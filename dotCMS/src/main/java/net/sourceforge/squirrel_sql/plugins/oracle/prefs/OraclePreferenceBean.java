@@ -3,7 +3,7 @@ package net.sourceforge.squirrel_sql.plugins.oracle.prefs;
 /*
  * Copyright (C) 2007 Rob Manning
  * manningr@users.sourceforge.net
- *
+ * 
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -20,75 +20,100 @@ package net.sourceforge.squirrel_sql.plugins.oracle.prefs;
  */
 import java.io.Serializable;
 import java.util.TimeZone;
+
 import net.sourceforge.squirrel_sql.fw.preferences.BaseQueryTokenizerPreferenceBean;
 
-/** A bean class to store preferences for the Oracle plugin. */
-public class OraclePreferenceBean extends BaseQueryTokenizerPreferenceBean
-    implements Cloneable, Serializable {
+/**
+ * A bean class to store preferences for the Oracle plugin.
+ */
+public class OraclePreferenceBean extends BaseQueryTokenizerPreferenceBean implements Cloneable, Serializable {
 
-  static final long serialVersionUID = 5818886723165356478L;
+    static final long serialVersionUID = 5818886723165356478L;
 
-  static final String UNSUPPORTED = "Unsupported";
+    static final String UNSUPPORTED = "Unsupported";
 
-  private boolean excludeRecycleBinTables = true;
+    private boolean excludeRecycleBinTables = true;
+    
+    private boolean showErrorOffset = true;
+    
+    private boolean initSessionTimezone = true;
+    
+    private String sessionTimezone = TimeZone.getDefault().getID();
+    
+    public OraclePreferenceBean() {
+        super();
+        statementSeparator = ";";
+        procedureSeparator = "/";
+        lineComment = "--";
+        removeMultiLineComments = false;
+        installCustomQueryTokenizer = true;
+    }
 
-  private boolean showErrorOffset = true;
+    /**
+     * Return a copy of this object.
+     */
+    public OraclePreferenceBean clone() {
+   	 return (OraclePreferenceBean) super.clone();
+    }
 
-  private boolean initSessionTimezone = true;
+    /**
+     * @param excludeRecycleBinTables the excludeRecycleBinTables to set
+     */
+    public void setExcludeRecycleBinTables(boolean excludeRecycleBinTables) {
+        this.excludeRecycleBinTables = excludeRecycleBinTables;
+    }
 
-  private String sessionTimezone = TimeZone.getDefault().getID();
+    /**
+     * @return the excludeRecycleBinTables
+     */
+    public boolean isExcludeRecycleBinTables() {
+        return excludeRecycleBinTables;
+    }
 
-  public OraclePreferenceBean() {
-    super();
-    statementSeparator = ";";
-    procedureSeparator = "/";
-    lineComment = "--";
-    removeMultiLineComments = false;
-    installCustomQueryTokenizer = true;
-  }
+   /**
+    * @return the showErrorOffset
+    */
+   public boolean isShowErrorOffset() {
+      return showErrorOffset;
+   }
 
-  /** Return a copy of this object. */
-  public OraclePreferenceBean clone() {
-    return (OraclePreferenceBean) super.clone();
-  }
+   /**
+    * @param showErrorOffset the showErrorOffset to set
+    */
+   public void setShowErrorOffset(boolean showErrorOffset) {
+      this.showErrorOffset = showErrorOffset;
+   }
 
-  /** @param excludeRecycleBinTables the excludeRecycleBinTables to set */
-  public void setExcludeRecycleBinTables(boolean excludeRecycleBinTables) {
-    this.excludeRecycleBinTables = excludeRecycleBinTables;
-  }
+	/**
+	 * @param sessionTimezone the sessionTimezone to set
+	 */
+	public void setSessionTimezone(String sessionTimezone)
+	{
+		this.sessionTimezone = sessionTimezone;
+	}
 
-  /** @return the excludeRecycleBinTables */
-  public boolean isExcludeRecycleBinTables() {
-    return excludeRecycleBinTables;
-  }
+	/**
+	 * @return the sessionTimezone
+	 */
+	public String getSessionTimezone()
+	{
+		return sessionTimezone;
+	}
 
-  /** @return the showErrorOffset */
-  public boolean isShowErrorOffset() {
-    return showErrorOffset;
-  }
+	/**
+	 * @param initSessionTimezone the initSessionTimezone to set
+	 */
+	public void setInitSessionTimezone(boolean initSessionTimezone)
+	{
+		this.initSessionTimezone = initSessionTimezone;
+	}
 
-  /** @param showErrorOffset the showErrorOffset to set */
-  public void setShowErrorOffset(boolean showErrorOffset) {
-    this.showErrorOffset = showErrorOffset;
-  }
+	/**
+	 * @return the getInitSessionTimezone
+	 */
+	public boolean getInitSessionTimezone()
+	{
+		return initSessionTimezone;
+	}
 
-  /** @param sessionTimezone the sessionTimezone to set */
-  public void setSessionTimezone(String sessionTimezone) {
-    this.sessionTimezone = sessionTimezone;
-  }
-
-  /** @return the sessionTimezone */
-  public String getSessionTimezone() {
-    return sessionTimezone;
-  }
-
-  /** @param initSessionTimezone the initSessionTimezone to set */
-  public void setInitSessionTimezone(boolean initSessionTimezone) {
-    this.initSessionTimezone = initSessionTimezone;
-  }
-
-  /** @return the getInitSessionTimezone */
-  public boolean getInitSessionTimezone() {
-    return initSessionTimezone;
-  }
 }

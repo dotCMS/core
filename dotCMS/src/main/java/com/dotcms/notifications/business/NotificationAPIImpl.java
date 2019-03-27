@@ -43,535 +43,477 @@ import org.apache.commons.lang.StringUtils;
  * @author Daniel Silva
  * @version 3.0, 3.7
  * @since Feb 3, 2014
+ *
  */
 public class NotificationAPIImpl implements NotificationAPI {
 
-  public static final String NOTIFICATIONS_THREAD_POOL_SUBMITTER_NAME = "notifications";
-  private final NotificationFactory notificationFactory;
-  private final SystemEventsAPI systemEventsAPI;
-  private final MarshalUtils marshalUtils;
-  private final ConversionUtils conversionUtils;
-  private final DotConcurrentFactory dotConcurrentFactory;
-  private final NewNotificationCache newNotificationCache;
-  private RoleAPI
-      roleAPI; // Don't access this attribute directly, use the getRoleAPI method instead
+    public static final String NOTIFICATIONS_THREAD_POOL_SUBMITTER_NAME = "notifications";
+    private final NotificationFactory notificationFactory;
+    private final SystemEventsAPI systemEventsAPI;
+    private final MarshalUtils marshalUtils;
+    private final ConversionUtils conversionUtils;
+    private final DotConcurrentFactory dotConcurrentFactory;
+    private final NewNotificationCache newNotificationCache;
+    private RoleAPI roleAPI;//Don't access this attribute directly, use the getRoleAPI method instead
 
-  /** Retrieve the factory class that interacts with the database. */
-  public NotificationAPIImpl() {
+    /**
+     * Retrieve the factory class that interacts with the database.
+     */
+    public NotificationAPIImpl() {
 
-    this(
-        FactoryLocator.getNotificationFactory(),
-        APILocator.getSystemEventsAPI(),
-        MarshalFactory.getInstance().getMarshalUtils(),
-        ConversionUtils.INSTANCE,
-        DotConcurrentFactory.getInstance(),
-        CacheLocator.getNewNotificationCache(),
-        null);
-  }
-
-  @VisibleForTesting
-  public NotificationAPIImpl(
-      final NotificationFactory notificationFactory,
-      final SystemEventsAPI systemEventsAPI,
-      final MarshalUtils marshalUtils,
-      final ConversionUtils conversionUtils,
-      final DotConcurrentFactory dotConcurrentFactory,
-      final NewNotificationCache newNotificationCache,
-      final RoleAPI roleAPI) {
-
-    this.notificationFactory = notificationFactory;
-    this.systemEventsAPI = systemEventsAPI;
-    this.marshalUtils = marshalUtils;
-    this.conversionUtils = conversionUtils;
-    this.dotConcurrentFactory = dotConcurrentFactory;
-    this.newNotificationCache = newNotificationCache;
-    this.roleAPI = roleAPI;
-  }
-
-  /**
-   * Utility method to lazy load the RoleAPI when needed and to avoid to instantiate it on the
-   * creation of this NotificationAPI object in order to avoid cyclic references with another
-   * APIs(java.lang.StackOverflowError).
-   *
-   * <p><br>
-   * <strong>Example of a cyclic reference:</strong> This NotificationAPI obtains an instance of the
-   * RoleAPI that at the same time obtains an instance of the UserAPI that uses the NotificationAPI
-   * resulting on a java.lang.StackOverflowError error.
-   *
-   * @return The RoleAPI reference
-   */
-  private RoleAPI getRoleAPI() {
-
-    if (null == this.roleAPI) {
-      synchronized (this) {
-        if (null == this.roleAPI) {
-          this.roleAPI = APILocator.getRoleAPI();
-        }
-      }
+        this(FactoryLocator.getNotificationFactory(),
+            APILocator.getSystemEventsAPI(),
+            MarshalFactory.getInstance().getMarshalUtils(),
+            ConversionUtils.INSTANCE,
+            DotConcurrentFactory.getInstance(),
+            CacheLocator.getNewNotificationCache(),
+            null);
     }
 
-    return roleAPI;
-  }
+    @VisibleForTesting
+    public NotificationAPIImpl(final NotificationFactory notificationFactory,
+                               final SystemEventsAPI systemEventsAPI,
+                               final MarshalUtils marshalUtils,
+                               final ConversionUtils conversionUtils,
+                               final DotConcurrentFactory dotConcurrentFactory,
+                               final NewNotificationCache newNotificationCache,
+                               final RoleAPI roleAPI) {
 
-  @Override
-  public void info(String message, String userId) {
-    try {
-      generateNotification(message, NotificationLevel.INFO, userId);
-    } catch (DotDataException e) {
-      Logger.error(this, "Error generating INFO Notification", e);
+        this.notificationFactory = notificationFactory;
+        this.systemEventsAPI = systemEventsAPI;
+        this.marshalUtils = marshalUtils;
+        this.conversionUtils = conversionUtils;
+        this.dotConcurrentFactory = dotConcurrentFactory;
+        this.newNotificationCache = newNotificationCache;
+        this.roleAPI = roleAPI;
     }
-  }
 
-  @Override
-  public void error(String message, String userId) {
-    try {
-      generateNotification(message, NotificationLevel.ERROR, userId);
-    } catch (DotDataException e) {
-      Logger.error(this, "Error generating ERROR Notification", e);
-    }
-  }
+    /**
+     * Utility method to lazy load the RoleAPI when needed and to avoid to instantiate it on the creation of this
+     * NotificationAPI object in order to avoid cyclic references with another APIs(java.lang.StackOverflowError).
+     * <p>
+     * <br>
+     * <strong>Example of a cyclic reference:</strong> This NotificationAPI obtains an instance of the RoleAPI that
+     * at the same time obtains an instance of the UserAPI that uses the NotificationAPI resulting on a
+     * java.lang.StackOverflowError error.
+     *
+     * @return The RoleAPI reference
+     */
+    private RoleAPI getRoleAPI() {
 
-  @Override
-  public void generateNotification(String message, NotificationLevel level, String userId)
-      throws DotDataException {
-
-    this.generateNotification(message, level, NotificationType.GENERIC, userId);
-  }
-
-  @Override
-  public void generateNotification(
-      String message, NotificationLevel level, NotificationType type, String userId)
-      throws DotDataException {
-
-    this.generateNotification(
-        StringUtils.EMPTY, message, null, level, NotificationType.GENERIC, userId);
-  }
-
-  @Override
-  public void generateNotification(
-      String title,
-      String message,
-      List<NotificationAction> actions,
-      NotificationLevel level,
-      NotificationType type,
-      String userId)
-      throws DotDataException {
-
-    this.generateNotification(
-        new I18NMessage(title),
-        new I18NMessage(message),
-        actions,
-        level,
-        type,
-        Visibility.USER,
-        userId,
-        userId,
-        null);
-  }
-
-  @Override
-  public void generateNotification(
-      final I18NMessage title,
-      final I18NMessage message,
-      final List<NotificationAction> actions,
-      final NotificationLevel level,
-      final NotificationType type,
-      final String userId,
-      final Locale locale)
-      throws DotDataException {
-    this.generateNotification(
-        title, message, actions, level, type, Visibility.USER, userId, userId, locale);
-  }
-
-  @Override
-  public void generateNotification(
-      final String title,
-      final String message,
-      final List<NotificationAction> actions,
-      final NotificationLevel level,
-      final NotificationType type,
-      Visibility visibility,
-      final String visibilityId,
-      final String userId,
-      final Locale locale)
-      throws DotDataException {
-
-    this.generateNotification(
-        new I18NMessage(title),
-        new I18NMessage(message),
-        actions,
-        level,
-        type,
-        visibility,
-        visibilityId,
-        userId,
-        locale);
-  }
-
-  @Override
-  public void generateNotification(
-      final I18NMessage title,
-      final I18NMessage message,
-      final List<NotificationAction> actions,
-      final NotificationLevel level,
-      final NotificationType type,
-      final Visibility visibility,
-      final String visibilityId,
-      final String userId,
-      final Locale locale)
-      throws DotDataException {
-
-    // since the notification is not a priory process on the current thread, we decided to execute
-    // it async
-    final DotSubmitter dotSubmitter =
-        this.dotConcurrentFactory.getSubmitter(NOTIFICATIONS_THREAD_POOL_SUBMITTER_NAME);
-    dotSubmitter.execute(
-        () -> {
-          final NotificationData data = new NotificationData(title, message, actions);
-          final String messageJson = this.marshalUtils.marshal(data);
-          final NotificationDTO dto =
-              new NotificationDTO(
-                  StringUtils.EMPTY,
-                  messageJson,
-                  type.name(),
-                  level.name(),
-                  userId,
-                  null,
-                  Boolean.FALSE);
-
-          try {
-
-            this.saveNotification(dto, data, visibility, visibilityId, level, userId, locale);
-          } catch (Exception e) {
-
-            if (Logger.isErrorEnabled(NotificationAPIImpl.class)) {
-              Logger.error(NotificationAPIImpl.class, e.getMessage(), e);
+        if ( null == this.roleAPI ) {
+            synchronized (this) {
+                if ( null == this.roleAPI ) {
+                    this.roleAPI = APILocator.getRoleAPI();
+                }
             }
-          }
-        });
-  } // generateNotification.
+        }
 
-  @WrapInTransaction
-  private void saveNotification(
-      final NotificationDTO dto,
-      final NotificationData data,
-      final Visibility visibility,
-      final String visibilityId,
-      final NotificationLevel level,
-      final String userId,
-      final Locale locale)
-      throws DotSecurityException, DotDataException {
-
-    Logger.debug(NotificationAPIImpl.class, "Storing the notification: " + dto);
-
-    // If the is Visibility.ROLE we need to create a notification for each user under that role
-    if (visibility.equals(Visibility.ROLE)) {
-      // Search for all the users in the given role
-      Collection<User> foundUsers = getRoleAPI().findUsersForRole(visibilityId);
-      if (foundUsers != null && !foundUsers.isEmpty()) {
-        this.notificationFactory.saveNotificationsForUsers(dto, foundUsers);
-      }
-    } else if (visibility.equals(Visibility.USER)) {
-      this.notificationFactory.saveNotification(dto);
-    } else {
-      throw new NotImplementedException("Visibility no implemented [" + visibility + "]");
+        return roleAPI;
     }
 
-    // Adding notification to System Events table
-    final Notification notificationBean = new Notification(level, userId, data);
-    final Payload payload = new Payload(notificationBean, visibility, visibilityId);
+    @Override
+    public void info(String message, String userId) {
+        try {
+            generateNotification(message, NotificationLevel.INFO, userId);
+        } catch (DotDataException e) {
+            Logger.error(this, "Error generating INFO Notification", e);
+        }
+    }
 
-    notificationBean.setGroupId(dto.getGroupId());
-    notificationBean.setTimeSent(new Date());
-    notificationBean.setPrettyDate(
-        DateUtil.prettyDateSince(notificationBean.getTimeSent(), locale));
+    @Override
+    public void error(String message, String userId) {
+        try {
+            generateNotification(message, NotificationLevel.ERROR, userId);
+        } catch (DotDataException e) {
+            Logger.error(this, "Error generating ERROR Notification", e);
+        }
+    }
 
-    final SystemEvent systemEvent = new SystemEvent(SystemEventType.NOTIFICATION, payload);
-    this.systemEventsAPI.push(systemEvent);
-    Logger.debug(NotificationAPIImpl.class, "Pushing the event: " + systemEvent);
-  }
+    @Override
+    public void generateNotification(String message, NotificationLevel level, String userId) throws DotDataException {
 
-  @CloseDBIfOpened
-  @Override
-  public Notification findNotification(final String userId, final String groupId)
-      throws DotDataException {
+        this.generateNotification(message, level, NotificationType.GENERIC, userId);
+    }
 
-    Notification notification = this.newNotificationCache.getNotification(userId, groupId);
+    @Override
+    public void generateNotification(String message, NotificationLevel level, NotificationType type, String userId) throws DotDataException {
 
-    if (null == notification) {
+        this.generateNotification(StringUtils.EMPTY, message, null, level, NotificationType.GENERIC, userId);
+    }
 
-      synchronized (this) {
+    @Override
+    public void generateNotification(String title, String message, List<NotificationAction> actions,
+                                     NotificationLevel level, NotificationType type, String userId) throws DotDataException {
+
+        this.generateNotification(new I18NMessage(title), new I18NMessage(message), actions, level, type, Visibility.USER, userId, userId, null);
+    }
+
+    @Override
+    public void generateNotification(final I18NMessage title, final I18NMessage message, final List<NotificationAction> actions,
+                                     final NotificationLevel level, final NotificationType type, final String userId, final Locale locale) throws DotDataException {
+        this.generateNotification(title, message, actions, level, type, Visibility.USER, userId, userId, locale);
+    }
+
+    @Override
+    public void generateNotification(final String title, final String message, final List<NotificationAction> actions,
+                                     final NotificationLevel level, final NotificationType type, Visibility visibility,
+                                     final String visibilityId, final String userId, final Locale locale) throws DotDataException {
+
+        this.generateNotification(new I18NMessage(title), new I18NMessage(message), actions, level, type, visibility, visibilityId, userId, locale);
+    }
+
+    @Override
+    public void generateNotification(final I18NMessage title, final I18NMessage message, final List<NotificationAction> actions,
+                                     final NotificationLevel level, final NotificationType type, final Visibility visibility,
+                                     final String visibilityId, final String userId, final Locale locale) throws DotDataException {
+
+        // since the notification is not a priory process on the current thread, we decided to execute it async
+        final DotSubmitter dotSubmitter = this.dotConcurrentFactory.getSubmitter(NOTIFICATIONS_THREAD_POOL_SUBMITTER_NAME);
+        dotSubmitter.execute(() -> {
+
+            final NotificationData data = new NotificationData(title, message, actions);
+            final String messageJson = this.marshalUtils.marshal(data);
+            final NotificationDTO dto = new NotificationDTO(StringUtils.EMPTY, messageJson,
+                type.name(), level.name(), userId, null, Boolean.FALSE);
+
+            try {
+
+                this.saveNotification(dto, data, visibility,
+                        visibilityId, level, userId, locale);
+            } catch (Exception e) {
+
+                if ( Logger.isErrorEnabled(NotificationAPIImpl.class) ) {
+                    Logger.error(NotificationAPIImpl.class, e.getMessage(), e);
+                }
+            }
+
+        });
+    } // generateNotification.
+
+    @WrapInTransaction
+    private void saveNotification (final NotificationDTO dto,
+                                   final NotificationData data,
+                                   final Visibility visibility,
+                                   final String visibilityId,
+                                   final NotificationLevel level,
+                                   final String userId,
+                                   final Locale locale) throws DotSecurityException, DotDataException {
+
+        Logger.debug(NotificationAPIImpl.class, "Storing the notification: " + dto);
+
+        //If the is Visibility.ROLE we need to create a notification for each user under that role
+        if ( visibility.equals(Visibility.ROLE) ) {
+            //Search for all the users in the given role
+            Collection<User> foundUsers = getRoleAPI().findUsersForRole(visibilityId);
+            if ( foundUsers != null && !foundUsers.isEmpty() ) {
+                this.notificationFactory.saveNotificationsForUsers(dto, foundUsers);
+            }
+        } else if ( visibility.equals(Visibility.USER) ) {
+            this.notificationFactory.saveNotification(dto);
+        } else {
+            throw new NotImplementedException("Visibility no implemented [" + visibility + "]");
+        }
+
+        // Adding notification to System Events table
+        final Notification notificationBean = new Notification(level, userId, data);
+        final Payload payload = new Payload(notificationBean, visibility, visibilityId);
+
+        notificationBean.setGroupId(dto.getGroupId());
+        notificationBean.setTimeSent(new Date());
+        notificationBean.setPrettyDate(DateUtil.prettyDateSince(notificationBean.getTimeSent(), locale));
+
+        final SystemEvent systemEvent = new SystemEvent(SystemEventType.NOTIFICATION, payload);
+        this.systemEventsAPI.push(systemEvent);
+        Logger.debug(NotificationAPIImpl.class, "Pushing the event: " + systemEvent);
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public Notification findNotification(final String userId, final String groupId) throws DotDataException {
+
+        Notification notification =
+            this.newNotificationCache.getNotification(userId, groupId);
+
         if (null == notification) {
 
-          final NotificationDTO dto = this.notificationFactory.findNotification(userId, groupId);
+            synchronized (this) {
 
-          notification = this.conversionUtils.convert(dto, this::convertNotificationDTO);
+                if (null == notification) {
 
-          if (notification != null) {
-            this.newNotificationCache.addNotification(notification);
-          }
-        }
-      }
-    }
+                    final NotificationDTO dto =
+                        this.notificationFactory.findNotification(userId, groupId);
 
-    return notification;
-  } // findNotification.
+                    notification = this.conversionUtils.convert(dto,  this::convertNotificationDTO);
 
-  @WrapInTransaction
-  @Override
-  public void deleteNotification(final String userId, final String groupId)
-      throws DotDataException {
-
-    synchronized (this) {
-      try {
-
-        // Check for a transaction and start one if required
-
-        this.notificationFactory.deleteNotification(userId, groupId);
-        this.newNotificationCache.removeNotification(userId, groupId);
-        this.newNotificationCache.remove(userId);
-
-      } catch (Exception e) {
-
-        final String msg = "An error occurred when deleting Notification.";
-        Logger.error(this, msg, e);
-        throw new DotDataException(msg, e);
-      }
-    }
-  } // deleteNotification.
-
-  @WrapInTransaction
-  @Override
-  public void deleteNotifications(final String userId, final String... groupsId)
-      throws DotDataException {
-
-    synchronized (this) {
-      try {
-
-        this.notificationFactory.deleteNotification(userId, groupsId);
-
-        for (String groupId : groupsId) {
-          this.newNotificationCache.removeNotification(userId, groupId);
+                    if(notification!=null){
+                        this.newNotificationCache.addNotification(notification);
+                    }
+                }
+            }
         }
 
-        this.newNotificationCache.remove(userId);
+        return notification;
+    } // findNotification.
 
-      } catch (Exception e) {
+    @WrapInTransaction
+    @Override
+    public void deleteNotification(final String userId, final String groupId) throws DotDataException {
 
-        final String msg =
-            "An error occurred when deleting Notifications for user [" + userId + "]";
-        Logger.error(this, msg, e);
-        throw new DotDataException(msg, e);
-      }
-    }
-  } // deleteNotifications.
+        synchronized (this) {
 
-  @WrapInTransaction
-  @Override
-  public void deleteNotifications(final String userId) throws DotDataException {
+            try {
 
-    synchronized (this) {
-      try {
+                //Check for a transaction and start one if required
 
-        this.notificationFactory.deleteNotifications(userId);
-        this.newNotificationCache.remove(userId);
-      } catch (Exception e) {
+                this.notificationFactory.deleteNotification(userId, groupId);
+                this.newNotificationCache.removeNotification(userId, groupId);
+                this.newNotificationCache.remove(userId);
 
-        final String msg =
-            "An error occurred when deleting Notifications for user [" + userId + "]";
-        Logger.error(this, msg, e);
-        throw new DotDataException(msg, e);
-      }
-    }
-  } // deleteNotifications.
+            } catch (Exception e) {
 
-  @CloseDBIfOpened
-  @Override
-  public List<Notification> getNotifications(final long offset, final long limit)
-      throws DotDataException {
+                final String msg = "An error occurred when deleting Notification.";
+                Logger.error(this, msg, e);
+                throw new DotDataException(msg, e);
+            }
+        }
+    } // deleteNotification.
 
-    List<Notification> notifications = this.newNotificationCache.getNotifications(offset, limit);
+    @WrapInTransaction
+    @Override
+    public void deleteNotifications(final String userId, final String... groupsId) throws DotDataException {
 
-    if (null == notifications) {
+        synchronized (this) {
 
-      synchronized (this) {
+            try {
+
+                this.notificationFactory.deleteNotification(userId, groupsId);
+
+                for ( String groupId : groupsId ) {
+                    this.newNotificationCache.removeNotification(userId, groupId);
+                }
+
+                this.newNotificationCache.remove(userId);
+
+            } catch (Exception e) {
+
+                final String msg = "An error occurred when deleting Notifications for user [" + userId + "]";
+                Logger.error(this, msg, e);
+                throw new DotDataException(msg, e);
+            }
+        }
+    } // deleteNotifications.
+
+    @WrapInTransaction
+    @Override
+    public void deleteNotifications(final String userId) throws DotDataException {
+
+        synchronized (this) {
+
+            try {
+
+                this.notificationFactory.deleteNotifications(userId);
+                this.newNotificationCache.remove(userId);
+            } catch (Exception e) {
+
+                final String msg = "An error occurred when deleting Notifications for user [" + userId + "]";
+                Logger.error(this, msg, e);
+                throw new DotDataException(msg, e);
+            }
+        }
+    } // deleteNotifications.
+
+    @CloseDBIfOpened
+    @Override
+    public List<Notification> getNotifications(final long offset,
+                                               final long limit) throws DotDataException {
+
+        List<Notification> notifications =
+            this.newNotificationCache.getNotifications(offset, limit);
+
         if (null == notifications) {
 
-          final List<NotificationDTO> dtos =
-              this.notificationFactory.getNotifications(offset, limit);
-          notifications =
-              this.conversionUtils.convert(
-                  dtos,
-                  (NotificationDTO record) -> {
-                    return convertNotificationDTO(record);
-                  });
+            synchronized (this) {
 
-          this.newNotificationCache.addNotifications(offset, limit, notifications);
+                if (null == notifications) {
+
+                    final List<NotificationDTO> dtos = this.notificationFactory.getNotifications(offset, limit);
+                    notifications = this.conversionUtils.convert(dtos, (NotificationDTO record) -> {
+                        return convertNotificationDTO(record);
+                    });
+
+                    this.newNotificationCache.addNotifications(offset, limit, notifications);
+                }
+            }
         }
-      }
-    }
 
-    return notifications;
-  } // getNotifications.
+        return notifications;
+    } // getNotifications.
 
-  @CloseDBIfOpened
-  @Override
-  public Long getNotificationsCount() throws DotDataException {
+    @CloseDBIfOpened
+    @Override
+    public Long getNotificationsCount() throws DotDataException {
 
-    Long count = this.newNotificationCache.getAllCount();
+        Long count = this.newNotificationCache.getAllCount();
 
-    if (!UtilMethods.isSet(count)) {
-
-      synchronized (this) {
         if (!UtilMethods.isSet(count)) {
 
-          count = this.notificationFactory.getNotificationsCount(null);
-          this.newNotificationCache.addAllCount(count);
+            synchronized (this) {
+
+                if (!UtilMethods.isSet(count)) {
+
+                    count = this.notificationFactory.getNotificationsCount(null);
+                    this.newNotificationCache.addAllCount(count);
+                }
+            }
         }
-      }
-    }
 
-    return count;
-  } // getNotificationsCount.
+        return count;
+    } // getNotificationsCount.
 
-  @CloseDBIfOpened
-  @Override
-  public Long getNotificationsCount(final String userId) throws DotDataException {
+    @CloseDBIfOpened
+    @Override
+    public Long getNotificationsCount(final String userId) throws DotDataException {
 
-    Long count = this.newNotificationCache.getUserCount(userId);
+        Long count = this.newNotificationCache.getUserCount(userId);
 
-    if (!UtilMethods.isSet(count)) {
-
-      synchronized (this) {
         if (!UtilMethods.isSet(count)) {
 
-          count = notificationFactory.getNotificationsCount(userId);
-          this.newNotificationCache.addUserCount(userId, count);
+            synchronized (this) {
+
+                if (!UtilMethods.isSet(count)) {
+
+                    count = notificationFactory.getNotificationsCount(userId);
+                    this.newNotificationCache.addUserCount(userId, count);
+                }
+            }
         }
-      }
-    }
 
-    return count;
-  } // getNotificationsCount.
+        return count;
+    } // getNotificationsCount.
 
-  @CloseDBIfOpened
-  @Override
-  public List<Notification> getAllNotifications(final String userId) throws DotDataException {
 
-    List<Notification> notifications = this.newNotificationCache.getAllNotifications(userId);
+    @CloseDBIfOpened
+    @Override
+    public List<Notification> getAllNotifications(final String userId) throws DotDataException {
 
-    if (null == notifications) {
+        List<Notification> notifications =
+            this.newNotificationCache.getAllNotifications(userId);
 
-      synchronized (this) {
         if (null == notifications) {
 
-          final List<NotificationDTO> dtos = this.notificationFactory.getAllNotifications(userId);
-          notifications = this.conversionUtils.convert(dtos, this::convertNotificationDTO);
+            synchronized (this) {
 
-          this.newNotificationCache.addAllNotifications(userId, notifications);
+                if (null == notifications) {
+
+                    final List<NotificationDTO> dtos = this.notificationFactory.getAllNotifications(userId);
+                    notifications = this.conversionUtils.convert(dtos, this::convertNotificationDTO);
+
+                    this.newNotificationCache.addAllNotifications(userId, notifications);
+                }
+            }
         }
-      }
-    }
 
-    return notifications;
-  } // getAllNotifications.
+        return notifications;
+    } // getAllNotifications.
 
-  @CloseDBIfOpened
-  @Override
-  public List<Notification> getNotifications(String userId, long offset, long limit)
-      throws DotDataException {
+    @CloseDBIfOpened
+    @Override
+    public List<Notification> getNotifications(String userId, long offset, long limit) throws DotDataException {
 
-    List<Notification> notifications =
-        this.newNotificationCache.getNotifications(userId, offset, limit);
+        List<Notification> notifications =
+            this.newNotificationCache.getNotifications(userId, offset, limit);
 
-    if (null == notifications) {
-
-      synchronized (this) {
         if (null == notifications) {
 
-          final List<NotificationDTO> dtos =
-              this.notificationFactory.getNotifications(userId, offset, limit);
-          notifications = this.conversionUtils.convert(dtos, this::convertNotificationDTO);
+            synchronized (this) {
 
-          this.newNotificationCache.addNotifications(userId, offset, limit, notifications);
+                if (null == notifications) {
+
+                    final List<NotificationDTO> dtos = this.notificationFactory.getNotifications(userId, offset, limit);
+                    notifications = this.conversionUtils.convert(dtos, this::convertNotificationDTO);
+
+                    this.newNotificationCache.addNotifications(userId, offset, limit, notifications);
+                }
+            }
         }
-      }
-    }
 
-    return notifications;
-  } // getNotifications.
+        return notifications;
+    } // getNotifications.
 
-  @CloseDBIfOpened
-  @Override
-  public Long getNewNotificationsCount(final String userId) throws DotDataException {
+    @CloseDBIfOpened
+    @Override
+    public Long getNewNotificationsCount(final String userId) throws DotDataException {
 
-    Long count = this.newNotificationCache.getCount(userId);
+        Long count = this.newNotificationCache.getCount(userId);
 
-    if (!UtilMethods.isSet(count)) {
-
-      synchronized (this) {
         if (!UtilMethods.isSet(count)) {
 
-          count = notificationFactory.getNewNotificationsCount(userId);
-          this.newNotificationCache.addCount(userId, count);
+            synchronized (this) {
+
+                if (!UtilMethods.isSet(count)) {
+
+                    count = notificationFactory.getNewNotificationsCount(userId);
+                    this.newNotificationCache.addCount(userId, count);
+                }
+            }
         }
-      }
-    }
 
-    return count;
-  } // getNewNotificationsCount.
+        return count;
+    } // getNewNotificationsCount.
 
-  @WrapInTransaction
-  @Override
-  public void markNotificationsAsRead(final String userId) throws DotDataException {
+    @WrapInTransaction
+    @Override
+    public void markNotificationsAsRead(final String userId) throws DotDataException {
 
-    synchronized (this) {
-      try {
+        synchronized (this) {
 
-        this.notificationFactory.markNotificationsAsRead(userId);
-        this.newNotificationCache.remove(userId);
-      } catch (Exception e) {
+            try {
 
-        final String msg =
-            "An error occurred marking Notifications as read for user [" + userId + "]";
-        Logger.error(this, msg, e);
-        throw new DotDataException(msg, e);
-      }
-    }
-  } // markNotificationsAsRead.
+                this.notificationFactory.markNotificationsAsRead(userId);
+                this.newNotificationCache.remove(userId);
+            } catch (Exception e) {
 
-  /**
-   * Converts the physical representation of a Notification (i.e., the information as stored in the
-   * database) to the logical representation.
-   *
-   * @param record - The {@link NotificationDTO} object.
-   * @return The {@link Notification} object.
-   */
-  private Notification convertNotificationDTO(final NotificationDTO record) {
+                final String msg = "An error occurred marking Notifications as read for user [" + userId + "]";
+                Logger.error(this, msg, e);
+                throw new DotDataException(msg, e);
+            }
+        }
+    } // markNotificationsAsRead.
 
-    final String group_id = record.getGroupId();
-    final String typeStr = record.getType();
-    final String levelStr = record.getLevel();
-    final NotificationType type =
-        (UtilMethods.isSet(typeStr)) ? NotificationType.valueOf(typeStr) : NotificationType.GENERIC;
-    final NotificationLevel level =
-        (UtilMethods.isSet(levelStr))
-            ? NotificationLevel.valueOf(levelStr)
+    /**
+     * Converts the physical representation of a Notification (i.e., the
+     * information as stored in the database) to the logical representation.
+     *
+     * @param record
+     *            - The {@link NotificationDTO} object.
+     * @return The {@link Notification} object.
+     */
+    private Notification convertNotificationDTO(final NotificationDTO record) {
+
+        final String group_id = record.getGroupId();
+        final String typeStr = record.getType();
+        final String levelStr = record.getLevel();
+        final NotificationType type = (UtilMethods.isSet(typeStr)) ? NotificationType.valueOf(typeStr)
+            : NotificationType.GENERIC;
+        final NotificationLevel level = (UtilMethods.isSet(levelStr)) ? NotificationLevel.valueOf(levelStr)
             : NotificationLevel.INFO;
-    final String userId = record.getUserId();
-    final Date timeSent = record.getTimeSent();
-    final boolean wasRead = record.getWasRead();
-    NotificationData data;
+        final String userId = record.getUserId();
+        final Date timeSent = record.getTimeSent();
+        final boolean wasRead = record.getWasRead();
+        NotificationData data;
 
-    try {
+        try {
 
-      data = this.marshalUtils.unmarshal(record.getMessage(), NotificationData.class);
-    } catch (Exception e) {
-      // If JSON cannot be parsed, just put the message
-      data =
-          new NotificationData(
-              new I18NMessage(StringUtils.EMPTY), new I18NMessage(record.getMessage()), null);
-    }
-    return new Notification(group_id, type, level, userId, timeSent, wasRead, data);
-  } // convertNotificationDTO.
+            data = this.marshalUtils.unmarshal(record.getMessage(), NotificationData.class);
+        } catch (Exception e) {
+            // If JSON cannot be parsed, just put the message
+            data = new NotificationData(
+                new I18NMessage(StringUtils.EMPTY),
+                new I18NMessage(record.getMessage()),
+                null);
+        }
+        return new Notification(group_id, type, level, userId, timeSent, wasRead, data);
+    } // convertNotificationDTO.
+
 } // E:O:F:NotificationAPIImpl.

@@ -16,61 +16,75 @@ package org.apache.velocity.runtime.directive;
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
- * under the License.
+ * under the License.    
  */
 
 import org.apache.velocity.Template;
 import org.apache.velocity.runtime.RuntimeInstance;
+import org.apache.velocity.runtime.directive.Evaluate;
 
 /**
- * Stop command for directive Control objects. In an ideal JDK, this would be able to extend a
- * RuntimeThrowable class, but we don't have that. So to avoid the interface changes needed by
- * extending Throwable and the potential errant catches were we to extend RuntimeException, we'll
- * have to extend Error, despite the fact that this is never an error.
+ * Stop command for directive Control objects.  In an ideal JDK,
+ * this would be able to extend a RuntimeThrowable class, but we
+ * don't have that. So to avoid the interface changes needed by
+ * extending Throwable and the potential errant catches were we
+ * to extend RuntimeException, we'll have to extend Error,
+ * despite the fact that this is never an error.
  *
  * @author Nathan Bubna
  * @version $Id$
  */
-public class StopCommand extends Error {
-  private static final long serialVersionUID = 2577683435802825964L;
-  private Object stopMe;
-  private boolean nearest = false;
+public class StopCommand extends Error
+{
+    private static final long serialVersionUID = 2577683435802825964L;
+    private Object stopMe;
+    private boolean nearest = false;
 
-  public StopCommand() {
-    this.nearest = true;
-  }
-
-  public StopCommand(String message) {
-    super(message);
-  }
-
-  public StopCommand(Object stopMe) {
-    this.stopMe = stopMe;
-  }
-
-  public String getMessage() {
-    if (stopMe != null) {
-      // only create a useful message if requested (which is unlikely)
-      return "StopCommand: " + stopMe;
-    } else {
-      return "StopCommand: " + super.getMessage();
+    public StopCommand()
+    {
+        this.nearest = true;
     }
-  }
 
-  public boolean isFor(Object that) {
-    if (nearest) // if we're stopping at the first chance
+    public StopCommand(String message)
     {
-      // save that for message
-      stopMe = that;
-      return true;
-    } else if (stopMe != null) // if we have a specified stopping point
-    {
-      return (that == stopMe);
-    } else // only stop for the top :)
-    {
-      return (that instanceof Template
-          || that instanceof RuntimeInstance
-          || that instanceof Evaluate);
+        super(message);
     }
-  }
+
+    public StopCommand(Object stopMe)
+    {
+        this.stopMe = stopMe;
+    }
+
+    public String getMessage()
+    {
+        if (stopMe != null)
+        {
+            // only create a useful message if requested (which is unlikely)
+            return "StopCommand: "+stopMe;
+        }
+        else
+        {
+            return "StopCommand: "+super.getMessage();
+        }
+    }
+
+    public boolean isFor(Object that)
+    {
+        if (nearest) // if we're stopping at the first chance
+        {
+            // save that for message
+            stopMe = that;
+            return true;
+        }
+        else if (stopMe != null) // if we have a specified stopping point
+        {
+            return (that == stopMe);
+        }
+        else // only stop for the top :)
+        {
+            return (that instanceof Template ||
+                    that instanceof RuntimeInstance ||
+                    that instanceof Evaluate);
+        }
+    }
 }

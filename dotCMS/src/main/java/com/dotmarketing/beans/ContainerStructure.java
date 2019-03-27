@@ -1,69 +1,76 @@
 package com.dotmarketing.beans;
 
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.util.Logger;
 import java.io.Serializable;
 
-public class ContainerStructure implements Serializable {
+import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.Logger;
 
-  private static final long serialVersionUID = 1L;
+public class ContainerStructure implements Serializable{
 
-  private String id;
-  private String structureId;
-  private String containerInode;
-  private String containerId;
-  private String code;
+	private static final long serialVersionUID = 1L;
 
-  public ContainerStructure() {}
+	private String id;
+	private String structureId;
+    private String containerInode;
+    private String containerId;
+    private String code;
 
-  public String getId() {
-    return id;
-  }
+	public ContainerStructure(){}
 
-  public void setId(String id) {
-    this.id = id;
-  }
+	public String getId() {
+		return id;
+	}
 
-  public String getContainerId() {
-    return containerId;
-  }
+	public void setId(String id) {
+		this.id = id;
+	}
 
-  public void setContainerId(String containerId) {
-    this.containerId = containerId;
-  }
+	public String getContainerId() {
+		return containerId;
+	}
 
-  public String getContainerInode() {
-    return containerInode;
-  }
+	public void setContainerId(String containerId) {
+		this.containerId = containerId;
+	}
 
-  public void setContainerInode(String containerInode) {
-    this.containerInode = containerInode;
-  }
-
-  public String getStructureId() {
-    return structureId;
-  }
-
-  public void setStructureId(String structureId) {
-    this.structureId = structureId;
-  }
-
-  public String getCode() {
-    return code;
-  }
-
-  public void setCode(String code) {
-    this.code = code;
-  }
-
-  public String getContentTypeVar() {
-    try {
-      return APILocator.getContentTypeAPI(APILocator.systemUser())
-          .find(getStructureId())
-          .variable();
-    } catch (Exception nfdb) {
-      Logger.debug(this.getClass(), nfdb.getMessage(), nfdb);
-      return null;
+    public String getContainerInode() {
+        return containerInode;
     }
-  }
+
+    public void setContainerInode(String containerInode) {
+        this.containerInode = containerInode;
+    }
+
+	public String getStructureId() {
+		return structureId;
+	}
+
+	public void setStructureId(String structureId) {
+		this.structureId = structureId;
+	}
+
+	public String getCode() {
+		return code;
+	}
+
+	public void setCode(String code) {
+		this.code = code;
+	}
+	
+	   public String getContentTypeVar() {
+	       try {
+	          return APILocator.getContentTypeAPI(APILocator.systemUser())
+               .find(getStructureId()).variable();
+	       }catch( Exception  nfdb) {
+	           Logger.debug(this.getClass(), nfdb.getMessage(), nfdb);
+	           return null;
+	       }
+	       
+	    }
+	
+
 }

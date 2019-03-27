@@ -10,33 +10,35 @@ import org.aspectj.lang.annotation.Aspect;
 
 /**
  * This aspect handles the {@link MethodHook} with AspectJ
- *
  * @author jsanca
  */
 @Aspect
 public class MethodHookAspect {
 
-  private final MethodInterceptor<Object> interceptor;
+    private final MethodInterceptor<Object> interceptor;
 
-  public MethodHookAspect() {
-    this(MethodHookMethodInterceptor.INSTANCE);
-  }
+    public MethodHookAspect() {
+        this( MethodHookMethodInterceptor.INSTANCE);
+    }
 
-  @VisibleForTesting
-  public MethodHookAspect(final MethodInterceptor<Object> interceptor) {
-    this.interceptor = interceptor;
-  }
+    @VisibleForTesting
+    public MethodHookAspect(final MethodInterceptor<Object> interceptor) {
+        this.interceptor = interceptor;
+    }
 
-  /**
-   * Aspect implementation for the {@link MethodHook} annotation
-   *
-   * @param point Joint point
-   * @return The result of call
-   * @throws Throwable If something goes wrong inside
-   */
-  @Around("execution(* *(..))" + " && @annotation(com.dotcms.business.MethodHook)")
-  public Object invoke(final ProceedingJoinPoint point) throws Throwable {
+    /**
+     * Aspect implementation for the {@link MethodHook} annotation
+     *
+     * @param point Joint point
+     * @return The result of call
+     * @throws Throwable If something goes wrong inside
+     */
+    @Around("execution(* *(..))"
+            + " && @annotation(com.dotcms.business.MethodHook)")
+    public Object invoke(final ProceedingJoinPoint point) throws Throwable {
 
-    return this.interceptor.invoke(new AspectJDelegateMethodInvocation<>(point));
-  } // invoke.
+        return
+                this.interceptor.invoke
+                        (new AspectJDelegateMethodInvocation<>(point));
+    } // invoke.
 } // E:O:F:MethodHookAspect.

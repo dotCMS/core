@@ -1,10 +1,5 @@
 package com.dotcms.mock.response;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.repackage.javax.ws.rs.container.AsyncResponse;
@@ -14,6 +9,9 @@ import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotmarketing.util.DateUtil;
 import com.google.common.collect.ImmutableList;
+import org.junit.Ignore;
+import org.junit.Test;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -22,105 +20,95 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
-import org.junit.Ignore;
-import org.junit.Test;
+
+import static org.junit.Assert.*;
 
 public class MockAsyncResponseTest {
 
-  @SuppressWarnings("unchecked")
-  @Ignore
-  @Test
-  public void testDeleteScheme() throws Exception {
+    @SuppressWarnings("unchecked")
+    @Ignore
+    @Test
+    public void testDeleteScheme() throws Exception {
 
-    final CountDownLatch countDownLatch = new CountDownLatch(1);
-    final AtomicReference<Response> response = new AtomicReference<>();
-    final AsyncResponse asyncResponse =
-        new MockAsyncResponse(
-            (arg) -> {
-              response.set((Response) arg);
-              countDownLatch.countDown();
-              return true;
-            },
-            arg -> {
-              countDownLatch.countDown();
-              fail("Error on deleting step");
-              return true;
-            });
+        final CountDownLatch countDownLatch = new CountDownLatch(1);
+        final AtomicReference<Response> response = new AtomicReference<>();
+        final AsyncResponse asyncResponse = new MockAsyncResponse((arg) -> {
 
-    new TestResource().test(asyncResponse);
+            response.set ((Response)arg);
+            countDownLatch.countDown();
+            return true;
+        }, arg -> {
 
-    try {
+            countDownLatch.countDown();
+            fail("Error on deleting step");
+            return true;
+        });
 
-      countDownLatch.await(10, TimeUnit.MINUTES);
-      assertNotNull(response);
-      assertEquals(Response.Status.OK.getStatusCode(), response.get().getStatus());
-      assertNotNull(response.get().getEntity());
-      assertTrue(response.get().getEntity() instanceof ResponseEntityView);
-      assertTrue(
-          ResponseEntityView.class.cast(response.get().getEntity()).getEntity() instanceof List);
-      assertEquals(
-          220,
-          List.class
-              .cast(ResponseEntityView.class.cast(response.get().getEntity()).getEntity())
-              .size());
-    } catch (InterruptedException e) {
-      fail(e.getMessage());
-    }
-  }
+        new TestResource().test(asyncResponse);
 
-  static class TestResource {
+        try {
 
-    public final void test(@Suspended final AsyncResponse asyncResponse) {
-
-      try {
-
-        ResponseUtil.handleAsyncResponse(this.veryExpensiveTask(), asyncResponse);
-      } catch (Exception e) {
-        asyncResponse.resume(ResponseUtil.mapExceptionResponse(e));
-      }
+            countDownLatch.await(10, TimeUnit.MINUTES);
+            assertNotNull(response);
+            assertEquals(Response.Status.OK.getStatusCode(), response.get().getStatus());
+            assertNotNull(response.get().getEntity());
+            assertTrue(response.get().getEntity() instanceof ResponseEntityView);
+            assertTrue(ResponseEntityView.class.cast(response.get().getEntity()).getEntity() instanceof List);
+            assertEquals(220, List.class.cast(ResponseEntityView.class.cast(response.get().getEntity()).getEntity()).size());
+        } catch (InterruptedException e) {
+            fail(e.getMessage());
+        }
     }
 
-    private Future<Object> veryExpensiveTask() {
+    static class TestResource {
 
-      final DotSubmitter dotSubmitter =
-          DotConcurrentFactory.getInstance()
-              .getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL);
+        public final void test(@Suspended final AsyncResponse asyncResponse) {
 
-      return dotSubmitter.submit(this::fireTasks);
-    }
+            try {
 
-    private List<String> fireTasks() {
-
-      final CopyOnWriteArrayList<String> results = new CopyOnWriteArrayList<>();
-      final List<Future> futures = new ArrayList<>();
-      final DotSubmitter dotSubmitter =
-          DotConcurrentFactory.getInstance()
-              .getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL);
-
-      for (int i = 0; i <= 10; ++i) {
-
-        IntStream.rangeClosed(1, 20)
-            .forEach(
-                number ->
-                    futures.add(
-                        dotSubmitter.submit(
-                            () -> {
-                              DateUtil.sleep(100 * number);
-                              results.add(String.valueOf(100 * number));
-                            })));
-
-        for (final Future future : futures) {
-
-          try {
-            future.get();
-          } catch (Exception e) {
-          }
+                ResponseUtil.handleAsyncResponse(
+                        this.veryExpensiveTask(), asyncResponse);
+            } catch (Exception e) {
+                asyncResponse.resume(ResponseUtil.mapExceptionResponse(e));
+            }
         }
 
-        futures.clear();
-      }
+        private Future<Object> veryExpensiveTask() {
 
-      return ImmutableList.copyOf(results);
+            final DotSubmitter dotSubmitter = DotConcurrentFactory.getInstance()
+                    .getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL);
+
+            return dotSubmitter.submit(this::fireTasks);
+        }
+
+        private List<String> fireTasks() {
+
+            final CopyOnWriteArrayList<String> results = new CopyOnWriteArrayList<>();
+            final List<Future> futures = new ArrayList<>();
+            final DotSubmitter dotSubmitter = DotConcurrentFactory.getInstance()
+                    .getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL);
+
+            for (int i = 0; i <= 10; ++i) {
+
+                IntStream.rangeClosed(1, 20).forEach(number ->
+                        futures.add(dotSubmitter.submit(() -> {
+
+                            DateUtil.sleep(100 * number);
+                            results.add(String.valueOf(100 * number));
+                        })));
+
+                for (final Future future : futures) {
+
+                    try {
+                        future.get();
+                    } catch (Exception e) {}
+                }
+
+                futures.clear();
+            }
+
+            return ImmutableList.copyOf(results);
+        }
     }
-  }
+
 }

@@ -7,62 +7,63 @@ import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 
 public abstract class IdentifierCache implements Cachable {
 
-  protected abstract void addIdentifierToCache(Identifier id);
+	abstract protected void addIdentifierToCache(Identifier id);
+	
+    abstract protected void addIdentifierToCache(Identifier id, Versionable v) ;
+    
+    abstract protected void addIdentifierToCache(String identifier, String inode) ;
 
-  protected abstract void addIdentifierToCache(Identifier id, Versionable v);
+	abstract protected Identifier getIdentifier(String identId);
 
-  protected abstract void addIdentifierToCache(String identifier, String inode);
+	abstract protected Identifier getIdentifier(Host host, String URI);
 
-  protected abstract Identifier getIdentifier(String identId);
+	abstract protected Identifier getIdentifier(String hostId, String URI);
 
-  protected abstract Identifier getIdentifier(Host host, String URI);
+	abstract protected String getIdentifierFromInode(Versionable versionable);
+	
+	abstract protected String getIdentifierFromInode(String inode);
 
-  protected abstract Identifier getIdentifier(String hostId, String URI);
+	abstract protected void removeFromCacheByURI(String hostId, String URI);
 
-  protected abstract String getIdentifierFromInode(Versionable versionable);
+	abstract public void removeFromCacheByVersionable(Versionable versionable);
 
-  protected abstract String getIdentifierFromInode(String inode);
+	abstract public void removeFromCacheByIdentifier(String inode);
+	
+	abstract public void removeFromCacheByInode(String inode);
+	
+    abstract public VersionInfo getVersionInfo(String identifier);
+    
+    abstract protected void addVersionInfoToCache(VersionInfo versionInfo);
+    
+    abstract protected void removeVersionInfoFromCache(String identifier);
+    
+    abstract protected ContentletVersionInfo getContentVersionInfo(String identifier, long lang);
+    
+    abstract protected void addContentletVersionInfoToCache(ContentletVersionInfo contV);
+    
+    abstract public void removeContentletVersionInfoToCache(String identifier, long lang);
 
-  protected abstract void removeFromCacheByURI(String hostId, String URI);
+	abstract public void clearCache();
 
-  public abstract void removeFromCacheByVersionable(Versionable versionable);
+	public String[] getGroups() {
+		String[] groups = { getPrimaryGroup(), getVersionInfoGroup(),getVersionGroup(),get404Group() };
+		return groups;
+	}
 
-  public abstract void removeFromCacheByIdentifier(String inode);
+	public String getPrimaryGroup() {
+		return "IdentifierCache";
+	}
+	
+	public String getVersionInfoGroup() {
+	    return "VersionInfoCache";
+	}
+	
+	public String getVersionGroup() {
+	    return "VersionCache";
+	}
+	
+	public String get404Group() {
+	    return "Identifier404Cache";
+	}
 
-  public abstract void removeFromCacheByInode(String inode);
-
-  public abstract VersionInfo getVersionInfo(String identifier);
-
-  protected abstract void addVersionInfoToCache(VersionInfo versionInfo);
-
-  protected abstract void removeVersionInfoFromCache(String identifier);
-
-  protected abstract ContentletVersionInfo getContentVersionInfo(String identifier, long lang);
-
-  protected abstract void addContentletVersionInfoToCache(ContentletVersionInfo contV);
-
-  public abstract void removeContentletVersionInfoToCache(String identifier, long lang);
-
-  public abstract void clearCache();
-
-  public String[] getGroups() {
-    String[] groups = {getPrimaryGroup(), getVersionInfoGroup(), getVersionGroup(), get404Group()};
-    return groups;
-  }
-
-  public String getPrimaryGroup() {
-    return "IdentifierCache";
-  }
-
-  public String getVersionInfoGroup() {
-    return "VersionInfoCache";
-  }
-
-  public String getVersionGroup() {
-    return "VersionCache";
-  }
-
-  public String get404Group() {
-    return "Identifier404Cache";
-  }
 }

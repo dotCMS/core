@@ -5,7 +5,15 @@ import java.util.Map;
 
 public interface Character {
 
-  Map<String, Serializable> getMap();
-
-  void clearMap();
+    
+    
+    
+    Map<String, Serializable>  getMap();
+    
+    void  clearMap();
+    
+    
+    
+    
+    
 }

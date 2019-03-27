@@ -4,86 +4,90 @@ import java.io.Serializable;
 import java.util.Date;
 
 public class DashboardSummaryPeriod implements Serializable {
+   
+	private static final long serialVersionUID = 1L;
+	
+	private long id;
+	
+	private Date fullDate;
+	
+	private int day;
+	
+	private String dayName;
+	
+	private int week;
+	
+	private int month;
+	
+	private String monthName;
+	
+	private String year;
 
-  private static final long serialVersionUID = 1L;
+	public long getId() {
+		return id;
+	}
 
-  private long id;
+	public void setId(long id) {
+		this.id = id;
+	}
 
-  private Date fullDate;
+	public Date getFullDate() {
+		return fullDate;
+	}
 
-  private int day;
+	public void setFullDate(Date fullDate) {
+		this.fullDate = fullDate;
+	}
 
-  private String dayName;
+	public int getDay() {
+		return day;
+	}
 
-  private int week;
+	public void setDay(int day) {
+		this.day = day;
+	}
 
-  private int month;
+	public String getDayName() {
+		return dayName;
+	}
 
-  private String monthName;
+	public void setDayName(String dayName) {
+		this.dayName = dayName;
+	}
 
-  private String year;
+	public int getWeek() {
+		return week;
+	}
 
-  public long getId() {
-    return id;
-  }
+	public void setWeek(int week) {
+		this.week = week;
+	}
 
-  public void setId(long id) {
-    this.id = id;
-  }
+	public int getMonth() {
+		return month;
+	}
 
-  public Date getFullDate() {
-    return fullDate;
-  }
+	public void setMonth(int month) {
+		this.month = month;
+	}
 
-  public void setFullDate(Date fullDate) {
-    this.fullDate = fullDate;
-  }
+	public String getMonthName() {
+		return monthName;
+	}
 
-  public int getDay() {
-    return day;
-  }
+	public void setMonthName(String monthName) {
+		this.monthName = monthName;
+	}
 
-  public void setDay(int day) {
-    this.day = day;
-  }
+	public String getYear() {
+		return year;
+	}
 
-  public String getDayName() {
-    return dayName;
-  }
-
-  public void setDayName(String dayName) {
-    this.dayName = dayName;
-  }
-
-  public int getWeek() {
-    return week;
-  }
-
-  public void setWeek(int week) {
-    this.week = week;
-  }
-
-  public int getMonth() {
-    return month;
-  }
-
-  public void setMonth(int month) {
-    this.month = month;
-  }
-
-  public String getMonthName() {
-    return monthName;
-  }
-
-  public void setMonthName(String monthName) {
-    this.monthName = monthName;
-  }
-
-  public String getYear() {
-    return year;
-  }
-
-  public void setYear(String year) {
-    this.year = year;
-  }
+	public void setYear(String year) {
+		this.year = year;
+	}
+	
+	
+	
+	
 }

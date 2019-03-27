@@ -106,2631 +106,2290 @@ import javax.servlet.http.HttpSession;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * This class handles the communication between the view and the back-end service that returns
- * information to the user regarding Contentlets in dotCMS. The information provided by this service
- * is accessed via DWR.
- *
- * <p>For example, the <b>Content Search</b> portlet uses this class to display the Contentlet data
- * to the users, which can be filtered by certain criteria depending on the selected Content Type.
- *
+ * This class handles the communication between the view and the back-end
+ * service that returns information to the user regarding Contentlets in dotCMS.
+ * The information provided by this service is accessed via DWR.
+ * <p>
+ * For example, the <b>Content Search</b> portlet uses this class to display the
+ * Contentlet data to the users, which can be filtered by certain criteria
+ * depending on the selected Content Type.
+ * 
  * @author root
  * @version 1.0
  * @since Mar 22, 2012
+ *
  */
 public class ContentletAjax {
 
-  private static final String CONTENT_TYPES_INODE_SEPARATOR = ",";
+	private static final String CONTENT_TYPES_INODE_SEPARATOR = ",";
 
-  private java.text.DateFormat modDateFormat =
-      java.text.DateFormat.getDateTimeInstance(
-          java.text.DateFormat.SHORT, java.text.DateFormat.SHORT);
+	private java.text.DateFormat modDateFormat = java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.SHORT,
+			java.text.DateFormat.SHORT);
 
-  private ContentletAPI conAPI = APILocator.getContentletAPI();
-  private ContentletWebAPI contentletWebAPI = WebAPILocator.getContentletWebAPI();
-  private LanguageAPI langAPI = APILocator.getLanguageAPI();
+	private ContentletAPI conAPI = APILocator.getContentletAPI();
+	private ContentletWebAPI contentletWebAPI = WebAPILocator.getContentletWebAPI();
+	private LanguageAPI langAPI = APILocator.getLanguageAPI();
 
-  public List<Map<String, Object>> getContentletsData(String inodesStr) {
-    List<Map<String, Object>> rows = new ArrayList<Map<String, Object>>();
+	public List<Map<String, Object>> getContentletsData(String inodesStr) {
+		List<Map<String,Object>> rows = new ArrayList<Map<String, Object>>();
 
-    if (inodesStr == null || !UtilMethods.isSet(inodesStr)) {
-      return rows;
-    }
+		if(inodesStr == null || !UtilMethods.isSet(inodesStr)) {
+			return rows;
+		}
 
-    String[] inodes = inodesStr.split(",");
-    for (String inode : inodes) {
-      Map<String, Object> contenletData = getContentletData(inode);
-      if (contenletData != null) rows.add(contenletData);
-    }
+		String[] inodes =  inodesStr.split(",");
+		for (String inode : inodes) {
+			Map<String, Object> contenletData = getContentletData(inode);
+			if(contenletData != null)
+				rows.add(contenletData);
+		}
 
-    return rows;
-  }
+		return rows;
+	}
 
-  public Map<String, Object> getContentletData(String inode) {
+	public Map<String, Object> getContentletData(String inode) {
 
-    Map<String, Object> result = new HashMap<String, Object>();
+		Map<String,Object> result = new HashMap<String, Object>();
 
-    try {
+		try {
 
-      HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
-      User currentUser = com.liferay.portal.util.PortalUtil.getUser(req);
-      Contentlet contentlet = null;
+			HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
+			User currentUser = com.liferay.portal.util.PortalUtil.getUser(req);
+			Contentlet contentlet = null;
 
-      try { // This is to avoid non-inode strings from throwing exception
-        contentlet = conAPI.find(inode, currentUser, true);
-      } catch (Exception e) {
-        Logger.debug(this, e.getMessage());
-      }
-      if (contentlet == null || !UtilMethods.isSet(contentlet.getInode())) {
-        return null;
-      }
+			try{// This is to avoid non-inode strings from throwing exception
+				contentlet = conAPI.find(inode, currentUser, true);
+			}catch(Exception e){
+				Logger.debug(this, e.getMessage());
+			}
+			if(contentlet == null || !UtilMethods.isSet(contentlet.getInode())) {
+				return null;
+			}
 
-      getListedFields(result, contentlet);
+			getListedFields(result, contentlet);
 
-      result.put("iconClass", UtilHTML.getIconClass(contentlet));
-      result.put("identifier", contentlet.getIdentifier());
-      result.put("statusIcons", UtilHTML.getStatusIcons(contentlet));
-      result.put("hasTitleImage", String.valueOf(contentlet.getTitleImage().isPresent()));
-      result.put("title", String.valueOf(contentlet.getTitle()));
-      result.put("inode", String.valueOf(contentlet.getInode()));
-      result.put("working", String.valueOf(contentlet.isWorking()));
-      result.put("live", String.valueOf(contentlet.isLive()));
-      result.put("deleted", String.valueOf(contentlet.isArchived()));
-      result.put("locked", String.valueOf(contentlet.isLocked()));
-      result.put(
-          "id",
-          contentlet
-              .getIdentifier()); // Duplicates value for identifier key in map so that UI does not
-      // get broken
-      Language language = langAPI.getLanguage(contentlet.getLanguageId());
-      String languageCode = langAPI.getLanguageCodeAndCountry(contentlet.getLanguageId(), null);
-      String languageName = language.getLanguage();
-      result.put("langCode", languageCode);
-      result.put("langName", languageName);
-      result.put("langId", language.getId() + "");
-      result.put("siblings", getContentSiblingsData(inode));
+			result.put("iconClass", UtilHTML.getIconClass(contentlet));
+			result.put("identifier", contentlet.getIdentifier());
+			result.put("statusIcons", UtilHTML.getStatusIcons(contentlet));
+			result.put("hasTitleImage", String.valueOf(contentlet.getTitleImage().isPresent()));
+			result.put("title", String.valueOf(contentlet.getTitle()));
+			result.put("inode", String.valueOf(contentlet.getInode()));
+			result.put("working", String.valueOf(contentlet.isWorking()));
+			result.put("live", String.valueOf(contentlet.isLive()));
+			result.put("deleted", String.valueOf(contentlet.isArchived()));
+			result.put("locked", String.valueOf(contentlet.isLocked()));
+			result.put("id", contentlet.getIdentifier());// Duplicates value for identifier key in map so that UI does not get broken
+			Language language = langAPI.getLanguage(contentlet.getLanguageId());
+			String languageCode = langAPI.getLanguageCodeAndCountry(contentlet.getLanguageId(),null);
+			String languageName =  language.getLanguage();
+			result.put("langCode", languageCode);
+			result.put("langName", languageName);
+			result.put("langId", language.getId()+"");
+			result.put("siblings", getContentSiblingsData(inode));
 
-    } catch (DotDataException e) {
-      Logger.error(this, "Error trying to obtain the contentlets from the relationship.", e);
+		} catch (DotDataException e) {
+			Logger.error(this, "Error trying to obtain the contentlets from the relationship.", e);
 
-    } catch (DotSecurityException e) {
-      Logger.error(this, "Security exception.", e);
-    }
+		} catch (DotSecurityException e) {
+			Logger.error(this, "Security exception.", e);
+		}
 
-    return result;
-  }
+		return result;
+	}
 
-  /**
-   * Puts into the map all listed fields defined for the contentlet
-   *
-   * @param result
-   * @param contentlet
-   */
-  private void getListedFields(final Map<String, Object> result, final Contentlet contentlet) {
-    for (com.dotcms.contenttype.model.field.Field field : contentlet.getContentType().fields()) {
-      if (field.listed() || field.indexed()) {
-        final Object fieldValueObj = contentlet.get(field.variable());
-        String fieldValue = null;
-        if (fieldValueObj != null) {
-          if (fieldValueObj instanceof Date) {
-            fieldValue = modDateFormat.format(fieldValueObj);
-          } else if (fieldValueObj instanceof java.sql.Timestamp) {
-            Date fieldDate = new Date(((java.sql.Timestamp) fieldValueObj).getTime());
-            fieldValue = modDateFormat.format(fieldDate);
-          } else {
-            fieldValue = fieldValueObj.toString();
-          }
-        }
-        result.put(field.variable(), fieldValue);
-      }
-    }
-  }
 
-  private List<Map<String, String>> getContentSiblingsData(String inode) { // GIT-1057
-
-    List<Map<String, String>> result = new ArrayList<Map<String, String>>();
-
-    try {
-
-      HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
-      User currentUser = com.liferay.portal.util.PortalUtil.getUser(req);
-
-      Contentlet firstContentlet = conAPI.find(inode, currentUser, true);
-
-      List<Map<String, String>> contentletList = new ArrayList<Map<String, String>>();
-
-      LanguageAPI langAPI = APILocator.getLanguageAPI();
-      ContentletAPI contentletAPI = APILocator.getContentletAPI();
-      List<Language> langs = langAPI.getLanguages();
-      Contentlet languageContentlet = null;
-
-      String identifier = String.valueOf(firstContentlet.getIdentifier());
-
-      Structure targetStructure = firstContentlet.getStructure();
-      List<Field> targetFields = FieldsCache.getFieldsByStructureInode(targetStructure.getInode());
-
-      boolean parent = false;
-      try {
-        parent = firstContentlet.getBoolProperty("dotCMSParentOnTree");
-      } catch (Exception e) {
-
-      }
-
-      for (Language lang : langs) {
-
-        Map<String, String> contentDetails = new HashMap<String, String>();
-        try {
-          languageContentlet = null;
-          languageContentlet =
-              contentletAPI.findContentletByIdentifier(
-                  firstContentlet.getIdentifier(), true, lang.getId(), currentUser, false);
-        } catch (Exception e) {
-          try {
-            languageContentlet =
-                contentletAPI.findContentletByIdentifier(
-                    firstContentlet.getIdentifier(), false, lang.getId(), currentUser, false);
-          } catch (Exception e1) {
-          }
-        }
-
-        boolean hasListedFields = false;
-
-        if ((languageContentlet == null) || (!UtilMethods.isSet(languageContentlet.getInode()))) {
-
-          contentDetails.put("langCode", langAPI.getLanguageCodeAndCountry(lang.getId(), null));
-          contentDetails.put("langName", lang.getLanguage());
-          contentDetails.put("langId", lang.getId() + "");
-          contentDetails.put("inode", "");
-          contentDetails.put("parent", parent + "");
-          contentDetails.put("working", "false");
-          contentDetails.put("live", "false");
-          contentDetails.put("deleted", "true");
-          contentDetails.put("locked", "false");
-          contentDetails.put("siblingInode", firstContentlet.getInode());
-
-          for (Field f : targetFields) {
-            if (f.isIndexed() || f.isListed()) {
-              hasListedFields = true;
-              String fieldName = f.getFieldName();
-              String fieldValue = "";
-              contentDetails.put(fieldName, fieldValue);
-            }
-          }
-          if (!hasListedFields) {
-            contentDetails.put("identifier", identifier);
-          }
-
-        } else {
-
-          contentDetails.put("langCode", langAPI.getLanguageCodeAndCountry(lang.getId(), null));
-          contentDetails.put("langName", lang.getLanguage());
-          contentDetails.put("langId", lang.getId() + "");
-          contentDetails.put("inode", languageContentlet.getInode());
-          contentDetails.put("parent", parent + "");
-          contentDetails.put("working", languageContentlet.isWorking() + "");
-          contentDetails.put("live", languageContentlet.isLive() + "");
-          contentDetails.put("deleted", languageContentlet.isArchived() + "");
-          contentDetails.put("locked", languageContentlet.isLocked() + "");
-          contentDetails.put("siblingInode", firstContentlet.getInode());
-
-          for (Field f : targetFields) {
-            if (f.isIndexed() || f.isListed()) {
-              hasListedFields = true;
-              String fieldName = f.getFieldName();
-              Object fieldValueObj = "";
-              try {
-                fieldValueObj = conAPI.getFieldValue(languageContentlet, f);
-              } catch (Exception e) {
-                Logger.error(ContentletAjax.class, "Unable to get value for field", e);
-              }
-              String fieldValue = "";
-              if (fieldValueObj instanceof java.util.Date) {
-                if (fieldValueObj != null) fieldValue = modDateFormat.format(fieldValueObj);
-              } else if (fieldValueObj instanceof java.sql.Timestamp) {
+	/**
+	 * Puts into the map all listed fields defined for the contentlet
+	 * @param result
+	 * @param contentlet
+	 */
+	private void getListedFields(final Map<String, Object> result, final Contentlet contentlet) {
+		for (com.dotcms.contenttype.model.field.Field field : contentlet.getContentType()
+                .fields()) {
+            if (field.listed() || field.indexed()) {
+                final Object fieldValueObj = contentlet.get(field.variable());
+                String fieldValue = null;
                 if (fieldValueObj != null) {
-                  java.util.Date fieldDate =
-                      new java.util.Date(((java.sql.Timestamp) fieldValueObj).getTime());
-                  fieldValue = modDateFormat.format(fieldDate);
+                    if (fieldValueObj instanceof Date) {
+                        fieldValue = modDateFormat.format(fieldValueObj);
+                    } else if (fieldValueObj instanceof java.sql.Timestamp) {
+                        Date fieldDate = new Date(
+                                ((java.sql.Timestamp) fieldValueObj).getTime());
+                        fieldValue = modDateFormat.format(fieldDate);
+                    } else {
+                        fieldValue = fieldValueObj.toString();
+                    }
                 }
-              } else {
-                if (fieldValueObj != null) fieldValue = fieldValueObj.toString();
-              }
-              contentDetails.put(fieldName, fieldValue);
+                result.put(field.variable(), fieldValue);
             }
-          }
-          if (!hasListedFields) {
-            contentDetails.put("identifier", identifier);
-          }
         }
-        contentletList.add(contentDetails);
-      }
+	}
 
-      result = contentletList;
+	private List<Map<String, String>> getContentSiblingsData(String inode) {//GIT-1057
 
-    } catch (DotDataException e) {
-      Logger.error(this, "Error trying to obtain the contentlets from the relationship.", e);
+		List<Map<String, String>> result = new ArrayList<Map<String, String>>();
 
-    } catch (DotSecurityException e) {
-      Logger.error(this, "Security exception.", e);
-    }
+		try {
 
-    return result;
-  }
+			HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
+			User currentUser = com.liferay.portal.util.PortalUtil.getUser(req);
 
-  /**
-   * This method is used by the backend to pull the content from the lucene index and also checks
-   * the user permissions to see the content
-   *
-   * @param structureInode Inode of the structure content to be listed
-   * @param fields Fields to filters, where the position i (where i is odd) represent the field name
-   *     and the position i + 1 represent the field value to filter
-   * @param categories The categories inodes to filter
-   * @param showDeleted If true show the deleted elements only
-   * @param filterSystemHost If true filter elements of system host
-   * @param page The page number to show (starting with 1) If page is 0, this will return all
-   *     possible contentlets
-   * @param perPage
-   * @param orderBy The field name to be used to sort the content
-   * @return The list of contents that match the parameters at the position 0 the result included a
-   *     hashmap with some useful information like the total number of results, ...
-   * @throws DotSecurityException
-   * @throws DotDataException
-   * @throws DotStateException
-   */
-  @SuppressWarnings("rawtypes")
-  public List searchContentlet(
-      String structureInode,
-      List<String> fields,
-      List<String> categories,
-      boolean showDeleted,
-      boolean filterSystemHost,
-      int page,
-      int perPage,
-      String orderBy)
-      throws DotStateException, DotDataException, DotSecurityException {
+			Contentlet firstContentlet = conAPI.find(inode, currentUser, true);
 
-    HttpSession sess = WebContextFactory.get().getSession();
-    HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
+			List<Map<String,String>> contentletList = new ArrayList<Map<String,String>>();
 
-    // User info
-    User currentUser = null;
-    try {
-      currentUser = com.liferay.portal.util.PortalUtil.getUser(req);
-    } catch (Exception e) {
-      Logger.error(this, "Error trying to obtain the current liferay user from the request.", e);
-    }
+			LanguageAPI langAPI = APILocator.getLanguageAPI();
+			ContentletAPI contentletAPI = APILocator.getContentletAPI();
+			List<Language> langs = langAPI.getLanguages();
+			Contentlet languageContentlet = null;
 
-    return searchContentletsByUser(
-        structureInode,
-        fields,
-        categories,
-        showDeleted,
-        filterSystemHost,
-        false,
-        false,
-        page,
-        orderBy,
-        perPage,
-        currentUser,
-        sess,
-        null,
-        null);
-  }
+			String identifier = String.valueOf(firstContentlet.getIdentifier());
 
-  @CloseDB
-  @SuppressWarnings("rawtypes")
-  public List searchContentlets(
-      String structureInode,
-      List<String> fields,
-      List<String> categories,
-      boolean showDeleted,
-      boolean filterSystemHost,
-      int page,
-      String orderBy,
-      String modDateFrom,
-      String modDateTo)
-      throws DotStateException, DotDataException, DotSecurityException {
-    return searchContentlets(
-        structureInode,
-        fields,
-        categories,
-        showDeleted,
-        filterSystemHost,
-        page,
-        orderBy,
-        modDateFrom,
-        modDateTo,
-        true);
-  }
+			Structure targetStructure = firstContentlet.getStructure();
+			List<Field> targetFields = FieldsCache.getFieldsByStructureInode(targetStructure.getInode());
 
-  @SuppressWarnings("rawtypes")
-  public List searchContentlets(
-      String structureInode,
-      List<String> fields,
-      List<String> categories,
-      boolean showDeleted,
-      boolean filterSystemHost,
-      int page,
-      String orderBy,
-      String modDateFrom,
-      String modDateTo,
-      boolean saveLastSearch)
-      throws DotStateException, DotDataException, DotSecurityException {
-    HttpSession sess = null;
-    if (saveLastSearch) sess = WebContextFactory.get().getSession();
-    HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
+			boolean parent = false;
+			try{
+		        parent = firstContentlet.getBoolProperty("dotCMSParentOnTree") ;
+		    }
+		    catch(Exception e){
 
-    // User info
-    User currentUser = null;
-    try {
-      currentUser = com.liferay.portal.util.PortalUtil.getUser(req);
-    } catch (Exception e) {
-      Logger.error(this, "Error trying to obtain the current liferay user from the request.", e);
-    }
+		    }
 
-    return searchContentletsByUser(
-        structureInode,
-        fields,
-        categories,
-        showDeleted,
-        filterSystemHost,
-        false,
-        false,
-        page,
-        orderBy,
-        0,
-        currentUser,
-        sess,
-        modDateFrom,
-        modDateTo);
-  }
+			for(Language lang : langs){
 
-  @CloseDB
-  @SuppressWarnings("rawtypes")
-  public List searchContentlets(
-      String structureInode,
-      List<String> fields,
-      List<String> categories,
-      boolean showDeleted,
-      boolean filterSystemHost,
-      boolean filterUnpublish,
-      boolean filterLocked,
-      int page,
-      String orderBy,
-      String modDateFrom,
-      String modDateTo)
-      throws DotStateException, DotDataException, DotSecurityException {
-    return searchContentlets(
-        structureInode,
-        fields,
-        categories,
-        showDeleted,
-        filterSystemHost,
-        filterUnpublish,
-        filterLocked,
-        page,
-        0,
-        orderBy,
-        modDateFrom,
-        modDateTo);
-  }
+				Map<String, String> contentDetails = new HashMap<String, String>();
+				try{
+					languageContentlet = null;
+					languageContentlet = contentletAPI.findContentletByIdentifier(firstContentlet.getIdentifier(), true, lang.getId(), currentUser, false);
+				}catch (Exception e) {
+					try{
+					languageContentlet = contentletAPI.findContentletByIdentifier(firstContentlet.getIdentifier(), false, lang.getId(), currentUser, false);
+					}catch (Exception e1) {	}
+				}
 
-  @SuppressWarnings("rawtypes")
-  public List searchContentlets(
-      String structureInode,
-      List<String> fields,
-      List<String> categories,
-      boolean showDeleted,
-      boolean filterSystemHost,
-      boolean filterUnpublish,
-      boolean filterLocked,
-      int page,
-      int perPage,
-      String orderBy,
-      String modDateFrom,
-      String modDateTo)
-      throws DotStateException, DotDataException, DotSecurityException {
+				boolean hasListedFields = false;
 
-    HttpSession sess = WebContextFactory.get().getSession();
-    HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
+				if((languageContentlet == null) || (!UtilMethods.isSet(languageContentlet.getInode()))){
 
-    // User info
-    User currentUser = null;
-    try {
-      currentUser = com.liferay.portal.util.PortalUtil.getUser(req);
-    } catch (Exception e) {
-      Logger.error(this, "Error trying to obtain the current liferay user from the request.", e);
-    }
+					contentDetails.put( "langCode" , langAPI.getLanguageCodeAndCountry(lang.getId(),null));
+					contentDetails.put("langName", lang.getLanguage());
+					contentDetails.put("langId", lang.getId()+"");
+			    	contentDetails.put("inode", "");
+					contentDetails.put("parent", parent+"");
+					contentDetails.put("working", "false");
+					contentDetails.put("live", "false");
+					contentDetails.put("deleted", "true");
+					contentDetails.put("locked", "false");
+					contentDetails.put("siblingInode", firstContentlet.getInode());
 
-    return searchContentletsByUser(
-        structureInode,
-        fields,
-        categories,
-        showDeleted,
-        filterSystemHost,
-        filterUnpublish,
-        filterLocked,
-        page,
-        orderBy,
-        perPage,
-        currentUser,
-        sess,
-        modDateFrom,
-        modDateTo);
-  }
+					for (Field f : targetFields) {
+						if (f.isIndexed() || f.isListed()) {
+							hasListedFields = true;
+							String fieldName = f.getFieldName();
+							String fieldValue = "";
+							contentDetails.put(fieldName, fieldValue);
+						}
+					}
+					if( !hasListedFields ) {
+						contentDetails.put("identifier", identifier);
+					}
 
-  public List searchContentlets(
-      String[] structureInodes,
-      List<String> fields,
-      List<String> categories,
-      boolean showDeleted,
-      boolean filterSystemHost,
-      boolean filterUnpublish,
-      boolean filterLocked,
-      int page,
-      int perPage,
-      String orderBy,
-      String modDateFrom,
-      String modDateTo)
-      throws DotStateException, DotDataException, DotSecurityException {
-    String structureInodesJoined = String.join(CONTENT_TYPES_INODE_SEPARATOR, structureInodes);
 
-    return searchContentlets(
-        structureInodesJoined,
-        fields,
-        categories,
-        showDeleted,
-        filterSystemHost,
-        filterUnpublish,
-        filterLocked,
-        page,
-        perPage,
-        orderBy,
-        modDateFrom,
-        modDateTo);
-  }
+				}else{
 
-  /**
-   * This method is used by the backend to pull from lucene index the form widgets if the widget
-   * doesn't exist then is created and also checks the user permissions to see the content
-   *
-   * @param formStructureInode Inode of the structure content to be listed
-   * @return The list of contents that match the parameters at the position 0 the result included a
-   *     hashmap with some useful information like the total number of results, ...
-   * @throws DotDataException
-   * @throws DotSecurityException
-   */
-  @CloseDB
-  public Map<String, Object> searchFormWidget(String formStructureInode)
-      throws DotDataException, DotSecurityException {
-    FormAJAXProxy fp = new FormAJAXProxy();
-    return fp.searchFormWidget(formStructureInode);
-  }
+					contentDetails.put( "langCode" , langAPI.getLanguageCodeAndCountry(lang.getId(),null));
+					contentDetails.put("langName", lang.getLanguage());
+					contentDetails.put("langId", lang.getId()+"");
+			    	contentDetails.put("inode", languageContentlet.getInode());
+					contentDetails.put("parent", parent+"");
+					contentDetails.put("working", languageContentlet.isWorking()+"");
+					contentDetails.put("live", languageContentlet.isLive()+"");
+					contentDetails.put("deleted", languageContentlet.isArchived()+"");
+					contentDetails.put("locked", languageContentlet.isLocked()+"");
+					contentDetails.put("siblingInode", firstContentlet.getInode());
 
-  /**
-   * This method is used by the back-end to pull the content from the Lucene index and also checks
-   * the user permissions to see the content.
-   *
-   * @param structureInode - Inode of the structure content to be listed
-   * @param fields - Fields to use for filtering, where the position i (where i is odd) represent
-   *     the field name and the position i + 1 represent the field value to filter
-   * @param categories - The categories inodes to filter.
-   * @param showDeleted - If true show the deleted elements only.
-   * @param filterSystemHost - If true filter elements of system host.
-   * @param page - The page number to show (starting with 1). If page is 0, this will return all
-   *     possible contentlets.
-   * @param perPage - Number of contents to display per page.
-   * @param orderBy - The field name to be used to sort the content.
-   * @param currentUser - The user needed to check the permissions.
-   * @param sess HttpSession to save some values if is set.
-   * @return The list of contents that match the parameters at the position 0 the result included a
-   *     {@link HashMap} with some useful information like the total number of results, etc.
-   * @throws DotSecurityException The user does not have the permissions to perform this action.
-   * @throws DotDataException An error occurred when retrieving information from the database.
-   * @throws DotStateException A system error has occurred.
-   */
-  @SuppressWarnings("rawtypes")
-  @LogTime
-  public List searchContentletsByUser(
-      String structureInode,
-      List<String> fields,
-      List<String> categories,
-      boolean showDeleted,
-      boolean filterSystemHost,
-      boolean filterUnpublish,
-      boolean filterLocked,
-      int page,
-      String orderBy,
-      int perPage,
-      final User currentUser,
-      HttpSession sess,
-      String modDateFrom,
-      String modDateTo)
-      throws DotStateException, DotDataException, DotSecurityException {
-    if (perPage < 1) {
-      perPage = Config.getIntProperty("PER_PAGE", 40);
-    }
-    if (!InodeUtils.isSet(structureInode)) {
-      Logger.error(this, "An invalid structure inode =  \"" + structureInode + "\" was passed");
-      throw new DotRuntimeException("a valid structureInode need to be passed");
-    }
+					for (Field f : targetFields) {
+						if (f.isIndexed() || f.isListed()) {
+							hasListedFields = true;
+							String fieldName = f.getFieldName();
+							Object fieldValueObj = "";
+							try{
+								fieldValueObj = conAPI.getFieldValue(languageContentlet, f);
+							}catch (Exception e) {
+								Logger.error(ContentletAjax.class, "Unable to get value for field", e);
+							}
+							String fieldValue = "";
+							if (fieldValueObj instanceof java.util.Date) {
+								if (fieldValueObj != null)
+									fieldValue = modDateFormat.format(fieldValueObj);
+							} else if (fieldValueObj instanceof java.sql.Timestamp) {
+								if (fieldValueObj != null) {
+									java.util.Date fieldDate = new java.util.Date(((java.sql.Timestamp) fieldValueObj).getTime());
+									fieldValue = modDateFormat.format(fieldDate);
+								}
+							} else {
+								if (fieldValueObj != null)
+									fieldValue = fieldValueObj.toString();
+							}
+							contentDetails.put(fieldName, fieldValue);
+						}
+					}
+					if( !hasListedFields ) {
+						contentDetails.put("identifier", identifier);
+					}
+				}
+				contentletList.add(contentDetails);
+			}
 
-    // Building search params and lucene query
-    StringBuffer luceneQuery = new StringBuffer();
-    String specialCharsToEscape = "([+\\-!\\(\\){}\\[\\]^\"~*?:\\\\]|[&\\|]{2})";
-    String specialCharsToEscapeForMetaData = "([+\\-!\\(\\){}\\[\\]^\"~?:/\\\\]{2})";
-    Map<String, Object> lastSearchMap = new HashMap<String, Object>();
+			result = contentletList;
 
-    if (UtilMethods.isSet(sess)) {
-      sess.setAttribute(WebKeys.CONTENTLET_LAST_SEARCH, lastSearchMap);
-      sess.setAttribute(ESMappingConstants.WORKFLOW_SCHEME, null);
-      sess.setAttribute(ESMappingConstants.WORKFLOW_STEP, null);
-    }
 
-    Map<String, String> fieldsSearch = new HashMap<String, String>();
-    List<Object> headers = new ArrayList<Object>();
-    Map<String, Field> fieldsMapping = new HashMap<String, Field>();
-    final String[] structureInodes = structureInode.split(CONTENT_TYPES_INODE_SEPARATOR);
-    Structure st = null;
-    if (!Structure.STRUCTURE_TYPE_ALL.equals(structureInode)
-        && !hasContentTypesInodeSeparator(structureInode)) {
-      st = CacheLocator.getContentTypeCache().getStructureByInode(structureInode);
-      lastSearchMap.put("structure", st);
-      luceneQuery.append("+contentType:" + st.getVelocityVarName() + " ");
-    } else if (!Structure.STRUCTURE_TYPE_ALL.equals(structureInode)
-        && hasContentTypesInodeSeparator(structureInode)) {
-      luceneQuery.append("+contentType:(");
 
-      for (int i = 0; i < structureInodes.length; i++) {
-        st = CacheLocator.getContentTypeCache().getStructureByInode(structureInodes[i]);
+		} catch (DotDataException e) {
+			Logger.error(this, "Error trying to obtain the contentlets from the relationship.", e);
 
-        if (i != 0) {
-          luceneQuery.append(" OR " + st.getVelocityVarName());
-        } else {
-          luceneQuery.append(st.getVelocityVarName());
+		} catch (DotSecurityException e) {
+			Logger.error(this, "Security exception.", e);
+		}
+
+		return result;
+	}
+
+
+	/**
+	 * This method is used by the backend to pull the content from the lucene
+	 * index and also checks the user permissions to see the content
+	 *
+	 * @param structureInode
+	 *            Inode of the structure content to be listed
+	 * @param fields
+	 *            Fields to filters, where the position i (where i is odd)
+	 *            represent the field name and the position i + 1 represent the
+	 *            field value to filter
+	 * @param categories
+	 *            The categories inodes to filter
+	 * @param showDeleted
+	 *            If true show the deleted elements only
+	 * @param filterSystemHost
+	 *            If true filter elements of system host
+	 * @param page
+	 *            The page number to show (starting with 1)
+	 *            If page is 0, this will return all possible contentlets
+	 * @param perPage
+	 * @param orderBy
+	 *            The field name to be used to sort the content
+	 * @return The list of contents that match the parameters at the position 0
+	 *         the result included a hashmap with some useful information like
+	 *         the total number of results, ...
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 * @throws DotStateException
+	 */
+	@SuppressWarnings("rawtypes")
+	public List searchContentlet(String structureInode, List<String> fields, List<String> categories, boolean showDeleted, boolean filterSystemHost, int page, int perPage, String orderBy) throws DotStateException, DotDataException, DotSecurityException {
+
+		HttpSession sess = WebContextFactory.get().getSession();
+		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
+
+		// User info
+		User currentUser = null;
+		try {
+			currentUser = com.liferay.portal.util.PortalUtil.getUser(req);
+		} catch (Exception e) {
+			Logger.error(this, "Error trying to obtain the current liferay user from the request.", e);
+		}
+
+		return searchContentletsByUser(structureInode, fields, categories, showDeleted, filterSystemHost, false, false, page, orderBy, perPage, currentUser, sess, null, null);
+	}
+	@CloseDB
+	@SuppressWarnings("rawtypes")
+	public List searchContentlets(String structureInode, List<String> fields, List<String> categories, boolean showDeleted, boolean filterSystemHost, int page, String orderBy, String modDateFrom, String modDateTo) throws DotStateException, DotDataException, DotSecurityException {
+	    return searchContentlets(structureInode, fields, categories, showDeleted, filterSystemHost, page, orderBy, modDateFrom, modDateTo, true);
+	}
+
+	@SuppressWarnings("rawtypes")
+	public List searchContentlets(String structureInode, List<String> fields, List<String> categories, boolean showDeleted, boolean filterSystemHost, int page, String orderBy, String modDateFrom, String modDateTo, boolean saveLastSearch) throws DotStateException, DotDataException, DotSecurityException {
+	    HttpSession sess = null;
+        if(saveLastSearch)
+            sess = WebContextFactory.get().getSession();
+		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
+
+		// User info
+		User currentUser = null;
+		try {
+			currentUser = com.liferay.portal.util.PortalUtil.getUser(req);
+		} catch (Exception e) {
+			Logger.error(this, "Error trying to obtain the current liferay user from the request.", e);
+		}
+
+		return searchContentletsByUser(structureInode, fields, categories, showDeleted, filterSystemHost, false, false, page, orderBy, 0,currentUser, sess, modDateFrom, modDateTo);
+	}
+
+	@CloseDB
+	@SuppressWarnings("rawtypes")
+	public List searchContentlets(String structureInode, List<String> fields, List<String> categories, boolean showDeleted,
+	        boolean filterSystemHost,  boolean filterUnpublish, boolean filterLocked, int page, String orderBy, String modDateFrom,
+	        String modDateTo) throws DotStateException, DotDataException, DotSecurityException {
+	    return searchContentlets(structureInode,fields,categories,showDeleted,filterSystemHost,filterUnpublish,filterLocked,page,0,orderBy,modDateFrom,modDateTo);
+	}
+
+	@SuppressWarnings("rawtypes")
+	public List searchContentlets(String structureInode, List<String> fields, List<String> categories, boolean showDeleted,
+	        boolean filterSystemHost,  boolean filterUnpublish, boolean filterLocked, int page, int perPage,String orderBy, String modDateFrom,
+	        String modDateTo) throws DotStateException, DotDataException, DotSecurityException {
+
+		HttpSession sess = WebContextFactory.get().getSession();
+		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
+
+		// User info
+		User currentUser = null;
+		try {
+			currentUser = com.liferay.portal.util.PortalUtil.getUser(req);
+		} catch (Exception e) {
+			Logger.error(this, "Error trying to obtain the current liferay user from the request.", e);
+		}
+
+		return searchContentletsByUser(structureInode, fields, categories, showDeleted, filterSystemHost, filterUnpublish, filterLocked,
+		        page, orderBy, perPage,currentUser, sess, modDateFrom, modDateTo);
+	}
+
+	public List searchContentlets(String[] structureInodes, List<String> fields, List<String> categories, boolean showDeleted,
+								  boolean filterSystemHost,  boolean filterUnpublish, boolean filterLocked, int page, int perPage,String orderBy, String modDateFrom,
+								  String modDateTo) throws DotStateException, DotDataException, DotSecurityException {
+		String structureInodesJoined = String.join(CONTENT_TYPES_INODE_SEPARATOR, structureInodes);
+
+		return searchContentlets(structureInodesJoined, fields, categories, showDeleted, filterSystemHost, filterUnpublish, filterLocked,
+				page, perPage, orderBy, modDateFrom, modDateTo);
+	}
+
+	/**
+	 * This method is used by the backend to pull from lucene index the form widgets
+	 * if the widget doesn't exist then is created and also checks the user
+	 * permissions to see the content
+	 *
+	 * @param formStructureInode
+	 *            Inode of the structure content to be listed
+	 * @return The list of contents that match the parameters at the position 0
+	 *         the result included a hashmap with some useful information like
+	 *         the total number of results, ...
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	@CloseDB
+	public Map<String, Object> searchFormWidget(String formStructureInode) throws DotDataException, DotSecurityException {
+		FormAJAXProxy fp = new FormAJAXProxy();
+		return fp.searchFormWidget(formStructureInode);
+	}
+
+	/**
+	 * This method is used by the back-end to pull the content from the Lucene
+	 * index and also checks the user permissions to see the content.
+	 *
+	 * @param structureInode
+	 *            - Inode of the structure content to be listed
+	 * @param fields
+	 *            - Fields to use for filtering, where the position i (where i
+	 *            is odd) represent the field name and the position i + 1
+	 *            represent the field value to filter
+	 * @param categories
+	 *            - The categories inodes to filter.
+	 * @param showDeleted
+	 *            - If true show the deleted elements only.
+	 * @param filterSystemHost
+	 *            - If true filter elements of system host.
+	 * @param page
+	 *            - The page number to show (starting with 1). If page is 0,
+	 *            this will return all possible contentlets.
+	 * @param perPage
+	 *            - Number of contents to display per page.
+	 * @param orderBy
+	 *            - The field name to be used to sort the content.
+	 * @param currentUser
+	 *            - The user needed to check the permissions.
+	 * @param sess
+	 *            HttpSession to save some values if is set.
+	 * @return The list of contents that match the parameters at the position 0
+	 *         the result included a {@link HashMap} with some useful
+	 *         information like the total number of results, etc.
+	 * @throws DotSecurityException
+	 *             The user does not have the permissions to perform this
+	 *             action.
+	 * @throws DotDataException
+	 *             An error occurred when retrieving information from the
+	 *             database.
+	 * @throws DotStateException
+	 *             A system error has occurred.
+	 */
+	@SuppressWarnings("rawtypes")
+	@LogTime
+	public List searchContentletsByUser(String structureInode, List<String> fields, List<String> categories, boolean showDeleted, boolean filterSystemHost, boolean filterUnpublish, boolean filterLocked, int page, String orderBy,int perPage, final User currentUser, HttpSession sess,String  modDateFrom, String modDateTo) throws DotStateException, DotDataException, DotSecurityException {
+    		if(perPage < 1){
+			perPage = Config.getIntProperty("PER_PAGE", 40);
+		}
+		if(!InodeUtils.isSet(structureInode)) {
+			Logger.error(this, "An invalid structure inode =  \"" + structureInode + "\" was passed");
+			throw new DotRuntimeException("a valid structureInode need to be passed");
+		}
+
+		// Building search params and lucene query
+		StringBuffer luceneQuery = new StringBuffer();
+		String specialCharsToEscape = "([+\\-!\\(\\){}\\[\\]^\"~*?:\\\\]|[&\\|]{2})";
+		String specialCharsToEscapeForMetaData = "([+\\-!\\(\\){}\\[\\]^\"~?:/\\\\]{2})";
+		Map<String, Object> lastSearchMap = new HashMap<String, Object>();
+
+		if (UtilMethods.isSet(sess)) {
+			sess.setAttribute(WebKeys.CONTENTLET_LAST_SEARCH, lastSearchMap);
+            sess.setAttribute(ESMappingConstants.WORKFLOW_SCHEME, null);
+            sess.setAttribute(ESMappingConstants.WORKFLOW_STEP, null);
+		}
+
+		Map<String, String> fieldsSearch = new HashMap<String, String>();
+		List<Object> headers = new ArrayList<Object>();
+		Map<String, Field> fieldsMapping = new HashMap<String, Field>();
+		final String[] structureInodes = structureInode.split(CONTENT_TYPES_INODE_SEPARATOR);
+		Structure st = null;
+		if(!Structure.STRUCTURE_TYPE_ALL.equals(structureInode) && !hasContentTypesInodeSeparator(structureInode)){
+		    st = CacheLocator.getContentTypeCache().getStructureByInode(structureInode);
+		    lastSearchMap.put("structure", st);
+		    luceneQuery.append("+contentType:" + st.getVelocityVarName() + " ");
+		} else if (!Structure.STRUCTURE_TYPE_ALL.equals(structureInode) && hasContentTypesInodeSeparator(structureInode)) {
+			luceneQuery.append("+contentType:(");
+
+			for (int i = 0; i < structureInodes.length; i++) {
+				st = CacheLocator.getContentTypeCache().getStructureByInode(structureInodes[i]);
+
+				if (i != 0) {
+					luceneQuery.append(" OR " + st.getVelocityVarName());
+				} else {
+					luceneQuery.append(st.getVelocityVarName());
+				}
+			}
+			luceneQuery.append(") ");
+
+		} else {
+		    for(int i=0;i<fields.size();i++){
+		        String x = fields.get(i);
+		        if(Structure.STRUCTURE_TYPE_ALL.equals(x)){
+		            String next =  fields.get(i+1);
+		            next = next.replaceAll("\\*", "");
+		            while(next.contains("  ")){
+		            	next = next.replace("  ", " ");
+		            }
+		            String y[] = next.split(" ");
+		            for(int j=0;j<y.length;j++){
+		            	y[j] = y[j].replaceAll(specialCharsToEscape, "\\\\$1");
+		                luceneQuery.append("title:" + y[j] + "* ");
+		            }
+		            break;
+		        }
+		    }
+		    luceneQuery.append("-contentType:Host ");
+		    luceneQuery.append("-baseType:3 ");
+		}
+		if (LicenseUtil.getLevel() < LicenseLevel.PROFESSIONAL.level) {
+			luceneQuery.append("-contentType:Persona ");
+		}
+		// Stores (database name,type description) pairs to catch certain field types.
+		List<Field> targetFields = new ArrayList<Field>();
+
+		if(st!=null  && structureInodes.length == 1){
+		    targetFields = FieldsCache.getFieldsByStructureInode(st.getInode());
+		}
+
+		Map<String,String> fieldContentletNames = new HashMap<String,String>();
+		Map<String,Field> decimalFields = new HashMap<String,Field>();//DOTCMS-5478
+		for( Field f : targetFields ) {
+			fieldContentletNames.put(f.getFieldContentlet(), f.getFieldType());
+			if(f.getFieldContentlet().startsWith("float")){
+				decimalFields.put(st.getVelocityVarName()+"."+f.getVelocityVarName(), f);
+			}
+		}
+		CategoryAPI catAPI = APILocator.getCategoryAPI();
+		Category category=null;
+		String categoriesvalues="";
+		boolean first = true;
+		boolean allLanguages = true;
+		for (String cat : categories) {
+			 try {
+				 category=catAPI.find(cat, currentUser, false);
+			} catch (DotDataException e) {
+				Logger.error(this, "Error trying to obtain the categories", e);
+			} catch (DotSecurityException e) {
+				Logger.error(this, " Permission error trying to obtain the categories", e);
+			}
+			if(!first){
+				categoriesvalues+=" ";
+			}
+			categoriesvalues+="categories:"+ category.getCategoryVelocityVarName();
+			first = false;
+		}
+		categoriesvalues = categoriesvalues.trim();
+		for (int i = 0; i < fields.size(); i = i + 2) {
+			String fieldName = (String) fields.get(i);
+			String fieldValue = "";
+			try{
+				fieldValue = (String) fields.get(i + 1);
+				//http://jira.dotmarketing.net/browse/DOTCMS-2656 add the try catch here in case the value is null.
+			}catch (Exception e) {}
+			if (UtilMethods.isSet(fieldValue)) {
+				if(fieldsSearch.containsKey(fieldName)){//DOTCMS-5987, To handle lastSearch for multi-select fields.
+					fieldsSearch.put(fieldName, fieldsSearch.get(fieldName)+","+fieldValue);
+				}else{
+					fieldsSearch.put(fieldName, fieldValue);
+				}
+				if(fieldName.equalsIgnoreCase("languageId")){
+					if (UtilMethods.isSet(sess)) {
+						sess.setAttribute(WebKeys.LANGUAGE_SEARCHED, String.valueOf(fieldValue));
+					}
+					allLanguages = false;
+				}
+				if(fieldName.equalsIgnoreCase("conhost")){
+					fieldValue = fieldValue.equalsIgnoreCase("current") ?
+							(String) sess.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID)
+							: fieldValue;
+
+					if(!filterSystemHost  && !fieldValue.equals(Host.SYSTEM_HOST)){
+						try {
+							luceneQuery.append("+(conhost:" + fieldValue + " conhost:" + APILocator.getHostAPI().findSystemHost(APILocator.getUserAPI().getSystemUser(), true).getIdentifier() + ") ");
+						} catch (Exception e) {
+							Logger.error(ContentletAjax.class,e.getMessage(),e);
+						}
+					}else{
+						try {
+							luceneQuery.append("+conhost:" + fieldValue + "* ");
+						} catch (Exception e) {
+							Logger.error(ContentletAjax.class,e.getMessage(),e);
+						}
+					}
+				} else if (ESMappingConstants.WORKFLOW_SCHEME.equalsIgnoreCase(fieldName)) {
+
+					try {
+						luceneQuery.append("+(" + ESMappingConstants.WORKFLOW_SCHEME + ":" + fieldValue + "*) ");
+						sess.setAttribute(ESMappingConstants.WORKFLOW_SCHEME, fieldValue);
+					} catch (Exception e) {
+						Logger.error(ContentletAjax.class,e.getMessage(),e);
+					}
+				} else if (ESMappingConstants.WORKFLOW_STEP.equalsIgnoreCase(fieldName)) {
+
+					try {
+
+						if (ESMappingConstants.WORKFLOW_CURRENT_STEP_NOT_ASSIGNED_VALUE.equalsIgnoreCase(fieldValue)) { // special case for [Not Assigned]
+
+							luceneQuery.append("+(" + ESMappingConstants.WORKFLOW_CURRENT_STEP + ":" + fieldValue + "*) ");
+						} else {
+
+							luceneQuery.append("+(" + ESMappingConstants.WORKFLOW_STEP + ":" + fieldValue + "*) ");
+						}
+                        sess.setAttribute(ESMappingConstants.WORKFLOW_STEP, fieldValue);
+					} catch (Exception e) {
+						Logger.error(ContentletAjax.class,e.getMessage(),e);
+					}
+				} else {
+						String fieldbcontentname="";
+						String fieldVelocityVarName = "";
+						Boolean isStructField=false;
+						String fieldVelName = "";
+						if(st != null && fieldName.startsWith(st.getVelocityVarName() + ".")){
+							fieldVelName = fieldName.substring(fieldName.indexOf(".") + 1, fieldName.length());
+						}
+						else if(fieldName.startsWith(".")) {
+                            // http://jira.dotmarketing.net/browse/DOTCMS-6433
+                            // weird case due to rare dwr bug on safari
+                            fieldVelName = fieldName.substring(1);
+                        }
+						else{
+							fieldVelName = fieldName;
+						}
+						Field thisField = null;
+
+						for (Field fd : targetFields) {
+							if (fd.getVelocityVarName().equals(fieldVelName) || fd.getFieldContentlet().equals(fieldVelName)) {
+								fieldbcontentname=fd.getFieldContentlet();
+								fieldVelocityVarName = fd.getVelocityVarName();
+								isStructField=true;
+								thisField = fd;
+								break;
+							}
+						}
+
+						String wildCard = " ";
+						if(!fieldName.equals("languageId") && fieldbcontentname.startsWith("text") ){
+							wildCard = ( fieldContentletNames.containsKey(fieldName) && fieldContentletNames.get(fieldName).equals(Field.FieldType.SELECT.toString()) ) ? " " : "*";
+						}
+
+						if( fieldbcontentname.startsWith("text") ){
+
+							if(thisField.getFieldType().equals(Field.FieldType.KEY_VALUE.toString())){
+								fieldValue = fieldValue.trim();
+								boolean hasQuotes = fieldValue != null && fieldValue.length() > 1 && fieldValue.endsWith("\"") && fieldValue.startsWith("\"");
+								if(hasQuotes){
+									fieldValue = fieldValue.replaceFirst("\"", "");
+									fieldValue = fieldValue.substring(0, fieldValue.length()-1);
+								}
+								try{
+									String[] splitter = fieldValue.split(":");
+									String metakey = "";
+									for(int x=0;x< splitter.length-1;x++){
+										metakey+= splitter[x];
+									}
+									metakey = StringUtils.camelCaseLower(metakey);
+									String metaVal = "*" +splitter[splitter.length-1]+"*";
+									fieldValue = metakey + ":" + metaVal;
+
+									if (fieldVelocityVarName.equals(FileAssetAPI.META_DATA_FIELD)){
+										luceneQuery.append("+" + fieldVelocityVarName + "." + fieldValue.toString().replaceAll(specialCharsToEscapeForMetaData, "\\\\$1") + " ");
+									}else{
+										luceneQuery.append("+" + st.getVelocityVarName() + "." + fieldVelocityVarName + "." + fieldValue.toString().replaceAll(specialCharsToEscapeForMetaData, "\\\\$1") + " ");
+									}
+
+								} catch (Exception e) {
+									Logger.debug(this, "An error occured when processing field name '" + fieldbcontentname + "'");
+								}
+							}else if( FieldFactory.isTagField(fieldbcontentname,st)== false){
+								fieldValue = fieldValue.trim();
+								boolean hasQuotes = fieldValue != null && fieldValue.length() > 1 && fieldValue.endsWith("\"") && fieldValue.startsWith("\"");
+								if(hasQuotes){
+									fieldValue = fieldValue.replaceFirst("\"", "");
+									fieldValue = fieldValue.substring(0, fieldValue.length()-1);
+								}
+
+								luceneQuery.append("+" + st.getVelocityVarName() + "." + fieldVelocityVarName + ":" + (hasQuotes ? "\"":wildCard) +
+                                        (hasQuotes && CharMatcher.WHITESPACE.matchesAnyOf(fieldValue.toString())? fieldValue: ESUtils.escape(fieldValue.toString())) +
+                                        (hasQuotes ? "\"":wildCard) + " ");
+							}
+							else{
+								String[] splitValues = fieldValue.split(",");
+								for(String splitValue : splitValues)
+								{
+									splitValue = splitValue.trim();
+									String quotes = splitValue.contains(" ") ? "\"" : "";
+									luceneQuery.append("+" + st.getVelocityVarName() + "." + fieldVelocityVarName+ ":" + quotes + ESUtils.escape(splitValue.toString()) + quotes + " ");
+								}
+							}
+						}
+						else if( fieldbcontentname.startsWith("date") ){
+							luceneQuery.append("+" + st.getVelocityVarName() +"."+ fieldVelocityVarName + ":" + fieldValue + " ");
+						} else {
+							if(isStructField==false){
+							    String next =  fieldValue.toString();
+							    if(!next.contains("'") && ! next.contains("\"")){
+							        next = next.replaceAll("\\*", "");
+							        while(next.contains("  ")){
+							        	next = next.replace("  ", " ");
+							        }
+							        String y[] = next.split(" ");
+							        for(int j=0;j<y.length;j++){
+							        	y[j] = y[j].replaceAll(specialCharsToEscape, "\\\\$1");
+							        	if(fieldName.equals("languageId")){
+							        		luceneQuery.append("+" + fieldName +":" + y[j] + " ");
+							        	}else{
+							        		luceneQuery.append("+" + fieldName +":" + y[j] + "* ");
+							        	}
+							        }
+							    }else if(next.contains("\"")){
+							    	 next = next.replaceAll("\\*", "");
+								        while(next.contains("  ")){
+								        	next = next.replace("  ", " ");
+								        }
+								        String y[] = next.split(" ");
+								        for(int j=0;j<y.length;j++){
+								        	y[j] = y[j].replaceAll(specialCharsToEscape, "\\\\$1");
+								        	luceneQuery.append("+" + fieldName +":" + y[j] + "* ");
+								        }
+							    }else{
+							        luceneQuery.append("+" + fieldName +":" + next + " ");
+							   }
+							}
+							else {
+								luceneQuery.append("+" + st.getVelocityVarName() +"."+ fieldVelocityVarName + ":" + fieldValue.toString() + wildCard + " ");
+							}
+						}
+
+				}
+			}
+		}
+		if(allLanguages){
+			if (UtilMethods.isSet(sess)) {
+				sess.setAttribute(WebKeys.LANGUAGE_SEARCHED, String.valueOf(0));
+			}
+		}
+
+		if(UtilMethods.isSet(categoriesvalues)){
+			luceneQuery.append("+(" + categoriesvalues + ") " );
+		}
+
+		lastSearchMap.put("fieldsSearch", fieldsSearch);
+		lastSearchMap.put("categories", categories);
+
+		//Adding the headers as the second row of the results
+		for (Field f : targetFields) {
+		    if (f.isListed()) {
+		        fieldsMapping.put(f.getVelocityVarName(), f);
+		        headers.add(f.getMap());
+		    }
+		}
+
+        if (!UtilMethods.isSet(orderBy)){
+            orderBy = "modDate desc";
+        }else if (orderBy.endsWith("__wfstep__")){
+			orderBy = "wfCurrentStepName";
+		}else if (orderBy.endsWith("__wfstep__ desc")){
+			orderBy = "wfCurrentStepName desc";
+		}else{
+            if(orderBy.charAt(0)=='.'){
+				if (structureInodes.length > 1) {
+					orderBy = orderBy.substring(1);
+				} else {
+					orderBy = st.getVelocityVarName() + orderBy;
+				}
+            }
         }
-      }
-      luceneQuery.append(") ");
 
-    } else {
-      for (int i = 0; i < fields.size(); i++) {
-        String x = fields.get(i);
-        if (Structure.STRUCTURE_TYPE_ALL.equals(x)) {
-          String next = fields.get(i + 1);
-          next = next.replaceAll("\\*", "");
-          while (next.contains("  ")) {
-            next = next.replace("  ", " ");
-          }
-          String y[] = next.split(" ");
-          for (int j = 0; j < y.length; j++) {
-            y[j] = y[j].replaceAll(specialCharsToEscape, "\\\\$1");
-            luceneQuery.append("title:" + y[j] + "* ");
-          }
-          break;
+		lastSearchMap.put("showDeleted", showDeleted);
+		lastSearchMap.put("filterSystemHost", filterSystemHost);
+		lastSearchMap.put("filterLocked", filterLocked);
+		lastSearchMap.put("filterUnpublish", filterUnpublish);
+
+
+		if(!showDeleted)
+			luceneQuery.append("+deleted:false ");
+		else
+			luceneQuery.append("+deleted:true ");
+		lastSearchMap.put("page", page);
+
+
+		if(filterLocked)
+			luceneQuery.append("+locked:true ");
+
+		if(filterUnpublish)
+			luceneQuery.append("+live:false ");
+
+		/*if we have a date*/
+		if(modDateFrom!=null || modDateTo!=null){
+			String dates =" +modDate:[";
+			dates+= (modDateFrom!=null) ? modDateFrom : "18000101000000";
+			dates+= " TO ";
+			dates+= (modDateTo!=null)? modDateTo : "30000101000000";
+			dates+="]";
+			luceneQuery.append(dates);
+		}
+
+
+		int offset = 0;
+		if (page != 0)
+			offset = perPage * (page - 1);
+
+		lastSearchMap.put("orderBy", orderBy);
+
+		luceneQuery.append(" +working:true");
+
+		//Executing the query
+		long before = System.currentTimeMillis();
+		PaginatedArrayList <Contentlet> hits = new PaginatedArrayList <Contentlet>();
+		long totalHits=0;
+		try{
+			hits = (PaginatedArrayList<Contentlet>) conAPI.search(luceneQuery.toString(), perPage + 1, offset, orderBy, currentUser, false);
+			totalHits = hits.getTotalResults();
+		}catch (Exception pe) {
+			Logger.error(ContentletAjax.class, "Unable to execute Lucene Query", pe);
+		}
+		long after = System.currentTimeMillis();
+		Logger.debug(ContentletAjax.class, "searchContentletsByUser: Time to search on lucene =" + (after - before) + " ms.");
+
+
+		before = System.currentTimeMillis();
+
+		//The reesults list returned to the page
+		List<Object> results = new ArrayList<Object>();
+
+		//Adding the result counters as the first row of the results
+		Map<String, Object> counters = new HashMap<String, Object>();
+		results.add(counters);
+
+
+		if (headers.size() == 0) {
+			Map<String, String> fieldMap = new HashMap<> ();
+			fieldMap.put("fieldVelocityVarName", "__title__");
+			fieldMap.put("fieldName", "Title");
+			headers.add(fieldMap);
+
+			fieldMap = new HashMap<> ();
+			fieldMap.put("fieldVelocityVarName", "__type__");
+			fieldMap.put("fieldName", "Type");
+			headers.add(fieldMap);
+
+
+		}
+
+		final Map<String, String> fieldMap = new HashMap<> ();
+		fieldMap.put("fieldVelocityVarName", "__wfstep__");
+		try {
+			fieldMap.put("fieldName", LanguageUtil.get(currentUser, "Step"));
+		} catch (LanguageException e) {
+			fieldMap.put("fieldName", "Step");
+		}
+		headers.add(fieldMap);
+
+		results.add(headers);
+
+		// we add the total hists for the query
+		results.add(totalHits);
+
+		List<String> expiredInodes=new ArrayList<>();
+
+		//Adding the query results
+		Contentlet con;
+		for (int i = 0; ((i < perPage) && (i < hits.size())); ++i) {
+
+			Map<String, String> searchResult = null;
+
+			try {
+				con = hits.get(i);
+				Identifier ident = APILocator.getIdentifierAPI().find(con);
+				if (!con.isLive()) {
+					if (UtilMethods.isSet(ident.getSysExpireDate()) && ident.getSysExpireDate().before(new Date()))
+						expiredInodes.add(con.getInode()); // it is unpublished and can't be manualy published
+				}
+
+				searchResult = new HashMap<String, String>();
+				ContentType type = con.getContentType();
+				searchResult.put("typeVariable", type.variable());
+				searchResult.put("baseType",type.baseType().name());
+				for (String fieldContentlet : fieldsMapping.keySet()) {
+					String fieldValue = null;
+					if (con.getMap() != null && con.getMap().get(fieldContentlet) != null) {
+						fieldValue = (con.getMap().get(fieldContentlet)).toString();
+					}
+					Field field = (Field) fieldsMapping.get(fieldContentlet);
+					if (UtilMethods.isSet(fieldValue) && field.getFieldType().equals(Field.FieldType.DATE.toString()) ||
+							UtilMethods.isSet(fieldValue) && field.getFieldType().equals(Field.FieldType.TIME.toString()) ||
+							UtilMethods.isSet(fieldValue) && field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {
+						try {
+							Date date = DateUtil.convertDate(fieldValue, new String[]{"yyyy-MM-dd HH:mm:ss", "E MMM dd HH:mm:ss z yyyy"});
+							if (field.getFieldType().equals(Field.FieldType.DATE.toString()))
+								fieldValue = UtilMethods.dateToHTMLDate(date);
+							if (field.getFieldType().equals(Field.FieldType.TIME.toString()))
+								fieldValue = UtilMethods.dateToHTMLTime(date);
+							if (field.getFieldType().equals(Field.FieldType.DATE_TIME.toString()))
+								fieldValue = UtilMethods.dateToHTMLDate(date) + " " + UtilMethods.dateToHTMLTime(date);
+						} catch (java.text.ParseException e) {
+							Logger.error(ContentletAjax.class, e.getMessage(), e);
+							throw new DotRuntimeException(e.getMessage(), e);
+						}
+					} else if (field.getFieldType().equals(Field.FieldType.CHECKBOX.toString()) || field.getFieldType().equals(Field.FieldType.MULTI_SELECT.toString())) {
+						if (UtilMethods.isSet(fieldValue))
+							fieldValue = fieldValue.replaceAll("# #", ",").replaceAll("#", "");
+					}
+
+					//We need to replace the URL value from the contentlet with the one in the Identifier only for pages.
+					if (("url").equals(fieldContentlet) &&
+							type != null &&
+							type  instanceof PageContentType &&
+							UtilMethods.isSet(ident) &&
+							UtilMethods.isSet(ident.getAssetName())) {
+						fieldValue = ident.getAssetName();
+					}
+
+					searchResult.put(fieldContentlet, fieldValue);
+				}
+
+				searchResult.put("inode", con.getInode());
+				searchResult.put("Identifier",con.getIdentifier());
+				searchResult.put("identifier", con.getIdentifier());
+				final Contentlet contentlet = con;
+				searchResult.put("__title__", conAPI.getName(contentlet, currentUser, false));
+
+				String spanClass = UtilHTML.getIconClass(contentlet);
+
+				String typeStringToShow = type.name();
+				searchResult.put("__type__", "<div class='typeCCol'><span class='" + spanClass +"'></span>&nbsp;" + typeStringToShow +"</div>");
+
+				String fieldValue = UtilMethods.dateToHTMLDate(con.getModDate()) + " " + UtilMethods.dateToHTMLTime(con.getModDate());
+				searchResult.put("hasTitleImage", String.valueOf(con.getTitleImage().isPresent()));
+				searchResult.put("modDate", fieldValue);
+				String user = "";
+				User contentEditor = null;
+				try {
+					contentEditor = APILocator.getUserAPI().loadUserById(con.getModUser(),APILocator.getUserAPI().getSystemUser(),false);
+				} catch (Exception e1) {
+					Logger.error(ContentletAjax.class,e1.getMessage() + " no such user.  did mod_user get deleted?");
+					Logger.debug(ContentletAjax.class,e1.getMessage(), e1);
+					contentEditor = new User();
+				}
+
+				if (contentEditor.getFirstName() == null || contentEditor.getLastName() == null) {
+					user = con.getModUser();
+				} else {
+					user = contentEditor.getFullName();
+				}
+				PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+				List<Permission> permissions = null;
+				try {
+					permissions = permissionAPI.getPermissions(con);
+				} catch (DotDataException e) {
+				}
+				StringBuffer permissionsSt = new StringBuffer();
+				Boolean ownerCanRead = false;
+				Boolean ownerCanWrite = false;
+				Boolean ownerCanPub = false;
+				for (Permission permission : permissions) {
+					String str = "P" + permission.getRoleId() + "." + permission.getPermission() + "P ";
+					if (permissionsSt.toString().indexOf(str) < 0) {
+						permissionsSt.append(str);
+					}
+					try {
+						if (APILocator.getRoleAPI().loadCMSOwnerRole().getId().equals(String.valueOf(permission.getRoleId()))) {
+							if (permission.getPermission() == PERMISSION_READ) {
+								ownerCanRead = true;
+							} else if (permission.getPermission() == PERMISSION_WRITE) {
+								ownerCanRead = true;
+								ownerCanWrite = true;
+							} else if (permission.getPermission() == PERMISSION_PUBLISH) {
+								ownerCanRead = true;
+								ownerCanWrite = true;
+								ownerCanPub = true;
+							}
+						}
+					} catch (DotDataException e) {
+
+					}
+				}
+				searchResult.put("modUser", user);
+				searchResult.put("owner", con.getOwner());
+				searchResult.put("ownerCanRead", ownerCanRead.toString());
+				searchResult.put("ownerCanWrite", ownerCanWrite.toString());
+				searchResult.put("ownerCanPublish", ownerCanPub.toString());
+				Boolean working = con.isWorking();
+				searchResult.put("working", working.toString());
+				Boolean live = con.isLive();
+				searchResult.put("statusIcons", UtilHTML.getStatusIcons(con));
+				searchResult.put("hasLiveVersion", "false");
+				if (!con.isLive() && con.isWorking() && !con.isArchived()) {
+					if (APILocator.getVersionableAPI().hasLiveVersion(con)) {
+						searchResult.put("hasLiveVersion", "true");
+						searchResult.put("allowUnpublishOfLiveVersion", "true");
+						searchResult.put("inodeOfLiveVersion", APILocator.getVersionableAPI().getContentletVersionInfo(con.getIdentifier(), con.getLanguageId()).getLiveInode());
+					}
+				}
+
+				searchResult.put("live", live.toString());
+				Boolean isdeleted = con.isArchived();
+				searchResult.put("deleted", isdeleted.toString());
+				Boolean locked = con.isLocked();
+				searchResult.put("locked", locked.toString());
+				searchResult.put("structureInode", con.getStructureInode());
+				setCurrentStep(currentUser, searchResult, contentlet);
+
+				searchResult.put("contentStructureType", "" + con.getStructure().getStructureType());
+
+				// Workflow Actions
+				final JSONArray wfActionMapList = this.getAvailableWorkflowActionsListingJson(currentUser, con);
+				
+				
+				searchResult.put("wfActionMapList", wfActionMapList.toString());
+				// End Workflow Actions
+
+				//searchResult.put("structureName", st.getVelocityVarName());
+				Long LanguageId = con.getLanguageId();
+				searchResult.put("languageId", LanguageId.toString());
+				searchResult.put("permissions", permissionsSt.toString());
+			} catch (DotSecurityException e) {
+
+				Logger.debug(this, "Does not have permissions to read the content: " + searchResult, e);
+				searchResult = null;
+
+			} catch (Exception e) {
+
+				Logger.error(this, "Couldn't read the content: " + searchResult, e);
+				searchResult = null;
+
+			}
+
+			if (UtilMethods.isSet(searchResult)) {
+				results.add(searchResult);
+			}
+		}
+
+		long total = hits.getTotalResults();
+		counters.put("total", total);
+
+		if (page == 0)
+			counters.put("hasPrevious", false);
+		else
+			counters.put("hasPrevious", page != 1);
+
+		if (page == 0)
+			counters.put("hasNext", false);
+		else
+			counters.put("hasNext", perPage < hits.size());
+
+		// Data to show in the bottom content listing page
+		String luceneQueryToShow2= luceneQuery.toString();		
+		luceneQueryToShow2=luceneQueryToShow2.replaceAll("\\+languageId:[0-9]*\\*?","").replaceAll("\\+deleted:[a-zA-Z]*","")
+			.replaceAll("\\+working:[a-zA-Z]*","").replaceAll("\\s+", " ").trim();
+		String luceneQueryToShow= luceneQuery.toString().replaceAll("\\s+", " ");
+		counters.put("luceneQueryRaw", luceneQueryToShow);
+		counters.put("luceneQueryFrontend", luceneQueryToShow2.replace("\"","\\${esc.quote}"));
+		counters.put("sortByUF", orderBy);
+		counters.put("expiredInodes", expiredInodes);
+
+		long end = total;
+		if (page != 0)
+			end = page * perPage;
+
+		end = (end < total ? end : total);
+
+		int begin = 1;
+		if (page != 0)
+			begin = (page == 0 ? 0 : (page - 1) * perPage);
+
+		begin = (end != 0 ? begin + 1: begin);
+
+		int totalPages = 1;
+		if (page != 0)
+			totalPages = (int) Math.ceil((float) total / (float) perPage);
+
+		counters.put("begin", begin);
+		counters.put("end", end);
+		counters.put("totalPages", totalPages);
+
+		after = System.currentTimeMillis();
+		Logger.debug(ContentletAjax.class, "searchContentletsByUser: Time to process results= " + (after - before) + " ms.");
+
+		return results;
+	}
+
+	private void setCurrentStep(final User currentUser,
+								final Map<String, String> searchResult,
+								final Contentlet contentlet) throws DotDataException, LanguageException {
+		try {
+			final Optional<WorkflowStep> step = APILocator.getWorkflowAPI().findCurrentStep(contentlet);
+			final String currentStep = (step.isPresent()) ?
+					step.get().getName() :
+					LanguageUtil.get(currentUser, "workflow.notassigned");
+			searchResult.put("__wfstep__", currentStep);
+		} catch (InvalidLicenseException e) {
+			searchResult.put("__wfstep__", LanguageUtil.get(currentUser, "workflow.licenserequired"));
+		}
+	}
+
+	private boolean hasContentTypesInodeSeparator(String structureInode) {
+		return structureInode.contains(CONTENT_TYPES_INODE_SEPARATOR);
+	}
+
+	@CloseDB
+	@NotNull
+	private JSONArray getAvailableWorkflowActionsListingJson(final User currentUser,
+													  final Contentlet contentlet) throws DotDataException, DotSecurityException {
+
+		final List<WorkflowAction> workflowActions = new ArrayList<>();
+
+		try {
+            workflowActions.addAll(APILocator.getWorkflowAPI()
+					.findAvailableActionsListing(contentlet, currentUser)) ;
+        } catch (Exception e) {
+            Logger.error(this, "Could not load workflow actions : ", e);
         }
-      }
-      luceneQuery.append("-contentType:Host ");
-      luceneQuery.append("-baseType:3 ");
-    }
-    if (LicenseUtil.getLevel() < LicenseLevel.PROFESSIONAL.level) {
-      luceneQuery.append("-contentType:Persona ");
-    }
-    // Stores (database name,type description) pairs to catch certain field types.
-    List<Field> targetFields = new ArrayList<Field>();
 
-    if (st != null && structureInodes.length == 1) {
-      targetFields = FieldsCache.getFieldsByStructureInode(st.getInode());
-    }
+		final JSONArray wfActionMapList = new JSONArray();
+        final boolean showScheme = (workflowActions!=null) ?  workflowActions.stream().collect(Collectors.groupingBy(WorkflowAction::getSchemeId)).size()>1 : false;
+		for (WorkflowAction action : workflowActions) {
 
-    Map<String, String> fieldContentletNames = new HashMap<String, String>();
-    Map<String, Field> decimalFields = new HashMap<String, Field>(); // DOTCMS-5478
-    for (Field f : targetFields) {
-      fieldContentletNames.put(f.getFieldContentlet(), f.getFieldType());
-      if (f.getFieldContentlet().startsWith("float")) {
-        decimalFields.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), f);
-      }
-    }
-    CategoryAPI catAPI = APILocator.getCategoryAPI();
-    Category category = null;
-    String categoriesvalues = "";
-    boolean first = true;
-    boolean allLanguages = true;
-    for (String cat : categories) {
-      try {
-        category = catAPI.find(cat, currentUser, false);
-      } catch (DotDataException e) {
-        Logger.error(this, "Error trying to obtain the categories", e);
-      } catch (DotSecurityException e) {
-        Logger.error(this, " Permission error trying to obtain the categories", e);
-      }
-      if (!first) {
-        categoriesvalues += " ";
-      }
-      categoriesvalues += "categories:" + category.getCategoryVelocityVarName();
-      first = false;
-    }
-    categoriesvalues = categoriesvalues.trim();
-    for (int i = 0; i < fields.size(); i = i + 2) {
-      String fieldName = (String) fields.get(i);
-      String fieldValue = "";
-      try {
-        fieldValue = (String) fields.get(i + 1);
-        // http://jira.dotmarketing.net/browse/DOTCMS-2656 add the try catch here in case the value
-        // is null.
-      } catch (Exception e) {
-      }
-      if (UtilMethods.isSet(fieldValue)) {
-        if (fieldsSearch.containsKey(
-            fieldName)) { // DOTCMS-5987, To handle lastSearch for multi-select fields.
-          fieldsSearch.put(fieldName, fieldsSearch.get(fieldName) + "," + fieldValue);
-        } else {
-          fieldsSearch.put(fieldName, fieldValue);
-        }
-        if (fieldName.equalsIgnoreCase("languageId")) {
-          if (UtilMethods.isSet(sess)) {
-            sess.setAttribute(WebKeys.LANGUAGE_SEARCHED, String.valueOf(fieldValue));
-          }
-          allLanguages = false;
-        }
-        if (fieldName.equalsIgnoreCase("conhost")) {
-          fieldValue =
-              fieldValue.equalsIgnoreCase("current")
-                  ? (String) sess.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID)
-                  : fieldValue;
+            boolean hasPushPublishActionlet = false;
 
-          if (!filterSystemHost && !fieldValue.equals(Host.SYSTEM_HOST)) {
+            final JSONObject wfActionMap = new JSONObject();
             try {
-              luceneQuery.append(
-                  "+(conhost:"
-                      + fieldValue
-                      + " conhost:"
-                      + APILocator.getHostAPI()
-                          .findSystemHost(APILocator.getUserAPI().getSystemUser(), true)
-                          .getIdentifier()
-                      + ") ");
-            } catch (Exception e) {
-              Logger.error(ContentletAjax.class, e.getMessage(), e);
-            }
-          } else {
-            try {
-              luceneQuery.append("+conhost:" + fieldValue + "* ");
-            } catch (Exception e) {
-              Logger.error(ContentletAjax.class, e.getMessage(), e);
-            }
-          }
-        } else if (ESMappingConstants.WORKFLOW_SCHEME.equalsIgnoreCase(fieldName)) {
+				WorkflowScheme wfScheme = APILocator.getWorkflowAPI().findScheme(action.getSchemeId());
+                wfActionMap.put("name", action.getName());
+                wfActionMap.put("id", action.getId());
+                wfActionMap.put("icon", action.getIcon());
+                wfActionMap.put("assignable", action.isAssignable());
+                wfActionMap.put("commentable", action.isCommentable() || UtilMethods.isSet(action.getCondition()));
+                wfActionMap.put("requiresCheckout", action.requiresCheckout());
 
-          try {
-            luceneQuery.append(
-                "+(" + ESMappingConstants.WORKFLOW_SCHEME + ":" + fieldValue + "*) ");
-            sess.setAttribute(ESMappingConstants.WORKFLOW_SCHEME, fieldValue);
-          } catch (Exception e) {
-            Logger.error(ContentletAjax.class, e.getMessage(), e);
-          }
-        } else if (ESMappingConstants.WORKFLOW_STEP.equalsIgnoreCase(fieldName)) {
+                final List<WorkflowActionClass> actionlets =
+						APILocator.getWorkflowAPI().findActionClasses(action);
+                for (WorkflowActionClass actionlet : actionlets) {
+                    if (actionlet.getActionlet() != null
+                            && actionlet.getActionlet().getClass().getCanonicalName()
+								.equals(PushPublishActionlet.class.getCanonicalName())) {
 
-          try {
-
-            if (ESMappingConstants.WORKFLOW_CURRENT_STEP_NOT_ASSIGNED_VALUE.equalsIgnoreCase(
-                fieldValue)) { // special case for [Not Assigned]
-
-              luceneQuery.append(
-                  "+(" + ESMappingConstants.WORKFLOW_CURRENT_STEP + ":" + fieldValue + "*) ");
-            } else {
-
-              luceneQuery.append(
-                  "+(" + ESMappingConstants.WORKFLOW_STEP + ":" + fieldValue + "*) ");
-            }
-            sess.setAttribute(ESMappingConstants.WORKFLOW_STEP, fieldValue);
-          } catch (Exception e) {
-            Logger.error(ContentletAjax.class, e.getMessage(), e);
-          }
-        } else {
-          String fieldbcontentname = "";
-          String fieldVelocityVarName = "";
-          Boolean isStructField = false;
-          String fieldVelName = "";
-          if (st != null && fieldName.startsWith(st.getVelocityVarName() + ".")) {
-            fieldVelName = fieldName.substring(fieldName.indexOf(".") + 1, fieldName.length());
-          } else if (fieldName.startsWith(".")) {
-            // http://jira.dotmarketing.net/browse/DOTCMS-6433
-            // weird case due to rare dwr bug on safari
-            fieldVelName = fieldName.substring(1);
-          } else {
-            fieldVelName = fieldName;
-          }
-          Field thisField = null;
-
-          for (Field fd : targetFields) {
-            if (fd.getVelocityVarName().equals(fieldVelName)
-                || fd.getFieldContentlet().equals(fieldVelName)) {
-              fieldbcontentname = fd.getFieldContentlet();
-              fieldVelocityVarName = fd.getVelocityVarName();
-              isStructField = true;
-              thisField = fd;
-              break;
-            }
-          }
-
-          String wildCard = " ";
-          if (!fieldName.equals("languageId") && fieldbcontentname.startsWith("text")) {
-            wildCard =
-                (fieldContentletNames.containsKey(fieldName)
-                        && fieldContentletNames
-                            .get(fieldName)
-                            .equals(Field.FieldType.SELECT.toString()))
-                    ? " "
-                    : "*";
-          }
-
-          if (fieldbcontentname.startsWith("text")) {
-
-            if (thisField.getFieldType().equals(Field.FieldType.KEY_VALUE.toString())) {
-              fieldValue = fieldValue.trim();
-              boolean hasQuotes =
-                  fieldValue != null
-                      && fieldValue.length() > 1
-                      && fieldValue.endsWith("\"")
-                      && fieldValue.startsWith("\"");
-              if (hasQuotes) {
-                fieldValue = fieldValue.replaceFirst("\"", "");
-                fieldValue = fieldValue.substring(0, fieldValue.length() - 1);
-              }
-              try {
-                String[] splitter = fieldValue.split(":");
-                String metakey = "";
-                for (int x = 0; x < splitter.length - 1; x++) {
-                  metakey += splitter[x];
-                }
-                metakey = StringUtils.camelCaseLower(metakey);
-                String metaVal = "*" + splitter[splitter.length - 1] + "*";
-                fieldValue = metakey + ":" + metaVal;
-
-                if (fieldVelocityVarName.equals(FileAssetAPI.META_DATA_FIELD)) {
-                  luceneQuery.append(
-                      "+"
-                          + fieldVelocityVarName
-                          + "."
-                          + fieldValue
-                              .toString()
-                              .replaceAll(specialCharsToEscapeForMetaData, "\\\\$1")
-                          + " ");
-                } else {
-                  luceneQuery.append(
-                      "+"
-                          + st.getVelocityVarName()
-                          + "."
-                          + fieldVelocityVarName
-                          + "."
-                          + fieldValue
-                              .toString()
-                              .replaceAll(specialCharsToEscapeForMetaData, "\\\\$1")
-                          + " ");
+                        hasPushPublishActionlet = true;
+                    }
                 }
 
-              } catch (Exception e) {
-                Logger.debug(
-                    this,
-                    "An error occured when processing field name '" + fieldbcontentname + "'");
-              }
-            } else if (FieldFactory.isTagField(fieldbcontentname, st) == false) {
-              fieldValue = fieldValue.trim();
-              boolean hasQuotes =
-                  fieldValue != null
-                      && fieldValue.length() > 1
-                      && fieldValue.endsWith("\"")
-                      && fieldValue.startsWith("\"");
-              if (hasQuotes) {
-                fieldValue = fieldValue.replaceFirst("\"", "");
-                fieldValue = fieldValue.substring(0, fieldValue.length() - 1);
-              }
+                wfActionMap.put("hasPushPublishActionlet", hasPushPublishActionlet);
 
-              luceneQuery.append(
-                  "+"
-                      + st.getVelocityVarName()
-                      + "."
-                      + fieldVelocityVarName
-                      + ":"
-                      + (hasQuotes ? "\"" : wildCard)
-                      + (hasQuotes && CharMatcher.WHITESPACE.matchesAnyOf(fieldValue.toString())
-                          ? fieldValue
-                          : ESUtils.escape(fieldValue.toString()))
-                      + (hasQuotes ? "\"" : wildCard)
-                      + " ");
-            } else {
-              String[] splitValues = fieldValue.split(",");
-              for (String splitValue : splitValues) {
-                splitValue = splitValue.trim();
-                String quotes = splitValue.contains(" ") ? "\"" : "";
-                luceneQuery.append(
-                    "+"
-                        + st.getVelocityVarName()
-                        + "."
-                        + fieldVelocityVarName
-                        + ":"
-                        + quotes
-                        + ESUtils.escape(splitValue.toString())
-                        + quotes
-                        + " ");
-              }
-            }
-          } else if (fieldbcontentname.startsWith("date")) {
-            luceneQuery.append(
-                "+"
-                    + st.getVelocityVarName()
-                    + "."
-                    + fieldVelocityVarName
-                    + ":"
-                    + fieldValue
-                    + " ");
-          } else {
-            if (isStructField == false) {
-              String next = fieldValue.toString();
-              if (!next.contains("'") && !next.contains("\"")) {
-                next = next.replaceAll("\\*", "");
-                while (next.contains("  ")) {
-                  next = next.replace("  ", " ");
-                }
-                String y[] = next.split(" ");
-                for (int j = 0; j < y.length; j++) {
-                  y[j] = y[j].replaceAll(specialCharsToEscape, "\\\\$1");
-                  if (fieldName.equals("languageId")) {
-                    luceneQuery.append("+" + fieldName + ":" + y[j] + " ");
-                  } else {
-                    luceneQuery.append("+" + fieldName + ":" + y[j] + "* ");
-                  }
-                }
-              } else if (next.contains("\"")) {
-                next = next.replaceAll("\\*", "");
-                while (next.contains("  ")) {
-                  next = next.replace("  ", " ");
-                }
-                String y[] = next.split(" ");
-                for (int j = 0; j < y.length; j++) {
-                  y[j] = y[j].replaceAll(specialCharsToEscape, "\\\\$1");
-                  luceneQuery.append("+" + fieldName + ":" + y[j] + "* ");
-                }
-              } else {
-                luceneQuery.append("+" + fieldName + ":" + next + " ");
-              }
-            } else {
-              luceneQuery.append(
-                  "+"
-                      + st.getVelocityVarName()
-                      + "."
-                      + fieldVelocityVarName
-                      + ":"
-                      + fieldValue.toString()
-                      + wildCard
-                      + " ");
-            }
-          }
-        }
-      }
-    }
-    if (allLanguages) {
-      if (UtilMethods.isSet(sess)) {
-        sess.setAttribute(WebKeys.LANGUAGE_SEARCHED, String.valueOf(0));
-      }
-    }
-
-    if (UtilMethods.isSet(categoriesvalues)) {
-      luceneQuery.append("+(" + categoriesvalues + ") ");
-    }
-
-    lastSearchMap.put("fieldsSearch", fieldsSearch);
-    lastSearchMap.put("categories", categories);
-
-    // Adding the headers as the second row of the results
-    for (Field f : targetFields) {
-      if (f.isListed()) {
-        fieldsMapping.put(f.getVelocityVarName(), f);
-        headers.add(f.getMap());
-      }
-    }
-
-    if (!UtilMethods.isSet(orderBy)) {
-      orderBy = "modDate desc";
-    } else if (orderBy.endsWith("__wfstep__")) {
-      orderBy = "wfCurrentStepName";
-    } else if (orderBy.endsWith("__wfstep__ desc")) {
-      orderBy = "wfCurrentStepName desc";
-    } else {
-      if (orderBy.charAt(0) == '.') {
-        if (structureInodes.length > 1) {
-          orderBy = orderBy.substring(1);
-        } else {
-          orderBy = st.getVelocityVarName() + orderBy;
-        }
-      }
-    }
-
-    lastSearchMap.put("showDeleted", showDeleted);
-    lastSearchMap.put("filterSystemHost", filterSystemHost);
-    lastSearchMap.put("filterLocked", filterLocked);
-    lastSearchMap.put("filterUnpublish", filterUnpublish);
-
-    if (!showDeleted) luceneQuery.append("+deleted:false ");
-    else luceneQuery.append("+deleted:true ");
-    lastSearchMap.put("page", page);
-
-    if (filterLocked) luceneQuery.append("+locked:true ");
-
-    if (filterUnpublish) luceneQuery.append("+live:false ");
-
-    /*if we have a date*/
-    if (modDateFrom != null || modDateTo != null) {
-      String dates = " +modDate:[";
-      dates += (modDateFrom != null) ? modDateFrom : "18000101000000";
-      dates += " TO ";
-      dates += (modDateTo != null) ? modDateTo : "30000101000000";
-      dates += "]";
-      luceneQuery.append(dates);
-    }
-
-    int offset = 0;
-    if (page != 0) offset = perPage * (page - 1);
-
-    lastSearchMap.put("orderBy", orderBy);
-
-    luceneQuery.append(" +working:true");
-
-    // Executing the query
-    long before = System.currentTimeMillis();
-    PaginatedArrayList<Contentlet> hits = new PaginatedArrayList<Contentlet>();
-    long totalHits = 0;
-    try {
-      hits =
-          (PaginatedArrayList<Contentlet>)
-              conAPI.search(
-                  luceneQuery.toString(), perPage + 1, offset, orderBy, currentUser, false);
-      totalHits = hits.getTotalResults();
-    } catch (Exception pe) {
-      Logger.error(ContentletAjax.class, "Unable to execute Lucene Query", pe);
-    }
-    long after = System.currentTimeMillis();
-    Logger.debug(
-        ContentletAjax.class,
-        "searchContentletsByUser: Time to search on lucene =" + (after - before) + " ms.");
-
-    before = System.currentTimeMillis();
-
-    // The reesults list returned to the page
-    List<Object> results = new ArrayList<Object>();
-
-    // Adding the result counters as the first row of the results
-    Map<String, Object> counters = new HashMap<String, Object>();
-    results.add(counters);
-
-    if (headers.size() == 0) {
-      Map<String, String> fieldMap = new HashMap<>();
-      fieldMap.put("fieldVelocityVarName", "__title__");
-      fieldMap.put("fieldName", "Title");
-      headers.add(fieldMap);
-
-      fieldMap = new HashMap<>();
-      fieldMap.put("fieldVelocityVarName", "__type__");
-      fieldMap.put("fieldName", "Type");
-      headers.add(fieldMap);
-    }
-
-    final Map<String, String> fieldMap = new HashMap<>();
-    fieldMap.put("fieldVelocityVarName", "__wfstep__");
-    try {
-      fieldMap.put("fieldName", LanguageUtil.get(currentUser, "Step"));
-    } catch (LanguageException e) {
-      fieldMap.put("fieldName", "Step");
-    }
-    headers.add(fieldMap);
-
-    results.add(headers);
-
-    // we add the total hists for the query
-    results.add(totalHits);
-
-    List<String> expiredInodes = new ArrayList<>();
-
-    // Adding the query results
-    Contentlet con;
-    for (int i = 0; ((i < perPage) && (i < hits.size())); ++i) {
-
-      Map<String, String> searchResult = null;
-
-      try {
-        con = hits.get(i);
-        Identifier ident = APILocator.getIdentifierAPI().find(con);
-        if (!con.isLive()) {
-          if (UtilMethods.isSet(ident.getSysExpireDate())
-              && ident.getSysExpireDate().before(new Date()))
-            expiredInodes.add(con.getInode()); // it is unpublished and can't be manualy published
-        }
-
-        searchResult = new HashMap<String, String>();
-        ContentType type = con.getContentType();
-        searchResult.put("typeVariable", type.variable());
-        searchResult.put("baseType", type.baseType().name());
-        for (String fieldContentlet : fieldsMapping.keySet()) {
-          String fieldValue = null;
-          if (con.getMap() != null && con.getMap().get(fieldContentlet) != null) {
-            fieldValue = (con.getMap().get(fieldContentlet)).toString();
-          }
-          Field field = (Field) fieldsMapping.get(fieldContentlet);
-          if (UtilMethods.isSet(fieldValue)
-                  && field.getFieldType().equals(Field.FieldType.DATE.toString())
-              || UtilMethods.isSet(fieldValue)
-                  && field.getFieldType().equals(Field.FieldType.TIME.toString())
-              || UtilMethods.isSet(fieldValue)
-                  && field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {
-            try {
-              Date date =
-                  DateUtil.convertDate(
-                      fieldValue, new String[] {"yyyy-MM-dd HH:mm:ss", "E MMM dd HH:mm:ss z yyyy"});
-              if (field.getFieldType().equals(Field.FieldType.DATE.toString()))
-                fieldValue = UtilMethods.dateToHTMLDate(date);
-              if (field.getFieldType().equals(Field.FieldType.TIME.toString()))
-                fieldValue = UtilMethods.dateToHTMLTime(date);
-              if (field.getFieldType().equals(Field.FieldType.DATE_TIME.toString()))
-                fieldValue =
-                    UtilMethods.dateToHTMLDate(date) + " " + UtilMethods.dateToHTMLTime(date);
-            } catch (java.text.ParseException e) {
-              Logger.error(ContentletAjax.class, e.getMessage(), e);
-              throw new DotRuntimeException(e.getMessage(), e);
-            }
-          } else if (field.getFieldType().equals(Field.FieldType.CHECKBOX.toString())
-              || field.getFieldType().equals(Field.FieldType.MULTI_SELECT.toString())) {
-            if (UtilMethods.isSet(fieldValue))
-              fieldValue = fieldValue.replaceAll("# #", ",").replaceAll("#", "");
-          }
-
-          // We need to replace the URL value from the contentlet with the one in the Identifier
-          // only for pages.
-          if (("url").equals(fieldContentlet)
-              && type != null
-              && type instanceof PageContentType
-              && UtilMethods.isSet(ident)
-              && UtilMethods.isSet(ident.getAssetName())) {
-            fieldValue = ident.getAssetName();
-          }
-
-          searchResult.put(fieldContentlet, fieldValue);
-        }
-
-        searchResult.put("inode", con.getInode());
-        searchResult.put("Identifier", con.getIdentifier());
-        searchResult.put("identifier", con.getIdentifier());
-        final Contentlet contentlet = con;
-        searchResult.put("__title__", conAPI.getName(contentlet, currentUser, false));
-
-        String spanClass = UtilHTML.getIconClass(contentlet);
-
-        String typeStringToShow = type.name();
-        searchResult.put(
-            "__type__",
-            "<div class='typeCCol'><span class='"
-                + spanClass
-                + "'></span>&nbsp;"
-                + typeStringToShow
-                + "</div>");
-
-        String fieldValue =
-            UtilMethods.dateToHTMLDate(con.getModDate())
-                + " "
-                + UtilMethods.dateToHTMLTime(con.getModDate());
-        searchResult.put("hasTitleImage", String.valueOf(con.getTitleImage().isPresent()));
-        searchResult.put("modDate", fieldValue);
-        String user = "";
-        User contentEditor = null;
-        try {
-          contentEditor =
-              APILocator.getUserAPI()
-                  .loadUserById(con.getModUser(), APILocator.getUserAPI().getSystemUser(), false);
-        } catch (Exception e1) {
-          Logger.error(
-              ContentletAjax.class, e1.getMessage() + " no such user.  did mod_user get deleted?");
-          Logger.debug(ContentletAjax.class, e1.getMessage(), e1);
-          contentEditor = new User();
-        }
-
-        if (contentEditor.getFirstName() == null || contentEditor.getLastName() == null) {
-          user = con.getModUser();
-        } else {
-          user = contentEditor.getFullName();
-        }
-        PermissionAPI permissionAPI = APILocator.getPermissionAPI();
-        List<Permission> permissions = null;
-        try {
-          permissions = permissionAPI.getPermissions(con);
-        } catch (DotDataException e) {
-        }
-        StringBuffer permissionsSt = new StringBuffer();
-        Boolean ownerCanRead = false;
-        Boolean ownerCanWrite = false;
-        Boolean ownerCanPub = false;
-        for (Permission permission : permissions) {
-          String str = "P" + permission.getRoleId() + "." + permission.getPermission() + "P ";
-          if (permissionsSt.toString().indexOf(str) < 0) {
-            permissionsSt.append(str);
-          }
-          try {
-            if (APILocator.getRoleAPI()
-                .loadCMSOwnerRole()
-                .getId()
-                .equals(String.valueOf(permission.getRoleId()))) {
-              if (permission.getPermission() == PERMISSION_READ) {
-                ownerCanRead = true;
-              } else if (permission.getPermission() == PERMISSION_WRITE) {
-                ownerCanRead = true;
-                ownerCanWrite = true;
-              } else if (permission.getPermission() == PERMISSION_PUBLISH) {
-                ownerCanRead = true;
-                ownerCanWrite = true;
-                ownerCanPub = true;
-              }
-            }
-          } catch (DotDataException e) {
-
-          }
-        }
-        searchResult.put("modUser", user);
-        searchResult.put("owner", con.getOwner());
-        searchResult.put("ownerCanRead", ownerCanRead.toString());
-        searchResult.put("ownerCanWrite", ownerCanWrite.toString());
-        searchResult.put("ownerCanPublish", ownerCanPub.toString());
-        Boolean working = con.isWorking();
-        searchResult.put("working", working.toString());
-        Boolean live = con.isLive();
-        searchResult.put("statusIcons", UtilHTML.getStatusIcons(con));
-        searchResult.put("hasLiveVersion", "false");
-        if (!con.isLive() && con.isWorking() && !con.isArchived()) {
-          if (APILocator.getVersionableAPI().hasLiveVersion(con)) {
-            searchResult.put("hasLiveVersion", "true");
-            searchResult.put("allowUnpublishOfLiveVersion", "true");
-            searchResult.put(
-                "inodeOfLiveVersion",
-                APILocator.getVersionableAPI()
-                    .getContentletVersionInfo(con.getIdentifier(), con.getLanguageId())
-                    .getLiveInode());
-          }
-        }
-
-        searchResult.put("live", live.toString());
-        Boolean isdeleted = con.isArchived();
-        searchResult.put("deleted", isdeleted.toString());
-        Boolean locked = con.isLocked();
-        searchResult.put("locked", locked.toString());
-        searchResult.put("structureInode", con.getStructureInode());
-        setCurrentStep(currentUser, searchResult, contentlet);
-
-        searchResult.put("contentStructureType", "" + con.getStructure().getStructureType());
-
-        // Workflow Actions
-        final JSONArray wfActionMapList =
-            this.getAvailableWorkflowActionsListingJson(currentUser, con);
-
-        searchResult.put("wfActionMapList", wfActionMapList.toString());
-        // End Workflow Actions
-
-        // searchResult.put("structureName", st.getVelocityVarName());
-        Long LanguageId = con.getLanguageId();
-        searchResult.put("languageId", LanguageId.toString());
-        searchResult.put("permissions", permissionsSt.toString());
-      } catch (DotSecurityException e) {
-
-        Logger.debug(this, "Does not have permissions to read the content: " + searchResult, e);
-        searchResult = null;
-
-      } catch (Exception e) {
-
-        Logger.error(this, "Couldn't read the content: " + searchResult, e);
-        searchResult = null;
-      }
-
-      if (UtilMethods.isSet(searchResult)) {
-        results.add(searchResult);
-      }
-    }
-
-    long total = hits.getTotalResults();
-    counters.put("total", total);
-
-    if (page == 0) counters.put("hasPrevious", false);
-    else counters.put("hasPrevious", page != 1);
-
-    if (page == 0) counters.put("hasNext", false);
-    else counters.put("hasNext", perPage < hits.size());
-
-    // Data to show in the bottom content listing page
-    String luceneQueryToShow2 = luceneQuery.toString();
-    luceneQueryToShow2 =
-        luceneQueryToShow2
-            .replaceAll("\\+languageId:[0-9]*\\*?", "")
-            .replaceAll("\\+deleted:[a-zA-Z]*", "")
-            .replaceAll("\\+working:[a-zA-Z]*", "")
-            .replaceAll("\\s+", " ")
-            .trim();
-    String luceneQueryToShow = luceneQuery.toString().replaceAll("\\s+", " ");
-    counters.put("luceneQueryRaw", luceneQueryToShow);
-    counters.put("luceneQueryFrontend", luceneQueryToShow2.replace("\"", "\\${esc.quote}"));
-    counters.put("sortByUF", orderBy);
-    counters.put("expiredInodes", expiredInodes);
-
-    long end = total;
-    if (page != 0) end = page * perPage;
-
-    end = (end < total ? end : total);
-
-    int begin = 1;
-    if (page != 0) begin = (page == 0 ? 0 : (page - 1) * perPage);
-
-    begin = (end != 0 ? begin + 1 : begin);
-
-    int totalPages = 1;
-    if (page != 0) totalPages = (int) Math.ceil((float) total / (float) perPage);
-
-    counters.put("begin", begin);
-    counters.put("end", end);
-    counters.put("totalPages", totalPages);
-
-    after = System.currentTimeMillis();
-    Logger.debug(
-        ContentletAjax.class,
-        "searchContentletsByUser: Time to process results= " + (after - before) + " ms.");
-
-    return results;
-  }
-
-  private void setCurrentStep(
-      final User currentUser, final Map<String, String> searchResult, final Contentlet contentlet)
-      throws DotDataException, LanguageException {
-    try {
-      final Optional<WorkflowStep> step = APILocator.getWorkflowAPI().findCurrentStep(contentlet);
-      final String currentStep =
-          (step.isPresent())
-              ? step.get().getName()
-              : LanguageUtil.get(currentUser, "workflow.notassigned");
-      searchResult.put("__wfstep__", currentStep);
-    } catch (InvalidLicenseException e) {
-      searchResult.put("__wfstep__", LanguageUtil.get(currentUser, "workflow.licenserequired"));
-    }
-  }
-
-  private boolean hasContentTypesInodeSeparator(String structureInode) {
-    return structureInode.contains(CONTENT_TYPES_INODE_SEPARATOR);
-  }
-
-  @CloseDB
-  @NotNull
-  private JSONArray getAvailableWorkflowActionsListingJson(
-      final User currentUser, final Contentlet contentlet)
-      throws DotDataException, DotSecurityException {
-
-    final List<WorkflowAction> workflowActions = new ArrayList<>();
-
-    try {
-      workflowActions.addAll(
-          APILocator.getWorkflowAPI().findAvailableActionsListing(contentlet, currentUser));
-    } catch (Exception e) {
-      Logger.error(this, "Could not load workflow actions : ", e);
-    }
-
-    final JSONArray wfActionMapList = new JSONArray();
-    final boolean showScheme =
-        (workflowActions != null)
-            ? workflowActions
-                    .stream()
-                    .collect(Collectors.groupingBy(WorkflowAction::getSchemeId))
-                    .size()
-                > 1
-            : false;
-    for (WorkflowAction action : workflowActions) {
-
-      boolean hasPushPublishActionlet = false;
-
-      final JSONObject wfActionMap = new JSONObject();
-      try {
-        WorkflowScheme wfScheme = APILocator.getWorkflowAPI().findScheme(action.getSchemeId());
-        wfActionMap.put("name", action.getName());
-        wfActionMap.put("id", action.getId());
-        wfActionMap.put("icon", action.getIcon());
-        wfActionMap.put("assignable", action.isAssignable());
-        wfActionMap.put(
-            "commentable", action.isCommentable() || UtilMethods.isSet(action.getCondition()));
-        wfActionMap.put("requiresCheckout", action.requiresCheckout());
-
-        final List<WorkflowActionClass> actionlets =
-            APILocator.getWorkflowAPI().findActionClasses(action);
-        for (WorkflowActionClass actionlet : actionlets) {
-          if (actionlet.getActionlet() != null
-              && actionlet
-                  .getActionlet()
-                  .getClass()
-                  .getCanonicalName()
-                  .equals(PushPublishActionlet.class.getCanonicalName())) {
-
-            hasPushPublishActionlet = true;
-          }
-        }
-
-        wfActionMap.put("hasPushPublishActionlet", hasPushPublishActionlet);
-
-        try {
-          final String actionNameStr =
-              (showScheme)
-                  ? LanguageUtil.get(currentUser, action.getName())
-                      + " ( "
-                      + LanguageUtil.get(currentUser, wfScheme.getName())
-                      + " )"
-                  : LanguageUtil.get(currentUser, action.getName());
-
-          wfActionMap.put("wfActionNameStr", actionNameStr);
-        } catch (LanguageException e) {
-          Logger.error(this, "Could not load language key : " + action.getName());
-        }
-
-        wfActionMapList.add(wfActionMap);
-      } catch (JSONException e1) {
-        Logger.error(this, "Could not put property in JSONObject");
-      }
-    }
-
-    return wfActionMapList;
-  }
-
-  @CloseDB
-  public ArrayList<String[]> doSearchGlossaryTerm(String valueToComplete, String language)
-      throws Exception {
-    final int limit = Config.getIntProperty("glossary.term.max.limit", 15);
-    ArrayList<String[]> list = new ArrayList<String[]>(limit);
-    final User systemUser = APILocator.systemUser();
-    final long languageId = Long.parseLong(language);
-    List<String> listAddedKeys = new ArrayList<>();
-    String[] term;
-
-    List<LanguageKey> props = retrieveProperties(languageId);
-    valueToComplete = valueToComplete.toLowerCase();
-    for (LanguageKey prop : props) {
-      if (prop.getKey().toLowerCase().startsWith(valueToComplete)) {
-        term =
-            new String[] {
-              prop.getKey(),
-              (70 < prop.getValue().length() ? prop.getValue().substring(0, 69) : prop.getValue())
-            };
-        list.add(term);
-        listAddedKeys.add(prop.getKey());
-      }
-
-      if (list.size() < limit) {
-        List<KeyValue> languageVariables =
-            APILocator.getLanguageVariableAPI()
-                .getAllLanguageVariablesKeyStartsWith(
-                    valueToComplete, languageId, systemUser, limit);
-        for (KeyValue languageVariable : languageVariables) {
-          if (!listAddedKeys.contains(languageVariable.getKey())) {
-            term =
-                new String[] {
-                  languageVariable.getKey(),
-                  (70 < languageVariable.getValue().length()
-                      ? languageVariable.getValue().substring(0, 69)
-                      : languageVariable.getValue())
-                };
-            list.add(term);
-          }
-          if (list.size() == limit) {
-            break;
-          }
-        }
-      }
-    }
-    return list;
-  }
-
-  private List<LanguageKey> retrieveProperties(long langId) throws Exception {
-    Language lang = langAPI.getLanguage(langId);
-    return langAPI.getLanguageKeys(lang);
-  }
-
-  /**
-   * Publishes or unpublishes contentlets from a given list of identifiers. You can have to publish
-   * within a specific language or all languages. Set the languageId = 0 for all languages.
-   *
-   * @param identifiersList
-   * @param isPublish whether it should publish or unpublish the contentlets
-   * @param languageId if set to 0 will publish for all languages
-   * @return
-   */
-  @CloseDB
-  public List<Map<String, Object>> publishContentlets(
-      List<String> identifiersList, boolean isPublish, long languageId) {
-    List<Map<String, Object>> rows = new ArrayList<Map<String, Object>>();
-    HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
-
-    for (int x = 0; x < identifiersList.size(); x++) {
-
-      String id = identifiersList.get(x);
-
-      try {
-        User currentUser = com.liferay.portal.util.PortalUtil.getUser(req);
-        Contentlet contentlet = new Contentlet();
-        List<Contentlet> contentletList = new ArrayList<Contentlet>();
-        if (languageId == 0) {
-          contentlet =
-              conAPI.findContentletByIdentifier(
-                  id, false, langAPI.getDefaultLanguage().getId(), currentUser, false);
-          contentletList = conAPI.getAllLanguages(contentlet, false, currentUser, false);
-        } else {
-          contentlet = conAPI.findContentletByIdentifier(id, false, languageId, currentUser, false);
-          contentletList.add(contentlet);
-        }
-
-        for (Contentlet cont : contentletList) {
-
-          if (isPublish) {
-
-            if (!cont.isLive()) {
-              conAPI.publish(cont, currentUser, false);
-            }
-
-          } else {
-
-            if (cont.isLive()) {
-              conAPI.unpublish(cont, currentUser, false);
-            }
-          }
-          if (languageId == 0) { // DOTCMS-5182
-            cont =
-                conAPI.findContentletByIdentifier(
-                    id, false, langAPI.getDefaultLanguage().getId(), currentUser, false);
-          } else {
-            cont = conAPI.findContentletByIdentifier(id, false, languageId, currentUser, false);
-          }
-          rows.add(cont.getMap());
-        }
-
-      } catch (DotDataException e) {
-        Logger.error(this, "Error trying to obtain the contentlets from the relationship.", e);
-
-      } catch (DotSecurityException e) {
-        Logger.error(this, "Security exception.", e);
-      }
-    }
-    return rows;
-  }
-
-  /**
-   * @param
-   * @param
-   * @param
-   * @return
-   * @throws SystemException
-   * @throws PortalException
-   * @throws LanguageException
-   */
-  // http://jira.dotmarketing.net/browse/DOTCMS-2273
-  @CloseDB
-  public Map<String, Object> saveContent(
-      List<String> formData, boolean isAutoSave, boolean isCheckin, boolean publish)
-      throws LanguageException, PortalException, SystemException {
-    Map<String, Object> contentletFormData = new HashMap<String, Object>();
-    Map<String, Object> callbackData = new HashMap<String, Object>();
-    List<String> saveContentErrors = new ArrayList<String>();
-    User user = null;
-    boolean clearBinary = true; // flag to check if the binary field needs to be cleared or not
-    HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
-    String newInode = "";
-
-    String referer = "";
-    String language = "";
-    String strutsAction = "";
-    String recurrenceDaysOfWeek = "";
-
-    try {
-      HibernateUtil.startTransaction();
-
-      int tempCount =
-          0; // To store multiple values opposite to a name. Ex: selected permissions & categories
-
-      user = com.liferay.portal.util.PortalUtil.getUser((HttpServletRequest) req);
-
-      // get the struts_action from the form data
-      for (String element : formData) {
-        if (element != null) {
-          String elementName =
-              element.substring(0, element.indexOf(WebKeys.CONTENTLET_FORM_NAME_VALUE_SEPARATOR));
-          if (elementName.startsWith("_") && elementName.endsWith("cmd")) {
-            strutsAction = elementName.substring(0, elementName.indexOf("cmd"));
-            break;
-          }
-        }
-      }
-
-      // Storing form data into map.
-      for (String element : formData) {
-        if (!com.dotmarketing.util.UtilMethods.isSet(element)) continue;
-
-        String elementName =
-            element.substring(0, element.indexOf(WebKeys.CONTENTLET_FORM_NAME_VALUE_SEPARATOR));
-        Object elementValue =
-            element.substring(
-                element.indexOf(WebKeys.CONTENTLET_FORM_NAME_VALUE_SEPARATOR)
-                    + WebKeys.CONTENTLET_FORM_NAME_VALUE_SEPARATOR.length());
-
-        if (element.startsWith(strutsAction))
-          elementName =
-              elementName.substring(elementName.indexOf(strutsAction) + strutsAction.length());
-
-        // Placed increments as Map holds unique keys.
-        if (elementName.equals("read")
-            || elementName.equals("write")
-            || elementName.equals("publish")) {
-
-          tempCount++;
-          elementName = "selected_permission_" + tempCount + elementName;
-        }
-
-        if (elementName.equals("categories")) {
-          tempCount++;
-          elementName = elementName + tempCount + "_";
-        }
-
-        if (!UtilMethods.isSet(elementName)) continue;
-
-        if (!UtilMethods.isSet(elementValue)) elementValue = "";
-
-        if (elementName.equals("referer")) referer = (String) elementValue;
-
-        if (elementName.equals("languageId")) language = (String) elementValue;
-
-        if (elementName.equals("recurrenceDaysOfWeek")) {
-          recurrenceDaysOfWeek = recurrenceDaysOfWeek + elementValue + ",";
-        }
-        // http://jira.dotmarketing.net/browse/DOTCMS-3232
-        if (elementName.equalsIgnoreCase("hostId")) {
-          callbackData.put("hostOrFolder", true);
-        }
-
-        if (elementName.startsWith("text")) {
-          elementValue = elementValue.toString().trim();
-        }
-
-        // http://jira.dotmarketing.net/browse/DOTCMS-3463
-        if (elementName.startsWith("binary")) {
-          String binaryFileValue = (String) elementValue;
-          File binaryFile = null;
-          if (UtilMethods.isSet(binaryFileValue) && !binaryFileValue.equals("---removed---")) {
-            Contentlet binaryContentlet = new Contentlet();
-            try {
-              binaryContentlet =
-                  conAPI.find(binaryFileValue, APILocator.getUserAPI().getSystemUser(), false);
-            } catch (Exception e) {
-              Logger.error(
-                  this.getClass(), "Problems finding binary content " + binaryFileValue, e);
-            }
-            if (UtilMethods.isSet(binaryContentlet)
-                && UtilMethods.isSet(binaryContentlet.getInode())) {
-              try {
-                elementValue = binaryContentlet.getBinary(FileAssetAPI.BINARY_FIELD);
-                binaryFile =
-                    new File(
-                        APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
-                            + File.separator
-                            + user.getUserId()
-                            + File.separator
-                            + "binary1"
-                            + File.separator
-                            + ((File) elementValue).getName());
-                if (binaryFile.exists()) elementValue = binaryFile;
-              } catch (IOException e) {
-              }
-            } else {
-              binaryFileValue = ContentletUtil.sanitizeFileName(binaryFileValue);
-              binaryFile =
-                  new File(
-                      APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
-                          + File.separator
-                          + user.getUserId()
-                          + File.separator
-                          + elementName
-                          + File.separator
-                          + binaryFileValue);
-              if (binaryFile.exists()) {
                 try {
-                  // https://github.com/dotCMS/dotCMS/issues/35
-                  // making a copy just in case the transaction fails so
-                  // we can have the file for possible next attempts
-                  File acopyFolder =
-                      new File(
-                          APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
-                              + File.separator
-                              + user.getUserId()
-                              + File.separator
-                              + elementName
-                              + File.separator
-                              + UUIDGenerator.generateUuid());
-                  if (!acopyFolder.exists()) acopyFolder.mkdir();
-                  File acopy = new File(acopyFolder, binaryFileValue);
-                  FileUtil.copyFile(binaryFile, acopy);
-                  elementValue = acopy;
-                } catch (Exception e) {
-                  Logger.error(this, "can't make a copy of the uploaded file:" + e, e);
-                  String errorString =
-                      LanguageUtil.get(user, "message.event.recurrence.can.not.copy.uploaded.file");
-                  saveContentErrors.add(errorString);
-                  callbackData.put("saveContentErrors", saveContentErrors);
-                  return callbackData;
+                    final String actionNameStr = (showScheme) ? LanguageUtil.get(currentUser, action.getName()) +" ( "+LanguageUtil.get(currentUser,wfScheme.getName())+" )" : LanguageUtil.get(currentUser, action.getName());
+                    
+                    wfActionMap.put("wfActionNameStr", actionNameStr);
+                } catch (LanguageException e) {
+                    Logger.error(this, "Could not load language key : " + action.getName());
                 }
-              }
+
+                wfActionMapList.add(wfActionMap);
+            } catch (JSONException e1) {
+                Logger.error(this, "Could not put property in JSONObject");
             }
-          } else {
-            elementValue = new File(binaryFileValue);
-          }
-        }
-        contentletFormData.put(elementName, elementValue);
-      }
-
-      contentletFormData.put("recurrenceDaysOfWeek", recurrenceDaysOfWeek);
-
-      if (contentletFormData.get("recurrenceOccurs") != null
-          && contentletFormData.get("recurrenceOccurs").toString().equals("annually")) {
-
-        if (Boolean.parseBoolean(contentletFormData.get("isSpecificDate").toString())
-            && !UtilMethods.isSet((String) contentletFormData.get("specificDayOfMonthRecY"))
-            && !UtilMethods.isSet((String) contentletFormData.get("specificMonthOfYearRecY"))) {
-          String errorString = LanguageUtil.get(user, "message.event.recurrence.invalid.date");
-          saveContentErrors.add(errorString);
         }
 
-        if (Boolean.parseBoolean(contentletFormData.get("isSpecificDate").toString())
-            && UtilMethods.isSet((String) contentletFormData.get("specificDayOfMonthRecY"))
-            && UtilMethods.isSet((String) contentletFormData.get("specificMonthOfYearRecY"))) {
-          try {
-            Long.valueOf((String) contentletFormData.get("specificDayOfMonthRecY"));
-            contentletFormData.put(
-                "recurrenceDayOfMonth", (String) contentletFormData.get("specificDayOfMonthRecY"));
-          } catch (Exception e) {
-            String errorString =
-                LanguageUtil.get(user, "message.event.recurrence.invalid.dayofmonth");
-            saveContentErrors.add(errorString);
-          }
-          try {
-            Long.valueOf((String) contentletFormData.get("specificMonthOfYearRecY"));
-            contentletFormData.put(
-                "recurrenceMonthOfYear",
-                (String) contentletFormData.get("specificMonthOfYearRecY"));
-          } catch (Exception e) {
-            String errorString =
-                LanguageUtil.get(user, "message.event.recurrence.invalid.monthofyear");
-            saveContentErrors.add(errorString);
-          }
-        } else {
-          contentletFormData.put("recurrenceDayOfMonth", "0");
-        }
-      }
+		return wfActionMapList;
+	}
 
-      // if it is save and publish, the save event must be not generated
-      newInode =
-          contentletWebAPI.saveContent(contentletFormData, isAutoSave, isCheckin, user, !publish);
+	@CloseDB
+	public ArrayList<String[]> doSearchGlossaryTerm(String valueToComplete, String language) throws Exception {
+		final int limit = Config.getIntProperty("glossary.term.max.limit",15);
+		ArrayList<String[]> list = new ArrayList<String[]>(limit);
+		final User systemUser = APILocator.systemUser();
+		final long languageId = Long.parseLong(language);
+		List<String> listAddedKeys = new ArrayList<>();
+		String[] term;
 
-      Contentlet contentlet = (Contentlet) contentletFormData.get(WebKeys.CONTENTLET_EDIT);
-      if (null != contentlet) {
-        callbackData.put("isHtmlPage", contentlet.isHTMLPage());
-        callbackData.put("contentletType", contentlet.getContentType().variable());
-        callbackData.put("contentletBaseType", contentlet.getContentType().baseType().name());
+		List<LanguageKey> props = retrieveProperties(languageId);
+		valueToComplete = valueToComplete.toLowerCase();
+		for (LanguageKey prop : props) {
+			if (prop.getKey().toLowerCase().startsWith(valueToComplete)) {
+				term = new String[]{prop.getKey(),
+						(70 < prop.getValue().length() ? prop.getValue().substring(0, 69)
+								: prop.getValue())};
+				list.add(term);
+				listAddedKeys.add(prop.getKey());
+			}
 
-        // Cleaning up as we don't need more calculations as the Contenlet was deleted
-        if (contentletFormData.containsKey(WebKeys.CONTENTLET_DELETED)
-            && (Boolean) contentletFormData.get(WebKeys.CONTENTLET_DELETED)) {
-          contentlet = null;
-        }
-      }
+		if(list.size() < limit){
+			List<KeyValue> languageVariables = APILocator.getLanguageVariableAPI().getAllLanguageVariablesKeyStartsWith(valueToComplete,languageId,systemUser,limit);
+			for (KeyValue languageVariable : languageVariables) {
+				if(!listAddedKeys.contains(languageVariable.getKey())) {
+					term = new String[]{languageVariable.getKey(),
+							(70 < languageVariable.getValue().length() ? languageVariable.getValue()
+									.substring(0, 69) : languageVariable.getValue())};
+					list.add(term);
+				}
+				if(list.size() == limit){
+					break;
+				}
+			}
+			}
+		}
+		return list;
+	}
 
-      if (contentlet != null) {
-        callbackData.put("contentletIdentifier", contentlet.getIdentifier());
-        callbackData.put("contentletInode", contentlet.getInode());
-        callbackData.put("contentletLocked", contentlet.isLocked());
+	private List<LanguageKey> retrieveProperties(long langId) throws Exception {
+		Language lang = langAPI.getLanguage(langId);
+		return langAPI.getLanguageKeys(lang);
+	}
 
-        if (contentlet.isHTMLPage()) {
-          HTMLPageAsset page = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
-          callbackData.put(
-              "htmlPageReferer",
-              page.getURI()
-                  + "?"
-                  + WebKeys.HTMLPAGE_LANGUAGE
-                  + "="
-                  + page.getLanguageId()
-                  + "&host_id="
-                  + page.getHost());
-          boolean contentLocked = false;
-          boolean iCanLock = false;
+	/**
+	 * Publishes or unpublishes contentlets from a given list of identifiers.  You can have to publish within
+	 * a specific language or all languages.  Set the languageId = 0 for all languages.
+	 * @param identifiersList
+	 * @param isPublish whether it should publish or unpublish the contentlets
+	 * @param languageId if set to 0 will publish for all languages
+	 * @return
+	 */
+	@CloseDB
+	public List<Map<String, Object>> publishContentlets(List<String> identifiersList, boolean isPublish, long languageId) {
+		List<Map<String, Object>> rows = new ArrayList<Map<String, Object>>();
+		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
 
-          try {
-            contentLocked = page.isLocked();
-            iCanLock = APILocator.getContentletAPI().canLock(contentlet, user);
-          } catch (DotLockException e) {
-            iCanLock = false;
-            contentLocked = false;
-          }
-          PageMode.setPageMode(req, contentLocked, iCanLock);
+		for (int x = 0; x < identifiersList.size(); x++) {
 
-          final String previousTemplateId = (String) contentletFormData.get("currentTemplateId");
+			String id = identifiersList.get(x);
 
-          if (UtilMethods.isSet(previousTemplateId)
-              && !previousTemplateId.equals(page.getTemplateId())) {
-            final User systemUser = APILocator.systemUser();
-            final Template previousTemplate =
-                APILocator.getTemplateAPI()
-                    .findWorkingTemplate(previousTemplateId, systemUser, false);
+			try {
+				User currentUser = com.liferay.portal.util.PortalUtil.getUser(req);
+				Contentlet contentlet = new Contentlet();
+				List<Contentlet> contentletList = new ArrayList<Contentlet>();
+				if(languageId == 0){
+					contentlet = conAPI.findContentletByIdentifier(id, false, langAPI.getDefaultLanguage().getId(), currentUser, false);
+					contentletList = conAPI.getAllLanguages(contentlet, false, currentUser, false);
+				}else{
+					contentlet = conAPI.findContentletByIdentifier(id, false, languageId, currentUser, false);
+					contentletList.add(contentlet);
+				}
 
-            if (UtilMethods.isSet(previousTemplate) && previousTemplate.isAnonymous()) {
-              APILocator.getTemplateAPI().delete(previousTemplate, systemUser, false);
-            }
-          }
-        }
-      }
 
-      if (publish && contentlet != null) {
-        ContentletAPI capi = APILocator.getContentletAPI();
-        capi.publish(contentlet, user, true);
-        capi.unlock(contentlet, user, true);
-        callbackData.put("contentletLocked", contentlet.isLocked());
-      }
+				for (Contentlet cont : contentletList) {
 
-      if (contentlet != null
-          && contentlet.getStructure().getVelocityVarName().equalsIgnoreCase("host")) {
-        String copyOptionsStr = (String) contentletFormData.get("copyOptions");
-        CopyHostContentUtil copyHostContentUtil = new CopyHostContentUtil();
-        if (UtilMethods.isSet(copyOptionsStr)) {
-          copyHostContentUtil.checkHostCopy(contentlet, user, copyOptionsStr);
-        }
-      }
+					if (isPublish) {
 
-      String urlMap = null;
-      if (contentlet != null) urlMap = contentlet.getStructure().getUrlMapPattern();
-      if (UtilMethods.isSet(urlMap) && !urlMap.equals("/")) {
-        if (UtilMethods.isSet(referer)) {
-          List<RegExMatch> matches =
-              RegEX.find(referer, StructureUtil.generateRegExForURLMap(urlMap));
-          if (matches != null && matches.size() > 0) {
-            String[] urlFrags = urlMap.split("/");
-            Map<String, Integer> vars = new HashMap<String, Integer>();
-            int index = 0;
-            for (String frag : urlFrags) {
-              if (UtilMethods.isSet(frag)) {
-                if (frag.startsWith("{")) {
-                  vars.put(frag.substring(frag.indexOf("{") + 1, frag.indexOf("}")), index);
-                }
-              }
-              index++;
-            }
-            if (!vars.isEmpty()) {
-              String[] refererVars = referer.split("/");
-              for (String var : vars.keySet()) {
-                String contVar = contentlet.get(var) != null ? (String) contentlet.get(var) : "";
-                String refererVar = refererVars[vars.get(var)];
-                if (UtilMethods.isSet(contVar) && !contVar.equals(refererVar)) {
-                  refererVars[vars.get(var)] = contVar;
-                }
-              }
-              if (refererVars.length > 0) {
-                StringBuilder refererPattern = new StringBuilder();
-                for (String ref : refererVars) {
-                  if (UtilMethods.isSet(ref)) {
-                    refererPattern.append("/");
-                    refererPattern.append(ref);
-                  }
-                }
-                if (UtilMethods.isSet(refererPattern.toString())) {
-                  refererPattern.append("/");
-                  referer = refererPattern.toString();
-                }
-              }
-            }
-          }
-        }
-      }
+						if(!cont.isLive()){
+							conAPI.publish(cont, currentUser, false);
+						}
 
-      if (UtilMethods.isSet(contentlet) && UtilMethods.isSet(contentlet.getIdentifier())) {
-        callbackData.put("allLangContentlets", findAllLangContentlets(contentlet.getIdentifier()));
-      }
+					} else {
 
-      // everything Ok? then commit
-      HibernateUtil.closeAndCommitTransaction();
+						if (cont.isLive()) {
+							conAPI.unpublish(cont, currentUser, false);
+						}
+					}
+					if(languageId == 0){//DOTCMS-5182
+						cont = conAPI.findContentletByIdentifier(id, false, langAPI.getDefaultLanguage().getId(), currentUser, false);
+					}else{
+						cont = conAPI.findContentletByIdentifier(id, false, languageId, currentUser, false);
+					}
+					rows.add(cont.getMap());
+				}
 
-      // clean up tmp_binary
-      // https://github.com/dotCMS/dotCMS/issues/2921
-      if (contentlet != null) {
-        for (Field ff : FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode())) {
-          if (ff.getFieldType().equals(FieldType.BINARY.toString())) {
-            File tmp =
-                new File(
-                    APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
-                        + File.separator
-                        + user.getUserId()
-                        + File.separator
-                        + ff.getFieldContentlet());
-            FileUtil.deltree(tmp);
-          }
-        }
-      }
-    } catch (DotLockException dse) {
-      String errorString = LanguageUtil.get(user, "message.content.locked");
-      saveContentErrors.add(errorString);
-      clearBinary = false;
-    } catch (DotSecurityException dse) {
-      String errorString =
-          LanguageUtil.get(user, "message.insufficient.permissions.to.save")
-              + ". "
-              + dse.getMessage();
-      saveContentErrors.add(errorString);
-      clearBinary = false;
-    } catch (PublishStateException pe) {
-      String errorString = LanguageUtil.get(user, pe.getMessage());
-      saveContentErrors.add(errorString);
-      clearBinary = false;
-    } catch (DotLanguageException e) {
-      saveContentErrors.add(e.getMessage());
-      callbackData.put("saveContentErrors", saveContentErrors);
-      callbackData.put("referer", referer);
-      clearBinary = false;
-      return callbackData;
-    } catch (final Exception e) {
+			} catch (DotDataException e) {
+				Logger.error(this, "Error trying to obtain the contentlets from the relationship.", e);
 
-      if (e instanceof DotContentletValidationException) {
-        final DotContentletValidationException ve = DotContentletValidationException.class.cast(e);
-        clearBinary = handleValidationException(user, ve, saveContentErrors);
-      } else {
-        final Throwable rootCause = getRootCause(e);
-        if (rootCause instanceof DotContentletValidationException) {
-          final DotContentletValidationException ve =
-              DotContentletValidationException.class.cast(rootCause);
-          clearBinary = handleValidationException(user, ve, saveContentErrors);
-        } else {
-          Logger.error(this, e.getMessage(), e);
-          saveContentErrors.add(e.getMessage());
-          callbackData.put("saveContentErrors", saveContentErrors);
-          callbackData.put("referer", referer);
-          clearBinary = false;
-          return callbackData;
-        }
-      }
-    } finally {
+			}catch (DotSecurityException e) {
+				Logger.error(this, "Security exception.", e);
+			}
+		}
+		return rows;
+	}
 
-      if (saveContentErrors.size() > 0) {
-        try {
-          HibernateUtil.rollbackTransaction();
-
-          Contentlet contentlet = (Contentlet) contentletFormData.get(WebKeys.CONTENTLET_EDIT);
-          if (contentlet != null) {
-            callbackData.remove("contentletIdentifier");
-            callbackData.remove("contentletInode");
-            callbackData.remove("contentletLocked");
-            newInode = null;
-          }
-        } catch (DotHibernateException e) {
-          Logger.warn(this, e.getMessage(), e);
-        }
-      }
-
-      if (!isAutoSave && (saveContentErrors != null && saveContentErrors.size() > 0)) {
-        callbackData.put("saveContentErrors", saveContentErrors);
-        SessionMessages.clear(req.getSession());
-      }
-      if (clearBinary) { // if an error occur with any other field (was unique, required, length,
-        // pattern or bad type) when saving the contentlet, do not clear the binary
-        // field
-        // If an error occurred, manually delete all other uploaded binary
-        // files since they were not included in the Hibernate transaction
-        try {
-          HttpSession ses = req.getSession();
-          List<String> tempBinaryImageInodes =
-              (List<String>) ses.getAttribute(Contentlet.TEMP_BINARY_IMAGE_INODES_LIST);
-          if (UtilMethods.isSet(tempBinaryImageInodes) && tempBinaryImageInodes.size() > 0) {
-            for (String inode : tempBinaryImageInodes) {
-              Contentlet contentlet =
-                  conAPI.find(inode, APILocator.getUserAPI().getSystemUser(), false);
-              if (contentlet != null) {
-                conAPI.archive(contentlet, user, false);
-                conAPI.delete(contentlet, APILocator.getUserAPI().getSystemUser(), false, true);
-              }
-            }
-            tempBinaryImageInodes.clear();
-          }
-        } catch (DotContentletStateException e1) {
-          Logger.warn(this, "Could not delete temporary image inode", e1);
-        } catch (DotDataException e1) {
-          Logger.warn(this, "Could not delete temporary image inode", e1);
-        } catch (DotSecurityException e1) {
-          Logger.warn(this, "Could not delete temporary image inode", e1);
-        }
-      }
-    }
-
-    if (!isAutoSave && (saveContentErrors == null || saveContentErrors.size() == 0)) {
-
-      if (referer.contains("referer")) {
-        String ref = "referer=";
-        String sourceReferer =
-            referer.substring(referer.indexOf(ref) + ref.length(), referer.length());
-        referer = referer.substring(0, referer.indexOf(ref));
-        callbackData.put("sourceReferer", sourceReferer);
-      }
-
-      Logger.debug(this, "AFTER PUBLISH LANGUAGE=" + language);
-
-      if (UtilMethods.isSet(language) && referer.indexOf("language") > -1) {
-        Logger.debug(this, "Replacing referer language=" + referer);
-        referer =
-            referer.replaceAll(
-                "language=([0-9])*",
-                com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE + "=" + language);
-        Logger.debug(this, "Referer after being replaced=" + referer);
-      } else {
-        referer = referer + "&language=" + language;
-      }
-    }
-
-    callbackData.put("referer", referer);
-
-    return callbackData;
-  }
-
-  /**
-   * This code has been extracted into a separate method so we can use it when original exception
-   * has been wrapped within a Runtime Exception
-   *
-   * @param user
-   * @param ve
-   * @param saveContentErrors
-   * @return
-   * @throws LanguageException
-   */
-  private boolean handleValidationException(
-      final User user,
-      final DotContentletValidationException ve,
-      final List<String> saveContentErrors)
-      throws LanguageException {
-    boolean clearBinary = true;
-    if (ve instanceof FileAssetValidationException) {
-      final List<Field> reqs =
-          ve.getNotValidFields().get(DotContentletValidationException.VALIDATION_FAILED_BADTYPE);
-      for (final Field field : reqs) {
-        String errorString = LanguageUtil.get(user, ve.getMessage());
-        errorString = errorString.replace("{0}", field.getFieldName());
-        saveContentErrors.add(errorString);
-      }
-
-    } else {
-
-      if (ve.hasRequiredErrors()) {
-        final List<Field> reqs =
-            ve.getNotValidFields().get(DotContentletValidationException.VALIDATION_FAILED_REQUIRED);
-        for (final Field field : reqs) {
-          String errorString = LanguageUtil.get(user, "message.contentlet.required");
-          errorString = errorString.replace("{0}", field.getFieldName());
-          saveContentErrors.add(errorString);
-        }
-        clearBinary = false;
-      }
-
-      if (ve.hasLengthErrors()) {
-        final List<Field> reqs =
-            ve.getNotValidFields()
-                .get(DotContentletValidationException.VALIDATION_FAILED_MAXLENGTH);
-        for (Field field : reqs) {
-          String errorString = LanguageUtil.get(user, "message.contentlet.maxlength");
-          errorString = errorString.replace("{0}", field.getFieldName());
-          errorString = errorString.replace("{1}", "255");
-          saveContentErrors.add(errorString);
-        }
-        clearBinary = false;
-      }
-
-      if (ve.hasPatternErrors()) {
-        List<Field> reqs =
-            ve.getNotValidFields().get(DotContentletValidationException.VALIDATION_FAILED_PATTERN);
-        for (final Field field : reqs) {
-          String errorString = LanguageUtil.get(user, "message.contentlet.format");
-          errorString = errorString.replace("{0}", field.getFieldName());
-          saveContentErrors.add(errorString);
-        }
-        clearBinary = false;
-      }
-
-      if (ve.hasBadTypeErrors()) {
-        final List<Field> reqs =
-            ve.getNotValidFields().get(DotContentletValidationException.VALIDATION_FAILED_BADTYPE);
-        for (final Field field : reqs) {
-          String errorString = LanguageUtil.get(user, "message.contentlet.type");
-          errorString = errorString.replace("{0}", field.getFieldName());
-          saveContentErrors.add(errorString);
-        }
-        clearBinary = false;
-      }
-
-      if (ve.hasRelationshipErrors()) {
-        StringBuilder sb = new StringBuilder("<br>");
-        final Map<String, Map<Relationship, List<Contentlet>>> notValidRelationships =
-            ve.getNotValidRelationship();
-        final Set<String> auxKeys = notValidRelationships.keySet();
-        for (final String key : auxKeys) {
-          StringBuilder errorMessage = new StringBuilder();
-          if (key.equals(DotContentletValidationException.VALIDATION_FAILED_REQUIRED_REL)) {
-            errorMessage
-                .append("<b>")
-                .append(LanguageUtil.get(user, "message.contentlet.relationship.required"))
-                .append("</b>");
-          } else if (key.equals(
-              DotContentletValidationException.VALIDATION_FAILED_INVALID_REL_CONTENT)) {
-            errorMessage
-                .append("<b>")
-                .append(LanguageUtil.get(user, "message.contentlet.relationship.invalid"))
-                .append("</b>");
-          } else if (key.equals(DotContentletValidationException.VALIDATION_FAILED_BAD_REL)) {
-            errorMessage
-                .append("<b>")
-                .append(LanguageUtil.get(user, "message.contentlet.relationship.bad"))
-                .append("</b>");
-          } else if (key.equals(
-              DotContentletValidationException.VALIDATION_FAILED_BAD_CARDINALITY)) {
-            errorMessage
-                .append("<b>")
-                .append(LanguageUtil.get(user, "message.contentlet.relationship.cardinality.bad"))
-                .append("</b>");
-          }
-
-          sb.append(errorMessage).append(":<br>");
-          final Map<Relationship, List<Contentlet>> relationshipContentlets =
-              notValidRelationships.get(key);
-
-          for (final Entry<Relationship, List<Contentlet>> relationship :
-              relationshipContentlets.entrySet()) {
-            sb.append(relationship.getKey().getRelationTypeValue()).append(", ");
-          }
-          sb.append("<br>");
-        }
-        sb.append("<br>");
-
-        // need to update message to support multiple relationship validation errors
-        String errorString = LanguageUtil.get(user, "message.relationship.required_ext");
-        errorString = errorString.replace("{0}", sb.toString());
-        saveContentErrors.add(errorString);
-        clearBinary = false;
-      }
-
-      if (ve.hasUniqueErrors()) {
-        final List<Field> reqs =
-            ve.getNotValidFields().get(DotContentletValidationException.VALIDATION_FAILED_UNIQUE);
-        for (final Field field : reqs) {
-          String errorString = LanguageUtil.get(user, "message.contentlet.unique");
-          errorString = errorString.replace("{0}", field.getFieldName());
-          saveContentErrors.add(errorString);
-        }
-        clearBinary = false;
-      }
-
-      if (ve.getMessage()
-          .contains(
-              "The content form submission data id different from the content which is trying to be edited")) {
-        String errorString = LanguageUtil.get(user, "message.contentlet.invalid.form");
-        saveContentErrors.add(errorString);
-      }
-
-      if (ve.getMessage().contains("message.contentlet.expired")) {
-        String errorString = LanguageUtil.get(user, "message.contentlet.expired");
-        saveContentErrors.add(errorString);
-      }
-    }
-    if (saveContentErrors.size() == 0) {
-      saveContentErrors.add(ve.getMessage());
-    }
-    return clearBinary;
-  }
-
-  @CloseDB
-  // http://jira.dotmarketing.net/browse/DOTCMS-2273
-  public String cancelContentEdit(
-      String workingContentletInode,
-      String currentContentletInode,
-      String referer,
-      String language) {
-
-    try {
+	/**
+	 *
+	 * @param
+	 * @param
+	 * @param
+	 * @return
+	 * @throws SystemException
+	 * @throws PortalException
+	 * @throws LanguageException
+	 */
+	//http://jira.dotmarketing.net/browse/DOTCMS-2273
+	@CloseDB
+	public Map<String,Object> saveContent(List<String> formData, boolean isAutoSave,boolean isCheckin, boolean publish) throws LanguageException, PortalException, SystemException {
+	  Map<String,Object> contentletFormData = new HashMap<String,Object>();
+	  Map<String,Object> callbackData = new HashMap<String,Object>();
+	  List<String> saveContentErrors = new ArrayList<String>(); 
+	  User user = null;
+      boolean clearBinary = true;//flag to check if the binary field needs to be cleared or not
       HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
-      User user = com.liferay.portal.util.PortalUtil.getUser(req);
-      // contentletWebAPI.cancelContentEdit(workingContentletInode,currentContentletInode,user);
-      HttpSession ses = req.getSession();
-      List<String> tempBinaryImageInodes =
-          (List<String>) ses.getAttribute(Contentlet.TEMP_BINARY_IMAGE_INODES_LIST);
-
-      if (UtilMethods.isSet(tempBinaryImageInodes) && tempBinaryImageInodes.size() > 0) {
-        for (String inode : tempBinaryImageInodes) {
-          conAPI.delete(
-              conAPI.find(inode, APILocator.getUserAPI().getSystemUser(), false),
-              APILocator.getUserAPI().getSystemUser(),
-              false,
-              true);
-        }
-        tempBinaryImageInodes.clear();
-      }
-
-      // if we are canceling the edition of a host, let's restore the default one for the site
-      // browser
-
-      Contentlet content = conAPI.find(workingContentletInode, user, false);
-      Structure structure = content.getStructure();
-
-      if (structure != null
-          && UtilMethods.isSet(structure.getInode())
-          && structure.getVelocityVarName().equals("Host")) {
-        Host defaultHost = APILocator.getHostAPI().findDefaultHost(user, false);
-        ses.setAttribute(
-            com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, defaultHost.getIdentifier());
-      }
-
-    } catch (Exception ae) {
-      Logger.debug(this, "Error trying to cancelContentEdit");
-    }
-
-    if (referer.contains("language")) {
-      referer =
-          referer.replaceAll(
-              "language=([0-9])*",
-              com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE + "=" + language);
-    } else {
-      referer = referer + "&language=" + language;
-    }
-    return referer;
-  }
-
-  @CloseDB
-  public Map<String, Object> saveContentProperties(
-      String inode, List<String> formData, boolean isAutoSave, boolean isCheckin, boolean isPublish)
-      throws PortalException, SystemException, DotDataException, DotSecurityException {
-    HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
-    User user = com.liferay.portal.util.PortalUtil.getUser((HttpServletRequest) req);
-    Contentlet cont = conAPI.find(inode, user, false);
-    Map<String, Object> contentletFormData = new HashMap<String, Object>();
-    Map<String, Object> callbackData = new HashMap<String, Object>();
-    List<String> saveContentErrors = new ArrayList<String>();
-    callbackData.put("contentletInode", inode);
-    // Storing form data into map.
-    for (Iterator iterator = formData.iterator(); iterator.hasNext(); ) {
-      String element = (String) iterator.next();
-
-      if (!com.dotmarketing.util.UtilMethods.isSet(element)) continue;
-
-      String elementName =
-          element.substring(0, element.indexOf(WebKeys.CONTENTLET_FORM_NAME_VALUE_SEPARATOR));
-      Object elementValue =
-          element.substring(
-              element.indexOf(WebKeys.CONTENTLET_FORM_NAME_VALUE_SEPARATOR)
-                  + WebKeys.CONTENTLET_FORM_NAME_VALUE_SEPARATOR.length());
-
-      if (!UtilMethods.isSet(elementName)) continue;
-
-      if (!UtilMethods.isSet(elementValue)) elementValue = "";
-
-      if (elementValue.toString().trim().equals("<p><br></p>")) elementValue = "";
-
-      contentletFormData.put(elementName, elementValue);
-    }
-
-    Structure structure = null;
-    if (!contentletFormData.isEmpty()) {
-      structure = cont.getStructure();
-      for (Field f : FieldsCache.getFieldsByStructureInode(structure.getInode())) {
-        for (String key : contentletFormData.keySet()) {
-          if (f.getVelocityVarName().toString().equals(key)) {
-            conAPI.setContentletProperty(cont, f, contentletFormData.get(key));
-          }
-        }
-      }
-    }
-    try {
-      HibernateUtil.startTransaction();
-      Map<Relationship, List<Contentlet>> contentRelationships =
-          new HashMap<Relationship, List<Contentlet>>();
-      List<Relationship> rels = FactoryLocator.getRelationshipFactory().byContentType(structure);
-      for (Relationship r : rels) {
-        if (!contentRelationships.containsKey(r)) {
-          contentRelationships.put(r, new ArrayList<Contentlet>());
-        }
-        List<Contentlet> cons = conAPI.getRelatedContent(cont, r, user, true);
-        for (Contentlet co : cons) {
-          List<Contentlet> l2 = contentRelationships.get(r);
-          l2.add(co);
-        }
-      }
-
-      conAPI.validateContentlet(
-          cont, contentRelationships, APILocator.getCategoryAPI().getParents(cont, user, false));
-
-      cont.setIndexPolicy(IndexPolicyProvider.getInstance().forSingleContent());
-
-      if (isPublish) { // DOTCMS-5514
-        conAPI.checkin(
-            cont,
-            contentRelationships,
-            APILocator.getCategoryAPI().getParents(cont, user, false),
-            APILocator.getPermissionAPI().getPermissions(cont, false, true),
-            user,
-            false);
-        APILocator.getVersionableAPI().setLive(cont);
-      } else {
-        // cont.setLive(false);
-        Contentlet draftContentlet =
-            conAPI.saveDraft(
-                cont,
-                contentRelationships,
-                APILocator.getCategoryAPI().getParents(cont, user, false),
-                APILocator.getPermissionAPI().getPermissions(cont, false, true),
-                user,
-                false);
-
-        callbackData.put("isNewContentletInodeHtmlPage", draftContentlet.isHTMLPage());
-        callbackData.put("newContentletInode", draftContentlet.getInode());
-      }
-    } catch (DotContentletValidationException ve) {
-
-      if (ve.hasRequiredErrors()) {
-        List<Field> reqs =
-            ve.getNotValidFields().get(DotContentletValidationException.VALIDATION_FAILED_REQUIRED);
-        for (Field field : reqs) {
-          String errorString = LanguageUtil.get(user, "message.contentlet.required");
-          errorString = errorString.replace("{0}", field.getFieldName());
-          saveContentErrors.add(errorString);
-        }
-      }
-
-      if (ve.hasLengthErrors()) {
-        List<Field> reqs =
-            ve.getNotValidFields()
-                .get(DotContentletValidationException.VALIDATION_FAILED_MAXLENGTH);
-        for (Field field : reqs) {
-          String errorString = LanguageUtil.get(user, "message.contentlet.maxlength");
-          errorString = errorString.replace("{0}", field.getFieldName());
-          errorString = errorString.replace("{1}", "255");
-          saveContentErrors.add(errorString);
-        }
-      }
-
-      if (ve.hasPatternErrors()) {
-        List<Field> reqs =
-            ve.getNotValidFields().get(DotContentletValidationException.VALIDATION_FAILED_PATTERN);
-        for (Field field : reqs) {
-          String errorString = LanguageUtil.get(user, "message.contentlet.format");
-          errorString = errorString.replace("{0}", field.getFieldName());
-          saveContentErrors.add(errorString);
-        }
-      }
-
-      if (ve.hasRelationshipErrors()) {
-        StringBuffer sb = new StringBuffer("<br>");
-        Map<String, Map<Relationship, List<Contentlet>>> notValidRelationships =
-            ve.getNotValidRelationship();
-        Set<String> auxKeys = notValidRelationships.keySet();
-        for (String key : auxKeys) {
-          String errorMessage = "";
-          if (key.equals(DotContentletValidationException.VALIDATION_FAILED_REQUIRED_REL)) {
-            errorMessage = "<b>Required Relationship</b>";
-          } else if (key.equals(
-              DotContentletValidationException.VALIDATION_FAILED_INVALID_REL_CONTENT)) {
-            errorMessage = "<b>Invalid Relationship-Contentlet</b>";
-          } else if (key.equals(DotContentletValidationException.VALIDATION_FAILED_BAD_REL)) {
-            errorMessage = "<b>Bad Relationship</b>";
-          }
-
-          sb.append(errorMessage + ":<br>");
-          Map<Relationship, List<Contentlet>> relationshipContentlets =
-              notValidRelationships.get(key);
-
-          for (Entry<Relationship, List<Contentlet>> relationship :
-              relationshipContentlets.entrySet()) {
-            sb.append(relationship.getKey().getRelationTypeValue() + ", ");
-          }
-          sb.append("<br>");
-        }
-        sb.append("<br>");
-
-        // need to update message to support multiple relationship validation errors
-        String errorString = LanguageUtil.get(user, "message.relationship.required_ext");
-        errorString = errorString.replace("{0}", sb.toString());
-        saveContentErrors.add(errorString);
-      }
-
-      if (ve.hasUniqueErrors()) {
-        List<Field> reqs =
-            ve.getNotValidFields().get(DotContentletValidationException.VALIDATION_FAILED_UNIQUE);
-        for (Field field : reqs) {
-          String errorString = LanguageUtil.get(user, "message.contentlet.unique");
-          errorString = errorString.replace("{0}", field.getFieldName());
-          saveContentErrors.add(errorString);
-        }
-      }
-
-      if (ve.getMessage()
-          .contains(
-              "The content form submission data id different from the content which is trying to be edited")) {
-        String errorString = LanguageUtil.get(user, "message.contentlet.invalid.form");
-        saveContentErrors.add(errorString);
-      }
-
-    } catch (DotSecurityException dse) {
-      String errorString = LanguageUtil.get(user, "message.insufficient.permissions.to.save");
-      saveContentErrors.add(errorString);
-
-    } catch (Exception e) {
-      String errorString = LanguageUtil.get(user, "message.contentlet.save.error");
-
-      saveContentErrors.add(
-          errorString + "<div style='color:silver;width:300px'>" + e.getMessage() + "</div>");
-      SessionMessages.clear(req.getSession());
-
-    } finally {
-      if (!isAutoSave && (saveContentErrors != null && saveContentErrors.size() > 0)) {
-        callbackData.put("saveContentErrors", saveContentErrors);
-        SessionMessages.clear(req.getSession());
-        HibernateUtil.rollbackTransaction();
-      } else {
-        HibernateUtil.closeAndCommitTransaction();
-        callbackData.put("saveContentSuccess", LanguageUtil.get(user, "message.contentlet.save"));
-      }
-    }
-
-    return callbackData;
-  }
-
-  @CloseDB
-  public void removeSiblingBinaryFromSession(String fieldContentlet) {
-    // http://jira.dotmarketing.net/browse/DOTCMS-5802
-    if (UtilMethods.isSet(fieldContentlet)) {
-      HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
-      req.getSession().removeAttribute(fieldContentlet + "-sibling");
-    }
-  }
-
-  @CloseDB
-  public String unrelateContent(
-      String contentletIdentifier, String identifierToUnrelate, String relationshipInode) {
-
-    // User info
-    HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
-    User currentUser = null;
-    try {
-      currentUser = com.liferay.portal.util.PortalUtil.getUser(req);
-    } catch (Exception e) {
-      Logger.error(this, "Error trying to obtain the current liferay user from the request.", e);
-    }
-
-    Contentlet currentContentlet;
-    Contentlet contentletToUnrelate;
-    Relationship relationship;
-    List<Contentlet> conList = new ArrayList<Contentlet>();
-    String resultStr = "Content Unrelated";
-    try {
-      currentContentlet = conAPI.find(contentletIdentifier, currentUser, false);
-      contentletToUnrelate = conAPI.find(identifierToUnrelate, currentUser, false);
-
-      relationship = FactoryLocator.getRelationshipFactory().byInode(relationshipInode);
-
-      conList.add(contentletToUnrelate);
-      FactoryLocator.getRelationshipFactory()
-          .deleteByContent(currentContentlet, relationship, conList);
-
-      // if contentletToUnrelate is related as new content, there exists the below relation which
-      // also needs to be deleted.
-      conList.clear();
-      conList.add(currentContentlet);
-      FactoryLocator.getRelationshipFactory()
-          .deleteByContent(contentletToUnrelate, relationship, conList);
-
-      conAPI.refresh(currentContentlet);
-      conAPI.refresh(contentletToUnrelate);
-
-      resultStr = LanguageUtil.get(currentUser, "Content-Unrelated");
-    } catch (DotDataException e) {
-      Logger.error(this, e.getMessage());
-    } catch (DotSecurityException e) {
-      Logger.error(this, e.getMessage());
-    } catch (LanguageException e) {
-      Logger.error(this, e.getMessage());
-    }
-    return resultStr;
-  }
-
-  public Map<String, String> lockContent(String contentletInode)
-      throws DotContentletStateException, DotDataException, DotSecurityException,
-          LanguageException {
-    // User info
-    HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
-    User currentUser = null;
-    try {
-      currentUser = com.liferay.portal.util.PortalUtil.getUser(req);
-    } catch (Exception e) {
-      Logger.error(this, "Error trying to obtain the current liferay user from the request.", e);
-    }
-    Contentlet c = conAPI.find(contentletInode, currentUser, false);
-
-    Map<String, String> ret = new HashMap<String, String>();
-    ret.put("lockedIdent", contentletInode);
-    try {
-      conAPI.lock(c, currentUser, false);
-
-      ret.put(
-          "lockedOn",
-          UtilMethods.capitalize(
-              DateUtil.prettyDateSince(
-                  APILocator.getVersionableAPI().getLockedOn(c), currentUser.getLocale())));
-      ret.put("lockedBy", currentUser.getFullName());
-
-    } catch (Exception ex) {
-      ret.put("Error", LanguageUtil.get(currentUser, "message.cannot.lock.content"));
-    }
-
-    return ret;
-  }
-
-  @CloseDB
-  public Map<String, String> unlockContent(String contentletInode)
-      throws DotContentletStateException, DotDataException, DotSecurityException,
-          LanguageException {
-    // User info
-    HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
-    User currentUser = null;
-    try {
-      currentUser = com.liferay.portal.util.PortalUtil.getUser(req);
-    } catch (Exception e) {
-      Logger.error(this, "Error trying to obtain the current liferay user from the request.", e);
-    }
-    Contentlet c = conAPI.find(contentletInode, currentUser, false);
-    conAPI.unlock(c, currentUser, false);
-    Map<String, String> ret = new HashMap<String, String>();
-    ret.put("lockedIdent", contentletInode);
-    return ret;
-  }
-
-  public Map<String, Object> saveBinaryFileOnContent(String fileName, String fieldInode)
-      throws DotContentletValidationException, Exception {
-
-    Map<String, Object> callbackData = new HashMap<String, Object>();
-    if (!UtilMethods.isImage(fileName)) {
-      return callbackData;
-    }
-
-    HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
-    User user = com.liferay.portal.util.PortalUtil.getUser((HttpServletRequest) req);
-    User sysUser = APILocator.getUserAPI().getSystemUser();
-
-    HttpSession ses = req.getSession();
-    List<String> tempBinaryImageInodes =
-        (List<String>) ses.getAttribute(Contentlet.TEMP_BINARY_IMAGE_INODES_LIST);
-
-    if (!UtilMethods.isSet(tempBinaryImageInodes))
-      ses.setAttribute(Contentlet.TEMP_BINARY_IMAGE_INODES_LIST, new ArrayList<String>());
-
-    tempBinaryImageInodes =
-        (List<String>) ses.getAttribute(Contentlet.TEMP_BINARY_IMAGE_INODES_LIST);
-    for (String tempBinaryImageInode : tempBinaryImageInodes) {
-      if (conAPI
-          .find(tempBinaryImageInode, sysUser, false)
-          .getStringProperty(FileAssetAPI.TITLE_FIELD)
-          .equalsIgnoreCase(fileName)) {
-        callbackData.put("contentletInode", tempBinaryImageInode);
-        return callbackData;
-      }
-    }
-
-    Contentlet newCont = new Contentlet();
-
-    Structure fileAssetStr =
-        CacheLocator.getContentTypeCache()
-            .getStructureByVelocityVarName(
-                FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME);
-
-    ContentletAPI conAPI = APILocator.getContentletAPI();
-
-    newCont.setStructureInode(fileAssetStr.getInode());
-
-    try {
-
-      newCont.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
-
-      for (Field field : FieldsCache.getFieldsByStructureVariableName(fileAssetStr.getInode())) {
-        if (field.getVelocityVarName().equals(FileAssetAPI.TITLE_FIELD))
-          conAPI.setContentletProperty(newCont, field, fileName);
-
-        if (field.getVelocityVarName().equals(FileAssetAPI.HOST_FOLDER_FIELD))
-          conAPI.setContentletProperty(
-              newCont, field, APILocator.getHostAPI().findSystemHost().getInode());
-
-        if (field.getVelocityVarName().equals(FileAssetAPI.BINARY_FIELD)) {
-
-          File binaryFile = null;
-          if (UtilMethods.isSet(fileName)) {
-            fileName = ContentletUtil.sanitizeFileName(fileName);
-            binaryFile =
-                new File(
-                    APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
-                        + File.separator
-                        + user.getUserId()
-                        + File.separator
-                        + FieldsCache.getField(fieldInode).getFieldContentlet()
-                        + File.separator
-                        + fileName.trim());
-          }
-
-          conAPI.setContentletProperty(newCont, field, binaryFile);
-        }
-      }
-
-      newCont = conAPI.checkin(newCont, sysUser, false);
-
-    } catch (Exception e) {
-      Logger.error(this, "Contentlet failed while creating new binary content", e);
-    }
-
-    // clean up tmp_binary
-    if (newCont != null) {
-      Field field = FieldsCache.getField(fieldInode);
-      if (field.getFieldType().equals(FieldType.BINARY.toString())) {
-        File tmp =
-            new File(
-                APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
-                    + File.separator
-                    + user.getUserId()
-                    + File.separator
-                    + field.getFieldContentlet());
-        FileUtil.deltree(tmp);
-      }
-    }
-
-    if (UtilMethods.isSet(newCont.getInode())) {
-      callbackData.put("contentletInode", newCont.getInode());
-      tempBinaryImageInodes.add(newCont.getInode());
-    }
-
-    return callbackData;
-  }
-
-  private List<Map<String, String>> findAllLangContentlets(final String contentletIdentifier) {
-
-    final Identifier identifier = new Identifier(contentletIdentifier);
-
-    final ImmutableList.Builder<Map<String, String>> builder = new ImmutableList.Builder<>();
-
-    final List<Language> allLanguages = langAPI.getLanguages();
-    allLanguages.forEach(
-        language -> {
-          try {
-            final Contentlet contentlet =
-                conAPI.findContentletForLanguage(language.getId(), identifier);
-            if (null != contentlet) {
-              builder.add(
-                  map(
-                      "inode",
-                      contentlet.getInode(),
-                      "identifier",
-                      contentletIdentifier,
-                      "languageId",
-                      language.getId() + ""));
-            } else {
-              builder.add(
-                  map(
-                      "inode",
-                      "",
-                      "identifier",
-                      contentletIdentifier,
-                      "languageId",
-                      language.getId() + ""));
+      String newInode = "";
+
+      String referer = "";
+      String language = "";
+      String strutsAction = "";
+      String recurrenceDaysOfWeek="";
+
+	  try {
+            HibernateUtil.startTransaction();
+
+
+	    int tempCount = 0;// To store multiple values opposite to a name. Ex: selected permissions & categories
+
+
+
+        user = com.liferay.portal.util.PortalUtil.getUser((HttpServletRequest)req);
+
+		// get the struts_action from the form data
+		for (String element:formData) {
+			if(element!=null) {
+    			String elementName = element.substring(0, element.indexOf(WebKeys.CONTENTLET_FORM_NAME_VALUE_SEPARATOR));
+    			if (elementName.startsWith("_") && elementName.endsWith("cmd")) {
+    				strutsAction = elementName.substring(0, elementName.indexOf("cmd"));
+    				break;
+    			}
+			}
+		}
+
+		// Storing form data into map.
+		for (String element:formData) {
+			if (!com.dotmarketing.util.UtilMethods.isSet(element))
+				continue;
+
+			String elementName = element.substring(0, element.indexOf(WebKeys.CONTENTLET_FORM_NAME_VALUE_SEPARATOR));
+			Object elementValue = element.substring(element.indexOf(WebKeys.CONTENTLET_FORM_NAME_VALUE_SEPARATOR) + WebKeys.CONTENTLET_FORM_NAME_VALUE_SEPARATOR.length());
+
+			if (element.startsWith(strutsAction))
+				elementName = elementName.substring(elementName
+						.indexOf(strutsAction)
+						+ strutsAction.length());
+
+			// Placed increments as Map holds unique keys.
+			if(elementName.equals("read")
+					||elementName.equals("write")
+					||elementName.equals("publish")){
+
+				tempCount++;
+				elementName = "selected_permission_"+tempCount+elementName;
+			}
+
+			if(elementName.equals("categories")){
+				tempCount++;
+				elementName = elementName+tempCount+"_";
+			}
+
+			if(!UtilMethods.isSet(elementName))
+				continue;
+
+			if(!UtilMethods.isSet(elementValue))
+				elementValue="";
+
+			if(elementName.equals("referer"))
+				referer = (String) elementValue;
+
+			if(elementName.equals("languageId"))
+				language = (String) elementValue;
+
+			if ( elementName.equals("recurrenceDaysOfWeek")) {
+				recurrenceDaysOfWeek= recurrenceDaysOfWeek + elementValue+ ",";
+			}
+			//http://jira.dotmarketing.net/browse/DOTCMS-3232
+			if(elementName.equalsIgnoreCase("hostId")){
+				callbackData.put("hostOrFolder",true);
+			}
+			
+			if(elementName.startsWith("text")){
+				elementValue = elementValue.toString().trim();
+			}
+			
+			//http://jira.dotmarketing.net/browse/DOTCMS-3463			
+			if(elementName.startsWith("binary")){
+				String binaryFileValue = (String) elementValue;
+				File binaryFile = null;
+				if(UtilMethods.isSet(binaryFileValue) && !binaryFileValue.equals("---removed---")){
+					Contentlet binaryContentlet =  new Contentlet();
+					try{
+						binaryContentlet = conAPI.find(binaryFileValue, APILocator.getUserAPI().getSystemUser(), false);
+					}catch(Exception e){
+						Logger.error(this.getClass(), "Problems finding binary content " + binaryFileValue, e);
+					}
+					if(UtilMethods.isSet(binaryContentlet) && UtilMethods.isSet(binaryContentlet.getInode())){
+						try {
+							elementValue = binaryContentlet.getBinary(FileAssetAPI.BINARY_FIELD);
+							binaryFile = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
+									+ File.separator + user.getUserId() + File.separator + "binary1"
+									+ File.separator + ((File)elementValue).getName());
+							if(binaryFile.exists())
+								elementValue = binaryFile;
+						} catch (IOException e) {}
+					}else{
+						binaryFileValue = ContentletUtil.sanitizeFileName(binaryFileValue);
+						binaryFile = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
+								+ File.separator + user.getUserId() + File.separator + elementName
+								+ File.separator + binaryFileValue);
+						if(binaryFile.exists()) {
+	    					try {
+	    					    // https://github.com/dotCMS/dotCMS/issues/35
+	    					    // making a copy just in case the transaction fails so
+	    					    // we can have the file for possible next attempts
+	                            File acopyFolder=new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
+	                                    + File.separator + user.getUserId() + File.separator + elementName
+	                                    + File.separator + UUIDGenerator.generateUuid());
+	                            if(!acopyFolder.exists())
+	                                acopyFolder.mkdir();
+	                            File acopy=new File(acopyFolder, binaryFileValue);
+	                            FileUtil.copyFile(binaryFile, acopy);
+	                            elementValue = acopy;
+	                        } catch (Exception e) {
+                                Logger.error(this, "can't make a copy of the uploaded file:" + e, e);
+                                String errorString = LanguageUtil.get(user,"message.event.recurrence.can.not.copy.uploaded.file");
+                                saveContentErrors.add(errorString);
+                                callbackData.put("saveContentErrors", saveContentErrors);
+                                return callbackData;
+                            }
+						}
+					}
+				}else{
+					elementValue = new File(binaryFileValue);
+				}
+			}
+			contentletFormData.put(elementName, elementValue);
+		}
+
+		contentletFormData.put("recurrenceDaysOfWeek", recurrenceDaysOfWeek);
+
+		if(contentletFormData.get("recurrenceOccurs")!=null &&
+		        contentletFormData.get("recurrenceOccurs").toString().equals("annually")){
+
+			if(Boolean.parseBoolean(contentletFormData.get("isSpecificDate").toString()) &&
+					!UtilMethods.isSet((String)contentletFormData.get("specificDayOfMonthRecY")) &&
+					!UtilMethods.isSet((String)contentletFormData.get("specificMonthOfYearRecY"))){
+				String errorString = LanguageUtil.get(user,"message.event.recurrence.invalid.date");
+				saveContentErrors.add(errorString);
+			}
+
+			if(Boolean.parseBoolean(contentletFormData.get("isSpecificDate").toString()) &&
+					UtilMethods.isSet((String)contentletFormData.get("specificDayOfMonthRecY"))
+					&& UtilMethods.isSet((String)contentletFormData.get("specificMonthOfYearRecY"))){
+				try{
+					Long.valueOf((String)contentletFormData.get("specificDayOfMonthRecY"));
+					contentletFormData.put("recurrenceDayOfMonth", (String)contentletFormData.get("specificDayOfMonthRecY"));
+				}catch (Exception e) {
+					String errorString = LanguageUtil.get(user,"message.event.recurrence.invalid.dayofmonth");
+					saveContentErrors.add(errorString);
+				}
+				try{
+					Long.valueOf((String)contentletFormData.get("specificMonthOfYearRecY"));
+					contentletFormData.put("recurrenceMonthOfYear", (String)contentletFormData.get("specificMonthOfYearRecY"));
+				}catch (Exception e) {
+					String errorString = LanguageUtil.get(user,"message.event.recurrence.invalid.monthofyear");
+					saveContentErrors.add(errorString);
+				}
+			}else{
+				contentletFormData.put("recurrenceDayOfMonth", "0");
+			}
+		}
+
+		  // if it is save and publish, the save event must be not generated
+		  newInode = contentletWebAPI
+				  .saveContent(contentletFormData, isAutoSave, isCheckin, user, !publish);
+
+		  Contentlet contentlet = (Contentlet) contentletFormData.get(WebKeys.CONTENTLET_EDIT);
+		  if (null != contentlet) {
+			  callbackData.put("isHtmlPage", contentlet.isHTMLPage());
+			  callbackData.put("contentletType", contentlet.getContentType().variable());
+			  callbackData.put("contentletBaseType", contentlet.getContentType().baseType().name());
+
+			  //Cleaning up as we don't need more calculations as the Contenlet was deleted
+			  if (contentletFormData.containsKey(WebKeys.CONTENTLET_DELETED)
+					  && (Boolean) contentletFormData.get(WebKeys.CONTENTLET_DELETED)) {
+				  contentlet = null;
+			  }
+		  }
+
+            if(contentlet != null){
+				callbackData.put("contentletIdentifier", contentlet.getIdentifier());
+				callbackData.put("contentletInode", contentlet.getInode());
+				callbackData.put("contentletLocked", contentlet.isLocked());
+
+                if(contentlet.isHTMLPage()) {
+                    HTMLPageAsset page = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
+                    callbackData.put("htmlPageReferer", page.getURI() + "?" + WebKeys.HTMLPAGE_LANGUAGE + "=" + page.getLanguageId() + "&host_id=" + page.getHost());
+                    boolean contentLocked = false;
+                    boolean iCanLock = false;
+                    
+                    try{
+                    	contentLocked = page.isLocked();
+                        iCanLock = APILocator.getContentletAPI().canLock(contentlet, user);
+                     }catch(DotLockException e){
+                        iCanLock=false;
+                        contentLocked = false;
+                     }
+                    PageMode.setPageMode(req, contentLocked, iCanLock);
+
+					final String previousTemplateId = (String) contentletFormData.get("currentTemplateId");
+
+					if (UtilMethods.isSet(previousTemplateId) && !previousTemplateId.equals(page.getTemplateId())) {
+						final User systemUser = APILocator.systemUser();
+						final Template previousTemplate = APILocator.getTemplateAPI().findWorkingTemplate(previousTemplateId,
+								systemUser, false);
+
+						if (UtilMethods.isSet(previousTemplate) && previousTemplate.isAnonymous()) {
+							APILocator.getTemplateAPI().delete(previousTemplate, systemUser, false);
+						}
+					}
+                }
+
+			}
+
+			if(publish && contentlet!=null){
+				ContentletAPI capi = APILocator.getContentletAPI();
+				capi.publish(contentlet, user, true);
+				capi.unlock(contentlet, user, true);
+				callbackData.put("contentletLocked", contentlet.isLocked());
+			}
+
+			if (contentlet!=null && contentlet.getStructure().getVelocityVarName().equalsIgnoreCase("host")) {
+				String copyOptionsStr = (String)contentletFormData.get("copyOptions");
+				CopyHostContentUtil copyHostContentUtil = new CopyHostContentUtil();
+				if (UtilMethods.isSet(copyOptionsStr)) {
+					copyHostContentUtil.checkHostCopy(contentlet, user, copyOptionsStr);
+				}
+
+			}
+
+			String urlMap = null;
+			if(contentlet!=null)
+			    urlMap=contentlet.getStructure().getUrlMapPattern();
+			if(UtilMethods.isSet(urlMap) && !urlMap.equals("/")){
+				if(UtilMethods.isSet(referer)){
+					List<RegExMatch> matches = RegEX.find(referer, StructureUtil.generateRegExForURLMap(urlMap));
+					if (matches != null && matches.size() > 0) {
+						String[] urlFrags = urlMap.split("/");
+						Map<String,Integer> vars = new HashMap<String, Integer>();
+						int index = 0;
+						for (String frag : urlFrags) {
+							if(UtilMethods.isSet(frag)){
+								if(frag.startsWith("{")){
+									vars.put(frag.substring(frag.indexOf("{")+1, frag.indexOf("}")), index);
+								}
+							}
+							index++;
+						}
+						if(!vars.isEmpty()){
+							String[] refererVars =referer.split("/");
+							for(String var: vars.keySet()){
+								String contVar = contentlet.get(var)!=null?(String)contentlet.get(var):"";
+								String refererVar = refererVars[vars.get(var)];
+								if(UtilMethods.isSet(contVar) && !contVar.equals(refererVar)){
+									refererVars[vars.get(var)] = contVar;
+								}
+							}
+							if(refererVars.length>0){
+								StringBuilder refererPattern = new StringBuilder();
+								for(String ref: refererVars){
+									if(UtilMethods.isSet(ref)){
+										refererPattern.append("/");
+										refererPattern.append(ref);
+									}
+								}
+								if(UtilMethods.isSet(refererPattern.toString())){
+									refererPattern.append("/");
+									referer = refererPattern.toString();
+								}
+
+							}
+						}
+					}
+				}
+			}
+
+
+		  if(UtilMethods.isSet(contentlet) && UtilMethods.isSet(contentlet.getIdentifier())){
+		    callbackData.put("allLangContentlets",
+					findAllLangContentlets(contentlet.getIdentifier())
+		    );
+		  }
+
+			// everything Ok? then commit
+			HibernateUtil.closeAndCommitTransaction();
+
+			// clean up tmp_binary
+			// https://github.com/dotCMS/dotCMS/issues/2921
+			if(contentlet!=null) {
+			    for(Field ff : FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode())) {
+			        if(ff.getFieldType().equals(FieldType.BINARY.toString())) {
+			            File tmp=new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
+			                    +File.separator+user.getUserId()+File.separator+ff.getFieldContentlet());
+			            FileUtil.deltree(tmp);
+			        }
+			    }
+			}
+	  }
+	  catch(DotLockException dse){
+		  String errorString = LanguageUtil.get(user,"message.content.locked");
+		  saveContentErrors.add(errorString);
+		  clearBinary = false;
+	  }
+	  catch(DotSecurityException dse){
+		  String errorString = LanguageUtil.get(user,"message.insufficient.permissions.to.save") + ". " + dse.getMessage();
+		  saveContentErrors.add(errorString);
+		  clearBinary = false;
+	  }
+	  catch ( PublishStateException pe ) {
+		  String errorString = LanguageUtil.get( user, pe.getMessage() );
+		  saveContentErrors.add( errorString );
+		  clearBinary = false;
+	  }
+	  catch ( DotLanguageException e ) {
+		  saveContentErrors.add( e.getMessage() );
+		  callbackData.put( "saveContentErrors", saveContentErrors );
+		  callbackData.put( "referer", referer );
+		  clearBinary = false;
+		  return callbackData;
+	  }
+	  catch(final Exception e){
+
+		  if (e instanceof DotContentletValidationException) {
+			  final DotContentletValidationException ve = DotContentletValidationException.class
+					  .cast(e);
+			  clearBinary = handleValidationException(user, ve, saveContentErrors);
+		  } else {
+			  final Throwable rootCause = getRootCause(e);
+			  if (rootCause instanceof DotContentletValidationException) {
+				  final DotContentletValidationException ve = DotContentletValidationException.class
+						  .cast(rootCause);
+				  clearBinary = handleValidationException(user, ve, saveContentErrors);
+			  } else {
+				  Logger.error(this, e.getMessage(), e);
+				  saveContentErrors.add(e.getMessage());
+				  callbackData.put("saveContentErrors", saveContentErrors);
+				  callbackData.put("referer", referer);
+				  clearBinary = false;
+				  return callbackData;
+			  }
+		  }
+		}
+		finally{
+			
+		    if(saveContentErrors.size()>0) {
+                try {
+                    HibernateUtil.rollbackTransaction();
+
+                    Contentlet contentlet = (Contentlet) contentletFormData.get(WebKeys.CONTENTLET_EDIT);
+                    if(contentlet!=null) {
+                        callbackData.remove("contentletIdentifier");
+                        callbackData.remove("contentletInode");
+                        callbackData.remove("contentletLocked");
+                        newInode=null;
+                    }
+                } catch (DotHibernateException e) {
+                    Logger.warn(this, e.getMessage(),e);
+                }
             }
-          } catch (DotDataException | DotSecurityException e) {
-            Logger.error(
-                ContentletAjax.class,
-                String.format(
-                    "Unable to get contentlet for identifier %s and language %s",
-                    contentletIdentifier, language),
-                e);
-          }
-        });
 
-    return builder.build();
-  }
+		    if(!isAutoSave
+					&&(saveContentErrors != null
+							&& saveContentErrors.size() > 0)){
+				callbackData.put("saveContentErrors", saveContentErrors);
+				SessionMessages.clear(req.getSession());
+
+			}
+		    if(clearBinary){//if an error occur with any other field (was unique, required, length, pattern or bad type) when saving the contentlet, do not clear the binary field
+			// If an error occurred, manually delete all other uploaded binary 
+		    // files since they were not included in the Hibernate transaction
+			try {
+				HttpSession ses = req.getSession();
+				List<String> tempBinaryImageInodes = (List<String>) ses
+						.getAttribute(Contentlet.TEMP_BINARY_IMAGE_INODES_LIST);
+				if (UtilMethods.isSet(tempBinaryImageInodes)
+						&& tempBinaryImageInodes.size() > 0) {
+					for (String inode : tempBinaryImageInodes) {
+						Contentlet contentlet = conAPI.find(inode, APILocator
+								.getUserAPI().getSystemUser(), false);
+						if (contentlet != null) {
+							conAPI.archive(contentlet, user, false);
+							conAPI.delete(contentlet, APILocator.getUserAPI()
+									.getSystemUser(), false, true);
+						}
+					}
+					tempBinaryImageInodes.clear();
+				}
+			} catch (DotContentletStateException e1) {
+				Logger.warn(this, "Could not delete temporary image inode", e1);
+			} catch (DotDataException e1) {
+				Logger.warn(this, "Could not delete temporary image inode", e1);
+			} catch (DotSecurityException e1) {
+				Logger.warn(this, "Could not delete temporary image inode", e1);
+			}
+		    }
+		}
+
+		if(!isAutoSave
+				&&(saveContentErrors == null
+						|| saveContentErrors.size() == 0)){
+
+			if(referer.contains("referer")){
+				String ref = "referer=";
+                String sourceReferer = referer.substring(referer.indexOf(ref)+ref.length(),referer.length());
+                referer = referer.substring(0,referer.indexOf(ref));
+                callbackData.put("sourceReferer", sourceReferer);
+			 }
+
+			Logger.debug(this, "AFTER PUBLISH LANGUAGE=" + language);
+
+			if (UtilMethods.isSet(language) && referer.indexOf("language") > -1) {
+				Logger.debug(this, "Replacing referer language=" + referer);
+				referer = referer.replaceAll("language=([0-9])*", com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE+"=" + language);
+				Logger.debug(this, "Referer after being replaced=" + referer);
+			}else{
+		          	referer = referer+"&language="+language;
+		    }
+
+		}
+
+		callbackData.put("referer", referer);
+
+		return callbackData;
+	}
+
+	/**
+	 * This code has been extracted into a separate method so we can use it when original exception has been wrapped within a Runtime Exception
+	 * @param user
+	 * @param ve
+	 * @param saveContentErrors
+	 * @return
+	 * @throws LanguageException
+	 */
+	private boolean handleValidationException(final User user,
+			final DotContentletValidationException ve, final List<String> saveContentErrors)
+			throws LanguageException {
+		boolean clearBinary = true;
+		if (ve instanceof FileAssetValidationException) {
+			final List<Field> reqs = ve.getNotValidFields()
+					.get(DotContentletValidationException.VALIDATION_FAILED_BADTYPE);
+			for (final Field field : reqs) {
+				String errorString = LanguageUtil.get(user, ve.getMessage());
+				errorString = errorString.replace("{0}", field.getFieldName());
+				saveContentErrors.add(errorString);
+			}
+
+		} else {
+
+			if (ve.hasRequiredErrors()) {
+				final List<Field> reqs = ve.getNotValidFields()
+						.get(DotContentletValidationException.VALIDATION_FAILED_REQUIRED);
+				for (final Field field : reqs) {
+					String errorString = LanguageUtil.get(user, "message.contentlet.required");
+					errorString = errorString.replace("{0}", field.getFieldName());
+					saveContentErrors.add(errorString);
+				}
+				clearBinary = false;
+			}
+
+			if (ve.hasLengthErrors()) {
+				final List<Field> reqs = ve.getNotValidFields()
+						.get(DotContentletValidationException.VALIDATION_FAILED_MAXLENGTH);
+				for (Field field : reqs) {
+					String errorString = LanguageUtil.get(user, "message.contentlet.maxlength");
+					errorString = errorString.replace("{0}", field.getFieldName());
+					errorString = errorString.replace("{1}", "255");
+					saveContentErrors.add(errorString);
+				}
+				clearBinary = false;
+			}
+
+			if (ve.hasPatternErrors()) {
+				List<Field> reqs = ve.getNotValidFields()
+						.get(DotContentletValidationException.VALIDATION_FAILED_PATTERN);
+				for (final Field field : reqs) {
+					String errorString = LanguageUtil.get(user, "message.contentlet.format");
+					errorString = errorString.replace("{0}", field.getFieldName());
+					saveContentErrors.add(errorString);
+				}
+				clearBinary = false;
+			}
+
+			if (ve.hasBadTypeErrors()) {
+				final List<Field> reqs = ve.getNotValidFields()
+						.get(DotContentletValidationException.VALIDATION_FAILED_BADTYPE);
+				for (final Field field : reqs) {
+					String errorString = LanguageUtil.get(user, "message.contentlet.type");
+					errorString = errorString.replace("{0}", field.getFieldName());
+					saveContentErrors.add(errorString);
+				}
+				clearBinary = false;
+			}
+
+			if (ve.hasRelationshipErrors()) {
+				StringBuilder sb = new StringBuilder("<br>");
+				final Map<String, Map<Relationship, List<Contentlet>>> notValidRelationships = ve
+						.getNotValidRelationship();
+				final Set<String> auxKeys = notValidRelationships.keySet();
+				for (final String key : auxKeys) {
+					StringBuilder errorMessage = new StringBuilder();
+					if (key.equals(
+							DotContentletValidationException.VALIDATION_FAILED_REQUIRED_REL)) {
+						errorMessage.append("<b>").append(LanguageUtil
+								.get(user, "message.contentlet.relationship.required"))
+								.append("</b>");
+					} else if (key
+							.equals(DotContentletValidationException.VALIDATION_FAILED_INVALID_REL_CONTENT)) {
+						errorMessage.append("<b>").append(LanguageUtil
+								.get(user, "message.contentlet.relationship.invalid"))
+								.append("</b>");
+					} else if (key
+							.equals(DotContentletValidationException.VALIDATION_FAILED_BAD_REL)) {
+						errorMessage.append("<b>").append(LanguageUtil
+								.get(user, "message.contentlet.relationship.bad"))
+								.append("</b>");
+					} else if (key
+							.equals(DotContentletValidationException.VALIDATION_FAILED_BAD_CARDINALITY)) {
+						errorMessage.append("<b>").append(LanguageUtil
+								.get(user, "message.contentlet.relationship.cardinality.bad"))
+								.append("</b>");
+					}
+
+					sb.append(errorMessage).append(":<br>");
+					final Map<Relationship, List<Contentlet>> relationshipContentlets = notValidRelationships
+							.get(key);
+
+					for (final Entry<Relationship, List<Contentlet>> relationship : relationshipContentlets
+							.entrySet()) {
+						sb.append(relationship.getKey().getRelationTypeValue()).append(", ");
+					}
+					sb.append("<br>");
+				}
+				sb.append("<br>");
+
+				//need to update message to support multiple relationship validation errors
+				String errorString = LanguageUtil.get(user, "message.relationship.required_ext");
+				errorString = errorString.replace("{0}", sb.toString());
+				saveContentErrors.add(errorString);
+				clearBinary = false;
+			}
+
+			if (ve.hasUniqueErrors()) {
+				final List<Field> reqs = ve.getNotValidFields()
+						.get(DotContentletValidationException.VALIDATION_FAILED_UNIQUE);
+				for (final Field field : reqs) {
+					String errorString = LanguageUtil.get(user, "message.contentlet.unique");
+					errorString = errorString.replace("{0}", field.getFieldName());
+					saveContentErrors.add(errorString);
+				}
+				clearBinary = false;
+			}
+
+			if (ve.getMessage().contains(
+					"The content form submission data id different from the content which is trying to be edited")) {
+				String errorString = LanguageUtil.get(user, "message.contentlet.invalid.form");
+				saveContentErrors.add(errorString);
+			}
+
+			if (ve.getMessage().contains("message.contentlet.expired")) {
+				String errorString = LanguageUtil.get(user, "message.contentlet.expired");
+				saveContentErrors.add(errorString);
+			}
+		}
+		if (saveContentErrors.size() == 0) {
+			saveContentErrors.add(ve.getMessage());
+		}
+		return clearBinary;
+	}
+
+
+	@CloseDB
+	//http://jira.dotmarketing.net/browse/DOTCMS-2273
+	public String cancelContentEdit(String workingContentletInode,String currentContentletInode,String referer,String language){
+
+		try{
+			HttpServletRequest req =WebContextFactory.get().getHttpServletRequest();
+			User user = com.liferay.portal.util.PortalUtil.getUser(req);
+			//contentletWebAPI.cancelContentEdit(workingContentletInode,currentContentletInode,user);
+			HttpSession ses = req.getSession();
+			List<String> tempBinaryImageInodes = (List<String>) ses.getAttribute(Contentlet.TEMP_BINARY_IMAGE_INODES_LIST);
+
+			if(UtilMethods.isSet(tempBinaryImageInodes) && tempBinaryImageInodes.size() > 0){
+				for(String inode : tempBinaryImageInodes){
+					conAPI.delete(conAPI.find(inode, APILocator.getUserAPI().getSystemUser(), false), APILocator.getUserAPI().getSystemUser(), false, true);
+				}
+				tempBinaryImageInodes.clear();
+			}
+
+			// if we are canceling the edition of a host, let's restore the default one for the site browser
+
+			Contentlet content = conAPI.find(workingContentletInode, user, false);
+			Structure structure = content.getStructure();
+
+			if(structure!= null && UtilMethods.isSet(structure.getInode()) && structure.getVelocityVarName().equals("Host")) {
+				Host defaultHost = APILocator.getHostAPI().findDefaultHost(user, false);
+				ses.setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID,defaultHost.getIdentifier() );
+			}
+
+		}
+		catch(Exception ae){
+			Logger.debug(this, "Error trying to cancelContentEdit");
+		}
+
+		if(referer.contains("language")){
+			referer = referer.replaceAll("language=([0-9])*", com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE+"=" + language);
+		}else{
+             referer = referer+"&language="+language;
+		}
+		return referer;
+	}
+
+	@CloseDB
+	public Map<String,Object> saveContentProperties(String inode, List<String> formData, boolean isAutoSave,boolean isCheckin,boolean isPublish) throws PortalException, SystemException, DotDataException, DotSecurityException{
+		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
+		User user = com.liferay.portal.util.PortalUtil.getUser((HttpServletRequest)req);
+		Contentlet cont  = conAPI.find(inode, user, false);
+		Map<String,Object> contentletFormData = new HashMap<String,Object>();
+		Map<String,Object> callbackData = new HashMap<String,Object>();
+		List<String> saveContentErrors = new ArrayList<String>();
+		callbackData.put("contentletInode",inode);
+		// Storing form data into map.
+		for (Iterator iterator = formData.iterator(); iterator.hasNext();) {
+			String element = (String) iterator.next();
+
+			if (!com.dotmarketing.util.UtilMethods.isSet(element))
+				continue;
+
+			String elementName = element.substring(0, element.indexOf(WebKeys.CONTENTLET_FORM_NAME_VALUE_SEPARATOR));
+			Object elementValue = element.substring(element.indexOf(WebKeys.CONTENTLET_FORM_NAME_VALUE_SEPARATOR) + WebKeys.CONTENTLET_FORM_NAME_VALUE_SEPARATOR.length());
+
+			if(!UtilMethods.isSet(elementName))
+				continue;
+
+			if(!UtilMethods.isSet(elementValue))
+				elementValue="";
+
+			if(elementValue.toString().trim().equals("<p><br></p>"))
+				elementValue="";
+
+			contentletFormData.put(elementName, elementValue);
+		}
+
+		Structure structure = null;
+		if(!contentletFormData.isEmpty()){
+			structure = cont.getStructure();
+			for(Field f: FieldsCache.getFieldsByStructureInode(structure.getInode())){
+				for(String key : contentletFormData.keySet()){
+					if(f.getVelocityVarName().toString().equals(key)){
+						conAPI.setContentletProperty(cont, f, contentletFormData.get(key));
+					}
+				}
+			}
+		}
+		try{
+			HibernateUtil.startTransaction();
+			Map<Relationship, List<Contentlet>> contentRelationships = new HashMap<Relationship, List<Contentlet>>();
+			List<Relationship> rels =  FactoryLocator.getRelationshipFactory().byContentType(structure);
+			for (Relationship r : rels) {
+				if (!contentRelationships.containsKey(r)) {
+					contentRelationships
+					.put(r, new ArrayList<Contentlet>());
+				}
+				List<Contentlet> cons = conAPI.getRelatedContent(
+						cont, r, user, true);
+				for (Contentlet co : cons) {
+					List<Contentlet> l2 = contentRelationships.get(r);
+					l2.add(co);
+				}
+			}
+
+			conAPI.validateContentlet(cont, contentRelationships, APILocator.getCategoryAPI().getParents(cont, user, false));
+
+			cont.setIndexPolicy(IndexPolicyProvider.getInstance().forSingleContent());
+
+			if(isPublish){//DOTCMS-5514
+				conAPI.checkin(cont, contentRelationships,
+						APILocator.getCategoryAPI().getParents(cont, user, false),
+						APILocator.getPermissionAPI().getPermissions(cont, false, true), user, false);
+				APILocator.getVersionableAPI().setLive(cont);
+			}else{
+				//cont.setLive(false);
+				Contentlet draftContentlet = conAPI.saveDraft(cont, contentRelationships,
+					APILocator.getCategoryAPI().getParents(cont, user, false),
+					APILocator.getPermissionAPI().getPermissions(cont, false, true), user, false);
+				
+                callbackData.put("isNewContentletInodeHtmlPage", draftContentlet.isHTMLPage());
+				callbackData.put("newContentletInode", draftContentlet.getInode());
+			}
+		}catch (DotContentletValidationException ve) {
+
+				if(ve.hasRequiredErrors()){
+					List<Field> reqs = ve.getNotValidFields().get(DotContentletValidationException.VALIDATION_FAILED_REQUIRED);
+					for (Field field : reqs) {
+						String errorString = LanguageUtil.get(user,"message.contentlet.required");
+						errorString = errorString.replace("{0}", field.getFieldName());
+						saveContentErrors.add(errorString);
+					}
+				}
+
+				if(ve.hasLengthErrors()){
+					List<Field> reqs = ve.getNotValidFields().get(DotContentletValidationException.VALIDATION_FAILED_MAXLENGTH);
+					for (Field field : reqs) {
+						String errorString = LanguageUtil.get(user,"message.contentlet.maxlength");
+						errorString = errorString.replace("{0}", field.getFieldName());
+						errorString = errorString.replace("{1}", "255");
+						saveContentErrors.add(errorString);
+					}
+				}
+
+				if(ve.hasPatternErrors()){
+					List<Field> reqs = ve.getNotValidFields().get(DotContentletValidationException.VALIDATION_FAILED_PATTERN);
+					for (Field field : reqs) {
+						String errorString = LanguageUtil.get(user,"message.contentlet.format");
+						errorString = errorString.replace("{0}", field.getFieldName());
+						saveContentErrors.add(errorString);
+					}
+				}
+
+				if(ve.hasRelationshipErrors()){
+					StringBuffer sb = new StringBuffer("<br>");
+					Map<String,Map<Relationship,List<Contentlet>>> notValidRelationships = ve.getNotValidRelationship();
+					Set<String> auxKeys = notValidRelationships.keySet();
+					for(String key : auxKeys)
+					{
+						String errorMessage = "";
+						if(key.equals(DotContentletValidationException.VALIDATION_FAILED_REQUIRED_REL))
+						{
+							errorMessage = "<b>Required Relationship</b>";
+						}
+						else if(key.equals(DotContentletValidationException.VALIDATION_FAILED_INVALID_REL_CONTENT))
+						{
+							errorMessage = "<b>Invalid Relationship-Contentlet</b>";
+						}
+						else if(key.equals(DotContentletValidationException.VALIDATION_FAILED_BAD_REL))
+						{
+							errorMessage = "<b>Bad Relationship</b>";
+						}
+
+						sb.append(errorMessage + ":<br>");
+						Map<Relationship,List<Contentlet>> relationshipContentlets = notValidRelationships.get(key);
+
+						for(Entry<Relationship,List<Contentlet>> relationship : relationshipContentlets.entrySet())
+						{
+							sb.append(relationship.getKey().getRelationTypeValue() + ", ");
+						}
+						sb.append("<br>");
+					}
+					sb.append("<br>");
+
+					//need to update message to support multiple relationship validation errors
+					String errorString = LanguageUtil.get(user,"message.relationship.required_ext");
+					errorString = errorString.replace("{0}", sb.toString());
+					saveContentErrors.add(errorString);
+				}
+
+				if(ve.hasUniqueErrors()){
+					List<Field> reqs = ve.getNotValidFields().get(DotContentletValidationException.VALIDATION_FAILED_UNIQUE);
+					for (Field field : reqs) {
+						String errorString = LanguageUtil.get(user,"message.contentlet.unique");
+						errorString = errorString.replace("{0}", field.getFieldName());
+						saveContentErrors.add(errorString);
+					}
+				}
+
+				if(ve.getMessage().contains("The content form submission data id different from the content which is trying to be edited")){
+					String errorString = LanguageUtil.get(user,"message.contentlet.invalid.form");
+					saveContentErrors.add(errorString);
+				}
+
+			}
+
+			catch(DotSecurityException dse){
+				String errorString = LanguageUtil.get(user,"message.insufficient.permissions.to.save");
+				saveContentErrors.add(errorString);
+
+			}
+
+			catch (Exception e) {
+				String errorString = LanguageUtil.get(user,"message.contentlet.save.error");
+
+
+
+
+				saveContentErrors.add(errorString + "<div style='color:silver;width:300px'>" + e.getMessage() + "</div>");
+				SessionMessages.clear(req.getSession());
+
+			}
+
+			finally{
+				if(!isAutoSave
+						&&(saveContentErrors != null
+								&& saveContentErrors.size() > 0)){
+					callbackData.put("saveContentErrors", saveContentErrors);
+					SessionMessages.clear(req.getSession());
+					HibernateUtil.rollbackTransaction();
+				}else{
+					HibernateUtil.closeAndCommitTransaction();
+					callbackData.put("saveContentSuccess",LanguageUtil.get(user,"message.contentlet.save"));
+				}
+			}
+
+
+
+		return callbackData;
+
+	}
+	@CloseDB
+	public void removeSiblingBinaryFromSession(String fieldContentlet){
+		//http://jira.dotmarketing.net/browse/DOTCMS-5802
+		if(UtilMethods.isSet(fieldContentlet)){
+			HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
+			req.getSession().removeAttribute(fieldContentlet+"-sibling");
+		}
+	}
+	@CloseDB
+	public String unrelateContent(String contentletIdentifier,  String identifierToUnrelate, String relationshipInode){
+
+		// User info
+		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
+		User currentUser = null;
+		try {
+			currentUser = com.liferay.portal.util.PortalUtil.getUser(req);
+		} catch (Exception e) {
+			Logger.error(this, "Error trying to obtain the current liferay user from the request.", e);
+		}
+
+		Contentlet currentContentlet;
+		Contentlet contentletToUnrelate;
+		Relationship relationship;
+		List<Contentlet> conList = new ArrayList<Contentlet>();
+		String resultStr = "Content Unrelated";
+		try {
+			currentContentlet = conAPI.find(contentletIdentifier, currentUser, false);
+			contentletToUnrelate = conAPI.find(identifierToUnrelate, currentUser, false);
+
+			relationship =  FactoryLocator.getRelationshipFactory().byInode(relationshipInode);
+
+			conList.add(contentletToUnrelate);
+			FactoryLocator.getRelationshipFactory().deleteByContent(currentContentlet, relationship, conList);
+
+			//if contentletToUnrelate is related as new content, there exists the below relation which also needs to be deleted.
+			conList.clear();
+			conList.add(currentContentlet);
+			FactoryLocator.getRelationshipFactory().deleteByContent(contentletToUnrelate, relationship, conList);
+
+			conAPI.refresh(currentContentlet);
+			conAPI.refresh(contentletToUnrelate);
+
+			resultStr = LanguageUtil.get(currentUser,"Content-Unrelated");
+		} catch (DotDataException e) {
+			Logger.error(this, e.getMessage());
+		} catch (DotSecurityException e) {
+			Logger.error(this, e.getMessage());
+		} catch (LanguageException e) {
+			Logger.error(this, e.getMessage());
+		}
+		return resultStr;
+	}
+
+
+	public Map<String, String> lockContent(String contentletInode) throws DotContentletStateException, DotDataException, DotSecurityException, LanguageException{
+		// User info
+		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
+		User currentUser = null;
+		try {
+			currentUser = com.liferay.portal.util.PortalUtil.getUser(req);
+		} catch (Exception e) {
+			Logger.error(this, "Error trying to obtain the current liferay user from the request.", e);
+		}
+		Contentlet c = conAPI.find(contentletInode, currentUser, false);
+
+
+		Map<String, String> ret = new HashMap<String, String>();
+		ret.put("lockedIdent", contentletInode );
+		try{
+			conAPI.lock(c, currentUser, false);
+
+			ret.put("lockedOn", UtilMethods.capitalize(DateUtil.prettyDateSince(APILocator.getVersionableAPI().getLockedOn(c), currentUser.getLocale()) ));
+			ret.put("lockedBy", currentUser.getFullName() );
+
+		}
+		catch(Exception ex){
+			ret.put("Error", LanguageUtil.get(currentUser, "message.cannot.lock.content") );
+
+		}
+
+		return ret;
+	}
+
+
+	@CloseDB
+	public Map<String, String> unlockContent(String contentletInode) throws DotContentletStateException, DotDataException, DotSecurityException, LanguageException{
+		// User info
+		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
+		User currentUser = null;
+		try {
+			currentUser = com.liferay.portal.util.PortalUtil.getUser(req);
+		} catch (Exception e) {
+			Logger.error(this, "Error trying to obtain the current liferay user from the request.", e);
+		}
+		Contentlet c = conAPI.find(contentletInode, currentUser, false);
+		conAPI.unlock(c, currentUser, false);
+		Map<String, String> ret = new HashMap<String, String>();
+		ret.put("lockedIdent", contentletInode );
+		return ret;
+	}
+
+	public Map<String, Object> saveBinaryFileOnContent(String fileName, String fieldInode) throws DotContentletValidationException, Exception{
+
+		Map<String,Object> callbackData = new HashMap<String,Object>();
+		if(!UtilMethods.isImage(fileName)){
+			return callbackData;
+		}
+
+		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
+		User user = com.liferay.portal.util.PortalUtil.getUser((HttpServletRequest)req);
+		User sysUser = APILocator.getUserAPI().getSystemUser();
+		
+
+		HttpSession ses = req.getSession();
+		List<String> tempBinaryImageInodes = (List<String>) ses.getAttribute(Contentlet.TEMP_BINARY_IMAGE_INODES_LIST);
+
+		if(!UtilMethods.isSet(tempBinaryImageInodes))
+			ses.setAttribute(Contentlet.TEMP_BINARY_IMAGE_INODES_LIST, new ArrayList<String>());
+
+		tempBinaryImageInodes = (List<String>) ses.getAttribute(Contentlet.TEMP_BINARY_IMAGE_INODES_LIST);
+		for(String tempBinaryImageInode : tempBinaryImageInodes){
+			if(conAPI.find(tempBinaryImageInode, sysUser, false).getStringProperty(FileAssetAPI.TITLE_FIELD).equalsIgnoreCase(fileName)){
+				callbackData.put("contentletInode", tempBinaryImageInode);
+				return callbackData;
+			}
+		}
+
+		Contentlet newCont = new Contentlet();
+
+		Structure fileAssetStr = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME);
+
+		ContentletAPI conAPI = APILocator.getContentletAPI();
+
+		newCont.setStructureInode(fileAssetStr.getInode());
+
+		try {
+
+			newCont.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+
+			for(Field field : FieldsCache.getFieldsByStructureVariableName(fileAssetStr.getInode())){
+				if(field.getVelocityVarName().equals(FileAssetAPI.TITLE_FIELD))
+					conAPI.setContentletProperty(newCont, field, fileName);
+
+				if(field.getVelocityVarName().equals(FileAssetAPI.HOST_FOLDER_FIELD))
+					conAPI.setContentletProperty(newCont, field, APILocator.getHostAPI().findSystemHost().getInode());
+
+				if(field.getVelocityVarName().equals(FileAssetAPI.BINARY_FIELD)){
+
+					File binaryFile = null;
+					if(UtilMethods.isSet(fileName)){
+						fileName = ContentletUtil.sanitizeFileName(fileName);
+						binaryFile = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
+								+ File.separator + user.getUserId() + File.separator + FieldsCache.getField(fieldInode).getFieldContentlet()
+								+ File.separator + fileName.trim());
+						}
+
+					conAPI.setContentletProperty(newCont, field, binaryFile);
+				}
+			}
+
+			newCont = conAPI.checkin(newCont, sysUser, false);
+
+		} catch (Exception e) {
+			Logger.error(this,"Contentlet failed while creating new binary content",e);
+		}
+
+		// clean up tmp_binary
+		if(newCont !=null ) {
+		    Field field = FieldsCache.getField(fieldInode);
+	        if(field.getFieldType().equals(FieldType.BINARY.toString())) {
+	            File tmp=new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
+	                    +File.separator+user.getUserId()+File.separator+field.getFieldContentlet());
+	            FileUtil.deltree(tmp);
+	        }
+		}
+
+		if(UtilMethods.isSet(newCont.getInode())){
+			callbackData.put("contentletInode", newCont.getInode());
+			tempBinaryImageInodes.add(newCont.getInode());
+		}
+
+		return callbackData;
+	}
+
+
+	private List<Map<String, String>> findAllLangContentlets(final String contentletIdentifier) {
+
+	    final Identifier identifier = new Identifier(contentletIdentifier);
+
+		final ImmutableList.Builder<Map<String, String>> builder = new ImmutableList.Builder<>();
+
+		final List<Language> allLanguages = langAPI.getLanguages();
+		allLanguages.forEach(language -> {
+
+			try {
+				final Contentlet contentlet = conAPI.findContentletForLanguage(language.getId(), identifier);
+				if (null != contentlet) {
+					builder.add(
+							map("inode", contentlet.getInode(),
+									"identifier", contentletIdentifier,
+									"languageId", language.getId() + "")
+					);
+				} else {
+					builder.add(
+							map("inode", "",
+									"identifier", contentletIdentifier,
+									"languageId", language.getId() + "")
+					);
+				}
+			} catch (DotDataException | DotSecurityException e) {
+			    Logger.error(ContentletAjax.class, String.format("Unable to get contentlet for identifier %s and language %s", contentletIdentifier, language), e);
+			}
+
+		});
+
+		return builder.build();
+	}
+
 }
+

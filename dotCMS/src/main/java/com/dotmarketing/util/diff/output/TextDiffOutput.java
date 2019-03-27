@@ -17,36 +17,36 @@ package com.dotmarketing.util.diff.output;
 
 import com.dotmarketing.util.diff.tag.TagSaxDiffOutput;
 
+
 /**
- * Interface for classes that need to process the result from the tag-like represenation of the
- * output.
- *
+ * 
+ * Interface for classes that need to process the result from the tag-like
+ * represenation of the output.
+ * 
  * @author kapelonk
  * @see TagSaxDiffOutput
+ *
  */
 public interface TextDiffOutput {
 
-  /**
-   * Handles normal text.
-   *
-   * @param text string that was not changed.
-   * @throws Exception something went wrong.
-   */
-  void addClearPart(String text) throws Exception;
+	/**
+	 * Handles normal text.
+	 * @param text string that was not changed.
+	 * @throws Exception something went wrong.
+	 */
+	void addClearPart(String text) throws Exception;
+	
+	/**
+	 * Handles a deletion.
+	 * @param text string that was removed.
+	 * @throws Exception something went wrong.
+	 */
+	void addRemovedPart(String text) throws Exception;
 
-  /**
-   * Handles a deletion.
-   *
-   * @param text string that was removed.
-   * @throws Exception something went wrong.
-   */
-  void addRemovedPart(String text) throws Exception;
-
-  /**
-   * Handles an addition.
-   *
-   * @param text string that was added.
-   * @throws Exception something went wrong.
-   */
-  void addAddedPart(String text) throws Exception;
+	/**
+	 * Handles an addition.
+	 * @param text string that was added.
+	 * @throws Exception something went wrong.
+	 */
+	void addAddedPart(String text) throws Exception;
 }

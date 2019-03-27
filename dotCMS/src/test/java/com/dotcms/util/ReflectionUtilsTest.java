@@ -5,60 +5,78 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-import com.dotcms.UnitTestBase;
 import org.junit.Test;
+
+import com.dotcms.UnitTestBase;
 
 /**
  * ReflectionUtils Test
- *
  * @author jsanca
  */
+
 public class ReflectionUtilsTest extends UnitTestBase {
 
-  /** Testing the new Instance */
-  @Test
-  public void newInstanceTest() {
 
-    final Object o1 = ReflectionUtils.newInstance((String) null);
 
-    assertNull(o1);
+    /**
+     * Testing the new Instance
+     *
+     */
+    @Test
+    public void newInstanceTest()  {
 
-    final Object o2 = ReflectionUtils.newInstance("com.doesnotexists.NoExistingClass");
+        final Object o1 =
+                ReflectionUtils.newInstance
+                        ((String)null);
 
-    assertNull(o2);
+        assertNull(o1);
 
-    final Object o3 = ReflectionUtils.newInstance("com.dotcms.util.ReflectionUtilsTest");
+        final Object o2 =
+                ReflectionUtils.newInstance
+                        ("com.doesnotexists.NoExistingClass");
 
-    assertNotNull(o3);
+        assertNull(o2);
 
-    assertTrue(o3 instanceof ReflectionUtilsTest);
+        final Object o3 =
+                ReflectionUtils.newInstance
+                        ("com.dotcms.util.ReflectionUtilsTest");
 
-    final Object o4 = ReflectionUtils.newInstance((Class) null);
+        assertNotNull(o3);
 
-    assertNull(o4);
+        assertTrue(o3 instanceof ReflectionUtilsTest);
 
-    final ReflectionUtilsTest reflectionUtilsTest =
-        ReflectionUtils.newInstance(ReflectionUtilsTest.class);
+        final Object o4 =
+                ReflectionUtils.newInstance((Class)null);
 
-    assertNotNull(reflectionUtilsTest);
+        assertNull(o4);
 
-    final ReflectionTestBean bean =
-        ReflectionUtils.newInstance(ReflectionTestBean.class, "Test Name");
+        final ReflectionUtilsTest reflectionUtilsTest =
+                ReflectionUtils.newInstance(ReflectionUtilsTest.class);
 
-    assertNotNull(bean);
-    assertEquals("Test Name", bean.toString());
+        assertNotNull(reflectionUtilsTest);
 
-    final ReflectionTestBean bean2 =
-        ReflectionUtils.newInstance(ReflectionTestBean.class, "Test Name", "Wrong Parameter");
 
-    assertNull(bean2);
+        final ReflectionTestBean bean =
+                ReflectionUtils.newInstance
+                        (ReflectionTestBean.class, "Test Name");
 
-    Class<?>[] types = ReflectionUtils.getTypes(new Integer(2), "Hello", Float.MAX_VALUE);
+        assertNotNull(bean);
+        assertEquals("Test Name", bean.toString());
 
-    assertNotNull(types);
-    assertTrue(types.length == 3);
-    assertEquals(Integer.class, types[0]);
-    assertEquals(String.class, types[1]);
-    assertEquals(Float.class, types[2]);
-  }
+        final ReflectionTestBean bean2 =
+                ReflectionUtils.newInstance
+                        (ReflectionTestBean.class, "Test Name", "Wrong Parameter");
+
+        assertNull(bean2);
+
+        Class<?> [] types = ReflectionUtils.getTypes(new Integer(2), "Hello", Float.MAX_VALUE);
+
+        assertNotNull(types);
+        assertTrue(types.length == 3);
+        assertEquals(Integer.class, types[0]);
+        assertEquals(String.class, types[1]);
+        assertEquals(Float.class, types[2]);
+
+    }
+
 }

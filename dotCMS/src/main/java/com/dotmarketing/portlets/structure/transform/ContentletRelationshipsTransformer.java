@@ -8,80 +8,77 @@ import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.UtilMethods;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 /**
  * ContentletRelationships transformer
- *
  * @author jsanca
  */
 public class ContentletRelationshipsTransformer implements DBTransformer<ContentletRelationships> {
 
-  private final Contentlet contentlet;
-  private final Map<Relationship, List<Contentlet>> contentRelationships;
+    private final Contentlet contentlet;
+    private final Map<Relationship, List<Contentlet>> contentRelationships;
 
-  public ContentletRelationshipsTransformer(
-      final Contentlet contentlet, final Map<Relationship, List<Contentlet>> contentRelationships) {
+    public ContentletRelationshipsTransformer(final Contentlet contentlet,
+            final Map<Relationship, List<Contentlet>> contentRelationships) {
 
-    this.contentlet = contentlet;
-    this.contentRelationships = contentRelationships;
-  }
-
-  @Override
-  public List<ContentletRelationships> asList() {
-
-    final List<ContentletRelationships> relationshipsList = new ArrayList<>();
-
-    final ContentletRelationships contentletRelationships =
-        this.getContentletRelationshipsFromMap(this.contentlet, this.contentRelationships);
-
-    if (null != contentletRelationships) {
-      relationshipsList.add(contentletRelationships);
+        this.contentlet           = contentlet;
+        this.contentRelationships = contentRelationships;
     }
 
-    return relationshipsList;
-  }
+    @Override
+    public List<ContentletRelationships> asList() {
 
-  private ContentletRelationships getContentletRelationshipsFromMap(
-      final Contentlet contentlet, final Map<Relationship, List<Contentlet>> contentRelationships) {
+        final List<ContentletRelationships> relationshipsList = new ArrayList<>();
 
-    if (contentRelationships == null) {
+        final ContentletRelationships contentletRelationships =
+                this.getContentletRelationshipsFromMap(this.contentlet,
+                        this.contentRelationships);
 
-      return null;
+        if (null != contentletRelationships) {
+            relationshipsList.add(contentletRelationships);
+        }
+
+        return relationshipsList;
     }
 
-    final Structure structure =
-        CacheLocator.getContentTypeCache().getStructureByInode(contentlet.getStructureInode());
-    final ContentletRelationships relationshipsData = new ContentletRelationships(contentlet);
-    final List<ContentletRelationships.ContentletRelationshipRecords> relationshipsRecords =
-        new ArrayList<ContentletRelationships.ContentletRelationshipRecords>();
-    relationshipsData.setRelationshipsRecords(relationshipsRecords);
+    private ContentletRelationships getContentletRelationshipsFromMap(final Contentlet contentlet,
+                                                                      final Map<Relationship, List<Contentlet>> contentRelationships) {
 
-    for (final Map.Entry<Relationship, List<Contentlet>> relEntry :
-        contentRelationships.entrySet()) {
+        if(contentRelationships == null) {
 
-      final Relationship relationship = relEntry.getKey();
-      final boolean hasChildren =
-          FactoryLocator.getRelationshipFactory().isChild(relationship, structure);
-      boolean hasParent = FactoryLocator.getRelationshipFactory().isParent(relationship, structure);
+            return null;
+        }
 
-      // self-join (same CT for parent and child) relationships return true to both, so if the
-      // parentRelationName is not set the relationship is one-sided so we add children
-      // if the parentRelationName is set there is no way to know if we are adding parents or
-      // children
-      // so we assume we are adding children
-      if (hasParent && hasChildren) {
-        hasParent = !UtilMethods.isSet(relationship.getParentRelationName());
-      }
+        final Structure structure = CacheLocator.getContentTypeCache()
+                .getStructureByInode(contentlet.getStructureInode());
+        final ContentletRelationships relationshipsData = new ContentletRelationships(contentlet);
+        final List<ContentletRelationships.ContentletRelationshipRecords> relationshipsRecords = new ArrayList<ContentletRelationships.ContentletRelationshipRecords>();
+        relationshipsData.setRelationshipsRecords(relationshipsRecords);
 
-      final ContentletRelationships.ContentletRelationshipRecords records =
-          relationshipsData.new ContentletRelationshipRecords(relationship, hasParent);
-      records.setRecords(relEntry.getValue());
-      relationshipsRecords.add(records);
+        for(final Map.Entry<Relationship, List<Contentlet>> relEntry : contentRelationships.entrySet()) {
+
+            final Relationship relationship = relEntry.getKey();
+            final boolean hasChildren       = FactoryLocator.getRelationshipFactory().isChild(relationship, structure);
+            boolean hasParent               = FactoryLocator.getRelationshipFactory().isParent(relationship, structure);
+
+            // self-join (same CT for parent and child) relationships return true to both, so if the
+            // parentRelationName is not set the relationship is one-sided so we add children
+            // if the parentRelationName is set there is no way to know if we are adding parents or children
+            // so we assume we are adding children
+            if (hasParent && hasChildren) {
+                hasParent = !UtilMethods.isSet(relationship.getParentRelationName());
+            }
+            
+            final ContentletRelationships.ContentletRelationshipRecords
+                    records = relationshipsData.new ContentletRelationshipRecords(relationship, hasParent);
+            records.setRecords(relEntry.getValue());
+            relationshipsRecords.add(records);
+        }
+
+        return relationshipsData;
     }
-
-    return relationshipsData;
-  }
 }

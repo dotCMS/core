@@ -4,8 +4,15 @@
  */
 package com.dotmarketing.util;
 
+import java.util.List;
+import java.util.Map;
+import java.util.StringTokenizer;
+
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.WindowState;
+import javax.servlet.http.HttpServletRequest;
+
+
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Layout;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -14,190 +21,176 @@ import com.liferay.portal.util.WebKeys;
 import com.liferay.portlet.ActionRequestImpl;
 import com.liferay.portlet.PortletConfigImpl;
 import com.liferay.util.Validator;
-import java.util.List;
-import java.util.Map;
-import java.util.StringTokenizer;
-import javax.servlet.http.HttpServletRequest;
 
-/** @author Maria */
+
+/**
+ * @author Maria
+ * 
+ */
 public class PortletURLUtil {
 
-  public static String URL_ADMIN_PREFIX =
-      Config.getStringProperty("URL_ADMIN_ANGULAR_PREFIX", "dotAdmin");
-  public static String ROOT_URL = String.format("/%s/#/c", URL_ADMIN_PREFIX);
-  private final URLEncoder ENCODER = new URLEncoder();
+	public static String URL_ADMIN_PREFIX = Config.getStringProperty("URL_ADMIN_ANGULAR_PREFIX", "dotAdmin");
+	public static String ROOT_URL = String.format("/%s/#/c", URL_ADMIN_PREFIX);
+	private final URLEncoder ENCODER = new URLEncoder();
 
-  public static String getActionURL(ActionRequest req, String _windowState, Map _params) {
+	public static String getActionURL(ActionRequest req, String _windowState, Map _params) {
 
-    // wraps request to get session object
-    ActionRequestImpl reqImpl = (ActionRequestImpl) req;
-    HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
+		// wraps request to get session object
+		ActionRequestImpl reqImpl = (ActionRequestImpl) req;
+		HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
 
-    return com.dotmarketing.util.PortletURLUtil.getActionURL(httpReq, _windowState, _params);
-  }
+		return com.dotmarketing.util.PortletURLUtil.getActionURL(httpReq, _windowState, _params);
+	}
 
-  public static String getActionURL(HttpServletRequest req, String _windowState, Map _params) {
+	public static String getActionURL(HttpServletRequest req, String _windowState, Map _params) {
+		
+		PortletConfigImpl portletConfig = (PortletConfigImpl) req.getAttribute(WebKeys.JAVAX_PORTLET_CONFIG);
+		String portletName = null;
+	
+		if(portletConfig==null) {
+			try {
+				User user = WebAPILocator.getUserWebAPI().getLoggedInUser(req);
+				List<Layout>layouts = APILocator.getLayoutAPI().loadLayoutsForUser(user);
+				if(layouts.size()==0){
+					return null;
+				}
+				Layout layout = layouts.get(0);
+				List<String> portletIds = layout.getPortletIds();
+				if(portletIds.size()==0){
+					return null;
+				}
+				portletName = portletIds.get(0);
+				return getActionURL(req, layout.getId(), _windowState, _params, portletName);
+			} catch (Exception e) {
+				Logger.error(PortletURLUtil.class, e.toString(), e);
+			}
+		} else {
+			portletName = portletConfig.getPortletId();
+		}
+		
+		return getActionURL(req, _windowState, _params, portletName);
+	
+	}
+	
+	public static String getActionURL(HttpServletRequest req, String _windowState, Map _params, String portletName) {
+		
+		Layout layout = (Layout) req.getAttribute(WebKeys.LAYOUT);
+		return getActionURL(req, layout.getId(), _windowState, _params, portletName);
+	}
+	
+	public static String getActionURL(HttpServletRequest req, String layoutId, String _windowState, Map _params, String portletName) {
+			
+		com.liferay.portlet.PortletURLImpl portletURL = new com.liferay.portlet.PortletURLImpl(req, portletName, layoutId, true);
 
-    PortletConfigImpl portletConfig =
-        (PortletConfigImpl) req.getAttribute(WebKeys.JAVAX_PORTLET_CONFIG);
-    String portletName = null;
+		try {
+			if (Validator.isNotNull(_windowState)) {
+				portletURL.setWindowState(new WindowState(_windowState));
+			}
 
-    if (portletConfig == null) {
-      try {
-        User user = WebAPILocator.getUserWebAPI().getLoggedInUser(req);
-        List<Layout> layouts = APILocator.getLayoutAPI().loadLayoutsForUser(user);
-        if (layouts.size() == 0) {
-          return null;
-        }
-        Layout layout = layouts.get(0);
-        List<String> portletIds = layout.getPortletIds();
-        if (portletIds.size() == 0) {
-          return null;
-        }
-        portletName = portletIds.get(0);
-        return getActionURL(req, layout.getId(), _windowState, _params, portletName);
-      } catch (Exception e) {
-        Logger.error(PortletURLUtil.class, e.toString(), e);
-      }
-    } else {
-      portletName = portletConfig.getPortletId();
-    }
+			portletURL.setSecure(req.isSecure());
 
-    return getActionURL(req, _windowState, _params, portletName);
-  }
+			if (_params != null) {
+				Logger.debug(Config.class, "Setting params=" + _params);
+				portletURL.setParameters(_params);
+			}
 
-  public static String getActionURL(
-      HttpServletRequest req, String _windowState, Map _params, String portletName) {
 
-    Layout layout = (Layout) req.getAttribute(WebKeys.LAYOUT);
-    return getActionURL(req, layout.getId(), _windowState, _params, portletName);
-  }
+		} catch (Exception e) {
+			Logger.warn(PortletURLUtil.class, e.toString(), e);
+		}
 
-  public static String getActionURL(
-      HttpServletRequest req,
-      String layoutId,
-      String _windowState,
-      Map _params,
-      String portletName) {
+		return stripProtocolAndHost(portletURL.toString());
+	}
 
-    com.liferay.portlet.PortletURLImpl portletURL =
-        new com.liferay.portlet.PortletURLImpl(req, portletName, layoutId, true);
+	public PortletURLUtil() {
+		// empty constructor to call methods from velocity pages
+	}
 
-    try {
-      if (Validator.isNotNull(_windowState)) {
-        portletURL.setWindowState(new WindowState(_windowState));
-      }
+	public static String getRenderURL(HttpServletRequest req, String _windowState, Map _params) {
+		PortletConfigImpl portletConfig = (PortletConfigImpl) req.getAttribute(WebKeys.JAVAX_PORTLET_CONFIG);
+		String portletName = portletConfig.getPortletId();
+		return getRenderURL(req, _windowState, _params, portletName);
+	}
+	
+	public static String getRenderURL(HttpServletRequest req, String _windowState, Map _params, String portletName) {
+		
+		Layout layout = (Layout) req.getAttribute(WebKeys.LAYOUT);
+		 return getRenderURL(req, layout.getId(),_windowState, _params, portletName);
+	}
+	
+	public static String getRenderURL(HttpServletRequest req, String layoutId, String _windowState, Map _params, String portletName) {
+		
+		com.liferay.portlet.PortletURLImpl portletURL = 
+			new com.liferay.portlet.PortletURLImpl(req, portletName, layoutId, false);
 
-      portletURL.setSecure(req.isSecure());
+		try {
+			if (Validator.isNotNull(_windowState)) {
+				portletURL.setWindowState(new WindowState(_windowState));
+			}
 
-      if (_params != null) {
-        Logger.debug(Config.class, "Setting params=" + _params);
-        portletURL.setParameters(_params);
-      }
+			portletURL.setSecure(req.isSecure());
 
-    } catch (Exception e) {
-      Logger.warn(PortletURLUtil.class, e.toString(), e);
-    }
+			if (_params != null) {
+				Logger.debug(PortletURLUtil.class, "Setting params=" + _params);
+				portletURL.setParameters(_params);
+			}
+		} catch (Exception e) {
+			Logger.error(PortletURLUtil.class, e.toString(), e);
+		}
+		return stripProtocolAndHost(portletURL.toString());
+	}
+	
+	/**
+	 * this method returns a relative url from an absolute url
+	 * @param url the full url + uri to be stripped
+	 * @return the new url without protocol or host information
+	 */
+	
+	
+	private static String stripProtocolAndHost(String url){
+	
+		if(url.indexOf("://")<0){
+			return url;
+		}
+		StringTokenizer st = new StringTokenizer(url, "/");
+		StringBuffer sb = new StringBuffer();
+		int i = 0;
 
-    return stripProtocolAndHost(portletURL.toString());
-  }
+		while (st.hasMoreTokens()) {
+			String _y = st.nextToken();
+			if (i > 1) {
+				sb.append("/");
+				sb.append(_y);
+			}
+			i++;
+		}
+		//return portletURL.toString();
+		return sb.toString();
+	}
 
-  public PortletURLUtil() {
-    // empty constructor to call methods from velocity pages
-  }
+	public String getPortletUrl(PortletID portletID){
+		return getPortletUrl(portletID, null);
+	}
 
-  public static String getRenderURL(HttpServletRequest req, String _windowState, Map _params) {
-    PortletConfigImpl portletConfig =
-        (PortletConfigImpl) req.getAttribute(WebKeys.JAVAX_PORTLET_CONFIG);
-    String portletName = portletConfig.getPortletId();
-    return getRenderURL(req, _windowState, _params, portletName);
-  }
+	public String getPortletUrl(PortletID portletID, Map<String, String> parameters){
 
-  public static String getRenderURL(
-      HttpServletRequest req, String _windowState, Map _params, String portletName) {
+		StringBuilder buffer = new StringBuilder();
 
-    Layout layout = (Layout) req.getAttribute(WebKeys.LAYOUT);
-    return getRenderURL(req, layout.getId(), _windowState, _params, portletName);
-  }
+		if ( parameters != null) {
+			buffer.append("?");
 
-  public static String getRenderURL(
-      HttpServletRequest req,
-      String layoutId,
-      String _windowState,
-      Map _params,
-      String portletName) {
+			for (Map.Entry<String, String> parametersEntry : parameters.entrySet()) {
 
-    com.liferay.portlet.PortletURLImpl portletURL =
-        new com.liferay.portlet.PortletURLImpl(req, portletName, layoutId, false);
+				if (buffer.length() > 1) {
+					buffer.append("&");
+				}
 
-    try {
-      if (Validator.isNotNull(_windowState)) {
-        portletURL.setWindowState(new WindowState(_windowState));
-      }
+				buffer.append(parametersEntry.getKey())
+						.append("=")
+						.append(ENCODER.encode(parametersEntry.getValue()));
+			}
+		}
 
-      portletURL.setSecure(req.isSecure());
-
-      if (_params != null) {
-        Logger.debug(PortletURLUtil.class, "Setting params=" + _params);
-        portletURL.setParameters(_params);
-      }
-    } catch (Exception e) {
-      Logger.error(PortletURLUtil.class, e.toString(), e);
-    }
-    return stripProtocolAndHost(portletURL.toString());
-  }
-
-  /**
-   * this method returns a relative url from an absolute url
-   *
-   * @param url the full url + uri to be stripped
-   * @return the new url without protocol or host information
-   */
-  private static String stripProtocolAndHost(String url) {
-
-    if (url.indexOf("://") < 0) {
-      return url;
-    }
-    StringTokenizer st = new StringTokenizer(url, "/");
-    StringBuffer sb = new StringBuffer();
-    int i = 0;
-
-    while (st.hasMoreTokens()) {
-      String _y = st.nextToken();
-      if (i > 1) {
-        sb.append("/");
-        sb.append(_y);
-      }
-      i++;
-    }
-    // return portletURL.toString();
-    return sb.toString();
-  }
-
-  public String getPortletUrl(PortletID portletID) {
-    return getPortletUrl(portletID, null);
-  }
-
-  public String getPortletUrl(PortletID portletID, Map<String, String> parameters) {
-
-    StringBuilder buffer = new StringBuilder();
-
-    if (parameters != null) {
-      buffer.append("?");
-
-      for (Map.Entry<String, String> parametersEntry : parameters.entrySet()) {
-
-        if (buffer.length() > 1) {
-          buffer.append("&");
-        }
-
-        buffer
-            .append(parametersEntry.getKey())
-            .append("=")
-            .append(ENCODER.encode(parametersEntry.getValue()));
-      }
-    }
-
-    return ROOT_URL + "/" + portletID.toString() + buffer.toString();
-  }
+		return ROOT_URL + "/" + portletID.toString() + buffer.toString();
+	}
 }

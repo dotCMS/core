@@ -22,186 +22,186 @@ import java.util.HashMap;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 
-/** @author Jonathan Gamba Date: 8/22/13 */
-@Path("/testResource")
+/**
+ * @author Jonathan Gamba
+ *         Date: 8/22/13
+ */
+@Path ("/testResource")
 public class TestResource {
 
-  private final WebResource webResource = new WebResource();
+    private final WebResource webResource = new WebResource();
 
-  /**
-   * Example method that handles a GET operation
-   *
-   * <p>URL Examples
-   * http://localhost:8081/api/testResource/testGet/user/admin@dotcms.com/password/admin/param1/parameter1/param2/parameter2
-   * http://localhost:8081/api/testResource/testGet/user/admin@dotcms.com/password/admin/param1/parameter1/param2/parameter2/type/json
-   * http://localhost:8081/api/testResource/testGet/user/admin@dotcms.com/password/admin/param1/parameter1/param2/parameter2/type/xml
-   * http://localhost:8081/api/testResource/testGet/user/admin@dotcms.com/password/admin/param1/parameter1/param2/parameter2/type/jsonp
-   * http://localhost:8081/api/testResource/testGet/user/admin@dotcms.com/password/admin/param1/parameter1/param2/parameter2/type/jsonp/callback/myMethodCallback
-   *
-   * @param request
-   * @param params
-   * @return
-   * @throws JSONException
-   */
-  @GET
-  @Path("/testGet/{params:.*}")
-  @Produces(MediaType.APPLICATION_JSON)
-  public Response getDocumentCount(
-      @Context HttpServletRequest request, @PathParam("params") String params)
-      throws JSONException {
+    /**
+     * Example method that handles a GET operation
+     * <p/>
+     * URL Examples
+     * http://localhost:8081/api/testResource/testGet/user/admin@dotcms.com/password/admin/param1/parameter1/param2/parameter2
+     * http://localhost:8081/api/testResource/testGet/user/admin@dotcms.com/password/admin/param1/parameter1/param2/parameter2/type/json
+     * http://localhost:8081/api/testResource/testGet/user/admin@dotcms.com/password/admin/param1/parameter1/param2/parameter2/type/xml
+     * http://localhost:8081/api/testResource/testGet/user/admin@dotcms.com/password/admin/param1/parameter1/param2/parameter2/type/jsonp
+     * http://localhost:8081/api/testResource/testGet/user/admin@dotcms.com/password/admin/param1/parameter1/param2/parameter2/type/jsonp/callback/myMethodCallback
+     *
+     * @param request
+     * @param params
+     * @return
+     * @throws JSONException
+     */
+    @GET
+    @Path ("/testGet/{params:.*}")
+    @Produces (MediaType.APPLICATION_JSON)
+    public Response getDocumentCount ( @Context HttpServletRequest request, @PathParam ("params") String params ) throws JSONException {
 
-    InitDataObject initData = webResource.init(params, true, request, true, null);
+        InitDataObject initData = webResource.init(params, true, request, true, null);
 
-    // Creating an utility response object
-    ResourceResponse responseResource = new ResourceResponse(initData.getParamsMap());
-    StringBuilder responseMessage = new StringBuilder();
+        //Creating an utility response object
+        ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
+        StringBuilder responseMessage = new StringBuilder();
 
-    // Validate the parameters
-    if (!responseResource.validate(responseMessage, "param1", "param2")) {
-      return responseResource.responseError(responseMessage.toString(), HttpStatus.SC_BAD_REQUEST);
-    }
-    String param1 = initData.getParamsMap().get("param1");
-    String param2 = initData.getParamsMap().get("param2");
-    String type = initData.getParamsMap().get(RESTParams.TYPE.getValue());
+        //Validate the parameters
+        if ( !responseResource.validate( responseMessage, "param1", "param2" ) ) {
+            return responseResource.responseError( responseMessage.toString(), HttpStatus.SC_BAD_REQUEST );
+        }
+        String param1 = initData.getParamsMap().get( "param1" );
+        String param2 = initData.getParamsMap().get( "param2" );
+        String type = initData.getParamsMap().get( RESTParams.TYPE.getValue() );
 
-    try {
+        try {
 
-      // SOME VERY SMART CODE.....
+            //SOME VERY SMART CODE.....
 
-      // And prepare the response
-      if (UtilMethods.isSet(type) && type.equalsIgnoreCase("xml")) {
+            //And prepare the response
+            if ( UtilMethods.isSet( type ) && type.equalsIgnoreCase( "xml" ) ) {
 
-        Map<String, Object> mapResponse = new HashMap<String, Object>();
-        mapResponse.put("success", true);
-        mapResponse.put("message", "Success message");
-        mapResponse.put("param1", param1);
-        mapResponse.put("param2", param2);
+                Map<String, Object> mapResponse = new HashMap<String, Object>();
+                mapResponse.put( "success", true );
+                mapResponse.put( "message", "Success message" );
+                mapResponse.put( "param1", param1 );
+                mapResponse.put( "param2", param2 );
 
-        XStream xstream = new XStream(new DomDriver());
-        xstream.alias("response", Map.class);
+                XStream xstream = new XStream( new DomDriver() );
+                xstream.alias( "response", Map.class );
 
-        StringBuilder xmlBuilder = new StringBuilder();
-        xmlBuilder.append("<?xml version=\"1.0\" encoding='UTF-8'?>");
-        xmlBuilder.append(xstream.toXML(mapResponse));
+                StringBuilder xmlBuilder = new StringBuilder();
+                xmlBuilder.append( "<?xml version=\"1.0\" encoding='UTF-8'?>" );
+                xmlBuilder.append( xstream.toXML( mapResponse ) );
 
-        responseMessage.append(xmlBuilder);
-      } else {
+                responseMessage.append( xmlBuilder );
+            } else {
 
-        // TODO: Handle JSON and JSONP the same
+                //TODO: Handle JSON and JSONP the same
 
-        JSONObject jsonResponse = new JSONObject();
-        jsonResponse.put("success", true);
-        jsonResponse.put("message", "Success message");
-        jsonResponse.put("param1", param1);
-        jsonResponse.put("param2", param2);
+                JSONObject jsonResponse = new JSONObject();
+                jsonResponse.put( "success", true );
+                jsonResponse.put( "message", "Success message" );
+                jsonResponse.put( "param1", param1 );
+                jsonResponse.put( "param2", param2 );
 
-        responseMessage.append(jsonResponse.toString());
-      }
+                responseMessage.append( jsonResponse.toString() );
+            }
 
-    } catch (Exception e) {
-      Logger.error(this.getClass(), "Error on test method.", e);
 
-      if (e.getMessage() != null) {
-        responseMessage.append(e.getMessage());
-      } else {
-        responseMessage.append("Error on test method.");
-      }
-      return responseResource.responseError(responseMessage.toString());
-    }
+        } catch ( Exception e ) {
+            Logger.error( this.getClass(), "Error on test method.", e );
 
-    return responseResource.response(responseMessage.toString());
-  }
+            if ( e.getMessage() != null ) {
+                responseMessage.append( e.getMessage() );
+            } else {
+                responseMessage.append( "Error on test method." );
+            }
+            return responseResource.responseError( responseMessage.toString() );
+        }
 
-  /**
-   * Example method that handles a POST operation
-   *
-   * @param request
-   * @param user
-   * @param password
-   * @param param1
-   * @param param2
-   * @param type respose type, example: json, jsonp, xml
-   * @param callback
-   * @return
-   * @throws IOException
-   * @throws JSONException
-   */
-  @POST
-  @Path("/testPost")
-  @Produces(MediaType.APPLICATION_JSON)
-  @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-  public Response saveTest(
-      @Context HttpServletRequest request,
-      @FormParam("user") String user,
-      @FormParam("password") String password,
-      @FormParam("param1") String param1,
-      @FormParam("param2") String param2,
-      @FormParam("type") String type,
-      @FormParam("callback") String callback)
-      throws IOException, JSONException {
-
-    InitDataObject initData =
-        webResource.init("user/" + user + "/password/" + password, true, request, true, null);
-
-    Map<String, String> paramsMap = initData.getParamsMap();
-    paramsMap.put("param1", param1);
-    paramsMap.put("param2", param2);
-    paramsMap.put("type", type);
-    paramsMap.put("callback", callback);
-    // Creating an utility response object
-    ResourceResponse responseResource = new ResourceResponse(initData.getParamsMap());
-    StringBuilder responseMessage = new StringBuilder();
-
-    // Validate the parameters
-    if (!responseResource.validate(responseMessage, "param1", "param2")) {
-      return responseResource.responseError(responseMessage.toString(), HttpStatus.SC_BAD_REQUEST);
+        return responseResource.response( responseMessage.toString() );
     }
 
-    try {
+    /**
+     * Example method that handles a POST operation
+     *
+     * @param request
+     * @param user
+     * @param password
+     * @param param1
+     * @param param2
+     * @param type     respose type, example: json, jsonp, xml
+     * @param callback
+     * @return
+     * @throws IOException
+     * @throws JSONException
+     */
+    @POST
+    @Path ("/testPost")
+    @Produces (MediaType.APPLICATION_JSON)
+    @Consumes (MediaType.APPLICATION_FORM_URLENCODED)
+    public Response saveTest ( @Context HttpServletRequest request,
+                               @FormParam ("user") String user, @FormParam ("password") String password,
+                               @FormParam ("param1") String param1,
+                               @FormParam ("param2") String param2,
+                               @FormParam ("type") String type,
+                               @FormParam ("callback") String callback ) throws IOException, JSONException {
 
-      // SOME VERY SMART CODE.....
+        InitDataObject initData = webResource.init("user/" + user + "/password/" + password, true, request, true, null);
 
-      // And prepare the response
-      if (UtilMethods.isSet(type) && type.equalsIgnoreCase("xml")) {
+        Map<String, String> paramsMap = initData.getParamsMap();
+        paramsMap.put( "param1", param1 );
+        paramsMap.put( "param2", param2 );
+        paramsMap.put( "type", type );
+        paramsMap.put( "callback", callback );
+        //Creating an utility response object
+        ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
+        StringBuilder responseMessage = new StringBuilder();
 
-        Map<String, Object> mapResponse = new HashMap<String, Object>();
-        mapResponse.put("success", true);
-        mapResponse.put("message", "Success message");
-        mapResponse.put("param1", param1);
-        mapResponse.put("param2", param2);
+        //Validate the parameters
+        if ( !responseResource.validate( responseMessage, "param1", "param2" ) ) {
+            return responseResource.responseError( responseMessage.toString(), HttpStatus.SC_BAD_REQUEST );
+        }
 
-        XStream xstream = new XStream(new DomDriver());
-        xstream.alias("response", Map.class);
+        try {
 
-        StringBuilder xmlBuilder = new StringBuilder();
-        xmlBuilder.append("<?xml version=\"1.0\" encoding='UTF-8'?>");
-        xmlBuilder.append(xstream.toXML(mapResponse));
+            //SOME VERY SMART CODE.....
 
-        responseMessage.append(xmlBuilder);
-      } else {
+            //And prepare the response
+            if ( UtilMethods.isSet( type ) && type.equalsIgnoreCase( "xml" ) ) {
 
-        // TODO: Handle JSON and JSONP the same
+                Map<String, Object> mapResponse = new HashMap<String, Object>();
+                mapResponse.put( "success", true );
+                mapResponse.put( "message", "Success message" );
+                mapResponse.put( "param1", param1 );
+                mapResponse.put( "param2", param2 );
 
-        JSONObject jsonResponse = new JSONObject();
-        jsonResponse.put("success", true);
-        jsonResponse.put("message", "Success message");
-        jsonResponse.put("param1", param1);
-        jsonResponse.put("param2", param2);
+                XStream xstream = new XStream( new DomDriver() );
+                xstream.alias( "response", Map.class );
 
-        responseMessage.append(jsonResponse.toString());
-      }
+                StringBuilder xmlBuilder = new StringBuilder();
+                xmlBuilder.append( "<?xml version=\"1.0\" encoding='UTF-8'?>" );
+                xmlBuilder.append( xstream.toXML( mapResponse ) );
 
-    } catch (Exception e) {
-      Logger.error(this.getClass(), "Error on test method.", e);
+                responseMessage.append( xmlBuilder );
+            } else {
 
-      if (e.getMessage() != null) {
-        responseMessage.append(e.getMessage());
-      } else {
-        responseMessage.append("Error on test method.");
-      }
-      return responseResource.responseError(responseMessage.toString());
+                //TODO: Handle JSON and JSONP the same
+
+                JSONObject jsonResponse = new JSONObject();
+                jsonResponse.put( "success", true );
+                jsonResponse.put( "message", "Success message" );
+                jsonResponse.put( "param1", param1 );
+                jsonResponse.put( "param2", param2 );
+
+                responseMessage.append( jsonResponse.toString() );
+            }
+
+
+        } catch ( Exception e ) {
+            Logger.error( this.getClass(), "Error on test method.", e );
+
+            if ( e.getMessage() != null ) {
+                responseMessage.append( e.getMessage() );
+            } else {
+                responseMessage.append( "Error on test method." );
+            }
+            return responseResource.responseError( responseMessage.toString() );
+        }
+
+        return responseResource.response( responseMessage.toString() );
     }
 
-    return responseResource.response(responseMessage.toString());
-  }
 }

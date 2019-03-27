@@ -1,17 +1,19 @@
 package com.dotmarketing.business;
 
-import com.dotmarketing.beans.Permission;
 import java.util.List;
 
-// This interface should have default package access
-public abstract class PermissionCache implements Cachable {
+import com.dotmarketing.beans.Permission;
 
-  protected abstract List<Permission> addToPermissionCache(
-      String key, List<Permission> permissions);
+//This interface should have default package access
+public abstract class PermissionCache implements Cachable{
 
-  protected abstract List<Permission> getPermissionsFromCache(String key);
+	abstract protected List<Permission> addToPermissionCache(String key,
+			List<Permission> permissions);
 
-  public abstract void clearCache();
+	abstract protected List<Permission> getPermissionsFromCache(String key);
 
-  protected abstract void remove(String key);
+	abstract public void clearCache();
+
+	abstract protected void remove(String key);
+
 }

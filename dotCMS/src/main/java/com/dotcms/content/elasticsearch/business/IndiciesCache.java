@@ -4,7 +4,6 @@ import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
 import com.dotmarketing.business.Cachable;
 
 public interface IndiciesCache extends Cachable {
-  public IndiciesInfo get();
-
-  public void put(IndiciesInfo info);
+    public IndiciesInfo get();
+    public void put(IndiciesInfo info);
 }

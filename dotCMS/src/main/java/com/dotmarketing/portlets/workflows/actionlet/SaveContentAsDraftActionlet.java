@@ -12,13 +12,10 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Relationship;
-import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
-import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
-import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
-import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
-import com.dotmarketing.portlets.workflows.model.WorkflowStep;
+import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -26,128 +23,127 @@ import java.util.Map;
 
 /**
  * Do the save as draft for a content (checkin)
- *
  * @author jsanca
  */
 @Actionlet(save = true)
 public class SaveContentAsDraftActionlet extends WorkFlowActionlet {
 
-  private final ContentletAPI contentletAPI;
-  private final RelationshipAPI relationshipAPI;
-  private final CategoryAPI categoryAPI;
-  private final PermissionAPI permissionAPI;
+	private final ContentletAPI   contentletAPI;
+	private final RelationshipAPI relationshipAPI;
+	private final CategoryAPI     categoryAPI;
+	private final PermissionAPI   permissionAPI;
 
-  public SaveContentAsDraftActionlet() {
+	public SaveContentAsDraftActionlet() {
 
-    this.contentletAPI = APILocator.getContentletAPI();
-    this.relationshipAPI = APILocator.getRelationshipAPI();
-    this.categoryAPI = APILocator.getCategoryAPI();
-    this.permissionAPI = APILocator.getPermissionAPI();
-  }
+		this.contentletAPI   = APILocator.getContentletAPI();
+		this.relationshipAPI = APILocator.getRelationshipAPI();
+		this.categoryAPI     = APILocator.getCategoryAPI();
+		this.permissionAPI   = APILocator.getPermissionAPI();
+	}
 
-  /** */
-  private static final long serialVersionUID = 1L;
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 
-  public String getName() {
-    return "Save Draft content";
-  }
+	public String getName() {
+		return "Save Draft content";
+	}
 
-  public String getHowTo() {
+	public String getHowTo() {
 
-    return "This actionlet will do checkin as draft the content.";
-  }
+		return "This actionlet will do checkin as draft the content.";
+	}
 
-  public void executeAction(
-      final WorkflowProcessor processor, final Map<String, WorkflowActionClassParameter> params)
-      throws WorkflowActionFailureException {
+	public void executeAction(final WorkflowProcessor processor,
+							  final Map<String, WorkflowActionClassParameter> params) throws WorkflowActionFailureException {
 
-    Map<Relationship, List<Contentlet>> relationshipListHashMap =
-        new HashMap<Relationship, List<Contentlet>>();
-    ContentletRelationships contentletRelationships = null;
-    Contentlet contentletNew = null;
-    try {
+		Map<Relationship, List<Contentlet>> relationshipListHashMap = new HashMap<Relationship, List<Contentlet>>();
+		ContentletRelationships contentletRelationships          = null;
+		Contentlet contentletNew 								 = null;
+		try {
 
-      final Contentlet contentlet = processor.getContentlet();
-      final User user = processor.getUser();
-      List<Category> categories = this.categoryAPI.getParents(contentlet, user, false);
-      final List<Permission> permissions =
-          this.permissionAPI.getPermissions(contentlet, false, true);
+			final Contentlet contentlet             = processor.getContentlet();
+			final User user                         = processor.getUser();
+			List<Category > categories        =
+					this.categoryAPI.getParents(contentlet, user, false);
+			final List< Permission > permissions    =
+					this.permissionAPI.getPermissions(contentlet, false, true);
 
-      Logger.debug(
-          this, "Saving the content as draft of the contentlet: " + contentlet.getIdentifier());
+			Logger.debug(this,
+					"Saving the content as draft of the contentlet: " + contentlet.getIdentifier());
 
-      contentlet.setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.TRUE);
+			contentlet.setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.TRUE);
 
-      this.buildRelationships(processor.getUser(), relationshipListHashMap, contentlet);
+			this.buildRelationships(processor.getUser(), relationshipListHashMap, contentlet);
 
-      if (null != processor.getContentletDependencies()) {
+			if (null != processor.getContentletDependencies()) {
 
-        if (null != processor.getContentletDependencies().getModUser()) {
+				if(null != processor.getContentletDependencies().getModUser()) {
 
-          contentlet.setModUser(processor.getContentletDependencies().getModUser().getUserId());
+					contentlet.setModUser(processor.getContentletDependencies().getModUser().getUserId());
+				}
+
+				if(null != processor.getContentletDependencies().getCategories()) {
+
+					categories = processor.getContentletDependencies().getCategories();
+				}
+
+				if(null != processor.getContentletDependencies().getRelationships()) {
+
+					contentletRelationships
+							= processor.getContentletDependencies().getRelationships();
+				}
+			}
+
+			contentletNew = (null != contentletRelationships)?
+					this.contentletAPI.saveDraft(
+							contentlet, contentletRelationships, categories, permissions, user, true):
+					this.contentletAPI.saveDraft(
+						contentlet, relationshipListHashMap, categories, permissions, user, true);
+
+			processor.setContentlet(contentletNew);
+			Logger.debug(this,
+					"content draft already saved for the contentlet: " + contentlet.getIdentifier());
+		} catch (Exception e) {
+
+			Logger.error(this.getClass(),e.getMessage(),e);
+			throw new  WorkflowActionFailureException(e.getMessage(),e);
+		}
+	}
+
+	private void buildRelationships(final User user,
+									final Map<Relationship, List<Contentlet>> contentRelationships,
+									final Contentlet contentlet) throws DotDataException, DotSecurityException {
+
+		final List<Relationship> relationships =  this.relationshipAPI.
+				byContentType(contentlet.getContentType());
+
+		for (final Relationship relationship : relationships) {
+
+            if (!contentRelationships.containsKey(relationship)) {
+
+                contentRelationships
+                        .put(relationship, new ArrayList<Contentlet>());
+            }
+
+            final List<Contentlet> relatedContents = this.contentletAPI.getRelatedContent(
+                    contentlet, relationship, user, true);
+
+            for (final Contentlet relatedContent : relatedContents) {
+                contentRelationships.get(relationship).add(relatedContent);
+            }
         }
+	}
 
-        if (null != processor.getContentletDependencies().getCategories()) {
+	public WorkflowStep getNextStep() {
 
-          categories = processor.getContentletDependencies().getCategories();
-        }
+		return null;
+	}
 
-        if (null != processor.getContentletDependencies().getRelationships()) {
+	@Override
+	public  List<WorkflowActionletParameter> getParameters() {
 
-          contentletRelationships = processor.getContentletDependencies().getRelationships();
-        }
-      }
-
-      contentletNew =
-          (null != contentletRelationships)
-              ? this.contentletAPI.saveDraft(
-                  contentlet, contentletRelationships, categories, permissions, user, true)
-              : this.contentletAPI.saveDraft(
-                  contentlet, relationshipListHashMap, categories, permissions, user, true);
-
-      processor.setContentlet(contentletNew);
-      Logger.debug(
-          this, "content draft already saved for the contentlet: " + contentlet.getIdentifier());
-    } catch (Exception e) {
-
-      Logger.error(this.getClass(), e.getMessage(), e);
-      throw new WorkflowActionFailureException(e.getMessage(), e);
-    }
-  }
-
-  private void buildRelationships(
-      final User user,
-      final Map<Relationship, List<Contentlet>> contentRelationships,
-      final Contentlet contentlet)
-      throws DotDataException, DotSecurityException {
-
-    final List<Relationship> relationships =
-        this.relationshipAPI.byContentType(contentlet.getContentType());
-
-    for (final Relationship relationship : relationships) {
-
-      if (!contentRelationships.containsKey(relationship)) {
-
-        contentRelationships.put(relationship, new ArrayList<Contentlet>());
-      }
-
-      final List<Contentlet> relatedContents =
-          this.contentletAPI.getRelatedContent(contentlet, relationship, user, true);
-
-      for (final Contentlet relatedContent : relatedContents) {
-        contentRelationships.get(relationship).add(relatedContent);
-      }
-    }
-  }
-
-  public WorkflowStep getNextStep() {
-
-    return null;
-  }
-
-  @Override
-  public List<WorkflowActionletParameter> getParameters() {
-
-    return null;
-  }
+		return null;
+	}
 }

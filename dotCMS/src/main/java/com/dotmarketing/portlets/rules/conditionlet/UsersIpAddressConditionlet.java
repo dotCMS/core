@@ -1,26 +1,26 @@
-// package com.dotmarketing.portlets.rules.conditionlet;
+//package com.dotmarketing.portlets.rules.conditionlet;
 //
-// import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
-// import com.dotmarketing.portlets.rules.RuleComponentInstance;
-// import com.dotmarketing.portlets.rules.ValidationResult;
-// import com.dotmarketing.portlets.rules.model.ParameterModel;
-// import java.util.Collection;
-// import java.util.LinkedHashMap;
-// import java.util.LinkedHashSet;
-// import java.util.List;
-// import java.util.Map;
-// import java.util.regex.Pattern;
-// import java.util.regex.PatternSyntaxException;
+//import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
+//import com.dotmarketing.portlets.rules.RuleComponentInstance;
+//import com.dotmarketing.portlets.rules.ValidationResult;
+//import com.dotmarketing.portlets.rules.model.ParameterModel;
+//import java.util.Collection;
+//import java.util.LinkedHashMap;
+//import java.util.LinkedHashSet;
+//import java.util.List;
+//import java.util.Map;
+//import java.util.regex.Pattern;
+//import java.util.regex.PatternSyntaxException;
 //
-// import javax.servlet.http.HttpServletRequest;
-// import javax.servlet.http.HttpServletResponse;
+//import javax.servlet.http.HttpServletRequest;
+//import javax.servlet.http.HttpServletResponse;
 //
-// import com.dotmarketing.util.Logger;
-// import com.dotmarketing.util.UtilMethods;
+//import com.dotmarketing.util.Logger;
+//import com.dotmarketing.util.UtilMethods;
 //
-// import static com.dotmarketing.portlets.rules.conditionlet.Comparison.IS;
+//import static com.dotmarketing.portlets.rules.conditionlet.Comparison.IS;
 //
-/// **
+///**
 // * This conditionlet will allow CMS users to check the IP address of the user
 // * that issued the request. The information is obtained by reading a specific
 // * list of headers in the {@link HttpServletRequest} object that might contain
@@ -34,8 +34,7 @@
 // * @since 04-21-2015
 // *
 // */
-// public class UsersIpAddressConditionlet extends Conditionlet<UsersIpAddressConditionlet.Instance>
-// {
+//public class UsersIpAddressConditionlet extends Conditionlet<UsersIpAddressConditionlet.Instance> {
 //
 //	private static final long serialVersionUID = 1L;
 //
@@ -52,16 +51,11 @@
 //	private Map<String, ConditionletInput> inputValues = null;
 //
 //	public UsersIpAddressConditionlet() {
-//        super("api.system.ruleengine.conditionlet.VisitorIpAddress",
-// ImmutableSet.<Comparison>of(IS,
-//
-// Comparison.IS_NOT,
-//
-// Comparison.STARTS_WITH,
-//
-// Comparison.NETMASK,
-//
-// Comparison.REGEX), parameters);
+//        super("api.system.ruleengine.conditionlet.VisitorIpAddress", ImmutableSet.<Comparison>of(IS,
+//                                                                                              Comparison.IS_NOT,
+//                                                                                              Comparison.STARTS_WITH,
+//                                                                                              Comparison.NETMASK,
+//                                                                                              Comparison.REGEX), parameters);
 //	}
 //
 //	protected ValidationResult validate(Comparison comparison,
@@ -112,8 +106,7 @@
 //	}
 //
 //	@Override
-//    public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance
-// instance) {
+//    public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance instance) {
 //
 ////        String ipAddress = null;
 ////		try {
@@ -171,4 +164,4 @@
 //        }
 //    }
 //
-// }
+//}

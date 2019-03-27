@@ -7,19 +7,18 @@ import javax.servlet.http.HttpServletResponse;
 
 public class ThrowErrorConditionlet extends Conditionlet {
 
-  public ThrowErrorConditionlet() {
-    super("");
-    throw new Error("As the name says... " + this.getClass().getName());
-  }
+    public ThrowErrorConditionlet() {
+        super("");
+        throw new Error("As the name says... " + this.getClass().getName());
+    }
 
-  @Override
-  public RuleComponentInstance instanceFrom(Map parameters) {
-    throw new Error("As the name says... " + this.getClass().getName());
-  }
+    @Override
+    public RuleComponentInstance instanceFrom(Map parameters) {
+        throw new Error("As the name says... " + this.getClass().getName());
+    }
 
-  @Override
-  public boolean evaluate(
-      HttpServletRequest request, HttpServletResponse response, RuleComponentInstance instance) {
-    throw new Error("As the name says... " + this.getClass().getName());
-  }
+    @Override
+    public boolean evaluate(HttpServletRequest request, HttpServletResponse response, RuleComponentInstance instance) {
+        throw new Error("As the name says... " + this.getClass().getName());
+    }
 }

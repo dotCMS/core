@@ -1,124 +1,129 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render.page;
 
-import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
 import java.util.Date;
 
-/** Contain information about a {@link HTMLPageAssetRendered} */
+
+/**
+ * Contain information about a {@link HTMLPageAssetRendered}
+ */
 @JsonSerialize(using = HTMLPageAssetInfoSerializer.class)
 public class HTMLPageAssetInfo {
 
-  private HTMLPageAsset page;
+    private HTMLPageAsset page;
 
-  private String workingInode;
-  private String shortyWorking;
-  private boolean canEdit;
-  private boolean canRead;
-  private String liveInode;
-  private String shortyLive;
-  private boolean canLock;
-  private Date lockedOn;
-  private String lockedBy;
-  private String lockedByName;
+    private String workingInode;
+    private String shortyWorking;
+    private boolean canEdit;
+    private boolean canRead;
+    private String liveInode;
+    private String shortyLive;
+    private boolean canLock;
+    private Date lockedOn;
+    private String lockedBy;
+    private String lockedByName;
 
-  HTMLPageAssetInfo() {}
+    HTMLPageAssetInfo(){}
 
-  public HTMLPageAsset getPage() {
-    return page;
-  }
+    public HTMLPageAsset getPage() {
+        return page;
+    }
 
-  HTMLPageAssetInfo setPage(HTMLPageAsset page) {
-    this.page = page;
-    return this;
-  }
+    HTMLPageAssetInfo setPage(HTMLPageAsset page) {
+        this.page = page;
+        return this;
+    }
 
-  public String getWorkingInode() {
-    return workingInode;
-  }
+    public String getWorkingInode() {
+        return workingInode;
+    }
 
-  HTMLPageAssetInfo setWorkingInode(String workingInode) {
-    this.workingInode = workingInode;
-    return this;
-  }
+    HTMLPageAssetInfo setWorkingInode(String workingInode) {
+        this.workingInode = workingInode;
+        return this;
+    }
 
-  public String getShortyWorking() {
-    return shortyWorking;
-  }
+    public String getShortyWorking() {
+        return shortyWorking;
+    }
 
-  HTMLPageAssetInfo setShortyWorking(String shortyWorking) {
-    this.shortyWorking = shortyWorking;
-    return this;
-  }
+    HTMLPageAssetInfo setShortyWorking(String shortyWorking) {
+        this.shortyWorking = shortyWorking;
+        return this;
+    }
 
-  public boolean isCanEdit() {
-    return canEdit;
-  }
+    public boolean isCanEdit() {
+        return canEdit;
+    }
 
-  HTMLPageAssetInfo setCanEdit(boolean canEdit) {
-    this.canEdit = canEdit;
-    return this;
-  }
+    HTMLPageAssetInfo setCanEdit(boolean canEdit) {
+        this.canEdit = canEdit;
+        return this;
+    }
 
-  public HTMLPageAssetInfo setCanRead(final boolean canRead) {
-    this.canRead = canRead;
-    return this;
-  }
+    public HTMLPageAssetInfo setCanRead(final boolean canRead) {
+        this.canRead = canRead;
+        return this;
+    }
 
-  public boolean isCanRead() {
-    return canRead;
-  }
+    public boolean isCanRead() {
+        return canRead;
+    }
 
-  public String getLiveInode() {
-    return liveInode;
-  }
+    public String getLiveInode() {
+        return liveInode;
+    }
 
-  HTMLPageAssetInfo setLiveInode(String liveInode) {
-    this.liveInode = liveInode;
-    return this;
-  }
+    HTMLPageAssetInfo setLiveInode(String liveInode) {
+        this.liveInode = liveInode;
+        return this;
+    }
 
-  public String getShortyLive() {
-    return shortyLive;
-  }
+    public String getShortyLive() {
+        return shortyLive;
+    }
 
-  HTMLPageAssetInfo setShortyLive(String shortyLive) {
-    this.shortyLive = shortyLive;
-    return this;
-  }
+    HTMLPageAssetInfo setShortyLive(String shortyLive) {
+        this.shortyLive = shortyLive;
+        return this;
+    }
 
-  public Date getLockedOn() {
-    return lockedOn;
-  }
+    public Date getLockedOn() {
+        return lockedOn;
+    }
 
-  HTMLPageAssetInfo setLockedOn(Date lockedOn) {
-    this.lockedOn = lockedOn;
-    return this;
-  }
+    HTMLPageAssetInfo setLockedOn(Date lockedOn) {
+        this.lockedOn = lockedOn;
+        return this;
+    }
 
-  public String getLockedBy() {
-    return lockedBy;
-  }
+    public String getLockedBy() {
+        return lockedBy;
+    }
 
-  HTMLPageAssetInfo setLockedBy(String lockedBy) {
-    this.lockedBy = lockedBy;
-    return this;
-  }
+    HTMLPageAssetInfo setLockedBy(String lockedBy) {
+        this.lockedBy = lockedBy;
+        return this;
+    }
 
-  public String getLockedByName() {
-    return lockedByName;
-  }
+    public String getLockedByName() {
+        return lockedByName;
+    }
 
-  HTMLPageAssetInfo setLockedByName(String lockedByName) {
-    this.lockedByName = lockedByName;
-    return this;
-  }
+    HTMLPageAssetInfo setLockedByName(String lockedByName) {
+        this.lockedByName = lockedByName;
+        return this;
+    }
 
-  HTMLPageAssetInfo setCanLock(boolean canLock) {
-    this.canLock = canLock;
-    return this;
-  }
+    HTMLPageAssetInfo setCanLock(boolean canLock) {
+        this.canLock = canLock;
+        return this;
+    }
 
-  public boolean isCanLock() {
-    return canLock;
-  }
+    public boolean isCanLock() {
+        return canLock;
+    }
 }

@@ -1,5 +1,6 @@
 package com.dotmarketing.fixtask.tasks;
 
+
 import com.dotmarketing.beans.FixAudit;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -24,191 +25,180 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class FixTask00006CheckLinksInconsistencies implements FixTask {
 
-  private List<Map<String, String>> modifiedData = new ArrayList<Map<String, String>>();
+public class FixTask00006CheckLinksInconsistencies  implements FixTask {
 
-  public List<Map<String, Object>> executeFix() throws DotDataException, DotRuntimeException {
+	
+	private List  <Map<String, String>>  modifiedData = new ArrayList <Map<String,String>>();
+	
+	public List <Map <String,Object>> executeFix() throws DotDataException, DotRuntimeException {
 
-    Logger.info(CMSMaintenanceFactory.class, "Beginning fixAssetsInconsistencies");
-    List<Map<String, Object>> returnValue = new ArrayList<Map<String, Object>>();
-    int counter = 0;
+		Logger.info(CMSMaintenanceFactory.class,
+				"Beginning fixAssetsInconsistencies");
+		 List <Map <String,Object>> returnValue = new ArrayList <Map <String,Object>>();
+		int counter = 0;
 
-    final String fix2LinksQuery =
-        "select c.* from links c, inode i where i.inode = c.inode and c.identifier = ? order by mod_date desc";
-    final String fix3LinksQuery =
-        "update link_version_info set working_inode = ? where identifier = ?";
+		final String fix2LinksQuery = "select c.* from links c, inode i where i.inode = c.inode and c.identifier = ? order by mod_date desc";
+		final String fix3LinksQuery = "update link_version_info set working_inode = ? where identifier = ?";
 
-    if (!FixAssetsProcessStatus.getRunning()) {
-      FixAssetsProcessStatus.startProgress();
-      FixAssetsProcessStatus.setDescription(
-          "task 6: check the working and live versions of links for inconsistencies");
-      HibernateUtil.startTransaction();
-      try {
-        DotConnect db = new DotConnect();
+		if (!FixAssetsProcessStatus.getRunning()) {
+			FixAssetsProcessStatus.startProgress();
+			FixAssetsProcessStatus.setDescription("task 6: check the working and live versions of links for inconsistencies");			
+			HibernateUtil.startTransaction();
+			try {
+				DotConnect db = new DotConnect();
 
-        String query =
-            "select distinct ident.* "
-                + "from identifier ident, "
-                + "inode i, "
-                + "links c "
-                + "where ident.id = c.identifier and "
-                + "ident.id not in (select ident.id "
-                + "from identifier ident, "
-                + "inode i, "
-                + "links c, "
-                + "link_version_info lvi "
-                + "where c.identifier = ident.id and "
-                + "i.inode = c.inode and "
-                + "lvi.working_inode = c.inode) and "
-                + "i.type = 'links' and "
-                + "i.inode = c.inode";
-        Logger.debug(CMSMaintenanceFactory.class, "Running query for links: " + query);
-        db.setSQL(query);
-        List<HashMap<String, String>> linkIds = db.getResults();
-        Logger.debug(CMSMaintenanceFactory.class, "Found " + linkIds.size() + " Links");
-        int total = linkIds.size();
+				String query = "select distinct ident.* " + "from identifier ident, "
+						+ "inode i, " + "links c "
+						+ "where ident.id = c.identifier and "
+						+ "ident.id not in (select ident.id "
+						+ "from identifier ident, " + "inode i, " + "links c, " + "link_version_info lvi "
+						+ "where c.identifier = ident.id and "
+						+ "i.inode = c.inode and " + "lvi.working_inode = c.inode) and "						
+						+ "i.type = 'links' and " + "i.inode = c.inode";
+				Logger.debug(CMSMaintenanceFactory.class,
+						"Running query for links: " + query);
+				db.setSQL(query);
+				List<HashMap<String, String>> linkIds = db.getResults();
+				Logger.debug(CMSMaintenanceFactory.class, "Found "
+						+ linkIds.size() + " Links");
+				int total = linkIds.size();
 
-        Logger.info(CMSMaintenanceFactory.class, "Total number of assets: " + total);
-        FixAssetsProcessStatus.setTotal(total);
+				Logger.info(CMSMaintenanceFactory.class,
+						"Total number of assets: " + total);
+				FixAssetsProcessStatus.setTotal(total);
 
-        long inodeInode;
-        long parentIdentifierInode;
+				long inodeInode;
+				long parentIdentifierInode;
 
-        // Check the working and live versions of contentlets
-        String identifierInode;
-        List<HashMap<String, String>> versions;
-        HashMap<String, String> version;
-        // String versionWorking;
-        String DbConnFalseBoolean = DbConnectionFactory.getDBFalse().trim().toLowerCase();
+				// Check the working and live versions of contentlets
+				String identifierInode;
+				List<HashMap<String, String>> versions;
+				HashMap<String, String> version;
+				//String versionWorking;
+				String DbConnFalseBoolean = DbConnectionFactory.getDBFalse()
+						.trim().toLowerCase();
 
-        char DbConnFalseBooleanChar;
-        if (DbConnFalseBoolean.charAt(0) == '\'')
-          DbConnFalseBooleanChar = DbConnFalseBoolean.charAt(1);
-        else DbConnFalseBooleanChar = DbConnFalseBoolean.charAt(0);
+				char DbConnFalseBooleanChar;
+				if (DbConnFalseBoolean.charAt(0) == '\'')
+					DbConnFalseBooleanChar = DbConnFalseBoolean.charAt(1);
+				else
+					DbConnFalseBooleanChar = DbConnFalseBoolean.charAt(0);
 
-        String inode;
+				String inode;
 
-        // Check the working and live versions of links
-        Logger.info(
-            CMSMaintenanceFactory.class,
-            "Verifying working and live versions for " + linkIds.size() + " links");
-        for (HashMap<String, String> identifier : linkIds) {
-          identifierInode = identifier.get("id");
+				// Check the working and live versions of links
+				Logger.info(CMSMaintenanceFactory.class,
+						"Verifying working and live versions for "
+								+ linkIds.size() + " links");
+				for (HashMap<String, String> identifier : linkIds) {
+					identifierInode = identifier.get("id");
 
-          Logger.debug(CMSMaintenanceFactory.class, "identifier inode " + identifierInode);
-          Logger.debug(CMSMaintenanceFactory.class, "Running query: " + fix2LinksQuery);
+					Logger.debug(CMSMaintenanceFactory.class,
+							"identifier inode " + identifierInode);
+					Logger.debug(CMSMaintenanceFactory.class, "Running query: "
+							+ fix2LinksQuery);
 
-          db.setSQL(fix2LinksQuery);
-          db.addParam(identifierInode);
-          versions = db.getResults();
-          modifiedData.addAll(versions);
+					db.setSQL(fix2LinksQuery);
+					db.addParam(identifierInode);
+					versions = db.getResults();
+					modifiedData.addAll(versions );
+					
 
-          if (0 < versions.size()) {
-            version = versions.get(0);
-            // versionWorking = version.get("working").trim().toLowerCase();
+					if (0 < versions.size()) {
+						version = versions.get(0);
+						//versionWorking = version.get("working").trim().toLowerCase();
 
-            inode = version.get("inode");
-            Logger.debug(CMSMaintenanceFactory.class, "Non Working Link inode : " + inode);
-            Logger.debug(CMSMaintenanceFactory.class, "Running query: " + fix3LinksQuery);
-            db.setSQL(fix3LinksQuery);
-            db.addParam(inode);
-            db.addParam(identifierInode);
-            db.getResult();
+						inode = version.get("inode");
+						Logger.debug(CMSMaintenanceFactory.class,
+								"Non Working Link inode : " + inode);
+						Logger.debug(CMSMaintenanceFactory.class,
+								"Running query: " + fix3LinksQuery);
+						db.setSQL(fix3LinksQuery);						
+						db.addParam(inode);
+						db.addParam(identifierInode);
+						db.getResult();
 
-            FixAssetsProcessStatus.addAErrorFixed();
-            counter++;
-          }
+						FixAssetsProcessStatus.addAErrorFixed();
+						counter++;
+					}
 
-          FixAssetsProcessStatus.addActual();
-        }
-        getModifiedData();
-        FixAudit Audit = new FixAudit();
-        Audit.setTableName("links");
-        Audit.setDatetime(new Date());
-        Audit.setRecordsAltered(total);
-        Audit.setAction(
-            "Check the working and live versions of links for inconsistencies and fix them");
-        HibernateUtil.save(Audit);
-        HibernateUtil.closeAndCommitTransaction();
-        returnValue.add(FixAssetsProcessStatus.getFixAssetsMap());
-        FixAssetsProcessStatus.stopProgress();
-        Logger.debug(CMSMaintenanceFactory.class, "Ending fixAssetsInconsistencies");
-      } catch (Exception e) {
-        Logger.debug(
-            CMSMaintenanceFactory.class, "There was a problem fixing asset inconsistencies", e);
-        Logger.warn(
-            CMSMaintenanceFactory.class, "There was a problem fixing asset inconsistencies", e);
-        HibernateUtil.rollbackTransaction();
-        FixAssetsProcessStatus.stopProgress();
-        FixAssetsProcessStatus.setActual(-1);
-      }
-    }
+					FixAssetsProcessStatus.addActual();
+				}
+				getModifiedData();
+				FixAudit Audit= new FixAudit();
+				Audit.setTableName("links");
+				Audit.setDatetime(new Date());
+				Audit.setRecordsAltered(total);
+				Audit.setAction("Check the working and live versions of links for inconsistencies and fix them");
+				HibernateUtil.save(Audit);				
+				HibernateUtil.closeAndCommitTransaction();
+				returnValue .add(FixAssetsProcessStatus.getFixAssetsMap());
+				FixAssetsProcessStatus.stopProgress();
+				Logger.debug(CMSMaintenanceFactory.class,
+						"Ending fixAssetsInconsistencies");
+			} catch (Exception e) {
+				Logger.debug(CMSMaintenanceFactory.class,
+						"There was a problem fixing asset inconsistencies", e);
+				Logger.warn(CMSMaintenanceFactory.class,
+						"There was a problem fixing asset inconsistencies", e);				
+				HibernateUtil.rollbackTransaction();
+				FixAssetsProcessStatus.stopProgress();
+				FixAssetsProcessStatus.setActual(-1);
+			}
+		}
 
-    return returnValue;
-  }
+		return returnValue;
+	}
 
-  public List<Map<String, String>> getModifiedData() {
+	
+	public List <Map<String, String>> getModifiedData()  {
+		
+		if (modifiedData.size() > 0) {
+			XStream _xstream = new XStream(new DomDriver());
+			Date date = new Date();
+			SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss");
+			String lastmoddate = sdf.format(date);
+			File _writing = null;
 
-    if (modifiedData.size() > 0) {
-      XStream _xstream = new XStream(new DomDriver());
-      Date date = new Date();
-      SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss");
-      String lastmoddate = sdf.format(date);
-      File _writing = null;
+			if (!new File(ConfigUtils.getBackupPath()+File.separator+"fixes").exists()) {
+				new File(ConfigUtils.getBackupPath()+File.separator+"fixes").mkdirs();
+			}
+			_writing = new File(ConfigUtils.getBackupPath()+File.separator+"fixes" + java.io.File.separator  + lastmoddate + "_"
+					+ "FixTask00006CheckLinksInconsistencies" + ".xml");
 
-      if (!new File(ConfigUtils.getBackupPath() + File.separator + "fixes").exists()) {
-        new File(ConfigUtils.getBackupPath() + File.separator + "fixes").mkdirs();
-      }
-      _writing =
-          new File(
-              ConfigUtils.getBackupPath()
-                  + File.separator
-                  + "fixes"
-                  + java.io.File.separator
-                  + lastmoddate
-                  + "_"
-                  + "FixTask00006CheckLinksInconsistencies"
-                  + ".xml");
+			try (BufferedOutputStream _bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()))){
+				_xstream.toXML(modifiedData, _bout);
+			} catch (IOException e) {
+				Logger.error(this, "Error trying to get modified data from XML.", e);
+			}
+		}
+		return modifiedData;
+	}
 
-      try (BufferedOutputStream _bout =
-          new BufferedOutputStream(Files.newOutputStream(_writing.toPath()))) {
-        _xstream.toXML(modifiedData, _bout);
-      } catch (IOException e) {
-        Logger.error(this, "Error trying to get modified data from XML.", e);
-      }
-    }
-    return modifiedData;
-  }
+	public boolean shouldRun() {
+		DotConnect db = new DotConnect();
 
-  public boolean shouldRun() {
-    DotConnect db = new DotConnect();
+		String query = "select distinct ident.* " + "from identifier ident, "
+				+ "inode i, " + "links c "
+				+ "where ident.id = c.identifier and "
+				+ "ident.id not in (select ident.id " + "from identifier ident, "
+				+ "inode i, " + "links c, " + "link_version_info lvi "
+				+ "where c.identifier = ident.id and "
+				+ "i.inode = c.inode and " + "lvi.working_inode = c.inode) and "
+				+ "i.type = 'links' and " + "i.inode = c.inode";
+		db.setSQL(query);
+		List<HashMap<String, String>> linkIds =null; 
+		try {
+			linkIds = db.getResults();
+		} catch (DotDataException e) {
+			Logger.error(this,e.getMessage(), e);
+		}
+		int total = linkIds.size();
+		if (total > 0)
+			return true;
+		else
+			return false;
+	}
 
-    String query =
-        "select distinct ident.* "
-            + "from identifier ident, "
-            + "inode i, "
-            + "links c "
-            + "where ident.id = c.identifier and "
-            + "ident.id not in (select ident.id "
-            + "from identifier ident, "
-            + "inode i, "
-            + "links c, "
-            + "link_version_info lvi "
-            + "where c.identifier = ident.id and "
-            + "i.inode = c.inode and "
-            + "lvi.working_inode = c.inode) and "
-            + "i.type = 'links' and "
-            + "i.inode = c.inode";
-    db.setSQL(query);
-    List<HashMap<String, String>> linkIds = null;
-    try {
-      linkIds = db.getResults();
-    } catch (DotDataException e) {
-      Logger.error(this, e.getMessage(), e);
-    }
-    int total = linkIds.size();
-    if (total > 0) return true;
-    else return false;
-  }
 }

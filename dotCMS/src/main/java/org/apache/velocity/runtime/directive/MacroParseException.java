@@ -16,7 +16,7 @@ package org.apache.velocity.runtime.directive;
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
- * under the License.
+ * under the License.    
  */
 
 import org.apache.velocity.exception.ExtendedParseException;
@@ -25,150 +25,178 @@ import org.apache.velocity.runtime.parser.ParseException;
 import org.apache.velocity.runtime.parser.Token;
 
 /**
- * Exception to indicate problem happened while constructing #macro()
+ *  Exception to indicate problem happened while constructing #macro()
  *
- * <p>For internal use in parser - not to be passed to app level
+ *  For internal use in parser - not to be passed to app level
  *
  * @author <a href="mailto:geirm@apache.org">Geir Magnusson Jr.</a>
  * @author <a href="hps@intermeta.de">Henning P. Schmiedehausen</a>
  * @version $Id: MacroParseException.java 735709 2009-01-19 14:30:03Z byron $
  */
-public class MacroParseException extends ParseException implements ExtendedParseException {
-  private final String templateName;
+public class MacroParseException
+        extends ParseException
+        implements ExtendedParseException
+{
+    private final String templateName;
 
-  /** Version Id for serializable */
-  private static final long serialVersionUID = -4985224672336070689L;
+    /**
+     * Version Id for serializable
+     */
+    private static final long serialVersionUID = -4985224672336070689L;
 
-  /**
-   * @param msg
-   * @param templateName
-   * @param currentToken
-   */
-  public MacroParseException(
-      final String msg, final String templateName, final Token currentToken) {
-    super(msg + " at ");
-    this.currentToken = currentToken;
-    this.templateName = templateName;
-  }
-
-  /**
-   * returns the Template name where this exception occured.
-   *
-   * @return The Template name where this exception occured.
-   * @since 1.5
-   */
-  public String getTemplateName() {
-    return templateName;
-  }
-
-  /**
-   * returns the line number where this exception occured.
-   *
-   * @return The line number where this exception occured.
-   * @since 1.5
-   */
-  public int getLineNumber() {
-    if ((currentToken != null) && (currentToken.next != null)) {
-      return currentToken.next.beginLine;
-    } else if (currentToken != null) {
-      return currentToken.beginLine;
-    } else {
-      return -1;
-    }
-  }
-
-  /**
-   * returns the column number where this exception occured.
-   *
-   * @return The column number where this exception occured.
-   * @since 1.5
-   */
-  public int getColumnNumber() {
-    if ((currentToken != null) && (currentToken.next != null)) {
-      return currentToken.next.beginColumn;
-    } else if (currentToken != null) {
-      return currentToken.beginColumn;
-    } else {
-      return -1;
-    }
-  }
-
-  /**
-   * This method has the standard behavior when this object has been created using the standard
-   * constructors. Otherwise, it uses "currentToken" and "expectedTokenSequences" to generate a
-   * parse error message and returns it. If this object has been created due to a parse error, and
-   * you do not catch it (it gets thrown from the parser), then this method is called during the
-   * printing of the final stack trace, and hence the correct error message gets displayed.
-   *
-   * @return the current message.
-   * @since 1.5
-   */
-  public String getMessage() {
-    if (!specialConstructor) {
-      StringBuilder sb = new StringBuilder(super.getMessage());
-      appendTemplateInfo(sb);
-      return sb.toString();
+    /**
+     * @param msg
+     * @param templateName
+     * @param currentToken
+     */
+    public MacroParseException(final String msg, final String templateName, final Token currentToken)
+    {
+        super(msg + " at ");
+        this.currentToken = currentToken;
+        this.templateName = templateName;
     }
 
-    int maxSize = 0;
-
-    StringBuilder expected = new StringBuilder();
-
-    for (int i = 0; i < expectedTokenSequences.length; i++) {
-      if (maxSize < expectedTokenSequences[i].length) {
-        maxSize = expectedTokenSequences[i].length;
-      }
-
-      for (int j = 0; j < expectedTokenSequences[i].length; j++) {
-        expected.append(tokenImage[expectedTokenSequences[i][j]]).append(" ");
-      }
-
-      if (expectedTokenSequences[i][expectedTokenSequences[i].length - 1] != 0) {
-        expected.append("...");
-      }
-
-      expected.append(eol).append("    ");
+    /**
+     * returns the Template name where this exception occured.
+     * @return The Template name where this exception occured.
+     * @since 1.5
+     */
+    public String getTemplateName()
+    {
+        return templateName;
     }
 
-    StringBuilder retval = new StringBuilder("Encountered \"");
-    Token tok = currentToken.next;
-
-    for (int i = 0; i < maxSize; i++) {
-      if (i != 0) {
-        retval.append(" ");
-      }
-
-      if (tok.kind == 0) {
-        retval.append(tokenImage[0]);
-        break;
-      }
-
-      retval.append(add_escapes(tok.image));
-      tok = tok.next;
+    /**
+     * returns the line number where this exception occured.
+     * @return The line number where this exception occured.
+     * @since 1.5
+     */
+    public int getLineNumber()
+    {
+        if ((currentToken != null) && (currentToken.next != null))
+        {
+            return currentToken.next.beginLine;
+        }
+        else if (currentToken != null)
+        {
+            return currentToken.beginLine;
+        }
+        else
+        {
+            return -1;
+        }
     }
 
-    retval.append("\"");
-    appendTemplateInfo(retval);
-
-    if (expectedTokenSequences.length == 1) {
-      retval.append("Was expecting:").append(eol).append("    ");
-    } else {
-      retval.append("Was expecting one of:").append(eol).append("    ");
+    /**
+     * returns the column number where this exception occured.
+     * @return The column number where this exception occured.
+     * @since 1.5
+     */
+    public int getColumnNumber()
+    {
+        if ((currentToken != null) && (currentToken.next != null))
+        {
+            return currentToken.next.beginColumn;
+        }
+        else if (currentToken != null)
+        {
+            return currentToken.beginColumn;
+        }
+        else
+        {
+            return -1;
+        }
     }
 
-    // avoid JDK 1.3 StringBuilder.append(Object o) vs 1.4 StringBuilder.append(StringBuilder sb)
-    // gotcha.
-    retval.append(expected.toString());
-    return retval.toString();
-  }
+    /**
+     * This method has the standard behavior when this object has been
+     * created using the standard constructors.  Otherwise, it uses
+     * "currentToken" and "expectedTokenSequences" to generate a parse
+     * error message and returns it.  If this object has been created
+     * due to a parse error, and you do not catch it (it gets thrown
+     * from the parser), then this method is called during the printing
+     * of the final stack trace, and hence the correct error message
+     * gets displayed.
+     * @return the current message.
+     * @since 1.5
+     */
+    public String getMessage()
+    {
+        if (!specialConstructor)
+        {
+            StringBuilder sb = new StringBuilder(super.getMessage());
+            appendTemplateInfo(sb);
+            return sb.toString();
+        }
 
-  /**
-   * @param sb
-   * @since 1.5
-   */
-  protected void appendTemplateInfo(final StringBuilder sb) {
-    sb.append(
-        VelocityException.formatFileString(getTemplateName(), getLineNumber(), getColumnNumber()));
-    sb.append(eol);
-  }
+        int maxSize = 0;
+
+        StringBuilder expected = new StringBuilder();
+
+        for (int i = 0; i < expectedTokenSequences.length; i++)
+        {
+            if (maxSize < expectedTokenSequences[i].length)
+            {
+                maxSize = expectedTokenSequences[i].length;
+            }
+
+            for (int j = 0; j < expectedTokenSequences[i].length; j++)
+            {
+                expected.append(tokenImage[expectedTokenSequences[i][j]]).append(" ");
+            }
+
+            if (expectedTokenSequences[i][expectedTokenSequences[i].length - 1] != 0)
+            {
+                expected.append("...");
+            }
+
+            expected.append(eol).append("    ");
+        }
+
+        StringBuilder retval = new StringBuilder("Encountered \"");
+        Token tok = currentToken.next;
+
+        for (int i = 0; i < maxSize; i++)
+        {
+            if (i != 0)
+            {
+                retval.append(" ");
+            }
+
+            if (tok.kind == 0)
+            {
+                retval.append(tokenImage[0]);
+                break;
+            }
+
+            retval.append(add_escapes(tok.image));
+            tok = tok.next;
+        }
+
+        retval.append("\"");
+        appendTemplateInfo(retval);
+
+        if (expectedTokenSequences.length == 1)
+        {
+            retval.append("Was expecting:").append(eol).append("    ");
+        }
+        else
+        {
+            retval.append("Was expecting one of:").append(eol).append("    ");
+        }
+
+        // avoid JDK 1.3 StringBuilder.append(Object o) vs 1.4 StringBuilder.append(StringBuilder sb) gotcha.
+        retval.append(expected.toString());
+        return retval.toString();
+    }
+
+    /**
+     * @param sb
+     * @since 1.5
+     */
+    protected void appendTemplateInfo(final StringBuilder sb)
+    {
+        sb.append(VelocityException.formatFileString(getTemplateName(), getLineNumber(), getColumnNumber()));
+        sb.append(eol);
+    }
 }

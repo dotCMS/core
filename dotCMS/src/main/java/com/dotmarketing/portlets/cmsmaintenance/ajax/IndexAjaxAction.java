@@ -5,6 +5,11 @@ import com.dotcms.content.elasticsearch.business.DotIndexException;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESIndexHelper;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import org.apache.commons.fileupload.FileItem;
+import org.apache.commons.fileupload.FileItemFactory;
+import org.apache.commons.fileupload.FileUploadException;
+import org.apache.commons.fileupload.disk.DiskFileItemFactory;
+import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.rest.api.v1.index.ESIndexResource;
 import com.dotmarketing.business.APILocator;
@@ -32,345 +37,331 @@ import java.util.Map;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.apache.commons.fileupload.FileItem;
-import org.apache.commons.fileupload.FileItemFactory;
-import org.apache.commons.fileupload.FileUploadException;
-import org.apache.commons.fileupload.disk.DiskFileItemFactory;
-import org.apache.commons.fileupload.servlet.ServletFileUpload;
 
 public class IndexAjaxAction extends AjaxAction {
 
-  private final ESIndexHelper indexHelper;
-  private final ESIndexAPI indexAPI;
+	private final ESIndexHelper indexHelper;
+	private final ESIndexAPI indexAPI;
 
-  public IndexAjaxAction() {
-    this.indexHelper = ESIndexHelper.INSTANCE;
-    this.indexAPI = APILocator.getESIndexAPI();
-  }
+	public IndexAjaxAction(){
+		this.indexHelper = ESIndexHelper.INSTANCE;
+		this.indexAPI = APILocator.getESIndexAPI();
+	}
 
-  @VisibleForTesting
-  protected IndexAjaxAction(ESIndexHelper indexHelper, ESIndexAPI indexAPI) {
-    this.indexHelper = indexHelper;
-    this.indexAPI = indexAPI;
-  }
+	@VisibleForTesting
+	protected IndexAjaxAction(ESIndexHelper indexHelper, ESIndexAPI indexAPI){
+		this.indexHelper = indexHelper;
+		this.indexAPI = indexAPI;
+	}
 
-  public void service(HttpServletRequest request, HttpServletResponse response)
-      throws ServletException, IOException {
+	public void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
-    Map<String, String> map = getURIParams();
 
-    String cmd = map.get("cmd");
-    java.lang.reflect.Method meth = null;
-    Class partypes[] = new Class[] {HttpServletRequest.class, HttpServletResponse.class};
-    Object arglist[] = new Object[] {request, response};
-    User user = getUser();
 
-    try {
-      // Check permissions if the user has access to the CMS Maintenance Portlet
-      if (user == null
-          || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("maintenance", user)) {
-        String userName = map.get("u");
-        String password = map.get("p");
-        LoginFactory.doLogin(userName, password, false, request, response);
-        user = (User) request.getSession().getAttribute(WebKeys.CMS_USER);
-        if (user == null) {
-          setUser(request);
-          user = getUser();
-        }
-        if (user == null
-            || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("maintenance", user)) {
-          response.sendError(401);
-          return;
-        }
-      }
 
-      meth = this.getClass().getMethod(cmd, partypes);
+		Map<String, String> map = getURIParams();
 
-    } catch (Exception e) {
 
-      try {
-        cmd = "action";
-        meth = this.getClass().getMethod(cmd, partypes);
-      } catch (Exception ex) {
-        Logger.error(this.getClass(), "Trying to run method:" + cmd);
-        Logger.error(this.getClass(), e.getMessage(), e.getCause());
-        return;
-      }
-    }
-    try {
-      meth.invoke(this, arglist);
-    } catch (Exception e) {
-      Logger.error(IndexAjaxAction.class, "Trying to run method:" + cmd);
-      Logger.error(IndexAjaxAction.class, e.getMessage(), e.getCause());
-      return;
-    }
-  }
 
-  public void restoreIndex(HttpServletRequest request, HttpServletResponse response)
-      throws ServletException, IOException, DotDataException {
-    try {
-      FileItemFactory factory = new DiskFileItemFactory();
-      ServletFileUpload upload = new ServletFileUpload(factory);
-      List<FileItem> items = (List<FileItem>) upload.parseRequest(request);
+		String cmd = map.get("cmd");
+		java.lang.reflect.Method meth = null;
+		Class partypes[] = new Class[] { HttpServletRequest.class, HttpServletResponse.class };
+		Object arglist[] = new Object[] { request, response };
+		User user = getUser();
 
-      String indexToRestore = null;
-      boolean clearBeforeRestore = false;
-      String aliasToRestore = null;
-      File ufile = null;
-      boolean isFlash = false;
-      for (FileItem it : items) {
-        if (it.getFieldName().equalsIgnoreCase("indexToRestore")) {
-          indexToRestore = it.getString().trim();
-        } else if (it.getFieldName().equalsIgnoreCase("aliasToRestore")) {
-          aliasToRestore = it.getString().trim();
-        } else if (it.getFieldName().equalsIgnoreCase("uploadedfiles[]")
-            || it.getFieldName().equals("uploadedfile")
-            || it.getFieldName().equalsIgnoreCase("uploadedfileFlash")) {
-          isFlash = it.getFieldName().equalsIgnoreCase("uploadedfileFlash");
-          ufile = File.createTempFile("indexToRestore", "idx");
-          InputStream in = it.getInputStream();
-          final OutputStream out = Files.newOutputStream(ufile.toPath());
-          IOUtils.copyLarge(in, out);
-          IOUtils.closeQuietly(out);
-          IOUtils.closeQuietly(in);
-        } else if (it.getFieldName().equalsIgnoreCase("clearBeforeRestore")) {
-          clearBeforeRestore = true;
-        }
-      }
 
-      if (ufile != null) {
-        ESIndexResource.restoreIndex(ufile, aliasToRestore, indexToRestore, clearBeforeRestore);
-      }
 
-      PrintWriter out = response.getWriter();
-      if (isFlash) {
-        out.println("response=ok");
-      } else {
-        response.setContentType("application/json");
-        out.println("{\"response\":1}");
-      }
 
-    } catch (FileUploadException fue) {
-      Logger.error(this, "Error uploading file", fue);
-      throw new IOException(fue);
-    }
-  }
 
-  public void downloadIndex(HttpServletRequest request, HttpServletResponse response)
-      throws ServletException, IOException, DotDataException {
-    Map<String, String> map = getURIParams();
-    response.setContentType("application/zip");
+		try {
+			// Check permissions if the user has access to the CMS Maintenance Portlet
+			if (user == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("maintenance", user)) {
+				String userName = map.get("u");
+				String password = map.get("p");
+				LoginFactory.doLogin(userName, password, false, request, response);
+				user = (User) request.getSession().getAttribute(WebKeys.CMS_USER);
+				if(user==null) {
+				    setUser(request);
+                    user = getUser();
+				}
+				if(user==null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("maintenance", user)){
+					response.sendError(401);
+					return;
+				}
+			}
 
-    String indexName =
-        indexHelper.getIndexNameOrAlias(map, "indexName", "indexAlias", this.indexAPI);
-    if (!UtilMethods.isSet(indexName)) return;
 
-    File f = ESIndexResource.downloadIndex(indexName);
-    response.setContentLength((int) f.length());
-    OutputStream out = response.getOutputStream();
-    final InputStream in = Files.newInputStream(f.toPath());
 
-    response.setHeader("Content-Type", "application/zip");
-    response.setHeader("Content-Disposition", "attachment; filename=" + indexName + ".zip");
+			meth = this.getClass().getMethod(cmd, partypes);
 
-    IOUtils.copyLarge(in, out);
+		} catch (Exception e) {
 
-    f.delete();
-  }
+			try {
+				cmd = "action";
+				meth = this.getClass().getMethod(cmd, partypes);
+			} catch (Exception ex) {
+				Logger.error(this.getClass(), "Trying to run method:" + cmd);
+				Logger.error(this.getClass(), e.getMessage(), e.getCause());
+				return;
+			}
+		}
+		try {
+			meth.invoke(this, arglist);
+		} catch (Exception e) {
+			Logger.error(IndexAjaxAction.class, "Trying to run method:" + cmd);
+			Logger.error(IndexAjaxAction.class, e.getMessage(), e.getCause());
+			return;
+		}
 
-  public void createIndex(HttpServletRequest request, HttpServletResponse response)
-      throws ServletException, IOException, DotIndexException {
+	}
 
-    Map<String, String> map = getURIParams();
-    int shards = 0;
+	public void restoreIndex(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotDataException {
+	    try {
+            FileItemFactory factory = new DiskFileItemFactory();
+            ServletFileUpload upload = new ServletFileUpload(factory);
+            List<FileItem> items = (List<FileItem>) upload.parseRequest(request);
 
-    try {
-      shards = Integer.parseInt(map.get("shards"));
+            String indexToRestore=null;
+            boolean clearBeforeRestore=false;
+            String aliasToRestore=null;
+            File ufile=null;
+            boolean isFlash=false;
+            for(FileItem it : items) {
+               if(it.getFieldName().equalsIgnoreCase("indexToRestore")) {
+                   indexToRestore=it.getString().trim();
+               }
+               else if(it.getFieldName().equalsIgnoreCase("aliasToRestore")) {
+                   aliasToRestore=it.getString().trim();
+               }
+               else if(it.getFieldName().equalsIgnoreCase("uploadedfiles[]") || it.getFieldName().equals("uploadedfile")
+                       || it.getFieldName().equalsIgnoreCase("uploadedfileFlash")) {
+                   isFlash=it.getFieldName().equalsIgnoreCase("uploadedfileFlash");
+                   ufile=File.createTempFile("indexToRestore", "idx");
+                   InputStream in=it.getInputStream();
+                   final OutputStream out = Files.newOutputStream(ufile.toPath());
+                   IOUtils.copyLarge(in, out);
+                   IOUtils.closeQuietly(out);
+                   IOUtils.closeQuietly(in);
+               }
+               else if(it.getFieldName().equalsIgnoreCase("clearBeforeRestore")) {
+                   clearBeforeRestore=true;
+               }
+            }
 
-    } catch (Exception e) {
+            if(ufile!=null) {
+                ESIndexResource.restoreIndex(ufile, aliasToRestore, indexToRestore, clearBeforeRestore);
+            }
+            
+            PrintWriter out=response.getWriter();
+            if(isFlash) {
+                out.println("response=ok");
+            }
+            else {
+                response.setContentType("application/json");
+                out.println("{\"response\":1}");
+            }
+            
+	    }
+	    catch(FileUploadException fue) {
+	        Logger.error(this, "Error uploading file", fue);
+	        throw new IOException(fue);
+	    }
+	}
 
-    }
+	
+	public void downloadIndex(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotDataException {
+		Map<String, String> map = getURIParams();
+		response.setContentType("application/zip");
 
-    boolean live = map.get("live") != null;
-    String indexName = map.get("indexName");
+		String indexName = indexHelper.getIndexNameOrAlias(map,"indexName","indexAlias",this.indexAPI);
+		if(!UtilMethods.isSet(indexName)) return;
+		
+		File f=ESIndexResource.downloadIndex(indexName);
+		response.setContentLength((int) f.length());
+		OutputStream out = response.getOutputStream();
+		final InputStream in = Files.newInputStream(f.toPath());
 
-    ESIndexResource.create(indexName, shards, live);
-  }
+		response.setHeader("Content-Type", "application/zip");
+		response.setHeader("Content-Disposition", "attachment; filename=" + indexName + ".zip");
 
-  public void clearIndex(HttpServletRequest request, HttpServletResponse response)
-      throws ServletException, IOException, DotStateException, DotDataException {
-    Map<String, String> map = getURIParams();
+		IOUtils.copyLarge(in, out);
 
-    String indexName =
-        indexHelper.getIndexNameOrAlias(map, "indexName", "indexAlias", this.indexAPI);
+		f.delete();
+	}
 
-    if (UtilMethods.isSet(indexName)) APILocator.getESIndexAPI().clearIndex(indexName);
-  }
+	public void createIndex(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotIndexException {
 
-  public void deleteIndex(HttpServletRequest request, HttpServletResponse response)
-      throws ServletException, IOException {
-    Map<String, String> map = getURIParams();
-    String indexName =
-        indexHelper.getIndexNameOrAlias(map, "indexName", "indexAlias", this.indexAPI);
-    if (UtilMethods.isSet(indexName)) APILocator.getESIndexAPI().delete(indexName);
-  }
+		Map<String, String> map = getURIParams();
+		int shards = 0;
 
-  public void activateIndex(HttpServletRequest request, HttpServletResponse response)
-      throws ServletException, IOException, DotDataException {
-    Map<String, String> map = getURIParams();
-    String indexName =
-        indexHelper.getIndexNameOrAlias(map, "indexName", "indexAlias", this.indexAPI);
+		try{
+			shards = Integer.parseInt(map.get("shards"));
 
-    ESIndexResource.activateIndex(indexName);
-  }
+		}
+		catch(Exception e){
 
-  public void deactivateIndex(HttpServletRequest request, HttpServletResponse response)
-      throws ServletException, IOException, DotDataException {
-    Map<String, String> map = getURIParams();
-    String indexName =
-        indexHelper.getIndexNameOrAlias(map, "indexName", "indexAlias", this.indexAPI);
-    ESIndexResource.deactivateIndex(indexName);
-  }
+		}
 
-  @Override
-  public void action(HttpServletRequest request, HttpServletResponse response)
-      throws ServletException, IOException {
-    return;
-  }
 
-  public void updateReplicas(HttpServletRequest request, HttpServletResponse response)
-      throws ServletException, IOException {
-    Map<String, String> map = getURIParams();
-    String indexName =
-        indexHelper.getIndexNameOrAlias(map, "indexName", "indexAlias", this.indexAPI);
+		boolean live = map.get("live") != null;
+		String indexName = map.get("indexName");
+		
+		ESIndexResource.create(indexName, shards, live);
+	}
 
-    int replicas = Integer.parseInt(map.get("replicas"));
+	public void clearIndex(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotStateException, DotDataException {
+		Map<String, String> map = getURIParams();
 
-    try {
-      APILocator.getESIndexAPI().updateReplicas(indexName, replicas);
-    } catch (DotDataException e) {
-      writeError(response, e.getMessage());
-    }
-  }
+		String indexName = indexHelper.getIndexNameOrAlias(map,"indexName","indexAlias",this.indexAPI);
 
-  public void writeError(HttpServletResponse response, String error) throws IOException {
-    String ret = null;
+		if(UtilMethods.isSet(indexName))
+		    APILocator.getESIndexAPI().clearIndex(indexName);
 
-    try {
-      ret = LanguageUtil.get(getUser(), error);
-    } catch (Exception e) {
+	}
 
-    }
-    if (ret == null) {
-      try {
-        ret =
-            LanguageUtil.get(
-                PublicCompanyFactory.getDefaultCompanyId(),
-                PublicCompanyFactory.getDefaultCompany().getLocale(),
-                error);
-      } catch (Exception e) {
+	public void deleteIndex(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		Map<String, String> map = getURIParams();
+		String indexName = indexHelper.getIndexNameOrAlias(map,"indexName","indexAlias",this.indexAPI);
+		if(UtilMethods.isSet(indexName))
+		    APILocator.getESIndexAPI().delete(indexName);
+	}
 
-      }
-    }
-    if (ret == null) {
-      ret = error;
-    }
+	public void activateIndex(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotDataException {
+		Map<String, String> map = getURIParams();
+		String indexName = indexHelper.getIndexNameOrAlias(map,"indexName","indexAlias",this.indexAPI);
 
-    response.getWriter().println("FAILURE: " + ret);
-  }
+		ESIndexResource.activateIndex(indexName);
 
-  public void closeIndex(HttpServletRequest request, HttpServletResponse response) {
-    Map<String, String> map = getURIParams();
-    String indexName =
-        indexHelper.getIndexNameOrAlias(map, "indexName", "indexAlias", this.indexAPI);
+	}
+	public void deactivateIndex(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotDataException {
+		Map<String, String> map = getURIParams();
+		String indexName = indexHelper.getIndexNameOrAlias(map,"indexName","indexAlias",this.indexAPI);
+		ESIndexResource.deactivateIndex(indexName);
+	}
 
-    APILocator.getESIndexAPI().closeIndex(indexName);
-  }
+	@Override
+	public void action(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		return;
 
-  public void openIndex(HttpServletRequest request, HttpServletResponse response) {
-    Map<String, String> map = getURIParams();
-    String indexName = map.get("indexName");
-    APILocator.getESIndexAPI().openIndex(indexName);
-  }
+	}
 
-  public void getActiveIndex(HttpServletRequest request, HttpServletResponse response)
-      throws IOException {
-    Map<String, String> map = getURIParams();
-    String type = map.get("type");
-    String resp = null;
 
-    try {
-      resp = APILocator.getContentletIndexAPI().getActiveIndexName(type);
-    } catch (DotDataException e) {
-      resp = e.getMessage();
-    }
+	public void updateReplicas(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		Map<String, String> map = getURIParams();
+		String indexName = indexHelper.getIndexNameOrAlias(map,"indexName","indexAlias",this.indexAPI);
 
-    response.getWriter().println(resp);
-  }
+		int replicas = Integer.parseInt(map.get("replicas"));
 
-  public void getIndexStatus(HttpServletRequest request, HttpServletResponse response)
-      throws IOException {
-    Map<String, String> map = getURIParams();
-    String indexName =
-        indexHelper.getIndexNameOrAlias(map, "indexName", "indexAlias", this.indexAPI);
-    String resp = null;
+		try{
+			APILocator.getESIndexAPI().updateReplicas(indexName, replicas);
+		}catch (DotDataException e){
+			writeError(response, e.getMessage());
+		}
+	}
 
-    try {
-      resp = APILocator.getESIndexAPI().getIndexStatus(indexName).getStatus();
-    } catch (DotDataException e) {
-      resp = e.getMessage();
-    }
 
-    response.getWriter().println(resp);
-  }
+	public void writeError(HttpServletResponse response, String error) throws IOException {
+		String ret = null;
 
-  public void getIndexRecordCount(HttpServletRequest request, HttpServletResponse response)
-      throws IOException {
-    Map<String, String> map = getURIParams();
-    String indexName =
-        indexHelper.getIndexNameOrAlias(map, "indexName", "indexAlias", this.indexAPI);
+		try {
+			ret = LanguageUtil.get(getUser(), error);
+		} catch (Exception e) {
 
-    response.getWriter().println(ESIndexResource.indexDocumentCount(indexName));
-  }
+		}
+		if (ret == null) {
+			try {
+				ret = LanguageUtil.get(PublicCompanyFactory.getDefaultCompanyId(), PublicCompanyFactory.getDefaultCompany().getLocale(),
+						error);
+			} catch (Exception e) {
 
-  public void getNotActiveIndexNames(HttpServletRequest request, HttpServletResponse response)
-      throws IOException {
-    ContentletIndexAPI idxApi = APILocator.getContentletIndexAPI();
-    List<String> indices = idxApi.listDotCMSIndices();
-    List<String> inactives = new ArrayList<String>();
+			}
+		}
+		if (ret == null) {
+			ret = error;
+		}
 
-    for (String index : indices) {
-      try {
-        if (APILocator.getESIndexAPI().getIndexStatus(index) == ESIndexAPI.Status.INACTIVE) {
-          inactives.add(index);
-        }
-      } catch (DotDataException e) {
-      }
+		response.getWriter().println("FAILURE: " + ret);
+	}
+
+	public void closeIndex(HttpServletRequest request, HttpServletResponse response) {
+	    Map<String, String> map = getURIParams();
+	    String indexName = indexHelper.getIndexNameOrAlias(map,"indexName","indexAlias",this.indexAPI);
+
+	    APILocator.getESIndexAPI().closeIndex(indexName);
+	}
+
+	public void openIndex(HttpServletRequest request, HttpServletResponse response) {
+		Map<String, String> map = getURIParams();
+		String indexName = map.get("indexName");
+		APILocator.getESIndexAPI().openIndex(indexName);
+	}
+
+	public void getActiveIndex(HttpServletRequest request, HttpServletResponse response) throws IOException  {
+		Map<String, String> map = getURIParams();
+		String type =map.get("type");
+		String resp = null;
+
+		try {
+			resp =  APILocator.getContentletIndexAPI().getActiveIndexName(type);
+		} catch (DotDataException e) {
+			resp =  e.getMessage();
+		}
+
+		response.getWriter().println(resp);
+	}
+
+	public void getIndexStatus(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		Map<String, String> map = getURIParams();
+		String indexName = indexHelper.getIndexNameOrAlias(map,"indexName","indexAlias",this.indexAPI);
+		String resp = null;
+
+		try {
+			resp = APILocator.getESIndexAPI().getIndexStatus(indexName).getStatus();
+		} catch (DotDataException e) {
+			resp = e.getMessage();
+		}
+
+		response.getWriter().println(resp);
     }
 
-    response.getWriter().println(inactives);
-  }
+	public void getIndexRecordCount(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		Map<String, String> map = getURIParams();
+		String indexName = indexHelper.getIndexNameOrAlias(map,"indexName","indexAlias",this.indexAPI);
 
-  public void stopReindexThread(HttpServletRequest request, HttpServletResponse response)
-      throws IOException {
-    ReindexThread.stopThread();
-  }
+		response.getWriter().println(ESIndexResource.indexDocumentCount(indexName));
+	}
 
-  public void startReindexThread(HttpServletRequest request, HttpServletResponse response)
-      throws IOException {
-    ReindexThread.startThread(
-        Config.getIntProperty("REINDEX_THREAD_SLEEP", 500),
-        Config.getIntProperty("REINDEX_THREAD_INIT_DELAY", 5000));
-  }
+	public void getNotActiveIndexNames(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		ContentletIndexAPI idxApi = APILocator.getContentletIndexAPI();
+		List<String> indices = idxApi.listDotCMSIndices();
+		List<String> inactives = new ArrayList<String>();
 
-  public void getReindexThreadStatus(HttpServletRequest request, HttpServletResponse response)
-      throws IOException {
-    response.getWriter().println(ReindexThread.getInstance().isWorking() ? "active" : "stopped");
-  }
+		for (String index : indices) {
+			try {
+				if(APILocator.getESIndexAPI().getIndexStatus(index) == ESIndexAPI.Status.INACTIVE) {
+					inactives.add(index);
+				}
+			} catch (DotDataException e) {
+			}
+		}
 
-  public void indexList(HttpServletRequest request, HttpServletResponse response)
-      throws IOException {
-    ContentletIndexAPI idxApi = APILocator.getContentletIndexAPI();
-    response.getWriter().println(idxApi.listDotCMSIndices());
-  }
+		response.getWriter().println(inactives);
+	}
+
+	public void stopReindexThread(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		ReindexThread.stopThread();
+	}
+
+	public void startReindexThread(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		ReindexThread.startThread(Config.getIntProperty("REINDEX_THREAD_SLEEP", 500), Config.getIntProperty("REINDEX_THREAD_INIT_DELAY", 5000));
+	}
+
+	public void getReindexThreadStatus(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		response.getWriter().println(ReindexThread.getInstance().isWorking()?"active":"stopped");
+	}
+
+	public void indexList(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        ContentletIndexAPI idxApi = APILocator.getContentletIndexAPI();
+        response.getWriter().println(idxApi.listDotCMSIndices());        
+    }
 }

@@ -12,6 +12,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
+
 import java.util.List;
 
 /**
@@ -21,45 +22,36 @@ import java.util.List;
  */
 public class LocalSystemEventSubscribersInitializer implements DotInitializer {
 
-  @Override
-  public void init() {
+    @Override
+    public void init() {
 
-    APILocator.getLocalSystemEventsAPI().subscribe(VanityUrlServices.getInstance());
+        APILocator.getLocalSystemEventsAPI().subscribe(VanityUrlServices.getInstance());
 
-    APILocator.getLocalSystemEventsAPI().subscribe(new ContentTypeAndFieldsModsListeners());
+        APILocator.getLocalSystemEventsAPI().subscribe(new ContentTypeAndFieldsModsListeners());
 
-    this.initApplicationContainerFolderListener();
-  }
-
-  public void initApplicationContainerFolderListener() {
-
-    try {
-
-      final User user = APILocator.systemUser();
-      final List<Host> hosts = APILocator.getHostAPI().findAllFromDB(user, false);
-      final ApplicationContainerFolderListener listener = new ApplicationContainerFolderListener();
-      for (final Host host : hosts) {
-
-        final Folder appContainerFolder =
-            APILocator.getFolderAPI()
-                .findFolderByPath(Constants.CONTAINER_FOLDER_PATH, host, user, false);
-
-        APILocator.getFolderAPI()
-            .subscribeFolderListener(
-                appContainerFolder,
-                listener,
-                childName ->
-                    null != childName && childName.endsWith(Constants.VELOCITY_FILE_EXTENSION));
-      }
-    } catch (DotDataException | DotSecurityException e) {
-
-      Logger.error(
-          this,
-          "Could not init the: "
-              + ApplicationContainerFolderListener.class.getName()
-              + ", msg: "
-              + e.getMessage(),
-          e);
+        this.initApplicationContainerFolderListener();
     }
-  }
+
+    public void initApplicationContainerFolderListener() {
+
+        try {
+
+            final User user  = APILocator.systemUser();
+            final List<Host> hosts = APILocator.getHostAPI().findAllFromDB(user, false);
+            final ApplicationContainerFolderListener listener = new ApplicationContainerFolderListener();
+            for (final Host host : hosts) {
+
+                final Folder appContainerFolder = APILocator.getFolderAPI().findFolderByPath(Constants.CONTAINER_FOLDER_PATH,
+                        host, user, false);
+
+                APILocator.getFolderAPI().subscribeFolderListener(appContainerFolder, listener,
+                        childName -> null != childName && childName.endsWith(Constants.VELOCITY_FILE_EXTENSION));
+            }
+        } catch (DotDataException | DotSecurityException e) {
+
+            Logger.error(this, "Could not init the: " +
+                    ApplicationContainerFolderListener.class.getName() + ", msg: " + e.getMessage(), e);
+        }
+    }
+
 }

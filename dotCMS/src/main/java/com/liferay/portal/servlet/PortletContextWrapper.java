@@ -1,102 +1,114 @@
 /**
  * Copyright (c) 2000-2005 Liferay, LLC. All rights reserved.
  *
- * <p>Permission is hereby granted, free of charge, to any person obtaining a copy of this software
- * and associated documentation files (the "Software"), to deal in the Software without restriction,
- * including without limitation the rights to use, copy, modify, merge, publish, distribute,
- * sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * <p>The above copyright notice and this permission notice shall be included in all copies or
- * substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
  *
- * <p>THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
- * BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
- * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
  */
+
 package com.liferay.portal.servlet;
 
-import com.dotcms.repackage.javax.portlet.Portlet;
-import com.dotcms.repackage.javax.portlet.PreferencesValidator;
-import com.liferay.portal.job.Scheduler;
 import java.util.Locale;
 import java.util.Map;
 import java.util.ResourceBundle;
+
+import com.dotcms.repackage.javax.portlet.Portlet;
+import com.dotcms.repackage.javax.portlet.PreferencesValidator;
 import javax.servlet.ServletContext;
+
+import com.liferay.portal.job.Scheduler;
+
 
 /**
  * <a href="PortletContextWrapper.java.html"><b><i>View Source</i></b></a>
  *
- * @author Brian Wing Shun Chan
+ * @author  Brian Wing Shun Chan
  * @version $Revision: 1.6 $
+ *
  */
 public class PortletContextWrapper {
 
-  public PortletContextWrapper(
-      String portletName,
-      ServletContext servletContext,
-      Portlet portletInstance,
-      Scheduler schedulerInstance,
-      PreferencesValidator prefsValidator,
-      Map resourceBundles,
-      Map customUserAttributes) {
+	public PortletContextWrapper(String portletName,
+								 ServletContext	servletContext,
+								 Portlet portletInstance,
 
-    _portletName = portletName;
-    _servletContext = servletContext;
-    _portletInstance = portletInstance;
+								 Scheduler schedulerInstance,
+								 PreferencesValidator prefsValidator,
+								 Map resourceBundles,
+								 Map customUserAttributes) {
 
-    _schedulerInstance = schedulerInstance;
-    _prefsValidator = prefsValidator;
-    _resourceBundles = resourceBundles;
-    _customUserAttributes = customUserAttributes;
-  }
+		_portletName = portletName;
+		_servletContext = servletContext;
+		_portletInstance = portletInstance;
 
-  public String getPortletName() {
-    return _portletName;
-  }
+		_schedulerInstance = schedulerInstance;
+		_prefsValidator = prefsValidator;
+		_resourceBundles = resourceBundles;
+		_customUserAttributes = customUserAttributes;
+	}
 
-  public ServletContext getServletContext() {
-    return _servletContext;
-  }
+	public String getPortletName() {
+		return _portletName;
+	}
 
-  public Portlet getPortletInstance() {
-    return _portletInstance;
-  }
+	public ServletContext getServletContext() {
+		return _servletContext;
+	}
 
-  public void removePortletInstance() {
-    _portletInstance = null;
-  }
+	public Portlet getPortletInstance() {
+		return _portletInstance;
+	}
 
-  public Scheduler getSchedulerInstance() {
-    return _schedulerInstance;
-  }
+	public void removePortletInstance() {
+		_portletInstance = null;
+	}
 
-  public PreferencesValidator getPreferencesValidator() {
-    return _prefsValidator;
-  }
 
-  public ResourceBundle getResourceBundle(Locale locale) {
-    ResourceBundle resourceBundle = (ResourceBundle) _resourceBundles.get(locale.getLanguage());
+	public Scheduler getSchedulerInstance() {
+		return _schedulerInstance;
+	}
 
-    if (resourceBundle == null) {
-      resourceBundle = (ResourceBundle) _resourceBundles.get(Locale.getDefault().getLanguage());
-    }
+	public PreferencesValidator getPreferencesValidator() {
+		return _prefsValidator;
+	}
 
-    return resourceBundle;
-  }
+	public ResourceBundle getResourceBundle(Locale locale) {
+		ResourceBundle resourceBundle = (ResourceBundle)_resourceBundles.get(
+			locale.getLanguage());
 
-  public Map getCustomUserAttributes() {
-    return _customUserAttributes;
-  }
+		if (resourceBundle == null) {
+			resourceBundle = (ResourceBundle)_resourceBundles.get(
+				Locale.getDefault().getLanguage());
+		}
 
-  private String _portletName;
-  private ServletContext _servletContext;
-  private Portlet _portletInstance;
+		return resourceBundle;
+	}
 
-  private Scheduler _schedulerInstance;
-  private PreferencesValidator _prefsValidator;
-  private Map _resourceBundles;
-  private Map _customUserAttributes;
+	public Map getCustomUserAttributes() {
+		return _customUserAttributes;
+	}
+
+	private String _portletName;
+	private ServletContext _servletContext;
+	private Portlet _portletInstance;
+
+	private Scheduler _schedulerInstance;
+	private PreferencesValidator _prefsValidator;
+	private Map _resourceBundles;
+	private Map _customUserAttributes;
+
 }

@@ -1,103 +1,92 @@
 package com.dotmarketing.factories;
 
 import com.dotcms.repackage.javax.portlet.WindowState;
-import com.dotmarketing.business.Layout;
-import com.dotmarketing.util.WebKeys;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
-/** @author maria, david (2005) */
+import com.dotmarketing.business.Layout;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
+
+/**
+ *
+ * @author  maria, david (2005)
+ */
 public class PreviewFactory {
 
-  public static void setVelocityURLS(HttpServletRequest hreq) {
 
-    HttpSession session = hreq.getSession();
 
-    java.util.Map<String, String[]> params = new java.util.HashMap<String, String[]>();
-    params.put("struts_action", new String[] {"/ext/director/direct"});
-    String directorURL =
-        com.dotmarketing.util.PortletURLUtil.getActionURL(
-            hreq, WindowState.MAXIMIZED.toString(), params);
-    session.setAttribute(WebKeys.DIRECTOR_URL, directorURL);
+	public static void setVelocityURLS(HttpServletRequest hreq) {
 
-    String portletId = null;
+		HttpSession session = hreq.getSession();
 
-    params = new java.util.HashMap<String, String[]>();
-    params.put("struts_action", new String[] {"/ext/browser/view_browser"});
-    portletId = "site-browser";
-    String viewBrowserURL = null;
-    try {
-      viewBrowserURL =
-          com.dotmarketing.util.PortletURLUtil.getActionURL(
-              hreq, WindowState.MAXIMIZED.toString(), params, portletId);
-    } catch (Exception e) {
-      viewBrowserURL =
-          com.dotmarketing.util.PortletURLUtil.getActionURL(
-              hreq, WindowState.MAXIMIZED.toString(), params);
-    }
-    session.setAttribute(WebKeys.VIEW_BROWSER_URL, viewBrowserURL);
+		java.util.Map<String, String[]> params = new java.util.HashMap<String, String[]>();
+		params.put("struts_action",new String[] {"/ext/director/direct"});
+		String directorURL = com.dotmarketing.util.PortletURLUtil.getActionURL(hreq,WindowState.MAXIMIZED.toString(),params);
+		session.setAttribute(WebKeys.DIRECTOR_URL, directorURL);
 
-    portletId = "site-browser";
-    params = new java.util.HashMap<String, String[]>();
-    params.put("struts_action", new String[] {"/ext/htmlpages/preview_htmlpage"});
-    String previewPageURL = null;
-    try {
-      previewPageURL =
-          com.dotmarketing.util.PortletURLUtil.getActionURL(
-              hreq, WindowState.MAXIMIZED.toString(), params, portletId);
-    } catch (Exception e) {
-      previewPageURL =
-          com.dotmarketing.util.PortletURLUtil.getActionURL(
-              hreq, WindowState.MAXIMIZED.toString(), params);
-    }
+		String portletId=null;
 
-    session.setAttribute(WebKeys.PREVIEW_PAGE_URL, previewPageURL);
+		params = new java.util.HashMap<String, String[]>();
+		params.put("struts_action",new String[] {"/ext/browser/view_browser"});
+		portletId="site-browser";
+		String viewBrowserURL = null;
+		try {
+			 viewBrowserURL = com.dotmarketing.util.PortletURLUtil.getActionURL(hreq,WindowState.MAXIMIZED.toString(),params, portletId);
+		} catch(Exception e) {
+			viewBrowserURL = com.dotmarketing.util.PortletURLUtil.getActionURL(hreq,WindowState.MAXIMIZED.toString(),params);
+		}
+		session.setAttribute(WebKeys.VIEW_BROWSER_URL, viewBrowserURL);
 
-    params = new java.util.HashMap<String, String[]>();
-    params.put("struts_action", new String[] {"/ext/contentlet/view_contentlets_popup"});
-    String viewContentsURL =
-        com.dotmarketing.util.PortletURLUtil.getActionURL(
-            hreq, WindowState.MAXIMIZED.toString(), params);
-    session.setAttribute(WebKeys.VIEW_CONTENTS_URL, viewContentsURL);
-  }
+		portletId="site-browser";
+		params = new java.util.HashMap<String, String[]>();
+		params.put("struts_action",new String[] {"/ext/htmlpages/preview_htmlpage"});
+		String previewPageURL = null;
+		try {
+			previewPageURL = com.dotmarketing.util.PortletURLUtil.getActionURL(hreq,WindowState.MAXIMIZED.toString(),params,portletId);
+		} catch (Exception e) {
+			previewPageURL = com.dotmarketing.util.PortletURLUtil.getActionURL(hreq,WindowState.MAXIMIZED.toString(),params);
+		}
 
-  public static void setVelocityURLS(HttpServletRequest hreq, Layout layout) {
-    hreq.setAttribute(WebKeys.LAYOUT, layout);
-    HttpSession session = hreq.getSession();
+		session.setAttribute(WebKeys.PREVIEW_PAGE_URL, previewPageURL);
 
-    String portletId = null;
-    java.util.Map<String, String[]> params = new java.util.HashMap<String, String[]>();
-    params.put("struts_action", new String[] {"/ext/director/direct"});
-    // director portlet
-    portletId = "site-browser";
-    String directorURL =
-        com.dotmarketing.util.PortletURLUtil.getActionURL(
-            hreq, WindowState.MAXIMIZED.toString(), params, portletId);
-    session.setAttribute(WebKeys.DIRECTOR_URL, directorURL);
+		params = new java.util.HashMap<String, String[]>();
+		params.put("struts_action",new String[] {"/ext/contentlet/view_contentlets_popup"});
+		String viewContentsURL = com.dotmarketing.util.PortletURLUtil.getActionURL(hreq,WindowState.MAXIMIZED.toString(),params);
+		session.setAttribute(WebKeys.VIEW_CONTENTS_URL, viewContentsURL);
 
-    params = new java.util.HashMap<String, String[]>();
-    params.put("struts_action", new String[] {"/ext/browser/view_browser"});
-    portletId = "site-browser";
-    String viewBrowserURL =
-        com.dotmarketing.util.PortletURLUtil.getActionURL(
-            hreq, WindowState.MAXIMIZED.toString(), params, portletId);
-    // iewBrowserURL
-    // =(UtilMethods.isSet(hreq.getParameter("referer"))?hreq.getParameter("referer"):viewBrowserURL);
-    session.setAttribute(WebKeys.VIEW_BROWSER_URL, viewBrowserURL);
+	}
 
-    portletId = "site-browser";
-    params = new java.util.HashMap<String, String[]>();
-    params.put("struts_action", new String[] {"/ext/htmlpages/preview_htmlpage"});
-    String previewPageURL =
-        com.dotmarketing.util.PortletURLUtil.getActionURL(
-            hreq, WindowState.MAXIMIZED.toString(), params, portletId);
-    session.setAttribute(WebKeys.PREVIEW_PAGE_URL, previewPageURL);
+	public static void setVelocityURLS(HttpServletRequest hreq, Layout layout) {
+		hreq.setAttribute(WebKeys.LAYOUT, layout);
+		HttpSession session = hreq.getSession();
 
-    params = new java.util.HashMap<String, String[]>();
-    params.put("struts_action", new String[] {"/ext/contentlet/view_contentlets_popup"});
-    String viewContentsURL =
-        com.dotmarketing.util.PortletURLUtil.getActionURL(
-            hreq, WindowState.MAXIMIZED.toString(), params, portletId);
-    session.setAttribute(WebKeys.VIEW_CONTENTS_URL, viewContentsURL);
-  }
+		String portletId=null;
+		java.util.Map<String, String[]> params = new java.util.HashMap<String, String[]>();
+		params.put("struts_action",new String[] {"/ext/director/direct"});
+		// director portlet
+		portletId="site-browser";
+		String directorURL = com.dotmarketing.util.PortletURLUtil.getActionURL(hreq,WindowState.MAXIMIZED.toString(),params, portletId);
+		session.setAttribute(WebKeys.DIRECTOR_URL, directorURL);
+
+		params = new java.util.HashMap<String, String[]>();
+		params.put("struts_action",new String[] {"/ext/browser/view_browser"});
+		portletId="site-browser";
+		String viewBrowserURL = com.dotmarketing.util.PortletURLUtil.getActionURL(hreq,WindowState.MAXIMIZED.toString(),params, portletId);
+		//iewBrowserURL =(UtilMethods.isSet(hreq.getParameter("referer"))?hreq.getParameter("referer"):viewBrowserURL);
+		session.setAttribute(WebKeys.VIEW_BROWSER_URL, viewBrowserURL);
+
+		portletId="site-browser";
+		params = new java.util.HashMap<String, String[]>();
+		params.put("struts_action",new String[] {"/ext/htmlpages/preview_htmlpage"});
+		String previewPageURL = com.dotmarketing.util.PortletURLUtil.getActionURL(hreq,WindowState.MAXIMIZED.toString(),params,portletId);
+		session.setAttribute(WebKeys.PREVIEW_PAGE_URL, previewPageURL);
+
+		params = new java.util.HashMap<String, String[]>();
+		params.put("struts_action",new String[] {"/ext/contentlet/view_contentlets_popup"});
+		String viewContentsURL = com.dotmarketing.util.PortletURLUtil.getActionURL(hreq,WindowState.MAXIMIZED.toString(),params,portletId);
+		session.setAttribute(WebKeys.VIEW_CONTENTS_URL, viewContentsURL);
+
+	}
+
 }

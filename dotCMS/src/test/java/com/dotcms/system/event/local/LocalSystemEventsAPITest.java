@@ -4,198 +4,212 @@ import com.dotcms.UnitTestBase;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
-import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 /**
- * LocalSystemEventsAPITest Test
- *
+ * LocalSystemEventsAPITest
+ * Test
  * @author jsanca
  */
+
 public class LocalSystemEventsAPITest extends UnitTestBase {
 
-  @Test
-  public void annotationSubscribeTest() throws DotDataException {
+    @Test
+    public void annotationSubscribeTest() throws DotDataException {
 
-    final TestAnnotatedSubscriber testAnnotatedSubscriber = new TestAnnotatedSubscriber();
+        final TestAnnotatedSubscriber testAnnotatedSubscriber =
+                new TestAnnotatedSubscriber();
 
-    final LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
+        final LocalSystemEventsAPI localSystemEventsAPI =
+                APILocator.getLocalSystemEventsAPI();
 
-    localSystemEventsAPI.subscribe(testAnnotatedSubscriber);
+        localSystemEventsAPI.subscribe(testAnnotatedSubscriber);
 
-    localSystemEventsAPI.notify(new TestEventType1("works??"));
-    localSystemEventsAPI.asyncNotify(new TestEventType1("yeah works??"));
+        localSystemEventsAPI.notify(new TestEventType1("works??"));
+        localSystemEventsAPI.asyncNotify(new TestEventType1("yeah works??"));
 
-    Assert.assertTrue(testAnnotatedSubscriber.isCalled());
+        Assert.assertTrue(testAnnotatedSubscriber.isCalled());
 
-    localSystemEventsAPI.unsubscribe(testAnnotatedSubscriber);
-  } // annotationSubscribeTest.
+        localSystemEventsAPI.unsubscribe(testAnnotatedSubscriber);
 
-  @Test
-  public void delegateSubscribeTest() throws DotDataException {
+    } // annotationSubscribeTest.
 
-    final TestDelegateSubscriber testDelegateSubscriber = new TestDelegateSubscriber();
+    @Test
+    public void delegateSubscribeTest() throws DotDataException {
 
-    final LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
+        final TestDelegateSubscriber testDelegateSubscriber =
+                new TestDelegateSubscriber();
 
-    localSystemEventsAPI.subscribe(TestEventType2.class, testDelegateSubscriber);
+        final LocalSystemEventsAPI localSystemEventsAPI =
+                APILocator.getLocalSystemEventsAPI();
 
-    localSystemEventsAPI.notify(new TestEventType2("it works??"));
-    localSystemEventsAPI.asyncNotify(new TestEventType2("yeah it works??"));
+        localSystemEventsAPI.subscribe(TestEventType2.class, testDelegateSubscriber);
 
-    Assert.assertTrue(testDelegateSubscriber.isCalled());
+        localSystemEventsAPI.notify(new TestEventType2("it works??"));
+        localSystemEventsAPI.asyncNotify(new TestEventType2("yeah it works??"));
 
-    localSystemEventsAPI.unsubscribe(testDelegateSubscriber);
-  } // delegateSubscribeTest.
+        Assert.assertTrue(testDelegateSubscriber.isCalled());
 
-  @Test
-  public void delegatePlusAnnotationSubscribeTest() throws DotDataException {
+        localSystemEventsAPI.unsubscribe(testDelegateSubscriber);
+    } // delegateSubscribeTest.
 
-    final TestDelegatePlusAnnotationSubscriber testDelegateSubscriber =
-        new TestDelegatePlusAnnotationSubscriber();
+    @Test
+    public void delegatePlusAnnotationSubscribeTest() throws DotDataException {
 
-    final LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
+        final TestDelegatePlusAnnotationSubscriber testDelegateSubscriber =
+                new TestDelegatePlusAnnotationSubscriber();
 
-    localSystemEventsAPI.subscribe(testDelegateSubscriber);
-    localSystemEventsAPI.subscribe(TestEventType2.class, testDelegateSubscriber);
+        final LocalSystemEventsAPI localSystemEventsAPI =
+                APILocator.getLocalSystemEventsAPI();
 
-    localSystemEventsAPI.notify(new TestEventType1("works??"));
-    localSystemEventsAPI.asyncNotify(new TestEventType1("yeah works??"));
-    localSystemEventsAPI.notify(new TestEventType2("it works??"));
-    localSystemEventsAPI.asyncNotify(new TestEventType2("yeah it works??"));
+        localSystemEventsAPI.subscribe(testDelegateSubscriber);
+        localSystemEventsAPI.subscribe(TestEventType2.class, testDelegateSubscriber);
 
-    Assert.assertTrue(testDelegateSubscriber.isCalled1());
-    Assert.assertTrue(testDelegateSubscriber.isCalled2());
+        localSystemEventsAPI.notify(new TestEventType1("works??"));
+        localSystemEventsAPI.asyncNotify(new TestEventType1("yeah works??"));
+        localSystemEventsAPI.notify(new TestEventType2("it works??"));
+        localSystemEventsAPI.asyncNotify(new TestEventType2("yeah it works??"));
 
-    localSystemEventsAPI.unsubscribe(testDelegateSubscriber);
-  } // delegatePlusAnnotationSubscribeTest.
+        Assert.assertTrue(testDelegateSubscriber.isCalled1());
+        Assert.assertTrue(testDelegateSubscriber.isCalled2());
 
-  @Test
-  public void twoAnnotationSubscribeTest() throws DotDataException {
+        localSystemEventsAPI.unsubscribe(testDelegateSubscriber);
+    } // delegatePlusAnnotationSubscribeTest.
 
-    final TestDelegatePlusAnnotationSubscriber testDelegateSubscriber =
-        new TestDelegatePlusAnnotationSubscriber();
+    @Test
+    public void twoAnnotationSubscribeTest() throws DotDataException {
 
-    final TestAnnotatedSubscriber testAnnotatedSubscriber = new TestAnnotatedSubscriber();
+        final TestDelegatePlusAnnotationSubscriber testDelegateSubscriber =
+                new TestDelegatePlusAnnotationSubscriber();
 
-    final LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
+        final TestAnnotatedSubscriber testAnnotatedSubscriber =
+                new TestAnnotatedSubscriber();
 
-    localSystemEventsAPI.subscribe(testAnnotatedSubscriber);
-    localSystemEventsAPI.subscribe(testDelegateSubscriber);
-    localSystemEventsAPI.subscribe(TestEventType2.class, testDelegateSubscriber);
+        final LocalSystemEventsAPI localSystemEventsAPI =
+                APILocator.getLocalSystemEventsAPI();
 
-    localSystemEventsAPI.notify(new TestEventType1("works??"));
-    localSystemEventsAPI.asyncNotify(new TestEventType1("yeah works??"));
-    localSystemEventsAPI.notify(new TestEventType2("it works??"));
-    localSystemEventsAPI.asyncNotify(new TestEventType2("yeah it works??"));
+        localSystemEventsAPI.subscribe(testAnnotatedSubscriber);
+        localSystemEventsAPI.subscribe(testDelegateSubscriber);
+        localSystemEventsAPI.subscribe(TestEventType2.class, testDelegateSubscriber);
 
-    Assert.assertTrue(testAnnotatedSubscriber.isCalled());
-    Assert.assertTrue(testDelegateSubscriber.isCalled1());
-    Assert.assertTrue(testDelegateSubscriber.isCalled2());
+        localSystemEventsAPI.notify(new TestEventType1("works??"));
+        localSystemEventsAPI.asyncNotify(new TestEventType1("yeah works??"));
+        localSystemEventsAPI.notify(new TestEventType2("it works??"));
+        localSystemEventsAPI.asyncNotify(new TestEventType2("yeah it works??"));
 
-    localSystemEventsAPI.unsubscribe(testDelegateSubscriber);
-  } // twoAnnotationSubscribeTest.
+        Assert.assertTrue(testAnnotatedSubscriber.isCalled());
+        Assert.assertTrue(testDelegateSubscriber.isCalled1());
+        Assert.assertTrue(testDelegateSubscriber.isCalled2());
 
-  @Test
-  public void deleteAnnotatedSubscriberTest() throws DotDataException {
+        localSystemEventsAPI.unsubscribe(testDelegateSubscriber);
+    } // twoAnnotationSubscribeTest.
 
-    final TestAnnotatedForDeleteSubscriber testAnnotatedSubscriber =
-        new TestAnnotatedForDeleteSubscriber();
 
-    final LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
-    localSystemEventsAPI.subscribe(testAnnotatedSubscriber);
+    @Test
+    public void deleteAnnotatedSubscriberTest() throws DotDataException {
 
-    localSystemEventsAPI.notify(new TestEventType1("works??"));
+        final TestAnnotatedForDeleteSubscriber testAnnotatedSubscriber =
+                new TestAnnotatedForDeleteSubscriber();
 
-    Assert.assertTrue(testAnnotatedSubscriber.isCalled());
+        final LocalSystemEventsAPI localSystemEventsAPI =
+                APILocator.getLocalSystemEventsAPI();
+        localSystemEventsAPI.subscribe(testAnnotatedSubscriber);
 
-    // check if the subscriber is there
-    Assert.assertNotNull(
-        localSystemEventsAPI.findSubscriber(
-            TestEventType1.class, testAnnotatedSubscriber.getClass().getName() + "#test"));
+        localSystemEventsAPI.notify(new TestEventType1("works??"));
 
-    // unsubscribe it
-    Assert.assertTrue(
-        localSystemEventsAPI.unsubscribe(
-            TestEventType1.class, testAnnotatedSubscriber.getClass().getName() + "#test"));
+        Assert.assertTrue(testAnnotatedSubscriber.isCalled());
 
-    // shouldn't be there.
-    Assert.assertNull(
-        localSystemEventsAPI.findSubscriber(
-            TestEventType1.class, testAnnotatedSubscriber.getClass().getName() + "#test"));
+        // check if the subscriber is there
+        Assert.assertNotNull(localSystemEventsAPI.findSubscriber(TestEventType1.class,
+                testAnnotatedSubscriber.getClass().getName() + "#test" ));
 
-    // already removed, so should be false
-    Assert.assertFalse(
-        localSystemEventsAPI.unsubscribe(
-            TestEventType1.class, testAnnotatedSubscriber.getClass().getName() + "#test"));
+        // unsubscribe it
+        Assert.assertTrue(localSystemEventsAPI.unsubscribe(TestEventType1.class,
+                testAnnotatedSubscriber.getClass().getName() + "#test" ));
 
-    localSystemEventsAPI.unsubscribe(testAnnotatedSubscriber);
-  } // deleteAnnotatedSubscriberTest.
+        // shouldn't be there.
+        Assert.assertNull(localSystemEventsAPI.findSubscriber(TestEventType1.class,
+                testAnnotatedSubscriber.getClass().getName() + "#test" ));
 
-  @Test
-  public void deleteAnnotated2SubscriberTest() throws DotDataException {
+        // already removed, so should be false
+        Assert.assertFalse(localSystemEventsAPI.unsubscribe(TestEventType1.class,
+                testAnnotatedSubscriber.getClass().getName() + "#test" ));
 
-    final TestAnnotatedForDelete2Subscriber testAnnotatedSubscriber =
-        new TestAnnotatedForDelete2Subscriber();
+        localSystemEventsAPI.unsubscribe(testAnnotatedSubscriber);
+    } // deleteAnnotatedSubscriberTest.
 
-    final LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
-    localSystemEventsAPI.subscribe(testAnnotatedSubscriber);
+    @Test
+    public void deleteAnnotated2SubscriberTest() throws DotDataException {
 
-    localSystemEventsAPI.notify(new TestEventType1("works??"));
-    localSystemEventsAPI.notify(new TestEventType2("really works??"));
+        final TestAnnotatedForDelete2Subscriber testAnnotatedSubscriber =
+                new TestAnnotatedForDelete2Subscriber();
 
-    Assert.assertTrue(2 == testAnnotatedSubscriber.getCalled());
+        final LocalSystemEventsAPI localSystemEventsAPI =
+                APILocator.getLocalSystemEventsAPI();
+        localSystemEventsAPI.subscribe(testAnnotatedSubscriber);
 
-    localSystemEventsAPI.notify(new TestEventType1("works??"));
-    localSystemEventsAPI.notify(new TestEventType2("really works??"));
+        localSystemEventsAPI.notify(new TestEventType1("works??"));
+        localSystemEventsAPI.notify(new TestEventType2("really works??"));
 
-    Assert.assertTrue(4 == testAnnotatedSubscriber.getCalled());
+        Assert.assertTrue(2 == testAnnotatedSubscriber.getCalled());
 
-    Assert.assertTrue(localSystemEventsAPI.unsubscribe(testAnnotatedSubscriber));
-    localSystemEventsAPI.unsubscribe(TestEventType1.class);
-    localSystemEventsAPI.unsubscribe(TestEventType2.class);
+        localSystemEventsAPI.notify(new TestEventType1("works??"));
+        localSystemEventsAPI.notify(new TestEventType2("really works??"));
 
-    localSystemEventsAPI.notify(new TestEventType1("works??"));
-    localSystemEventsAPI.notify(new TestEventType2("really works??"));
+        Assert.assertTrue(4 == testAnnotatedSubscriber.getCalled());
 
-    // new message not received, so the counter still on 4
-    Assert.assertEquals(4, testAnnotatedSubscriber.getCalled());
+        Assert.assertTrue(localSystemEventsAPI.unsubscribe(testAnnotatedSubscriber));
+        localSystemEventsAPI.unsubscribe(TestEventType1.class);
+        localSystemEventsAPI.unsubscribe(TestEventType2.class);
 
-    localSystemEventsAPI.unsubscribe(testAnnotatedSubscriber);
-  } // deleteAnnotatedSubscriberTest.
+        localSystemEventsAPI.notify(new TestEventType1("works??"));
+        localSystemEventsAPI.notify(new TestEventType2("really works??"));
 
-  @Test
-  public void invalidAnnotatedSubscriberTest() throws DotDataException {
+        // new message not received, so the counter still on 4
+        Assert.assertEquals(4, testAnnotatedSubscriber.getCalled());
 
-    final TestInvalidAnnotatedSubscriber testAnnotatedSubscriber =
-        new TestInvalidAnnotatedSubscriber();
+        localSystemEventsAPI.unsubscribe(testAnnotatedSubscriber);
 
-    final LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
-    try {
+    } // deleteAnnotatedSubscriberTest.
 
-      localSystemEventsAPI.subscribe(testAnnotatedSubscriber);
-      Assert.fail(
-          "TestInvalidAnnotatedSubscriber has annotated an invalid subscriber method with 2 arguments");
-    } catch (Exception e) {
-      System.out.println("Worked");
-    }
-  } // invalidAnnotatedSubscriberTest.
+    @Test
+    public void invalidAnnotatedSubscriberTest() throws DotDataException {
 
-  @Test
-  public void orphanSubscriberTest() throws DotDataException {
+        final TestInvalidAnnotatedSubscriber testAnnotatedSubscriber =
+                new TestInvalidAnnotatedSubscriber();
 
-    final LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
-    final AtomicBoolean isCalled = new AtomicBoolean(false);
+        final LocalSystemEventsAPI localSystemEventsAPI =
+                APILocator.getLocalSystemEventsAPI();
+        try {
 
-    localSystemEventsAPI.setOrphanEventSubscriber(
-        (orphanEvent) -> {
-          System.out.println("OrphanEvent: " + orphanEvent);
-          isCalled.set(true);
+            localSystemEventsAPI.subscribe(testAnnotatedSubscriber);
+            Assert.fail("TestInvalidAnnotatedSubscriber has annotated an invalid subscriber method with 2 arguments");
+        } catch (Exception e) {
+            System.out.println("Worked");
+        }
+    } // invalidAnnotatedSubscriberTest.
+
+
+    @Test
+    public void orphanSubscriberTest() throws DotDataException {
+
+        final LocalSystemEventsAPI localSystemEventsAPI =
+                APILocator.getLocalSystemEventsAPI();
+        final AtomicBoolean isCalled = new AtomicBoolean(false);
+
+        localSystemEventsAPI.setOrphanEventSubscriber((orphanEvent) ->  {
+            System.out.println("OrphanEvent: " + orphanEvent);
+            isCalled.set(true);
         });
 
-    localSystemEventsAPI.notify(new MyOrphanEvent());
+        localSystemEventsAPI.notify(new MyOrphanEvent());
 
-    Assert.assertTrue(isCalled.get());
-  } // orphanSubscriberTest.
+        Assert.assertTrue(isCalled.get());
+    } // orphanSubscriberTest.
+
+
+
 } // E:O:F:LocalSystemEventsAPITest.

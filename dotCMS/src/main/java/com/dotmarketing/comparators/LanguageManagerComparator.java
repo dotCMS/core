@@ -10,20 +10,24 @@ import java.util.Comparator;
 
 /**
  * @author alex
- *     <p>TODO To change the template for this generated type comment go to Window - Preferences -
- *     Java - Code Style - Code Templates
+ *
+ * TODO To change the template for this generated type comment go to
+ * Window - Preferences - Java - Code Style - Code Templates
  */
 public class LanguageManagerComparator implements Comparator {
 
-  public int compare(Object o1, Object o2) {
-    int comp = 0;
-    try {
-      String str1 = (String) o1;
-      String str2 = (String) o2;
-      comp = str1.compareTo(str2);
-    } catch (ClassCastException e) {
+    
+    
+  	public int compare(Object o1, Object o2) {
+  		int comp = 0;
+		try {
+			String str1 = (String) o1;
+			String str2 = (String) o2;
+			comp = str1.compareTo(str2);
+		}catch (ClassCastException e) {
+			
+		}
+		return comp;
 
-    }
-    return comp;
-  }
+  	}	
 }

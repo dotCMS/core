@@ -12,25 +12,25 @@ import org.junit.Test;
 
 public class Task05035LanguageTableIdentityOffTest {
 
-  @BeforeClass
-  public static void prepare() throws Exception {
-    // Setting web app environment
-    IntegrationTestInitService.getInstance().init();
-  }
-
-  @Test
-  public void testExecuteUpgrade() throws DotDataException, DotSecurityException {
-    final DbType dbType = DbType.getDbType(DbConnectionFactory.getDBType());
-    try {
-
-      final Task05040LanguageTableIdentityOff languageTableIdentityOff =
-          new Task05040LanguageTableIdentityOff();
-      languageTableIdentityOff.executeUpgrade();
-    } catch (Exception e) {
-      final String errMessage =
-          "Could not modify Language table on db of type: " + dbType + " Err: " + e.toString();
-      Logger.error(getClass(), errMessage, e);
-      Assert.fail(errMessage);
+    @BeforeClass
+    public static void prepare() throws Exception{
+        // Setting web app environment
+        IntegrationTestInitService.getInstance().init();
     }
-  }
+
+    @Test
+    public void testExecuteUpgrade() throws DotDataException, DotSecurityException {
+       final DbType dbType = DbType.getDbType(DbConnectionFactory.getDBType());
+       try{
+
+         final Task05040LanguageTableIdentityOff languageTableIdentityOff = new Task05040LanguageTableIdentityOff();
+         languageTableIdentityOff.executeUpgrade();
+       } catch (Exception e) {
+           final String  errMessage = "Could not modify Language table on db of type: " + dbType + " Err: " +  e.toString() ;
+           Logger.error(getClass(),errMessage, e);
+           Assert.fail(errMessage);
+       }
+    }
+
+
 }

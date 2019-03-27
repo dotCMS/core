@@ -27,175 +27,195 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
-/** Takes a branch root and creates an HTML file for it. */
-public class HtmlSaxDiffOutput implements DiffOutput {
+/**
+ * Takes a branch root and creates an HTML file for it.
+ */
+public class HtmlSaxDiffOutput implements DiffOutput{
 
-  private ContentHandler handler;
+    private ContentHandler handler;
 
-  private String prefix;
+    private String prefix;
 
-  public HtmlSaxDiffOutput(ContentHandler handler, String name) {
-    this.handler = handler;
-    this.prefix = name;
-  }
-
-  /** {@inheritDoc} */
-  public void generateOutput(TagNode node) throws SAXException {
-
-    if (!node.getQName().equalsIgnoreCase("img") && !node.getQName().equalsIgnoreCase("body")) {
-      handler.startElement("", node.getQName(), node.getQName(), node.getAttributes());
+    public HtmlSaxDiffOutput(ContentHandler handler, String name) {
+        this.handler = handler;
+        this.prefix = name;
     }
 
-    boolean newStarted = false;
-    boolean remStarted = false;
-    boolean changeStarted = false;
-    String changeTXT = "";
+    /**
+     * {@inheritDoc}
+     */
+    public void generateOutput(TagNode node) throws SAXException {
 
-    for (Node child : node) {
-      if (child instanceof TagNode) {
+        if (!node.getQName().equalsIgnoreCase("img")
+                && !node.getQName().equalsIgnoreCase("body")) {
+            handler.startElement("", node.getQName(), node.getQName(), node
+                    .getAttributes());
+        }
+
+        boolean newStarted = false;
+        boolean remStarted = false;
+        boolean changeStarted = false;
+        String changeTXT = "";
+
+        for (Node child : node) {
+            if (child instanceof TagNode) {
+                if (newStarted) {
+                    handler.endElement("", "span", "span");
+                    newStarted = false;
+                } else if (changeStarted) {
+                    handler.endElement("", "span", "span");
+                    changeStarted = false;
+                } else if (remStarted) {
+                    handler.endElement("", "span", "span");
+                    remStarted = false;
+                }
+                generateOutput(((TagNode) child));
+            } else if (child instanceof TextNode) {
+                TextNode textChild = (TextNode) child;
+                Modification mod = textChild.getModification();
+
+                if (newStarted
+                        && (mod.getType() != ModificationType.ADDED || mod
+                                .isFirstOfID())) {
+                    handler.endElement("", "span", "span");
+                    newStarted = false;
+                } else if (changeStarted
+                        && (mod.getType() != ModificationType.CHANGED
+                                || !mod.getChanges().equals(changeTXT) || mod
+                                .isFirstOfID())) {
+                    handler.endElement("", "span", "span");
+                    changeStarted = false;
+                } else if (remStarted
+                        && (mod.getType() != ModificationType.REMOVED || mod
+                                .isFirstOfID())) {
+                    handler.endElement("", "span", "span");
+                    remStarted = false;
+                }
+
+                // no else because a removed part can just be closed and a new
+                // part can start
+                if (!newStarted && mod.getType() == ModificationType.ADDED) {
+                    AttributesImpl attrs = new AttributesImpl();
+                    attrs.addAttribute("", "class", "class", "CDATA",
+                            "diff-html-added");
+                    if (mod.isFirstOfID()) {
+                        attrs.addAttribute("", "id", "id", "CDATA", mod
+                                .getType()
+                                + "-" + prefix + "-" + mod.getID());
+                    }
+
+                    addAttributes(mod, attrs);
+
+                    handler.startElement("", "span", "span", attrs);
+                    newStarted = true;
+                } else if (!changeStarted
+                        && mod.getType() == ModificationType.CHANGED) {
+                    AttributesImpl attrs = new AttributesImpl();
+                    attrs.addAttribute("", "class", "class", "CDATA",
+                            "diff-html-changed");
+                    if (mod.isFirstOfID()) {
+                        attrs.addAttribute("", "id", "id", "CDATA", mod
+                                .getType()
+                                + "-" + prefix + "-" + mod.getID());
+                    }
+                    // showing change inside html
+                    if (UtilMethods.isSet(mod.getChanges())) {
+                        attrs.addAttribute("", "title", "title", "", mod
+                                .getChanges()
+                                .replaceAll("<b>" , "\"").replaceAll("</b>" , "\"").replaceAll("<br/>", "")
+                                .replaceAll("<li>" , "").replaceAll("</li>" , " ")
+                                .replaceAll("<ul class='changelist'>" , "").replaceAll("</ul>" , "")
+                                );
+                    }
+                    addAttributes(mod, attrs);
+                    handler.startElement("", "span", "span", attrs);
+
+                    changeStarted = true;
+                    changeTXT = mod.getChanges();
+                } else if (!remStarted
+                        && mod.getType() == ModificationType.REMOVED) {
+                    AttributesImpl attrs = new AttributesImpl();
+                    attrs.addAttribute("", "class", "class", "CDATA",
+                            "diff-html-removed");
+                    if (mod.isFirstOfID()) {
+                        attrs.addAttribute("", "id", "id", "CDATA", mod
+                                .getType()
+                                + "-" + prefix + "-" + mod.getID());
+                    }
+                    addAttributes(mod, attrs);
+
+                    handler.startElement("", "span", "span", attrs);
+                    remStarted = true;
+                }
+
+                char[] chars = textChild.getText().toCharArray();
+
+                if (textChild instanceof ImageNode) {
+                    writeImage((ImageNode)textChild);
+                } else {
+                    handler.characters(chars, 0, chars.length);
+                }
+
+            }
+        }
+
         if (newStarted) {
-          handler.endElement("", "span", "span");
-          newStarted = false;
+            handler.endElement("", "span", "span");
+            newStarted = false;
         } else if (changeStarted) {
-          handler.endElement("", "span", "span");
-          changeStarted = false;
+            handler.endElement("", "span", "span");
+            changeStarted = false;
         } else if (remStarted) {
-          handler.endElement("", "span", "span");
-          remStarted = false;
-        }
-        generateOutput(((TagNode) child));
-      } else if (child instanceof TextNode) {
-        TextNode textChild = (TextNode) child;
-        Modification mod = textChild.getModification();
-
-        if (newStarted && (mod.getType() != ModificationType.ADDED || mod.isFirstOfID())) {
-          handler.endElement("", "span", "span");
-          newStarted = false;
-        } else if (changeStarted
-            && (mod.getType() != ModificationType.CHANGED
-                || !mod.getChanges().equals(changeTXT)
-                || mod.isFirstOfID())) {
-          handler.endElement("", "span", "span");
-          changeStarted = false;
-        } else if (remStarted && (mod.getType() != ModificationType.REMOVED || mod.isFirstOfID())) {
-          handler.endElement("", "span", "span");
-          remStarted = false;
+            handler.endElement("", "span", "span");
+            remStarted = false;
         }
 
-        // no else because a removed part can just be closed and a new
-        // part can start
-        if (!newStarted && mod.getType() == ModificationType.ADDED) {
-          AttributesImpl attrs = new AttributesImpl();
-          attrs.addAttribute("", "class", "class", "CDATA", "diff-html-added");
-          if (mod.isFirstOfID()) {
-            attrs.addAttribute(
-                "", "id", "id", "CDATA", mod.getType() + "-" + prefix + "-" + mod.getID());
-          }
+        if (!node.getQName().equalsIgnoreCase("img")
+                && !node.getQName().equalsIgnoreCase("body"))
+            handler.endElement("", node.getQName(), node.getQName());
 
-          addAttributes(mod, attrs);
+    }
 
-          handler.startElement("", "span", "span", attrs);
-          newStarted = true;
-        } else if (!changeStarted && mod.getType() == ModificationType.CHANGED) {
-          AttributesImpl attrs = new AttributesImpl();
-          attrs.addAttribute("", "class", "class", "CDATA", "diff-html-changed");
-          if (mod.isFirstOfID()) {
-            attrs.addAttribute(
-                "", "id", "id", "CDATA", mod.getType() + "-" + prefix + "-" + mod.getID());
-          }
-          // showing change inside html
-          if (UtilMethods.isSet(mod.getChanges())) {
-            attrs.addAttribute(
-                "",
-                "title",
-                "title",
-                "",
-                mod.getChanges()
-                    .replaceAll("<b>", "\"")
-                    .replaceAll("</b>", "\"")
-                    .replaceAll("<br/>", "")
-                    .replaceAll("<li>", "")
-                    .replaceAll("</li>", " ")
-                    .replaceAll("<ul class='changelist'>", "")
-                    .replaceAll("</ul>", ""));
-          }
-          addAttributes(mod, attrs);
-          handler.startElement("", "span", "span", attrs);
+    private void writeImage(ImageNode imgNode) throws SAXException {
+        AttributesImpl attrs = imgNode.getAttributes();
+        if (imgNode.getModification().getType() == ModificationType.REMOVED)
+            attrs.addAttribute("", "changeType", "changeType", "CDATA",
+                    "diff-removed-image");
+        else if (imgNode.getModification().getType() == ModificationType.ADDED)
+            attrs.addAttribute("", "changeType", "changeType", "CDATA",
+                    "diff-added-image");
+        handler.startElement("", "img", "img", attrs);
+        handler.endElement("", "img", "img");
+    }
 
-          changeStarted = true;
-          changeTXT = mod.getChanges();
-        } else if (!remStarted && mod.getType() == ModificationType.REMOVED) {
-          AttributesImpl attrs = new AttributesImpl();
-          attrs.addAttribute("", "class", "class", "CDATA", "diff-html-removed");
-          if (mod.isFirstOfID()) {
-            attrs.addAttribute(
-                "", "id", "id", "CDATA", mod.getType() + "-" + prefix + "-" + mod.getID());
-          }
-          addAttributes(mod, attrs);
+    private void addAttributes(Modification mod, AttributesImpl attrs) {
 
-          handler.startElement("", "span", "span", attrs);
-          remStarted = true;
+        if (mod.getType() == ModificationType.CHANGED) {
+            String changes = mod.getChanges();
+            attrs.addAttribute("", "changes", "changes", "CDATA", changes);
         }
 
-        char[] chars = textChild.getText().toCharArray();
-
-        if (textChild instanceof ImageNode) {
-          writeImage((ImageNode) textChild);
+        String previous;
+        if (mod.getPrevious() == null) {
+            previous = "first-" + prefix;
         } else {
-          handler.characters(chars, 0, chars.length);
+            previous = mod.getPrevious().getType() + "-" + prefix + "-"
+                    + mod.getPrevious().getID();
         }
-      }
+        attrs.addAttribute("", "previous", "previous", "CDATA", previous);
+
+        String changeId = mod.getType() + "-" + prefix + "-" + mod.getID();
+        attrs.addAttribute("", "changeId", "changeId", "CDATA", changeId);
+
+        String next;
+        if (mod.getNext() == null) {
+            next = "last-" + prefix;
+        } else {
+            next = mod.getNext().getType() + "-" + prefix + "-"
+                    + mod.getNext().getID();
+        }
+        attrs.addAttribute("", "next", "next", "CDATA", next);
+
     }
 
-    if (newStarted) {
-      handler.endElement("", "span", "span");
-      newStarted = false;
-    } else if (changeStarted) {
-      handler.endElement("", "span", "span");
-      changeStarted = false;
-    } else if (remStarted) {
-      handler.endElement("", "span", "span");
-      remStarted = false;
-    }
-
-    if (!node.getQName().equalsIgnoreCase("img") && !node.getQName().equalsIgnoreCase("body"))
-      handler.endElement("", node.getQName(), node.getQName());
-  }
-
-  private void writeImage(ImageNode imgNode) throws SAXException {
-    AttributesImpl attrs = imgNode.getAttributes();
-    if (imgNode.getModification().getType() == ModificationType.REMOVED)
-      attrs.addAttribute("", "changeType", "changeType", "CDATA", "diff-removed-image");
-    else if (imgNode.getModification().getType() == ModificationType.ADDED)
-      attrs.addAttribute("", "changeType", "changeType", "CDATA", "diff-added-image");
-    handler.startElement("", "img", "img", attrs);
-    handler.endElement("", "img", "img");
-  }
-
-  private void addAttributes(Modification mod, AttributesImpl attrs) {
-
-    if (mod.getType() == ModificationType.CHANGED) {
-      String changes = mod.getChanges();
-      attrs.addAttribute("", "changes", "changes", "CDATA", changes);
-    }
-
-    String previous;
-    if (mod.getPrevious() == null) {
-      previous = "first-" + prefix;
-    } else {
-      previous = mod.getPrevious().getType() + "-" + prefix + "-" + mod.getPrevious().getID();
-    }
-    attrs.addAttribute("", "previous", "previous", "CDATA", previous);
-
-    String changeId = mod.getType() + "-" + prefix + "-" + mod.getID();
-    attrs.addAttribute("", "changeId", "changeId", "CDATA", changeId);
-
-    String next;
-    if (mod.getNext() == null) {
-      next = "last-" + prefix;
-    } else {
-      next = mod.getNext().getType() + "-" + prefix + "-" + mod.getNext().getID();
-    }
-    attrs.addAttribute("", "next", "next", "CDATA", next);
-  }
 }

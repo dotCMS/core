@@ -16,53 +16,61 @@ package org.apache.velocity.runtime.parser.node;
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
- * under the License.
+ * under the License.    
  */
 
 import java.io.IOException;
 import java.io.Writer;
+
 import org.apache.velocity.context.InternalContextAdapter;
 import org.apache.velocity.exception.MethodInvocationException;
 import org.apache.velocity.exception.ParseErrorException;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.runtime.parser.Parser;
 
-/** */
-public class ASTBlock extends SimpleNode {
-  /** @param id */
-  public ASTBlock(int id) {
-    super(id);
-  }
 
-  /**
-   * @param p
-   * @param id
-   */
-  public ASTBlock(Parser p, int id) {
-    super(p, id);
-  }
+/**
+ *
+ */
+public class ASTBlock extends SimpleNode
+{
+    /**
+     * @param id
+     */
+    public ASTBlock(int id)
+    {
+        super(id);
+    }
 
-  /**
-   * @see
-   *     org.apache.velocity.runtime.parser.node.SimpleNode#jjtAccept(org.apache.velocity.runtime.parser.node.ParserVisitor,
-   *     java.lang.Object)
-   */
-  public Object jjtAccept(ParserVisitor visitor, Object data) {
-    return visitor.visit(this, data);
-  }
+    /**
+     * @param p
+     * @param id
+     */
+    public ASTBlock(Parser p, int id)
+    {
+        super(p, id);
+    }
 
-  /**
-   * @see
-   *     org.apache.velocity.runtime.parser.node.SimpleNode#render(org.apache.velocity.context.InternalContextAdapter,
-   *     java.io.Writer)
-   */
-  public boolean render(InternalContextAdapter context, Writer writer)
-      throws IOException, MethodInvocationException, ResourceNotFoundException,
-          ParseErrorException {
-    int i, k = jjtGetNumChildren();
+    /**
+     * @see org.apache.velocity.runtime.parser.node.SimpleNode#jjtAccept(org.apache.velocity.runtime.parser.node.ParserVisitor, java.lang.Object)
+     */
+    public Object jjtAccept(ParserVisitor visitor, Object data)
+    {
+        return visitor.visit(this, data);
+    }
 
-    for (i = 0; i < k; i++) jjtGetChild(i).render(context, writer);
+    /**
+     * @see org.apache.velocity.runtime.parser.node.SimpleNode#render(org.apache.velocity.context.InternalContextAdapter, java.io.Writer)
+     */
+    public boolean render( InternalContextAdapter context, Writer writer)
+        throws IOException, MethodInvocationException,
+        	ResourceNotFoundException, ParseErrorException
+    {
+        int i, k = jjtGetNumChildren();
 
-    return true;
-  }
+        for (i = 0; i < k; i++)
+            jjtGetChild(i).render(context, writer);
+
+        return true;
+    }
 }

@@ -1,11 +1,5 @@
 package com.dotcms.filters.interceptor.jwt;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import com.dotcms.auth.providers.jwt.beans.UserToken;
 import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenService;
@@ -21,224 +15,226 @@ import com.liferay.portal.ejb.CompanyLocalManager;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.CookieKeys;
 import com.liferay.portal.util.WebKeys;
-import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.TimeZone;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.TimeZone;
+
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Matchers.anyObject;
+import static org.mockito.Mockito.*;
 
 public class JsonWebTokenInterceptorIntegrationTest {
 
-  private static JsonWebTokenService jsonWebTokenService;
-  private LoginServiceAPI loginService;
-  private static UserAPI userAPI;
-  private static final String jwtId = "jwt1";
-  private static String userId;
-  private static final SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
-  private static Date date;
-  private final HttpServletRequest request = mock(HttpServletRequest.class);
-  private final HttpServletResponse response = mock(HttpServletResponse.class);
-  private final HttpSession session = mock(HttpSession.class);
-  private final CompanyLocalManager companyLocalManager = mock(CompanyLocalManager.class);
-  private final Encryptor encryptor = mock(Encryptor.class);
+    private static JsonWebTokenService jsonWebTokenService;
+    private LoginServiceAPI loginService;
+    private static UserAPI userAPI;
+    private static final String jwtId  = "jwt1";
+    private static String userId;
+    private static final SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
+    private static Date date;
+    private final HttpServletRequest request = mock(HttpServletRequest.class);
+    private final HttpServletResponse response = mock(HttpServletResponse.class);
+    private final HttpSession session = mock(HttpSession.class);
+    private final CompanyLocalManager companyLocalManager = mock(CompanyLocalManager.class);
+    private final Encryptor encryptor = mock(Encryptor.class);
 
-  @BeforeClass
-  public static void prepare() throws Exception {
-    // Setting web app environment
-    IntegrationTestInitService.getInstance().init();
 
-    userAPI = APILocator.getUserAPI();
+    @BeforeClass
+    public static void prepare() throws Exception {
+        //Setting web app environment
+        IntegrationTestInitService.getInstance().init();
 
-    // Create User
-    final User newUser = new UserDataGen().nextPersisted();
-    APILocator.getRoleAPI().addRoleToUser(APILocator.getRoleAPI().loadCMSAdminRole(), newUser);
-    assertTrue(userAPI.isCMSAdmin(newUser));
-    userId = newUser.getUserId();
+        userAPI = APILocator.getUserAPI();
 
-    dateFormat.setTimeZone(TimeZone.getTimeZone("GMT-8:00"));
-    dateFormat.setLenient(true);
-    date = dateFormat.parse("04/10/1981");
-  }
+        //Create User
+        final User newUser = new UserDataGen().nextPersisted();
+        APILocator.getRoleAPI().addRoleToUser(APILocator.getRoleAPI().loadCMSAdminRole(), newUser);
+        assertTrue(userAPI.isCMSAdmin(newUser));
+        userId = newUser.getUserId();
 
-  /**
-   * Test the scenario when the ttl time is not valid for the token
-   *
-   * @throws IOException
-   */
-  @Test
-  public void interceptWithAccessTokenNonValidTest()
-      throws IOException, DotSecurityException, DotDataException {
-    loginService = mock(LoginServiceAPI.class);
+        dateFormat.setTimeZone(TimeZone.getTimeZone("GMT-8:00"));
+        dateFormat.setLenient(true);
+        date = dateFormat.parse("04/10/1981");
+    }
 
-    jsonWebTokenService = JsonWebTokenFactory.getInstance().getJsonWebTokenService();
+    /**
+     * Test the scenario when the ttl time is not valid for the token
+     * @throws IOException
+     */
+    @Test
+    public void interceptWithAccessTokenNonValidTest() throws IOException, DotSecurityException, DotDataException {
+        loginService  = mock(LoginServiceAPI.class);
 
-    final JsonWebTokenInterceptor jsonWebTokenInterceptor =
-        new JsonWebTokenInterceptor(jsonWebTokenService, null, null, loginService, userAPI);
+        jsonWebTokenService =
+                JsonWebTokenFactory.getInstance().getJsonWebTokenService();
 
-    when(loginService.isLoggedIn(request)).thenReturn(false);
+        final JsonWebTokenInterceptor jsonWebTokenInterceptor =
+                new JsonWebTokenInterceptor(jsonWebTokenService, null, null, loginService, userAPI);
 
-    final UserToken userToken = new UserToken(jwtId, userId, date, date.getTime());
+        when(loginService.isLoggedIn(request)).thenReturn(false);
 
-    userAPI.loadUserById(userId).setModificationDate(new Date());
 
-    final String jsonWebToken = jsonWebTokenService.generateUserToken(userToken);
 
-    when(request.getSession(false)).thenReturn(session);
-    when(session.getAttribute(WebKeys.USER_ID)).thenReturn(null); // non-logged
-    when(request.isSecure()).thenReturn(true); // https
-    when(request.getCookies())
-        .thenAnswer(
-            new Answer<Cookie[]>() {
+        final UserToken userToken = new UserToken(jwtId, userId, date, date.getTime());
 
-              @Override
-              public Cookie[] answer(InvocationOnMock invocation) throws Throwable {
+        userAPI.loadUserById(userId).setModificationDate(new Date());
 
-                System.out.println("getting the access token:" + jsonWebToken);
-                return new Cookie[] {new Cookie(CookieKeys.JWT_ACCESS_TOKEN, jsonWebToken)};
-              }
-            });
+        final String jsonWebToken = jsonWebTokenService.generateUserToken(userToken);
 
-    jsonWebTokenInterceptor.init();
+        when(request.getSession(false)).thenReturn(session);
+        when(session.getAttribute(WebKeys.USER_ID)).thenReturn(null); // non-logged
+        when(request.isSecure()).thenReturn(true); // https
+        when(request.getCookies()).thenAnswer(new Answer<Cookie[]>() {
 
-    jsonWebTokenInterceptor.intercept(request, response);
-
-    jsonWebTokenInterceptor.destroy();
-  }
-
-  /**
-   * Test the scenario when the user from the database has been modified.
-   *
-   * @throws IOException
-   */
-  @Test
-  public void interceptWithAccessTokenUserModifiedTest()
-      throws IOException, DotSecurityException, DotDataException {
-    loginService = mock(LoginServiceAPI.class);
-
-    jsonWebTokenService = JsonWebTokenFactory.getInstance().getJsonWebTokenService();
-
-    final JsonWebTokenInterceptor jsonWebTokenInterceptor =
-        new JsonWebTokenInterceptor(jsonWebTokenService, null, null, loginService, userAPI);
-
-    when(loginService.isLoggedIn(request)).thenReturn(false);
-
-    final UserToken userToken = new UserToken(jwtId, userId, date, date.getTime());
-
-    final String jsonWebToken = jsonWebTokenService.generateUserToken(userToken);
-
-    when(request.getSession(false)).thenReturn(session);
-    when(session.getAttribute(WebKeys.USER_ID)).thenReturn(null); // non-logged
-    when(request.isSecure()).thenReturn(true); // https
-    when(request.getCookies())
-        .thenAnswer(
-            new Answer<Cookie[]>() {
-
-              @Override
-              public Cookie[] answer(InvocationOnMock invocation) throws Throwable {
+            @Override
+            public Cookie[] answer(InvocationOnMock invocation) throws Throwable {
 
                 System.out.println("getting the access token:" + jsonWebToken);
-                return new Cookie[] {new Cookie(CookieKeys.JWT_ACCESS_TOKEN, jsonWebToken)};
-              }
-            });
+                return new Cookie[] {
+                        new Cookie(CookieKeys.JWT_ACCESS_TOKEN, jsonWebToken)
+                };
+            }
+        });
 
-    userAPI.loadUserById(userId).setModificationDate(new Date());
+        jsonWebTokenInterceptor.init();
 
-    when(loginService.doCookieLogin(anyObject(), anyObject(), anyObject()))
-        .thenAnswer(
-            new Answer<Boolean>() {
+        jsonWebTokenInterceptor.intercept(request, response);
 
-              @Override
-              public Boolean answer(InvocationOnMock invocation) throws Throwable {
+        jsonWebTokenInterceptor.destroy();
+    }
 
-                fail(
-                    "Since the modification date of the token user and db user are diff, should not call to this method");
+    /**
+     * Test the scenario when the user from the database has been modified.
+     * @throws IOException
+     */
+    @Test
+    public void interceptWithAccessTokenUserModifiedTest() throws IOException, DotSecurityException, DotDataException {
+        loginService  = mock(LoginServiceAPI.class);
+
+        jsonWebTokenService =
+                JsonWebTokenFactory.getInstance().getJsonWebTokenService();
+
+        final JsonWebTokenInterceptor jsonWebTokenInterceptor =
+                new JsonWebTokenInterceptor(jsonWebTokenService, null, null, loginService, userAPI);
+
+        when(loginService.isLoggedIn(request)).thenReturn(false);
+
+        final UserToken userToken = new UserToken(jwtId, userId, date, date.getTime());
+
+        final String jsonWebToken = jsonWebTokenService.generateUserToken(userToken);
+
+        when(request.getSession(false)).thenReturn(session);
+        when(session.getAttribute(WebKeys.USER_ID)).thenReturn(null); // non-logged
+        when(request.isSecure()).thenReturn(true); // https
+        when(request.getCookies()).thenAnswer(new Answer<Cookie[]>() {
+
+            @Override
+            public Cookie[] answer(InvocationOnMock invocation) throws Throwable {
+
+                System.out.println("getting the access token:" + jsonWebToken);
+                return new Cookie[] {
+                        new Cookie(CookieKeys.JWT_ACCESS_TOKEN, jsonWebToken)
+                };
+            }
+        });
+
+        userAPI.loadUserById(userId).setModificationDate(new Date());
+
+        when(loginService.doCookieLogin(anyObject(), anyObject(), anyObject())).thenAnswer(new Answer<Boolean>() {
+
+            @Override
+            public Boolean answer(InvocationOnMock invocation) throws Throwable {
+
+                fail("Since the modification date of the token user and db user are diff, should not call to this method");
                 return true;
-              }
-            });
+            }
+        });
 
-    jsonWebTokenInterceptor.setCompanyLocalManager(companyLocalManager);
-    jsonWebTokenInterceptor.setEncryptor(encryptor);
-    jsonWebTokenInterceptor.setLoginService(loginService);
+        jsonWebTokenInterceptor.setCompanyLocalManager(companyLocalManager);
+        jsonWebTokenInterceptor.setEncryptor(encryptor);
+        jsonWebTokenInterceptor.setLoginService(loginService);
 
-    jsonWebTokenInterceptor.init();
+        jsonWebTokenInterceptor.init();
 
-    jsonWebTokenInterceptor.intercept(request, response);
+        jsonWebTokenInterceptor.intercept(request, response);
 
-    jsonWebTokenInterceptor.destroy();
-  }
+        jsonWebTokenInterceptor.destroy();
+    }
 
-  private boolean calledDoCookieLogin;
+    private boolean calledDoCookieLogin;
 
-  /**
-   * Test the scenario when the user from the data base (mocked) has been modified.
-   *
-   * @throws IOException
-   */
-  @Test
-  public void interceptWithAccessTokenTest()
-      throws IOException, DotSecurityException, DotDataException {
-    loginService = mock(LoginServiceAPI.class);
+    /**
+     * Test the scenario when the user from the data base (mocked) has been modified.
+     * @throws IOException
+     */
+    @Test
+    public void interceptWithAccessTokenTest() throws IOException, DotSecurityException, DotDataException {
+        loginService  = mock(LoginServiceAPI.class);
 
-    jsonWebTokenService = JsonWebTokenFactory.getInstance().getJsonWebTokenService();
+        jsonWebTokenService =
+                JsonWebTokenFactory.getInstance().getJsonWebTokenService();
 
-    final JsonWebTokenInterceptor jsonWebTokenInterceptor =
-        new JsonWebTokenInterceptor(jsonWebTokenService, null, null, loginService, null);
+        final JsonWebTokenInterceptor jsonWebTokenInterceptor =
+                new JsonWebTokenInterceptor(jsonWebTokenService, null, null, loginService, null);
 
-    when(loginService.isLoggedIn(request)).thenReturn(false);
+        when(loginService.isLoggedIn(request)).thenReturn(false);
 
-    final UserToken userToken = new UserToken(jwtId, userId, date, date.getTime());
 
-    final String jsonWebToken = jsonWebTokenService.generateUserToken(userToken);
+        final UserToken userToken = new UserToken(jwtId, userId, date, date.getTime());
 
-    when(request.getSession(false)).thenReturn(session);
-    when(session.getAttribute(WebKeys.USER_ID)).thenReturn(null); // non-logged
-    when(request.isSecure()).thenReturn(true); // https
-    when(request.getCookies())
-        .thenAnswer(
-            new Answer<Cookie[]>() {
+        final String jsonWebToken = jsonWebTokenService.generateUserToken(userToken);
 
-              @Override
-              public Cookie[] answer(InvocationOnMock invocation) throws Throwable {
+        when(request.getSession(false)).thenReturn(session);
+        when(session.getAttribute(WebKeys.USER_ID)).thenReturn(null); // non-logged
+        when(request.isSecure()).thenReturn(true); // https
+        when(request.getCookies()).thenAnswer(new Answer<Cookie[]>() {
+
+            @Override
+            public Cookie[] answer(InvocationOnMock invocation) throws Throwable {
 
                 System.out.println("getting the access token:" + jsonWebToken);
-                return new Cookie[] {new Cookie(CookieKeys.JWT_ACCESS_TOKEN, jsonWebToken)};
-              }
-            });
+                return new Cookie[] {
+                        new Cookie(CookieKeys.JWT_ACCESS_TOKEN, jsonWebToken)
+                };
+            }
+        });
 
-    when(loginService.doCookieLogin(anyObject(), anyObject(), anyObject()))
-        .thenAnswer(
-            new Answer<Boolean>() {
+        when(loginService.doCookieLogin(anyObject(), anyObject(), anyObject())).thenAnswer(new Answer<Boolean>() {
 
-              @Override
-              public Boolean answer(InvocationOnMock invocation) throws Throwable {
+            @Override
+            public Boolean answer(InvocationOnMock invocation) throws Throwable {
 
                 System.out.println("Success calling the do cookie for a valid scenario");
                 calledDoCookieLogin = true;
                 return true;
-              }
-            });
+            }
+        });
 
-    jsonWebTokenInterceptor.setCompanyLocalManager(companyLocalManager);
-    jsonWebTokenInterceptor.setEncryptor(encryptor);
-    jsonWebTokenInterceptor.setLoginService(loginService);
-    jsonWebTokenInterceptor.setUserAPI(userAPI);
+        jsonWebTokenInterceptor.setCompanyLocalManager(companyLocalManager);
+        jsonWebTokenInterceptor.setEncryptor(encryptor);
+        jsonWebTokenInterceptor.setLoginService(loginService);
+        jsonWebTokenInterceptor.setUserAPI(userAPI);
 
-    jsonWebTokenInterceptor.init();
+        jsonWebTokenInterceptor.init();
 
-    jsonWebTokenInterceptor.intercept(request, response);
+        jsonWebTokenInterceptor.intercept(request, response);
 
-    jsonWebTokenInterceptor.destroy();
+        jsonWebTokenInterceptor.destroy();
 
-    if (!calledDoCookieLogin) {
+        if (!calledDoCookieLogin) {
 
-      fail("Failed. doCookieLogin must be called on successfully scenario...");
+            fail("Failed. doCookieLogin must be called on successfully scenario...");
+        }
     }
-  }
+
 }

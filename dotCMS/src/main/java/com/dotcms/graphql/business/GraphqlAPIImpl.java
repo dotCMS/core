@@ -1,14 +1,5 @@
 package com.dotcms.graphql.business;
 
-import static com.dotcms.graphql.util.TypeUtil.BASE_TYPE_SUFFIX;
-import static graphql.Scalars.GraphQLFloat;
-import static graphql.Scalars.GraphQLInt;
-import static graphql.Scalars.GraphQLString;
-import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
-import static graphql.schema.GraphQLList.list;
-import static graphql.schema.GraphQLNonNull.nonNull;
-import static graphql.schema.GraphQLObjectType.newObject;
-
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.CategoryField;
@@ -51,6 +42,17 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import graphql.scalars.ExtendedScalars;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLArgument;
@@ -62,285 +64,281 @@ import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeReference;
 import graphql.schema.idl.SchemaPrinter;
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+
+import static com.dotcms.graphql.util.TypeUtil.BASE_TYPE_SUFFIX;
+import static graphql.Scalars.GraphQLFloat;
+import static graphql.Scalars.GraphQLInt;
+import static graphql.Scalars.GraphQLString;
+import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
+import static graphql.schema.GraphQLList.list;
+import static graphql.schema.GraphQLNonNull.nonNull;
+import static graphql.schema.GraphQLObjectType.newObject;
 
 public class GraphqlAPIImpl implements GraphqlAPI {
 
-  private Map<Class<? extends Field>, GraphQLOutputType> fieldClassGraphqlTypeMap = new HashMap<>();
+    private Map<Class<? extends Field>, GraphQLOutputType> fieldClassGraphqlTypeMap = new HashMap<>();
 
-  private Map<Class<? extends Field>, DataFetcher> fieldClassGraphqlDataFetcher = new HashMap<>();
+    private Map<Class<? extends Field>, DataFetcher> fieldClassGraphqlDataFetcher = new HashMap<>();
 
-  private volatile GraphQLSchema schema;
+    private volatile GraphQLSchema schema;
 
-  public static final String TYPES_AND_FIELDS_VALID_NAME_REGEX = "[_A-Za-z][_0-9A-Za-z]*";
+    public static final String TYPES_AND_FIELDS_VALID_NAME_REGEX = "[_A-Za-z][_0-9A-Za-z]*";
 
-  public GraphqlAPIImpl() {
-    // custom type mappings
-    this.fieldClassGraphqlTypeMap.put(BinaryField.class, CustomFieldType.BINARY.getType());
-    this.fieldClassGraphqlTypeMap.put(
-        CategoryField.class, list(CustomFieldType.CATEGORY.getType()));
-    this.fieldClassGraphqlTypeMap.put(ImageField.class, InterfaceType.FILEASSET.getType());
-    this.fieldClassGraphqlTypeMap.put(FileField.class, InterfaceType.FILEASSET.getType());
-    this.fieldClassGraphqlTypeMap.put(
-        KeyValueField.class, list(CustomFieldType.KEY_VALUE.getType()));
-    this.fieldClassGraphqlTypeMap.put(CheckboxField.class, list(GraphQLString));
-    this.fieldClassGraphqlTypeMap.put(MultiSelectField.class, list(GraphQLString));
-    this.fieldClassGraphqlTypeMap.put(TagField.class, list(GraphQLString));
-    this.fieldClassGraphqlTypeMap.put(
-        HostFolderField.class, CustomFieldType.SITE_OR_FOLDER.getType());
+    public GraphqlAPIImpl() {
+        // custom type mappings
+        this.fieldClassGraphqlTypeMap.put(BinaryField.class, CustomFieldType.BINARY.getType());
+        this.fieldClassGraphqlTypeMap.put(CategoryField.class, list(CustomFieldType.CATEGORY.getType()));
+        this.fieldClassGraphqlTypeMap.put(ImageField.class, InterfaceType.FILEASSET.getType());
+        this.fieldClassGraphqlTypeMap.put(FileField.class, InterfaceType.FILEASSET.getType());
+        this.fieldClassGraphqlTypeMap.put(KeyValueField.class, list(CustomFieldType.KEY_VALUE.getType()));
+        this.fieldClassGraphqlTypeMap.put(CheckboxField.class, list(GraphQLString));
+        this.fieldClassGraphqlTypeMap.put(MultiSelectField.class, list(GraphQLString));
+        this.fieldClassGraphqlTypeMap.put(TagField.class, list(GraphQLString));
+        this.fieldClassGraphqlTypeMap.put(HostFolderField.class, CustomFieldType.SITE_OR_FOLDER.getType());
 
-    // custom data fetchers
-    this.fieldClassGraphqlDataFetcher.put(BinaryField.class, new BinaryFieldDataFetcher());
-    this.fieldClassGraphqlDataFetcher.put(CategoryField.class, new CategoryFieldDataFetcher());
-    this.fieldClassGraphqlDataFetcher.put(ImageField.class, new FileFieldDataFetcher());
-    this.fieldClassGraphqlDataFetcher.put(FileField.class, new FileFieldDataFetcher());
-    this.fieldClassGraphqlDataFetcher.put(KeyValueField.class, new KeyValueFieldDataFetcher());
-    this.fieldClassGraphqlDataFetcher.put(CheckboxField.class, new MultiValueFieldDataFetcher());
-    this.fieldClassGraphqlDataFetcher.put(MultiSelectField.class, new MultiValueFieldDataFetcher());
-    this.fieldClassGraphqlDataFetcher.put(TagField.class, new TagsFieldDataFetcher());
-    this.fieldClassGraphqlDataFetcher.put(
-        HostFolderField.class, new SiteOrFolderFieldDataFetcher());
-  }
-
-  @Override
-  public GraphQLSchema getSchema() throws DotDataException {
-    GraphQLSchema innerSchema = this.schema;
-    if (innerSchema == null) {
-      synchronized (this) {
-        innerSchema = this.schema;
-        if (innerSchema == null) {
-          this.schema = innerSchema = generateSchema();
-        }
-      }
+        // custom data fetchers
+        this.fieldClassGraphqlDataFetcher.put(BinaryField.class, new BinaryFieldDataFetcher());
+        this.fieldClassGraphqlDataFetcher.put(CategoryField.class, new CategoryFieldDataFetcher());
+        this.fieldClassGraphqlDataFetcher.put(ImageField.class, new FileFieldDataFetcher());
+        this.fieldClassGraphqlDataFetcher.put(FileField.class, new FileFieldDataFetcher());
+        this.fieldClassGraphqlDataFetcher.put(KeyValueField.class, new KeyValueFieldDataFetcher());
+        this.fieldClassGraphqlDataFetcher.put(CheckboxField.class, new MultiValueFieldDataFetcher());
+        this.fieldClassGraphqlDataFetcher.put(MultiSelectField.class, new MultiValueFieldDataFetcher());
+        this.fieldClassGraphqlDataFetcher.put(TagField.class, new TagsFieldDataFetcher());
+        this.fieldClassGraphqlDataFetcher.put(HostFolderField.class, new SiteOrFolderFieldDataFetcher());
     }
 
-    printSchema();
-    return innerSchema;
-  }
-
-  @Override
-  public void invalidateSchema() {
-    this.schema = null;
-  }
-
-  private void printSchema() {
-    if (Config.getBooleanProperty("PRINT_GRAPHQL_SCHEMA", false)) {
-      SchemaPrinter printer = new SchemaPrinter();
-      try {
-        File graphqlDirectory = new File(ConfigUtils.getGraphqlPath());
-
-        if (!graphqlDirectory.exists()) {
-          graphqlDirectory.mkdirs();
-        }
-
-        File schemaFile = new File(graphqlDirectory.getPath() + File.separator + "schema.graphqls");
-        schemaFile.createNewFile();
-        Files.write(schemaFile.toPath(), printer.print(schema).getBytes());
-      } catch (IOException e) {
-        Logger.error(this, "Error printing schema", e);
-      }
-    }
-  }
-
-  private void createSchemaType(
-      ContentType contentType, final Map<String, GraphQLObjectType> graphqlObjectTypes) {
-
-    // skip contentType.variable not sticking to the regex
-    if (!contentType.variable().matches(TYPES_AND_FIELDS_VALID_NAME_REGEX)) {
-      return;
-    }
-
-    final GraphQLObjectType.Builder builder =
-        GraphQLObjectType.newObject().name(contentType.variable());
-
-    // add CONTENT interface fields
-    builder.fields(InterfaceType.CONTENTLET.getType().getFieldDefinitions());
-
-    if (InterfaceType.getInterfaceForBaseType(contentType.baseType()) != null) {
-      builder.withInterface(InterfaceType.getInterfaceForBaseType(contentType.baseType()));
-    }
-
-    final List<Field> fields = contentType.fields();
-
-    fields.forEach(
-        (field) -> {
-          // skip field.variable not sticking to the regex
-          if (!field.variable().matches(TYPES_AND_FIELDS_VALID_NAME_REGEX)
-              || field instanceof RelationshipsTabField) {
-            return;
-          }
-
-          if (!(field instanceof RowField) && !(field instanceof ColumnField)) {
-            if (field instanceof RelationshipField) {
-              handleRelationshipField(contentType, builder, field, graphqlObjectTypes);
-            } else {
-              builder.field(
-                  newFieldDefinition()
-                      .name(field.variable())
-                      .type(
-                          field.required()
-                              ? nonNull(getGraphqlTypeForFieldClass(field.type(), field))
-                              : getGraphqlTypeForFieldClass(field.type(), field))
-                      .dataFetcher(getGraphqlDataFetcherForFieldClass(field.type())));
+    @Override
+    public GraphQLSchema getSchema() throws DotDataException {
+        GraphQLSchema innerSchema = this.schema;
+        if(innerSchema == null) {
+            synchronized (this) {
+                innerSchema = this.schema;
+                if(innerSchema == null) {
+                    this.schema = innerSchema = generateSchema();
+                }
             }
-          }
+        }
+
+        printSchema();
+        return innerSchema;
+    }
+
+    @Override
+    public void invalidateSchema() {
+        this.schema = null;
+    }
+
+    private void printSchema() {
+        if (Config.getBooleanProperty("PRINT_GRAPHQL_SCHEMA", false)) {
+            SchemaPrinter printer = new SchemaPrinter();
+            try {
+                File graphqlDirectory = new File(ConfigUtils.getGraphqlPath());
+
+                if(!graphqlDirectory.exists()) {
+                    graphqlDirectory.mkdirs();
+                }
+
+                File schemaFile = new File(graphqlDirectory.getPath() + File.separator + "schema.graphqls");
+                schemaFile.createNewFile();
+                Files.write(schemaFile.toPath(), printer.print(schema).getBytes());
+            } catch (IOException e) {
+                Logger.error(this, "Error printing schema", e);
+            }
+        }
+    }
+
+    private void createSchemaType(ContentType contentType,
+                                              final Map<String, GraphQLObjectType> graphqlObjectTypes) {
+
+        // skip contentType.variable not sticking to the regex
+        if(!contentType.variable().matches(TYPES_AND_FIELDS_VALID_NAME_REGEX)) {
+            return;
+        }
+
+        final GraphQLObjectType.Builder builder = GraphQLObjectType.newObject().name(contentType.variable());
+
+        // add CONTENT interface fields
+        builder.fields(InterfaceType.CONTENTLET.getType().getFieldDefinitions());
+
+        if(InterfaceType.getInterfaceForBaseType(contentType.baseType())!=null) {
+            builder.withInterface(InterfaceType.getInterfaceForBaseType(contentType.baseType()));
+        }
+
+        final List<Field> fields = contentType.fields();
+
+        fields.forEach((field)->{
+            // skip field.variable not sticking to the regex
+            if(!field.variable().matches(TYPES_AND_FIELDS_VALID_NAME_REGEX)
+                || field instanceof RelationshipsTabField) {
+                return;
+            }
+
+            if(!(field instanceof RowField) && !(field instanceof ColumnField)) {
+                if (field instanceof RelationshipField) {
+                    handleRelationshipField(contentType, builder, field, graphqlObjectTypes);
+                } else {
+                    builder.field(newFieldDefinition()
+                        .name(field.variable())
+                        .type(field.required()
+                            ? nonNull(getGraphqlTypeForFieldClass(field.type(), field))
+                            : getGraphqlTypeForFieldClass(field.type(), field))
+                        .dataFetcher(getGraphqlDataFetcherForFieldClass(field.type()))
+                    );
+                }
+            }
         });
 
-    builder.withInterface(InterfaceType.CONTENTLET.getType());
-    final GraphQLObjectType graphQLType = builder.build();
+        builder.withInterface(InterfaceType.CONTENTLET.getType());
+        final GraphQLObjectType graphQLType = builder.build();
 
-    graphqlObjectTypes.put(graphQLType.getName(), graphQLType);
-  }
-
-  private void handleRelationshipField(
-      final ContentType contentType,
-      GraphQLObjectType.Builder builder,
-      final Field field,
-      final Map<String, GraphQLObjectType> typesMap) {
-
-    final ContentType relatedContentType;
-    try {
-      relatedContentType = getRelatedContentTypeForField(field, APILocator.systemUser());
-    } catch (DotSecurityException | DotDataException e) {
-      throw new DotRuntimeException(
-          "Unable to create schema type for Content Type: " + contentType.variable(), e);
+        graphqlObjectTypes.put(graphQLType.getName(), graphQLType);
     }
 
-    Relationship relationship;
+    private void handleRelationshipField(final ContentType contentType, GraphQLObjectType.Builder builder,
+                                         final Field field, final Map<String, GraphQLObjectType> typesMap) {
 
-    try {
-      relationship =
-          APILocator.getRelationshipAPI().getRelationshipFromField(field, APILocator.systemUser());
-    } catch (DotDataException | DotSecurityException e) {
-      throw new DotRuntimeException(e);
-    }
+        final ContentType relatedContentType;
+        try {
+            relatedContentType = getRelatedContentTypeForField(field, APILocator.systemUser());
+        } catch (DotSecurityException | DotDataException e) {
+            throw new DotRuntimeException("Unable to create schema type for Content Type: " + contentType.variable(), e);
+        }
 
-    final ContentletRelationships contentletRelationships = new ContentletRelationships(null);
-    final ContentletRelationships.ContentletRelationshipRecords records =
-        contentletRelationships
-        .new ContentletRelationshipRecords(
-            relationship, APILocator.getRelationshipAPI().isParent(relationship, contentType));
+        Relationship relationship;
 
-    GraphQLOutputType outputType =
-        typesMap.get(relatedContentType.variable()) != null
+        try {
+            relationship = APILocator.getRelationshipAPI().getRelationshipFromField(field,
+                APILocator.systemUser());
+        } catch (DotDataException | DotSecurityException e) {
+            throw new DotRuntimeException(e);
+        }
+
+        final ContentletRelationships contentletRelationships = new ContentletRelationships(null);
+        final ContentletRelationships.ContentletRelationshipRecords
+            records = contentletRelationships.new ContentletRelationshipRecords(
+            relationship,
+            APILocator.getRelationshipAPI().isParent(relationship, contentType));
+
+        GraphQLOutputType outputType = typesMap.get(relatedContentType.variable()) != null
             ? typesMap.get(relatedContentType.variable())
             : GraphQLTypeReference.typeRef(relatedContentType.variable());
 
-    outputType = records.doesAllowOnlyOne() ? outputType : list(outputType);
 
-    builder.field(
-        newFieldDefinition()
+        outputType = records.doesAllowOnlyOne()
+            ? outputType
+            : list(outputType);
+
+        builder.field(newFieldDefinition()
             .name(field.variable())
-            .type(field.required() ? nonNull(outputType) : outputType)
-            .dataFetcher(new RelationshipFieldDataFetcher()));
-  }
+            .type(field.required()?nonNull(outputType):outputType)
+            .dataFetcher(new RelationshipFieldDataFetcher())
+        );
+    }
 
-  @Override
-  public GraphQLOutputType getGraphqlTypeForFieldClass(
-      final Class<? extends Field> fieldClass, final Field field) {
-    return fieldClassGraphqlTypeMap.get(fieldClass) != null
-        ? fieldClassGraphqlTypeMap.get(fieldClass)
-        : fieldClass.equals(TextField.class) && field.dataType().equals(DataTypes.INTEGER)
-            ? GraphQLInt
-            : fieldClass.equals(TextField.class) && field.dataType().equals(DataTypes.FLOAT)
-                ? GraphQLFloat
-                : GraphQLString;
-  }
+    @Override
+    public GraphQLOutputType getGraphqlTypeForFieldClass(final Class<? extends Field> fieldClass, final Field field) {
+        return fieldClassGraphqlTypeMap.get(fieldClass)!= null
+            ? fieldClassGraphqlTypeMap.get(fieldClass)
+            : fieldClass.equals(TextField.class) && field.dataType().equals(DataTypes.INTEGER) ? GraphQLInt
+                : fieldClass.equals(TextField.class) && field.dataType().equals(DataTypes.FLOAT) ? GraphQLFloat
+                    : GraphQLString;
+    }
 
-  private DataFetcher getGraphqlDataFetcherForFieldClass(final Class<Field> fieldClass) {
-    return fieldClassGraphqlDataFetcher.get(fieldClass) != null
-        ? fieldClassGraphqlDataFetcher.get(fieldClass)
-        : new FieldDataFetcher();
-  }
+    private DataFetcher getGraphqlDataFetcherForFieldClass(final Class<Field> fieldClass) {
+        return fieldClassGraphqlDataFetcher.get(fieldClass)!= null
+            ? fieldClassGraphqlDataFetcher.get(fieldClass)
+            : new FieldDataFetcher();
+    }
 
-  @LogTime(loggingLevel = "INFO")
-  private GraphQLSchema generateSchema() throws DotDataException {
-    final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+    @LogTime(loggingLevel = "INFO")
+    private GraphQLSchema generateSchema() throws DotDataException {
+        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
 
-    List<ContentType> allTypes = contentTypeAPI.findAll();
+        List<ContentType> allTypes = contentTypeAPI.findAll();
 
-    // create all types
-    Map<String, GraphQLObjectType> concreteTypes = new HashMap<>();
+        // create all types
+        Map<String, GraphQLObjectType> concreteTypes = new HashMap<>();
 
-    allTypes.forEach((type) -> createSchemaType(type, concreteTypes));
+        allTypes.forEach((type)->createSchemaType(type, concreteTypes));
 
-    final Set<GraphQLType> graphQLTypes = new HashSet<>(InterfaceType.valuesAsSet());
-    // custom scalar types
-    graphQLTypes.add(ExtendedScalars.DateTime);
-    // add here the rest of types
-    graphQLTypes.addAll(concreteTypes.values());
+        final Set<GraphQLType> graphQLTypes = new HashSet<>(InterfaceType.valuesAsSet());
+        // custom scalar types
+        graphQLTypes.add(ExtendedScalars.DateTime);
+        // add here the rest of types
+        graphQLTypes.addAll(concreteTypes.values());
 
-    // Root Type
-    GraphQLObjectType.Builder rootTypeBuilder =
-        newObject()
+        // Root Type
+        GraphQLObjectType.Builder rootTypeBuilder = newObject()
             .name("Query")
-            .field(
-                newFieldDefinition()
-                    .name("search")
-                    .argument(
-                        GraphQLArgument.newArgument()
-                            .name("query")
-                            .type(nonNull(GraphQLString))
-                            .build())
-                    .argument(GraphQLArgument.newArgument().name("limit").type(GraphQLInt).build())
-                    .argument(GraphQLArgument.newArgument().name("offset").type(GraphQLInt).build())
-                    .argument(
-                        GraphQLArgument.newArgument().name("sortBy").type(GraphQLString).build())
-                    .type(list(InterfaceType.CONTENTLET.getType()))
-                    .dataFetcher(new ContentletDataFetcher()));
+            .field(newFieldDefinition()
+                .name("search")
+                .argument(GraphQLArgument.newArgument()
+                    .name("query")
+                    .type(nonNull(GraphQLString))
+                    .build())
+                .argument(GraphQLArgument.newArgument()
+                    .name("limit")
+                    .type(GraphQLInt)
+                    .build())
+                .argument(GraphQLArgument.newArgument()
+                    .name("offset")
+                    .type(GraphQLInt)
+                    .build())
+                .argument(GraphQLArgument.newArgument()
+                    .name("sortBy")
+                    .type(GraphQLString)
+                    .build())
+                .type(list(InterfaceType.CONTENTLET.getType()))
+                .dataFetcher(new ContentletDataFetcher()));
 
-    List<GraphQLFieldDefinition> typesFieldsDefinitions = new ArrayList<>();
+        List<GraphQLFieldDefinition> typesFieldsDefinitions = new ArrayList<>();
 
-    // each content type as query'able collection field
-    graphQLTypes.forEach(
-        (type) -> {
-          if (type.getName().equals(InterfaceType.CONTENTLET.getType().getName())) {
-            return;
-          }
+        // each content type as query'able collection field
+        graphQLTypes.forEach((type)-> {
+            if(type.getName().equals(InterfaceType.CONTENTLET.getType().getName())) {
+                return;
+            }
 
-          final String fieldDescription =
-              type instanceof GraphQLInterfaceType ? BASE_TYPE_SUFFIX : null;
+            final String fieldDescription = type instanceof GraphQLInterfaceType ? BASE_TYPE_SUFFIX : null;
 
-          typesFieldsDefinitions.add(
-              newFieldDefinition()
-                  .name(TypeUtil.collectionizedName(type.getName()))
-                  .argument(GraphQLArgument.newArgument().name("query").type(GraphQLString).build())
-                  .argument(GraphQLArgument.newArgument().name("limit").type(GraphQLInt).build())
-                  .argument(GraphQLArgument.newArgument().name("offset").type(GraphQLInt).build())
-                  .argument(
-                      GraphQLArgument.newArgument().name("sortBy").type(GraphQLString).build())
-                  .type(list((type)))
-                  .description(fieldDescription)
-                  .dataFetcher(new ContentletDataFetcher())
-                  .build());
+            typesFieldsDefinitions.add(newFieldDefinition()
+                .name(TypeUtil.collectionizedName(type.getName()))
+                .argument(GraphQLArgument.newArgument()
+                    .name("query")
+                    .type(GraphQLString)
+                    .build())
+                .argument(GraphQLArgument.newArgument()
+                    .name("limit")
+                    .type(GraphQLInt)
+                    .build())
+                .argument(GraphQLArgument.newArgument()
+                    .name("offset")
+                    .type(GraphQLInt)
+                    .build())
+                .argument(GraphQLArgument.newArgument()
+                    .name("sortBy")
+                    .type(GraphQLString)
+                    .build())
+                .type(list((type)))
+                .description(fieldDescription)
+                .dataFetcher(new ContentletDataFetcher()).build());
+
         });
 
-    rootTypeBuilder = rootTypeBuilder.fields(typesFieldsDefinitions);
+        rootTypeBuilder = rootTypeBuilder.fields(typesFieldsDefinitions);
 
-    return new GraphQLSchema.Builder()
-        .query(rootTypeBuilder.build())
-        .additionalTypes(graphQLTypes)
-        .build();
-  }
+        return new GraphQLSchema.Builder().query(rootTypeBuilder.build()).additionalTypes(graphQLTypes).build();
+    }
 
-  private ContentType getRelatedContentTypeForField(final Field field, final User user)
-      throws DotSecurityException, DotDataException {
-    final Relationship relationship =
-        APILocator.getRelationshipAPI().getRelationshipFromField(field, user);
+    private ContentType getRelatedContentTypeForField(final Field field, final User user) throws DotSecurityException, DotDataException {
+        final Relationship relationship = APILocator.getRelationshipAPI().getRelationshipFromField(field,
+            user);
 
-    final String relatedContentTypeId =
-        relationship.getParentStructureInode().equals(field.contentTypeId())
-            ? relationship.getChildStructureInode()
-            : relationship.getParentStructureInode();
+        final String relatedContentTypeId = relationship.getParentStructureInode().equals(field.contentTypeId())
+            ? relationship.getChildStructureInode() : relationship.getParentStructureInode();
 
-    return APILocator.getContentTypeAPI(user).find(relatedContentTypeId);
-  }
+        return APILocator.getContentTypeAPI(user).find(relatedContentTypeId);
+    }
+
 }

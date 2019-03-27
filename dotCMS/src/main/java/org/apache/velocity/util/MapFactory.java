@@ -16,7 +16,7 @@ package org.apache.velocity.util;
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
- * under the License.
+ * under the License.    
  */
 
 import java.lang.reflect.Constructor;
@@ -27,88 +27,104 @@ import java.util.Map;
 
 /**
  * Factory class for creating Maps.
- *
- * <p>The main purpose of this class is to take advantage of Java 5 Concurrent classes if they are
- * available. We use reflection to instantiate java.util.concurrent classes to avoid compile time
- * dependency on Java 5.
- *
- * <p>See <a href="http://issues.apache.org/jira/browse/VELOCITY-607">Issue 607</a> for more info on
- * this class.
- *
+ * 
+ * The main purpose of this class is to take advantage of Java 5
+ * Concurrent classes if they are available. We use reflection to instantiate
+ * java.util.concurrent classes to avoid compile time dependency on Java 5.
+ * 
+ * See <a href="http://issues.apache.org/jira/browse/VELOCITY-607">Issue 607</a>
+ * for more info on this class.
  * @author <a href="mailto:wyla@sci.fi">Jarkko Viinamaki</a>
  * @since 1.6
  */
-public class MapFactory {
-  private static Constructor concurrentHashMapConstructor;
-
-  static {
-    try {
-      concurrentHashMapConstructor =
-          Class.forName("java.util.concurrent.ConcurrentHashMap")
-              .getConstructor(new Class[] {int.class, float.class, int.class});
-    } catch (Exception ex) {
-      // not running under JRE 1.5+
-    }
-  }
-
-  /**
-   * Creates a new instance of a class that implements Map interface using the JDK defaults for
-   * initial size, load factor, etc.
-   *
-   * <p>Note that there is a small performance penalty because concurrent maps are created using
-   * reflection.
-   *
-   * @param allowNullKeys if true, the returned Map instance supports null keys
-   * @return one of ConcurrentHashMap, HashMap, Hashtable
-   */
-  public static Map create(boolean allowNullKeys) {
-    return create(16, 0.75f, 16, allowNullKeys);
-  }
-
-  /**
-   * Creates a new instance of a class that implements Map interface.
-   *
-   * <p>Note that there is a small performance penalty because concurrent maps are created using
-   * reflection.
-   *
-   * @param size initial size of the map
-   * @param loadFactor smaller value = better performance, larger value = better memory utilization
-   * @param concurrencyLevel estimated number of writer Threads. If this is smaller than 1, HashMap
-   *     is always returned which is not threadsafe.
-   * @param allowNullKeys if true, the returned Map instance supports null keys
-   * @return one of ConcurrentHashMap, HashMap, Hashtable
-   */
-  public static Map create(
-      int size, float loadFactor, int concurrencyLevel, boolean allowNullKeys) {
-    Map map = null;
-    if (concurrencyLevel <= 1) {
-      map = new HashMap(size, loadFactor);
-    } else {
-      if (concurrentHashMapConstructor != null) {
-        // running under JRE 1.5+
-        try {
-          map =
-              (Map)
-                  concurrentHashMapConstructor.newInstance(
-                      new Object[] {
-                        new Integer(size), new Float(loadFactor), new Integer(concurrencyLevel)
-                      });
-        } catch (Exception ex) {
-          throw new RuntimeException("this should not happen", ex);
+public class MapFactory
+{
+    private static Constructor concurrentHashMapConstructor;
+    static
+    {
+        try
+        {
+            concurrentHashMapConstructor =
+                Class.forName("java.util.concurrent.ConcurrentHashMap")
+                     .getConstructor(new Class[] { int.class, float.class, int.class } );
         }
-      } else {
-        /*
-         * Hashtable should be faster than
-         * Collections.synchronizedMap(new HashMap());
-         * so favor it if there is no need for null key support
-         */
-        if (allowNullKeys) {
-          map = Collections.synchronizedMap(new HashMap(size, loadFactor));
-        } else {
-          map = new Hashtable(size, loadFactor);
+        catch (Exception ex)
+        {
+            // not running under JRE 1.5+
         }
-      }
     }
-    return map;
-  }
+
+    /**
+     * Creates a new instance of a class that implements Map interface
+     * using the JDK defaults for initial size, load factor, etc.
+     * 
+     * Note that there is a small performance penalty because concurrent
+     * maps are created using reflection.
+     * 
+     * @param allowNullKeys if true, the returned Map instance supports null keys         
+     * @return one of ConcurrentHashMap, HashMap, Hashtable
+     */
+    public static Map create(boolean allowNullKeys)
+    {
+        return create(16, 0.75f, 16, allowNullKeys);
+    }
+
+    /**
+     * Creates a new instance of a class that implements Map interface.
+     * 
+     * Note that there is a small performance penalty because concurrent
+     * maps are created using reflection.
+     * 
+     * @param size initial size of the map
+     * @param loadFactor smaller value = better performance, 
+     *          larger value = better memory utilization
+     * @param concurrencyLevel estimated number of writer Threads. 
+     *          If this is smaller than 1, HashMap is always returned which is not 
+     *          threadsafe.
+     * @param allowNullKeys if true, the returned Map instance supports null keys         
+     *          
+     * @return one of ConcurrentHashMap, HashMap, Hashtable
+     */
+    public static Map create(int size, float loadFactor,
+                             int concurrencyLevel, boolean allowNullKeys)
+    {
+        Map map = null;
+        if (concurrencyLevel <= 1)
+        {
+            map = new HashMap(size, loadFactor);
+        }
+        else
+        {
+            if (concurrentHashMapConstructor != null)
+            {
+                // running under JRE 1.5+
+                try
+                {
+                    map = (Map)concurrentHashMapConstructor.newInstance(
+                        new Object[] { new Integer(size), new Float(loadFactor), new Integer(concurrencyLevel) });
+                }
+                catch (Exception ex)
+                {
+                    throw new RuntimeException("this should not happen", ex);
+                }
+            }
+            else
+            {
+                /*
+                 * Hashtable should be faster than
+                 * Collections.synchronizedMap(new HashMap());
+                 * so favor it if there is no need for null key support
+                 */
+                if (allowNullKeys)
+                {
+                    map = Collections.synchronizedMap(new HashMap(size, loadFactor));
+                }
+                else
+                {
+                    map = new Hashtable(size, loadFactor);
+                }
+            }
+        }
+        return map;
+    }
 }

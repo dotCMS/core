@@ -15,45 +15,58 @@
  */
 package com.dotmarketing.util.diff.html.ancestor;
 
-import com.dotmarketing.util.diff.html.modification.HtmlLayoutChange;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.dotmarketing.util.diff.html.modification.HtmlLayoutChange;
+
 public class AncestorComparatorResult {
+	
+	
 
-  private boolean changed = false;
+    private boolean changed = false;
 
-  private String changes = null;
+    private String changes = null;
+    
+    private List<HtmlLayoutChange> htmlLayoutChanges= null;
+    
+    public AncestorComparatorResult()
+	{
+    	htmlLayoutChanges = new ArrayList<HtmlLayoutChange>();
+	}
 
-  private List<HtmlLayoutChange> htmlLayoutChanges = null;
+    public boolean isChanged() {
+        return changed;
+    }
 
-  public AncestorComparatorResult() {
-    htmlLayoutChanges = new ArrayList<HtmlLayoutChange>();
-  }
+    public void setChanged(boolean changed) {
+        this.changed = changed;
+    }
 
-  public boolean isChanged() {
-    return changed;
-  }
+    public String getChanges() {
+        return changes;
+    }
 
-  public void setChanged(boolean changed) {
-    this.changed = changed;
-  }
+    public void setChanges(String changes) {
+        this.changes = changes;
+    }
 
-  public String getChanges() {
-    return changes;
-  }
+	/**
+	 * @return the htmlChanges
+	 */
+	public List<HtmlLayoutChange> getHtmlLayoutChanges() {
+		return htmlLayoutChanges;
+	}
 
-  public void setChanges(String changes) {
-    this.changes = changes;
-  }
+	/**
+	 * @param htmlLayoutChanges the htmlChanges to set
+	 */
+	public void setHtmlLayoutChanges(List<HtmlLayoutChange> htmlLayoutChanges) {
+		this.htmlLayoutChanges = htmlLayoutChanges;
+	}
+    
+    
+    
+    
 
-  /** @return the htmlChanges */
-  public List<HtmlLayoutChange> getHtmlLayoutChanges() {
-    return htmlLayoutChanges;
-  }
-
-  /** @param htmlLayoutChanges the htmlChanges to set */
-  public void setHtmlLayoutChanges(List<HtmlLayoutChange> htmlLayoutChanges) {
-    this.htmlLayoutChanges = htmlLayoutChanges;
-  }
 }

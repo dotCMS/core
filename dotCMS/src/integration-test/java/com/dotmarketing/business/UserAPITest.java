@@ -1,22 +1,12 @@
 package com.dotmarketing.business;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.notifications.bean.Notification;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.TimeUtil;
-import com.dotmarketing.beans.ContainerStructure;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.beans.MultiTree;
-import com.dotmarketing.beans.Permission;
+import com.dotmarketing.beans.*;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
@@ -49,1034 +39,937 @@ import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
-import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.portlets.workflows.model.WorkflowComment;
-import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
-import com.dotmarketing.portlets.workflows.model.WorkflowStep;
-import com.dotmarketing.portlets.workflows.model.WorkflowTask;
+import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.ejb.UserTestUtil;
+import com.liferay.portal.language.LanguageException;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
 
-/** @author Oswaldo Gallango */
+import static org.junit.Assert.*;
+
+/**
+ *
+ * @author Oswaldo Gallango
+ *
+ */
+
 public class UserAPITest extends IntegrationTestBase {
 
-  protected static UserAPI userAPI;
-  protected static RoleAPI roleAPI;
-  protected static PermissionAPI perAPI;
-  protected static HostAPI hostAPI;
-  protected static TemplateAPI templateAPI;
-  protected static ContainerAPI containerAPI;
-  protected static ContentletAPI conAPI;
-  protected static LayoutAPI layoutAPI;
-  protected static VersionableAPI versionableAPI;
-  protected static HTMLPageAssetAPI htmlPageAssetAPI;
-  protected static FolderAPI folderAPI;
-  protected static IdentifierAPI identifierAPI;
-  protected static WorkflowAPI workflowAPI;
-  protected static HostVariableAPI hostVariableAPI;
-
-  private static User systemUser;
-
-  @BeforeClass
-  public static void prepare() throws Exception {
-    // Setting web app environment
-    IntegrationTestInitService.getInstance().init();
-
-    LicenseTestUtil.getLicense();
-
-    userAPI = APILocator.getUserAPI();
-    roleAPI = APILocator.getRoleAPI();
-    perAPI = APILocator.getPermissionAPI();
-    hostAPI = APILocator.getHostAPI();
-    templateAPI = APILocator.getTemplateAPI();
-    containerAPI = APILocator.getContainerAPI();
-    conAPI = APILocator.getContentletAPI();
-    layoutAPI = APILocator.getLayoutAPI();
-    versionableAPI = APILocator.getVersionableAPI();
-    htmlPageAssetAPI = APILocator.getHTMLPageAssetAPI();
-    folderAPI = APILocator.getFolderAPI();
-    identifierAPI = APILocator.getIdentifierAPI();
-    workflowAPI = APILocator.getWorkflowAPI();
-    hostVariableAPI = APILocator.getHostVariableAPI();
-
-    // Setting the test user
-    systemUser = APILocator.getUserAPI().getSystemUser();
-    // setDebugMode(true);
-  }
-
-  /*@AfterClass
-  public static void cleanup() throws DotDataException, DotSecurityException {
-
-  	cleanupDebug(UserAPITest.class);
-  }*/
-
-  /**
-   * Testing {@link UserAPI#delete(User, User, User, boolean)}
-   *
-   * @throws DotDataException If the user to delete or the replacement user are not set
-   * @throws DotSecurityException If the user requesting the delete doesn't have permission
-   * @throws SystemException
-   * @throws PortalException
-   * @throws WebAssetException
-   * @throws IOException If the url is malformed or if there is an issue opening the connection
-   *     stream
-   */
-  @Test
-  public void delete() throws Exception {
-
-    final long langId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
-    final String timeString = String.valueOf(new Date().getTime());
-
-    /** Add host */
-    Host host = new Host();
-    host.setHostname("test" + timeString + ".demo.dotcms.com");
-    host.setIndexPolicy(IndexPolicy.FORCE);
-    host = hostAPI.save(host, systemUser, false);
-
-    /** Add role */
-    Role newRole = new Role();
-    String newRoleName = "role" + timeString;
-    newRole.setName(newRoleName);
-    newRole.setRoleKey(newRoleName);
-    newRole.setEditLayouts(true);
-    newRole.setEditPermissions(true);
-    newRole.setEditUsers(true);
-    newRole.setSystem(false);
-    newRole = roleAPI.save(newRole);
-
-    /** Set permission to role */
-    List<Permission> permissionsToSave = new ArrayList<Permission>();
-    permissionsToSave.add(
-        new Permission(
-            PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
-            host.getPermissionId(),
-            newRole.getId(),
-            (PermissionAPI.PERMISSION_READ
-                | PermissionAPI.PERMISSION_WRITE
-                | PermissionAPI.PERMISSION_CAN_ADD_CHILDREN
-                | PermissionAPI.PERMISSION_EDIT_PERMISSIONS),
-            true));
-    permissionsToSave.add(
-        new Permission(
-            Host.class.getCanonicalName(), host.getPermissionId(), newRole.getId(), 0, true));
-    permissionsToSave.add(
-        new Permission(
-            Folder.class.getCanonicalName(),
-            host.getPermissionId(),
-            newRole.getId(),
-            (PermissionAPI.PERMISSION_READ
-                | PermissionAPI.PERMISSION_WRITE
-                | PermissionAPI.PERMISSION_CAN_ADD_CHILDREN),
-            true));
-    permissionsToSave.add(
-        new Permission(
-            Container.class.getCanonicalName(),
-            host.getPermissionId(),
-            newRole.getId(),
-            (PermissionAPI.PERMISSION_READ
-                | PermissionAPI.PERMISSION_WRITE
-                | PermissionAPI.PERMISSION_PUBLISH),
-            true));
-    permissionsToSave.add(
-        new Permission(
-            Template.class.getCanonicalName(),
-            host.getPermissionId(),
-            newRole.getId(),
-            (PermissionAPI.PERMISSION_READ
-                | PermissionAPI.PERMISSION_WRITE
-                | PermissionAPI.PERMISSION_PUBLISH),
-            true));
-    permissionsToSave.add(
-        new Permission(
-            TemplateLayout.class.getCanonicalName(),
-            host.getPermissionId(),
-            newRole.getId(),
-            (PermissionAPI.PERMISSION_READ
-                | PermissionAPI.PERMISSION_WRITE
-                | PermissionAPI.PERMISSION_PUBLISH),
-            true));
-    permissionsToSave.add(
-        new Permission(
-            Link.class.getCanonicalName(),
-            host.getPermissionId(),
-            newRole.getId(),
-            (PermissionAPI.PERMISSION_READ
-                | PermissionAPI.PERMISSION_WRITE
-                | PermissionAPI.PERMISSION_PUBLISH),
-            true));
-    permissionsToSave.add(
-        new Permission(
-            Contentlet.class.getCanonicalName(),
-            host.getPermissionId(),
-            newRole.getId(),
-            (PermissionAPI.PERMISSION_READ
-                | PermissionAPI.PERMISSION_WRITE
-                | PermissionAPI.PERMISSION_PUBLISH),
-            true));
-    permissionsToSave.add(
-        new Permission(
-            IHTMLPage.class.getCanonicalName(),
-            host.getPermissionId(),
-            newRole.getId(),
-            (PermissionAPI.PERMISSION_READ
-                | PermissionAPI.PERMISSION_CAN_ADD_CHILDREN
-                | PermissionAPI.PERMISSION_WRITE
-                | PermissionAPI.PERMISSION_PUBLISH),
-            true));
-    permissionsToSave.add(
-        new Permission(
-            Structure.class.getCanonicalName(),
-            host.getPermissionId(),
-            newRole.getId(),
-            (PermissionAPI.PERMISSION_READ
-                | PermissionAPI.PERMISSION_WRITE
-                | PermissionAPI.PERMISSION_PUBLISH),
-            true));
-    permissionsToSave.add(
-        new Permission(
-            Category.class.getCanonicalName(), host.getPermissionId(), newRole.getId(), 0, true));
-    permissionsToSave.add(
-        new Permission(
-            Rule.class.getCanonicalName(), host.getPermissionId(), newRole.getId(), 0, true));
-
-    if (APILocator.getPermissionAPI().isInheritingPermissions(host)) {
-      Permissionable parentPermissionable =
-          APILocator.getPermissionAPI().findParentPermissionable(host);
-      APILocator.getPermissionAPI().permissionIndividually(parentPermissionable, host, systemUser);
-    }
-
-    // NOTE: Method "assignPermissions" is deprecated in favor of "save", which has subtle
-    // functional differences. Please take these differences into consideration if planning to
-    // replace this method with the "save"
-    APILocator.getPermissionAPI().assignPermissions(permissionsToSave, host, systemUser, false);
-
-    /** Add role permission over htmlpages */
-    Structure pageStructure =
-        StructureFactory.getStructureByVelocityVarName(
-            HTMLPageAssetAPIImpl.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_VARNAME);
-    perAPI.permissionIndividually(host, pageStructure, systemUser);
-
-    List<Permission> permissions = new ArrayList<Permission>();
-    Permission p1 = new Permission();
-    p1.setPermission(PermissionAPI.PERMISSION_READ);
-    p1.setRoleId(newRole.getId());
-    p1.setInode(pageStructure.getInode());
-    permissions.add(p1);
-
-    p1 = new Permission();
-    p1.setPermission(PermissionAPI.PERMISSION_WRITE);
-    p1.setRoleId(newRole.getId());
-    p1.setInode(pageStructure.getInode());
-    permissions.add(p1);
-
-    p1 = new Permission();
-    p1.setPermission(PermissionAPI.PERMISSION_PUBLISH);
-    p1.setRoleId(newRole.getId());
-    p1.setInode(pageStructure.getInode());
-    permissions.add(p1);
-
-    // NOTE: Method "assignPermissions" is deprecated in favor of "save", which has subtle
-    // functional differences. Please take these differences into consideration if planning to
-    // replace this method with the "save"
-    perAPI.assignPermissions(permissions, pageStructure, systemUser, false);
-
-    /** Add layout */
-    List<Layout> layouts = layoutAPI.findAllLayouts();
-    for (Layout l : layouts) {
-      if (l.getName().equals("Site Browser")
-          || l.getName().equals("Content")
-          || l.getName().equals("Content Types")) {
-        roleAPI.addLayoutToRole(l, newRole);
-      }
-    }
-
-    /** Add users with role */
-    String userToDeleteId = "user" + timeString;
-    User userToDelete =
-        userAPI.createUser(userToDeleteId + "@test.com", userToDeleteId + "@test.com");
-    userToDelete.setFirstName(userToDeleteId);
-    userToDelete.setLastName("TestUser");
-    userAPI.save(userToDelete, systemUser, false);
-
-    roleAPI.addRoleToUser(newRole, userToDelete);
-
-    Role newUserUserRole = roleAPI.loadRoleByKey(userToDelete.getUserId());
-
-    String replacementUserName = "replacementuser" + timeString;
-    User replacementUser =
-        userAPI.createUser(replacementUserName + "@test.com", replacementUserName + "@test.com");
-    replacementUser.setFirstName(replacementUserName);
-    replacementUser.setLastName("TestUser");
-    userAPI.save(replacementUser, systemUser, false);
-
-    roleAPI.addRoleToUser(newRole, replacementUser);
-
-    Role replacementUserUserRole = roleAPI.loadRoleByKey(replacementUser.getUserId());
-
-    /** Add folder */
-    Folder testFolder =
-        folderAPI.createFolders("/folderTest" + timeString, host, userToDelete, false);
-    testFolder.setOwner(userToDelete.getUserId());
-    folderAPI.save(testFolder, userToDelete, false);
-
-    /** Create workflow scheme */
-    String schemeName = "workflow-" + timeString;
-
-    WorkflowScheme newScheme = new WorkflowScheme();
-    newScheme.setName(schemeName);
-    newScheme.setArchived(false);
-    workflowAPI.saveScheme(newScheme, systemUser);
-
-    WorkflowScheme ws = workflowAPI.findSchemeByName(schemeName);
-    Assert.assertTrue(UtilMethods.isSet(ws));
-
-    /** Create scheme step1 */
-    WorkflowStep workflowStep1 = new WorkflowStep();
-    workflowStep1.setMyOrder(1);
-    workflowStep1.setName("Edit");
-    workflowStep1.setSchemeId(ws.getId());
-    workflowStep1.setResolved(false);
-    workflowAPI.saveStep(workflowStep1, systemUser);
-
-    List<WorkflowStep> steps = workflowAPI.findSteps(ws);
-    Assert.assertTrue(steps.size() == 1);
-    workflowStep1 = steps.get(0);
-
-    /** Create scheme step2 */
-    WorkflowStep workflowStep2 = new WorkflowStep();
-    workflowStep2.setMyOrder(2);
-    workflowStep2.setName("Publish");
-    workflowStep2.setSchemeId(ws.getId());
-    workflowStep2.setResolved(false);
-    workflowAPI.saveStep(workflowStep2, systemUser);
-
-    steps = workflowAPI.findSteps(ws);
-    Assert.assertTrue(steps.size() == 2);
-    workflowStep2 = steps.get(1);
-
-    /** Add action to scheme step1 */
-    WorkflowAction newAction = new WorkflowAction();
-    newAction.setSchemeId(ws.getId());
-    newAction.setName("Edit");
-    newAction.setAssignable(true);
-    newAction.setCommentable(true);
-    newAction.setIcon("workflowIcon");
-    newAction.setNextStep(workflowStep2.getId());
-    newAction.setCondition("");
-    newAction.setRequiresCheckout(false);
-    newAction.setRoleHierarchyForAssign(false);
-    newAction.setNextAssign(newUserUserRole.getId());
-
-    List<Permission> permissionsNewAction = new ArrayList<>();
-    permissionsNewAction.add(
-        new Permission(newAction.getId(), newRole.getId(), PermissionAPI.PERMISSION_USE));
-
-    workflowAPI.saveAction(newAction, permissionsNewAction, systemUser);
-    workflowAPI.saveAction(newAction.getId(), workflowStep1.getId(), systemUser);
-
-    List<WorkflowAction> actions1 = workflowAPI.findActions(workflowStep1, systemUser);
-    Assert.assertTrue(actions1.size() == 1);
-    WorkflowAction action1 = actions1.get(0);
-
-    /** Add action to scheme step2 */
-    WorkflowAction newAction2 = new WorkflowAction();
-    newAction2.setSchemeId(ws.getId());
-    newAction2.setName("Publish");
-    newAction2.setAssignable(true);
-    newAction2.setCommentable(true);
-    newAction2.setIcon("workflowIcon");
-    newAction2.setNextStep(workflowStep2.getId());
-    newAction2.setCondition("");
-    newAction2.setRequiresCheckout(false);
-    newAction2.setRoleHierarchyForAssign(false);
-    newAction2.setNextAssign(newUserUserRole.getId());
-
-    List<Permission> permissionsNewAction2 = new ArrayList<>();
-    permissionsNewAction2.add(
-        new Permission(newAction2.getId(), newRole.getId(), PermissionAPI.PERMISSION_USE));
-
-    workflowAPI.saveAction(newAction2, permissionsNewAction2, systemUser);
-    workflowAPI.saveAction(newAction2.getId(), workflowStep2.getId(), systemUser);
-
-    List<WorkflowAction> actions2 = workflowAPI.findActions(workflowStep2, systemUser);
-    Assert.assertTrue(actions2.size() == 1);
-    WorkflowAction action2 = actions2.get(0);
-
-    /** Add structure */
-    Structure st = new Structure();
-    st.setHost(host.getIdentifier());
-    st.setFolder(testFolder.getInode());
-    st.setName("structure" + timeString);
-    st.setStructureType(Structure.STRUCTURE_TYPE_CONTENT);
-    st.setOwner(userToDelete.getUserId());
-    st.setVelocityVarName("structure" + timeString);
-    StructureFactory.saveStructure(st);
-    CacheLocator.getContentTypeCache().add(st);
-
-    Field field1 =
-        new Field(
-            "title",
-            Field.FieldType.TEXT,
-            Field.DataType.TEXT,
-            st,
-            true,
-            true,
-            true,
-            3,
-            "",
-            "",
-            "",
-            true,
-            false,
-            true);
-    field1.setVelocityVarName("title");
-    field1.setListed(true);
-    FieldFactory.saveField(field1);
-    FieldsCache.addField(field1);
-
-    Field field2 =
-        new Field(
-            "body",
-            Field.FieldType.TEXT_AREA,
-            Field.DataType.LONG_TEXT,
-            st,
-            true,
-            true,
-            true,
-            4,
-            "",
-            "",
-            "",
-            true,
-            false,
-            true);
-    field2.setVelocityVarName("body");
-    FieldFactory.saveField(field2);
-    FieldsCache.addField(field2);
-
-    List<WorkflowScheme> schemes = new ArrayList<>();
-    schemes.add(ws);
-    workflowAPI.saveSchemesForStruct(st, schemes);
-
-    /** Add container */
-    Container container = new Container();
-    String containerName = "container" + timeString;
-    container.setFriendlyName(containerName);
-    container.setTitle(containerName);
-    container.setOwner(userToDelete.getUserId());
-    container.setMaxContentlets(5);
-    container.setPreLoop("preloop code");
-    container.setCode("<div><h3>content $!{title}</h3><p>$!{body}</p></div>");
-    container.setPostLoop("postloop code");
-
-    List<ContainerStructure> csList = new ArrayList<ContainerStructure>();
-    ContainerStructure cs = new ContainerStructure();
-    cs.setStructureId(st.getInode());
-    cs.setCode(container.getCode());
-    csList.add(cs);
-    container = containerAPI.save(container, csList, host, userToDelete, false);
-    PublishFactory.publishAsset(container, userToDelete, false, false);
-
-    /** Add template */
-    String templateBody =
-        "<html><body> #parseContainer('" + container.getIdentifier() + "') </body></html>";
-    String templateTitle = "template" + timeString;
-
-    Template template = new Template();
-    template.setTitle(templateTitle);
-    template.setBody(templateBody);
-    template.setOwner(userToDelete.getUserId());
-    template.setDrawedBody(templateBody);
-    template = templateAPI.saveTemplate(template, host, userToDelete, false);
-    PublishFactory.publishAsset(template, userToDelete, false, false);
-
-    /** Add page */
-    String page0Str = "page" + timeString;
-
-    Contentlet contentAsset = new Contentlet();
-    contentAsset.setStructureInode(HTMLPageAssetAPIImpl.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE);
-    contentAsset.setHost(host.getIdentifier());
-    contentAsset.setProperty(HTMLPageAssetAPIImpl.FRIENDLY_NAME_FIELD, page0Str);
-    contentAsset.setProperty(HTMLPageAssetAPIImpl.URL_FIELD, page0Str);
-    contentAsset.setProperty(HTMLPageAssetAPIImpl.TITLE_FIELD, page0Str);
-    contentAsset.setProperty(HTMLPageAssetAPIImpl.CACHE_TTL_FIELD, "0");
-    contentAsset.setProperty(HTMLPageAssetAPIImpl.TEMPLATE_FIELD, template.getIdentifier());
-    contentAsset.setLanguageId(langId);
-    contentAsset.setFolder(testFolder.getInode());
-    contentAsset.setIndexPolicy(IndexPolicy.FORCE);
-    contentAsset = conAPI.checkin(contentAsset, userToDelete, false);
-    contentAsset.setIndexPolicy(IndexPolicy.FORCE);
-    conAPI.publish(contentAsset, userToDelete, false);
-
-    /** Add content */
-    String title = "content" + timeString;
-    Contentlet contentAsset2 = new Contentlet();
-    contentAsset2.setStructureInode(st.getInode());
-    contentAsset2.setHost(host.getIdentifier());
-    contentAsset2.setProperty("title", title);
-    contentAsset2.setLanguageId(langId);
-    contentAsset2.setProperty("body", title);
-    contentAsset2.setFolder(testFolder.getInode());
-    contentAsset2.setIndexPolicy(IndexPolicy.FORCE);
-    contentAsset2 = conAPI.checkin(contentAsset2, userToDelete, false);
-    contentAsset.setIndexPolicy(IndexPolicy.FORCE);
-    conAPI.publish(contentAsset2, userToDelete, false);
-
-    /** Test that delete is not possible for step2 while has associated step or content */
-    contentAsset2.setStringProperty("wfActionId", action1.getId());
-    contentAsset2.setStringProperty("wfActionComments", "step1");
-    contentAsset2.setStringProperty("wfActionAssign", newUserUserRole.getId());
-    workflowAPI.fireWorkflowNoCheckin(contentAsset2, userToDelete);
-
-    contentAsset2.setStringProperty("wfActionId", action2.getId());
-    contentAsset2.setStringProperty("wfActionComments", "step2");
-    contentAsset2.setStringProperty("wfActionAssign", newUserUserRole.getId());
-    workflowAPI.fireWorkflowNoCheckin(contentAsset2, userToDelete);
-
-    WorkflowStep currentStep = workflowAPI.findStepByContentlet(contentAsset2);
-    assertNotNull(currentStep);
-
-    assertTrue(currentStep.getId().equals(workflowStep2.getId()));
-
-    /** Relate content to page */
-    MultiTree m =
-        new MultiTree(
-            contentAsset.getIdentifier(), container.getIdentifier(), contentAsset2.getIdentifier());
-    MultiTreeFactory.saveMultiTree(m);
-
-    /** Add menu link */
-    String linkStr = "link" + timeString;
-    Link link = new Link();
-    link.setTitle(linkStr);
-    link.setFriendlyName(linkStr);
-    link.setParent(testFolder.getInode());
-    link.setTarget("_blank");
-    link.setOwner(userToDelete.getUserId());
-    link.setModUser(userToDelete.getUserId());
-    IHTMLPage page =
-        htmlPageAssetAPI.getPageByPath(testFolder.getPath() + page0Str, host, langId, true);
-
-    Identifier internalLinkIdentifier = identifierAPI.findFromInode(page.getIdentifier());
-    link.setLinkType(Link.LinkType.INTERNAL.toString());
-    link.setInternalLinkIdentifier(internalLinkIdentifier.getId());
-    link.setProtocal("http://");
-
-    StringBuffer myURL = new StringBuffer();
-    if (InodeUtils.isSet(internalLinkIdentifier.getHostId())) {
-      myURL.append(host.getHostname());
-    }
-    myURL.append(internalLinkIdentifier.getURI());
-    link.setUrl(myURL.toString());
-    WebAssetFactory.createAsset(link, userToDelete.getUserId(), testFolder);
-    versionableAPI.setLive(link);
-
-    /** Add HostVariable */
-    final String hostVariableString = "hostVariable" + timeString;
-    HostVariable hostVariable = new HostVariable();
-    hostVariable.setHostId(host.getIdentifier());
-    hostVariable.setName(hostVariableString);
-    hostVariable.setKey(hostVariableString);
-    hostVariable.setValue(hostVariableString);
-    hostVariable.setLastModifierId(userToDelete.getUserId());
-    hostVariable.setLastModDate(new Date());
-    hostVariableAPI.save(hostVariable, userToDelete, false);
-
-    /** validation of current user and references */
-    assertTrue(userAPI.userExistsWithEmail(userToDelete.getEmailAddress()));
-    assertNotNull(roleAPI.loadRoleByKey(userToDelete.getUserId()));
-
-    assertTrue(link.getOwner().equals(userToDelete.getUserId()));
-    assertTrue(link.getModUser().equals(userToDelete.getUserId()));
-
-    assertTrue(contentAsset2.getOwner().equals(userToDelete.getUserId()));
-    assertTrue(contentAsset2.getModUser().equals(userToDelete.getUserId()));
-
-    assertTrue(contentAsset.getOwner().equals(userToDelete.getUserId()));
-    assertTrue(contentAsset.getModUser().equals(userToDelete.getUserId()));
-
-    WorkflowTask task = workflowAPI.findTaskByContentlet(contentAsset2);
-    assertTrue(task.getAssignedTo().equals(newUserUserRole.getId()));
-    assertTrue(task.getCreatedBy().equals(newUserUserRole.getId()));
-
-    WorkflowStep step = workflowAPI.findStepByContentlet(contentAsset2);
-    assertNotNull(step);
-    WorkflowAction action = workflowAPI.findActions(step, systemUser).get(0);
-    assertTrue(action.getNextAssign().equals(newUserUserRole.getId()));
-
-    List<WorkflowComment> comments = workflowAPI.findWorkFlowComments(task);
-    for (WorkflowComment comm : comments) {
-      assertTrue(comm.getPostedBy().equals(userToDelete.getUserId()));
-    }
-
-    assertTrue(container.getOwner().equals(userToDelete.getUserId()));
-    assertTrue(container.getModUser().equals(userToDelete.getUserId()));
-
-    assertTrue(template.getOwner().equals(userToDelete.getUserId()));
-    assertTrue(template.getModUser().equals(userToDelete.getUserId()));
-
-    assertTrue(testFolder.getOwner().equals(userToDelete.getUserId()));
-
-    hostVariable =
-        hostVariableAPI.getVariablesForHost(host.getIdentifier(), userToDelete, false).get(0);
-    assertTrue(hostVariable.getLastModifierId().equals(userToDelete.getUserId()));
-
-    // Verify we have the proper user set in the HTMLPage
-    page = htmlPageAssetAPI.getPageByPath(testFolder.getPath() + page0Str, host, langId, true);
-    assertTrue(page.getOwner().equals(userToDelete.getUserId()));
-    assertTrue(page.getModUser().equals(userToDelete.getUserId()));
-
-    /*
-     * delete user and replace its references with the replacement user, this delete method
-     * does a lot of things, after the delete lets wait a bit in order to allow the reindex
-     * of the modified contentlets to finish processing.
-     */
-
-    final StringBuilder luceneQuery =
-        new StringBuilder("working:true +modUser:").append(userToDelete.getUserId());
-    final int limit = 0;
-    final int offset = -1;
-    final List<ContentletSearch> contentlets =
-        APILocator.getContentletAPI()
-            .searchIndex(luceneQuery.toString(), limit, offset, null, systemUser, false);
-
-    Logger.info(this, "ES query: " + luceneQuery.toString());
-    Logger.info(this, "contentlets.size: " + contentlets.size());
-
-    userAPI.delete(userToDelete, replacementUser, systemUser, false);
-
-    waitForDeleteCompletedNotification(userToDelete);
-    /*
-     * Validate that the user was deleted and if its references were updated
-     */
-    try {
-      assertNull(userAPI.loadByUserByEmail(userToDelete.getEmailAddress(), systemUser, false));
-    } catch (com.dotmarketing.business.NoSuchUserException e) {
-      // enter here if the user doesn't exist as is expected
-    }
-    assertNull(roleAPI.loadRoleByKey(userToDelete.getUserId()));
-
-    assertNotNull(userAPI.loadByUserByEmail(replacementUser.getEmailAddress(), systemUser, false));
-
-    link = APILocator.getMenuLinkAPI().find(link.getInode(), systemUser, false);
-    assertTrue(link.getOwner().equals(replacementUser.getUserId()));
-    assertTrue(link.getModUser().equals(replacementUser.getUserId()));
-
-    page = htmlPageAssetAPI.getPageByPath(testFolder.getPath() + page0Str, host, langId, true);
-    Logger.info(this, "Page inode:" + page.getInode());
-    Logger.info(this, "Page identifier:" + page.getIdentifier());
-    assertTrue(
-        "Page Owner " + page.getOwner(), page.getOwner().equals(replacementUser.getUserId()));
-    assertTrue(page.getModUser().equals(replacementUser.getUserId()));
-
-    List<Contentlet> contentAssets = conAPI.findByStructure(st, systemUser, false, 100, 0);
-    for (Contentlet content : contentAssets) {
-      assertTrue(content.getOwner().equals(replacementUser.getUserId()));
-      assertTrue(content.getModUser().equals(replacementUser.getUserId()));
-
-      task = workflowAPI.findTaskByContentlet(content);
-      assertTrue(task.getAssignedTo().equals(replacementUserUserRole.getId()));
-      assertTrue(task.getCreatedBy().equals(replacementUserUserRole.getId()));
-
-      step = workflowAPI.findStepByContentlet(content);
-      assertNotNull(step);
-      action = workflowAPI.findActions(step, systemUser).get(0);
-      assertTrue(action.getNextAssign().equals(replacementUserUserRole.getId()));
-
-      comments = workflowAPI.findWorkFlowComments(task);
-      for (WorkflowComment comm : comments) {
-        assertTrue(comm.getPostedBy().equals(replacementUser.getUserId()));
-      }
-    }
-
-    container = containerAPI.getLiveContainerById(container.getIdentifier(), systemUser, false);
-    assertTrue(container.getOwner().equals(replacementUser.getUserId()));
-    assertTrue(container.getModUser().equals(replacementUser.getUserId()));
-
-    template = templateAPI.find(template.getInode(), systemUser, false);
-    assertTrue(template.getOwner().equals(replacementUser.getUserId()));
-    assertTrue(template.getModUser().equals(replacementUser.getUserId()));
-
-    CacheLocator.getFolderCache()
-        .removeFolder(testFolder, identifierAPI.find(testFolder.getIdentifier()));
-    testFolder = folderAPI.findFolderByPath(testFolder.getPath(), host, systemUser, false);
-    assertTrue(testFolder.getOwner().equals(replacementUser.getUserId()));
-
-    hostVariable =
-        hostVariableAPI.getVariablesForHost(host.getIdentifier(), replacementUser, false).get(0);
-    assertTrue(hostVariable.getLastModifierId().equals(replacementUser.getUserId()));
-
-    APILocator.getContentTypeAPI(systemUser).delete(new StructureTransformer(st).from());
-    conAPI.archive(contentAsset, systemUser, false);
-    conAPI.delete(contentAsset, systemUser, false);
-  }
-
-  private void waitForDeleteCompletedNotification(User userToDelete)
-      throws DotDataException, InterruptedException {
-
-    final int MAX_TIME = 20000;
-    final int WAIT_TIME = 1000;
-
-    TimeUtil.waitFor(
-        WAIT_TIME,
-        MAX_TIME,
-        () -> {
-          boolean isReindexFinished = false;
-          List<Notification> notifications = null;
-
-          try {
-            notifications =
-                APILocator.getNotificationAPI().getAllNotifications(systemUser.getUserId());
-          } catch (DotDataException e) {
-            Logger.error(this, "Unable to get notifications. ", e);
-          }
-
-          for (final Notification notification : notifications) {
-            final String notificationKey = notification.getMessage().getKey();
-            final String expectedKey = "notification.contentapi.reindex.related.content.success";
-            final Object[] notificationArgs =
-                notification.getNotificationData().getMessage().getArguments();
-            final Object[] expectedArgs = {
-              userToDelete.getUserId() + "/" + userToDelete.getFullName()
-            };
-            final String notificationArg =
-                UtilMethods.isSet(notificationArgs) ? (String) notificationArgs[0] : "notArg";
-            final String expectedArg =
-                UtilMethods.isSet(expectedArgs) ? (String) expectedArgs[0] : "expectedArg";
-
-            if (notificationKey.equals(expectedKey) && notificationArg.equals(expectedArg)) {
-              isReindexFinished = true;
-              break;
-            }
-          }
-
-          Logger.info(
-              this, "waitForDeleteCompletedNotification isReindexFinished:" + isReindexFinished);
-          return isReindexFinished;
-        });
-  }
-
-  /**
-   * Validates rule to forbid anonymous user delete as in other restrictions an exception is
-   * returned
-   *
-   * @throws DotDataException
-   */
-  @Test(expected = DotDataException.class)
-  public void deleteAnonymous() throws DotDataException, DotSecurityException {
-
-    UserAPI userAPI = APILocator.getUserAPI();
-    User anonymousUser = null;
-
-    anonymousUser = userAPI.getAnonymousUser();
-    userAPI.delete(anonymousUser, systemUser, false);
-  }
-
-  @Test
-  public void testGetUsersByNameOrEmailOrUserID() throws DotDataException {
-    UserAPI userAPI = APILocator.getUserAPI();
-    List<User> users = userAPI.getUsersByNameOrEmailOrUserID(null, 0, 40, false);
-    assertNotNull(users);
-    assertTrue(users.size() > 0);
-  }
-
-  @Test
-  public void testGetUsersByNameOrEmailOrUserIDWithFilter()
-      throws DotDataException, DotSecurityException {
-    String id;
-    String userName;
-    User user;
-    UserAPI userAPI;
-
-    id = String.valueOf(new Date().getTime());
-    userAPI = APILocator.getUserAPI();
-    userName = "user" + id;
-
-    user = UserTestUtil.getUser(userName, false, true);
-
-    List<User> users = userAPI.getUsersByNameOrEmailOrUserID(userName + "@fake.org", 0, 40, false);
-    assertNotNull(users);
-    assertTrue(users.size() == 1);
-
-    userAPI.delete(user, userAPI.getDefaultUser(), systemUser, false);
-  }
-
-  @Test
-  public void testGetUsersByNameOrEmailOrUserIDDeleted()
-      throws DotDataException, DotSecurityException {
-    String id;
-    String userName;
-    User user;
-    UserAPI userAPI;
-
-    id = String.valueOf(new Date().getTime());
-    userAPI = APILocator.getUserAPI();
-    userName = "user" + id;
-
-    user = UserTestUtil.getUser(userName, true, true);
-
-    List<User> users = userAPI.getUsersByNameOrEmailOrUserID(userName + "@fake.org", 0, 40, false);
-    assertNotNull(users);
-    assertTrue(users.size() == 0);
-
-    userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
-  }
-
-  @Test
-  public void testGetUnDeletedUsers() throws DotDataException, DotSecurityException {
-
-    UserAPI userAPI = APILocator.getUserAPI();
-
-    // Getting the current list
-    List<User> currentUsers = userAPI.getUnDeletedUsers();
-    int currentUsersCount = 0;
-    if (null != currentUsers) {
-      currentUsersCount = currentUsers.size();
-    }
-
-    /*
-     * Add user
-     */
-    Calendar calendar = Calendar.getInstance();
-    calendar.add(Calendar.HOUR, -48);
-    String newUserName = "user" + System.currentTimeMillis();
-
-    User newUser = UserTestUtil.getUser(newUserName, true, true, calendar.getTime());
-
-    List<User> foundUsers = userAPI.getUnDeletedUsers();
-
-    assertNotNull(foundUsers);
-    assertEquals(foundUsers.size(), currentUsersCount + 1);
-
-    Boolean found = false;
-    for (User user : foundUsers) {
-      if (newUserName.equals(user.getFirstName())) {
-        assertTrue(user.getDeleteInProgress());
-        assertNotNull(user.getDeleteDate());
-        assertEquals(user.getFirstName(), newUserName);
-        found = true;
-      }
-    }
-
-    if (!found) {
-      fail("The user saved was not found in the retrieved list.");
-    }
-
-    // Clean up the created user
-    userAPI.delete(newUser, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
-  }
-
-  @Test
-  public void testGetUsersByName() throws DotDataException, DotSecurityException {
-
-    String id;
-    String userName;
-    User user;
-    UserAPI userAPI;
-
-    id = String.valueOf(new Date().getTime());
-    userAPI = APILocator.getUserAPI();
-    userName = "user" + id;
-
-    user = UserTestUtil.getUser(userName, false, true);
-
-    List<User> users = userAPI.getUsersByName(userName, 0, 40, systemUser, false);
-    assertNotNull(users);
-    assertTrue(users.size() == 1);
-
-    userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
-  }
-
-  @Test
-  public void testGetUsersByNameDeleted() throws DotDataException, DotSecurityException {
-
-    String id;
-    String userName;
-    User user;
-    UserAPI userAPI;
-
-    id = String.valueOf(new Date().getTime());
-    userAPI = APILocator.getUserAPI();
-    userName = "user" + id;
-
-    user = UserTestUtil.getUser(userName, true, true);
-
-    List<User> users = userAPI.getUsersByName(userName, 0, 40, systemUser, false);
-    assertNotNull(users);
-    assertTrue(users.size() == 0);
-
-    userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
-  }
-
-  @Test
-  public void testGetUsersByNameOrEmail() throws DotDataException, DotSecurityException {
-
-    String id;
-    String userName;
-    User user;
-    UserAPI userAPI;
-
-    id = String.valueOf(new Date().getTime());
-    userAPI = APILocator.getUserAPI();
-    userName = "user" + id;
-
-    user = UserTestUtil.getUser(userName, false, true);
-
-    List<User> users = userAPI.getUsersByNameOrEmail(userName, 0, 40);
-    assertNotNull(users);
-    assertTrue(users.size() == 1);
-
-    userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
-  }
-
-  @Test
-  public void testGetUsersByNameOrEmailDeleted() throws DotDataException, DotSecurityException {
-
-    String id;
-    String userName;
-    User user;
-    UserAPI userAPI;
-
-    id = String.valueOf(new Date().getTime());
-    userAPI = APILocator.getUserAPI();
-    userName = "user" + id;
-
-    user = UserTestUtil.getUser(userName, true, true);
-
-    List<User> users = userAPI.getUsersByNameOrEmail(userName, 0, 40);
-    assertNotNull(users);
-    assertTrue(users.size() == 0);
-
-    userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
-  }
-
-  @Test
-  public void testGetCountUsersByNameOrEmail() throws DotDataException, DotSecurityException {
-    String id;
-    String userName;
-    User user;
-    UserAPI userAPI;
-
-    id = String.valueOf(new Date().getTime());
-    userAPI = APILocator.getUserAPI();
-    userName = "user" + id;
-
-    user = UserTestUtil.getUser(userName, false, true);
-
-    long count = userAPI.getCountUsersByNameOrEmail(userName + "@fake.org");
-
-    assertTrue(count == 1);
-
-    userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
-  }
-
-  @Test
-  public void testGetCountUsersByNameOrEmailDeleted()
-      throws DotDataException, DotSecurityException {
-    String id;
-    String userName;
-    User user;
-    UserAPI userAPI;
-
-    id = String.valueOf(new Date().getTime());
-    userAPI = APILocator.getUserAPI();
-    userName = "user" + id;
-
-    user = UserTestUtil.getUser(userName, true, true);
-
-    long count = userAPI.getCountUsersByNameOrEmail(userName + "@fake.org");
-
-    assertTrue(count == 0);
-
-    userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
-  }
-
-  @Test
-  public void testGetCountUsersByNameOrEmailOrUserID()
-      throws DotDataException, DotSecurityException {
-    String id;
-    String userName;
-    User user;
-    UserAPI userAPI;
-
-    id = String.valueOf(new Date().getTime());
-    userAPI = APILocator.getUserAPI();
-    userName = "user" + id;
-
-    user = UserTestUtil.getUser(userName, false, true);
-
-    long count = userAPI.getCountUsersByNameOrEmailOrUserID(userName + "@fake.org");
-
-    assertTrue(count == 1);
-
-    userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
-  }
-
-  @Test
-  public void testGetCountUsersByNameOrEmailOrUserIDDeleted()
-      throws DotDataException, DotSecurityException {
-    String id;
-    String userName;
-    User user;
-    UserAPI userAPI;
-
-    id = String.valueOf(new Date().getTime());
-    userAPI = APILocator.getUserAPI();
-    userName = "user" + id;
-
-    user = UserTestUtil.getUser(userName, true, true);
-
-    long count = userAPI.getCountUsersByNameOrEmailOrUserID(userName + "@fake.org");
-
-    assertTrue(count == 0);
-
-    userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
-  }
-
-  @Test
-  public void testGetUsersIdsByCreationDate() throws DotDataException, DotSecurityException {
-
-    UserAPI userAPI = APILocator.getUserAPI();
-
-    List<String> users = userAPI.getUsersIdsByCreationDate(null, 0, 40);
-    assertNotNull(users);
-    assertTrue(users.size() > 0);
-  }
-
-  @Test
-  public void testGetUsersIdsByCreationDateDeleted() throws DotDataException, DotSecurityException {
-
-    String id;
-    String userName;
-    User user;
-    UserAPI userAPI;
-    Calendar calendar;
-
-    id = String.valueOf(new Date().getTime());
-    userAPI = APILocator.getUserAPI();
-    userName = "user" + id;
-
-    user = UserTestUtil.getUser(userName, true, true);
-
-    calendar = Calendar.getInstance();
-    calendar.add(Calendar.HOUR, -24);
-
-    List<String> users = userAPI.getUsersIdsByCreationDate(calendar.getTime(), 0, 40);
-    assertNotNull(users);
-    assertTrue(!users.contains(user.getUserId()));
-
-    userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
-  }
+	protected static UserAPI userAPI;
+	protected static RoleAPI roleAPI;
+	protected static PermissionAPI perAPI;
+	protected static HostAPI hostAPI;
+	protected static TemplateAPI templateAPI;
+	protected static ContainerAPI containerAPI;
+	protected static ContentletAPI conAPI;
+	protected static LayoutAPI layoutAPI;
+	protected static VersionableAPI versionableAPI;
+	protected static HTMLPageAssetAPI htmlPageAssetAPI;
+	protected static FolderAPI folderAPI;
+	protected static IdentifierAPI identifierAPI;
+	protected static WorkflowAPI workflowAPI;
+	protected static HostVariableAPI hostVariableAPI;
+
+	private static User systemUser;
+
+	@BeforeClass
+	public static void prepare () throws Exception {
+        //Setting web app environment
+        IntegrationTestInitService.getInstance().init();
+
+		LicenseTestUtil.getLicense();
+
+		userAPI = APILocator.getUserAPI();
+		roleAPI = APILocator.getRoleAPI();
+		perAPI = APILocator.getPermissionAPI();
+		hostAPI = APILocator.getHostAPI();
+		templateAPI = APILocator.getTemplateAPI();
+		containerAPI = APILocator.getContainerAPI();
+		conAPI = APILocator.getContentletAPI();
+		layoutAPI = APILocator.getLayoutAPI();
+		versionableAPI = APILocator.getVersionableAPI();
+		htmlPageAssetAPI = APILocator.getHTMLPageAssetAPI();
+		folderAPI = APILocator.getFolderAPI();
+		identifierAPI = APILocator.getIdentifierAPI();
+		workflowAPI = APILocator.getWorkflowAPI();
+		hostVariableAPI = APILocator.getHostVariableAPI();
+
+		//Setting the test user
+		systemUser = APILocator.getUserAPI().getSystemUser();
+		//setDebugMode(true);
+	}
+
+	/*@AfterClass
+	public static void cleanup() throws DotDataException, DotSecurityException {
+
+		cleanupDebug(UserAPITest.class);
+	}*/
+
+	/**
+	 * Testing {@link UserAPI#delete(User, User, User, boolean)}
+	 *
+	 * @throws DotDataException If the user to delete or the replacement user are not set
+	 * @throws DotSecurityException If the user requesting the delete doesn't have permission
+	 * @throws SystemException
+	 * @throws PortalException
+	 * @throws WebAssetException
+	 * @throws IOException If the url is malformed or if there is an issue opening the connection stream
+	 */
+	@Test
+	public void delete() throws Exception {
+
+		final long langId =APILocator.getLanguageAPI().getDefaultLanguage().getId();
+		final String timeString = String.valueOf( new Date().getTime());
+
+		/**
+		 * Add host
+		 */
+		Host host = new Host();
+		host.setHostname("test"+timeString+".demo.dotcms.com");
+		host.setIndexPolicy(IndexPolicy.FORCE);
+		host=hostAPI.save(host, systemUser, false);
+
+		/**
+		 * Add role
+		 */
+		Role newRole = new Role();
+		String newRoleName = "role"+timeString;
+		newRole.setName(newRoleName);
+		newRole.setRoleKey(newRoleName);
+		newRole.setEditLayouts(true);
+		newRole.setEditPermissions(true);
+		newRole.setEditUsers(true);
+		newRole.setSystem(false);
+		newRole = roleAPI.save(newRole);
+
+		/**
+		 * Set permission to role
+		 */
+		List<Permission> permissionsToSave = new ArrayList<Permission>();
+		permissionsToSave.add(new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE, host.getPermissionId(), newRole.getId(), (PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_CAN_ADD_CHILDREN | PermissionAPI.PERMISSION_EDIT_PERMISSIONS), true));
+		permissionsToSave.add(new Permission(Host.class.getCanonicalName(), host.getPermissionId(), newRole.getId(), 0, true));
+		permissionsToSave.add(new Permission(Folder.class.getCanonicalName(), host.getPermissionId(), newRole.getId(), (PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_CAN_ADD_CHILDREN), true));
+		permissionsToSave.add(new Permission(Container.class.getCanonicalName(), host.getPermissionId(), newRole.getId(), (PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH), true));
+		permissionsToSave.add(new Permission(Template.class.getCanonicalName(), host.getPermissionId(), newRole.getId(), (PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH), true));
+		permissionsToSave.add(new Permission(TemplateLayout.class.getCanonicalName(), host.getPermissionId(), newRole.getId(), (PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH), true));
+		permissionsToSave.add(new Permission(Link.class.getCanonicalName(), host.getPermissionId(), newRole.getId(), (PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH), true));
+		permissionsToSave.add(new Permission(Contentlet.class.getCanonicalName(), host.getPermissionId(), newRole.getId(), (PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH), true));
+		permissionsToSave.add(new Permission(IHTMLPage.class.getCanonicalName(), host.getPermissionId(), newRole.getId(), (PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_CAN_ADD_CHILDREN | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH), true));
+		permissionsToSave.add(new Permission(Structure.class.getCanonicalName(), host.getPermissionId(), newRole.getId(), (PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH), true));
+		permissionsToSave.add(new Permission(Category.class.getCanonicalName(), host.getPermissionId(), newRole.getId(), 0, true));
+		permissionsToSave.add(new Permission(Rule.class.getCanonicalName(), host.getPermissionId(), newRole.getId(), 0, true));
+
+		if ( APILocator.getPermissionAPI().isInheritingPermissions(host) ) {
+			Permissionable parentPermissionable = APILocator.getPermissionAPI().findParentPermissionable(host);
+			APILocator.getPermissionAPI().permissionIndividually(parentPermissionable, host, systemUser);
+		}
+
+		// NOTE: Method "assignPermissions" is deprecated in favor of "save", which has subtle functional differences. Please take these differences into consideration if planning to replace this method with the "save"
+		APILocator.getPermissionAPI().assignPermissions(permissionsToSave, host, systemUser, false);
+
+		/**
+		 * Add role permission over htmlpages
+		 */
+		Structure pageStructure = StructureFactory.getStructureByVelocityVarName(HTMLPageAssetAPIImpl.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_VARNAME);
+		perAPI.permissionIndividually(host, pageStructure, systemUser);
+
+		List<Permission> permissions = new ArrayList<Permission>();
+		Permission p1=new Permission();
+		p1.setPermission(PermissionAPI.PERMISSION_READ);
+		p1.setRoleId(newRole.getId());
+		p1.setInode(pageStructure.getInode());
+		permissions.add(p1);
+
+		p1=new Permission();
+		p1.setPermission(PermissionAPI.PERMISSION_WRITE);
+		p1.setRoleId(newRole.getId());
+		p1.setInode(pageStructure.getInode());
+		permissions.add(p1);
+
+		p1=new Permission();
+		p1.setPermission(PermissionAPI.PERMISSION_PUBLISH);
+		p1.setRoleId(newRole.getId());
+		p1.setInode(pageStructure.getInode());
+		permissions.add(p1);
+
+		// NOTE: Method "assignPermissions" is deprecated in favor of "save", which has subtle functional differences. Please take these differences into consideration if planning to replace this method with the "save"
+		perAPI.assignPermissions(permissions, pageStructure, systemUser, false);
+
+		/**
+		 * Add layout
+		 */
+		List<Layout> layouts = layoutAPI.findAllLayouts();
+		for(Layout l : layouts){
+			if(l.getName().equals("Site Browser") || l.getName().equals("Content") || l.getName().equals("Content Types")){
+				roleAPI.addLayoutToRole(l, newRole);
+			}
+		}
+
+		/**
+		 * Add users with role
+		 */
+		String userToDeleteId = "user"+timeString;
+		User userToDelete = userAPI.createUser( userToDeleteId + "@test.com", userToDeleteId + "@test.com" );
+		userToDelete.setFirstName( userToDeleteId );
+		userToDelete.setLastName( "TestUser" );
+		userAPI.save( userToDelete, systemUser, false );
+
+		roleAPI.addRoleToUser(newRole, userToDelete);
+
+		Role newUserUserRole = roleAPI.loadRoleByKey(userToDelete.getUserId());
+
+		String replacementUserName = "replacementuser"+timeString;
+		User replacementUser = userAPI.createUser( replacementUserName + "@test.com", replacementUserName + "@test.com" );
+		replacementUser.setFirstName( replacementUserName );
+		replacementUser.setLastName( "TestUser" );
+		userAPI.save( replacementUser, systemUser, false );
+
+		roleAPI.addRoleToUser(newRole, replacementUser);
+
+		Role replacementUserUserRole = roleAPI.loadRoleByKey(replacementUser.getUserId());
+
+		/**
+		 * Add folder
+		 */
+		Folder testFolder = folderAPI.createFolders("/folderTest"+timeString, host, userToDelete, false);
+		testFolder.setOwner(userToDelete.getUserId());
+		folderAPI.save(testFolder, userToDelete, false);
+
+		/**
+		 * Create workflow scheme
+		 */
+		String schemeName = "workflow-"+timeString;
+
+		WorkflowScheme newScheme = new WorkflowScheme();
+		newScheme.setName(schemeName);
+		newScheme.setArchived(false);
+		workflowAPI.saveScheme(newScheme, systemUser);
+
+		WorkflowScheme ws = workflowAPI.findSchemeByName(schemeName);
+		Assert.assertTrue(UtilMethods.isSet(ws));
+
+		/**
+		 * Create scheme step1
+		 */
+		WorkflowStep workflowStep1 = new WorkflowStep();
+		workflowStep1.setMyOrder(1);
+		workflowStep1.setName("Edit");
+		workflowStep1.setSchemeId(ws.getId());
+		workflowStep1.setResolved(false);
+		workflowAPI.saveStep(workflowStep1, systemUser);
+
+		List<WorkflowStep> steps = workflowAPI.findSteps(ws);
+		Assert.assertTrue(steps.size()==1);
+		workflowStep1 = steps.get(0);
+
+		/**
+		 * Create scheme step2
+		 */
+		WorkflowStep workflowStep2 = new WorkflowStep();
+		workflowStep2.setMyOrder(2);
+		workflowStep2.setName("Publish");
+		workflowStep2.setSchemeId(ws.getId());
+		workflowStep2.setResolved(false);
+		workflowAPI.saveStep(workflowStep2, systemUser);
+
+		steps = workflowAPI.findSteps(ws);
+		Assert.assertTrue(steps.size()==2);
+		workflowStep2 = steps.get(1);
+
+		/**
+		 * Add action to scheme step1
+		 */
+		WorkflowAction newAction = new WorkflowAction();
+		newAction.setSchemeId(ws.getId());
+		newAction.setName("Edit");
+		newAction.setAssignable(true);
+		newAction.setCommentable(true);
+		newAction.setIcon("workflowIcon");
+		newAction.setNextStep(workflowStep2.getId());
+		newAction.setCondition("");
+		newAction.setRequiresCheckout(false);
+		newAction.setRoleHierarchyForAssign(false);
+		newAction.setNextAssign(newUserUserRole.getId());
+
+		List<Permission> permissionsNewAction = new ArrayList<>();
+		permissionsNewAction.add(new Permission( newAction.getId(), newRole.getId(), PermissionAPI.PERMISSION_USE ));
+
+		workflowAPI.saveAction(newAction, permissionsNewAction, systemUser);
+		workflowAPI.saveAction(newAction.getId(), workflowStep1.getId(), systemUser);
+
+		List<WorkflowAction> actions1= workflowAPI.findActions(workflowStep1, systemUser);
+		Assert.assertTrue(actions1.size()==1);
+		WorkflowAction action1 = actions1.get(0);
+
+		/**
+		 * Add action to scheme step2
+		 */
+		WorkflowAction newAction2 = new WorkflowAction();
+		newAction2.setSchemeId(ws.getId());
+		newAction2.setName("Publish");
+		newAction2.setAssignable(true);
+		newAction2.setCommentable(true);
+		newAction2.setIcon("workflowIcon");
+		newAction2.setNextStep(workflowStep2.getId());
+		newAction2.setCondition("");
+		newAction2.setRequiresCheckout(false);
+		newAction2.setRoleHierarchyForAssign(false);
+		newAction2.setNextAssign(newUserUserRole.getId());
+
+		List<Permission> permissionsNewAction2 = new ArrayList<>();
+		permissionsNewAction2.add(new Permission( newAction2.getId(), newRole.getId(), PermissionAPI.PERMISSION_USE ));
+
+		workflowAPI.saveAction(newAction2, permissionsNewAction2, systemUser);
+		workflowAPI.saveAction(newAction2.getId(), workflowStep2.getId(), systemUser);
+
+		List<WorkflowAction> actions2= workflowAPI.findActions(workflowStep2, systemUser);
+		Assert.assertTrue(actions2.size()==1);
+		WorkflowAction action2 = actions2.get(0);
+
+		/**
+		 * Add structure
+		 */
+		Structure st = new Structure();
+		st.setHost(host.getIdentifier());
+		st.setFolder(testFolder.getInode());
+		st.setName("structure"+timeString);
+		st.setStructureType(Structure.STRUCTURE_TYPE_CONTENT);
+		st.setOwner(userToDelete.getUserId());
+		st.setVelocityVarName("structure"+timeString);
+		StructureFactory.saveStructure(st);
+		CacheLocator.getContentTypeCache().add(st);
+
+		Field field1 = new Field("title", Field.FieldType.TEXT, Field.DataType.TEXT, st,true, true, true, 3, "", "", "", true, false, true);
+		field1.setVelocityVarName("title");
+		field1.setListed(true);
+		FieldFactory.saveField(field1);
+		FieldsCache.addField(field1);
+
+		Field field2 = new Field("body", Field.FieldType.TEXT_AREA, Field.DataType.LONG_TEXT, st,true, true, true, 4, "", "", "", true, false, true);
+		field2.setVelocityVarName("body");
+		FieldFactory.saveField(field2);
+		FieldsCache.addField(field2);
+
+		List<WorkflowScheme> schemes = new ArrayList<>();
+		schemes.add(ws);
+		workflowAPI.saveSchemesForStruct(st, schemes);
+
+		/**
+		 * Add container
+		 */
+		Container container = new Container();
+		String containerName="container"+timeString;
+		container.setFriendlyName(containerName);
+		container.setTitle(containerName);
+		container.setOwner(userToDelete.getUserId());
+		container.setMaxContentlets(5);
+		container.setPreLoop("preloop code");
+		container.setCode("<div><h3>content $!{title}</h3><p>$!{body}</p></div>");
+		container.setPostLoop("postloop code");
+
+		List<ContainerStructure> csList = new ArrayList<ContainerStructure>();
+		ContainerStructure cs = new ContainerStructure();
+		cs.setStructureId(st.getInode());
+		cs.setCode(container.getCode());
+		csList.add(cs);
+		container = containerAPI.save(container, csList, host, userToDelete, false);
+		PublishFactory.publishAsset(container,userToDelete, false, false);
+
+		/**
+		 * Add template
+		 */
+		String templateBody="<html><body> #parseContainer('"+container.getIdentifier()+"') </body></html>";
+		String templateTitle="template"+timeString;
+
+		Template template=new Template();
+		template.setTitle(templateTitle);
+		template.setBody(templateBody);
+		template.setOwner(userToDelete.getUserId());
+		template.setDrawedBody(templateBody);
+		template = templateAPI.saveTemplate(template, host, userToDelete, false);
+		PublishFactory.publishAsset(template, userToDelete, false, false);
+
+		/**
+		 * Add page
+		 */
+		String page0Str ="page"+timeString;
+
+		Contentlet contentAsset=new Contentlet();
+		contentAsset.setStructureInode(HTMLPageAssetAPIImpl.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE);
+		contentAsset.setHost(host.getIdentifier());
+		contentAsset.setProperty(HTMLPageAssetAPIImpl.FRIENDLY_NAME_FIELD, page0Str);
+		contentAsset.setProperty(HTMLPageAssetAPIImpl.URL_FIELD, page0Str);
+		contentAsset.setProperty(HTMLPageAssetAPIImpl.TITLE_FIELD, page0Str);
+		contentAsset.setProperty(HTMLPageAssetAPIImpl.CACHE_TTL_FIELD, "0");
+		contentAsset.setProperty(HTMLPageAssetAPIImpl.TEMPLATE_FIELD, template.getIdentifier());
+		contentAsset.setLanguageId(langId);
+		contentAsset.setFolder(testFolder.getInode());
+		contentAsset.setIndexPolicy(IndexPolicy.FORCE);
+		contentAsset=conAPI.checkin(contentAsset, userToDelete, false);
+		contentAsset.setIndexPolicy(IndexPolicy.FORCE);
+		conAPI.publish(contentAsset, userToDelete, false);
+
+		/**
+		 * Add content
+		 */
+		String title ="content"+timeString;
+		Contentlet contentAsset2=new Contentlet();
+		contentAsset2.setStructureInode(st.getInode());
+		contentAsset2.setHost(host.getIdentifier());
+		contentAsset2.setProperty("title", title);
+		contentAsset2.setLanguageId(langId);
+		contentAsset2.setProperty("body", title);
+		contentAsset2.setFolder(testFolder.getInode());
+		contentAsset2.setIndexPolicy(IndexPolicy.FORCE);
+		contentAsset2=conAPI.checkin(contentAsset2, userToDelete, false);
+		contentAsset.setIndexPolicy(IndexPolicy.FORCE);
+		conAPI.publish(contentAsset2, userToDelete, false);
+
+		/**
+		 * Test that delete is not possible for step2
+		 * while has associated step or content
+		 */
+		contentAsset2.setStringProperty("wfActionId", action1.getId());
+		contentAsset2.setStringProperty("wfActionComments", "step1");
+		contentAsset2.setStringProperty("wfActionAssign", newUserUserRole.getId());
+		workflowAPI.fireWorkflowNoCheckin(contentAsset2, userToDelete);
+
+		contentAsset2.setStringProperty("wfActionId", action2.getId());
+		contentAsset2.setStringProperty("wfActionComments", "step2");
+		contentAsset2.setStringProperty("wfActionAssign", newUserUserRole.getId());
+		workflowAPI.fireWorkflowNoCheckin(contentAsset2, userToDelete);
+
+		WorkflowStep  currentStep = workflowAPI.findStepByContentlet(contentAsset2);
+		assertNotNull(currentStep);
+
+		assertTrue(currentStep.getId().equals(workflowStep2.getId()));
+
+		/**
+		 * Relate content to page
+		 */
+		MultiTree m = new MultiTree(contentAsset.getIdentifier(), container.getIdentifier(), contentAsset2.getIdentifier());
+		MultiTreeFactory.saveMultiTree(m);
+
+		/**
+		 * Add menu link
+		 */
+		String linkStr="link"+timeString;
+		Link link = new Link();
+		link.setTitle(linkStr);
+		link.setFriendlyName(linkStr);
+		link.setParent(testFolder.getInode());
+		link.setTarget("_blank");
+		link.setOwner(userToDelete.getUserId());
+		link.setModUser(userToDelete.getUserId());
+		IHTMLPage page =htmlPageAssetAPI.getPageByPath(testFolder.getPath()+page0Str, host, langId, true);
+
+		Identifier internalLinkIdentifier = identifierAPI.findFromInode(page.getIdentifier());
+		link.setLinkType(Link.LinkType.INTERNAL.toString());
+		link.setInternalLinkIdentifier(internalLinkIdentifier.getId());
+		link.setProtocal("http://");
+
+		StringBuffer myURL = new StringBuffer();
+		if(InodeUtils.isSet(internalLinkIdentifier.getHostId())) {
+			myURL.append(host.getHostname());
+		}
+		myURL.append(internalLinkIdentifier.getURI());
+		link.setUrl(myURL.toString());
+		WebAssetFactory.createAsset(link, userToDelete.getUserId(), testFolder);
+		versionableAPI.setLive(link);
+
+		/**
+		 * Add HostVariable
+		 */
+		final String hostVariableString = "hostVariable"+timeString;
+		HostVariable hostVariable = new HostVariable();
+		hostVariable.setHostId(host.getIdentifier());
+		hostVariable.setName(hostVariableString);
+		hostVariable.setKey(hostVariableString);
+		hostVariable.setValue(hostVariableString);
+		hostVariable.setLastModifierId(userToDelete.getUserId());
+		hostVariable.setLastModDate(new Date());
+		hostVariableAPI.save(hostVariable,userToDelete,false);
+
+		/**
+		 * validation of current user and references
+		 */
+		assertTrue(userAPI.userExistsWithEmail(userToDelete.getEmailAddress()));
+		assertNotNull(roleAPI.loadRoleByKey(userToDelete.getUserId()));
+
+		assertTrue(link.getOwner().equals(userToDelete.getUserId()));
+		assertTrue(link.getModUser().equals(userToDelete.getUserId()));
+
+		assertTrue(contentAsset2.getOwner().equals(userToDelete.getUserId()));
+		assertTrue(contentAsset2.getModUser().equals(userToDelete.getUserId()));
+
+		assertTrue(contentAsset.getOwner().equals(userToDelete.getUserId()));
+		assertTrue(contentAsset.getModUser().equals(userToDelete.getUserId()));
+
+		WorkflowTask task = workflowAPI.findTaskByContentlet(contentAsset2);
+		assertTrue(task.getAssignedTo().equals(newUserUserRole.getId()));
+		assertTrue(task.getCreatedBy().equals(newUserUserRole.getId()));
+
+		WorkflowStep  step =  workflowAPI.findStepByContentlet(contentAsset2);
+		assertNotNull(step);
+		WorkflowAction action =  workflowAPI.findActions(step, systemUser).get(0);
+		assertTrue(action.getNextAssign().equals(newUserUserRole.getId()));
+
+		List<WorkflowComment> comments = workflowAPI.findWorkFlowComments(task);
+		for(WorkflowComment comm : comments){
+			assertTrue(comm.getPostedBy().equals(userToDelete.getUserId()));
+		}
+
+		assertTrue(container.getOwner().equals(userToDelete.getUserId()));
+		assertTrue(container.getModUser().equals(userToDelete.getUserId()));
+
+		assertTrue(template.getOwner().equals(userToDelete.getUserId()));
+		assertTrue(template.getModUser().equals(userToDelete.getUserId()));
+
+		assertTrue(testFolder.getOwner().equals(userToDelete.getUserId()));
+
+		hostVariable = hostVariableAPI.getVariablesForHost(host.getIdentifier(),userToDelete,false).get(0);
+		assertTrue(hostVariable.getLastModifierId().equals(userToDelete.getUserId()));
+
+		//Verify we have the proper user set in the HTMLPage
+		page = htmlPageAssetAPI.getPageByPath(testFolder.getPath() + page0Str, host, langId, true);
+		assertTrue(page.getOwner().equals(userToDelete.getUserId()));
+		assertTrue(page.getModUser().equals(userToDelete.getUserId()));
+
+		/*
+		 * delete user and replace its references with the replacement user, this delete method
+		 * does a lot of things, after the delete lets wait a bit in order to allow the reindex
+		 * of the modified contentlets to finish processing.
+		 */
+
+		final StringBuilder luceneQuery = new StringBuilder("working:true +modUser:").append(userToDelete.getUserId());
+		final int limit = 0;
+		final int offset = -1;
+		final List<ContentletSearch> contentlets = APILocator.getContentletAPI().searchIndex
+			(luceneQuery.toString(), limit, offset, null, systemUser, false);
+
+		Logger.info(this, "ES query: " + luceneQuery.toString());
+		Logger.info(this, "contentlets.size: " + contentlets.size());
+
+		userAPI.delete(userToDelete, replacementUser, systemUser,false);
+
+		waitForDeleteCompletedNotification(userToDelete);
+		/*
+		 * Validate that the user was deleted and if its references were updated
+		 */
+		try {
+			assertNull(userAPI.loadByUserByEmail(userToDelete.getEmailAddress(),systemUser,false));
+		}catch(com.dotmarketing.business.NoSuchUserException e){
+			//enter here if the user doesn't exist as is expected
+		}
+		assertNull(roleAPI.loadRoleByKey(userToDelete.getUserId()));
+
+		assertNotNull(userAPI.loadByUserByEmail(replacementUser.getEmailAddress(),systemUser,false));
+
+		link = APILocator.getMenuLinkAPI().find(link.getInode(), systemUser, false);
+		assertTrue(link.getOwner().equals(replacementUser.getUserId()));
+		assertTrue(link.getModUser().equals(replacementUser.getUserId()));
+
+		page =htmlPageAssetAPI.getPageByPath(testFolder.getPath()+page0Str, host, langId, true);
+		Logger.info(this, "Page inode:" + page.getInode());
+		Logger.info(this, "Page identifier:" + page.getIdentifier());
+		assertTrue("Page Owner " + page.getOwner(), page.getOwner().equals(replacementUser.getUserId()));
+		assertTrue(page.getModUser().equals(replacementUser.getUserId()));
+
+		List<Contentlet> contentAssets = conAPI.findByStructure(st, systemUser, false, 100,0);
+		for(Contentlet content: contentAssets){
+			assertTrue(content.getOwner().equals(replacementUser.getUserId()));
+			assertTrue(content.getModUser().equals(replacementUser.getUserId()));
+
+			task = workflowAPI.findTaskByContentlet(content);
+			assertTrue(task.getAssignedTo().equals(replacementUserUserRole.getId()));
+			assertTrue(task.getCreatedBy().equals(replacementUserUserRole.getId()));
+
+			step = workflowAPI.findStepByContentlet(content);
+			assertNotNull(step);
+			action =  workflowAPI.findActions(step, systemUser).get(0);
+			assertTrue(action.getNextAssign().equals(replacementUserUserRole.getId()));
+
+			comments = workflowAPI.findWorkFlowComments(task);
+			for(WorkflowComment comm : comments){
+				assertTrue(comm.getPostedBy().equals(replacementUser.getUserId()));
+			}
+		}
+
+		container = containerAPI.getLiveContainerById(container.getIdentifier(), systemUser, false);
+		assertTrue(container.getOwner().equals(replacementUser.getUserId()));
+		assertTrue(container.getModUser().equals(replacementUser.getUserId()));
+
+		template = templateAPI.find(template.getInode(), systemUser, false);
+		assertTrue(template.getOwner().equals(replacementUser.getUserId()));
+		assertTrue(template.getModUser().equals(replacementUser.getUserId()));
+
+		CacheLocator.getFolderCache().removeFolder(testFolder, identifierAPI.find(testFolder.getIdentifier()));
+		testFolder = folderAPI.findFolderByPath(testFolder.getPath(), host, systemUser, false);
+		assertTrue(testFolder.getOwner().equals(replacementUser.getUserId()));
+
+		hostVariable = hostVariableAPI.getVariablesForHost(host.getIdentifier(),replacementUser,false).get(0);
+		assertTrue(hostVariable.getLastModifierId().equals(replacementUser.getUserId()));
+
+		APILocator.getContentTypeAPI(systemUser).delete(new StructureTransformer(st).from());
+		conAPI.archive(contentAsset,systemUser,false);
+		conAPI.delete(contentAsset,systemUser,false);
+	}
+
+	private void waitForDeleteCompletedNotification(User userToDelete) throws DotDataException, InterruptedException {
+
+		final int MAX_TIME = 20000;
+		final int WAIT_TIME = 1000;
+
+		TimeUtil.waitFor(WAIT_TIME, MAX_TIME, () -> {
+
+			boolean isReindexFinished = false;
+			List<Notification> notifications = null;
+
+			try {
+				notifications = APILocator.getNotificationAPI().getAllNotifications(systemUser.getUserId());
+			} catch (DotDataException e) {
+				Logger.error(this, "Unable to get notifications. ", e);
+			}
+
+			for (final Notification notification : notifications) {
+				final String notificationKey = notification.getMessage().getKey();
+				final String expectedKey = "notification.contentapi.reindex.related.content.success";
+				final Object[] notificationArgs = notification.getNotificationData().getMessage().getArguments();
+                final Object[] expectedArgs = {userToDelete.getUserId() + "/" + userToDelete.getFullName()};
+                final String notificationArg = UtilMethods.isSet(notificationArgs)?(String)notificationArgs[0]:"notArg";
+                final String expectedArg = UtilMethods.isSet(expectedArgs)?(String)expectedArgs[0]:"expectedArg";
+
+				if (notificationKey.equals(expectedKey) && notificationArg.equals(expectedArg)) {
+					isReindexFinished = true;
+					break;
+				}
+			}
+
+			Logger.info(this, "waitForDeleteCompletedNotification isReindexFinished:" + isReindexFinished);
+			return isReindexFinished;
+
+		});
+	}
+
+	/**
+	 * Validates rule to forbid anonymous user delete
+	 * as in other restrictions an exception is returned
+	 * @throws DotDataException
+	 */
+	@Test(expected=DotDataException.class)
+	public void deleteAnonymous() throws DotDataException, DotSecurityException {
+
+		UserAPI userAPI = APILocator.getUserAPI();
+		User anonymousUser = null;
+
+		anonymousUser = userAPI.getAnonymousUser();
+		userAPI.delete(anonymousUser, systemUser, false);
+	}
+
+	@Test
+	public void testGetUsersByNameOrEmailOrUserID() throws DotDataException {
+		UserAPI userAPI = APILocator.getUserAPI();
+		List<User> users = userAPI.getUsersByNameOrEmailOrUserID(null, 0, 40, false);
+		assertNotNull(users);
+		assertTrue(users.size() > 0);
+	}
+
+	@Test
+	public void testGetUsersByNameOrEmailOrUserIDWithFilter() throws DotDataException, DotSecurityException {
+		String id;
+		String userName;
+		User user;
+		UserAPI userAPI;
+
+		id = String.valueOf(new Date().getTime());
+		userAPI = APILocator.getUserAPI();
+		userName = "user" + id;
+
+		user = UserTestUtil.getUser(userName, false, true);
+
+		List<User> users = userAPI.getUsersByNameOrEmailOrUserID(userName + "@fake.org", 0, 40, false);
+		assertNotNull(users);
+		assertTrue(users.size() == 1);
+
+		userAPI.delete(user, userAPI.getDefaultUser(), systemUser, false);}
+
+	@Test
+	public void testGetUsersByNameOrEmailOrUserIDDeleted() throws DotDataException, DotSecurityException {
+		String id;
+		String userName;
+		User user;
+		UserAPI userAPI;
+
+		id = String.valueOf(new Date().getTime());
+		userAPI = APILocator.getUserAPI();
+		userName = "user" + id;
+
+		user = UserTestUtil.getUser(userName, true, true);
+
+		List<User> users = userAPI.getUsersByNameOrEmailOrUserID(userName + "@fake.org", 0, 40, false);
+		assertNotNull(users);
+		assertTrue(users.size() == 0);
+
+		userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+	}
+
+	@Test
+	public void testGetUnDeletedUsers() throws DotDataException, DotSecurityException {
+
+		UserAPI userAPI = APILocator.getUserAPI();
+
+		//Getting the current list
+		List<User> currentUsers = userAPI.getUnDeletedUsers();
+		int currentUsersCount = 0;
+		if (null != currentUsers) {
+			currentUsersCount = currentUsers.size();
+		}
+
+		/*
+		 * Add user
+		 */
+		Calendar calendar = Calendar.getInstance();
+		calendar.add(Calendar.HOUR, -48);
+		String newUserName = "user" + System.currentTimeMillis();
+
+		User newUser = UserTestUtil.getUser(newUserName, true, true, calendar.getTime());
+
+		List<User> foundUsers = userAPI.getUnDeletedUsers();
+
+		assertNotNull(foundUsers);
+		assertEquals(foundUsers.size(), currentUsersCount + 1);
+
+		Boolean found = false;
+		for (User user : foundUsers) {
+			if (newUserName.equals(user.getFirstName())) {
+				assertTrue(user.getDeleteInProgress());
+				assertNotNull(user.getDeleteDate());
+				assertEquals(user.getFirstName(), newUserName);
+				found = true;
+			}
+		}
+
+		if (!found) {
+			fail("The user saved was not found in the retrieved list.");
+		}
+
+		//Clean up the created user
+		userAPI.delete(newUser, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+	}
+
+	@Test
+	public void testGetUsersByName() throws DotDataException, DotSecurityException {
+
+		String id;
+		String userName;
+		User user;
+		UserAPI userAPI;
+
+		id = String.valueOf(new Date().getTime());
+		userAPI = APILocator.getUserAPI();
+		userName = "user" + id;
+
+		user = UserTestUtil.getUser(userName, false, true);
+
+		List<User> users = userAPI.getUsersByName(userName, 0, 40, systemUser, false);
+		assertNotNull(users);
+		assertTrue(users.size() == 1);
+
+		userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+	}
+
+	@Test
+	public void testGetUsersByNameDeleted() throws DotDataException, DotSecurityException {
+
+		String id;
+		String userName;
+		User user;
+		UserAPI userAPI;
+
+		id = String.valueOf(new Date().getTime());
+		userAPI = APILocator.getUserAPI();
+		userName = "user" + id;
+
+		user = UserTestUtil.getUser(userName, true, true);
+
+		List<User> users = userAPI.getUsersByName(userName, 0, 40, systemUser, false);
+		assertNotNull(users);
+		assertTrue(users.size() == 0);
+
+		userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+	}
+
+	@Test
+	public void testGetUsersByNameOrEmail() throws DotDataException, DotSecurityException {
+
+		String id;
+		String userName;
+		User user;
+		UserAPI userAPI;
+
+		id = String.valueOf(new Date().getTime());
+		userAPI = APILocator.getUserAPI();
+		userName = "user" + id;
+
+		user = UserTestUtil.getUser(userName, false, true);
+
+		List<User> users = userAPI.getUsersByNameOrEmail(userName, 0, 40);
+		assertNotNull(users);
+		assertTrue(users.size() == 1);
+
+		userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+	}
+
+	@Test
+	public void testGetUsersByNameOrEmailDeleted() throws DotDataException, DotSecurityException {
+
+		String id;
+		String userName;
+		User user;
+		UserAPI userAPI;
+
+		id = String.valueOf(new Date().getTime());
+		userAPI = APILocator.getUserAPI();
+		userName = "user" + id;
+
+		user = UserTestUtil.getUser(userName, true, true);
+
+		List<User> users = userAPI.getUsersByNameOrEmail(userName, 0, 40);
+		assertNotNull(users);
+		assertTrue(users.size() == 0);
+
+		userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+	}
+
+	@Test
+	public void testGetCountUsersByNameOrEmail() throws DotDataException, DotSecurityException {
+		String id;
+		String userName;
+		User user;
+		UserAPI userAPI;
+
+		id = String.valueOf(new Date().getTime());
+		userAPI = APILocator.getUserAPI();
+		userName = "user" + id;
+
+		user = UserTestUtil.getUser(userName, false, true);
+
+		long count = userAPI.getCountUsersByNameOrEmail(userName + "@fake.org");
+
+		assertTrue(count == 1);
+
+		userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+
+	}
+
+	@Test
+	public void testGetCountUsersByNameOrEmailDeleted() throws DotDataException, DotSecurityException {
+		String id;
+		String userName;
+		User user;
+		UserAPI userAPI;
+
+		id = String.valueOf(new Date().getTime());
+		userAPI = APILocator.getUserAPI();
+		userName = "user" + id;
+
+		user = UserTestUtil.getUser(userName, true, true);
+
+		long count = userAPI.getCountUsersByNameOrEmail(userName + "@fake.org");
+
+		assertTrue(count == 0);
+
+		userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+	}
+
+	@Test
+	public void testGetCountUsersByNameOrEmailOrUserID() throws DotDataException, DotSecurityException {
+		String id;
+		String userName;
+		User user;
+		UserAPI userAPI;
+
+		id = String.valueOf(new Date().getTime());
+		userAPI = APILocator.getUserAPI();
+		userName = "user" + id;
+
+		user = UserTestUtil.getUser(userName, false, true);
+
+		long count = userAPI.getCountUsersByNameOrEmailOrUserID(userName + "@fake.org");
+
+		assertTrue(count == 1);
+
+		userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+	}
+
+	@Test
+	public void testGetCountUsersByNameOrEmailOrUserIDDeleted() throws DotDataException, DotSecurityException {
+		String id;
+		String userName;
+		User user;
+		UserAPI userAPI;
+
+		id = String.valueOf(new Date().getTime());
+		userAPI = APILocator.getUserAPI();
+		userName = "user" + id;
+
+		user = UserTestUtil.getUser(userName, true, true);
+
+		long count = userAPI.getCountUsersByNameOrEmailOrUserID(userName + "@fake.org");
+
+		assertTrue(count == 0);
+
+		userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+	}
+
+	@Test
+	public void testGetUsersIdsByCreationDate() throws DotDataException, DotSecurityException {
+
+		UserAPI userAPI = APILocator.getUserAPI();
+
+		List<String> users = userAPI.getUsersIdsByCreationDate(null, 0, 40);
+		assertNotNull(users);
+		assertTrue(users.size() > 0);
+
+	}
+
+	@Test
+	public void testGetUsersIdsByCreationDateDeleted() throws DotDataException, DotSecurityException {
+
+		String id;
+		String userName;
+		User user;
+		UserAPI userAPI;
+		Calendar calendar;
+
+		id = String.valueOf(new Date().getTime());
+		userAPI = APILocator.getUserAPI();
+		userName = "user" + id;
+
+		user = UserTestUtil.getUser(userName, true, true);
+
+		calendar = Calendar.getInstance();
+		calendar.add(Calendar.HOUR, -24);
+
+		List<String> users = userAPI.getUsersIdsByCreationDate(calendar.getTime(), 0, 40);
+		assertNotNull(users);
+		assertTrue(!users.contains(user.getUserId()));
+
+		userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+	}
 }

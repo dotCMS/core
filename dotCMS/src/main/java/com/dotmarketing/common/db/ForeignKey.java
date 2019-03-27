@@ -1,107 +1,103 @@
 package com.dotmarketing.common.db;
 
+
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
 public class ForeignKey {
 
-  private final String primaryKeyTableName;
-  private final Set<String> primaryKeyColumnNames = new LinkedHashSet<>();
-  private final String foreignKeyTableName;
-  private final Set<String> foreignKeyColumnNames = new LinkedHashSet<>();
-  private final String foreignKeyName;
+    private final String primaryKeyTableName;
+    private final Set<String> primaryKeyColumnNames = new LinkedHashSet<>();
+    private final String foreignKeyTableName;
+    private final Set<String> foreignKeyColumnNames = new LinkedHashSet<>();
+    private final String foreignKeyName;
 
-  public ForeignKey(String primaryKeyTableName, String foreignKeyTableName, String foreignKeyName) {
-    this.primaryKeyTableName = primaryKeyTableName;
-    this.foreignKeyTableName = foreignKeyTableName;
-    this.foreignKeyName = foreignKeyName;
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    if (obj instanceof ForeignKey) {
-      ForeignKey k = (ForeignKey) obj;
-      if (!k.primaryKeyTableName.equalsIgnoreCase(primaryKeyTableName)) {
-        return false;
-      }
-      if (!k.foreignKeyTableName.equalsIgnoreCase(foreignKeyTableName)) {
-        return false;
-      }
-      if (!k.foreignKeyName.equalsIgnoreCase(foreignKeyName)) {
-        return false;
-      }
-      return true;
+    public ForeignKey(String primaryKeyTableName, String foreignKeyTableName, String foreignKeyName) {
+        this.primaryKeyTableName = primaryKeyTableName;
+        this.foreignKeyTableName = foreignKeyTableName;
+        this.foreignKeyName = foreignKeyName;
     }
-    return false;
-  }
 
-  @Override
-  public int hashCode() {
-    int result = primaryKeyTableName.hashCode();
-    result = 31 * result + foreignKeyTableName.hashCode();
-    result = 31 * result + foreignKeyName.hashCode();
-    return result;
-  }
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof ForeignKey) {
+            ForeignKey k=(ForeignKey)obj;
+            if (!k.primaryKeyTableName.equalsIgnoreCase(primaryKeyTableName)) {
+                return false;
+            }
+            if (!k.foreignKeyTableName.equalsIgnoreCase(foreignKeyTableName)) {
+                return false;
+            }
+            if (!k.foreignKeyName.equalsIgnoreCase(foreignKeyName)) {
+                return false;
+            }
+            return true;
+        }
+        return false;
+    }
 
-  /**
-   * Adds a new value to the list of columns for the primary key.
-   *
-   * @param columnName - The name of the new column.
-   */
-  public void addPrimaryColumnName(final String columnName) {
-    this.primaryKeyColumnNames.add(columnName);
-  }
+    @Override
+    public int hashCode() {
+        int result = primaryKeyTableName.hashCode();
+        result = 31 * result + foreignKeyTableName.hashCode();
+        result = 31 * result + foreignKeyName.hashCode();
+        return result;
+    }
 
-  /**
-   * Adds a new value to the list of columns for the foreign key.
-   *
-   * @param columnName - The name of the new column.
-   */
-  public void addForeignColumnName(String columnName) {
-    this.foreignKeyColumnNames.add(columnName);
-  }
+    /**
+     * Adds a new value to the list of columns for the primary key.
+     *
+     * @param columnName
+     *            - The name of the new column.
+     */
+    public void addPrimaryColumnName(final String columnName) {
+        this.primaryKeyColumnNames.add(columnName);
+    }
 
-  @Override
-  public String toString() {
-    return "ForeignKey{"
-        + "primaryKeyTableName='"
-        + primaryKeyTableName
-        + '\''
-        + ", primaryKeyColumnNames="
-        + primaryKeyColumnNames
-        + ", foreignKeyTableName='"
-        + foreignKeyTableName
-        + '\''
-        + ", foreignKeyColumnNames="
-        + foreignKeyColumnNames
-        + ", foreignKeyName='"
-        + foreignKeyName
-        + '\''
-        + '}';
-  }
+    /**
+     * Adds a new value to the list of columns for the foreign key.
+     *
+     * @param columnName
+     *            - The name of the new column.
+     */
+    public void addForeignColumnName(String columnName) {
+        this.foreignKeyColumnNames.add(columnName);
+    }
 
-  public String fkName() {
-    return foreignKeyName;
-  }
+    @Override
+    public String toString() {
+        return "ForeignKey{" +
+                "primaryKeyTableName='" + primaryKeyTableName + '\'' +
+                ", primaryKeyColumnNames=" + primaryKeyColumnNames +
+                ", foreignKeyTableName='" + foreignKeyTableName + '\'' +
+                ", foreignKeyColumnNames=" + foreignKeyColumnNames +
+                ", foreignKeyName='" + foreignKeyName + '\'' +
+                '}';
+    }
 
-  public String getPrimaryKeyTableName() {
-    return primaryKeyTableName;
-  }
+    public String fkName(){
+        return foreignKeyName;
+    }
 
-  public Set<String> getPrimaryKeyColumnNames() {
-    return Collections.unmodifiableSet(primaryKeyColumnNames);
-  }
+    public String getPrimaryKeyTableName() {
+        return primaryKeyTableName;
+    }
 
-  public String getForeignKeyTableName() {
-    return foreignKeyTableName;
-  }
+    public Set<String> getPrimaryKeyColumnNames() {
+        return Collections.unmodifiableSet(primaryKeyColumnNames);
+    }
 
-  public Set<String> getForeignKeyColumnNames() {
-    return Collections.unmodifiableSet(foreignKeyColumnNames);
-  }
+    public String getForeignKeyTableName() {
+        return foreignKeyTableName;
+    }
 
-  public String getForeignKeyName() {
-    return foreignKeyName;
-  }
+    public Set<String> getForeignKeyColumnNames() {
+        return Collections.unmodifiableSet(foreignKeyColumnNames);
+    }
+
+    public String getForeignKeyName() {
+        return foreignKeyName;
+    }
+
 }

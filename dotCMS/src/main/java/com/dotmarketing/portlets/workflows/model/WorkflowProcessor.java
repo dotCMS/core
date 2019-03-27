@@ -17,284 +17,265 @@ import com.liferay.portal.model.User;
 import java.util.List;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-
 public class WorkflowProcessor {
 
-  Contentlet contentlet;
-  WorkflowAction action;
-  WorkflowStep step;
-  List<WorkflowStep> steps;
-  WorkflowScheme scheme;
-  User user;
-  Role nextAssign;
-  Role previousAssign;
-  WorkflowStep nextStep;
-  WorkflowTask task;
-  List<WorkflowHistory> history;
-  String workflowMessage;
-  List<WorkflowActionClass> actionClasses;
-  ContentletDependencies contentletDependencies;
-  private final AtomicBoolean abort = new AtomicBoolean(false);
+	Contentlet contentlet;
+	WorkflowAction action;
+	WorkflowStep step;
+	List<WorkflowStep> steps;
+	WorkflowScheme scheme;
+	User user;
+	Role nextAssign;
+	Role previousAssign;
+	WorkflowStep nextStep ;
+	WorkflowTask task;
+	List<WorkflowHistory> history;
+	String workflowMessage;
+	List<WorkflowActionClass> actionClasses;
+	ContentletDependencies    contentletDependencies;
+	private final AtomicBoolean abort  = new AtomicBoolean(false);
 
-  private ConcurrentMap<String, Object> actionsContext;
+	private ConcurrentMap<String,Object> actionsContext;
 
-  /**
-   * True if the processor was aborted
-   *
-   * @return boolean
-   */
-  public boolean abort() {
-    return this.abort.get();
-  }
+	/**
+	 * True if the processor was aborted
+	 * @return boolean
+	 */
+	public boolean abort () {
+		return this.abort.get();
+	}
 
-  /** Be carefull on calling this method, it will abort the processor of the current workflow. */
-  public void abortProcessor() {
-    this.abort.set(true);
-  }
+	/**
+	 * Be carefull on calling this method, it will abort the processor of the current workflow.
+	 */
+	public void abortProcessor () {
+		this.abort.set(true);
+	}
 
-  public ContentletDependencies getContentletDependencies() {
-    return contentletDependencies;
-  }
+	public ContentletDependencies getContentletDependencies() {
+		return contentletDependencies;
+	}
 
-  public void setContentletDependencies(final ContentletDependencies contentletDependencies) {
-    this.contentletDependencies = contentletDependencies;
-  }
+	public void setContentletDependencies(final ContentletDependencies contentletDependencies) {
+		this.contentletDependencies = contentletDependencies;
+	}
 
-  public List<WorkflowActionClass> getActionClasses() {
-    return actionClasses;
-  }
+	public List<WorkflowActionClass> getActionClasses() {
+		return actionClasses;
+	}
 
-  public void setActionClasses(List<WorkflowActionClass> actionClasses) {
-    this.actionClasses = actionClasses;
-  }
+	public void setActionClasses(List<WorkflowActionClass> actionClasses) {
+		this.actionClasses = actionClasses;
+	}
 
-  public String getWorkflowMessage() {
-    return workflowMessage;
-  }
+	public String getWorkflowMessage() {
+		return workflowMessage;
+	}
 
-  public void setWorkflowMessage(String workflowMessage) {
-    this.workflowMessage = workflowMessage;
-  }
+	public void setWorkflowMessage(String workflowMessage) {
+		this.workflowMessage = workflowMessage;
+	}
 
-  public Role getNextAssign() {
-    return nextAssign;
-  }
 
-  public void setNextAssign(Role nextAssign) {
-    this.nextAssign = nextAssign;
-  }
+	public Role getNextAssign() {
+		return nextAssign;
+	}
 
-  public Role getPreviousAssign() {
-    return previousAssign;
-  }
+	public void setNextAssign(Role nextAssign) {
+		this.nextAssign = nextAssign;
+	}
 
-  public void setPreviousAssign(Role previousAssign) {
-    this.previousAssign = previousAssign;
-  }
 
-  public WorkflowStep getNextStep() {
-    return nextStep;
-  }
+	public Role getPreviousAssign() {
+		return previousAssign;
+	}
 
-  public void setNextStep(WorkflowStep nextStep) {
-    this.nextStep = nextStep;
-  }
+	public void setPreviousAssign(Role previousAssign) {
+		this.previousAssign = previousAssign;
+	}
 
-  public List<WorkflowHistory> getHistory() {
-    return history;
-  }
+	public WorkflowStep getNextStep() {
+		return nextStep;
+	}
 
-  public void setHistory(List<WorkflowHistory> history) {
-    this.history = history;
-  }
+	public void setNextStep(WorkflowStep nextStep) {
+		this.nextStep = nextStep;
+	}
 
-  public WorkflowProcessor(final Contentlet contentlet, final User firingUser) {
-    this(contentlet, firingUser, null);
-  }
+	public List<WorkflowHistory> getHistory() {
+		return history;
+	}
 
-  public WorkflowProcessor(
-      final Contentlet contentlet,
-      final User firingUser,
-      final ConcurrentMap<String, Object> actionsContext) {
-    this.contentlet = contentlet;
+	public void setHistory(List<WorkflowHistory> history) {
+		this.history = history;
+	}
 
-    try {
+	public WorkflowProcessor(final Contentlet contentlet, final User firingUser) {
+       this(contentlet, firingUser, null);
+	}
 
-      this.user = firingUser;
+	public WorkflowProcessor(final Contentlet contentlet, final User firingUser, final ConcurrentMap<String,Object> actionsContext) {
+		this.contentlet = contentlet;
 
-      WorkflowStep contentStep = getWorkflowAPI().findStepByContentlet(contentlet);
-      if (null != contentStep) {
-        scheme = getWorkflowAPI().findScheme(contentStep.getSchemeId());
-      }
-      task = getWorkflowAPI().findTaskByContentlet(contentlet);
+		try {
 
-      String workflowActionId = contentlet.getActionId();
-      if (UtilMethods.isSet(workflowActionId)) {
-        action = findAction(contentlet, workflowActionId);
-      }
+			this.user = firingUser;
 
-      // If we found and action and we don't have a workflow we can search for it
-      if (null != action && null == scheme) {
-        scheme = getWorkflowAPI().findScheme(action.getSchemeId());
-      }
+			WorkflowStep contentStep = getWorkflowAPI().findStepByContentlet(contentlet);
+			if (null != contentStep) {
+				scheme = getWorkflowAPI().findScheme(contentStep.getSchemeId());
+			}
+			task = getWorkflowAPI().findTaskByContentlet(contentlet);
 
-      if (null == action) {
-        Logger.error(
-            this,
-            "Contentlet Identifier ("
-                + contentlet.getIdentifier()
-                + ") should not have a null workflow action");
-        return;
-      }
+			String workflowActionId = contentlet.getActionId();
+			if (UtilMethods.isSet(workflowActionId)) {
+				action = findAction(contentlet, workflowActionId);
+			}
 
-      if (UtilMethods.isSet(contentlet.getStringProperty(Contentlet.WORKFLOW_ASSIGN_KEY))) {
-        nextAssign =
-            getRoleAPI().loadRoleById(contentlet.getStringProperty(Contentlet.WORKFLOW_ASSIGN_KEY));
-      }
-      if (!UtilMethods.isSet(nextAssign)) {
-        nextAssign = getRoleAPI().loadRoleById(action.getNextAssign());
-      }
+			//If we found and action and we don't have a workflow we can search for it
+			if (null != action && null == scheme) {
+				scheme = getWorkflowAPI().findScheme(action.getSchemeId());
+			}
 
-      // if the action's next assign is the "System User", we assign to the user executing the
-      // workflow
-      if ((!UtilMethods.isSet(nextAssign))
-          || getRoleAPI().loadCMSAnonymousRole().getId().equals(nextAssign.getId())) {
-        nextAssign = getRoleAPI().loadRoleByKey(user.getUserId());
-      }
+			if (null == action) {
+				Logger.error(this,"Contentlet Identifier ("+contentlet.getIdentifier()+") should not have a null workflow action");
+				return;
+			}
 
-      if (UtilMethods.isSet(Contentlet.WORKFLOW_COMMENTS_KEY)) {
-        workflowMessage = contentlet.getStringProperty(Contentlet.WORKFLOW_COMMENTS_KEY);
-      }
+			if (UtilMethods.isSet(contentlet.getStringProperty(Contentlet.WORKFLOW_ASSIGN_KEY))) {
+				nextAssign = getRoleAPI().loadRoleById(contentlet.getStringProperty(Contentlet.WORKFLOW_ASSIGN_KEY));
+			}
+			if(!UtilMethods.isSet(nextAssign)){
+				nextAssign = getRoleAPI().loadRoleById(action.getNextAssign());
+			}
 
-      if (null == contentStep) {
+			// if the action's next assign is the "System User", we assign to the user executing the workflow
+			if((!UtilMethods.isSet(nextAssign)) || getRoleAPI().loadCMSAnonymousRole().getId().equals(nextAssign.getId())){
+				nextAssign = getRoleAPI().loadRoleByKey(user.getUserId());
+			}
 
-        contentStep = this.findFirstStepByScheme(action.getSchemeId());
-      }
+			if(UtilMethods.isSet(Contentlet.WORKFLOW_COMMENTS_KEY)){
+				workflowMessage = contentlet.getStringProperty(Contentlet.WORKFLOW_COMMENTS_KEY);
+			}
 
-      nextStep =
-          (action.isNextStepCurrentStep())
-              ? contentStep
-              : getWorkflowAPI().findStep(action.getNextStep());
-      step = contentStep;
-      actionClasses = getWorkflowAPI().findActionClasses(action);
-      if (null == scheme) {
-        scheme = getWorkflowAPI().findScheme(action.getSchemeId());
-      }
+			if (null == contentStep) {
 
-      if (task != null && UtilMethods.isSet(task.getId())) {
-        history = getWorkflowAPI().findWorkflowHistory(task);
-      }
+				contentStep = this.findFirstStepByScheme (action.getSchemeId());
+			}
 
-      this.actionsContext = actionsContext;
+			nextStep      = (action.isNextStepCurrentStep())?
+					contentStep:getWorkflowAPI().findStep(action.getNextStep());
+			step          = contentStep;
+			actionClasses = getWorkflowAPI().findActionClasses(action);
+			if(null == scheme) {
+                scheme = getWorkflowAPI().findScheme(action.getSchemeId());
+            }
 
-    } catch (Exception e) {
-      throw new DotWorkflowException(e.getMessage(), e);
-    }
-  }
+			if(task != null && UtilMethods.isSet(task.getId())){
+				history = getWorkflowAPI().findWorkflowHistory(task);
+			}
 
-  private WorkflowStep findFirstStepByScheme(final String schemeId)
-      throws DotDataException, DotSecurityException {
+			this.actionsContext = actionsContext;
 
-    return getWorkflowAPI()
-        .findSteps(getWorkflowAPI().findScheme(schemeId))
-        .stream()
-        .findFirst()
-        .orElse(null);
-  }
+		} catch (Exception e) {
+			throw new DotWorkflowException(e.getMessage(),e);
+		}
+	}
 
-  /**
-   * Searches and returns a WorkflowAction using a given workflow action id, if the Processor
-   * already have associated an action the existing action will be returned and no search will be
-   * executed.
-   */
-  private WorkflowAction findAction(final Contentlet contentlet, final String workflowActionId)
-      throws LanguageException {
+	private WorkflowStep findFirstStepByScheme(final String schemeId) throws DotDataException, DotSecurityException {
 
-    if (null == action) {
-      try {
-        action =
-            getWorkflowAPI()
-                .findActionRespectingPermissions(workflowActionId, contentlet, this.user);
-      } catch (DotSecurityException e) {
-        throw new DotWorkflowException(e.getMessage(), e);
-      } catch (Exception ex) {
-        throw new DotWorkflowException(
-            LanguageUtil.get(this.user, "message.workflow.error.invalid.action")
-                + contentlet.getActionId(),
-            ex);
-      }
-    }
+		return getWorkflowAPI().findSteps(getWorkflowAPI().findScheme(schemeId)).stream().findFirst().orElse(null);
+	}
 
-    return action;
-  }
+	/**
+	 * Searches and returns a WorkflowAction using a given workflow action id, if the Processor
+	 * already have associated an action the existing action will be returned and no search will be
+	 * executed.
+	 */
+	private WorkflowAction findAction(final Contentlet contentlet, final String workflowActionId)
+			throws LanguageException {
 
-  public Contentlet getContentlet() {
-    return contentlet;
-  }
+		if (null == action) {
+			try {
+				action = getWorkflowAPI().findActionRespectingPermissions(workflowActionId, contentlet, this.user);
+			} catch (DotSecurityException e) {
+				throw new DotWorkflowException(e.getMessage(), e);
+			} catch (Exception ex) {
+				throw new DotWorkflowException(
+						LanguageUtil.get(this.user, "message.workflow.error.invalid.action")
+								+ contentlet.getActionId(), ex);
+			}
+		}
 
-  public void setContentlet(Contentlet contentlet) {
-    this.contentlet = contentlet;
-  }
+		return action;
+	}
 
-  public WorkflowAction getAction() {
-    return action;
-  }
+	public Contentlet getContentlet() {
+		return contentlet;
+	}
 
-  public void setAction(WorkflowAction action) {
-    this.action = action;
-  }
+	public void setContentlet(Contentlet contentlet) {
+		this.contentlet = contentlet;
+	}
 
-  public WorkflowStep getStep() {
-    return step;
-  }
+	public WorkflowAction getAction() {
+		return action;
+	}
 
-  public void setStep(WorkflowStep step) {
-    this.step = step;
-  }
+	public void setAction(WorkflowAction action) {
+		this.action = action;
+	}
 
-  public List<WorkflowStep> getSteps() {
-    return steps;
-  }
+	public WorkflowStep getStep() {
+		return step;
+	}
 
-  public void setSteps(List<WorkflowStep> steps) {
-    this.steps = steps;
-  }
+	public void setStep(WorkflowStep step) {
+		this.step = step;
+	}
 
-  public WorkflowScheme getScheme() {
-    return scheme;
-  }
+	public List<WorkflowStep> getSteps() {
+		return steps;
+	}
 
-  public void setScheme(WorkflowScheme scheme) {
-    this.scheme = scheme;
-  }
+	public void setSteps(List<WorkflowStep> steps) {
+		this.steps = steps;
+	}
 
-  public User getUser() {
-    return user;
-  }
+	public WorkflowScheme getScheme() {
+		return scheme;
+	}
 
-  public void setUser(User user) {
-    this.user = user;
-  }
+	public void setScheme(WorkflowScheme scheme) {
+		this.scheme = scheme;
+	}
 
-  public WorkflowTask getTask() {
-    return task;
-  }
+	public User getUser() {
+		return user;
+	}
 
-  public void setTask(WorkflowTask task) {
-    this.task = task;
-  }
+	public void setUser(User user) {
+		this.user = user;
+	}
 
-  public boolean inProcess() {
-    return UtilMethods.isSet(action);
-  }
+	public WorkflowTask getTask() {
+		return task;
+	}
 
-  public boolean isRunningBulk() {
-    final Boolean runningBulk =
-        Boolean.class.cast(getContentlet().getMap().get(Contentlet.WORKFLOW_BULK_KEY));
-    return runningBulk != null && runningBulk;
-  }
+	public void setTask(WorkflowTask task) {
+		this.task = task;
+	}
 
-  public ConcurrentMap<String, Object> getActionsContext() {
-    return actionsContext;
-  }
+	public boolean inProcess(){
+		return UtilMethods.isSet(action);
+	}
+
+	public boolean isRunningBulk(){
+		final Boolean runningBulk = Boolean.class.cast(getContentlet().getMap().get(Contentlet.WORKFLOW_BULK_KEY));
+		return runningBulk != null && runningBulk;
+	}
+
+	public ConcurrentMap<String,Object> getActionsContext() {
+		return actionsContext;
+	}
 }

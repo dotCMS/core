@@ -12,45 +12,47 @@ import java.util.Map;
 
 public class UnpublishContentActionlet extends WorkFlowActionlet {
 
-  /** */
-  private static final long serialVersionUID = 1L;
 
-  public String getName() {
-    return "Unpublish content";
-  }
 
-  public String getHowTo() {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 
-    return "This actionlet will unpublish the content.";
-  }
+	public String getName() {
+		return "Unpublish content";
+	}
 
-  public void executeAction(
-      WorkflowProcessor processor, Map<String, WorkflowActionClassParameter> params)
-      throws WorkflowActionFailureException {
-    try {
+	public String getHowTo() {
 
-      // Verify if there is something to unpublish
-      boolean hasLiveVersion =
-          APILocator.getVersionableAPI().hasLiveVersion(processor.getContentlet());
-      if (hasLiveVersion) {
-        APILocator.getContentletAPI()
-            .unpublish(processor.getContentlet(), processor.getUser(), false);
-      }
+		return "This actionlet will unpublish the content.";
+	}
 
-    } catch (Exception e) {
-      Logger.error(this.getClass(), e.getMessage(), e);
-      throw new WorkflowActionFailureException(e.getMessage(), e);
-    }
-  }
+	public void executeAction(WorkflowProcessor processor,Map<String,WorkflowActionClassParameter>  params) throws WorkflowActionFailureException {
+		try {
 
-  public WorkflowStep getNextStep() {
+			//Verify if there is something to unpublish
+			boolean hasLiveVersion = APILocator.getVersionableAPI()
+					.hasLiveVersion(processor.getContentlet());
+			if (hasLiveVersion) {
+				APILocator.getContentletAPI().unpublish(processor.getContentlet(), processor.getUser(), false);
+			}
 
-    return null;
-  }
+		} catch (Exception e) {
+			Logger.error(this.getClass(),e.getMessage(),e);
+			throw new  WorkflowActionFailureException(e.getMessage(),e);
+		}
 
-  @Override
-  public List<WorkflowActionletParameter> getParameters() {
+	}
 
-    return null;
-  }
+	public WorkflowStep getNextStep() {
+
+		return null;
+	}
+
+	@Override
+	public  List<WorkflowActionletParameter> getParameters() {
+
+		return null;
+	}
 }

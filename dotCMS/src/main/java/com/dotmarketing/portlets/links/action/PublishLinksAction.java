@@ -20,71 +20,73 @@ import org.apache.struts.action.ActionMapping;
 /**
  * <a href="ViewQuestionsAction.java.html"><b><i>View Source</i></b></a>
  *
- * @author Maria Ahues
+ * @author  Maria Ahues
  * @version $Revision: 1.2 $
+ *
  */
 public class PublishLinksAction extends DotPortletAction {
 
-  public void processAction(
-      ActionMapping mapping,
-      ActionForm form,
-      PortletConfig config,
-      ActionRequest req,
-      ActionResponse res)
-      throws Exception {
+	public void processAction(
+			 ActionMapping mapping, ActionForm form, PortletConfig config,
+			 ActionRequest req, ActionResponse res)
+		 throws Exception {
 
-    Logger.debug(this, "Running PublishLinksAction!!!!");
+		Logger.debug(this, "Running PublishLinksAction!!!!");
 
-    String referer = req.getParameter("referer");
-    if ((referer != null) && (referer.length() != 0)) {
-      referer = URLDecoder.decode(referer, "UTF-8");
-    }
+		String referer = req.getParameter("referer");
+		if ((referer!=null) && (referer.length()!=0)) {
+			referer = URLDecoder.decode(referer,"UTF-8");
+		}
+		
+		try {
+			//get the user
+			User user = com.liferay.portal.util.PortalUtil.getUser(req);
 
-    try {
-      // get the user
-      User user = com.liferay.portal.util.PortalUtil.getUser(req);
+			_publishLinks(req, user);
+			
+			if ((referer!=null) && (referer.length()!=0)) {
+				_sendToReferral(req, res, referer);
+			}
+			
+			setForward(req, "portlet.ext.links.publish_links");
 
-      _publishLinks(req, user);
+		}
+		catch (Exception e) {
+			_handleException(e, req);
+		}
+	}
 
-      if ((referer != null) && (referer.length() != 0)) {
-        _sendToReferral(req, res, referer);
-      }
+	private void _publishLinks(ActionRequest req, User user) throws Exception {
+		
+		String[] publishInode = req.getParameterValues("publishInode");
+		ActionRequestImpl reqImpl = (ActionRequestImpl)req;
+		
+		if (publishInode!=null) {
+			boolean isArchived = true;
+			for (int i=0;i<publishInode.length;i++) {
+				Link link = (Link) InodeFactory.getInode(publishInode[i],Link.class);
+		
+				if (InodeUtils.isSet(link.getInode())) {
+					//calls the asset factory edit
+					
+					try{
+						if(!link.isArchived()){
+							PublishFactory.publishAsset(link,reqImpl.getHttpServletRequest());
+							SessionMessages.add(req, "message", "message.link_list.published");
+							isArchived = false;
+						}
+					}catch(WebAssetException wax){
+						Logger.error(this, wax.getMessage(),wax);
+						SessionMessages.add(req, "error", "message.webasset.published.failed");
+					}
+				}
+			}
+			if(isArchived){
+				SessionMessages.add(req, "error", "message.webasset.cannot.published.archived");
+			}
 
-      setForward(req, "portlet.ext.links.publish_links");
+		}	
+		
+	}
 
-    } catch (Exception e) {
-      _handleException(e, req);
-    }
-  }
-
-  private void _publishLinks(ActionRequest req, User user) throws Exception {
-
-    String[] publishInode = req.getParameterValues("publishInode");
-    ActionRequestImpl reqImpl = (ActionRequestImpl) req;
-
-    if (publishInode != null) {
-      boolean isArchived = true;
-      for (int i = 0; i < publishInode.length; i++) {
-        Link link = (Link) InodeFactory.getInode(publishInode[i], Link.class);
-
-        if (InodeUtils.isSet(link.getInode())) {
-          // calls the asset factory edit
-
-          try {
-            if (!link.isArchived()) {
-              PublishFactory.publishAsset(link, reqImpl.getHttpServletRequest());
-              SessionMessages.add(req, "message", "message.link_list.published");
-              isArchived = false;
-            }
-          } catch (WebAssetException wax) {
-            Logger.error(this, wax.getMessage(), wax);
-            SessionMessages.add(req, "error", "message.webasset.published.failed");
-          }
-        }
-      }
-      if (isArchived) {
-        SessionMessages.add(req, "error", "message.webasset.cannot.published.archived");
-      }
-    }
-  }
 }

@@ -1,396 +1,419 @@
 package com.dotcms.notifications.business;
 
-import static com.dotcms.util.CollectionsUtils.list;
-
 import com.dotcms.notifications.bean.Notification;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.util.Logger;
+
 import java.io.Serializable;
 import java.util.List;
 
+import static com.dotcms.util.CollectionsUtils.list;
+
 /**
  * New Notification Cache.
- *
  * @author jsanca
  */
 public class NewNotificationCacheImpl extends NewNotificationCache implements Serializable {
 
-  private static final String OFFSET = "offset";
-  private static final String LIMIT = "limit";
-  private static final String SINGLE_NOTIFICATION = "singleNotification";
-  private static final String COUNT_ALL = "All";
-  private static final String COUNT_USER = "User";
-  private static final String PRIMARY_GROUP = "NewNotificationCache";
-  private static final String COUNT_PREFIX = "Count";
-  private static final String NOTIFICATION_PREFIX = "Notification";
-  private static final String ALL_NOTIFICATIONS = "AllNotifications";
-  // region's name for the cache
-  private static final String[] GROUP_NAMES = {PRIMARY_GROUP};
+    private static final String OFFSET = "offset";
+    private static final String LIMIT = "limit";
+    private static final String SINGLE_NOTIFICATION = "singleNotification";
+    private static final String COUNT_ALL = "All";
+    private static final String COUNT_USER = "User";
+    private final static String PRIMARY_GROUP = "NewNotificationCache";
+    private final static String COUNT_PREFIX = "Count";
+    private final static String NOTIFICATION_PREFIX = "Notification";
+    private static final String ALL_NOTIFICATIONS = "AllNotifications";
+    // region's name for the cache
+    private final static String[] GROUP_NAMES = { PRIMARY_GROUP };
 
-  private final DotCacheAdministrator cache;
 
-  public NewNotificationCacheImpl() {
+    private final DotCacheAdministrator cache;
 
-    this.cache = CacheLocator.getCacheAdministrator();
-  }
+    public NewNotificationCacheImpl() {
 
-  //////////////
-
-  private String getCountUserPrimaryKey(final String userId) {
-
-    return PRIMARY_GROUP + COUNT_PREFIX + userId;
-  }
-
-  @Override
-  protected Long addCount(final String userId, final Long newNotifications) {
-
-    final String primaryKey = this.getCountUserPrimaryKey(userId);
-
-    // Add the key to the cache
-    this.cache.put(primaryKey, newNotifications, PRIMARY_GROUP);
-
-    return newNotifications;
-  } // add.
-
-  @Override
-  protected Long getCount(final String userId) {
-
-    final String primaryKey = this.getCountUserPrimaryKey(userId);
-    Long newNotificationsCount = null;
-
-    try {
-
-      newNotificationsCount = (Long) this.cache.get(primaryKey, PRIMARY_GROUP);
-    } catch (DotCacheException e) {
-
-      Logger.debug(this, "Cache Entry not found", e);
+        this.cache = CacheLocator.getCacheAdministrator();
     }
 
-    return newNotificationsCount;
-  } // get.
+    //////////////
 
-  /* (non-Javadoc)
-   * @see com.dotmarketing.business.PermissionCache#clearCache()
-   */
-  @Override
-  public void clearCache() {
-    // clear the cache
-    this.cache.flushGroup(PRIMARY_GROUP);
-  } // clearCache/
+    private String getCountUserPrimaryKey(final String userId) {
 
-  /* (non-Javadoc)
-   * @see com.dotmarketing.business.PermissionCache#remove(java.lang.String)
-   */
-  @Override
-  public void remove(final String userId) {
-
-    final String countPrimaryKey = this.getCountUserPrimaryKey(userId);
-
-    final String userCountPrimaryKey = this.getUserCountPrimaryKey(userId);
-
-    final String allNotificationsPrimaryKey = this.getAllNotificationsPrimaryKey(userId);
-
-    final String referenceKey = PRIMARY_GROUP + NOTIFICATION_PREFIX;
-    List<String> referenceKeyList;
-
-    try {
-
-      referenceKeyList = (List<String>) this.cache.get(referenceKey, PRIMARY_GROUP);
-    } catch (DotCacheException e) {
-
-      referenceKeyList = null;
+        return PRIMARY_GROUP + COUNT_PREFIX + userId;
     }
 
-    try {
+    @Override
+    protected Long addCount(final String userId,
+                            final Long newNotifications) {
 
-      this.cache.remove(countPrimaryKey, PRIMARY_GROUP);
-      this.cache.remove(userCountPrimaryKey, PRIMARY_GROUP);
-      this.cache.remove(allNotificationsPrimaryKey, PRIMARY_GROUP);
+        final String primaryKey = this.getCountUserPrimaryKey(userId);
 
-      if (null != referenceKeyList) {
+        // Add the key to the cache
+        this.cache.put(primaryKey, newNotifications, PRIMARY_GROUP);
 
-        for (String primaryKey : referenceKeyList) {
+        return newNotifications;
+    } // add.
 
-          this.cache.remove(primaryKey, PRIMARY_GROUP);
+    @Override
+    protected Long getCount(final String userId) {
+
+        final String primaryKey =  this.getCountUserPrimaryKey(userId);
+        Long newNotificationsCount = null;
+
+        try {
+
+            newNotificationsCount = (Long)this.cache.get(primaryKey, PRIMARY_GROUP);
+        } catch (DotCacheException e) {
+
+            Logger.debug(this, "Cache Entry not found", e);
         }
-      }
 
-      this.cache.remove(referenceKey, PRIMARY_GROUP);
-    } catch (Exception e) {
+        return newNotificationsCount;
+    } // get.
 
-      Logger.debug(this, "Cache not able to be removed", e);
-    }
-  } // remove.
+    /* (non-Javadoc)
+     * @see com.dotmarketing.business.PermissionCache#clearCache()
+     */
+    @Override
+    public void clearCache() {
+        // clear the cache
+        this.cache.flushGroup(PRIMARY_GROUP);
+    } // clearCache/
 
-  ///////////////////
+    /* (non-Javadoc)
+	 * @see com.dotmarketing.business.PermissionCache#remove(java.lang.String)
+	 */
+    @Override
+    public void remove(final String userId) {
 
-  protected String getSingleNotificationPrimaryKey(
-      final String userId, final String notificationId) {
+        final String countPrimaryKey =
+            this.getCountUserPrimaryKey(userId);
 
-    return PRIMARY_GROUP
-        + NOTIFICATION_PREFIX
-        + SINGLE_NOTIFICATION
-        + notificationId
-        + "_"
-        + userId;
-  }
+        final String userCountPrimaryKey =
+            this.getUserCountPrimaryKey(userId);
 
-  @Override
-  protected void addNotification(final Notification notification) {
+        final String allNotificationsPrimaryKey =
+            this.getAllNotificationsPrimaryKey(userId);
 
-    final String primaryKey =
-        this.getSingleNotificationPrimaryKey(notification.getUserId(), notification.getGroupId());
+        final String referenceKey = PRIMARY_GROUP + NOTIFICATION_PREFIX;
+        List<String> referenceKeyList;
 
-    this.cache.put(primaryKey, notification, PRIMARY_GROUP);
-  } // addNotification.
+        try {
 
-  @Override
-  protected Notification getNotification(final String userId, final String groupId) {
+            referenceKeyList = (List<String>) this.cache.
+                get(referenceKey, PRIMARY_GROUP);
+        } catch (DotCacheException e) {
 
-    Notification notification = null;
-    final String primaryKey = this.getSingleNotificationPrimaryKey(userId, groupId);
+            referenceKeyList = null;
+        }
 
-    try {
+        try {
 
-      notification = (Notification) this.cache.get(primaryKey, PRIMARY_GROUP);
-    } catch (DotCacheException e) {
+            this.cache.remove(countPrimaryKey,     		  PRIMARY_GROUP);
+            this.cache.remove(userCountPrimaryKey, 		  PRIMARY_GROUP);
+            this.cache.remove(allNotificationsPrimaryKey, PRIMARY_GROUP);
 
-      Logger.debug(this, "Cache Entry not found: " + primaryKey, e);
-    }
+            if (null != referenceKeyList) {
 
-    return notification;
-  } // getNotification.
+                for (String primaryKey : referenceKeyList) {
 
-  @Override
-  protected void removeNotification(final String userId, final String groupId) {
+                    this.cache.remove(primaryKey, PRIMARY_GROUP);
+                }
+            }
 
-    final String primaryKey = this.getSingleNotificationPrimaryKey(userId, groupId);
+            this.cache.remove(referenceKey, PRIMARY_GROUP);
+        } catch (Exception e) {
 
-    try {
+            Logger.debug(this, "Cache not able to be removed", e);
+        }
+    } // remove.
 
-      this.cache.remove(primaryKey, PRIMARY_GROUP);
-    } catch (Exception e) {
-      Logger.debug(this, "Cache not able to be removed: " + primaryKey, e);
-    }
-  } // removeNotification.
+    ///////////////////
 
-  /////////////
-  protected String getAllCountPrimaryKey() {
+    protected String getSingleNotificationPrimaryKey (final String userId, final String notificationId) {
 
-    return PRIMARY_GROUP + COUNT_PREFIX + COUNT_ALL;
-  }
-
-  @Override
-  protected Long getAllCount() {
-
-    Long count = null;
-    final String primaryKey = this.getAllCountPrimaryKey();
-
-    try {
-
-      count = (Long) this.cache.get(primaryKey, PRIMARY_GROUP);
-    } catch (DotCacheException e) {
-
-      Logger.debug(this, "Cache Entry not found: " + primaryKey, e);
+        return PRIMARY_GROUP + NOTIFICATION_PREFIX
+            + SINGLE_NOTIFICATION + notificationId + "_" + userId;
     }
 
-    return count;
-  } // getAllCount.
+    @Override
+    protected void addNotification(final Notification notification) {
 
-  @Override
-  protected void addAllCount(final Long count) {
+        final String primaryKey   =
+            this.getSingleNotificationPrimaryKey (notification.getUserId(), notification.getGroupId());
 
-    final String primaryKey = this.getAllCountPrimaryKey();
+        this.cache.put(primaryKey, notification, PRIMARY_GROUP);
+    } // addNotification.
 
-    this.cache.put(primaryKey, count, PRIMARY_GROUP);
-  } // addAllCount.
+    @Override
+    protected Notification getNotification(final String userId, final String groupId) {
 
-  ///////////////
+        Notification notification = null;
+        final String primaryKey   =
+            this.getSingleNotificationPrimaryKey (userId, groupId);
 
-  protected String getUserCountPrimaryKey(final String userId) {
+        try {
 
-    return PRIMARY_GROUP + COUNT_PREFIX + COUNT_USER + userId;
-  }
+            notification = (Notification)this.cache.get(primaryKey, PRIMARY_GROUP);
+        } catch (DotCacheException e) {
 
-  @Override
-  protected Long getUserCount(final String userId) {
+            Logger.debug(this, "Cache Entry not found: " + primaryKey, e);
+        }
 
-    Long count = null;
-    final String primaryKey = this.getAllNotificationsPrimaryKey(userId);
+        return notification;
+    } // getNotification.
 
-    try {
+    @Override
+    protected void removeNotification(final String userId, final String groupId) {
 
-      count = (Long) this.cache.get(primaryKey, PRIMARY_GROUP);
-    } catch (DotCacheException e) {
+        final String primaryKey   =
+            this.getSingleNotificationPrimaryKey (userId, groupId);
 
-      Logger.debug(this, "Cache Entry not found: " + primaryKey, e);
+        try {
+
+            this.cache.remove(primaryKey, PRIMARY_GROUP);
+        } catch (Exception e) {
+            Logger.debug(this, "Cache not able to be removed: " + primaryKey, e);
+        }
+    } // removeNotification.
+
+    /////////////
+    protected String getAllCountPrimaryKey () {
+
+        return PRIMARY_GROUP + COUNT_PREFIX
+            + COUNT_ALL;
     }
 
-    return count;
-  } // getUserCount.
+    @Override
+    protected Long getAllCount() {
 
-  @Override
-  protected void addUserCount(final String userId, final Long count) {
+        Long count = null;
+        final String primaryKey   = this.getAllCountPrimaryKey();
 
-    final String primaryKey = this.getUserCountPrimaryKey(userId);
+        try {
 
-    this.cache.put(primaryKey, count, PRIMARY_GROUP);
-  } // addUserCount.
+            count = (Long)this.cache.get(primaryKey, PRIMARY_GROUP);
+        } catch (DotCacheException e) {
 
-  ////////
+            Logger.debug(this, "Cache Entry not found: " + primaryKey, e);
+        }
 
-  protected String getAllNotificationsPrimaryKey(final String userId) {
+        return count;
+    } // getAllCount.
 
-    return PRIMARY_GROUP + ALL_NOTIFICATIONS + userId;
-  }
+    @Override
+    protected void addAllCount(final Long count) {
 
-  @Override
-  public List<Notification> getAllNotifications(final String userId) {
+        final String primaryKey   = this.getAllCountPrimaryKey();
 
-    List<Notification> notifications = null;
-    final String primaryKey = getAllNotificationsPrimaryKey(userId);
+        this.cache.put(primaryKey, count, PRIMARY_GROUP);
+    } // addAllCount.
 
-    try {
+    ///////////////
 
-      notifications = (List<Notification>) this.cache.get(primaryKey, PRIMARY_GROUP);
-    } catch (DotCacheException e) {
+    protected String getUserCountPrimaryKey(final String userId) {
 
-      Logger.debug(this, "Cache Entry not found", e);
+        return PRIMARY_GROUP + COUNT_PREFIX
+            + COUNT_USER + userId;
     }
 
-    return notifications;
-  } // getAllNotifications.
+    @Override
+    protected Long getUserCount(final String userId) {
 
-  @Override
-  public void addAllNotifications(final String userId, final List<Notification> notifications) {
+        Long count = null;
+        final String primaryKey   =
+                this.getAllNotificationsPrimaryKey(userId);
 
-    final String primaryKey = getAllNotificationsPrimaryKey(userId);
-    final String referenceKey = PRIMARY_GROUP + NOTIFICATION_PREFIX;
-    List<String> referenceKeyList = null;
+        try {
 
-    try {
+            count = (Long)this.cache.get(primaryKey, PRIMARY_GROUP);
+        } catch (DotCacheException e) {
 
-      referenceKeyList = (List<String>) this.cache.get(referenceKey, PRIMARY_GROUP);
-    } catch (DotCacheException e) {
+            Logger.debug(this, "Cache Entry not found: " + primaryKey, e);
+        }
 
-      referenceKeyList = null;
+        return count;
+    } // getUserCount.
+
+    @Override
+    protected void addUserCount(final String userId, final Long count) {
+
+        final String primaryKey   =
+            this.getUserCountPrimaryKey(userId);
+
+        this.cache.put(primaryKey, count, PRIMARY_GROUP);
+    } // addUserCount.
+
+    ////////
+
+    protected String getAllNotificationsPrimaryKey(final String userId) {
+
+        return PRIMARY_GROUP + ALL_NOTIFICATIONS + userId;
     }
 
-    referenceKeyList = (null == referenceKeyList) ? list() : referenceKeyList;
+    @Override
+    public List<Notification> getAllNotifications(final String userId) {
 
-    // Add the primary key to the reference list for future iteration and removes
-    referenceKeyList.add(primaryKey);
+        List<Notification> notifications = null;
+        final String primaryKey   = getAllNotificationsPrimaryKey (userId);
 
-    // Add the reference list to the cache
-    this.cache.put(referenceKey, referenceKeyList, PRIMARY_GROUP);
+        try {
 
-    // Add the key to the cache
-    this.cache.put(primaryKey, notifications, PRIMARY_GROUP);
-  } // addAllNotifications.
+            notifications = (List<Notification>)this.cache.get(primaryKey, PRIMARY_GROUP);
+        } catch (DotCacheException e) {
 
-  /////
+            Logger.debug(this, "Cache Entry not found", e);
+        }
 
-  protected String getNotificationsPrimaryKey(
-      final String userId, final long offset, final long limit) {
+        return notifications;
+    } // getAllNotifications.
 
-    return PRIMARY_GROUP + ALL_NOTIFICATIONS + userId + OFFSET + offset + LIMIT + limit;
-  }
+    @Override
+    public void addAllNotifications(final String userId,
+                                    final List<Notification> notifications) {
 
-  @Override
-  public List<Notification> getNotifications(
-      final String userId, final long offset, final long limit) {
+        final String primaryKey   = getAllNotificationsPrimaryKey (userId);
+        final String referenceKey = PRIMARY_GROUP + NOTIFICATION_PREFIX;
+        List<String> referenceKeyList = null;
 
-    List<Notification> notifications = null;
-    final String primaryKey = getNotificationsPrimaryKey(userId, offset, limit);
+        try {
 
-    try {
+            referenceKeyList = (List<String>) this.cache.
+                get(referenceKey, PRIMARY_GROUP);
+        } catch (DotCacheException e) {
 
-      notifications = (List<Notification>) this.cache.get(primaryKey, PRIMARY_GROUP);
-    } catch (DotCacheException e) {
+            referenceKeyList = null;
+        }
 
-      Logger.debug(this, "Cache Entry not found", e);
+        referenceKeyList =
+            (null == referenceKeyList)? list(): referenceKeyList;
+
+        // Add the primary key to the reference list for future iteration and removes
+        referenceKeyList.add(primaryKey);
+
+        // Add the reference list to the cache
+        this.cache.put(referenceKey, referenceKeyList, PRIMARY_GROUP);
+
+        // Add the key to the cache
+        this.cache.put(primaryKey, notifications, PRIMARY_GROUP);
+    } // addAllNotifications.
+
+    /////
+
+    protected String getNotificationsPrimaryKey(final String userId,
+                                                final long offset,
+                                                final long limit) {
+
+        return PRIMARY_GROUP + ALL_NOTIFICATIONS + userId +
+            OFFSET + offset +
+            LIMIT  + limit;
     }
 
-    return notifications;
-  } // getNotifications.
+    @Override
+    public List<Notification> getNotifications(final String userId,
+                                               final long offset,
+                                               final long limit) {
 
-  @Override
-  public void addNotifications(
-      final String userId,
-      final long offset,
-      final long limit,
-      final List<Notification> notifications) {
+        List<Notification> notifications = null;
+        final String primaryKey   = getNotificationsPrimaryKey (userId, offset, limit);
 
-    final String primaryKey = getNotificationsPrimaryKey(userId, offset, limit);
+        try {
 
-    final String referenceKey = PRIMARY_GROUP + NOTIFICATION_PREFIX;
-    List<String> referenceKeyList = null;
+            notifications = (List<Notification>)this.cache.get(primaryKey, PRIMARY_GROUP);
+        } catch (DotCacheException e) {
 
-    try {
+            Logger.debug(this, "Cache Entry not found", e);
+        }
 
-      referenceKeyList = (List<String>) this.cache.get(referenceKey, PRIMARY_GROUP);
-    } catch (DotCacheException e) {
+        return notifications;
+    } // getNotifications.
 
-      referenceKeyList = null;
+    @Override
+    public void addNotifications(final String userId,
+                                 final long offset,
+                                 final long limit,
+                                 final List<Notification> notifications) {
+
+        final String primaryKey   = getNotificationsPrimaryKey (userId, offset, limit);
+
+        final String referenceKey = PRIMARY_GROUP + NOTIFICATION_PREFIX;
+        List<String> referenceKeyList = null;
+
+        try {
+
+            referenceKeyList = (List<String>) this.cache.
+                get(referenceKey, PRIMARY_GROUP);
+        } catch (DotCacheException e) {
+
+            referenceKeyList = null;
+        }
+
+        referenceKeyList =
+            (null == referenceKeyList)? list(): referenceKeyList;
+
+        // Add the primary key to the reference list for future iteration and removes
+        referenceKeyList.add(primaryKey);
+
+        // Add the reference list to the cache
+        this.cache.put(referenceKey, referenceKeyList, PRIMARY_GROUP);
+
+        // Add the key to the cache
+        this.cache.put(primaryKey, notifications, PRIMARY_GROUP);
+    } // addNotifications.
+
+    /////
+
+    protected String getNotificationsPrimaryKey(final long offset,
+                                                final long limit) {
+
+        return PRIMARY_GROUP + NOTIFICATION_PREFIX
+            + OFFSET + offset + LIMIT + limit;
     }
 
-    referenceKeyList = (null == referenceKeyList) ? list() : referenceKeyList;
+    @Override
+    protected List<Notification> getNotifications(final long offset,
+                                                  final long limit) {
 
-    // Add the primary key to the reference list for future iteration and removes
-    referenceKeyList.add(primaryKey);
+        List<Notification> notifications = null;
+        final String primaryKey   = getNotificationsPrimaryKey (offset, limit);
 
-    // Add the reference list to the cache
-    this.cache.put(referenceKey, referenceKeyList, PRIMARY_GROUP);
+        try {
 
-    // Add the key to the cache
-    this.cache.put(primaryKey, notifications, PRIMARY_GROUP);
-  } // addNotifications.
+            notifications = (List<Notification>)this.cache.get(primaryKey, PRIMARY_GROUP);
+        } catch (DotCacheException e) {
 
-  /////
+            Logger.debug(this, "Cache Entry not found", e);
+        }
 
-  protected String getNotificationsPrimaryKey(final long offset, final long limit) {
+        return notifications;
+    } // getNotifications.
 
-    return PRIMARY_GROUP + NOTIFICATION_PREFIX + OFFSET + offset + LIMIT + limit;
-  }
 
-  @Override
-  protected List<Notification> getNotifications(final long offset, final long limit) {
 
-    List<Notification> notifications = null;
-    final String primaryKey = getNotificationsPrimaryKey(offset, limit);
+    @Override
+    public void addNotifications(final long offset, final long limit,
+                                 final List<Notification> notifications) {
 
-    try {
+        final String primaryKey   = getNotificationsPrimaryKey (offset, limit);
 
-      notifications = (List<Notification>) this.cache.get(primaryKey, PRIMARY_GROUP);
-    } catch (DotCacheException e) {
+        // Add the key to the cache
+        this.cache.put(primaryKey, notifications, PRIMARY_GROUP);
+    } // addNotifications.
 
-      Logger.debug(this, "Cache Entry not found", e);
-    }
 
-    return notifications;
-  } // getNotifications.
 
-  @Override
-  public void addNotifications(
-      final long offset, final long limit, final List<Notification> notifications) {
+    @Override
+    public String[] getGroups() {
 
-    final String primaryKey = getNotificationsPrimaryKey(offset, limit);
+        return GROUP_NAMES;
+    } // getGroups.
 
-    // Add the key to the cache
-    this.cache.put(primaryKey, notifications, PRIMARY_GROUP);
-  } // addNotifications.
+    @Override
+    public String getPrimaryGroup() {
 
-  @Override
-  public String[] getGroups() {
+        return PRIMARY_GROUP;
+    } // getPrimaryGroup.
 
-    return GROUP_NAMES;
-  } // getGroups.
-
-  @Override
-  public String getPrimaryGroup() {
-
-    return PRIMARY_GROUP;
-  } // getPrimaryGroup.
 } // E:O:F:NewNotificationCacheImpl.

@@ -1,41 +1,41 @@
 package com.dotcms.aspects.interceptors;
 
-import static com.dotcms.util.AnnotationUtils.getMethodAnnotation;
-
 import com.dotcms.aspects.DelegateMethodInvocation;
 import com.dotcms.aspects.MethodInterceptor;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotmarketing.db.DbConnectionFactory;
 
+import static com.dotcms.util.AnnotationUtils.getMethodAnnotation;
+
 /**
  * Method handler for the {@link CloseDBIfOpened} annotation aspect
- *
  * @author jsanca
  */
 public class CloseDBIfOpenedMethodInterceptor implements MethodInterceptor<Object> {
 
-  public static final CloseDBIfOpenedMethodInterceptor INSTANCE =
-      new CloseDBIfOpenedMethodInterceptor();
+    public static final CloseDBIfOpenedMethodInterceptor INSTANCE = new CloseDBIfOpenedMethodInterceptor();
 
-  @Override
-  public Object invoke(final DelegateMethodInvocation<Object> delegate) throws Throwable {
 
-    final boolean isNewConnection = !DbConnectionFactory.connectionExists();
+    @Override
+    public Object invoke(final DelegateMethodInvocation<Object> delegate) throws Throwable {
 
-    final CloseDBIfOpened closeDB =
-        getMethodAnnotation(delegate.getMethod(), CloseDBIfOpened.class);
-    Object methodReturn = null;
+        final boolean isNewConnection = !DbConnectionFactory.connectionExists();
 
-    try {
-      methodReturn = delegate.proceed();
-    } finally {
+        final CloseDBIfOpened closeDB =
+                getMethodAnnotation(delegate.getMethod(), CloseDBIfOpened.class);
+        Object methodReturn = null;
 
-      if (null != closeDB && closeDB.connection() && isNewConnection) {
+        try {
+            methodReturn = delegate.proceed();
+        } finally {
 
-        DbConnectionFactory.closeSilently();
-      }
-    }
+            if (null != closeDB && closeDB.connection()
+                    && isNewConnection) {
 
-    return methodReturn;
-  } // invoke.
+                DbConnectionFactory.closeSilently();
+            }
+        }
+
+        return methodReturn;
+    } // invoke.
 } // E:O:F:LogTimeMethodInterceptor.

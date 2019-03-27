@@ -16,53 +16,64 @@ package org.apache.velocity.runtime.directive;
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
- * under the License.
+ * under the License.    
  */
 
 /**
- * This represents scoping and metadata for #foreach, adding index, count, hasNext, isFirst and
- * isLast info.
+ * This represents scoping and metadata for #foreach,
+ * adding index, count, hasNext, isFirst and isLast info.
  *
  * @author Nathan Bubna
  * @version $Id$
  */
-public class ForeachScope extends Scope {
-  protected int index = -1;
-  protected boolean hasNext = false;
+public class ForeachScope extends Scope
+{
+    protected int index = -1;
+    protected boolean hasNext = false;
 
-  public ForeachScope(Object owner, Object replaces) {
-    super(owner, replaces);
-  }
+    public ForeachScope(Object owner, Object replaces)
+    {
+        super(owner, replaces);
+    }
 
-  public int getIndex() {
-    return index;
-  }
+    public int getIndex()
+    {
+        return index;
+    }
 
-  public int getCount() {
-    return index + 1;
-  }
+    public int getCount()
+    {
+        return index + 1;
+    }
 
-  public boolean hasNext() {
-    return getHasNext();
-  }
+    public boolean hasNext()
+    {
+        return getHasNext();
+    }
 
-  public boolean getHasNext() {
-    return hasNext;
-  }
+    public boolean getHasNext()
+    {
+        return hasNext;
+    }
 
-  public boolean isFirst() {
-    return index < 1;
-  }
+    public boolean isFirst()
+    {
+        return index < 1;
+    }
 
-  public boolean getFirst() {
-    return isFirst();
-  }
+    public boolean getFirst()
+    {
+        return isFirst();
+    }
 
-  public boolean isLast() {
-    return !hasNext;
-  }
+    public boolean isLast()
+    {
+        return !hasNext;
+    }
 
-  public boolean getLast() {
-    return isLast();
-  }
+    public boolean getLast()
+    {
+        return isLast();
+    }
+
 }

@@ -19,7 +19,8 @@ import java.util.List;
 
 public interface DomTree {
 
-  public List<TextNode> getTextNodes();
+    public List<TextNode> getTextNodes();
 
-  public BodyNode getBodyNode();
+    public BodyNode getBodyNode();
+
 }

@@ -8,156 +8,193 @@ import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.validator.ValidatorForm;
 
-public class WorkflowTaskForm extends ValidatorForm {
 
-  private static final long serialVersionUID = 1L;
 
-  String inode;
-  Date creationDate;
-  Date modDate;
-  Date dueDate;
-  String dueDateMonth;
-  String dueDateDay;
-  String dueDateYear;
-  boolean noDueDate;
-  String createdBy;
-  String assignedTo;
-  String belongsTo;
-  String title;
-  String description;
-  String status;
-  String webasset = "";
+public class WorkflowTaskForm extends ValidatorForm 
+{
+	
+	private static final long serialVersionUID = 1L;
+	
+    String inode;
+    Date creationDate;
+    Date modDate;
+    Date dueDate;
+    String dueDateMonth;
+    String dueDateDay;
+    String dueDateYear;
+    boolean noDueDate;
+    String createdBy;
+    String assignedTo;
+    String belongsTo;
+    String title;
+    String description;
+    String status;
+    String webasset = "";
 
-  public String getInode() {
-    if (InodeUtils.isSet(inode)) return inode;
+        
+    public String getInode() {
+    	if(InodeUtils.isSet(inode))
+			return inode;
+		
+		return "";
+    }
 
-    return "";
-  }
 
-  public void setInode(String inode) {
-    this.inode = inode;
-  }
+    public void setInode(String inode) {
+        this.inode = inode;
+    }
 
-  public String getAssignedTo() {
-    return assignedTo;
-  }
 
-  public void setAssignedTo(String assignedTo) {
-    this.assignedTo = assignedTo;
-  }
+    public String getAssignedTo() {
+        return assignedTo;
+    }
 
-  public String getBelongsTo() {
-    return belongsTo;
-  }
 
-  public void setBelongsTo(String belongsTo) {
-    this.belongsTo = belongsTo;
-  }
+    public void setAssignedTo(String assignedTo) {
+        this.assignedTo = assignedTo;
+    }
 
-  public String getCreatedBy() {
-    return createdBy;
-  }
 
-  public void setCreatedBy(String createdBy) {
-    this.createdBy = createdBy;
-  }
+    public String getBelongsTo() {
+        return belongsTo;
+    }
 
-  public Date getCreationDate() {
-    return creationDate;
-  }
 
-  public void setCreationDate(Date creationDate) {
-    this.creationDate = creationDate;
-  }
+    public void setBelongsTo(String belongsTo) {
+        this.belongsTo = belongsTo;
+    }
 
-  public String getDescription() {
-    return description;
-  }
 
-  public void setDescription(String description) {
-    this.description = description;
-  }
+    public String getCreatedBy() {
+        return createdBy;
+    }
 
-  public Date getDueDate() {
-    return dueDate;
-  }
 
-  public void setDueDate(Date dueDate) {
-    this.dueDate = dueDate;
-  }
+    public void setCreatedBy(String createdBy) {
+        this.createdBy = createdBy;
+    }
 
-  public Date getModDate() {
-    return modDate;
-  }
 
-  public void setModDate(Date modDate) {
-    this.modDate = modDate;
-  }
+    public Date getCreationDate() {
+        return creationDate;
+    }
 
-  public String getStatus() {
-    return status;
-  }
 
-  public void setStatus(String status) {
-    this.status = status;
-  }
+    public void setCreationDate(Date creationDate) {
+        this.creationDate = creationDate;
+    }
 
-  public String getTitle() {
-    return title;
-  }
 
-  public void setTitle(String title) {
-    this.title = title;
-  }
+    public String getDescription() {
+        return description;
+    }
 
-  public String getDueDateDay() {
-    return dueDateDay;
-  }
 
-  public void setDueDateDay(String dueDateDay) {
-    this.dueDateDay = dueDateDay;
-  }
+    public void setDescription(String description) {
+        this.description = description;
+    }
 
-  public String getDueDateMonth() {
-    return dueDateMonth;
-  }
 
-  public void setDueDateMonth(String dueDateMonth) {
-    this.dueDateMonth = dueDateMonth;
-  }
+    public Date getDueDate() {
+        return dueDate;
+    }
 
-  public String getDueDateYear() {
-    return dueDateYear;
-  }
 
-  public void setDueDateYear(String dueDateYear) {
-    this.dueDateYear = dueDateYear;
-  }
+    public void setDueDate(Date dueDate) {
+        this.dueDate = dueDate;
+    }
 
-  public boolean isNoDueDate() {
-    return noDueDate;
-  }
 
-  public void setNoDueDate(boolean noDueDate) {
-    this.noDueDate = noDueDate;
-  }
+    public Date getModDate() {
+        return modDate;
+    }
 
-  public String getWebasset() {
-    return webasset;
-  }
 
-  public void setWebasset(String webasset) {
-    this.webasset = webasset;
-  }
+    public void setModDate(Date modDate) {
+        this.modDate = modDate;
+    }
 
-  @Override
-  public String toString() {
-    return ToStringBuilder.reflectionToString(this);
-  }
 
-  public ActionErrors validate(ActionMapping arg0, HttpServletRequest arg1) {
-    ActionErrors ae = new ActionErrors();
-    ae = super.validate(arg0, arg1);
-    return ae;
-  }
+    public String getStatus() {
+        return status;
+    }
+
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+
+    public String getTitle() {
+        return title;
+    }
+
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+   
+
+    public String getDueDateDay() {
+        return dueDateDay;
+    }
+
+
+    public void setDueDateDay(String dueDateDay) {
+        this.dueDateDay = dueDateDay;
+    }
+
+
+    public String getDueDateMonth() {
+        return dueDateMonth;
+    }
+
+
+    public void setDueDateMonth(String dueDateMonth) {
+        this.dueDateMonth = dueDateMonth;
+    }
+
+
+    public String getDueDateYear() {
+        return dueDateYear;
+    }
+
+
+    public void setDueDateYear(String dueDateYear) {
+        this.dueDateYear = dueDateYear;
+    }
+
+
+    public boolean isNoDueDate() {
+        return noDueDate;
+    }
+
+
+    public void setNoDueDate(boolean noDueDate) {
+        this.noDueDate = noDueDate;
+    }
+
+    
+
+    public String getWebasset() {
+        return webasset;
+    }
+
+
+    public void setWebasset(String webasset) {
+        this.webasset = webasset;
+    }
+
+
+    @Override
+    public String toString() {
+        return ToStringBuilder.reflectionToString(this);
+    }
+
+    public ActionErrors validate(ActionMapping arg0, HttpServletRequest arg1) {
+        ActionErrors ae = new ActionErrors();   
+        ae = super.validate(arg0,arg1);
+        return ae;
+    }
 }

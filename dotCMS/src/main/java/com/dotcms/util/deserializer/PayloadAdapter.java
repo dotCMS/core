@@ -1,21 +1,17 @@
 package com.dotcms.util.deserializer;
 
-import static com.dotcms.util.ReflectionUtils.getClassFor;
 
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.Visibility;
-import com.google.gson.JsonDeserializationContext;
-import com.google.gson.JsonDeserializer;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
-import com.google.gson.JsonSerializationContext;
-import com.google.gson.JsonSerializer;
+import com.google.gson.*;
+
 import java.lang.reflect.Type;
 
+import static com.dotcms.util.ReflectionUtils.getClassFor;
+
 /**
- * Json deserializer and serializer for {@link Payload} objects, the format of the json is the
- * follow:<br>
+ * Json deserializer and serializer for {@link Payload} objects, the format of the json is the follow:<br>
+ *
  * <code>
  * {
  *     type: #Payload's data fully qualified name
@@ -26,72 +22,73 @@ import java.lang.reflect.Type;
  * }
  * </code>
  */
-public class PayloadAdapter implements JsonDeserializer<Payload>, JsonSerializer<Payload> {
+public class PayloadAdapter implements JsonDeserializer<Payload>,JsonSerializer<Payload> {
 
-  public static final String TYPE = "type";
-  public static final String VISIBILITY = "visibility";
-  public static final String VISIBILITY_VALUE = "visibilityValue";
-  public static final String VISIBILITY_TYPE = "visibilityType";
-  public static final String DATA = "data";
+    public static final String TYPE = "type";
+    public static final String VISIBILITY = "visibility";
+    public static final String VISIBILITY_VALUE = "visibilityValue";
+    public static final String VISIBILITY_TYPE = "visibilityType";
+    public static final String DATA = "data";
 
-  @Override
-  public Payload deserialize(JsonElement json, Type type, JsonDeserializationContext context)
-      throws JsonParseException {
-    JsonObject jsonObject = null;
-    String payloadType = null;
-    Payload payload = null;
-    Class clazz = null;
-    Object payloadData = null;
-    Visibility visibility = null;
-    String visibilityName = null;
-    Object visibilityValue = null;
+    @Override
+    public Payload deserialize(JsonElement json, Type type, JsonDeserializationContext context) throws JsonParseException {
+        JsonObject jsonObject = null;
+        String payloadType = null;
+        Payload payload = null;
+        Class clazz = null;
+        Object payloadData = null;
+        Visibility visibility = null;
+        String visibilityName = null;
+        Object visibilityValue = null;
 
-    if (null != json) {
+        if (null != json) {
 
-      jsonObject = json.getAsJsonObject();
+            jsonObject = json.getAsJsonObject();
 
-      if (null != jsonObject && jsonObject.has(TYPE)) {
+            if (null != jsonObject && jsonObject.has(TYPE)) {
 
-        payloadType = jsonObject.getAsJsonPrimitive(TYPE).getAsString();
+                payloadType = jsonObject.getAsJsonPrimitive
+                        (TYPE).getAsString();
 
-        if (jsonObject.has(VISIBILITY)) {
-          visibilityName = jsonObject.getAsJsonPrimitive(VISIBILITY).getAsString();
+                if(jsonObject.has(VISIBILITY)) {
+                    visibilityName = jsonObject.getAsJsonPrimitive
+                            (VISIBILITY).getAsString();
+                }
+
+                if(jsonObject.has(VISIBILITY_VALUE)) {
+                    String visibilityType = jsonObject.getAsJsonPrimitive
+                            (VISIBILITY_TYPE).getAsString();
+                    visibilityValue = context.deserialize(jsonObject.get(VISIBILITY_VALUE), getClassFor(visibilityType));
+                }
+
+                if (null != visibilityName) {
+
+                    visibility =
+                            Visibility.valueOf(visibilityName);
+                }
+
+                clazz = getClassFor(payloadType);
+                payloadData = context.deserialize(jsonObject.get(DATA), clazz);
+                payload = new Payload(payloadData, visibility, visibilityValue);
+            }
         }
 
-        if (jsonObject.has(VISIBILITY_VALUE)) {
-          String visibilityType = jsonObject.getAsJsonPrimitive(VISIBILITY_TYPE).getAsString();
-          visibilityValue =
-              context.deserialize(jsonObject.get(VISIBILITY_VALUE), getClassFor(visibilityType));
-        }
-
-        if (null != visibilityName) {
-
-          visibility = Visibility.valueOf(visibilityName);
-        }
-
-        clazz = getClassFor(payloadType);
-        payloadData = context.deserialize(jsonObject.get(DATA), clazz);
-        payload = new Payload(payloadData, visibility, visibilityValue);
-      }
+        return payload;
     }
 
-    return payload;
-  }
+    @Override
+    public JsonElement serialize(Payload payload, Type type, JsonSerializationContext jsonSerializationContext) {
+        final JsonObject jsonElement = new JsonObject();
+        jsonElement.addProperty(TYPE, payload.getRawData().getClass().getName());
+        jsonElement.addProperty(VISIBILITY, payload.getVisibility().name());
+        Object visibilityValue = payload.getVisibilityValue();
 
-  @Override
-  public JsonElement serialize(
-      Payload payload, Type type, JsonSerializationContext jsonSerializationContext) {
-    final JsonObject jsonElement = new JsonObject();
-    jsonElement.addProperty(TYPE, payload.getRawData().getClass().getName());
-    jsonElement.addProperty(VISIBILITY, payload.getVisibility().name());
-    Object visibilityValue = payload.getVisibilityValue();
+        if (visibilityValue != null) {
+            jsonElement.add(VISIBILITY_VALUE,  jsonSerializationContext.serialize(visibilityValue));
+            jsonElement.addProperty(VISIBILITY_TYPE, visibilityValue.getClass().getName());
+        }
 
-    if (visibilityValue != null) {
-      jsonElement.add(VISIBILITY_VALUE, jsonSerializationContext.serialize(visibilityValue));
-      jsonElement.addProperty(VISIBILITY_TYPE, visibilityValue.getClass().getName());
+        jsonElement.add(DATA, jsonSerializationContext.serialize(payload.getRawData()));
+        return jsonElement;
     }
-
-    jsonElement.add(DATA, jsonSerializationContext.serialize(payload.getRawData()));
-    return jsonElement;
-  }
 }

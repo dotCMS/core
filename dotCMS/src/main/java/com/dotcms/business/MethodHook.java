@@ -1,10 +1,6 @@
 package com.dotcms.business;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.lang.annotation.*;
 
 /**
  * Method annotated with this annotation can set a parameter decorator to do something over the
@@ -17,17 +13,15 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 public @interface MethodHook {
 
-  /**
-   * Pre hook
-   *
-   * @return Class
-   */
-  Class<? extends PreHook> preHook() default PreHook.class;
+    /**
+     * Pre hook
+     * @return Class
+     */
+    Class<? extends PreHook>  preHook  () default PreHook.class;
 
-  /**
-   * Post hook
-   *
-   * @return
-   */
-  Class<? extends PostHook> postHook() default PostHook.class;
+    /**
+     * Post hook
+     * @return
+     */
+    Class<? extends PostHook> postHook () default PostHook.class;
 }

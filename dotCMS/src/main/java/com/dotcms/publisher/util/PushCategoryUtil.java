@@ -17,73 +17,76 @@ import java.util.Map;
 import java.util.Set;
 import org.apache.commons.io.IOUtils;
 
+
 public class PushCategoryUtil {
 
-  private XStream xstream;
+	private XStream xstream;
 
-  private Map<String, File> categoriesByInode;
-  private Set<String> categoriesTopLevel;
+	private Map<String, File> categoriesByInode;
+	private Set<String> categoriesTopLevel;
 
-  private int categoriesCount;
+	private int categoriesCount;
+	
+	public PushCategoryUtil(Collection<File> categories, String categoryExtension) throws DotPublishingException {
+		xstream=new XStream(new DomDriver());
 
-  public PushCategoryUtil(Collection<File> categories, String categoryExtension)
-      throws DotPublishingException {
-    xstream = new XStream(new DomDriver());
+		categoriesByInode = new HashMap<>();
+		categoriesTopLevel = new HashSet<>();
+		categoriesCount = 0;
 
-    categoriesByInode = new HashMap<>();
-    categoriesTopLevel = new HashSet<>();
-    categoriesCount = 0;
+		for(File categoryFile : categories){
 
-    for (File categoryFile : categories) {
+			if(categoryFile.getName().endsWith(categoryExtension))
+				categoriesCount++;
 
-      if (categoryFile.getName().endsWith(categoryExtension)) categoriesCount++;
+			if(categoryFile.isDirectory())
+				continue;
 
-      if (categoryFile.isDirectory()) continue;
+			try {
+				CategoryWrapper wrapper = getCategoryWrapperFromFile(categoryFile);
 
-      try {
-        CategoryWrapper wrapper = getCategoryWrapperFromFile(categoryFile);
+				categoriesByInode.put(wrapper.getCategory().getInode(), categoryFile);
 
-        categoriesByInode.put(wrapper.getCategory().getInode(), categoryFile);
+				if(wrapper.isTopLevel())
+					categoriesTopLevel.add(wrapper.getCategory().getInode());
 
-        if (wrapper.isTopLevel()) categoriesTopLevel.add(wrapper.getCategory().getInode());
+			} catch (IOException fnfe) {
+				throw new DotPublishingException(fnfe.getMessage(),fnfe);
+			}
+		}
+	}
+	
+	/**
+	 * Find all top level categories. Returns all the Wrapper.
+	 * 
+	 * Mar 6, 2013 - 9:53:45 AM
+	 */
+	public List<CategoryWrapper> findTopLevelWrappers() throws IOException {
+		List<CategoryWrapper> topLevels = new ArrayList<CategoryWrapper>();
+		for(String categoryInode : categoriesTopLevel){
+			File categoryFile = categoriesByInode.get(categoryInode);
+			topLevels.add( getCategoryWrapperFromFile(categoryFile) );
+		}
+		return topLevels;
+	}
 
-      } catch (IOException fnfe) {
-        throw new DotPublishingException(fnfe.getMessage(), fnfe);
-      }
-    }
-  }
-
-  /**
-   * Find all top level categories. Returns all the Wrapper.
-   *
-   * <p>Mar 6, 2013 - 9:53:45 AM
-   */
-  public List<CategoryWrapper> findTopLevelWrappers() throws IOException {
-    List<CategoryWrapper> topLevels = new ArrayList<CategoryWrapper>();
-    for (String categoryInode : categoriesTopLevel) {
-      File categoryFile = categoriesByInode.get(categoryInode);
-      topLevels.add(getCategoryWrapperFromFile(categoryFile));
-    }
-    return topLevels;
-  }
-
-  public CategoryWrapper getCategoryWrapperFromInode(final String inode) throws IOException {
-    File categoryFile = categoriesByInode.get(inode);
-    return (categoryFile != null) ? getCategoryWrapperFromFile(categoryFile) : null;
-  }
-
-  private CategoryWrapper getCategoryWrapperFromFile(final File category) throws IOException {
-    final InputStream fis = Files.newInputStream(category.toPath());
-    CategoryWrapper categoryWrapper;
-    try {
-      categoryWrapper = (CategoryWrapper) xstream.fromXML(fis);
-    } finally {
-      IOUtils.closeQuietly(fis);
-    }
-    return categoryWrapper;
-  }
-
-  public int getCategoryXMLCount() {
-    return categoriesCount;
-  }
+	public CategoryWrapper getCategoryWrapperFromInode(final String inode) throws IOException {
+		File categoryFile = categoriesByInode.get(inode);
+		return (categoryFile != null) ? getCategoryWrapperFromFile(categoryFile) : null;
+	}
+	
+	private CategoryWrapper getCategoryWrapperFromFile(final File category) throws IOException {
+		final InputStream fis = Files.newInputStream(category.toPath());
+		CategoryWrapper categoryWrapper;
+		try {
+            categoryWrapper = (CategoryWrapper) xstream.fromXML(fis);
+		} finally {
+			IOUtils.closeQuietly(fis);
+		}
+		return categoryWrapper;
+	}
+	
+	public int getCategoryXMLCount(){
+        return categoriesCount;
+	}
 }

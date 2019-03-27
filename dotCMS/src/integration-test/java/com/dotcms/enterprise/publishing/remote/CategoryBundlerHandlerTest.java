@@ -1,11 +1,6 @@
 package com.dotcms.enterprise.publishing.remote;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
@@ -41,500 +36,508 @@ import org.mockito.Mockito;
  */
 public class CategoryBundlerHandlerTest extends IntegrationTestBase {
 
-  private static User user;
+    private static User user;
 
-  @BeforeClass
-  public static void prepare() throws Exception {
+    @BeforeClass
+    public static void prepare() throws Exception {
 
-    // Setting web app environment
-    IntegrationTestInitService.getInstance().init();
-    LicenseTestUtil.getLicense();
+        //Setting web app environment
+        IntegrationTestInitService.getInstance().init();
+        LicenseTestUtil.getLicense();
 
-    user = APILocator.getUserAPI().getSystemUser();
-  }
-
-  @Test
-  public void testBundlerAndHandler_success_newCategories()
-      throws DotBundleException, DotDataException, DotSecurityException {
-
-    final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
-    final CategoryCache categoryCache = CacheLocator.getCategoryCache();
-    final String assetRealPath = Config.getStringProperty("ASSET_REAL_PATH", "test-resources");
-    final File tempDir = new File(assetRealPath + "/bundles/" + System.currentTimeMillis());
-
-    List<Category> categoriesToDelete = Lists.newArrayList();
-
-    try {
-      // Create Parent Category.
-      Category parentCategory = new Category();
-      parentCategory.setCategoryName("Category A");
-      parentCategory.setKey("categoryA");
-      parentCategory.setCategoryVelocityVarName("categoryA");
-      parentCategory.setSortOrder((String) null);
-      parentCategory.setKeywords(null);
-
-      categoryAPI.save(null, parentCategory, user, false);
-      categoriesToDelete.add(parentCategory);
-
-      // Create First Child Category.
-      Category childCategory = new Category();
-      childCategory.setCategoryName("Category B");
-      childCategory.setKey("categoryB");
-      childCategory.setCategoryVelocityVarName("categoryB");
-      childCategory.setSortOrder(1);
-      childCategory.setKeywords(null);
-
-      categoryAPI.save(parentCategory, childCategory, user, false);
-      categoriesToDelete.add(childCategory);
-
-      // Create Grand-Child Category.
-      Category grandchildCategory = new Category();
-      grandchildCategory.setCategoryName("Category C");
-      grandchildCategory.setKey("categoryC");
-      grandchildCategory.setCategoryVelocityVarName("categoryC");
-      grandchildCategory.setSortOrder(2);
-      grandchildCategory.setKeywords(null);
-
-      categoryAPI.save(childCategory, grandchildCategory, user, false);
-      categoriesToDelete.add(grandchildCategory);
-
-      // Creating categories hierarchy.
-      Set<String> categorySet = Sets.newHashSet();
-      categorySet.add(grandchildCategory.getInode());
-
-      CategoryBundler categoryBundler = new CategoryBundler();
-
-      // Mocking Push Publish configuration
-      PushPublisherConfig config = Mockito.mock(PushPublisherConfig.class);
-      Mockito.when(config.getCategories()).thenReturn(categorySet);
-      Mockito.when(config.isDownloading()).thenReturn(true);
-      Mockito.when(config.getOperation()).thenReturn(PublisherConfig.Operation.PUBLISH);
-      categoryBundler.setConfig(config);
-
-      // Creating temp bundle dir
-      if (!tempDir.exists()) {
-        tempDir.mkdirs();
-      }
-
-      // Generating bundle
-      BundlerStatus status = new BundlerStatus(CategoryBundler.class.getName());
-      categoryBundler.generate(tempDir, status);
-      assertEquals("We should have 3 categories.xml", 3, status.getCount());
-
-      // Now let's delete the categories to make sure they are installed by the Handler.
-      cleanCategories(categoriesToDelete);
-      categoryCache.clearCache();
-      assertNull(categoryAPI.find(parentCategory.getInode(), user, false));
-      assertNull(categoryAPI.find(childCategory.getInode(), user, false));
-      assertNull(categoryAPI.find(grandchildCategory.getInode(), user, false));
-
-      // Run the bundler that will create the categories again.
-      CategoryHandler categoryHandler = new CategoryHandler(config);
-      categoryHandler.handle(tempDir);
-
-      assertNotNull(categoryAPI.find(parentCategory.getInode(), user, false));
-      assertNotNull(categoryAPI.find(childCategory.getInode(), user, false));
-      assertNotNull(categoryAPI.find(grandchildCategory.getInode(), user, false));
-
-      assertEquals(1, categoryAPI.findChildren(user, parentCategory.getInode(), false, "").size());
-      assertEquals(
-          childCategory,
-          categoryAPI.findChildren(user, parentCategory.getInode(), false, "").get(0));
-
-      assertEquals(1, categoryAPI.findChildren(user, childCategory.getInode(), false, "").size());
-      assertEquals(
-          grandchildCategory,
-          categoryAPI.findChildren(user, childCategory.getInode(), false, "").get(0));
-
-      assertEquals(
-          0, categoryAPI.findChildren(user, grandchildCategory.getInode(), false, "").size());
-
-    } catch (Exception e) {
-      fail(e.getMessage());
-    } finally {
-      tempDir.delete();
-      cleanCategories(categoriesToDelete);
+        user = APILocator.getUserAPI().getSystemUser();
     }
-  }
 
-  @Test
-  public void testBundlerAndHandler_success_differentInodeSameKey()
-      throws DotBundleException, DotDataException, DotSecurityException {
+    @Test
+    public void testBundlerAndHandler_success_newCategories()
+            throws DotBundleException, DotDataException, DotSecurityException {
 
-    final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
-    final CategoryCache categoryCache = CacheLocator.getCategoryCache();
-    final String assetRealPath = Config.getStringProperty("ASSET_REAL_PATH", "test-resources");
-    final File tempDir = new File(assetRealPath + "/bundles/" + System.currentTimeMillis());
+        final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
+        final CategoryCache categoryCache = CacheLocator.getCategoryCache();
+        final String assetRealPath = Config.getStringProperty("ASSET_REAL_PATH", "test-resources");
+        final File tempDir = new File(assetRealPath + "/bundles/" + System.currentTimeMillis());
 
-    List<Category> categoriesToDelete = Lists.newArrayList();
+        List<Category> categoriesToDelete = Lists.newArrayList();
 
-    try {
-      // Create Parent Category.
-      Category parentCategory = new Category();
-      parentCategory.setCategoryName("Category A");
-      parentCategory.setKey("categoryA");
-      parentCategory.setCategoryVelocityVarName("categoryA");
-      parentCategory.setSortOrder((String) null);
-      parentCategory.setKeywords(null);
+        try {
+            //Create Parent Category.
+            Category parentCategory = new Category();
+            parentCategory.setCategoryName("Category A");
+            parentCategory.setKey("categoryA");
+            parentCategory.setCategoryVelocityVarName("categoryA");
+            parentCategory.setSortOrder((String) null);
+            parentCategory.setKeywords(null);
 
-      categoryAPI.save(null, parentCategory, user, false);
-      categoriesToDelete.add(parentCategory);
+            categoryAPI.save(null, parentCategory, user, false);
+            categoriesToDelete.add(parentCategory);
 
-      // Create First Child Category.
-      Category childCategory = new Category();
-      childCategory.setCategoryName("Category B");
-      childCategory.setKey("categoryB");
-      childCategory.setCategoryVelocityVarName("categoryB");
-      childCategory.setSortOrder(1);
-      childCategory.setKeywords(null);
+            //Create First Child Category.
+            Category childCategory = new Category();
+            childCategory.setCategoryName("Category B");
+            childCategory.setKey("categoryB");
+            childCategory.setCategoryVelocityVarName("categoryB");
+            childCategory.setSortOrder(1);
+            childCategory.setKeywords(null);
 
-      categoryAPI.save(parentCategory, childCategory, user, false);
-      categoriesToDelete.add(childCategory);
+            categoryAPI.save(parentCategory, childCategory, user, false);
+            categoriesToDelete.add(childCategory);
 
-      // Creating categories hierarchy.
-      Set<String> categorySet = Sets.newHashSet();
-      categorySet.add(childCategory.getInode());
+            //Create Grand-Child Category.
+            Category grandchildCategory = new Category();
+            grandchildCategory.setCategoryName("Category C");
+            grandchildCategory.setKey("categoryC");
+            grandchildCategory.setCategoryVelocityVarName("categoryC");
+            grandchildCategory.setSortOrder(2);
+            grandchildCategory.setKeywords(null);
 
-      CategoryBundler categoryBundler = new CategoryBundler();
+            categoryAPI.save(childCategory, grandchildCategory, user, false);
+            categoriesToDelete.add(grandchildCategory);
 
-      // Mocking Push Publish configuration
-      PushPublisherConfig config = Mockito.mock(PushPublisherConfig.class);
-      Mockito.when(config.getCategories()).thenReturn(categorySet);
-      Mockito.when(config.isDownloading()).thenReturn(true);
-      Mockito.when(config.getOperation()).thenReturn(PublisherConfig.Operation.PUBLISH);
-      categoryBundler.setConfig(config);
+            //Creating categories hierarchy.
+            Set<String> categorySet = Sets.newHashSet();
+            categorySet.add(grandchildCategory.getInode());
 
-      // Creating temp bundle dir
-      if (!tempDir.exists()) {
-        tempDir.mkdirs();
-      }
+            CategoryBundler categoryBundler = new CategoryBundler();
 
-      // Generating bundle
-      BundlerStatus status = new BundlerStatus(CategoryBundler.class.getName());
-      categoryBundler.generate(tempDir, status);
-      assertEquals("We should have 2 categories.xml", 2, status.getCount());
+            //Mocking Push Publish configuration
+            PushPublisherConfig config = Mockito.mock(PushPublisherConfig.class);
+            Mockito.when(config.getCategories()).thenReturn(categorySet);
+            Mockito.when(config.isDownloading()).thenReturn(true);
+            Mockito.when(config.getOperation()).thenReturn(PublisherConfig.Operation.PUBLISH);
+            categoryBundler.setConfig(config);
 
-      // Now let's delete the categories to make sure they are installed by the Handler.
-      cleanCategories(categoriesToDelete);
-      categoriesToDelete.clear();
-      categoryCache.clearCache();
-      assertNull(categoryAPI.find(parentCategory.getInode(), user, false));
-      assertNull(categoryAPI.find(childCategory.getInode(), user, false));
+            //Creating temp bundle dir
+            if (!tempDir.exists()) {
+                tempDir.mkdirs();
+            }
 
-      // But recreate same categories so the key match with different inodes.
-      // Create Receiver Parent Category.
-      Category parentCategoryReceiver = new Category();
-      parentCategoryReceiver.setCategoryName("Category A");
-      parentCategoryReceiver.setKey("categoryA");
-      parentCategoryReceiver.setCategoryVelocityVarName("categoryA");
-      parentCategoryReceiver.setSortOrder((String) null);
-      parentCategoryReceiver.setKeywords(null);
+            //Generating bundle
+            BundlerStatus status = new BundlerStatus(CategoryBundler.class.getName());
+            categoryBundler.generate(tempDir, status);
+            assertEquals("We should have 3 categories.xml", 3, status.getCount());
 
-      categoryAPI.save(null, parentCategoryReceiver, user, false);
-      categoriesToDelete.add(parentCategoryReceiver);
+            // Now let's delete the categories to make sure they are installed by the Handler.
+            cleanCategories(categoriesToDelete);
+            categoryCache.clearCache();
+            assertNull(categoryAPI.find(parentCategory.getInode(), user, false));
+            assertNull(categoryAPI.find(childCategory.getInode(), user, false));
+            assertNull(categoryAPI.find(grandchildCategory.getInode(), user, false));
 
-      // Create Receiver Child Category.
-      Category childCategoryReceiver = new Category();
-      childCategoryReceiver.setCategoryName("Category B");
-      childCategoryReceiver.setKey("categoryB");
-      childCategoryReceiver.setCategoryVelocityVarName("categoryB");
-      childCategoryReceiver.setSortOrder(1);
-      childCategoryReceiver.setKeywords(null);
+            // Run the bundler that will create the categories again.
+            CategoryHandler categoryHandler = new CategoryHandler(config);
+            categoryHandler.handle(tempDir);
 
-      categoryAPI.save(parentCategoryReceiver, childCategoryReceiver, user, false);
-      categoriesToDelete.add(childCategoryReceiver);
+            assertNotNull(categoryAPI.find(parentCategory.getInode(), user, false));
+            assertNotNull(categoryAPI.find(childCategory.getInode(), user, false));
+            assertNotNull(categoryAPI.find(grandchildCategory.getInode(), user, false));
 
-      // Run the bundler that will create the categories again.
-      CategoryHandler categoryHandler = new CategoryHandler(config);
-      categoryHandler.handle(tempDir);
+            assertEquals(1,
+                    categoryAPI.findChildren(user, parentCategory.getInode(), false, "").size());
+            assertEquals(childCategory,
+                    categoryAPI.findChildren(user, parentCategory.getInode(), false, "").get(0));
 
-      assertNull(categoryAPI.find(parentCategory.getInode(), user, false));
-      assertNull(categoryAPI.find(childCategory.getInode(), user, false));
-      assertNotNull(categoryAPI.find(parentCategoryReceiver.getInode(), user, false));
-      assertNotNull(categoryAPI.find(childCategoryReceiver.getInode(), user, false));
+            assertEquals(1,
+                    categoryAPI.findChildren(user, childCategory.getInode(), false, "").size());
+            assertEquals(grandchildCategory,
+                    categoryAPI.findChildren(user, childCategory.getInode(), false, "").get(0));
 
-      assertEquals(
-          1, categoryAPI.findChildren(user, parentCategoryReceiver.getInode(), false, "").size());
-      assertEquals(
-          childCategoryReceiver,
-          categoryAPI.findChildren(user, parentCategoryReceiver.getInode(), false, "").get(0));
+            assertEquals(0, categoryAPI.findChildren(user, grandchildCategory.getInode(), false, "")
+                    .size());
 
-      assertEquals(
-          0, categoryAPI.findChildren(user, childCategoryReceiver.getInode(), false, "").size());
-
-      // The inodes should be different but the key should be the same.
-      assertNotEquals(parentCategory.getInode(), parentCategoryReceiver.getInode());
-      assertNotEquals(childCategory.getInode(), childCategoryReceiver.getInode());
-      assertEquals(parentCategory.getKey(), parentCategoryReceiver.getKey());
-      assertEquals(childCategory.getKey(), childCategoryReceiver.getKey());
-
-    } catch (Exception e) {
-      fail(e.getMessage());
-    } finally {
-      tempDir.delete();
-      cleanCategories(categoriesToDelete);
+        } catch (Exception e) {
+            fail(e.getMessage());
+        } finally {
+            tempDir.delete();
+            cleanCategories(categoriesToDelete);
+        }
     }
-  }
 
-  @Test
-  public void testBundlerAndHandler_success_sameInodeSameKey()
-      throws DotBundleException, DotDataException, DotSecurityException {
+    @Test
+    public void testBundlerAndHandler_success_differentInodeSameKey()
+            throws DotBundleException, DotDataException, DotSecurityException {
 
-    final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
-    final CategoryCache categoryCache = CacheLocator.getCategoryCache();
-    final String assetRealPath = Config.getStringProperty("ASSET_REAL_PATH", "test-resources");
-    final File tempDir = new File(assetRealPath + "/bundles/" + System.currentTimeMillis());
+        final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
+        final CategoryCache categoryCache = CacheLocator.getCategoryCache();
+        final String assetRealPath = Config.getStringProperty("ASSET_REAL_PATH", "test-resources");
+        final File tempDir = new File(assetRealPath + "/bundles/" + System.currentTimeMillis());
 
-    List<Category> categoriesToDelete = Lists.newArrayList();
+        List<Category> categoriesToDelete = Lists.newArrayList();
 
-    try {
-      // Create Parent Category.
-      Category parentCategory = new Category();
-      parentCategory.setCategoryName("Category A");
-      parentCategory.setKey("categoryA");
-      parentCategory.setCategoryVelocityVarName("categoryA");
-      parentCategory.setSortOrder((String) null);
-      parentCategory.setKeywords(null);
+        try {
+            //Create Parent Category.
+            Category parentCategory = new Category();
+            parentCategory.setCategoryName("Category A");
+            parentCategory.setKey("categoryA");
+            parentCategory.setCategoryVelocityVarName("categoryA");
+            parentCategory.setSortOrder((String) null);
+            parentCategory.setKeywords(null);
 
-      categoryAPI.save(null, parentCategory, user, false);
-      categoriesToDelete.add(parentCategory);
+            categoryAPI.save(null, parentCategory, user, false);
+            categoriesToDelete.add(parentCategory);
 
-      // Create First Child Category.
-      Category childCategory = new Category();
-      childCategory.setCategoryName("Category B");
-      childCategory.setKey("categoryB");
-      childCategory.setCategoryVelocityVarName("categoryB");
-      childCategory.setSortOrder(1);
-      childCategory.setKeywords(null);
+            //Create First Child Category.
+            Category childCategory = new Category();
+            childCategory.setCategoryName("Category B");
+            childCategory.setKey("categoryB");
+            childCategory.setCategoryVelocityVarName("categoryB");
+            childCategory.setSortOrder(1);
+            childCategory.setKeywords(null);
 
-      categoryAPI.save(parentCategory, childCategory, user, false);
-      categoriesToDelete.add(childCategory);
+            categoryAPI.save(parentCategory, childCategory, user, false);
+            categoriesToDelete.add(childCategory);
 
-      // Creating categories hierarchy.
-      Set<String> categorySet = Sets.newHashSet();
-      categorySet.add(childCategory.getInode());
+            //Creating categories hierarchy.
+            Set<String> categorySet = Sets.newHashSet();
+            categorySet.add(childCategory.getInode());
 
-      CategoryBundler categoryBundler = new CategoryBundler();
+            CategoryBundler categoryBundler = new CategoryBundler();
 
-      // Mocking Push Publish configuration
-      PushPublisherConfig config = Mockito.mock(PushPublisherConfig.class);
-      Mockito.when(config.getCategories()).thenReturn(categorySet);
-      Mockito.when(config.isDownloading()).thenReturn(true);
-      Mockito.when(config.getOperation()).thenReturn(PublisherConfig.Operation.PUBLISH);
-      categoryBundler.setConfig(config);
+            //Mocking Push Publish configuration
+            PushPublisherConfig config = Mockito.mock(PushPublisherConfig.class);
+            Mockito.when(config.getCategories()).thenReturn(categorySet);
+            Mockito.when(config.isDownloading()).thenReturn(true);
+            Mockito.when(config.getOperation()).thenReturn(PublisherConfig.Operation.PUBLISH);
+            categoryBundler.setConfig(config);
 
-      // Creating temp bundle dir
-      if (!tempDir.exists()) {
-        tempDir.mkdirs();
-      }
+            //Creating temp bundle dir
+            if (!tempDir.exists()) {
+                tempDir.mkdirs();
+            }
 
-      // Generating bundle
-      BundlerStatus status = new BundlerStatus(CategoryBundler.class.getName());
-      categoryBundler.generate(tempDir, status);
-      assertEquals("We should have 2 categories.xml", 2, status.getCount());
+            //Generating bundle
+            BundlerStatus status = new BundlerStatus(CategoryBundler.class.getName());
+            categoryBundler.generate(tempDir, status);
+            assertEquals("We should have 2 categories.xml", 2, status.getCount());
 
-      // We don't want to delete the categories, just clear cache.
-      categoryCache.clearCache();
+            // Now let's delete the categories to make sure they are installed by the Handler.
+            cleanCategories(categoriesToDelete);
+            categoriesToDelete.clear();
+            categoryCache.clearCache();
+            assertNull(categoryAPI.find(parentCategory.getInode(), user, false));
+            assertNull(categoryAPI.find(childCategory.getInode(), user, false));
 
-      // Run the bundler that will create the categories again.
-      CategoryHandler categoryHandler = new CategoryHandler(config);
-      categoryHandler.handle(tempDir);
+            // But recreate same categories so the key match with different inodes.
+            //Create Receiver Parent Category.
+            Category parentCategoryReceiver = new Category();
+            parentCategoryReceiver.setCategoryName("Category A");
+            parentCategoryReceiver.setKey("categoryA");
+            parentCategoryReceiver.setCategoryVelocityVarName("categoryA");
+            parentCategoryReceiver.setSortOrder((String) null);
+            parentCategoryReceiver.setKeywords(null);
 
-      assertNotNull(categoryAPI.find(parentCategory.getInode(), user, false));
-      assertNotNull(categoryAPI.find(parentCategory.getInode(), user, false));
+            categoryAPI.save(null, parentCategoryReceiver, user, false);
+            categoriesToDelete.add(parentCategoryReceiver);
 
-      assertEquals(1, categoryAPI.findChildren(user, parentCategory.getInode(), false, "").size());
-      assertEquals(
-          childCategory,
-          categoryAPI.findChildren(user, parentCategory.getInode(), false, "").get(0));
+            //Create Receiver Child Category.
+            Category childCategoryReceiver = new Category();
+            childCategoryReceiver.setCategoryName("Category B");
+            childCategoryReceiver.setKey("categoryB");
+            childCategoryReceiver.setCategoryVelocityVarName("categoryB");
+            childCategoryReceiver.setSortOrder(1);
+            childCategoryReceiver.setKeywords(null);
 
-      assertEquals(0, categoryAPI.findChildren(user, childCategory.getInode(), false, "").size());
+            categoryAPI.save(parentCategoryReceiver, childCategoryReceiver, user, false);
+            categoriesToDelete.add(childCategoryReceiver);
 
-    } catch (Exception e) {
-      fail(e.getMessage());
-    } finally {
-      tempDir.delete();
-      cleanCategories(categoriesToDelete);
+            // Run the bundler that will create the categories again.
+            CategoryHandler categoryHandler = new CategoryHandler(config);
+            categoryHandler.handle(tempDir);
+
+            assertNull(categoryAPI.find(parentCategory.getInode(), user, false));
+            assertNull(categoryAPI.find(childCategory.getInode(), user, false));
+            assertNotNull(categoryAPI.find(parentCategoryReceiver.getInode(), user, false));
+            assertNotNull(categoryAPI.find(childCategoryReceiver.getInode(), user, false));
+
+            assertEquals(1,
+                    categoryAPI.findChildren(user, parentCategoryReceiver.getInode(), false, "")
+                            .size());
+            assertEquals(childCategoryReceiver,
+                    categoryAPI.findChildren(user, parentCategoryReceiver.getInode(), false, "")
+                            .get(0));
+
+            assertEquals(0,
+                    categoryAPI.findChildren(user, childCategoryReceiver.getInode(), false, "")
+                            .size());
+
+            // The inodes should be different but the key should be the same.
+            assertNotEquals(parentCategory.getInode(), parentCategoryReceiver.getInode());
+            assertNotEquals(childCategory.getInode(), childCategoryReceiver.getInode());
+            assertEquals(parentCategory.getKey(), parentCategoryReceiver.getKey());
+            assertEquals(childCategory.getKey(), childCategoryReceiver.getKey());
+
+        } catch (Exception e) {
+            fail(e.getMessage());
+        } finally {
+            tempDir.delete();
+            cleanCategories(categoriesToDelete);
+        }
     }
-  }
 
-  @Test
-  public void testBundlerAndHandler_success_sameInodeBlankKey()
-      throws DotBundleException, DotDataException, DotSecurityException {
+    @Test
+    public void testBundlerAndHandler_success_sameInodeSameKey()
+            throws DotBundleException, DotDataException, DotSecurityException {
 
-    final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
-    final CategoryCache categoryCache = CacheLocator.getCategoryCache();
-    final String assetRealPath = Config.getStringProperty("ASSET_REAL_PATH", "test-resources");
-    final File tempDir = new File(assetRealPath + "/bundles/" + System.currentTimeMillis());
+        final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
+        final CategoryCache categoryCache = CacheLocator.getCategoryCache();
+        final String assetRealPath = Config.getStringProperty("ASSET_REAL_PATH", "test-resources");
+        final File tempDir = new File(assetRealPath + "/bundles/" + System.currentTimeMillis());
 
-    List<Category> categoriesToDelete = Lists.newArrayList();
+        List<Category> categoriesToDelete = Lists.newArrayList();
 
-    try {
-      // Create Parent Category.
-      Category parentCategory = new Category();
-      parentCategory.setCategoryName("Category A");
-      parentCategory.setKey(null);
-      parentCategory.setCategoryVelocityVarName("categoryA");
-      parentCategory.setSortOrder((String) null);
-      parentCategory.setKeywords(null);
+        try {
+            //Create Parent Category.
+            Category parentCategory = new Category();
+            parentCategory.setCategoryName("Category A");
+            parentCategory.setKey("categoryA");
+            parentCategory.setCategoryVelocityVarName("categoryA");
+            parentCategory.setSortOrder((String) null);
+            parentCategory.setKeywords(null);
 
-      // We need to use saveRemote so we don't run into unique-key validation.
-      categoryAPI.saveRemote(null, parentCategory, user, false);
-      categoriesToDelete.add(parentCategory);
+            categoryAPI.save(null, parentCategory, user, false);
+            categoriesToDelete.add(parentCategory);
 
-      // Create First Child Category.
-      Category childCategory = new Category();
-      childCategory.setCategoryName("Category B");
-      childCategory.setKey("categoryB");
-      childCategory.setCategoryVelocityVarName("categoryB");
-      childCategory.setSortOrder(1);
-      childCategory.setKeywords(null);
+            //Create First Child Category.
+            Category childCategory = new Category();
+            childCategory.setCategoryName("Category B");
+            childCategory.setKey("categoryB");
+            childCategory.setCategoryVelocityVarName("categoryB");
+            childCategory.setSortOrder(1);
+            childCategory.setKeywords(null);
 
-      categoryAPI.save(parentCategory, childCategory, user, false);
-      categoriesToDelete.add(childCategory);
+            categoryAPI.save(parentCategory, childCategory, user, false);
+            categoriesToDelete.add(childCategory);
 
-      // Creating categories hierarchy.
-      Set<String> categorySet = Sets.newHashSet();
-      categorySet.add(childCategory.getInode());
+            //Creating categories hierarchy.
+            Set<String> categorySet = Sets.newHashSet();
+            categorySet.add(childCategory.getInode());
 
-      CategoryBundler categoryBundler = new CategoryBundler();
+            CategoryBundler categoryBundler = new CategoryBundler();
 
-      // Mocking Push Publish configuration
-      PushPublisherConfig config = Mockito.mock(PushPublisherConfig.class);
-      Mockito.when(config.getCategories()).thenReturn(categorySet);
-      Mockito.when(config.isDownloading()).thenReturn(true);
-      Mockito.when(config.getOperation()).thenReturn(PublisherConfig.Operation.PUBLISH);
-      categoryBundler.setConfig(config);
+            //Mocking Push Publish configuration
+            PushPublisherConfig config = Mockito.mock(PushPublisherConfig.class);
+            Mockito.when(config.getCategories()).thenReturn(categorySet);
+            Mockito.when(config.isDownloading()).thenReturn(true);
+            Mockito.when(config.getOperation()).thenReturn(PublisherConfig.Operation.PUBLISH);
+            categoryBundler.setConfig(config);
 
-      // Creating temp bundle dir
-      if (!tempDir.exists()) {
-        tempDir.mkdirs();
-      }
+            //Creating temp bundle dir
+            if (!tempDir.exists()) {
+                tempDir.mkdirs();
+            }
 
-      // Generating bundle
-      BundlerStatus status = new BundlerStatus(CategoryBundler.class.getName());
-      categoryBundler.generate(tempDir, status);
-      assertEquals("We should have 2 categories.xml", 2, status.getCount());
+            //Generating bundle
+            BundlerStatus status = new BundlerStatus(CategoryBundler.class.getName());
+            categoryBundler.generate(tempDir, status);
+            assertEquals("We should have 2 categories.xml", 2, status.getCount());
 
-      // We don't want to delete the categories.
-      parentCategory.setKey("now-with-key");
-      categoryAPI.save(null, parentCategory, user, false);
+            // We don't want to delete the categories, just clear cache.
+            categoryCache.clearCache();
 
-      categoryCache.clearCache();
+            // Run the bundler that will create the categories again.
+            CategoryHandler categoryHandler = new CategoryHandler(config);
+            categoryHandler.handle(tempDir);
 
-      // Run the bundler that will create the categories again.
-      CategoryHandler categoryHandler = new CategoryHandler(config);
-      categoryHandler.handle(tempDir);
+            assertNotNull(categoryAPI.find(parentCategory.getInode(), user, false));
+            assertNotNull(categoryAPI.find(parentCategory.getInode(), user, false));
 
-      assertNotNull(categoryAPI.find(parentCategory.getInode(), user, false));
-      assertNotNull(categoryAPI.find(parentCategory.getInode(), user, false));
+            assertEquals(1,
+                    categoryAPI.findChildren(user, parentCategory.getInode(), false, "").size());
+            assertEquals(childCategory,
+                    categoryAPI.findChildren(user, parentCategory.getInode(), false, "").get(0));
 
-      assertEquals(1, categoryAPI.findChildren(user, parentCategory.getInode(), false, "").size());
-      assertEquals(
-          childCategory,
-          categoryAPI.findChildren(user, parentCategory.getInode(), false, "").get(0));
+            assertEquals(0,
+                    categoryAPI.findChildren(user, childCategory.getInode(), false, "").size());
 
-      assertEquals(0, categoryAPI.findChildren(user, childCategory.getInode(), false, "").size());
-
-      assertTrue(
-          !UtilMethods.isSet(categoryAPI.find(parentCategory.getInode(), user, false).getKey()));
-
-    } catch (Exception e) {
-      fail(e.getMessage());
-    } finally {
-      tempDir.delete();
-      cleanCategories(categoriesToDelete);
+        } catch (Exception e) {
+            fail(e.getMessage());
+        } finally {
+            tempDir.delete();
+            cleanCategories(categoriesToDelete);
+        }
     }
-  }
 
-  @Test
-  public void testBundlerAndHandler_success_sameInodeDifferentKey()
-      throws DotBundleException, DotDataException, DotSecurityException {
+    @Test
+    public void testBundlerAndHandler_success_sameInodeBlankKey()
+            throws DotBundleException, DotDataException, DotSecurityException {
 
-    final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
-    final CategoryCache categoryCache = CacheLocator.getCategoryCache();
-    final String assetRealPath = Config.getStringProperty("ASSET_REAL_PATH", "test-resources");
-    final File tempDir = new File(assetRealPath + "/bundles/" + System.currentTimeMillis());
+        final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
+        final CategoryCache categoryCache = CacheLocator.getCategoryCache();
+        final String assetRealPath = Config.getStringProperty("ASSET_REAL_PATH", "test-resources");
+        final File tempDir = new File(assetRealPath + "/bundles/" + System.currentTimeMillis());
 
-    List<Category> categoriesToDelete = Lists.newArrayList();
+        List<Category> categoriesToDelete = Lists.newArrayList();
 
-    try {
-      final String NEW_KEY = "new-key";
-      final String OLD_KEY = "old-key";
+        try {
+            //Create Parent Category.
+            Category parentCategory = new Category();
+            parentCategory.setCategoryName("Category A");
+            parentCategory.setKey(null);
+            parentCategory.setCategoryVelocityVarName("categoryA");
+            parentCategory.setSortOrder((String) null);
+            parentCategory.setKeywords(null);
 
-      // Create Parent Category.
-      Category parentCategory = new Category();
-      parentCategory.setCategoryName("Category A");
-      parentCategory.setKey(NEW_KEY);
-      parentCategory.setCategoryVelocityVarName("categoryA");
-      parentCategory.setSortOrder((String) null);
-      parentCategory.setKeywords(null);
+            // We need to use saveRemote so we don't run into unique-key validation.
+            categoryAPI.saveRemote(null, parentCategory, user, false);
+            categoriesToDelete.add(parentCategory);
 
-      categoryAPI.save(null, parentCategory, user, false);
-      categoriesToDelete.add(parentCategory);
+            //Create First Child Category.
+            Category childCategory = new Category();
+            childCategory.setCategoryName("Category B");
+            childCategory.setKey("categoryB");
+            childCategory.setCategoryVelocityVarName("categoryB");
+            childCategory.setSortOrder(1);
+            childCategory.setKeywords(null);
 
-      // Create First Child Category.
-      Category childCategory = new Category();
-      childCategory.setCategoryName("Category B");
-      childCategory.setKey("categoryB");
-      childCategory.setCategoryVelocityVarName("categoryB");
-      childCategory.setSortOrder(1);
-      childCategory.setKeywords(null);
+            categoryAPI.save(parentCategory, childCategory, user, false);
+            categoriesToDelete.add(childCategory);
 
-      categoryAPI.save(parentCategory, childCategory, user, false);
-      categoriesToDelete.add(childCategory);
+            //Creating categories hierarchy.
+            Set<String> categorySet = Sets.newHashSet();
+            categorySet.add(childCategory.getInode());
 
-      // Creating categories hierarchy.
-      Set<String> categorySet = Sets.newHashSet();
-      categorySet.add(childCategory.getInode());
+            CategoryBundler categoryBundler = new CategoryBundler();
 
-      CategoryBundler categoryBundler = new CategoryBundler();
+            //Mocking Push Publish configuration
+            PushPublisherConfig config = Mockito.mock(PushPublisherConfig.class);
+            Mockito.when(config.getCategories()).thenReturn(categorySet);
+            Mockito.when(config.isDownloading()).thenReturn(true);
+            Mockito.when(config.getOperation()).thenReturn(PublisherConfig.Operation.PUBLISH);
+            categoryBundler.setConfig(config);
 
-      // Mocking Push Publish configuration
-      PushPublisherConfig config = Mockito.mock(PushPublisherConfig.class);
-      Mockito.when(config.getCategories()).thenReturn(categorySet);
-      Mockito.when(config.isDownloading()).thenReturn(true);
-      Mockito.when(config.getOperation()).thenReturn(PublisherConfig.Operation.PUBLISH);
-      categoryBundler.setConfig(config);
+            //Creating temp bundle dir
+            if (!tempDir.exists()) {
+                tempDir.mkdirs();
+            }
 
-      // Creating temp bundle dir
-      if (!tempDir.exists()) {
-        tempDir.mkdirs();
-      }
+            //Generating bundle
+            BundlerStatus status = new BundlerStatus(CategoryBundler.class.getName());
+            categoryBundler.generate(tempDir, status);
+            assertEquals("We should have 2 categories.xml", 2, status.getCount());
 
-      // Generating bundle
-      BundlerStatus status = new BundlerStatus(CategoryBundler.class.getName());
-      categoryBundler.generate(tempDir, status);
-      assertEquals("We should have 2 categories.xml", 2, status.getCount());
+            // We don't want to delete the categories.
+            parentCategory.setKey("now-with-key");
+            categoryAPI.save(null, parentCategory, user, false);
 
-      // We don't want to delete the categories.
-      parentCategory.setKey(OLD_KEY);
-      categoryAPI.save(null, parentCategory, user, false);
-      assertEquals(OLD_KEY, categoryAPI.find(parentCategory.getInode(), user, false).getKey());
+            categoryCache.clearCache();
 
-      categoryCache.clearCache();
+            // Run the bundler that will create the categories again.
+            CategoryHandler categoryHandler = new CategoryHandler(config);
+            categoryHandler.handle(tempDir);
 
-      // Run the bundler that will create the categories again.
-      CategoryHandler categoryHandler = new CategoryHandler(config);
-      categoryHandler.handle(tempDir);
+            assertNotNull(categoryAPI.find(parentCategory.getInode(), user, false));
+            assertNotNull(categoryAPI.find(parentCategory.getInode(), user, false));
 
-      assertNotNull(categoryAPI.find(parentCategory.getInode(), user, false));
-      assertNotNull(categoryAPI.find(parentCategory.getInode(), user, false));
+            assertEquals(1,
+                    categoryAPI.findChildren(user, parentCategory.getInode(), false, "").size());
+            assertEquals(childCategory,
+                    categoryAPI.findChildren(user, parentCategory.getInode(), false, "").get(0));
 
-      assertEquals(1, categoryAPI.findChildren(user, parentCategory.getInode(), false, "").size());
-      assertEquals(
-          childCategory,
-          categoryAPI.findChildren(user, parentCategory.getInode(), false, "").get(0));
+            assertEquals(0,
+                    categoryAPI.findChildren(user, childCategory.getInode(), false, "").size());
 
-      assertEquals(0, categoryAPI.findChildren(user, childCategory.getInode(), false, "").size());
+            assertTrue(!UtilMethods
+                    .isSet(categoryAPI.find(parentCategory.getInode(), user, false).getKey()));
 
-      assertEquals(NEW_KEY, categoryAPI.find(parentCategory.getInode(), user, false).getKey());
-
-    } catch (Exception e) {
-      fail(e.getMessage());
-    } finally {
-      tempDir.delete();
-      cleanCategories(categoriesToDelete);
+        } catch (Exception e) {
+            fail(e.getMessage());
+        } finally {
+            tempDir.delete();
+            cleanCategories(categoriesToDelete);
+        }
     }
-  }
+
+    @Test
+    public void testBundlerAndHandler_success_sameInodeDifferentKey()
+            throws DotBundleException, DotDataException, DotSecurityException {
+
+        final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
+        final CategoryCache categoryCache = CacheLocator.getCategoryCache();
+        final String assetRealPath = Config.getStringProperty("ASSET_REAL_PATH", "test-resources");
+        final File tempDir = new File(assetRealPath + "/bundles/" + System.currentTimeMillis());
+
+        List<Category> categoriesToDelete = Lists.newArrayList();
+
+        try {
+            final String NEW_KEY = "new-key";
+            final String OLD_KEY = "old-key";
+
+            //Create Parent Category.
+            Category parentCategory = new Category();
+            parentCategory.setCategoryName("Category A");
+            parentCategory.setKey(NEW_KEY);
+            parentCategory.setCategoryVelocityVarName("categoryA");
+            parentCategory.setSortOrder((String) null);
+            parentCategory.setKeywords(null);
+
+            categoryAPI.save(null, parentCategory, user, false);
+            categoriesToDelete.add(parentCategory);
+
+            //Create First Child Category.
+            Category childCategory = new Category();
+            childCategory.setCategoryName("Category B");
+            childCategory.setKey("categoryB");
+            childCategory.setCategoryVelocityVarName("categoryB");
+            childCategory.setSortOrder(1);
+            childCategory.setKeywords(null);
+
+            categoryAPI.save(parentCategory, childCategory, user, false);
+            categoriesToDelete.add(childCategory);
+
+            //Creating categories hierarchy.
+            Set<String> categorySet = Sets.newHashSet();
+            categorySet.add(childCategory.getInode());
+
+            CategoryBundler categoryBundler = new CategoryBundler();
+
+            //Mocking Push Publish configuration
+            PushPublisherConfig config = Mockito.mock(PushPublisherConfig.class);
+            Mockito.when(config.getCategories()).thenReturn(categorySet);
+            Mockito.when(config.isDownloading()).thenReturn(true);
+            Mockito.when(config.getOperation()).thenReturn(PublisherConfig.Operation.PUBLISH);
+            categoryBundler.setConfig(config);
+
+            //Creating temp bundle dir
+            if (!tempDir.exists()) {
+                tempDir.mkdirs();
+            }
+
+            //Generating bundle
+            BundlerStatus status = new BundlerStatus(CategoryBundler.class.getName());
+            categoryBundler.generate(tempDir, status);
+            assertEquals("We should have 2 categories.xml", 2, status.getCount());
+
+            // We don't want to delete the categories.
+            parentCategory.setKey(OLD_KEY);
+            categoryAPI.save(null, parentCategory, user, false);
+            assertEquals(OLD_KEY,
+                    categoryAPI.find(parentCategory.getInode(), user, false).getKey());
+
+            categoryCache.clearCache();
+
+            // Run the bundler that will create the categories again.
+            CategoryHandler categoryHandler = new CategoryHandler(config);
+            categoryHandler.handle(tempDir);
+
+            assertNotNull(categoryAPI.find(parentCategory.getInode(), user, false));
+            assertNotNull(categoryAPI.find(parentCategory.getInode(), user, false));
+
+            assertEquals(1,
+                    categoryAPI.findChildren(user, parentCategory.getInode(), false, "").size());
+            assertEquals(childCategory,
+                    categoryAPI.findChildren(user, parentCategory.getInode(), false, "").get(0));
+
+            assertEquals(0,
+                    categoryAPI.findChildren(user, childCategory.getInode(), false, "").size());
+
+            assertEquals(NEW_KEY,
+                    categoryAPI.find(parentCategory.getInode(), user, false).getKey());
+
+        } catch (Exception e) {
+            fail(e.getMessage());
+        } finally {
+            tempDir.delete();
+            cleanCategories(categoriesToDelete);
+        }
+    }
+
 }

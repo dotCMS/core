@@ -9,7 +9,7 @@ import java.util.List;
  */
 public interface RelationshipTransformer extends DBTransformer<Relationship> {
 
-  List<Relationship> asList();
+	List<Relationship> asList();
 
-  Relationship from();
+	Relationship from();
 }

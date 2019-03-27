@@ -28,46 +28,50 @@ import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import java.io.IOException;
-import java.util.Optional;
-import java.util.StringTokenizer;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.Optional;
+import java.util.StringTokenizer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 
 /**
- * Resolves a shorty or long id, image or assets. if the path has an jpeg or jpegp would be taken as
- * a image and can resize
+ * Resolves a shorty or long id, image or assets.
+ * if the path has an jpeg or jpegp would be taken as a image and can resize
  */
 public class ShortyServlet extends HttpServlet {
 
   private static final long serialVersionUID = 1L;
 
-  private final HostWebAPI hostWebAPI = WebAPILocator.getHostWebAPI();
+  private final HostWebAPI     hostWebAPI     = WebAPILocator.getHostWebAPI();
   private final VersionableAPI versionableAPI = APILocator.getVersionableAPI();
-  private final ShortyIdAPI shortyIdAPI = APILocator.getShortyAPI();
+  private final ShortyIdAPI    shortyIdAPI    = APILocator.getShortyAPI();
 
-  private static final String JPEG = "jpeg";
-  private static final String JPEGP = "jpegp";
-  private static final String FILE_ASSET_DEFAULT = FileAssetAPI.BINARY_FIELD;
-  public static final String SHORTY_SERVLET_FORWARD_PATH = "shorty.servlet.forward.path";
-  private static final Pattern widthPattern = Pattern.compile("/\\d+[w]");
-  private static final Pattern heightPattern = Pattern.compile("/\\d+[h]");
+
+  private static final String  JPEG                        = "jpeg";
+  private static final String  JPEGP                       = "jpegp";
+  private static final String  FILE_ASSET_DEFAULT          = FileAssetAPI.BINARY_FIELD;
+  public  static final String  SHORTY_SERVLET_FORWARD_PATH = "shorty.servlet.forward.path";
+  private static final Pattern widthPattern                = Pattern.compile("/\\d+[w]");
+  private static final Pattern heightPattern               = Pattern.compile("/\\d+[h]");
 
   @CloseDBIfOpened
   protected void service(final HttpServletRequest request, final HttpServletResponse response)
       throws ServletException, IOException {
     try {
 
-      serve(request, response);
+        serve(request, response);
     } catch (Throwable t) {
       throw new ServletException(t);
     }
   }
+
 
   private int getWidth(final String uri, final int defaultWidth) {
 
@@ -75,36 +79,35 @@ public class ShortyServlet extends HttpServlet {
 
     try {
       final Matcher widthMatcher = widthPattern.matcher(uri);
-      width =
-          widthMatcher.find()
-              ? Integer.parseInt(widthMatcher.group().substring(1).replace("w", StringPool.BLANK))
-              : defaultWidth;
-    } catch (Exception e) {
+      width = widthMatcher.find()?
+              Integer.parseInt(widthMatcher.group().substring(1).replace("w", StringPool.BLANK)):
+              defaultWidth;
+    } catch(Exception e){
       Logger.debug(this, e.getMessage());
     }
 
     return width;
   }
 
-  private int getHeight(final String uri, final int defaultHeight) {
+  private int getHeight (final String uri, final int defaultHeight) {
 
     int height = 0;
 
     try {
       final Matcher heightMatcher = heightPattern.matcher(uri);
-      height =
-          heightMatcher.find()
-              ? Integer.parseInt(heightMatcher.group().substring(1).replace("h", StringPool.BLANK))
-              : defaultHeight;
-    } catch (Exception e) {
+      height = heightMatcher.find() ?
+              Integer.parseInt(heightMatcher.group().substring(1).replace("h", StringPool.BLANK)) :
+              defaultHeight;
+    } catch(Exception e){
       Logger.debug(this, e.getMessage());
     }
 
     return height;
   }
 
-  private void serve(final HttpServletRequest request, final HttpServletResponse response)
-      throws Exception {
+  private void serve(final HttpServletRequest request,
+                     final HttpServletResponse response) throws Exception {
+
 
     final PageMode mode = PageMode.get(request);
 
@@ -112,7 +115,7 @@ public class ShortyServlet extends HttpServlet {
       return;
     }
 
-    final String uri = request.getRequestURI();
+    final String uri    = request.getRequestURI();
     final StringTokenizer tokens = new StringTokenizer(uri, StringPool.FORWARD_SLASH);
 
     if (tokens.countTokens() < 2) {
@@ -121,10 +124,10 @@ public class ShortyServlet extends HttpServlet {
     }
 
     tokens.nextToken();
-    final String inodeOrIdentifier = tokens.nextToken();
-    final String fieldName = tokens.hasMoreTokens() ? tokens.nextToken() : FILE_ASSET_DEFAULT;
-    final String lowerUri = uri.toLowerCase();
-    final boolean live = mode.showLive;
+    final String inodeOrIdentifier    = tokens.nextToken();
+    final String fieldName            = tokens.hasMoreTokens() ? tokens.nextToken() : FILE_ASSET_DEFAULT;
+    final String lowerUri             = uri.toLowerCase();
+    final boolean live                = mode.showLive;
     final Optional<ShortyId> shortOpt = this.shortyIdAPI.getShorty(inodeOrIdentifier);
 
     this.addHeaders(response, live);
@@ -136,43 +139,41 @@ public class ShortyServlet extends HttpServlet {
     this.doForward(request, response, fieldName, lowerUri, live, shortOpt);
   }
 
-  private void doForward(
-      final HttpServletRequest request,
-      final HttpServletResponse response,
-      final String fieldName,
-      final String lowerUri,
-      final boolean live,
-      final Optional<ShortyId> shortOpt)
-      throws DotDataException, DotSecurityException, ServletException, IOException {
+  private void doForward(final HttpServletRequest request,
+                         final HttpServletResponse response,
+                         final String fieldName,
+                         final String lowerUri,
+                         final boolean live,
+                         final Optional<ShortyId> shortOpt)
+          throws DotDataException, DotSecurityException, ServletException, IOException {
 
-    final int width = this.getWidth(lowerUri, 0);
-    final int height = this.getHeight(lowerUri, 0);
-    final boolean jpeg = lowerUri.contains(JPEG);
-    final boolean jpegp = jpeg && lowerUri.contains(JPEGP);
-    final boolean isImage = jpeg || width + height > 0;
-    final ShortyId shorty = shortOpt.get();
-    final String path = isImage ? "/contentAsset/image" : "/contentAsset/raw-data";
-    final User systemUser = APILocator.systemUser();
-    final Language language = WebAPILocator.getLanguageWebAPI().getLanguage(request);
+    final int      width   = this.getWidth(lowerUri, 0);
+    final int      height  = this.getHeight(lowerUri, 0);
+    final boolean  jpeg    = lowerUri.contains(JPEG);
+    final boolean  jpegp   = jpeg && lowerUri.contains(JPEGP);
+    final boolean  isImage = jpeg || width+height > 0;
+    final ShortyId shorty  = shortOpt.get();
+    final String   path    = isImage? "/contentAsset/image" : "/contentAsset/raw-data";
+    final User systemUser  = APILocator.systemUser();
+    final Language language =WebAPILocator.getLanguageWebAPI().getLanguage(request);
     try {
 
-      final Optional<Contentlet> conOpt =
-          (shorty.type == ShortType.IDENTIFIER)
-              ? APILocator.getContentletAPI()
-                  .findContentletByIdentifierOrFallback(
-                      shorty.longId, live, language.getId(), APILocator.systemUser(), false)
-              : Optional.ofNullable(
-                  APILocator.getContentletAPI().find(shorty.longId, systemUser, false));
+        
+        
+        
+        final Optional<Contentlet> conOpt = (shorty.type == ShortType.IDENTIFIER)
+                    ? APILocator.getContentletAPI().findContentletByIdentifierOrFallback(shorty.longId, live, language.getId(), APILocator.systemUser(), false)
+                    : Optional.ofNullable(APILocator.getContentletAPI().find(shorty.longId, systemUser, false));
+                    
+        if(!conOpt.isPresent()) {
+            response.sendError(HttpServletResponse.SC_NOT_FOUND);
+            return;
+        }
+        
+        
 
-      if (!conOpt.isPresent()) {
-        response.sendError(HttpServletResponse.SC_NOT_FOUND);
-        return;
-      }
-
-      final StringBuilder pathBuilder =
-          new StringBuilder(path)
-              .append(this.inodePath(conOpt.get(), fieldName, live))
-              .append("/byInode/true");
+      final StringBuilder pathBuilder = new StringBuilder(path)
+              .append(this.inodePath(conOpt.get(), fieldName, live)).append("/byInode/true");
 
       this.addImagePath(width, height, jpeg, jpegp, isImage, pathBuilder);
       this.doForward(request, response, pathBuilder.toString());
@@ -183,35 +184,36 @@ public class ShortyServlet extends HttpServlet {
     }
   }
 
-  private void doForward(
-      final HttpServletRequest request, final HttpServletResponse response, final String path)
-      throws ServletException, IOException {
 
-    request.setAttribute(SHORTY_SERVLET_FORWARD_PATH, path);
 
-    final RequestDispatcher dispatch = request.getRequestDispatcher(path);
-    if (dispatch != null) {
+  private void doForward(final HttpServletRequest request,
+                         final HttpServletResponse response,
+                         final String path) throws ServletException, IOException {
 
-      dispatch.forward(request, response);
-    }
+      request.setAttribute(SHORTY_SERVLET_FORWARD_PATH, path);
+
+      final RequestDispatcher dispatch = request.getRequestDispatcher(path);
+      if(dispatch!=null) {
+
+          dispatch.forward(request, response);
+      }
   }
 
-  private void addImagePath(
-      final int weight,
-      final int height,
-      final boolean jpeg,
-      final boolean jpegp,
-      final boolean isImage,
-      final StringBuilder pathBuilder) {
-    if (isImage) {
+  private void addImagePath(final int weight,
+                            final int height,
+                            final boolean jpeg,
+                            final boolean jpegp,
+                            final boolean isImage,
+                            final StringBuilder pathBuilder) {
+      if(isImage) {
 
-      pathBuilder.append("/filter/");
-      pathBuilder.append(weight + height > 0 ? "Resize," : StringPool.BLANK);
-      pathBuilder.append(jpeg ? "Jpeg/jpeg_q/75" : StringPool.BLANK);
-      pathBuilder.append(jpeg && jpegp ? "/jpeg_p/1" : StringPool.BLANK);
-      pathBuilder.append(weight > 0 ? "/resize_w/" + weight : StringPool.BLANK);
-      pathBuilder.append(height > 0 ? "/resize_h/" + height : StringPool.BLANK);
-    }
+          pathBuilder.append("/filter/");
+          pathBuilder.append(weight+height > 0? "Resize,"      : StringPool.BLANK);
+          pathBuilder.append(jpeg? "Jpeg/jpeg_q/75"            : StringPool.BLANK);
+          pathBuilder.append(jpeg && jpegp? "/jpeg_p/1"        : StringPool.BLANK);
+          pathBuilder.append(weight > 0? "/resize_w/" + weight : StringPool.BLANK);
+          pathBuilder.append(height > 0? "/resize_h/" + height : StringPool.BLANK);
+      }
   }
 
   private void addHeaders(final HttpServletResponse response, final boolean live) {
@@ -223,16 +225,15 @@ public class ShortyServlet extends HttpServlet {
     }
   }
 
-  private boolean isValidRequest(
-      final HttpServletRequest request, final HttpServletResponse response, final PageMode mode)
-      throws DotDataException, DotSecurityException, PortalException, SystemException, IOException {
+  private boolean isValidRequest(final HttpServletRequest request,
+                                 final HttpServletResponse response,
+                                 final PageMode mode) throws DotDataException, DotSecurityException, PortalException, SystemException, IOException {
 
-    final Host host = this.hostWebAPI.getCurrentHost(request);
+    final Host host     = this.hostWebAPI.getCurrentHost(request);
     // Checking if host is active
     if (!mode.isAdmin && !this.versionableAPI.hasLiveVersion(host)) {
 
-      response.sendError(
-          HttpServletResponse.SC_SERVICE_UNAVAILABLE,
+      response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE,
           LanguageUtil.get("server-unavailable-error-message"));
       return false;
     }
@@ -240,57 +241,47 @@ public class ShortyServlet extends HttpServlet {
     return true;
   }
 
-  protected final String inodePath(
-      final Contentlet contentlet, final String tryField, final boolean live)
-      throws DotStateException, DotDataException {
 
-    final Optional<Field> fieldOpt = resolveField(contentlet, tryField);
+  protected final String inodePath(final Contentlet contentlet,
+                                   final String tryField,
+                                   final boolean live)
+            throws DotStateException, DotDataException {
 
-    if (!fieldOpt.isPresent()) {
-      return "/" + contentlet.getInode() + "/" + FILE_ASSET_DEFAULT;
+        final Optional<Field> fieldOpt = resolveField(contentlet, tryField);
+
+        if (!fieldOpt.isPresent()) {
+            return "/" + contentlet.getInode() + "/" + FILE_ASSET_DEFAULT;
+        }
+
+        final Field field = fieldOpt.get();
+        if (field instanceof ImageField || field instanceof FileField) {
+
+            final String relatedImageId = contentlet.getStringProperty(field.variable());
+            final ContentletVersionInfo contentletVersionInfo =
+                    this.versionableAPI.getContentletVersionInfo(relatedImageId, contentlet.getLanguageId());
+
+            if (contentletVersionInfo != null) {
+
+                final String inode = live ? contentletVersionInfo.getLiveInode() : contentletVersionInfo.getWorkingInode();
+                return new StringBuilder(StringPool.FORWARD_SLASH).append(inode)
+                        .append(StringPool.FORWARD_SLASH).append(FILE_ASSET_DEFAULT).toString();
+            }
+        }
+
+        return new StringBuilder(StringPool.FORWARD_SLASH).append(contentlet.getInode())
+                .append(StringPool.FORWARD_SLASH).append(field.variable()).toString();
     }
 
-    final Field field = fieldOpt.get();
-    if (field instanceof ImageField || field instanceof FileField) {
 
-      final String relatedImageId = contentlet.getStringProperty(field.variable());
-      final ContentletVersionInfo contentletVersionInfo =
-          this.versionableAPI.getContentletVersionInfo(relatedImageId, contentlet.getLanguageId());
+    protected final Optional<Field> resolveField(final Contentlet contentlet, final String tryField) {
 
-      if (contentletVersionInfo != null) {
 
-        final String inode =
-            live ? contentletVersionInfo.getLiveInode() : contentletVersionInfo.getWorkingInode();
-        return new StringBuilder(StringPool.FORWARD_SLASH)
-            .append(inode)
-            .append(StringPool.FORWARD_SLASH)
-            .append(FILE_ASSET_DEFAULT)
-            .toString();
-      }
+        return Contentlet.TITLE_IMAGE_KEY.equals(tryField) ?
+                contentlet.getTitleImage():
+                contentlet.getContentType().fieldMap().containsKey(tryField) ?
+                        Optional.of(contentlet.getContentType().fieldMap().get(tryField)):
+                        contentlet.getContentType().fields().stream()
+                                .filter(f -> (f instanceof BinaryField || f instanceof ImageField || f instanceof FileField)).findFirst();
     }
-
-    return new StringBuilder(StringPool.FORWARD_SLASH)
-        .append(contentlet.getInode())
-        .append(StringPool.FORWARD_SLASH)
-        .append(field.variable())
-        .toString();
-  }
-
-  protected final Optional<Field> resolveField(final Contentlet contentlet, final String tryField) {
-
-    return Contentlet.TITLE_IMAGE_KEY.equals(tryField)
-        ? contentlet.getTitleImage()
-        : contentlet.getContentType().fieldMap().containsKey(tryField)
-            ? Optional.of(contentlet.getContentType().fieldMap().get(tryField))
-            : contentlet
-                .getContentType()
-                .fields()
-                .stream()
-                .filter(
-                    f ->
-                        (f instanceof BinaryField
-                            || f instanceof ImageField
-                            || f instanceof FileField))
-                .findFirst();
-  }
+    
 }

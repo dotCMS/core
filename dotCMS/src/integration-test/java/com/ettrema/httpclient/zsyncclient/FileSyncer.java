@@ -20,11 +20,7 @@ import java.io.IOException;
  * @author brad
  */
 public interface FileSyncer {
-  File download(Host host, Path remotePath, File localFile, final ProgressListener listener)
-      throws IOException, NotFoundException, HttpException, Utils.CancelledException,
-          NotAuthorizedException, BadRequestException, ConflictException;
-
-  void upload(Host host, File localcopy, Path remotePath, final ProgressListener listener)
-      throws IOException, NotFoundException, Utils.CancelledException, NotAuthorizedException,
-          ConflictException;
+    File download(Host host, Path remotePath, File localFile, final ProgressListener listener) throws IOException, NotFoundException, HttpException, Utils.CancelledException, NotAuthorizedException, BadRequestException, ConflictException;
+    
+    void upload(Host host, File localcopy, Path remotePath, final ProgressListener listener) throws IOException, NotFoundException, Utils.CancelledException, NotAuthorizedException, ConflictException;
 }

@@ -1,27 +1,30 @@
 package com.dotcms.util;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import javax.servlet.http.HttpServletRequest;
 import org.junit.Assert;
 import org.junit.Test;
 
-/** Created by nollymar on 3/8/17. */
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+
+import javax.servlet.http.HttpServletRequest;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+/**
+ * Created by nollymar on 3/8/17.
+ */
 public class HttpRequestDataUtilTest {
 
-  @Test
-  public void test_getIpAddress_XForwardedForWithMultipleIPs_ReturnFirstHost()
-      throws UnknownHostException {
-    HttpServletRequest request = mock(HttpServletRequest.class);
-    when(request.getHeader("X-Forwarded-For"))
-        .thenReturn("www.dotcms.com,www.google.com,www.github.com");
+    @Test
+    public void test_getIpAddress_XForwardedForWithMultipleIPs_ReturnFirstHost() throws UnknownHostException {
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getHeader("X-Forwarded-For")).thenReturn("www.dotcms.com,www.google.com,www.github.com");
 
-    InetAddress ip = HttpRequestDataUtil.getIpAddress(request);
-    Assert.assertNotNull(ip);
-    Assert.assertEquals(ip.getHostName(), "www.dotcms.com");
-    Assert.assertNotNull(ip.getHostAddress());
-  }
+        InetAddress ip = HttpRequestDataUtil.getIpAddress(request);
+        Assert.assertNotNull(ip);
+        Assert.assertEquals(ip.getHostName(), "www.dotcms.com");
+        Assert.assertNotNull(ip.getHostAddress());
+
+    }
 }

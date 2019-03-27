@@ -3,22 +3,26 @@ package com.dotcms.mock.response;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
 
-/** Proxy for HTTPServletResponse */
+/**
+ * Proxy for HTTPServletResponse
+ *
+ */
 public class MockHttpResponse extends HttpServletResponseWrapper implements MockResponse {
 
-  final HttpServletResponse base;
+    final HttpServletResponse base;
 
-  public MockHttpResponse(HttpServletResponse response) {
-    super(response);
-    base = response;
-  }
+    public MockHttpResponse(HttpServletResponse response) {
+        super(response);
+        base = response;
+    }
+    public MockHttpResponse() {
+       this(new BaseResponse().response());
+    }
 
-  public MockHttpResponse() {
-    this(new BaseResponse().response());
-  }
+    @Override
+    public HttpServletResponse response() {
+        return base;
+    }
 
-  @Override
-  public HttpServletResponse response() {
-    return base;
-  }
+
 }

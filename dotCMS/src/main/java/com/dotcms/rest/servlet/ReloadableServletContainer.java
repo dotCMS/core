@@ -51,145 +51,129 @@ import com.dotcms.rest.annotation.RequestFilter;
 import com.dotcms.rest.api.CorsFilter;
 import com.dotcms.rest.api.MyObjectMapperProvider;
 import com.dotcms.rest.config.DotRestApplication;
-import com.dotcms.rest.exception.mapper.DotDataExceptionMapper;
-import com.dotcms.rest.exception.mapper.DotSecurityExceptionMapper;
-import com.dotcms.rest.exception.mapper.HttpStatusCodeExceptionMapper;
-import com.dotcms.rest.exception.mapper.InvalidFormatExceptionMapper;
-import com.dotcms.rest.exception.mapper.InvalidLicenseExceptionMapper;
-import com.dotcms.rest.exception.mapper.JsonMappingExceptionMapper;
-import com.dotcms.rest.exception.mapper.JsonParseExceptionMapper;
-import com.dotcms.rest.exception.mapper.ParamExceptionMapper;
-import com.dotcms.rest.exception.mapper.ResourceNotFoundExceptionMapper;
-import com.dotcms.rest.exception.mapper.UnrecognizedPropertyExceptionMapper;
+import com.dotcms.rest.exception.mapper.*;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.Logger;
-import java.io.IOException;
-import java.util.List;
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.FilterConfig;
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
+
+import javax.servlet.*;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.List;
 
 public class ReloadableServletContainer extends HttpServlet implements Filter {
 
-  /** */
-  private static final long serialVersionUID = 1L;
+    /**
+     *
+     */
+    private static final long serialVersionUID = 1L;
 
-  private static ServletContainer container = null;
+    private static ServletContainer container = null;
 
-  private static ServletConfig servletConfig;
+    private static ServletConfig servletConfig;
 
-  public ReloadableServletContainer() {
-    this(new DotRestApplication());
-  }
-
-  public ReloadableServletContainer(Class<? extends Application> appClass) {
-    container = new ServletContainer(createResourceConfig(appClass));
-  }
-
-  public ReloadableServletContainer(Application app) {
-    container = new ServletContainer(createResourceConfig(app));
-  }
-
-  // GenericServlet
-
-  @Override
-  public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
-      throws IOException, ServletException {
-    container.doFilter(req, res, chain);
-  }
-
-  @Override
-  public void service(ServletRequest req, ServletResponse res)
-      throws ServletException, IOException {
-    try {
-      container.service(req, res);
-    } catch (ServletException e) {
-
-      List<Throwable> chain = Throwables.getCausalChain(e);
-      //noinspection ThrowableResultOfMethodCallIgnored
-      if (chain.get(chain.size() - 1) instanceof UnrecognizedPropertyException) {
-        // Log the exception at trace level only, since we handled it, and thus (presumably)
-        // understand what caused it.
-        Logger.getLogger(this.getClass()).warn("Bad request: " + e.getMessage());
-        Logger.getLogger(this.getClass()).trace("Bad request:", e);
-
-      } else {
-        Logger.getLogger(this.getClass()).error("Unhandled error during request processing: ", e);
-        throw e;
-      }
-    } catch (IOException e) {
-      Logger.getLogger(this.getClass()).error("Unhandled error during request processing: ", e);
-      throw e;
+    public ReloadableServletContainer() {
+        this(new DotRestApplication());
     }
-  }
 
-  @Override
-  public void init(ServletConfig config) throws ServletException {
-    servletConfig = config;
-    container.init(config);
-  }
-
-  public static void reload(Application app) {
-    container = new ServletContainer(createResourceConfig(app));
-    try {
-      container.init(servletConfig);
-    } catch (ServletException e) {
-      throw new DotStateException(e.getMessage(), e);
+    public ReloadableServletContainer(Class<? extends Application> appClass) {
+        container = new ServletContainer(createResourceConfig(appClass));
     }
-  }
 
-  /** Destroy this Servlet or Filter. */
-  @Override
-  public void destroy() {
-    if (container != null) {
-      container.destroy();
+    public ReloadableServletContainer(Application app) {
+        container = new ServletContainer(createResourceConfig(app));
     }
-  }
 
-  public void init(FilterConfig filterConfig) throws ServletException {
-    container.init(filterConfig);
-  }
+    // GenericServlet
 
-  @Override
-  protected void service(HttpServletRequest req, HttpServletResponse res)
-      throws ServletException, IOException {
-    container.service(req, res);
-  }
+    @Override
+    public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException, ServletException {
+            container.doFilter(req, res, chain);
+    }
 
-  private static ResourceConfig createResourceConfig(Application app) {
-    return configureResourceConfig(ResourceConfig.forApplication(app));
-  }
+    @Override
+    public void service(ServletRequest req, ServletResponse res) throws ServletException, IOException {
+        try {
+            container.service(req, res);
+        } catch (ServletException e) {
 
-  private static ResourceConfig createResourceConfig(Class<? extends Application> appClass) {
-    return configureResourceConfig(ResourceConfig.forApplicationClass(appClass));
-  }
+            List<Throwable> chain = Throwables.getCausalChain(e);
+            //noinspection ThrowableResultOfMethodCallIgnored
+            if(chain.get(chain.size() - 1) instanceof UnrecognizedPropertyException){
+                // Log the exception at trace level only, since we handled it, and thus (presumably) understand what caused it.
+                Logger.getLogger(this.getClass()).warn("Bad request: " + e.getMessage());
+                Logger.getLogger(this.getClass()).trace("Bad request:", e);
 
-  private static ResourceConfig configureResourceConfig(ResourceConfig config) {
-    return config
-        .register(RequestFilter.class)
-        .register(HeaderFilter.class)
-        .register(CorsFilter.class)
-        .register(MyObjectMapperProvider.class)
-        .register(JacksonJaxbJsonProvider.class)
-        .register(HttpStatusCodeExceptionMapper.class)
-        .register(ResourceNotFoundExceptionMapper.class)
-        .register(InvalidFormatExceptionMapper.class)
-        .register(JsonParseExceptionMapper.class)
-        .register(ParamExceptionMapper.class)
-        .register(JsonMappingExceptionMapper.class)
-        .register(UnrecognizedPropertyExceptionMapper.class)
-        .register(InvalidLicenseExceptionMapper.class)
-        .register(DotSecurityExceptionMapper.class)
-        .register(DotDataExceptionMapper.class);
-    // .register(ExceptionMapper.class); // temporaly unregister since some services are expecting
-    // just a plain message as an error instead of a json, so to keep the compatibility we won't
-    // apply this change yet.
-  }
+            } else{
+                Logger.getLogger(this.getClass()).error("Unhandled error during request processing: ", e);
+                throw e;
+            }
+        } catch (IOException e) {
+            Logger.getLogger(this.getClass()).error("Unhandled error during request processing: ", e);
+            throw e;
+        }
+    }
+
+    @Override
+    public void init(ServletConfig config) throws ServletException {
+        servletConfig = config;
+        container.init(config);
+    }
+
+    public static void reload(Application app) {
+        container = new ServletContainer(createResourceConfig(app));
+        try {
+            container.init(servletConfig);
+        } catch (ServletException e) {
+            throw new DotStateException(e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Destroy this Servlet or Filter.
+     */
+    @Override
+    public void destroy() {
+        if(container != null) {
+            container.destroy();
+        }
+    }
+
+    public void init(FilterConfig filterConfig) throws ServletException {
+        container.init(filterConfig);
+    }
+
+    @Override
+    protected void service(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
+        container.service(req, res);
+    }
+
+    private static ResourceConfig createResourceConfig(Application app) {
+        return configureResourceConfig(ResourceConfig.forApplication(app));
+    }
+
+    private static ResourceConfig createResourceConfig(Class<? extends Application> appClass) {
+        return configureResourceConfig(ResourceConfig.forApplicationClass(appClass));
+    }
+
+    private static ResourceConfig configureResourceConfig(ResourceConfig config) {
+        return config
+                .register(RequestFilter.class)
+                .register(HeaderFilter.class)
+                .register(CorsFilter.class)
+                .register(MyObjectMapperProvider.class)
+                .register(JacksonJaxbJsonProvider.class)
+                .register(HttpStatusCodeExceptionMapper.class)
+                .register(ResourceNotFoundExceptionMapper.class)
+                .register(InvalidFormatExceptionMapper.class)
+                .register(JsonParseExceptionMapper.class)
+                .register(ParamExceptionMapper.class)
+                .register(JsonMappingExceptionMapper.class)
+                .register(UnrecognizedPropertyExceptionMapper.class)
+                .register(InvalidLicenseExceptionMapper.class)
+                .register(DotSecurityExceptionMapper.class)
+                .register(DotDataExceptionMapper.class);
+                //.register(ExceptionMapper.class); // temporaly unregister since some services are expecting just a plain message as an error instead of a json, so to keep the compatibility we won't apply this change yet.
+    }
 }

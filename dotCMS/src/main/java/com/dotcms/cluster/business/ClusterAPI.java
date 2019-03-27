@@ -2,13 +2,13 @@ package com.dotcms.cluster.business;
 
 public interface ClusterAPI {
 
-  boolean isTransportAutoWire();
+    boolean isTransportAutoWire();
 
-  boolean isESAutoWire();
+    boolean isESAutoWire();
 
-  boolean isReplicasSetInConfig();
+    boolean isReplicasSetInConfig();
 
-  boolean isAutoScaleConfigured();
+    boolean isAutoScaleConfigured();
 
-  ReplicasMode getReplicasMode();
+    ReplicasMode getReplicasMode();
 }

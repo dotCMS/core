@@ -24,63 +24,60 @@ import org.junit.runner.RunWith;
 @RunWith(DataProviderRunner.class)
 public class ES6UpgradeTest extends IntegrationTestBase {
 
-  private static final String RESOURCE_DIR = "com/dotcms/content/elasticsearch/business/json";
+    private final static String RESOURCE_DIR = "com/dotcms/content/elasticsearch/business/json";
 
-  private static User systemUser;
+    private static User systemUser;
 
-  @BeforeClass
-  public static void prepare() throws Exception {
+    @BeforeClass
+    public static void prepare () throws Exception {
 
-    // Setting web app environment
-    IntegrationTestInitService.getInstance().init();
+        //Setting web app environment
+        IntegrationTestInitService.getInstance().init();
 
-    systemUser = APILocator.getUserAPI().getSystemUser();
-  }
-
-  /**
-   * Gets an array of JSon files containing Elastic Search queries to be tested
-   *
-   * @return list of Files
-   */
-  @DataProvider
-  public static Object[] getJsonFilesDataProvider() {
-    final String resource = ConfigTestHelper.getPathToTestResource(RESOURCE_DIR);
-    final File directory = new File(resource);
-    return directory.listFiles();
-  }
-
-  @Test
-  @UseDataProvider("getJsonFilesDataProvider")
-  public void testElasticSearchJson(final Object objectFile)
-      throws DotSecurityException, DotDataException, IOException {
-
-    final File file = (File) objectFile;
-    Logger.info(this, "Testing File: " + file.getName());
-
-    final String json = FileUtils.readFileToString(file);
-    final ESSearchResults results =
-        APILocator.getContentletAPI().esSearch(json, false, systemUser, false);
-
-    Assert.assertNotNull(results);
-
-    Logger.info(this, "Results size: " + results.getTotalResults());
-    Assert.assertTrue(results.getTotalResults() > 0);
-
-    if (json.contains("agg")) {
-      // This is an aggregation
-      Assert.assertFalse(results.getAggregations().asList().isEmpty());
-    } else {
-      // Contentlets
-      Assert.assertFalse(results.isEmpty());
-      for (final Object res : results) {
-        final Contentlet contentlet = (Contentlet) res;
-        Assert.assertTrue(
-            APILocator.getPermissionAPI()
-                .doesUserHavePermission(
-                    contentlet, PermissionAPI.PERMISSION_READ, systemUser, false));
-      }
+        systemUser = APILocator.getUserAPI().getSystemUser();
     }
 
-    Logger.info(this, "Success Testing File: " + file.getName());
-  }
+    /**
+     * Gets an array of JSon files containing Elastic Search queries to be tested
+     * @return list of Files
+     */
+    @DataProvider
+    public static Object[] getJsonFilesDataProvider() {
+        final String resource = ConfigTestHelper.getPathToTestResource(RESOURCE_DIR);
+        final File directory = new File(resource);
+        return directory.listFiles();
+    }
+
+    @Test
+    @UseDataProvider("getJsonFilesDataProvider")
+    public void testElasticSearchJson (final Object objectFile)
+            throws DotSecurityException, DotDataException, IOException {
+
+        final File file = (File) objectFile;
+        Logger.info(this, "Testing File: " + file.getName());
+
+        final String json = FileUtils.readFileToString(file);
+        final ESSearchResults results = APILocator.getContentletAPI()
+                .esSearch(json, false, systemUser, false);
+
+        Assert.assertNotNull(results);
+
+        Logger.info(this, "Results size: " + results.getTotalResults());
+        Assert.assertTrue(results.getTotalResults() > 0);
+
+        if (json.contains("agg")) {
+            //This is an aggregation
+            Assert.assertFalse(results.getAggregations().asList().isEmpty());
+        } else {
+            //Contentlets
+            Assert.assertFalse(results.isEmpty());
+            for (final Object res : results) {
+                final Contentlet contentlet = (Contentlet) res;
+                Assert.assertTrue(APILocator.getPermissionAPI().doesUserHavePermission(contentlet,
+                                    PermissionAPI.PERMISSION_READ, systemUser, false));
+            }
+        }
+
+        Logger.info(this, "Success Testing File: " + file.getName());
+    }
 }

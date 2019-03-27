@@ -10,7 +10,8 @@ import java.util.Map;
  */
 public class KeyValueFieldUtil {
 
-  public static Map<String, Object> JSONValueToHashMap(final String json) {
-    return com.dotcms.contenttype.util.KeyValueFieldUtil.JSONValueToHashMap(json);
-  }
+    public static Map<String, Object> JSONValueToHashMap ( final String json ) {
+        return com.dotcms.contenttype.util.KeyValueFieldUtil.JSONValueToHashMap(json);
+    }
+
 }

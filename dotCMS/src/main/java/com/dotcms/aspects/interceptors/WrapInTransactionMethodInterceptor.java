@@ -7,19 +7,20 @@ import com.dotmarketing.db.LocalTransaction;
 
 /**
  * Method handler for the {@link WrapInTransaction} annotation aspect
- *
  * @author jsanca
  */
 public class WrapInTransactionMethodInterceptor implements MethodInterceptor<Object> {
 
-  public static final WrapInTransactionMethodInterceptor INSTANCE =
-      new WrapInTransactionMethodInterceptor();
+    public static final WrapInTransactionMethodInterceptor INSTANCE = new WrapInTransactionMethodInterceptor();
 
-  protected WrapInTransactionMethodInterceptor() {}
+    protected WrapInTransactionMethodInterceptor() {
 
-  @Override
-  public Object invoke(final DelegateMethodInvocation<Object> delegate) throws Throwable {
+    }
 
-    return LocalTransaction.wrapReturnWithListeners(delegate::proceed);
-  } // invoke.
+    @Override
+    public Object invoke(final DelegateMethodInvocation<Object> delegate) throws Throwable {
+
+        return LocalTransaction.wrapReturnWithListeners(delegate::proceed);
+    } // invoke.
+
 } // E:O:F:LogTimeMethodInterceptor.

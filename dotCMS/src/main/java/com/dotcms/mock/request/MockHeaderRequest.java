@@ -4,6 +4,7 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Vector;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
 
@@ -11,10 +12,11 @@ import javax.servlet.http.HttpServletRequestWrapper;
  * Mock {@link HttpServletRequest} with a {@link Map} as part of the class that will contain the
  * Headers.
  *
- * <p>See an example here: {@link MockHttpRequest#MockHttpRequest(String, String)}
+ * See an example here: {@link MockHttpRequest#MockHttpRequest(String, String)}
  */
 public class MockHeaderRequest extends HttpServletRequestWrapper implements MockRequest {
   final Map<String, String> headers = new HashMap<String, String>();
+
 
   public MockHeaderRequest(HttpServletRequest request) {
     super(request);
@@ -47,6 +49,7 @@ public class MockHeaderRequest extends HttpServletRequestWrapper implements Mock
     return new Vector<String>(headers.keySet()).elements();
   }
 
+
   public void setHeader(final String name, final String o) {
     headers.put(name, o);
   }
@@ -56,4 +59,6 @@ public class MockHeaderRequest extends HttpServletRequestWrapper implements Mock
 
     return super.getHeaders(name);
   }
+
+
 }

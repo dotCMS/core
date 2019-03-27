@@ -6,140 +6,141 @@ import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableList;
+
 import io.vavr.control.Try;
+
 import java.io.Serializable;
 import java.util.Date;
+import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class WorkflowScheme implements Serializable {
 
-  private static final long serialVersionUID = 1L;
+	private static final long serialVersionUID = 1L;
 
-  public static final String SYSTEM_WORKFLOW_ID = WorkFlowFactory.SYSTEM_WORKFLOW_ID;
+	public static final String SYSTEM_WORKFLOW_ID = WorkFlowFactory.SYSTEM_WORKFLOW_ID;
 
-  String id;
-  Date creationDate = new Date();
-  String name;
-  String description;
-  boolean archived;
-  boolean mandatory;
-  boolean defaultScheme;
-  private Date modDate = new Date();
+	String id;
+	Date creationDate = new Date();
+	String name;
+	String description;
+	boolean archived;
+	boolean mandatory;
+	boolean defaultScheme;
+	private Date modDate = new Date();
+	
 
-  public boolean isDefaultScheme() {
-    return defaultScheme;
-  }
+	public boolean isDefaultScheme() {
+		return defaultScheme;
+	}
 
-  public void setDefaultScheme(boolean defaultScheme) {
-    this.defaultScheme = defaultScheme;
-  }
+	public void setDefaultScheme(boolean defaultScheme) {
+		this.defaultScheme = defaultScheme;
+	}
+	String entryActionId;
 
-  String entryActionId;
+	@Deprecated
+	public String getEntryActionId() {
+		return entryActionId;
+	}
 
-  @Deprecated
-  public String getEntryActionId() {
-    return entryActionId;
-  }
+	@Deprecated
+	public void setEntryActionId(String entryActionId) {
+		this.entryActionId = entryActionId;
+	}
 
-  @Deprecated
-  public void setEntryActionId(String entryActionId) {
-    this.entryActionId = entryActionId;
-  }
+	@Override
+	public String toString() {
+		return "WorkflowScheme [id=" + id + ", name=" + name + ", archived=" + archived + ", mandatory=" + mandatory + "]";
+	}
 
-  @Override
-  public String toString() {
-    return "WorkflowScheme [id="
-        + id
-        + ", name="
-        + name
-        + ", archived="
-        + archived
-        + ", mandatory="
-        + mandatory
-        + "]";
-  }
+	public Date getCreationDate() {
+		return creationDate;
+	}
 
-  public Date getCreationDate() {
-    return creationDate;
-  }
+	public void setCreationDate(Date creationDate) {
+		this.creationDate = creationDate;
+	}
 
-  public void setCreationDate(Date creationDate) {
-    this.creationDate = creationDate;
-  }
+	public String getId() {
+		return id;
+	}
 
-  public String getId() {
-    return id;
-  }
+	public void setId(String id) {
+		this.id = id;
+	}
 
-  public void setId(String id) {
-    this.id = id;
-  }
+	public String getName() {
+		return name;
+	}
 
-  public String getName() {
-    return name;
-  }
+	public void setName(String name) {
+		this.name = name;
+	}
 
-  public void setName(String name) {
-    this.name = name;
-  }
+	public String getDescription() {
+		return description;
+	}
 
-  public String getDescription() {
-    return description;
-  }
+	public void setDescription(String description) {
+		this.description = description;
+	}
 
-  public void setDescription(String description) {
-    this.description = description;
-  }
 
-  public boolean isArchived() {
-    return archived;
-  }
 
-  public void setArchived(boolean archived) {
-    this.archived = archived;
-  }
+	public boolean isArchived() {
+		return archived;
+	}
 
-  @Deprecated
-  public boolean isMandatory() {
-    return mandatory;
-  }
+	public void setArchived(boolean archived) {
+		this.archived = archived;
+	}
 
-  @Deprecated
-  public void setMandatory(boolean mandatory) {
-    this.mandatory = mandatory;
-  }
+	@Deprecated
+	public boolean isMandatory() {
+		return mandatory;
+	}
 
-  @JsonIgnore
-  public boolean isNew() {
-    return !UtilMethods.isSet(id);
-  }
+	@Deprecated
+	public void setMandatory(boolean mandatory) {
+		this.mandatory = mandatory;
+	}
+	@JsonIgnore
+	public boolean isNew(){
+		return !UtilMethods.isSet(id);
 
-  /**
-   * Returns true if this scheme is the system workflow.
-   *
-   * @return boolean
-   */
-  @JsonProperty("system")
-  public boolean isSystem() {
-    return (SYSTEM_WORKFLOW_ID.equals(this.getId()));
-  }
+	}
 
-  public Date getModDate() {
-    return modDate;
-  }
+	/**
+	 * Returns true if this scheme is the system workflow.
+	 * @return boolean
+	 */
+	@JsonProperty("system")
+	public boolean isSystem () {
+		return (SYSTEM_WORKFLOW_ID.equals(this.getId()));
+	}
 
-  public void setModDate(Date modDate) {
-    this.modDate = modDate;
-  }
+	public Date getModDate() {
+		return modDate;
+	}
 
-  private String entryStep = null;
+	public void setModDate(Date modDate) {
+		this.modDate = modDate;
+	}
 
-  @JsonIgnore
-  public String entryStep() {
-    if (this.entryStep == null) {
-      this.entryStep =
-          Try.of(() -> APILocator.getWorkflowAPI().findSteps(this).get(0).getId()).getOrNull();
+	
+    private String entryStep = null;
+
+    @JsonIgnore
+    public String entryStep() {
+        if (this.entryStep == null) {
+            this.entryStep = Try.of(() -> APILocator.getWorkflowAPI().findSteps(this).get(0).getId()).getOrNull();
+        }
+        return this.entryStep;
+
     }
-    return this.entryStep;
-  }
+	
+	
+	
 }

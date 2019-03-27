@@ -38,309 +38,297 @@ import org.mockito.stubbing.Answer;
 
 public class ForgotPasswordResourceTest extends UnitTestBase {
 
-  public ForgotPasswordResourceTest() {}
 
-  @Before
-  public void initTest() {
-    RestUtilTest.initMockContext();
-  }
+    public ForgotPasswordResourceTest() {
 
-  @Test
-  public void testEmptyParameter() throws JSONException {
-
-    try {
-      final ForgotPasswordForm forgotPasswordForm = new ForgotPasswordForm.Builder().build();
-
-      fail("Should throw a ValidationException");
-    } catch (Exception e) {
-      // quiet
-    }
-  }
-
-  @Test
-  public void testWrongParameter() throws JSONException {
-
-    try {
-      final ForgotPasswordForm forgotPasswordForm =
-          new ForgotPasswordForm.Builder().userId("").build();
-
-      fail("Should throw a ValidationException");
-    } catch (Exception e) {
-      // quiet
-    }
-  }
-
-  @Test
-  public void testNoSuchUserExceptionExposingNoData() throws Exception {
-
-    final HttpServletRequest request = mock(HttpServletRequest.class);
-    final HttpServletResponse response = mock(HttpServletResponse.class);
-    final HttpSession session = mock(HttpSession.class);
-    final UserLocalManager userLocalManager = mock(UserLocalManager.class);
-    final ResponseUtil responseUtil = ResponseUtil.INSTANCE;
-    final CompanyAPI companyAPI = mock(CompanyAPI.class);
-    final String userId = "admin@dotcms.com";
-    final ServletContext context = mock(ServletContext.class);
-    final UserService userService = mock(UserService.class);
-    final Company company =
-        new Company() {
-
-          @Override
-          public String getAuthType() {
-
-            return Company.AUTH_TYPE_ID;
-          }
-        };
-    final ForgotPasswordForm forgotPasswordForm =
-        new ForgotPasswordForm.Builder().userId(userId).build();
-
-    Config.CONTEXT = context;
-
-    when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
-    when(request.getSession(false)).thenReturn(session); //
-    when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(Locale.getDefault()); //
-    when(companyAPI.getCompany(request)).thenReturn(company);
-    when(userLocalManager.getUserById(anyString()))
-        .thenAnswer(
-            new Answer<User>() { // if this method is called, should fail
-
-              @Override
-              public User answer(InvocationOnMock invocation) throws Throwable {
-
-                throw new NoSuchUserException();
-              }
-            });
-
-    /*
-    Set the CONFIG_DISPLAY_NOT_EXISTING_USER_AT_RECOVER_PASSWORD property to FALSE in order to
-    hide from the user that the email is not an existing user email. For security reasons.
-     */
-    boolean displayNotSuchUserError =
-        Config.getBooleanProperty(CONFIG_DISPLAY_NOT_EXISTING_USER_AT_RECOVER_PASSWORD, false);
-    if (displayNotSuchUserError) {
-      Config.setProperty(CONFIG_DISPLAY_NOT_EXISTING_USER_AT_RECOVER_PASSWORD, false);
     }
 
-    final ForgotPasswordResource authenticationResource =
-        new ForgotPasswordResource(userLocalManager, userService, companyAPI, responseUtil);
-
-    final Response response1 =
-        authenticationResource.forgotPassword(request, response, forgotPasswordForm);
-
-    System.out.println(response1);
-    assertNotNull(response1);
-    assertEquals(response1.getStatus(), Response.Status.OK.getStatusCode());
-    assertNotNull(response1.getEntity());
-    System.out.println(response1.getEntity());
-    assertTrue(response1.getEntity() instanceof ResponseEntityView);
-    assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
-    assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().isEmpty());
-  }
-
-  @Test
-  public void testNoSuchUserExceptionExposingData() throws Exception {
-
-    final HttpServletRequest request = mock(HttpServletRequest.class);
-    final HttpServletResponse response = mock(HttpServletResponse.class);
-    final HttpSession session = mock(HttpSession.class);
-    final UserLocalManager userLocalManager = mock(UserLocalManager.class);
-    final ResponseUtil responseUtil = ResponseUtil.INSTANCE;
-    final CompanyAPI companyAPI = mock(CompanyAPI.class);
-    final String userId = "admin@dotcms.com";
-    final ServletContext context = mock(ServletContext.class);
-    final UserService userService = mock(UserService.class);
-    final Company company =
-        new Company() {
-
-          @Override
-          public String getAuthType() {
-
-            return Company.AUTH_TYPE_ID;
-          }
-        };
-    final ForgotPasswordForm forgotPasswordForm =
-        new ForgotPasswordForm.Builder().userId(userId).build();
-
-    Config.CONTEXT = context;
-
-    when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
-    when(request.getSession(false)).thenReturn(session); //
-    when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(Locale.getDefault()); //
-    when(companyAPI.getCompany(request)).thenReturn(company);
-    when(userLocalManager.getUserById(anyString()))
-        .thenAnswer(
-            new Answer<User>() { // if this method is called, should fail
-
-              @Override
-              public User answer(InvocationOnMock invocation) throws Throwable {
-
-                throw new NoSuchUserException();
-              }
-            });
-
-    /*
-    Set the CONFIG_DISPLAY_NOT_EXISTING_USER_AT_RECOVER_PASSWORD property to TRUE in order to
-    send a response informing the user the email is an non existing user email.
-     */
-    boolean displayNotSuchUserError =
-        Config.getBooleanProperty(CONFIG_DISPLAY_NOT_EXISTING_USER_AT_RECOVER_PASSWORD, false);
-    if (!displayNotSuchUserError) {
-      Config.setProperty(CONFIG_DISPLAY_NOT_EXISTING_USER_AT_RECOVER_PASSWORD, true);
+    @Before
+    public void initTest(){
+        RestUtilTest.initMockContext();
     }
 
-    final ForgotPasswordResource authenticationResource =
-        new ForgotPasswordResource(userLocalManager, userService, companyAPI, responseUtil);
+    @Test
+    public void testEmptyParameter() throws JSONException{
 
-    final Response response1 =
-        authenticationResource.forgotPassword(request, response, forgotPasswordForm);
+        try {
+            final ForgotPasswordForm forgotPasswordForm =
+                    new ForgotPasswordForm.Builder().build();
 
-    System.out.println(response1);
-    assertNotNull(response1);
-    assertEquals(response1.getStatus(), Status.BAD_REQUEST.getStatusCode());
-    assertNotNull(response1.getEntity());
-    System.out.println(response1.getEntity());
-    assertTrue(response1.getEntity() instanceof ResponseEntityView);
-    assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
-    assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() > 0);
-    assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
-    assertTrue(
-        ResponseEntityView.class
-            .cast(response1.getEntity())
-            .getErrors()
-            .get(0)
-            .getErrorCode()
-            .equals("the-email-address-you-requested-is-not-registered-in-our-database"));
-  }
+            fail ("Should throw a ValidationException");
+        } catch (Exception e) {
+            // quiet
+        }
+    }
 
-  @Test
-  public void testSendPasswordException() throws Exception {
+    @Test
+    public void testWrongParameter() throws JSONException{
 
-    final HttpServletRequest request = mock(HttpServletRequest.class);
-    final HttpServletResponse response = mock(HttpServletResponse.class);
-    final HttpSession session = mock(HttpSession.class);
-    final UserLocalManager userLocalManager = mock(UserLocalManager.class);
-    final ResponseUtil authenticationHelper = ResponseUtil.INSTANCE;
-    final CompanyAPI companyAPI = mock(CompanyAPI.class);
-    final String userId = "admin@dotcms.com";
-    final ServletContext context = mock(ServletContext.class);
-    final UserService userService = mock(UserService.class);
-    final Company company =
-        new Company() {
+        try {
+            final ForgotPasswordForm forgotPasswordForm =
+                    new ForgotPasswordForm.Builder().userId("").build();
 
-          @Override
-          public String getAuthType() {
+            fail ("Should throw a ValidationException");
+        } catch (Exception e) {
+            // quiet
+        }
+    }
 
-            return Company.AUTH_TYPE_ID;
-          }
+    @Test
+    public void testNoSuchUserExceptionExposingNoData() throws Exception {
+
+        final HttpServletRequest request  = mock(HttpServletRequest.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+        final HttpSession session  = mock(HttpSession.class);
+        final UserLocalManager userLocalManager = mock(UserLocalManager.class);
+        final ResponseUtil responseUtil = ResponseUtil.INSTANCE;
+        final CompanyAPI companyAPI = mock(CompanyAPI.class);
+        final String userId = "admin@dotcms.com";
+        final ServletContext context = mock(ServletContext.class);
+        final UserService userService = mock(UserService.class);
+        final Company company = new Company() {
+
+            @Override
+            public String getAuthType() {
+
+                return Company.AUTH_TYPE_ID;
+            }
         };
-    final ForgotPasswordForm forgotPasswordForm =
-        new ForgotPasswordForm.Builder().userId(userId).build();
+        final ForgotPasswordForm forgotPasswordForm =
+                new ForgotPasswordForm.Builder().userId(userId).build();
 
-    Config.CONTEXT = context;
+        Config.CONTEXT = context;
 
-    when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
-    when(request.getSession(false)).thenReturn(session); //
-    when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(Locale.getDefault()); //
-    when(companyAPI.getCompany(request)).thenReturn(company);
-    when(userLocalManager.getUserById(anyString()))
-        .thenAnswer(
-            new Answer<User>() { // if this method is called, should fail
+        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
+        when(request.getSession(false)).thenReturn(session); //
+        when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(Locale.getDefault()); //
+        when(companyAPI.getCompany(request)).thenReturn(company);
+        when(userLocalManager.getUserById(anyString()))
+                .thenAnswer(new Answer<User>() { // if this method is called, should fail
 
-              @Override
-              public User answer(InvocationOnMock invocation) throws Throwable {
+                    @Override
+                    public User answer(InvocationOnMock invocation) throws Throwable {
 
-                throw new SendPasswordException();
-              }
-            });
+                        throw new NoSuchUserException();
+                    }
+                });
 
-    final ForgotPasswordResource authenticationResource =
-        new ForgotPasswordResource(userLocalManager, userService, companyAPI, authenticationHelper);
+        /*
+        Set the CONFIG_DISPLAY_NOT_EXISTING_USER_AT_RECOVER_PASSWORD property to FALSE in order to
+        hide from the user that the email is not an existing user email. For security reasons.
+         */
+        boolean displayNotSuchUserError = Config
+                .getBooleanProperty(CONFIG_DISPLAY_NOT_EXISTING_USER_AT_RECOVER_PASSWORD, false);
+        if (displayNotSuchUserError) {
+            Config.setProperty(CONFIG_DISPLAY_NOT_EXISTING_USER_AT_RECOVER_PASSWORD, false);
+        }
 
-    final Response response1 =
-        authenticationResource.forgotPassword(request, response, forgotPasswordForm);
+        final ForgotPasswordResource authenticationResource =
+                new ForgotPasswordResource(userLocalManager, userService,
+                        companyAPI, responseUtil);
 
-    System.out.println(response1);
-    assertNotNull(response1);
-    assertEquals(response1.getStatus(), Response.Status.BAD_REQUEST.getStatusCode());
-    assertNotNull(response1.getEntity());
-    System.out.println(response1.getEntity());
-    assertTrue(response1.getEntity() instanceof ResponseEntityView);
-    assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
-    assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() > 0);
-    assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
-    assertTrue(
-        ResponseEntityView.class
-            .cast(response1.getEntity())
-            .getErrors()
-            .get(0)
-            .getErrorCode()
-            .equals("a-new-password-can-only-be-sent-to-an-external-email-address"));
-  }
 
-  @Test
-  public void testUserEmailAddressException() throws Exception {
+        final Response response1 = authenticationResource.forgotPassword(request, response, forgotPasswordForm);
 
-    final HttpServletRequest request = mock(HttpServletRequest.class);
-    final HttpServletResponse response = mock(HttpServletResponse.class);
-    final HttpSession session = mock(HttpSession.class);
-    final UserLocalManager userLocalManager = mock(UserLocalManager.class);
-    final ResponseUtil authenticationHelper = ResponseUtil.INSTANCE;
-    final CompanyAPI companyAPI = mock(CompanyAPI.class);
-    final ApiProvider apiProvider = mock(ApiProvider.class);
-    final String userId = "admin@dotcms.com";
-    final ServletContext context = mock(ServletContext.class);
-    final Company company =
-        new Company() {
+        System.out.println(response1);
+        assertNotNull(response1);
+        assertEquals(response1.getStatus(), Response.Status.OK.getStatusCode());
+        assertNotNull(response1.getEntity());
+        System.out.println(response1.getEntity());
+        assertTrue(response1.getEntity() instanceof ResponseEntityView);
+        assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
+        assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().isEmpty());
+    }
 
-          @Override
-          public String getAuthType() {
+    @Test
+    public void testNoSuchUserExceptionExposingData() throws Exception {
 
-            return Company.AUTH_TYPE_ID;
-          }
+        final HttpServletRequest request  = mock(HttpServletRequest.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+        final HttpSession session  = mock(HttpSession.class);
+        final UserLocalManager userLocalManager = mock(UserLocalManager.class);
+        final ResponseUtil responseUtil = ResponseUtil.INSTANCE;
+        final CompanyAPI companyAPI = mock(CompanyAPI.class);
+        final String userId = "admin@dotcms.com";
+        final ServletContext context = mock(ServletContext.class);
+        final UserService userService = mock(UserService.class);
+        final Company company = new Company() {
+
+            @Override
+            public String getAuthType() {
+
+                return Company.AUTH_TYPE_ID;
+            }
         };
-    final ForgotPasswordForm forgotPasswordForm =
-        new ForgotPasswordForm.Builder().userId(userId).build();
+        final ForgotPasswordForm forgotPasswordForm =
+                new ForgotPasswordForm.Builder().userId(userId).build();
 
-    Config.CONTEXT = context;
+        Config.CONTEXT = context;
 
-    when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
-    when(request.getSession(false)).thenReturn(session); //
-    when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(Locale.getDefault()); //
-    when(companyAPI.getCompany(request)).thenReturn(company);
-    when(userLocalManager.getUserById(anyString()))
-        .thenAnswer(
-            new Answer<User>() { // if this method is called, should fail
+        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
+        when(request.getSession(false)).thenReturn(session); //
+        when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(Locale.getDefault()); //
+        when(companyAPI.getCompany(request)).thenReturn(company);
+        when(userLocalManager.getUserById(anyString()))
+                .thenAnswer(new Answer<User>() { // if this method is called, should fail
 
-              @Override
-              public User answer(InvocationOnMock invocation) throws Throwable {
+                    @Override
+                    public User answer(InvocationOnMock invocation) throws Throwable {
 
-                throw new UserEmailAddressException();
-              }
-            });
+                        throw new NoSuchUserException();
+                    }
+                });
 
-    final UserService userService = mock(UserService.class);
+        /*
+        Set the CONFIG_DISPLAY_NOT_EXISTING_USER_AT_RECOVER_PASSWORD property to TRUE in order to
+        send a response informing the user the email is an non existing user email.
+         */
+        boolean displayNotSuchUserError = Config
+                .getBooleanProperty(CONFIG_DISPLAY_NOT_EXISTING_USER_AT_RECOVER_PASSWORD, false);
+        if (!displayNotSuchUserError) {
+            Config.setProperty(CONFIG_DISPLAY_NOT_EXISTING_USER_AT_RECOVER_PASSWORD, true);
+        }
 
-    final ForgotPasswordResource authenticationResource =
-        new ForgotPasswordResource(userLocalManager, userService, companyAPI, authenticationHelper);
+        final ForgotPasswordResource authenticationResource =
+                new ForgotPasswordResource(userLocalManager, userService,
+                        companyAPI, responseUtil);
 
-    final Response response1 =
-        authenticationResource.forgotPassword(request, response, forgotPasswordForm);
 
-    System.out.println(response1);
-    assertNotNull(response1);
-    assertEquals(response1.getStatus(), Response.Status.BAD_REQUEST.getStatusCode());
-    assertNotNull(response1.getEntity());
-    System.out.println(response1.getEntity());
-    assertTrue(response1.getEntity() instanceof ResponseEntityView);
-    assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
-    assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() > 0);
-    assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
-    assertTrue(
-        ResponseEntityView.class
-            .cast(response1.getEntity())
-            .getErrors()
-            .get(0)
-            .getErrorCode()
-            .equals("please-enter-a-valid-email-address"));
-  }
+        final Response response1 = authenticationResource.forgotPassword(request, response, forgotPasswordForm);
+
+        System.out.println(response1);
+        assertNotNull(response1);
+        assertEquals(response1.getStatus(), Status.BAD_REQUEST.getStatusCode());
+        assertNotNull(response1.getEntity());
+        System.out.println(response1.getEntity());
+        assertTrue(response1.getEntity() instanceof ResponseEntityView);
+        assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
+        assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() > 0);
+        assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
+        assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0).getErrorCode().equals
+                ("the-email-address-you-requested-is-not-registered-in-our-database"));
+    }
+
+    @Test
+    public void testSendPasswordException() throws Exception {
+
+        final HttpServletRequest request  = mock(HttpServletRequest.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+        final HttpSession session  = mock(HttpSession.class);
+        final UserLocalManager userLocalManager = mock(UserLocalManager.class);
+        final ResponseUtil authenticationHelper = ResponseUtil.INSTANCE;
+        final CompanyAPI companyAPI = mock(CompanyAPI.class);
+        final String userId = "admin@dotcms.com";
+        final ServletContext context = mock(ServletContext.class);
+        final UserService userService = mock(UserService.class);
+        final Company company = new Company() {
+
+            @Override
+            public String getAuthType() {
+
+                return Company.AUTH_TYPE_ID;
+            }
+        };
+        final ForgotPasswordForm forgotPasswordForm =
+                new ForgotPasswordForm.Builder().userId(userId).build();
+
+        Config.CONTEXT = context;
+
+        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
+        when(request.getSession(false)).thenReturn(session); //
+        when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(Locale.getDefault()); //
+        when(companyAPI.getCompany(request)).thenReturn(company);
+        when(userLocalManager.getUserById(anyString()))
+                .thenAnswer(new Answer<User>() { // if this method is called, should fail
+
+                    @Override
+                    public User answer(InvocationOnMock invocation) throws Throwable {
+
+                        throw new SendPasswordException();
+                    }
+                });
+
+
+
+        final ForgotPasswordResource authenticationResource =
+                new ForgotPasswordResource(userLocalManager, userService,
+                        companyAPI, authenticationHelper);
+
+
+        final Response response1 = authenticationResource.forgotPassword(request, response, forgotPasswordForm);
+
+        System.out.println(response1);
+        assertNotNull(response1);
+        assertEquals(response1.getStatus(), Response.Status.BAD_REQUEST.getStatusCode());
+        assertNotNull(response1.getEntity());
+        System.out.println(response1.getEntity());
+        assertTrue(response1.getEntity() instanceof ResponseEntityView);
+        assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
+        assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() > 0);
+        assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
+        assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0).getErrorCode().equals
+                ("a-new-password-can-only-be-sent-to-an-external-email-address"));
+    }
+
+    @Test
+    public void testUserEmailAddressException() throws Exception {
+
+        final HttpServletRequest request  = mock(HttpServletRequest.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+        final HttpSession session  = mock(HttpSession.class);
+        final UserLocalManager userLocalManager = mock(UserLocalManager.class);
+        final ResponseUtil authenticationHelper = ResponseUtil.INSTANCE;
+        final CompanyAPI companyAPI = mock(CompanyAPI.class);
+        final ApiProvider apiProvider = mock(ApiProvider.class);
+        final String userId = "admin@dotcms.com";
+        final ServletContext context = mock(ServletContext.class);
+        final Company company = new Company() {
+
+            @Override
+            public String getAuthType() {
+
+                return Company.AUTH_TYPE_ID;
+            }
+        };
+        final ForgotPasswordForm forgotPasswordForm =
+                new ForgotPasswordForm.Builder().userId(userId).build();
+
+        Config.CONTEXT = context;
+
+        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
+        when(request.getSession(false)).thenReturn(session); //
+        when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(Locale.getDefault()); //
+        when(companyAPI.getCompany(request)).thenReturn(company);
+        when(userLocalManager.getUserById(anyString()))
+                .thenAnswer(new Answer<User>() { // if this method is called, should fail
+
+                    @Override
+                    public User answer(InvocationOnMock invocation) throws Throwable {
+
+                        throw new UserEmailAddressException();
+                    }
+                });
+
+        final UserService userService = mock(UserService.class);
+
+        final ForgotPasswordResource authenticationResource =
+                new ForgotPasswordResource(userLocalManager, userService,
+                        companyAPI, authenticationHelper);
+
+
+        final Response response1 = authenticationResource.forgotPassword(request, response, forgotPasswordForm);
+
+        System.out.println(response1);
+        assertNotNull(response1);
+        assertEquals(response1.getStatus(), Response.Status.BAD_REQUEST.getStatusCode());
+        assertNotNull(response1.getEntity());
+        System.out.println(response1.getEntity());
+        assertTrue(response1.getEntity() instanceof ResponseEntityView);
+        assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
+        assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() > 0);
+        assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
+        assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0).getErrorCode().equals
+                ("please-enter-a-valid-email-address"));
+    }
+
 }

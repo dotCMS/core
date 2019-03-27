@@ -16,19 +16,22 @@
 package com.dotmarketing.util.diff.html.ancestor;
 
 public enum TagChangeSematic {
-  MOVED {
-    @Override
-    public String toString() {
-      return "moved";
-    }
-  },
 
-  STYLE {
-    @Override
-    public String toString() {
-      return "style";
-    }
-  },
+    MOVED {
+        @Override
+        public String toString() {
+            return "moved";
+        }
 
-  UNKNOWN;
+    },
+
+    STYLE {
+        @Override
+        public String toString() {
+            return "style";
+        }
+    },
+
+    UNKNOWN;
+
 }

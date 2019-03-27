@@ -29,37 +29,42 @@ import org.xml.sax.ContentHandler;
 
 public class XslFilter {
 
-  public ContentHandler xsl(ContentHandler consumer, String xslPath) throws IOException {
-    Logger.debug(this, "xslPath1 : " + xslPath);
-    try {
-      Logger.debug(this, "xslPath2 : " + xslPath);
-      // Create transformer factory
-      TransformerFactory factory = TransformerFactory.newInstance();
+	
+    public ContentHandler xsl(ContentHandler consumer, String xslPath)
+            throws IOException {
+    	Logger.debug(this, "xslPath1 : " +  xslPath);
+        try {
+        	Logger.debug(this, "xslPath2 : " +  xslPath);
+            // Create transformer factory
+            TransformerFactory factory = TransformerFactory.newInstance();
 
-      Logger.debug(this, "factory : " + factory);
-      // Use the factory to create a template containing the xsl file
-      Templates template =
-          factory.newTemplates(
-              new StreamSource(getClass().getClassLoader().getResourceAsStream(xslPath)));
+            Logger.debug(this, "factory : " +  factory);
+            // Use the factory to create a template containing the xsl file
+            Templates template = factory.newTemplates(new StreamSource(
+                    getClass().getClassLoader().getResourceAsStream(xslPath)));
 
-      System.out.println("template : " + template);
-      // Use the template to create a transformer
-      TransformerFactory transFact = TransformerFactory.newInstance();
-      SAXTransformerFactory saxTransFact = (SAXTransformerFactory) transFact;
-      // create a ContentHandler
-      TransformerHandler transHand = saxTransFact.newTransformerHandler(template);
+            
+            System.out.println("template : " +  template);
+            // Use the template to create a transformer
+            TransformerFactory transFact = TransformerFactory.newInstance();
+            SAXTransformerFactory saxTransFact = (SAXTransformerFactory) transFact;
+            // create a ContentHandler
+            TransformerHandler transHand = saxTransFact
+                    .newTransformerHandler(template);
 
-      transHand.setResult(new SAXResult(consumer));
+            transHand.setResult(new SAXResult(consumer));
 
-      return transHand;
+            return transHand;
 
-    } catch (TransformerConfigurationException e) {
-      e.printStackTrace();
-    } catch (IllegalArgumentException e) {
-      e.printStackTrace();
-    } catch (TransformerFactoryConfigurationError e) {
-      e.printStackTrace();
+        } catch (TransformerConfigurationException e) {
+            e.printStackTrace();
+        } catch (IllegalArgumentException e) {
+            e.printStackTrace();
+        } catch (TransformerFactoryConfigurationError e) {
+            e.printStackTrace();
+        }
+        throw new IllegalStateException("Can't transform xml.");
+
     }
-    throw new IllegalStateException("Can't transform xml.");
-  }
+
 }

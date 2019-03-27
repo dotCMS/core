@@ -15,256 +15,261 @@ import java.util.Date;
 import java.util.List;
 import org.elasticsearch.common.Nullable;
 
+
 public class LegacyFieldTransformer implements FieldTransformer {
 
-  final List<com.dotmarketing.portlets.structure.model.Field> oldFields;
-  final List<Field> newFields;
+	final List<com.dotmarketing.portlets.structure.model.Field> oldFields;
+	final List<Field> newFields;
 
-  public LegacyFieldTransformer(com.dotmarketing.portlets.structure.model.Field oldField) {
-    this(ImmutableList.of(oldField));
-  }
+	public LegacyFieldTransformer(com.dotmarketing.portlets.structure.model.Field oldField) {
+		this(ImmutableList.of(oldField));
 
-  public LegacyFieldTransformer(Field newField) {
-    this(ImmutableList.of(newField));
-  }
+	}
 
-  public LegacyFieldTransformer(List<? extends FieldIf> newFields) {
+	public LegacyFieldTransformer(Field newField) {
+		this(ImmutableList.of(newField));
+	}
 
-    List<Field> news = new ArrayList<Field>();
-    List<com.dotmarketing.portlets.structure.model.Field> olds =
-        new ArrayList<com.dotmarketing.portlets.structure.model.Field>();
+	public LegacyFieldTransformer(List<? extends FieldIf> newFields) {
+		
+		List<Field> news = new ArrayList<Field>();
+		List<com.dotmarketing.portlets.structure.model.Field> olds = new ArrayList<com.dotmarketing.portlets.structure.model.Field>();
+		
+		for(FieldIf field : newFields){
+			if(field instanceof Field){
+				olds.add(transformToOld((Field) field));
+				news.add((Field)field);
+			}
+			else{
+				olds.add((com.dotmarketing.portlets.structure.model.Field) field);
+				news.add(transformToNew((com.dotmarketing.portlets.structure.model.Field) field));
+			}
+		}
+		
+		this.newFields = ImmutableList.copyOf(news);
+		this.oldFields = ImmutableList.copyOf(olds);
+	}
 
-    for (FieldIf field : newFields) {
-      if (field instanceof Field) {
-        olds.add(transformToOld((Field) field));
-        news.add((Field) field);
-      } else {
-        olds.add((com.dotmarketing.portlets.structure.model.Field) field);
-        news.add(transformToNew((com.dotmarketing.portlets.structure.model.Field) field));
-      }
+	public Field from() throws DotStateException {
+		if (this.newFields.size() == 0)
+			throw new DotStateException("0 results");
+		return this.newFields.get(0);
+	}
+
+	@Override
+	public List<Field> asList() throws DotStateException {
+
+		return this.newFields;
+
+	}
+
+	private static com.dotmarketing.portlets.structure.model.Field transformToOld(Field field) {
+
+		com.dotmarketing.portlets.structure.model.Field old = new com.dotmarketing.portlets.structure.model.Field();
+		old.setDefaultValue(field.defaultValue());
+		old.setFieldContentlet(LegacyFieldTransformer.buildLegacyFieldContent(field));
+		old.setFieldName(field.name());
+		old.setFieldRelationType(field.relationType());
+		old.setFieldType(field.typeName());
+		old.setFixed(field.fixed());
+		old.setHint(field.hint());
+		old.setiDate(field.iDate());
+		old.setIdentifier(field.inode());
+		old.setIndexed(field.indexed());
+		old.setInode(field.inode());
+		old.setListed(field.listed());
+		old.setModDate(field.modDate());
+		old.setOwner(field.owner());
+		old.setReadOnly(field.readOnly());
+		old.setRegexCheck(field.regexCheck());
+		old.setRequired(field.required());
+		old.setSearchable(field.searchable());
+		old.setSortOrder(field.sortOrder());
+		old.setStructureInode(field.contentTypeId());
+		old.setUnique(field.unique());
+		old.setValues(field.values());
+		old.setVelocityVarName(field.variable());
+		return old;
+
+	}
+
+	private static String buildLegacyFieldContent(Field field){
+		String fieldContent = (field instanceof BinaryField)
+		    ? fieldContent = "binary" + field.sortOrder() 
+		    : (field.dbColumn() !=null)
+		      ? field.dbColumn()
+		          : " system_field";
+		return fieldContent;
+	}
+	
+    private static String buildNewFieldDbColumn(com.dotmarketing.portlets.structure.model.Field oldField){
+      String fieldContent = (oldField.getFieldContentlet()!=null)
+          ?  (oldField.getFieldContentlet().startsWith("binary"))
+              ? "system_field"
+              :  oldField.getFieldContentlet()
+                : null;
+
+      return fieldContent;
     }
 
-    this.newFields = ImmutableList.copyOf(news);
-    this.oldFields = ImmutableList.copyOf(olds);
-  }
+    private static Field transformToNew(final com.dotmarketing.portlets.structure.model.Field oldField) {
+		final String fieldType = oldField.getFieldType();
 
-  public Field from() throws DotStateException {
-    if (this.newFields.size() == 0) throw new DotStateException("0 results");
-    return this.newFields.get(0);
-  }
+		@SuppressWarnings("serial")
+		final Field field = new Field() {
 
-  @Override
-  public List<Field> asList() throws DotStateException {
+			@Override
+			public String variable() {
+				return StringUtils.nullEmptyStr(oldField.getVelocityVarName());
+			}
 
-    return this.newFields;
-  }
+			@Override
+			public String values() {
+				return StringUtils.nullEmptyStr(oldField.getValues());
+			}
 
-  private static com.dotmarketing.portlets.structure.model.Field transformToOld(Field field) {
+			@Override
+			@Nullable
+			public String relationType() {
+				return StringUtils.nullEmptyStr(oldField.getFieldRelationType());
+			}
 
-    com.dotmarketing.portlets.structure.model.Field old =
-        new com.dotmarketing.portlets.structure.model.Field();
-    old.setDefaultValue(field.defaultValue());
-    old.setFieldContentlet(LegacyFieldTransformer.buildLegacyFieldContent(field));
-    old.setFieldName(field.name());
-    old.setFieldRelationType(field.relationType());
-    old.setFieldType(field.typeName());
-    old.setFixed(field.fixed());
-    old.setHint(field.hint());
-    old.setiDate(field.iDate());
-    old.setIdentifier(field.inode());
-    old.setIndexed(field.indexed());
-    old.setInode(field.inode());
-    old.setListed(field.listed());
-    old.setModDate(field.modDate());
-    old.setOwner(field.owner());
-    old.setReadOnly(field.readOnly());
-    old.setRegexCheck(field.regexCheck());
-    old.setRequired(field.required());
-    old.setSearchable(field.searchable());
-    old.setSortOrder(field.sortOrder());
-    old.setStructureInode(field.contentTypeId());
-    old.setUnique(field.unique());
-    old.setValues(field.values());
-    old.setVelocityVarName(field.variable());
-    return old;
-  }
+			@Override
+			public String contentTypeId() {
+				return StringUtils.nullEmptyStr(oldField.getStructureInode());
+			}
 
-  private static String buildLegacyFieldContent(Field field) {
-    String fieldContent =
-        (field instanceof BinaryField)
-            ? fieldContent = "binary" + field.sortOrder()
-            : (field.dbColumn() != null) ? field.dbColumn() : " system_field";
-    return fieldContent;
-  }
+			@Override
+			public String regexCheck() {
+				return StringUtils.nullEmptyStr(oldField.getRegexCheck());
+			}
 
-  private static String buildNewFieldDbColumn(
-      com.dotmarketing.portlets.structure.model.Field oldField) {
-    String fieldContent =
-        (oldField.getFieldContentlet() != null)
-            ? (oldField.getFieldContentlet().startsWith("binary"))
-                ? "system_field"
-                : oldField.getFieldContentlet()
-            : null;
+			@Override
+			public String owner() {
+				return StringUtils.nullEmptyStr(oldField.getOwner());
+			}
 
-    return fieldContent;
-  }
+			@Override
+			public String name() {
+				return StringUtils.nullEmptyStr(oldField.getFieldName());
+			}
 
-  private static Field transformToNew(
-      final com.dotmarketing.portlets.structure.model.Field oldField) {
-    final String fieldType = oldField.getFieldType();
+			@Override
+			public String id() {
+				return StringUtils.nullEmptyStr(oldField.getInode());
+			}
 
-    @SuppressWarnings("serial")
-    final Field field =
-        new Field() {
+			@Override
+			public String hint() {
+				return StringUtils.nullEmptyStr(oldField.getHint());
+			}
 
-          @Override
-          public String variable() {
-            return StringUtils.nullEmptyStr(oldField.getVelocityVarName());
-          }
+			@Override
+			public String defaultValue() {
+				return StringUtils.nullEmptyStr(oldField.getDefaultValue());
+			}
 
-          @Override
-          public String values() {
-            return StringUtils.nullEmptyStr(oldField.getValues());
-          }
+			@Override
+			public DataTypes dataType() {
+				String dbType = (oldField.getFieldContentlet()!=null) ? oldField.getFieldContentlet().replaceAll("[0-9]", "") : null;
+				if(!UtilMethods.isSet(dbType)){
+				   return FieldBuilder.instanceOf(LegacyFieldTypes.getImplClass(fieldType)).acceptedDataTypes().get(0);
+				}
+				return DataTypes.getDataType(dbType);
+			}
 
-          @Override
-          @Nullable
-          public String relationType() {
-            return StringUtils.nullEmptyStr(oldField.getFieldRelationType());
-          }
+			@Override
+			public String dbColumn() {
+				return StringUtils.nullEmptyStr(oldField.getFieldContentlet());
 
-          @Override
-          public String contentTypeId() {
-            return StringUtils.nullEmptyStr(oldField.getStructureInode());
-          }
+			}
 
-          @Override
-          public String regexCheck() {
-            return StringUtils.nullEmptyStr(oldField.getRegexCheck());
-          }
+			@Override
+			public Date modDate() {
+				return new Date(oldField.getModDate().getTime());
+			}
 
-          @Override
-          public String owner() {
-            return StringUtils.nullEmptyStr(oldField.getOwner());
-          }
+			@Override
+			public Date iDate() {
+				if (oldField.getiDate() == null)
+					return null;
+				return new Date(oldField.getiDate().getTime());
 
-          @Override
-          public String name() {
-            return StringUtils.nullEmptyStr(oldField.getFieldName());
-          }
+			}
 
-          @Override
-          public String id() {
-            return StringUtils.nullEmptyStr(oldField.getInode());
-          }
+			@Override
+			public boolean required() {
+				return oldField.isRequired();
+			}
 
-          @Override
-          public String hint() {
-            return StringUtils.nullEmptyStr(oldField.getHint());
-          }
+			@Override
+			public int sortOrder() {
+				return oldField.getSortOrder();
 
-          @Override
-          public String defaultValue() {
-            return StringUtils.nullEmptyStr(oldField.getDefaultValue());
-          }
+			}
 
-          @Override
-          public DataTypes dataType() {
-            String dbType =
-                (oldField.getFieldContentlet() != null)
-                    ? oldField.getFieldContentlet().replaceAll("[0-9]", "")
-                    : null;
-            if (!UtilMethods.isSet(dbType)) {
-              return FieldBuilder.instanceOf(LegacyFieldTypes.getImplClass(fieldType))
-                  .acceptedDataTypes()
-                  .get(0);
-            }
-            return DataTypes.getDataType(dbType);
-          }
+			@Override
+			public boolean indexed() {
+				return oldField.isIndexed();
+			}
 
-          @Override
-          public String dbColumn() {
-            return StringUtils.nullEmptyStr(oldField.getFieldContentlet());
-          }
+			@Override
+			public boolean listed() {
+				return oldField.isListed();
+			}
 
-          @Override
-          public Date modDate() {
-            return new Date(oldField.getModDate().getTime());
-          }
+			@Override
+			public boolean fixed() {
+				return oldField.isFixed();
+			}
 
-          @Override
-          public Date iDate() {
-            if (oldField.getiDate() == null) return null;
-            return new Date(oldField.getiDate().getTime());
-          }
+			@Override
+			public boolean readOnly() {
+				return oldField.isReadOnly();
+			}
 
-          @Override
-          public boolean required() {
-            return oldField.isRequired();
-          }
+			@Override
+			public boolean searchable() {
+				return oldField.isSearchable();
+			}
 
-          @Override
-          public int sortOrder() {
-            return oldField.getSortOrder();
-          }
+			@Override
+			public boolean unique() {
+				return oldField.isUnique();
+			}
 
-          @Override
-          public boolean indexed() {
-            return oldField.isIndexed();
-          }
+			@Override
+			public List<DataTypes> acceptedDataTypes() {
+				return ImmutableList.of();
+			}
 
-          @Override
-          public boolean listed() {
-            return oldField.isListed();
-          }
+			@SuppressWarnings({ "rawtypes", "unchecked" })
+			@Override
+			public Class type() {
+				return LegacyFieldTypes.getImplClass(fieldType);
 
-          @Override
-          public boolean fixed() {
-            return oldField.isFixed();
-          }
+			}
 
-          @Override
-          public boolean readOnly() {
-            return oldField.isReadOnly();
-          }
+			@Override
+			public String typeName() {
+				// TODO Auto-generated method stub
+				return null;
+			}
 
-          @Override
-          public boolean searchable() {
-            return oldField.isSearchable();
-          }
+		};
 
-          @Override
-          public boolean unique() {
-            return oldField.isUnique();
-          }
+		return new ImplClassFieldTransformer(field).from();
 
-          @Override
-          public List<DataTypes> acceptedDataTypes() {
-            return ImmutableList.of();
-          }
+	}
 
-          @SuppressWarnings({"rawtypes", "unchecked"})
-          @Override
-          public Class type() {
-            return LegacyFieldTypes.getImplClass(fieldType);
-          }
 
-          @Override
-          public String typeName() {
-            // TODO Auto-generated method stub
-            return null;
-          }
-        };
+	public com.dotmarketing.portlets.structure.model.Field asOldField() throws DotStateException {
+		return oldFields.get(0);
+	}
 
-    return new ImplClassFieldTransformer(field).from();
-  }
 
-  public com.dotmarketing.portlets.structure.model.Field asOldField() throws DotStateException {
-    return oldFields.get(0);
-  }
+	public List<com.dotmarketing.portlets.structure.model.Field> asOldFieldList() throws DotStateException {
+		return oldFields;
+	}
 
-  public List<com.dotmarketing.portlets.structure.model.Field> asOldFieldList()
-      throws DotStateException {
-    return oldFields;
-  }
 }

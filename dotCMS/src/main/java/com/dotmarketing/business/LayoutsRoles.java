@@ -2,47 +2,49 @@ package com.dotmarketing.business;
 
 import java.io.Serializable;
 
+
 public class LayoutsRoles implements Serializable {
 
-  private static final long serialVersionUID = 244359427451632900L;
+	private static final long serialVersionUID = 244359427451632900L;
+	
+	private String id;
+	private String layoutId;
+	private String roleId;
+	
+	public LayoutsRoles() {
+	}
 
-  private String id;
-  private String layoutId;
-  private String roleId;
+	public String getId() {
+		return id;
+	}
 
-  public LayoutsRoles() {}
+	public void setId(String id) {
+		this.id = id;
+	}
 
-  public String getId() {
-    return id;
-  }
+	public String getRoleId() {
+		return roleId;
+	}
 
-  public void setId(String id) {
-    this.id = id;
-  }
+	public void setRoleId(String roleId) {
+		this.roleId = roleId;
+	}
+	
+	public boolean equals(Object other) {
+		if (!(other instanceof LayoutsRoles)) {
+			return false;
+		}
 
-  public String getRoleId() {
-    return roleId;
-  }
+		LayoutsRoles castOther = (LayoutsRoles) other;
 
-  public void setRoleId(String roleId) {
-    this.roleId = roleId;
-  }
+		return (this.getId().equalsIgnoreCase(castOther.getId()));
+	}
 
-  public boolean equals(Object other) {
-    if (!(other instanceof LayoutsRoles)) {
-      return false;
-    }
+	public String getLayoutId() {
+		return layoutId;
+	}
 
-    LayoutsRoles castOther = (LayoutsRoles) other;
-
-    return (this.getId().equalsIgnoreCase(castOther.getId()));
-  }
-
-  public String getLayoutId() {
-    return layoutId;
-  }
-
-  public void setLayoutId(String layoutId) {
-    this.layoutId = layoutId;
-  }
+	public void setLayoutId(String layoutId) {
+		this.layoutId = layoutId;
+	}
 }

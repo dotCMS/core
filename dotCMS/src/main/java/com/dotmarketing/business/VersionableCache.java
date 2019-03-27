@@ -4,30 +4,32 @@ import com.dotmarketing.beans.Identifier;
 
 public abstract class VersionableCache implements Cachable {
 
-  protected abstract void addVersionableToCache(Versionable id);
+	abstract protected void addVersionableToCache(Versionable id);
 
-  protected abstract Versionable getVersionable(String identId);
+	abstract protected Versionable getVersionable(String identId);
 
-  protected abstract Versionable getVersionable(Versionable versionable);
 
-  protected abstract Versionable getWorkingVersionable(Versionable versionable);
+	abstract protected Versionable getVersionable(Versionable versionable);
 
-  protected abstract Versionable getLiveVersionable(Versionable versionable);
+	abstract protected Versionable getWorkingVersionable(Versionable versionable);
+	
+	abstract protected Versionable getLiveVersionable(Versionable versionable);
+	
+	abstract protected void removFromCache(Versionable versionable);
 
-  protected abstract void removFromCache(Versionable versionable);
+	abstract protected void removeFromCache(Identifier inode);
 
-  protected abstract void removeFromCache(Identifier inode);
+	abstract protected void removeFromCache(String inode);
 
-  protected abstract void removeFromCache(String inode);
+	abstract public void clearCache();
 
-  public abstract void clearCache();
+	public String[] getGroups() {
+		String[] groups = { getPrimaryGroup() };
+		return groups;
+	}
 
-  public String[] getGroups() {
-    String[] groups = {getPrimaryGroup()};
-    return groups;
-  }
+	public String getPrimaryGroup() {
+		return "VersionableCache";
+	}
 
-  public String getPrimaryGroup() {
-    return "VersionableCache";
-  }
 }

@@ -24,108 +24,100 @@ import org.apache.struts.action.ActionMessages;
 
 @Deprecated
 public class MyInterestsAction extends SecureAction {
+	
+	private CategoryAPI categoryAPI = APILocator.getCategoryAPI();
+	
+	public CategoryAPI getCategoryAPI() {
+		return categoryAPI;
+	}
 
-  private CategoryAPI categoryAPI = APILocator.getCategoryAPI();
+	public void setCategoryAPI(CategoryAPI categoryAPI) {
+		this.categoryAPI = categoryAPI;
+	}
 
-  public CategoryAPI getCategoryAPI() {
-    return categoryAPI;
-  }
+	public ActionForward unspecified(ActionMapping mapping, ActionForm lf,
+			HttpServletRequest request, HttpServletResponse response)
+			throws Exception {
 
-  public void setCategoryAPI(CategoryAPI categoryAPI) {
-    this.categoryAPI = categoryAPI;
-  }
+		if (request.getSession().getAttribute(WebKeys.CMS_USER) == null) {
+			return new ActionForward("/dotCMS/login?referrer=/dotCMS/editInterests");
+		}
 
-  public ActionForward unspecified(
-      ActionMapping mapping,
-      ActionForm lf,
-      HttpServletRequest request,
-      HttpServletResponse response)
-      throws Exception {
+		// HttpSession session = request.getSession();
+		MyAccountForm form = (MyAccountForm) lf;
 
-    if (request.getSession().getAttribute(WebKeys.CMS_USER) == null) {
-      return new ActionForward("/dotCMS/login?referrer=/dotCMS/editInterests");
-    }
+		//Getting the user from the session
+		User user = (User) request.getSession().getAttribute(WebKeys.CMS_USER);
+		String userId = user.getUserId();
 
-    // HttpSession session = request.getSession();
-    MyAccountForm form = (MyAccountForm) lf;
+		loadUserInfoInRequest(form, userId, request);
 
-    // Getting the user from the session
-    User user = (User) request.getSession().getAttribute(WebKeys.CMS_USER);
-    String userId = user.getUserId();
+		return mapping.findForward("myInterestsPage");
+	}
 
-    loadUserInfoInRequest(form, userId, request);
+	public ActionForward saveUserInfo(ActionMapping mapping, ActionForm lf,
+			HttpServletRequest request, HttpServletResponse response)
+	throws Exception {
 
-    return mapping.findForward("myInterestsPage");
-  }
+		if (request.getSession().getAttribute(WebKeys.CMS_USER) == null) {
+			 return new ActionForward("/dotCMS/login");
+		}
+		
+		//Getting the user from the session
+		User user = (User) request.getSession().getAttribute(WebKeys.CMS_USER);
+		String userId = user.getUserId();
+		UserProxy userProxy = com.dotmarketing.business.APILocator.getUserProxyAPI().getUserProxy(user,APILocator.getUserAPI().getSystemUser(), false);
 
-  public ActionForward saveUserInfo(
-      ActionMapping mapping,
-      ActionForm lf,
-      HttpServletRequest request,
-      HttpServletResponse response)
-      throws Exception {
+		//Delete the old categories
+		InodeFactory.deleteChildrenOfClass(userProxy,Category.class);
 
-    if (request.getSession().getAttribute(WebKeys.CMS_USER) == null) {
-      return new ActionForward("/dotCMS/login");
-    }
+		//Save the new categories
+		MyAccountForm form = (MyAccountForm) lf;
+		String[] categories = form.getCategory();
+		if (UtilMethods.isSet(categories)) {
+			for(int i = 0;i < categories.length;i++) {
+				Category category = categoryAPI.find(categories[i], user, true);
+				if(InodeUtils.isSet(category.getInode())) {
+					categoryAPI.addChild(userProxy, category, user, true);
+				}
+			}
+		}
+		
+		HibernateUtil.flush();
+		
+		loadUserInfoInRequest(form, userId, request);
 
-    // Getting the user from the session
-    User user = (User) request.getSession().getAttribute(WebKeys.CMS_USER);
-    String userId = user.getUserId();
-    UserProxy userProxy =
-        com.dotmarketing.business.APILocator.getUserProxyAPI()
-            .getUserProxy(user, APILocator.getUserAPI().getSystemUser(), false);
+        request.getSession().removeAttribute(WebKeys.LOGGED_IN_USER_CATS);
 
-    // Delete the old categories
-    InodeFactory.deleteChildrenOfClass(userProxy, Category.class);
+		ActionMessages msg = new ActionMessages();
+        msg.add(Globals.MESSAGE_KEY, new ActionMessage("message.interests.saved"));
+        request.setAttribute(Globals.MESSAGE_KEY, msg);
 
-    // Save the new categories
-    MyAccountForm form = (MyAccountForm) lf;
-    String[] categories = form.getCategory();
-    if (UtilMethods.isSet(categories)) {
-      for (int i = 0; i < categories.length; i++) {
-        Category category = categoryAPI.find(categories[i], user, true);
-        if (InodeUtils.isSet(category.getInode())) {
-          categoryAPI.addChild(userProxy, category, user, true);
-        }
-      }
-    }
+        return mapping.findForward("myInterestsPage");
+	}
 
-    HibernateUtil.flush();
+	
+	private void loadUserInfoInRequest(MyAccountForm form, String userId,
+			HttpServletRequest request) throws Exception {
 
-    loadUserInfoInRequest(form, userId, request);
+		
+		User user = APILocator.getUserAPI().loadUserById(userId,APILocator.getUserAPI().getSystemUser(),false);
 
-    request.getSession().removeAttribute(WebKeys.LOGGED_IN_USER_CATS);
+		// Retriving info from db
+		UserProxy userProxy = com.dotmarketing.business.APILocator.getUserProxyAPI().getUserProxy(user,APILocator.getUserAPI().getSystemUser(), false);
+		
+		if (!InodeUtils.isSet(userProxy.getInode())) {
+			userProxy.setUserId(user.getUserId());
+			HibernateUtil.saveOrUpdate(userProxy);
+		}
 
-    ActionMessages msg = new ActionMessages();
-    msg.add(Globals.MESSAGE_KEY, new ActionMessage("message.interests.saved"));
-    request.setAttribute(Globals.MESSAGE_KEY, msg);
+		// Copy the attributes
+		BeanUtils.copyProperties(form, user);
+		BeanUtils.copyProperties(form, userProxy);
+		
 
-    return mapping.findForward("myInterestsPage");
-  }
+		// Extra user info
+		form.setUserProxyInode(userProxy.getInode());
 
-  private void loadUserInfoInRequest(MyAccountForm form, String userId, HttpServletRequest request)
-      throws Exception {
-
-    User user =
-        APILocator.getUserAPI()
-            .loadUserById(userId, APILocator.getUserAPI().getSystemUser(), false);
-
-    // Retriving info from db
-    UserProxy userProxy =
-        com.dotmarketing.business.APILocator.getUserProxyAPI()
-            .getUserProxy(user, APILocator.getUserAPI().getSystemUser(), false);
-
-    if (!InodeUtils.isSet(userProxy.getInode())) {
-      userProxy.setUserId(user.getUserId());
-      HibernateUtil.saveOrUpdate(userProxy);
-    }
-
-    // Copy the attributes
-    BeanUtils.copyProperties(form, user);
-    BeanUtils.copyProperties(form, userProxy);
-
-    // Extra user info
-    form.setUserProxyInode(userProxy.getInode());
-  }
+	}
 }

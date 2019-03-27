@@ -21,13 +21,7 @@ import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.util.ContentTypeUtil;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.PermissionLevel;
-import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.*;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -35,20 +29,13 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.SimpleStructureURLMap;
 import com.dotmarketing.quartz.job.IdentifierDateJob;
-import com.dotmarketing.util.ActivityLogger;
-import com.dotmarketing.util.AdminLogger;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UUIDUtil;
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.*;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 import org.elasticsearch.action.search.SearchResponse;
+
+import java.util.*;
 
 public class ContentTypeAPIImpl implements ContentTypeAPI {
 
@@ -60,14 +47,10 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   private final FieldAPI fieldAPI;
   private final LocalSystemEventsAPI localSystemEventsAPI;
 
-  public ContentTypeAPIImpl(
-      User user,
-      boolean respectFrontendRoles,
-      ContentTypeFactory fac,
-      FieldFactory ffac,
-      PermissionAPI perms,
-      FieldAPI fAPI,
-      final LocalSystemEventsAPI localSystemEventsAPI) {
+
+
+  public ContentTypeAPIImpl(User user, boolean respectFrontendRoles, ContentTypeFactory fac, FieldFactory ffac,
+      PermissionAPI perms, FieldAPI fAPI, final LocalSystemEventsAPI localSystemEventsAPI) {
     super();
     this.contentTypeFactory = fac;
     this.fieldFactory = ffac;
@@ -78,16 +61,13 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     this.localSystemEventsAPI = localSystemEventsAPI;
   }
 
+
+
   public ContentTypeAPIImpl(User user, boolean respectFrontendRoles) {
-    this(
-        user,
-        respectFrontendRoles,
-        FactoryLocator.getContentTypeFactory(),
-        FactoryLocator.getFieldFactory(),
-        APILocator.getPermissionAPI(),
-        APILocator.getContentTypeFieldAPI(),
-        APILocator.getLocalSystemEventsAPI());
+    this(user, respectFrontendRoles, FactoryLocator.getContentTypeFactory(), FactoryLocator.getFieldFactory(),
+        APILocator.getPermissionAPI(), APILocator.getContentTypeFieldAPI(), APILocator.getLocalSystemEventsAPI());
   }
+
 
   @CloseDBIfOpened
   @Override
@@ -102,31 +82,25 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     }
     try {
       String actionUrl = ContentTypeUtil.getInstance().getActionUrl(type, user);
-      ContentTypePayloadDataWrapper contentTypePayloadDataWrapper =
-          new ContentTypePayloadDataWrapper(actionUrl, type);
-      APILocator.getSystemEventsAPI()
-          .pushAsync(
-              SystemEventType.DELETE_BASE_CONTENT_TYPE,
-              new Payload(
-                  contentTypePayloadDataWrapper,
-                  Visibility.PERMISSION,
-                  String.valueOf(PermissionAPI.PERMISSION_READ)));
+      ContentTypePayloadDataWrapper contentTypePayloadDataWrapper = new ContentTypePayloadDataWrapper(actionUrl, type);
+      APILocator.getSystemEventsAPI().pushAsync(SystemEventType.DELETE_BASE_CONTENT_TYPE, new Payload(
+          contentTypePayloadDataWrapper, Visibility.PERMISSION, String.valueOf(PermissionAPI.PERMISSION_READ)));
     } catch (DotStateException | DotDataException e) {
       Logger.error(ContentType.class, e.getMessage(), e);
       throw new BaseRuntimeInternationalizationException(e);
     }
 
-    HibernateUtil.addCommitListener(
-        () -> {
-          localSystemEventsAPI.notify(new ContentTypeDeletedEvent(type.variable()));
-        });
+    HibernateUtil.addCommitListener(()-> {
+      localSystemEventsAPI.notify(new ContentTypeDeletedEvent(type.variable()));
+    });
+
   }
 
   @Override
   @CloseDBIfOpened
   public ContentType find(final String inodeOrVar) throws DotSecurityException, DotDataException {
-    if (!UtilMethods.isSet(inodeOrVar)) {
-      return null;
+    if(!UtilMethods.isSet(inodeOrVar)) {
+        return null;
     }
     final ContentType type = this.contentTypeFactory.find(inodeOrVar);
 
@@ -135,8 +109,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
       return type;
     }
 
-    throw new DotSecurityException(
-        "User " + user + " does not have READ permissions on ContentType " + type);
+    throw new DotSecurityException("User " + user + " does not have READ permissions on ContentType " + type);
   }
 
   @CloseDBIfOpened
@@ -144,15 +117,12 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   public List<ContentType> findAll() throws DotDataException {
 
     try {
-      return perms.filterCollection(
-          this.contentTypeFactory.findAll(),
-          PermissionAPI.PERMISSION_READ,
-          respectFrontendRoles,
-          user);
+      return perms.filterCollection(this.contentTypeFactory.findAll(), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
     } catch (DotSecurityException e) {
       Logger.warn(this.getClass(), e.getMessage(), e);
       return ImmutableList.of();
     }
+
   }
 
   @CloseDBIfOpened
@@ -160,30 +130,26 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   public List<ContentType> findAll(String orderBy) throws DotDataException {
 
     try {
-      return perms.filterCollection(
-          this.contentTypeFactory.findAll(orderBy),
-          PermissionAPI.PERMISSION_READ,
-          respectFrontendRoles,
+      return perms.filterCollection(this.contentTypeFactory.findAll(orderBy), PermissionAPI.PERMISSION_READ, respectFrontendRoles,
           user);
     } catch (DotSecurityException e) {
       Logger.warn(this.getClass(), e.getMessage(), e);
       return ImmutableList.of();
     }
+
   }
 
   @CloseDBIfOpened
   @Override
   public List<ContentType> search(String condition) throws DotDataException {
     try {
-      return perms.filterCollection(
-          this.contentTypeFactory.search(condition, "mod_date", -1, 0),
-          PermissionAPI.PERMISSION_READ,
-          respectFrontendRoles,
-          user);
+      return perms.filterCollection(this.contentTypeFactory.search(condition, "mod_date", -1, 0), PermissionAPI.PERMISSION_READ,
+          respectFrontendRoles, user);
     } catch (DotSecurityException e) {
       throw new DotStateException(e);
     }
   }
+
 
   @Override
   public int count() throws DotDataException {
@@ -195,21 +161,19 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     return search(condition).size();
   }
 
+
   @CloseDBIfOpened
   @Override
   public int count(String condition, BaseContentType base) throws DotDataException {
     try {
-      return perms
-          .filterCollection(
-              this.contentTypeFactory.search(condition, base, "mod_date", -1, 0),
-              PermissionAPI.PERMISSION_READ,
-              respectFrontendRoles,
-              user)
-          .size();
+      return perms.filterCollection(this.contentTypeFactory.search(condition, base, "mod_date", -1, 0), PermissionAPI.PERMISSION_READ,
+          respectFrontendRoles, user).size();
     } catch (DotSecurityException e) {
       throw new DotStateException(e);
     }
   }
+
+
 
   @Override
   public ContentType save(ContentType type) throws DotDataException, DotSecurityException {
@@ -231,6 +195,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   public ContentType setAsDefault(ContentType type) throws DotDataException, DotSecurityException {
     perms.checkPermission(type, PermissionLevel.READ, user);
     return contentTypeFactory.setAsDefault(type);
+
   }
 
   @CloseDBIfOpened
@@ -239,33 +204,28 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     ContentType type = contentTypeFactory.findDefaultType();
     perms.checkPermission(type, PermissionLevel.READ, user);
     return type;
+
   }
 
   @CloseDBIfOpened
   @Override
-  public List<ContentType> findByBaseType(
-      BaseContentType type, String orderBy, int limit, int offset) throws DotDataException {
+  public List<ContentType> findByBaseType(BaseContentType type, String orderBy, int limit, int offset)
+      throws DotDataException {
     try {
-      return perms.filterCollection(
-          this.contentTypeFactory.search("1=1", type, orderBy, limit, offset),
-          PermissionAPI.PERMISSION_READ,
-          respectFrontendRoles,
-          user);
+      return perms.filterCollection(this.contentTypeFactory.search("1=1", type, orderBy, limit, offset), PermissionAPI.PERMISSION_READ,
+          respectFrontendRoles, user);
     } catch (DotSecurityException e) {
       return ImmutableList.of();
     }
+
   }
 
   @CloseDBIfOpened
   @Override
-  public List<ContentType> findByType(BaseContentType type)
-      throws DotDataException, DotSecurityException {
+  public List<ContentType> findByType(BaseContentType type) throws DotDataException, DotSecurityException {
 
     try {
-      return perms.filterCollection(
-          this.contentTypeFactory.findByBaseType(type),
-          PermissionAPI.PERMISSION_READ,
-          respectFrontendRoles,
+      return perms.filterCollection(this.contentTypeFactory.findByBaseType(type), PermissionAPI.PERMISSION_READ, respectFrontendRoles,
           user);
     } catch (DotSecurityException e) {
       return ImmutableList.of();
@@ -281,6 +241,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
       if (type instanceof UrlMapable) {
         res.add(new SimpleStructureURLMap(type.id(), type.urlMapPattern()));
       }
+
     }
 
     return ImmutableList.copyOf(res);
@@ -296,6 +257,8 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
       ContentTypeBuilder builder = ContentTypeBuilder.builder(type);
       builder.host(folder.getHostId());
       builder.folder(Folder.SYSTEM_FOLDER);
+
+
 
       type = contentTypeFactory.save(builder.build());
       CacheLocator.getContentTypeCache2().remove(type);
@@ -319,8 +282,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     return false;
   }
 
-  public List<ContentType> recentlyUsed(BaseContentType type, int numberToShow)
-      throws DotDataException {
+  public List<ContentType> recentlyUsed(BaseContentType type, int numberToShow) throws DotDataException {
 
     String query =
         " { \"query\": { \"query_string\": { \"query\": \"+moduser:{0} +working:true +deleted:false +basetype:{1}\" } },  \"aggs\": { \"recent-contents\": { \"terms\": { \"field\": \"contentType_dotraw\", \"size\": {2} }, \"aggs\": { \"top_tag_hits\": { \"top_hits\": { \"sort\": [ { \"moddate\": { \"order\": \"desc\" } } ], \"_source\": { \"include\": [ \"title\" ] }, \"size\" : 1 } } }  }  }, \"size\":0 } ";
@@ -332,13 +294,10 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     query = query.replace("{2}", String.valueOf(limit));
 
     try {
-      SearchResponse raw =
-          APILocator.getEsSearchAPI().esSearchRaw(query.toLowerCase(), false, user, false);
+      SearchResponse raw = APILocator.getEsSearchAPI().esSearchRaw(query.toLowerCase(), false, user, false);
 
-      JSONObject jo =
-          new JSONObject(raw.toString())
-              .getJSONObject("aggregations")
-              .getJSONObject("recent-contents");
+
+      JSONObject jo = new JSONObject(raw.toString()).getJSONObject("aggregations").getJSONObject("recent-contents");
       JSONArray ja = jo.getJSONArray("buckets");
       List<ContentType> ret = new ArrayList<>();
       for (int i = 0; i < ja.size(); i++) {
@@ -348,6 +307,8 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
         ret.add(find(var));
       }
 
+
+
       return ImmutableList.copyOf(ret);
     } catch (Exception e) {
       throw new DotStateException(e);
@@ -355,23 +316,13 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   }
 
   public Map<String, Long> getEntriesByContentTypes() throws DotDataException {
-    String query =
-        "{"
-            + "  \"aggs\" : {"
-            + "    \"entries\" : {"
-            + "       \"terms\" : { \"field\" : \"contenttype_dotraw\",  \"size\" : "
-            + Integer.MAX_VALUE
-            + "}"
-            + "     }"
-            + "   },"
-            + "   \"size\":0}";
+    String query = "{" + "  \"aggs\" : {" + "    \"entries\" : {" + "       \"terms\" : { \"field\" : \"contenttype_dotraw\",  \"size\" : " + Integer.MAX_VALUE + "}"
+        + "     }" + "   }," + "   \"size\":0}";
 
     try {
-      SearchResponse raw =
-          APILocator.getEsSearchAPI().esSearchRaw(query.toLowerCase(), false, user, false);
+      SearchResponse raw = APILocator.getEsSearchAPI().esSearchRaw(query.toLowerCase(), false, user, false);
 
-      JSONObject jo =
-          new JSONObject(raw.toString()).getJSONObject("aggregations").getJSONObject("entries");
+      JSONObject jo = new JSONObject(raw.toString()).getJSONObject("aggregations").getJSONObject("entries");
       JSONArray ja = jo.getJSONArray("buckets");
 
       Map<String, Long> result = new HashMap<>();
@@ -390,47 +341,40 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     }
   }
 
+
   @CloseDBIfOpened
   @Override
-  public List<ContentType> search(String condition, String orderBy, int limit, int offset)
-      throws DotDataException {
-    return this.search(condition, BaseContentType.ANY, orderBy, limit, offset);
+  public List<ContentType> search(String condition, String orderBy, int limit, int offset) throws DotDataException {
+      return this.search( condition, BaseContentType.ANY, orderBy,  limit,  offset);
   }
 
-  @CloseDBIfOpened
-  @Override
-  public List<ContentType> search(
-      String condition,
-      BaseContentType base,
-      final String orderBy,
-      final int limit,
-      final int offset)
-      throws DotDataException {
+    @CloseDBIfOpened
+    @Override
+    public List<ContentType> search(String condition, BaseContentType base, final String orderBy, final int limit, final int offset)
+            throws DotDataException {
 
-    final List<ContentType> returnTypes = new ArrayList<>();
-    int rollingOffset = offset;
-    try {
-      while ((limit < 0) || (returnTypes.size() < limit)) {
-        final List<ContentType> rawContentTypes =
-            this.contentTypeFactory.search(condition, base, orderBy, limit, rollingOffset);
-        if (rawContentTypes.isEmpty()) {
-          break;
-        }
-        returnTypes.addAll(
-            perms.filterCollection(
-                rawContentTypes, PermissionAPI.PERMISSION_READ, respectFrontendRoles, user));
-        if (returnTypes.size() >= limit || rawContentTypes.size() < limit) {
-          break;
-        }
-        rollingOffset += limit;
-      }
+        final List<ContentType> returnTypes = new ArrayList<>();
+        int rollingOffset = offset;
+        try {
+            while ((limit<0)||(returnTypes.size() < limit)) {
+                final List<ContentType> rawContentTypes = this.contentTypeFactory.search(condition, base, orderBy, limit, rollingOffset);
+                if (rawContentTypes.isEmpty()) {
+                    break;
+                }
+                returnTypes.addAll(perms.filterCollection(rawContentTypes, PermissionAPI.PERMISSION_READ, respectFrontendRoles, user));
+                if(returnTypes.size() >= limit || rawContentTypes.size()<limit) {
+                    break;
+                }
+                rollingOffset += limit;
+            }
 
-      final int maxAmount = (limit < 0) ? returnTypes.size() : Math.min(limit, returnTypes.size());
-      return returnTypes.subList(0, maxAmount);
-    } catch (DotSecurityException e) {
-      throw new DotStateException(e);
+            final int maxAmount = (limit<0)?returnTypes.size():Math.min(limit, returnTypes.size());
+            return returnTypes.subList(0, maxAmount);
+        } catch (DotSecurityException e) {
+            throw new DotStateException(e);
+        }
+
     }
-  }
 
   @CloseDBIfOpened
   @Override
@@ -445,8 +389,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   }
 
   @Override
-  public ContentType save(
-      ContentType contentType, List<Field> newFields, List<FieldVariable> newFieldVariables)
+  public ContentType save(ContentType contentType, List<Field> newFields, List<FieldVariable> newFieldVariables)
       throws DotDataException, DotSecurityException {
     // Sets the host:
     try {
@@ -455,15 +398,10 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
         contentType = ContentTypeBuilder.builder(contentType).host(Host.SYSTEM_HOST).build();
         contentType.constructWithFields(existinFields);
       }
-      if (!UUIDUtil.isUUID(contentType.host())
-          && !Host.SYSTEM_HOST.equalsIgnoreCase(contentType.host())) {
+      if (!UUIDUtil.isUUID(contentType.host()) && !Host.SYSTEM_HOST.equalsIgnoreCase(contentType.host())) {
         HostAPI hapi = APILocator.getHostAPI();
-        contentType =
-            ContentTypeBuilder.builder(contentType)
-                .host(
-                    hapi.resolveHostName(contentType.host(), APILocator.systemUser(), true)
-                        .getIdentifier())
-                .build();
+        contentType = ContentTypeBuilder.builder(contentType)
+            .host(hapi.resolveHostName(contentType.host(), APILocator.systemUser(), true).getIdentifier()).build();
       }
     } catch (DotDataException e) {
       throw new DotDataException("unable to resolve host:" + contentType.host(), e);
@@ -473,12 +411,8 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
     // check perms
     Permissionable parent = contentType.getParentPermissionable();
-    if (!perms.doesUserHavePermissions(
-        parent,
-        "PARENT:"
-            + PermissionAPI.PERMISSION_CAN_ADD_CHILDREN
-            + ", STRUCTURES:"
-            + PermissionAPI.PERMISSION_EDIT_PERMISSIONS,
+    if (!perms.doesUserHavePermissions(parent,
+        "PARENT:" + PermissionAPI.PERMISSION_CAN_ADD_CHILDREN + ", STRUCTURES:" + PermissionAPI.PERMISSION_EDIT_PERMISSIONS,
         user)) {
       throw new DotSecurityException(
           "User-does-not-have-add-children-or-structure-permission-on-host-folder:" + parent);
@@ -487,25 +421,21 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     try {
       if (contentType.id() != null) {
         final ContentType oldType = this.contentTypeFactory.find(contentType.id());
-        if (!perms.doesUserHavePermission(
-            oldType, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user, respectFrontendRoles)) {
+        if (!perms.doesUserHavePermission(oldType, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user, respectFrontendRoles)) {
           throw new DotSecurityException("You don't have permission to edit this content type.");
         }
       }
     } catch (NotFoundInDbException notThere) {
-      Logger.info(
-          this, "Content type not found with given id: " + contentType.id() + ". Continuing...");
+      Logger.info(this, "Content type not found with given id: " + contentType.id() + ". Continuing...");
     }
 
     return transactionalSave(newFields, newFieldVariables, contentType);
   }
 
   @WrapInTransaction
-  private ContentType transactionalSave(
-      final List<Field> newFields,
-      final List<FieldVariable> newFieldVariables,
-      final ContentType ctype)
-      throws DotDataException, DotSecurityException {
+  private ContentType transactionalSave(final List<Field> newFields,
+                                        final List<FieldVariable> newFieldVariables,
+                                        final ContentType ctype) throws DotDataException, DotSecurityException {
 
     ContentType contentTypeToSave = ctype;
 
@@ -514,20 +444,13 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
     // Checks if the folder has been set, if so checks the host where that folder lives and set
     // it.
-    if (UtilMethods.isSet(contentTypeToSave.folder())
-        && !contentTypeToSave.folder().equals(Folder.SYSTEM_FOLDER)) {
-      contentTypeToSave =
-          ContentTypeBuilder.builder(contentTypeToSave)
-              .host(
-                  APILocator.getFolderAPI()
-                      .find(contentTypeToSave.folder(), user, false)
-                      .getHostId())
-              .build();
-    } else if (UtilMethods.isSet(contentTypeToSave.host())) { // If there is no folder set, check
-      // if the host has been set, if so
-      // set the folder to System Folder
-      contentTypeToSave =
-          ContentTypeBuilder.builder(contentTypeToSave).folder(Folder.SYSTEM_FOLDER).build();
+    if (UtilMethods.isSet(contentTypeToSave.folder()) && !contentTypeToSave.folder().equals(Folder.SYSTEM_FOLDER)) {
+      contentTypeToSave = ContentTypeBuilder.builder(contentTypeToSave)
+          .host(APILocator.getFolderAPI().find(contentTypeToSave.folder(), user, false).getHostId()).build();
+    } else if (UtilMethods.isSet(contentTypeToSave.host())) {// If there is no folder set, check
+                                                             // if the host has been set, if so
+                                                             // set the folder to System Folder
+      contentTypeToSave = ContentTypeBuilder.builder(contentTypeToSave).folder(Folder.SYSTEM_FOLDER).build();
     }
 
     if (!ctype.fields().isEmpty()) {
@@ -549,26 +472,16 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
       if (fireUpdateIdentifiers(oldType.expireDateVar(), contentTypeToSave.expireDateVar())) {
 
         IdentifierDateJob.triggerJobImmediately(oldType, user);
-      } else if (fireUpdateIdentifiers(
-          oldType.publishDateVar(), contentTypeToSave.publishDateVar())) {
+      } else if (fireUpdateIdentifiers(oldType.publishDateVar(), contentTypeToSave.publishDateVar())) {
 
         IdentifierDateJob.triggerJobImmediately(oldType, user);
       }
       perms.resetPermissionReferences(contentTypeToSave);
     }
-    ActivityLogger.logInfo(
-        getClass(),
-        "Save ContentType Action",
-        "User "
-            + user.getUserId()
-            + "/"
-            + user.getFullName()
-            + " added ContentType "
-            + contentTypeToSave.name()
-            + " to host id:"
-            + contentTypeToSave.host());
-    AdminLogger.log(
-        getClass(), "ContentType", "ContentType saved : " + contentTypeToSave.name(), user);
+    ActivityLogger.logInfo(getClass(), "Save ContentType Action",
+        "User " + user.getUserId() + "/" + user.getFullName() + " added ContentType " + contentTypeToSave.name()
+            + " to host id:" + contentTypeToSave.host());
+    AdminLogger.log(getClass(), "ContentType", "ContentType saved : " + contentTypeToSave.name(), user);
 
     // update the existing content type fields
     if (newFields != null) {
@@ -578,25 +491,13 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
       for (Field oldField : oldFields) {
         if (!newFields.stream().anyMatch(f -> f.id().equals(oldField.id()))) {
           if (!oldField.fixed()) {
-            Logger.info(
-                this,
-                "Deleting no longer needed Field: "
-                    + oldField.name()
-                    + " with ID: "
-                    + oldField.id()
-                    + ", from Content Type: "
-                    + contentTypeToSave.name());
+            Logger.info(this, "Deleting no longer needed Field: " + oldField.name() + " with ID: " + oldField.id()
+                + ", from Content Type: " + contentTypeToSave.name());
 
             fieldAPI.delete(oldField);
           } else {
-            Logger.info(
-                this,
-                "Can't delete Field because is fixed: "
-                    + oldField.name()
-                    + " with ID: "
-                    + oldField.id()
-                    + ", from Content Type: "
-                    + contentTypeToSave.name());
+            Logger.info(this, "Can't delete Field because is fixed: " + oldField.name() + " with ID: " + oldField.id()
+                + ", from Content Type: " + contentTypeToSave.name());
             varNamesCantDelete.put(oldField.variable(), oldField);
           }
         }
@@ -615,22 +516,15 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
           // instead of creating a new one due the different ID. We need to be sure new field has
           // same variable and DB column.
           Field oldField = varNamesCantDelete.get(field.variable());
-          if (oldField.variable().equals(field.variable())
-              && oldField.dbColumn().equals(field.dbColumn())) {
+          if (oldField.variable().equals(field.variable()) && oldField.dbColumn().equals(field.dbColumn())) {
 
             // Create a copy of the new Field with the oldField-ID,
             field = FieldBuilder.builder(field).id(oldField.id()).build();
             fieldAPI.save(field, APILocator.systemUser());
           } else {
             // If the field don't match on VariableName and DBColumn we log an error.
-            Logger.error(
-                this,
-                "Can't save Field with already existing VariableName: "
-                    + field.variable()
-                    + ", id: "
-                    + field.id()
-                    + ", DBColumn: "
-                    + field.dbColumn());
+            Logger.error(this, "Can't save Field with already existing VariableName: " + field.variable() + ", id: "
+                + field.id() + ", DBColumn: " + field.dbColumn());
           }
         }
 
@@ -646,25 +540,23 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
     final ContentType savedContentType = find(contentTypeToSave.id());
 
-    HibernateUtil.addCommitListener(
-        () -> {
-          localSystemEventsAPI.notify(new ContentTypeSavedEvent(savedContentType));
-        });
+    HibernateUtil.addCommitListener(()-> {
+      localSystemEventsAPI.notify(new ContentTypeSavedEvent(savedContentType));
+    });
 
     return savedContentType;
   }
 
   private Field checkContentTypeFields(final ContentType contentType, final Field field) {
 
-    if (UtilMethods.isSet(field) && UtilMethods.isSet(contentType.id())) {
+      if (UtilMethods.isSet(field) && UtilMethods.isSet(contentType.id())) {
 
-      return !UtilMethods.isSet(field.contentTypeId())
-              || !field.contentTypeId().equals(contentType.id())
-          ? FieldBuilder.builder(field).contentTypeId(contentType.id()).build()
-          : field;
-    }
+          return  !UtilMethods.isSet(field.contentTypeId()) || !field.contentTypeId().equals(contentType.id()) ?
+                FieldBuilder.builder(field).contentTypeId(contentType.id()).build() : field;
 
-    return field;
+      }
+
+      return field;
   }
 
   @WrapInTransaction
@@ -682,15 +574,15 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   @WrapInTransaction
   @Override
   public boolean updateModDate(Field field) throws DotDataException {
-    return this.updateModDate(contentTypeFactory.find(field.contentTypeId()));
+    return this.updateModDate( contentTypeFactory.find( field.contentTypeId() ) );
   }
 
   @WrapInTransaction
   @Override
   public void unlinkPageFromContentType(ContentType contentType)
-      throws DotSecurityException, DotDataException {
+          throws DotSecurityException, DotDataException {
     ContentTypeBuilder builder =
-        ContentTypeBuilder.builder(contentType).urlMapPattern(null).detailPage(null);
+            ContentTypeBuilder.builder(contentType).urlMapPattern(null).detailPage(null);
     save(builder.build());
   }
 }

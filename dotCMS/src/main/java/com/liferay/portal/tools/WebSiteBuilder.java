@@ -1,21 +1,25 @@
 /**
  * Copyright (c) 2000-2005 Liferay, LLC. All rights reserved.
  *
- * <p>Permission is hereby granted, free of charge, to any person obtaining a copy of this software
- * and associated documentation files (the "Software"), to deal in the Software without restriction,
- * including without limitation the rights to use, copy, modify, merge, publish, distribute,
- * sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * <p>The above copyright notice and this permission notice shall be included in all copies or
- * substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
  *
- * <p>THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
- * BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
- * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
  */
+
 package com.liferay.portal.tools;
 
 import com.dotmarketing.util.Logger;
@@ -40,370 +44,394 @@ import org.dom4j.io.SAXReader;
 /**
  * <a href="WebSiteBuilder.java.html"><b><i>View Source</i></b></a>
  *
- * @author Brian Wing Shun Chan
+ * @author  Brian Wing Shun Chan
  * @version $Revision: 1.30 $
+ *
  */
 public class WebSiteBuilder {
 
-  public static void main(String[] args) {
-    if (args.length == 2) {
-      new WebSiteBuilder(args[0], args[1]);
-    } else {
-      throw new IllegalArgumentException();
-    }
-  }
+	public static void main(String[] args) {
+		if (args.length == 2) {
+			new WebSiteBuilder(args[0], args[1]);
+		}
+		else {
+			throw new IllegalArgumentException();
+		}
+	}
 
-  public static List getWebSites() throws Exception {
-    File file = new File("../web-sites/web-sites.xml");
+	public static List getWebSites() throws Exception {
+		File file = new File("../web-sites/web-sites.xml");
 
-    SAXReader reader = new SAXReader();
+		SAXReader reader = new SAXReader();
+
+		Document doc = null;
+
+		try {
+			doc = reader.read(file);
+		}
+		catch (DocumentException de) {
+			Logger.error(WebSiteBuilder.class,de.getMessage(),de);
+		}
 
-    Document doc = null;
+		Element root = doc.getRootElement();
 
-    try {
-      doc = reader.read(file);
-    } catch (DocumentException de) {
-      Logger.error(WebSiteBuilder.class, de.getMessage(), de);
-    }
+		List webSites = new ArrayList();
 
-    Element root = doc.getRootElement();
+		Iterator itr = root.elements("web-site").iterator();
 
-    List webSites = new ArrayList();
+		while (itr.hasNext()) {
+			Element webSite = (Element)itr.next();
 
-    Iterator itr = root.elements("web-site").iterator();
+			String id = webSite.attributeValue("id");
+			boolean httpEnabled = GetterUtil.getBoolean(
+				webSite.attributeValue("http-enabled"), true);
+			String keystore = GetterUtil.getString(
+				webSite.attributeValue("keystore"));
+			String keystorePassword = GetterUtil.getString(
+				webSite.attributeValue("keystore-password"));
+			String virtualHosts = GetterUtil.getString(
+				webSite.attributeValue("virtual-hosts"));
+			String forwardURL = GetterUtil.getString(
+				webSite.attributeValue("forward-url"), "/c");
 
-    while (itr.hasNext()) {
-      Element webSite = (Element) itr.next();
+			webSites.add(
+				new WebSite(
+					id, httpEnabled, keystore, keystorePassword, virtualHosts,
+					forwardURL));
+		}
 
-      String id = webSite.attributeValue("id");
-      boolean httpEnabled = GetterUtil.getBoolean(webSite.attributeValue("http-enabled"), true);
-      String keystore = GetterUtil.getString(webSite.attributeValue("keystore"));
-      String keystorePassword = GetterUtil.getString(webSite.attributeValue("keystore-password"));
-      String virtualHosts = GetterUtil.getString(webSite.attributeValue("virtual-hosts"));
-      String forwardURL = GetterUtil.getString(webSite.attributeValue("forward-url"), "/c");
+		return webSites;
+	}
 
-      webSites.add(
-          new WebSite(id, httpEnabled, keystore, keystorePassword, virtualHosts, forwardURL));
-    }
+	public WebSiteBuilder(String portalExtProperties, String orionConfigDir) {
+		try {
+			_portalExtProperties = portalExtProperties;
+			_orionConfigDir = orionConfigDir;
 
-    return webSites;
-  }
+			List webSites = getWebSites();
 
-  public WebSiteBuilder(String portalExtProperties, String orionConfigDir) {
-    try {
-      _portalExtProperties = portalExtProperties;
-      _orionConfigDir = orionConfigDir;
+			_buildOrionASP(webSites);
+			_buildWebSites(webSites);
+		}
+		catch (Exception e) {
+			Logger.error(this,e.getMessage(),e);
+		}
+	}
 
-      List webSites = getWebSites();
+	private void _buildOrionASP(List webSites) throws Exception {
+		if (_portalExtProperties.startsWith("${") ||
+			_orionConfigDir.startsWith("${")) {
 
-      _buildOrionASP(webSites);
-      _buildWebSites(webSites);
-    } catch (Exception e) {
-      Logger.error(this, e.getMessage(), e);
-    }
-  }
+			return;
+		}
 
-  private void _buildOrionASP(List webSites) throws Exception {
-    if (_portalExtProperties.startsWith("${") || _orionConfigDir.startsWith("${")) {
+		// portal-ext.properties
 
-      return;
-    }
+		BufferedReader br = new BufferedReader(new FileReader(
+			_portalExtProperties));
 
-    // portal-ext.properties
+		StringBuffer sb = new StringBuffer();
+		String line = null;
 
-    BufferedReader br = new BufferedReader(new FileReader(_portalExtProperties));
+		while ((line = br.readLine()) != null) {
+			if (line.startsWith("portal.instances")) {
+				sb.append("portal.instances=" + webSites.size());
+			}
+			else {
+				sb.append(line);
+			}
 
-    StringBuffer sb = new StringBuffer();
-    String line = null;
+			sb.append("\n");
+		}
 
-    while ((line = br.readLine()) != null) {
-      if (line.startsWith("portal.instances")) {
-        sb.append("portal.instances=" + webSites.size());
-      } else {
-        sb.append(line);
-      }
+		br.close();
 
-      sb.append("\n");
-    }
+		FileUtil.write(_portalExtProperties, sb.toString());
 
-    br.close();
+		// /orion/config/application.xml
 
-    FileUtil.write(_portalExtProperties, sb.toString());
+		sb = new StringBuffer();
 
-    // /orion/config/application.xml
+		Iterator itr = webSites.iterator();
 
-    sb = new StringBuffer();
+		while (itr.hasNext()) {
+			WebSite webSite = (WebSite)itr.next();
 
-    Iterator itr = webSites.iterator();
+			if (webSite.isHttpEnabled() || webSite.isHttpsEnabled()) {
+				sb.append("\t<web-module id=\"");
+				sb.append(webSite.getId());
+				sb.append("-web\" ");
+				sb.append("path=\"../applications/");
+				sb.append(webSite.getId());
+				sb.append("-web.war\" />\n");
+			}
+		}
 
-    while (itr.hasNext()) {
-      WebSite webSite = (WebSite) itr.next();
+		File file = new File(_orionConfigDir + "/application.xml");
+
+		String content = FileUtil.read(file);
 
-      if (webSite.isHttpEnabled() || webSite.isHttpsEnabled()) {
-        sb.append("\t<web-module id=\"");
-        sb.append(webSite.getId());
-        sb.append("-web\" ");
-        sb.append("path=\"../applications/");
-        sb.append(webSite.getId());
-        sb.append("-web.war\" />\n");
-      }
-    }
-
-    File file = new File(_orionConfigDir + "/application.xml");
-
-    String content = FileUtil.read(file);
-
-    int x = content.indexOf("<!-- Begin ASP -->");
-    int y = content.indexOf("<!-- End ASP -->");
-
-    content =
-        content.substring(0, x + 20) + sb.toString() + content.substring(y - 2, content.length());
-
-    FileUtil.write(file, content);
-
-    // /orion/config/server.xml
-
-    sb = new StringBuffer();
-
-    itr = webSites.iterator();
-
-    while (itr.hasNext()) {
-      WebSite webSite = (WebSite) itr.next();
-
-      if (webSite.isHttpEnabled()) {
-        sb.append("\t<web-site path=\"./web-sites/");
-        sb.append(webSite.getId());
-        sb.append("-web.xml\" />\n");
-      }
-
-      if (webSite.isHttpsEnabled()) {
-        sb.append("\t<web-site path=\"./web-sites/");
-        sb.append(webSite.getId());
-        sb.append("-web-secure.xml\" />\n");
-      }
-    }
-
-    file = new File(_orionConfigDir + "/server.xml");
-
-    content = FileUtil.read(file);
-
-    x = content.indexOf("<!-- Begin ASP -->");
-    y = content.indexOf("<!-- End ASP -->");
+		int x = content.indexOf("<!-- Begin ASP -->");
+		int y = content.indexOf("<!-- End ASP -->");
 
-    content =
-        content.substring(0, x + 20) + sb.toString() + content.substring(y - 2, content.length());
+		content =
+			content.substring(0, x  + 20) + sb.toString() +
+				content.substring(y - 2, content.length());
 
-    FileUtil.write(file, content);
+		FileUtil.write(file, content);
+
+		// /orion/config/server.xml
 
-    // /orion/config/web-sites/liferay.com-web.xml
+		sb = new StringBuffer();
 
-    itr = webSites.iterator();
+		itr = webSites.iterator();
 
-    while (itr.hasNext()) {
-      WebSite webSite = (WebSite) itr.next();
+		while (itr.hasNext()) {
+			WebSite webSite = (WebSite)itr.next();
 
-      if (webSite.isHttpEnabled()) {
-        _buildOrionASP(webSite, false);
-      }
+			if (webSite.isHttpEnabled()) {
+				sb.append("\t<web-site path=\"./web-sites/");
+				sb.append(webSite.getId());
+				sb.append("-web.xml\" />\n");
+			}
 
-      if (webSite.isHttpsEnabled()) {
-        _buildOrionASP(webSite, true);
-      }
-    }
-  }
-
-  private void _buildOrionASP(WebSite webSite, boolean secure) throws Exception {
-
-    String xml =
-        "<?xml version=\"1.0\"?>\n"
-            + "<!DOCTYPE web-site PUBLIC \"Orion Web-site\" "
-            + "\"http://www.orionserver.com/dtds/web-site.dtd\">\n"
-            + "\n"
-            + "<web-site "
-            + (secure ? "secure=\"true\" " : "")
-            + "virtual-hosts=\""
-            + webSite.getVirtualHosts()
-            + "\">\n"
-            + "\t<default-web-app application=\"default\" name=\""
-            + webSite.getId()
-            + "-web\" load-on-startup=\"true\" />\n"
-            + "\t<web-app application=\"default\" name=\"cms-web\" "
-            + "root=\"/cms\" load-on-startup=\"true\" />\n"
-            + "\t<web-app application=\"default\" name=\"laszlo-web\" "
-            + "root=\"/laszlo\" load-on-startup=\"true\" />\n"
-            + "\t<web-app application=\"default\" name=\"portal-web\" "
-            + "root=\"/portal\" load-on-startup=\"true\" />\n"
-            + "\t<web-app application=\"default\" name=\"tunnel-web\" "
-            + "root=\"/tunnel\" load-on-startup=\"true\" />\n"
-            + "\t<access-log path=\"../../log/"
-            + webSite.getId()
-            + "-web"
-            + (secure ? "-secure" : "")
-            + "-access.log\" />\n";
+			if (webSite.isHttpsEnabled()) {
+				sb.append("\t<web-site path=\"./web-sites/");
+				sb.append(webSite.getId());
+				sb.append("-web-secure.xml\" />\n");
+			}
+		}
 
-    if (secure) {
-      xml +=
-          "\t<ssl-config keystore=\""
-              + webSite.getKeystore()
-              + "\" keystore-password=\""
-              + webSite.getKeystorePassword()
-              + "\" />\n";
-    }
+		file = new File(_orionConfigDir + "/server.xml");
 
-    xml += "</web-site>";
+		content = FileUtil.read(file);
 
-    FileUtil.write(
-        _orionConfigDir
-            + "/web-sites/"
-            + webSite.getId()
-            + "-web"
-            + (secure ? "-secure" : "")
-            + ".xml",
-        xml);
-  }
+		x = content.indexOf("<!-- Begin ASP -->");
+		y = content.indexOf("<!-- End ASP -->");
 
-  private void _buildWebSites(List webSites) throws Exception {
+		content =
+			content.substring(0, x  + 20) + sb.toString() +
+				content.substring(y - 2, content.length());
 
-    // Session timeout
+		FileUtil.write(file, content);
 
-    Properties props = new Properties();
-    try (final InputStream inStream =
-        Files.newInputStream(Paths.get("../portal-ejb/classes/portal.properties"))) {
-      props.load(inStream);
-    }
+		// /orion/config/web-sites/liferay.com-web.xml
 
-    String sessionTimeout = GetterUtil.get(props.getProperty("session.timeout"), "30");
+		itr = webSites.iterator();
 
-    // Default NFC
+		while (itr.hasNext()) {
+			WebSite webSite = (WebSite)itr.next();
 
-    String nfcConf =
-        StringUtil.replace(
-            FileUtil.read("../portal-ejb/src/com/liferay/portal/tools/tmpl/" + "nfc.conf.tmpl"),
-            new String[] {"[$LISTEN_PORT$]"},
-            new String[] {Integer.toString(_nfcListenPort)});
+			if (webSite.isHttpEnabled()) {
+				_buildOrionASP(webSite, false);
+			}
 
-    File nfcConfFile = new File("../portal-web/docroot/WEB-INF/nfc/nfc.conf");
+			if (webSite.isHttpsEnabled()) {
+				_buildOrionASP(webSite, true);
+			}
+		}
+	}
 
-    FileUtil.write(nfcConfFile, nfcConf);
+	private void _buildOrionASP(WebSite webSite, boolean secure)
+		throws Exception {
 
-    // web-sites
+		String xml =
+			"<?xml version=\"1.0\"?>\n" +
+			"<!DOCTYPE web-site PUBLIC \"Orion Web-site\" " +
+				"\"http://www.orionserver.com/dtds/web-site.dtd\">\n" +
+			"\n" +
+			"<web-site " + (secure ? "secure=\"true\" " : "") +
+				"virtual-hosts=\"" + webSite.getVirtualHosts() + "\">\n" +
+			"\t<default-web-app application=\"default\" name=\"" +
+				webSite.getId() + "-web\" load-on-startup=\"true\" />\n" +
+			"\t<web-app application=\"default\" name=\"cms-web\" " +
+				"root=\"/cms\" load-on-startup=\"true\" />\n" +
+			"\t<web-app application=\"default\" name=\"laszlo-web\" " +
+				"root=\"/laszlo\" load-on-startup=\"true\" />\n" +
+			"\t<web-app application=\"default\" name=\"portal-web\" " +
+				"root=\"/portal\" load-on-startup=\"true\" />\n" +
+			"\t<web-app application=\"default\" name=\"tunnel-web\" " +
+				"root=\"/tunnel\" load-on-startup=\"true\" />\n" +
+			"\t<access-log path=\"../../log/" + webSite.getId() +
+				"-web" + (secure ? "-secure" : "") + "-access.log\" />\n";
 
-    Iterator itr = webSites.iterator();
+			if (secure) {
+				xml +=
+					"\t<ssl-config keystore=\"" + webSite.getKeystore() +
+						"\" keystore-password=\"" +
+							webSite.getKeystorePassword() + "\" />\n";
+			}
 
-    while (itr.hasNext()) {
-      WebSite webSite = (WebSite) itr.next();
+			xml += "</web-site>";
 
-      String id = webSite.getId();
-      String forwardURL = webSite.getForwardURL();
+		FileUtil.write(
+			_orionConfigDir + "/web-sites/" + webSite.getId() + "-web" +
+				(secure ? "-secure" : "") + ".xml",
+			xml);
+	}
 
-      // /docroot/index.html
+	private void _buildWebSites(List webSites) throws Exception {
 
-      String indexHTML =
-          "<html>\n"
-              + "<head>\n"
-              + "\t<title></title>\n"
-              + "\t<meta content=\"0; url="
-              + forwardURL
-              + "\" http-equiv=\"refresh\">\n"
-              + "</head>\n"
-              + "\n"
-              + "<body onLoad=\"javascript:location.replace('"
-              + forwardURL
-              + "')\">\n"
-              + "\n"
-              + "</body>\n"
-              + "\n"
-              + "</html>";
+		// Session timeout
 
-      File indexHTMLFile = new File("../web-sites/" + id + "-web/docroot/index.html");
+		Properties props = new Properties();
+		try (final InputStream inStream = Files
+				.newInputStream(Paths.get("../portal-ejb/classes/portal.properties"))){
+			props.load(inStream);
+		}
 
-      FileUtil.write(indexHTMLFile, indexHTML);
 
-      // /docroot/WEB-INF/web.xml
+		String sessionTimeout =
+			GetterUtil.get(props.getProperty("session.timeout"), "30");
 
-      String webXML =
-          StringUtil.replace(
-              FileUtil.read("../portal-ejb/src/com/liferay/portal/tools/tmpl/" + "web.xml.tmpl"),
-              new String[] {"[$COMPANY_ID$]", "[$SESSION_TIMEOUT$]"},
-              new String[] {id, sessionTimeout});
+		// Default NFC
 
-      File webXMLFile = new File("../web-sites/" + id + "-web/docroot/WEB-INF/web.xml");
+		String nfcConf = StringUtil.replace(
+			FileUtil.read(
+				"../portal-ejb/src/com/liferay/portal/tools/tmpl/" +
+					"nfc.conf.tmpl"),
+			new String[] {"[$LISTEN_PORT$]"},
+			new String[] {Integer.toString(_nfcListenPort)});
 
-      FileUtil.write(webXMLFile, webXML);
+		File nfcConfFile = new File(
+			"../portal-web/docroot/WEB-INF/nfc/nfc.conf");
 
-      // /docroot/WEB-INF/lib/util-taglib.jar
+		FileUtil.write(nfcConfFile, nfcConf);
 
-      FileUtil.copyFile(
-          "../portal-web/docroot/WEB-INF/lib/util-taglib.jar",
-          "../web-sites/" + id + "-web/docroot/WEB-INF/lib/util-taglib.jar");
+		// web-sites
 
-      // /docroot/WEB-INF/tld/liferay-portlet.tld
+		Iterator itr = webSites.iterator();
 
-      FileUtil.copyFile(
-          "../portal-web/docroot/WEB-INF/tld/liferay-portlet.tld",
-          "../web-sites/" + id + "-web/docroot/WEB-INF/tld/liferay-portlet.tld");
+		while (itr.hasNext()) {
+			WebSite webSite = (WebSite)itr.next();
 
-      // /docroot/WEB-INF/tld/liferay-util.tld
+			String id = webSite.getId();
+			String forwardURL = webSite.getForwardURL();
 
-      FileUtil.copyFile(
-          "../portal-web/docroot/WEB-INF/tld/liferay-util.tld",
-          "../web-sites/" + id + "-web/docroot/WEB-INF/tld/liferay-util.tld");
+			// /docroot/index.html
 
-      // /docroot/WEB-INF/jcvs
+			String indexHTML =
+				"<html>\n" +
+				"<head>\n" +
+				"\t<title></title>\n" +
+				"\t<meta content=\"0; url=" + forwardURL +
+					"\" http-equiv=\"refresh\">\n" +
+				"</head>\n" +
+				"\n" +
+				"<body onLoad=\"javascript:location.replace('" +
+					forwardURL + "')\">\n" +
+				"\n" +
+				"</body>\n" +
+				"\n" +
+				"</html>";
 
-      File[] jcvsConfArray = new File("../portal-web/docroot/WEB-INF/jcvs/conf").listFiles();
+			File indexHTMLFile = new File(
+				"../web-sites/" + id + "-web/docroot/index.html");
 
-      for (int i = 0; i < jcvsConfArray.length; i++) {
-        if (jcvsConfArray[i].isFile() && jcvsConfArray[i].getName().endsWith(".properties")) {
+			FileUtil.write(indexHTMLFile, indexHTML);
 
-          File webJcvsConf =
-              new File(
-                  "../web-sites/"
-                      + id
-                      + "-web/docroot/WEB-INF/jcvs/conf/"
-                      + jcvsConfArray[i].getName());
+			// /docroot/WEB-INF/web.xml
 
-          if (!webJcvsConf.exists()) {
-            FileUtil.copyFile(jcvsConfArray[i], webJcvsConf);
-          }
-        }
-      }
+			String webXML = StringUtil.replace(
+				FileUtil.read(
+					"../portal-ejb/src/com/liferay/portal/tools/tmpl/" +
+						"web.xml.tmpl"),
+				new String[] {"[$COMPANY_ID$]", "[$SESSION_TIMEOUT$]"},
+				new String[] {id, sessionTimeout});
 
-      FileUtil.write("../web-sites/" + id + "-web/docroot/WEB-INF/jcvs/temp/deleteme", "");
+			File webXMLFile = new File(
+				"../web-sites/" + id + "-web/docroot/WEB-INF/web.xml");
 
-      FileUtil.write("../web-sites/" + id + "-web/docroot/WEB-INF/jcvs/work/deleteme", "");
+			FileUtil.write(webXMLFile, webXML);
 
-      // /docroot/WEB-INF/nfc
+			// /docroot/WEB-INF/lib/util-taglib.jar
 
-      File[] nfcArray = new File("../portal-web/docroot/WEB-INF/nfc").listFiles();
+			FileUtil.copyFile(
+				"../portal-web/docroot/WEB-INF/lib/util-taglib.jar",
+				"../web-sites/" + id +
+					"-web/docroot/WEB-INF/lib/util-taglib.jar");
 
-      for (int i = 0; i < nfcArray.length; i++) {
-        if (nfcArray[i].isFile() && nfcArray[i].getName().endsWith(".properties")) {
+			// /docroot/WEB-INF/tld/liferay-portlet.tld
 
-          File webNfc =
-              new File("../web-sites/" + id + "-web/docroot/WEB-INF/nfc/" + nfcArray[i].getName());
+			FileUtil.copyFile(
+				"../portal-web/docroot/WEB-INF/tld/liferay-portlet.tld",
+				"../web-sites/" + id +
+					"-web/docroot/WEB-INF/tld/liferay-portlet.tld");
 
-          if (!webNfc.exists()) {
-            FileUtil.copyFile(nfcArray[i], webNfc);
-          }
-        }
-      }
+			// /docroot/WEB-INF/tld/liferay-util.tld
 
-      _nfcListenPort++;
+			FileUtil.copyFile(
+				"../portal-web/docroot/WEB-INF/tld/liferay-util.tld",
+				"../web-sites/" + id +
+					"-web/docroot/WEB-INF/tld/liferay-util.tld");
 
-      nfcConf =
-          StringUtil.replace(
-              FileUtil.read("../portal-ejb/src/com/liferay/portal/tools/tmpl/" + "nfc.conf.tmpl"),
-              new String[] {"[$LISTEN_PORT$]"},
-              new String[] {Integer.toString(_nfcListenPort)});
+			// /docroot/WEB-INF/jcvs
 
-      nfcConfFile = new File("../web-sites/" + id + "-web/docroot/WEB-INF/nfc/nfc.conf");
+			File[] jcvsConfArray = new File(
+				"../portal-web/docroot/WEB-INF/jcvs/conf").listFiles();
 
-      FileUtil.write(nfcConfFile, nfcConf);
-    }
-  }
+			for (int i = 0; i < jcvsConfArray.length; i++) {
+				if (jcvsConfArray[i].isFile() &&
+					jcvsConfArray[i].getName().endsWith(".properties")) {
 
-  private String _portalExtProperties = null;
-  private String _orionConfigDir = null;
-  private int _nfcListenPort = 7777;
+					File webJcvsConf = new File(
+						"../web-sites/" + id +
+							"-web/docroot/WEB-INF/jcvs/conf/" +
+								jcvsConfArray[i].getName());
+
+					if (!webJcvsConf.exists()) {
+						FileUtil.copyFile(jcvsConfArray[i], webJcvsConf);
+					}
+				}
+			}
+
+			FileUtil.write(
+				"../web-sites/" + id +
+					"-web/docroot/WEB-INF/jcvs/temp/deleteme",
+				"");
+
+			FileUtil.write(
+				"../web-sites/" + id +
+					"-web/docroot/WEB-INF/jcvs/work/deleteme",
+				"");
+
+			// /docroot/WEB-INF/nfc
+
+			File[] nfcArray = new File(
+				"../portal-web/docroot/WEB-INF/nfc").listFiles();
+
+			for (int i = 0; i < nfcArray.length; i++) {
+				if (nfcArray[i].isFile() &&
+					nfcArray[i].getName().endsWith(".properties")) {
+
+					File webNfc = new File(
+						"../web-sites/" + id + "-web/docroot/WEB-INF/nfc/" +
+							nfcArray[i].getName());
+
+					if (!webNfc.exists()) {
+						FileUtil.copyFile(nfcArray[i], webNfc);
+					}
+				}
+			}
+
+			_nfcListenPort++;
+
+			nfcConf = StringUtil.replace(
+				FileUtil.read(
+					"../portal-ejb/src/com/liferay/portal/tools/tmpl/" +
+						"nfc.conf.tmpl"),
+				new String[] {"[$LISTEN_PORT$]"},
+				new String[] {Integer.toString(_nfcListenPort)});
+
+			nfcConfFile = new File(
+				"../web-sites/" + id + "-web/docroot/WEB-INF/nfc/nfc.conf");
+
+			FileUtil.write(nfcConfFile, nfcConf);
+		}
+	}
+
+	private String _portalExtProperties = null;
+	private String _orionConfigDir = null;
+	private int _nfcListenPort = 7777;
+
 }

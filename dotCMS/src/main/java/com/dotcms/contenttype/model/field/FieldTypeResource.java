@@ -1,6 +1,5 @@
 package com.dotcms.contenttype.model.field;
 
-import static com.dotcms.util.CollectionsUtils.toImmutableList;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.ws.rs.GET;
@@ -16,38 +15,44 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
-import java.util.Map;
-import javax.servlet.http.HttpServletRequest;
 
-/** This end-point provides access to information associated to dotCMS FieldType. */
+import javax.servlet.http.HttpServletRequest;
+import java.util.Map;
+
+import static com.dotcms.util.CollectionsUtils.toImmutableList;
+
+/**
+ * This end-point provides access to information associated to dotCMS FieldType.
+ */
 @Path("/v1/fieldTypes")
 public class FieldTypeResource {
 
-  private final WebResource webResource;
-  private FieldTypeAPI fieldTypeAPI;
+    private final WebResource webResource;
+    private FieldTypeAPI fieldTypeAPI;
 
-  public FieldTypeResource() {
-    this(new WebResource(), FieldTypeAPI.getInstance());
-  }
+    public FieldTypeResource() {
+        this(new WebResource(), FieldTypeAPI.getInstance());
+    }
 
-  @VisibleForTesting
-  public FieldTypeResource(final WebResource webresource, FieldTypeAPI fieldTypeAPI) {
-    this.webResource = webresource;
-    this.fieldTypeAPI = fieldTypeAPI;
-  }
+    @VisibleForTesting
+    public FieldTypeResource(final WebResource webresource, FieldTypeAPI fieldTypeAPI) {
+        this.webResource = webresource;
+        this.fieldTypeAPI = fieldTypeAPI;
+    }
 
-  @GET
-  @JSONP
-  @NoCache
-  @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-  public Response getFieldTypes(@Context final HttpServletRequest req) {
+    @GET
+    @JSONP
+    @NoCache
+    @Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
+    public Response getFieldTypes(@Context final HttpServletRequest req) {
 
-    final InitDataObject initData = this.webResource.init(null, true, req, true, null);
-    final User user = initData.getUser();
+        final InitDataObject initData = this.webResource.init(null, true, req, true, null);
+        final User user = initData.getUser();
 
-    final ImmutableList<Map<String, Object>> fieldTypesMap =
-        fieldTypeAPI.getFieldTypes(user).stream().map(FieldType::toMap).collect(toImmutableList());
+        final ImmutableList<Map<String, Object>> fieldTypesMap = fieldTypeAPI.getFieldTypes(user).stream()
+                .map(FieldType::toMap)
+                .collect(toImmutableList());
 
-    return Response.ok(new ResponseEntityView(fieldTypesMap)).build();
-  }
+        return Response.ok( new ResponseEntityView( fieldTypesMap ) ).build();
+    }
 }

@@ -13,31 +13,28 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 
 /**
+ * 
  * @author David Torres
  * @version 1.9
+ * 
  */
 public class ViewHostsAction extends DotPortletAction {
 
-  HostAPI hostAPI;
-  ContentletAPI contentAPI = APILocator.getContentletAPI();
+	HostAPI hostAPI;
+	ContentletAPI contentAPI = APILocator.getContentletAPI();
+	
+	public ViewHostsAction () throws InstantiationException, IllegalAccessException, ClassNotFoundException {
+		hostAPI = APILocator.getHostAPI();
+		//Interceptor conI = (Interceptor)APILocator.getContentletAPIntercepter();
+		//conI.addPostHook("com.dotmarketing.portlets.hostadmin.business.CopyHostContentPostHook");
+	}
 
-  public ViewHostsAction()
-      throws InstantiationException, IllegalAccessException, ClassNotFoundException {
-    hostAPI = APILocator.getHostAPI();
-    // Interceptor conI = (Interceptor)APILocator.getContentletAPIntercepter();
-    // conI.addPostHook("com.dotmarketing.portlets.hostadmin.business.CopyHostContentPostHook");
-  }
+	public ActionForward render(ActionMapping mapping, ActionForm form, PortletConfig config, RenderRequest req, RenderResponse res) throws Exception {
 
-  public ActionForward render(
-      ActionMapping mapping,
-      ActionForm form,
-      PortletConfig config,
-      RenderRequest req,
-      RenderResponse res)
-      throws Exception {
+		Logger.debug(this, "Running ViewHostsAction!!!!");
 
-    Logger.debug(this, "Running ViewHostsAction!!!!");
+		return mapping.findForward("portlet.ext.hostadmin.view_hosts");
+		
+	}
 
-    return mapping.findForward("portlet.ext.hostadmin.view_hosts");
-  }
 }

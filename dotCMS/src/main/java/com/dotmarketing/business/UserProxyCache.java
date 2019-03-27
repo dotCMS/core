@@ -2,15 +2,17 @@ package com.dotmarketing.business;
 
 import com.dotmarketing.beans.UserProxy;
 
+
 public abstract class UserProxyCache implements Cachable {
 
-  protected abstract UserProxy addToUserProxyCache(UserProxy userProxy);
+	abstract protected UserProxy addToUserProxyCache(UserProxy userProxy);
 
-  protected abstract UserProxy getUserProxyFromUserId(String userId);
+	abstract protected UserProxy getUserProxyFromUserId(String userId);
+	
+	abstract protected UserProxy getUserProxyFromLongCookie(String longLivedCookie);
 
-  protected abstract UserProxy getUserProxyFromLongCookie(String longLivedCookie);
+	abstract public void clearCache();
 
-  public abstract void clearCache();
+	abstract protected void remove(UserProxy userProxy);
 
-  protected abstract void remove(UserProxy userProxy);
 }

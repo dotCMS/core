@@ -34,380 +34,347 @@ import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 
+
 @Path("/cluster")
 public class ClusterResource {
 
-  private final WebResource webResource = new WebResource();
+    private final WebResource webResource = new WebResource();
 
-  /**
-   * Returns a Map of the Cache Cluster Nodes Status
-   *
-   * @param request
-   * @param params
-   * @return
-   * @throws DotStateException
-   * @throws DotDataException
-   * @throws JSONException
-   */
-  @GET
-  @Path("/getNodesStatus/{params:.*}")
-  @Produces("application/json")
-  public Response getNodesInfo(
-      @Context HttpServletRequest request, @PathParam("params") String params)
-      throws DotDataException, JSONException {
+    /**
+     * Returns a Map of the Cache Cluster Nodes Status
+     *
+     * @param request
+     * @param params
+     * @return
+     * @throws DotStateException
+     * @throws DotDataException
+     * @throws JSONException
+     */
+    @GET
+    @Path ("/getNodesStatus/{params:.*}")
+    @Produces ("application/json")
+    public Response getNodesInfo ( @Context HttpServletRequest request, @PathParam ("params") String params )
+			throws DotDataException, JSONException {
 
-    InitDataObject initData =
-        webResource.init(params, true, request, false, PortletID.CONFIGURATION.toString());
-    ResourceResponse responseResource = new ResourceResponse(initData.getParamsMap());
+        InitDataObject initData = webResource.init( params, true, request, false, PortletID.CONFIGURATION.toString());
+        ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
+        
+        ServerAPI serverAPI = APILocator.getServerAPI();
+        List<Server> servers = serverAPI.getAliveServers();
+        String myServerId = serverAPI.readServerId();
 
-    ServerAPI serverAPI = APILocator.getServerAPI();
-    List<Server> servers = serverAPI.getAliveServers();
-    String myServerId = serverAPI.readServerId();
+        List<ServerActionBean> actionBeans = new ArrayList<ServerActionBean>();
+        List<ServerActionBean> resultActionBeans = new ArrayList<ServerActionBean>();
+        JSONArray jsonNodes = new JSONArray();
+        
 
-    List<ServerActionBean> actionBeans = new ArrayList<ServerActionBean>();
-    List<ServerActionBean> resultActionBeans = new ArrayList<ServerActionBean>();
-    JSONArray jsonNodes = new JSONArray();
+        Long timeoutSeconds = new Long(1);
+		
+		for (Server server : servers) {
+	        NodeStatusServerAction nodeStatusServerAction = new NodeStatusServerAction();
+			ServerActionBean nodeStatusServerActionBean = 
+					nodeStatusServerAction.getNewServerAction(myServerId, server.getServerId(), timeoutSeconds);
+			if(myServerId.equals(server.getServerId())){
+			    nodeStatusServerActionBean= APILocator.getServerActionAPI().handleServerAction(nodeStatusServerActionBean);  
+			}
+			nodeStatusServerActionBean = APILocator.getServerActionAPI().saveServerActionBean(nodeStatusServerActionBean);
+			actionBeans.add(nodeStatusServerActionBean);
+		}
+		
+		//Waits for 3 seconds in order server respond.
+		int maxWaitTime = 
+				timeoutSeconds.intValue() * 1000 + Config.getIntProperty("CLUSTER_SERVER_THREAD_SLEEP", 2000) ;
+		int passedWaitTime = 0;
+		
+		//Trying to NOT wait whole time for returning the info.
+		while (passedWaitTime <= maxWaitTime){
+			try {
+			    Thread.sleep(10);
+			    passedWaitTime += 10;
+			    
+			    resultActionBeans = new ArrayList<ServerActionBean>();
+			    
+			    //Iterates over the Actions in order to see if we have it all.
+			    for (ServerActionBean actionBean : actionBeans) {
+			    	ServerActionBean resultActionBean = 
+				    		APILocator.getServerActionAPI().findServerActionBean(actionBean.getId());
+			    	
+			    	//Add the ActionBean to the list of results.
+			    	if(resultActionBean.isCompleted()){
+			    		resultActionBeans.add(resultActionBean);
+			    	}
+				}
+			    
+			    //No need to wait if we have all Action results. 
+			    if(resultActionBeans.size() == servers.size()){
+			    	passedWaitTime = maxWaitTime + 1;
+			    }
+			    
+			} catch(InterruptedException ex) {
+			    Thread.currentThread().interrupt();
+			    passedWaitTime = maxWaitTime + 1;
+			}
+		}
+		
+		//If some of the server didn't pick up the action, means they are down.
+		if(resultActionBeans.size() != actionBeans.size()){
+			//Need to find out which is missing?
+			for(ServerActionBean actionBean : actionBeans){
+				boolean isMissing = true;
+				for(ServerActionBean resultActionBean : resultActionBeans){
+					if(resultActionBean.getId().equals(actionBean.getId())){
+						isMissing = false;
+					}
+				}
+				//If the actionBean wasn't pick up.
+				if(isMissing){
+					//We need to save it as failed.
+					actionBean.setCompleted(true);
+					actionBean.setFailed(true);
+					actionBean.setResponse(new JSONObject().put(ServerAction.ERROR_STATE, "Server did NOT respond on time"));
+					APILocator.getServerActionAPI().saveServerActionBean(actionBean);
+					
+					//Add it to the results.
+					resultActionBeans.add(actionBean);
+				}
+			}
+		}
+		
+		//Iterate over all the results gathered.
+		for (ServerActionBean resultActionBean : resultActionBeans) {
+			JSONObject jsonNodeStatusObject = null;
+			
+			//If the result is failed we need to gather the info available.
+			if(resultActionBean.isFailed()){
+				Logger.error(ClusterResource.class, String.format("Error trying to get Node Status for server '%s' " +
+						"(actionId='%s'): %s", resultActionBean.getServerId(), resultActionBean.getServerActionId(),
+						resultActionBean.getResponse()));
+				jsonNodeStatusObject = 
+						ClusterUtilProxy.createFailedJson(APILocator.getServerAPI().getServer(resultActionBean.getServerId()));
+			
+		    //If the result is OK we need to get the response object.
+			} else {
+				jsonNodeStatusObject = resultActionBean.getResponse().getJSONObject(NodeStatusServerAction.JSON_NODE_STATUS);
+				jsonNodeStatusObject.put("myself", myServerId.equals(resultActionBean.getServerId()));
+				
+				//Check Test File Asset
+				if(jsonNodeStatusObject.has("assetsStatus")
+						&& jsonNodeStatusObject.getString("assetsStatus").equals("green")
+						&& jsonNodeStatusObject.has("assetsTestPath")){
+					
+					//Get the file Name from the response.
+					File testFile = new File(jsonNodeStatusObject.getString("assetsTestPath"));
+					//If exist we need to check if we can delete it.
+					if (testFile.exists()) {
+						//If we can't delete it, it is a problem.
+						if(!testFile.delete()){
+							jsonNodeStatusObject.put("assetsStatus", "red");
+							jsonNodeStatusObject.put("status", "red");
+						}
+					} else {
+						jsonNodeStatusObject.put("assetsStatus", "red");
+						jsonNodeStatusObject.put("status", "red");
+					}
+				}
+			}
+			
+			//Add the status of the node to the list of other nodes.
+			if(jsonNodeStatusObject != null){
+				jsonNodes.add( jsonNodeStatusObject );
+			}
+		}	
 
-    Long timeoutSeconds = new Long(1);
-
-    for (Server server : servers) {
-      NodeStatusServerAction nodeStatusServerAction = new NodeStatusServerAction();
-      ServerActionBean nodeStatusServerActionBean =
-          nodeStatusServerAction.getNewServerAction(
-              myServerId, server.getServerId(), timeoutSeconds);
-      if (myServerId.equals(server.getServerId())) {
-        nodeStatusServerActionBean =
-            APILocator.getServerActionAPI().handleServerAction(nodeStatusServerActionBean);
-      }
-      nodeStatusServerActionBean =
-          APILocator.getServerActionAPI().saveServerActionBean(nodeStatusServerActionBean);
-      actionBeans.add(nodeStatusServerActionBean);
+        return responseResource.response( jsonNodes.toString() );
     }
 
-    // Waits for 3 seconds in order server respond.
-    int maxWaitTime =
-        timeoutSeconds.intValue() * 1000
-            + Config.getIntProperty("CLUSTER_SERVER_THREAD_SLEEP", 2000);
-    int passedWaitTime = 0;
+    /**
+     * Returns a Map with the info of the Node with the given Id
+     *
+     * @param request
+     * @param params
+     * @return
+     * @throws DotStateException
+     * @throws DotDataException
+     * @throws JSONException
+     */
+    @GET
+    @Path ("/getNodeStatus/{params:.*}")
+    @Produces ("application/json")
+    public Response getNodeInfo ( @Context HttpServletRequest request, @PathParam ("params") String params )
+			throws DotDataException, JSONException {
 
-    // Trying to NOT wait whole time for returning the info.
-    while (passedWaitTime <= maxWaitTime) {
-      try {
-        Thread.sleep(10);
-        passedWaitTime += 10;
+        InitDataObject initData = webResource.init( params, true, request, false, PortletID.CONFIGURATION.toString() );
 
-        resultActionBeans = new ArrayList<ServerActionBean>();
+        Map<String, String> paramsMap = initData.getParamsMap();
+		String remoteServerID = paramsMap.get("id");
+		String localServerId = APILocator.getServerAPI().readServerId();
 
-        // Iterates over the Actions in order to see if we have it all.
-        for (ServerActionBean actionBean : actionBeans) {
-          ServerActionBean resultActionBean =
-              APILocator.getServerActionAPI().findServerActionBean(actionBean.getId());
+		if(UtilMethods.isSet(remoteServerID) && !remoteServerID.equals("undefined")) {
+			
+			ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
+			
+			NodeStatusServerAction nodeStatusServerAction = new NodeStatusServerAction();
+			Long timeoutSeconds = new Long(1);
+			
+			ServerActionBean nodeStatusServerActionBean = 
+					nodeStatusServerAction.getNewServerAction(localServerId, remoteServerID, timeoutSeconds);
+			
+			nodeStatusServerActionBean = 
+					APILocator.getServerActionAPI().saveServerActionBean(nodeStatusServerActionBean);
+			
+			//Waits for 3 seconds in order server respond.
+			int maxWaitTime = 
+					timeoutSeconds.intValue() * 1000 + Config.getIntProperty("CLUSTER_SERVER_THREAD_SLEEP", 2000) ;
+			int passedWaitTime = 0;
+			
+			//Trying to NOT wait whole time for returning the info.
+			while (passedWaitTime <= maxWaitTime){
+				try {
+				    Thread.sleep(10);
+				    passedWaitTime += 10;
+				    
+				    nodeStatusServerActionBean = 
+				    		APILocator.getServerActionAPI().findServerActionBean(nodeStatusServerActionBean.getId());
+				    
+				    //No need to wait if we have all Action results. 
+				    if(nodeStatusServerActionBean != null && nodeStatusServerActionBean.isCompleted()){
+				    	passedWaitTime = maxWaitTime + 1;
+				    }
+				    
+				} catch(InterruptedException ex) {
+				    Thread.currentThread().interrupt();
+				    passedWaitTime = maxWaitTime + 1;
+				}
+			}
+			
+			//If the we don't have the info after the timeout
+			if(!nodeStatusServerActionBean.isCompleted()){
+				nodeStatusServerActionBean.setCompleted(true);
+				nodeStatusServerActionBean.setFailed(true);
+				nodeStatusServerActionBean.setResponse(new JSONObject().put(ServerAction.ERROR_STATE, "Server did NOT respond on time"));
+				APILocator.getServerActionAPI().saveServerActionBean(nodeStatusServerActionBean);
+			}
+			
+			JSONObject jsonNodeStatusObject = null;
+			
+			//If the we have a failed job.
+			if(nodeStatusServerActionBean.isFailed()){
+				jsonNodeStatusObject = 
+						ClusterUtilProxy.createFailedJson(APILocator.getServerAPI().getServer(nodeStatusServerActionBean.getServerId()));
+		    	
+			//If everything is OK.
+			} else {
+				jsonNodeStatusObject = 
+		        		nodeStatusServerActionBean.getResponse().getJSONObject(NodeStatusServerAction.JSON_NODE_STATUS);
+				
+				//Check Test File Asset
+				if(jsonNodeStatusObject.has("assetsStatus")
+						&& jsonNodeStatusObject.getString("assetsStatus").equals("green")
+						&& jsonNodeStatusObject.has("assetsTestPath")){
+					
+					//Get the file Name from the response.
+					File testFile = new File(jsonNodeStatusObject.getString("assetsTestPath"));
+					//If exist we need to check if we can delete it.
+					if (testFile.exists()) {
+						//If we can't delete it, it is a problem.
+						if(!testFile.delete()){
+							jsonNodeStatusObject.put("assetsStatus", "red");
+							jsonNodeStatusObject.put("status", "red");
+						}
+					} else {
+						jsonNodeStatusObject.put("assetsStatus", "red");
+						jsonNodeStatusObject.put("status", "red");
+					}
+				}
+			}
+	        
+			if(jsonNodeStatusObject != null){
+				return responseResource.response( jsonNodeStatusObject.toString() );
+			} else {
+				return null;
+			}
+	        
+		} else {
+			return null;
+		}
 
-          // Add the ActionBean to the list of results.
-          if (resultActionBean.isCompleted()) {
-            resultActionBeans.add(resultActionBean);
-          }
-        }
-
-        // No need to wait if we have all Action results.
-        if (resultActionBeans.size() == servers.size()) {
-          passedWaitTime = maxWaitTime + 1;
-        }
-
-      } catch (InterruptedException ex) {
-        Thread.currentThread().interrupt();
-        passedWaitTime = maxWaitTime + 1;
-      }
     }
 
-    // If some of the server didn't pick up the action, means they are down.
-    if (resultActionBeans.size() != actionBeans.size()) {
-      // Need to find out which is missing?
-      for (ServerActionBean actionBean : actionBeans) {
-        boolean isMissing = true;
-        for (ServerActionBean resultActionBean : resultActionBeans) {
-          if (resultActionBean.getId().equals(actionBean.getId())) {
-            isMissing = false;
-          }
-        }
-        // If the actionBean wasn't pick up.
-        if (isMissing) {
-          // We need to save it as failed.
-          actionBean.setCompleted(true);
-          actionBean.setFailed(true);
-          actionBean.setResponse(
-              new JSONObject().put(ServerAction.ERROR_STATE, "Server did NOT respond on time"));
-          APILocator.getServerActionAPI().saveServerActionBean(actionBean);
+    /**
+     * Returns a Map of the ES Cluster Nodes Status
+     *
+     * @param request
+     * @param params
+     * @return
+     * @throws DotStateException
+     * @throws DotDataException
+     * @throws JSONException
+     */
+    @GET
+    @Path ("/getESConfigProperties/{params:.*}")
+    @Produces ("application/json")
+    public Response getESConfigProperties ( @Context HttpServletRequest request, @PathParam ("params") String params )
+			throws DotDataException, JSONException {
 
-          // Add it to the results.
-          resultActionBeans.add(actionBean);
-        }
-      }
+        InitDataObject initData = webResource.init( params, true, request, false, PortletID.CONFIGURATION.toString() );
+        ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
+
+        JSONObject jsonNode = new JSONObject();
+        ServerAPI serverAPI = APILocator.getServerAPI();
+
+        String serverId = serverAPI.readServerId();
+        Server server = serverAPI.getServer(serverId);
+        String cachePort = ClusterFactory.getNextAvailablePort(serverId, ServerPort.CACHE_PORT);
+        String esPort = ClusterFactory.getNextAvailablePort(serverId, ServerPort.ES_TRANSPORT_TCP_PORT);
+
+        jsonNode.put("BIND_ADDRESS", server!=null&&UtilMethods.isSet(server.getIpAddress())?server.getIpAddress():"");
+        jsonNode.put("CACHE_BINDPORT", server!=null&&UtilMethods.isSet(server.getCachePort())?server.getCachePort():cachePort);
+        jsonNode.put("ES_TRANSPORT_TCP_PORT", server!=null&&UtilMethods.isSet(server.getEsTransportTcpPort())?server.getEsTransportTcpPort():esPort);
+
+        return responseResource.response( jsonNode.toString() );
+
     }
 
-    // Iterate over all the results gathered.
-    for (ServerActionBean resultActionBean : resultActionBeans) {
-      JSONObject jsonNodeStatusObject = null;
+    @GET
+    @Path("/licenseRepoStatus")
+    @Produces("application/json")
+    public Response getLicenseRepoStatus(@Context HttpServletRequest request, @PathParam ("params") String params) throws DotDataException, JSONException {
+        webResource.init(params, true, request, true, null);
 
-      // If the result is failed we need to gather the info available.
-      if (resultActionBean.isFailed()) {
-        Logger.error(
-            ClusterResource.class,
-            String.format(
-                "Error trying to get Node Status for server '%s' " + "(actionId='%s'): %s",
-                resultActionBean.getServerId(),
-                resultActionBean.getServerActionId(),
-                resultActionBean.getResponse()));
-        jsonNodeStatusObject =
-            ClusterUtilProxy.createFailedJson(
-                APILocator.getServerAPI().getServer(resultActionBean.getServerId()));
+        JSONObject json=new JSONObject();
+        json.put("total", LicenseUtil.getLicenseRepoTotal());
+        json.put("available", LicenseUtil.getLicenseRepoAvailableCount());
 
-        // If the result is OK we need to get the response object.
-      } else {
-        jsonNodeStatusObject =
-            resultActionBean.getResponse().getJSONObject(NodeStatusServerAction.JSON_NODE_STATUS);
-        jsonNodeStatusObject.put("myself", myServerId.equals(resultActionBean.getServerId()));
-
-        // Check Test File Asset
-        if (jsonNodeStatusObject.has("assetsStatus")
-            && jsonNodeStatusObject.getString("assetsStatus").equals("green")
-            && jsonNodeStatusObject.has("assetsTestPath")) {
-
-          // Get the file Name from the response.
-          File testFile = new File(jsonNodeStatusObject.getString("assetsTestPath"));
-          // If exist we need to check if we can delete it.
-          if (testFile.exists()) {
-            // If we can't delete it, it is a problem.
-            if (!testFile.delete()) {
-              jsonNodeStatusObject.put("assetsStatus", "red");
-              jsonNodeStatusObject.put("status", "red");
-            }
-          } else {
-            jsonNodeStatusObject.put("assetsStatus", "red");
-            jsonNodeStatusObject.put("status", "red");
-          }
-        }
-      }
-
-      // Add the status of the node to the list of other nodes.
-      if (jsonNodeStatusObject != null) {
-        jsonNodes.add(jsonNodeStatusObject);
-      }
+        return Response.ok(json.toString()).build();
     }
-
-    return responseResource.response(jsonNodes.toString());
-  }
-
-  /**
-   * Returns a Map with the info of the Node with the given Id
-   *
-   * @param request
-   * @param params
-   * @return
-   * @throws DotStateException
-   * @throws DotDataException
-   * @throws JSONException
-   */
-  @GET
-  @Path("/getNodeStatus/{params:.*}")
-  @Produces("application/json")
-  public Response getNodeInfo(
-      @Context HttpServletRequest request, @PathParam("params") String params)
-      throws DotDataException, JSONException {
-
-    InitDataObject initData =
-        webResource.init(params, true, request, false, PortletID.CONFIGURATION.toString());
-
-    Map<String, String> paramsMap = initData.getParamsMap();
-    String remoteServerID = paramsMap.get("id");
-    String localServerId = APILocator.getServerAPI().readServerId();
-
-    if (UtilMethods.isSet(remoteServerID) && !remoteServerID.equals("undefined")) {
-
-      ResourceResponse responseResource = new ResourceResponse(initData.getParamsMap());
-
-      NodeStatusServerAction nodeStatusServerAction = new NodeStatusServerAction();
-      Long timeoutSeconds = new Long(1);
-
-      ServerActionBean nodeStatusServerActionBean =
-          nodeStatusServerAction.getNewServerAction(localServerId, remoteServerID, timeoutSeconds);
-
-      nodeStatusServerActionBean =
-          APILocator.getServerActionAPI().saveServerActionBean(nodeStatusServerActionBean);
-
-      // Waits for 3 seconds in order server respond.
-      int maxWaitTime =
-          timeoutSeconds.intValue() * 1000
-              + Config.getIntProperty("CLUSTER_SERVER_THREAD_SLEEP", 2000);
-      int passedWaitTime = 0;
-
-      // Trying to NOT wait whole time for returning the info.
-      while (passedWaitTime <= maxWaitTime) {
+    /**
+     * Remove server from cluster
+     * @param request
+     * @param params
+     * @return
+     */
+    @POST
+    @Path("/remove/{params:.*}")
+    public Response removeFromCluster(@Context HttpServletRequest request, @PathParam("params") String params) {
+        InitDataObject initData = webResource.init(params, true, request, true, PortletID.CONFIGURATION.toString());
+        String serverId = initData.getParamsMap().get("serverid");
         try {
-          Thread.sleep(10);
-          passedWaitTime += 10;
-
-          nodeStatusServerActionBean =
-              APILocator.getServerActionAPI()
-                  .findServerActionBean(nodeStatusServerActionBean.getId());
-
-          // No need to wait if we have all Action results.
-          if (nodeStatusServerActionBean != null && nodeStatusServerActionBean.isCompleted()) {
-            passedWaitTime = maxWaitTime + 1;
-          }
-
-        } catch (InterruptedException ex) {
-          Thread.currentThread().interrupt();
-          passedWaitTime = maxWaitTime + 1;
+        	HibernateUtil.startTransaction();
+            APILocator.getServerAPI().removeServerFromClusterTable(serverId);
+            HibernateUtil.closeAndCommitTransaction();
         }
-      }
-
-      // If the we don't have the info after the timeout
-      if (!nodeStatusServerActionBean.isCompleted()) {
-        nodeStatusServerActionBean.setCompleted(true);
-        nodeStatusServerActionBean.setFailed(true);
-        nodeStatusServerActionBean.setResponse(
-            new JSONObject().put(ServerAction.ERROR_STATE, "Server did NOT respond on time"));
-        APILocator.getServerActionAPI().saveServerActionBean(nodeStatusServerActionBean);
-      }
-
-      JSONObject jsonNodeStatusObject = null;
-
-      // If the we have a failed job.
-      if (nodeStatusServerActionBean.isFailed()) {
-        jsonNodeStatusObject =
-            ClusterUtilProxy.createFailedJson(
-                APILocator.getServerAPI().getServer(nodeStatusServerActionBean.getServerId()));
-
-        // If everything is OK.
-      } else {
-        jsonNodeStatusObject =
-            nodeStatusServerActionBean
-                .getResponse()
-                .getJSONObject(NodeStatusServerAction.JSON_NODE_STATUS);
-
-        // Check Test File Asset
-        if (jsonNodeStatusObject.has("assetsStatus")
-            && jsonNodeStatusObject.getString("assetsStatus").equals("green")
-            && jsonNodeStatusObject.has("assetsTestPath")) {
-
-          // Get the file Name from the response.
-          File testFile = new File(jsonNodeStatusObject.getString("assetsTestPath"));
-          // If exist we need to check if we can delete it.
-          if (testFile.exists()) {
-            // If we can't delete it, it is a problem.
-            if (!testFile.delete()) {
-              jsonNodeStatusObject.put("assetsStatus", "red");
-              jsonNodeStatusObject.put("status", "red");
+        catch(Exception ex) {
+            Logger.error(this, "can't remove from cluster ",ex);
+            try {
+                HibernateUtil.rollbackTransaction();
+            } catch (DotHibernateException e) {
+                Logger.warn(this, "can't rollback", e);
             }
-          } else {
-            jsonNodeStatusObject.put("assetsStatus", "red");
-            jsonNodeStatusObject.put("status", "red");
-          }
-        }
-      }
+            return Response.serverError().build();
+        } finally {
+        	HibernateUtil.closeSessionSilently();
+		}
 
-      if (jsonNodeStatusObject != null) {
-        return responseResource.response(jsonNodeStatusObject.toString());
-      } else {
-        return null;
-      }
-
-    } else {
-      return null;
+        return Response.ok().build();
     }
-  }
-
-  /**
-   * Returns a Map of the ES Cluster Nodes Status
-   *
-   * @param request
-   * @param params
-   * @return
-   * @throws DotStateException
-   * @throws DotDataException
-   * @throws JSONException
-   */
-  @GET
-  @Path("/getESConfigProperties/{params:.*}")
-  @Produces("application/json")
-  public Response getESConfigProperties(
-      @Context HttpServletRequest request, @PathParam("params") String params)
-      throws DotDataException, JSONException {
-
-    InitDataObject initData =
-        webResource.init(params, true, request, false, PortletID.CONFIGURATION.toString());
-    ResourceResponse responseResource = new ResourceResponse(initData.getParamsMap());
-
-    JSONObject jsonNode = new JSONObject();
-    ServerAPI serverAPI = APILocator.getServerAPI();
-
-    String serverId = serverAPI.readServerId();
-    Server server = serverAPI.getServer(serverId);
-    String cachePort = ClusterFactory.getNextAvailablePort(serverId, ServerPort.CACHE_PORT);
-    String esPort = ClusterFactory.getNextAvailablePort(serverId, ServerPort.ES_TRANSPORT_TCP_PORT);
-
-    jsonNode.put(
-        "BIND_ADDRESS",
-        server != null && UtilMethods.isSet(server.getIpAddress()) ? server.getIpAddress() : "");
-    jsonNode.put(
-        "CACHE_BINDPORT",
-        server != null && UtilMethods.isSet(server.getCachePort())
-            ? server.getCachePort()
-            : cachePort);
-    jsonNode.put(
-        "ES_TRANSPORT_TCP_PORT",
-        server != null && UtilMethods.isSet(server.getEsTransportTcpPort())
-            ? server.getEsTransportTcpPort()
-            : esPort);
-
-    return responseResource.response(jsonNode.toString());
-  }
-
-  @GET
-  @Path("/licenseRepoStatus")
-  @Produces("application/json")
-  public Response getLicenseRepoStatus(
-      @Context HttpServletRequest request, @PathParam("params") String params)
-      throws DotDataException, JSONException {
-    webResource.init(params, true, request, true, null);
-
-    JSONObject json = new JSONObject();
-    json.put("total", LicenseUtil.getLicenseRepoTotal());
-    json.put("available", LicenseUtil.getLicenseRepoAvailableCount());
-
-    return Response.ok(json.toString()).build();
-  }
-  /**
-   * Remove server from cluster
-   *
-   * @param request
-   * @param params
-   * @return
-   */
-  @POST
-  @Path("/remove/{params:.*}")
-  public Response removeFromCluster(
-      @Context HttpServletRequest request, @PathParam("params") String params) {
-    InitDataObject initData =
-        webResource.init(params, true, request, true, PortletID.CONFIGURATION.toString());
-    String serverId = initData.getParamsMap().get("serverid");
-    try {
-      HibernateUtil.startTransaction();
-      APILocator.getServerAPI().removeServerFromClusterTable(serverId);
-      HibernateUtil.closeAndCommitTransaction();
-    } catch (Exception ex) {
-      Logger.error(this, "can't remove from cluster ", ex);
-      try {
-        HibernateUtil.rollbackTransaction();
-      } catch (DotHibernateException e) {
-        Logger.warn(this, "can't rollback", e);
-      }
-      return Response.serverError().build();
-    } finally {
-      HibernateUtil.closeSessionSilently();
-    }
-
-    return Response.ok().build();
-  }
 }

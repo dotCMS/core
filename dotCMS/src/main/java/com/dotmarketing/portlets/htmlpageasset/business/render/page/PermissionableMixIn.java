@@ -1,7 +1,7 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render.page;
 
-import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
 import com.dotmarketing.business.Permissionable;
+import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
  * Restricts the JSON conversion of specific data in the Permissionable object.
@@ -12,6 +12,7 @@ import com.dotmarketing.business.Permissionable;
  */
 abstract class PermissionableMixIn {
 
-  @JsonIgnore
-  abstract Permissionable getParentPermissionable();
+    @JsonIgnore
+    abstract Permissionable getParentPermissionable();
+
 }

@@ -18,103 +18,172 @@
  */
 package net.sourceforge.squirrel_sql.fw.preferences;
 
-/** Base-class for preference beans that store QueryTokenizer preferences. */
-public class BaseQueryTokenizerPreferenceBean implements IQueryTokenizerPreferenceBean, Cloneable {
+/**
+ * Base-class for preference beans that store QueryTokenizer preferences.
+ */
+public class BaseQueryTokenizerPreferenceBean implements IQueryTokenizerPreferenceBean, Cloneable
+{
 
-  /** Client Name. */
-  protected String clientName;
+	/** Client Name. */
+	protected String clientName;
 
-  /** Client version. */
-  protected String clientVersion;
+	/** Client version. */
+	protected String clientVersion;
 
-  protected String statementSeparator = ";";
+	protected String statementSeparator = ";";
 
-  protected String procedureSeparator = "/";
+	protected String procedureSeparator = "/";
 
-  protected String lineComment = "--";
+	protected String lineComment = "--";
 
-  protected boolean removeMultiLineComments = false;
+	protected boolean removeMultiLineComments = false;
 
-  protected boolean installCustomQueryTokenizer = true;
+	protected boolean installCustomQueryTokenizer = true;
 
-  /** @return the clientName */
-  public String getClientName() {
-    return clientName;
-  }
+	/**
+	 * @return the clientName
+	 */
 
-  /** @param clientName the clientName to set */
-  public void setClientName(String clientName) {
-    this.clientName = clientName;
-  }
+	public String getClientName()
+	{
+		return clientName;
+	}
 
-  /** @return the clientVersion */
-  public String getClientVersion() {
-    return clientVersion;
-  }
+	/**
+	 * @param clientName
+	 *           the clientName to set
+	 */
 
-  /** @param clientVersion the clientVersion to set */
-  public void setClientVersion(String clientVersion) {
-    this.clientVersion = clientVersion;
-  }
+	public void setClientName(String clientName)
+	{
+		this.clientName = clientName;
+	}
 
-  /** @return the statementSeparator */
-  public String getStatementSeparator() {
-    return statementSeparator;
-  }
+	/**
+	 * @return the clientVersion
+	 */
 
-  /** @param statementSeparator the statementSeparator to set */
-  public void setStatementSeparator(String statementSeparator) {
-    this.statementSeparator = statementSeparator;
-  }
+	public String getClientVersion()
+	{
+		return clientVersion;
+	}
 
-  /** @return the procedureSeparator */
-  public String getProcedureSeparator() {
-    return procedureSeparator;
-  }
+	/**
+	 * @param clientVersion
+	 *           the clientVersion to set
+	 */
 
-  /** @param procedureSeparator the procedureSeparator to set */
-  public void setProcedureSeparator(String procedureSeparator) {
-    this.procedureSeparator = procedureSeparator;
-  }
+	public void setClientVersion(String clientVersion)
+	{
+		this.clientVersion = clientVersion;
+	}
 
-  /** @return the lineComment */
-  public String getLineComment() {
-    return lineComment;
-  }
+	/**
+	 * @return the statementSeparator
+	 */
 
-  /** @param lineComment the lineComment to set */
-  public void setLineComment(String lineComment) {
-    this.lineComment = lineComment;
-  }
+	public String getStatementSeparator()
+	{
+		return statementSeparator;
+	}
 
-  /** @return the removeMultiLineComments */
-  public boolean isRemoveMultiLineComments() {
-    return removeMultiLineComments;
-  }
+	/**
+	 * @param statementSeparator
+	 *           the statementSeparator to set
+	 */
 
-  /** @param removeMultiLineComments the removeMultiLineComments to set */
-  public void setRemoveMultiLineComments(boolean removeMultiLineComments) {
-    this.removeMultiLineComments = removeMultiLineComments;
-  }
+	public void setStatementSeparator(String statementSeparator)
+	{
+		this.statementSeparator = statementSeparator;
+	}
 
-  public boolean isInstallCustomQueryTokenizer() {
-    return installCustomQueryTokenizer;
-  }
+	/**
+	 * @return the procedureSeparator
+	 */
 
-  public void setInstallCustomQueryTokenizer(boolean installCustomQueryTokenizer) {
-    this.installCustomQueryTokenizer = installCustomQueryTokenizer;
-  }
+	public String getProcedureSeparator()
+	{
+		return procedureSeparator;
+	}
 
-  /**
-   * Implemented in accordance with page 55 of "Effective Java" by Joshua Bloch.
-   *
-   * @see java.lang.Object#clone()
-   */
-  protected BaseQueryTokenizerPreferenceBean clone() {
-    try {
-      return (BaseQueryTokenizerPreferenceBean) super.clone();
-    } catch (CloneNotSupportedException e) {
-      throw new AssertionError(); // Can't happen
-    }
-  }
+	/**
+	 * @param procedureSeparator
+	 *           the procedureSeparator to set
+	 */
+
+	public void setProcedureSeparator(String procedureSeparator)
+	{
+		this.procedureSeparator = procedureSeparator;
+	}
+
+	/**
+	 * @return the lineComment
+	 */
+
+	public String getLineComment()
+	{
+		return lineComment;
+	}
+
+	/**
+	 * @param lineComment
+	 *           the lineComment to set
+	 */
+
+	public void setLineComment(String lineComment)
+	{
+		this.lineComment = lineComment;
+	}
+
+	/**
+	 * @return the removeMultiLineComments
+	 */
+
+	public boolean isRemoveMultiLineComments()
+	{
+		return removeMultiLineComments;
+	}
+
+	/**
+	 * @param removeMultiLineComments
+	 *           the removeMultiLineComments to set
+	 */
+
+	public void setRemoveMultiLineComments(boolean removeMultiLineComments)
+	{
+		this.removeMultiLineComments = removeMultiLineComments;
+	}
+
+
+	public boolean isInstallCustomQueryTokenizer()
+	{
+		return installCustomQueryTokenizer;
+	}
+
+
+	public void setInstallCustomQueryTokenizer(boolean installCustomQueryTokenizer)
+	{
+		this.installCustomQueryTokenizer = installCustomQueryTokenizer;
+		
+	}
+
+	/**
+	 * Implemented in accordance with page 55 of "Effective Java" by Joshua Bloch.
+	 * 
+	 * @see java.lang.Object#clone()
+	 */
+
+	protected BaseQueryTokenizerPreferenceBean clone()
+	{
+		try
+		{
+			return (BaseQueryTokenizerPreferenceBean)super.clone();
+		}
+		catch (CloneNotSupportedException e)
+		{
+			throw new AssertionError(); // Can't happen
+		}
+	}
+
+	
 }

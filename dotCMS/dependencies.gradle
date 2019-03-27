@@ -408,10 +408,5 @@ dependencies {
 
     compile 'net.jodah:failsafe:1.1.1'
     compile 'com.rainerhahnekamp:sneakythrow:1.1.0'
-
-    implementation('com.puppycrawl.tools:checkstyle:8.18') {
-        exclude(group: 'com.google.guava')
-    }
-
     
 }

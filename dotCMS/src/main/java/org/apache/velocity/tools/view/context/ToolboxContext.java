@@ -17,35 +17,49 @@
 package org.apache.velocity.tools.view.context;
 
 import java.util.Map;
+
 import org.apache.velocity.VelocityContext;
+import org.apache.velocity.context.Context;
 
 /**
- * Read-only context used to carry a set of view tools.
+ * <p>Read-only context used to carry a set of view tools.</p>
  *
- * <p>Writes get dropped.
+ * <p>Writes get dropped.</p>
  *
  * @author <a href="mailto:sidler@apache.org">Gabriel Sidler</a>
  * @author <a href="mailto:geirm@apache.org">Geir Magnusson Jr.</a>
+ *
  * @version $Id: ToolboxContext.java 72102 2004-11-11 04:01:01Z nbubna $
  * @deprecated This class will be removed after VelocityTools 1.2.
  */
-public class ToolboxContext extends VelocityContext {
+public class ToolboxContext extends VelocityContext
+{
 
-  private Map toolbox;
+    private Map toolbox;
 
-  /** Default constructor. */
-  public ToolboxContext(Map tb) {
-    super(tb);
-    this.toolbox = tb;
-  }
+    /**
+     * Default constructor.
+     */
+    public ToolboxContext( Map tb )
+    {
+        super(tb);
+        this.toolbox = tb;
+    }
 
-  /** Return the internal toolbox map. */
-  public Map getToolbox() {
-    return toolbox;
-  }
+    /**
+     * Return the internal toolbox map.
+     */
+    public Map getToolbox()
+    {
+        return toolbox;
+    }
 
-  /** Does nothing. Returns <code>null</code> always. */
-  public Object internalPut(String key, Object value) {
-    return null;
-  }
+    /**
+     * Does nothing. Returns <code>null</code> always.
+     */
+    public Object internalPut( String key, Object value )
+    {
+        return null;
+    }
+    
 }

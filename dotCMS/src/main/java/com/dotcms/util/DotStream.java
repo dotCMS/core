@@ -4,18 +4,18 @@ import java.util.stream.Stream;
 
 /**
  * The interface provides kinda wrapper to use extra functions in your pipeline
- *
  * @param <T>
  * @author jsanca
  */
-public interface DotStream<T> {
+public interface DotStream <T>  {
 
-  Stream<T> stream();
+    Stream<T> stream();
 
-  static <T> DotStream<T> of(final Stream<T> stream) {
+    static <T> DotStream<T> of(final Stream<T> stream) {
 
-    return () -> stream;
-  }
+        return () -> stream;
+    }
 
-  // todo: add here extra functions
+
+    // todo: add here extra functions
 }

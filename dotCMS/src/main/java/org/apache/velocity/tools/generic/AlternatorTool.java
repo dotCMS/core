@@ -19,11 +19,10 @@ package org.apache.velocity.tools.generic;
 import java.util.List;
 
 /**
- * Simple tool to provide easy in-template instantiation of {@link Alternator}s from varying "list"
- * types.
+ * Simple tool to provide easy in-template instantiation of
+ * {@link Alternator}s from varying "list" types.
  *
  * <p><b>Example Use:</b>
- *
  * <pre>
  * toolbox.xml...
  * &lt;tool&gt;
@@ -42,73 +41,96 @@ import java.util.List;
  *
  * output...
  *  1 is red and hip
- *  2 is blue and fly
+ *  2 is blue and fly 
  *  3 is red and groovy
- *  4 is blue and hip
+ *  4 is blue and hip 
  *  5 is red and fly
- * </pre>
+ * </pre></p>
  *
  * @since Velocity Tools 1.2
  * @version $Revision: 72056 $ $Date: 2004-05-05 17:01:27 -0700 (Wed, 05 May 2004) $
  */
-public class AlternatorTool {
+public class AlternatorTool
+{
 
-  public AlternatorTool() {}
+    public AlternatorTool() {}
 
-  /** Make an automatic {@link Alternator} from a List. */
-  public Alternator make(List list) {
-    return make(false, list);
-  }
-
-  /**
-   * Make an {@link Alternator} from a List.
-   *
-   * @return The new Alternator, or <code>null</code> if arguments were illegal.
-   */
-  public Alternator make(boolean auto, List list) {
-    if (list == null) {
-      return null;
+    /**
+     * Make an automatic {@link Alternator} from a List.
+     */
+    public Alternator make(List list)
+    {
+        return make(false, list);
     }
-    return new Alternator(auto, list);
-  }
 
-  /** Make an automatic {@link Alternator} from an object array. */
-  public Alternator make(Object[] array) {
-    return make(false, array);
-  }
-
-  /**
-   * Make an {@link Alternator} from an object array.
-   *
-   * @return The new Alternator, or <code>null</code> if arguments were illegal.
-   */
-  public Alternator make(boolean auto, Object[] array) {
-    if (array == null) {
-      return null;
+    /**
+     * Make an {@link Alternator} from a List.
+     *
+     * @return The new Alternator, or <code>null</code> if arguments
+     * were illegal.
+     */
+    public Alternator make(boolean auto, List list)
+    {
+        if (list == null)
+        {
+            return null;
+        }
+        return new Alternator(auto, list);
     }
-    return new Alternator(auto, array);
-  }
 
-  /**
-   * Make an automatic {@link Alternator} from a list containing the two specified objects.
-   *
-   * @return The new Alternator, or <code>null</code> if arguments were illegal.
-   */
-  public Alternator make(Object o1, Object o2) {
-    return make(false, o1, o2);
-  }
-
-  /**
-   * Make an {@link Alternator} from a list containing the two specified objects.
-   *
-   * @param o1 The first of two objects for alternation between. Must be non-<code>null</code>.
-   * @param o2 The second of two objects for alternation between. Must be non-<code>null</code>.
-   * @return The new Alternator, or <code>null</code> if arguments were illegal.
-   */
-  public Alternator make(boolean auto, Object o1, Object o2) {
-    if (o1 == null || o2 == null) {
-      return null;
+    /**
+     * Make an automatic {@link Alternator} from an object array.
+     */
+    public Alternator make(Object[] array)
+    {
+        return make(false, array);
     }
-    return new Alternator(auto, new Object[] {o1, o2});
-  }
+
+    /**
+     * Make an {@link Alternator} from an object array.
+     *
+     * @return The new Alternator, or <code>null</code> if arguments
+     * were illegal.
+     */
+    public Alternator make(boolean auto, Object[] array)
+    {
+        if (array == null)
+        {
+            return null;
+        }
+        return new Alternator(auto, array);
+    }
+
+    /**
+     * Make an automatic {@link Alternator} from a list containing the two
+     * specified objects.
+     *
+     * @return The new Alternator, or <code>null</code> if arguments
+     * were illegal.
+     */
+    public Alternator make(Object o1, Object o2)
+    {
+        return make(false, o1, o2);
+    }
+
+    /**
+     * Make an {@link Alternator} from a list containing the two
+     * specified objects.
+     *
+     * @param o1 The first of two objects for alternation between.
+     * Must be non-<code>null</code>.
+     * @param o2 The second of two objects for alternation between.
+     * Must be non-<code>null</code>.
+     * @return The new Alternator, or <code>null</code> if arguments
+     * were illegal.
+     */
+    public Alternator make(boolean auto, Object o1, Object o2)
+    {
+        if (o1 == null || o2 == null)
+        {
+            return null;
+        }
+        return new Alternator(auto, new Object[] { o1, o2 });
+    }
+
 }

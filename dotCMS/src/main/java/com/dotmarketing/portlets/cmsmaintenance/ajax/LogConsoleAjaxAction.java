@@ -1,164 +1,164 @@
 package com.dotmarketing.portlets.cmsmaintenance.ajax;
 
-import com.dotcms.repackage.org.json.JSONArray;
-import com.dotcms.repackage.org.json.JSONException;
-import com.dotcms.repackage.org.json.JSONObject;
 import com.dotmarketing.logConsole.model.LogMapper;
 import com.dotmarketing.logConsole.model.LogMapperRow;
 import com.dotmarketing.util.Logger;
-import java.io.IOException;
-import java.util.List;
+import com.dotcms.repackage.org.json.JSONArray;
+import com.dotcms.repackage.org.json.JSONException;
+import com.dotcms.repackage.org.json.JSONObject;
+
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.List;
 
-/** Created by Jonathan Gamba. Date: 5/18/12 */
+/**
+ * Created by Jonathan Gamba.
+ * Date: 5/18/12
+ */
 public class LogConsoleAjaxAction extends IndexAjaxAction {
 
-  public static final String CONTENT_JSON = "application/json";
+    public static final String CONTENT_JSON = "application/json";
 
-  //    public void
+//    public void 
+    
+    /**
+     * Method that will get the current logs list and will send them to the client in a JSON format
+     *
+     * @param request
+     * @param response
+     * @throws ServletException
+     * @throws IOException
+     */
+    public void getLogs ( HttpServletRequest request, HttpServletResponse response ) throws JSONException, IOException {
 
-  /**
-   * Method that will get the current logs list and will send them to the client in a JSON format
-   *
-   * @param request
-   * @param response
-   * @throws ServletException
-   * @throws IOException
-   */
-  public void getLogs(HttpServletRequest request, HttpServletResponse response)
-      throws JSONException, IOException {
+        //Preparing the log list json to send it to the client
+        JSONObject jsonResponse = prepareAndResponseLogList( response );
 
-    // Preparing the log list json to send it to the client
-    JSONObject jsonResponse = prepareAndResponseLogList(response);
+        //Sending the json response
+        prepareResponse( jsonResponse.toString(), CONTENT_JSON, response );
+    }
 
-    // Sending the json response
-    prepareResponse(jsonResponse.toString(), CONTENT_JSON, response);
-  }
+    /**
+     * Method that will enable/disable a list of given logs
+     *
+     * @param request
+     * @param response
+     * @throws ServletException
+     * @throws IOException
+     */
+    public void enabledDisabledLogs ( HttpServletRequest request, HttpServletResponse response ) throws JSONException, IOException {
 
-  /**
-   * Method that will enable/disable a list of given logs
-   *
-   * @param request
-   * @param response
-   * @throws ServletException
-   * @throws IOException
-   */
-  public void enabledDisabledLogs(HttpServletRequest request, HttpServletResponse response)
-      throws JSONException, IOException {
+        JSONObject jsonResponse = new JSONObject();
 
-    JSONObject jsonResponse = new JSONObject();
+        try {
 
-    try {
-
-      // Getting the names of the selected logs
-      String[] selectedLogs = null;
-      String selectedLogsParam = getURIParams().get("selection");
-      if (selectedLogsParam != null) {
-        selectedLogs = selectedLogsParam.split(",");
-      }
-
-      if (selectedLogs != null) {
-
-        // Getting our current logs
-        List<LogMapperRow> currentLogs = LogMapper.getInstance().getLogList();
-
-        for (LogMapperRow logMapperRow : currentLogs) {
-          for (String selectedLog : selectedLogs) {
-
-            // Compare to see if this log was selected in the UI by the client
-            if (logMapperRow.getLog_name().equals(selectedLog)) {
-
-              if (logMapperRow.getEnabled()) {
-                logMapperRow.setEnabled(false);
-              } else {
-                logMapperRow.setEnabled(true);
-              }
+            //Getting the names of the selected logs
+            String[] selectedLogs = null;
+            String selectedLogsParam = getURIParams().get( "selection" );
+            if ( selectedLogsParam != null ) {
+                selectedLogs = selectedLogsParam.split( "," );
             }
-          }
+
+            if ( selectedLogs != null ) {
+
+                //Getting our current logs
+                List<LogMapperRow> currentLogs = LogMapper.getInstance().getLogList();
+
+                for ( LogMapperRow logMapperRow : currentLogs ) {
+                    for ( String selectedLog : selectedLogs ) {
+
+                        //Compare to see if this log was selected in the UI by the client
+                        if ( logMapperRow.getLog_name().equals( selectedLog ) ) {
+
+                            if ( logMapperRow.getEnabled() ) {
+                                logMapperRow.setEnabled( false );
+                            } else {
+                                logMapperRow.setEnabled( true );
+                            }
+                        }
+                    }
+                }
+
+                //Update the modified logs
+                LogMapper.getInstance().updateLogsList();
+            }
+
+            //And finally preparing the log list json to send it to the client with the modified values
+            jsonResponse = prepareAndResponseLogList( response );
+
+        } catch ( Exception e ) {
+
+            jsonResponse.put( "response", "error" );
+            jsonResponse.put( "message", "Error updating logs." );
+            Logger.error( LogConsoleAjaxAction.class, "Error updating logs.", e );
         }
 
-        // Update the modified logs
-        LogMapper.getInstance().updateLogsList();
-      }
-
-      // And finally preparing the log list json to send it to the client with the modified values
-      jsonResponse = prepareAndResponseLogList(response);
-
-    } catch (Exception e) {
-
-      jsonResponse.put("response", "error");
-      jsonResponse.put("message", "Error updating logs.");
-      Logger.error(LogConsoleAjaxAction.class, "Error updating logs.", e);
+        //Sending the json response
+        prepareResponse( jsonResponse.toString(), CONTENT_JSON, response );
     }
 
-    // Sending the json response
-    prepareResponse(jsonResponse.toString(), CONTENT_JSON, response);
-  }
+    /**
+     * Method that will get the current logs list and will create the required JSON to send them to the client
+     *
+     * @param response
+     * @throws JSONException
+     * @throws IOException
+     */
+    private JSONObject prepareAndResponseLogList ( HttpServletResponse response ) throws JSONException, IOException {
 
-  /**
-   * Method that will get the current logs list and will create the required JSON to send them to
-   * the client
-   *
-   * @param response
-   * @throws JSONException
-   * @throws IOException
-   */
-  private JSONObject prepareAndResponseLogList(HttpServletResponse response)
-      throws JSONException, IOException {
+        JSONObject jsonResponse = new JSONObject();
 
-    JSONObject jsonResponse = new JSONObject();
+        try {
+            //Getting our current logs
+            List<LogMapperRow> logList = LogMapper.getInstance().getLogList();
 
-    try {
-      // Getting our current logs
-      List<LogMapperRow> logList = LogMapper.getInstance().getLogList();
+            //Preparing a json response
+            JSONArray logsJSONArray = new JSONArray();
 
-      // Preparing a json response
-      JSONArray logsJSONArray = new JSONArray();
+            for ( LogMapperRow logMapperRow : logList ) {
 
-      for (LogMapperRow logMapperRow : logList) {
+                JSONObject jsonLogMapperRow = new JSONObject();
+                jsonLogMapperRow.put( "name", logMapperRow.getLog_name() );
+                jsonLogMapperRow.put( "enabled", logMapperRow.getEnabled() );
+                jsonLogMapperRow.put( "description", logMapperRow.getDescription() );
 
-        JSONObject jsonLogMapperRow = new JSONObject();
-        jsonLogMapperRow.put("name", logMapperRow.getLog_name());
-        jsonLogMapperRow.put("enabled", logMapperRow.getEnabled());
-        jsonLogMapperRow.put("description", logMapperRow.getDescription());
+                //Add it to our json array
+                logsJSONArray.put( jsonLogMapperRow );
+            }
 
-        // Add it to our json array
-        logsJSONArray.put(jsonLogMapperRow);
-      }
+            //Preparing the json response
+            jsonResponse.put( "logs", logsJSONArray );
+            jsonResponse.put( "response", "sucess" );
+        } catch ( Exception e ) {
+            jsonResponse.put( "response", "error" );
+            jsonResponse.put( "message", "Error retrieving logs." );
+            Logger.error( LogConsoleAjaxAction.class, "Error retrieving logs.", e );
+        }
 
-      // Preparing the json response
-      jsonResponse.put("logs", logsJSONArray);
-      jsonResponse.put("response", "sucess");
-    } catch (Exception e) {
-      jsonResponse.put("response", "error");
-      jsonResponse.put("message", "Error retrieving logs.");
-      Logger.error(LogConsoleAjaxAction.class, "Error retrieving logs.", e);
+        return jsonResponse;
     }
 
-    return jsonResponse;
-  }
+    /**
+     * Prepare the response for the AJAX call
+     *
+     * @param responseData -
+     * @param contentType  -
+     * @param response     -
+     * @throws java.io.IOException -
+     */
+    protected void prepareResponse ( String responseData, String contentType, HttpServletResponse response ) throws IOException {
 
-  /**
-   * Prepare the response for the AJAX call
-   *
-   * @param responseData -
-   * @param contentType -
-   * @param response -
-   * @throws java.io.IOException -
-   */
-  protected void prepareResponse(
-      String responseData, String contentType, HttpServletResponse response) throws IOException {
+        response.setContentType( contentType );
 
-    response.setContentType(contentType);
+        ServletOutputStream sos = response.getOutputStream();
+        sos.write( responseData.getBytes() );
+        sos.flush();
+        sos.close();
 
-    ServletOutputStream sos = response.getOutputStream();
-    sos.write(responseData.getBytes());
-    sos.flush();
-    sos.close();
+        response.flushBuffer();
+    }
 
-    response.flushBuffer();
-  }
 }

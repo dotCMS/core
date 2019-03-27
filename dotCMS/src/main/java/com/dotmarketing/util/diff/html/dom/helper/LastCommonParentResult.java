@@ -18,54 +18,57 @@ package com.dotmarketing.util.diff.html.dom.helper;
 import com.dotmarketing.util.diff.html.dom.TagNode;
 
 /**
- * When detecting the last common parent of two nodes, all results are stored as a {@link
- * LastCommonParentResult}.
+ * When detecting the last common parent of two nodes, all results are stored as
+ * a {@link LastCommonParentResult}.
  */
 public class LastCommonParentResult {
 
-  public LastCommonParentResult() {}
+    public LastCommonParentResult() {
 
-  // Parent
-  private TagNode parent;
+    }
 
-  public TagNode getLastCommonParent() {
-    return parent;
-  }
+    // Parent
+    private TagNode parent;
 
-  public void setLastCommonParent(TagNode parent) {
-    this.parent = parent;
-  }
+    public TagNode getLastCommonParent() {
+        return parent;
+    }
 
-  // Splitting
-  private boolean splittingNeeded = false;
+    public void setLastCommonParent(TagNode parent) {
+        this.parent = parent;
+    }
 
-  public boolean isSplittingNeeded() {
-    return splittingNeeded;
-  }
+    // Splitting
+    private boolean splittingNeeded = false;
 
-  public void setSplittingNeeded() {
-    splittingNeeded = true;
-  }
+    public boolean isSplittingNeeded() {
+        return splittingNeeded;
+    }
 
-  // Depth
-  private int lastCommonParentDepth = -1;
+    public void setSplittingNeeded() {
+        splittingNeeded = true;
+    }
 
-  public int getLastCommonParentDepth() {
-    return lastCommonParentDepth;
-  }
+    // Depth
+    private int lastCommonParentDepth = -1;
 
-  public void setLastCommonParentDepth(int depth) {
-    lastCommonParentDepth = depth;
-  }
+    public int getLastCommonParentDepth() {
+        return lastCommonParentDepth;
+    }
 
-  // Index
-  private int indexInLastCommonParent = -1;
+    public void setLastCommonParentDepth(int depth) {
+        lastCommonParentDepth = depth;
+    }
 
-  public int getIndexInLastCommonParent() {
-    return indexInLastCommonParent;
-  }
+    // Index
+    private int indexInLastCommonParent = -1;
 
-  public void setIndexInLastCommonParent(int index) {
-    indexInLastCommonParent = index;
-  }
+    public int getIndexInLastCommonParent() {
+        return indexInLastCommonParent;
+    }
+
+    public void setIndexInLastCommonParent(int index) {
+        indexInLastCommonParent = index;
+    }
+
 }

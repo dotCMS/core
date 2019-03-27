@@ -13,52 +13,55 @@ import com.dotmarketing.servlets.test.ServletTestRunner;
 import com.liferay.portal.model.User;
 import javax.servlet.http.HttpServletRequest;
 
-/** @author Geoff M. Granum */
+/**
+ * @author Geoff M. Granum
+ */
 public class FunctionalTestConfig {
 
-  private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
-  private final HttpServletRequest request;
-  public final String serverName;
-  public final Integer serverPort;
-  public final User user;
-  public final Host defaultHost;
-  public final String defaultHostId;
-  public final Client client;
+    private final HttpServletRequest request;
+    public final String serverName;
+    public final Integer serverPort;
+    public final User user;
+    public final Host defaultHost;
+    public final String defaultHostId;
+    public final Client client;
 
-  public FunctionalTestConfig() {
-    request = ServletTestRunner.localRequest.get();
+    public FunctionalTestConfig() {
+        request = ServletTestRunner.localRequest.get();
 
-    serverName = request.getServerName();
-    serverPort = request.getServerPort();
-    HostAPI hostAPI = APILocator.getHostAPI();
+        serverName = request.getServerName();
+        serverPort = request.getServerPort();
+        HostAPI hostAPI = APILocator.getHostAPI();
 
-    User user = null;
-    Host defaultHost = null;
-    // Setting the test user
-    try {
-      user = APILocator.getUserAPI().getSystemUser();
-      defaultHost = hostAPI.findDefaultHost(user, false);
-    } catch (DotDataException dd) {
-      dd.printStackTrace();
-    } catch (DotSecurityException ds) {
-      ds.printStackTrace();
+        User user = null;
+        Host defaultHost = null;
+        //Setting the test user
+        try {
+            user = APILocator.getUserAPI().getSystemUser();
+            defaultHost = hostAPI.findDefaultHost(user, false);
+        } catch (DotDataException dd) {
+            dd.printStackTrace();
+        } catch (DotSecurityException ds) {
+            ds.printStackTrace();
+        }
+        this.user = user;
+        this.defaultHost = defaultHost;
+        this.defaultHostId = defaultHost.getIdentifier();
+
+        client = RestClientBuilder.newClient();
+        HttpAuthenticationFeature feature = HttpAuthenticationFeature.basic("admin@dotcms.com", "admin");
+        client.register(feature);
+
     }
-    this.user = user;
-    this.defaultHost = defaultHost;
-    this.defaultHostId = defaultHost.getIdentifier();
 
-    client = RestClientBuilder.newClient();
-    HttpAuthenticationFeature feature =
-        HttpAuthenticationFeature.basic("admin@dotcms.com", "admin");
-    client.register(feature);
-  }
+    public String restBaseUrl() {
+        return request.getScheme() + "://" + serverName + ":" + serverPort + "/api/v1";
+    }
 
-  public String restBaseUrl() {
-    return request.getScheme() + "://" + serverName + ":" + serverPort + "/api/v1";
-  }
-
-  public WebTarget restBaseTarget() {
-    return client.target(restBaseUrl());
-  }
+    public WebTarget restBaseTarget() {
+        return client.target(restBaseUrl());
+    }
 }
+ 

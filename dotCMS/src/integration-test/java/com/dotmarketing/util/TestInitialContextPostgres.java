@@ -1,53 +1,54 @@
 package com.dotmarketing.util;
 
 import com.dotcms.repackage.org.apache.commons.dbcp.BasicDataSource;
+
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 
 /**
  * Singleton that defines a context that provides a datasource for testing purpose
  *
- * <p>Created by nollymar on 9/16/16.
+ * Created by nollymar on 9/16/16.
  */
 public class TestInitialContextPostgres extends InitialContext {
 
-  private final String driver = "org.postgresql.Driver";
-  private final String url = "jdbc:postgresql://localhost/dotcms";
-  private final String username = "postgres";
-  private final String password = "postgres";
-  private final int maxTotal = 60;
-  private final int maxIdle = 10;
-  private static TestInitialContextPostgres context;
+    private final String driver = "org.postgresql.Driver";
+    private final String url = "jdbc:postgresql://localhost/dotcms";
+    private final String username = "postgres";
+    private final String password = "postgres";
+    private final int maxTotal = 60;
+    private final int maxIdle = 10;
+    private static TestInitialContextPostgres context;
 
-  private BasicDataSource dataSource;
+    private BasicDataSource dataSource;
 
-  private TestInitialContextPostgres() throws NamingException {
-    dataSource = new BasicDataSource();
-    dataSource.setDriverClassName(driver);
-    dataSource.setUrl(url);
-    dataSource.setUsername(username);
-    dataSource.setPassword(password);
-    dataSource.setRemoveAbandoned(true);
-    dataSource.setLogAbandoned(true);
-    dataSource.setMaxIdle(maxIdle);
-    dataSource.setMaxActive(maxTotal);
-  }
-
-  public static TestInitialContextPostgres getInstance() throws NamingException {
-    if (context == null) {
-      context = new TestInitialContextPostgres();
+    private TestInitialContextPostgres() throws NamingException {
+        dataSource = new BasicDataSource();
+        dataSource.setDriverClassName(driver);
+        dataSource.setUrl(url);
+        dataSource.setUsername(username);
+        dataSource.setPassword(password);
+        dataSource.setRemoveAbandoned(true);
+        dataSource.setLogAbandoned(true);
+        dataSource.setMaxIdle(maxIdle);
+        dataSource.setMaxActive(maxTotal);
     }
 
-    return context;
-  }
+    public static TestInitialContextPostgres getInstance() throws NamingException {
+        if (context == null) {
+            context = new TestInitialContextPostgres();
+        }
 
-  @Override
-  public Object lookup(String name) throws NamingException {
-
-    if (name != null && name.equals(Constants.DATABASE_DEFAULT_DATASOURCE)) { // init datasources
-      return dataSource;
+        return context;
     }
 
-    throw new NamingException("Unable to find datasource: " + name);
-  }
+    @Override
+    public Object lookup(String name) throws NamingException {
+
+        if (name != null && name.equals(Constants.DATABASE_DEFAULT_DATASOURCE)) { // init datasources
+            return dataSource;
+        }
+
+        throw new NamingException("Unable to find datasource: " + name);
+    }
 }

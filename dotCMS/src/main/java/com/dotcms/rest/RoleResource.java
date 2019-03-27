@@ -22,335 +22,327 @@ import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 
+
 @Path("/role")
 public class RoleResource {
 
-  private final WebResource webResource = new WebResource();
+    private final WebResource webResource = new WebResource();
 
-  /**
-   * Returns a JSON representation of the Role with the given id, including its first level
-   * children. <br>
-   * The role node contains: id, name, locked, children. <br>
-   * - id: id of the role <br>
-   * - name: name of the role <br>
-   * - locked: boolean that indicates if the role is locked <br>
-   * - children: a list of the role's first level children <br>
-   *
-   * <p>Each child node contains: id, name, locked, children. <br>
-   * - id: id of the child role <br>
-   * - name: name of the child role <br>
-   * - locked: boolean that indicates if the child role is locked <br>
-   * - children: boolean that indicates if the child role has children <br>
-   *
-   * <p>If no id is given, returns the root node (not a role) and its first level children (root
-   * roles) <br>
-   *
-   * <p>This is used to lazy-load the Tree (UI) of roles in the Role Manager of dotCMS Admin
-   *
-   * <p>Usage: /loadchildren/id/{id} Example usage 1:
-   * /loadchildren/id/2adccac3-a56b-4078-be40-94e343f20712 Example usage 2 (Root Roles):
-   * /loadchildren/
-   *
-   * @param request
-   * @param params a string containing the URL parameters
-   * @return
-   * @throws DotDataException
-   * @throws JSONException
-   */
-  @GET
-  @Path("/loadchildren/{params:.*}")
-  @Produces("application/json")
-  public Response loadChildren(
-      @Context HttpServletRequest request, @PathParam("params") String params)
-      throws DotDataException, JSONException {
+    /**
+	 * <p>Returns a JSON representation of the Role with the given id, including its first level children.
+	 * <br>The role node contains: id, name, locked, children.
+	 * <br>- id: id of the role
+	 * <br>- name: name of the role
+	 * <br>- locked: boolean that indicates if the role is locked
+	 * <br>- children: a list of the role's first level children
+	 *
+	 * <br><p>Each child node contains: id, name, locked, children.
+	 * <br>- id: id of the child role
+	 * <br>- name: name of the child role
+	 * <br>- locked: boolean that indicates if the child role is locked
+	 * <br>- children: boolean that indicates if the child role has children
+	 *
+	 *
+	 * <br><p>If no id is given, returns the root node (not a role) and its first level children (root roles)
+	 *
+	 * <br><p>This is used to lazy-load the Tree (UI) of roles in the Role Manager of dotCMS Admin
+	 *
+	 * Usage: /loadchildren/id/{id}
+	 * Example usage 1: /loadchildren/id/2adccac3-a56b-4078-be40-94e343f20712
+	 * Example usage 2 (Root Roles): /loadchildren/
+	 *
+	 * @param request
+	 * @param params a string containing the URL parameters
+	 * @return
+	 * @throws DotDataException
+	 * @throws JSONException
+	 */
 
-    InitDataObject initData = webResource.init(params, true, request, true, null);
+	@GET
+	@Path("/loadchildren/{params:.*}")
+	@Produces("application/json")
+	public Response loadChildren(@Context HttpServletRequest request, @PathParam("params") String params)
+			throws DotDataException, JSONException {
 
-    // Creating an utility response object
-    ResourceResponse responseResource = new ResourceResponse(initData.getParamsMap());
 
-    Map<String, String> paramsMap = initData.getParamsMap();
-    String roleId = paramsMap.get("id");
+        InitDataObject initData = webResource.init(params, true, request, true, null);
 
-    try {
-      RoleAPI roleAPI = APILocator.getRoleAPI();
-      final List<Role> workflowRoles = roleAPI.findWorkflowSpecialRoles();
-      CacheControl cc = new CacheControl();
-      cc.setNoCache(true);
+        //Creating an utility response object
+        ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
 
-      if (!UtilMethods.isSet(roleId) || roleId.equals("root")) { // Loads Root Roles
-        JSONArray jsonRoles = new JSONArray();
-        JSONObject jsonRoleObject = new JSONObject();
-        jsonRoleObject.put("id", "root");
-        jsonRoleObject.put("name", "Roles");
-        jsonRoleObject.put("top", "true");
+		Map<String, String> paramsMap = initData.getParamsMap();
+		String roleId = paramsMap.get("id");
 
-        List<Role> rootRoles = roleAPI.findRootRoles();
-        JSONArray jsonChildren = new JSONArray();
+		try {
+			RoleAPI roleAPI = APILocator.getRoleAPI();
+			final List<Role> workflowRoles = roleAPI.findWorkflowSpecialRoles();
+			CacheControl cc = new CacheControl();
+			cc.setNoCache(true);
 
-        for (Role r : rootRoles) {
-          if (!workflowRoles.contains(r)) {
-            JSONObject jsonRoleChildObject = new JSONObject();
-            jsonRoleChildObject.put("id", r.getId());
-            jsonRoleChildObject.put("$ref", r.getId());
-            jsonRoleChildObject.put("name", r.getName());
-            jsonRoleChildObject.put("locked", r.isLocked());
-            jsonRoleChildObject.put("children", true);
+			if (!UtilMethods.isSet(roleId) || roleId.equals("root")) {  // Loads Root Roles
+				JSONArray jsonRoles = new JSONArray();
+				JSONObject jsonRoleObject = new JSONObject();
+				jsonRoleObject.put("id", "root");
+				jsonRoleObject.put("name", "Roles");
+				jsonRoleObject.put("top", "true");
 
-            jsonChildren.add(jsonRoleChildObject);
-          }
-        }
-        // In order to add a JsonArray to a JsonObject
-        // we need to specify that is an object (API bug)
-        jsonRoleObject.put("children", (Object) jsonChildren);
-        jsonRoles.add(jsonRoleObject);
+				List<Role> rootRoles = roleAPI.findRootRoles();
+				JSONArray jsonChildren = new JSONArray();
 
-        return responseResource.response(jsonRoles.toString(), cc);
+				for (Role r : rootRoles) {
+					if (!workflowRoles.contains(r)) {
+						JSONObject jsonRoleChildObject = new JSONObject();
+						jsonRoleChildObject.put("id", r.getId());
+						jsonRoleChildObject.put("$ref", r.getId());
+						jsonRoleChildObject.put("name", r.getName());
+						jsonRoleChildObject.put("locked", r.isLocked());
+						jsonRoleChildObject.put("children", true);
 
-      } else { // Loads Children Roles of given Role ID
-        Role role = roleAPI.loadRoleById(roleId);
+						jsonChildren.add(jsonRoleChildObject);
+					}
+				}
+				//In order to add a JsonArray to a JsonObject
+				//we need to specify that is an object (API bug)
+				jsonRoleObject.put("children", (Object) jsonChildren);
+				jsonRoles.add(jsonRoleObject);
 
-        JSONObject jsonRoleObject = new JSONObject();
-        jsonRoleObject.put("id", role.getId());
-        jsonRoleObject.put("name", role.getName());
-        jsonRoleObject.put("locked", role.isLocked());
+				return responseResource.response(jsonRoles.toString(), cc);
 
-        JSONArray jsonChildren = new JSONArray();
+			} else {  // Loads Children Roles of given Role ID
+				Role role = roleAPI.loadRoleById(roleId);
 
-        List<String> children = role.getRoleChildren();
-        if (children != null) {
-          for (String childId : children) {
-            Role r = roleAPI.loadRoleById(childId);
-            if (!workflowRoles.contains(r)) {
-              JSONObject jsonRoleChildObject = new JSONObject();
-              jsonRoleChildObject.put("id", r.getId());
-              jsonRoleChildObject.put("$ref", r.getId());
-              jsonRoleChildObject.put("name", r.getName());
-              jsonRoleChildObject.put("locked", r.isLocked());
-              jsonRoleChildObject.put("children", true);
+				JSONObject jsonRoleObject = new JSONObject();
+				jsonRoleObject.put("id", role.getId());
+				jsonRoleObject.put("name", role.getName());
+				jsonRoleObject.put("locked", role.isLocked());
 
-              jsonChildren.add(jsonRoleChildObject);
-            }
-          }
-        }
-        // In order to add a JsonArray to a JsonObject
-        // we need to specify that is an object (API bug)
-        jsonRoleObject.put("children", (Object) jsonChildren);
+				JSONArray jsonChildren = new JSONArray();
 
-        return responseResource.response(jsonRoleObject.toString(), cc);
-      }
-    } catch (DotSecurityException e) {
-      throw new ForbiddenException(e);
-    }
-  }
+				List<String> children = role.getRoleChildren();
+				if (children != null) {
+					for (String childId : children) {
+						Role r = roleAPI.loadRoleById(childId);
+						if (!workflowRoles.contains(r)) {
+							JSONObject jsonRoleChildObject = new JSONObject();
+							jsonRoleChildObject.put("id", r.getId());
+							jsonRoleChildObject.put("$ref", r.getId());
+							jsonRoleChildObject.put("name", r.getName());
+							jsonRoleChildObject.put("locked", r.isLocked());
+							jsonRoleChildObject.put("children", true);
 
-  /**
-   * Returns a JSON representation of the Role with the given id. <br>
-   * The resulting role node contains the following fields: <br>
-   * DBFQN, FQN, description, editLayouts, editPermissions, editUsers, id, locked, name, parent,
-   * roleKey, system. See {@link Role}.
-   *
-   * <p>This is used to load all the info of a role when clicked on the Tree (UI) in the Role
-   * Manager of dotCMS Admin
-   *
-   * <p>Usage: /api/role/loadbyid/id/{id} <br>
-   * Example usage: /api/role/loadbyid/id/2adccac3-a56b-4078-be40-94e343f20712
-   *
-   * @param request
-   * @param params a string containing the URL parameters
-   * @return
-   * @throws DotDataException
-   * @throws JSONException
-   */
-  @GET
-  @Path("/loadbyid/{params:.*}")
-  @Produces("application/json")
-  public Response loadById(@Context HttpServletRequest request, @PathParam("params") String params)
-      throws DotDataException, JSONException {
-    InitDataObject initData = webResource.init(params, true, request, true, null);
+							jsonChildren.add(jsonRoleChildObject);
+						}
+					}
+				}
+				//In order to add a JsonArray to a JsonObject
+				//we need to specify that is an object (API bug)
+				jsonRoleObject.put("children", (Object) jsonChildren);
 
-    // Creating an utility response object
-    ResourceResponse responseResource = new ResourceResponse(initData.getParamsMap());
-
-    Map<String, String> paramsMap = initData.getParamsMap();
-    String roleId = paramsMap.get("id");
-
-    if (!UtilMethods.isSet(roleId) || roleId.equalsIgnoreCase("root")) {
-      JSONObject jsonRoleObject = new JSONObject();
-      jsonRoleObject.put("id", 0);
-      jsonRoleObject.put("name", "Root Role");
-
-      return responseResource.response(jsonRoleObject.toString());
+				return responseResource.response(jsonRoleObject.toString(), cc);
+			}
+		} catch (DotSecurityException e) {
+			throw new ForbiddenException(e);
+		}
     }
 
-    RoleAPI roleAPI = APILocator.getRoleAPI();
-    Role role = roleAPI.loadRoleById(roleId);
+	/**
+	 * <p>Returns a JSON representation of the Role with the given id.
+	 * <br>The resulting role node contains the following fields:
+	 * <br>DBFQN, FQN, description, editLayouts, editPermissions, editUsers,
+	 * id, locked, name, parent, roleKey, system. See {@link Role}.
+	 *
+	 * <p>This is used to load all the info of a role when clicked on the Tree (UI) in the Role Manager
+	 * of dotCMS Admin
+	 *
+	 * <p>Usage: /api/role/loadbyid/id/{id}
+	 * <br>Example usage: /api/role/loadbyid/id/2adccac3-a56b-4078-be40-94e343f20712
+	 *
+	 * @param request
+	 * @param params a string containing the URL parameters
+	 * @return
+	 * @throws DotDataException
+	 * @throws JSONException
+	 */
 
-    JSONObject jsonRoleObject = new JSONObject();
-    jsonRoleObject.put("DBFQN", UtilMethods.javaScriptify(role.getDBFQN()));
-    jsonRoleObject.put("FQN", UtilMethods.javaScriptify(role.getFQN()));
-    jsonRoleObject.put("children", (Object) new JSONArray());
-    jsonRoleObject.put("description", role.getDescription());
-    jsonRoleObject.put("editLayouts", role.isEditLayouts());
-    jsonRoleObject.put("editPermissions", role.isEditPermissions());
-    jsonRoleObject.put("editUsers", role.isEditUsers());
-    jsonRoleObject.put("id", role.getId());
-    jsonRoleObject.put("locked", role.isLocked());
-    jsonRoleObject.put("name", role.getName());
-    jsonRoleObject.put("parent", role.getParent());
-    jsonRoleObject.put("roleKey", role.getRoleKey() != null ? role.getRoleKey() : "");
-    jsonRoleObject.put("system", role.isSystem());
+	@GET
+	@Path("/loadbyid/{params:.*}")
+	@Produces("application/json")
+	public Response loadById(@Context HttpServletRequest request, @PathParam("params") String params) throws DotDataException, JSONException {
+        InitDataObject initData = webResource.init(params, true, request, true, null);
 
-    return responseResource.response(jsonRoleObject.toString());
-  }
+        //Creating an utility response object
+        ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
 
-  /**
-   * Returns a JSON tree structure whose leaves names contain the given "name" parameter. Each node
-   * contains the fields: id, name, locked, children. - id: id of the child role - name: name of the
-   * child role - locked: boolean that indicates if the child role is locked - children: list of the
-   * role's first level children, if any.
-   *
-   * <p>This is used to feed the resulting Tree (UI) in the Role Manager of dotCMS Admin when using
-   * the filter functionality
-   *
-   * <p>Usage: /api/role/loadbyname/name/<id> Example usage:
-   * /api/role/loadbyid/id/2adccac3-a56b-4078-be40-94e343f20712
-   *
-   * @param request
-   * @param params
-   * @return
-   * @throws DotDataException
-   * @throws JSONException
-   */
-  @GET
-  @Path("/loadbyname/{params:.*}")
-  @Produces("application/json")
-  @SuppressWarnings("unchecked")
-  public Response loadByName(
-      @Context HttpServletRequest request, @PathParam("params") String params)
-      throws DotDataException, JSONException {
-    InitDataObject initData = webResource.init(params, true, request, true, null);
+		Map<String, String> paramsMap = initData.getParamsMap();
+		String roleId = paramsMap.get("id");
 
-    // Creating an utility response object
-    ResourceResponse responseResource = new ResourceResponse(initData.getParamsMap());
+		if(!UtilMethods.isSet(roleId) || roleId.equalsIgnoreCase("root")) {
+			JSONObject jsonRoleObject = new JSONObject();
+			jsonRoleObject.put("id", 0);
+			jsonRoleObject.put("name", "Root Role");
 
-    Map<String, String> paramsMap = initData.getParamsMap();
-    String name = paramsMap.get("name");
+            return responseResource.response(jsonRoleObject.toString());
+		}
 
-    if (!UtilMethods.isSet(name)) {
-      responseResource.response(""); // FIXME: Should return a proper error....
+		RoleAPI roleAPI = APILocator.getRoleAPI();
+		Role role = roleAPI.loadRoleById(roleId);
+
+		JSONObject jsonRoleObject = new JSONObject();
+		jsonRoleObject.put("DBFQN", UtilMethods.javaScriptify(role.getDBFQN()));
+		jsonRoleObject.put("FQN", UtilMethods.javaScriptify(role.getFQN()));
+		jsonRoleObject.put("children", (Object)new JSONArray());
+		jsonRoleObject.put("description", role.getDescription());
+		jsonRoleObject.put("editLayouts", role.isEditLayouts());
+		jsonRoleObject.put("editPermissions", role.isEditPermissions());
+		jsonRoleObject.put("editUsers", role.isEditUsers());
+		jsonRoleObject.put("id", role.getId());
+		jsonRoleObject.put("locked", role.isLocked());
+		jsonRoleObject.put("name", role.getName());
+		jsonRoleObject.put("parent", role.getParent());
+		jsonRoleObject.put("roleKey", role.getRoleKey()!=null?role.getRoleKey():"");
+		jsonRoleObject.put("system", role.isSystem());
+
+        return responseResource.response(jsonRoleObject.toString());
     }
 
-    RoleAPI roleAPI = APILocator.getRoleAPI();
-    Role userRole = roleAPI.loadRoleByKey(RoleAPI.USERS_ROOT_ROLE_KEY);
-    List<Role> roles = roleAPI.findRolesByNameFilter(name, -1, -1);
+	/**
+	 * Returns a JSON tree structure whose leaves names contain the given "name" parameter.
+	 * Each node contains the fields: id, name, locked, children.
+	 * - id: id of the child role
+	 * - name: name of the child role
+	 * - locked: boolean that indicates if the child role is locked
+	 * - children: list of the role's first level children, if any.
+	 *
+	 * This is used to feed the resulting Tree (UI) in the Role Manager of dotCMS Admin when using
+	 * the filter functionality
+	 *
+	 * Usage: /api/role/loadbyname/name/<id>
+	 * Example usage: /api/role/loadbyid/id/2adccac3-a56b-4078-be40-94e343f20712
+	 *
+	 *
+	 * @param request
+	 * @param params
+	 * @return
+	 * @throws DotDataException
+	 * @throws JSONException
+	 */
 
-    LinkedHashMap<String, Object> resultTree = new LinkedHashMap<String, Object>();
+	@GET
+	@Path("/loadbyname/{params:.*}")
+	@Produces("application/json")
+	@SuppressWarnings("unchecked")
+	public Response loadByName(@Context HttpServletRequest request, @PathParam("params") String params) throws DotDataException, JSONException {
+        InitDataObject initData = webResource.init(params, true, request, true, null);
 
-    for (Role r : roles) {
+        //Creating an utility response object
+        ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
 
-      String DBFQN = r.getDBFQN();
+		Map<String, String> paramsMap = initData.getParamsMap();
+		String name = paramsMap.get("name");
 
-      if (DBFQN.contains(userRole.getId())) {
-        continue;
-      }
-
-      String node = DBFQN.split(" --> ")[0];
-      int offset = DBFQN.indexOf(" --> ");
-
-      if (offset > 0) {
-        String nodes = DBFQN.substring(offset + 5, DBFQN.length());
-        // check if it already exists
-        LinkedHashMap<String, Object> existingMap =
-            (LinkedHashMap<String, Object>) resultTree.get(node);
-
-        if (existingMap != null) {
-          buildTree(
-              existingMap,
-              nodes); // if exists past the existing HashMap to continue looking for children
-        } else {
-          resultTree.put(
-              node,
-              buildTree(
-                  new LinkedHashMap<String, Object>(),
-                  nodes)); // if does not exist put the key and continue building recursively
+		if(!UtilMethods.isSet(name)) {
+            responseResource.response( "" );//FIXME: Should return a proper error....
         }
 
-      } else {
-        resultTree.put(node, null);
-      }
-    }
-    JSONObject jsonObject = new JSONObject();
-    jsonObject.put("identifier", "id");
-    jsonObject.put("label", "name");
+		RoleAPI roleAPI = APILocator.getRoleAPI();
+		Role userRole = roleAPI.loadRoleByKey(RoleAPI.USERS_ROOT_ROLE_KEY);
+		List<Role> roles = roleAPI.findRolesByNameFilter(name, -1, -1);
 
-    JSONArray jsonItems = new JSONArray();
+		LinkedHashMap<String, Object> resultTree = new LinkedHashMap<String, Object>();
 
-    JSONObject jsonItemsObject = new JSONObject();
-    jsonItemsObject.put("id", "root");
-    jsonItemsObject.put("name", "Roles");
-    jsonItemsObject.put("top", true);
-    jsonItemsObject.put("children", (Object) buildFilteredJsonTree(resultTree));
+		for (Role r : roles) {
 
-    jsonItems.add(jsonItemsObject);
+			String DBFQN =  r.getDBFQN();
 
-    jsonObject.put("items", (Object) jsonItems);
+			if(DBFQN.contains(userRole.getId())) {
+				continue;
+			}
 
-    return responseResource.response(jsonObject.toString());
-  }
+			String node = DBFQN.split(" --> ")[0];
+			int offset = DBFQN.indexOf(" --> ");
 
-  @SuppressWarnings("unchecked")
-  private LinkedHashMap<String, Object> buildTree(LinkedHashMap<String, Object> map, String nodes) {
+			if(offset>0) {
+				String nodes = DBFQN.substring(offset+5, DBFQN.length());
+				// check if it already exists
+				LinkedHashMap<String, Object> existingMap = (LinkedHashMap<String, Object>) resultTree.get(node);
 
-    String node = nodes.split(" --> ")[0];
-    int offset = nodes.indexOf(" --> ");
+				if(existingMap!=null) {
+					buildTree(existingMap, nodes); // if exists past the existing HashMap to continue looking for children
+				} else {
+					resultTree.put(node,  buildTree(new LinkedHashMap<String, Object>(), nodes)); // if does not exist put the key and continue building recursively
+				}
 
-    if (offset > 0) {
-      String subNodes = nodes.substring(offset + 5, nodes.length());
+			} else {
+				resultTree.put(node,  null);
+			}
 
-      LinkedHashMap<String, Object> existingMap = (LinkedHashMap<String, Object>) map.get(node);
+		}
+		JSONObject jsonObject = new JSONObject();
+		jsonObject.put("identifier", "id");
+		jsonObject.put("label", "name");
 
-      if (existingMap != null) {
-        buildTree(
-            existingMap,
-            subNodes); // if exists pass the existing HashMap to continue looking for children
-      } else {
-        map.put(
-            node,
-            buildTree(
-                new LinkedHashMap<String, Object>(),
-                subNodes)); // if does not exist put the key and continue building recursively
-      }
+		JSONArray jsonItems = new JSONArray();
 
-    } else {
-      map.put(node, null);
-    }
+		JSONObject jsonItemsObject = new JSONObject();
+		jsonItemsObject.put("id", "root");
+		jsonItemsObject.put("name", "Roles");
+		jsonItemsObject.put("top", true);
+		jsonItemsObject.put("children", (Object)buildFilteredJsonTree(resultTree));
 
-    return map;
-  }
+		jsonItems.add(jsonItemsObject);
 
-  @SuppressWarnings("unchecked")
-  private JSONArray buildFilteredJsonTree(LinkedHashMap<String, Object> map)
-      throws DotDataException, JSONException {
-    JSONArray jsonChildren = new JSONArray();
+		jsonObject.put("items", (Object)jsonItems);
 
-    RoleAPI roleAPI = APILocator.getRoleAPI();
+        return responseResource.response(jsonObject.toString());
+	}
 
-    if (map != null) {
-      for (String key : map.keySet()) {
-        Role r = roleAPI.loadRoleById(key);
+	@SuppressWarnings("unchecked")
+	private LinkedHashMap<String, Object> buildTree(LinkedHashMap<String, Object> map, String nodes) {
 
-        JSONObject jsonObject = new JSONObject();
-        jsonObject.put("id", r.getId().replace('-', '_'));
-        jsonObject.put("name", r.getName());
-        jsonObject.put("locked", r.isLocked());
+		String node = nodes.split(" --> ")[0];
+		int offset = nodes.indexOf(" --> ");
 
-        LinkedHashMap<String, Object> children = (LinkedHashMap<String, Object>) map.get(key);
+		if(offset>0) {
+			String subNodes = nodes.substring(offset+5, nodes.length());
 
-        jsonObject.put("children", (Object) buildFilteredJsonTree(children));
-        jsonChildren.add(jsonObject);
-      }
-    }
-    return jsonChildren;
-  }
+			LinkedHashMap<String, Object> existingMap = (LinkedHashMap<String, Object>) map.get(node);
+
+			if(existingMap!=null) {
+				buildTree(existingMap, subNodes); // if exists pass the existing HashMap to continue looking for children
+			} else {
+				map.put(node,  buildTree(new LinkedHashMap<String, Object>(), subNodes)); // if does not exist put the key and continue building recursively
+			}
+
+		} else {
+			map.put(node,  null);
+		}
+
+		return map;
+
+	}
+
+	@SuppressWarnings("unchecked")
+	private JSONArray buildFilteredJsonTree(LinkedHashMap<String, Object> map) throws DotDataException, JSONException {
+		JSONArray jsonChildren = new JSONArray();
+
+		RoleAPI roleAPI = APILocator.getRoleAPI();
+
+		if(map != null) {
+			for (String key : map.keySet()) {
+				Role r = roleAPI.loadRoleById(key);
+
+				JSONObject jsonObject = new JSONObject();
+				jsonObject.put("id", r.getId().replace('-', '_'));
+				jsonObject.put("name", r.getName());
+				jsonObject.put("locked", r.isLocked());
+
+				LinkedHashMap<String, Object> children = (LinkedHashMap<String, Object>) map.get(key);
+
+				jsonObject.put("children", (Object)buildFilteredJsonTree(children));
+				jsonChildren.add(jsonObject);
+			}
+		}
+		return jsonChildren;
+	}
+
 }

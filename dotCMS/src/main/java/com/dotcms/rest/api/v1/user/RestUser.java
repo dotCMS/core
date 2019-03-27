@@ -6,64 +6,66 @@ import com.dotcms.rest.api.Validated;
 
 /**
  * Encapsulates the minimal information for the RestUser
- *
  * @author Geoff M. Granum
  */
 @JsonDeserialize(builder = RestUser.Builder.class)
-public final class RestUser extends Validated {
+public final class RestUser extends Validated  {
 
-  public final String userId;
-  public final String givenName;
-  public final String email;
-  public final String surname;
-  public final String roleId;
+    public final String userId;
+    public final String givenName;
+    public final String email;
+    public final String surname;
+    public final String roleId;
 
-  private RestUser(RestUser.Builder builder) {
-    userId = builder.userId;
-    givenName = builder.givenName;
-    surname = builder.surname;
-    roleId = builder.roleId;
-    email = builder.email;
 
-    checkValid();
-  }
+    private RestUser(RestUser.Builder builder) {
+        userId    = builder.userId;
+        givenName = builder.givenName;
+        surname   = builder.surname;
+        roleId    = builder.roleId;
+        email     = builder.email;
 
-  public static final class Builder {
-    @JsonProperty private String userId;
-    @JsonProperty private String givenName;
-    @JsonProperty private String surname;
-    @JsonProperty private String roleId;
-    @JsonProperty private String email;
-
-    public Builder() {}
-
-    public RestUser.Builder userId(String userId) {
-      this.userId = userId;
-      return this;
+        checkValid();
     }
 
-    public RestUser.Builder givenName(String givenName) {
-      this.givenName = givenName;
-      return this;
-    }
+    public static final class Builder {
+        @JsonProperty private String userId;
+        @JsonProperty private String givenName;
+        @JsonProperty private String surname;
+        @JsonProperty private String roleId;
+        @JsonProperty private String email;
 
-    public RestUser.Builder surname(String surname) {
-      this.surname = surname;
-      return this;
-    }
+        public Builder() {
+        }
 
-    public RestUser.Builder roleId(String roleId) {
-      this.roleId = roleId;
-      return this;
-    }
+        public RestUser.Builder userId(String userId) {
+            this.userId = userId;
+            return this;
+        }
 
-    public RestUser.Builder email(String email) {
-      this.email = email;
-      return this;
-    }
+        public RestUser.Builder givenName(String givenName) {
+            this.givenName = givenName;
+            return this;
+        }
 
-    public RestUser build() {
-      return new RestUser(this);
+        public RestUser.Builder surname(String surname) {
+            this.surname = surname;
+            return this;
+        }
+
+        public RestUser.Builder roleId(String roleId) {
+            this.roleId = roleId;
+            return this;
+        }
+
+        public RestUser.Builder email(String email) {
+            this.email = email;
+            return this;
+        }
+
+        public RestUser build() {
+            return new RestUser(this);
+        }
     }
-  }
 }
+ 

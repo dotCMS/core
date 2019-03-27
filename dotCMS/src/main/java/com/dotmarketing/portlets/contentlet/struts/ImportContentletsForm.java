@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.contentlet.struts;
 
+
 import javax.servlet.http.HttpServletRequest;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMapping;
@@ -7,72 +8,74 @@ import org.apache.struts.validator.ValidatorForm;
 
 public class ImportContentletsForm extends ValidatorForm {
 
-  private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
-  /** identifier field */
-  private String structure = "";
+	/** identifier field */    
+	
+	private String structure = "";
+	
+	private String fileName = "";
+	
+	private long language = 0;
+	
+	private String[] fields = new String[0];
 
-  private String fileName = "";
+	private String workflowActionId = "";
 
-  private long language = 0;
+    public String[] getFields() {
+        return fields;
+    }
 
-  private String[] fields = new String[0];
+    public void setFields(String[] fields) {
+        this.fields = fields;
+    }
 
-  private String workflowActionId = "";
+    public String getStructure() {
+        return structure;
+    }
 
-  public String[] getFields() {
-    return fields;
-  }
+    public void setStructure(String structure) {
+        this.structure = structure;
+    }
 
-  public void setFields(String[] fields) {
-    this.fields = fields;
-  }
+    public long getLanguage() {
+        return language;
+    }
 
-  public String getStructure() {
-    return structure;
-  }
+    public void setLanguage(long language) {
+        this.language = language;
+    }
 
-  public void setStructure(String structure) {
-    this.structure = structure;
-  }
+    @Override
+    public ActionErrors validate(ActionMapping mapping, HttpServletRequest req) {
+        
+        return super.validate(mapping, req);
+    }
 
-  public long getLanguage() {
-    return language;
-  }
+	public void setFileName(String fileName) {
+		this.fileName = fileName;
+	}
 
-  public void setLanguage(long language) {
-    this.language = language;
-  }
+	public String getFileName() {
+		return fileName;
+	}
 
-  @Override
-  public ActionErrors validate(ActionMapping mapping, HttpServletRequest req) {
+    /**
+     * Set the WorkflowActionId to be executed on the import
+     * @param workflowActionId the workflow action Id string
+     */
+    public void setWorkflowActionId(String workflowActionId) {
+        this.workflowActionId = workflowActionId;
+    }
 
-    return super.validate(mapping, req);
-  }
-
-  public void setFileName(String fileName) {
-    this.fileName = fileName;
-  }
-
-  public String getFileName() {
-    return fileName;
-  }
-
-  /**
-   * Set the WorkflowActionId to be executed on the import
-   *
-   * @param workflowActionId the workflow action Id string
-   */
-  public void setWorkflowActionId(String workflowActionId) {
-    this.workflowActionId = workflowActionId;
-  }
-
-  /**
-   * Get the Workflow Action Id to be executed on the import
-   *
-   * @return The workflow Action Id
-   */
-  public String getWorkflowActionId() {
-    return workflowActionId;
-  }
+    /**
+     * Get the Workflow Action Id to be executed on the import
+     * @return The workflow Action Id
+     */
+    public String getWorkflowActionId() {
+        return workflowActionId;
+    }
+    
+    
+    
 }

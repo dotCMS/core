@@ -1,10 +1,5 @@
 package com.dotcms.content.elasticsearch.business;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
@@ -37,355 +32,320 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.junit.Assert.*;
+
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-/** @author nollymar */
+/**
+ * @author nollymar
+ */
 public class ESMappingAPITest {
 
-  private static ContentletAPI contentletAPI;
-  private static ContentTypeAPI contentTypeAPI;
-  private static FieldAPI fieldAPI;
-  private static LanguageAPI languageAPI;
-  private static Language language;
-  private static RelationshipAPI relationshipAPI;
-  private static UserAPI userAPI;
-  private static User user;
+    private static ContentletAPI contentletAPI;
+    private static ContentTypeAPI contentTypeAPI;
+    private static FieldAPI fieldAPI;
+    private static LanguageAPI languageAPI;
+    private static Language language;
+    private static RelationshipAPI relationshipAPI;
+    private static UserAPI userAPI;
+    private static User user;
 
-  @BeforeClass
-  public static void prepare() throws Exception {
-    // Setting web app environment
-    IntegrationTestInitService.getInstance().init();
-    userAPI = APILocator.getUserAPI();
-    user = userAPI.getSystemUser();
+    @BeforeClass
+    public static void prepare() throws Exception {
+        //Setting web app environment
+        IntegrationTestInitService.getInstance().init();
+        userAPI = APILocator.getUserAPI();
+        user = userAPI.getSystemUser();
 
-    contentTypeAPI = APILocator.getContentTypeAPI(user);
-    contentletAPI = APILocator.getContentletAPI();
-    fieldAPI = APILocator.getContentTypeFieldAPI();
-    languageAPI = APILocator.getLanguageAPI();
-    language = languageAPI.getDefaultLanguage();
-    relationshipAPI = APILocator.getRelationshipAPI();
-  }
-
-  @Test
-  public void testLoadRelationshipFields_whenUsingLegacyRelationships_shouldSuccess()
-      throws DotDataException, DotSecurityException {
-
-    final ESMappingAPIImpl esMappingAPI = new ESMappingAPIImpl();
-    final Map<String, Object> esMap = new HashMap<>();
-
-    final ContentType newsContentType = contentTypeAPI.find("News");
-    final ContentType commentsContentType = contentTypeAPI.find("Comments");
-
-    Contentlet newsContentlet = null;
-    Contentlet commentsContentlet = null;
-
-    try {
-      // creates parent contentlet
-      ContentletDataGen dataGen = new ContentletDataGen(newsContentType.id());
-      newsContentlet =
-          dataGen
-              .languageId(language.getId())
-              .setProperty("title", "News Test")
-              .setProperty("urlTitle", "news-test")
-              .setProperty("byline", "news-test")
-              .setProperty("sysPublishDate", new Date())
-              .setProperty("story", "news-test")
-              .next();
-
-      // creates child contentlet
-      dataGen = new ContentletDataGen(commentsContentType.id());
-      commentsContentlet =
-          dataGen
-              .languageId(language.getId())
-              .setProperty("title", "Comment for News")
-              .setProperty("email", "testing@dotcms.com")
-              .setProperty("comment", "Comment for News")
-              .nextPersisted();
-
-      final Relationship relationship = relationshipAPI.byTypeValue("News-Comments");
-
-      newsContentlet =
-          contentletAPI.checkin(
-              newsContentlet,
-              CollectionsUtils.map(relationship, CollectionsUtils.list(commentsContentlet)),
-              null,
-              user,
-              false);
-
-      esMappingAPI.loadRelationshipFields(newsContentlet, esMap);
-
-      assertNotNull(esMap);
-      assertEquals(
-          commentsContentlet.getIdentifier(), List.class.cast(esMap.get("News-Comments")).get(0));
-      assertEquals(
-          commentsContentlet.getIdentifier() + "_1",
-          List.class.cast(esMap.get("News-Comments" + ESMappingConstants.SUFFIX_ORDER)).get(0));
-
-    } finally {
-      if (newsContentlet != null && newsContentlet.getIdentifier() != null) {
-        ContentletDataGen.remove(newsContentlet);
-      }
-
-      if (commentsContentlet != null && commentsContentlet.getIdentifier() != null) {
-        ContentletDataGen.remove(commentsContentlet);
-      }
+        contentTypeAPI = APILocator.getContentTypeAPI(user);
+        contentletAPI = APILocator.getContentletAPI();
+        fieldAPI = APILocator.getContentTypeFieldAPI();
+        languageAPI = APILocator.getLanguageAPI();
+        language = languageAPI.getDefaultLanguage();
+        relationshipAPI = APILocator.getRelationshipAPI();
     }
-  }
 
-  @Test
-  public void testLoadRelationshipFields_whenUsingSelfRelationships_shouldSuccess()
-      throws DotDataException, DotSecurityException {
+    @Test
+    public void testLoadRelationshipFields_whenUsingLegacyRelationships_shouldSuccess()
+            throws DotDataException, DotSecurityException {
 
-    final ESMappingAPIImpl esMappingAPI = new ESMappingAPIImpl();
-    final Map<String, Object> esMap = new HashMap<>();
+        final ESMappingAPIImpl esMappingAPI = new ESMappingAPIImpl();
+        final Map<String, Object> esMap = new HashMap<>();
 
-    final ContentType commentsContentType = contentTypeAPI.find("Comments");
+        final ContentType newsContentType = contentTypeAPI.find("News");
+        final ContentType commentsContentType = contentTypeAPI.find("Comments");
 
-    Contentlet parentContentlet = null;
-    Contentlet childContentlet = null;
+        Contentlet newsContentlet = null;
+        Contentlet commentsContentlet = null;
 
-    try {
-      // creates parent contentlet
-      ContentletDataGen dataGen = new ContentletDataGen(commentsContentType.id());
-      childContentlet =
-          dataGen
-              .languageId(language.getId())
-              .setProperty("title", "Child Comment for Test")
-              .setProperty("email", "testing@dotcms.com")
-              .setProperty("comment", "Child Comment for Test")
-              .next();
+        try {
+            //creates parent contentlet
+            ContentletDataGen dataGen = new ContentletDataGen(newsContentType.id());
+            newsContentlet = dataGen.languageId(language.getId()).setProperty("title", "News Test")
+                    .setProperty("urlTitle", "news-test").setProperty("byline", "news-test")
+                    .setProperty("sysPublishDate", new Date()).setProperty("story", "news-test")
+                    .next();
 
-      // creates child contentlet
-      parentContentlet =
-          dataGen
-              .languageId(language.getId())
-              .setProperty("title", "Parent Comment for Test")
-              .setProperty("email", "testing@dotcms.com")
-              .setProperty("comment", "Parent Comment for Test")
-              .nextPersisted();
+            //creates child contentlet
+            dataGen = new ContentletDataGen(commentsContentType.id());
+            commentsContentlet = dataGen.languageId(language.getId())
+                    .setProperty("title", "Comment for News")
+                    .setProperty("email", "testing@dotcms.com")
+                    .setProperty("comment", "Comment for News").nextPersisted();
 
-      final Relationship relationship = relationshipAPI.byTypeValue("Comments-Comments");
+            final Relationship relationship = relationshipAPI.byTypeValue("News-Comments");
 
-      childContentlet =
-          contentletAPI.checkin(
-              childContentlet,
-              CollectionsUtils.map(relationship, CollectionsUtils.list(parentContentlet)),
-              null,
-              user,
-              false);
+            newsContentlet = contentletAPI.checkin(newsContentlet,
+                    CollectionsUtils.map(relationship, CollectionsUtils.list(commentsContentlet)),
+                    null, user, false);
 
-      esMappingAPI.loadRelationshipFields(parentContentlet, esMap);
+            esMappingAPI.loadRelationshipFields(newsContentlet, esMap);
 
-      assertNotNull(esMap);
-      assertEquals(
-          childContentlet.getIdentifier(),
-          ((List) esMap.get("Comments-Comments" + ESMappingConstants.SUFFIX_CHILD)).get(0));
-      assertEquals(
-          childContentlet.getIdentifier() + "_1",
-          ((List) esMap.get("Comments-Comments" + ESMappingConstants.SUFFIX_ORDER)).get(0));
+            assertNotNull(esMap);
+            assertEquals(commentsContentlet.getIdentifier(),
+                    List.class.cast(esMap.get("News-Comments")).get(0));
+            assertEquals(commentsContentlet.getIdentifier() + "_1",
+                    List.class.cast(esMap.get("News-Comments" + ESMappingConstants.SUFFIX_ORDER)).get(0));
 
-    } finally {
-      if (parentContentlet != null && parentContentlet.getIdentifier() != null) {
-        ContentletDataGen.remove(parentContentlet);
-      }
+        } finally {
+            if (newsContentlet != null && newsContentlet.getIdentifier() != null) {
+                ContentletDataGen.remove(newsContentlet);
+            }
 
-      if (childContentlet != null && childContentlet.getIdentifier() != null) {
-        ContentletDataGen.remove(childContentlet);
-      }
+            if (commentsContentlet != null && commentsContentlet.getIdentifier() != null) {
+                ContentletDataGen.remove(commentsContentlet);
+            }
+
+        }
     }
-  }
 
-  @Test
-  public void testLoadRelationshipFields_whenUsingOneSideFieldRelationships_shouldSuccess()
-      throws DotDataException, DotSecurityException {
+    @Test
+    public void testLoadRelationshipFields_whenUsingSelfRelationships_shouldSuccess()
+            throws DotDataException, DotSecurityException {
 
-    final ESMappingAPIImpl esMappingAPI = new ESMappingAPIImpl();
-    Map<String, Object> esMap = new HashMap<>();
+        final ESMappingAPIImpl esMappingAPI = new ESMappingAPIImpl();
+        final Map<String, Object> esMap = new HashMap<>();
 
-    String cardinality = String.valueOf(RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal());
+        final ContentType commentsContentType = contentTypeAPI.find("Comments");
 
-    ContentType parentContentType = null;
-    ContentType childContentType = null;
+        Contentlet parentContentlet = null;
+        Contentlet childContentlet = null;
 
-    try {
-      parentContentType = createAndSaveSimpleContentType("parentContentType");
-      childContentType = createAndSaveSimpleContentType("childContentType");
+        try {
+            //creates parent contentlet
+            ContentletDataGen dataGen = new ContentletDataGen(commentsContentType.id());
+            childContentlet = dataGen.languageId(language.getId())
+                    .setProperty("title", "Child Comment for Test")
+                    .setProperty("email", "testing@dotcms.com")
+                    .setProperty("comment", "Child Comment for Test")
+                    .next();
 
-      createAndSaveRelationshipField(
-          "newRel", parentContentType.id(), childContentType.variable(), cardinality);
+            //creates child contentlet
+            parentContentlet = dataGen.languageId(language.getId())
+                    .setProperty("title", "Parent Comment for Test")
+                    .setProperty("email", "testing@dotcms.com")
+                    .setProperty("comment", "Parent Comment for Test")
+                    .nextPersisted();
 
-      final Relationship relationship = relationshipAPI.byContentType(parentContentType).get(0);
+            final Relationship relationship = relationshipAPI.byTypeValue("Comments-Comments");
 
-      // creates parent contentlet
-      ContentletDataGen dataGen = new ContentletDataGen(parentContentType.id());
-      Contentlet parentContentlet = dataGen.languageId(language.getId()).next();
+            childContentlet = contentletAPI.checkin(childContentlet,
+                    CollectionsUtils.map(relationship, CollectionsUtils.list(parentContentlet)),
+                    null, user, false);
 
-      // creates child contentlet
-      dataGen = new ContentletDataGen(childContentType.id());
-      final Contentlet childContentlet1 = dataGen.languageId(language.getId()).nextPersisted();
-      final Contentlet childContentlet2 = dataGen.languageId(language.getId()).nextPersisted();
+            esMappingAPI.loadRelationshipFields(parentContentlet, esMap);
 
-      parentContentlet =
-          contentletAPI.checkin(
-              parentContentlet,
-              CollectionsUtils.map(
-                  relationship, CollectionsUtils.list(childContentlet1, childContentlet2)),
-              null,
-              user,
-              false);
+            assertNotNull(esMap);
+            assertEquals(childContentlet.getIdentifier(),
+                    ((List)esMap.get("Comments-Comments" + ESMappingConstants.SUFFIX_CHILD)).get(0));
+            assertEquals(childContentlet.getIdentifier() + "_1",
+                    ((List)esMap.get("Comments-Comments" + ESMappingConstants.SUFFIX_ORDER)).get(0));
 
-      esMappingAPI.loadRelationshipFields(parentContentlet, esMap);
+        } finally {
+            if (parentContentlet != null && parentContentlet.getIdentifier() != null) {
+                ContentletDataGen.remove(parentContentlet);
+            }
 
-      assertNotNull(esMap);
+            if (childContentlet != null && childContentlet.getIdentifier() != null) {
+                ContentletDataGen.remove(childContentlet);
+            }
 
-      final List<String> expectedResults =
-          CollectionsUtils.list(childContentlet1.getIdentifier(), childContentlet2.getIdentifier());
-
-      validateRelationshipIndex(esMap, relationship.getRelationTypeValue(), expectedResults);
-
-      assertTrue(
-          ((List) esMap.get(relationship.getRelationTypeValue() + ESMappingConstants.SUFFIX_ORDER))
-              .stream()
-              .allMatch(
-                  child ->
-                      child.equals(childContentlet1.getIdentifier() + "_1")
-                          || child.equals(childContentlet2.getIdentifier() + "_2")));
-
-    } finally {
-      if (parentContentType != null && parentContentType.id() != null) {
-        contentTypeAPI.delete(parentContentType);
-      }
-
-      if (childContentType != null && childContentType.id() != null) {
-        contentTypeAPI.delete(childContentType);
-      }
+        }
     }
-  }
 
-  @Test
-  public void testLoadRelationshipFields_whenUsingTwoSidedFieldRelationships_shouldSuccess()
-      throws DotDataException, DotSecurityException {
 
-    final ESMappingAPIImpl esMappingAPI = new ESMappingAPIImpl();
-    Map<String, Object> esMap = new HashMap<>();
+    @Test
+    public void testLoadRelationshipFields_whenUsingOneSideFieldRelationships_shouldSuccess()
+            throws DotDataException, DotSecurityException {
 
-    String cardinality = String.valueOf(RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal());
+        final ESMappingAPIImpl esMappingAPI = new ESMappingAPIImpl();
+        Map<String, Object> esMap = new HashMap<>();
 
-    ContentType parentContentType = null;
-    ContentType childContentType = null;
+        String cardinality = String.valueOf(RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal());
 
-    try {
-      parentContentType = createAndSaveSimpleContentType("parentContentType");
-      childContentType = createAndSaveSimpleContentType("childContentType");
+        ContentType parentContentType = null;
+        ContentType childContentType = null;
 
-      final Field parentTypeRelationshipField =
-          createAndSaveRelationshipField(
-              "newRel", parentContentType.id(), childContentType.variable(), cardinality);
+        try {
+            parentContentType = createAndSaveSimpleContentType("parentContentType");
+            childContentType = createAndSaveSimpleContentType("childContentType");
 
-      final String fullFieldVar =
-          parentContentType.variable() + StringPool.PERIOD + parentTypeRelationshipField.variable();
+            createAndSaveRelationshipField("newRel",
+                    parentContentType.id(), childContentType.variable(), cardinality);
 
-      // Adding a RelationshipField to the child
-      final Field childTypeRelationshipField =
-          createAndSaveRelationshipField(
-              "otherSideRel", childContentType.id(), fullFieldVar, cardinality);
+            final Relationship relationship = relationshipAPI.byContentType(parentContentType)
+                    .get(0);
 
-      final Relationship relationship = relationshipAPI.byContentType(parentContentType).get(0);
+            //creates parent contentlet
+            ContentletDataGen dataGen = new ContentletDataGen(parentContentType.id());
+            Contentlet parentContentlet = dataGen.languageId(language.getId()).next();
 
-      // creates child contentlet
-      final ContentletDataGen childDataGen = new ContentletDataGen(childContentType.id());
-      final Contentlet childContentlet = childDataGen.languageId(language.getId()).nextPersisted();
+            //creates child contentlet
+            dataGen = new ContentletDataGen(childContentType.id());
+            final Contentlet childContentlet1 = dataGen.languageId(language.getId()).nextPersisted();
+            final Contentlet childContentlet2 = dataGen.languageId(language.getId()).nextPersisted();
 
-      // creates parent contentlet
-      final ContentletDataGen parentDataGen = new ContentletDataGen(parentContentType.id());
-      final Contentlet parentContentlet1 =
-          contentletAPI.checkin(
-              parentDataGen.languageId(language.getId()).next(),
-              CollectionsUtils.map(relationship, CollectionsUtils.list(childContentlet)),
-              null,
-              user,
-              false);
+            parentContentlet = contentletAPI.checkin(parentContentlet,
+                    CollectionsUtils.map(relationship, CollectionsUtils.list(childContentlet1, childContentlet2)),
+                    null, user, false);
 
-      final Contentlet parentContentlet2 =
-          contentletAPI.checkin(
-              parentDataGen.languageId(language.getId()).next(),
-              CollectionsUtils.map(relationship, CollectionsUtils.list(childContentlet)),
-              null,
-              user,
-              false);
+            esMappingAPI.loadRelationshipFields(parentContentlet, esMap);
 
-      esMappingAPI.loadRelationshipFields(childContentlet, esMap);
+            assertNotNull(esMap);
 
-      assertNotNull(esMap);
+            final List<String> expectedResults = CollectionsUtils
+                    .list(childContentlet1.getIdentifier(), childContentlet2.getIdentifier());
 
-      final List<String> expectedResults =
-          CollectionsUtils.list(
-              parentContentlet1.getIdentifier(), parentContentlet2.getIdentifier());
+            validateRelationshipIndex(esMap, relationship.getRelationTypeValue(), expectedResults);
 
-      validateRelationshipIndex(esMap, relationship.getRelationTypeValue(), expectedResults);
+            assertTrue(((List) esMap
+                    .get(relationship.getRelationTypeValue() + ESMappingConstants.SUFFIX_ORDER))
+                    .stream().allMatch(
+                            child -> child.equals(childContentlet1.getIdentifier() + "_1") || child
+                                    .equals(childContentlet2.getIdentifier() + "_2")));
 
-      validateRelationshipIndex(
-          esMap,
-          childContentType.variable() + StringPool.PERIOD + childTypeRelationshipField.variable(),
-          expectedResults);
+        } finally {
+            if (parentContentType != null && parentContentType.id() != null) {
+                contentTypeAPI.delete(parentContentType);
+            }
 
-      // parents cannot be ordered
-      assertTrue(
-          ((List) esMap.get(relationship.getRelationTypeValue() + ESMappingConstants.SUFFIX_ORDER))
-              .stream()
-              .allMatch(
-                  parent ->
-                      parent.equals(parentContentlet1.getIdentifier() + "_1")
-                          || parent.equals(parentContentlet2.getIdentifier() + "_1")));
+            if (childContentType != null && childContentType.id() != null) {
+                contentTypeAPI.delete(childContentType);
+            }
 
-    } finally {
-      if (parentContentType != null && parentContentType.id() != null) {
-        contentTypeAPI.delete(parentContentType);
-      }
-
-      if (childContentType != null && childContentType.id() != null) {
-        contentTypeAPI.delete(childContentType);
-      }
+        }
     }
-  }
 
-  private void validateRelationshipIndex(
-      final Map<String, Object> esMap, final String keyName, final List<String> identifiers) {
+    @Test
+    public void testLoadRelationshipFields_whenUsingTwoSidedFieldRelationships_shouldSuccess()
+            throws DotDataException, DotSecurityException {
 
-    final List results = List.class.cast(esMap.get(keyName));
-    assertEquals(identifiers.size(), results.size());
+        final ESMappingAPIImpl esMappingAPI = new ESMappingAPIImpl();
+        Map<String, Object> esMap = new HashMap<>();
 
-    assertFalse(Collections.disjoint(results, identifiers));
-  }
+        String cardinality = String.valueOf(RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal());
 
-  private ContentType createAndSaveSimpleContentType(final String name)
-      throws DotSecurityException, DotDataException {
-    return contentTypeAPI.save(
-        ContentTypeBuilder.builder(SimpleContentType.class)
-            .folder(FolderAPI.SYSTEM_FOLDER)
-            .host(Host.SYSTEM_HOST)
-            .name(name)
-            .owner(user.getUserId())
-            .build());
-  }
+        ContentType parentContentType = null;
+        ContentType childContentType = null;
 
-  private Field createAndSaveRelationshipField(
-      final String relationshipName,
-      final String parentTypeId,
-      final String childTypeVar,
-      final String cardinality)
-      throws DotSecurityException, DotDataException {
+        try {
+            parentContentType = createAndSaveSimpleContentType("parentContentType");
+            childContentType = createAndSaveSimpleContentType("childContentType");
 
-    final Field field =
-        FieldBuilder.builder(RelationshipField.class)
-            .name(relationshipName)
-            .contentTypeId(parentTypeId)
-            .values(cardinality)
-            .relationType(childTypeVar)
-            .build();
+            final Field parentTypeRelationshipField = createAndSaveRelationshipField("newRel",
+                    parentContentType.id(), childContentType.variable(), cardinality);
 
-    // One side of the relationship is set parentContentType --> childContentType
-    return fieldAPI.save(field, user);
-  }
+            final String fullFieldVar =
+                    parentContentType.variable() + StringPool.PERIOD + parentTypeRelationshipField
+                            .variable();
+
+            //Adding a RelationshipField to the child
+            final Field childTypeRelationshipField = createAndSaveRelationshipField("otherSideRel",
+                    childContentType.id(), fullFieldVar, cardinality);
+
+            final Relationship relationship = relationshipAPI.byContentType(parentContentType)
+                    .get(0);
+
+            //creates child contentlet
+            final ContentletDataGen childDataGen = new ContentletDataGen(childContentType.id());
+            final Contentlet childContentlet = childDataGen.languageId(language.getId()).nextPersisted();
+
+            //creates parent contentlet
+            final ContentletDataGen parentDataGen = new ContentletDataGen(parentContentType.id());
+            final Contentlet parentContentlet1 = contentletAPI
+                    .checkin(parentDataGen.languageId(language.getId()).next(),
+                            CollectionsUtils
+                                    .map(relationship, CollectionsUtils.list(childContentlet)),
+                            null, user, false);
+
+            final Contentlet parentContentlet2 = contentletAPI
+                    .checkin(parentDataGen.languageId(language.getId()).next(),
+                            CollectionsUtils
+                                    .map(relationship, CollectionsUtils.list(childContentlet)),
+                            null, user, false);
+
+            esMappingAPI.loadRelationshipFields(childContentlet, esMap);
+
+            assertNotNull(esMap);
+
+            final List<String> expectedResults = CollectionsUtils
+                    .list(parentContentlet1.getIdentifier(), parentContentlet2.getIdentifier());
+
+            validateRelationshipIndex(esMap, relationship.getRelationTypeValue(), expectedResults);
+
+            validateRelationshipIndex(esMap, childContentType.variable() + StringPool.PERIOD
+                    + childTypeRelationshipField.variable(), expectedResults);
+
+            //parents cannot be ordered
+            assertTrue(((List) esMap
+                    .get(relationship.getRelationTypeValue() + ESMappingConstants.SUFFIX_ORDER))
+                    .stream().allMatch(
+                            parent -> parent.equals(parentContentlet1.getIdentifier() + "_1")
+                                    || parent
+                                    .equals(parentContentlet2.getIdentifier() + "_1")));
+
+
+        } finally {
+            if (parentContentType != null && parentContentType.id() != null) {
+                contentTypeAPI.delete(parentContentType);
+            }
+
+            if (childContentType != null && childContentType.id() != null) {
+                contentTypeAPI.delete(childContentType);
+            }
+
+        }
+    }
+
+    private void validateRelationshipIndex(final Map<String, Object> esMap, final String keyName,
+            final List<String> identifiers) {
+
+        final List results = List.class.cast(esMap.get(keyName));
+        assertEquals(identifiers.size(), results.size());
+
+        assertFalse(Collections.disjoint(results, identifiers));
+    }
+
+    private ContentType createAndSaveSimpleContentType(final String name)
+            throws DotSecurityException, DotDataException {
+        return contentTypeAPI.save(ContentTypeBuilder.builder(SimpleContentType.class).folder(
+                FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name(name)
+                .owner(user.getUserId()).build());
+    }
+
+    private Field createAndSaveRelationshipField(final String relationshipName,
+            final String parentTypeId,
+            final String childTypeVar, final String cardinality)
+            throws DotSecurityException, DotDataException {
+
+        final Field field = FieldBuilder.builder(RelationshipField.class).name(relationshipName)
+                .contentTypeId(parentTypeId).values(cardinality)
+                .relationType(childTypeVar).build();
+
+        //One side of the relationship is set parentContentType --> childContentType
+        return fieldAPI.save(field, user);
+    }
+
 }

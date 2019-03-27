@@ -3,14 +3,12 @@ package com.dotmarketing.portlets.rules.parameter.display;
 import com.dotmarketing.portlets.rules.parameter.type.TextType;
 
 /**
- * Defines a Select input field that populates its Options from the values returned by a call to a
- * specified ReST Endpoint ( <code>optionUrl</code> ).
- *
- * <p>The corresponding ReST endpoint must return either a list of key-value pairs or an Array of
- * values. For example:
- *
+ * Defines a Select input field that populates its Options from the values returned by a call to
+ * a specified ReST Endpoint ( <code>optionUrl</code> ).
  * <p>
- *
+ * The corresponding ReST endpoint must return either a list of key-value pairs or an Array of values.
+ * For example:
+ * <p>
  * <pre>
  * GET http://example.com/dropdownOptions
  *
@@ -34,56 +32,57 @@ import com.dotmarketing.portlets.rules.parameter.type.TextType;
  */
 public class RestDropdownInput extends TextInput<TextType> {
 
-  private final String optionUrl;
-  private final String jsonValueField;
-  private final String jsonLabelField;
-  private boolean allowAdditions = false;
-  private int minSelections = 0;
-  private int maxSelections = 1;
+    private final String optionUrl;
+    private final String jsonValueField;
+    private final String jsonLabelField;
+    private boolean allowAdditions = false;
+    private int minSelections = 0;
+    private int maxSelections = 1;
 
-  public RestDropdownInput(String optionUrl, String jsonValueField, String jsonLabelField) {
-    super("restDropdown", new TextType());
-    this.optionUrl = optionUrl;
-    this.jsonValueField = jsonValueField;
-    this.jsonLabelField = jsonLabelField;
-  }
+    public RestDropdownInput(String optionUrl, String jsonValueField, String jsonLabelField) {
+        super("restDropdown", new TextType());
+        this.optionUrl = optionUrl;
+        this.jsonValueField = jsonValueField;
+        this.jsonLabelField = jsonLabelField;
+    }
 
-  public RestDropdownInput allowAdditions() {
-    this.allowAdditions = true;
-    return this;
-  }
+    public RestDropdownInput allowAdditions() {
+        this.allowAdditions = true;
+        return this;
+    }
 
-  public boolean isAllowAdditions() {
-    return allowAdditions;
-  }
+    public boolean isAllowAdditions() {
+        return allowAdditions;
+    }
 
-  public RestDropdownInput minSelections(int minSelections) {
-    this.minSelections = minSelections;
-    return this;
-  }
+    public RestDropdownInput minSelections(int minSelections) {
+        this.minSelections = minSelections;
+        return this;
+    }
 
-  public RestDropdownInput maxSelections(int maxSelections) {
-    this.maxSelections = maxSelections;
-    return this;
-  }
+    public RestDropdownInput maxSelections(int maxSelections) {
+        this.maxSelections = maxSelections;
+        return this;
+    }
 
-  public int getMinSelections() {
-    return minSelections;
-  }
+    public int getMinSelections() {
+        return minSelections;
+    }
 
-  public int getMaxSelections() {
-    return maxSelections;
-  }
+    public int getMaxSelections() {
+        return maxSelections;
+    }
 
-  public String getOptionUrl() {
-    return optionUrl;
-  }
+    public String getOptionUrl() {
+        return optionUrl;
+    }
 
-  public String getJsonValueField() {
-    return jsonValueField;
-  }
+    public String getJsonValueField() {
+        return jsonValueField;
+    }
 
-  public String getJsonLabelField() {
-    return jsonLabelField;
-  }
+    public String getJsonLabelField() {
+        return jsonLabelField;
+    }
 }
+

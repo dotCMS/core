@@ -16,37 +16,38 @@ package org.apache.velocity.context;
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
- * under the License.
+ * under the License.    
  */
 
 /**
- * interface for internal context wrapping functionality
+ *  interface for internal context wrapping functionality
  *
- * @author <a href="mailto:geirm@optonline.net">Geir Magnusson Jr.</a>
- * @version $Id: InternalWrapperContext.java 471908 2006-11-06 22:39:28Z henning $
+ *  @author <a href="mailto:geirm@optonline.net">Geir Magnusson Jr.</a>
+ *  @version $Id: InternalWrapperContext.java 471908 2006-11-06 22:39:28Z henning $
  */
-public interface InternalWrapperContext {
-  /**
-   * Returns the wrapped user context.
-   *
-   * @return The wrapped user context.
-   */
-  Context getInternalUserContext();
+public interface InternalWrapperContext
+{
+    /**
+     * Returns the wrapped user context.
+     * @return The wrapped user context.
+     */
+    Context getInternalUserContext();
 
-  /**
-   * Returns the base full context impl.
-   *
-   * @return The base full context impl.
-   */
-  InternalContextAdapter getBaseContext();
+    /**
+     * Returns the base full context impl.
+     * @return The base full context impl.
+     *
+     */
+    InternalContextAdapter getBaseContext();
 
-  /**
-   * Allows callers to explicitly put objects in the local context. Objects added to the context
-   * through this method always end up in the top-level context of possible wrapped contexts.
-   *
-   * @param key name of item to set.
-   * @param value object to set to key.
-   * @return old stored object
-   */
-  Object localPut(final String key, final Object value);
+    /**
+     * Allows callers to explicitly put objects in the local context.
+     * Objects added to the context through this method always end up
+     * in the top-level context of possible wrapped contexts.
+     *
+     *  @param key name of item to set.
+     *  @param value object to set to key.
+     *  @return old stored object
+     */
+    Object localPut(final String key, final Object value);
 }
