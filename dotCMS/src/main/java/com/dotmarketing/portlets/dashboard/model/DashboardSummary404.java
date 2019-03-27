@@ -1,90 +1,99 @@
 package com.dotmarketing.portlets.dashboard.model;
 
 import java.io.Serializable;
+import java.util.Date;
 import java.util.Set;
 
 public class DashboardSummary404 implements Serializable {
+   
+	private static final long serialVersionUID = 1L;
+	
+	private long id;
+	
+	private DashboardSummaryPeriod summaryPeriod;
+	
+	private String hostId;
+	
+	private String uri;
+	
+	private String refererUri;
+	
+	private boolean ignored;
+	
+	private Set userPreferences;
 
-  private static final long serialVersionUID = 1L;
+	public DashboardSummary404(){
+		
+	}
+	
+	public DashboardSummary404(long id, String hostId, String uri, String refererUri, Boolean ignored){
+		this.id = id;
+		this.hostId = hostId;
+		this.uri = uri;
+		this.refererUri = refererUri;
+		this.ignored = ignored==null?false:ignored.booleanValue();
+		
+	}
 
-  private long id;
+		
+	public boolean isIgnored() {
+		return ignored;
+	}
 
-  private DashboardSummaryPeriod summaryPeriod;
+	public void setIgnored(boolean ignored) {
+		this.ignored = ignored;
+	}
 
-  private String hostId;
+	public long getId() {
+		return id;
+	}
 
-  private String uri;
+	public void setId(long id) {
+		this.id = id;
+	}
 
-  private String refererUri;
+	public DashboardSummaryPeriod getSummaryPeriod() {
+		return summaryPeriod;
+	}
 
-  private boolean ignored;
+	public void setSummaryPeriod(DashboardSummaryPeriod summaryPeriod) {
+		this.summaryPeriod = summaryPeriod;
+	}
 
-  private Set userPreferences;
+	public String getHostId() {
+		return hostId;
+	}
 
-  public DashboardSummary404() {}
+	public void setHostId(String hostId) {
+		this.hostId = hostId;
+	}
 
-  public DashboardSummary404(
-      long id, String hostId, String uri, String refererUri, Boolean ignored) {
-    this.id = id;
-    this.hostId = hostId;
-    this.uri = uri;
-    this.refererUri = refererUri;
-    this.ignored = ignored == null ? false : ignored.booleanValue();
-  }
+	public String getUri() {
+		return uri;
+	}
 
-  public boolean isIgnored() {
-    return ignored;
-  }
+	public void setUri(String uri) {
+		this.uri = uri;
+	}
 
-  public void setIgnored(boolean ignored) {
-    this.ignored = ignored;
-  }
+	public String getRefererUri() {
+		return refererUri;
+	}
 
-  public long getId() {
-    return id;
-  }
+	public void setRefererUri(String refererUri) {
+		this.refererUri = refererUri;
+	}
 
-  public void setId(long id) {
-    this.id = id;
-  }
+	public Set getUserPreferences() {
+		return userPreferences;
+	}
 
-  public DashboardSummaryPeriod getSummaryPeriod() {
-    return summaryPeriod;
-  }
-
-  public void setSummaryPeriod(DashboardSummaryPeriod summaryPeriod) {
-    this.summaryPeriod = summaryPeriod;
-  }
-
-  public String getHostId() {
-    return hostId;
-  }
-
-  public void setHostId(String hostId) {
-    this.hostId = hostId;
-  }
-
-  public String getUri() {
-    return uri;
-  }
-
-  public void setUri(String uri) {
-    this.uri = uri;
-  }
-
-  public String getRefererUri() {
-    return refererUri;
-  }
-
-  public void setRefererUri(String refererUri) {
-    this.refererUri = refererUri;
-  }
-
-  public Set getUserPreferences() {
-    return userPreferences;
-  }
-
-  public void setUserPreferences(Set userPreferences) {
-    this.userPreferences = userPreferences;
-  }
+	public void setUserPreferences(Set userPreferences) {
+		this.userPreferences = userPreferences;
+	}
+	
+	
+    
+	
+	
 }

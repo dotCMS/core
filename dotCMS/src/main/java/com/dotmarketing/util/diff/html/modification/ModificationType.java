@@ -16,31 +16,33 @@
 package com.dotmarketing.util.diff.html.modification;
 
 public enum ModificationType {
-  CHANGED {
-    @Override
-    public String toString() {
-      return "changed";
-    }
-  },
 
-  REMOVED {
-    @Override
-    public String toString() {
-      return "removed";
-    }
-  },
+    CHANGED {
+        @Override
+        public String toString() {
+            return "changed";
+        }
+    },
 
-  ADDED {
-    @Override
-    public String toString() {
-      return "added";
-    }
-  },
+    REMOVED {
+        @Override
+        public String toString() {
+            return "removed";
+        }
+    },
 
-  NONE {
-    @Override
-    public String toString() {
-      return "none";
-    }
-  };
+    ADDED {
+        @Override
+        public String toString() {
+            return "added";
+        }
+    },
+
+    NONE {
+        @Override
+        public String toString() {
+            return "none";
+        }
+    };
+
 }

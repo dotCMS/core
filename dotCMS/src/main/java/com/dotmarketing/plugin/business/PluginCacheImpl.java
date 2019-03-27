@@ -12,113 +12,113 @@ import com.dotmarketing.util.Logger;
  * @since 1.6.5c
  */
 public class PluginCacheImpl extends PluginCache {
+	
+	private DotCacheAdministrator cache;
+	
+	private String pluginGroup = "PluginCache";
+	private String propertyGroup = "PropertyCache";
+    // region's name for the cache
+    private String[] groupNames = {pluginGroup, propertyGroup};
 
-  private DotCacheAdministrator cache;
+	public PluginCacheImpl() {
+        cache = CacheLocator.getCacheAdministrator();
+	}
 
-  private String pluginGroup = "PluginCache";
-  private String propertyGroup = "PropertyCache";
-  // region's name for the cache
-  private String[] groupNames = {pluginGroup, propertyGroup};
+	@Override
+	protected com.dotmarketing.plugin.model.Plugin add(com.dotmarketing.plugin.model.Plugin plugin) {
+		String key = pluginGroup + plugin.getId();
+        // Add the key to the cache
+        cache.put(key, plugin,pluginGroup);
+        try {
+			return (Plugin)cache.get(key,pluginGroup);
+		} catch (DotCacheException e) {
+			Logger.warn(this,"Cache Entry not found after adding", e);
+			return plugin;
+		}
+	}
+	
+	@Override
+	protected com.dotmarketing.plugin.model.Plugin get(String pluginId) {
+		String key = pluginGroup + pluginId;
+    	Plugin plugin = null;
+    	try{
+    		plugin = (Plugin)cache.get(key,pluginGroup);
+    	}catch (DotCacheException e) {
+			Logger.debug(this, "Cache Entry not found", e);
+		}
+        return plugin;	
+	}
 
-  public PluginCacheImpl() {
-    cache = CacheLocator.getCacheAdministrator();
-  }
-
-  @Override
-  protected com.dotmarketing.plugin.model.Plugin add(com.dotmarketing.plugin.model.Plugin plugin) {
-    String key = pluginGroup + plugin.getId();
-    // Add the key to the cache
-    cache.put(key, plugin, pluginGroup);
-    try {
-      return (Plugin) cache.get(key, pluginGroup);
-    } catch (DotCacheException e) {
-      Logger.warn(this, "Cache Entry not found after adding", e);
-      return plugin;
+    /* (non-Javadoc)
+	 * @see com.dotmarketing.business.PermissionCache#clearCache()
+	 */
+	public void clearCache() {
+        // clear the cache
+        cache.flushGroup(pluginGroup);
+        cache.flushGroup(propertyGroup);
     }
-  }
 
-  @Override
-  protected com.dotmarketing.plugin.model.Plugin get(String pluginId) {
-    String key = pluginGroup + pluginId;
-    Plugin plugin = null;
-    try {
-      plugin = (Plugin) cache.get(key, pluginGroup);
-    } catch (DotCacheException e) {
-      Logger.debug(this, "Cache Entry not found", e);
+    public String[] getGroups() {
+    	return groupNames;
     }
-    return plugin;
-  }
 
-  /* (non-Javadoc)
-   * @see com.dotmarketing.business.PermissionCache#clearCache()
-   */
-  public void clearCache() {
-    // clear the cache
-    cache.flushGroup(pluginGroup);
-    cache.flushGroup(propertyGroup);
-  }
+	@Override
+	protected PluginProperty addProperty(PluginProperty pluginProperty) {
+		String key = propertyGroup + pluginProperty.getPluginId() + ":" + pluginProperty.getPropkey();
+        // Add the key to the cache
+        cache.put(key, pluginProperty,propertyGroup);
 
-  public String[] getGroups() {
-    return groupNames;
-  }
+        try {
+			return (PluginProperty)cache.get(key,propertyGroup);
+		} catch (DotCacheException e) {
+			Logger.warn(this,"Cache Entry not found after adding", e);
+			return pluginProperty;
+		}
+	}
 
-  @Override
-  protected PluginProperty addProperty(PluginProperty pluginProperty) {
-    String key = propertyGroup + pluginProperty.getPluginId() + ":" + pluginProperty.getPropkey();
-    // Add the key to the cache
-    cache.put(key, pluginProperty, propertyGroup);
+	@Override
+	protected void clearPluginCache() {
+		cache.flushGroup(pluginGroup);
+	}
 
-    try {
-      return (PluginProperty) cache.get(key, propertyGroup);
-    } catch (DotCacheException e) {
-      Logger.warn(this, "Cache Entry not found after adding", e);
-      return pluginProperty;
-    }
-  }
+	@Override
+	protected void clearPropertyCache() {
+		cache.flushGroup(propertyGroup);
+	}
 
-  @Override
-  protected void clearPluginCache() {
-    cache.flushGroup(pluginGroup);
-  }
+	@Override
+	protected PluginProperty getProperty(String pluginId, String propertyKey) {
+		String key = propertyGroup + pluginId + ":" + propertyKey;
+		PluginProperty value = null;
+    	try{
+    		value = (PluginProperty)cache.get(key,propertyGroup);
+    	}catch (DotCacheException e) {
+			Logger.debug(this, "Cache Entry not found", e);
+		}
+        return value;	
+	}
 
-  @Override
-  protected void clearPropertyCache() {
-    cache.flushGroup(propertyGroup);
-  }
+	@Override
+	protected void removePlugin(String pluginId) {
+		String key = pluginGroup + pluginId;
+    	try{
+    		cache.remove(key,pluginGroup);
+    	}catch (Exception e) {
+			Logger.debug(this, e.getMessage(), e);
+		} 
+	}
 
-  @Override
-  protected PluginProperty getProperty(String pluginId, String propertyKey) {
-    String key = propertyGroup + pluginId + ":" + propertyKey;
-    PluginProperty value = null;
-    try {
-      value = (PluginProperty) cache.get(key, propertyGroup);
-    } catch (DotCacheException e) {
-      Logger.debug(this, "Cache Entry not found", e);
-    }
-    return value;
-  }
+	@Override
+	protected void removePluginProperty(PluginProperty pluginProperty) {
+		String key = propertyGroup + pluginProperty.getPluginId() + ":" + pluginProperty.getPropkey();
+    	try{
+    		cache.remove(key,propertyGroup);
+    	}catch (Exception e) {
+			Logger.debug(this, e.getMessage(), e);
+		} 
+	}
 
-  @Override
-  protected void removePlugin(String pluginId) {
-    String key = pluginGroup + pluginId;
-    try {
-      cache.remove(key, pluginGroup);
-    } catch (Exception e) {
-      Logger.debug(this, e.getMessage(), e);
-    }
-  }
-
-  @Override
-  protected void removePluginProperty(PluginProperty pluginProperty) {
-    String key = propertyGroup + pluginProperty.getPluginId() + ":" + pluginProperty.getPropkey();
-    try {
-      cache.remove(key, propertyGroup);
-    } catch (Exception e) {
-      Logger.debug(this, e.getMessage(), e);
-    }
-  }
-
-  public String getPrimaryGroup() {
-    return pluginGroup;
-  }
+	public String getPrimaryGroup() {
+		return pluginGroup;
+	}
 }

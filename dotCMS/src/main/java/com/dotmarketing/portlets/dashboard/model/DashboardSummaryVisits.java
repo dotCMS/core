@@ -4,73 +4,78 @@ import java.io.Serializable;
 import java.util.Date;
 
 public class DashboardSummaryVisits implements Serializable {
+   
+	private static final long serialVersionUID = 1L;
+	
+	private Long id;
+	
+	private DashboardSummaryPeriod summaryPeriod;
+	
+	private String hostId;
+	
+	private Date visitTime;
+	
+	private Long visits;
+	
+	private String formattedTime;
 
-  private static final long serialVersionUID = 1L;
+	public DashboardSummaryVisits(){
+		
+	}
+	
+	public DashboardSummaryVisits(Long visits, Date visitTime){
+		this.visits = visits;
+		this.visitTime = visitTime;
+	}
 
-  private Long id;
+	public Long getId() {
+		return id;
+	}
 
-  private DashboardSummaryPeriod summaryPeriod;
+	public void setId(Long id) {
+		this.id = id;
+	}
 
-  private String hostId;
+	public DashboardSummaryPeriod getSummaryPeriod() {
+		return summaryPeriod;
+	}
 
-  private Date visitTime;
+	public void setSummaryPeriod(DashboardSummaryPeriod summaryPeriod) {
+		this.summaryPeriod = summaryPeriod;
+	}
 
-  private Long visits;
+	public String getHostId() {
+		return hostId;
+	}
 
-  private String formattedTime;
+	public void setHostId(String hostId) {
+		this.hostId = hostId;
+	}
 
-  public DashboardSummaryVisits() {}
+	public Date getVisitTime() {
+		return visitTime;
+	}
 
-  public DashboardSummaryVisits(Long visits, Date visitTime) {
-    this.visits = visits;
-    this.visitTime = visitTime;
-  }
+	public void setVisitTime(Date visitTime) {
+		this.visitTime = visitTime;
+	}
 
-  public Long getId() {
-    return id;
-  }
+	public Long getVisits() {
+		return visits;
+	}
 
-  public void setId(Long id) {
-    this.id = id;
-  }
+	public void setVisits(Long visits) {
+		this.visits = visits;
+	}
 
-  public DashboardSummaryPeriod getSummaryPeriod() {
-    return summaryPeriod;
-  }
+	public String getFormattedTime() {
+		return formattedTime;
+	}
 
-  public void setSummaryPeriod(DashboardSummaryPeriod summaryPeriod) {
-    this.summaryPeriod = summaryPeriod;
-  }
+	public void setFormattedTime(String formattedTime) {
+		this.formattedTime = formattedTime;
+	}
+	
+	
 
-  public String getHostId() {
-    return hostId;
-  }
-
-  public void setHostId(String hostId) {
-    this.hostId = hostId;
-  }
-
-  public Date getVisitTime() {
-    return visitTime;
-  }
-
-  public void setVisitTime(Date visitTime) {
-    this.visitTime = visitTime;
-  }
-
-  public Long getVisits() {
-    return visits;
-  }
-
-  public void setVisits(Long visits) {
-    this.visits = visits;
-  }
-
-  public String getFormattedTime() {
-    return formattedTime;
-  }
-
-  public void setFormattedTime(String formattedTime) {
-    this.formattedTime = formattedTime;
-  }
 }

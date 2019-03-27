@@ -1,24 +1,24 @@
-// package com.dotmarketing.portlets.rules.conditionlet;
+//package com.dotmarketing.portlets.rules.conditionlet;
 //
-// import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
-// import com.dotmarketing.portlets.rules.RuleComponentInstance;
-// import com.dotmarketing.portlets.rules.ValidationResult;
-// import com.dotmarketing.portlets.rules.model.ParameterModel;
-// import java.util.Collection;
-// import java.util.LinkedHashMap;
-// import java.util.LinkedHashSet;
-// import java.util.List;
-// import java.util.Map;
-// import java.util.Set;
+//import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
+//import com.dotmarketing.portlets.rules.RuleComponentInstance;
+//import com.dotmarketing.portlets.rules.ValidationResult;
+//import com.dotmarketing.portlets.rules.model.ParameterModel;
+//import java.util.Collection;
+//import java.util.LinkedHashMap;
+//import java.util.LinkedHashSet;
+//import java.util.List;
+//import java.util.Map;
+//import java.util.Set;
 //
-// import javax.servlet.http.HttpServletRequest;
-// import javax.servlet.http.HttpServletResponse;
+//import javax.servlet.http.HttpServletRequest;
+//import javax.servlet.http.HttpServletResponse;
 //
-// import com.dotmarketing.util.UtilMethods;
+//import com.dotmarketing.util.UtilMethods;
 //
-// import static com.dotmarketing.portlets.rules.conditionlet.Comparison.IS;
+//import static com.dotmarketing.portlets.rules.conditionlet.Comparison.IS;
 //
-/// **
+///**
 // * This conditionlet will allow CMS users to check the state/province/region a
 // * user request comes from. The available options of this conditionlet will be
 // * represented as a one or two-character values (depending on the country). This
@@ -37,7 +37,7 @@
 // * @since 04-13-2015
 // *
 // */
-// public class UsersStateConditionlet extends Conditionlet<UsersStateConditionlet.Instance> {
+//public class UsersStateConditionlet extends Conditionlet<UsersStateConditionlet.Instance> {
 //
 //	private static final long serialVersionUID = 1L;
 //
@@ -51,8 +51,7 @@
 //	private Map<String, ConditionletInput> inputValues = null;
 //
 //	public UsersStateConditionlet() {
-//        super("api.ruleengine.system.conditionlet.VisitorsStateProvince",
-// ImmutableSet.<Comparison>of(IS, Comparison.IS_NOT), parameters);
+//        super("api.ruleengine.system.conditionlet.VisitorsStateProvince", ImmutableSet.<Comparison>of(IS, Comparison.IS_NOT), parameters);
 //	}
 //
 //
@@ -154,8 +153,7 @@
 //	}
 //
 //	@Override
-//    public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance
-// instance) {
+//    public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance instance) {
 //
 ////        GeoIp2CityDbUtil geoIp2Util = GeoIp2CityDbUtil.getInstance();
 ////		String state = null;
@@ -208,4 +206,4 @@
 //        }
 //    }
 //
-// }
+//}

@@ -6,49 +6,57 @@ import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.portlets.templates.model.Template;
 
 public class TemplateWrapper {
-  private Identifier templateId;
-  private Template template;
-  private VersionInfo vi;
-  private Operation operation;
+	private Identifier templateId;
+	private Template template;
+	private VersionInfo vi;
+	private Operation operation;
+	
+	public TemplateWrapper(Identifier templateId, Template template) {
+		this.templateId = templateId;
+		this.template = template;
+	}
 
-  public TemplateWrapper(Identifier templateId, Template template) {
-    this.templateId = templateId;
-    this.template = template;
-  }
+	public Identifier getTemplateId() {
+		return templateId;
+	}
 
-  public Identifier getTemplateId() {
-    return templateId;
-  }
+	public void setTemplateId(Identifier templateId) {
+		this.templateId = templateId;
+	}
 
-  public void setTemplateId(Identifier templateId) {
-    this.templateId = templateId;
-  }
+	public Template getTemplate() {
+		return template;
+	}
 
-  public Template getTemplate() {
-    return template;
-  }
+	public void setTemplate(Template template) {
+		this.template = template;
+	}
 
-  public void setTemplate(Template template) {
-    this.template = template;
-  }
+	/**
+	 * @return the vi
+	 */
+	public VersionInfo getVi() {
+		return vi;
+	}
 
-  /** @return the vi */
-  public VersionInfo getVi() {
-    return vi;
-  }
+	/**
+	 * @param vi the vi to set
+	 */
+	public void setVi(VersionInfo vi) {
+		this.vi = vi;
+	}
+	
+	/**
+	 * @return the operation
+	 */
+	public Operation getOperation() {
+		return operation;
+	}
 
-  /** @param vi the vi to set */
-  public void setVi(VersionInfo vi) {
-    this.vi = vi;
-  }
-
-  /** @return the operation */
-  public Operation getOperation() {
-    return operation;
-  }
-
-  /** @param operation the operation to set */
-  public void setOperation(Operation operation) {
-    this.operation = operation;
-  }
+	/**
+	 * @param operation the operation to set
+	 */
+	public void setOperation(Operation operation) {
+		this.operation = operation;
+	}
 }

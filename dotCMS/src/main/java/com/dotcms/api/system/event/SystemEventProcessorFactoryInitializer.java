@@ -6,23 +6,23 @@ import com.dotcms.notifications.NotificationSystemEventProcessor;
 
 /**
  * This class inits the {@link SystemEventProcessorFactory}
- *
  * @author jsanca
  */
 public class SystemEventProcessorFactoryInitializer implements DotInitializer {
 
-  @Override
-  public void init() {
 
-    final SystemEventProcessorFactory factory = SystemEventProcessorFactory.getInstance();
+    @Override
+    public void init() {
 
-    factory.register(SystemEventType.NOTIFICATION, new NotificationSystemEventProcessor());
+        final SystemEventProcessorFactory factory =
+                SystemEventProcessorFactory.getInstance();
 
-    BaseContentTypeSystemEventProcessor baseContentTypeSystemEventProcessor =
-        new BaseContentTypeSystemEventProcessor();
+        factory.register(SystemEventType.NOTIFICATION, new NotificationSystemEventProcessor());
 
-    factory.register(SystemEventType.DELETE_BASE_CONTENT_TYPE, baseContentTypeSystemEventProcessor);
-    factory.register(SystemEventType.SAVE_BASE_CONTENT_TYPE, baseContentTypeSystemEventProcessor);
-    factory.register(SystemEventType.UPDATE_BASE_CONTENT_TYPE, baseContentTypeSystemEventProcessor);
-  }
+        BaseContentTypeSystemEventProcessor baseContentTypeSystemEventProcessor = new BaseContentTypeSystemEventProcessor();
+
+        factory.register(SystemEventType.DELETE_BASE_CONTENT_TYPE, baseContentTypeSystemEventProcessor);
+        factory.register(SystemEventType.SAVE_BASE_CONTENT_TYPE, baseContentTypeSystemEventProcessor);
+        factory.register(SystemEventType.UPDATE_BASE_CONTENT_TYPE, baseContentTypeSystemEventProcessor);
+    }
 } // E:O:F:SystemEventProcessorFactoryInitializer.

@@ -1,6 +1,10 @@
 package com.dotcms.content.elasticsearch.util;
 
-import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
+import java.util.List;
+
+import org.elasticsearch.action.bulk.BulkRequestBuilder;
+import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.client.Client;
 
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;
@@ -12,61 +16,59 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
-import java.util.List;
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
-import org.elasticsearch.action.bulk.BulkResponse;
-import org.elasticsearch.client.Client;
+
+import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
 
 public class ESMigrationUtil {
 
-  /**
-   * This method will take a structure and move the contents
-   *
-   * @param struct
-   * @throws DotDataException
-   * @throws DotSecurityException
-   * @throws DotMappingException
-   */
-  public void migrateStructure(Structure struct)
-      throws DotDataException, DotSecurityException, DotMappingException {
+	
+	/**
+	 * This method will take a structure and move the contents 
+	 * @param struct
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 * @throws DotMappingException
+	 */
+	public void migrateStructure(Structure struct) throws DotDataException, DotSecurityException, DotMappingException {
+		
+		new ESContentletIndexAPI().checkAndInitialiazeIndex();
+		
+		
+		ContentletAPI capi = APILocator.getContentletAPI();
 
-    new ESContentletIndexAPI().checkAndInitialiazeIndex();
+		String type = struct.getVelocityVarName();
+		for (int i = 0; i < 10000; i++) {
 
-    ContentletAPI capi = APILocator.getContentletAPI();
+			int limit = 100;
+			int offset = i * 100;
 
-    String type = struct.getVelocityVarName();
-    for (int i = 0; i < 10000; i++) {
+			List<Contentlet> cons = capi.findByStructure(struct.getInode(), APILocator.getUserAPI().getSystemUser(), false, limit, offset);
+			if (cons.size() == 0) {
+				break;
+			}
+			Client client = new ESClient().getClient();
+			BulkRequestBuilder bulkRequest = client.prepareBulk();
+			for (Contentlet c : cons) {
 
-      int limit = 100;
-      int offset = i * 100;
+				//bulkRequest.add(client.prepareIndex(ESIndexAPI.ES_INDEX_NAME, type, c.getInode()).setSource(
+				//		new ESMappingAPIImpl().toJson(c)));
 
-      List<Contentlet> cons =
-          capi.findByStructure(
-              struct.getInode(), APILocator.getUserAPI().getSystemUser(), false, limit, offset);
-      if (cons.size() == 0) {
-        break;
-      }
-      Client client = new ESClient().getClient();
-      BulkRequestBuilder bulkRequest = client.prepareBulk();
-      for (Contentlet c : cons) {
+			}
+			BulkResponse bulkResponse = bulkRequest.execute().actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
+			if (bulkResponse.hasFailures()) {
+				Logger.error(this.getClass(), bulkResponse.buildFailureMessage());
+			}
 
-        // bulkRequest.add(client.prepareIndex(ESIndexAPI.ES_INDEX_NAME, type,
-        // c.getInode()).setSource(
-        //		new ESMappingAPIImpl().toJson(c)));
+		
 
-      }
-      BulkResponse bulkResponse = bulkRequest.execute().actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
-      if (bulkResponse.hasFailures()) {
-        Logger.error(this.getClass(), bulkResponse.buildFailureMessage());
-      }
-    }
-  }
+		}
+	}
 
-  public void migrateAllStructures()
-      throws DotDataException, DotSecurityException, DotMappingException {
-    List<Structure> structs = StructureFactory.getStructures();
-    for (Structure struct : structs) {
-      migrateStructure(struct);
-    }
-  }
+	
+	public void migrateAllStructures() throws DotDataException, DotSecurityException, DotMappingException {
+		List<Structure> structs = StructureFactory.getStructures();
+		for(Structure struct : structs){
+			migrateStructure(struct);
+		}
+	}
 }

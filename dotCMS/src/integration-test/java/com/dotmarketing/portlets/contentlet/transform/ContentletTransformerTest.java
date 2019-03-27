@@ -8,6 +8,13 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
+import org.junit.BeforeClass;
+import org.junit.Test;
+
 import com.dotcms.rest.ContentHelper;
 import com.dotcms.rest.MapToContentletPopulator;
 import com.dotcms.util.IntegrationTestInitService;
@@ -19,155 +26,131 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.struts.ContentletForm;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import org.junit.BeforeClass;
-import org.junit.Test;
 
 public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
 
-  @BeforeClass
-  public static void prepare() throws Exception {
-    IntegrationTestInitService.getInstance().init();
-  }
-
-  @Test
-  public void Transformer_Simple_Test() throws DotDataException {
-
-    final List<Contentlet> list = APILocator.getContentletAPI().findAllContent(0, 20);
-    assertFalse("I was expecting at least 20 contentlets returned from the index", list.isEmpty());
-    final List<Map<String, Object>> transformedList = new ContentletToMapTransformer(list).toMaps();
-
-    assertEquals(list.size(), transformedList.size());
-    for (int i = 0; i < list.size(); i++) {
-      final Contentlet original = list.get(i);
-      final Map<String, Object> transformed = transformedList.get(i);
-      // Basic properties must exist on both
-      assertEquals(
-          original.getMap().get(Contentlet.IDENTIFIER_KEY),
-          transformed.get(Contentlet.IDENTIFIER_KEY));
-      assertEquals(
-          original.getMap().get(Contentlet.INODE_KEY), transformed.get(Contentlet.INODE_KEY));
-      assertEquals(
-          original.getMap().get(Contentlet.LANGUAGEID_KEY),
-          transformed.get(Contentlet.LANGUAGEID_KEY));
-      assertEquals(
-          original.getMap().get(Contentlet.MOD_DATE_KEY), transformed.get(Contentlet.MOD_DATE_KEY));
-      assertEquals(
-          original.getMap().get(Contentlet.MOD_USER_KEY), transformed.get(Contentlet.MOD_USER_KEY));
-
-      // New Properties expected
-      assertNotNull(transformed.get(Contentlet.TITTLE_KEY));
-      assertNotNull(transformed.get(Contentlet.CONTENT_TYPE_KEY));
-      assertNotNull(transformed.get(HTMLPageAssetAPI.URL_FIELD));
-
-      // Forbidden properties Must Not be part of the result
-      for (final String property : ContentletToMapTransformer.privateInternalProperties) {
-        assertFalse(transformed.containsKey(property));
-      }
+    @BeforeClass
+    public static void prepare() throws Exception {
+        IntegrationTestInitService.getInstance().init();
     }
-  }
 
-  @Test
-  public void Test_Hydrate_Contentlet_WithUrl() throws DotDataException {
+    @Test
+    public void Transformer_Simple_Test() throws DotDataException {
 
-    final IdentifierAPI identifierAPI = mock(IdentifierAPI.class);
-    final ContentHelper contentHelper =
-        new ContentHelper(identifierAPI, MapToContentletPopulator.INSTANCE);
-    final String identifier = "1234";
-    Identifier identifierObject = new Identifier();
-    String urlExpected = "home_page";
-    identifierObject.setAssetName(urlExpected);
-    identifierObject.setId(identifier);
-    Contentlet contentlet = new Contentlet();
+        final List<Contentlet> list = APILocator.getContentletAPI().findAllContent(0,20);
+        assertFalse("I was expecting at least 20 contentlets returned from the index",list.isEmpty());
+        final List<Map<String, Object>> transformedList = new ContentletToMapTransformer(list).toMaps();
 
-    contentlet.getMap().put(ContentletForm.IDENTIFIER_KEY, identifier);
-    contentlet.getMap().put(HTMLPageAssetAPI.URL_FIELD, urlExpected);
+        assertEquals(list.size(), transformedList.size());
+        for(int i=0; i < list.size(); i++){
+            final Contentlet original = list.get(i);
+            final Map<String,Object> transformed = transformedList.get(i);
+            //Basic properties must exist on both
+            assertEquals(original.getMap().get(Contentlet.IDENTIFIER_KEY),transformed.get(Contentlet.IDENTIFIER_KEY));
+            assertEquals(original.getMap().get(Contentlet.INODE_KEY),transformed.get(Contentlet.INODE_KEY));
+            assertEquals(original.getMap().get(Contentlet.LANGUAGEID_KEY),transformed.get(Contentlet.LANGUAGEID_KEY));
+            assertEquals(original.getMap().get(Contentlet.MOD_DATE_KEY),transformed.get(Contentlet.MOD_DATE_KEY));
+            assertEquals(original.getMap().get(Contentlet.MOD_USER_KEY),transformed.get(Contentlet.MOD_USER_KEY));
 
-    when(identifierAPI.find(identifier)).thenReturn(identifierObject);
+            //New Properties expected
+            assertNotNull(transformed.get(Contentlet.TITTLE_KEY));
+            assertNotNull(transformed.get(Contentlet.CONTENT_TYPE_KEY));
+            assertNotNull(transformed.get(HTMLPageAssetAPI.URL_FIELD));
 
-    final Contentlet newContentlet =
-        new ContentletToMapTransformer(
-                Collections.singletonList(contentlet), contentHelper, APILocator.getUserAPI())
-            .hydrate()
-            .get(0);
+            //Forbidden properties Must Not be part of the result
+            for(final String property : ContentletToMapTransformer.privateInternalProperties){
+                assertFalse(transformed.containsKey(property));
+            }
+        }
 
-    assertNotNull(newContentlet);
-    assertNotSame(
-        newContentlet,
-        contentlet); // This method now returns a new instance. A copy of the original contentlet
-    assertFalse(newContentlet.getMap().containsKey(Contentlet.NULL_PROPERTIES));
-    assertEquals(newContentlet.getMap().get(ContentletForm.IDENTIFIER_KEY), identifier);
-    assertEquals(newContentlet.getMap().get(HTMLPageAssetAPI.URL_FIELD), urlExpected);
-  }
+    }
 
-  @Test
-  public void Test_Hydrate_Contentlet_Without_Url_And_AssetName_Does_Not_Exist()
-      throws DotDataException {
-    final String anyUrl = "anyUrl";
-    final IdentifierAPI identifierAPI = mock(IdentifierAPI.class);
-    final ContentHelper contentHelper =
-        new ContentHelper(identifierAPI, MapToContentletPopulator.INSTANCE) {
-          @Override
-          public String getUrl(Contentlet contentlet) {
-            return anyUrl;
-          }
+    @Test
+    public void Test_Hydrate_Contentlet_WithUrl() throws DotDataException {
+
+        final IdentifierAPI identifierAPI = mock(IdentifierAPI.class);
+        final ContentHelper contentHelper = new ContentHelper(identifierAPI, MapToContentletPopulator.INSTANCE);
+        final String identifier = "1234";
+        Identifier identifierObject = new Identifier();
+        String urlExpected = "home_page";
+        identifierObject.setAssetName(urlExpected);
+        identifierObject.setId(identifier);
+        Contentlet contentlet = new Contentlet();
+
+        contentlet.getMap().put(ContentletForm.IDENTIFIER_KEY, identifier);
+        contentlet.getMap().put(HTMLPageAssetAPI.URL_FIELD, urlExpected);
+
+
+        when(identifierAPI.find(identifier)).thenReturn(identifierObject);
+
+        final Contentlet newContentlet = new ContentletToMapTransformer(Collections.singletonList(contentlet), contentHelper, APILocator.getUserAPI()).hydrate().get(0);
+
+        assertNotNull(newContentlet);
+        assertNotSame(newContentlet, contentlet); //This method now returns a new instance. A copy of the original contentlet
+        assertFalse(newContentlet.getMap().containsKey(Contentlet.NULL_PROPERTIES));
+        assertEquals(newContentlet.getMap().get(ContentletForm.IDENTIFIER_KEY), identifier);
+        assertEquals(newContentlet.getMap().get(HTMLPageAssetAPI.URL_FIELD), urlExpected);
+    }
+
+    @Test
+    public void Test_Hydrate_Contentlet_Without_Url_And_AssetName_Does_Not_Exist() throws DotDataException {
+        final String  anyUrl = "anyUrl";
+        final IdentifierAPI identifierAPI = mock(IdentifierAPI.class);
+        final ContentHelper contentHelper = new ContentHelper(identifierAPI, MapToContentletPopulator.INSTANCE){
+            @Override
+            public String getUrl(Contentlet contentlet) {
+                return anyUrl;
+            }
         };
-    final String identifier = "1234";
+        final String identifier = "1234";
 
-    Contentlet contentlet = new Contentlet();
+        Contentlet contentlet = new Contentlet();
 
-    contentlet.getMap().put(ContentletForm.IDENTIFIER_KEY, identifier);
+        contentlet.getMap().put(ContentletForm.IDENTIFIER_KEY, identifier);
 
-    when(identifierAPI.find(identifier)).thenReturn(null);
+        when(identifierAPI.find(identifier)).thenReturn(null);
 
-    final Contentlet newContentlet =
-        new ContentletToMapTransformer(
-                Collections.singletonList(contentlet), contentHelper, APILocator.getUserAPI())
-            .hydrate()
-            .get(0);
+        final Contentlet newContentlet = new ContentletToMapTransformer(
+                  Collections.singletonList(contentlet), contentHelper, APILocator.getUserAPI()
+        ).hydrate().get(0);
 
-    assertNotNull(newContentlet);
-    assertNotSame(
-        newContentlet,
-        contentlet); // This method now returns a new instance. A copy of the original contentlet
-    assertFalse(newContentlet.getMap().containsKey(Contentlet.NULL_PROPERTIES));
-    assertEquals(identifier, newContentlet.getMap().get(ContentletForm.IDENTIFIER_KEY));
-    assertEquals(anyUrl, newContentlet.getMap().get(HTMLPageAssetAPI.URL_FIELD));
-  }
+        assertNotNull(newContentlet);
+        assertNotSame(newContentlet, contentlet); //This method now returns a new instance. A copy of the original contentlet
+        assertFalse(newContentlet.getMap().containsKey(Contentlet.NULL_PROPERTIES));
+        assertEquals(identifier, newContentlet.getMap().get(ContentletForm.IDENTIFIER_KEY));
+        assertEquals(anyUrl, newContentlet.getMap().get(HTMLPageAssetAPI.URL_FIELD));
+    }
 
-  @Test
-  public void Test_Hydrate_Contentlet_Without_Url() throws DotDataException {
-    String urlExpected = "home_page";
-    final IdentifierAPI identifierAPI = mock(IdentifierAPI.class);
-    final ContentHelper contentHelper =
-        new ContentHelper(identifierAPI, MapToContentletPopulator.INSTANCE) {
-          @Override
-          public String getUrl(Contentlet contentlet) {
-            return urlExpected;
-          }
+    @Test
+    public void Test_Hydrate_Contentlet_Without_Url() throws DotDataException {
+        String urlExpected = "home_page";
+        final IdentifierAPI identifierAPI = mock(IdentifierAPI.class);
+        final ContentHelper contentHelper = new ContentHelper(identifierAPI, MapToContentletPopulator.INSTANCE){
+            @Override
+            public String getUrl(Contentlet contentlet) {
+                return urlExpected;
+            }
         };
-    final String identifier = "1234";
-    Identifier identifierObject = new Identifier();
-    identifierObject.setAssetName(urlExpected);
-    identifierObject.setId(identifier);
-    Contentlet contentlet = new Contentlet();
+        final String identifier = "1234";
+        Identifier identifierObject = new Identifier();
+        identifierObject.setAssetName(urlExpected);
+        identifierObject.setId(identifier);
+        Contentlet contentlet = new Contentlet();
 
-    contentlet.getMap().put(ContentletForm.IDENTIFIER_KEY, identifier);
-    when(identifierAPI.find(identifier)).thenReturn(identifierObject);
+        contentlet.getMap().put(ContentletForm.IDENTIFIER_KEY, identifier);
+        when(identifierAPI.find(identifier)).thenReturn(identifierObject);
 
-    final Contentlet newContentlet =
-        new ContentletToMapTransformer(
-                Collections.singletonList(contentlet), contentHelper, APILocator.getUserAPI())
-            .hydrate()
-            .get(0);
+        final Contentlet newContentlet = new ContentletToMapTransformer(
+                  Collections.singletonList(contentlet), contentHelper, APILocator.getUserAPI()
+        ).hydrate().get(0);
 
-    assertNotNull(newContentlet);
-    assertNotSame(newContentlet, contentlet);
-    assertFalse(contentlet.getMap().containsKey(HTMLPageAssetAPI.URL_FIELD));
-    assertTrue(newContentlet.getMap().containsKey(HTMLPageAssetAPI.URL_FIELD));
-    assertEquals(urlExpected, newContentlet.getMap().get(HTMLPageAssetAPI.URL_FIELD));
-    assertFalse(newContentlet.getMap().containsKey(Contentlet.NULL_PROPERTIES));
-  }
+        assertNotNull(newContentlet);
+        assertNotSame(newContentlet, contentlet);
+        assertFalse(contentlet.getMap().containsKey(HTMLPageAssetAPI.URL_FIELD));
+        assertTrue(newContentlet.getMap().containsKey(HTMLPageAssetAPI.URL_FIELD));
+        assertEquals(urlExpected, newContentlet.getMap().get(HTMLPageAssetAPI.URL_FIELD));
+        assertFalse(newContentlet.getMap().containsKey(Contentlet.NULL_PROPERTIES));
+    }
+
+
 }

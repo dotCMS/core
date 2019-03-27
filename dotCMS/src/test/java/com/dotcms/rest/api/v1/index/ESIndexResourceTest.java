@@ -5,6 +5,15 @@ import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.io.File;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.junit.Test;
+
 import com.dotcms.UnitTestBase;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESIndexHelper;
@@ -18,261 +27,229 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotmarketing.business.LayoutAPI;
 import com.liferay.portal.model.User;
-import java.io.File;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
-import javax.servlet.http.HttpServletRequest;
-import org.junit.Test;
 
 public class ESIndexResourceTest extends UnitTestBase {
 
-  public ESIndexResourceTest() {}
 
-  /**
-   * Tests the download of a live index named live_20161004130547
-   *
-   * @throws Exception
-   */
-  @Test
-  public void testDownloadSnapshot_liveIndex() throws Exception {
+    public ESIndexResourceTest() {
 
-    final String liveIndex = "live_20161004130547";
-    final String workingIndex = "work_20161004130447";
-    final String requestParams = "/index/" + liveIndex;
+	}
 
-    final HttpServletRequest request = RestUtilTest.getMockHttpRequest();
-    final InitDataObject initDataObject = mock(InitDataObject.class);
-    final WebResource webResource = mock(WebResource.class);
-    final ESIndexAPI indexAPI = mock(ESIndexAPI.class);
-    final ESIndexHelper indexHelper = mock(ESIndexHelper.class);
-    final ResponseUtil responseUtil = mock(ResponseUtil.class);
-    final LayoutAPI layoutAPI = mock(LayoutAPI.class);
-    final IndiciesAPI indiciesAPI = mock(IndiciesAPI.class);
+	/**
+	 * Tests the download of a live index named live_20161004130547
+	 * @throws Exception
+	 */
+    @Test
+    public void testDownloadSnapshot_liveIndex() throws Exception {
 
-    final User user = new User();
-    IndiciesInfo indiciesInfo = new IndiciesInfo();
-    indiciesInfo.live = liveIndex;
-    indiciesInfo.working = workingIndex;
-    File tempFile = File.createTempFile(liveIndex, null);
-    tempFile.deleteOnExit();
-    Map<String, String> paramsMap = new HashMap<String, String>();
-    paramsMap.put("index", liveIndex);
+    	final String liveIndex = "live_20161004130547";
+    	final String workingIndex = "work_20161004130447";
+    	final String requestParams = "/index/" + liveIndex;
 
-    when(webResource.init(requestParams, true, request, true, null)).thenReturn(initDataObject);
-    when(initDataObject.getUser()).thenReturn(user);
-    when(initDataObject.getParamsMap()).thenReturn(paramsMap);
-    when(layoutAPI.doesUserHaveAccessToPortlet("maintenance", initDataObject.getUser()))
-        .thenReturn(true);
-    when(indiciesAPI.loadIndicies()).thenReturn(indiciesInfo);
-    when(indexHelper.getIndexNameOrAlias(paramsMap, indexAPI)).thenReturn(liveIndex);
-    when(indexAPI.createSnapshot(ESIndexAPI.BACKUP_REPOSITORY, "backup", liveIndex))
-        .thenReturn(tempFile);
+    	final HttpServletRequest request = RestUtilTest.getMockHttpRequest();
+        final InitDataObject initDataObject  = mock(InitDataObject.class);
+        final WebResource webResource = mock(WebResource.class);
+        final ESIndexAPI indexAPI = mock(ESIndexAPI.class);
+        final ESIndexHelper indexHelper = mock(ESIndexHelper.class);
+        final ResponseUtil responseUtil = mock(ResponseUtil.class);
+        final LayoutAPI layoutAPI = mock(LayoutAPI.class);
+        final IndiciesAPI indiciesAPI = mock(IndiciesAPI.class);
 
-    ESIndexResource esIndexResource =
-        new ESIndexResource(
-            indexAPI, indexHelper, responseUtil, webResource, layoutAPI, indiciesAPI);
+        final User user = new User();
+        IndiciesInfo indiciesInfo = new IndiciesInfo();
+        indiciesInfo.live = liveIndex;
+        indiciesInfo.working = workingIndex;
+        File tempFile = File.createTempFile(liveIndex, null);
+        tempFile.deleteOnExit();
+        Map<String,String> paramsMap = new HashMap<String,String>();
+        paramsMap.put("index", liveIndex);
 
-    final Response response1 = esIndexResource.snapshotIndex(request, requestParams);
+        when(webResource.init(requestParams, true, request, true, null)).thenReturn(initDataObject);
+        when(initDataObject.getUser()).thenReturn(user);
+        when(initDataObject.getParamsMap()).thenReturn(paramsMap);
+        when(layoutAPI.doesUserHaveAccessToPortlet("maintenance", initDataObject.getUser())).thenReturn(true);
+        when(indiciesAPI.loadIndicies()).thenReturn(indiciesInfo);
+        when(indexHelper.getIndexNameOrAlias(paramsMap,indexAPI)).thenReturn(liveIndex);
+        when(indexAPI.createSnapshot(ESIndexAPI.BACKUP_REPOSITORY, "backup", liveIndex)).thenReturn(tempFile);
 
-    assertNotNull(response1);
-    assertEquals(response1.getStatus(), 200);
-  }
+        ESIndexResource esIndexResource = new ESIndexResource(indexAPI, indexHelper, responseUtil, webResource, layoutAPI, indiciesAPI);
 
-  /**
-   * Tests the download of the default index named live_20161004130547
-   *
-   * @throws Exception
-   */
-  @Test
-  public void testDownloadSnapshot_liveDefaultIndex() throws Exception {
+        final Response response1 = esIndexResource.snapshotIndex(request, requestParams);
 
-    final String liveIndex = "live_20161004130547";
-    final String workingIndex = "work_20161004130447";
-    final String requestParams = "/index/live";
+        assertNotNull(response1);
+        assertEquals(response1.getStatus(), 200);
+    }
 
-    final HttpServletRequest request = RestUtilTest.getMockHttpRequest();
-    final InitDataObject initDataObject = mock(InitDataObject.class);
-    final WebResource webResource = mock(WebResource.class);
-    final ESIndexAPI indexAPI = mock(ESIndexAPI.class);
-    final ESIndexHelper indexHelper = mock(ESIndexHelper.class);
-    final ResponseUtil responseUtil = mock(ResponseUtil.class);
-    final LayoutAPI layoutAPI = mock(LayoutAPI.class);
-    final IndiciesAPI indiciesAPI = mock(IndiciesAPI.class);
+    /**
+	 * Tests the download of the default index named live_20161004130547
+	 * @throws Exception
+	 */
+    @Test
+    public void testDownloadSnapshot_liveDefaultIndex() throws Exception {
 
-    final User user = new User();
-    IndiciesInfo indiciesInfo = new IndiciesInfo();
-    indiciesInfo.live = liveIndex;
-    indiciesInfo.working = workingIndex;
-    File tempFile = File.createTempFile(liveIndex, null);
-    tempFile.deleteOnExit();
-    Map<String, String> paramsMap = new HashMap<String, String>();
-    paramsMap.put("index", "live");
+    	final String liveIndex = "live_20161004130547";
+    	final String workingIndex = "work_20161004130447";
+    	final String requestParams = "/index/live";
 
-    when(webResource.init(requestParams, true, request, true, null)).thenReturn(initDataObject);
-    when(initDataObject.getUser()).thenReturn(user);
-    when(initDataObject.getParamsMap()).thenReturn(paramsMap);
-    when(layoutAPI.doesUserHaveAccessToPortlet("maintenance", initDataObject.getUser()))
-        .thenReturn(true);
-    when(indiciesAPI.loadIndicies()).thenReturn(indiciesInfo);
-    when(indexHelper.getIndexNameOrAlias(paramsMap, indexAPI)).thenReturn("live");
-    when(indexAPI.createSnapshot(ESIndexAPI.BACKUP_REPOSITORY, "backup", liveIndex))
-        .thenReturn(tempFile);
+    	final HttpServletRequest request = RestUtilTest.getMockHttpRequest();
+        final InitDataObject initDataObject  = mock(InitDataObject.class);
+        final WebResource webResource = mock(WebResource.class);
+        final ESIndexAPI indexAPI = mock(ESIndexAPI.class);
+        final ESIndexHelper indexHelper = mock(ESIndexHelper.class);
+        final ResponseUtil responseUtil = mock(ResponseUtil.class);
+        final LayoutAPI layoutAPI = mock(LayoutAPI.class);
+        final IndiciesAPI indiciesAPI = mock(IndiciesAPI.class);
 
-    ESIndexResource esIndexResource =
-        new ESIndexResource(
-            indexAPI, indexHelper, responseUtil, webResource, layoutAPI, indiciesAPI);
+        final User user = new User();
+        IndiciesInfo indiciesInfo = new IndiciesInfo();
+        indiciesInfo.live = liveIndex;
+        indiciesInfo.working = workingIndex;
+        File tempFile = File.createTempFile(liveIndex, null);
+        tempFile.deleteOnExit();
+        Map<String,String> paramsMap = new HashMap<String,String>();
+        paramsMap.put("index", "live");
 
-    final Response response1 = esIndexResource.snapshotIndex(request, requestParams);
+        when(webResource.init(requestParams, true, request, true, null)).thenReturn(initDataObject);
+        when(initDataObject.getUser()).thenReturn(user);
+        when(initDataObject.getParamsMap()).thenReturn(paramsMap);
+        when(layoutAPI.doesUserHaveAccessToPortlet("maintenance", initDataObject.getUser())).thenReturn(true);
+        when(indiciesAPI.loadIndicies()).thenReturn(indiciesInfo);
+        when(indexHelper.getIndexNameOrAlias(paramsMap, indexAPI)).thenReturn("live");
+        when(indexAPI.createSnapshot(ESIndexAPI.BACKUP_REPOSITORY, "backup", liveIndex)).thenReturn(tempFile);
 
-    assertNotNull(response1);
-    assertEquals(response1.getStatus(), 200);
-  }
+        ESIndexResource esIndexResource = new ESIndexResource(indexAPI, indexHelper, responseUtil, webResource, layoutAPI, indiciesAPI);
 
-  /**
-   * Tests the download of a working index named work_20161004130447
-   *
-   * @throws Exception
-   */
-  @Test
-  public void testDownloadSnapshot_workingIndex() throws Exception {
+        final Response response1 = esIndexResource.snapshotIndex(request, requestParams);
 
-    final String liveIndex = "live_20161004130547";
-    final String workingIndex = "work_20161004130447";
-    final String requestParams = "/index/" + workingIndex;
+        assertNotNull(response1);
+        assertEquals(response1.getStatus(), 200);
+    }
 
-    final HttpServletRequest request = RestUtilTest.getMockHttpRequest();
-    final InitDataObject initDataObject = mock(InitDataObject.class);
-    final WebResource webResource = mock(WebResource.class);
-    final ESIndexAPI indexAPI = mock(ESIndexAPI.class);
-    final ESIndexHelper indexHelper = mock(ESIndexHelper.class);
-    final ResponseUtil responseUtil = mock(ResponseUtil.class);
-    final LayoutAPI layoutAPI = mock(LayoutAPI.class);
-    final IndiciesAPI indiciesAPI = mock(IndiciesAPI.class);
+    /**
+	 * Tests the download of a working index named work_20161004130447
+	 * @throws Exception
+	 */
+    @Test
+    public void testDownloadSnapshot_workingIndex() throws Exception {
 
-    final User user = new User();
-    IndiciesInfo indiciesInfo = new IndiciesInfo();
-    indiciesInfo.live = liveIndex;
-    indiciesInfo.working = workingIndex;
-    File tempFile = File.createTempFile(workingIndex, null);
-    tempFile.deleteOnExit();
-    Map<String, String> paramsMap = new HashMap<String, String>();
-    paramsMap.put("index", workingIndex);
+    	final String liveIndex = "live_20161004130547";
+    	final String workingIndex = "work_20161004130447";
+    	final String requestParams = "/index/" + workingIndex;
 
-    when(webResource.init(requestParams, true, request, true, null)).thenReturn(initDataObject);
-    when(initDataObject.getUser()).thenReturn(user);
-    when(initDataObject.getParamsMap()).thenReturn(paramsMap);
-    when(layoutAPI.doesUserHaveAccessToPortlet("maintenance", initDataObject.getUser()))
-        .thenReturn(true);
-    when(indiciesAPI.loadIndicies()).thenReturn(indiciesInfo);
-    when(indexHelper.getIndexNameOrAlias(paramsMap, indexAPI)).thenReturn(workingIndex);
-    when(indexAPI.createSnapshot(ESIndexAPI.BACKUP_REPOSITORY, "backup", workingIndex))
-        .thenReturn(tempFile);
+    	final HttpServletRequest request = RestUtilTest.getMockHttpRequest();
+        final InitDataObject initDataObject  = mock(InitDataObject.class);
+        final WebResource webResource = mock(WebResource.class);
+        final ESIndexAPI indexAPI = mock(ESIndexAPI.class);
+        final ESIndexHelper indexHelper = mock(ESIndexHelper.class);
+        final ResponseUtil responseUtil = mock(ResponseUtil.class);
+        final LayoutAPI layoutAPI = mock(LayoutAPI.class);
+        final IndiciesAPI indiciesAPI = mock(IndiciesAPI.class);
 
-    ESIndexResource esIndexResource =
-        new ESIndexResource(
-            indexAPI, indexHelper, responseUtil, webResource, layoutAPI, indiciesAPI);
+        final User user = new User();
+        IndiciesInfo indiciesInfo = new IndiciesInfo();
+        indiciesInfo.live = liveIndex;
+        indiciesInfo.working = workingIndex;
+        File tempFile = File.createTempFile(workingIndex, null);
+        tempFile.deleteOnExit();
+        Map<String,String> paramsMap = new HashMap<String,String>();
+        paramsMap.put("index", workingIndex);
 
-    final Response response1 = esIndexResource.snapshotIndex(request, requestParams);
+        when(webResource.init(requestParams, true, request, true, null)).thenReturn(initDataObject);
+        when(initDataObject.getUser()).thenReturn(user);
+        when(initDataObject.getParamsMap()).thenReturn(paramsMap);
+        when(layoutAPI.doesUserHaveAccessToPortlet("maintenance", initDataObject.getUser())).thenReturn(true);
+        when(indiciesAPI.loadIndicies()).thenReturn(indiciesInfo);
+        when(indexHelper.getIndexNameOrAlias(paramsMap, indexAPI)).thenReturn(workingIndex);
+        when(indexAPI.createSnapshot(ESIndexAPI.BACKUP_REPOSITORY, "backup", workingIndex)).thenReturn(tempFile);
 
-    assertNotNull(response1);
-    assertEquals(response1.getStatus(), 200);
-  }
+        ESIndexResource esIndexResource = new ESIndexResource(indexAPI, indexHelper, responseUtil, webResource, layoutAPI, indiciesAPI);
 
-  /**
-   * Tests the download of a working index named work_20161004130447
-   *
-   * @throws Exception
-   */
-  @Test
-  public void testDownloadSnapshot_workingDefaultIndex() throws Exception {
+        final Response response1 = esIndexResource.snapshotIndex(request, requestParams);
 
-    final String liveIndex = "live_20161004130547";
-    final String workingIndex = "work_20161004130447";
-    final String requestParams = "/index/working";
+        assertNotNull(response1);
+        assertEquals(response1.getStatus(), 200);
+    }
 
-    final HttpServletRequest request = RestUtilTest.getMockHttpRequest();
-    final InitDataObject initDataObject = mock(InitDataObject.class);
-    final WebResource webResource = mock(WebResource.class);
-    final ESIndexAPI indexAPI = mock(ESIndexAPI.class);
-    final ESIndexHelper indexHelper = mock(ESIndexHelper.class);
-    final ResponseUtil responseUtil = mock(ResponseUtil.class);
-    final LayoutAPI layoutAPI = mock(LayoutAPI.class);
-    final IndiciesAPI indiciesAPI = mock(IndiciesAPI.class);
+    /**
+	 * Tests the download of a working index named work_20161004130447
+	 * @throws Exception
+	 */
+    @Test
+    public void testDownloadSnapshot_workingDefaultIndex() throws Exception {
 
-    final User user = new User();
-    IndiciesInfo indiciesInfo = new IndiciesInfo();
-    indiciesInfo.live = liveIndex;
-    indiciesInfo.working = workingIndex;
-    File tempFile = File.createTempFile(workingIndex, null);
-    tempFile.deleteOnExit();
-    Map<String, String> paramsMap = new HashMap<String, String>();
-    paramsMap.put("index", "working");
+    	final String liveIndex = "live_20161004130547";
+    	final String workingIndex = "work_20161004130447";
+    	final String requestParams = "/index/working";
 
-    when(webResource.init(requestParams, true, request, true, null)).thenReturn(initDataObject);
-    when(initDataObject.getUser()).thenReturn(user);
-    when(initDataObject.getParamsMap()).thenReturn(paramsMap);
-    when(layoutAPI.doesUserHaveAccessToPortlet("maintenance", initDataObject.getUser()))
-        .thenReturn(true);
-    when(indiciesAPI.loadIndicies()).thenReturn(indiciesInfo);
-    when(indexHelper.getIndexNameOrAlias(paramsMap, indexAPI)).thenReturn(workingIndex);
-    when(indexAPI.createSnapshot(ESIndexAPI.BACKUP_REPOSITORY, "backup", workingIndex))
-        .thenReturn(tempFile);
+    	final HttpServletRequest request = RestUtilTest.getMockHttpRequest();
+        final InitDataObject initDataObject  = mock(InitDataObject.class);
+        final WebResource webResource = mock(WebResource.class);
+        final ESIndexAPI indexAPI = mock(ESIndexAPI.class);
+        final ESIndexHelper indexHelper = mock(ESIndexHelper.class);
+        final ResponseUtil responseUtil = mock(ResponseUtil.class);
+        final LayoutAPI layoutAPI = mock(LayoutAPI.class);
+        final IndiciesAPI indiciesAPI = mock(IndiciesAPI.class);
 
-    ESIndexResource esIndexResource =
-        new ESIndexResource(
-            indexAPI, indexHelper, responseUtil, webResource, layoutAPI, indiciesAPI);
+        final User user = new User();
+        IndiciesInfo indiciesInfo = new IndiciesInfo();
+        indiciesInfo.live = liveIndex;
+        indiciesInfo.working = workingIndex;
+        File tempFile = File.createTempFile(workingIndex, null);
+        tempFile.deleteOnExit();
+        Map<String,String> paramsMap = new HashMap<String,String>();
+        paramsMap.put("index", "working");
 
-    final Response response1 = esIndexResource.snapshotIndex(request, requestParams);
+        when(webResource.init(requestParams, true, request, true, null)).thenReturn(initDataObject);
+        when(initDataObject.getUser()).thenReturn(user);
+        when(initDataObject.getParamsMap()).thenReturn(paramsMap);
+        when(layoutAPI.doesUserHaveAccessToPortlet("maintenance", initDataObject.getUser())).thenReturn(true);
+        when(indiciesAPI.loadIndicies()).thenReturn(indiciesInfo);
+        when(indexHelper.getIndexNameOrAlias(paramsMap, indexAPI)).thenReturn(workingIndex);
+        when(indexAPI.createSnapshot(ESIndexAPI.BACKUP_REPOSITORY, "backup", workingIndex)).thenReturn(tempFile);
 
-    assertNotNull(response1);
-    assertEquals(response1.getStatus(), 200);
-  }
+        ESIndexResource esIndexResource = new ESIndexResource(indexAPI, indexHelper, responseUtil, webResource, layoutAPI, indiciesAPI);
 
-  /**
-   * Tests call without index name
-   *
-   * @throws Exception
-   */
-  @Test
-  public void testDownloadSnapshot_noIndex() throws Exception {
+        final Response response1 = esIndexResource.snapshotIndex(request, requestParams);
 
-    final String requestParams = "/index/";
+        assertNotNull(response1);
+        assertEquals(response1.getStatus(), 200);
+    }
 
-    final HttpServletRequest request = RestUtilTest.getMockHttpRequest();
-    final InitDataObject initDataObject = mock(InitDataObject.class);
-    final WebResource webResource = mock(WebResource.class);
-    final ESIndexAPI indexAPI = mock(ESIndexAPI.class);
-    final ESIndexHelper indexHelper = mock(ESIndexHelper.class);
-    final ResponseUtil responseUtil = mock(ResponseUtil.class);
-    final LayoutAPI layoutAPI = mock(LayoutAPI.class);
-    final IndiciesAPI indiciesAPI = mock(IndiciesAPI.class);
+    /**
+	 * Tests call without index name
+	 * @throws Exception
+	 */
+    @Test
+    public void testDownloadSnapshot_noIndex() throws Exception {
 
-    final User user = mock(User.class);
-    Map<String, String> paramsMap = new HashMap<String, String>();
+    	final String requestParams = "/index/";
 
-    when(webResource.init(requestParams, true, request, true, null)).thenReturn(initDataObject);
-    when(initDataObject.getUser()).thenReturn(user);
-    when(user.getLocale()).thenReturn(Locale.getDefault());
-    when(initDataObject.getParamsMap()).thenReturn(paramsMap);
-    when(layoutAPI.doesUserHaveAccessToPortlet("maintenance", initDataObject.getUser()))
-        .thenReturn(true);
-    when(indexHelper.getIndexNameOrAlias(paramsMap, indexAPI)).thenReturn(null);
-    when(responseUtil.getErrorResponse(
-            request,
-            Response.Status.BAD_REQUEST,
-            Locale.getDefault(),
-            null,
-            "snapshot.wrong.arguments"))
-        .thenReturn(Response.status(Status.BAD_REQUEST).build());
+    	final HttpServletRequest request = RestUtilTest.getMockHttpRequest();
+        final InitDataObject initDataObject  = mock(InitDataObject.class);
+        final WebResource webResource = mock(WebResource.class);
+        final ESIndexAPI indexAPI = mock(ESIndexAPI.class);
+        final ESIndexHelper indexHelper = mock(ESIndexHelper.class);
+        final ResponseUtil responseUtil = mock(ResponseUtil.class);
+        final LayoutAPI layoutAPI = mock(LayoutAPI.class);
+        final IndiciesAPI indiciesAPI = mock(IndiciesAPI.class);
 
-    ESIndexResource esIndexResource =
-        new ESIndexResource(
-            indexAPI, indexHelper, responseUtil, webResource, layoutAPI, indiciesAPI);
+        final User user = mock(User.class);
+        Map<String,String> paramsMap = new HashMap<String,String>();
 
-    Response response1 = esIndexResource.snapshotIndex(request, requestParams);
+        when(webResource.init(requestParams, true, request, true, null)).thenReturn(initDataObject);
+        when(initDataObject.getUser()).thenReturn(user);
+        when(user.getLocale()).thenReturn(Locale.getDefault());
+        when(initDataObject.getParamsMap()).thenReturn(paramsMap);
+        when(layoutAPI.doesUserHaveAccessToPortlet("maintenance", initDataObject.getUser())).thenReturn(true);
+        when(indexHelper.getIndexNameOrAlias(paramsMap, indexAPI)).thenReturn(null);
+        when(responseUtil.getErrorResponse(request, Response.Status.BAD_REQUEST, Locale.getDefault(), null, "snapshot.wrong.arguments")).thenReturn(Response.status(Status.BAD_REQUEST).build());
 
-    assertNotNull(response1);
-    assertEquals(response1.getStatus(), 400);
-  }
+        ESIndexResource esIndexResource = new ESIndexResource(indexAPI, indexHelper, responseUtil, webResource, layoutAPI, indiciesAPI);
+
+        Response response1 = esIndexResource.snapshotIndex(request, requestParams);
+
+        assertNotNull(response1);
+        assertEquals(response1.getStatus(), 400);
+    }
 }
+

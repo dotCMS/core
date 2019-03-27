@@ -16,13 +16,14 @@ package org.apache.velocity.runtime.resource.loader;
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
- * under the License.
+ * under the License.    
  */
 
-import com.dotmarketing.util.Logger;
 import org.apache.velocity.exception.VelocityException;
 import org.apache.velocity.runtime.RuntimeServices;
 import org.apache.velocity.util.ClassUtils;
+
+import com.dotmarketing.util.Logger;
 
 /**
  * Factory to grab a template loader.
@@ -30,37 +31,35 @@ import org.apache.velocity.util.ClassUtils;
  * @author <a href="mailto:jvanzyl@apache.org">Jason van Zyl</a>
  * @version $Id: ResourceLoaderFactory.java 898032 2010-01-11 19:51:03Z nbubna $
  */
-public class ResourceLoaderFactory {
-  /**
-   * Gets the loader specified in the configuration file.
-   *
-   * @param rs
-   * @param loaderClassName
-   * @return TemplateLoader
-   */
-  public static ResourceLoader getLoader(RuntimeServices rs, String loaderClassName) {
-    ResourceLoader loader = null;
+public class ResourceLoaderFactory
+{
+    /**
+     * Gets the loader specified in the configuration file.
+     * @param rs
+     * @param loaderClassName
+     * @return TemplateLoader
+     */
+    public static ResourceLoader getLoader(RuntimeServices rs, String loaderClassName)
+    {
+        ResourceLoader loader = null;
 
-    try {
-      loader = (ResourceLoader) ClassUtils.getNewInstance(loaderClassName);
+        try
+        {
+            loader = (ResourceLoader) ClassUtils.getNewInstance( loaderClassName );
 
-      Logger.debug(
-          ResourceLoaderFactory.class,
-          "ResourceLoader instantiated: " + loader.getClass().getName());
+            Logger.debug(ResourceLoaderFactory.class,"ResourceLoader instantiated: "
+                              + loader.getClass().getName());
 
-      return loader;
+            return loader;
+        }
+        // The ugly three strike again: ClassNotFoundException,IllegalAccessException,InstantiationException
+        catch(Exception e)
+        {
+            String msg = "Problem instantiating the template loader: "+loaderClassName+".\n" +
+                         "Look at your properties file and make sure the\n" +
+                         "name of the template loader is correct.";
+            Logger.error(ResourceLoaderFactory.class,msg, e);
+            throw new VelocityException(msg, e);
+        }
     }
-    // The ugly three strike again:
-    // ClassNotFoundException,IllegalAccessException,InstantiationException
-    catch (Exception e) {
-      String msg =
-          "Problem instantiating the template loader: "
-              + loaderClassName
-              + ".\n"
-              + "Look at your properties file and make sure the\n"
-              + "name of the template loader is correct.";
-      Logger.error(ResourceLoaderFactory.class, msg, e);
-      throw new VelocityException(msg, e);
-    }
-  }
 }

@@ -4,19 +4,20 @@ import java.io.Serializable;
 
 public class UserSessionBean implements Serializable {
 
-  private final String user;
-  private final String sessionId;
+    private final String user;
+    private final String sessionId;
 
-  public UserSessionBean(final String user, final String sessionId) {
-    this.user = user;
-    this.sessionId = sessionId;
-  }
+    public UserSessionBean(final String user,
+                                    final String sessionId) {
+        this.user = user;
+        this.sessionId = sessionId;
+    }
 
-  public String getUser() {
-    return user;
-  }
+    public String getUser() {
+        return user;
+    }
 
-  public String getSessionId() {
-    return sessionId;
-  }
+    public String getSessionId() {
+        return sessionId;
+    }
 }

@@ -1,14 +1,17 @@
 package com.ettrema.httpclient;
 
-/** @author mcevoyb */
+/**
+ *
+ * @author mcevoyb
+ */
 public class GenericHttpException extends HttpException {
-  private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
-  public GenericHttpException(int result, String href) {
-    super(result, href);
-  }
-
-  public GenericHttpException(String href, Throwable ex) {
-    super(href, ex);
-  }
+    public GenericHttpException( int result, String href ) {
+        super( result, href );
+    }
+    
+    public GenericHttpException( String href, Throwable ex ) {
+        super(href, ex);
+    }    
 }

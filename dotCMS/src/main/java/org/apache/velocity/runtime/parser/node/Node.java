@@ -21,6 +21,8 @@ package org.apache.velocity.runtime.parser.node;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.List;
+
 import org.apache.velocity.context.InternalContextAdapter;
 import org.apache.velocity.exception.MethodInvocationException;
 import org.apache.velocity.exception.ParseErrorException;
@@ -30,159 +32,195 @@ import org.apache.velocity.runtime.Renderable;
 import org.apache.velocity.runtime.parser.Token;
 
 /**
- * This file describes the interface between the Velocity code and the JavaCC generated code.
+ *  This file describes the interface between the Velocity code
+ *  and the JavaCC generated code.
  *
  * @author <a href="mailto:hps@intermeta.de">Henning P. Schmiedehausen</a>
  * @version $Id: Node.java 737539 2009-01-25 17:24:29Z nbubna $
  */
-public interface Node extends Renderable {
-  /**
-   * This method is called after the node has been made the current node. It indicates that child
-   * nodes can now be added to it.
-   */
-  public void jjtOpen();
 
-  /** This method is called after all the child nodes have been added. */
-  public void jjtClose();
+public interface Node extends Renderable
+{
+    /** This method is called after the node has been made the current
+     * node.  It indicates that child nodes can now be added to it. */
+    public void jjtOpen();
 
-  /**
-   * This pair of methods are used to inform the node of its parent.
-   *
-   * @param n
-   */
-  public void jjtSetParent(Node n);
+    /** This method is called after all the child nodes have been
+      added.
+     */
+    public void jjtClose();
 
-  /** @return The node parent. */
-  public Node jjtGetParent();
+    /**
+     * This pair of methods are used to inform the node of its
+     * parent.
+     * @param n
+     *
+     */
+    public void jjtSetParent(Node n);
 
-  /**
-   * This method tells the node to add its argument to the node's list of children.
-   *
-   * @param n
-   * @param i
-   */
-  public void jjtAddChild(Node n, int i);
+    /**
+     * @return The node parent.
+     */
+    public Node jjtGetParent();
 
-  /**
-   * This method returns a child node. The children are numbered from zero, left to right.
-   *
-   * @param i
-   * @return A child node.
-   */
-  public Node jjtGetChild(int i);
+    /**
+     * This method tells the node to add its argument to the node's
+     * list of children.
+     * @param n
+     * @param i
+     */
+    public void jjtAddChild(Node n, int i);
 
-  /**
-   * Return the number of children the node has.
-   *
-   * @return The number of children of this node.
-   */
-  public int jjtGetNumChildren();
+    /**
+     * This method returns a child node.  The children are numbered
+     * from zero, left to right.
+     * @param i
+     * @return A child node.
+     */
+    public Node jjtGetChild(int i);
 
-  /**
-   * @param visitor
-   * @param data
-   * @return The Node execution result object.
-   */
-  public Object jjtAccept(ParserVisitor visitor, Object data);
+    /**
+     * Return the number of children the node has.
+     * @return The number of children of this node.
+     */
+    public int jjtGetNumChildren();
 
-  /*
-   * ========================================================================
-   *
-   * The following methods are not generated automatically be the Parser but
-   * added manually to be used by Velocity.
-   *
-   * ========================================================================
-   */
+    /**
+     * @param visitor
+     * @param data
+     * @return The Node execution result object.
+     */
+    public Object jjtAccept(ParserVisitor visitor, Object data);
 
-  /**
-   * @see #jjtAccept(ParserVisitor, Object)
-   * @param visitor
-   * @param data
-   * @return The node execution result.
-   */
-  public Object childrenAccept(ParserVisitor visitor, Object data);
+    /*
+     * ========================================================================
+     *
+     * The following methods are not generated automatically be the Parser but
+     * added manually to be used by Velocity.
+     *
+     * ========================================================================
+     */
 
-  /** @return The first token. */
-  // public Token getFirstToken();
+    /**
+     * @see #jjtAccept(ParserVisitor, Object)
+     * @param visitor
+     * @param data
+     * @return The node execution result.
+     */
+    public Object childrenAccept(ParserVisitor visitor, Object data);
 
-  /** @return The NodeType. */
-  public int getType();
+    /**
+     * @return The first token.
+     */
+    //public Token getFirstToken();
 
-  /**
-   * @param context
-   * @param data
-   * @return The init result.
-   * @throws TemplateInitException
-   */
-  public Object init(InternalContextAdapter context, Object data) throws TemplateInitException;
+    /**
+     * @return The NodeType.
+     */
+    public int getType();
 
-  /**
-   * @param context
-   * @return The evaluation result.
-   * @throws MethodInvocationException
-   */
-  public boolean evaluate(InternalContextAdapter context) throws MethodInvocationException;
+    /**
+     * @param context
+     * @param data
+     * @return The init result.
+     * @throws TemplateInitException
+     */
+    public Object init( InternalContextAdapter context, Object data) throws TemplateInitException;
 
-  /**
-   * @param context
-   * @return The node value.
-   * @throws MethodInvocationException
-   */
-  public Object value(InternalContextAdapter context) throws MethodInvocationException;
+    /**
+     * @param context
+     * @return The evaluation result.
+     * @throws MethodInvocationException
+     */
+    public boolean evaluate( InternalContextAdapter context)
+        throws MethodInvocationException;
 
-  /**
-   * @param context
-   * @param writer
-   * @return True if the node rendered successfully.
-   * @throws IOException
-   * @throws MethodInvocationException
-   * @throws ParseErrorException
-   * @throws ResourceNotFoundException
-   */
-  public boolean render(InternalContextAdapter context, Writer writer)
-      throws IOException, MethodInvocationException, ParseErrorException, ResourceNotFoundException;
+    /**
+     * @param context
+     * @return The node value.
+     * @throws MethodInvocationException
+     */
+    public Object value( InternalContextAdapter context)
+        throws MethodInvocationException;
 
-  /**
-   * @param o
-   * @param context
-   * @return The execution result.
-   * @throws MethodInvocationException
-   */
-  public Object execute(Object o, InternalContextAdapter context) throws MethodInvocationException;
+    /**
+     * @param context
+     * @param writer
+     * @return True if the node rendered successfully.
+     * @throws IOException
+     * @throws MethodInvocationException
+     * @throws ParseErrorException
+     * @throws ResourceNotFoundException
+     */
+    public boolean render( InternalContextAdapter context, Writer writer)
+        throws IOException,MethodInvocationException, ParseErrorException, ResourceNotFoundException;
 
-  /** @return The first token. */
-  Token getFirstToken();
-  /** @return The last token. */
-  Token getLastToken();
-  /** @param info */
-  public void setInfo(int info);
+    /**
+     * @param o
+     * @param context
+     * @return The execution result.
+     * @throws MethodInvocationException
+     */
+    public Object execute(Object o, InternalContextAdapter context)
+      throws MethodInvocationException;
+    
+    /**
+     * @return The first token.
+     */
+    Token getFirstToken();
+    /**
+     * @return The last token.
+     */
+    Token getLastToken();
+    /**
+     * @param info
+     */
+    public void setInfo(int info);
 
-  /** @return The current node info. */
-  public int getInfo();
+    /**
+     * @return The current node info.
+     */
+    public int getInfo();
 
-  /** @return A literal. */
-  public String literal();
+    /**
+     * @return A literal.
+     */
+    public String literal();
 
-  /** Mark the node as invalid. */
-  public void setInvalid();
+    /**
+     * Mark the node as invalid.
+     */
+    public void setInvalid();
 
-  /** @return True if the node is invalid. */
-  public boolean isInvalid();
+    /**
+     * @return True if the node is invalid.
+     */
+    public boolean isInvalid();
 
-  /** @return The current line position. */
-  public int getLine();
+    /**
+     * @return The current line position.
+     */
+    public int getLine();
 
-  /** @return The current column position. */
-  public int getColumn();
+    /**
+     * @return The current column position.
+     */
+    public int getColumn();
+    
+    /**
+     * @return the file name of the template
+     */
+    public String getTemplateName();
+    
+    /**
+     * @return cached image (String) of the first Token for this Node returned by the Parser
+     */
+    String getFirstTokenImage();
 
-  /** @return the file name of the template */
-  public String getTemplateName();
+    /**
+     * @return cached image (String) of the last Token for this Node returned by the Parser
+     */
+    String getLastTokenImage();
 
-  /** @return cached image (String) of the first Token for this Node returned by the Parser */
-  String getFirstTokenImage();
-
-  /** @return cached image (String) of the last Token for this Node returned by the Parser */
-  String getLastTokenImage();
-
-  void cleanupParserAndTokens();
+    void cleanupParserAndTokens();
 }

@@ -1,26 +1,29 @@
 package com.dotcms.contenttype.transform.field;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 public class JsonFieldVariableTransformer {
 
-  private static final ObjectMapper mapper =
-      new ObjectMapper()
-          .setSerializationInclusion(Include.NON_NULL)
-          .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+  private static final ObjectMapper mapper = new ObjectMapper().setSerializationInclusion(Include.NON_NULL)
+      .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
   final List<FieldVariable> list;
+
 
   public JsonFieldVariableTransformer(FieldVariable fieldVariable) {
     this.list = ImmutableList.of(fieldVariable);
@@ -36,6 +39,7 @@ public class JsonFieldVariableTransformer {
     this.list = ImmutableList.copyOf(l);
   }
 
+
   private FieldVariable fromJsonStr(String input) throws DotStateException {
     try {
       return (FieldVariable) mapper.readValue(input, FieldVariable.class);
@@ -44,6 +48,7 @@ public class JsonFieldVariableTransformer {
     }
   }
 
+
   public FieldVariable from() throws DotStateException {
     return this.list.get(0);
   }
@@ -51,6 +56,7 @@ public class JsonFieldVariableTransformer {
   public List<FieldVariable> asList() throws DotStateException {
     return this.list;
   }
+
 
   public List<Map<String, Object>> mapList() {
     List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
@@ -68,7 +74,9 @@ public class JsonFieldVariableTransformer {
     map.remove("userId");
 
     return map;
+
   }
+
 
   public JSONObject jsonObject() {
     return new JSONObject(mapObject());
@@ -82,3 +90,4 @@ public class JsonFieldVariableTransformer {
     return jarr;
   }
 }
+

@@ -1,21 +1,25 @@
 /**
  * Copyright (c) 2000-2005 Liferay, LLC. All rights reserved.
  *
- * <p>Permission is hereby granted, free of charge, to any person obtaining a copy of this software
- * and associated documentation files (the "Software"), to deal in the Software without restriction,
- * including without limitation the rights to use, copy, modify, merge, publish, distribute,
- * sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * <p>The above copyright notice and this permission notice shall be included in all copies or
- * substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
  *
- * <p>THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
- * BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
- * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
  */
+
 package com.liferay.util.servlet;
 
 import java.io.File;
@@ -25,115 +29,120 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import javax.servlet.http.HttpServletRequestWrapper;
 
 /**
  * <a href="UploadPortletRequest.java.html"><b><i>View Source</i></b></a>
  *
- * @author Brian Wing Shun Chan
+ * @author  Brian Wing Shun Chan
  * @version $Revision: 1.6 $
+ *
  */
 public class UploadPortletRequest extends HttpServletRequestWrapper {
 
-  public UploadPortletRequest(UploadServletRequest req, String namespace) {
-    super(req);
+	public UploadPortletRequest(UploadServletRequest req, String namespace) {
+		super(req);
 
-    _req = req;
-    _namespace = namespace;
-  }
+		_req = req;
+		_namespace = namespace;
+	}
 
-  public String getContentType(String name) {
-    String contentType = _req.getContentType(_namespace + name);
+	public String getContentType(String name) {
+		String contentType = _req.getContentType(_namespace + name);
 
-    if (contentType == null) {
-      contentType = _req.getContentType(name);
-    }
+		if (contentType == null) {
+			contentType = _req.getContentType(name);
+		}
 
-    return contentType;
-  }
+		return contentType;
+	}
 
-  public File getFile(String name) {
-    File file = _req.getFile(_namespace + name);
+	public File getFile(String name) {
+		File file = _req.getFile(_namespace + name);
 
-    if (file == null) {
-      file = _req.getFile(name);
-    }
+		if (file == null) {
+			file = _req.getFile(name);
+		}
 
-    return file;
-  }
+		return file;
+	}
 
-  public String getFileName(String name) {
-    String fileName = _req.getFileName(_namespace + name);
+	public String getFileName(String name) {
+		String fileName = _req.getFileName(_namespace + name);
 
-    if (fileName == null) {
-      fileName = _req.getFileName(name);
-    }
+		if (fileName == null) {
+			fileName = _req.getFileName(name);
+		}
 
-    return fileName;
-  }
+		return fileName;
+	}
 
-  public String getFullFileName(String name) {
-    String fullFileName = _req.getFullFileName(_namespace + name);
+	public String getFullFileName(String name) {
+		String fullFileName = _req.getFullFileName(_namespace + name);
 
-    if (fullFileName == null) {
-      fullFileName = _req.getFullFileName(name);
-    }
+		if (fullFileName == null) {
+			fullFileName = _req.getFullFileName(name);
+		}
 
-    return fullFileName;
-  }
+		return fullFileName;
+	}
 
-  public String getParameter(String name) {
-    String parameter = _req.getParameter(_namespace + name);
+	public String getParameter(String name) {
+		String parameter = _req.getParameter(_namespace + name);
 
-    if (parameter == null) {
-      parameter = _req.getParameter(name);
-    }
+		if (parameter == null) {
+			parameter = _req.getParameter(name);
+		}
 
-    return parameter;
-  }
+		return parameter;
+	}
 
-  public Map getParameterMap() {
-    Map map = new HashMap();
+	public Map getParameterMap() {
+		Map map = new HashMap();
 
-    Enumeration enu = getParameterNames();
+		Enumeration enu = getParameterNames();
 
-    while (enu.hasMoreElements()) {
-      String name = (String) enu.nextElement();
+		while (enu.hasMoreElements()) {
+			String name = (String)enu.nextElement();
 
-      map.put(name, getParameterValues(name));
-    }
+			map.put(name, getParameterValues(name));
+		}
 
-    return map;
-  }
+		return map;
+	}
 
-  public Enumeration getParameterNames() {
-    List parameterNames = new ArrayList();
+	public Enumeration getParameterNames() {
+		List parameterNames = new ArrayList();
 
-    Enumeration enu = _req.getParameterNames();
+		Enumeration enu = _req.getParameterNames();
 
-    while (enu.hasMoreElements()) {
-      String name = (String) enu.nextElement();
+		while (enu.hasMoreElements()) {
+			String name = (String)enu.nextElement();
 
-      if (name.startsWith(_namespace)) {
-        parameterNames.add(name.substring(_namespace.length(), name.length()));
-      } else {
-        parameterNames.add(name);
-      }
-    }
+			if (name.startsWith(_namespace)) {
+				parameterNames.add(
+					name.substring(_namespace.length(), name.length()));
+			}
+			else {
+				parameterNames.add(name);
+			}
+		}
 
-    return Collections.enumeration(parameterNames);
-  }
+		return Collections.enumeration(parameterNames);
+	}
 
-  public String[] getParameterValues(String name) {
-    String[] parameterValues = _req.getParameterValues(_namespace + name);
+	public String[] getParameterValues(String name) {
+		String[] parameterValues = _req.getParameterValues(_namespace + name);
 
-    if (parameterValues == null) {
-      parameterValues = _req.getParameterValues(name);
-    }
+		if (parameterValues == null) {
+			parameterValues = _req.getParameterValues(name);
+		}
 
-    return parameterValues;
-  }
+		return parameterValues;
+	}
 
-  private UploadServletRequest _req;
-  private String _namespace;
+	private UploadServletRequest _req;
+	private String _namespace;
+
 }

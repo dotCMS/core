@@ -11,120 +11,120 @@ import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.UtilMethods;
+
 import java.util.List;
 import java.util.Set;
 
 public class EnvironmentAPIImpl implements EnvironmentAPI {
 
-  private final EnvironmentFactory environmentFactory;
+	private final EnvironmentFactory environmentFactory;
 
-  public EnvironmentAPIImpl() {
-    environmentFactory = FactoryLocator.getEnvironmentFactory();
-  }
+	public EnvironmentAPIImpl() {
+		environmentFactory = FactoryLocator.getEnvironmentFactory();
+	}
 
-  @CloseDBIfOpened
-  @Override
-  public Environment findEnvironmentById(String id) throws DotDataException {
-    if (!UtilMethods.isSet(id)) return null;
+	@CloseDBIfOpened
+	@Override
+	public Environment findEnvironmentById(String id) throws DotDataException {
+		if(!UtilMethods.isSet(id))
+			return null;
 
-    return environmentFactory.getEnvironmentById(id);
-  }
+		return environmentFactory.getEnvironmentById(id);
+	}
 
-  @WrapInTransaction
-  @Override
-  public void saveEnvironment(Environment environment, List<Permission> perms)
-      throws DotDataException, DotSecurityException {
+	@WrapInTransaction
+	@Override
+	public void saveEnvironment(Environment environment, List<Permission> perms) throws DotDataException, DotSecurityException {
 
-    if (!UtilMethods.isSet(environment)) return;
+		if(!UtilMethods.isSet(environment))
+			return;
 
-    environmentFactory.save(environment);
-    APILocator.getPermissionAPI().removePermissions(environment);
+		environmentFactory.save(environment);
+		APILocator.getPermissionAPI().removePermissions(environment);
 
-    if (perms != null) {
-      for (Permission p : perms) {
-        p.setInode(environment.getId());
-        APILocator.getPermissionAPI()
-            .save(p, environment, APILocator.getUserAPI().getSystemUser(), false);
-      }
-    }
-  }
+		if(perms != null){
+			for (Permission p : perms) {
+				p.setInode(environment.getId());
+				APILocator.getPermissionAPI().save(p, environment, APILocator.getUserAPI().getSystemUser(), false);
+			}
+		}
+	}
 
-  @CloseDBIfOpened
-  @Override
-  public List<Environment> findAllEnvironments() throws DotDataException {
-    return environmentFactory.getEnvironments();
-  }
+	@CloseDBIfOpened
+	@Override
+	public List<Environment> findAllEnvironments() throws DotDataException {
+		return environmentFactory.getEnvironments();
+	}
 
-  @CloseDBIfOpened
-  @Override
-  public List<Environment> findEnvironmentsWithServers() throws DotDataException {
-    return environmentFactory.getEnvironmentsWithServers();
-  }
+	@CloseDBIfOpened
+	@Override
+	public List<Environment> findEnvironmentsWithServers() throws DotDataException {
+		return environmentFactory.getEnvironmentsWithServers();
+	}
 
-  @WrapInTransaction
-  @Override
-  public void deleteEnvironment(String id) throws DotDataException {
+	@WrapInTransaction
+	@Override
+	public void deleteEnvironment(String id) throws DotDataException {
 
-    if (!UtilMethods.isSet(id)) return;
+		if(!UtilMethods.isSet(id))
+			return;
 
-    // remove the endpoints of the environment
+		// remove the endpoints of the environment
+		
+		List<PublishingEndPoint> endPoints = APILocator.getPublisherEndPointAPI().findSendingEndPointsByEnvironment(id);
+        
+        for (PublishingEndPoint ep : endPoints) {
+            //Delete endpoints associated to this Environment
+            APILocator.getPublisherEndPointAPI().deleteEndPointById(ep.getId());
+        }
 
-    List<PublishingEndPoint> endPoints =
-        APILocator.getPublisherEndPointAPI().findSendingEndPointsByEnvironment(id);
+		Environment e = findEnvironmentById(id);
 
-    for (PublishingEndPoint ep : endPoints) {
-      // Delete endpoints associated to this Environment
-      APILocator.getPublisherEndPointAPI().deleteEndPointById(ep.getId());
-    }
+		APILocator.getPermissionAPI().removePermissions(e);
 
-    Environment e = findEnvironmentById(id);
+		// delete bundle-environment relationships
 
-    APILocator.getPermissionAPI().removePermissions(e);
+		FactoryLocator.getBundleFactory().deleteBundleEnvironmentByEnvironment(id);
 
-    // delete bundle-environment relationships
+		// delete related pushed-assets history
 
-    FactoryLocator.getBundleFactory().deleteBundleEnvironmentByEnvironment(id);
+		FactoryLocator.getPushedAssetsFactory().deletePushedAssetsByEnvironment(id);
 
-    // delete related pushed-assets history
+		environmentFactory.deleteEnvironmentById(id);
+	}
 
-    FactoryLocator.getPushedAssetsFactory().deletePushedAssetsByEnvironment(id);
+	@WrapInTransaction
+	@Override
+	public void updateEnvironment(Environment environment, List<Permission> perms ) throws DotDataException, DotSecurityException {
+		environmentFactory.update(environment);
 
-    environmentFactory.deleteEnvironmentById(id);
-  }
+		APILocator.getPermissionAPI().removePermissions(environment);
 
-  @WrapInTransaction
-  @Override
-  public void updateEnvironment(Environment environment, List<Permission> perms)
-      throws DotDataException, DotSecurityException {
-    environmentFactory.update(environment);
+		if(perms != null){
+			for (Permission p : perms) {
+				p.setInode(environment.getId());
+				APILocator.getPermissionAPI().save(p, environment, APILocator.getUserAPI().getSystemUser(), false);
+			}
+		}
 
-    APILocator.getPermissionAPI().removePermissions(environment);
+	}
 
-    if (perms != null) {
-      for (Permission p : perms) {
-        p.setInode(environment.getId());
-        APILocator.getPermissionAPI()
-            .save(p, environment, APILocator.getUserAPI().getSystemUser(), false);
-      }
-    }
-  }
+	@CloseDBIfOpened
+	@Override
+	public Environment findEnvironmentByName(String name) throws DotDataException {
+		return environmentFactory.getEnvironmentByName(name);
+	}
 
-  @CloseDBIfOpened
-  @Override
-  public Environment findEnvironmentByName(String name) throws DotDataException {
-    return environmentFactory.getEnvironmentByName(name);
-  }
+	@CloseDBIfOpened
+	@Override
+	public Set<Environment> findEnvironmentsByRole(String roleId) throws DotDataException, NoSuchUserException, DotSecurityException {
+		return environmentFactory.getEnvironmentsByRole(roleId);
+	}
 
-  @CloseDBIfOpened
-  @Override
-  public Set<Environment> findEnvironmentsByRole(String roleId)
-      throws DotDataException, NoSuchUserException, DotSecurityException {
-    return environmentFactory.getEnvironmentsByRole(roleId);
-  }
+	@CloseDBIfOpened
+	@Override
+	public List<Environment> findEnvironmentsByBundleId(String bundleId) throws DotDataException {
+		return environmentFactory.getEnvironmentsByBundleId(bundleId);
+	}
 
-  @CloseDBIfOpened
-  @Override
-  public List<Environment> findEnvironmentsByBundleId(String bundleId) throws DotDataException {
-    return environmentFactory.getEnvironmentsByBundleId(bundleId);
-  }
 }

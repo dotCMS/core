@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.templates.struts;
 
+
 import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.END_COMMENT;
 import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtmlCssConstants.START_COMMENT;
 
@@ -13,294 +14,293 @@ import org.apache.struts.validator.ValidatorForm;
 /** @author Hibernate CodeGenerator */
 public class TemplateForm extends ValidatorForm {
 
-  private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
-  /** nullable persistent field */
-  private String body;
+	/** nullable persistent field */
+    private String body;
 
-  /** * WEB ASSET FIELDS FOR THE FORM ** */
-  /** nullable persistent field */
-  private String title;
+	/*** WEB ASSET FIELDS FOR THE FORM ***/
+    /** nullable persistent field */
+    private String title;
 
-  /** nullable persistent field */
-  private String friendlyName;
+    /** nullable persistent field */
+    private String friendlyName;
 
-  /** nullable persistent field */
-  private boolean showOnMenu;
+    /** nullable persistent field */
+    private boolean showOnMenu;
 
-  /** nullable persistent field */
-  private int sortOrder;
-  /** * WEB ASSET FIELDS FOR THE FORM ** */
+    /** nullable persistent field */
+    private int sortOrder;
+	/*** WEB ASSET FIELDS FOR THE FORM ***/
 
-  /** nullable persistent field */
-  private String image;
+    /** nullable persistent field */
+	private String image;
 
-  /** nullable persistent field */
-  private String header;
-  /** nullable persistent field */
-  private String footer;
+    /** nullable persistent field */
+    private String header;
+    /** nullable persistent field */
+    private String footer;
 
-  /** nullable persistent field */
-  private String hostId;
+    /** nullable persistent field */
+    private String hostId;
 
-  // BEGIN GRAZIANO issue-12-dnd-template
-  private String drawedBody;
+    // BEGIN GRAZIANO issue-12-dnd-template
+    private String drawedBody;
 
-  private boolean drawed;
+    private boolean drawed;
 
-  private int countAddContainer;
+    private int countAddContainer;
 
-  private int countContainers;
+    private int countContainers;
 
-  private String headCode;
-  // END GRAZIANO issue-12-dnd-template
+    private String headCode;
+    // END GRAZIANO issue-12-dnd-template
 
-  private String owner; // dotcms 472
+    private String owner;  // dotcms 472
 
-  private String theme;
+    private String theme;
 
-  private String themeName;
+    private String themeName;
 
-  private boolean headerCheck;
+    private boolean headerCheck;
 
-  private boolean footerCheck;
+    private boolean footerCheck;
 
-  public TemplateForm() {}
 
-  public String toString() {
-    return ToStringBuilder.reflectionToString(this);
-  }
 
-  /** @return Returns the image. */
-  public String getImage() {
-    return image;
-  }
-  /** @param image The image to set. */
-  public void setImage(String image) {
-    this.image = image;
-  }
-
-  /**
-   * Returns the title.
-   *
-   * @return String
-   */
-  public String getTitle() {
-    return title;
-  }
-
-  /**
-   * Sets the title.
-   *
-   * @param title The title to set
-   */
-  public void setTitle(String title) {
-    this.title = title;
-  }
-
-  /**
-   * Returns the showOnMenu.
-   *
-   * @return boolean
-   */
-  public boolean isShowOnMenu() {
-    return showOnMenu;
-  }
-
-  /**
-   * Sets the showOnMenu.
-   *
-   * @param showOnMenu The showOnMenu to set
-   */
-  public void setShowOnMenu(boolean showOnMenu) {
-    this.showOnMenu = showOnMenu;
-  }
-
-  /**
-   * Returns the sortOrder.
-   *
-   * @return int
-   */
-  public int getSortOrder() {
-    return sortOrder;
-  }
-
-  /**
-   * Sets the sortOrder.
-   *
-   * @param sortOrder The sortOrder to set
-   */
-  public void setSortOrder(int sortOrder) {
-    this.sortOrder = sortOrder;
-  }
-
-  public ActionErrors validate(ActionMapping mapping, HttpServletRequest request) {
-    if (request.getParameter("cmd") != null && request.getParameter("cmd").equals(Constants.ADD)) {
-      return super.validate(mapping, request);
+	public TemplateForm() {
     }
-    return null;
-  }
 
-  /**
-   * Returns the friendlyName.
-   *
-   * @return String
-   */
-  public String getFriendlyName() {
-    return friendlyName;
-  }
 
-  /**
-   * Sets the friendlyName.
-   *
-   * @param friendlyName The friendlyName to set
-   */
-  public void setFriendlyName(String friendlyName) {
-    this.friendlyName = friendlyName;
-  }
 
-  /**
-   * Returns the body.
-   *
-   * @return String
-   */
-  public String getBody() {
-    if (!drawed) return body;
-    else return START_COMMENT + body + END_COMMENT;
-  }
+    public String toString() {
+        return ToStringBuilder.reflectionToString(this);
+    }
 
-  /**
-   * Sets the body.
-   *
-   * @param body The body to set
-   */
-  public void setBody(String body) {
-    this.body = body;
-  }
+	/**
+	 * @return Returns the image.
+	 */
+	public String getImage() {
+		return image;
+	}
+	/**
+	 * @param image The image to set.
+	 */
+	public void setImage(String image) {
+		this.image = image;
+	}
 
-  // BEGIN GRAZIANO issue-12-dnd-template
-  public String getDrawedBody() {
-    return drawedBody;
-  }
+	/**
+	 * Returns the title.
+	 * @return String
+	 */
+	public String getTitle() {
+		return title;
+	}
 
-  public void setDrawedBody(String drawedBody) {
-    this.drawedBody = drawedBody;
-  }
+	/**
+	 * Sets the title.
+	 * @param title The title to set
+	 */
+	public void setTitle(String title) {
+		this.title = title;
+	}
 
-  public boolean isDrawed() {
-    return drawed;
-  }
+	/**
+	 * Returns the showOnMenu.
+	 * @return boolean
+	 */
+	public boolean isShowOnMenu() {
+		return showOnMenu;
+	}
 
-  public void setDrawed(boolean drawed) {
-    this.drawed = drawed;
-  }
+	/**
+	 * Sets the showOnMenu.
+	 * @param showOnMenu The showOnMenu to set
+	 */
+	public void setShowOnMenu(boolean showOnMenu) {
+		this.showOnMenu = showOnMenu;
+	}
 
-  public int getCountAddContainer() {
-    return countAddContainer;
-  }
+	/**
+	 * Returns the sortOrder.
+	 * @return int
+	 */
+	public int getSortOrder() {
+		return sortOrder;
+	}
 
-  public void setCountAddContainer(Integer countAddContainer) {
-    this.countAddContainer = (countAddContainer == null) ? 0 : countAddContainer;
-  }
+	/**
+	 * Sets the sortOrder.
+	 * @param sortOrder The sortOrder to set
+	 */
+	public void setSortOrder(int sortOrder) {
+		this.sortOrder = sortOrder;
+	}
 
-  public int getCountContainers() {
-    return countContainers;
-  }
+	public ActionErrors validate(ActionMapping mapping, HttpServletRequest request) {
+        if(request.getParameter("cmd")!=null && request.getParameter("cmd").equals(Constants.ADD)) {
+            return super.validate(mapping, request);
+        }
+        return null;
+    }
 
-  public void setCountContainers(Integer countContainers) {
-    this.countContainers = (countContainers == null) ? 0 : countContainers;
-  }
+	/**
+	 * Returns the friendlyName.
+	 * @return String
+	 */
+	public String getFriendlyName() {
+		return friendlyName;
+	}
 
-  public String getHeadCode() {
-    return headCode;
-  }
+	/**
+	 * Sets the friendlyName.
+	 * @param friendlyName The friendlyName to set
+	 */
+	public void setFriendlyName(String friendlyName) {
+		this.friendlyName = friendlyName;
+	}
 
-  public void setHeadCode(String headCode) {
-    this.headCode = headCode;
-  }
-  // END GRAZIANO issue-12-dnd-template
+	/**
+	 * Returns the body.
+	 * @return String
+	 */
+	public String getBody() {
+		if(!drawed)
+			return body;
+		else
+			return START_COMMENT+body+END_COMMENT;
+	}
 
-  /**
-   * Returns the footer.
-   *
-   * @return String
-   */
-  public String getFooter() {
-    return footer;
-  }
+	/**
+	 * Sets the body.
+	 * @param body The body to set
+	 */
+	public void setBody(String body) {
+		this.body = body;
+	}
 
-  /**
-   * Returns the header.
-   *
-   * @return String
-   */
-  public String getHeader() {
-    return header;
-  }
+	// BEGIN GRAZIANO issue-12-dnd-template
+	public String getDrawedBody() {
+		return drawedBody;
+	}
 
-  /**
-   * Sets the footer.
-   *
-   * @param footer The footer to set
-   */
-  public void setFooter(String footer) {
-    this.footer = footer;
-  }
+	public void setDrawedBody(String drawedBody) {
+		this.drawedBody = drawedBody;
+	}
 
-  /**
-   * Sets the header.
-   *
-   * @param header The header to set
-   */
-  public void setHeader(String header) {
-    this.header = header;
-  }
+	public boolean isDrawed() {
+		return drawed;
+	}
 
-  public String getHostId() {
-    return hostId;
-  }
+	public void setDrawed(boolean drawed) {
+		this.drawed = drawed;
+	}
 
-  public void setHostId(String hostId) {
-    this.hostId = hostId;
-  }
+	public int getCountAddContainer() {
+		return countAddContainer;
+	}
 
-  public String getOwner() {
-    return owner;
-  }
+	public void setCountAddContainer(Integer countAddContainer) {
+      this.countAddContainer = (countAddContainer==null) ? 0 :countAddContainer ;
+	}
 
-  public void setOwner(String owner) {
-    this.owner = owner;
-  }
+	public int getCountContainers() {
+		return countContainers;
+	}
 
-  public String getTheme() {
-    return theme;
-  }
+	public void setCountContainers(Integer countContainers) {
+		this.countContainers = (countContainers==null) ? 0 :countContainers ;
+	}
 
-  public void setTheme(String theme) {
-    this.theme = theme;
-  }
+	public String getHeadCode() {
+		return headCode;
+	}
 
-  public String getThemeName() {
-    return themeName;
-  }
+	public void setHeadCode(String headCode) {
+		this.headCode = headCode;
+	}
+	// END GRAZIANO issue-12-dnd-template
 
-  public void setThemeName(String themeName) {
-    this.themeName = themeName;
-  }
+	/**
+	 * Returns the footer.
+	 * @return String
+	 */
+	public String getFooter() {
+		return footer;
+	}
 
-  public boolean isHeaderCheck() {
-    return headerCheck;
-  }
+	/**
+	 * Returns the header.
+	 * @return String
+	 */
+	public String getHeader() {
+		return header;
+	}
 
-  public void setHeaderCheck(boolean headerCheck) {
-    this.headerCheck = headerCheck;
-  }
+	/**
+	 * Sets the footer.
+	 * @param footer The footer to set
+	 */
+	public void setFooter(String footer) {
+		this.footer = footer;
+	}
 
-  public boolean isFooterCheck() {
-    return footerCheck;
-  }
+	/**
+	 * Sets the header.
+	 * @param header The header to set
+	 */
+	public void setHeader(String header) {
+		this.header = header;
+	}
 
-  public void setFooterCheck(boolean footerCheck) {
-    this.footerCheck = footerCheck;
-  }
+    public String getHostId() {
+        return hostId;
+    }
+
+    public void setHostId(String hostId) {
+        this.hostId = hostId;
+    }
+
+	public String getOwner() {
+		return owner;
+	}
+
+	public void setOwner(String owner) {
+		this.owner = owner;
+	}
+
+	public String getTheme() {
+		return theme;
+	}
+
+	public void setTheme(String theme) {
+		this.theme = theme;
+	}
+
+	public String getThemeName() {
+		return themeName;
+	}
+
+	public void setThemeName(String themeName) {
+		this.themeName = themeName;
+	}
+
+	public boolean isHeaderCheck() {
+		return headerCheck;
+	}
+
+	public void setHeaderCheck(boolean headerCheck) {
+		this.headerCheck = headerCheck;
+	}
+
+	public boolean isFooterCheck() {
+		return footerCheck;
+	}
+
+	public void setFooterCheck(boolean footerCheck) {
+		this.footerCheck = footerCheck;
+	}
+
+
 }

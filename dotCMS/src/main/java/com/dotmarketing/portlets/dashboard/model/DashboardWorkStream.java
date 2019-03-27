@@ -1,120 +1,119 @@
 package com.dotmarketing.portlets.dashboard.model;
 
+import java.io.Serializable;
+import java.util.Date;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
-import java.io.Serializable;
-import java.util.Date;
 
 public class DashboardWorkStream implements Serializable {
+   
+	private static final long serialVersionUID = 1L;
+	
+	private long id;
+	
+	private String inode;
+	
+	private String assetType;
+	
+	private String hostId;
+	
+	private String action;
+	
+	private String name;
 
-  private static final long serialVersionUID = 1L;
+	private String modUserId;
+	
+	private Date modDate;
 
-  private long id;
+	public long getId() {
+		return id;
+	}
 
-  private String inode;
+	public void setId(long id) {
+		this.id = id;
+	}
 
-  private String assetType;
+	public String getInode() {
+		return inode;
+	}
 
-  private String hostId;
+	public void setInode(String inode) {
+		this.inode = inode;
+	}
 
-  private String action;
+	public String getAssetType() {
+		return assetType;
+	}
 
-  private String name;
+	public void setAssetType(String assetType) {
+		this.assetType = assetType;
+	}
 
-  private String modUserId;
+	public String getHostId() {
+		return hostId;
+	}
 
-  private Date modDate;
+	public void setHostId(String hostId) {
+		this.hostId = hostId;
+	}
 
-  public long getId() {
-    return id;
-  }
+	public String getAction() {
+		return action;
+	}
 
-  public void setId(long id) {
-    this.id = id;
-  }
+	public void setAction(String action) {
+		this.action = action;
+	}
 
-  public String getInode() {
-    return inode;
-  }
+	public String getName() {
+		return name;
+	}
 
-  public void setInode(String inode) {
-    this.inode = inode;
-  }
+	public void setName(String name) {
+		this.name = name;
+	}
 
-  public String getAssetType() {
-    return assetType;
-  }
+	public String getModUserId() {
+		return modUserId;
+	}
 
-  public void setAssetType(String assetType) {
-    this.assetType = assetType;
-  }
+	public void setModUserId(String modUserId) {
+		this.modUserId = modUserId;
+	}
 
-  public String getHostId() {
-    return hostId;
-  }
+	public Date getModDate() {
+		return modDate;
+	}
 
-  public void setHostId(String hostId) {
-    this.hostId = hostId;
-  }
+	public void setModDate(Date modDate) {
+		this.modDate = modDate;
+	}
+	
+	public User getModUser() {
+		User modUser = null;
+		try {
+			modUser = APILocator.getUserAPI().loadUserById(this.getModUserId(),APILocator.getUserAPI().getSystemUser(),false);
+		} catch (NoSuchUserException e) {
+			Logger.debug(this, e.getMessage());
+		} catch (Exception e) {
+			Logger.error(this, e.getMessage(), e);
+		}
+		return modUser;
+	}
+	
+	public Host getHost() {
+		Host host = null;
+		try {
+			host = APILocator.getHostAPI().find(this.getHostId(), APILocator.getUserAPI().getSystemUser(),false);
+		} catch (Exception e) {
+			Logger.error(this, e.getMessage(), e);
+		}
+		return host;
+	}
 
-  public String getAction() {
-    return action;
-  }
 
-  public void setAction(String action) {
-    this.action = action;
-  }
-
-  public String getName() {
-    return name;
-  }
-
-  public void setName(String name) {
-    this.name = name;
-  }
-
-  public String getModUserId() {
-    return modUserId;
-  }
-
-  public void setModUserId(String modUserId) {
-    this.modUserId = modUserId;
-  }
-
-  public Date getModDate() {
-    return modDate;
-  }
-
-  public void setModDate(Date modDate) {
-    this.modDate = modDate;
-  }
-
-  public User getModUser() {
-    User modUser = null;
-    try {
-      modUser =
-          APILocator.getUserAPI()
-              .loadUserById(this.getModUserId(), APILocator.getUserAPI().getSystemUser(), false);
-    } catch (NoSuchUserException e) {
-      Logger.debug(this, e.getMessage());
-    } catch (Exception e) {
-      Logger.error(this, e.getMessage(), e);
-    }
-    return modUser;
-  }
-
-  public Host getHost() {
-    Host host = null;
-    try {
-      host =
-          APILocator.getHostAPI()
-              .find(this.getHostId(), APILocator.getUserAPI().getSystemUser(), false);
-    } catch (Exception e) {
-      Logger.error(this, e.getMessage(), e);
-    }
-    return host;
-  }
 }

@@ -11,133 +11,130 @@ import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
+
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
+
 
 @Deprecated
 public class WfActionAjax extends WfBaseAction {
 
-  private final WorkflowHelper workflowHelper = WorkflowHelper.getInstance();
-  private final UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
+    private final WorkflowHelper workflowHelper = WorkflowHelper.getInstance();
+	private final UserWebAPI     userWebAPI     = WebAPILocator.getUserWebAPI();
 
-  public void action(HttpServletRequest request, HttpServletResponse response)
-      throws ServletException, IOException {};
+    public void action(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException{};
 
-  public void reorder(final HttpServletRequest request, final HttpServletResponse response)
-      throws ServletException, IOException {
+    public void reorder(final HttpServletRequest request,
+                         final HttpServletResponse response) throws ServletException, IOException {
 
-    final String actionId = request.getParameter("actionId");
-    final String stepId = request.getParameter("stepId");
-    final String orderParam = request.getParameter("order");
+		final String actionId   = request.getParameter("actionId");
+		final String stepId     = request.getParameter("stepId");
+		final String orderParam = request.getParameter("order");
 
-    try {
+		try {
 
-      this.workflowHelper.reorderAction(
-          new WorkflowReorderBean.Builder()
-              .actionId(actionId)
-              .stepId(stepId)
-              .order(Integer.parseInt(orderParam))
-              .build(),
-          this.userWebAPI.getUser(request));
-    } catch (Exception e) {
-      Logger.error(this.getClass(), e.getMessage(), e);
-      writeError(response, e.getMessage());
-    }
-  } // reorder.
+			this.workflowHelper.reorderAction(new WorkflowReorderBean.Builder()
+						.actionId(actionId).stepId(stepId)
+						.order(Integer.parseInt(orderParam)).build(),
+											  this.userWebAPI.getUser(request));
+		} catch (Exception e) {
+			Logger.error(this.getClass(), e.getMessage(), e);
+			writeError(response, e.getMessage());
+		}
+	} // reorder.
 
-  /**
-   * Deletes just the action associated to the step, but the action still alive as part of the
-   * scheme.
-   *
-   * @param request
-   * @param response
-   * @throws ServletException
-   * @throws IOException
-   */
-  public void deleteActionForStep(
-      final HttpServletRequest request, final HttpServletResponse response)
-      throws ServletException, IOException {
+	/**
+	 * Deletes just the action associated to the step, but the action still alive as part of the scheme.
+	 * @param request
+	 * @param response
+	 * @throws ServletException
+	 * @throws IOException
+	 */
+	public void deleteActionForStep(final HttpServletRequest request,
+					   final HttpServletResponse response) throws ServletException, IOException {
 
-    final String actionId = request.getParameter("actionId");
-    final String stepId = request.getParameter("stepId");
-    WorkflowStep workflowStep = null;
+		final String actionId = request.getParameter("actionId");
+		final String stepId   = request.getParameter("stepId");
+		WorkflowStep workflowStep = null;
 
-    try {
+		try {
 
-      Logger.debug(this, "Deleting the action: " + actionId + ", for the step: " + stepId);
-      final User user = this.userWebAPI.getUser(request);
-      workflowStep = this.workflowHelper.deleteAction(actionId, stepId, user);
-      writeSuccess(response, workflowStep.getSchemeId());
-    } catch (Exception e) {
-      Logger.error(this.getClass(), e.getMessage(), e);
-      writeError(response, e.getMessage());
-    }
-  } // delete.
+			Logger.debug(this, "Deleting the action: " + actionId +
+							", for the step: " + stepId);
+			final User user = this.userWebAPI.getUser(request);
+			workflowStep    = this.workflowHelper.deleteAction
+					(actionId, stepId, user);
+			writeSuccess(response, workflowStep.getSchemeId() );
+		} catch (Exception e) {
+			Logger.error(this.getClass(), e.getMessage(), e);
+			writeError(response, e.getMessage());
+		}
+	} // delete.
 
-  /**
-   * This method deletes the action associated to the scheme and all references to the steps.
-   *
-   * @param request HttpServletRequest
-   * @param response HttpServletResponse
-   * @throws ServletException
-   * @throws IOException
-   */
-  public void delete(final HttpServletRequest request, final HttpServletResponse response)
-      throws ServletException, IOException {
+	/**
+	 * This method deletes the action associated to the scheme and all references to the steps.
+	 * @param request  HttpServletRequest
+	 * @param response HttpServletResponse
+	 * @throws ServletException
+	 * @throws IOException
+	 */
+	public void delete(final HttpServletRequest request,
+                       final HttpServletResponse response) throws ServletException, IOException {
 
-    final String actionId = request.getParameter("actionId");
+		final String actionId = request.getParameter("actionId");
 
-    try {
+		try {
 
-      Logger.debug(this, "Deleting the action: " + actionId);
-      this.workflowHelper.deleteAction(actionId, this.userWebAPI.getUser(request));
+			Logger.debug(this, "Deleting the action: " + actionId);
+			this.workflowHelper.deleteAction(actionId, this.userWebAPI.getUser(request));
 
-      writeSuccess(response, StringPool.BLANK);
-    } catch (Exception e) {
-      Logger.error(this.getClass(), e.getMessage(), e);
-      writeError(response, e.getMessage());
-    }
-  } // delete.
 
-  public void save(final HttpServletRequest request, final HttpServletResponse response)
-      throws ServletException, IOException {
+			writeSuccess(response, StringPool.BLANK);
+		} catch (Exception e) {
+			Logger.error(this.getClass(), e.getMessage(), e);
+			writeError(response, e.getMessage());
+		}
+	} // delete.
 
-    final WorkflowActionForm.Builder builder = new WorkflowActionForm.Builder();
 
-    builder
-        .actionName(request.getParameter("actionName"))
-        .actionId(request.getParameter("actionId"))
-        .schemeId(request.getParameter("schemeId"))
-        .stepId(request.getParameter("stepId"))
-        .actionIcon(request.getParameter("actionIconSelect"))
-        .actionAssignable(request.getParameter("actionAssignable") != null)
-        .actionCommentable(request.getParameter("actionCommentable") != null)
-        .requiresCheckout(false)
-        .actionRoleHierarchyForAssign(request.getParameter("actionRoleHierarchyForAssign") != null)
-        .actionNextStep(request.getParameter("actionNextStep"))
-        .actionNextAssign(request.getParameter("actionAssignToSelect"))
-        .actionCondition(request.getParameter("actionCondition"))
-        .showOn(WorkflowState.toSet(request.getParameterValues("showOn")));
+	public void save(final HttpServletRequest request,
+					 final HttpServletResponse response) throws ServletException, IOException {
 
-    final String whoCanUseTmp = request.getParameter("whoCanUse");
-    final List<String> whoCanUse = Arrays.asList(whoCanUseTmp.split(","));
-    builder.whoCanUse(whoCanUse);
+        final WorkflowActionForm.Builder builder = new WorkflowActionForm.Builder();
 
-    WorkflowAction newAction = null;
-    final User user = this.userWebAPI.getUser(request);
+        builder.actionName(request.getParameter("actionName"))
+                .actionId  (request.getParameter("actionId"))
+                .schemeId  (request.getParameter("schemeId"))
+				.stepId    (request.getParameter("stepId"))
+                .actionIcon(request.getParameter("actionIconSelect"))
+                .actionAssignable (request.getParameter("actionAssignable") != null)
+                .actionCommentable(request.getParameter("actionCommentable") != null)
+				.requiresCheckout(false)
+                .actionRoleHierarchyForAssign(request.getParameter("actionRoleHierarchyForAssign") != null)
+                .actionNextStep(request.getParameter  ("actionNextStep"))
+                .actionNextAssign(request.getParameter("actionAssignToSelect"))
+                .actionCondition(request.getParameter ("actionCondition"))
+				.showOn(WorkflowState.toSet(request.getParameterValues ("showOn")));
 
-    try {
+		final String whoCanUseTmp       = request.getParameter("whoCanUse");
+		final List<String> whoCanUse    = Arrays.asList(whoCanUseTmp.split(","));
+		builder.whoCanUse(whoCanUse);
 
-      newAction = this.workflowHelper.saveAction(builder.build(), user);
-      response.getWriter().println("SUCCESS:" + newAction.getId());
-    } catch (Exception e) {
+        WorkflowAction newAction        = null;
+		final User user      = this.userWebAPI.getUser(request);
 
-      Logger.error(this.getClass(), e.getMessage(), e);
-      writeError(response, e.getMessage());
-    }
-  } // save.
+        try {
+
+            newAction  = this.workflowHelper.saveAction(builder.build(), user);
+            response.getWriter().println("SUCCESS:" + newAction.getId());
+        } catch (Exception e) {
+
+            Logger.error(this.getClass(), e.getMessage(), e);
+            writeError(response, e.getMessage());
+        }
+    } // save.
 }

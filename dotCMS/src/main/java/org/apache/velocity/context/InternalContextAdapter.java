@@ -16,17 +16,21 @@ package org.apache.velocity.context;
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
- * under the License.
+ * under the License.    
  */
 
 /**
- * interface to bring all necessary internal and user contexts together. this is what the AST
- * expects to deal with. If anything new comes along, add it here.
+ *  interface to bring all necessary internal and user contexts together.
+ *  this is what the AST expects to deal with.  If anything new comes
+ *  along, add it here.
  *
- * <p>I will rename soon :)
+ *  I will rename soon :)
  *
- * @author <a href="mailto:geirm@optonline.net">Geir Magnusson Jr.</a>
- * @version $Id: InternalContextAdapter.java 463298 2006-10-12 16:10:32Z henning $
+ *  @author <a href="mailto:geirm@optonline.net">Geir Magnusson Jr.</a>
+ *  @version $Id: InternalContextAdapter.java 463298 2006-10-12 16:10:32Z henning $
  */
+
 public interface InternalContextAdapter
-    extends InternalHousekeepingContext, Context, InternalWrapperContext, InternalEventContext {}
+    extends InternalHousekeepingContext, Context, InternalWrapperContext, InternalEventContext
+{
+}

@@ -28,200 +28,201 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Actionlet(pushPublish = true)
-public class PushPublishActionlet extends WorkFlowActionlet implements BatchAction<String> {
+public class PushPublishActionlet extends WorkFlowActionlet implements BatchAction <String>  {
 
-  public static final String WF_PUBLISH_DATE = "wfPublishDate";
-  public static final String WF_PUBLISH_TIME = "wfPublishTime";
-  public static final String WF_EXPIRE_DATE = "wfExpireDate";
-  public static final String WF_EXPIRE_TIME = "wfExpireTime";
-  public static final String WF_NEVER_EXPIRE = "wfNeverExpire";
-  public static final String WHERE_TO_SEND = "whereToSend";
-  public static final String FORCE_PUSH = "forcePush";
-  private PublisherAPI publisherAPI = PublisherAPI.getInstance();
+	public static final String WF_PUBLISH_DATE = "wfPublishDate";
+	public static final String WF_PUBLISH_TIME = "wfPublishTime";
+	public static final String WF_EXPIRE_DATE = "wfExpireDate";
+	public static final String WF_EXPIRE_TIME = "wfExpireTime";
+	public static final String WF_NEVER_EXPIRE = "wfNeverExpire";
+	public static final String WHERE_TO_SEND = "whereToSend";
+	public static final String FORCE_PUSH = "forcePush";
+	private PublisherAPI publisherAPI = PublisherAPI.getInstance();
 
-  /** */
-  private static final long serialVersionUID = 1L;
+	/**
+	 *
+	 */
+	private static final long serialVersionUID = 1L;
 
-  @Override
-  public List<WorkflowActionletParameter> getParameters() {
-    return null;
-  }
+	@Override
+	public List<WorkflowActionletParameter> getParameters() {
+		return null;
+	}
 
-  @Override
-  public String getName() {
-    return "Push Publish";
-  }
+	@Override
+	public String getName() {
+		return "Push Publish";
+	}
 
-  @Override
-  public String getHowTo() {
-    return "This actionlet will add the content to the remote publish queue";
-  }
+	@Override
+	public String getHowTo() {
+		return "This actionlet will add the content to the remote publish queue";
+	}
 
-  /** add the contentlet to the publish queue */
-  @Override
-  public void executeAction(
-      final WorkflowProcessor processor, final Map<String, WorkflowActionClassParameter> params)
-      throws WorkflowActionFailureException {
+	/**
+	 * add the contentlet to the publish queue
+	 */
+	@Override
+	public void executeAction(final WorkflowProcessor processor,
+			final Map<String, WorkflowActionClassParameter> params) throws WorkflowActionFailureException {
 
-    // Gets available languages
-    // List<Language> languages = languagesAPI.getLanguages();
-    final Contentlet ref = processor.getContentlet();
-    final User user = processor.getUser();
-    try {
-      doPushPublish(
-          getPushPublishDataAsMap(ref), Collections.singletonList(ref.getIdentifier()), user);
-    } catch (Exception e) {
-      Logger.debug(PushPublishActionlet.class, e.getMessage());
-      throw new WorkflowActionFailureException(e.getMessage(), e);
-    }
-  }
+			//Gets available languages
+			//List<Language> languages = languagesAPI.getLanguages();
+			final Contentlet ref = processor.getContentlet();
+		    final User user = processor.getUser();
+		try {
+			doPushPublish(getPushPublishDataAsMap(ref),Collections.singletonList(ref.getIdentifier()), user);
+		} catch (Exception e) {
+			Logger.debug(PushPublishActionlet.class, e.getMessage());
+			throw new WorkflowActionFailureException(e.getMessage(), e);
+		}
+	}
 
-  @Override
-  public void preBatchAction(
-      final WorkflowProcessor processor,
-      final WorkflowActionClass actionClass,
-      final Map<String, WorkflowActionClassParameter> params) {
+	@Override
+	public void preBatchAction(final WorkflowProcessor processor,
+			final WorkflowActionClass actionClass,
+			final Map<String, WorkflowActionClassParameter> params) {
 
-    final String actionletInstanceId = actionClass.getId();
-    final Contentlet contentlet = processor.getContentlet();
-    final ConcurrentMap<String, Object> context = processor.getActionsContext();
-    context.computeIfAbsent(
-        actionletInstanceId, key -> new PushPublishBatchData(getPushPublishDataAsMap(contentlet)));
+		 final String actionletInstanceId = actionClass.getId();
+		 final Contentlet contentlet = processor.getContentlet();
+		 final ConcurrentMap<String,Object> context = processor.getActionsContext();
+		 context.computeIfAbsent(actionletInstanceId, key ->
+		    new PushPublishBatchData(getPushPublishDataAsMap(contentlet))
+		 );
 
-    context.computeIfPresent(
-        actionletInstanceId,
-        (key, o) -> {
-          final PushPublishBatchData data = PushPublishBatchData.class.cast(o);
-          data.addIdentifier(contentlet.getIdentifier());
-          data.addInode(contentlet.getInode());
-          return data;
-        });
-  }
+		 context.computeIfPresent(actionletInstanceId,(key, o) -> {
+			         final PushPublishBatchData data = PushPublishBatchData.class.cast(o);
+					 data.addIdentifier(contentlet.getIdentifier());
+					 data.addInode(contentlet.getInode());
+					 return data;
+				 }
+		 );
+	}
 
-  @Override
-  public void executeBatchAction(
-      final User user,
-      final ConcurrentMap<String, Object> context,
-      final WorkflowActionClass actionClass,
-      final Map<String, WorkflowActionClassParameter> params)
-      throws WorkflowActionFailureException {
+	@Override
+	public void executeBatchAction(final User user,
+			final ConcurrentMap<String, Object> context,
+			final WorkflowActionClass actionClass,
+			final Map<String, WorkflowActionClassParameter> params) throws WorkflowActionFailureException {
 
-    final Object object = context.get(actionClass.getId());
-    final PushPublishBatchData pushPublishBatchData = PushPublishBatchData.class.cast(object);
-    try {
-      doPushPublish(pushPublishBatchData.getData(), pushPublishBatchData.getIdentifiers(), user);
-    } catch (Exception e) {
-      Logger.debug(PushPublishActionlet.class, e.getMessage());
-      throw new WorkflowActionFailureException(e.getMessage(), e);
-    }
-  }
+		 final Object object = context.get(actionClass.getId());
+		 final PushPublishBatchData pushPublishBatchData = PushPublishBatchData.class.cast(object);
+		 try {
+			 doPushPublish(pushPublishBatchData.getData(), pushPublishBatchData.getIdentifiers(), user);
+		 }catch (Exception e){
+			 Logger.debug(PushPublishActionlet.class, e.getMessage());
+		 	 throw new WorkflowActionFailureException(e.getMessage(), e);
+		 }
+	}
 
-  @Override
-  public List<String> getObjectsForBatch(
-      final ConcurrentMap<String, Object> context, final WorkflowActionClass actionClass) {
-    final String actionletInstanceId = actionClass.getId();
-    final Object object = context.get(actionletInstanceId);
-    if (null == object) {
-      return Collections.emptyList();
-    }
-    final PushPublishBatchData pushPublishBatchData = PushPublishBatchData.class.cast(object);
-    return pushPublishBatchData.getIdentifiers();
-  }
+	@Override
+	public List <String> getObjectsForBatch(final ConcurrentMap<String, Object> context,
+			final WorkflowActionClass actionClass){
+		final String actionletInstanceId = actionClass.getId();
+		final Object object = context.get(actionletInstanceId);
+		if(null == object) {
+		   return Collections.emptyList();
+		}
+		final PushPublishBatchData pushPublishBatchData = PushPublishBatchData.class.cast(object);
+		return pushPublishBatchData.getIdentifiers();
+	}
 
-  private void doPushPublish(
-      final Map<String, String> pushPublishData, final List<String> identifiers, final User user)
-      throws DotDataException, ParseException, DotPublisherException {
 
-    final String contentPushPublishDate = pushPublishData.get(WF_PUBLISH_DATE);
-    final String contentPushPublishTime = pushPublishData.get(WF_PUBLISH_TIME);
-    final String contentPushExpireDate = pushPublishData.get(WF_EXPIRE_DATE);
-    final String contentPushExpireTime = pushPublishData.get(WF_EXPIRE_TIME);
-    final String contentNeverExpire = pushPublishData.get(WF_NEVER_EXPIRE);
-    final boolean contentPushNeverExpire =
-        ("on".equals(contentNeverExpire) || "true".equals(contentNeverExpire));
-    final String whoToSendTmp = pushPublishData.get(WHERE_TO_SEND);
-    final String forcePushStr = pushPublishData.get(FORCE_PUSH);
-    final boolean forcePush = "true".equals(forcePushStr);
-    final List<Environment> envsToSendTo = getEnvironmentsToSendTo(whoToSendTmp);
 
-    final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd-H-m");
-    final Date publishDate =
-        dateFormat.parse(contentPushPublishDate + "-" + contentPushPublishTime);
+	private void doPushPublish(final Map<String,String> pushPublishData, final List<String> identifiers, final User user)
+			throws DotDataException, ParseException, DotPublisherException {
 
-    Bundle bundle = new Bundle(null, publishDate, null, user.getUserId(), forcePush);
-    APILocator.getBundleAPI().saveBundle(bundle, envsToSendTo);
+			final String contentPushPublishDate = pushPublishData.get(WF_PUBLISH_DATE);
+			final String contentPushPublishTime = pushPublishData.get(WF_PUBLISH_TIME);
+			final String contentPushExpireDate = pushPublishData.get(WF_EXPIRE_DATE);
+			final String contentPushExpireTime = pushPublishData.get(WF_EXPIRE_TIME);
+			final String contentNeverExpire = pushPublishData.get(WF_NEVER_EXPIRE);
+			final boolean contentPushNeverExpire = ("on".equals(contentNeverExpire) ||
+					  "true".equals(contentNeverExpire)
+			);
+			final String whoToSendTmp = pushPublishData.get(WHERE_TO_SEND);
+			final String forcePushStr = pushPublishData.get(FORCE_PUSH);
+			final boolean forcePush = "true".equals(forcePushStr);
+			final List<Environment> envsToSendTo = getEnvironmentsToSendTo(whoToSendTmp);
 
-    publisherAPI.addContentsToPublish(identifiers, bundle.getId(), publishDate, user);
-    if (!contentPushNeverExpire
-        && (!"".equals(contentPushExpireDate.trim()) && !"".equals(contentPushExpireTime.trim()))) {
-      Date expireDate = dateFormat.parse(contentPushExpireDate + "-" + contentPushExpireTime);
-      bundle = new Bundle(null, publishDate, expireDate, user.getUserId(), forcePush);
-      APILocator.getBundleAPI().saveBundle(bundle, envsToSendTo);
-      publisherAPI.addContentsToUnpublish(identifiers, bundle.getId(), expireDate, user);
-    }
-  }
+			final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd-H-m");
+			final Date publishDate = dateFormat
+					.parse(contentPushPublishDate + "-" + contentPushPublishTime);
 
-  private Map<String, String> getPushPublishDataAsMap(final Contentlet contentlet) {
-    final Map<String, String> map = new HashMap<>();
-    map.put(WF_PUBLISH_DATE, contentlet.getStringProperty(WF_PUBLISH_DATE));
-    map.put(WF_PUBLISH_TIME, contentlet.getStringProperty(WF_PUBLISH_TIME));
-    map.put(WF_EXPIRE_DATE, contentlet.getStringProperty(WF_EXPIRE_DATE));
-    map.put(WF_EXPIRE_TIME, contentlet.getStringProperty(WF_EXPIRE_TIME));
-    map.put(WF_NEVER_EXPIRE, contentlet.getStringProperty(WF_NEVER_EXPIRE));
-    map.put(WHERE_TO_SEND, contentlet.getStringProperty(WHERE_TO_SEND));
-    map.put(FORCE_PUSH, contentlet.getStringProperty(FORCE_PUSH));
-    return map;
-  }
+			Bundle bundle = new Bundle(null, publishDate, null, user.getUserId(), forcePush);
+			APILocator.getBundleAPI().saveBundle(bundle, envsToSendTo);
 
-  public static List<Environment> getEnvironmentsToSendTo(final String whoToSendTo) {
-    final String[] whereToSend = whoToSendTo.split(",");
-    return Stream.of(whereToSend)
-        .map(
-            id -> {
-              try {
-                return APILocator.getEnvironmentAPI().findEnvironmentById(id);
-              } catch (DotDataException e) {
-                Logger.error(
-                    PushPublishActionlet.class, "Error retrieving environment from id: " + id, e);
-              }
-              return null;
-            })
-        .filter(Objects::nonNull)
-        .collect(Collectors.toList());
-  }
+			publisherAPI.addContentsToPublish(identifiers, bundle.getId(), publishDate, user);
+			if (!contentPushNeverExpire && (!"".equals(contentPushExpireDate.trim()) && !""
+					.equals(contentPushExpireTime.trim()))) {
+				Date expireDate = dateFormat
+						.parse(contentPushExpireDate + "-" + contentPushExpireTime);
+				bundle = new Bundle(null, publishDate, expireDate, user.getUserId(), forcePush);
+				APILocator.getBundleAPI().saveBundle(bundle, envsToSendTo);
+				publisherAPI.addContentsToUnpublish(identifiers, bundle.getId(), expireDate, user);
+			}
+	}
 
-  static class PushPublishBatchData {
 
-    private final List<String> identifiers;
 
-    private final List<String> inodes;
+	private Map<String,String> getPushPublishDataAsMap(final Contentlet contentlet){
+		final Map<String,String> map = new HashMap<>();
+        map.put(WF_PUBLISH_DATE,contentlet.getStringProperty(WF_PUBLISH_DATE));
+		map.put(WF_PUBLISH_TIME,contentlet.getStringProperty(WF_PUBLISH_TIME));
+		map.put(WF_EXPIRE_DATE,contentlet.getStringProperty(WF_EXPIRE_DATE));
+		map.put(WF_EXPIRE_TIME,contentlet.getStringProperty(WF_EXPIRE_TIME));
+		map.put(WF_NEVER_EXPIRE,contentlet.getStringProperty(WF_NEVER_EXPIRE));
+		map.put(WHERE_TO_SEND,contentlet.getStringProperty(WHERE_TO_SEND));
+		map.put(FORCE_PUSH,contentlet.getStringProperty(FORCE_PUSH));
+		return map;
+	}
 
-    private final Map<String, String> data;
+	public static List<Environment> getEnvironmentsToSendTo(final String whoToSendTo){
+		final String[] whereToSend = whoToSendTo.split(",");
+		return Stream.of(whereToSend).map(id -> {
+			try {
+				return APILocator.getEnvironmentAPI().findEnvironmentById(id);
+			} catch (DotDataException e) {
+				Logger.error(PushPublishActionlet.class,
+						"Error retrieving environment from id: " + id, e);
+			}
+			return null;
+		}).filter(Objects::nonNull).collect(Collectors.toList());
+	}
 
-    PushPublishBatchData(final Map<String, String> data) {
-      this.data = data;
-      this.identifiers = new ArrayList<>();
-      this.inodes = new ArrayList<>();
-    }
+	static class PushPublishBatchData {
 
-    void addIdentifier(final String identifier) {
-      identifiers.add(identifier);
-    }
+		private final List<String> identifiers;
 
-    public List<String> getIdentifiers() {
-      return identifiers;
-    }
+		private final List<String> inodes;
 
-    void addInode(final String inode) {
-      inodes.add(inode);
-    }
+        private final Map<String,String> data;
 
-    public List<String> getInodes() {
-      return inodes;
-    }
+		PushPublishBatchData( final Map<String,String> data) {
+			this.data = data;
+			this.identifiers = new ArrayList<>();
+			this.inodes = new ArrayList<>();
+		}
 
-    public Map<String, String> getData() {
-      return data;
-    }
-  }
+		void addIdentifier(final String identifier){
+			identifiers.add(identifier);
+		}
+
+		public List<String> getIdentifiers() {
+			return identifiers;
+		}
+
+		void addInode(final String inode){
+			inodes.add(inode);
+		}
+
+		public List<String> getInodes() {
+			return inodes;
+		}
+
+		public Map<String, String> getData() {
+			return data;
+		}
+
+	}
 }

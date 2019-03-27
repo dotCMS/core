@@ -1,34 +1,37 @@
 package com.dotmarketing.portlets.dashboard.model;
 
 public class TopAsset {
+	
+	private long count;
+	
+	private String assetType;
+	
+	private String hostId;
 
-  private long count;
+	public long getCount() {
+		return count;
+	}
 
-  private String assetType;
+	public void setCount(long count) {
+		this.count = count;
+	}
 
-  private String hostId;
+	public String getAssetType() {
+		return assetType;
+	}
 
-  public long getCount() {
-    return count;
-  }
+	public void setAssetType(String assetType) {
+		this.assetType = assetType;
+	}
 
-  public void setCount(long count) {
-    this.count = count;
-  }
+	public String getHostId() {
+		return hostId;
+	}
 
-  public String getAssetType() {
-    return assetType;
-  }
+	public void setHostId(String hostId) {
+		this.hostId = hostId;
+	}
+	
+	
 
-  public void setAssetType(String assetType) {
-    this.assetType = assetType;
-  }
-
-  public String getHostId() {
-    return hostId;
-  }
-
-  public void setHostId(String hostId) {
-    this.hostId = hostId;
-  }
 }

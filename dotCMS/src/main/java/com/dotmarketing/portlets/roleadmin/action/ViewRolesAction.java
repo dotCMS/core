@@ -10,14 +10,9 @@ import org.apache.struts.action.ActionMapping;
 
 public class ViewRolesAction extends PortletAction {
 
-  @Override
-  public ActionForward render(
-      ActionMapping mapping,
-      ActionForm form,
-      PortletConfig config,
-      RenderRequest req,
-      RenderResponse res)
-      throws Exception {
-    return mapping.findForward("portlet.ext.roleadmin.view_roles");
-  }
+	@Override
+	public ActionForward render(ActionMapping mapping, ActionForm form, PortletConfig config, RenderRequest req, RenderResponse res) throws Exception {
+		return mapping.findForward("portlet.ext.roleadmin.view_roles");
+	}
+
 }

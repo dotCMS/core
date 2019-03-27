@@ -15,6 +15,8 @@
 
 package com.dotcms.webdav;
 
+import java.io.File;
+
 import com.dotcms.repackage.com.bradmcevoy.common.Path;
 import com.dotcms.repackage.com.bradmcevoy.http.Resource;
 import com.dotcms.repackage.com.bradmcevoy.http.ResourceFactory;
@@ -22,14 +24,16 @@ import com.dotcms.repackage.com.bradmcevoy.http.SecurityManager;
 import com.dotcms.repackage.com.ettrema.http.fs.LockManager;
 import com.dotcms.repackage.com.ettrema.http.fs.NullSecurityManager;
 import com.dotmarketing.util.Logger;
-import java.io.File;
+
 
 /**
  * A resource factory which provides access to files in a file system.
  *
- * <p>Using this with milton is equivalent to using the dav servlet in tomcat
+ * Using this with milton is equivalent to using the dav servlet in tomcat
+ *
  */
 public final class FileSystemResourceFactory implements ResourceFactory {
+
 
   private FileContentService contentService;
   File root;
@@ -47,14 +51,14 @@ public final class FileSystemResourceFactory implements ResourceFactory {
    * FileSystemResourceFactory.properties in the classpath If one is found it uses the root and
    * realm properties to initialise
    *
-   * <p>If not found the factory is initialised with the defaults root: user.home system property
+   * If not found the factory is initialised with the defaults root: user.home system property
    * realm: milton-fs-test
    *
-   * <p>These initialised values are not final, and may be changed through the setters or init
-   * method
+   * These initialised values are not final, and may be changed through the setters or init method
    *
-   * <p>To be honest its pretty naf configuring like this, but i don't want to force people to use
+   * To be honest its pretty naf configuring like this, but i don't want to force people to use
    * spring or any other particular configuration tool
+   *
    */
   public FileSystemResourceFactory() {
     Logger.info(FileSystemResourceFactory.class, "setting default configuration...");
@@ -72,8 +76,9 @@ public final class FileSystemResourceFactory implements ResourceFactory {
   }
 
   /**
+   *
    * @param root - the root folder of the filesystem to expose. This must include the context path.
-   *     Eg, if you've deployed to webdav-fs, root must contain a folder called webdav-fs
+   *        Eg, if you've deployed to webdav-fs, root must contain a folder called webdav-fs
    * @param securityManager
    */
   public FileSystemResourceFactory(File root, SecurityManager securityManager) {
@@ -82,11 +87,12 @@ public final class FileSystemResourceFactory implements ResourceFactory {
   }
 
   /**
+   *
    * @param root - the root folder of the filesystem to expose. called webdav-fs
    * @param securityManager
    * @param contextPath - this is the leading part of URL's to ignore. For example if you're
-   *     application is deployed to http://localhost:8080/webdav-fs, the context path should be
-   *     webdav-fs
+   *        application is deployed to http://localhost:8080/webdav-fs, the context path should be
+   *        webdav-fs
    */
   public FileSystemResourceFactory(File root, SecurityManager securityManager, String contextPath) {
     setRoot(root);
@@ -102,13 +108,10 @@ public final class FileSystemResourceFactory implements ResourceFactory {
     Logger.info(FileSystemResourceFactory.class, "root: " + root.getAbsolutePath());
     this.root = root;
     if (!root.exists()) {
-      Logger.info(
-          FileSystemResourceFactory.class, "Root folder does not exist: " + root.getAbsolutePath());
+      Logger.info(FileSystemResourceFactory.class, "Root folder does not exist: " + root.getAbsolutePath());
     }
     if (!root.isDirectory()) {
-      Logger.info(
-          FileSystemResourceFactory.class,
-          "Root exists but is not a directory: " + root.getAbsolutePath());
+      Logger.info(FileSystemResourceFactory.class, "Root exists but is not a directory: " + root.getAbsolutePath());
     }
   }
 
@@ -119,6 +122,7 @@ public final class FileSystemResourceFactory implements ResourceFactory {
     File requested = resolvePath(root, url);
     return resolveFile(host, requested);
   }
+
 
   public FsResource resolveFile(String host, File file) {
     FsResource r;
@@ -149,19 +153,19 @@ public final class FileSystemResourceFactory implements ResourceFactory {
     return securityManager.getRealm(host);
   }
 
-  /** @return - the caching time for files */
+  /**
+   *
+   * @return - the caching time for files
+   */
   public Long maxAgeSeconds(FsResource resource) {
     return maxAgeSeconds;
   }
 
   public void setSecurityManager(SecurityManager securityManager) {
     if (securityManager != null) {
-      Logger.info(
-          FileSystemResourceFactory.class, "securityManager: " + securityManager.getClass());
+      Logger.info(FileSystemResourceFactory.class, "securityManager: " + securityManager.getClass());
     } else {
-      Logger.info(
-          FileSystemResourceFactory.class,
-          "Setting null FsSecurityManager. This WILL cause null pointer exceptions");
+      Logger.info(FileSystemResourceFactory.class, "Setting null FsSecurityManager. This WILL cause null pointer exceptions");
     }
     this.securityManager = securityManager;
   }

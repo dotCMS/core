@@ -1,56 +1,56 @@
 package com.dotcms.aspects.aspectj;
 
 import com.dotcms.aspects.DelegateMethodInvocation;
-import java.lang.reflect.Method;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.Signature;
 import org.aspectj.lang.reflect.MethodSignature;
 
+import java.lang.reflect.Method;
+
 /**
  * Implementation of delegate for Aspectj
- *
  * @author jsanca
  */
 public class AspectJDelegateMethodInvocation<T> implements DelegateMethodInvocation<T> {
 
-  private final ProceedingJoinPoint joinPoint;
+    private final ProceedingJoinPoint joinPoint;
 
-  public AspectJDelegateMethodInvocation(final ProceedingJoinPoint joinPoint) {
 
-    this.joinPoint = joinPoint;
-  }
+    public AspectJDelegateMethodInvocation(final ProceedingJoinPoint joinPoint) {
 
-  @Override
-  public Method getMethod() {
+        this.joinPoint = joinPoint;
+    }
 
-    final Signature signature = this.joinPoint.getSignature();
+    @Override
+    public Method getMethod() {
 
-    return (null != signature && signature instanceof MethodSignature)
-        ? MethodSignature.class.cast(signature).getMethod()
-        : null;
-  }
+        final Signature signature = this.joinPoint.getSignature();
 
-  @Override
-  public Object[] getArguments() {
+        return (null != signature && signature instanceof MethodSignature)?
+                MethodSignature.class.cast(signature).getMethod():null;
+    }
 
-    return this.joinPoint.getArgs();
-  }
+    @Override
+    public Object[] getArguments() {
 
-  @Override
-  public Object proceed() throws Throwable {
+        return this.joinPoint.getArgs();
+    }
 
-    return this.joinPoint.proceed();
-  }
+    @Override
+    public Object proceed() throws Throwable {
 
-  @Override
-  public Object proceed(final Object[] arguments) throws Throwable {
+            return this.joinPoint.proceed();
+    }
 
-    return this.joinPoint.proceed(arguments);
-  }
+    @Override
+    public Object proceed(final Object[] arguments) throws Throwable {
 
-  @Override
-  public T getTarget() {
+        return this.joinPoint.proceed(arguments);
+    }
 
-    return (T) joinPoint.getTarget();
-  }
+    @Override
+    public T getTarget() {
+
+        return (T)joinPoint.getTarget();
+    }
 } // E:O:F:AspectJDelegateMethodInvocation.

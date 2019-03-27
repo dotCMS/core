@@ -1,9 +1,11 @@
 package com.dotcms.visitor.filter.geo;
 
-import com.dotcms.visitor.domain.Visitor;
 import java.util.Map;
+
+import com.dotcms.visitor.domain.Visitor;
 
 public interface GeoLocationProvider {
 
-  Map<String, String> getGeoInfo(Visitor visitor);
+    Map<String, String> getGeoInfo(Visitor visitor);
+
 }

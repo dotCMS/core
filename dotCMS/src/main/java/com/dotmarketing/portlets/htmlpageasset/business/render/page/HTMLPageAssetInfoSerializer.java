@@ -5,50 +5,47 @@ import com.dotcms.repackage.com.fasterxml.jackson.databind.JsonSerializer;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.SerializerProvider;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.google.common.collect.ImmutableMap;
+
 import java.io.IOException;
 import java.util.Map;
 
-/** Json Serializer of {@link HTMLPageAssetInfoSerializer} */
+/**
+ * Json Serializer of {@link HTMLPageAssetInfoSerializer}
+ */
 public class HTMLPageAssetInfoSerializer extends JsonSerializer<HTMLPageAssetInfo> {
-  @Override
-  public void serialize(
-      HTMLPageAssetInfo htmlPageAssetInfo,
-      JsonGenerator jsonGenerator,
-      SerializerProvider serializerProvider)
-      throws IOException {
+    @Override
+    public void serialize(HTMLPageAssetInfo htmlPageAssetInfo, JsonGenerator jsonGenerator,
+                          SerializerProvider serializerProvider) throws IOException {
 
-    ImmutableMap.Builder<Object, Object> pageMapBuilder =
-        ImmutableMap.builder()
-            .putAll(((HTMLPageAsset) htmlPageAssetInfo.getPage()).getMap())
-            .put("workingInode", htmlPageAssetInfo.getWorkingInode())
-            .put("shortyWorking", htmlPageAssetInfo.getShortyWorking())
-            .put("canEdit", htmlPageAssetInfo.isCanEdit())
-            .put("canRead", htmlPageAssetInfo.isCanRead())
-            .putAll(getLockMap(htmlPageAssetInfo));
+        ImmutableMap.Builder<Object, Object> pageMapBuilder = ImmutableMap.builder()
+                .putAll(((HTMLPageAsset) htmlPageAssetInfo.getPage()).getMap())
+                .put("workingInode", htmlPageAssetInfo.getWorkingInode())
+                .put("shortyWorking", htmlPageAssetInfo.getShortyWorking())
+                .put("canEdit", htmlPageAssetInfo.isCanEdit())
+                .put("canRead", htmlPageAssetInfo.isCanRead())
+                .putAll(getLockMap(htmlPageAssetInfo));
 
-    if (htmlPageAssetInfo.getLiveInode() != null) {
-      pageMapBuilder
-          .put("liveInode", htmlPageAssetInfo.getLiveInode())
-          .put("shortyLive", htmlPageAssetInfo.getShortyLive());
+        if(htmlPageAssetInfo.getLiveInode() != null) {
+            pageMapBuilder.put("liveInode", htmlPageAssetInfo.getLiveInode())
+                    .put("shortyLive", htmlPageAssetInfo.getShortyLive());
+        }
+
+        jsonGenerator.writeObject(pageMapBuilder.build());
     }
 
-    jsonGenerator.writeObject(pageMapBuilder.build());
-  }
+    private Map<String, Object> getLockMap(HTMLPageAssetInfo htmlPageAssetInfo) {
 
-  private Map<String, Object> getLockMap(HTMLPageAssetInfo htmlPageAssetInfo) {
+        final ImmutableMap.Builder<String, Object> lockMapBuilder = ImmutableMap.builder();
+        lockMapBuilder.put("canLock", htmlPageAssetInfo.isCanLock());
 
-    final ImmutableMap.Builder<String, Object> lockMapBuilder = ImmutableMap.builder();
-    lockMapBuilder.put("canLock", htmlPageAssetInfo.isCanLock());
+        String lockedBy = htmlPageAssetInfo.getLockedBy();
 
-    String lockedBy = htmlPageAssetInfo.getLockedBy();
+        if (lockedBy != null) {
+            lockMapBuilder.put("lockedOn", htmlPageAssetInfo.getLockedOn())
+                    .put("lockedBy", lockedBy)
+                    .put("lockedByName", htmlPageAssetInfo.getLockedByName());
+        }
 
-    if (lockedBy != null) {
-      lockMapBuilder
-          .put("lockedOn", htmlPageAssetInfo.getLockedOn())
-          .put("lockedBy", lockedBy)
-          .put("lockedByName", htmlPageAssetInfo.getLockedByName());
+        return lockMapBuilder.build();
     }
-
-    return lockMapBuilder.build();
-  }
 }

@@ -1,150 +1,147 @@
 package com.dotcms.translate;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
 import com.dotcms.UnitTestBase;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Field.FieldType;
+
+import org.junit.Test;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 
 public class TranslationUtilTest extends UnitTestBase {
 
-  public static final List<String> filterTypes =
-      Arrays.asList(
-          FieldType.TEXT.toString(), FieldType.WYSIWYG.toString(), FieldType.TEXT_AREA.toString());
+    public static final List<String> filterTypes = Arrays
+        .asList(FieldType.TEXT.toString(),FieldType.WYSIWYG.toString(),FieldType.TEXT_AREA.toString());
 
-  @Test
-  public void testFilterFields_NullFilter_NullExclude() throws Exception {
+    @Test
+    public void testFilterFields_NullFilter_NullExclude() throws Exception {
 
-    List<Field> fieldsToFilter = new ArrayList<>();
+        List<Field> fieldsToFilter = new ArrayList<>();
 
-    Field dateField = new Field();
-    dateField.setFieldType(FieldType.DATE.name());
+        Field dateField = new Field();
+        dateField.setFieldType(FieldType.DATE.name());
 
-    Field checkBoxField = new Field();
-    checkBoxField.setFieldType(FieldType.CHECKBOX.name());
+        Field checkBoxField = new Field();
+        checkBoxField.setFieldType(FieldType.CHECKBOX.name());
 
-    fieldsToFilter.add(dateField);
-    fieldsToFilter.add(checkBoxField);
+        fieldsToFilter.add(dateField);
+        fieldsToFilter.add(checkBoxField);
 
-    List<Field> result = TranslationUtil.getUtil().filterFields(fieldsToFilter, null, null);
+        List<Field> result = TranslationUtil.getUtil().filterFields(fieldsToFilter, null, null);
 
-    assertTrue(result.isEmpty());
-  }
+        assertTrue(result.isEmpty());
+    }
 
-  @Test
-  public void testFilterFields_FilterTypeDate_NullExclude() throws Exception {
+    @Test
+    public void testFilterFields_FilterTypeDate_NullExclude() throws Exception {
 
-    List<Field> fieldsToFilter = new ArrayList<>();
+        List<Field> fieldsToFilter = new ArrayList<>();
 
-    Field dateField = new Field();
-    dateField.setFieldType(FieldType.DATE.toString());
+        Field dateField = new Field();
+        dateField.setFieldType(FieldType.DATE.toString());
 
-    Field checkBoxField = new Field();
-    checkBoxField.setFieldType(FieldType.CHECKBOX.toString());
+        Field checkBoxField = new Field();
+        checkBoxField.setFieldType(FieldType.CHECKBOX.toString());
 
-    fieldsToFilter.add(dateField);
-    fieldsToFilter.add(checkBoxField);
+        fieldsToFilter.add(dateField);
+        fieldsToFilter.add(checkBoxField);
 
-    List<Field> result =
-        TranslationUtil.getUtil()
-            .filterFields(
-                fieldsToFilter, Collections.singletonList(FieldType.DATE.toString()), null);
+        List<Field> result = TranslationUtil.getUtil()
+            .filterFields(fieldsToFilter, Collections.singletonList(FieldType.DATE.toString()), null);
 
-    assertEquals(checkBoxField, result.get(0));
-  }
+        assertEquals(checkBoxField, result.get(0));
+    }
 
-  @Test
-  public void testFilterFields_FilterTypeDate_OneExclusion() throws Exception {
+    @Test
+    public void testFilterFields_FilterTypeDate_OneExclusion() throws Exception {
 
-    List<Field> fieldsToFilter = new ArrayList<>();
+        List<Field> fieldsToFilter = new ArrayList<>();
 
-    Field dateField = new Field();
-    dateField.setFieldType(FieldType.DATE.toString());
+        Field dateField = new Field();
+        dateField.setFieldType(FieldType.DATE.toString());
 
-    Field checkBoxField = new Field();
-    checkBoxField.setFieldType(FieldType.CHECKBOX.toString());
-    checkBoxField.setVelocityVarName("velVar");
+        Field checkBoxField = new Field();
+        checkBoxField.setFieldType(FieldType.CHECKBOX.toString());
+        checkBoxField.setVelocityVarName("velVar");
 
-    fieldsToFilter.add(dateField);
-    fieldsToFilter.add(checkBoxField);
+        fieldsToFilter.add(dateField);
+        fieldsToFilter.add(checkBoxField);
 
-    List<Field> result =
-        TranslationUtil.getUtil()
-            .filterFields(
-                fieldsToFilter,
-                Collections.singletonList(FieldType.DATE.toString()),
+        List<Field> result = TranslationUtil.getUtil()
+            .filterFields(fieldsToFilter, Collections.singletonList(FieldType.DATE.toString()),
                 Collections.singletonList("velVar"));
 
-    assertEquals(result, Collections.singletonList(dateField));
-  }
+        assertEquals(result, Collections.singletonList(dateField));
+    }
 
-  @Test
-  public void testFilterFields_FilterTypeDate_OneBadExclusion() throws Exception {
+    @Test
+    public void testFilterFields_FilterTypeDate_OneBadExclusion() throws Exception {
 
-    List<Field> fieldsToFilter = new ArrayList<>();
+        List<Field> fieldsToFilter = new ArrayList<>();
 
-    Field dateField = new Field();
-    dateField.setFieldType(FieldType.DATE.toString());
+        Field dateField = new Field();
+        dateField.setFieldType(FieldType.DATE.toString());
 
-    Field checkBoxField = new Field();
-    checkBoxField.setFieldType(FieldType.CHECKBOX.toString());
-    checkBoxField.setVelocityVarName("velVar");
+        Field checkBoxField = new Field();
+        checkBoxField.setFieldType(FieldType.CHECKBOX.toString());
+        checkBoxField.setVelocityVarName("velVar");
 
-    fieldsToFilter.add(dateField);
-    fieldsToFilter.add(checkBoxField);
+        fieldsToFilter.add(dateField);
+        fieldsToFilter.add(checkBoxField);
 
-    List<Field> result =
-        TranslationUtil.getUtil()
-            .filterFields(
-                fieldsToFilter,
-                Collections.singletonList(FieldType.DATE.toString()),
+        List<Field> result = TranslationUtil.getUtil()
+            .filterFields(fieldsToFilter, Collections.singletonList(FieldType.DATE.toString()),
                 Collections.singletonList("thisIsNotaVelVarName"));
 
-    assertEquals(result, Collections.singletonList(dateField));
-  }
 
-  @Test
-  public void testFilterFields_FilterTextTypes_NullExclude() throws Exception {
 
-    List<Field> fieldsToFilter = new ArrayList<>();
+        assertEquals(result, Collections.singletonList(dateField));
+    }
 
-    Field dateField = new Field();
-    dateField.setFieldType(FieldType.DATE.toString());
+    @Test
+    public void testFilterFields_FilterTextTypes_NullExclude() throws Exception {
 
-    Field checkBoxField = new Field();
-    checkBoxField.setFieldType(FieldType.CHECKBOX.toString());
+        List<Field> fieldsToFilter = new ArrayList<>();
 
-    Field textField = new Field();
-    textField.setFieldType(FieldType.TEXT.toString());
-    textField.setFieldContentlet("text1");
+        Field dateField = new Field();
+        dateField.setFieldType(FieldType.DATE.toString());
 
-    Field textFieldButNumeric = new Field();
-    textFieldButNumeric.setFieldType(FieldType.TEXT.toString());
-    textFieldButNumeric.setFieldContentlet("integer1");
+        Field checkBoxField = new Field();
+        checkBoxField.setFieldType(FieldType.CHECKBOX.toString());
 
-    Field wField = new Field();
-    wField.setFieldType(FieldType.WYSIWYG.toString());
+        Field textField = new Field();
+        textField.setFieldType(FieldType.TEXT.toString());
+        textField.setFieldContentlet("text1");
 
-    Field textAreaField = new Field();
-    textAreaField.setFieldType(FieldType.TEXT_AREA.toString());
+        Field textFieldButNumeric = new Field();
+        textFieldButNumeric.setFieldType(FieldType.TEXT.toString());
+        textFieldButNumeric.setFieldContentlet("integer1");
 
-    fieldsToFilter.add(dateField);
-    fieldsToFilter.add(checkBoxField);
-    fieldsToFilter.add(textField);
-    fieldsToFilter.add(textFieldButNumeric);
-    fieldsToFilter.add(wField);
-    fieldsToFilter.add(textAreaField);
+        Field wField = new Field();
+        wField.setFieldType(FieldType.WYSIWYG.toString());
 
-    List<Field> result = TranslationUtil.getUtil().filterFields(fieldsToFilter, filterTypes, null);
+        Field textAreaField = new Field();
+        textAreaField.setFieldType(FieldType.TEXT_AREA.toString());
 
-    List<Field> expectedList = Arrays.asList(textField, wField, textAreaField);
+        fieldsToFilter.add(dateField);
+        fieldsToFilter.add(checkBoxField);
+        fieldsToFilter.add(textField);
+        fieldsToFilter.add(textFieldButNumeric);
+        fieldsToFilter.add(wField);
+        fieldsToFilter.add(textAreaField);
 
-    assertEquals(result, expectedList);
-  }
+        List<Field> result = TranslationUtil.getUtil()
+            .filterFields(fieldsToFilter, filterTypes, null);
+
+        List<Field> expectedList = Arrays.asList(textField, wField, textAreaField);
+
+        assertEquals(result, expectedList);
+    }
 }

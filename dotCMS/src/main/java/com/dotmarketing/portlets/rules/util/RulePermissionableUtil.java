@@ -13,62 +13,63 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
-/** Created by Oscar Arrieta on 2/6/16. */
+/**
+ * Created by Oscar Arrieta on 2/6/16.
+ */
 public class RulePermissionableUtil {
 
-  /**
-   * Determines the permissionable parent of a {@link Rule} object. Permissionable parents in dotCMS
-   * can be a Site (Host), or a Folder.
-   *
-   * @param parent - The Identifier of the rule's parent.
-   * @return The permissionable parent of the rule.
-   * @throws DotDataException An error occurred when retrieving information from the database.
-   */
-  public static Permissionable findParentPermissionable(String parent) throws DotDataException {
-    Permissionable permissionableParent = null;
-    try {
-      User systemUser = APILocator.getUserAPI().getSystemUser();
-      Identifier iden = APILocator.getIdentifierAPI().find(parent);
-      if (UtilMethods.isSet(iden) && UtilMethods.isSet(iden.getAssetType())) {
-        if (iden.getAssetType().equals("folder")) {
-          permissionableParent = APILocator.getFolderAPI().find(parent, systemUser, false);
-        } else {
-          Contentlet contentlet;
+	/**
+	 * Determines the permissionable parent of a {@link Rule} object.
+	 * Permissionable parents in dotCMS can be a Site (Host), or a Folder.
+	 * 
+	 * @param parent
+	 *            - The Identifier of the rule's parent.
+	 * @return The permissionable parent of the rule.
+	 * @throws DotDataException
+	 *             An error occurred when retrieving information from the
+	 *             database.
+	 */
+    public static Permissionable findParentPermissionable(String parent) throws DotDataException {
+        Permissionable permissionableParent = null;
+        try {
+            User systemUser = APILocator.getUserAPI().getSystemUser();
+            Identifier iden = APILocator.getIdentifierAPI().find(parent);
+            if(UtilMethods.isSet(iden) && UtilMethods.isSet(iden.getAssetType())){
+                if(iden.getAssetType().equals("folder")){
+                    permissionableParent = APILocator.getFolderAPI().find(parent,systemUser,false);
+                }else{
+                    Contentlet contentlet;
 
-          try {
-            contentlet =
-                APILocator.getContentletAPI()
-                    .findContentletByIdentifier(
-                        parent,
-                        false,
-                        APILocator.getLanguageAPI().getDefaultLanguage().getId(),
-                        systemUser,
-                        false);
-          } catch (DotContentletStateException se) {
-            contentlet = null;
-          }
+                    try {
+                        contentlet = APILocator.getContentletAPI()
+                                .findContentletByIdentifier(parent, false,
+                                        APILocator.getLanguageAPI().getDefaultLanguage().getId(),
+                                        systemUser, false);
+                    } catch (DotContentletStateException se) {
+                        contentlet = null;
+                    }
 
-          if (contentlet == null) {
-            contentlet =
-                APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(parent);
-          }
-          if (contentlet == null) {
-            throw new DotDataException("Identifier: " + parent + " does not exist.");
-          }
+                    if (contentlet == null) {
+                        contentlet = APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(parent);
+                    }
+                    if (contentlet == null) {
+                        throw new DotDataException("Identifier: " + parent + " does not exist.");
+                    }
 
-          if (contentlet.isHost()) {
-            permissionableParent = contentlet;
-          } else {
-            permissionableParent = contentlet.getParentPermissionable();
-          }
+                    if (contentlet.isHost()) {
+						permissionableParent = contentlet;
+					} else {
+						permissionableParent = contentlet.getParentPermissionable();
+					}
+                }
+            } else {
+                throw new DotDataException("Parent Identifier: " + parent + " does NOT exist.");
+            }
+        } catch (DotSecurityException | IndexOutOfBoundsException e) {
+            Logger.error(Rule.class, e.getMessage(), e);
+            throw new DotRuntimeException(e.getMessage(), e);
         }
-      } else {
-        throw new DotDataException("Parent Identifier: " + parent + " does NOT exist.");
-      }
-    } catch (DotSecurityException | IndexOutOfBoundsException e) {
-      Logger.error(Rule.class, e.getMessage(), e);
-      throw new DotRuntimeException(e.getMessage(), e);
+        return permissionableParent;
     }
-    return permissionableParent;
-  }
+
 }

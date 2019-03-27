@@ -8,75 +8,72 @@ import com.dotcms.rest.api.Validated;
 @JsonDeserialize(builder = WorkflowReorderActionStepForm.Builder.class)
 public class WorkflowReorderActionStepForm extends Validated {
 
-  @NotNull private final String actionId;
+    @NotNull
+    private final String        actionId;
 
-  @NotNull private final String stepId;
+    @NotNull
+    private final String        stepId;
 
-  @NotNull private final int order;
+    @NotNull
+    private final int           order;
 
-  public String getActionId() {
-    return actionId;
-  }
-
-  public String getStepId() {
-    return stepId;
-  }
-
-  public int getOrder() {
-    return order;
-  }
-
-  @Override
-  public String toString() {
-    return "WorkflowReorderActionStepForm{"
-        + "actionId='"
-        + actionId
-        + '\''
-        + ", stepId='"
-        + stepId
-        + '\''
-        + ", order="
-        + order
-        + '}';
-  }
-
-  public WorkflowReorderActionStepForm(final Builder builder) {
-
-    this.actionId = builder.actionId;
-    this.stepId = builder.stepId;
-    this.order = builder.order;
-    this.checkValid();
-  }
-
-  public static final class Builder {
-
-    @JsonProperty(required = true)
-    private String actionId;
-
-    @JsonProperty(required = true)
-    private String stepId;
-
-    @JsonProperty(required = true)
-    private int order;
-
-    public Builder actionId(String actionId) {
-      this.actionId = actionId;
-      return this;
+    public String getActionId() {
+        return actionId;
     }
 
-    public Builder stepId(String stepId) {
-      this.stepId = stepId;
-      return this;
+    public String getStepId() {
+        return stepId;
     }
 
-    public Builder order(int order) {
-      this.order = order;
-      return this;
+    public int getOrder() {
+        return order;
     }
 
-    public WorkflowReorderActionStepForm build() {
-
-      return new WorkflowReorderActionStepForm(this);
+    @Override
+    public String toString() {
+        return "WorkflowReorderActionStepForm{" +
+                "actionId='" + actionId + '\'' +
+                ", stepId='" + stepId + '\'' +
+                ", order=" + order +
+                '}';
     }
-  }
+
+    public WorkflowReorderActionStepForm(final Builder builder) {
+
+        this.actionId           = builder.actionId;
+        this.stepId             = builder.stepId;
+        this.order              = builder.order;
+        this.checkValid();
+    }
+
+    public static final class Builder {
+
+        @JsonProperty(required = true)
+        private String        actionId;
+        @JsonProperty(required = true)
+        private String        stepId;
+        @JsonProperty(required = true)
+        private int           order;
+
+        public Builder actionId(String actionId) {
+            this.actionId = actionId;
+            return this;
+        }
+
+        public Builder stepId(String stepId) {
+            this.stepId = stepId;
+            return this;
+        }
+
+        public Builder order(int order) {
+            this.order = order;
+            return this;
+        }
+
+
+        public WorkflowReorderActionStepForm build() {
+
+            return new WorkflowReorderActionStepForm(this);
+        }
+    }
 }

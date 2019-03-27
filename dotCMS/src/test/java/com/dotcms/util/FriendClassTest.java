@@ -6,52 +6,49 @@ import org.junit.Test;
 
 public class FriendClassTest extends UnitTestBase {
 
-  @Test
-  public void isFriendTest() {
+    @Test
+    public void isFriendTest()  {
 
-    new VeryGoodFriendClass().testVeryGoodFriendClass();
-    new GoodFriendClass().testGoodFriendClass();
-    new NotFriendClass().testNoFriendClass();
-  }
-
-  public static class HostClass {
-
-    private final FriendClass friendClass =
-        new FriendClass(VeryGoodFriendClass.class, GoodFriendClass.class);
-
-    public boolean test() {
-
-      return this.friendClass.isFriend();
+        new VeryGoodFriendClass().testVeryGoodFriendClass();
+        new GoodFriendClass().testGoodFriendClass();
+        new NotFriendClass().testNoFriendClass();
     }
-  }
 
-  public static class VeryGoodFriendClass {
+    public static class HostClass {
 
-    private final HostClass hostClass = new HostClass();
+        private final FriendClass friendClass =
+                new FriendClass(VeryGoodFriendClass.class, GoodFriendClass.class);
 
-    public void testVeryGoodFriendClass() {
+        public boolean test () {
 
-      Assert.assertTrue(this.hostClass.test());
+            return this.friendClass.isFriend();
+        }
     }
-  }
 
-  public static class GoodFriendClass {
+    public static class VeryGoodFriendClass {
 
-    private final HostClass hostClass = new HostClass();
+        private final HostClass hostClass = new HostClass();
+        public void testVeryGoodFriendClass () {
 
-    public void testGoodFriendClass() {
-
-      Assert.assertTrue(this.hostClass.test());
+            Assert.assertTrue(this.hostClass.test());
+        }
     }
-  }
 
-  public static class NotFriendClass {
+    public static class GoodFriendClass {
 
-    private final HostClass hostClass = new HostClass();
+        private final HostClass hostClass = new HostClass();
+        public void testGoodFriendClass () {
 
-    public void testNoFriendClass() {
-
-      Assert.assertFalse(this.hostClass.test());
+            Assert.assertTrue(this.hostClass.test());
+        }
     }
-  }
+
+    public static class NotFriendClass {
+
+        private final HostClass hostClass = new HostClass();
+        public void testNoFriendClass () {
+
+            Assert.assertFalse(this.hostClass.test());
+        }
+    }
 }

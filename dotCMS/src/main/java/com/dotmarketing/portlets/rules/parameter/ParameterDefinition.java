@@ -10,54 +10,53 @@ import org.apache.commons.lang.StringUtils;
 
 public class ParameterDefinition<T extends DataType> {
 
-  private final String key;
-  private final String i18nBaseKey;
-  private final String defaultValue;
-  private final Input<T> inputType;
-  private final int priority;
+    private final String key;
+    private final String i18nBaseKey;
+    private final String defaultValue;
+    private final Input<T> inputType;
+    private final int priority;
 
-  /** Creates a parameter with the key, data type and a default value */
-  public ParameterDefinition(int priority, String key, Input<T> inputType) {
-    this(priority, key, inputType, "");
-  }
+    /**
+     * Creates a parameter with the key, data type and a default value
+     */
+    public ParameterDefinition(int priority, String key, Input<T> inputType) {
+        this(priority, key, inputType, "");
+    }
 
-  public ParameterDefinition(int priority, String key, Input<T> inputType, String defaultValue) {
-    this(priority, key, null, inputType, defaultValue);
-  }
+    public ParameterDefinition(int priority, String key, Input<T> inputType, String defaultValue) {
+        this(priority, key, null, inputType, defaultValue);
+    }
+    public ParameterDefinition(int priority, String key, String i18nBaseKey, Input<T> inputType, String defaultValue) {
+        Preconditions.checkState(StringUtils.isNotBlank(key), "ParameterDefinition requires a valid key.");
+        this.key = key;
+        this.i18nBaseKey = i18nBaseKey;
+        this.defaultValue = defaultValue == null ? "" : defaultValue;
+        this.inputType = inputType;
+        this.priority = priority;
+    }
 
-  public ParameterDefinition(
-      int priority, String key, String i18nBaseKey, Input<T> inputType, String defaultValue) {
-    Preconditions.checkState(
-        StringUtils.isNotBlank(key), "ParameterDefinition requires a valid key.");
-    this.key = key;
-    this.i18nBaseKey = i18nBaseKey;
-    this.defaultValue = defaultValue == null ? "" : defaultValue;
-    this.inputType = inputType;
-    this.priority = priority;
-  }
+    public String getKey() {
+        return key;
+    }
 
-  public String getKey() {
-    return key;
-  }
+    public String getI18nBaseKey() {
+        return i18nBaseKey;
+    }
 
-  public String getI18nBaseKey() {
-    return i18nBaseKey;
-  }
+    public String getDefaultValue() {
+        return defaultValue;
+    }
 
-  public String getDefaultValue() {
-    return defaultValue;
-  }
+    public int getPriority() {
+        return priority;
+    }
 
-  public int getPriority() {
-    return priority;
-  }
+    public Input<T> getInputType() {
+        return inputType;
+    }
 
-  public Input<T> getInputType() {
-    return inputType;
-  }
-
-  public void checkValid(ParameterModel model)
-      throws InvalidRuleParameterException, RuleEngineException {
-    this.inputType.checkValid(model.getValue());
-  }
+    public void checkValid(ParameterModel model) throws InvalidRuleParameterException, RuleEngineException {
+    	this.inputType.checkValid(model.getValue());
+    }
 }
+

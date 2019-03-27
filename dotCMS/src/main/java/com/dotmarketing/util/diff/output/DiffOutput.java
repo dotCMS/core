@@ -20,19 +20,19 @@ import com.dotmarketing.util.diff.html.dom.TagNode;
 import org.xml.sax.SAXException;
 
 /**
- * Interface for classes that need to process the result from the tree-like represenation of the
- * output.
- *
+ * Interface for classes that need to process the result from the tree-like
+ * represenation of the output.
+ * 
  * @author kapelonk
  * @see HtmlSaxDiffOutput
+ *
  */
 public interface DiffOutput {
 
-  /**
-   * Parses a Node Tree and produces an output format.
-   *
-   * @param node Root not of the tree
-   * @throws SAXException something went wrong with parsing.
-   */
-  void generateOutput(TagNode node) throws SAXException;
+	/**
+	 * Parses a Node Tree and produces an output format.
+	 * @param node Root not of the tree
+	 * @throws SAXException something went wrong with parsing.
+	 */
+	void generateOutput(TagNode node) throws SAXException;
 }

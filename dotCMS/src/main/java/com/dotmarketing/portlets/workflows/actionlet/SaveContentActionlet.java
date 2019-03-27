@@ -4,105 +4,100 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
-import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
-import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
-import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
-import com.dotmarketing.portlets.workflows.model.WorkflowStep;
+import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
+
 import java.util.List;
 import java.util.Map;
 
 /**
  * Do the save for a content (checkin)
- *
  * @author jsanca
  */
 @Actionlet(save = true)
 public class SaveContentActionlet extends WorkFlowActionlet {
 
-  private final ContentletAPI contentletAPI;
+	private final ContentletAPI contentletAPI;
 
-  public SaveContentActionlet() {
+	public SaveContentActionlet () {
 
-    this(APILocator.getContentletAPI());
-  }
+		this(APILocator.getContentletAPI());
+	}
 
-  @VisibleForTesting
-  protected SaveContentActionlet(final ContentletAPI contentletAPI) {
+	@VisibleForTesting
+	protected SaveContentActionlet (final ContentletAPI contentletAPI) {
 
-    this.contentletAPI = contentletAPI;
-  }
+		this.contentletAPI = contentletAPI;
+	}
 
-  /** */
-  private static final long serialVersionUID = 1L;
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 
-  public String getName() {
-    return "Save content";
-  }
+	public String getName() {
+		return "Save content";
+	}
 
-  public String getHowTo() {
+	public String getHowTo() {
 
-    return "This actionlet will checkin the content.";
-  }
+		return "This actionlet will checkin the content.";
+	}
 
-  @WrapInTransaction
-  public void executeAction(
-      final WorkflowProcessor processor, final Map<String, WorkflowActionClassParameter> params)
-      throws WorkflowActionFailureException {
+	@WrapInTransaction
+	public void executeAction(final WorkflowProcessor processor,
+							  final Map<String, WorkflowActionClassParameter> params) throws WorkflowActionFailureException {
 
-    try {
+		try {
 
-      final Contentlet contentlet = processor.getContentlet();
+			final Contentlet contentlet =
+					processor.getContentlet();
 
-      Logger.debug(this, "Saving the content of the contentlet: " + contentlet.getIdentifier());
+			Logger.debug(this,
+					"Saving the content of the contentlet: " + contentlet.getIdentifier());
 
-      final boolean isNew = this.isNew(contentlet);
-      final Contentlet checkoutContentlet =
-          isNew
-              ? contentlet
-              : this.contentletAPI.checkout(contentlet.getInode(), processor.getUser(), false);
+			final boolean    isNew              = this.isNew (contentlet);
+			final Contentlet checkoutContentlet = isNew? contentlet:
+					this.contentletAPI.checkout(contentlet.getInode(), processor.getUser(), false);
 
-      if (!isNew) {
+			if (!isNew) {
 
-        final String inode = checkoutContentlet.getInode();
-        this.contentletAPI.copyProperties(checkoutContentlet, contentlet.getMap());
-        checkoutContentlet.setInode(inode);
-      }
+				final String inode = checkoutContentlet.getInode();
+				this.contentletAPI.copyProperties(checkoutContentlet, contentlet.getMap());
+				checkoutContentlet.setInode(inode);
+			}
 
-      checkoutContentlet.setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.TRUE);
+			checkoutContentlet.setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.TRUE);
 
-      final Contentlet contentletNew =
-          (null != processor.getContentletDependencies())
-              ? this.contentletAPI.checkin(
-                  checkoutContentlet, processor.getContentletDependencies())
-              : this.contentletAPI.checkin(checkoutContentlet, processor.getUser(), false);
+			final Contentlet contentletNew = (null != processor.getContentletDependencies())?
+					this.contentletAPI.checkin(checkoutContentlet, processor.getContentletDependencies()):
+					this.contentletAPI.checkin(checkoutContentlet, processor.getUser(), false);
 
-      processor.setContentlet(contentletNew);
+			processor.setContentlet(contentletNew);
 
-      Logger.debug(
-          this, "content version already saved for the contentlet: " + contentlet.getIdentifier());
-    } catch (Exception e) {
+			Logger.debug(this,
+					"content version already saved for the contentlet: " + contentlet.getIdentifier());
+		} catch (Exception e) {
 
-      Logger.error(this.getClass(), e.getMessage(), e);
-      throw new WorkflowActionFailureException(e.getMessage(), e);
-    }
-  }
+			Logger.error(this.getClass(),e.getMessage(),e);
+			throw new  WorkflowActionFailureException(e.getMessage(),e);
+		}
+	}
 
-  private boolean isNew(final Contentlet contentlet) {
-    return !UtilMethods.isSet(contentlet.getIdentifier()) || contentlet.isNew();
-  }
+	private boolean isNew(final Contentlet contentlet) {
+		return !UtilMethods.isSet(contentlet.getIdentifier()) || contentlet.isNew();
+	}
 
-  public WorkflowStep getNextStep() {
+	public WorkflowStep getNextStep() {
 
-    return null;
-  }
+		return null;
+	}
 
-  @Override
-  public List<WorkflowActionletParameter> getParameters() {
+	@Override
+	public  List<WorkflowActionletParameter> getParameters() {
 
-    return null;
-  }
+		return null;
+	}
 }

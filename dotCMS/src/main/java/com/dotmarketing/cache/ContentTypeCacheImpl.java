@@ -1,5 +1,9 @@
 package com.dotmarketing.cache;
 
-/** @author David */
+/**
+ * @author David
+ */
 @Deprecated
-public class ContentTypeCacheImpl extends LegacyContentTypeCacheImpl {}
+public class ContentTypeCacheImpl extends LegacyContentTypeCacheImpl {
+
+}

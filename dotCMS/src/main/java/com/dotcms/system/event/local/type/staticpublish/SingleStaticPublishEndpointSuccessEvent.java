@@ -6,39 +6,36 @@ import com.dotcms.system.event.local.type.publish.PublishEvent;
 import java.time.LocalDateTime;
 
 /**
- * Object used to represent an event to be triggered when an endpoint successes during static
- * publishing
+ *  Object used to represent an event to be triggered when an endpoint successes during static publishing
  *
  * @author nollymar
  */
 public class SingleStaticPublishEndpointSuccessEvent extends PublishEvent {
 
-  private PublisherConfig config = null;
-  private PublishingEndPoint endpoint;
+    private PublisherConfig config = null;
+    private PublishingEndPoint endpoint;
 
-  public SingleStaticPublishEndpointSuccessEvent(
-      PublisherConfig config, PublishingEndPoint endpoint) {
-    super(
-        SingleStaticPublishEndpointSuccessEvent.class.getCanonicalName(),
-        config.getAssets(),
-        LocalDateTime.now());
-    setConfig(config);
-    setEndpoint(endpoint);
-  }
+    public SingleStaticPublishEndpointSuccessEvent(PublisherConfig config, PublishingEndPoint endpoint) {
+        super(SingleStaticPublishEndpointSuccessEvent.class.getCanonicalName(), config.getAssets(),
+                LocalDateTime.now());
+        setConfig(config);
+        setEndpoint(endpoint);
+    }
 
-  public PublisherConfig getConfig() {
-    return config;
-  }
+    public PublisherConfig getConfig() {
+        return config;
+    }
 
-  public void setConfig(PublisherConfig config) {
-    this.config = config;
-  }
+    public void setConfig(PublisherConfig config) {
+        this.config = config;
+    }
 
-  public PublishingEndPoint getEndpoint() {
-    return endpoint;
-  }
+    public PublishingEndPoint getEndpoint(){
+        return endpoint;
+    }
 
-  public void setEndpoint(PublishingEndPoint endpoint) {
-    this.endpoint = endpoint;
-  }
+    public void setEndpoint(PublishingEndPoint endpoint){
+        this.endpoint = endpoint;
+    }
+
 }

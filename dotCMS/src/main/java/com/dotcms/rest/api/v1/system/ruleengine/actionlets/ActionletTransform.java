@@ -6,25 +6,25 @@ import java.util.function.Function;
 
 public class ActionletTransform implements RestTransform<RuleActionlet, RestActionlet> {
 
-  private final Function<RuleActionlet, RestActionlet> toRest =
-      (app) ->
-          new RestActionlet.Builder()
-              .id(app.getId())
-              .parameters(app.getParameterDefinitions())
-              .i18nKey(app.getI18nKey())
-              .build();
+    private final Function<RuleActionlet, RestActionlet> toRest = (app) -> new RestActionlet.Builder()
+        .id(app.getId())
+        .parameters(app.getParameterDefinitions())
+        .i18nKey(app.getI18nKey())
+        .build();
 
-  @Override
-  public RuleActionlet applyRestToApp(RestActionlet rest, RuleActionlet app) {
-    throw new IllegalStateException("RuleActionlet is not modifiable.");
-  }
 
-  @Override
-  public RestActionlet appToRest(RuleActionlet app) {
-    return toRest.apply(app);
-  }
+    @Override
+    public RuleActionlet applyRestToApp(RestActionlet rest, RuleActionlet app) {
+        throw new IllegalStateException("RuleActionlet is not modifiable.");
+    }
 
-  public Function<RuleActionlet, RestActionlet> appToRestFn() {
-    return toRest;
-  }
+    @Override
+    public RestActionlet appToRest(RuleActionlet app) {
+        return toRest.apply(app);
+    }
+
+    public Function<RuleActionlet, RestActionlet> appToRestFn() {
+        return toRest;
+    }
 }
+

@@ -15,65 +15,74 @@
  */
 package com.dotmarketing.util.diff.html.ancestor;
 
+import java.util.List;
+import java.util.Locale;
+
 import com.dotcms.repackage.org.eclipse.compare.rangedifferencer.IRangeComparator;
 import com.dotcms.repackage.org.eclipse.compare.rangedifferencer.RangeDifference;
 import com.dotcms.repackage.org.eclipse.compare.rangedifferencer.RangeDifferencer;
 import com.dotmarketing.util.diff.html.dom.TagNode;
-import java.util.List;
-import java.util.Locale;
 
-/** A comparator used when calculating the difference in ancestry of two Nodes. */
+/**
+ * A comparator used when calculating the difference in ancestry of two Nodes.
+ */
 public class AncestorComparator implements IRangeComparator {
 
-  private List<TagNode> ancestors;
+    private List<TagNode> ancestors;
 
-  public AncestorComparator(List<TagNode> ancestors) {
-    this.ancestors = ancestors;
-  }
-
-  public int getRangeCount() {
-    return ancestors.size();
-  }
-
-  public boolean rangesEqual(int owni, IRangeComparator otherComp, int otheri) {
-    AncestorComparator other;
-    try {
-      other = (AncestorComparator) otherComp;
-    } catch (ClassCastException e) {
-      return false;
+    public AncestorComparator(List<TagNode> ancestors) {
+        this.ancestors = ancestors;
     }
 
-    return other.getAncestor(otheri).isSameTag(getAncestor(owni));
-  }
+    public int getRangeCount() {
+        return ancestors.size();
+    }
 
-  public boolean skipRangeComparison(int arg0, int arg1, IRangeComparator arg2) {
-    return false;
-  }
+    public boolean rangesEqual(int owni, IRangeComparator otherComp, int otheri) {
+        AncestorComparator other;
+        try {
+            other = (AncestorComparator) otherComp;
+        } catch (ClassCastException e) {
+            return false;
+        }
 
-  public TagNode getAncestor(int i) {
-    return ancestors.get(i);
-  }
+        return other.getAncestor(otheri).isSameTag(getAncestor(owni));
+    }
 
-  private String compareTxt = "";
+    public boolean skipRangeComparison(int arg0, int arg1, IRangeComparator arg2) {
+        return false;
+    }
 
-  public String getCompareTxt() {
-    return compareTxt;
-  }
+    public TagNode getAncestor(int i) {
+        return ancestors.get(i);
+    }
 
-  public AncestorComparatorResult getResult(AncestorComparator other, Locale locale) {
+    private String compareTxt = "";
 
-    AncestorComparatorResult result = new AncestorComparatorResult();
+    public String getCompareTxt() {
+        return compareTxt;
+    }
 
-    RangeDifference[] differences = RangeDifferencer.findDifferences(other, this);
+    public AncestorComparatorResult getResult(AncestorComparator other,
+            Locale locale) {
 
-    if (differences.length == 0) return result;
+        AncestorComparatorResult result = new AncestorComparatorResult();
 
-    ChangeTextGenerator changeTxt = new ChangeTextGenerator(this, other, locale);
+        RangeDifference[] differences = RangeDifferencer.findDifferences(other,
+                this);
 
-    result.setChanged(true);
-    result.setChanges(changeTxt.getChanged(differences).toString());
-    result.setHtmlLayoutChanges(changeTxt.getHtmlLayoutChanges());
+        if (differences.length == 0)
+            return result;
 
-    return result;
-  }
+        ChangeTextGenerator changeTxt = new ChangeTextGenerator(this, other,
+                locale);
+
+        result.setChanged(true);
+        result.setChanges(changeTxt.getChanged(differences).toString());
+        result.setHtmlLayoutChanges(changeTxt.getHtmlLayoutChanges());
+
+        return result;
+
+    }
+
 }

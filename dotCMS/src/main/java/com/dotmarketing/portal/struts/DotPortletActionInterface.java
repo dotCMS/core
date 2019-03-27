@@ -12,58 +12,44 @@ import com.dotcms.repackage.javax.portlet.PortletConfig;
 import com.liferay.portal.model.User;
 import org.apache.struts.action.ActionForm;
 
-/** @author Maria */
+/**
+ * @author Maria
+ *
+ */
 public interface DotPortletActionInterface {
+	
+	//the get version back web asset method is different for each asset so it needs to be implemented
+	public abstract void _getVersionBackWebAsset(ActionRequest req, ActionResponse res,PortletConfig config,ActionForm form, User user) throws Exception;
 
-  // the get version back web asset method is different for each asset so it needs to be implemented
-  public abstract void _getVersionBackWebAsset(
-      ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form, User user)
-      throws Exception;
+	//the copy web asset method is different for each asset so it needs to be implemented
+	public abstract void _copyWebAsset(ActionRequest req, ActionResponse res,PortletConfig config,ActionForm form, User user) throws Exception;
 
-  // the copy web asset method is different for each asset so it needs to be implemented
-  public abstract void _copyWebAsset(
-      ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form, User user)
-      throws Exception;
+	//the save web asset method is different for each asset so it needs to be implemented
+	public abstract void _saveWebAsset(ActionRequest req, ActionResponse res,PortletConfig config,ActionForm form, User user) throws Exception;
 
-  // the save web asset method is different for each asset so it needs to be implemented
-  public abstract void _saveWebAsset(
-      ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form, User user)
-      throws Exception;
+	//This method is implemented in part on the abstract class, still needs to be finished on each asset class, so it needs to stay on the interface
+	public abstract void _editWebAsset(ActionRequest req, ActionResponse res,PortletConfig config,ActionForm form, User user) throws Exception;
 
-  // This method is implemented in part on the abstract class, still needs to be finished on each
-  // asset class, so it needs to stay on the interface
-  public abstract void _editWebAsset(
-      ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form, User user)
-      throws Exception;
 
-  /*
-   *  All these methods are implemented in the Abstract class DotPortletAction. These are all common to the all WebAssets
-   */
+	/*
+	*  All these methods are implemented in the Abstract class DotPortletAction. These are all common to the all WebAssets
+	*/
+	
+//	public abstract void _moveWebAsset(ActionRequest req, ActionResponse res,PortletConfig config,ActionForm form, User user) throws Exception;
 
-  //	public abstract void _moveWebAsset(ActionRequest req, ActionResponse res,PortletConfig
-  // config,ActionForm form, User user) throws Exception;
+//	public abstract void _publishWebAsset(ActionRequest req, ActionResponse res,PortletConfig config,ActionForm form, User user) throws Exception;
 
-  //	public abstract void _publishWebAsset(ActionRequest req, ActionResponse res,PortletConfig
-  // config,ActionForm form, User user) throws Exception;
+//	public abstract void _getVersionsWebAsset(ActionRequest req, ActionResponse res,PortletConfig config,ActionForm form, User user) throws Exception;
 
-  //	public abstract void _getVersionsWebAsset(ActionRequest req, ActionResponse res,PortletConfig
-  // config,ActionForm form, User user) throws Exception;
+//	public abstract void _unLockWebAsset(ActionRequest req, ActionResponse res,PortletConfig config,ActionForm form, User user) throws Exception;
 
-  //	public abstract void _unLockWebAsset(ActionRequest req, ActionResponse res,PortletConfig
-  // config,ActionForm form, User user) throws Exception;
+//	public abstract void _deleteWebAsset(ActionRequest req, ActionResponse res,PortletConfig config,ActionForm form, User user) throws Exception;
 
-  //	public abstract void _deleteWebAsset(ActionRequest req, ActionResponse res,PortletConfig
-  // config,ActionForm form, User user) throws Exception;
+//	public abstract void _undeleteWebAsset(ActionRequest req, ActionResponse res,PortletConfig config,ActionForm form, User user) throws Exception;
+	
+//	public abstract void _deleteVersionWebAsset(ActionRequest req, ActionResponse res,PortletConfig config,ActionForm form, User user) throws Exception;
 
-  //	public abstract void _undeleteWebAsset(ActionRequest req, ActionResponse res,PortletConfig
-  // config,ActionForm form, User user) throws Exception;
-
-  //	public abstract void _deleteVersionWebAsset(ActionRequest req, ActionResponse res,PortletConfig
-  // config,ActionForm form, User user) throws Exception;
-
-  //	public abstract void _unPublishWebAsset(ActionRequest req, ActionResponse res,PortletConfig
-  // config,ActionForm form, User user) throws Exception;
-
-  //  public abstract void _retrieveWebAsset(ActionRequest req, ActionResponse res,PortletConfig
-  // config,ActionForm form, User user) throws Exception;
+//	public abstract void _unPublishWebAsset(ActionRequest req, ActionResponse res,PortletConfig config,ActionForm form, User user) throws Exception;
+		
+//  public abstract void _retrieveWebAsset(ActionRequest req, ActionResponse res,PortletConfig config,ActionForm form, User user) throws Exception;
 }

@@ -1,24 +1,24 @@
-// package com.dotmarketing.portlets.rules.conditionlet;
+//package com.dotmarketing.portlets.rules.conditionlet;
 //
-// import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
-// import com.dotcms.repackage.com.google.common.collect.Lists;
-// import com.dotmarketing.portlets.rules.RuleComponentInstance;
-// import com.dotmarketing.portlets.rules.ValidationResult;
-// import com.dotmarketing.portlets.rules.model.ParameterModel;
-// import java.util.Calendar;
-// import java.util.Collection;
-// import java.util.List;
-// import java.util.Map;
-// import java.util.regex.Pattern;
+//import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
+//import com.dotcms.repackage.com.google.common.collect.Lists;
+//import com.dotmarketing.portlets.rules.RuleComponentInstance;
+//import com.dotmarketing.portlets.rules.ValidationResult;
+//import com.dotmarketing.portlets.rules.model.ParameterModel;
+//import java.util.Calendar;
+//import java.util.Collection;
+//import java.util.List;
+//import java.util.Map;
+//import java.util.regex.Pattern;
 //
-// import javax.servlet.http.HttpServletRequest;
-// import javax.servlet.http.HttpServletResponse;
+//import javax.servlet.http.HttpServletRequest;
+//import javax.servlet.http.HttpServletResponse;
 //
-// import com.dotmarketing.util.UtilMethods;
+//import com.dotmarketing.util.UtilMethods;
 //
-// import static com.dotmarketing.portlets.rules.conditionlet.Comparison.EQUAL;
+//import static com.dotmarketing.portlets.rules.conditionlet.Comparison.EQUAL;
 //
-/// **
+///**
 // * This conditionlet will allow dotCMS users to check the client's current time
 // * when a page was requested. This {@link Conditionlet} provides a drop-down
 // * menu with the available comparison mechanisms, and a text field to enter the
@@ -37,7 +37,7 @@
 // * @since 05-13-2015
 // *
 // */
-// public class UsersTimeConditionlet extends Conditionlet<UsersTimeConditionlet.Instance> {
+//public class UsersTimeConditionlet extends Conditionlet<UsersTimeConditionlet.Instance> {
 //
 //	private static final long serialVersionUID = 1L;
 //
@@ -48,18 +48,12 @@
 //	private Map<String, ConditionletInput> inputValuesType2 = null;
 //
 //	public UsersTimeConditionlet() {
-//        super("api.ruleengine.system.conditionlet.VisitorsLocalTime",
-// ImmutableSet.<Comparison>of(EQUAL,
-//
-// Comparison.LESS_THAN,
-//
-// Comparison.GREATER_THAN,
-//
-// Comparison.LESS_THAN_OR_EQUAL,
-//
-// Comparison.GREATER_THAN_OR_EQUAL,
-//
-// Comparison.BETWEEN), parameters);
+//        super("api.ruleengine.system.conditionlet.VisitorsLocalTime", ImmutableSet.<Comparison>of(EQUAL,
+//                                                                                              Comparison.LESS_THAN,
+//                                                                                              Comparison.GREATER_THAN,
+//                                                                                              Comparison.LESS_THAN_OR_EQUAL,
+//                                                                                              Comparison.GREATER_THAN_OR_EQUAL,
+//                                                                                              Comparison.BETWEEN), parameters);
 //	}
 //	protected ValidationResult validate(Comparison comparison,
 //			ConditionletInputValue inputValue) {
@@ -109,8 +103,7 @@
 //    }
 //
 //	@Override
-//    public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance
-// instance) {
+//    public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance instance) {
 //
 ////        long clientDateTime = 0;
 ////		try {
@@ -163,8 +156,7 @@
 //	 * @return If the client's time matches the specified comparison, returns
 //	 *         {@code true}. Otherwise, returns {@code false}.
 //	 */
-//	private boolean compareTime(Comparison comparison, long clientDateTime, Map<String, String>
-// conditionletValues) {
+//	private boolean compareTime(Comparison comparison, long clientDateTime, Map<String, String> conditionletValues) {
 ////		int clientTime = getTimeFromDate(clientDateTime);
 ////		int conditionletTime1 = getTimeFromDate(Long.valueOf(conditionletValues
 ////				.get(INPUT1_ID)));
@@ -233,4 +225,4 @@
 //        }
 //    }
 //
-// }
+//}

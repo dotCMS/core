@@ -1,34 +1,34 @@
-// package com.dotmarketing.portlets.rules.conditionlet;
+//package com.dotmarketing.portlets.rules.conditionlet;
 //
-// import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
-// import com.dotcms.repackage.com.google.common.collect.Sets;
-// import com.dotmarketing.portlets.rules.RuleComponentInstance;
-// import com.dotmarketing.portlets.rules.ValidationResult;
-// import com.dotmarketing.portlets.rules.model.ParameterModel;
-// import com.dotmarketing.portlets.rules.parameter.comparison.Comparison;
-// import java.util.Collection;
-// import java.util.LinkedHashMap;
-// import java.util.LinkedHashSet;
-// import java.util.List;
-// import java.util.Map;
-// import java.util.regex.Pattern;
-// import java.util.regex.PatternSyntaxException;
+//import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
+//import com.dotcms.repackage.com.google.common.collect.Sets;
+//import com.dotmarketing.portlets.rules.RuleComponentInstance;
+//import com.dotmarketing.portlets.rules.ValidationResult;
+//import com.dotmarketing.portlets.rules.model.ParameterModel;
+//import com.dotmarketing.portlets.rules.parameter.comparison.Comparison;
+//import java.util.Collection;
+//import java.util.LinkedHashMap;
+//import java.util.LinkedHashSet;
+//import java.util.List;
+//import java.util.Map;
+//import java.util.regex.Pattern;
+//import java.util.regex.PatternSyntaxException;
 //
-// import javax.servlet.http.HttpServletRequest;
-// import javax.servlet.http.HttpServletResponse;
+//import javax.servlet.http.HttpServletRequest;
+//import javax.servlet.http.HttpServletResponse;
 //
-// import com.dotmarketing.beans.Host;
-// import com.dotmarketing.business.web.WebAPILocator;
-// import com.dotmarketing.exception.DotDataException;
-// import com.dotmarketing.exception.DotSecurityException;
-// import com.dotmarketing.util.Logger;
-// import com.dotmarketing.util.UtilMethods;
-// import com.liferay.portal.PortalException;
-// import com.liferay.portal.SystemException;
+//import com.dotmarketing.beans.Host;
+//import com.dotmarketing.business.web.WebAPILocator;
+//import com.dotmarketing.exception.DotDataException;
+//import com.dotmarketing.exception.DotSecurityException;
+//import com.dotmarketing.util.Logger;
+//import com.dotmarketing.util.UtilMethods;
+//import com.liferay.portal.PortalException;
+//import com.liferay.portal.SystemException;
 //
-// import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS;
+//import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS;
 //
-/// **
+///**
 // * This conditionlet will allow dotCMS users to check the host name a user
 // * request is directed to. The information is obtained by extracting the host
 // * information the {@link HttpServletRequest} object using our own API. The
@@ -42,7 +42,7 @@
 // * @since 04-20-2015
 // *
 // */
-// public class UsersHostConditionlet extends Conditionlet<UsersHostConditionlet.Instance> {
+//public class UsersHostConditionlet extends Conditionlet<UsersHostConditionlet.Instance> {
 //
 //	private static final long serialVersionUID = 1L;
 //
@@ -61,16 +61,11 @@
 //
 //	public UsersHostConditionlet() {
 //        super("api.system.ruleengine.conditionlet.VisitorHost", ImmutableSet.<Comparison>of(IS,
-//
-// Comparison.IS_NOT,
-//
-// Comparison.STARTS_WITH,
-//
-// Comparison.ENDS_WITH,
-//
-// Comparison.CONTAINS,
-//
-// Comparison.REGEX), Sets.newHashSet());
+//                                                                                  Comparison.IS_NOT,
+//                                                                                  Comparison.STARTS_WITH,
+//                                                                                  Comparison.ENDS_WITH,
+//                                                                                  Comparison.CONTAINS,
+//                                                                                  Comparison.REGEX), Sets.newHashSet());
 //	}
 //
 //	protected ValidationResult validate(Comparison comparison,
@@ -119,8 +114,7 @@
 //	}
 //
 //	@Override
-//    public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance
-// instance) {
+//    public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance instance) {
 //
 ////        String hostName = getHostName(request);
 ////		Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
@@ -199,4 +193,4 @@
 //        }
 //    }
 //
-// }
+//}

@@ -5,5 +5,6 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 @FunctionalInterface
 public interface AssertionStrategy {
 
-  void apply(Contentlet original, Contentlet copy);
+    void apply(Contentlet original, Contentlet copy);
+
 }

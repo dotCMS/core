@@ -2,6 +2,7 @@ package com.dotcms.system.event.local.type.staticpublish;
 
 import com.dotcms.publisher.business.PublishQueueElement;
 import com.dotcms.system.event.local.type.publish.PublishEvent;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -12,11 +13,10 @@ import java.util.List;
  */
 public class StaticPublishStartEvent extends PublishEvent {
 
-  public StaticPublishStartEvent(List<PublishQueueElement> publishQueueElements) {
+    public StaticPublishStartEvent(List<PublishQueueElement> publishQueueElements) {
 
-    super(
-        StaticPublishStartEvent.class.getCanonicalName(),
-        publishQueueElements,
-        LocalDateTime.now());
-  }
+        super(StaticPublishStartEvent.class.getCanonicalName(), publishQueueElements,
+                LocalDateTime.now());
+    }
+
 }

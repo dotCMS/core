@@ -16,6 +16,7 @@ import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.repackage.com.csvreader.CsvReader;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
+import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.model.ContentletSearch;
@@ -50,725 +51,470 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
- * Verifies that the Content Importer/Exporter feature is working as expected. Users can import and
- * export contents from the Content Search page.
- *
+ * Verifies that the Content Importer/Exporter feature is working as expected.
+ * Users can import and export contents from the Content Search page.
+ * 
  * @author Jonathan Gamba Date: 3/10/14
  */
 public class ImportUtilTest extends BaseWorkflowIntegrationTest {
 
-  private static User user;
-  private static Host defaultSite;
-  private static Language defaultLanguage;
-  private static ContentTypeAPIImpl contentTypeApi;
-  private static FieldAPI fieldAPI;
-  private static CreateSchemeStepActionResult schemeStepActionResult1 = null;
-  private static WorkflowAPI workflowAPI;
+    private static User user;
+    private static Host defaultSite;
+    private static Language defaultLanguage;
+    private static ContentTypeAPIImpl contentTypeApi;
+    private static FieldAPI fieldAPI;
+    private static CreateSchemeStepActionResult schemeStepActionResult1 = null;
+    private static WorkflowAPI workflowAPI;
 
-  @BeforeClass
-  public static void prepare() throws Exception {
-    // Setting web app environment
-    // IntegrationTestInitService.getInstance().init();
-    user = APILocator.getUserAPI().getSystemUser();
-    defaultSite = APILocator.getHostAPI().findDefaultHost(user, false);
-    defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
-    contentTypeApi = (ContentTypeAPIImpl) APILocator.getContentTypeAPI(user);
-    fieldAPI = APILocator.getContentTypeFieldAPI();
-    workflowAPI = APILocator.getWorkflowAPI();
+    @BeforeClass
+    public static void prepare () throws Exception {
+    	//Setting web app environment
+        //IntegrationTestInitService.getInstance().init();
+        user = APILocator.getUserAPI().getSystemUser();
+        defaultSite = APILocator.getHostAPI().findDefaultHost( user, false );
+        defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        contentTypeApi  = (ContentTypeAPIImpl) APILocator.getContentTypeAPI(user);
+        fieldAPI = APILocator.getContentTypeFieldAPI();
+        workflowAPI = APILocator.getWorkflowAPI();
 
-    // creates the scheme, step1 and action1
-    schemeStepActionResult1 =
-        createSchemeStepActionActionlet(
-            "ImportUtilScheme" + UUIDGenerator.generateUuid(),
-            "step1",
-            "action1",
-            SaveContentActionlet.class);
-  }
+        // creates the scheme, step1 and action1
+        schemeStepActionResult1 = createSchemeStepActionActionlet
+                ("ImportUtilScheme" + UUIDGenerator.generateUuid(), "step1", "action1", SaveContentActionlet.class);
 
-  /**
-   * Testing the {@link ImportUtil#importFile(Long, String, String, String[], boolean, boolean,
-   * User, long, String[], com.dotcms.repackage.javacsv.com.csvreader.CsvReader, int, int, Reader,
-   * String)} method
-   *
-   * @throws DotDataException
-   * @throws DotSecurityException
-   * @throws IOException
-   * @throws InterruptedException
-   */
-  @Test
-  public void importFile()
-      throws DotDataException, DotSecurityException, IOException, InterruptedException {
+    }
 
-    ContentletAPI contentletAPI = APILocator.getContentletAPI();
+    /**
+     * Testing the {@link ImportUtil#importFile(Long, String, String, String[], boolean, boolean, User, long, String[], com.dotcms.repackage.javacsv.com.csvreader.CsvReader, int, int, Reader, String)} method
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws IOException
+     * @throws InterruptedException
+     */
+    @Test
+    public void importFile () throws DotDataException, DotSecurityException, IOException, InterruptedException {
 
-    // Create a test Content Type
-    String contentTypeSuffix = String.valueOf(new Date().getTime());
-    Structure contentType = new Structure();
-    contentType.setName("Import Test " + contentTypeSuffix);
-    contentType.setVelocityVarName("ImportTest_" + contentTypeSuffix);
-    contentType.setDescription("Testing import of csv files");
+        ContentletAPI contentletAPI = APILocator.getContentletAPI();
 
-    StructureFactory.saveStructure(contentType);
+        //Create a test Content Type
+        String contentTypeSuffix = String.valueOf( new Date().getTime() );
+        Structure contentType = new Structure();
+        contentType.setName( "Import Test " + contentTypeSuffix );
+        contentType.setVelocityVarName( "ImportTest_" + contentTypeSuffix );
+        contentType.setDescription( "Testing import of csv files" );
 
-    // Create test fields
-    Field textField =
-        new Field(
-            "Title",
-            Field.FieldType.TEXT,
-            Field.DataType.TEXT,
-            contentType,
-            true,
-            true,
-            true,
-            1,
-            false,
-            false,
-            true);
-    textField = FieldFactory.saveField(textField);
-    final String textFieldVarName = textField.getVelocityVarName();
+        StructureFactory.saveStructure( contentType );
 
-    Field siteField =
-        new Field(
-            "Host",
-            Field.FieldType.HOST_OR_FOLDER,
-            Field.DataType.TEXT,
-            contentType,
-            true,
-            true,
-            true,
-            2,
-            false,
-            false,
-            true);
-    siteField = FieldFactory.saveField(siteField);
-    final String siteFieldVarName = siteField.getVelocityVarName();
-    workflowAPI.saveSchemesForStruct(
-        contentType, Arrays.asList(schemeStepActionResult1.getScheme()));
+        //Create test fields
+        Field textField = new Field( "Title", Field.FieldType.TEXT, Field.DataType.TEXT, contentType, true, true, true, 1, false, false, true );
+        textField = FieldFactory.saveField( textField );
+        final String textFieldVarName = textField.getVelocityVarName();
 
-    try {
+        Field siteField = new Field( "Host", Field.FieldType.HOST_OR_FOLDER, Field.DataType.TEXT, contentType, true, true, true, 2, false, false, true );
+        siteField = FieldFactory.saveField( siteField );
+        final String siteFieldVarName = siteField.getVelocityVarName();
+        workflowAPI.saveSchemesForStruct(contentType, Arrays.asList(schemeStepActionResult1.getScheme()));
 
-      // ----------------PREVIEW = TRUE------------------------------------------
-      // ------------------------------------------------------------------------
-      // Create the csv file to import
-      Reader reader =
-          createTempFile(
-              textFieldVarName
-                  + ", "
-                  + siteFieldVarName
-                  + "\r\n"
-                  + "Test1, "
-                  + defaultSite.getIdentifier()
-                  + "\r\n"
-                  + "Test2, "
-                  + defaultSite.getIdentifier()
-                  + "\r\n"
-                  + "Test3, "
-                  + defaultSite.getIdentifier()
-                  + "\r\n"
-                  + "Test4, "
-                  + defaultSite.getIdentifier()
-                  + "\r\n");
-      CsvReader csvreader = new CsvReader(reader);
-      csvreader.setSafetySwitch(false);
-      String[] csvHeaders = csvreader.getHeaders();
+        try {
 
-      // Preview=true
-      HashMap<String, List<String>> results =
-          ImportUtil.importFile(
-              0L,
-              defaultSite.getInode(),
-              contentType.getInode(),
-              new String[] {},
-              true,
-              false,
-              user,
-              defaultLanguage.getId(),
-              csvHeaders,
-              csvreader,
-              -1,
-              -1,
-              reader,
-              schemeStepActionResult1.getAction().getId());
-      // Validations
-      validate(results, true, false, true);
+            //----------------PREVIEW = TRUE------------------------------------------
+            //------------------------------------------------------------------------
+            //Create the csv file to import
+            Reader reader = createTempFile(textFieldVarName + ", " + siteFieldVarName + "\r\n" +
+                    "Test1, " + defaultSite.getIdentifier() + "\r\n" +
+                    "Test2, " + defaultSite.getIdentifier() + "\r\n" +
+                    "Test3, " + defaultSite.getIdentifier() + "\r\n" +
+                    "Test4, " + defaultSite.getIdentifier() + "\r\n");
+            CsvReader csvreader = new CsvReader(reader);
+            csvreader.setSafetySwitch(false);
+            String[] csvHeaders = csvreader.getHeaders();
 
-      // As it was a preview nothing should be saved
-      List<Contentlet> savedData =
-          contentletAPI.findByStructure(contentType.getInode(), user, false, 0, 0);
-      // Validations
-      assertNotNull(savedData);
-      assertEquals(savedData.size(), 0);
+            //Preview=true
+            HashMap<String, List<String>> results = ImportUtil
+                    .importFile(0L, defaultSite.getInode(), contentType.getInode(), new String[]{},
+                            true, false, user, defaultLanguage.getId(), csvHeaders, csvreader, -1,
+                            -1, reader, schemeStepActionResult1.getAction().getId());
+            //Validations
+            validate(results, true, false, true);
 
-      // ----------------PREVIEW = FALSE-----------------------------------------
-      // ------------------------------------------------------------------------
-      // Create the csv file to import
-      reader =
-          createTempFile(
-              textFieldVarName
-                  + ", "
-                  + siteFieldVarName
-                  + "\r\n"
-                  + "Test1, "
-                  + defaultSite.getIdentifier()
-                  + "\r\n"
-                  + "Test2, "
-                  + defaultSite.getIdentifier()
-                  + "\r\n"
-                  + "Test3, "
-                  + defaultSite.getIdentifier()
-                  + "\r\n"
-                  + "Test4, "
-                  + defaultSite.getIdentifier()
-                  + "\r\n");
-      csvreader = new CsvReader(reader);
-      csvreader.setSafetySwitch(false);
-      csvHeaders = csvreader.getHeaders();
+            //As it was a preview nothing should be saved
+            List<Contentlet> savedData = contentletAPI
+                    .findByStructure(contentType.getInode(), user, false, 0, 0);
+            //Validations
+            assertNotNull(savedData);
+            assertEquals(savedData.size(), 0);
 
-      // Preview=false
-      results =
-          ImportUtil.importFile(
-              0L,
-              defaultSite.getInode(),
-              contentType.getInode(),
-              new String[] {},
-              false,
-              false,
-              user,
-              defaultLanguage.getId(),
-              csvHeaders,
-              csvreader,
-              -1,
-              -1,
-              reader,
-              schemeStepActionResult1.getAction().getId());
-      // Validations
-      validate(results, false, false, true);
+            //----------------PREVIEW = FALSE-----------------------------------------
+            //------------------------------------------------------------------------
+            //Create the csv file to import
+            reader = createTempFile(textFieldVarName + ", " + siteFieldVarName + "\r\n" +
+                    "Test1, " + defaultSite.getIdentifier() + "\r\n" +
+                    "Test2, " + defaultSite.getIdentifier() + "\r\n" +
+                    "Test3, " + defaultSite.getIdentifier() + "\r\n" +
+                    "Test4, " + defaultSite.getIdentifier() + "\r\n");
+            csvreader = new CsvReader(reader);
+            csvreader.setSafetySwitch(false);
+            csvHeaders = csvreader.getHeaders();
 
-      // Now we should have saved data
-      savedData = contentletAPI.findByStructure(contentType.getInode(), user, false, 0, 0);
-      // Validations
-      assertNotNull(savedData);
-      assertEquals(savedData.size(), 4);
+            //Preview=false
+            results = ImportUtil
+                    .importFile(0L, defaultSite.getInode(), contentType.getInode(), new String[]{},
+                            false, false, user, defaultLanguage.getId(), csvHeaders, csvreader, -1,
+                            -1, reader, schemeStepActionResult1.getAction().getId());
+            //Validations
+            validate(results, false, false, true);
 
-      Logger.info(
-          this,
-          "Test1 Content. IsInodeIndexed:"
-              + contentletAPI.isInodeIndexed(savedData.get(0).getInode()));
-      Logger.info(
-          this,
-          "Test2 Content. IsInodeIndexed:"
-              + contentletAPI.isInodeIndexed(savedData.get(1).getInode()));
-      Logger.info(
-          this,
-          "Test3 Content. IsInodeIndexed:"
-              + contentletAPI.isInodeIndexed(savedData.get(2).getInode()));
-      Logger.info(
-          this,
-          "Test4 Content. IsInodeIndexed:"
-              + contentletAPI.isInodeIndexed(savedData.get(3).getInode()));
+            //Now we should have saved data
+            savedData = contentletAPI.findByStructure(contentType.getInode(), user, false, 0, 0);
+            //Validations
+            assertNotNull(savedData);
+            assertEquals(savedData.size(), 4);
 
-      // ----------------USING WRONG HOST IDENTIFIERS----------------------------
-      // ------------------------------------------------------------------------
-      // Create the csv file to import
-      reader =
-          createTempFile(
-              textFieldVarName
-                  + ", "
-                  + siteFieldVarName
-                  + "\r\n"
-                  + "Test5, "
-                  + defaultSite.getIdentifier()
-                  + "\r\n"
-                  + "Test6, "
-                  + "999-99999999-99999999-00000"
-                  + "\r\n"
-                  + "Test7, "
-                  + "44444444-5555555555-2222"
-                  + "\r\n");
-      csvreader = new CsvReader(reader);
-      csvreader.setSafetySwitch(false);
-      csvHeaders = csvreader.getHeaders();
+            Logger.info(this, "Test1 Content. IsInodeIndexed:" + contentletAPI
+                    .isInodeIndexed(savedData.get(0).getInode()));
+            Logger.info(this, "Test2 Content. IsInodeIndexed:" + contentletAPI
+                    .isInodeIndexed(savedData.get(1).getInode()));
+            Logger.info(this, "Test3 Content. IsInodeIndexed:" + contentletAPI
+                    .isInodeIndexed(savedData.get(2).getInode()));
+            Logger.info(this, "Test4 Content. IsInodeIndexed:" + contentletAPI
+                    .isInodeIndexed(savedData.get(3).getInode()));
 
-      // Preview=true
-      results =
-          ImportUtil.importFile(
-              0L,
-              defaultSite.getInode(),
-              contentType.getInode(),
-              new String[] {},
-              true,
-              false,
-              user,
-              defaultLanguage.getId(),
-              csvHeaders,
-              csvreader,
-              -1,
-              -1,
-              reader,
-              schemeStepActionResult1.getAction().getId());
-      // Validations
-      validate(results, true, true, true);
+            //----------------USING WRONG HOST IDENTIFIERS----------------------------
+            //------------------------------------------------------------------------
+            //Create the csv file to import
+            reader = createTempFile(textFieldVarName + ", " + siteFieldVarName + "\r\n" +
+                    "Test5, " + defaultSite.getIdentifier() + "\r\n" +
+                    "Test6, " + "999-99999999-99999999-00000" + "\r\n" +
+                    "Test7, " + "44444444-5555555555-2222" + "\r\n");
+            csvreader = new CsvReader(reader);
+            csvreader.setSafetySwitch(false);
+            csvHeaders = csvreader.getHeaders();
 
-      // We should have the same amount on data
-      savedData = contentletAPI.findByStructure(contentType.getInode(), user, false, 0, 0);
-      // Validations
-      assertNotNull(savedData);
-      assertEquals(savedData.size(), 4);
+            //Preview=true
+            results = ImportUtil
+                    .importFile(0L, defaultSite.getInode(), contentType.getInode(), new String[]{},
+                            true, false, user, defaultLanguage.getId(), csvHeaders, csvreader, -1,
+                            -1, reader, schemeStepActionResult1.getAction().getId());
+            //Validations
+            validate(results, true, true, true);
 
-      // ---------------USING KEY FIELDS-----------------------------------------
-      // ------------------------------------------------------------------------
+            //We should have the same amount on data
+            savedData = contentletAPI.findByStructure(contentType.getInode(), user, false, 0, 0);
+            //Validations
+            assertNotNull(savedData);
+            assertEquals(savedData.size(), 4);
 
-      // Making sure the contentlets are in the indexes
-      List<ContentletSearch> contentletSearchResults;
-      int x = 0;
-      do {
-        Thread.sleep(30000);
-        // Verify if it was added to the index
-        contentletSearchResults =
-            contentletAPI.searchIndex(
-                "+structureName:"
-                    + contentType.getVelocityVarName()
-                    + " +working:true +deleted:false +"
-                    + contentType.getVelocityVarName()
-                    + ".title:Test1 +languageId:1",
-                0,
-                -1,
-                null,
-                user,
-                true);
-        x++;
-      } while ((contentletSearchResults == null || contentletSearchResults.isEmpty()) && x < 100);
+            //---------------USING KEY FIELDS-----------------------------------------
+            //------------------------------------------------------------------------
 
-      // Create the csv file to import
-      reader =
-          createTempFile(
-              textFieldVarName
-                  + ", "
-                  + siteFieldVarName
-                  + "\r\n"
-                  + "Test1, "
-                  + defaultSite.getIdentifier()
-                  + "\r\n"
-                  + "Test2, "
-                  + defaultSite.getIdentifier()
-                  + "\r\n");
-      csvreader = new CsvReader(reader);
-      csvreader.setSafetySwitch(false);
-      csvHeaders = csvreader.getHeaders();
+            //Making sure the contentlets are in the indexes
+            List<ContentletSearch> contentletSearchResults;
+            int x = 0;
+            do {
+                Thread.sleep(30000);
+                //Verify if it was added to the index
+                contentletSearchResults = contentletAPI.searchIndex(
+                        "+structureName:" + contentType.getVelocityVarName()
+                                + " +working:true +deleted:false +" + contentType
+                                .getVelocityVarName() + ".title:Test1 +languageId:1", 0, -1, null,
+                        user, true);
+                x++;
+            } while ((contentletSearchResults == null || contentletSearchResults.isEmpty())
+                    && x < 100);
 
-      // Preview=false
-      results =
-          ImportUtil.importFile(
-              0L,
-              defaultSite.getInode(),
-              contentType.getInode(),
-              new String[] {textField.getInode()},
-              false,
-              false,
-              user,
-              defaultLanguage.getId(),
-              csvHeaders,
-              csvreader,
-              -1,
-              -1,
-              reader,
-              schemeStepActionResult1.getAction().getId());
-      // Validations
-      validate(
-          results, false, false,
-          true); // We should expect warnings: Line #X. The key fields chosen match 1 existing
-      // content(s) - more than one match suggests key(s) are not properly unique
+            //Create the csv file to import
+            reader = createTempFile(textFieldVarName + ", " + siteFieldVarName + "\r\n" +
+                    "Test1, " + defaultSite.getIdentifier() + "\r\n" +
+                    "Test2, " + defaultSite.getIdentifier() + "\r\n");
+            csvreader = new CsvReader(reader);
+            csvreader.setSafetySwitch(false);
+            csvHeaders = csvreader.getHeaders();
 
-      // We used the key fields, so the import process should update instead to add new records
-      savedData = contentletAPI.findByStructure(contentType.getInode(), user, false, 0, 0);
-      // Validations
-      assertNotNull(savedData);
-      assertEquals(savedData.size(), 4);
+            //Preview=false
+            results = ImportUtil.importFile(0L, defaultSite.getInode(), contentType.getInode(),
+                    new String[]{textField.getInode()}, false, false, user, defaultLanguage.getId(),
+                    csvHeaders, csvreader, -1, -1, reader,
+                    schemeStepActionResult1.getAction().getId());
+            //Validations
+            validate(results, false, false,
+                    true);//We should expect warnings: Line #X. The key fields chosen match 1 existing content(s) - more than one match suggests key(s) are not properly unique
 
-      // ---------------USING IDENTIFIER COLUMN----------------------------------
-      // ------------------------------------------------------------------------
-      // Create the csv file to import
+            //We used the key fields, so the import process should update instead to add new records
+            savedData = contentletAPI.findByStructure(contentType.getInode(), user, false, 0, 0);
+            //Validations
+            assertNotNull(savedData);
+            assertEquals(savedData.size(), 4);
 
-      String id1 = null;
-      String id2 = null;
-      for (Contentlet content : savedData) {
-        if (content.getMap().get("title").equals("Test1")) {
-          id1 = content.getIdentifier();
-        } else if (content.getMap().get("title").equals("Test2")) {
-          id2 = content.getIdentifier();
+            //---------------USING IDENTIFIER COLUMN----------------------------------
+            //------------------------------------------------------------------------
+            //Create the csv file to import
+
+            String id1 = null;
+            String id2 = null;
+            for (Contentlet content : savedData) {
+                if (content.getMap().get("title").equals("Test1")) {
+                    id1 = content.getIdentifier();
+                } else if (content.getMap().get("title").equals("Test2")) {
+                    id2 = content.getIdentifier();
+                }
+            }
+
+            reader = createTempFile(
+                    "Identifier, " + textFieldVarName + ", " + siteFieldVarName + "\r\n" +
+                            id1 + ", Test1_edited, " + defaultSite.getIdentifier() + "\r\n" +
+                            id2 + ", Test2_edited, " + defaultSite.getIdentifier() + "\r\n");
+            csvreader = new CsvReader(reader);
+            csvreader.setSafetySwitch(false);
+            csvHeaders = csvreader.getHeaders();
+
+            //Preview=false
+            results = ImportUtil
+                    .importFile(0L, defaultSite.getInode(), contentType.getInode(), new String[]{},
+                            false, false, user, defaultLanguage.getId(), csvHeaders, csvreader, -1,
+                            -1, reader, schemeStepActionResult1.getAction().getId());
+            //Validations
+            validate(results, false, false, true);
+
+            //We used a identifier column, so the import process should update instead to add new records
+            savedData = contentletAPI.findByStructure(contentType.getInode(), user, false, 0, 0);
+            //Validations
+            assertNotNull(savedData);
+            assertEquals(savedData.size(), 4);
+
+            //-------------------------LANGUAGE AND KEY FIELDS------------------------
+            //------------------------------------------------------------------------
+            //Create the csv file to import
+            reader = createTempFile(
+                    "languageCode, countryCode, " + textFieldVarName + ", " + siteFieldVarName
+                            + "\r\n" +
+                            "es, ES, Test1_edited, " + defaultSite.getIdentifier() + "\r\n" +
+                            "es, ES, Test2_edited, " + defaultSite.getIdentifier() + "\r\n");
+            csvreader = new CsvReader(reader);
+            csvreader.setSafetySwitch(false);
+            csvHeaders = csvreader.getHeaders();
+
+            int languageCodeHeaderColumn = 0;
+            int countryCodeHeaderColumn = 1;
+            //Preview=false
+            results = ImportUtil.importFile(0L, defaultSite.getInode(), contentType.getInode(),
+                    new String[]{textField.getInode()}, false, true, user, -1, csvHeaders,
+                    csvreader, languageCodeHeaderColumn, countryCodeHeaderColumn, reader,
+                    schemeStepActionResult1.getAction().getId());
+            //Validations
+            validate(results, false, false, false);
+
+            //We used the key fields, so the import process should update instead to add new records
+            savedData = contentletAPI.findByStructure(contentType.getInode(), user, false, 0, 0);
+            //Validations
+            assertNotNull(savedData);
+            assertEquals(savedData.size(), 6);
+
+            //Validate we saved the contentlets on spanish
+            int spanishFound = 0;
+            for (Contentlet contentlet : savedData) {
+                if (contentlet.getLanguageId() == 2) {
+                    spanishFound++;
+                }
+            }
+            assertEquals(spanishFound, 2);
+        }finally {
+            contentTypeApi.delete(new StructureTransformer(contentType).from());
         }
-      }
+    }
 
-      reader =
-          createTempFile(
-              "Identifier, "
-                  + textFieldVarName
-                  + ", "
-                  + siteFieldVarName
-                  + "\r\n"
-                  + id1
-                  + ", Test1_edited, "
-                  + defaultSite.getIdentifier()
-                  + "\r\n"
-                  + id2
-                  + ", Test2_edited, "
-                  + defaultSite.getIdentifier()
-                  + "\r\n");
-      csvreader = new CsvReader(reader);
-      csvreader.setSafetySwitch(false);
-      csvHeaders = csvreader.getHeaders();
+    /**
+     * Creates a temporal file using a given content
+     *
+     * @param content
+     * @return
+     * @throws IOException
+     */
+    private Reader createTempFile ( String content ) throws IOException {
 
-      // Preview=false
-      results =
-          ImportUtil.importFile(
-              0L,
-              defaultSite.getInode(),
-              contentType.getInode(),
-              new String[] {},
-              false,
-              false,
-              user,
-              defaultLanguage.getId(),
-              csvHeaders,
-              csvreader,
-              -1,
-              -1,
-              reader,
-              schemeStepActionResult1.getAction().getId());
-      // Validations
-      validate(results, false, false, true);
+        File tempTestFile = File.createTempFile( "csvTest_" + String.valueOf( new Date().getTime() ), ".txt" );
+        FileUtils.writeStringToFile( tempTestFile, content );
+        byte[] bytes = com.liferay.util.FileUtil.getBytes( tempTestFile );
 
-      // We used a identifier column, so the import process should update instead to add new records
-      savedData = contentletAPI.findByStructure(contentType.getInode(), user, false, 0, 0);
-      // Validations
-      assertNotNull(savedData);
-      assertEquals(savedData.size(), 4);
+        return new InputStreamReader( new ByteArrayInputStream( bytes ), Charset.forName( "UTF-8" ) );
+    }
 
-      // -------------------------LANGUAGE AND KEY FIELDS------------------------
-      // ------------------------------------------------------------------------
-      // Create the csv file to import
-      reader =
-          createTempFile(
-              "languageCode, countryCode, "
-                  + textFieldVarName
-                  + ", "
-                  + siteFieldVarName
-                  + "\r\n"
-                  + "es, ES, Test1_edited, "
-                  + defaultSite.getIdentifier()
-                  + "\r\n"
-                  + "es, ES, Test2_edited, "
-                  + defaultSite.getIdentifier()
-                  + "\r\n");
-      csvreader = new CsvReader(reader);
-      csvreader.setSafetySwitch(false);
-      csvHeaders = csvreader.getHeaders();
+    /**
+     * Validates a given result generated by the ImportUtil.importFile method
+     *
+     * @param results
+     * @param preview
+     * @param expectingErrors
+     * @param expectingWarnings
+     */
+    private void validate ( HashMap<String, List<String>> results, Boolean preview, Boolean expectingErrors, Boolean expectingWarnings ) {
 
-      int languageCodeHeaderColumn = 0;
-      int countryCodeHeaderColumn = 1;
-      // Preview=false
-      results =
-          ImportUtil.importFile(
-              0L,
-              defaultSite.getInode(),
-              contentType.getInode(),
-              new String[] {textField.getInode()},
-              false,
-              true,
-              user,
-              -1,
-              csvHeaders,
-              csvreader,
-              languageCodeHeaderColumn,
-              countryCodeHeaderColumn,
-              reader,
-              schemeStepActionResult1.getAction().getId());
-      // Validations
-      validate(results, false, false, false);
+        //Reading the results
 
-      // We used the key fields, so the import process should update instead to add new records
-      savedData = contentletAPI.findByStructure(contentType.getInode(), user, false, 0, 0);
-      // Validations
-      assertNotNull(savedData);
-      assertEquals(savedData.size(), 6);
-
-      // Validate we saved the contentlets on spanish
-      int spanishFound = 0;
-      for (Contentlet contentlet : savedData) {
-        if (contentlet.getLanguageId() == 2) {
-          spanishFound++;
+        if ( expectingErrors ) {
+            List<String> errors = results.get( "errors" );
+            assertNotNull( errors );//Expected warnings as no key fields were chosen
+            assertTrue( !errors.isEmpty() );
+        } else {
+            List<String> errors = results.get( "errors" );
+            assertTrue( errors == null || errors.isEmpty() );//No errors should be found
         }
-      }
-      assertEquals(spanishFound, 2);
-    } finally {
-      contentTypeApi.delete(new StructureTransformer(contentType).from());
-    }
-  }
 
-  /**
-   * Creates a temporal file using a given content
-   *
-   * @param content
-   * @return
-   * @throws IOException
-   */
-  private Reader createTempFile(String content) throws IOException {
+        if ( expectingWarnings ) {
+            List<String> warnings = results.get( "warnings" );
+            assertNotNull( warnings );//Expected warnings as no key fields were chosen
+            Logger.info(this,"List WARNINGS: " + warnings.size());
+            assertTrue( !warnings.isEmpty() );
+        } else {
+            List<String> warnings = results.get( "warnings" );
+            assertTrue( warnings == null || warnings.isEmpty() );
+        }
 
-    File tempTestFile =
-        File.createTempFile("csvTest_" + String.valueOf(new Date().getTime()), ".txt");
-    FileUtils.writeStringToFile(tempTestFile, content);
-    byte[] bytes = com.liferay.util.FileUtil.getBytes(tempTestFile);
+        List<String> finalResults = results.get( "results" );
+        assertNotNull( finalResults );//Expected final results messages
+        assertTrue( !finalResults.isEmpty() );
 
-    return new InputStreamReader(new ByteArrayInputStream(bytes), Charset.forName("UTF-8"));
-  }
+        List<String> messages = results.get( "messages" );
+        assertNotNull( messages );//Expected return messages
+        assertTrue( !messages.isEmpty() );
 
-  /**
-   * Validates a given result generated by the ImportUtil.importFile method
-   *
-   * @param results
-   * @param preview
-   * @param expectingErrors
-   * @param expectingWarnings
-   */
-  private void validate(
-      HashMap<String, List<String>> results,
-      Boolean preview,
-      Boolean expectingErrors,
-      Boolean expectingWarnings) {
+        if ( !preview ) {
 
-    // Reading the results
+            List<String> lastInode = results.get( "lastInode" );
+            assertNotNull( lastInode );
+            assertTrue( !lastInode.isEmpty() );
 
-    if (expectingErrors) {
-      List<String> errors = results.get("errors");
-      assertNotNull(errors); // Expected warnings as no key fields were chosen
-      assertTrue(!errors.isEmpty());
-    } else {
-      List<String> errors = results.get("errors");
-      assertTrue(errors == null || errors.isEmpty()); // No errors should be found
+            List<String> counters = results.get( "counters" );
+            assertNotNull( counters );
+            assertTrue( !counters.isEmpty() );
+        }
     }
 
-    if (expectingWarnings) {
-      List<String> warnings = results.get("warnings");
-      assertNotNull(warnings); // Expected warnings as no key fields were chosen
-      Logger.info(this, "List WARNINGS: " + warnings.size());
-      assertTrue(!warnings.isEmpty());
-    } else {
-      List<String> warnings = results.get("warnings");
-      assertTrue(warnings == null || warnings.isEmpty());
-    }
+    @Test
+    public void importFile_success_when_twoLinesHaveSameUniqueKeysButDifferentLanguage()
+        throws DotSecurityException, DotDataException, IOException {
 
-    List<String> finalResults = results.get("results");
-    assertNotNull(finalResults); // Expected final results messages
-    assertTrue(!finalResults.isEmpty());
+        ContentType type;
+        CsvReader csvreader;
+        com.dotcms.contenttype.model.field.Field titleField, hostField;
+        HashMap<String, List<String>> results;
+        Reader reader;
+        String[] csvHeaders;
+        long time;
 
-    List<String> messages = results.get("messages");
-    assertNotNull(messages); // Expected return messages
-    assertTrue(!messages.isEmpty());
+        //Creating new content type with one unique field
+        time = System.currentTimeMillis();
 
-    if (!preview) {
-
-      List<String> lastInode = results.get("lastInode");
-      assertNotNull(lastInode);
-      assertTrue(!lastInode.isEmpty());
-
-      List<String> counters = results.get("counters");
-      assertNotNull(counters);
-      assertTrue(!counters.isEmpty());
-    }
-  }
-
-  @Test
-  public void importFile_success_when_twoLinesHaveSameUniqueKeysButDifferentLanguage()
-      throws DotSecurityException, DotDataException, IOException {
-
-    ContentType type;
-    CsvReader csvreader;
-    com.dotcms.contenttype.model.field.Field titleField, hostField;
-    HashMap<String, List<String>> results;
-    Reader reader;
-    String[] csvHeaders;
-    long time;
-
-    // Creating new content type with one unique field
-    time = System.currentTimeMillis();
-
-    type =
-        ContentTypeBuilder.builder(
-                BaseContentType.getContentTypeClass(BaseContentType.CONTENT.getType()))
-            .description("description" + time)
-            .folder(FolderAPI.SYSTEM_FOLDER)
-            .host(Host.SYSTEM_HOST)
-            .name("ContentTypeTestingWithFields" + time)
-            .owner("owner")
-            .variable("velocityVarNameTesting" + time)
+        type = ContentTypeBuilder.builder(BaseContentType.getContentTypeClass(BaseContentType.CONTENT.getType()))
+            .description("description" + time).folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
+            .name("ContentTypeTestingWithFields" + time).owner("owner").variable("velocityVarNameTesting" + time)
             .build();
 
-    type = contentTypeApi.save(type);
+        type = contentTypeApi.save(type);
 
-    try {
-      titleField =
-          FieldBuilder.builder(TextField.class)
-              .name("testTitle")
-              .variable("testTitle")
-              .unique(true)
-              .contentTypeId(type.id())
-              .dataType(DataTypes.TEXT)
-              .build();
-      hostField =
-          FieldBuilder.builder(HostFolderField.class)
-              .name("testHost")
-              .variable("testHost")
-              .contentTypeId(type.id())
-              .dataType(DataTypes.TEXT)
-              .build();
-      titleField = fieldAPI.save(titleField, user);
-      fieldAPI.save(hostField, user);
+        try {
+            titleField =
+                FieldBuilder.builder(TextField.class).name("testTitle").variable("testTitle").unique(true)
+                    .contentTypeId(type.id()).dataType(
+                    DataTypes.TEXT).build();
+            hostField =
+                FieldBuilder.builder(HostFolderField.class).name("testHost").variable("testHost")
+                    .contentTypeId(type.id()).dataType(
+                    DataTypes.TEXT).build();
+            titleField = fieldAPI.save(titleField, user);
+            fieldAPI.save(hostField, user);
 
-      workflowAPI.saveSchemesForStruct(
-          new StructureTransformer(type).asStructure(),
-          Arrays.asList(schemeStepActionResult1.getScheme()));
+            workflowAPI.saveSchemesForStruct(new StructureTransformer(type).asStructure(),
+                    Arrays.asList(schemeStepActionResult1.getScheme()));
 
-      // Creating csv
-      reader =
-          createTempFile(
-              "languageCode, countryCode, testTitle, testHost"
-                  + "\r\n"
-                  + "es, ES, UniqueTitle, "
-                  + defaultSite.getIdentifier()
-                  + "\r\n"
-                  + "en, US, UniqueTitle, "
-                  + defaultSite.getIdentifier()
-                  + "\r\n");
-      csvreader = new CsvReader(reader);
-      csvreader.setSafetySwitch(false);
-      csvHeaders = csvreader.getHeaders();
+            //Creating csv
+            reader = createTempFile("languageCode, countryCode, testTitle, testHost" + "\r\n" +
+                "es, ES, UniqueTitle, " + defaultSite.getIdentifier() + "\r\n" +
+                "en, US, UniqueTitle, " + defaultSite.getIdentifier() + "\r\n");
+            csvreader = new CsvReader(reader);
+            csvreader.setSafetySwitch(false);
+            csvHeaders = csvreader.getHeaders();
 
-      int languageCodeHeaderColumn = 0;
-      int countryCodeHeaderColumn = 1;
-      // Preview=false
-      results =
-          ImportUtil.importFile(
-              0L,
-              defaultSite.getInode(),
-              type.inode(),
-              new String[] {titleField.id()},
-              true,
-              true,
-              user,
-              -1,
-              csvHeaders,
-              csvreader,
-              languageCodeHeaderColumn,
-              countryCodeHeaderColumn,
-              reader,
-              schemeStepActionResult1.getAction().getId());
-      // Validations
-      validate(results, true, false, true);
+            int languageCodeHeaderColumn = 0;
+            int countryCodeHeaderColumn = 1;
+            //Preview=false
+            results =
+                ImportUtil
+                    .importFile(0L, defaultSite.getInode(), type.inode(), new String[]{titleField.id()}, true, true,
+                        user, -1, csvHeaders, csvreader, languageCodeHeaderColumn, countryCodeHeaderColumn, reader, schemeStepActionResult1.getAction().getId());
+            //Validations
+            validate(results, true, false, true);
 
-      assertTrue(results.get("warnings").size() == 1);
-      assertEquals("The Content Type field testTitle is unique.", results.get("warnings").get(0));
+            assertTrue(results.get("warnings").size() == 1);
+            assertEquals("The Content Type field testTitle is unique.", results.get("warnings").get(0));
 
-    } finally {
-      contentTypeApi.delete(type);
+
+        } finally {
+            contentTypeApi.delete(type);
+        }
     }
-  }
 
-  @Test
-  public void importFile_fails_when_twoLinesHaveSameUniqueKeys()
-      throws DotSecurityException, DotDataException, IOException {
+    @Test
+    public void importFile_fails_when_twoLinesHaveSameUniqueKeys()
+        throws DotSecurityException, DotDataException, IOException {
 
-    ContentType type;
-    CsvReader csvreader;
-    com.dotcms.contenttype.model.field.Field titleField, hostField;
-    HashMap<String, List<String>> results;
-    Reader reader;
-    String[] csvHeaders;
-    long time;
+        ContentType type;
+        CsvReader csvreader;
+        com.dotcms.contenttype.model.field.Field titleField, hostField;
+        HashMap<String, List<String>> results;
+        Reader reader;
+        String[] csvHeaders;
+        long time;
 
-    // Creating new content type with one unique field
-    time = System.currentTimeMillis();
+        //Creating new content type with one unique field
+        time = System.currentTimeMillis();
 
-    type =
-        ContentTypeBuilder.builder(
-                BaseContentType.getContentTypeClass(BaseContentType.CONTENT.getType()))
-            .description("description" + time)
-            .folder(FolderAPI.SYSTEM_FOLDER)
-            .host(Host.SYSTEM_HOST)
-            .name("ContentTypeTestingWithFields" + time)
-            .owner("owner")
-            .variable("velocityVarNameTesting" + time)
+        type = ContentTypeBuilder.builder(BaseContentType.getContentTypeClass(BaseContentType.CONTENT.getType()))
+            .description("description" + time).folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
+            .name("ContentTypeTestingWithFields" + time).owner("owner").variable("velocityVarNameTesting" + time)
             .build();
 
-    type = contentTypeApi.save(type);
+        type = contentTypeApi.save(type);
 
-    try {
-      titleField =
-          FieldBuilder.builder(TextField.class)
-              .name("testTitle")
-              .variable("testTitle")
-              .unique(true)
-              .contentTypeId(type.id())
-              .dataType(DataTypes.TEXT)
-              .build();
-      hostField =
-          FieldBuilder.builder(HostFolderField.class)
-              .name("testHost")
-              .variable("testHost")
-              .contentTypeId(type.id())
-              .dataType(DataTypes.TEXT)
-              .build();
-      titleField = fieldAPI.save(titleField, user);
-      fieldAPI.save(hostField, user);
+        try {
+            titleField =
+                FieldBuilder.builder(TextField.class).name("testTitle").variable("testTitle").unique(true)
+                    .contentTypeId(type.id()).dataType(
+                    DataTypes.TEXT).build();
+            hostField =
+                FieldBuilder.builder(HostFolderField.class).name("testHost").variable("testHost")
+                    .contentTypeId(type.id()).dataType(
+                    DataTypes.TEXT).build();
+            titleField = fieldAPI.save(titleField, user);
+            fieldAPI.save(hostField, user);
 
-      workflowAPI.saveSchemesForStruct(
-          new StructureTransformer(type).asStructure(),
-          Arrays.asList(schemeStepActionResult1.getScheme()));
+            workflowAPI.saveSchemesForStruct(new StructureTransformer(type).asStructure(),
+                    Arrays.asList(schemeStepActionResult1.getScheme()));
 
-      // Creating csv
-      reader =
-          createTempFile(
-              "languageCode, countryCode, testTitle, testHost"
-                  + "\r\n"
-                  + "en, US, UniqueTitle, "
-                  + defaultSite.getIdentifier()
-                  + "\r\n"
-                  + "en, US, UniqueTitle, "
-                  + defaultSite.getIdentifier()
-                  + "\r\n");
-      csvreader = new CsvReader(reader);
-      csvreader.setSafetySwitch(false);
-      csvHeaders = csvreader.getHeaders();
+            //Creating csv
+            reader = createTempFile("languageCode, countryCode, testTitle, testHost" + "\r\n" +
+                "en, US, UniqueTitle, " + defaultSite.getIdentifier() + "\r\n" +
+                "en, US, UniqueTitle, " + defaultSite.getIdentifier() + "\r\n");
+            csvreader = new CsvReader(reader);
+            csvreader.setSafetySwitch(false);
+            csvHeaders = csvreader.getHeaders();
 
-      int languageCodeHeaderColumn = 0;
-      int countryCodeHeaderColumn = 1;
-      // Preview=false
-      results =
-          ImportUtil.importFile(
-              0L,
-              defaultSite.getInode(),
-              type.inode(),
-              new String[] {titleField.id()},
-              true,
-              true,
-              user,
-              -1,
-              csvHeaders,
-              csvreader,
-              languageCodeHeaderColumn,
-              countryCodeHeaderColumn,
-              reader,
-              schemeStepActionResult1.getAction().getId());
-      // Validations
-      validate(results, true, false, true);
+            int languageCodeHeaderColumn = 0;
+            int countryCodeHeaderColumn = 1;
+            //Preview=false
+            results =
+                ImportUtil
+                    .importFile(0L, defaultSite.getInode(), type.inode(), new String[]{titleField.id()}, true, true,
+                        user, -1, csvHeaders, csvreader, languageCodeHeaderColumn, countryCodeHeaderColumn, reader, schemeStepActionResult1.getAction().getId());
+            //Validations
+            validate(results, true, false, true);
 
-      assertTrue(results.get("warnings").size() == 2);
-      assertEquals("The Content Type field testTitle is unique.", results.get("warnings").get(0));
-      assertEquals(
-          "Line # 3 contains duplicate values for a unique Content Type field testTitle and will be ignored.",
-          results.get("warnings").get(1));
+            assertTrue(results.get("warnings").size() == 2);
+            assertEquals("The Content Type field testTitle is unique.", results.get("warnings").get(0));
+            assertEquals("Line # 3 contains duplicate values for a unique Content Type field testTitle and will be ignored.", results.get("warnings").get(1));
 
-    } finally {
-      contentTypeApi.delete(type);
+        } finally {
+            contentTypeApi.delete(type);
+        }
     }
-  }
+
 }

@@ -3,14 +3,14 @@ package com.dotmarketing.portlets.links.business;
 import com.dotmarketing.business.Cachable;
 import com.dotmarketing.portlets.links.model.Link;
 
-// This interface should have default package access
+//This interface should have default package access
 public abstract class MenuLinkCache implements Cachable {
 
-  protected abstract Link add(String key, Link menuLink);
+	abstract protected Link add(String key, Link menuLink);
 
-  protected abstract Link get(String key);
+	abstract protected Link get(String key);
 
-  public abstract void clearCache();
+	abstract public void clearCache();
 
-  protected abstract void remove(String key);
+	abstract protected void remove(String key);
 }

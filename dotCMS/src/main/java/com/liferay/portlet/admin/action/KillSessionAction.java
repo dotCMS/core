@@ -1,21 +1,25 @@
 /**
  * Copyright (c) 2000-2005 Liferay, LLC. All rights reserved.
  *
- * <p>Permission is hereby granted, free of charge, to any person obtaining a copy of this software
- * and associated documentation files (the "Software"), to deal in the Software without restriction,
- * including without limitation the rights to use, copy, modify, merge, publish, distribute,
- * sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * <p>The above copyright notice and this permission notice shall be included in all copies or
- * substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
  *
- * <p>THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
- * BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
- * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
  */
+
 package com.liferay.portlet.admin.action;
 
 import com.dotcms.repackage.javax.portlet.ActionRequest;
@@ -44,72 +48,78 @@ import org.apache.struts.action.ActionMapping;
 /**
  * <a href="KillSessionAction.java.html"><b><i>View Source</i></b></a>
  *
- * @author Brian Wing Shun Chan
+ * @author  Brian Wing Shun Chan
  * @version $Revision: 1.2 $
+ *
  */
 public class KillSessionAction extends PortletAction {
 
-  public void processAction(
-      ActionMapping mapping,
-      ActionForm form,
-      PortletConfig config,
-      ActionRequest req,
-      ActionResponse res)
-      throws Exception {
+	public void processAction(
+			ActionMapping mapping, ActionForm form, PortletConfig config,
+			ActionRequest req, ActionResponse res)
+		throws Exception {
 
-    if (!OmniadminUtil.isOmniadmin(PortalUtil.getUser(req).getUserId())) {
-      SessionErrors.add(req, PrincipalException.class.getName());
+		if (!OmniadminUtil.isOmniadmin(PortalUtil.getUser(req).getUserId())) {
+			SessionErrors.add(req, PrincipalException.class.getName());
 
-      setForward(req, "portlet.admin.error");
-    } else {
-      try {
-        _killSession(req, res);
-      } catch (Exception e) {
-        if (e != null && e instanceof PrincipalException) {
+			setForward(req, "portlet.admin.error");
+		}
+		else {
+			try {
+				_killSession(req, res);
+			}
+			catch (Exception e) {
+				if (e != null &&
+					e instanceof PrincipalException) {
 
-          SessionErrors.add(req, e.getClass().getName());
+					SessionErrors.add(req, e.getClass().getName());
 
-          setForward(req, "portlet.admin.error");
-        } else {
-          req.setAttribute(PageContext.EXCEPTION, e);
+					setForward(req, "portlet.admin.error");
+				}
+				else {
+					req.setAttribute(PageContext.EXCEPTION, e);
 
-          setForward(req, Constants.COMMON_ERROR);
-        }
-      }
+					setForward(req, Constants.COMMON_ERROR);
+				}
+			}
 
-      setForward(req, "portlet.admin.list_sessions");
-    }
-  }
+			setForward(req, "portlet.admin.list_sessions");
+		}
+	}
 
-  private void _killSession(ActionRequest req, ActionResponse res) throws Exception {
+	private void _killSession(ActionRequest req, ActionResponse res)
+		throws Exception {
 
-    // Getting the http request
-    ActionRequestImpl reqImpl = (ActionRequestImpl) req;
-    HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
+        // Getting the http request
+        ActionRequestImpl reqImpl = (ActionRequestImpl) req;
+        HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
 
-    String sessionId = ParamUtil.getString(req, "session_id");
+		String sessionId = ParamUtil.getString(req, "session_id");
 
-    HttpSession userSession = PortalSessionContext.get(sessionId);
+		HttpSession userSession = PortalSessionContext.get(sessionId);
 
-    if (userSession != null) {
-      try {
-        String companyId = PortalUtil.getCompanyId(req);
-        String sesCompanyId = (String) userSession.getAttribute(WebKeys.COMPANY_ID);
+		if (userSession != null) {
+			try {
+				String companyId = PortalUtil.getCompanyId(req);
+				String sesCompanyId =
+					(String)userSession.getAttribute(WebKeys.COMPANY_ID);
 
-        if ((!req.getPortletSession().getId().equals(sessionId))
-            && (companyId.equals(sesCompanyId))) {
+				if ((!req.getPortletSession().getId().equals(sessionId)) &&
+					(companyId.equals(sesCompanyId))) {
 
-          userSession.invalidate();
-        }
-      } catch (Exception e) {
-        _log.error(StringUtil.stackTrace(e));
-      }
-    }
+					userSession.invalidate();
+				}
+			}
+			catch (Exception e) {
+				_log.error(StringUtil.stackTrace(e));
+			}
+		}
 
-    // Send redirect
+		// Send redirect
 
-    res.sendRedirect(SecurityUtils.stripReferer(httpReq, ParamUtil.getString(req, "redirect")));
-  }
+		res.sendRedirect(SecurityUtils.stripReferer(httpReq, ParamUtil.getString(req, "redirect")));
+	}
 
-  private static final Log _log = LogFactory.getLog(KillSessionAction.class);
+	private static final Log _log = LogFactory.getLog(KillSessionAction.class);
+
 }

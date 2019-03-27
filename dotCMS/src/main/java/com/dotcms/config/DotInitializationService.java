@@ -1,222 +1,218 @@
 package com.dotcms.config;
 
-import static com.dotcms.util.CollectionsUtils.linkSet;
-
 import com.dotcms.api.system.event.PayloadVerifierFactoryInitializer;
 import com.dotcms.api.system.event.SystemEventProcessorFactoryInitializer;
 import com.dotcms.rendering.velocity.events.ExceptionHandlersInitializer;
 import com.dotcms.system.event.local.business.LocalSystemEventSubscribersInitializer;
 import com.dotcms.util.ReflectionUtils;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.DateUtil;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.StringUtils;
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.*;
+import org.apache.commons.lang.time.StopWatch;
+
 import java.io.Serializable;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.ServiceLoader;
 import java.util.Set;
-import org.apache.commons.lang.time.StopWatch;
+
+import static com.dotcms.util.CollectionsUtils.linkSet;
 
 /**
  * This class is in charge of the Services, Factories or any eager Component to be initialized
  *
- * <p>It use three approaches:
+ * It use three approaches:
  *
- * <p>1) {@link java.util.ServiceLoader} will use the standard java extension mechanism, the class
- * to extends will be {@link DotInitializer} 2) List of class names comma separated on the
- * dotmarketing-config.properties by using the property: dotcms.initializationservice.services 3)
- * You can extends this class and override on the dotmarketing-config.properties by using the
- * property: dotcms.initializationservice.classname
+ * 1) {@link java.util.ServiceLoader} will use the standard java extension mechanism, the class to extends will be {@link DotInitializer}
+ * 2) List of class names comma separated on the  dotmarketing-config.properties by using the property: dotcms.initializationservice.services
+ * 3) You can extends this class and override on the  dotmarketing-config.properties by using the property: dotcms.initializationservice.classname
  *
  * @author jsanca
  */
 public class DotInitializationService implements Serializable {
 
-  /**
-   * Key for dotmarketing-config.properties in order to get the comma separated list of {@link
-   * DotInitializer} classes.
-   */
-  private static final String SERVICES_KEY = "dotcms.initializationservice.services";
+    /**
+     * Key for dotmarketing-config.properties in order to get the comma separated list of {@link DotInitializer} classes.
+     */
+    private static final String SERVICES_KEY = "dotcms.initializationservice.services";
+    private final StopWatch stopWatch = new StopWatch();
 
-  private final StopWatch stopWatch = new StopWatch();
+    /**
+     * Key for dotmarketing-config.properties in order to get a subclass of {@link DotInitializationService} in order you want a specific init.
+     * If you use a custom implementation, you might want to override getInitializers() (by default returns a null set)
+     */
+    private static final String INITIALIZATION_SERVICE_CLASSNAME_KEY = "dotcms.initializationservice.classname";
 
-  /**
-   * Key for dotmarketing-config.properties in order to get a subclass of {@link
-   * DotInitializationService} in order you want a specific init. If you use a custom
-   * implementation, you might want to override getInitializers() (by default returns a null set)
-   */
-  private static final String INITIALIZATION_SERVICE_CLASSNAME_KEY =
-      "dotcms.initializationservice.classname";
+    protected DotInitializationService () {
 
-  protected DotInitializationService() {}
-
-  private void initService(final DotInitializer initializer) {
-
-    try {
-
-      this.stopWatch.reset();
-      this.stopWatch.start();
-
-      Logger.info(this, "Initializing :" + initializer.getName());
-
-      initializer.init();
-
-      this.stopWatch.stop();
-
-      Logger.info(
-          this,
-          "Initializing Done:"
-              + initializer.getName()
-              + ", duration:"
-              + DateUtil.millisToSeconds(this.stopWatch.getTime())
-              + " seconds");
-    } catch (Exception e) {
-
-      Logger.error(this, e.getMessage(), e);
-    }
-  }
-
-  /** Runs the initialization */
-  public synchronized void initialize() {
-
-    final Set<DotInitializer> initializers = this.getInternalInitializers();
-    final Set<DotInitializer> subClassInitializers = this.getInitializers();
-    final Set<DotInitializer> dotMarketingInitializers = this.getDotMarketingInitializers();
-    final Set<DotInitializer> serviceLoaderInitializers = this.getServiceLoaderInitializers();
-
-    if (null != subClassInitializers) {
-
-      initializers.addAll(subClassInitializers);
     }
 
-    if (null != dotMarketingInitializers) {
+    private void initService (final DotInitializer initializer) {
 
-      initializers.addAll(dotMarketingInitializers);
-    }
+        try {
 
-    if (null != serviceLoaderInitializers) {
+            this.stopWatch.reset();
+            this.stopWatch.start();
 
-      initializers.addAll(serviceLoaderInitializers);
-    }
+            Logger.info(this, "Initializing :" + initializer.getName());
 
-    Logger.info(this, "Initializing DotCMS services");
+            initializer.init();
 
-    initializers.forEach(this::initService);
-  } // initialize.
+            this.stopWatch.stop();
 
-  /**
-   * Returns a list of internal components to initialize
-   *
-   * @return List with the {@link DotInitializer} elements to initialize
-   */
-  private Set<DotInitializer> getInternalInitializers() {
+            Logger.info(this, "Initializing Done:" + initializer.getName() + ", duration:" +
+                    DateUtil.millisToSeconds(this.stopWatch.getTime()) + " seconds");
+        } catch (Exception e) {
 
-    return linkSet(
-        new SystemEventProcessorFactoryInitializer(),
-        new PayloadVerifierFactoryInitializer(),
-        new LocalSystemEventSubscribersInitializer(),
-        new ExceptionHandlersInitializer());
-  } // getInternalInitializers.
-
-  private Set<DotInitializer> getServiceLoaderInitializers() {
-
-    Set<DotInitializer> initializerSet = null;
-    final ServiceLoader<DotInitializer> serviceLoader = ServiceLoader.load(DotInitializer.class);
-
-    final Iterator<DotInitializer> iterator = serviceLoader.iterator();
-
-    if (iterator.hasNext()) {
-
-      initializerSet = new LinkedHashSet<>();
-      initializerSet.add(iterator.next());
-    }
-
-    while (iterator.hasNext()) {
-
-      initializerSet.add(iterator.next());
-    }
-
-    return initializerSet;
-  }
-
-  /**
-   * By default returns a null set, but if you override it, you can return your custom set of {@link
-   * DotInitializer}
-   *
-   * @return Set of {@link DotInitializer}
-   */
-  protected Set<DotInitializer> getInitializers() {
-    return null;
-  } // getInitializers.
-
-  private Set<DotInitializer> getDotMarketingInitializers() {
-
-    Set<DotInitializer> initializerSet = null;
-    String[] implementationArray = null;
-    final String implementations = Config.getStringProperty(SERVICES_KEY, null);
-
-    if (UtilMethods.isSet(implementations)) {
-
-      implementationArray = StringUtils.splitByCommas(implementations);
-
-      if (UtilMethods.isSet(implementationArray)) {
-
-        initializerSet = new LinkedHashSet<>();
-
-        for (String implementation : implementationArray) {
-
-          this.addInitializer(initializerSet, implementation);
+            Logger.error(this, e.getMessage(), e);
         }
-      }
     }
 
-    return initializerSet;
-  } // getDotMarketingInitializers.
+    /**
+     * Runs the initialization
+     */
+    public synchronized void initialize() {
 
-  private void addInitializer(
-      final Set<DotInitializer> initializerSet, final String implementation) {
+        final Set<DotInitializer> initializers              = this.getInternalInitializers();
+        final Set<DotInitializer> subClassInitializers      = this.getInitializers();
+        final Set<DotInitializer> dotMarketingInitializers  = this.getDotMarketingInitializers();
+        final Set<DotInitializer> serviceLoaderInitializers = this.getServiceLoaderInitializers();
 
-    final Object initializerObject;
-    if (UtilMethods.isSet(implementation)) {
 
-      initializerObject = ReflectionUtils.newInstance(implementation);
+        if (null != subClassInitializers) {
 
-      if (UtilMethods.isSet(initializerObject) && initializerObject instanceof DotInitializer) {
+            initializers.addAll(subClassInitializers);
+        }
 
-        initializerSet.add((DotInitializer) initializerObject);
-      } else {
+        if (null != dotMarketingInitializers) {
 
-        Logger.error(
-            this,
-            "The object " + implementation + "is not a DotInitializer, can not be initialized");
-      }
+            initializers.addAll(dotMarketingInitializers);
+        }
+
+        if (null != serviceLoaderInitializers) {
+
+            initializers.addAll(serviceLoaderInitializers);
+        }
+
+        Logger.info(this, "Initializing DotCMS services");
+
+        initializers.forEach(this::initService);
+    } // initialize.
+
+    /**
+     * Returns a list of internal components to initialize
+     *
+     * @return List with the {@link DotInitializer} elements to initialize
+     */
+    private Set<DotInitializer> getInternalInitializers() {
+
+        return linkSet(
+                new SystemEventProcessorFactoryInitializer(),
+                new PayloadVerifierFactoryInitializer(),
+                new LocalSystemEventSubscribersInitializer(),
+                new ExceptionHandlersInitializer());
+    } // getInternalInitializers.
+
+    private Set<DotInitializer> getServiceLoaderInitializers() {
+
+        Set<DotInitializer> initializerSet = null;
+        final ServiceLoader<DotInitializer> serviceLoader =
+                ServiceLoader.load(DotInitializer.class);
+
+        final Iterator<DotInitializer> iterator =
+                serviceLoader.iterator();
+
+        if (iterator.hasNext()) {
+
+            initializerSet = new LinkedHashSet<>();
+            initializerSet.add(iterator.next());
+        }
+
+        while (iterator.hasNext()) {
+
+            initializerSet.add(iterator.next());
+        }
+
+        return initializerSet;
     }
-  } // addInitializer.
 
-  /**
-   * Get the instance, custom or default one.
-   *
-   * @return DotInitializationService
-   */
-  public static DotInitializationService getInstance() {
+    /**
+     * By default returns a null set, but if you override it, you can return your custom set of {@link DotInitializer}
+     * @return Set of {@link DotInitializer}
+     */
+    protected Set<DotInitializer> getInitializers() {
+        return null;
+    } // getInitializers.
 
-    DotInitializationService service = null;
-    final String customImpl = Config.getStringProperty(INITIALIZATION_SERVICE_CLASSNAME_KEY, null);
 
-    // if has a custom implemention use it.
-    if (UtilMethods.isSet(customImpl)) {
+    private Set<DotInitializer> getDotMarketingInitializers() {
 
-      service = (DotInitializationService) ReflectionUtils.newInstance(customImpl);
-    }
+        Set<DotInitializer> initializerSet = null;
+        String [] implementationArray = null;
+        final String implementations  = Config.getStringProperty(SERVICES_KEY, null);
 
-    // otherwise use this one as a default on.
-    if (null == service) {
+        if (UtilMethods.isSet(implementations)) {
 
-      service = new DotInitializationService();
-    }
+            implementationArray =
+                    StringUtils.splitByCommas(implementations);
 
-    return service;
-  } // getInstance.
+            if (UtilMethods.isSet(implementationArray)) {
+
+                initializerSet =  new LinkedHashSet<>();
+
+                for (String implementation : implementationArray) {
+
+                    this.addInitializer(initializerSet, implementation);
+                }
+            }
+        }
+
+        return initializerSet;
+    } // getDotMarketingInitializers.
+
+    private void addInitializer(final Set<DotInitializer> initializerSet,
+                                final String implementation) {
+
+        final Object initializerObject;
+        if (UtilMethods.isSet(implementation)) {
+
+            initializerObject =
+                    ReflectionUtils.newInstance(implementation);
+
+            if (UtilMethods.isSet(initializerObject)
+                    && initializerObject instanceof DotInitializer) {
+
+                initializerSet.add((DotInitializer) initializerObject);
+            } else {
+
+                Logger.error(this, "The object " + implementation
+                        + "is not a DotInitializer, can not be initialized");
+            }
+        }
+    } // addInitializer.
+
+    /**
+     * Get the instance, custom or default one.
+     * @return DotInitializationService
+     */
+    public static DotInitializationService getInstance () {
+
+        DotInitializationService service = null;
+        final String customImpl = Config.getStringProperty
+                (INITIALIZATION_SERVICE_CLASSNAME_KEY, null);
+
+        // if has a custom implemention use it.
+        if (UtilMethods.isSet(customImpl)) {
+
+            service = (DotInitializationService)
+                    ReflectionUtils.newInstance(customImpl);
+        }
+
+        // otherwise use this one as a default on.
+        if (null == service) {
+
+            service = new DotInitializationService();
+        }
+
+        return service;
+    } // getInstance.
+
 } // E:O:F:DotInitializationService.

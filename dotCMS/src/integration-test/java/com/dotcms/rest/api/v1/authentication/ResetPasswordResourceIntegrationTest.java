@@ -25,106 +25,100 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class ResetPasswordResourceIntegrationTest {
+public class ResetPasswordResourceIntegrationTest{
 
-  HttpServletRequest request;
-  ResponseUtil responseUtil;
-  ResetPasswordForm resetPasswordForm;
+    HttpServletRequest request;
+    ResponseUtil responseUtil;
+    ResetPasswordForm  resetPasswordForm;
+    
+    @BeforeClass
+	public static void prepare() throws Exception{
+		//Setting web app environment
+        IntegrationTestInitService.getInstance().init();
+        final Company company = new Company() {
 
-  @BeforeClass
-  public static void prepare() throws Exception {
-    // Setting web app environment
-    IntegrationTestInitService.getInstance().init();
-    final Company company =
-        new Company() {
+            @Override
+            public String getAuthType() {
 
-          @Override
-          public String getAuthType() {
-
-            return Company.AUTH_TYPE_ID;
-          }
+                return Company.AUTH_TYPE_ID;
+            }
         };
-    CompanyPool.put(RestUtilTest.DEFAULT_COMPANY, company);
-  }
+        CompanyPool.put(RestUtilTest.DEFAULT_COMPANY, company);
+	}
 
-  @Before
-  public void initTest() {
-    request = RestUtilTest.getMockHttpRequest();
-    RestUtilTest.initMockContext();
-    responseUtil = ResponseUtil.INSTANCE;
-    resetPasswordForm = this.getForm();
-  }
+    @Before
+    public void initTest(){
+        request = RestUtilTest.getMockHttpRequest();
+        RestUtilTest.initMockContext();
+        responseUtil = ResponseUtil.INSTANCE;
+        resetPasswordForm = this.getForm();
+    }
 
-  @Test
-  public void testNoSuchUserException()
-      throws DotSecurityException, NoSuchUserException, DotInvalidTokenException, SystemException,
-          PortalException {
-    UserManager userManager = getUserManagerThrowingException(new NoSuchUserException(""));
-    final JsonWebTokenService jsonWebTokenService = mock(JsonWebTokenService.class);
-    final UserToken jwtBean =
-        new UserToken(UUID.randomUUID().toString(), "dotcms.org.1", new Date(), 100000);
+    @Test
+    public void testNoSuchUserException() throws DotSecurityException, NoSuchUserException, DotInvalidTokenException, SystemException, PortalException {
+        UserManager userManager = getUserManagerThrowingException( new NoSuchUserException("") );
+        final JsonWebTokenService jsonWebTokenService = mock(JsonWebTokenService.class);
+        final UserToken jwtBean = new UserToken(UUID.randomUUID().toString(),
+                "dotcms.org.1",
+                new Date(), 100000);
 
-    when(jsonWebTokenService.parseToken(eq("token1"))).thenReturn(jwtBean);
-    ResetPasswordResource resetPasswordResource =
-        new ResetPasswordResource(userManager, responseUtil, jsonWebTokenService);
-    Response response = resetPasswordResource.resetPassword(request, resetPasswordForm);
+        when(jsonWebTokenService.parseToken(eq("token1"))).thenReturn(jwtBean);
+        ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, responseUtil, jsonWebTokenService);
+        Response response = resetPasswordResource.resetPassword(request, resetPasswordForm);
 
-    RestUtilTest.verifyErrorResponse(
-        response, Response.Status.BAD_REQUEST.getStatusCode(), "please-enter-a-valid-login");
-  }
+        RestUtilTest.verifyErrorResponse(response,  Response.Status.BAD_REQUEST.getStatusCode(), "please-enter-a-valid-login");
+    }
 
-  @Test
-  public void testTokenInvalidException()
-      throws DotSecurityException, NoSuchUserException, DotInvalidTokenException {
-    UserManager userManager = getUserManagerThrowingException(new DotInvalidTokenException(""));
-    final JsonWebTokenService jsonWebTokenService = mock(JsonWebTokenService.class);
-    final UserToken jwtBean =
-        new UserToken(UUID.randomUUID().toString(), "dotcms.org.1", new Date(), 100000);
-    when(jsonWebTokenService.parseToken(eq("token1"))).thenReturn(jwtBean);
+    @Test
+    public void testTokenInvalidException() throws DotSecurityException, NoSuchUserException, DotInvalidTokenException {
+        UserManager userManager = getUserManagerThrowingException( new DotInvalidTokenException("") );
+        final JsonWebTokenService jsonWebTokenService = mock(JsonWebTokenService.class);
+        final UserToken jwtBean = new UserToken(UUID.randomUUID().toString(),
+                "dotcms.org.1",
+                new Date(), 100000);
+        when(jsonWebTokenService.parseToken(eq("token1"))).thenReturn(jwtBean);
+        
+        ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, responseUtil, jsonWebTokenService);
+        Response response = resetPasswordResource.resetPassword(request, resetPasswordForm);
+        RestUtilTest.verifyErrorResponse(response,  Response.Status.BAD_REQUEST.getStatusCode(), "reset-password-token-invalid");
+    }
 
-    ResetPasswordResource resetPasswordResource =
-        new ResetPasswordResource(userManager, responseUtil, jsonWebTokenService);
-    Response response = resetPasswordResource.resetPassword(request, resetPasswordForm);
-    RestUtilTest.verifyErrorResponse(
-        response, Response.Status.BAD_REQUEST.getStatusCode(), "reset-password-token-invalid");
-  }
+    @Test
+    public void testTokenExpiredException() throws DotSecurityException, NoSuchUserException, DotInvalidTokenException {
+        UserManager userManager = getUserManagerThrowingException( new DotInvalidTokenException("", true) );
+        final JsonWebTokenService jsonWebTokenService = mock(JsonWebTokenService.class);
+        final UserToken jwtBean = new UserToken(UUID.randomUUID().toString(),
+                "dotcms.org.1",
+                new Date(), 100000);
 
-  @Test
-  public void testTokenExpiredException()
-      throws DotSecurityException, NoSuchUserException, DotInvalidTokenException {
-    UserManager userManager =
-        getUserManagerThrowingException(new DotInvalidTokenException("", true));
-    final JsonWebTokenService jsonWebTokenService = mock(JsonWebTokenService.class);
-    final UserToken jwtBean =
-        new UserToken(UUID.randomUUID().toString(), "dotcms.org.1", new Date(), 100000);
+        when(jsonWebTokenService.parseToken(eq("token1"))).thenReturn(jwtBean);
+        ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, responseUtil, jsonWebTokenService);
+        Response response = resetPasswordResource.resetPassword(request, resetPasswordForm);
 
-    when(jsonWebTokenService.parseToken(eq("token1"))).thenReturn(jwtBean);
-    ResetPasswordResource resetPasswordResource =
-        new ResetPasswordResource(userManager, responseUtil, jsonWebTokenService);
-    Response response = resetPasswordResource.resetPassword(request, resetPasswordForm);
+        RestUtilTest.verifyErrorResponse(response,  Response.Status.UNAUTHORIZED.getStatusCode(), "reset-password-token-expired");
+    }
 
-    RestUtilTest.verifyErrorResponse(
-        response, Response.Status.UNAUTHORIZED.getStatusCode(), "reset-password-token-expired");
-  }
+    private UserManager getUserManagerThrowingException(Exception e)
+            throws NoSuchUserException, DotSecurityException, DotInvalidTokenException {
+        UserManager userManager = mock( UserManager.class );
+        doThrow( e ).when( userManager ).resetPassword("dotcms.org.1",
+                "token2", resetPasswordForm.getPassword());
+        return userManager;
+    }
 
-  private UserManager getUserManagerThrowingException(Exception e)
-      throws NoSuchUserException, DotSecurityException, DotInvalidTokenException {
-    UserManager userManager = mock(UserManager.class);
-    doThrow(e)
-        .when(userManager)
-        .resetPassword("dotcms.org.1", "token2", resetPasswordForm.getPassword());
-    return userManager;
-  }
+    private ResetPasswordForm getForm(){
+        final String password = "admin";
+        final String token = "token1+++token2";
 
-  private ResetPasswordForm getForm() {
-    final String password = "admin";
-    final String token = "token1+++token2";
+        return new ResetPasswordForm.Builder()
+                .password(password)
+                .token(token)
+                .build();
+    }
+    
+    @AfterClass
+    public static void cleanUp(){
+    	CompanyPool.remove(RestUtilTest.DEFAULT_COMPANY);
+    }
 
-    return new ResetPasswordForm.Builder().password(password).token(token).build();
-  }
-
-  @AfterClass
-  public static void cleanUp() {
-    CompanyPool.remove(RestUtilTest.DEFAULT_COMPANY);
-  }
 }

@@ -4,34 +4,36 @@ import org.apache.struts.validator.ValidatorForm;
 
 public class UserCategoriesForm extends ValidatorForm {
 
-  private static final long serialVersionUID = 1L;
+	private static final long serialVersionUID = 1L;
+	
+	private String userProxy;
+	private boolean nonclicktracking;
+	
+	private String[] categories;
 
-  private String userProxy;
-  private boolean nonclicktracking;
+	
+	
+	public boolean isNonclicktracking() {
+		return nonclicktracking;
+	}
 
-  private String[] categories;
+	public void setNonclicktracking(boolean nonclicktracking) {
+		this.nonclicktracking = nonclicktracking;
+	}
 
-  public boolean isNonclicktracking() {
-    return nonclicktracking;
-  }
+	public String[] getCategories() {
+		return categories;
+	}
 
-  public void setNonclicktracking(boolean nonclicktracking) {
-    this.nonclicktracking = nonclicktracking;
-  }
+	public void setCategories(String[] categories) {
+		this.categories = categories;
+	}
 
-  public String[] getCategories() {
-    return categories;
-  }
+	public String getUserProxy() {
+		return userProxy;
+	}
 
-  public void setCategories(String[] categories) {
-    this.categories = categories;
-  }
-
-  public String getUserProxy() {
-    return userProxy;
-  }
-
-  public void setUserProxy(String userProxy) {
-    this.userProxy = userProxy;
-  }
+	public void setUserProxy(String userProxy) {
+		this.userProxy = userProxy;
+	}
 }

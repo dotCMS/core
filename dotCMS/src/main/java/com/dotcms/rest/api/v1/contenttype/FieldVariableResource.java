@@ -1,5 +1,11 @@
 package com.dotcms.rest.api.v1.contenttype;
 
+import com.dotcms.rest.exception.ForbiddenException;
+import java.io.Serializable;
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
@@ -23,7 +29,6 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
-import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -31,643 +36,498 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import java.io.Serializable;
-import java.util.List;
-import javax.servlet.http.HttpServletRequest;
 
 @Path("/v1/contenttype/{typeId}/fields")
 public class FieldVariableResource implements Serializable {
-  private final WebResource webResource;
-
-  public FieldVariableResource() {
-    this(new WebResource());
-  }
-
-  @VisibleForTesting
-  public FieldVariableResource(final WebResource webresource) {
-    this.webResource = webresource;
-  }
+	private final WebResource webResource;
 
-  private static final long serialVersionUID = 1L;
+	public FieldVariableResource() {
+		this(new WebResource());
+	}
 
-  @POST
-  @Path("/id/{fieldId}/variables")
-  @JSONP
-  @NoCache
-  @Consumes(MediaType.APPLICATION_JSON)
-  @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-  public Response createFieldVariableByFieldId(
-      @PathParam("typeId") final String typeId,
-      @PathParam("fieldId") final String fieldId,
-      final String fieldVariableJson,
-      @Context final HttpServletRequest req)
-      throws DotDataException {
+	@VisibleForTesting
+	public FieldVariableResource(final WebResource webresource) {
+		this.webResource = webresource;
+	}
 
-    final InitDataObject initData = this.webResource.init(null, false, req, false, null);
-    final User user = initData.getUser();
-    final FieldAPI fapi = APILocator.getContentTypeFieldAPI();
+	private static final long serialVersionUID = 1L;
 
-    Response response = null;
 
-    try {
-      Field field = fapi.find(fieldId);
+	@POST
+	@Path("/id/{fieldId}/variables")
+	@JSONP
+	@NoCache
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
+	public Response createFieldVariableByFieldId(@PathParam("typeId") final String typeId, @PathParam("fieldId") final String fieldId,
+			final String fieldVariableJson, @Context final HttpServletRequest req) throws DotDataException {
 
-      FieldVariable fieldVariable = new JsonFieldVariableTransformer(fieldVariableJson).from();
+		final InitDataObject initData = this.webResource.init(null, false, req, false, null);
+		final User user = initData.getUser();
+		final FieldAPI fapi = APILocator.getContentTypeFieldAPI();
+		
+		Response response = null;
+		
+		try {
+			Field field = fapi.find(fieldId);
 
-      if (UtilMethods.isSet(fieldVariable.id())) {
+			FieldVariable fieldVariable = new JsonFieldVariableTransformer(fieldVariableJson).from();
 
-        response = ExceptionMapperUtil.createResponse(null, "Field 'id' should not be set");
+			if (UtilMethods.isSet(fieldVariable.id())) {
 
-      } else if (!UtilMethods.isSet(fieldVariable.fieldId())
-          || !fieldVariable.fieldId().equals(field.id())) {
+				response = ExceptionMapperUtil.createResponse(null, "Field 'id' should not be set");
 
-        response =
-            ExceptionMapperUtil.createResponse(
-                null,
-                "Field fieldId '"
-                    + fieldVariable.fieldId()
-                    + "' does not match a field with id '"
-                    + field.id()
-                    + "'");
+			} else if (!UtilMethods.isSet(fieldVariable.fieldId()) || !fieldVariable.fieldId().equals(field.id())) {
 
-      } else {
+				response = ExceptionMapperUtil.createResponse(null, "Field fieldId '"+ fieldVariable.fieldId() +"' does not match a field with id '"+ field.id() +"'");
 
-        fieldVariable = fapi.save(fieldVariable, user);
+			} else {
 
-        response =
-            Response.ok(
-                    new ResponseEntityView(
-                        new JsonFieldVariableTransformer(fieldVariable).mapObject()))
-                .build();
-      }
-    } catch (DotStateException e) {
+				fieldVariable = fapi.save(fieldVariable, user);
 
-      response =
-          ExceptionMapperUtil.createResponse(
-              null, "Field variable is not valid (" + e.getMessage() + ")");
+				response = Response.ok(new ResponseEntityView(new JsonFieldVariableTransformer(fieldVariable).mapObject())).build();
+			}
+		} catch (DotStateException e) {
 
-    } catch (NotFoundInDbException e) {
+			response = ExceptionMapperUtil.createResponse(null, "Field variable is not valid ("+ e.getMessage() +")");
 
-      response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
+		} catch (NotFoundInDbException e) {
 
-    } catch (DotSecurityException e) {
-      throw new ForbiddenException(e);
+			response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
 
-    } catch (Exception e) {
+		} catch (DotSecurityException e) {
+			throw new ForbiddenException(e);
 
-      response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
-    }
+		} catch (Exception e) {
 
-    return response;
-  }
+			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+		}
 
-  @POST
-  @Path("/var/{fieldVar}/variables")
-  @JSONP
-  @NoCache
-  @Consumes(MediaType.APPLICATION_JSON)
-  @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-  public Response createFieldVariableByFieldVar(
-      @PathParam("typeId") final String typeId,
-      @PathParam("fieldVar") final String fieldVar,
-      final String fieldVariableJson,
-      @Context final HttpServletRequest req)
-      throws DotDataException {
+		return response;
+	}
 
-    final InitDataObject initData = this.webResource.init(null, false, req, false, null);
-    final User user = initData.getUser();
-    final FieldAPI fapi = APILocator.getContentTypeFieldAPI();
+	@POST
+	@Path("/var/{fieldVar}/variables")
+	@JSONP
+	@NoCache
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
+	public Response createFieldVariableByFieldVar(@PathParam("typeId") final String typeId, @PathParam("fieldVar") final String fieldVar,
+			final String fieldVariableJson, @Context final HttpServletRequest req) throws DotDataException {
 
-    Response response = null;
+		final InitDataObject initData = this.webResource.init(null, false, req, false, null);
+		final User user = initData.getUser();
+		final FieldAPI fapi = APILocator.getContentTypeFieldAPI();
+		
+		Response response = null;
+		
+		try {
+			Field field = fapi.byContentTypeIdAndVar(typeId, fieldVar);
 
-    try {
-      Field field = fapi.byContentTypeIdAndVar(typeId, fieldVar);
+			FieldVariable fieldVariable = new JsonFieldVariableTransformer(fieldVariableJson).from();
 
-      FieldVariable fieldVariable = new JsonFieldVariableTransformer(fieldVariableJson).from();
+			if (UtilMethods.isSet(fieldVariable.id())) {
 
-      if (UtilMethods.isSet(fieldVariable.id())) {
+				response = ExceptionMapperUtil.createResponse(null, "Field 'id' should not be set");
 
-        response = ExceptionMapperUtil.createResponse(null, "Field 'id' should not be set");
+			} else if (!UtilMethods.isSet(fieldVariable.fieldId()) || !fieldVariable.fieldId().equals(field.id())) {
 
-      } else if (!UtilMethods.isSet(fieldVariable.fieldId())
-          || !fieldVariable.fieldId().equals(field.id())) {
+				response = ExceptionMapperUtil.createResponse(null, "Field fieldId '"+ fieldVariable.fieldId() +"' does not match a field with id '"+ field.id() +"'");
 
-        response =
-            ExceptionMapperUtil.createResponse(
-                null,
-                "Field fieldId '"
-                    + fieldVariable.fieldId()
-                    + "' does not match a field with id '"
-                    + field.id()
-                    + "'");
+			} else {
 
-      } else {
+				fieldVariable = fapi.save(fieldVariable, user);
 
-        fieldVariable = fapi.save(fieldVariable, user);
+				response = Response.ok(new ResponseEntityView(new JsonFieldVariableTransformer(fieldVariable).mapObject())).build();
+			}
+		} catch (DotStateException e) {
 
-        response =
-            Response.ok(
-                    new ResponseEntityView(
-                        new JsonFieldVariableTransformer(fieldVariable).mapObject()))
-                .build();
-      }
-    } catch (DotStateException e) {
+			response = ExceptionMapperUtil.createResponse(null, "Field variable is not valid ("+ e.getMessage() +")");
 
-      response =
-          ExceptionMapperUtil.createResponse(
-              null, "Field variable is not valid (" + e.getMessage() + ")");
+		} catch (NotFoundInDbException e) {
 
-    } catch (NotFoundInDbException e) {
+			response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
 
-      response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
+		} catch (DotSecurityException e) {
+			throw new ForbiddenException(e);
 
-    } catch (DotSecurityException e) {
-      throw new ForbiddenException(e);
+		} catch (Exception e) {
 
-    } catch (Exception e) {
+			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+		}
 
-      response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
-    }
+		return response;
+	}
 
-    return response;
-  }
 
-  @GET
-  @Path("/id/{fieldId}/variables")
-  @JSONP
-  @NoCache
-  @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-  public final Response getFieldVariablesByFieldId(
-      @PathParam("typeId") final String typeId,
-      @PathParam("fieldId") final String fieldId,
-      @Context final HttpServletRequest req) {
+	@GET
+	@Path("/id/{fieldId}/variables")
+	@JSONP
+	@NoCache
+	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
+	public final Response getFieldVariablesByFieldId(@PathParam("typeId") final String typeId,
+			@PathParam("fieldId") final String fieldId, @Context final HttpServletRequest req) {
 
-    final InitDataObject initData = this.webResource.init(null, true, req, true, null);
-    final User user = initData.getUser();
-    final ContentTypeAPI tapi = APILocator.getContentTypeAPI(user, true);
-    final FieldAPI fapi = APILocator.getContentTypeFieldAPI();
+		final InitDataObject initData = this.webResource.init(null, true, req, true, null);
+		final User user = initData.getUser();
+		final ContentTypeAPI tapi = APILocator.getContentTypeAPI(user, true);
+		final FieldAPI fapi = APILocator.getContentTypeFieldAPI();
 
-    Response response = null;
+		Response response = null;
 
-    try {
-      Field field = fapi.find(fieldId);
+		try {
+			Field field = fapi.find(fieldId);
 
-      List<FieldVariable> fieldVariables = field.fieldVariables();
+			List<FieldVariable> fieldVariables = field.fieldVariables();
 
-      response =
-          Response.ok(
-                  new ResponseEntityView(
-                      new JsonFieldVariableTransformer(fieldVariables).mapList()))
-              .build();
+			response = Response.ok(new ResponseEntityView(new JsonFieldVariableTransformer(fieldVariables).mapList())).build();
 
-    } catch (NotFoundInDbException e) {
+		} catch (NotFoundInDbException e) {
 
-      response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
+			response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
 
-    } catch (Exception e) {
+		} catch (Exception e) {
 
-      response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
-    }
+			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+		}
 
-    return response;
-  }
+		return response;
+	}
 
-  @GET
-  @Path("/var/{fieldVar}/variables")
-  @JSONP
-  @NoCache
-  @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-  public final Response getFieldVariablesByFieldVar(
-      @PathParam("typeId") final String typeId,
-      @PathParam("fieldVar") final String fieldVar,
-      @Context final HttpServletRequest req) {
+	@GET
+	@Path("/var/{fieldVar}/variables")
+	@JSONP
+	@NoCache
+	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
+	public final Response getFieldVariablesByFieldVar(@PathParam("typeId") final String typeId,
+			@PathParam("fieldVar") final String fieldVar, @Context final HttpServletRequest req) {
 
-    final InitDataObject initData = this.webResource.init(null, true, req, true, null);
-    final User user = initData.getUser();
-    final ContentTypeAPI tapi = APILocator.getContentTypeAPI(user, true);
-    final FieldAPI fapi = APILocator.getContentTypeFieldAPI();
+		final InitDataObject initData = this.webResource.init(null, true, req, true, null);
+		final User user = initData.getUser();
+		final ContentTypeAPI tapi = APILocator.getContentTypeAPI(user, true);
+		final FieldAPI fapi = APILocator.getContentTypeFieldAPI();
 
-    Response response = null;
+		Response response = null;
 
-    try {
-      Field field = fapi.byContentTypeIdAndVar(typeId, fieldVar);
+		try {
+			Field field = fapi.byContentTypeIdAndVar(typeId, fieldVar);
 
-      List<FieldVariable> fieldVariables = field.fieldVariables();
+			List<FieldVariable> fieldVariables = field.fieldVariables();
 
-      response =
-          Response.ok(
-                  new ResponseEntityView(
-                      new JsonFieldVariableTransformer(fieldVariables).mapList()))
-              .build();
+			response = Response.ok(new ResponseEntityView(new JsonFieldVariableTransformer(fieldVariables).mapList())).build();
 
-    } catch (NotFoundInDbException e) {
+		} catch (NotFoundInDbException e) {
 
-      response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
+			response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
 
-    } catch (Exception e) {
+		} catch (Exception e) {
 
-      response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
-    }
+			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+		}
 
-    return response;
-  }
+		return response;
+	}
 
-  @GET
-  @Path("/id/{fieldId}/variables/id/{fieldVarId}")
-  @JSONP
-  @NoCache
-  @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-  public Response getFieldVariableByFieldId(
-      @PathParam("typeId") final String typeId,
-      @PathParam("fieldId") final String fieldId,
-      @PathParam("fieldVarId") final String fieldVarId,
-      @Context final HttpServletRequest req)
-      throws DotDataException {
 
-    final InitDataObject initData = this.webResource.init(null, false, req, false, null);
-    final FieldAPI fapi = APILocator.getContentTypeFieldAPI();
+	@GET
+	@Path("/id/{fieldId}/variables/id/{fieldVarId}")
+	@JSONP
+	@NoCache
+	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
+	public Response getFieldVariableByFieldId(@PathParam("typeId") final String typeId,
+			@PathParam("fieldId") final String fieldId, @PathParam("fieldVarId") final String fieldVarId,
+			@Context final HttpServletRequest req) throws DotDataException {
 
-    Response response = null;
-    try {
+		final InitDataObject initData = this.webResource.init(null, false, req, false, null);
+		final FieldAPI fapi = APILocator.getContentTypeFieldAPI();
 
-      Field field = fapi.find(fieldId);
+		Response response = null;
+		try {
 
-      FieldVariable fieldVariable = getFieldVariable(field, fieldVarId);
+			Field field = fapi.find(fieldId);
 
-      if (!field.id().equals(fieldVariable.fieldId())) {
+			FieldVariable fieldVariable = getFieldVariable(field, fieldVarId);
 
-        response =
-            ExceptionMapperUtil.createResponse(
-                null,
-                "Field fieldVarId '"
-                    + fieldVarId
-                    + "' does not match a field with id '"
-                    + field.id()
-                    + "'");
+			if (!field.id().equals(fieldVariable.fieldId())) {
 
-      } else {
+				response = ExceptionMapperUtil.createResponse(null, "Field fieldVarId '"+ fieldVarId +"' does not match a field with id '"+ field.id() +"'");
 
-        response =
-            Response.ok(
-                    new ResponseEntityView(
-                        new JsonFieldVariableTransformer(fieldVariable).mapObject()))
-                .build();
-      }
+			} else {
 
-    } catch (NotFoundInDbException e) {
+				response = Response.ok(new ResponseEntityView(new JsonFieldVariableTransformer(fieldVariable).mapObject())).build();				
+			}
 
-      response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
+		} catch (NotFoundInDbException e) {
 
-    } catch (Exception e) {
+			response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
 
-      response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
-    }
+		} catch (Exception e) {
 
-    return response;
-  }
+			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+		}
 
-  @GET
-  @Path("/var/{fieldVar}/variables/id/{fieldVarId}")
-  @JSONP
-  @NoCache
-  @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-  public Response getFieldVariableByFieldVar(
-      @PathParam("typeId") final String typeId,
-      @PathParam("fieldVar") final String fieldVar,
-      @PathParam("fieldVarId") final String fieldVarId,
-      @Context final HttpServletRequest req)
-      throws DotDataException {
+		return response;
+	}
 
-    final InitDataObject initData = this.webResource.init(null, false, req, false, null);
-    final FieldAPI fapi = APILocator.getContentTypeFieldAPI();
+	@GET
+	@Path("/var/{fieldVar}/variables/id/{fieldVarId}")
+	@JSONP
+	@NoCache
+	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
+	public Response getFieldVariableByFieldVar(@PathParam("typeId") final String typeId,
+			@PathParam("fieldVar") final String fieldVar, @PathParam("fieldVarId") final String fieldVarId,
+			@Context final HttpServletRequest req) throws DotDataException {
 
-    Response response = null;
-    try {
+		final InitDataObject initData = this.webResource.init(null, false, req, false, null);
+		final FieldAPI fapi = APILocator.getContentTypeFieldAPI();
 
-      Field field = fapi.byContentTypeIdAndVar(typeId, fieldVar);
+		Response response = null;
+		try {
 
-      FieldVariable fieldVariable = getFieldVariable(field, fieldVarId);
+			Field field = fapi.byContentTypeIdAndVar(typeId, fieldVar);
 
-      if (!field.id().equals(fieldVariable.fieldId())) {
+			FieldVariable fieldVariable = getFieldVariable(field, fieldVarId);
 
-        response =
-            ExceptionMapperUtil.createResponse(
-                null,
-                "Field fieldVarId '"
-                    + fieldVarId
-                    + "' does not match a field with id '"
-                    + field.id()
-                    + "'");
+			if (!field.id().equals(fieldVariable.fieldId())) {
 
-      } else {
+				response = ExceptionMapperUtil.createResponse(null, "Field fieldVarId '"+ fieldVarId +"' does not match a field with id '"+ field.id() +"'");
 
-        response =
-            Response.ok(
-                    new ResponseEntityView(
-                        new JsonFieldVariableTransformer(fieldVariable).mapObject()))
-                .build();
-      }
+			} else {
 
-    } catch (NotFoundInDbException e) {
+				response = Response.ok(new ResponseEntityView(new JsonFieldVariableTransformer(fieldVariable).mapObject())).build();				
+			}
 
-      response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
+		} catch (NotFoundInDbException e) {
 
-    } catch (Exception e) {
+			response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
 
-      response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
-    }
+		} catch (Exception e) {
 
-    return response;
-  }
+			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+		}
 
-  @PUT
-  @Path("/id/{fieldId}/variables/id/{fieldVarId}")
-  @JSONP
-  @NoCache
-  @Consumes(MediaType.APPLICATION_JSON)
-  @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-  public Response updateFieldVariableByFieldId(
-      @PathParam("typeId") final String typeId,
-      @PathParam("fieldId") final String fieldId,
-      @PathParam("fieldVarId") final String fieldVarId,
-      final String fieldVariableJson,
-      @Context final HttpServletRequest req)
-      throws DotDataException {
+		return response;
+	}
 
-    final InitDataObject initData = this.webResource.init(null, false, req, false, null);
-    final User user = initData.getUser();
-    final FieldAPI fapi = APILocator.getContentTypeFieldAPI();
 
-    Response response = null;
+	@PUT
+	@Path("/id/{fieldId}/variables/id/{fieldVarId}")
+	@JSONP
+	@NoCache
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
+	public Response updateFieldVariableByFieldId(@PathParam("typeId") final String typeId, @PathParam("fieldId") final String fieldId,
+			@PathParam("fieldVarId") final String fieldVarId, final String fieldVariableJson, @Context final HttpServletRequest req
+	) throws DotDataException {
 
-    try {
-      Field field = fapi.find(fieldId);
+		final InitDataObject initData = this.webResource.init(null, false, req, false, null);
+		final User user = initData.getUser();
+		final FieldAPI fapi = APILocator.getContentTypeFieldAPI();
 
-      FieldVariable fieldVariable = new JsonFieldVariableTransformer(fieldVariableJson).from();
+		Response response = null;
 
-      if (!UtilMethods.isSet(fieldVariable.id())) {
+		try {
+			Field field = fapi.find(fieldId);
 
-        response = ExceptionMapperUtil.createResponse(null, "Field 'id' should be set");
+			FieldVariable fieldVariable = new JsonFieldVariableTransformer(fieldVariableJson).from();
 
-      } else if (!UtilMethods.isSet(fieldVariable.fieldId())
-          || !fieldVariable.fieldId().equals(field.id())) {
+			if (!UtilMethods.isSet(fieldVariable.id())) {
 
-        response =
-            ExceptionMapperUtil.createResponse(
-                null,
-                "Field fieldId '"
-                    + fieldVariable.fieldId()
-                    + "' does not match a field with id '"
-                    + field.id()
-                    + "'");
+				response = ExceptionMapperUtil.createResponse(null, "Field 'id' should be set");
 
-      } else {
+			} else if (!UtilMethods.isSet(fieldVariable.fieldId()) || !fieldVariable.fieldId().equals(field.id())) {
 
-        FieldVariable currentFieldVariable = getFieldVariable(field, fieldVarId);
+				response = ExceptionMapperUtil.createResponse(null, "Field fieldId '"+ fieldVariable.fieldId() +"' does not match a field with id '"+ field.id() +"'");
 
-        if (!currentFieldVariable.id().equals(fieldVariable.id())) {
+			} else {
 
-          response =
-              ExceptionMapperUtil.createResponse(
-                  null,
-                  "Field variable id '"
-                      + fieldVarId
-                      + "' does not match a field variable with id '"
-                      + fieldVariable.id()
-                      + "'");
+				FieldVariable currentFieldVariable = getFieldVariable(field, fieldVarId);
 
-        } else {
+				if (!currentFieldVariable.id().equals(fieldVariable.id())) {
 
-          fieldVariable = fapi.save(fieldVariable, user);
+					response = ExceptionMapperUtil.createResponse(null, "Field variable id '"+ fieldVarId +"' does not match a field variable with id '"+ fieldVariable.id() +"'");
 
-          response =
-              Response.ok(
-                      new ResponseEntityView(
-                          new JsonFieldVariableTransformer(fieldVariable).mapObject()))
-                  .build();
-        }
-      }
-    } catch (DotStateException e) {
+				} else {
 
-      response =
-          ExceptionMapperUtil.createResponse(
-              null, "Field variable is not valid (" + e.getMessage() + ")");
+					fieldVariable = fapi.save(fieldVariable, user);
 
-    } catch (NotFoundInDbException e) {
+					response = Response.ok(new ResponseEntityView(new JsonFieldVariableTransformer(fieldVariable).mapObject())).build();
+				}
+			}
+		} catch (DotStateException e) {
 
-      response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
+			response = ExceptionMapperUtil.createResponse(null, "Field variable is not valid ("+ e.getMessage() +")");
 
-    } catch (DotSecurityException e) {
-      throw new ForbiddenException(e);
+		} catch (NotFoundInDbException e) {
 
-    } catch (Exception e) {
+			response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
 
-      response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
-    }
+		} catch (DotSecurityException e) {
+			throw new ForbiddenException(e);
 
-    return response;
-  }
+		} catch (Exception e) {
 
-  @PUT
-  @Path("/var/{fieldVar}/variables/id/{fieldVarId}")
-  @JSONP
-  @NoCache
-  @Consumes(MediaType.APPLICATION_JSON)
-  @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-  public Response updateFieldVariableByFieldVar(
-      @PathParam("typeId") final String typeId,
-      @PathParam("fieldVar") final String fieldVar,
-      @PathParam("fieldVarId") final String fieldVarId,
-      final String fieldVariableJson,
-      @Context final HttpServletRequest req)
-      throws DotDataException {
+			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+		}
 
-    final InitDataObject initData = this.webResource.init(null, false, req, false, null);
-    final User user = initData.getUser();
-    final FieldAPI fapi = APILocator.getContentTypeFieldAPI();
+		return response;
+	}
 
-    Response response = null;
+	@PUT
+	@Path("/var/{fieldVar}/variables/id/{fieldVarId}")
+	@JSONP
+	@NoCache
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
+	public Response updateFieldVariableByFieldVar(@PathParam("typeId") final String typeId, @PathParam("fieldVar") final String fieldVar,
+			@PathParam("fieldVarId") final String fieldVarId, final String fieldVariableJson, @Context final HttpServletRequest req
+	) throws DotDataException {
 
-    try {
-      Field field = fapi.byContentTypeIdAndVar(typeId, fieldVar);
+		final InitDataObject initData = this.webResource.init(null, false, req, false, null);
+		final User user = initData.getUser();
+		final FieldAPI fapi = APILocator.getContentTypeFieldAPI();
 
-      FieldVariable fieldVariable = new JsonFieldVariableTransformer(fieldVariableJson).from();
+		Response response = null;
 
-      if (!UtilMethods.isSet(fieldVariable.id())) {
+		try {
+			Field field = fapi.byContentTypeIdAndVar(typeId, fieldVar);
 
-        response = ExceptionMapperUtil.createResponse(null, "Field 'id' should be set");
+			FieldVariable fieldVariable = new JsonFieldVariableTransformer(fieldVariableJson).from();
 
-      } else if (!UtilMethods.isSet(fieldVariable.fieldId())
-          || !fieldVariable.fieldId().equals(field.id())) {
+			if (!UtilMethods.isSet(fieldVariable.id())) {
 
-        response =
-            ExceptionMapperUtil.createResponse(
-                null,
-                "Field fieldId '"
-                    + fieldVariable.fieldId()
-                    + "' does not match a field with id '"
-                    + field.id()
-                    + "'");
+				response = ExceptionMapperUtil.createResponse(null, "Field 'id' should be set");
 
-      } else {
+			} else if (!UtilMethods.isSet(fieldVariable.fieldId()) || !fieldVariable.fieldId().equals(field.id())) {
 
-        FieldVariable currentFieldVariable = getFieldVariable(field, fieldVarId);
+				response = ExceptionMapperUtil.createResponse(null, "Field fieldId '"+ fieldVariable.fieldId() +"' does not match a field with id '"+ field.id() +"'");
 
-        if (!currentFieldVariable.id().equals(fieldVariable.id())) {
+			} else {
 
-          response =
-              ExceptionMapperUtil.createResponse(
-                  null,
-                  "Field variable id '"
-                      + fieldVarId
-                      + "' does not match a field variable with id '"
-                      + fieldVariable.id()
-                      + "'");
+				FieldVariable currentFieldVariable = getFieldVariable(field, fieldVarId);
 
-        } else {
+				if (!currentFieldVariable.id().equals(fieldVariable.id())) {
 
-          fieldVariable = fapi.save(fieldVariable, user);
+					response = ExceptionMapperUtil.createResponse(null, "Field variable id '"+ fieldVarId +"' does not match a field variable with id '"+ fieldVariable.id() +"'");
 
-          response =
-              Response.ok(
-                      new ResponseEntityView(
-                          new JsonFieldVariableTransformer(fieldVariable).mapObject()))
-                  .build();
-        }
-      }
-    } catch (DotStateException e) {
+				} else {
 
-      response =
-          ExceptionMapperUtil.createResponse(
-              null, "Field variable is not valid (" + e.getMessage() + ")");
+					fieldVariable = fapi.save(fieldVariable, user);
 
-    } catch (NotFoundInDbException e) {
+					response = Response.ok(new ResponseEntityView(new JsonFieldVariableTransformer(fieldVariable).mapObject())).build();
+				}
+			}
+		} catch (DotStateException e) {
 
-      response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
+			response = ExceptionMapperUtil.createResponse(null, "Field variable is not valid ("+ e.getMessage() +")");
 
-    } catch (DotSecurityException e) {
-      throw new ForbiddenException(e);
+		} catch (NotFoundInDbException e) {
 
-    } catch (Exception e) {
+			response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
 
-      response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
-    }
+		} catch (DotSecurityException e) {
+			throw new ForbiddenException(e);
 
-    return response;
-  }
+		} catch (Exception e) {
 
-  @DELETE
-  @Path("/id/{fieldId}/variables/id/{fieldVarId}")
-  @JSONP
-  @NoCache
-  @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-  public Response deleteFieldVariableByFieldId(
-      @PathParam("typeId") final String typeId,
-      @PathParam("fieldId") final String fieldId,
-      @PathParam("fieldVarId") final String fieldVarId,
-      @Context final HttpServletRequest req)
-      throws DotDataException {
+			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+		}
 
-    final InitDataObject initData = this.webResource.init(null, false, req, false, null);
-    final User user = initData.getUser();
-    final FieldAPI fapi = APILocator.getContentTypeFieldAPI();
+		return response;
+	}
 
-    Response response = null;
-    try {
 
-      Field field = fapi.find(fieldId);
+	@DELETE
+	@Path("/id/{fieldId}/variables/id/{fieldVarId}")
+	@JSONP
+	@NoCache
+	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
+	public Response deleteFieldVariableByFieldId(@PathParam("typeId") final String typeId,
+			@PathParam("fieldId") final String fieldId, @PathParam("fieldVarId") final String fieldVarId,
+			@Context final HttpServletRequest req) throws DotDataException {
 
-      FieldVariable fieldVariable = getFieldVariable(field, fieldVarId);
+		final InitDataObject initData = this.webResource.init(null, false, req, false, null);
+		final User user = initData.getUser();
+		final FieldAPI fapi = APILocator.getContentTypeFieldAPI();
 
-      if (!fieldVariable.fieldId().equals(field.id())) {
+		Response response = null;
+		try {
 
-        response =
-            ExceptionMapperUtil.createResponse(
-                null,
-                "Field fieldId '"
-                    + fieldVariable.fieldId()
-                    + "' does not match a field with id '"
-                    + field.id()
-                    + "'");
+			Field field = fapi.find(fieldId);
 
-      } else {
+			FieldVariable fieldVariable = getFieldVariable(field, fieldVarId);
 
-        fapi.delete(fieldVariable);
+			if (!fieldVariable.fieldId().equals(field.id())) {
 
-        response = Response.ok(new ResponseEntityView(null)).build();
-      }
+				response = ExceptionMapperUtil.createResponse(null, "Field fieldId '"+ fieldVariable.fieldId() +"' does not match a field with id '"+ field.id() +"'");
 
-    } catch (NotFoundInDbException e) {
+			} else {
 
-      response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
+				fapi.delete(fieldVariable);
 
-    } catch (Exception e) {
+				response = Response.ok(new ResponseEntityView(null)).build();
+			}
 
-      response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
-    }
+		} catch (NotFoundInDbException e) {
 
-    return response;
-  }
+			response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
 
-  @DELETE
-  @Path("/var/{fieldVar}/variables/id/{fieldVarId}")
-  @JSONP
-  @NoCache
-  @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-  public Response deleteFieldVariableByFieldVar(
-      @PathParam("typeId") final String typeId,
-      @PathParam("fieldVar") final String fieldVar,
-      @PathParam("fieldVarId") final String fieldVarId,
-      @Context final HttpServletRequest req)
-      throws DotDataException {
+		} catch (Exception e) {
 
-    final InitDataObject initData = this.webResource.init(null, false, req, false, null);
-    final User user = initData.getUser();
-    final FieldAPI fapi = APILocator.getContentTypeFieldAPI();
+			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+		}
 
-    Response response = null;
-    try {
+		return response;
+	}
 
-      Field field = fapi.byContentTypeIdAndVar(typeId, fieldVar);
+	@DELETE
+	@Path("/var/{fieldVar}/variables/id/{fieldVarId}")
+	@JSONP
+	@NoCache
+	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
+	public Response deleteFieldVariableByFieldVar(@PathParam("typeId") final String typeId,
+			@PathParam("fieldVar") final String fieldVar, @PathParam("fieldVarId") final String fieldVarId,
+			@Context final HttpServletRequest req) throws DotDataException {
 
-      FieldVariable fieldVariable = getFieldVariable(field, fieldVarId);
+		final InitDataObject initData = this.webResource.init(null, false, req, false, null);
+		final User user = initData.getUser();
+		final FieldAPI fapi = APILocator.getContentTypeFieldAPI();
 
-      if (!fieldVariable.fieldId().equals(field.id())) {
+		Response response = null;
+		try {
 
-        response =
-            ExceptionMapperUtil.createResponse(
-                null,
-                "Field fieldId '"
-                    + fieldVariable.fieldId()
-                    + "' does not match a field with id '"
-                    + field.id()
-                    + "'");
+			Field field = fapi.byContentTypeIdAndVar(typeId, fieldVar);
 
-      } else {
+			FieldVariable fieldVariable = getFieldVariable(field, fieldVarId);
 
-        fapi.delete(fieldVariable);
+			if (!fieldVariable.fieldId().equals(field.id())) {
 
-        response = Response.ok(new ResponseEntityView(null)).build();
-      }
+				response = ExceptionMapperUtil.createResponse(null, "Field fieldId '"+ fieldVariable.fieldId() +"' does not match a field with id '"+ field.id() +"'");
 
-    } catch (NotFoundInDbException e) {
+			} else {
 
-      response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
+				fapi.delete(fieldVariable);
 
-    } catch (Exception e) {
+				response = Response.ok(new ResponseEntityView(null)).build();
+			}
 
-      response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
-    }
+		} catch (NotFoundInDbException e) {
 
-    return response;
-  }
+			response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
 
-  private FieldVariable getFieldVariable(Field field, String fieldVarId)
-      throws NotFoundInDbException {
-    FieldVariable result = field.fieldVariablesMap().get(fieldVarId);
-    if (result == null) {
-      throw new NotFoundInDbException("Field variable with id:" + fieldVarId + " not found");
-    }
-    return result;
-  }
+		} catch (Exception e) {
+
+			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+		}
+
+		return response;
+	}
+
+	private FieldVariable getFieldVariable(Field field, String fieldVarId) throws NotFoundInDbException {
+		FieldVariable result = field.fieldVariablesMap().get(fieldVarId);
+		if (result == null) {
+			throw new NotFoundInDbException("Field variable with id:" + fieldVarId + " not found");
+		}
+		return result;
+	}
 }

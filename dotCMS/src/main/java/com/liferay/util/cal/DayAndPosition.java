@@ -36,179 +36,217 @@ import java.util.Calendar;
 /**
  * <a href="DayAndPosition.java.html"><b><i>View Source</i></b></a>
  *
- * @author Jonathan Lennox
+ * @author  Jonathan Lennox
  * @version $Revision: 1.3 $
+ *
  */
 public class DayAndPosition implements Cloneable, Serializable {
 
-  /** Field day */
-  private int day;
+	/**
+	 * Field day
+	 */
+	private int day;
 
-  /** Field position */
-  private int position;
+	/**
+	 * Field position
+	 */
+	private int position;
 
-  /** Field NO_WEEKDAY */
-  public static final int NO_WEEKDAY = 0;
+	/**
+	 * Field NO_WEEKDAY
+	 */
+	public final static int NO_WEEKDAY = 0;
 
-  /** Constructor DayAndPosition */
-  public DayAndPosition() {
-    day = NO_WEEKDAY;
-    position = 0;
-  }
+	/**
+	 * Constructor DayAndPosition
+	 *
+	 *
+	 */
+	public DayAndPosition() {
+		day = NO_WEEKDAY;
+		position = 0;
+	}
 
-  /**
-   * Constructor DayAndPosition
-   *
-   * @param d
-   * @param p
-   */
-  public DayAndPosition(int d, int p) {
-    if (!isValidDayOfWeek(d)) {
-      throw new IllegalArgumentException("Invalid day of week");
-    }
+	/**
+	 * Constructor DayAndPosition
+	 *
+	 *
+	 * @param	d
+	 * @param	p
+	 *
+	 */
+	public DayAndPosition(int d, int p) {
+		if (!isValidDayOfWeek(d)) {
+			throw new IllegalArgumentException("Invalid day of week");
+		}
 
-    if (!isValidDayPosition(p)) {
-      throw new IllegalArgumentException("Invalid day position");
-    }
+		if (!isValidDayPosition(p)) {
+			throw new IllegalArgumentException("Invalid day position");
+		}
 
-    day = d;
-    position = p;
-  }
+		day = d;
+		position = p;
+	}
 
-  /**
-   * Method getDayOfWeek
-   *
-   * @return int
-   */
-  public int getDayOfWeek() {
-    return day;
-  }
+	/**
+	 * Method getDayOfWeek
+	 *
+	 *
+	 * @return	int
+	 *
+	 */
+	public int getDayOfWeek() {
+		return day;
+	}
 
-  /**
-   * Method setDayOfWeek
-   *
-   * @param d
-   */
-  public void setDayOfWeek(int d) {
-    if (!isValidDayOfWeek(d)) {
-      throw new IllegalArgumentException("Invalid day of week");
-    }
+	/**
+	 * Method setDayOfWeek
+	 *
+	 *
+	 * @param	d
+	 *
+	 */
+	public void setDayOfWeek(int d) {
+		if (!isValidDayOfWeek(d)) {
+			throw new IllegalArgumentException("Invalid day of week");
+		}
 
-    day = d;
-  }
+		day = d;
+	}
 
-  /**
-   * Method getDayPosition
-   *
-   * @return int
-   */
-  public int getDayPosition() {
-    return position;
-  }
+	/**
+	 * Method getDayPosition
+	 *
+	 *
+	 * @return	int
+	 *
+	 */
+	public int getDayPosition() {
+		return position;
+	}
 
-  /**
-   * Method setDayPosition
-   *
-   * @param p
-   */
-  public void setDayPosition(int p) {
-    if (!isValidDayPosition(p)) {
-      throw new IllegalArgumentException();
-    }
+	/**
+	 * Method setDayPosition
+	 *
+	 *
+	 * @param	p
+	 *
+	 */
+	public void setDayPosition(int p) {
+		if (!isValidDayPosition(p)) {
+			throw new IllegalArgumentException();
+		}
 
-    position = p;
-  }
+		position = p;
+	}
 
-  /**
-   * Method equals
-   *
-   * @param obj
-   * @return boolean
-   */
-  public boolean equals(Object obj) {
-    if (obj == null) {
-      return false;
-    }
+	/**
+	 * Method equals
+	 *
+	 *
+	 * @param	obj
+	 *
+	 * @return	boolean
+	 *
+	 */
+	public boolean equals(Object obj) {
+		if (obj == null) {
+			return false;
+		}
 
-    if (this == obj) {
-      return true;
-    }
+		if (this == obj) {
+			return true;
+		}
 
-    if (!(obj instanceof DayAndPosition)) {
-      return false;
-    }
+		if (!(obj instanceof DayAndPosition)) {
+			return false;
+		}
 
-    DayAndPosition that = (DayAndPosition) obj;
+		DayAndPosition that = (DayAndPosition)obj;
 
-    return (getDayOfWeek() == that.getDayOfWeek()) && (getDayPosition() == that.getDayPosition());
-  }
+		return (getDayOfWeek() == that.getDayOfWeek())
+			   && (getDayPosition() == that.getDayPosition());
+	}
 
-  /**
-   * Method isValidDayOfWeek
-   *
-   * @param d
-   * @return boolean
-   */
-  public static boolean isValidDayOfWeek(int d) {
-    switch (d) {
-      case NO_WEEKDAY:
-      case Calendar.SUNDAY:
-      case Calendar.MONDAY:
-      case Calendar.TUESDAY:
-      case Calendar.WEDNESDAY:
-      case Calendar.THURSDAY:
-      case Calendar.FRIDAY:
-      case Calendar.SATURDAY:
-        return true;
+	/**
+	 * Method isValidDayOfWeek
+	 *
+	 *
+	 * @param	d
+	 *
+	 * @return	boolean
+	 *
+	 */
+	public static boolean isValidDayOfWeek(int d) {
+		switch (d) {
 
-      default:
-        return false;
-    }
-  }
+			case NO_WEEKDAY :
+			case Calendar.SUNDAY :
+			case Calendar.MONDAY :
+			case Calendar.TUESDAY :
+			case Calendar.WEDNESDAY :
+			case Calendar.THURSDAY :
+			case Calendar.FRIDAY :
+			case Calendar.SATURDAY :
+				return true;
 
-  /**
-   * Method isValidDayPosition
-   *
-   * @param p
-   * @return boolean
-   */
-  public static boolean isValidDayPosition(int p) {
-    return ((p >= -53) && (p <= 53));
-  }
+			default :
+				return false;
+		}
+	}
 
-  /**
-   * Method clone
-   *
-   * @return Object
-   */
-  public Object clone() {
-    try {
-      DayAndPosition other = (DayAndPosition) super.clone();
+	/**
+	 * Method isValidDayPosition
+	 *
+	 *
+	 * @param	p
+	 *
+	 * @return	boolean
+	 *
+	 */
+	public static boolean isValidDayPosition(int p) {
+		return ((p >= -53) && (p <= 53));
+	}
 
-      other.day = day;
-      other.position = position;
+	/**
+	 * Method clone
+	 *
+	 *
+	 * @return	Object
+	 *
+	 */
+	public Object clone() {
+		try {
+			DayAndPosition other = (DayAndPosition)super.clone();
 
-      return other;
-    } catch (CloneNotSupportedException e) {
-      throw new InternalError();
-    }
-  }
+			other.day = day;
+			other.position = position;
 
-  /**
-   * Method toString
-   *
-   * @return String
-   */
-  public String toString() {
-    StringBuffer buffer = new StringBuffer();
+			return other;
+		}
+		catch (CloneNotSupportedException e) {
+			throw new InternalError();
+		}
+	}
 
-    buffer.append(getClass().getName());
-    buffer.append("[day=");
-    buffer.append(day);
-    buffer.append(",position=");
-    buffer.append(position);
-    buffer.append("]");
+	/**
+	 * Method toString
+	 *
+	 *
+	 * @return	String
+	 *
+	 */
+	public String toString() {
+		StringBuffer buffer = new StringBuffer();
 
-    return buffer.toString();
-  }
+		buffer.append(getClass().getName());
+		buffer.append("[day=");
+		buffer.append(day);
+		buffer.append(",position=");
+		buffer.append(position);
+		buffer.append("]");
+
+		return buffer.toString();
+	}
+
 }

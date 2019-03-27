@@ -1,33 +1,36 @@
 package com.dotcms.contenttype.model.relationship;
 
 import java.io.Serializable;
+
 import org.immutables.value.Value;
 
 @Value.Immutable
 public abstract class Relationship implements Serializable {
 
-  private static final long serialVersionUID = 1L;
 
-  public abstract String getParentStructureInode();
+	private static final long serialVersionUID = 1L;
 
-  public abstract String getChildStructureInode();
+	public abstract String getParentStructureInode();
 
-  public abstract String getParentRelationName();
+	public abstract String getChildStructureInode();
 
-  public abstract String getChildRelationName();
+	public abstract String getParentRelationName();
 
-  public abstract String getRelationTypeValue();
+	public abstract String getChildRelationName();
 
-  @Value.Default
-  String getType() {
-    return "relationship";
-  };
+	public abstract String getRelationTypeValue();
 
-  public abstract int getCardinality();
+	@Value.Default
+	String getType() {
+		return "relationship";
+	};
 
-  public abstract boolean isParentRequired();
+	public abstract int getCardinality();
 
-  public abstract boolean isChildRequired();
+	public abstract boolean isParentRequired();
 
-  public abstract boolean isFixed();
+	public abstract boolean isChildRequired();
+
+	public abstract boolean isFixed();
+
 }

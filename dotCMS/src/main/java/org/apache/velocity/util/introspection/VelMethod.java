@@ -16,47 +16,48 @@ package org.apache.velocity.util.introspection;
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
- * under the License.
+ * under the License.    
  */
 
 /**
- * Method used for regular method invocation
+ *  Method used for regular method invocation
  *
- * <p>$foo.bar()
+ *    $foo.bar()
+ *
  *
  * @author <a href="mailto:geirm@optonline.net">Geir Magnusson Jr.</a>
  * @version $Id: VelMethod.java 510625 2007-02-22 19:06:28Z nbubna $
  */
-public interface VelMethod {
-  /**
-   * invocation method - called when the method invocation should be performed and a value returned
-   *
-   * @param o
-   * @param params
-   * @return The resulting object.
-   * @throws Exception
-   */
-  public Object invoke(Object o, Object[] params) throws Exception;
+public interface VelMethod
+{
+    /**
+     *  invocation method - called when the method invocation should be
+     *  performed and a value returned
+     * @param o
+     * @param params
+     * @return The resulting object.
+     * @throws Exception
+     */
+    public Object invoke(Object o, Object[] params)
+        throws Exception;
 
-  /**
-   * specifies if this VelMethod is cacheable and able to be reused for this class of object it was
-   * returned for
-   *
-   * @return true if can be reused for this class, false if not
-   */
-  public boolean isCacheable();
+    /**
+     *  specifies if this VelMethod is cacheable and able to be
+     *  reused for this class of object it was returned for
+     *
+     *  @return true if can be reused for this class, false if not
+     */
+    public boolean isCacheable();
 
-  /**
-   * returns the method name used
-   *
-   * @return The method name used
-   */
-  public String getMethodName();
+    /**
+     *  returns the method name used
+     * @return The method name used
+     */
+    public String getMethodName();
 
-  /**
-   * returns the return type of the method invoked
-   *
-   * @return The return type of the method invoked
-   */
-  public Class getReturnType();
+    /**
+     *  returns the return type of the method invoked
+     * @return The return type of the method invoked
+     */
+    public Class getReturnType();
 }

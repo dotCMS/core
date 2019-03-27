@@ -4,56 +4,60 @@ import java.io.Serializable;
 import java.util.Date;
 
 public class DashboardUserPreferences implements Serializable {
+   
+	private static final long serialVersionUID = 1L;
+	
+	private long id;
+	
+	private DashboardSummary404 summary404;
+	
+	private boolean ignored;
+	
+	private String userId;
+	
+	private Date modDate;
 
-  private static final long serialVersionUID = 1L;
+	public long getId() {
+		return id;
+	}
 
-  private long id;
+	public void setId(long id) {
+		this.id = id;
+	}
 
-  private DashboardSummary404 summary404;
+	public DashboardSummary404 getSummary404() {
+		return summary404;
+	}
 
-  private boolean ignored;
+	public void setSummary404(DashboardSummary404 summary404) {
+		this.summary404 = summary404;
+	}
 
-  private String userId;
+	public boolean isIgnored() {
+		return ignored;
+	}
 
-  private Date modDate;
+	public void setIgnored(boolean ignored) {
+		this.ignored = ignored;
+	}
 
-  public long getId() {
-    return id;
-  }
+	public String getUserId() {
+		return userId;
+	}
 
-  public void setId(long id) {
-    this.id = id;
-  }
+	public void setUserId(String userId) {
+		this.userId = userId;
+	}
 
-  public DashboardSummary404 getSummary404() {
-    return summary404;
-  }
+	public Date getModDate() {
+		return modDate;
+	}
 
-  public void setSummary404(DashboardSummary404 summary404) {
-    this.summary404 = summary404;
-  }
+	public void setModDate(Date modDate) {
+		this.modDate = modDate;
+	}
+	
+	
 
-  public boolean isIgnored() {
-    return ignored;
-  }
 
-  public void setIgnored(boolean ignored) {
-    this.ignored = ignored;
-  }
-
-  public String getUserId() {
-    return userId;
-  }
-
-  public void setUserId(String userId) {
-    this.userId = userId;
-  }
-
-  public Date getModDate() {
-    return modDate;
-  }
-
-  public void setModDate(Date modDate) {
-    this.modDate = modDate;
-  }
 }

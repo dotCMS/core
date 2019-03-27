@@ -14,18 +14,21 @@
  * limitations under the License.
  */
 
+
 package org.apache.velocity.tools.view.servlet;
 
+
 import org.apache.velocity.tools.view.ViewToolInfo;
+import org.apache.velocity.tools.view.context.ViewContext;
+
 
 /**
- * ToolInfo implementation that holds scope information for tools used in a servlet environment. The
- * ServletToolboxManager uses this to allow tool definitions to specify the scope/lifecycle of
- * individual view tools.
+ * <p>ToolInfo implementation that holds scope information for tools
+ * used in a servlet environment.  The ServletToolboxManager uses
+ * this to allow tool definitions to specify the scope/lifecycle
+ * of individual view tools.</p>
  *
- * <p>Example of toolbox.xml definitions for servlet tools:
- *
- * <pre>
+ * <p>Example of toolbox.xml definitions for servlet tools:<pre>
  *  &lt;tool&gt;
  *    &lt;key&gt;link&lt;/key&gt;
  *    &lt;scope&gt;request&lt;/scope&gt;
@@ -41,23 +44,32 @@ import org.apache.velocity.tools.view.ViewToolInfo;
  *    &lt;scope&gt;session&lt;/scope&gt;
  *    &lt;class&gt;com.mycompany.tools.MyUserTool&lt;/class&gt;
  *  &lt;/tool&gt;
- *  </pre>
+ *  </pre></p>
  *
  * @author <a href="mailto:nathan@esha.com">Nathan Bubna</a>
+ *
  * @version $Id: ServletToolInfo.java 72030 2004-03-12 20:50:38Z nbubna $
  */
-public class ServletToolInfo extends ViewToolInfo {
+public class ServletToolInfo extends ViewToolInfo
+{
+        
+    private String scope;
 
-  private String scope;
 
-  public ServletToolInfo() {}
+    public ServletToolInfo() {}
 
-  public void setScope(String scope) {
-    this.scope = scope;
-  }
 
-  /** @return the scope of the tool */
-  public String getScope() {
-    return scope;
-  }
+    public void setScope(String scope) { 
+        this.scope = scope;
+    }
+
+
+    /**
+     * @return the scope of the tool
+     */
+    public String getScope()
+    {
+        return scope;
+    }
+
 }

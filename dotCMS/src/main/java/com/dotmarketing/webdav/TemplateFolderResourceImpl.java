@@ -1,5 +1,15 @@
-/** */
+/**
+ * 
+ */
 package com.dotmarketing.webdav;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 import com.dotcms.repackage.com.bradmcevoy.http.Auth;
 import com.dotcms.repackage.com.bradmcevoy.http.CollectionResource;
@@ -26,305 +36,303 @@ import com.dotmarketing.util.CompanyUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
 
-/** @author Jason Tesser */
-public class TemplateFolderResourceImpl
-    implements LockableResource,
-        LockingCollectionResource,
-        FolderResource,
-        MakeCollectionableResource {
+/**
+ * @author Jason Tesser
+ * 
+ */
+public class TemplateFolderResourceImpl implements LockableResource,
+		LockingCollectionResource, FolderResource, MakeCollectionableResource {
 
-  public static final String TEMPLATE_FOLDER = "_TEMPLATE";
-  private DotWebdavHelper dotDavHelper;
-  private String path;
+	public static final String TEMPLATE_FOLDER="_TEMPLATE";
+	private DotWebdavHelper dotDavHelper;
+	private String path;
 
-  private PermissionAPI perAPI;
-  private Host host;
-  private TemplateAPI tapi;
+	private PermissionAPI perAPI;
+	private Host host;
+	private TemplateAPI tapi;
 
-  public TemplateFolderResourceImpl(String path, Host host) {
-    this.perAPI = APILocator.getPermissionAPI();
-    this.dotDavHelper = new DotWebdavHelper();
-    this.path = path;
-    this.host = host;
-    this.tapi = APILocator.getTemplateAPI();
-  }
+	public TemplateFolderResourceImpl(String path, Host host) {
+		this.perAPI = APILocator.getPermissionAPI();
+		this.dotDavHelper = new DotWebdavHelper();
+		this.path = path ;
+		this.host = host;
+		this.tapi = APILocator.getTemplateAPI();
+	}
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see
-   * com.dotcms.repackage.com.bradmcevoy.http.MakeCollectionableResource#createCollection(java.
-   * lang.String)
-   */
-  public CollectionResource createCollection(String newName) throws DotRuntimeException {
-    return null;
-  }
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * com.dotcms.repackage.com.bradmcevoy.http.MakeCollectionableResource#createCollection(java.
+	 * lang.String)
+	 */
+	public CollectionResource createCollection(String newName)
+			throws DotRuntimeException {
+		return null;
+	}
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see com.dotcms.repackage.com.bradmcevoy.http.CollectionResource#child(java.lang.String)
-   */
-  public Resource child(String childName) {
-    if (!UtilMethods.isSet(childName)) {
-      return null;
-    }
-    List<Resource> children = getChildren();
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see com.dotcms.repackage.com.bradmcevoy.http.CollectionResource#child(java.lang.String)
+	 */
+	public Resource child(String childName) {
+		if (!UtilMethods.isSet(childName)) {
+			return null;
+		}
+		List<Resource> children = getChildren();
 
-    for (Resource resource : children) {
-      TemplateFolderResourceImpl tfr = (TemplateFolderResourceImpl) resource;
-      if (childName.equalsIgnoreCase(tfr.getName())) {
-        return resource;
-      }
-    }
-    return null;
-  }
+		for (Resource resource : children) {
+			TemplateFolderResourceImpl tfr = (TemplateFolderResourceImpl) resource;
+			if (childName.equalsIgnoreCase(tfr.getName())) {
+				return resource;
+			}
+		}
+		return null;
+	}
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see com.dotcms.repackage.com.bradmcevoy.http.Resource#authenticate(java.lang.String,
-   * java.lang.String)
-   */
-  public Object authenticate(String username, String password) {
-    try {
-      return dotDavHelper.authorizePrincipal(username, password);
-    } catch (Exception e) {
-      Logger.error(this, e.getMessage(), e);
-      return null;
-    }
-  }
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see com.dotcms.repackage.com.bradmcevoy.http.Resource#authenticate(java.lang.String,
+	 * java.lang.String)
+	 */
+	public Object authenticate(String username, String password) {
+		try {
+			return dotDavHelper.authorizePrincipal(username, password);
+		} catch (Exception e) {
+			Logger.error(this, e.getMessage(), e);
+			return null;
+		}
+	}
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see com.dotcms.repackage.com.bradmcevoy.http.Resource#authorise(com.dotcms.repackage.com.bradmcevoy.http.Request,
-   * com.dotcms.repackage.com.bradmcevoy.http.Request.Method, com.dotcms.repackage.com.bradmcevoy.http.Auth)
-   */
-  public boolean authorise(Request req, Method method, Auth auth) {
-    try {
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see com.dotcms.repackage.com.bradmcevoy.http.Resource#authorise(com.dotcms.repackage.com.bradmcevoy.http.Request,
+	 * com.dotcms.repackage.com.bradmcevoy.http.Request.Method, com.dotcms.repackage.com.bradmcevoy.http.Auth)
+	 */
+	public boolean authorise(Request req, Method method, Auth auth) {
+		try {
 
-      if (auth == null) return false;
-      else {
-        User user = (User) auth.getTag();
-        if (method.isWrite) {
-          return perAPI.doesUserHavePermission(
-              host, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, false);
-        } else if (!method.isWrite) {
-          return perAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user, false);
-        }
-      }
-    } catch (DotDataException e) {
-      Logger.error(TemplateFolderResourceImpl.class, e.getMessage(), e);
-      throw new DotRuntimeException(e.getMessage(), e);
-    }
-    return false;
-  }
+			if (auth == null)
+				return false;
+			else { 
+			    User user=(User)auth.getTag();
+			    if (method.isWrite) {
+    				return perAPI.doesUserHavePermission(host,
+    						PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, false);
+    			} else if (!method.isWrite) {
+    				return perAPI.doesUserHavePermission(host,
+    						PermissionAPI.PERMISSION_READ, user, false);
+    			}
+			}
+		} catch (DotDataException e) {
+			Logger.error(TemplateFolderResourceImpl.class, e.getMessage(), e);
+			throw new DotRuntimeException(e.getMessage(), e);
+		}
+		return false;
+	}
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see
-   * com.dotcms.repackage.com.bradmcevoy.http.Resource#checkRedirect(com.dotcms.repackage.com.bradmcevoy.http.Request)
-   */
-  public String checkRedirect(Request req) {
-    return null;
-  }
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * com.dotcms.repackage.com.bradmcevoy.http.Resource#checkRedirect(com.dotcms.repackage.com.bradmcevoy.http.Request)
+	 */
+	public String checkRedirect(Request req) {
+		return null;
+	}
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see com.dotcms.repackage.com.bradmcevoy.http.Resource#getContentLength()
-   */
-  public Long getContentLength() {
-    return (long) 0;
-  }
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see com.dotcms.repackage.com.bradmcevoy.http.Resource#getContentLength()
+	 */
+	public Long getContentLength() {
+		return (long) 0;
+	}
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see com.dotcms.repackage.com.bradmcevoy.http.Resource#getContentType(java.lang.String)
-   */
-  public String getContentType(String arg0) {
-    return "folder";
-  }
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see com.dotcms.repackage.com.bradmcevoy.http.Resource#getContentType(java.lang.String)
+	 */
+	public String getContentType(String arg0) {
+		return "folder";
+	}
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see com.dotcms.repackage.com.bradmcevoy.http.Resource#getModifiedDate()
-   */
-  public Date getModifiedDate() {
-    return new Date();
-  }
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see com.dotcms.repackage.com.bradmcevoy.http.Resource#getModifiedDate()
+	 */
+	public Date getModifiedDate() {
+		return new Date();
+	}
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see com.dotcms.repackage.com.bradmcevoy.http.Resource#getRealm()
-   */
-  public String getRealm() {
-    return CompanyUtils.getDefaultCompany().getName();
-  }
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see com.dotcms.repackage.com.bradmcevoy.http.Resource#getRealm()
+	 */
+	public String getRealm() {
+		return CompanyUtils.getDefaultCompany().getName();
+	}
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see com.dotcms.repackage.com.bradmcevoy.http.Resource#getUniqueId()
-   */
-  public String getUniqueId() {
-    return path;
-  }
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see com.dotcms.repackage.com.bradmcevoy.http.Resource#getUniqueId()
+	 */
+	public String getUniqueId() {
+		return path;
+	}
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see com.dotcms.repackage.com.bradmcevoy.http.PutableResource#createNew(java.lang.String,
-   * java.io.InputStream, java.lang.Long, java.lang.String)
-   */
-  public Resource createNew(String newName, InputStream in, Long length, String contentType)
-      throws IOException, DotRuntimeException {
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see com.dotcms.repackage.com.bradmcevoy.http.PutableResource#createNew(java.lang.String,
+	 * java.io.InputStream, java.lang.Long, java.lang.String)
+	 */
+	public Resource createNew(String newName, InputStream in, Long length,
+			String contentType) throws IOException, DotRuntimeException {
 
-    throw new DotRuntimeException("Cannot create new template folder");
-  }
+		throw new DotRuntimeException("Cannot create new template folder");
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see com.dotcms.repackage.com.bradmcevoy.http.CopyableResource#copyTo(com.dotcms.repackage.com.bradmcevoy.http.
-   * CollectionResource, java.lang.String)
-   */
-  public void copyTo(CollectionResource collRes, String name) {
-    throw new DotRuntimeException("Cannot copy template folder");
-  }
+	}
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see com.dotcms.repackage.com.bradmcevoy.http.DeletableResource#delete()
-   */
-  public void delete() throws DotRuntimeException {
-    throw new DotRuntimeException("Cannot delete template folder");
-  }
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see com.dotcms.repackage.com.bradmcevoy.http.CopyableResource#copyTo(com.dotcms.repackage.com.bradmcevoy.http.
+	 * CollectionResource, java.lang.String)
+	 */
+	public void copyTo(CollectionResource collRes, String name) {
+		throw new DotRuntimeException("Cannot copy template folder");
+	}
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see com.dotcms.repackage.com.bradmcevoy.http.GetableResource#getMaxAgeSeconds()
-   */
-  public Long getMaxAgeSeconds() {
-    return new Long(0);
-  }
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see com.dotcms.repackage.com.bradmcevoy.http.DeletableResource#delete()
+	 */
+	public void delete() throws DotRuntimeException {
+		throw new DotRuntimeException("Cannot delete template folder");
+	}
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see
-   * com.dotcms.repackage.com.bradmcevoy.http.GetableResource#sendContent(java.io.OutputStream,
-   * com.dotcms.repackage.com.bradmcevoy.http.Range, java.util.Map)
-   */
-  public void sendContent(OutputStream arg0, Range arg1, Map<String, String> arg2, String arg3)
-      throws IOException {
-    return;
-  }
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see com.dotcms.repackage.com.bradmcevoy.http.GetableResource#getMaxAgeSeconds()
+	 */
+	public Long getMaxAgeSeconds() {
+		return new Long(0);
+	}
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see com.dotcms.repackage.com.bradmcevoy.http.MoveableResource#moveTo(com.dotcms.repackage.com.bradmcevoy.http.
-   * CollectionResource, java.lang.String)
-   */
-  public void moveTo(CollectionResource collRes, String name) throws DotRuntimeException {
-    throw new DotRuntimeException("Cannot move template folder");
-  }
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * com.dotcms.repackage.com.bradmcevoy.http.GetableResource#sendContent(java.io.OutputStream,
+	 * com.dotcms.repackage.com.bradmcevoy.http.Range, java.util.Map)
+	 */
+	public void sendContent(OutputStream arg0, Range arg1,
+			Map<String, String> arg2, String arg3) throws IOException {
+		return;
+	}
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see com.dotcms.repackage.com.bradmcevoy.http.PropFindableResource#getCreateDate()
-   */
-  public Date getCreateDate() {
-    return host.getModDate();
-  }
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see com.dotcms.repackage.com.bradmcevoy.http.MoveableResource#moveTo(com.dotcms.repackage.com.bradmcevoy.http.
+	 * CollectionResource, java.lang.String)
+	 */
+	public void moveTo(CollectionResource collRes, String name)
+			throws DotRuntimeException {
+		throw new DotRuntimeException("Cannot move template folder");
+	}
 
-  public String getName() {
-    return TEMPLATE_FOLDER;
-  }
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see com.dotcms.repackage.com.bradmcevoy.http.PropFindableResource#getCreateDate()
+	 */
+	public Date getCreateDate() {
+		return host.getModDate();
+	}
 
-  public int compareTo(Object o) {
-    // TODO Auto-generated method stub
-    return 0;
-  }
+	public String getName() {
+		return TEMPLATE_FOLDER;
+	}
 
-  public String getPath() {
-    return path;
-  }
+	public int compareTo(Object o) {
+		// TODO Auto-generated method stub
+		return 0;
+	}
 
-  public void setPath(String path) {
-    this.path = path;
-  }
+	public String getPath() {
+		return path;
+	}
 
-  public LockResult lock(LockTimeout timeout, LockInfo lockInfo) {
-    return dotDavHelper.lock(timeout, lockInfo, getUniqueId());
-    // return dotDavHelper.lock(lockInfo, user, file.getIdentifier() + "");
-  }
+	public void setPath(String path) {
+		this.path = path;
+	}
 
-  public LockResult refreshLock(String token) {
-    return dotDavHelper.refreshLock(getUniqueId());
-    // return dotDavHelper.refreshLock(token);
-  }
+	public LockResult lock(LockTimeout timeout, LockInfo lockInfo) {
+		return dotDavHelper.lock(timeout, lockInfo, getUniqueId());
+		// return dotDavHelper.lock(lockInfo, user, file.getIdentifier() + "");
+	}
 
-  public void unlock(String tokenId) {
-    dotDavHelper.unlock(getUniqueId());
-    // dotDavHelper.unlock(tokenId);
-  }
+	public LockResult refreshLock(String token) {
+		return dotDavHelper.refreshLock(getUniqueId());
+		// return dotDavHelper.refreshLock(token);
+	}
 
-  public LockToken getCurrentLock() {
-    return dotDavHelper.getCurrentLock(getUniqueId());
-  }
+	public void unlock(String tokenId) {
+		dotDavHelper.unlock(getUniqueId());
+		// dotDavHelper.unlock(tokenId);
+	}
 
-  public Long getMaxAgeSeconds(Auth arg0) {
-    return (long) 60;
-  }
+	public LockToken getCurrentLock() {
+		return dotDavHelper.getCurrentLock(getUniqueId());
+	}
 
-  public LockToken createAndLock(String name, LockTimeout timeout, LockInfo lockInfo)
-      throws NotAuthorizedException {
-    createCollection(name);
-    return lock(timeout, lockInfo).getLockToken();
-  }
+	public Long getMaxAgeSeconds(Auth arg0) {
+		return (long) 60;
+	}
 
-  public List<Resource> getChildren() {
-    /*
-    List<Template> templates;
-    try {
-    	templates = tapi.findTemplatesUserCanUse(user, host.getHostname(),
-    			true, 0, 100);
+	public LockToken createAndLock(String name, LockTimeout timeout, LockInfo lockInfo)
+			throws NotAuthorizedException {
+		createCollection(name);
+		return lock(timeout, lockInfo).getLockToken();
+	}
 
-    	List<Resource> tempRes = new ArrayList<Resource>();
-    	for (Template t : templates) {
-    		TemplateFileResourceImpl tfr = new TemplateFileResourceImpl(t, host);
-    		tempRes.add(tfr);
+	public List<Resource> getChildren() {
+		/*
+		List<Template> templates;
+		try {
+			templates = tapi.findTemplatesUserCanUse(user, host.getHostname(),
+					true, 0, 100);
 
-    	}
-    	return tempRes;
-    } catch (DotDataException e) {
-    	Logger.error(this.getClass(), "Cannot list templates on host "
-    			+ host.getHostname() + " " + e.getMessage());
+			List<Resource> tempRes = new ArrayList<Resource>();
+			for (Template t : templates) {
+				TemplateFileResourceImpl tfr = new TemplateFileResourceImpl(t, host);
+				tempRes.add(tfr);
 
-    } catch (DotSecurityException e) {
-    	Logger.error(this.getClass(), "Cannot list templates on host "
-    			+ host.getHostname() + " " + e.getMessage());
+			}
+			return tempRes;
+		} catch (DotDataException e) {
+			Logger.error(this.getClass(), "Cannot list templates on host "
+					+ host.getHostname() + " " + e.getMessage());
 
-    }
-    */
-    return new ArrayList();
-  }
+		} catch (DotSecurityException e) {
+			Logger.error(this.getClass(), "Cannot list templates on host "
+					+ host.getHostname() + " " + e.getMessage());
+
+		}
+		*/
+		return new ArrayList();
+	}
 }

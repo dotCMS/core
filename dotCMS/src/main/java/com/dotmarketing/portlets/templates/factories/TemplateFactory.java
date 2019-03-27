@@ -1,5 +1,7 @@
 package com.dotmarketing.portlets.templates.factories;
 
+import java.util.List;
+
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -11,38 +13,33 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
-import java.util.List;
 
-/** @author will, david (2005) */
+/**
+ *
+ * @author will, david (2005)
+ */
 @Deprecated
 public class TemplateFactory {
 
-  public static Contentlet getImageContentlet(Template template)
-      throws DotStateException, DotDataException, DotSecurityException {
-    String imageIdentifierInode = template.getImage();
-    Identifier identifier = new Identifier();
-    try {
-      identifier = APILocator.getIdentifierAPI().find(imageIdentifierInode);
-    } catch (DotHibernateException e) {
-      Logger.error(TemplateFactory.class, e.getMessage(), e);
-    }
-    Contentlet imageContentlet = new Contentlet();
-    if (InodeUtils.isSet(identifier.getInode())) {
-      imageContentlet =
-          APILocator.getContentletAPI()
-              .findContentletByIdentifier(
-                  identifier.getId(),
-                  false,
-                  APILocator.getLanguageAPI().getDefaultLanguage().getId(),
-                  APILocator.getUserAPI().getSystemUser(),
-                  false);
-    }
-    return imageContentlet;
-  }
+	public static Contentlet getImageContentlet(Template template) throws DotStateException, DotDataException, DotSecurityException {
+		String imageIdentifierInode = template.getImage();
+		Identifier identifier = new Identifier();
+		try {
+			identifier = APILocator.getIdentifierAPI().find(imageIdentifierInode);
+		} catch (DotHibernateException e) {
+			Logger.error(TemplateFactory.class,e.getMessage(),e);
+		}
+		Contentlet imageContentlet = new Contentlet();
+		if(InodeUtils.isSet(identifier.getInode())){
+			imageContentlet = APILocator.getContentletAPI().findContentletByIdentifier(identifier.getId(), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), APILocator.getUserAPI().getSystemUser(), false);
+		}
+		return imageContentlet;
+	}
 
-  static List<Container> getContainersInTemplate(Template t)
-      throws DotDataException, DotSecurityException {
-    return APILocator.getTemplateAPI()
-        .getContainersInTemplate(t, APILocator.getUserAPI().getSystemUser(), false);
-  }
+	
+
+	static List<Container> getContainersInTemplate(Template t) throws DotDataException, DotSecurityException{
+		return APILocator.getTemplateAPI().getContainersInTemplate(t, APILocator.getUserAPI().getSystemUser(), false);
+	}
+
 }

@@ -19,87 +19,96 @@ import java.util.List;
 
 public class Modification implements Cloneable {
 
-  private ModificationType type;
+    private ModificationType type;
 
-  private long id = -1;
+    private long id = -1;
 
-  private Modification prevMod = null;
+    private Modification prevMod = null;
 
-  private Modification nextMod = null;
+    private Modification nextMod = null;
 
-  private boolean firstOfID = false;
+    private boolean firstOfID = false;
+    
+    private List<HtmlLayoutChange> htmlLayoutChanges = null;
 
-  private List<HtmlLayoutChange> htmlLayoutChanges = null;
+    public Modification(ModificationType type) {
+        this.type = type;
+    }
 
-  public Modification(ModificationType type) {
-    this.type = type;
-  }
+    @Override
+    public Modification clone() {
+        Modification newM = new Modification(this.getType());
+        newM.setID(getID());
+        newM.setChanges(getChanges());
+        newM.setHtmlLayoutChanges(getHtmlLayoutChanges());
+        newM.setFirstOfID(isFirstOfID());
+        newM.setNext(getNext());
+        newM.setPrevious(getPrevious());
+        return newM;
+    }
 
-  @Override
-  public Modification clone() {
-    Modification newM = new Modification(this.getType());
-    newM.setID(getID());
-    newM.setChanges(getChanges());
-    newM.setHtmlLayoutChanges(getHtmlLayoutChanges());
-    newM.setFirstOfID(isFirstOfID());
-    newM.setNext(getNext());
-    newM.setPrevious(getPrevious());
-    return newM;
-  }
+    public ModificationType getType() {
+        return type;
+    }
 
-  public ModificationType getType() {
-    return type;
-  }
+    public void setID(long id) {
+        this.id = id;
+    }
 
-  public void setID(long id) {
-    this.id = id;
-  }
+    public long getID() {
+        return id;
+    }
 
-  public long getID() {
-    return id;
-  }
+    public void setPrevious(Modification m) {
+        this.prevMod = m;
+    }
 
-  public void setPrevious(Modification m) {
-    this.prevMod = m;
-  }
+    public Modification getPrevious() {
+        return prevMod;
+    }
 
-  public Modification getPrevious() {
-    return prevMod;
-  }
+    public void setNext(Modification m) {
+        this.nextMod = m;
+    }
 
-  public void setNext(Modification m) {
-    this.nextMod = m;
-  }
+    public Modification getNext() {
+        return nextMod;
+    }
 
-  public Modification getNext() {
-    return nextMod;
-  }
+    private String changes;
 
-  private String changes;
+    public void setChanges(final String changes) {
+        this.changes = changes;
+    }
 
-  public void setChanges(final String changes) {
-    this.changes = changes;
-  }
+    public String getChanges() {
+        return changes;
+    }
 
-  public String getChanges() {
-    return changes;
-  }
+    public boolean isFirstOfID() {
+        return firstOfID;
+    }
 
-  public boolean isFirstOfID() {
-    return firstOfID;
-  }
+    public void setFirstOfID(boolean firstOfID) {
+        this.firstOfID = firstOfID;
+    }
 
-  public void setFirstOfID(boolean firstOfID) {
-    this.firstOfID = firstOfID;
-  }
+	/**
+	 * @return the htmlLayoutChanges
+	 */
+	public List<HtmlLayoutChange> getHtmlLayoutChanges() {
+		return htmlLayoutChanges;
+	}
 
-  /** @return the htmlLayoutChanges */
-  public List<HtmlLayoutChange> getHtmlLayoutChanges() {
-    return htmlLayoutChanges;
-  }
+	/**
+	 * @param htmlLayoutChanges the htmlLayoutChanges to set
+	 */
+	public void setHtmlLayoutChanges(List<HtmlLayoutChange> htmlLayoutChanges) {
+		this.htmlLayoutChanges = htmlLayoutChanges;
+	}
 
-  /** @param htmlLayoutChanges the htmlLayoutChanges to set */
-  public void setHtmlLayoutChanges(List<HtmlLayoutChange> htmlLayoutChanges) {
-    this.htmlLayoutChanges = htmlLayoutChanges;
-  }
+	
+    
+    
+
 }

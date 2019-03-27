@@ -21,177 +21,174 @@ import com.dotmarketing.portlets.links.transform.LinkTransformer;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.templates.transform.FolderTransformer;
+
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 /**
- * Factory class used to instantiate DBTransformer objects Default DBTransformer objects supported
- * so far are: FolderTransformer, TemplateTransformer, ContainerTransformer, LinkTransformer and
- * IdentifierTransformer However, new implementations can be included calling the addTransformer
+ * Factory class used to instantiate DBTransformer objects
+ * Default DBTransformer objects supported so far are: FolderTransformer, TemplateTransformer,
+ * ContainerTransformer, LinkTransformer and IdentifierTransformer
+ * However, new implementations can be included calling the addTransformer
  * method and removed calling removeTransformer.
- *
  * @author nollymar
  */
 public class TransformerLocator {
 
-  private TransformerLocator() {}
+    private TransformerLocator() {
 
-  /** Map that contains DbTransformer implementations */
-  private static Map<Class, Function<List<Map<String, Object>>, DBTransformer>> transformerMapping =
-      new ConcurrentHashMap<>();
-
-  static {
-    transformerMapping.put(Folder.class, TransformerLocator::createFolderTransformer);
-    transformerMapping.put(Template.class, TransformerLocator::createTemplateTransformer);
-    transformerMapping.put(Container.class, TransformerLocator::createContainerTransformer);
-    transformerMapping.put(Link.class, TransformerLocator::createLinkTransformer);
-    transformerMapping.put(MultiTree.class, TransformerLocator::createMultiTreeTransformer);
-    transformerMapping.put(Identifier.class, TransformerLocator::createIdentifierTransformer);
-    transformerMapping.put(Tree.class, TransformerLocator::createTreeTransformer);
-    transformerMapping.put(Contentlet.class, TransformerLocator::createContentletTransformer);
-    transformerMapping.put(Language.class, TransformerLocator::createLanguageTransformer);
-    transformerMapping.put(Relationship.class, TransformerLocator::createRelationshipTransformer);
-  }
-
-  public static DBTransformer createDBTransformer(List<Map<String, Object>> list, Class clazz) {
-    DBTransformer transformer = null;
-
-    if (transformerMapping.containsKey(clazz)) {
-      transformer = transformerMapping.get(clazz).apply(list);
     }
-    return transformer;
-  }
 
-  /**
-   * Extends default DBTransformer map
-   *
-   * @param clazz Class which DB results will be transformed to
-   * @param transformerFunction DBTransformer that contains the implementation
-   */
-  public static void addTransformer(
-      Class clazz, Function<List<Map<String, Object>>, DBTransformer> transformerFunction) {
-    transformerMapping.put(clazz, transformerFunction);
-  }
+    /**
+     * Map that contains DbTransformer implementations
+     */
+    private static Map<Class, Function<List<Map<String, Object>>, DBTransformer>> transformerMapping = new ConcurrentHashMap<>();
 
-  /**
-   * Remove a DBTransformer implementation from the map given the class as a key
-   *
-   * @param clazz
-   */
-  public static void removeTransformer(Class clazz) {
-    transformerMapping.remove(clazz);
-  }
+    static {
+        transformerMapping.put (Folder.class, TransformerLocator::createFolderTransformer);
+        transformerMapping.put (Template.class, TransformerLocator::createTemplateTransformer);
+        transformerMapping.put (Container.class, TransformerLocator::createContainerTransformer);
+        transformerMapping.put (Link.class, TransformerLocator::createLinkTransformer);
+        transformerMapping.put (MultiTree.class, TransformerLocator::createMultiTreeTransformer);
+        transformerMapping.put (Identifier.class, TransformerLocator::createIdentifierTransformer);
+        transformerMapping.put (Tree.class, TransformerLocator::createTreeTransformer);
+        transformerMapping.put (Contentlet.class, TransformerLocator::createContentletTransformer);
+        transformerMapping.put (Language.class, TransformerLocator::createLanguageTransformer);
+        transformerMapping.put (Relationship.class, TransformerLocator::createRelationshipTransformer);
+    }
 
-  /**
-   * Creates a DBTransformer for Folder objects
-   *
-   * @param initList List of DB results to be transformed
-   * @return
-   */
-  public static FolderTransformer createFolderTransformer(List<Map<String, Object>> initList) {
+    public static DBTransformer createDBTransformer(List<Map<String, Object>> list, Class clazz) {
+        DBTransformer transformer = null;
 
-    return new FolderTransformer(initList);
-  }
+        if (transformerMapping.containsKey(clazz)){
+            transformer = transformerMapping.get(clazz).apply(list);
+        }
+        return transformer;
+    }
 
-  /**
-   * Creates a DBTransformer for Template objects
-   *
-   * @param initList List of DB results to be transformed
-   * @return
-   */
-  public static TemplateTransformer createTemplateTransformer(List<Map<String, Object>> initList) {
+    /**
+     * Extends default DBTransformer map
+     * @param clazz Class which DB results will be transformed to
+     * @param transformerFunction DBTransformer that contains the implementation
+     */
+    public static void addTransformer(Class clazz,
+            Function<List<Map<String, Object>>, DBTransformer> transformerFunction) {
+        transformerMapping.put(clazz, transformerFunction);
+    }
 
-    return new TemplateTransformer(initList);
-  }
+    /**
+     * Remove a DBTransformer implementation from the map given the class as a key
+     * @param clazz
+     */
+    public static void removeTransformer(Class clazz){
+        transformerMapping.remove(clazz);
+    }
 
-  /**
-   * Creates a DBTransformer for Container objects
-   *
-   * @param initList List of DB results to be transformed
-   * @return
-   */
-  public static ContainerTransformer createContainerTransformer(
-      List<Map<String, Object>> initList) {
+    /**
+     * Creates a DBTransformer for Folder objects
+     * @param initList List of DB results to be transformed
+     * @return
+     */
+    public static FolderTransformer createFolderTransformer(List<Map<String, Object>> initList) {
 
-    return new ContainerTransformer(initList);
-  }
+        return new FolderTransformer(initList);
+    }
 
-  /**
-   * Creates a DBTransformer for Contentlet objects
-   *
-   * @param initList List of DB results to be transformed
-   * @return
-   */
-  public static ContentletTransformer createContentletTransformer(
-      List<Map<String, Object>> initList) {
+    /**
+     * Creates a DBTransformer for Template objects
+     * @param initList List of DB results to be transformed
+     * @return
+     */
+    public static TemplateTransformer createTemplateTransformer(
+            List<Map<String, Object>> initList) {
 
-    return new ContentletTransformer(initList);
-  }
+        return new TemplateTransformer(initList);
+    }
 
-  /**
-   * Creates a DBTransformer for MultiTree objects
-   *
-   * @param initList List of DB results to be transformed
-   */
-  public static MultiTreeTransformer createMultiTreeTransformer(
-      List<Map<String, Object>> initList) {
-    return new MultiTreeTransformer(initList);
-  }
+    /**
+     * Creates a DBTransformer for Container objects
+     * @param initList List of DB results to be transformed
+     * @return
+     */
+    public static ContainerTransformer createContainerTransformer(
+            List<Map<String, Object>> initList) {
 
-  /**
-   * Creates a DBTransformer for Link objects
-   *
-   * @param initList List of DB results to be transformed
-   * @return
-   */
-  public static LinkTransformer createLinkTransformer(List<Map<String, Object>> initList) {
+        return new ContainerTransformer(initList);
+    }
 
-    return new LinkTransformer(initList);
-  }
+    /**
+     * Creates a DBTransformer for Contentlet objects
+     * @param initList List of DB results to be transformed
+     * @return
+     */
+    public static ContentletTransformer createContentletTransformer(
+            List<Map<String, Object>> initList) {
 
-  /**
-   * Creates a DBTransformer for Identifier objects
-   *
-   * @param initList List of DB results to be transformed
-   * @return
-   */
-  public static IdentifierTransformer createIdentifierTransformer(
-      List<Map<String, Object>> initList) {
+        return new ContentletTransformer(initList);
+    }
 
-    return new IdentifierTransformer(initList);
-  }
+    /**
+     * Creates a DBTransformer for MultiTree objects
+     * @param initList List of DB results to be transformed
+     */
+    public static MultiTreeTransformer createMultiTreeTransformer(
+            List<Map<String, Object>> initList) {
+        return new MultiTreeTransformer(initList);
+    }
 
-  /**
-   * Creates a DBTransformer for Language objects
-   *
-   * @param initList List of DB results to be transformed
-   */
-  public static LanguageTransformer createLanguageTransformer(List<Map<String, Object>> initList) {
+    /**
+     * Creates a DBTransformer for Link objects
+     * @param initList List of DB results to be transformed
+     * @return
+     */
+    public static LinkTransformer createLinkTransformer(List<Map<String, Object>> initList) {
 
-    return new LanguageTransformer(initList);
-  }
+        return new LinkTransformer(initList);
+    }
 
-  /**
-   * Creates a DBTransformer for Tree objects
-   *
-   * @param initList List of DB results to be transformed
-   * @return
-   */
-  public static TreeTransformer createTreeTransformer(List<Map<String, Object>> initList) {
+    /**
+     * Creates a DBTransformer for Identifier objects
+     * @param initList List of DB results to be transformed
+     * @return
+     */
+    public static IdentifierTransformer createIdentifierTransformer(
+            List<Map<String, Object>> initList) {
 
-    return new TreeTransformer(initList);
-  }
+        return new IdentifierTransformer(initList);
+    }
 
-  /**
-   * Creates a DBTransformer for Relationship objects
-   *
-   * @param initList List of DB results to be transformed
-   */
-  public static RelationshipTransformer createRelationshipTransformer(
-      List<Map<String, Object>> initList) {
+    /**
+     * Creates a DBTransformer for Language objects
+     *
+     * @param initList List of DB results to be transformed
+     */
+    public static LanguageTransformer createLanguageTransformer(
+            List<Map<String, Object>> initList) {
 
-    return new DbRelationshipTransformer(initList);
-  }
+        return new LanguageTransformer(initList);
+    }
+
+    /**
+     * Creates a DBTransformer for Tree objects
+     * @param initList List of DB results to be transformed
+     * @return
+     */
+    public static TreeTransformer createTreeTransformer(
+        List<Map<String, Object>> initList) {
+
+        return new TreeTransformer(initList);
+    }
+
+    /**
+     * Creates a DBTransformer for Relationship objects
+     *
+     * @param initList List of DB results to be transformed
+     */
+    public static RelationshipTransformer createRelationshipTransformer(
+            List<Map<String, Object>> initList) {
+
+        return new DbRelationshipTransformer(initList);
+    }
 }

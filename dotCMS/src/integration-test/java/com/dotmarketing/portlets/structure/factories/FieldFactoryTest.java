@@ -1,403 +1,372 @@
 package com.dotmarketing.portlets.structure.factories;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.portlets.ContentletBaseTest;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.FieldVariable;
 import com.dotmarketing.portlets.structure.model.Structure;
+import org.junit.Test;
+
 import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
-import org.junit.Test;
 
-/** Created by Jonathan Gamba. Date: 3/6/12 Time: 4:34 PM */
+import static org.junit.Assert.*;
+
+/**
+ * Created by Jonathan Gamba.
+ * Date: 3/6/12
+ * Time: 4:34 PM
+ */
 public class FieldFactoryTest extends ContentletBaseTest {
 
-  /**
-   * Testing {@link FieldFactory#getFieldByInode(String)}
-   *
-   * @see FieldFactory
-   * @see FieldsCache
-   */
-  @Test
-  public void getFieldByInode() {
+    /**
+     * Testing {@link FieldFactory#getFieldByInode(String)}
+     *
+     * @see FieldFactory
+     * @see FieldsCache
+     */
+    @Test
+    public void getFieldByInode () {
 
-    // Getting a known structure
-    Structure structure = structures.iterator().next();
+        //Getting a known structure
+        Structure structure = structures.iterator().next();
 
-    // Getting the fields for this structure
-    Collection<Field> fields = FieldsCache.getFieldsByStructureInode(structure.getInode());
+        //Getting the fields for this structure
+        Collection<Field> fields = FieldsCache.getFieldsByStructureInode( structure.getInode() );
 
-    Iterator<Field> iterator = fields.iterator();
-    Field field = iterator.next();
+        Iterator<Field> iterator = fields.iterator();
+        Field field = iterator.next();
 
-    // Verify we found an stored field
-    Field foundField = FieldFactory.getFieldByInode(field.getInode());
-    assertNotNull(foundField);
-  }
-
-  /**
-   * Testing {@link FieldFactory#getFieldsByStructure(String)}
-   *
-   * @see FieldFactory
-   */
-  @Test
-  public void getFieldsByStructure() {
-
-    // Getting a known structure
-    Structure structure = structures.iterator().next();
-
-    // Getting the fields for this structure
-    Collection<Field> fields = FieldFactory.getFieldsByStructure(structure.getInode());
-
-    // Start with the validations
-    assertTrue(fields != null && !fields.isEmpty());
-    assertEquals(fields.size(), FIELDS_SIZE);
-  }
-
-  /**
-   * Testing {@link FieldFactory#getFieldsByStructureSortedBySortOrder(String)}
-   *
-   * @see FieldFactory
-   */
-  @Test
-  public void getFieldsByStructureSortedBySortOrder() {
-
-    // Getting a known structure
-    Iterator<Structure> it = structures.iterator();
-    it.next();
-    Structure structure = it.next();
-
-    // Getting the fields for this structure
-    Collection<Field> fields =
-        FieldFactory.getFieldsByStructureSortedBySortOrder(structure.getInode());
-
-    // Start with the validations
-    assertTrue(fields != null && !fields.isEmpty());
-    assertEquals(fields.size(), FIELDS_SIZE);
-  }
-
-  /**
-   * Testing {@link FieldFactory#isTagField(String,
-   * com.dotmarketing.portlets.structure.model.Structure)}
-   *
-   * @see FieldFactory
-   * @see FieldsCache
-   */
-  @Test
-  public void isTagField() {
-
-    // Getting a known structure
-    Structure structure = structures.iterator().next();
-
-    // Getting the fields for this structure
-    Collection<Field> fields = FieldsCache.getFieldsByStructureInode(structure.getInode());
-
-    // Start with the validations
-    assertTrue(fields != null && !fields.isEmpty());
-
-    for (Field field : fields) {
-
-      // Its a tag field???
-      Boolean isTagField = FieldFactory.isTagField(field.getVelocityVarName(), structure);
-      if (field.getFieldType().equals(Field.FieldType.TAG.toString())) {
-        assertTrue(isTagField);
-      } else {
-        assertFalse(isTagField);
-      }
+        //Verify we found an stored field
+        Field foundField = FieldFactory.getFieldByInode( field.getInode() );
+        assertNotNull( foundField );
     }
-  }
 
-  /**
-   * Testing {@link FieldFactory#getFieldsByContentletField(String, String, String)}
-   *
-   * @see FieldFactory
-   * @see FieldsCache
-   */
-  @Test
-  @SuppressWarnings("unchecked")
-  public void getFieldsByContentletField() {
+    /**
+     * Testing {@link FieldFactory#getFieldsByStructure(String)}
+     *
+     * @see FieldFactory
+     */
+    @Test
+    public void getFieldsByStructure () {
 
-    // Getting a known structure
-    Structure structure = structures.iterator().next();
+        //Getting a known structure
+        Structure structure = structures.iterator().next();
 
-    // Getting the fields for this structure
-    Collection<Field> fields = FieldsCache.getFieldsByStructureInode(structure.getInode());
+        //Getting the fields for this structure
+        Collection<Field> fields = FieldFactory.getFieldsByStructure( structure.getInode() );
 
-    // Validations
-    assertTrue(fields != null && !fields.isEmpty());
+        //Start with the validations
+        assertTrue( fields != null && !fields.isEmpty() );
+        assertEquals( fields.size(), FIELDS_SIZE );
+    }
 
-    Iterator<Field> iterator = fields.iterator();
-    Field field = iterator.next();
-  }
+    /**
+     * Testing {@link FieldFactory#getFieldsByStructureSortedBySortOrder(String)}
+     *
+     * @see FieldFactory
+     */
+    @Test
+    public void getFieldsByStructureSortedBySortOrder () {
 
-  /**
-   * Testing {@link FieldFactory#getFieldByVariableName(String, String)}
-   *
-   * @see FieldFactory
-   * @see FieldsCache
-   */
-  @Test
-  public void getFieldByVariableName() {
+        //Getting a known structure
+    	Iterator<Structure> it = structures.iterator();
+    	it.next();
+        Structure structure = it.next();
 
-    // Getting a known structure
-    Structure structure = structures.iterator().next();
+        //Getting the fields for this structure
+        Collection<Field> fields = FieldFactory.getFieldsByStructureSortedBySortOrder( structure.getInode() );
 
-    // Getting the fields for this structure
-    Collection<Field> fields = FieldsCache.getFieldsByStructureInode(structure.getInode());
+        //Start with the validations
+        assertTrue( fields != null && !fields.isEmpty() );
+        assertEquals( fields.size(), FIELDS_SIZE );
+    }
 
-    // Validations
-    assertTrue(fields != null && !fields.isEmpty());
+    /**
+     * Testing {@link FieldFactory#isTagField(String, com.dotmarketing.portlets.structure.model.Structure)}
+     *
+     * @see FieldFactory
+     * @see FieldsCache
+     */
+    @Test
+    public void isTagField () {
 
-    Iterator<Field> iterator = fields.iterator();
-    Field field = iterator.next();
+        //Getting a known structure
+        Structure structure = structures.iterator().next();
 
-    // Search by variable name
-    Field foundField =
-        FieldFactory.getFieldByVariableName(structure.getInode(), field.getVelocityVarName());
+        //Getting the fields for this structure
+        Collection<Field> fields = FieldsCache.getFieldsByStructureInode( structure.getInode() );
 
-    // Start with the validations
-    assertNotNull(foundField);
-    assertEquals(foundField.getInode(), field.getInode());
-  }
+        //Start with the validations
+        assertTrue( fields != null && !fields.isEmpty() );
 
-  /**
-   * Testing {@link FieldFactory#getFieldByName(String, String)}
-   *
-   * @see FieldFactory
-   * @see FieldsCache
-   */
-  @Test
-  public void getFieldByName() {
+        for ( Field field : fields ) {
 
-    // Getting a known structure
-    Structure structure = structures.iterator().next();
+            //Its a tag field???
+            Boolean isTagField = FieldFactory.isTagField( field.getVelocityVarName(), structure );
+            if ( field.getFieldType().equals( Field.FieldType.TAG.toString() ) ) {
+                assertTrue( isTagField );
+            } else {
+                assertFalse( isTagField );
+            }
+        }
 
-    // Getting the fields for this structure
-    Collection<Field> fields = FieldsCache.getFieldsByStructureInode(structure.getInode());
+    }
 
-    // Validations
-    assertTrue(fields != null && !fields.isEmpty());
+    /**
+     * Testing {@link FieldFactory#getFieldsByContentletField(String, String, String)}
+     *
+     * @see FieldFactory
+     * @see FieldsCache
+     */
+    @Test
+    @SuppressWarnings ( "unchecked" )
+    public void getFieldsByContentletField () {
 
-    Iterator<Field> iterator = fields.iterator();
-    Field field = iterator.next();
+        //Getting a known structure
+        Structure structure = structures.iterator().next();
 
-    // Search by field name
-    Field foundField =
-        FieldFactory.getFieldByVariableName(structure.getInode(), field.getVelocityVarName());
+        //Getting the fields for this structure
+        Collection<Field> fields = FieldsCache.getFieldsByStructureInode( structure.getInode() );
 
-    // Start with the validations
-    assertNotNull(foundField);
-    assertEquals(foundField.getInode(), field.getInode());
-  }
+        //Validations
+        assertTrue( fields != null && !fields.isEmpty() );
 
-  /**
-   * Testing the methods {@link
-   * FieldFactory#saveField(com.dotmarketing.portlets.structure.model.Field)}, {@link
-   * FieldFactory#deleteField(com.dotmarketing.portlets.structure.model.Field)} and {@link
-   * FieldFactory#deleteField(String)}
-   *
-   * @throws com.dotmarketing.exception.DotHibernateException
-   * @see FieldFactory
-   */
-  @Test
-  public void saveDeleteField() throws DotHibernateException {
+        Iterator<Field> iterator = fields.iterator();
+        Field field = iterator.next();
 
-    String NAME_ORIGINAL = "JUnit Test Text --  test";
-    String NAME_UPDATED = "UPDATED --- JUnit Test Text --  test";
 
-    // Getting a known structure
-    Structure structure = structures.iterator().next();
+    }
 
-    // Creating a field
-    Field field =
-        new Field(
-            NAME_ORIGINAL,
-            Field.FieldType.TEXT,
-            Field.DataType.TEXT,
-            structure,
-            false,
-            true,
-            false,
-            1,
-            false,
-            false,
-            false);
-    Field field2 =
-        new Field(
-            NAME_ORIGINAL + "_2",
-            Field.FieldType.TEXT,
-            Field.DataType.TEXT,
-            structure,
-            false,
-            true,
-            false,
-            1,
-            false,
-            false,
-            false);
+    /**
+     * Testing {@link FieldFactory#getFieldByVariableName(String, String)}
+     *
+     * @see FieldFactory
+     * @see FieldsCache
+     */
+    @Test
+    public void getFieldByVariableName () {
 
-    // ++++++++++++++++++++++++++++++++++++++++++++
-    // Testing the save
-    field = FieldFactory.saveField(field);
-    field2 = FieldFactory.saveField(field2);
+        //Getting a known structure
+        Structure structure = structures.iterator().next();
 
-    // Validations
-    assertNotNull(field.getInode());
+        //Getting the fields for this structure
+        Collection<Field> fields = FieldsCache.getFieldsByStructureInode( structure.getInode() );
 
-    // ++++++++++++++++++++++++++++++++++++++++++++
-    // Updating the field
-    field.setFieldName(NAME_UPDATED);
-    FieldFactory.saveField(field);
+        //Validations
+        assertTrue( fields != null && !fields.isEmpty() );
 
-    // Getting the field we just updated
-    Field foundField = FieldFactory.getFieldByInode(field.getInode());
+        Iterator<Field> iterator = fields.iterator();
+        Field field = iterator.next();
 
-    // Validations
-    assertEquals(field.getInode(), foundField.getInode());
-    assertEquals(field.getFieldName(), foundField.getFieldName());
+        //Search by variable name
+        Field foundField = FieldFactory.getFieldByVariableName( structure.getInode(), field.getVelocityVarName() );
 
-    // ++++++++++++++++++++++++++++++++++++++++++++
-    // Testing one of the deletes
-    FieldFactory.deleteField(field);
+        //Start with the validations
+        assertNotNull( foundField );
+        assertEquals( foundField.getInode(), field.getInode() );
+    }
 
-    // Trying to get the field we just deleted
-    Field deletedField = FieldFactory.getFieldByInode(foundField.getInode());
 
-    // Validations
-    assertTrue(deletedField.getInode() == null || deletedField.getInode().isEmpty());
 
-    // ++++++++++++++++++++++++++++++++++++++++++++
-    // Testing another delete
-    String field2Inode = field2.getInode();
-    FieldFactory.deleteField(field2);
+    /**
+     * Testing {@link FieldFactory#getFieldByName(String, String)}
+     *
+     * @see FieldFactory
+     * @see FieldsCache
+     */
+    @Test
+    public void getFieldByName () {
 
-    // Trying to get the field we just deleted
-    deletedField = FieldFactory.getFieldByInode(field2Inode);
+        //Getting a known structure
+        Structure structure = structures.iterator().next();
 
-    // Validations
-    assertTrue(deletedField.getInode() == null || deletedField.getInode().isEmpty());
-  }
+        //Getting the fields for this structure
+        Collection<Field> fields = FieldsCache.getFieldsByStructureInode( structure.getInode() );
 
-  /**
-   * Testing {@link FieldFactory#getNextAvaliableFieldNumber(String, String, String)}
-   *
-   * @see FieldFactory
-   * @see FieldsCache
-   */
-  @Test
-  public void getNextAvailableFieldNumber() {
+        //Validations
+        assertTrue( fields != null && !fields.isEmpty() );
 
-    // Getting a known structure
-    Structure structure = structures.iterator().next();
+        Iterator<Field> iterator = fields.iterator();
+        Field field = iterator.next();
 
-    // Getting the fields for this structure
-    Collection<Field> fields = FieldsCache.getFieldsByStructureInode(structure.getInode());
+        //Search by field name
+        Field foundField = FieldFactory.getFieldByVariableName(structure.getInode(), field.getVelocityVarName());
 
-    // Validations
-    assertTrue(fields != null && !fields.isEmpty());
+        //Start with the validations
+        assertNotNull( foundField );
+        assertEquals( foundField.getInode(), field.getInode() );
+    }
 
-    Iterator<Field> iterator = fields.iterator();
-    Field field = iterator.next();
+    /**
+     * Testing the methods {@link FieldFactory#saveField(com.dotmarketing.portlets.structure.model.Field)}, {@link FieldFactory#deleteField(com.dotmarketing.portlets.structure.model.Field)}
+     * and {@link FieldFactory#deleteField(String)}
+     *
+     * @throws com.dotmarketing.exception.DotHibernateException
+     *
+     * @see FieldFactory
+     */
+    @Test
+    public void saveDeleteField () throws DotHibernateException {
 
-    // FIXME: Work more on this test, verify when the max ammount of fields is reach....
-    // Find the next available field number
-    String fieldContentlet =
-        FieldFactory.getNextAvaliableFieldNumber(
-            Field.DataType.TEXT.toString(), field.getInode(), field.getStructureInode());
+        String NAME_ORIGINAL = "JUnit Test Text --  test";
+        String NAME_UPDATED = "UPDATED --- JUnit Test Text --  test";
 
-    // Validations
-    assertTrue(fieldContentlet != null && !fieldContentlet.isEmpty());
-  }
+        //Getting a known structure
+        Structure structure = structures.iterator().next();
 
-  /**
-   * Testing the methods {@link
-   * FieldFactory#saveFieldVariable(com.dotmarketing.portlets.structure.model.FieldVariable)},
-   * {@link FieldFactory#getFieldVariable(String)}, {@link
-   * FieldFactory#getFieldVariablesForField(String)}, {@link FieldFactory#getAllFieldVariables()},
-   * {@link FieldFactory#deleteFieldVariable(String)} and {@link
-   * FieldFactory#deleteFieldVariable(com.dotmarketing.portlets.structure.model.FieldVariable)}
-   *
-   * @see FieldFactory
-   * @see FieldsCache
-   */
-  @Test
-  public void fieldVariables() {
+        //Creating a field
+        Field field = new Field( NAME_ORIGINAL, Field.FieldType.TEXT, Field.DataType.TEXT, structure, false, true, false, 1, false, false, false );
+        Field field2 = new Field( NAME_ORIGINAL + "_2", Field.FieldType.TEXT, Field.DataType.TEXT, structure, false, true, false, 1, false, false, false );
 
-    String NAME_ORIGINAL = "JUnit Test variable name";
-    String NAME_UPDATED = "UPDATED --- Test variable name";
+        //++++++++++++++++++++++++++++++++++++++++++++
+        //Testing the save
+        field = FieldFactory.saveField( field );
+        field2 = FieldFactory.saveField( field2 );
 
-    // Getting a known structure
-    Structure structure = structures.iterator().next();
+        //Validations
+        assertNotNull( field.getInode() );
 
-    // Getting the fields for this structure
-    Collection<Field> fields = FieldsCache.getFieldsByStructureInode(structure.getInode());
+        //++++++++++++++++++++++++++++++++++++++++++++
+        //Updating the field
+        field.setFieldName( NAME_UPDATED );
+        FieldFactory.saveField( field );
 
-    // Validations
-    assertTrue(fields != null && !fields.isEmpty());
+        //Getting the field we just updated
+        Field foundField = FieldFactory.getFieldByInode( field.getInode() );
 
-    Iterator<Field> iterator = fields.iterator();
-    Field field = iterator.next();
+        //Validations
+        assertEquals( field.getInode(), foundField.getInode() );
+        assertEquals( field.getFieldName(), foundField.getFieldName() );
 
-    // Creating the FieldVariables
-    FieldVariable fieldVariable = new FieldVariable();
-    fieldVariable.setFieldId(field.getInode());
-    fieldVariable.setName(NAME_ORIGINAL);
-    fieldVariable.setKey("test_variable_key");
-    fieldVariable.setValue("test variable value");
-    fieldVariable.setLastModifierId(user.getUserId());
-    fieldVariable.setLastModDate(new Date());
+        //++++++++++++++++++++++++++++++++++++++++++++
+        //Testing one of the deletes
+        FieldFactory.deleteField( field );
 
-    // ++++++++++++++++++++++++++++++++++++++++++++
-    // Saving the field variable
-    fieldVariable = FieldFactory.saveFieldVariable(fieldVariable);
+        //Trying to get the field we just deleted
+        Field deletedField = FieldFactory.getFieldByInode( foundField.getInode() );
 
-    // Validations
-    assertNotNull(fieldVariable.getId());
+        //Validations
+        assertTrue( deletedField.getInode() == null || deletedField.getInode().isEmpty() );
 
-    // ++++++++++++++++++++++++++++++++++++++++++++
-    // Getting the variable we just saved
-    FieldVariable savedVariable = FieldFactory.getFieldVariable(fieldVariable.getId());
+        //++++++++++++++++++++++++++++++++++++++++++++
+        //Testing another delete
+        String field2Inode = field2.getInode();
+        FieldFactory.deleteField( field2 );
 
-    // Validations
-    assertEquals(fieldVariable.getId(), savedVariable.getId());
+        //Trying to get the field we just deleted
+        deletedField = FieldFactory.getFieldByInode( field2Inode );
 
-    // ++++++++++++++++++++++++++++++++++++++++++++
-    // Updating the field variable
-    savedVariable.setName(NAME_UPDATED);
-    FieldFactory.saveFieldVariable(savedVariable);
+        //Validations
+        assertTrue( deletedField.getInode() == null || deletedField.getInode().isEmpty() );
+    }
 
-    // Getting again the saved variable
-    fieldVariable = FieldFactory.getFieldVariable(fieldVariable.getId());
+    /**
+     * Testing {@link FieldFactory#getNextAvaliableFieldNumber(String, String, String)}
+     *
+     * @see FieldFactory
+     * @see FieldsCache
+     */
+    @Test
+    public void getNextAvailableFieldNumber () {
 
-    // Validations
-    assertNotNull(fieldVariable.getId());
-    assertEquals(fieldVariable.getName(), NAME_UPDATED);
+        //Getting a known structure
+        Structure structure = structures.iterator().next();
 
-    // ++++++++++++++++++++++++++++++++++++++++++++
-    // Getting all the variables for a given field
-    Collection<FieldVariable> variables = FieldFactory.getFieldVariablesForField(field.getInode());
+        //Getting the fields for this structure
+        Collection<Field> fields = FieldsCache.getFieldsByStructureInode( structure.getInode() );
 
-    // Validations
-    assertTrue(variables != null && !variables.isEmpty());
+        //Validations
+        assertTrue( fields != null && !fields.isEmpty() );
 
-    // ++++++++++++++++++++++++++++++++++++++++++++
-    // Delete a given variable
-    String variableId = fieldVariable.getId();
-    FieldFactory.deleteFieldVariable(fieldVariable);
-    // Try to get the deleted variable
-    FieldVariable tempFieldVariable = FieldFactory.getFieldVariable(variableId);
+        Iterator<Field> iterator = fields.iterator();
+        Field field = iterator.next();
 
-    // validations
-    assertTrue(
-        tempFieldVariable == null
-            || tempFieldVariable.getId() == null
-            || tempFieldVariable.getId().isEmpty());
-  }
+        //FIXME: Work more on this test, verify when the max ammount of fields is reach....
+        //Find the next available field number
+        String fieldContentlet = FieldFactory.getNextAvaliableFieldNumber( Field.DataType.TEXT.toString(), field.getInode(), field.getStructureInode() );
+
+        //Validations
+        assertTrue( fieldContentlet != null && !fieldContentlet.isEmpty() );
+    }
+
+    /**
+     * Testing the methods {@link FieldFactory#saveFieldVariable(com.dotmarketing.portlets.structure.model.FieldVariable)}, {@link FieldFactory#getFieldVariable(String)},
+     * {@link FieldFactory#getFieldVariablesForField(String)}, {@link FieldFactory#getAllFieldVariables()}, {@link FieldFactory#deleteFieldVariable(String)} and {@link FieldFactory#deleteFieldVariable(com.dotmarketing.portlets.structure.model.FieldVariable)}
+     *
+     * @see FieldFactory
+     * @see FieldsCache
+     */
+    @Test
+    public void fieldVariables () {
+
+        String NAME_ORIGINAL = "JUnit Test variable name";
+        String NAME_UPDATED = "UPDATED --- Test variable name";
+
+        //Getting a known structure
+        Structure structure = structures.iterator().next();
+
+        //Getting the fields for this structure
+        Collection<Field> fields = FieldsCache.getFieldsByStructureInode( structure.getInode() );
+
+        //Validations
+        assertTrue( fields != null && !fields.isEmpty() );
+
+        Iterator<Field> iterator = fields.iterator();
+        Field field = iterator.next();
+
+        //Creating the FieldVariables
+        FieldVariable fieldVariable = new FieldVariable();
+        fieldVariable.setFieldId( field.getInode() );
+        fieldVariable.setName( NAME_ORIGINAL );
+        fieldVariable.setKey( "test_variable_key" );
+        fieldVariable.setValue( "test variable value" );
+        fieldVariable.setLastModifierId( user.getUserId() );
+        fieldVariable.setLastModDate( new Date() );
+
+        //++++++++++++++++++++++++++++++++++++++++++++
+        //Saving the field variable
+        fieldVariable = FieldFactory.saveFieldVariable( fieldVariable );
+
+        //Validations
+        assertNotNull( fieldVariable.getId() );
+
+        //++++++++++++++++++++++++++++++++++++++++++++
+        //Getting the variable we just saved
+        FieldVariable savedVariable = FieldFactory.getFieldVariable( fieldVariable.getId() );
+
+        //Validations
+        assertEquals( fieldVariable.getId(), savedVariable.getId() );
+
+        //++++++++++++++++++++++++++++++++++++++++++++
+        //Updating the field variable
+        savedVariable.setName( NAME_UPDATED );
+        FieldFactory.saveFieldVariable( savedVariable );
+
+        //Getting again the saved variable
+        fieldVariable = FieldFactory.getFieldVariable( fieldVariable.getId() );
+
+        //Validations
+        assertNotNull( fieldVariable.getId() );
+        assertEquals( fieldVariable.getName(), NAME_UPDATED );
+
+        //++++++++++++++++++++++++++++++++++++++++++++
+        //Getting all the variables for a given field
+        Collection<FieldVariable> variables = FieldFactory.getFieldVariablesForField( field.getInode() );
+
+        //Validations
+        assertTrue( variables != null && !variables.isEmpty() );
+
+        //++++++++++++++++++++++++++++++++++++++++++++
+        //Delete a given variable
+        String variableId = fieldVariable.getId();
+        FieldFactory.deleteFieldVariable( fieldVariable );
+        //Try to get the deleted variable
+        FieldVariable tempFieldVariable = FieldFactory.getFieldVariable( variableId );
+
+        //validations
+        assertTrue( tempFieldVariable == null || tempFieldVariable.getId() == null || tempFieldVariable.getId().isEmpty() );
+    }
 }

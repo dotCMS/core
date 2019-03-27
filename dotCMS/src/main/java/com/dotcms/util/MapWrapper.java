@@ -2,80 +2,82 @@ package com.dotcms.util;
 
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import java.io.Serializable;
+
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import org.elasticsearch.common.Nullable;
 
-public class MapWrapper<K, V> implements Map<K, V>, Serializable {
+public class MapWrapper<K,V> implements Map<K,V>, Serializable {
 
-  private final Map<K, V> delegate;
+    private final Map<K,V> delegate;
 
-  public MapWrapper(final Map<K, V> delegate) {
-    this.delegate = delegate;
-  }
 
-  @Override
-  public int size() {
-    return this.delegate.size();
-  }
+    public MapWrapper(final Map<K, V> delegate) {
+        this.delegate = delegate;
+    }
 
-  @Override
-  public boolean isEmpty() {
-    return this.delegate.isEmpty();
-  }
+    @Override
+    public int size() {
+        return this.delegate.size();
+    }
 
-  @Override
-  public boolean containsKey(final Object key) {
-    return this.delegate.containsKey(key);
-  }
+    @Override
+    public boolean isEmpty() {
+        return this.delegate.isEmpty();
+    }
 
-  @Override
-  public boolean containsValue(final Object value) {
-    return this.delegate.containsValue(value);
-  }
+    @Override
+    public boolean containsKey(final Object key) {
+        return this.delegate.containsKey(key);
+    }
 
-  @Override
-  public V get(final Object key) {
-    return this.delegate.get(key);
-  }
+    @Override
+    public boolean containsValue(final Object value) {
+        return this.delegate.containsValue(value);
+    }
 
-  @Nullable
-  @Override
-  public V put(final K key, final V value) {
-    return delegate.put(key, value);
-  }
+    @Override
+    public V get(final Object key) {
+        return this.delegate.get(key);
+    }
 
-  @Override
-  public V remove(final Object key) {
-    return delegate.remove(key);
-  }
+    @Nullable
+    @Override
+    public V put(final K key, final V value) {
+        return delegate.put(key, value);
+    }
 
-  @Override
-  public void putAll(@NotNull final Map<? extends K, ? extends V> m) {
-    delegate.putAll(m);
-  }
+    @Override
+    public V remove(final Object key) {
+        return delegate.remove(key);
+    }
 
-  @Override
-  public void clear() {
-    delegate.clear();
-  }
+    @Override
+    public void putAll(@NotNull final Map<? extends K, ? extends V> m) {
+        delegate.putAll(m);
+    }
 
-  @NotNull
-  @Override
-  public Set<K> keySet() {
-    return delegate.keySet();
-  }
+    @Override
+    public void clear() {
+        delegate.clear();
+    }
 
-  @NotNull
-  @Override
-  public Collection<V> values() {
-    return delegate.values();
-  }
+    @NotNull
+    @Override
+    public Set<K> keySet() {
+        return delegate.keySet();
+    }
 
-  @NotNull
-  @Override
-  public Set<Entry<K, V>> entrySet() {
-    return delegate.entrySet();
-  }
+    @NotNull
+    @Override
+    public Collection<V> values() {
+        return delegate.values();
+    }
+
+    @NotNull
+    @Override
+    public Set<Entry<K, V>> entrySet() {
+        return delegate.entrySet();
+    }
 }

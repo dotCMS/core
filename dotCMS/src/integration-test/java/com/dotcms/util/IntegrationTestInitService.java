@@ -17,46 +17,44 @@ import org.mockito.Mockito;
  * Created by nollymar on 9/29/16.
  */
 public class IntegrationTestInitService {
-  private static IntegrationTestInitService service = new IntegrationTestInitService();
+    private static IntegrationTestInitService service = new IntegrationTestInitService();
 
-  private static AtomicBoolean initCompleted;
+    private static AtomicBoolean initCompleted;
 
-  static {
-    SystemProperties.getProperties();
-  }
-
-  private IntegrationTestInitService() {
-    initCompleted = new AtomicBoolean(false);
-  }
-
-  public static IntegrationTestInitService getInstance() {
-    return service;
-  }
-
-  public void init() throws Exception {
-    if (!initCompleted.get()) {
-      TestingJndiDatasource.init();
-      ConfigTestHelper._setupFakeTestingContext();
-
-      CacheLocator.init();
-      FactoryLocator.init();
-      APILocator.init();
-
-      // For these tests fire the reindex immediately
-      Config.setProperty("ASYNC_REINDEX_COMMIT_LISTENERS", false);
-      Config.setProperty("ASYNC_COMMIT_LISTENERS", false);
-
-      Config.setProperty("NETWORK_CACHE_FLUSH_DELAY", (long) 0);
-      // Init other dotCMS services.
-      DotInitializationService.getInstance().initialize();
-
-      initCompleted.set(true);
+    static { SystemProperties.getProperties(); }
+    
+    private IntegrationTestInitService() {
+        initCompleted = new AtomicBoolean(false);
     }
-  }
 
-  public void mockStrutsActionModule() {
-    ModuleConfigFactory factoryObject = ModuleConfigFactory.createFactory();
-    ModuleConfig config = factoryObject.createModuleConfig("");
-    Mockito.when(Config.CONTEXT.getAttribute(Globals.MODULE_KEY)).thenReturn(config);
-  }
+    public static IntegrationTestInitService getInstance() {
+        return service;
+    }
+
+    public void init() throws Exception {
+        if (!initCompleted.get()) {
+            TestingJndiDatasource.init();
+            ConfigTestHelper._setupFakeTestingContext();
+
+            CacheLocator.init();
+    		FactoryLocator.init();
+    		APILocator.init();
+
+    		//For these tests fire the reindex immediately
+            Config.setProperty("ASYNC_REINDEX_COMMIT_LISTENERS", false);
+            Config.setProperty("ASYNC_COMMIT_LISTENERS", false);
+
+            Config.setProperty("NETWORK_CACHE_FLUSH_DELAY", (long) 0);
+            // Init other dotCMS services.
+            DotInitializationService.getInstance().initialize();
+
+            initCompleted.set(true);
+        }
+    }
+    
+    public void mockStrutsActionModule() {
+        ModuleConfigFactory factoryObject = ModuleConfigFactory.createFactory();
+        ModuleConfig config = factoryObject.createModuleConfig("");
+        Mockito.when(Config.CONTEXT.getAttribute(Globals.MODULE_KEY)).thenReturn(config);
+    }
 }

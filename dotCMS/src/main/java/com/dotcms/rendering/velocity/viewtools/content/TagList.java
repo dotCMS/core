@@ -1,40 +1,55 @@
-/** */
+/**
+ * 
+ */
 package com.dotcms.rendering.velocity.viewtools.content;
 
-import com.dotmarketing.util.UtilMethods;
 import java.util.ArrayList;
 
+import com.dotmarketing.util.UtilMethods;
+
 /**
- * Used as a wrapper around an ArrayList of Tags to return to the front-end of dotCMS from the
- * ContentTool.
- *
+ * Used as a wrapper around an ArrayList of Tags to return to the front-end of dotCMS from the 
+ * ContentTool. 
+ * 
  * @author Jason Tesser
  * @since 1.9.1.3
+ *
  */
 public class TagList extends ArrayList<String> {
 
-  protected TagList(String tagValue) {
-    super();
-    if (UtilMethods.isSet(tagValue)) {
-      for (String t : tagValue.split(",")) {
-        add(t.trim());
-      }
-    }
-  }
+	protected TagList(String tagValue) {
+		super();
+		if(UtilMethods.isSet(tagValue)){
+			for(String t : tagValue.split(",")){
+				add(t.trim());
+			
+			}
+		}
+		
+	}
+	
+	/**
+	 * The raw Tag values is a comma separated list of the selected tags.  
+	 */
+	private String rawTagValues;
+	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -2259803707187904180L;
 
-  /** The raw Tag values is a comma separated list of the selected tags. */
-  private String rawTagValues;
+	/**
+	 * @param rawTagValues the rawTagValues to set
+	 */
+	protected void setRawTagValues(String rawTagValues) {
+		this.rawTagValues = rawTagValues;
+	}
 
-  /** */
-  private static final long serialVersionUID = -2259803707187904180L;
-
-  /** @param rawTagValues the rawTagValues to set */
-  protected void setRawTagValues(String rawTagValues) {
-    this.rawTagValues = rawTagValues;
-  }
-
-  /** @return the rawTagValues */
-  public String getRawTagValues() {
-    return rawTagValues;
-  }
+	/**
+	 * @return the rawTagValues
+	 */
+	public String getRawTagValues() {
+		return rawTagValues;
+	}
+	
 }

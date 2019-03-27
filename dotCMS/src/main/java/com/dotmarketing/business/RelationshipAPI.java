@@ -22,23 +22,22 @@ public interface RelationshipAPI {
 
   /**
    * Search a list of relationships that contain the string typeValue.
-   *
    * @param typeValue
    * @return
    */
   List<Relationship> dbAllByTypeValue(final String typeValue);
 
   /**
-   * Returns an {@link Optional} of {@link Relationship} for the given content type (parent or
-   * child) and the given relationName (child relation name or parent relation name)
-   *
+   * Returns an {@link Optional} of {@link Relationship} for the given content type (parent or child)
+   * and the given relationName (child relation name or parent relation name)
    * @param contentType
    * @param relationName
    * @return
    */
-  Optional<Relationship> byParentChildRelationName(ContentType contentType, String relationName);
+  Optional<Relationship> byParentChildRelationName(ContentType contentType,
+          String relationName);
 
-  List<Relationship> byParent(ContentTypeIf parent) throws DotDataException;
+    List<Relationship> byParent(ContentTypeIf parent) throws DotDataException;
 
   List<Relationship> byChild(ContentTypeIf child) throws DotDataException;
 
@@ -49,28 +48,26 @@ public interface RelationshipAPI {
   List<Relationship> byContentType(ContentTypeIf type, String orderBy);
 
   List<Contentlet> dbRelatedContent(Relationship relationship, Contentlet contentlet)
-      throws DotDataException;
+          throws DotDataException;
 
-  List<Contentlet> dbRelatedContent(
-      Relationship relationship, Contentlet contentlet, boolean hasParent) throws DotDataException;
+  List<Contentlet> dbRelatedContent(Relationship relationship, Contentlet contentlet,
+                                    boolean hasParent) throws DotDataException;
 
-  void deleteByContent(
-      Contentlet contentlet, Relationship relationship, List<Contentlet> relatedContentlets)
+  void deleteByContent(Contentlet contentlet, Relationship relationship, List<Contentlet> relatedContentlets)
       throws DotDataException;
 
   List<Relationship> byContentType(ContentTypeIf st, boolean hasParent) throws DotDataException;
 
-  List<Tree> relatedContentTrees(Relationship relationship, Contentlet contentlet)
-      throws DotDataException;
+  List<Tree> relatedContentTrees(Relationship relationship, Contentlet contentlet) throws DotDataException;
 
   void delete(String inode) throws DotDataException;
 
-  List<Tree> relatedContentTrees(
-      Relationship relationship, Contentlet contentlet, boolean hasParent) throws DotDataException;
+  List<Tree> relatedContentTrees(Relationship relationship, Contentlet contentlet, boolean hasParent)
+      throws DotDataException;
+
 
   /**
    * Save or Update the relationship depending on whether the relationship inode exists
-   *
    * @param relationship
    * @throws DotDataException
    */
@@ -78,7 +75,6 @@ public interface RelationshipAPI {
 
   /**
    * Saves the relationship with the inode provided
-   *
    * @param relationship
    * @param inode
    * @throws DotDataException
@@ -87,7 +83,6 @@ public interface RelationshipAPI {
 
   /**
    * Creates a new relationship, generating a new inode as primary key
-   *
    * @throws DotDataException
    */
   void create(Relationship relationship) throws DotDataException;
@@ -104,7 +99,6 @@ public interface RelationshipAPI {
 
   /**
    * Method to delete a relationship, but keep the TypeValue in Tree and multitree
-   *
    * @param relationship to be deleted
    * @throws DotDataException
    */
@@ -112,42 +106,36 @@ public interface RelationshipAPI {
 
   void addRelationship(String parent, String child, String relationType) throws DotDataException;
 
-  List<Relationship> getOneSidedRelationships(
-      final ContentType contentType, final int limit, final int offset) throws DotDataException;
+  List<Relationship> getOneSidedRelationships(final ContentType contentType, final int limit,
+          final int offset) throws DotDataException;
 
   long getOneSidedRelationshipsCount(final ContentType contentType) throws DotDataException;
 
-  ContentletRelationships getContentletRelationshipsFromMap(
-      final Contentlet contentlet, final Map<Relationship, List<Contentlet>> contentRelationships);
+  ContentletRelationships getContentletRelationshipsFromMap(final Contentlet contentlet, final Map<Relationship,
+          List<Contentlet>> contentRelationships);
 
   /**
    * Given a Relationship Field, returns the existing relationship
-   *
    * @param field
    * @param user
    * @return
    */
-  Relationship getRelationshipFromField(Field field, final User user)
-      throws DotDataException, DotSecurityException;
+  Relationship getRelationshipFromField(Field field, final User user) throws DotDataException, DotSecurityException;
 
   /**
    * Given a Relationship Field, returns the existing relationship
-   *
    * @param field
    * @param user
    * @return
    */
-  Relationship getRelationshipFromField(
-      final com.dotcms.contenttype.model.field.Field field, final User user)
-      throws DotDataException, DotSecurityException;
+  Relationship getRelationshipFromField(final com.dotcms.contenttype.model.field.Field field, final User user)
+          throws DotDataException, DotSecurityException;
 
   /**
    * It converts an old Relationship to the new Relationship Field
-   *
    * @param oldRelationship
    * @throws DotDataException
    * @throws DotSecurityException
    */
-  void convertRelationshipToRelationshipField(final Relationship oldRelationship)
-      throws DotDataException, DotSecurityException;
+  void convertRelationshipToRelationshipField(final Relationship oldRelationship) throws DotDataException, DotSecurityException;
 }

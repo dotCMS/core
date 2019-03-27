@@ -23,88 +23,89 @@ import org.w3c.dom.Document;
 
 public final class ImageUtil {
 
-  private static class UtilHolder {
-    public static final ImageUtil INSTANCE = new ImageUtil();
-  }
+	private static class UtilHolder {
+		public static final ImageUtil INSTANCE = new ImageUtil();
+	}
 
-  public static ImageUtil getInstance() {
-    return UtilHolder.INSTANCE;
-  }
+	public static ImageUtil getInstance() {
+		return UtilHolder.INSTANCE;
+	}
 
-  /**
-   * Returns a java.awt.Dimention that contains the image's width and height
-   *
-   * @param imgFile
-   * @return
-   * @throws IOException
-   */
-  public Dimension getDimension(File imgFile) throws IOException {
+	/**
+	 * Returns a java.awt.Dimention that contains the image's
+	 * width and height
+	 * @param imgFile
+	 * @return
+	 * @throws IOException
+	 */
+	public Dimension getDimension(File imgFile) throws IOException {
 
-    if (imgFile == null) {
-      throw new IOException("null file passed in");
-    }
-    int pos = imgFile.getName().lastIndexOf(".");
-    if (pos == -1) {
-      throw new IOException("No extension for file: " + imgFile.getAbsolutePath());
-    }
-    String suffix = imgFile.getName().substring(pos + 1);
+		if (imgFile == null) {
+			throw new IOException("null file passed in");
+		}
+		int pos = imgFile.getName().lastIndexOf(".");
+		if (pos == -1) {
+			throw new IOException("No extension for file: " + imgFile.getAbsolutePath());
+		}
+		String suffix = imgFile.getName().substring(pos + 1);
 
-    if (suffix.equalsIgnoreCase("svg")) {
-      return getSVGImageDimension(imgFile);
-    } else {
-      Iterator<ImageReader> iter = ImageIO.getImageReadersBySuffix(suffix);
-      if (iter.hasNext()) {
-        Dimension dimension = getImageDimension(imgFile, iter);
-        if (dimension != null) return dimension;
-      }
-    }
+		if (suffix.equalsIgnoreCase("svg")){
+			return getSVGImageDimension( imgFile );
+		}else{
+			Iterator<ImageReader> iter = ImageIO.getImageReadersBySuffix(suffix);
+			if (iter.hasNext()) {
+				Dimension dimension = getImageDimension(imgFile, iter);
+				if (dimension != null) return dimension;
+			}
+		}
 
-    throw new IOException("Not a known image file: " + imgFile.getAbsolutePath());
-  }
+		throw new IOException("Not a known image file: " + imgFile.getAbsolutePath());
+	}
 
-  private Dimension getSVGImageDimension(File imgFile) {
-    try {
-      SAXSVGDocumentFactory factory =
-          new SAXSVGDocumentFactory(XMLResourceDescriptor.getXMLParserClassName());
+	private Dimension getSVGImageDimension( File imgFile ) {
+		try {
+			SAXSVGDocumentFactory factory = new SAXSVGDocumentFactory(
+					XMLResourceDescriptor.getXMLParserClassName());
 
-      final InputStream is = Files.newInputStream(imgFile.toPath());
+			final InputStream is = Files.newInputStream(imgFile.toPath());
 
-      Document document = factory.createDocument(imgFile.toURI().toURL().toString(), is);
-      UserAgent agent = new UserAgentAdapter();
-      DocumentLoader loader = new DocumentLoader(agent);
-      BridgeContext context = new BridgeContext(agent, loader);
-      context.setDynamic(true);
-      GVTBuilder builder = new GVTBuilder();
-      GraphicsNode root = builder.build(context, document);
+			Document document = factory.createDocument(
+					imgFile.toURI().toURL().toString(), is);
+			UserAgent agent = new UserAgentAdapter();
+			DocumentLoader loader = new DocumentLoader(agent);
+			BridgeContext context = new BridgeContext(agent, loader);
+			context.setDynamic(true);
+			GVTBuilder builder = new GVTBuilder();
+			GraphicsNode root = builder.build(context, document);
 
-      return new Dimension(
-          (int) root.getPrimitiveBounds().getWidth(), (int) root.getPrimitiveBounds().getHeight());
-    } catch (IOException e) {
-      return null;
-    }
-  }
+			return new Dimension((int) root.getPrimitiveBounds().getWidth(), (int) root.getPrimitiveBounds().getHeight());
+		}catch(IOException e){
+			return null;
+		}
+	}
 
-  private Dimension getImageDimension(File imgFile, Iterator<ImageReader> iter) {
-    ImageReader reader = iter.next();
-    try {
-      ImageInputStream stream = new FileImageInputStream(imgFile);
-      reader.setInput(stream);
-      int width = reader.getWidth(reader.getMinIndex());
-      int height = reader.getHeight(reader.getMinIndex());
-      return new Dimension(width, height);
-    } catch (IOException e) {
-      // fall back if we cannot read the image headers
-      try {
-        BufferedImage src = ImageIO.read(imgFile);
-        int width = src.getWidth();
-        int height = src.getHeight();
-        return new Dimension(width, height);
-      } catch (IOException e2) {
-        Logger.warn(this, "Error reading: " + imgFile.getAbsolutePath(), e);
-      }
-    } finally {
-      reader.dispose();
-    }
-    return null;
-  }
+	private Dimension getImageDimension(File imgFile, Iterator<ImageReader> iter) {
+		ImageReader reader = iter.next();
+		try {
+            ImageInputStream stream = new FileImageInputStream(imgFile);
+            reader.setInput(stream);
+            int width = reader.getWidth(reader.getMinIndex());
+            int height = reader.getHeight(reader.getMinIndex());
+            return new Dimension(width, height);
+        } catch (IOException e) {
+            // fall back if we cannot read the image headers
+            try{
+                BufferedImage src = ImageIO.read(imgFile);
+                int width = src.getWidth();
+                int height = src.getHeight();
+                return new Dimension(width, height);
+            } catch (IOException e2) {
+                Logger.warn(this, "Error reading: " + imgFile.getAbsolutePath(), e);
+            }
+        } finally {
+            reader.dispose();
+        }
+		return null;
+	}
+
 }

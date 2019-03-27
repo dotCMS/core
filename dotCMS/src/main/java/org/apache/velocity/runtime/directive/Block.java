@@ -16,7 +16,7 @@ package org.apache.velocity.runtime.directive;
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
- * under the License.
+ * under the License.    
  */
 
 import com.dotmarketing.util.Logger;
@@ -32,8 +32,9 @@ import org.apache.velocity.runtime.RuntimeServices;
 import org.apache.velocity.runtime.parser.node.Node;
 
 /**
- * Directive that puts an unrendered AST block in the context under the specified key, postponing
- * rendering until the reference is used and rendered.
+ * Directive that puts an unrendered AST block in the context
+ * under the specified key, postponing rendering until the
+ * reference is used and rendered.
  *
  * @author Andrew Tetlaw
  * @author Nathan Bubna
@@ -41,107 +42,133 @@ import org.apache.velocity.runtime.parser.node.Node;
  * @since 1.7
  * @version $Id: Block.java 686842 2008-08-18 18:29:31Z nbubna $
  */
-public abstract class Block extends Directive {
-  protected Node block;
-  protected int maxDepth;
-  protected String key;
+public abstract class Block extends Directive
+{
+    protected Node block;
+    protected int maxDepth;
+    protected String key;
 
-  /** Return type of this directive. */
-  public int getType() {
-    return BLOCK;
-  }
-
-  /** simple init - get the key */
-  public void init(RuntimeServices rs, InternalContextAdapter context, Node node)
-      throws TemplateInitException {
-    super.init(rs, context, node);
-
-    /** No checking is done. We just grab the last child node and assume that it's the block! */
-    block = node.jjtGetChild(node.jjtGetNumChildren() - 1);
-  }
-
-  public boolean render(InternalContextAdapter context, Writer writer) {
-    preRender(context);
-    try {
-      return block.render(context, writer);
-    } catch (IOException e) {
-      String msg =
-          "Failed to render "
-              + id(context)
-              + " to writer "
-              + " at "
-              + VelocityException.formatFileString(this);
-
-      Logger.error(this, msg, e);
-      throw new RuntimeException(msg, e);
-    } catch (StopCommand stop) {
-      if (!stop.isFor(this)) {
-        throw stop;
-      }
-      return true;
-    } finally {
-      postRender(context);
-    }
-  }
-
-  /**
-   * Creates a string identifying the source and location of the block definition, and the current
-   * template being rendered if that is different.
-   */
-  protected String id(InternalContextAdapter context) {
-    StrBuilder str = new StrBuilder(100).append("block $").append(key);
-    if (!context.getCurrentTemplateName().equals(getTemplateName())) {
-      str.append(" used in ").append(context.getCurrentTemplateName());
-    }
-    return str.toString();
-  }
-
-  /**
-   * actual class placed in the context, holds the context being used for the render, as well as the
-   * parent (which already holds everything else we need).
-   */
-  public static class Reference implements Renderable {
-    private InternalContextAdapter context;
-    private Block parent;
-    private int depth;
-
-    public Reference(InternalContextAdapter context, Block parent) {
-      this.context = context;
-      this.parent = parent;
+    /**
+     * Return type of this directive.
+     */
+    public int getType()
+    {
+        return BLOCK;
     }
 
-    /** Render the AST of this block into the writer using the context. */
-    public boolean render(InternalContextAdapter context, Writer writer) {
-      depth++;
-      if (depth > parent.maxDepth) {
-        /* this is only a debug message, as recursion can
-         * happen in quasi-innocent situations and is relatively
-         * harmless due to how we handle it here.
-         * this is more to help anyone nuts enough to intentionally
-         * use recursive block definitions and having problems
-         * pulling it off properly.
+    /**
+     *  simple init - get the key
+     */
+    public void init(RuntimeServices rs, InternalContextAdapter context, Node node)
+        throws TemplateInitException
+    {
+        super.init(rs, context, node);
+
+        /**
+         * No checking is done. We just grab the last child node and assume
+         * that it's the block!
          */
-        Logger.debug(
-            this,
-            "Max recursion depth reached for "
-                + parent.id(context)
-                + " at "
-                + VelocityException.formatFileString(parent));
-        depth--;
-        return false;
-      } else {
-        parent.render(context, writer);
-        depth--;
-        return true;
-      }
+        block = node.jjtGetChild(node.jjtGetNumChildren() - 1);
     }
 
-    public String toString() {
-      Writer writer = new StringWriter();
-      if (render(context, writer)) {
-        return writer.toString();
-      }
-      return null;
+    public boolean render(InternalContextAdapter context, Writer writer)
+    {
+        preRender(context);
+        try
+        {
+            return block.render(context, writer);
+        }
+        catch (IOException e)
+        {
+            String msg = "Failed to render " + id(context) + " to writer "
+              + " at " + VelocityException.formatFileString(this);
+
+            Logger.error(this,msg, e);
+            throw new RuntimeException(msg, e);
+        }
+        catch (StopCommand stop)
+        {
+            if (!stop.isFor(this))
+            {
+                throw stop;
+            }
+            return true;
+        }
+        finally
+        {
+            postRender(context);
+        }
     }
-  }
+
+    /**
+     * Creates a string identifying the source and location of the block
+     * definition, and the current template being rendered if that is
+     * different.
+     */
+    protected String id(InternalContextAdapter context)
+    {
+        StrBuilder str = new StrBuilder(100)
+            .append("block $").append(key);
+        if (!context.getCurrentTemplateName().equals(getTemplateName()))
+        {
+            str.append(" used in ").append(context.getCurrentTemplateName());
+        }
+        return str.toString();
+    }
+    
+    /**
+     * actual class placed in the context, holds the context
+     * being used for the render, as well as the parent (which already holds
+     * everything else we need).
+     */
+    public static class Reference implements Renderable
+    {
+        private InternalContextAdapter context;
+        private Block parent;
+        private int depth;
+        
+        public Reference(InternalContextAdapter context, Block parent)
+        {
+            this.context = context;
+            this.parent = parent;
+        }
+        
+        /**
+         * Render the AST of this block into the writer using the context.
+         */
+        public boolean render(InternalContextAdapter context, Writer writer)
+        {
+            depth++;
+            if (depth > parent.maxDepth)
+            {
+                /* this is only a debug message, as recursion can
+                 * happen in quasi-innocent situations and is relatively
+                 * harmless due to how we handle it here.
+                 * this is more to help anyone nuts enough to intentionally
+                 * use recursive block definitions and having problems
+                 * pulling it off properly.
+                 */
+                Logger.debug(this,"Max recursion depth reached for " + parent.id(context)
+                    + " at " + VelocityException.formatFileString(parent));
+                depth--;
+                return false;
+            }
+            else
+            {
+                parent.render(context, writer);
+                depth--;
+                return true;
+            }
+        }
+
+        public String toString()
+        {
+            Writer writer = new StringWriter();
+            if (render(context, writer))
+            {
+                return writer.toString();
+            }
+            return null;
+        }
+    }
 }

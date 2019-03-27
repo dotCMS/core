@@ -10,52 +10,66 @@ import java.io.Serializable;
 
 /**
  * @author rocco
- *     <p>To change the template for this generated type comment go to
- *     Window&gt;Preferences&gt;Java&gt;Code Generation&gt;Code and Comments
+ *
+ * To change the template for this generated type comment go to
+ * Window&gt;Preferences&gt;Java&gt;Code Generation&gt;Code and Comments
  */
 public class Status implements Serializable, Comparable {
+	
+	private static final long serialVersionUID = 1L;
 
-  private static final long serialVersionUID = 1L;
+	private long id;
+	
+	private String title;
+		
+	private int permission;
 
-  private long id;
+	/**
+	 * @return
+	 */
+	public long getId() {
+		return id;
+	}
 
-  private String title;
+	/**
+	 * @param l
+	 */
+	public void setId(long l) {
+		id = l;
+	}
 
-  private int permission;
+	/**
+	 * @return
+	 */
+	public String getTitle() {
+		return title;
+	}
 
-  /** @return */
-  public long getId() {
-    return id;
-  }
+	/**
+	 * @param string
+	 */
+	public void setTitle(String string) {
+		title = string;
+	}
 
-  /** @param l */
-  public void setId(long l) {
-    id = l;
-  }
+	public int compareTo(Object compObject){
+		if(!(compObject instanceof Status))return -1;
+		Status status = (Status) compObject;
+		return (status.getTitle().compareTo(this.getTitle()));
+	}
 
-  /** @return */
-  public String getTitle() {
-    return title;
-  }
+	/**
+	 * @return
+	 */
+	public int getPermission() {
+		return permission;
+	}
 
-  /** @param string */
-  public void setTitle(String string) {
-    title = string;
-  }
+	/**
+	 * @param i
+	 */
+	public void setPermission(int permission) {
+		this.permission = permission;
+	}
 
-  public int compareTo(Object compObject) {
-    if (!(compObject instanceof Status)) return -1;
-    Status status = (Status) compObject;
-    return (status.getTitle().compareTo(this.getTitle()));
-  }
-
-  /** @return */
-  public int getPermission() {
-    return permission;
-  }
-
-  /** @param i */
-  public void setPermission(int permission) {
-    this.permission = permission;
-  }
 }

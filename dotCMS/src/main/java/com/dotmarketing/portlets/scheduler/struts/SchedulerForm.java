@@ -9,392 +9,402 @@ import org.apache.struts.validator.ValidatorForm;
 
 /** @author Hibernate CodeGenerator */
 public class SchedulerForm extends ValidatorForm {
-  private boolean editMode = false;
-  private String jobName;
-  private String jobGroup;
-  private String jobDescription;
+	private boolean editMode = false;
+	private String jobName;
+    private String jobGroup;
+    private String jobDescription;
+    
+    private String javaClass;
+    
+    private boolean haveStartDate;
+    private String startDate;
+    private boolean haveEndDate;
+    private String endDate;
+    
+    private boolean atInfo;
+    private String at;
+    private int atTimeHour;
+    private int atTimeMinute;
+    private int atTimeSecond;
+    private int betweenFromHour;
+    private int betweenFromMinute;
+    private int betweenFromSecond;
+    private int betweenToHour;
+    private int betweenToMinute;
+    private int betweenToSecond;
+    
+    private boolean everyInfo;
+    private String every;
+    private int everyDateMonth;
+    private int everyDateDay;
+    private int everyDateYear;
+    private boolean isMonday;
+    private boolean isTuesday;
+    private boolean isWednesday;
+    private boolean isThusday;
+    private boolean isFriday;
+    private boolean isSaturday;
+    private boolean isSunday;
+    
+    private boolean eachInfo;
+    private int eachHours;
+    private int eachMinutes;
+    
+    private String everyDate;
+    private String atTime;
+    private String cronExpression="";
+    
+    
+    
 
-  private String javaClass;
 
-  private boolean haveStartDate;
-  private String startDate;
-  private boolean haveEndDate;
-  private String endDate;
+	
+	private Map map;
+/*    private String type;
+    private boolean schedulerEditable;
 
-  private boolean atInfo;
-  private String at;
-  private int atTimeHour;
-  private int atTimeMinute;
-  private int atTimeSecond;
-  private int betweenFromHour;
-  private int betweenFromMinute;
-  private int betweenFromSecond;
-  private int betweenToHour;
-  private int betweenToMinute;
-  private int betweenToSecond;
+    public boolean isSchedulerEditable() {
+		return schedulerEditable;
+	}
 
-  private boolean everyInfo;
-  private String every;
-  private int everyDateMonth;
-  private int everyDateDay;
-  private int everyDateYear;
-  private boolean isMonday;
-  private boolean isTuesday;
-  private boolean isWednesday;
-  private boolean isThusday;
-  private boolean isFriday;
-  private boolean isSaturday;
-  private boolean isSunday;
+	public void setSchedulerEditable(boolean schedulerEditable) {
+		this.schedulerEditable = schedulerEditable;
+	}
 
-  private boolean eachInfo;
-  private int eachHours;
-  private int eachMinutes;
+	public String getType() {
+		return type;
+	}
 
-  private String everyDate;
-  private String atTime;
-  private String cronExpression = "";
+	public void setType(String type) {
+		this.type = type;
+	}
+*/
+	public int getBetweenFromHour() {
+		return betweenFromHour;
+	}
 
-  private Map map;
-  /*    private String type;
-      private boolean schedulerEditable;
+	public void setBetweenFromHour(int betweenFromHour) {
+		this.betweenFromHour = betweenFromHour;
+	}
 
-      public boolean isSchedulerEditable() {
-  		return schedulerEditable;
-  	}
+	public int getBetweenFromMinute() {
+		return betweenFromMinute;
+	}
 
-  	public void setSchedulerEditable(boolean schedulerEditable) {
-  		this.schedulerEditable = schedulerEditable;
-  	}
+	public void setBetweenFromMinute(int betweenFromMinute) {
+		this.betweenFromMinute = betweenFromMinute;
+	}
 
-  	public String getType() {
-  		return type;
-  	}
+	public int getBetweenFromSecond() {
+		return betweenFromSecond;
+	}
 
-  	public void setType(String type) {
-  		this.type = type;
-  	}
-  */
-  public int getBetweenFromHour() {
-    return betweenFromHour;
-  }
+	public void setBetweenFromSecond(int betweenFromSecond) {
+		this.betweenFromSecond = betweenFromSecond;
+	}
 
-  public void setBetweenFromHour(int betweenFromHour) {
-    this.betweenFromHour = betweenFromHour;
-  }
+	public String getAt() {
+		return at;
+	}
 
-  public int getBetweenFromMinute() {
-    return betweenFromMinute;
-  }
+	public void setAt(String at) {
+		this.at = at;
+	}
 
-  public void setBetweenFromMinute(int betweenFromMinute) {
-    this.betweenFromMinute = betweenFromMinute;
-  }
+	public boolean isAtInfo() {
+		return atInfo;
+	}
 
-  public int getBetweenFromSecond() {
-    return betweenFromSecond;
-  }
+	public void setAtInfo(boolean atInfo) {
+		this.atInfo = atInfo;
+	}
 
-  public void setBetweenFromSecond(int betweenFromSecond) {
-    this.betweenFromSecond = betweenFromSecond;
-  }
+	public int getAtTimeHour() {
+		return atTimeHour;
+	}
 
-  public String getAt() {
-    return at;
-  }
+	public void setAtTimeHour(int atTimeHour) {
+		this.atTimeHour = atTimeHour;
+	}
 
-  public void setAt(String at) {
-    this.at = at;
-  }
+	public int getAtTimeMinute() {
+		return atTimeMinute;
+	}
 
-  public boolean isAtInfo() {
-    return atInfo;
-  }
+	public void setAtTimeMinute(int atTimeMinute) {
+		this.atTimeMinute = atTimeMinute;
+	}
 
-  public void setAtInfo(boolean atInfo) {
-    this.atInfo = atInfo;
-  }
+	public int getAtTimeSecond() {
+		return atTimeSecond;
+	}
 
-  public int getAtTimeHour() {
-    return atTimeHour;
-  }
+	public void setAtTimeSecond(int atTimeSecond) {
+		this.atTimeSecond = atTimeSecond;
+	}
 
-  public void setAtTimeHour(int atTimeHour) {
-    this.atTimeHour = atTimeHour;
-  }
-
-  public int getAtTimeMinute() {
-    return atTimeMinute;
-  }
-
-  public void setAtTimeMinute(int atTimeMinute) {
-    this.atTimeMinute = atTimeMinute;
-  }
-
-  public int getAtTimeSecond() {
-    return atTimeSecond;
-  }
-
-  public void setAtTimeSecond(int atTimeSecond) {
-    this.atTimeSecond = atTimeSecond;
-  }
-
-  /** default constructor */
-  public SchedulerForm() {}
-
-  public ActionErrors validate(ActionMapping mapping, HttpServletRequest request) {
-    if (request.getParameter("cmd") != null && request.getParameter("cmd").equals(Constants.ADD)) {
-      return super.validate(mapping, request);
+	/** default constructor */
+    public SchedulerForm() {
     }
-    return null;
-  }
+    
+    public ActionErrors validate(ActionMapping mapping, HttpServletRequest request) {
+        if(request.getParameter("cmd")!=null && request.getParameter("cmd").equals(Constants.ADD)) {
+            return super.validate(mapping, request);
+        }
+        return null;
+    }
+    
+	public String getEndDate() {
+		return endDate;
+	}
+	
+	public void setEndDate(String endDate) {
+		this.endDate = endDate;
+	}
+	
+	public String getJavaClass() {
+		return javaClass;
+	}
+	
+	public void setJavaClass(String javaClass) {
+		this.javaClass = javaClass;
+	}
+	
+	public String getJobDescription() {
+		return jobDescription;
+	}
+	
+	public void setJobDescription(String jobDescription) {
+		this.jobDescription = jobDescription;
+	}
+	
+	public String getJobName() {
+		return jobName;
+	}
+	
+	public void setJobName(String jobName) {
+		this.jobName = jobName;
+	}
+	
+	public String getStartDate() {
+		return startDate;
+	}
+	
+	public void setStartDate(String startDate) {
+		this.startDate = startDate;
+	}
 
-  public String getEndDate() {
-    return endDate;
-  }
+	public String getJobGroup() {
+		return jobGroup;
+	}
 
-  public void setEndDate(String endDate) {
-    this.endDate = endDate;
-  }
+	public void setJobGroup(String jobGroup) {
+		this.jobGroup = jobGroup;
+	}
 
-  public String getJavaClass() {
-    return javaClass;
-  }
+	public boolean isHaveEndDate() {
+		return haveEndDate;
+	}
 
-  public void setJavaClass(String javaClass) {
-    this.javaClass = javaClass;
-  }
+	public void setHaveEndDate(boolean haveEndDate) {
+		this.haveEndDate = haveEndDate;
+	}
 
-  public String getJobDescription() {
-    return jobDescription;
-  }
+	public boolean isHaveStartDate() {
+		return haveStartDate;
+	}
 
-  public void setJobDescription(String jobDescription) {
-    this.jobDescription = jobDescription;
-  }
+	public void setHaveStartDate(boolean haveStartDate) {
+		this.haveStartDate = haveStartDate;
+	}
 
-  public String getJobName() {
-    return jobName;
-  }
+	public int getBetweenToHour() {
+		return betweenToHour;
+	}
 
-  public void setJobName(String jobName) {
-    this.jobName = jobName;
-  }
+	public void setBetweenToHour(int betweenToHour) {
+		this.betweenToHour = betweenToHour;
+	}
 
-  public String getStartDate() {
-    return startDate;
-  }
+	public int getBetweenToMinute() {
+		return betweenToMinute;
+	}
 
-  public void setStartDate(String startDate) {
-    this.startDate = startDate;
-  }
+	public void setBetweenToMinute(int betweenToMinute) {
+		this.betweenToMinute = betweenToMinute;
+	}
 
-  public String getJobGroup() {
-    return jobGroup;
-  }
+	public int getBetweenToSecond() {
+		return betweenToSecond;
+	}
 
-  public void setJobGroup(String jobGroup) {
-    this.jobGroup = jobGroup;
-  }
+	public void setBetweenToSecond(int betweenToSecond) {
+		this.betweenToSecond = betweenToSecond;
+	}
 
-  public boolean isHaveEndDate() {
-    return haveEndDate;
-  }
+	public String getEvery() {
+		return every;
+	}
 
-  public void setHaveEndDate(boolean haveEndDate) {
-    this.haveEndDate = haveEndDate;
-  }
+	public void setEvery(String every) {
+		this.every = every;
+	}
 
-  public boolean isHaveStartDate() {
-    return haveStartDate;
-  }
+	public int getEveryDateDay() {
+		return everyDateDay;
+	}
 
-  public void setHaveStartDate(boolean haveStartDate) {
-    this.haveStartDate = haveStartDate;
-  }
+	public void setEveryDateDay(int everyDateDay) {
+		this.everyDateDay = everyDateDay;
+	}
 
-  public int getBetweenToHour() {
-    return betweenToHour;
-  }
+	public int getEveryDateMonth() {
+		return everyDateMonth;
+	}
 
-  public void setBetweenToHour(int betweenToHour) {
-    this.betweenToHour = betweenToHour;
-  }
+	public void setEveryDateMonth(int everyDateMonth) {
+		this.everyDateMonth = everyDateMonth;
+	}
 
-  public int getBetweenToMinute() {
-    return betweenToMinute;
-  }
+	public int getEveryDateYear() {
+		return everyDateYear;
+	}
 
-  public void setBetweenToMinute(int betweenToMinute) {
-    this.betweenToMinute = betweenToMinute;
-  }
+	public void setEveryDateYear(int everyDateYear) {
+		this.everyDateYear = everyDateYear;
+	}
 
-  public int getBetweenToSecond() {
-    return betweenToSecond;
-  }
+	public boolean isEveryInfo() {
+		return everyInfo;
+	}
 
-  public void setBetweenToSecond(int betweenToSecond) {
-    this.betweenToSecond = betweenToSecond;
-  }
+	public void setEveryInfo(boolean everyInfo) {
+		this.everyInfo = everyInfo;
+	}
 
-  public String getEvery() {
-    return every;
-  }
+	public boolean isFriday() {
+		return isFriday;
+	}
 
-  public void setEvery(String every) {
-    this.every = every;
-  }
+	public void setFriday(boolean isFriday) {
+		this.isFriday = isFriday;
+	}
 
-  public int getEveryDateDay() {
-    return everyDateDay;
-  }
+	public boolean isMonday() {
+		return isMonday;
+	}
 
-  public void setEveryDateDay(int everyDateDay) {
-    this.everyDateDay = everyDateDay;
-  }
+	public void setMonday(boolean isMonday) {
+		this.isMonday = isMonday;
+	}
 
-  public int getEveryDateMonth() {
-    return everyDateMonth;
-  }
+	public boolean isSaturday() {
+		return isSaturday;
+	}
 
-  public void setEveryDateMonth(int everyDateMonth) {
-    this.everyDateMonth = everyDateMonth;
-  }
+	public void setSaturday(boolean isSaturday) {
+		this.isSaturday = isSaturday;
+	}
 
-  public int getEveryDateYear() {
-    return everyDateYear;
-  }
+	public boolean isSunday() {
+		return isSunday;
+	}
 
-  public void setEveryDateYear(int everyDateYear) {
-    this.everyDateYear = everyDateYear;
-  }
+	public void setSunday(boolean isSunday) {
+		this.isSunday = isSunday;
+	}
 
-  public boolean isEveryInfo() {
-    return everyInfo;
-  }
+	public boolean isThusday() {
+		return isThusday;
+	}
 
-  public void setEveryInfo(boolean everyInfo) {
-    this.everyInfo = everyInfo;
-  }
+	public void setThusday(boolean isThusday) {
+		this.isThusday = isThusday;
+	}
 
-  public boolean isFriday() {
-    return isFriday;
-  }
+	public boolean isTuesday() {
+		return isTuesday;
+	}
 
-  public void setFriday(boolean isFriday) {
-    this.isFriday = isFriday;
-  }
+	public void setTuesday(boolean isTuesday) {
+		this.isTuesday = isTuesday;
+	}
 
-  public boolean isMonday() {
-    return isMonday;
-  }
+	public boolean isWednesday() {
+		return isWednesday;
+	}
 
-  public void setMonday(boolean isMonday) {
-    this.isMonday = isMonday;
-  }
+	public void setWednesday(boolean isWednesday) {
+		this.isWednesday = isWednesday;
+	}
 
-  public boolean isSaturday() {
-    return isSaturday;
-  }
+	public int getEachHours() {
+		return eachHours;
+	}
 
-  public void setSaturday(boolean isSaturday) {
-    this.isSaturday = isSaturday;
-  }
+	public void setEachHours(int eachHours) {
+		this.eachHours = eachHours;
+	}
 
-  public boolean isSunday() {
-    return isSunday;
-  }
+	public boolean isEachInfo() {
+		return eachInfo;
+	}
 
-  public void setSunday(boolean isSunday) {
-    this.isSunday = isSunday;
-  }
+	public void setEachInfo(boolean eachInfo) {
+		this.eachInfo = eachInfo;
+	}
 
-  public boolean isThusday() {
-    return isThusday;
-  }
+	public int getEachMinutes() {
+		return eachMinutes;
+	}
 
-  public void setThusday(boolean isThusday) {
-    this.isThusday = isThusday;
-  }
+	public void setEachMinutes(int eachMinutes) {
+		this.eachMinutes = eachMinutes;
+	}
 
-  public boolean isTuesday() {
-    return isTuesday;
-  }
+	/**
+	 * @return the hashMap
+	 */
+	public Map getMap() {
+		return map;
+	}
 
-  public void setTuesday(boolean isTuesday) {
-    this.isTuesday = isTuesday;
-  }
+	/**
+	 * @param Map the hashMap to set
+	 */
+	public void setMap(Map map) {
+		this.map = map;
+	}
 
-  public boolean isWednesday() {
-    return isWednesday;
-  }
+	public boolean isEditMode() {
+		return editMode;
+	}
 
-  public void setWednesday(boolean isWednesday) {
-    this.isWednesday = isWednesday;
-  }
+	public void setEditMode(boolean editMode) {
+		this.editMode = editMode;
+	}
+	
+    public String getEveryDate() {
+		return everyDate;
+	}
 
-  public int getEachHours() {
-    return eachHours;
-  }
+	public void setEveryDate(String everyDate) {
+		this.everyDate = everyDate;
+	}
 
-  public void setEachHours(int eachHours) {
-    this.eachHours = eachHours;
-  }
+	public String getAtTime() {
+		return atTime;
+	}
 
-  public boolean isEachInfo() {
-    return eachInfo;
-  }
+	public void setAtTime(String atTime) {
+		this.atTime = atTime;
+	}
+	
+	public String getCronExpression() {
+		return cronExpression;
+	}
 
-  public void setEachInfo(boolean eachInfo) {
-    this.eachInfo = eachInfo;
-  }
-
-  public int getEachMinutes() {
-    return eachMinutes;
-  }
-
-  public void setEachMinutes(int eachMinutes) {
-    this.eachMinutes = eachMinutes;
-  }
-
-  /** @return the hashMap */
-  public Map getMap() {
-    return map;
-  }
-
-  /** @param Map the hashMap to set */
-  public void setMap(Map map) {
-    this.map = map;
-  }
-
-  public boolean isEditMode() {
-    return editMode;
-  }
-
-  public void setEditMode(boolean editMode) {
-    this.editMode = editMode;
-  }
-
-  public String getEveryDate() {
-    return everyDate;
-  }
-
-  public void setEveryDate(String everyDate) {
-    this.everyDate = everyDate;
-  }
-
-  public String getAtTime() {
-    return atTime;
-  }
-
-  public void setAtTime(String atTime) {
-    this.atTime = atTime;
-  }
-
-  public String getCronExpression() {
-    return cronExpression;
-  }
-
-  public void setCronExpression(String cronExpression) {
-    this.cronExpression = cronExpression;
-  }
+	public void setCronExpression(String cronExpression) {
+		this.cronExpression = cronExpression;
+	}
 }

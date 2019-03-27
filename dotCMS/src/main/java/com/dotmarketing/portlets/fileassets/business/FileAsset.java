@@ -24,253 +24,273 @@ import java.util.Map;
 
 public class FileAsset extends Contentlet implements IFileAsset {
 
-  String metaData;
+	String metaData;
 
-  public static final String UNKNOWN_MIME_TYPE = "unknown";
+	public static final String UNKNOWN_MIME_TYPE = "unknown";
 
-  public FileAsset() {
-    super();
-  }
+	public FileAsset() {
+		super();
 
-  public String getMetaData() {
-    if (metaData == null) {
-      metaData = (String) super.get(FileAssetAPI.META_DATA_FIELD);
-    }
-    return metaData;
-  }
+	}
 
-  public long getLanguageId() {
-    return super.getLanguageId();
-  }
+	public String getMetaData(){
+		if(metaData ==null){
+			metaData=(String) super.get(FileAssetAPI.META_DATA_FIELD);
+		}
+		return metaData;
 
-  public void setMetaData(String metaData) {
-    this.metaData = metaData;
-  }
+	}
+	
+	public long getLanguageId(){
+		return super.getLanguageId();
+	}
 
-  public void setMenuOrder(int sortOrder) {
-    setLongProperty(FileAssetAPI.SORT_ORDER, new Long(sortOrder));
-  }
 
-  public int getMenuOrder() {
-    return new Integer(String.valueOf(getLongProperty(FileAssetAPI.SORT_ORDER)));
-  }
 
-  private static final long serialVersionUID = 1L;
+	public void setMetaData(String metaData) {
+		this.metaData = metaData;
+	}
 
-  private String path;
+	public void setMenuOrder(int sortOrder) {
+		setLongProperty(FileAssetAPI.SORT_ORDER, new Long(sortOrder));
 
-  public String getPath() {
-    Identifier id = null;
-    try {
-      id = APILocator.getIdentifierAPI().find(this.getIdentifier());
-      return id.getParentPath();
-    } catch (Exception e) {
-      Logger.error(this, e.getMessage(), e);
-    }
-    return null;
-  }
+	}
 
-  public String getParent() {
-    if ("SYSTEM_FOLDER".equals(getFolder())) {
-      return getHost();
-    } else {
-      return getFolder();
-    }
-  }
+	public int getMenuOrder() {
+		return new Integer(String.valueOf(getLongProperty(FileAssetAPI.SORT_ORDER)));
+	}
 
-  public long getFileSize() {
-    if (getFileAsset() != null) return getFileAsset().length();
-    else return 0;
-  }
+	private static final long serialVersionUID = 1L;
 
-  private Dimension fileDimension = new Dimension();
+	private String path;
 
-  public int getHeight() {
-    try {
-      if (fileDimension.height == 0) {
-        // File dimension is not loaded and we need to load it
-        fileDimension = ImageUtil.getInstance().getDimension(getFileAsset());
-      }
-    } catch (Exception e) {
-      Logger.debug(this, "Error getting height for file asset, id: " + getIdentifier(), e);
-    }
+	public String getPath() {
+		Identifier id = null;
+		try{
+			id = APILocator.getIdentifierAPI().find(this.getIdentifier());
+			return id.getParentPath();
+		}catch(Exception e){
+			Logger.error(this, e.getMessage(), e);
+		}
+		return null;
+	}
 
-    return fileDimension.height;
-  }
+	public String getParent() {
+		if ("SYSTEM_FOLDER".equals(getFolder())) {
+			return getHost();
+		} else {
+			return getFolder();
+		}
 
-  public int getWidth() {
-    try {
-      if (fileDimension.width == 0) {
-        // File dimension is not loaded and we need to load it
-        fileDimension = ImageUtil.getInstance().getDimension(getFileAsset());
-      }
-    } catch (Exception e) {
-      Logger.debug(this, "Error getting width for file asset, id: " + getIdentifier(), e);
+	}
+
+	public long getFileSize() {
+		if(getFileAsset()!=null)
+			return getFileAsset().length();
+		else
+			return 0;
+	}
+
+	private Dimension fileDimension = new Dimension();
+	public int getHeight() {
+        try {
+            if (fileDimension.height == 0) {
+                // File dimension is not loaded and we need to load it
+                fileDimension = ImageUtil.getInstance().getDimension(getFileAsset());
+            }
+        } catch (Exception e) {
+            Logger.debug(this, "Error getting height for file asset, id: " + getIdentifier(), e);
+        }
+
+        return fileDimension.height;
     }
 
-    return fileDimension.width;
-  }
+    public int getWidth() {
+        try {
+            if (fileDimension.width == 0) {
+                // File dimension is not loaded and we need to load it
+                fileDimension = ImageUtil.getInstance().getDimension(getFileAsset());
+            }
+        } catch (Exception e) {
+            Logger.debug(this, "Error getting width for file asset, id: " + getIdentifier(), e);
+        }
 
-  public void setFileName(String name) {
-    File ff = getFileAsset();
-    ff.renameTo(new File(ff.getParent(), name));
-  }
-
-  public String getFileName() {
-    File f = getFileAsset();
-    return (f != null) ? f.getName() : null;
-  }
-
-  public String getMimeType() {
-    String mimeType = APILocator.getFileAssetAPI().getMimeType(getFileName());
-
-    if (mimeType == null || UNKNOWN_MIME_TYPE.equals(mimeType)) {
-      mimeType = "application/octet-stream";
+        return fileDimension.width;
     }
 
-    return mimeType;
-  }
+	public void setFileName(String name) {
+	    File ff=getFileAsset();
+	    ff.renameTo(new File(ff.getParent(),name));
+	}
 
-  public void setMimeType(String mimeType) {}
+	public String getFileName() {
+		File f = getFileAsset();
+		return (f!=null)?f.getName(): null;
+	}
 
-  public InputStream getInputStream() throws IOException {
-    return new BufferedInputStream(Files.newInputStream(getFileAsset().toPath()));
-  }
+	public String getMimeType() {
+		String mimeType = APILocator.getFileAssetAPI().getMimeType(getFileName());
 
-  public File getFileAsset() {
-    try {
-      return getBinary(FileAssetAPI.BINARY_FIELD);
-    } catch (IOException e) {
-      throw new DotStateException("Unable to find the fileAsset for :" + this.getInode());
-    }
-  }
 
-  public boolean isDeleted() throws DotStateException, DotDataException, DotSecurityException {
-    return super.isArchived();
-  }
+		if (mimeType == null || UNKNOWN_MIME_TYPE.equals(mimeType)){
+			mimeType = "application/octet-stream";
+		}
 
-  public String getURI(Folder folder) {
-    // TODO Auto-generated method stub
-    return null;
-  }
+		
+		return mimeType;
+	}
 
-  public boolean isShowOnMenu() {
-    String isShowOnMenu = super.getStringProperty(FileAssetAPI.SHOW_ON_MENU); // DOTCMS-6968
-    if (UtilMethods.isSet(isShowOnMenu) && isShowOnMenu.contains("true")) {
-      return true;
-    } else {
-      return false;
-    }
-  }
+	public void setMimeType(String mimeType) {
 
-  public void setShowOnMenu(boolean showOnMenu) {
-    super.setStringProperty(FileAssetAPI.SHOW_ON_MENU, Boolean.toString(showOnMenu));
-  }
+	}
 
-  public void setSortOrder(int sortOrder) {
-    super.setSortOrder(sortOrder);
-  }
+	public InputStream getInputStream() throws IOException {
+		return new BufferedInputStream(Files.newInputStream(getFileAsset().toPath()));
+	}
 
-  public void setTitle(final String title) {
-    super.setStringProperty(FileAssetAPI.TITLE_FIELD, title);
-  }
+	public File getFileAsset() {
+		try {
+			return getBinary(FileAssetAPI.BINARY_FIELD);
+		} catch (IOException e) {
+			throw new DotStateException("Unable to find the fileAsset for :" + this.getInode());
+		}
+	}
 
-  public String getFriendlyName() {
-    return super.getStringProperty(FileAssetAPI.TITLE_FIELD);
-  }
+	public boolean isDeleted() throws DotStateException, DotDataException, DotSecurityException {
+		return super.isArchived();
+	}
 
-  public void setFriendlyName(String friendlyName) {}
+	public String getURI(Folder folder) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
-  public boolean isArchived() throws DotStateException, DotDataException, DotSecurityException {
-    return isDeleted();
-  }
+	public boolean isShowOnMenu() {
+		String isShowOnMenu = super.getStringProperty(FileAssetAPI.SHOW_ON_MENU);//DOTCMS-6968
+		if(UtilMethods.isSet(isShowOnMenu) && isShowOnMenu.contains("true")){
+			return true;
+		}else{
+			return false;
+		}
+	}
 
-  /**
-   * Returns the live.
-   *
-   * @return boolean
-   * @throws DotSecurityException
-   * @throws DotDataException
-   * @throws DotStateException
-   */
-  public boolean isLive() throws DotStateException, DotDataException, DotSecurityException {
-    return APILocator.getVersionableAPI().isLive(this);
-  }
+	public void setShowOnMenu(boolean showOnMenu) {
+		super.setStringProperty(FileAssetAPI.SHOW_ON_MENU, Boolean.toString(showOnMenu));
 
-  /**
-   * Returns the locked.
-   *
-   * @return boolean
-   * @throws DotSecurityException
-   * @throws DotDataException
-   * @throws DotStateException
-   */
-  public boolean isLocked() throws DotStateException, DotDataException, DotSecurityException {
-    return APILocator.getVersionableAPI().isLocked(this);
-  }
+	}
 
-  public String getType() {
-    return "file_asset";
-  }
+	public void setSortOrder(int sortOrder) {
+		super.setSortOrder(sortOrder);
 
-  public String getExtension() {
-    return UtilMethods.getFileExtension(getFileName());
-  }
+	}
 
-  public Map<String, Object> getMap() throws DotRuntimeException {
-    Map<String, Object> map = super.getMap();
-    boolean live = false;
-    boolean working = false;
-    boolean deleted = false;
-    boolean locked = false;
-    try {
-      live = isLive();
-      working = isWorking();
-      deleted = isDeleted();
-      locked = isLocked();
-    } catch (Exception e) {
-      Logger.error(this, e.getMessage(), e);
-    }
-    map.put("extension", getExtension());
-    map.put("live", live);
-    map.put("working", working);
-    map.put("deleted", deleted);
-    map.put("locked", locked);
-    map.put("isContent", true);
-    map.put("fileAssetType", this.getStructureInode());
-    map.put("friendlyName", getStringProperty(FileAssetAPI.DESCRIPTION));
-    map.put("mimeType", getMimeType());
-    User modUser = null;
-    try {
-      modUser =
-          APILocator.getUserAPI()
-              .loadUserById(this.getModUser(), APILocator.getUserAPI().getSystemUser(), false);
-    } catch (NoSuchUserException | DotDataException e) {
-      Logger.debug(this, e.getMessage());
-    } catch (Exception e) {
-      Logger.error(this, e.getMessage(), e);
-    }
-    if (UtilMethods.isSet(modUser) && UtilMethods.isSet(modUser.getUserId()) && !modUser.isNew())
-      map.put("modUserName", modUser.getFullName());
-    else map.put("modUserName", "unknown");
+	public void setTitle(final String title) {
+		super.setStringProperty(FileAssetAPI.TITLE_FIELD, title);
 
-    map.put("type", this.getType());
-    return map;
-  }
+	}
 
-  public String getURI() throws DotDataException {
-    return UtilMethods.isSet(getIdentifier())
-        ? APILocator.getIdentifierAPI().find(getIdentifier()).getURI()
-        : "";
-  }
+	public String getFriendlyName() {
+		return super.getStringProperty(FileAssetAPI.TITLE_FIELD);
+	}
 
-  public Date getIDate() {
-    // TODO Auto-generated method stub
-    return getModDate();
-  }
+	public void setFriendlyName(String friendlyName) {
 
-  @Override
-  public String toString() {
-    return this.getFileName();
-  }
+	}
+
+	public boolean isArchived() throws DotStateException, DotDataException, DotSecurityException {
+       return isDeleted();
+	}
+
+
+	/**
+	 * Returns the live.
+	 * @return boolean
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 * @throws DotStateException
+	 */
+	public boolean isLive() throws DotStateException, DotDataException, DotSecurityException {
+	    return APILocator.getVersionableAPI().isLive(this);
+	}
+
+	/**
+	 * Returns the locked.
+	 * @return boolean
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 * @throws DotStateException
+	 */
+	public boolean isLocked() throws DotStateException, DotDataException, DotSecurityException {
+       return APILocator.getVersionableAPI().isLocked(this);
+   }
+
+
+	public String getType(){
+		return "file_asset";
+	}
+
+	 public String getExtension(){
+		 return UtilMethods.getFileExtension(getFileName());
+
+	 }
+
+
+	 
+	 
+	 public Map<String, Object> getMap() throws DotRuntimeException {
+		Map<String,Object> map = super.getMap();
+		boolean live =  false;
+		boolean working =  false;
+		boolean deleted = false;
+		boolean locked  = false;
+		try{
+			live =  isLive();
+			working = isWorking();
+			deleted = isDeleted();
+			locked  = isLocked();
+		}catch(Exception e){
+			Logger.error(this, e.getMessage(), e);
+		}
+		map.put("extension", getExtension());
+		map.put("live", live);
+		map.put("working", working);
+		map.put("deleted", deleted);
+		map.put("locked", locked);
+		map.put("isContent", true);
+		map.put("fileAssetType", this.getStructureInode());
+		map.put("friendlyName", getStringProperty(FileAssetAPI.DESCRIPTION));
+		map.put("mimeType", getMimeType());
+		User modUser = null;
+		try {
+			modUser = APILocator.getUserAPI().loadUserById(this.getModUser(),APILocator.getUserAPI().getSystemUser(),false);
+		} catch (NoSuchUserException | DotDataException e) {
+			Logger.debug(this, e.getMessage());
+		} catch (Exception e) {
+			Logger.error(this, e.getMessage(), e);
+		}
+		if (UtilMethods.isSet(modUser) && UtilMethods.isSet(modUser.getUserId()) && !modUser.isNew())
+			map.put("modUserName", modUser.getFullName());
+		else
+			map.put("modUserName", "unknown");
+
+		 map.put("type", this.getType());
+		return map;
+	 }
+
+	public String getURI() throws DotDataException {
+		return UtilMethods.isSet(getIdentifier()) ?
+		        APILocator.getIdentifierAPI().find(getIdentifier()).getURI()
+		       : "";
+
+	}
+
+	public Date getIDate() {
+		// TODO Auto-generated method stub
+		return getModDate();
+	}
+
+	@Override
+	public String toString() {
+		return this.getFileName();
+	}
 }

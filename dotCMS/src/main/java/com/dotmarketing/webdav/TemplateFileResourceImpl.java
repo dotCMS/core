@@ -32,208 +32,198 @@ import java.net.URLEncoder;
 import java.util.Date;
 import java.util.Map;
 
-/** @author Jason Tesser */
+/**
+ * 
+ * @author Jason Tesser
+ */
 public class TemplateFileResourceImpl implements FileResource, LockableResource {
 
-  private DotWebdavHelper dotDavHelper;
-  private final Template template;
-  private TemplateAPI tapi;
-  private Host host;
+	private DotWebdavHelper dotDavHelper;
+	private final Template template;
+	private TemplateAPI tapi;
+	private Host host;
 
-  public TemplateFileResourceImpl(Template t, Host h) {
-    this.template = t;
-    tapi = APILocator.getTemplateAPI();
-    this.host = h;
-  }
+	public TemplateFileResourceImpl(Template t, Host h) {
+		this.template = t;
+		tapi = APILocator.getTemplateAPI();
+		this.host = h;
+	}
 
-  public String getUniqueId() {
-    return template.getTitle().hashCode() + "";
-  }
+	public String getUniqueId() {
+		return template.getTitle().hashCode() + "";
+	}
 
-  public int compareTo(Object o) {
-    if (o instanceof Resource) {
-      Resource res = (Resource) o;
-      return this.getUniqueId().compareTo(res.getUniqueId());
-    } else {
-      return -1;
-    }
-  }
+	public int compareTo(Object o) {
+		if (o instanceof Resource) {
+			Resource res = (Resource) o;
+			return this.getUniqueId().compareTo(res.getUniqueId());
+		} else {
+			return -1;
+		}
+	}
 
-  public void sendContent(OutputStream out, Range range, Map<String, String> params, String arg3)
-      throws IOException {
-    if (template != null) out.write(template.getBody().getBytes());
-  }
+	public void sendContent(OutputStream out, Range range, Map<String, String> params, String arg3) throws IOException {
+		if (template != null)
+			out.write(template.getBody().getBytes());
+	}
 
-  public String getName() {
-    String x = template.getTitle();
-    try {
-      x = URLEncoder.encode(x, "UTF-8");
-    } catch (UnsupportedEncodingException e) {
-      Logger.error(this, e.getMessage(), e);
-    }
-    x = x + " | " + template.getIdentifier();
-    return x;
-  }
+	public String getName() {
+		String x = template.getTitle();
+		try {
+			x = URLEncoder.encode(x, "UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			Logger.error(this, e.getMessage(), e);
+		}
+		x = x + " | " + template.getIdentifier(); 
+		return x;
+	}
 
-  public Object authenticate(String username, String password) {
-    try {
-      return dotDavHelper.authorizePrincipal(username, password);
-    } catch (Exception e) {
-      Logger.error(this, e.getMessage(), e);
-      return null;
-    }
-  }
+	public Object authenticate(String username, String password) {
+		try {
+			return dotDavHelper.authorizePrincipal(username, password);
+		} catch (Exception e) {
+			Logger.error(this, e.getMessage(), e);
+			return null;
+		}
+	}
 
-  public boolean authorise(Request request, Request.Method method, Auth auth) {
-    try {
-      if (auth == null) return false;
-      else {
-        User user = (User) auth.getTag();
-        if (method.isWrite)
-          return APILocator.getPermissionAPI()
-              .doesUserHavePermission(host, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, false);
-        else if (!method.isWrite)
-          return APILocator.getPermissionAPI()
-              .doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user, false);
-      }
-    } catch (Exception e) {
-      Logger.error(this, e.getMessage(), e);
-    }
-    return false;
-  }
+	public boolean authorise(Request request, Request.Method method, Auth auth) {
+		try {
+			if (auth == null)
+				return false;
+			else { 
+			    User user=(User)auth.getTag();
+			    if (method.isWrite) 
+    				return APILocator.getPermissionAPI().doesUserHavePermission(host, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, false);
+    			else if (!method.isWrite) 
+    				return APILocator.getPermissionAPI().doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user,false);
+			}
+		} catch (Exception e) {
+			Logger.error(this, e.getMessage(), e);
 
-  public String getRealm() {
-    return null;
-  }
+		}
+		return false;
+	}
 
-  public Date getModifiedDate() {
-    Date dt = template.getModDate();
-    // log.debug("static resource modified: " + dt);
-    return dt;
-  }
+	public String getRealm() {
+		return null;
+	}
 
-  public Long getContentLength() {
-    return (long) template.getBody().length();
-  }
+	public Date getModifiedDate() {
+		Date dt = template.getModDate();
+		// log.debug("static resource modified: " + dt);
+		return dt;
+	}
 
-  public String getContentType(String accepts) {
+	public Long getContentLength() {
+		return (long) template.getBody().length();
+	}
 
-    return "text/plain";
-  }
+	public String getContentType(String accepts) {
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see com.dotcms.repackage.com.bradmcevoy.http.PutableResource#createNew(java.lang.String,
-   * java.io.InputStream, java.lang.Long, java.lang.String)
-   */
-  public Resource createNew(String newName, InputStream in, Long length, String contentType)
-      throws IOException, DotRuntimeException {
-    User user = (User) HttpManager.request().getAuthorization().getTag();
+		return "text/plain";
+	}
 
-    StringWriter sw = new StringWriter();
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see com.dotcms.repackage.com.bradmcevoy.http.PutableResource#createNew(java.lang.String,
+	 * java.io.InputStream, java.lang.Long, java.lang.String)
+	 */
+	public Resource createNew(String newName, InputStream in, Long length, String contentType) throws IOException,
+			DotRuntimeException {
+	    User user=(User)HttpManager.request().getAuthorization().getTag();
 
-    int read = -1;
-    while ((read = in.read()) != -1) {
-      sw.write(read);
-    }
-    Template t = new Template();
-    t.setTitle(newName);
-    t.setiDate(new Date());
-    t.setModDate(new Date());
-    t.setBody(sw.toString());
-    try {
-      tapi.saveTemplate(t, host, user, false);
-    } catch (DotDataException e) {
-      Logger.error(
-          this.getClass(),
-          "Cannot save template "
-              + t.getTitle()
-              + " on host "
-              + host.getHostname()
-              + " "
-              + e.getMessage());
+		StringWriter sw = new StringWriter();
 
-    } catch (DotSecurityException e) {
-      Logger.error(
-          this.getClass(),
-          "Cannot save template "
-              + t.getTitle()
-              + " on host "
-              + host.getHostname()
-              + " "
-              + e.getMessage());
-    }
+		int read = -1;
+		while ((read = in.read()) != -1) {
+			sw.write(read);
+		}
+		Template t = new Template();
+		t.setTitle(newName);
+		t.setiDate(new Date());
+		t.setModDate(new Date());
+		t.setBody(sw.toString());
+		try {
+			tapi.saveTemplate(t, host, user, false);
+		} catch (DotDataException e) {
+			Logger.error(this.getClass(), "Cannot save template " + t.getTitle() + " on host " + host.getHostname()
+					+ " " + e.getMessage());
 
-    TemplateFileResourceImpl tfri = new TemplateFileResourceImpl(t, host);
-    return tfri;
-  }
+		} catch (DotSecurityException e) {
+			Logger.error(this.getClass(), "Cannot save template " + t.getTitle() + " on host " + host.getHostname()
+					+ " " + e.getMessage());
+		}
 
-  public String checkRedirect(Request request) {
-    return null;
-  }
+		TemplateFileResourceImpl tfri = new TemplateFileResourceImpl(t, host);
+		return tfri;
+	}
 
-  public Long getMaxAgeSeconds() {
-    return (long) 60;
-  }
+	public String checkRedirect(Request request) {
+		return null;
+	}
 
-  public void copyTo(CollectionResource collRes, String name) {
-    if (collRes instanceof TemplateFolderResourceImpl) {}
+	public Long getMaxAgeSeconds() {
+		return (long) 60;
+	}
 
-    throw new RuntimeException("Not allowed to implement copy");
-  }
+	public void copyTo(CollectionResource collRes, String name) {
+		if (collRes instanceof TemplateFolderResourceImpl) {
 
-  public void delete() {
-    User user = (User) HttpManager.request().getAuthorization().getTag();
-    try {
-      tapi.delete(template, user, false);
+		}
+		throw new RuntimeException("Not allowed to implement copy");
+	}
 
-    } catch (Exception e) {
-      Logger.error(
-          this.getClass(),
-          "Cannot delete template "
-              + template.getTitle()
-              + " on host "
-              + host.getHostname()
-              + " "
-              + e.getMessage());
-    }
-  }
+	public void delete() {
+	    User user=(User)HttpManager.request().getAuthorization().getTag();
+		try {
+			tapi.delete(template, user, false);
 
-  public void moveTo(CollectionResource collRes, String name) {
-    throw new RuntimeException("Not allowed to implement move");
-  }
+		} catch (Exception e) {
+			Logger.error(
+					this.getClass(),
+					"Cannot delete template " + template.getTitle() + " on host " + host.getHostname() + " "
+							+ e.getMessage());
+		}
 
-  public String processForm(Map<String, String> parameters, Map<String, FileItem> files) {
-    // TODO Auto-generated method stub
-    return null;
-  }
+	}
 
-  public Date getCreateDate() {
-    // TODO Auto-generated method stub
-    return template.getiDate();
-  }
+	public void moveTo(CollectionResource collRes, String name) {
+		throw new RuntimeException("Not allowed to implement move");
+	}
 
-  public LockResult lock(LockTimeout timeout, LockInfo lockInfo) {
-    return dotDavHelper.lock(timeout, lockInfo, getUniqueId());
-    // return dotDavHelper.lock(lockInfo, user, file.getIdentifier() + "");
-  }
+	public String processForm(Map<String, String> parameters, Map<String, FileItem> files) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
-  public LockResult refreshLock(String token) {
-    return dotDavHelper.refreshLock(getUniqueId());
-    // return dotDavHelper.refreshLock(token);
-  }
+	public Date getCreateDate() {
+		// TODO Auto-generated method stub
+		return template.getiDate();
+	}
 
-  public void unlock(String tokenId) {
-    dotDavHelper.unlock(getUniqueId());
-    // dotDavHelper.unlock(tokenId);
-  }
+	public LockResult lock(LockTimeout timeout, LockInfo lockInfo) {
+		return dotDavHelper.lock(timeout, lockInfo, getUniqueId());
+		// return dotDavHelper.lock(lockInfo, user, file.getIdentifier() + "");
+	}
 
-  public LockToken getCurrentLock() {
-    return dotDavHelper.getCurrentLock(getUniqueId());
-  }
+	public LockResult refreshLock(String token) {
+		return dotDavHelper.refreshLock(getUniqueId());
+		// return dotDavHelper.refreshLock(token);
+	}
 
-  public Long getMaxAgeSeconds(Auth arg0) {
-    return (long) 60;
-  }
+	public void unlock(String tokenId) {
+		dotDavHelper.unlock(getUniqueId());
+		// dotDavHelper.unlock(tokenId);
+	}
+
+	public LockToken getCurrentLock() {
+		return dotDavHelper.getCurrentLock(getUniqueId());
+	}
+
+	public Long getMaxAgeSeconds(Auth arg0) {
+		return (long) 60;
+	}
+
 }

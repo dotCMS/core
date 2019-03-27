@@ -1,26 +1,26 @@
-// package com.dotmarketing.portlets.rules.conditionlet;
+//package com.dotmarketing.portlets.rules.conditionlet;
 //
-// import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
-// import com.dotmarketing.portlets.rules.RuleComponentInstance;
-// import com.dotmarketing.portlets.rules.ValidationResult;
-// import com.dotmarketing.portlets.rules.model.ParameterModel;
-// import java.util.Collection;
-// import java.util.LinkedHashMap;
-// import java.util.LinkedHashSet;
-// import java.util.List;
-// import java.util.Map;
-// import java.util.regex.Pattern;
-// import java.util.regex.PatternSyntaxException;
+//import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
+//import com.dotmarketing.portlets.rules.RuleComponentInstance;
+//import com.dotmarketing.portlets.rules.ValidationResult;
+//import com.dotmarketing.portlets.rules.model.ParameterModel;
+//import java.util.Collection;
+//import java.util.LinkedHashMap;
+//import java.util.LinkedHashSet;
+//import java.util.List;
+//import java.util.Map;
+//import java.util.regex.Pattern;
+//import java.util.regex.PatternSyntaxException;
 //
-// import javax.servlet.http.HttpServletRequest;
-// import javax.servlet.http.HttpServletResponse;
+//import javax.servlet.http.HttpServletRequest;
+//import javax.servlet.http.HttpServletResponse;
 //
-// import com.dotmarketing.util.Logger;
-// import com.dotmarketing.util.UtilMethods;
+//import com.dotmarketing.util.Logger;
+//import com.dotmarketing.util.UtilMethods;
 //
-// import static com.dotmarketing.portlets.rules.conditionlet.Comparison.IS;
+//import static com.dotmarketing.portlets.rules.conditionlet.Comparison.IS;
 //
-/// **
+///**
 // * This conditionlet will allow CMS users to check the URL of the first page
 // * that a user has visited in its current session. The comparison of URLs is
 // * case-insensitive, except for the regular expression comparison. This
@@ -40,8 +40,7 @@
 // * @since 05-13-2015
 // *
 // */
-// public class UsersLandingPageUrlConditionlet extends
-// Conditionlet<UsersLandingPageUrlConditionlet.Instance> {
+//public class UsersLandingPageUrlConditionlet extends Conditionlet<UsersLandingPageUrlConditionlet.Instance> {
 //
 //	private static final long serialVersionUID = 1L;
 //
@@ -59,18 +58,12 @@
 //	private Map<String, ConditionletInput> inputValues = null;
 //
 //	public UsersLandingPageUrlConditionlet() {
-//        super("api.system.ruleengine.conditionlet.VisitorsLandingPage",
-// ImmutableSet.<Comparison>of(IS,
-//
-// Comparison.IS_NOT,
-//
-// Comparison.STARTS_WITH,
-//
-// Comparison.ENDS_WITH,
-//
-// Comparison.CONTAINS,
-//
-// Comparison.REGEX), parameters);
+//        super("api.system.ruleengine.conditionlet.VisitorsLandingPage", ImmutableSet.<Comparison>of(IS,
+//                                                                                              Comparison.IS_NOT,
+//                                                                                              Comparison.STARTS_WITH,
+//                                                                                              Comparison.ENDS_WITH,
+//                                                                                              Comparison.CONTAINS,
+//                                                                                              Comparison.REGEX), parameters);
 //	}
 //
 //	protected ValidationResult validate(Comparison comparison,
@@ -119,8 +112,7 @@
 //	}
 //
 //	@Override
-//    public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance
-// instance) {
+//    public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance instance) {
 //
 ////        Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
 ////		String conditionletValue = values.get(0).getValue();
@@ -189,4 +181,4 @@
 //        }
 //    }
 //
-// }
+//}

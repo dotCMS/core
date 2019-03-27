@@ -3,75 +3,80 @@ package com.dotmarketing.portlets.dashboard.model;
 import java.io.Serializable;
 
 public class DashboardSummaryContent implements Serializable {
+   
+	private static final long serialVersionUID = 1L;
+	
+    private long id;
+	
+    private DashboardSummary summary;
+	
+	private String inode;
+	
+	private long hits;
+	
+	private String uri;
+	
+	private String title;
+	
+	public DashboardSummaryContent(){
+		
+	}
+	
+	public DashboardSummaryContent(String inode, long hits, String uri, String title){
+		this.inode = inode;
+		this.hits = hits;
+		this.uri = uri;
+		this.title = title;
+	}
 
-  private static final long serialVersionUID = 1L;
+	public long getId() {
+		return id;
+	}
 
-  private long id;
+	public void setId(long id) {
+		this.id = id;
+	}
 
-  private DashboardSummary summary;
+	public DashboardSummary getSummary() {
+		return summary;
+	}
 
-  private String inode;
+	public void setSummary(DashboardSummary summary) {
+		this.summary = summary;
+	}
 
-  private long hits;
+	public String getInode() {
+		return inode;
+	}
 
-  private String uri;
+	public void setInode(String inode) {
+		this.inode = inode;
+	}
 
-  private String title;
+	public long getHits() {
+		return hits;
+	}
 
-  public DashboardSummaryContent() {}
+	public void setHits(long hits) {
+		this.hits = hits;
+	}
 
-  public DashboardSummaryContent(String inode, long hits, String uri, String title) {
-    this.inode = inode;
-    this.hits = hits;
-    this.uri = uri;
-    this.title = title;
-  }
+	public String getUri() {
+		return uri;
+	}
 
-  public long getId() {
-    return id;
-  }
+	public void setUri(String uri) {
+		this.uri = uri;
+	}
 
-  public void setId(long id) {
-    this.id = id;
-  }
+	public String getTitle() {
+		return title;
+	}
 
-  public DashboardSummary getSummary() {
-    return summary;
-  }
+	public void setTitle(String title) {
+		this.title = title;
+	}
+	
+	
 
-  public void setSummary(DashboardSummary summary) {
-    this.summary = summary;
-  }
-
-  public String getInode() {
-    return inode;
-  }
-
-  public void setInode(String inode) {
-    this.inode = inode;
-  }
-
-  public long getHits() {
-    return hits;
-  }
-
-  public void setHits(long hits) {
-    this.hits = hits;
-  }
-
-  public String getUri() {
-    return uri;
-  }
-
-  public void setUri(String uri) {
-    this.uri = uri;
-  }
-
-  public String getTitle() {
-    return title;
-  }
-
-  public void setTitle(String title) {
-    this.title = title;
-  }
 }

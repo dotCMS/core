@@ -5,7 +5,8 @@ import com.dotcms.enterprise.license.LicenseLevel;
 
 public interface LicenseValiditySupplier {
 
-  default boolean hasValidLicense() {
-    return (LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level);
-  }
+    default boolean hasValidLicense(){
+       return (LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level);
+    }
+
 }

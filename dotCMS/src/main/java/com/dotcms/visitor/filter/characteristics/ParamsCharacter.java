@@ -10,24 +10,26 @@ import java.util.Set;
 
 public class ParamsCharacter extends AbstractCharacter {
 
-  private static final Set<String> WHITELISTED_PARAMS =
-      new HashSet<>(
-          Arrays.asList(
-              Config.getStringProperty("WHITELISTED_PARAMS", "").toLowerCase().split(",")));
 
-  public ParamsCharacter(AbstractCharacter incomingCharacter) {
-    super(incomingCharacter);
+    private static final Set<String> WHITELISTED_PARAMS =
+            new HashSet<>(Arrays.asList(
+                    Config.getStringProperty("WHITELISTED_PARAMS", "").toLowerCase().split(",")));
 
-    final Map<String, String> params = new HashMap<>();
-    final String queryString =
-        (request.getQueryString() != null) ? request.getQueryString().replaceAll("&", " ") : null;
-    for (Enumeration<String> e = request.getParameterNames(); e.hasMoreElements(); ) {
-      String nextParamName = e.nextElement().toLowerCase();
-      if (WHITELISTED_PARAMS.contains(nextParamName)) {
-        params.put("p." + nextParamName.toLowerCase(), request.getParameter(nextParamName));
-      }
+    public ParamsCharacter(AbstractCharacter incomingCharacter) {
+        super(incomingCharacter);
+
+
+        final Map<String, String> params = new HashMap<>();
+        final String queryString = (request.getQueryString() != null) ? request.getQueryString().replaceAll("&", " ") : null;
+        for (Enumeration<String> e = request.getParameterNames(); e.hasMoreElements();) {
+            String nextParamName = e.nextElement().toLowerCase();
+            if (WHITELISTED_PARAMS.contains(nextParamName)) {
+                params.put("p." + nextParamName.toLowerCase(), request.getParameter(nextParamName));
+            }
+        }
+        getMap().putAll(params);
+        getMap().put("queryString", queryString);
+
     }
-    getMap().putAll(params);
-    getMap().put("queryString", queryString);
-  }
+
 }

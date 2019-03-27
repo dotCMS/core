@@ -3,55 +3,55 @@ package com.dotmarketing.quartz.job;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.liferay.portal.model.User;
-import java.util.Map;
-import org.quartz.Job;
-import org.quartz.JobDataMap;
-import org.quartz.JobDetail;
-import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
-import org.quartz.SimpleTrigger;
+import org.quartz.*;
 import org.quartz.spi.TriggerFiredBundle;
+
+import java.util.Map;
 
 public class TestJobExecutor {
 
-  private TestJobExecutor() {}
+    private TestJobExecutor(){}
 
-  public static void execute(Job job, Map<String, Object> jobMap) {
-    try {
-      job.execute(new JobContextTest(jobMap));
-    } catch (JobExecutionException e) {
-      throw new RuntimeException(e);
+    public static void execute(Job job, Map<String, Object> jobMap){
+        try {
+            job.execute(new JobContextTest(jobMap));
+        } catch (JobExecutionException e) {
+            throw new RuntimeException(e);
+        }
     }
-  }
 
-  private static class JobContextTest extends JobExecutionContext {
+    private static class JobContextTest extends JobExecutionContext {
 
-    private Structure st;
-    private User user;
-    private Field field;
-    private JobDetailTest jobDetail;
+        private Structure st;
+        private User user;
+        private Field field;
+        private JobDetailTest jobDetail;
 
-    public JobContextTest(Map<String, Object> jobMap) {
-      super(null, new TriggerFiredBundleTest(new JobDetailTest(jobMap)), null);
+        public JobContextTest(Map<String, Object> jobMap) {
+            super(null, new TriggerFiredBundleTest(new JobDetailTest(jobMap)), null);
 
-      this.st = st;
-      this.user = user;
-      this.field = field;
+            this.st = st;
+            this.user = user;
+            this.field = field;
+        }
     }
-  }
 
-  private static class JobDetailTest extends JobDetail {
+    private static class JobDetailTest    extends JobDetail {
 
-    public JobDetailTest(Map<String, Object> jobMap) {
-      this.setJobDataMap(new JobDataMap(jobMap));
+
+        public JobDetailTest(Map<String, Object> jobMap) {
+            this.setJobDataMap( new JobDataMap(jobMap) );
+        }
     }
-  }
 
-  private static class TriggerFiredBundleTest extends TriggerFiredBundle {
-    TriggerFiredBundleTest(JobDetail jobDetail) {
-      super(jobDetail, new TriggerTest(), null, false, null, null, null, null);
+    private static class TriggerFiredBundleTest extends TriggerFiredBundle {
+        TriggerFiredBundleTest(JobDetail jobDetail){
+            super(jobDetail , new TriggerTest(), null, false,null, null, null, null);
+        }
     }
-  }
 
-  private static class TriggerTest extends SimpleTrigger {}
+    private static class TriggerTest extends SimpleTrigger {
+
+
+    }
 }

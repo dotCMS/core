@@ -7,114 +7,121 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.UtilMethods;
+
 import java.util.List;
 
 public class PushedAssetsAPIImpl implements PushedAssetsAPI {
 
-  private final PushedAssetsFactory pushedAssetsFactory;
+	private final PushedAssetsFactory pushedAssetsFactory;
 
-  public PushedAssetsAPIImpl() {
-    pushedAssetsFactory = FactoryLocator.getPushedAssetsFactory();
-  }
+	public PushedAssetsAPIImpl() {
+		pushedAssetsFactory = FactoryLocator.getPushedAssetsFactory();
+	}
 
-  @WrapInTransaction
-  @Override
-  public void savePushedAsset(PushedAsset asset) throws DotDataException {
-    pushedAssetsFactory.savePushedAsset(asset);
-  }
+	@WrapInTransaction
+	@Override
+	public void savePushedAsset(PushedAsset asset)
+			throws DotDataException {
+		pushedAssetsFactory.savePushedAsset(asset);
 
-  @WrapInTransaction
-  @Override
-  public void deletePushedAssets(String bundleId, String environmentId) throws DotDataException {
+	}
 
-    List<PushedAsset> assets = pushedAssetsFactory.getPushedAssets(bundleId, environmentId);
+	@WrapInTransaction
+	@Override
+	public void deletePushedAssets(String bundleId, String environmentId)
+			throws DotDataException {
 
-    pushedAssetsFactory.deletePushedAssets(bundleId, environmentId);
+		List<PushedAsset> assets = pushedAssetsFactory.getPushedAssets(bundleId, environmentId);
 
-    // clear the deleted entries from the cache
-    if (assets != null && assets.size() > 0) {
-      for (PushedAsset asset : assets) {
-        CacheLocator.getPushedAssetsCache()
-            .removePushedAssetById(asset.getAssetId(), asset.getEnvironmentId());
-      }
-    }
-  }
+		pushedAssetsFactory.deletePushedAssets(bundleId, environmentId);
 
-  @WrapInTransaction
-  @Override
-  public void deletePushedAssets(String assetId) throws DotDataException {
+		// clear the deleted entries from the cache
+		if(assets!=null && assets.size()>0) {
+			for (PushedAsset asset : assets) {
+				CacheLocator.getPushedAssetsCache().removePushedAssetById(asset.getAssetId(), asset.getEnvironmentId());
+			}
+		}
 
-    List<PushedAsset> assets = pushedAssetsFactory.getPushedAssets(assetId);
+	}
 
-    pushedAssetsFactory.deletePushedAssets(assetId);
+	@WrapInTransaction
+	@Override
+	public void deletePushedAssets(String assetId)
+			throws DotDataException {
 
-    // clear the deleted entries from the cache
-    if (assets != null && assets.size() > 0) {
-      for (PushedAsset asset : assets) {
-        CacheLocator.getPushedAssetsCache()
-            .removePushedAssetById(asset.getAssetId(), asset.getEnvironmentId());
-      }
-    }
-  }
+		List<PushedAsset> assets = pushedAssetsFactory.getPushedAssets(assetId);
 
-  @WrapInTransaction
-  @Override
-  public void deletePushedAssetsByEnvironment(final String assetId, final String environmentId)
-      throws DotDataException {
+		pushedAssetsFactory.deletePushedAssets(assetId);
 
-    final List<PushedAsset> assets = pushedAssetsFactory.getPushedAssets(assetId, environmentId);
+		// clear the deleted entries from the cache
+		if(assets!=null && assets.size()>0) {
+			for (PushedAsset asset : assets) {
+				CacheLocator.getPushedAssetsCache().removePushedAssetById(asset.getAssetId(), asset.getEnvironmentId());
+			}
+		}
 
-    pushedAssetsFactory.deletePushedAssetsByEnvironment(assetId, environmentId);
+	}
 
-    // clear the deleted entries from the cache
-    if (UtilMethods.isSet(assets)) {
-      for (final PushedAsset asset : assets) {
-        CacheLocator.getPushedAssetsCache()
-            .removePushedAssetById(asset.getAssetId(), asset.getEnvironmentId());
-      }
-    }
-  }
+	@WrapInTransaction
+	@Override
+	public void deletePushedAssetsByEnvironment(final String assetId, final String environmentId)  throws DotDataException {
 
-  @WrapInTransaction
-  @Override
-  public void deletePushedAssetsByEnvironment(String environmentId) throws DotDataException {
+		final List<PushedAsset> assets = pushedAssetsFactory.getPushedAssets(assetId, environmentId);
 
-    List<PushedAsset> assets = pushedAssetsFactory.getPushedAssetsByEnvironment(environmentId);
+		pushedAssetsFactory.deletePushedAssetsByEnvironment(assetId, environmentId);
 
-    pushedAssetsFactory.deletePushedAssetsByEnvironment(environmentId);
+		// clear the deleted entries from the cache
+		if(UtilMethods.isSet(assets)) {
+			for (final PushedAsset asset : assets) {
+				CacheLocator.getPushedAssetsCache().removePushedAssetById(asset.getAssetId(), asset.getEnvironmentId());
+			}
+		}
+	}
 
-    // clear the deleted entries from the cache
-    if (assets != null && assets.size() > 0) {
-      for (PushedAsset asset : assets) {
-        CacheLocator.getPushedAssetsCache()
-            .removePushedAssetById(asset.getAssetId(), asset.getEnvironmentId());
-      }
-    }
-  }
+	@WrapInTransaction
+	@Override
+	public void deletePushedAssetsByEnvironment(String environmentId)
+			throws DotDataException {
 
-  @WrapInTransaction
-  @Override
-  public void deleteAllPushedAssets() throws DotDataException {
-    pushedAssetsFactory.deleteAllPushedAssets();
-    CacheLocator.getPushedAssetsCache().clearCache();
-  }
+		List<PushedAsset> assets = pushedAssetsFactory.getPushedAssetsByEnvironment(environmentId);
 
-  @CloseDBIfOpened
-  @Override
-  public List<PushedAsset> getPushedAssets(String assetId) throws DotDataException {
-    return pushedAssetsFactory.getPushedAssets(assetId);
-  }
+		pushedAssetsFactory.deletePushedAssetsByEnvironment(environmentId);
 
-  @CloseDBIfOpened
-  @Override
-  public PushedAsset getLastPushForAsset(
-      final String assetId, final String environmentId, final String endpointIds)
-      throws DotDataException {
+		// clear the deleted entries from the cache
+		if(assets!=null && assets.size()>0) {
+			for (PushedAsset asset : assets) {
+				CacheLocator.getPushedAssetsCache().removePushedAssetById(asset.getAssetId(), asset.getEnvironmentId());
+			}
+		}
 
-    if (!UtilMethods.isSet(environmentId) || !UtilMethods.isSet(assetId)) {
-      return null;
-    }
+	}
 
-    return pushedAssetsFactory.getLastPushForAsset(assetId, environmentId, endpointIds);
-  }
+	@WrapInTransaction
+	@Override
+	public void deleteAllPushedAssets() throws DotDataException {
+		pushedAssetsFactory.deleteAllPushedAssets();
+		CacheLocator.getPushedAssetsCache().clearCache();
+
+	}
+
+	@CloseDBIfOpened
+	@Override
+	public List<PushedAsset> getPushedAssets(String assetId)
+			throws DotDataException {
+		return pushedAssetsFactory.getPushedAssets(assetId);
+	}
+	
+	
+	@CloseDBIfOpened
+	@Override
+	public PushedAsset getLastPushForAsset(final String assetId, final String environmentId, final String endpointIds)  throws DotDataException{
+
+		if(!UtilMethods.isSet(environmentId) || !UtilMethods.isSet(assetId)) {
+			return null;
+		}
+
+		return pushedAssetsFactory.getLastPushForAsset(assetId,environmentId,endpointIds);
+		
+	}
+
 }

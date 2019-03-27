@@ -14,16 +14,14 @@
  * limitations under the License.
  */
 
+
 package org.apache.velocity.tools.struts;
 
 import org.apache.struts.action.ActionErrors;
 
 /**
- * View tool to work with the Struts error messages.
- *
- * <p>
- *
- * <pre>
+ * <p>View tool to work with the Struts error messages.</p>
+ * <p><pre>
  * Template example(s):
  *   #if( $errors.exist() )
  *     &lt;div class="errors"&gt;
@@ -39,84 +37,99 @@ import org.apache.struts.action.ActionErrors;
  *   &lt;scope&gt;request&lt;/scope&gt;
  *   &lt;class&gt;org.apache.velocity.tools.struts.ErrorsTool&lt;/class&gt;
  * &lt;/tool&gt;
- * </pre>
+ * </pre></p>
  *
- * <p>This tool should only be used in the request scope.
- *
- * <p>Since VelocityTools 1.1, ErrorsTool extends ActionMessagesTool.
+ * <p>This tool should only be used in the request scope.</p>
+ * <p>Since VelocityTools 1.1, ErrorsTool extends ActionMessagesTool.</p>
  *
  * @author <a href="mailto:sidler@teamup.com">Gabe Sidler</a>
  * @author <a href="mailto:nathan@esha.com">Nathan Bubna</a>
  * @since VelocityTools 1.0
  * @version $Id: ErrorsTool.java,v 1.12.2.1 2004/03/12 23:36:19 nbubna Exp $
  */
-public class ErrorsTool extends ActionMessagesTool {
+public class ErrorsTool extends ActionMessagesTool
+{
+    
+    /**
+     * Initializes this tool.
+     *
+     * @param obj the current ViewContext
+     * @throws IllegalArgumentException if the param is not a ViewContext
+     */
+    public void init(Object obj)
+    {
+        //setup superclass instance members
+        super.init(obj);
 
-  /**
-   * Initializes this tool.
-   *
-   * @param obj the current ViewContext
-   * @throws IllegalArgumentException if the param is not a ViewContext
-   */
-  public void init(Object obj) {
-    // setup superclass instance members
-    super.init(obj);
+        this.actionMsgs = StrutsUtils.getErrors(this.request);
+    }
 
-    this.actionMsgs = StrutsUtils.getErrors(this.request);
-  }
 
-  /**
-   * Renders the queued error messages as a list. This method expects the message keys <code>
-   * errors.header</code> and <code>errors.footer</code> in the message resources. The value of the
-   * former is rendered before the list of error messages and the value of the latter is rendered
-   * after the error messages.
-   *
-   * @return The formatted error messages. If no error messages are queued, an empty string is
-   *     returned.
-   */
-  public String getMsgs() {
-    return getMsgs(null, null);
-  }
+    /**
+     * <p>Renders the queued error messages as a list. This method expects
+     * the message keys <code>errors.header</code> and <code>errors.footer</code>
+     * in the message resources. The value of the former is rendered before
+     * the list of error messages and the value of the latter is rendered
+     * after the error messages.</p>
+     * 
+     * @return The formatted error messages. If no error messages are queued, 
+     * an empty string is returned.
+     */
+    public String getMsgs()
+    {
+        return getMsgs(null, null);    
+    }
 
-  /**
-   * Renders the queued error messages of a particual category as a list. This method expects the
-   * message keys <code>errors.header</code> and <code>errors.footer</code> in the message
-   * resources. The value of the former is rendered before the list of error messages and the value
-   * of the latter is rendered after the error messages.
-   *
-   * @param property the category of errors to render
-   * @return The formatted error messages. If no error messages are queued, an empty string is
-   *     returned.
-   */
-  public String getMsgs(String property) {
-    return getMsgs(property, null);
-  }
 
-  /**
-   * Renders the queued error messages of a particual category as a list. This method expects the
-   * message keys <code>errors.header</code> and <code>errors.footer</code> in the message
-   * resources. The value of the former is rendered before the list of error messages and the value
-   * of the latter is rendered after the error messages.
-   *
-   * @param property the category of errors to render
-   * @param bundle the message resource bundle to use
-   * @return The formatted error messages. If no error messages are queued, an empty string is
-   *     returned.
-   * @since VelocityTools 1.1
-   */
-  public String getMsgs(String property, String bundle) {
-    return StrutsUtils.errorMarkup(
-        property, bundle, request, request.getSession(false), application);
-  }
+    /**
+     * <p>Renders the queued error messages of a particual category as a list. 
+     * This method expects the message keys <code>errors.header</code> and 
+     * <code>errors.footer</code> in the message resources. The value of the 
+     * former is rendered before the list of error messages and the value of 
+     * the latter is rendered after the error messages.</p>
+     * 
+     * @param property the category of errors to render
+     * 
+     * @return The formatted error messages. If no error messages are queued, 
+     * an empty string is returned. 
+     */
+    public String getMsgs(String property)
+    {
+        return getMsgs(property, null);
+    }
 
-  /**
-   * Overrides {@link ActionMessagesTool#getGlobalName()} to return the "global" key for action
-   * errors.
-   *
-   * @see org.apache.struts.action.ActionErrors.GLOBAL_ERROR
-   * @deprecated This will be removed after VelocityTools 1.1.
-   */
-  public String getGlobalName() {
-    return ActionErrors.GLOBAL_ERROR;
-  }
+
+    /**
+     * <p>Renders the queued error messages of a particual category as a list. 
+     * This method expects the message keys <code>errors.header</code> and 
+     * <code>errors.footer</code> in the message resources. The value of the 
+     * former is rendered before the list of error messages and the value of 
+     * the latter is rendered after the error messages.</p>
+     * 
+     * @param property the category of errors to render
+     * @param bundle the message resource bundle to use
+     * 
+     * @return The formatted error messages. If no error messages are queued, 
+     * an empty string is returned. 
+     * @since VelocityTools 1.1
+     */
+    public String getMsgs(String property, String bundle)
+    {
+        return StrutsUtils.errorMarkup(property, bundle, request, 
+                                       request.getSession(false), application);
+    }
+
+
+    /**
+     * Overrides {@link ActionMessagesTool#getGlobalName()}
+     * to return the "global" key for action errors.
+     *
+     * @see org.apache.struts.action.ActionErrors.GLOBAL_ERROR
+     * @deprecated This will be removed after VelocityTools 1.1.
+     */
+    public String getGlobalName()
+    {
+        return ActionErrors.GLOBAL_ERROR;
+    }
+
 }

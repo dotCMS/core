@@ -16,7 +16,7 @@ package org.apache.velocity.runtime.parser.node;
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
- * under the License.
+ * under the License.    
  */
 
 import com.dotmarketing.util.Logger;
@@ -25,83 +25,104 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.velocity.exception.VelocityException;
 import org.apache.velocity.util.introspection.Introspector;
 
-/** Returned the value of object property when executed. */
-public class PropertyExecutor extends AbstractExecutor {
-  private final Introspector introspector;
+/**
+ * Returned the value of object property when executed.
+ */
+public class PropertyExecutor extends AbstractExecutor
+{
+    private final Introspector introspector;
 
-  /**
-   * @param log
-   * @param introspector
-   * @param clazz
-   * @param property
-   * @since 1.5
-   */
-  public PropertyExecutor(
-      final Introspector introspector, final Class clazz, final String property) {
-
-    this.introspector = introspector;
-
-    // Don't allow passing in the empty string or null because
-    // it will either fail with a StringIndexOutOfBounds error
-    // or the introspector will get confused.
-    if (StringUtils.isNotEmpty(property)) {
-      discover(clazz, property);
-    }
-  }
-
-  /**
-   * @return The current introspector.
-   * @since 1.5
-   */
-  protected Introspector getIntrospector() {
-    return this.introspector;
-  }
-
-  /**
-   * @param clazz
-   * @param property
-   */
-  protected void discover(final Class clazz, final String property) {
-    /*
-     *  this is gross and linear, but it keeps it straightforward.
+    /**
+     * @param log
+     * @param introspector
+     * @param clazz
+     * @param property
+     * @since 1.5
      */
+    public PropertyExecutor(final Introspector introspector,
+            final Class clazz, final String property)
+    {
+        
+        this.introspector = introspector;
 
-    try {
-      Object[] params = {};
+        // Don't allow passing in the empty string or null because
+        // it will either fail with a StringIndexOutOfBounds error
+        // or the introspector will get confused.
+        if (StringUtils.isNotEmpty(property))
+        {
+            discover(clazz, property);
+        }
+    }
 
-      StringBuilder sb = new StringBuilder("get");
-      sb.append(property);
+    /**
+     * @return The current introspector.
+     * @since 1.5
+     */
+    protected Introspector getIntrospector()
+    {
+        return this.introspector;
+    }
 
-      setMethod(introspector.getMethod(clazz, sb.toString(), params));
-
-      if (!isAlive()) {
+    /**
+     * @param clazz
+     * @param property
+     */
+    protected void discover(final Class clazz, final String property)
+    {
         /*
-         *  now the convenience, flip the 1st character
+         *  this is gross and linear, but it keeps it straightforward.
          */
 
-        char c = sb.charAt(3);
+        try
+        {
+            Object [] params = {};
 
-        if (Character.isLowerCase(c)) {
-          sb.setCharAt(3, Character.toUpperCase(c));
-        } else {
-          sb.setCharAt(3, Character.toLowerCase(c));
+            StringBuilder sb = new StringBuilder("get");
+            sb.append(property);
+
+            setMethod(introspector.getMethod(clazz, sb.toString(), params));
+
+            if (!isAlive())
+            {
+                /*
+                 *  now the convenience, flip the 1st character
+                 */
+
+                char c = sb.charAt(3);
+
+                if (Character.isLowerCase(c))
+                {
+                    sb.setCharAt(3, Character.toUpperCase(c));
+                }
+                else
+                {
+                    sb.setCharAt(3, Character.toLowerCase(c));
+                }
+
+                setMethod(introspector.getMethod(clazz, sb.toString(), params));
+            }
         }
-
-        setMethod(introspector.getMethod(clazz, sb.toString(), params));
-      }
+        /**
+         * pass through application level runtime exceptions
+         */
+        catch( RuntimeException e )
+        {
+            throw e;
+        }
+        catch(Exception e)
+        {
+            String msg = "Exception while looking for property getter for '" + property;
+            Logger.error(this,msg, e);
+            throw new VelocityException(msg, e);
+        }
     }
-    /** pass through application level runtime exceptions */
-    catch (RuntimeException e) {
-      throw e;
-    } catch (Exception e) {
-      String msg = "Exception while looking for property getter for '" + property;
-      Logger.error(this, msg, e);
-      throw new VelocityException(msg, e);
-    }
-  }
 
-  /** @see org.apache.velocity.runtime.parser.node.AbstractExecutor#execute(java.lang.Object) */
-  public Object execute(Object o) throws IllegalAccessException, InvocationTargetException {
-    return isAlive() ? getMethod().invoke(o, ((Object[]) null)) : null;
-  }
+    /**
+     * @see org.apache.velocity.runtime.parser.node.AbstractExecutor#execute(java.lang.Object)
+     */
+    public Object execute(Object o)
+        throws IllegalAccessException,  InvocationTargetException
+    {
+        return isAlive() ? getMethod().invoke(o, ((Object []) null)) : null;
+    }
 }

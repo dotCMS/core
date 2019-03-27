@@ -1,109 +1,87 @@
 package com.dotcms.integritycheckers;
 
 public enum IntegrityType {
-  FOLDERS(
-      new FolderIntegrityChecker(),
-      "push_publish_integrity_folders_conflicts",
-      "folder",
-      "FoldersToCheck.csv",
-      "FoldersToFix.csv"),
 
-  STRUCTURES(
-      new StructureIntegrityChecker(),
-      "push_publish_integrity_structures_conflicts",
-      "velocity_name",
-      "StructuresToCheck.csv",
-      "StructuresToFix.csv"),
+	FOLDERS(
+    	new FolderIntegrityChecker(), "push_publish_integrity_folders_conflicts", "folder",
+    	"FoldersToCheck.csv", "FoldersToFix.csv"
+    ),
 
-  HTMLPAGES(
-      new ContentPageIntegrityChecker(),
-      "push_publish_integrity_html_pages_conflicts",
-      "html_page",
-      "ContentPagesToCheck.csv",
-      "ContentPagesToFix.csv"),
+    STRUCTURES(
+    	new StructureIntegrityChecker(), "push_publish_integrity_structures_conflicts", "velocity_name",
+    	"StructuresToCheck.csv", "StructuresToFix.csv"
+    ),
 
-  FILEASSETS(
-      new ContentFileAssetIntegrityChecker(),
-      "push_publish_integrity_content_file_assets_conflicts",
-      "file_name",
-      "ContentFileAssetsToCheck.csv",
-      "ContentFileAssetsToFix.csv"),
+    HTMLPAGES(
+    	new ContentPageIntegrityChecker(), "push_publish_integrity_html_pages_conflicts", "html_page",
+    	"ContentPagesToCheck.csv", "ContentPagesToFix.csv"
+    ),
 
-  CMS_ROLES(
-      new RoleIntegrityChecker(),
-      "push_publish_integrity_cms_roles_conflicts",
-      "name",
-      "CmsRolesToCheck.csv",
-      "CmsRolesToFix.csv");
+    FILEASSETS(
+    	new ContentFileAssetIntegrityChecker(), "push_publish_integrity_content_file_assets_conflicts", "file_name",
+    	"ContentFileAssetsToCheck.csv", "ContentFileAssetsToFix.csv"
+    ),
 
-  private IntegrityChecker integrityChecker;
-  private String label;
-  private String firstDisplayColumnLabel;
-  private String dataToCheckCSVName;
-  private String dataToFixCSVName;
-  // IMPORTANT: When a type has this flag in false, means that the process
-  // results are handle by other integrity type, a good example is HTMLPAGES,
-  // where the same results table is use by HTMLPAGE and CONTENTPAGE.
-  // NOTE: This should be use as an EXCEPTION not as normal scenario.
-  private boolean hasResultsTable;
+    CMS_ROLES(
+    	new RoleIntegrityChecker(), "push_publish_integrity_cms_roles_conflicts", "name",
+    	"CmsRolesToCheck.csv", "CmsRolesToFix.csv"
+    );
 
-  IntegrityType(
-      IntegrityChecker integrityChecker,
-      String label,
-      String firstDisplayColumnLabel,
-      String dataToCheckCSVName,
-      String dataToFixCSVName) {
-    this(
-        integrityChecker,
-        label,
-        firstDisplayColumnLabel,
-        dataToCheckCSVName,
-        dataToFixCSVName,
-        true);
-  }
 
-  IntegrityType(
-      IntegrityChecker integrityChecker,
-      String label,
-      String firstDisplayColumnLabel,
-      String dataToCheckCSVName,
-      String dataToFixCSVName,
-      boolean hasResultsTable) {
-    this.integrityChecker = integrityChecker;
-    this.label = label;
-    this.firstDisplayColumnLabel = firstDisplayColumnLabel;
-    this.dataToCheckCSVName = dataToCheckCSVName;
-    this.dataToFixCSVName = dataToFixCSVName;
-    this.hasResultsTable = hasResultsTable;
-  }
+	private IntegrityChecker integrityChecker;
+    private String label;
+    private String firstDisplayColumnLabel;
+    private String dataToCheckCSVName;
+    private String dataToFixCSVName;
+    // IMPORTANT: When a type has this flag in false, means that the process
+    // results are handle by other integrity type, a good example is HTMLPAGES,
+    // where the same results table is use by HTMLPAGE and CONTENTPAGE.
+    // NOTE: This should be use as an EXCEPTION not as normal scenario.
+    private boolean hasResultsTable;
 
-  public IntegrityChecker getIntegrityChecker() {
-    return integrityChecker;
-  }
 
-  public String getLabel() {
-    return label;
-  }
+    IntegrityType(IntegrityChecker integrityChecker, String label, String firstDisplayColumnLabel, String dataToCheckCSVName,
+            String dataToFixCSVName) {
+    	this(integrityChecker, label, firstDisplayColumnLabel, dataToCheckCSVName, dataToFixCSVName, true);
+    }
 
-  public String getFirstDisplayColumnLabel() {
-    return firstDisplayColumnLabel;
-  }
+    IntegrityType(IntegrityChecker integrityChecker, String label, String firstDisplayColumnLabel, String dataToCheckCSVName,
+            String dataToFixCSVName, boolean hasResultsTable) {
+    	this.integrityChecker = integrityChecker;
+        this.label = label;
+        this.firstDisplayColumnLabel = firstDisplayColumnLabel;
+        this.dataToCheckCSVName = dataToCheckCSVName;
+        this.dataToFixCSVName = dataToFixCSVName;
+        this.hasResultsTable = hasResultsTable;
+    }
 
-  public String getDataToCheckCSVName() {
-    return dataToCheckCSVName;
-  }
+    public IntegrityChecker getIntegrityChecker() {
+    	return integrityChecker;
+    }
 
-  public String getDataToFixCSVName() {
-    return dataToFixCSVName;
-  }
+    public String getLabel() {
+        return label;
+    }
+    
+    public String getFirstDisplayColumnLabel() {
+        return firstDisplayColumnLabel;
+    }
 
-  private static final String RESULT_TABLE_SUFFIX = "_ir";
+    public String getDataToCheckCSVName() {
+        return dataToCheckCSVName;
+    }
 
-  public String getResultsTableName() {
-    return name().toLowerCase() + RESULT_TABLE_SUFFIX;
-  }
+    public String getDataToFixCSVName() {
+        return dataToFixCSVName;
+    }
 
-  public boolean hasResultsTable() {
-    return hasResultsTable;
-  }
+    private static final String RESULT_TABLE_SUFFIX = "_ir";
+
+    public String getResultsTableName() {
+        return name().toLowerCase() + RESULT_TABLE_SUFFIX;
+    }
+
+    public boolean hasResultsTable() {
+        return hasResultsTable;
+    }
 }

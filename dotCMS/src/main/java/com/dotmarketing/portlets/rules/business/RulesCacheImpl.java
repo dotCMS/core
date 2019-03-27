@@ -1,24 +1,22 @@
 package com.dotmarketing.portlets.rules.business;
 
-import static com.dotcms.repackage.com.google.common.base.Preconditions.checkNotNull;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import com.dotcms.repackage.com.google.common.base.Strings;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.business.Ruleable;
-import com.dotmarketing.portlets.rules.model.Condition;
-import com.dotmarketing.portlets.rules.model.ConditionGroup;
-import com.dotmarketing.portlets.rules.model.Rule;
-import com.dotmarketing.portlets.rules.model.RuleAction;
+import com.dotmarketing.portlets.rules.model.*;
 import com.dotmarketing.util.Logger;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
+
+import static com.dotcms.repackage.com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * Implements the Rule Engine caching functionality. The structures that make up the cache are
- * hierarchically associated in order to improve response times by reducing database round trips.
+ * Implements the Rule Engine caching functionality. The structures that make up
+ * the cache are hierarchically associated in order to improve response times by
+ * reducing database round trips.
  *
  * @author Jose Castro
  * @version 1.0
@@ -26,357 +24,363 @@ import java.util.stream.Collectors;
  */
 public class RulesCacheImpl extends RulesCache {
 
-  protected DotCacheAdministrator cache = null;
+    protected DotCacheAdministrator cache = null;
 
-  /**
-   * Default constructor. Instantiates the {@link DotCacheAdministrator} object used to store all
-   * the rules information.
-   */
-  public RulesCacheImpl() {
-    cache = CacheLocator.getCacheAdministrator();
-  }
-
-  @Override
-  public void clearCache() {
-    for (String cacheGroup : getGroups()) {
-      cache.flushGroup(cacheGroup);
-    }
-  }
-
-  @Override
-  public void addRule(Rule rule) {
-    rule = checkNotNull(rule, "Rule is required.");
-
-    if (Strings.isNullOrEmpty(rule.getId())) {
-      throw new IllegalArgumentException("Rule must have an id.");
+    /**
+     * Default constructor. Instantiates the {@link DotCacheAdministrator}
+     * object used to store all the rules information.
+     */
+    public RulesCacheImpl() {
+        cache = CacheLocator.getCacheAdministrator();
     }
 
-    this.cache.put(rule.getId(), rule, getPrimaryGroup());
-  }
-
-  @Override
-  public Rule getRule(String ruleId) {
-    Rule rule = null;
-    try {
-      rule = (Rule) this.cache.get(ruleId, getPrimaryGroup());
-    } catch (DotCacheException e) {
-      Logger.debug(this, "RulesCache entry not found: " + ruleId);
-    }
-    return rule;
-  }
-
-  @Override
-  public void removeRule(Rule rule) {
-    rule = checkNotNull(rule, "Rule is required.");
-
-    if (Strings.isNullOrEmpty(rule.getId())) {
-      throw new IllegalArgumentException("Rule must have an Id.");
+    @Override
+    public void clearCache() {
+        for (String cacheGroup : getGroups()) {
+            cache.flushGroup(cacheGroup);
+        }
     }
 
-    this.cache.remove(rule.getId(), getPrimaryGroup());
+    @Override
+    public void addRule(Rule rule) {
+        rule = checkNotNull(rule, "Rule is required.");
 
-    for (Rule.FireOn fireOn : Rule.FireOn.values()) {
-      cache.remove(rule.getParent() + ":" + fireOn, getPrimaryGroup());
+        if (Strings.isNullOrEmpty(rule.getId())) {
+            throw new IllegalArgumentException("Rule must have an id.");
+        }
+
+        this.cache.put(rule.getId(), rule, getPrimaryGroup());
     }
 
-    // let's clean the
-    cache.remove(rule.getParent(), PARENT_RULES_CACHE);
-  }
-
-  @Override
-  public void putRulesByParent(Ruleable parent, List<Rule> rules) {
-    parent = checkNotNull(parent, "parent is required");
-
-    String parentIdentifier = parent.getIdentifier();
-
-    if (Strings.isNullOrEmpty(parentIdentifier)) {
-      throw new IllegalArgumentException("Parent must have an identifier.");
+    @Override
+    public Rule getRule(String ruleId) {
+        Rule rule = null;
+        try {
+            rule = (Rule) this.cache.get(ruleId, getPrimaryGroup());
+        } catch (DotCacheException e) {
+            Logger.debug(this, "RulesCache entry not found: " + ruleId);
+        }
+        return rule;
     }
 
-    rules = checkNotNull(rules, "Rules List is required");
+    @Override
+    public void removeRule(Rule rule) {
+        rule = checkNotNull(rule, "Rule is required.");
 
-    for (Rule rule : rules) {
-      addRule(rule);
+        if (Strings.isNullOrEmpty(rule.getId())) {
+            throw new IllegalArgumentException("Rule must have an Id.");
+        }
+
+        this.cache.remove(rule.getId(), getPrimaryGroup());
+
+        for(Rule.FireOn fireOn: Rule.FireOn.values()) {
+            cache.remove(rule.getParent() + ":" + fireOn, getPrimaryGroup());
+        }
+
+        // let's clean the
+        cache.remove(rule.getParent(), PARENT_RULES_CACHE);
+
     }
 
-    List<String> rulesIds = rules.stream().map(Rule::getId).collect(Collectors.toList());
+    @Override
+    public void putRulesByParent(Ruleable parent, List<Rule> rules) {
+    	parent = checkNotNull(parent, "parent is required");
 
-    cache.put(parentIdentifier, rulesIds, PARENT_RULES_CACHE);
-  }
+        String parentIdentifier = parent.getIdentifier();
 
-  @Override
-  public List<String> getRulesIdsByParent(Ruleable parent) {
-    parent = checkNotNull(parent, "Parent is required");
-    String parentIdentifier = parent.getIdentifier();
+        if (Strings.isNullOrEmpty(parentIdentifier)) {
+            throw new IllegalArgumentException("Parent must have an identifier.");
+        }
 
-    if (Strings.isNullOrEmpty(parentIdentifier)) {
-      throw new IllegalArgumentException("Parent must have an identifier.");
-    }
-    try {
-      return (List<String>) cache.get(parentIdentifier, PARENT_RULES_CACHE);
-    } catch (DotCacheException e) {
-      Logger.debug(RulesCacheImpl.class, e.getMessage(), e);
-      return null;
-    }
-  }
+        rules = checkNotNull(rules, "Rules List is required");
 
-  @Override
-  public void addRulesByParentFireOn(Set<Rule> rules, String parentIdentifier, Rule.FireOn fireOn) {
-    rules = checkNotNull(rules, "Rules list is required.");
+        for (Rule rule : rules) {
+            addRule(rule);
+        }
 
-    if (Strings.isNullOrEmpty(parentIdentifier)) {
-      throw new IllegalArgumentException("Invalid parent identifier.");
+        List<String> rulesIds = rules.stream().map(Rule::getId).collect(Collectors.toList());
+
+        cache.put(parentIdentifier, rulesIds, PARENT_RULES_CACHE);
     }
 
-    fireOn = checkNotNull(fireOn, "FireOn is required.");
+    @Override
+    public List<String> getRulesIdsByParent(Ruleable parent) {
+    	parent = checkNotNull(parent, "Parent is required");
+        String parentIdentifier = parent.getIdentifier();
 
-    cache.put(parentIdentifier + ":" + fireOn, rules, getPrimaryGroup());
-  }
-
-  @Override
-  public Set<Rule> getRulesByParentFireOn(String parentIdentifier, Rule.FireOn fireOn) {
-    if (Strings.isNullOrEmpty(parentIdentifier)) {
-      throw new IllegalArgumentException("Invalid parent identifier.");
+        if (Strings.isNullOrEmpty(parentIdentifier)) {
+            throw new IllegalArgumentException("Parent must have an identifier.");
+        }
+        try {
+            return (List<String>) cache.get(parentIdentifier, PARENT_RULES_CACHE);
+        } catch (DotCacheException e) {
+            Logger.debug(RulesCacheImpl.class, e.getMessage(), e);
+            return null;
+        }
     }
 
-    fireOn = checkNotNull(fireOn, "FireOn is required.");
 
-    try {
-      return (Set<Rule>) cache.get(parentIdentifier + ":" + fireOn, PRIMARY_GROUP);
-    } catch (DotCacheException e) {
-      Logger.debug(RulesCacheImpl.class, e.getMessage(), e);
-    }
-    return null;
-  }
+    @Override
+    public void addRulesByParentFireOn(Set<Rule> rules, String parentIdentifier, Rule.FireOn fireOn) {
+        rules = checkNotNull(rules, "Rules list is required.");
 
-  @Override
-  public void addCondition(Condition condition) {
-    condition = checkNotNull(condition, "Condition is required.");
+        if (Strings.isNullOrEmpty(parentIdentifier)) {
+            throw new IllegalArgumentException("Invalid parent identifier.");
+        }
 
-    if (Strings.isNullOrEmpty(condition.getId())) {
-      throw new IllegalArgumentException("Condition must have an Id");
+        fireOn = checkNotNull(fireOn, "FireOn is required.");
+
+
+        cache.put(parentIdentifier + ":" + fireOn, rules, getPrimaryGroup());
     }
 
-    this.cache.put(condition.getId(), condition, CONDITIONS_CACHE);
-  }
+    @Override
+    public Set<Rule> getRulesByParentFireOn(String parentIdentifier, Rule.FireOn fireOn) {
+        if (Strings.isNullOrEmpty(parentIdentifier)) {
+            throw new IllegalArgumentException("Invalid parent identifier.");
+        }
 
-  @Override
-  public Condition getCondition(String conditionId) {
-    if (Strings.isNullOrEmpty(conditionId)) {
-      throw new IllegalArgumentException("Invalid conditionId.");
+        fireOn = checkNotNull(fireOn, "FireOn is required.");
+
+        try {
+            return (Set<Rule>) cache.get(parentIdentifier + ":" + fireOn, PRIMARY_GROUP);
+        } catch (DotCacheException e) {
+            Logger.debug(RulesCacheImpl.class, e.getMessage(), e);
+        }
+        return null;
     }
 
-    Condition condition = null;
 
-    try {
-      condition = (Condition) this.cache.get(conditionId, CONDITIONS_CACHE);
-    } catch (DotCacheException e) {
-      Logger.debug(this, "ConditionsCache entry not found: " + conditionId);
-    }
-    return condition;
-  }
+    @Override
+    public void addCondition(Condition condition) {
+        condition = checkNotNull(condition, "Condition is required.");
 
-  @Override
-  public void removeCondition(Condition condition) {
-    condition = checkNotNull(condition, "Condition is required.");
+        if (Strings.isNullOrEmpty(condition.getId())) {
+            throw new IllegalArgumentException("Condition must have an Id");
+        }
 
-    if (Strings.isNullOrEmpty(condition.getId())) {
-      throw new IllegalArgumentException("Condition must have an Id.");
+        this.cache.put(condition.getId(), condition, CONDITIONS_CACHE);
     }
 
-    this.cache.remove(condition.getId(), CONDITIONS_CACHE);
-    this.cache.remove(condition.getConditionGroup(), CONDITION_GROUP_CONDITIONS_CACHE);
-    this.cache.remove(condition.getConditionGroup(), CONDITION_GROUPS_CACHE);
-  }
+    @Override
+    public Condition getCondition(String conditionId) {
+        if (Strings.isNullOrEmpty(conditionId)) {
+            throw new IllegalArgumentException("Invalid conditionId.");
+        }
 
-  @Override
-  public void putConditionsByGroup(ConditionGroup conditionGroup, List<Condition> conditions) {
-    conditionGroup = checkNotNull(conditionGroup, "Condition Group is required");
+        Condition condition = null;
 
-    String groupId = conditionGroup.getId();
-
-    if (Strings.isNullOrEmpty(groupId)) {
-      throw new IllegalArgumentException("Condition Group must have an id.");
+        try {
+            condition = (Condition) this.cache.get(conditionId, CONDITIONS_CACHE);
+        } catch (DotCacheException e) {
+            Logger.debug(this, "ConditionsCache entry not found: " + conditionId);
+        }
+        return condition;
     }
 
-    conditions = checkNotNull(conditions, "Condition List is required");
+    @Override
+    public void removeCondition(Condition condition) {
+        condition = checkNotNull(condition, "Condition is required.");
 
-    for (Condition condition : conditions) {
-      addCondition(condition);
+        if (Strings.isNullOrEmpty(condition.getId())) {
+            throw new IllegalArgumentException("Condition must have an Id.");
+        }
+
+        this.cache.remove(condition.getId(), CONDITIONS_CACHE);
+        this.cache.remove(condition.getConditionGroup(), CONDITION_GROUP_CONDITIONS_CACHE);
+        this.cache.remove(condition.getConditionGroup(), CONDITION_GROUPS_CACHE);
     }
 
-    List<String> conditionsIds =
-        conditions.stream().map(Condition::getId).collect(Collectors.toList());
+    @Override
+    public void putConditionsByGroup(ConditionGroup conditionGroup, List<Condition> conditions) {
+        conditionGroup = checkNotNull(conditionGroup, "Condition Group is required");
 
-    cache.put(groupId, conditionsIds, CONDITION_GROUP_CONDITIONS_CACHE);
-  }
+        String groupId = conditionGroup.getId();
 
-  @Override
-  public List<String> getConditionsIdsByGroup(ConditionGroup conditionGroup) {
-    conditionGroup = checkNotNull(conditionGroup, "Condition Group is required");
-    String conditionGroupId = conditionGroup.getId();
+        if (Strings.isNullOrEmpty(groupId)) {
+            throw new IllegalArgumentException("Condition Group must have an id.");
+        }
 
-    if (Strings.isNullOrEmpty(conditionGroupId)) {
-      throw new IllegalArgumentException("Condition Group must have an id.");
-    }
-    try {
-      return (List<String>) cache.get(conditionGroupId, CONDITION_GROUP_CONDITIONS_CACHE);
-    } catch (DotCacheException e) {
-      Logger.debug(RulesCacheImpl.class, e.getMessage(), e);
-      return null;
-    }
-  }
+        conditions = checkNotNull(conditions, "Condition List is required");
 
-  @Override
-  public void addConditionGroup(ConditionGroup conditionGroup) {
-    conditionGroup = checkNotNull(conditionGroup, "Condition Group is required.");
+        for (Condition condition : conditions) {
+            addCondition(condition);
+        }
 
-    if (Strings.isNullOrEmpty(conditionGroup.getId())) {
-      throw new IllegalArgumentException("Condition Group must have an Id");
+        List<String> conditionsIds = conditions.stream().map(Condition::getId).collect(Collectors.toList());
+
+        cache.put(groupId, conditionsIds, CONDITION_GROUP_CONDITIONS_CACHE);
     }
 
-    this.cache.put(conditionGroup.getId(), conditionGroup, CONDITION_GROUPS_CACHE);
-  }
+    @Override
+    public List<String> getConditionsIdsByGroup(ConditionGroup conditionGroup) {
+        conditionGroup = checkNotNull(conditionGroup, "Condition Group is required");
+        String conditionGroupId = conditionGroup.getId();
 
-  @Override
-  public ConditionGroup getConditionGroup(String conditionGroupId) {
-    if (Strings.isNullOrEmpty(conditionGroupId)) {
-      throw new IllegalArgumentException("Invalid conditionGroupId.");
+        if (Strings.isNullOrEmpty(conditionGroupId)) {
+            throw new IllegalArgumentException("Condition Group must have an id.");
+        }
+        try {
+            return (List<String>) cache.get(conditionGroupId, CONDITION_GROUP_CONDITIONS_CACHE);
+        } catch (DotCacheException e) {
+            Logger.debug(RulesCacheImpl.class, e.getMessage(), e);
+            return null;
+        }
     }
 
-    ConditionGroup conditionGroup = null;
+    @Override
+    public void addConditionGroup(ConditionGroup conditionGroup) {
+        conditionGroup = checkNotNull(conditionGroup, "Condition Group is required.");
 
-    try {
-      conditionGroup = (ConditionGroup) this.cache.get(conditionGroupId, CONDITION_GROUPS_CACHE);
-    } catch (DotCacheException e) {
-      Logger.debug(this, "ConditionsCache entry not found: " + conditionGroupId);
-    }
-    return conditionGroup;
-  }
+        if (Strings.isNullOrEmpty(conditionGroup.getId())) {
+            throw new IllegalArgumentException("Condition Group must have an Id");
+        }
 
-  @Override
-  public void removeConditionGroup(ConditionGroup conditionGroup) {
-    conditionGroup = checkNotNull(conditionGroup, "Condition Group is required.");
-
-    if (Strings.isNullOrEmpty(conditionGroup.getId())) {
-      throw new IllegalArgumentException("Condition must have an Id.");
+        this.cache.put(conditionGroup.getId(), conditionGroup, CONDITION_GROUPS_CACHE);
     }
 
-    this.cache.remove(conditionGroup.getId(), CONDITION_GROUPS_CACHE);
-    this.cache.remove(conditionGroup.getRuleId(), RULE_CONDITION_GROUPS);
-  }
 
-  @Override
-  public void putConditionGroupsByRule(Rule rule, List<ConditionGroup> groups) {
-    rule = checkNotNull(rule, "Rule is required.");
+    @Override
+    public ConditionGroup getConditionGroup(String conditionGroupId) {
+        if (Strings.isNullOrEmpty(conditionGroupId)) {
+            throw new IllegalArgumentException("Invalid conditionGroupId.");
+        }
 
-    String ruleId = rule.getId();
+        ConditionGroup conditionGroup = null;
 
-    if (Strings.isNullOrEmpty(ruleId)) {
-      throw new IllegalArgumentException("Rule must have an id.");
+        try {
+            conditionGroup = (ConditionGroup) this.cache.get(conditionGroupId, CONDITION_GROUPS_CACHE);
+        } catch (DotCacheException e) {
+            Logger.debug(this, "ConditionsCache entry not found: " + conditionGroupId);
+        }
+        return conditionGroup;
     }
 
-    groups = checkNotNull(groups, "Condition List is required");
+    @Override
+    public void removeConditionGroup(ConditionGroup conditionGroup) {
+        conditionGroup = checkNotNull(conditionGroup, "Condition Group is required.");
 
-    for (ConditionGroup group : groups) {
-      addConditionGroup(group);
+        if (Strings.isNullOrEmpty(conditionGroup.getId())) {
+            throw new IllegalArgumentException("Condition must have an Id.");
+        }
+
+        this.cache.remove(conditionGroup.getId(), CONDITION_GROUPS_CACHE);
+        this.cache.remove(conditionGroup.getRuleId(), RULE_CONDITION_GROUPS);
     }
 
-    List<String> conditionGroupsIds =
-        groups.stream().map(ConditionGroup::getId).collect(Collectors.toList());
+    @Override
+    public void putConditionGroupsByRule(Rule rule, List<ConditionGroup> groups) {
+        rule = checkNotNull(rule, "Rule is required.");
 
-    cache.put(ruleId, conditionGroupsIds, RULE_CONDITION_GROUPS);
-  }
+        String ruleId = rule.getId();
 
-  @Override
-  public List<String> getConditionGroupsIdsByRule(Rule rule) {
-    rule = checkNotNull(rule, "Rule is required");
-    String ruleId = rule.getId();
+        if (Strings.isNullOrEmpty(ruleId)) {
+            throw new IllegalArgumentException("Rule must have an id.");
+        }
 
-    if (Strings.isNullOrEmpty(ruleId)) {
-      throw new IllegalArgumentException("Rule must have an id.");
-    }
-    try {
-      return (List<String>) cache.get(ruleId, RULE_CONDITION_GROUPS);
-    } catch (DotCacheException e) {
-      Logger.debug(RulesCacheImpl.class, e.getMessage(), e);
-      return null;
-    }
-  }
+        groups = checkNotNull(groups, "Condition List is required");
 
-  @Override
-  public void addAction(RuleAction action) {
-    action = checkNotNull(action, "Action is required.");
+        for (ConditionGroup group : groups) {
+            addConditionGroup(group);
+        }
 
-    if (Strings.isNullOrEmpty(action.getId())) {
-      throw new IllegalArgumentException("Action must have an Id");
+        List<String> conditionGroupsIds = groups.stream().map(ConditionGroup::getId).collect(Collectors.toList());
+
+        cache.put(ruleId, conditionGroupsIds, RULE_CONDITION_GROUPS);
     }
 
-    this.cache.put(action.getId(), action, ACTIONS_CACHE);
-  }
+    @Override
+    public List<String> getConditionGroupsIdsByRule(Rule rule) {
+        rule = checkNotNull(rule, "Rule is required");
+        String ruleId = rule.getId();
 
-  @Override
-  public RuleAction getAction(String actionId) {
-    if (Strings.isNullOrEmpty(actionId)) {
-      throw new IllegalArgumentException("Invalid actionId.");
+        if (Strings.isNullOrEmpty(ruleId)) {
+            throw new IllegalArgumentException("Rule must have an id.");
+        }
+        try {
+            return (List<String>) cache.get(ruleId, RULE_CONDITION_GROUPS);
+        } catch (DotCacheException e) {
+            Logger.debug(RulesCacheImpl.class, e.getMessage(), e);
+            return null;
+        }
     }
 
-    RuleAction action = null;
 
-    try {
-      action = (RuleAction) this.cache.get(actionId, ACTIONS_CACHE);
-    } catch (DotCacheException e) {
-      Logger.debug(this, "ActionsCache entry not found: " + actionId);
-    }
-    return action;
-  }
+    @Override
+    public void addAction(RuleAction action) {
+        action = checkNotNull(action, "Action is required.");
 
-  @Override
-  public void removeAction(RuleAction action) {
-    action = checkNotNull(action, "Rule Action is required.");
+        if (Strings.isNullOrEmpty(action.getId())) {
+            throw new IllegalArgumentException("Action must have an Id");
+        }
 
-    if (Strings.isNullOrEmpty(action.getId())) {
-      throw new IllegalArgumentException("Rule Action must have an Id.");
+        this.cache.put(action.getId(), action, ACTIONS_CACHE);
     }
 
-    this.cache.remove(action.getId(), ACTIONS_CACHE);
-    this.cache.remove(action.getRuleId(), RULE_ACTIONS_CACHE);
-  }
+    @Override
+    public RuleAction getAction(String actionId) {
+        if (Strings.isNullOrEmpty(actionId)) {
+            throw new IllegalArgumentException("Invalid actionId.");
+        }
 
-  @Override
-  public void putActionsByRule(Rule rule, List<RuleAction> actions) {
-    rule = checkNotNull(rule, "Rule is required.");
+        RuleAction action = null;
 
-    String ruleId = rule.getId();
-
-    if (Strings.isNullOrEmpty(ruleId)) {
-      throw new IllegalArgumentException("Rule must have an id.");
+        try {
+            action = (RuleAction) this.cache.get(actionId, ACTIONS_CACHE);
+        } catch (DotCacheException e) {
+            Logger.debug(this, "ActionsCache entry not found: " + actionId);
+        }
+        return action;
     }
 
-    actions = checkNotNull(actions, "Action List is required");
+    @Override
+    public void removeAction(RuleAction action) {
+        action = checkNotNull(action, "Rule Action is required.");
 
-    for (RuleAction action : actions) {
-      addAction(action);
+        if (Strings.isNullOrEmpty(action.getId())) {
+            throw new IllegalArgumentException("Rule Action must have an Id.");
+        }
+
+        this.cache.remove(action.getId(), ACTIONS_CACHE);
+        this.cache.remove(action.getRuleId(), RULE_ACTIONS_CACHE);
     }
 
-    List<String> actionsIds = actions.stream().map(RuleAction::getId).collect(Collectors.toList());
+    @Override
+    public void putActionsByRule(Rule rule, List<RuleAction> actions) {
+        rule = checkNotNull(rule, "Rule is required.");
 
-    cache.put(ruleId, actionsIds, RULE_ACTIONS_CACHE);
-  }
+        String ruleId = rule.getId();
 
-  @Override
-  public List<String> getActionsIdsByRule(Rule rule) {
-    rule = checkNotNull(rule, "Rule is required");
-    String ruleId = rule.getId();
+        if (Strings.isNullOrEmpty(ruleId)) {
+            throw new IllegalArgumentException("Rule must have an id.");
+        }
 
-    if (Strings.isNullOrEmpty(ruleId)) {
-      throw new IllegalArgumentException("Rule must have an id.");
+        actions = checkNotNull(actions, "Action List is required");
+
+        for (RuleAction action : actions) {
+            addAction(action);
+        }
+
+        List<String> actionsIds = actions.stream().map(RuleAction::getId).collect(Collectors.toList());
+
+        cache.put(ruleId, actionsIds, RULE_ACTIONS_CACHE);
     }
-    try {
-      return (List<String>) cache.get(ruleId, RULE_ACTIONS_CACHE);
-    } catch (DotCacheException e) {
-      Logger.debug(RulesCacheImpl.class, e.getMessage(), e);
-      return null;
+
+    @Override
+    public List<String> getActionsIdsByRule(Rule rule) {
+        rule = checkNotNull(rule, "Rule is required");
+        String ruleId = rule.getId();
+
+        if (Strings.isNullOrEmpty(ruleId)) {
+            throw new IllegalArgumentException("Rule must have an id.");
+        }
+        try {
+            return (List<String>) cache.get(ruleId, RULE_ACTIONS_CACHE);
+        } catch (DotCacheException e) {
+            Logger.debug(RulesCacheImpl.class, e.getMessage(), e);
+            return null;
+        }
     }
-  }
+
+
 }

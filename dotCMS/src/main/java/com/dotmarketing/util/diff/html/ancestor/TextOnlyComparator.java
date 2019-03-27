@@ -15,6 +15,9 @@
  */
 package com.dotmarketing.util.diff.html.ancestor;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.dotcms.repackage.org.eclipse.compare.internal.LCSSettings;
 import com.dotcms.repackage.org.eclipse.compare.rangedifferencer.IRangeComparator;
 import com.dotcms.repackage.org.eclipse.compare.rangedifferencer.RangeDifference;
@@ -22,71 +25,72 @@ import com.dotcms.repackage.org.eclipse.compare.rangedifferencer.RangeDifference
 import com.dotmarketing.util.diff.html.dom.Node;
 import com.dotmarketing.util.diff.html.dom.TagNode;
 import com.dotmarketing.util.diff.html.dom.TextNode;
-import java.util.ArrayList;
-import java.util.List;
 
-/** A comparator that compares only the elements of text inside a given tag. */
+/**
+ * A comparator that compares only the elements of text inside a given tag.
+ */
 public class TextOnlyComparator implements IRangeComparator {
 
-  private List<TextNode> leafs = new ArrayList<TextNode>();
+    private List<TextNode> leafs = new ArrayList<TextNode>();
 
-  public TextOnlyComparator(TagNode tree) {
-    addRecursive(tree);
-  }
-
-  private void addRecursive(TagNode tree) {
-    for (Node child : tree) {
-      if (child instanceof TagNode) {
-        TagNode tagnode = (TagNode) child;
-        addRecursive(tagnode);
-      } else if (child instanceof TextNode) {
-        TextNode textnode = (TextNode) child;
-        leafs.add(textnode);
-      }
-    }
-  }
-
-  public int getRangeCount() {
-    return leafs.size();
-  }
-
-  public boolean rangesEqual(int owni, IRangeComparator otherComp, int otheri) {
-    TextOnlyComparator other;
-    try {
-      other = (TextOnlyComparator) otherComp;
-    } catch (ClassCastException e) {
-      return false;
+    public TextOnlyComparator(TagNode tree) {
+        addRecursive(tree);
     }
 
-    return getLeaf(owni).isSameText(other.getLeaf(otheri));
-  }
-
-  private TextNode getLeaf(int owni) {
-    return leafs.get(owni);
-  }
-
-  public boolean skipRangeComparison(int arg0, int arg1, IRangeComparator arg2) {
-    return false;
-  }
-
-  public double getMatchRatio(TextOnlyComparator other) {
-    LCSSettings settings = new LCSSettings();
-    settings.setUseGreedyMethod(true);
-    settings.setPowLimit(1.5);
-    settings.setTooLong(150 * 150);
-
-    RangeDifference[] differences = RangeDifferencer.findDifferences(settings, other, this);
-    int distanceOther = 0;
-    for (RangeDifference d : differences) {
-      distanceOther += d.leftLength();
+    private void addRecursive(TagNode tree) {
+        for (Node child : tree) {
+            if (child instanceof TagNode) {
+                TagNode tagnode = (TagNode) child;
+                addRecursive(tagnode);
+            } else if (child instanceof TextNode) {
+                TextNode textnode = (TextNode) child;
+                leafs.add(textnode);
+            }
+        }
     }
 
-    int distanceThis = 0;
-    for (RangeDifference d : differences) {
-      distanceThis += d.rightLength();
+    public int getRangeCount() {
+        return leafs.size();
     }
 
-    return ((0.0 + distanceOther) / other.getRangeCount() + (0.0 + distanceThis) / getRangeCount())
-        / 2;
-  }
+    public boolean rangesEqual(int owni, IRangeComparator otherComp, int otheri) {
+        TextOnlyComparator other;
+        try {
+            other = (TextOnlyComparator) otherComp;
+        } catch (ClassCastException e) {
+            return false;
+        }
+
+        return getLeaf(owni).isSameText(other.getLeaf(otheri));
+    }
+
+    private TextNode getLeaf(int owni) {
+        return leafs.get(owni);
+    }
+
+    public boolean skipRangeComparison(int arg0, int arg1, IRangeComparator arg2) {
+        return false;
+    }
+
+    public double getMatchRatio(TextOnlyComparator other) {
+        LCSSettings settings = new LCSSettings();
+        settings.setUseGreedyMethod(true);
+        settings.setPowLimit(1.5);
+        settings.setTooLong(150 * 150);
+
+        RangeDifference[] differences = RangeDifferencer.findDifferences(
+                settings, other, this);
+        int distanceOther = 0;
+        for (RangeDifference d : differences) {
+            distanceOther += d.leftLength();
+        }
+
+        int distanceThis = 0;
+        for (RangeDifference d : differences) {
+            distanceThis += d.rightLength();
+        }
+
+        return ((0.0 + distanceOther) / other.getRangeCount() + (0.0 + distanceThis)
+                / getRangeCount()) / 2;
+    }
 }

@@ -3,25 +3,24 @@ package com.dotmarketing.plugin.business;
 import com.dotmarketing.business.Cachable;
 import com.dotmarketing.plugin.model.PluginProperty;
 
-// This interface should have default package access
-public abstract class PluginCache implements Cachable {
+//This interface should have default package access
+public abstract class PluginCache implements Cachable{
 
-  protected abstract com.dotmarketing.plugin.model.Plugin add(
-      com.dotmarketing.plugin.model.Plugin plugin);
+	abstract protected com.dotmarketing.plugin.model.Plugin add(com.dotmarketing.plugin.model.Plugin plugin);
 
-  protected abstract com.dotmarketing.plugin.model.Plugin get(String pluginId);
+	abstract protected com.dotmarketing.plugin.model.Plugin get(String pluginId);
+	
+	abstract protected PluginProperty addProperty(PluginProperty pluginProperty);
+	
+	abstract protected PluginProperty getProperty(String pluginId, String propertyKey);
 
-  protected abstract PluginProperty addProperty(PluginProperty pluginProperty);
+	abstract public void clearCache();
+	
+	abstract protected void clearPluginCache();
+	
+	abstract protected void clearPropertyCache();
 
-  protected abstract PluginProperty getProperty(String pluginId, String propertyKey);
+	abstract protected void removePlugin(String pluginId);
 
-  public abstract void clearCache();
-
-  protected abstract void clearPluginCache();
-
-  protected abstract void clearPropertyCache();
-
-  protected abstract void removePlugin(String pluginId);
-
-  protected abstract void removePluginProperty(PluginProperty pluginProperty);
+	abstract protected void removePluginProperty(PluginProperty pluginProperty);
 }

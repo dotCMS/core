@@ -19,31 +19,35 @@ import java.util.ArrayList;
 import java.util.List;
 import org.xml.sax.helpers.AttributesImpl;
 
-/** Represents the root of a HTML document. */
+/**
+ * Represents the root of a HTML document.
+ */
 public class BodyNode extends TagNode {
 
-  public BodyNode() {
-    super(null, "body", new AttributesImpl());
-  }
-
-  @Override
-  public Node copyTree() {
-    BodyNode newThis = new BodyNode();
-    for (Node child : this) {
-      Node newChild = child.copyTree();
-      newChild.setParent(newThis);
-      newThis.addChild(newChild);
+    public BodyNode() {
+        super(null, "body", new AttributesImpl());
     }
-    return newThis;
-  }
 
-  @Override
-  public List<Node> getMinimalDeletedSet(long id) {
-    List<Node> nodes = new ArrayList<Node>();
-    for (Node child : this) {
-      List<Node> childrenChildren = child.getMinimalDeletedSet(id);
-      nodes.addAll(childrenChildren);
+    @Override
+    public Node copyTree() {
+        BodyNode newThis = new BodyNode();
+        for (Node child : this) {
+            Node newChild = child.copyTree();
+            newChild.setParent(newThis);
+            newThis.addChild(newChild);
+        }
+        return newThis;
     }
-    return nodes;
-  }
+    
+    @Override
+    public List<Node> getMinimalDeletedSet(long id) {
+        List<Node> nodes = new ArrayList<Node>();
+        for (Node child : this) {
+            List<Node> childrenChildren = child.getMinimalDeletedSet(id);
+            nodes.addAll(childrenChildren);
+
+        }        
+        return nodes;
+    }
+
 }

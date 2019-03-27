@@ -1,56 +1,16 @@
 package com.dotcms.contenttype.test;
 
-import static junit.framework.Assert.assertTrue;
-import static junit.framework.TestCase.assertEquals;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.fail;
-
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
-import com.dotcms.contenttype.model.field.DataTypes;
-import com.dotcms.contenttype.model.field.DateTimeField;
-import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.FieldBuilder;
-import com.dotcms.contenttype.model.field.FieldVariable;
-import com.dotcms.contenttype.model.field.ImmutableDateField;
-import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
-import com.dotcms.contenttype.model.field.ImmutableTextAreaField;
-import com.dotcms.contenttype.model.field.ImmutableTextField;
-import com.dotcms.contenttype.model.field.OnePerContentType;
-import com.dotcms.contenttype.model.field.RelationshipField;
-import com.dotcms.contenttype.model.field.TextField;
-import com.dotcms.contenttype.model.field.WysiwygField;
-import com.dotcms.contenttype.model.type.BaseContentType;
-import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.model.type.ContentTypeBuilder;
-import com.dotcms.contenttype.model.type.Expireable;
-import com.dotcms.contenttype.model.type.FileAssetContentType;
-import com.dotcms.contenttype.model.type.FormContentType;
-import com.dotcms.contenttype.model.type.ImmutableFileAssetContentType;
-import com.dotcms.contenttype.model.type.ImmutableFormContentType;
-import com.dotcms.contenttype.model.type.ImmutableKeyValueContentType;
-import com.dotcms.contenttype.model.type.ImmutablePageContentType;
-import com.dotcms.contenttype.model.type.ImmutablePersonaContentType;
-import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
-import com.dotcms.contenttype.model.type.ImmutableVanityUrlContentType;
-import com.dotcms.contenttype.model.type.ImmutableWidgetContentType;
-import com.dotcms.contenttype.model.type.KeyValueContentType;
-import com.dotcms.contenttype.model.type.PageContentType;
-import com.dotcms.contenttype.model.type.PersonaContentType;
-import com.dotcms.contenttype.model.type.SimpleContentType;
-import com.dotcms.contenttype.model.type.UrlMapable;
-import com.dotcms.contenttype.model.type.VanityUrlContentType;
-import com.dotcms.contenttype.model.type.WidgetContentType;
+import com.dotcms.contenttype.model.field.*;
+import com.dotcms.contenttype.model.type.*;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.*;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
@@ -62,6 +22,12 @@ import com.liferay.portal.model.User;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import org.apache.commons.lang.StringUtils;
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+
 import java.io.File;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -70,1622 +36,1388 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
-import org.apache.commons.lang.StringUtils;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mockito;
+
+import static junit.framework.Assert.assertTrue;
+import static junit.framework.TestCase.assertEquals;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.*;
 
 @RunWith(DataProviderRunner.class)
 public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 
-  @Test
-  public void test_languageFallback_baseTypes_FileAssetContentType_expected_true() {
+	@Test
+	public void test_languageFallback_baseTypes_FileAssetContentType_expected_true () {
 
-    final ImmutableFileAssetContentType.Builder builder = ImmutableFileAssetContentType.builder();
-    builder.name("Test");
-    final FileAssetContentType fileAssetContentType = builder.build();
+		final ImmutableFileAssetContentType.Builder builder = ImmutableFileAssetContentType.builder();
+		builder.name("Test");
+		final FileAssetContentType fileAssetContentType = builder.build();
 
-    Assert.assertTrue(fileAssetContentType.languageFallback());
-  }
+		Assert.assertTrue(fileAssetContentType.languageFallback());
+	}
 
-  @Test
-  public void test_languageFallback_baseTypes_FormContentType_expected_false() {
+	@Test
+	public void test_languageFallback_baseTypes_FormContentType_expected_false () {
 
-    final ImmutableFormContentType.Builder builder = ImmutableFormContentType.builder();
-    builder.name("Test");
-    final FormContentType formContentType = builder.build();
+		final ImmutableFormContentType.Builder builder = ImmutableFormContentType.builder();
+		builder.name("Test");
+		final FormContentType formContentType = builder.build();
 
-    Assert.assertFalse(formContentType.languageFallback());
-  }
+		Assert.assertFalse(formContentType.languageFallback());
+	}
 
-  @Test
-  public void test_languageFallback_baseTypes_PageContentType_expected_false() {
+	@Test
+	public void test_languageFallback_baseTypes_PageContentType_expected_false () {
 
-    final ImmutablePageContentType.Builder builder = ImmutablePageContentType.builder();
-    builder.name("Test");
-    final PageContentType pageContentType = builder.build();
+		final ImmutablePageContentType.Builder builder = ImmutablePageContentType.builder();
+		builder.name("Test");
+		final PageContentType pageContentType = builder.build();
 
-    Assert.assertFalse(pageContentType.languageFallback());
-  }
-
-  @Test
-  public void test_languageFallback_baseTypes_PersonaContentType_expected_false() {
+		Assert.assertFalse(pageContentType.languageFallback());
+	}
 
-    final ImmutablePersonaContentType.Builder builder = ImmutablePersonaContentType.builder();
-    builder.name("Test");
-    final PersonaContentType personaContentType = builder.build();
+	@Test
+	public void test_languageFallback_baseTypes_PersonaContentType_expected_false () {
 
-    Assert.assertFalse(personaContentType.languageFallback());
-  }
+		final ImmutablePersonaContentType.Builder builder = ImmutablePersonaContentType.builder();
+		builder.name("Test");
+		final PersonaContentType personaContentType = builder.build();
 
-  @Test
-  public void test_languageFallback_baseTypes_SimpleContentType_expected_false() {
+		Assert.assertFalse(personaContentType.languageFallback());
+	}
 
-    final ImmutableSimpleContentType.Builder builder = ImmutableSimpleContentType.builder();
-    builder.name("Test");
-    final SimpleContentType simpleContentType = builder.build();
-
-    Assert.assertFalse(simpleContentType.languageFallback());
-  }
-
-  @Test
-  public void test_languageFallback_baseTypes_WidgetContentType_expected_true() {
-
-    final ImmutableWidgetContentType.Builder builder = ImmutableWidgetContentType.builder();
-    builder.name("Test");
-    final WidgetContentType widgetContentType = builder.build();
-
-    Assert.assertTrue(widgetContentType.languageFallback());
-  }
-
-  @Test
-  public void test_languageFallback_baseTypes_VanityUrlContentType_expected_false() {
-
-    final ImmutableVanityUrlContentType.Builder builder = ImmutableVanityUrlContentType.builder();
-    builder.name("Test");
-    final VanityUrlContentType vanityUrlContentType = builder.build();
-
-    Assert.assertFalse(vanityUrlContentType.languageFallback());
-  }
-
-  @Test
-  public void test_languageFallback_baseTypes_KeyValueContentType_expected_false() {
-
-    final ImmutableKeyValueContentType.Builder builder = ImmutableKeyValueContentType.builder();
-    builder.name("Test");
-    final KeyValueContentType keyValueContentType = builder.build();
-
-    Assert.assertFalse(keyValueContentType.languageFallback());
-  }
-
-  @Test
-  public void testFindMethodEquals() throws Exception {
-
-    final List<ContentType> types = contentTypeApi.findAll(); // DB
-    for (final ContentType type : types) {
-      final ContentType contentType = contentTypeApi.find(type.id()); // cache
-      final ContentType contentType2 = contentTypeApi.find(type.variable()); // cache
-
-      assertEquals(type.id(), contentType.id(), contentType2.id());
-      assertEquals(type.name(), contentType.name(), contentType2.name());
-      assertEquals(type.variable(), contentType.variable(), contentType2.variable());
-      assertEquals(type.host(), contentType.host(), contentType2.host());
-      assertEquals(type.folder(), contentType.folder(), contentType2.folder());
-      assertEquals(
-          type.fields().toString(),
-          contentType.fields().toString(),
-          contentType2.fields().toString());
-    }
-  }
-
-  @Test
-  public void testFindAll() throws Exception {
-    List<ContentType> types = contentTypeApi.findAll();
-    assertThat(
-        "findAll sort by Name has same size as find all",
-        contentTypeApi.search("0=0", "name desc", -1, 0).size() == types.size());
-  }
-
-  @Test
-  public void testFieldsMethod() throws Exception {
-
-    ContentType type = contentTypeApi.find(Constants.NEWS);
-
-    // System.out.println(type);
-    ContentType otherType = contentTypeApi.find(Constants.NEWS);
-
-    List<Field> fields = otherType.fields();
-    // System.out.println(type);
-    List<Field> fields2 = type.fields();
-    assertThat("We have fields!", fields.size() > 0 && fields.size() == fields2.size());
-    for (int j = 0; j < fields.size(); j++) {
-      Field field = fields.get(j);
-      Field testField = fields2.get(j);
-      assertThat("fields are correct:", field.equals(testField));
-    }
-
-    fields = type.fields();
-    fields = type.fields();
-    fields = type.fields();
-  }
-
-  // Based on: https://groups.google.com/forum/?pli=1#!topic/dotcms/2-0QrRJtppw
-  @Test
-  public void Test_Fields_without_contenttype_on_saving() throws Exception {
-
-    ContentTypeAPI ctApi = APILocator.getContentTypeAPI(APILocator.systemUser());
-    ImmutableSimpleContentType.Builder builder = ImmutableSimpleContentType.builder();
-    ContentType movie = builder.name("Movie").folder(APILocator.systemHost().getFolder()).build();
-
-    try {
-      movie = ctApi.save(movie);
-
-      ImmutableTextField imdbid =
-          ImmutableTextField.builder().name("imdbid").required(true).unique(true).build();
-      ImmutableTextField title =
-          ImmutableTextField.builder().name("Title").indexed(true).required(true).build();
-      ImmutableDateField releaseDate =
-          ImmutableDateField.builder().name("Release Date").variable("releaseDate").build();
-      ImmutableTextField poster = ImmutableTextField.builder().name("Poster").build();
-      ImmutableTextField runtime = ImmutableTextField.builder().name("Runtime").build();
-      ImmutableTextAreaField plot = ImmutableTextAreaField.builder().name("Plot").build();
-      ImmutableTextField boxOffice =
-          ImmutableTextField.builder().name("Box Office").variable("boxOffice").build();
-      List<Field> fieldList = new ArrayList<>();
-      fieldList.add(imdbid);
-      fieldList.add(title);
-      fieldList.add(releaseDate);
-      fieldList.add(poster);
-      fieldList.add(runtime);
-      fieldList.add(plot);
-      fieldList.add(boxOffice);
-
-      ctApi.save(movie, fieldList);
-
-      final List<Field> fieldsRecovery =
-          APILocator.getContentTypeFieldAPI().byContentTypeId(movie.id());
-
-      for (final Field field : fieldsRecovery) {
-
-        assertEquals(movie.id(), field.contentTypeId());
-      }
-    } catch (Exception e) {
-
-      fail("Should work");
-    } finally {
-
-      ctApi.delete(movie);
-    }
-  }
-
-  @Test
-  public void testSerialization() throws Exception {
-
-    File temp = File.createTempFile("test1", "obj");
-    File temp2 = File.createTempFile("test2", "obj");
-    ContentType origType = contentTypeApi.find(Constants.NEWS);
-
-    try (ObjectOutputStream oos = new ObjectOutputStream(Files.newOutputStream(temp.toPath()))) {
-      oos.writeObject(origType);
-    }
-
-    temp.renameTo(temp2);
-    ContentType fromDisk = null;
-    try (ObjectInputStream ois = new ObjectInputStream(Files.newInputStream(temp2.toPath()))) {
-      fromDisk = (ContentType) ois.readObject();
-      ois.close();
-    }
-
-    try {
-      assertThat("fields are correct:", origType.equals(fromDisk));
-    } catch (Throwable e) {
-      System.out.println("origType" + origType);
-      System.out.println("fromDisk" + fromDisk);
-      throw e;
-    }
-
-    List<Field> fields = origType.fields();
-    List<Field> fields2 = fromDisk.fields();
-
-    assertThat("We have fields!", fields.size() > 0 && fields.size() == fields2.size());
-    for (int j = 0; j < fields.size(); j++) {
-      Field field = fields.get(j);
-      Field testField = fields2.get(j);
-      try {
-        assertThat("fields are correct:", field.equals(testField));
-      } catch (Throwable t) {
-        System.out.println("Old and New fields are NOT the same");
-        System.out.println(field);
-        System.out.println(testField);
-        throw t;
-      }
-    }
-  }
-
-  @Test
-  public void testAddingContentTypes() throws Exception {
-    int count = contentTypeApi.count();
-    int runs = 20;
-
-    for (int i = 0; i < runs; i++) {
-      int base = (i % 5) + 1;
-      Thread.sleep(1);
-      ContentType type =
-          ContentTypeBuilder.builder(BaseContentType.getContentTypeClass(base))
-              .description("description" + i)
-              .folder(FolderAPI.SYSTEM_FOLDER)
-              .host(Host.SYSTEM_HOST)
-              .name("ContentTypeTestingWithFields" + i)
-              .owner("owner")
-              .variable("velocityVarNameTesting" + i)
-              .build();
-      type = contentTypeApi.save(type);
-      addFields(type);
-    }
-    int count2 = contentTypeApi.count();
-    assertThat("contenttypes are added", count == count2 - runs);
-
-    for (int i = 0; i < runs; i++) {
-      ContentType type = contentTypeApi.find("velocityVarNameTesting" + i);
-      contentTypeApi.delete(type);
-    }
-  }
-
-  @Test
-  public void testUpdatingContentTypes() throws Exception {
-    List<ContentType> types = contentTypeApi.findUrlMapped();
-    assertThat("findUrlMapped only returns urlmapped content", types.size() > 0);
-    for (ContentType type : types) {
-      assertThat("findUrlMapped only returns urlmapped content", type.urlMapPattern() != null);
-    }
-  }
-
-  @Test
-  public void testDefaultType() throws DotDataException, DotSecurityException {
-    // Get the current DefaultContentType
-    final ContentType defaultContentType = contentTypeApi.findDefault();
-
-    ContentType newDefaultContentType = null;
-    try {
-      // Create a new ContentType
-      newDefaultContentType = createContentType("newDefaultContentType");
-
-      // Set as Default ContentType
-      contentTypeApi.setAsDefault(newDefaultContentType);
-
-      // Check that the default ContentType ID is the same as the new contentType
-      assertEquals(newDefaultContentType.id(), contentTypeApi.findDefault().id());
-
-      // Check that the defaultType attribute in the new ContentType is set to true
-      assertTrue(contentTypeApi.find(newDefaultContentType.id()).defaultType());
-    } finally {
-      // Set the DefaultContentType as it was originally
-      contentTypeApi.setAsDefault(defaultContentType);
-
-      // Check that the default ContentType ID is the same as the original defaultContentType
-      assertEquals(defaultContentType.id(), contentTypeApi.findDefault().id());
-
-      // Check that the defaultType attribute in the defaultContentType is set to true
-      assertTrue(contentTypeApi.find(defaultContentType.id()).defaultType());
-
-      // Delete the contentType created
-      if (newDefaultContentType != null) {
-        contentTypeApi.delete(newDefaultContentType);
-      }
-    }
-  }
-
-  @Test
-  public void testSearch() throws Exception {
-    String[] searchTerms = {
-      Constants.NEWS, "structuretype = 2", " And structure.inode='" + Constants.NEWS + "'"
-    };
-
-    int totalCount = contentTypeApi.count();
-
-    List<ContentType> types = contentTypeApi.search(null, BaseContentType.ANY, "name", -1, 0);
-    assertThat("we have at least 40 content types", types.size() > 20);
-    types = contentTypeApi.search(null, BaseContentType.ANY, "name", 5, 0);
-    assertThat("limit works and we have max five content types", types.size() < 6);
-    for (int x = 0; x < totalCount; x = x + 5) {
-      types = contentTypeApi.search(null, BaseContentType.ANY, "name asc", 5, 0);
-      assertThat("we have max five content types", types.size() < 6);
-    }
-
-    for (int i = 0; i < BaseContentType.values().length; i++) {
-      types = contentTypeApi.search(null, BaseContentType.getBaseContentType(i), "name", -1, 0);
-      if (!types.isEmpty()) {
-        assertThat(
-            "we have content types of " + BaseContentType.getBaseContentType(i), types.size() > 0);
-        int count = contentTypeApi.count(null, BaseContentType.getBaseContentType(i));
-        assertThat("Count works as well", types.size() == count);
-      } else {
-        System.out.println(
-            "No data found for BaseContentType: " + BaseContentType.getBaseContentType(i));
-      }
-    }
-
-    for (int i = 0; i < searchTerms.length; i++) {
-      types = contentTypeApi.search(searchTerms[i], BaseContentType.ANY, "mod_date desc", -1, 0);
-      if (!types.isEmpty()) {
-        assertThat("we can search content types:" + searchTerms[i], types.size() > 0);
-        int count = contentTypeApi.count(searchTerms[i], BaseContentType.ANY);
-        assertThat("Count works as well", types.size() == count);
-      } else {
-        System.out.println(
-            "No data found for BaseContentType: " + BaseContentType.getBaseContentType(i));
-      }
-    }
-  }
-
-  @Test
-  public void testAddingUpdatingDeleting() throws Exception {
-
-    for (BaseContentType baseType : BaseContentType.values()) {
-      if (baseType == BaseContentType.ANY) continue;
-
-      int countAll = contentTypeApi.count();
-      int runs = 10;
-      int countBaseType = contentTypeApi.count(null, baseType);
-
-      for (int i = 0; i < runs; i++) {
-        insert(baseType);
+	@Test
+	public void test_languageFallback_baseTypes_SimpleContentType_expected_false () {
+
+		final ImmutableSimpleContentType.Builder builder = ImmutableSimpleContentType.builder();
+		builder.name("Test");
+		final SimpleContentType simpleContentType = builder.build();
+
+		Assert.assertFalse(simpleContentType.languageFallback());
+	}
+
+	@Test
+	public void test_languageFallback_baseTypes_WidgetContentType_expected_true () {
+
+		final ImmutableWidgetContentType.Builder builder = ImmutableWidgetContentType.builder();
+		builder.name("Test");
+		final WidgetContentType widgetContentType = builder.build();
+
+		Assert.assertTrue(widgetContentType.languageFallback());
+	}
+
+	@Test
+	public void test_languageFallback_baseTypes_VanityUrlContentType_expected_false () {
+
+		final ImmutableVanityUrlContentType.Builder builder = ImmutableVanityUrlContentType.builder();
+		builder.name("Test");
+		final VanityUrlContentType vanityUrlContentType = builder.build();
+
+		Assert.assertFalse(vanityUrlContentType.languageFallback());
+	}
+
+	@Test
+	public void test_languageFallback_baseTypes_KeyValueContentType_expected_false () {
+
+		final ImmutableKeyValueContentType.Builder builder = ImmutableKeyValueContentType.builder();
+		builder.name("Test");
+		final KeyValueContentType keyValueContentType = builder.build();
+
+		Assert.assertFalse(keyValueContentType.languageFallback());
+	}
+
+
+
+
+
+
+	@Test
+	public void testFindMethodEquals() throws Exception {
+
+		final List<ContentType> types = contentTypeApi.findAll();//DB
+		for (final ContentType type : types) {
+			final ContentType contentType = contentTypeApi.find(type.id());//cache
+			final ContentType contentType2 = contentTypeApi.find(type.variable());//cache
+
+			assertEquals(type.id(),contentType.id(),contentType2.id());
+			assertEquals(type.name(),contentType.name(),contentType2.name());
+			assertEquals(type.variable(),contentType.variable(),contentType2.variable());
+			assertEquals(type.host(),contentType.host(),contentType2.host());
+			assertEquals(type.folder(),contentType.folder(),contentType2.folder());
+			assertEquals(type.fields().toString(),contentType.fields().toString(),contentType2.fields().toString());
+		}
+	}
+
+	@Test
+	public void testFindAll() throws Exception {
+		List<ContentType> types = contentTypeApi.findAll();
+		assertThat("findAll sort by Name has same size as find all",
+				contentTypeApi.search("0=0", "name desc", -1, 0).size() == types.size());
+	}
+
+	@Test
+	public void testFieldsMethod() throws Exception {
+
+		ContentType type = contentTypeApi.find(Constants.NEWS);
+
+		// System.out.println(type);
+		ContentType otherType = contentTypeApi.find(Constants.NEWS);
+
+		List<Field> fields = otherType.fields();
+		// System.out.println(type);
+		List<Field> fields2 = type.fields();
+		assertThat("We have fields!", fields.size() > 0 && fields.size() == fields2.size());
+		for (int j = 0; j < fields.size(); j++) {
+			Field field = fields.get(j);
+			Field testField = fields2.get(j);
+			assertThat("fields are correct:", field.equals(testField));
+		}
+
+		fields = type.fields();
+		fields = type.fields();
+		fields = type.fields();
+
+	}
+
+	// Based on: https://groups.google.com/forum/?pli=1#!topic/dotcms/2-0QrRJtppw
+	@Test
+	public void Test_Fields_without_contenttype_on_saving() throws Exception {
+
+		ContentTypeAPI ctApi = APILocator.getContentTypeAPI(APILocator.systemUser());
+		ImmutableSimpleContentType.Builder builder = ImmutableSimpleContentType.builder();
+		ContentType movie = builder.name("Movie").folder(APILocator.systemHost().getFolder()).build();
+
+		try {
+			movie = ctApi.save(movie);
+
+			ImmutableTextField imdbid = ImmutableTextField.builder().name("imdbid").required(true).unique(true).build();
+			ImmutableTextField title = ImmutableTextField.builder().name("Title").indexed(true).required(true).build();
+			ImmutableDateField releaseDate = ImmutableDateField.builder().name("Release Date").variable("releaseDate").build();
+			ImmutableTextField poster = ImmutableTextField.builder().name("Poster").build();
+			ImmutableTextField runtime = ImmutableTextField.builder().name("Runtime").build();
+			ImmutableTextAreaField plot = ImmutableTextAreaField.builder().name("Plot").build();
+			ImmutableTextField boxOffice = ImmutableTextField.builder().name("Box Office").variable("boxOffice").build();
+			List<Field> fieldList = new ArrayList<>();
+			fieldList.add(imdbid);
+			fieldList.add(title);
+			fieldList.add(releaseDate);
+			fieldList.add(poster);
+			fieldList.add(runtime);
+			fieldList.add(plot);
+			fieldList.add(boxOffice);
+
+			ctApi.save(movie, fieldList);
+
+			final List<Field> fieldsRecovery = APILocator.getContentTypeFieldAPI().byContentTypeId(movie.id());
+
+			for (final Field field : fieldsRecovery) {
+
+				assertEquals(movie.id(), field.contentTypeId());
+			}
+		} catch (Exception e) {
+
+			fail("Should work");
+		} finally {
+
+			ctApi.delete(movie);
+		}
+	}
+
+	@Test
+	public void testSerialization() throws Exception {
+
+		File temp = File.createTempFile("test1", "obj");
+		File temp2 = File.createTempFile("test2", "obj");
+		ContentType origType = contentTypeApi.find(Constants.NEWS);
+
+
+		try (ObjectOutputStream oos = new ObjectOutputStream(Files.newOutputStream(temp.toPath()))) {
+			oos.writeObject(origType);
+		}
+
+		temp.renameTo(temp2);
+		ContentType fromDisk = null;
+		try (ObjectInputStream ois = new ObjectInputStream(Files.newInputStream(temp2.toPath()))) {
+			fromDisk = (ContentType) ois.readObject();
+			ois.close();
+		}
+
+
+		try {
+			assertThat("fields are correct:", origType.equals(fromDisk));
+		} catch (Throwable e) {
+			System.out.println("origType" + origType);
+			System.out.println("fromDisk" + fromDisk);
+			throw e;
+		}
+
+		List<Field> fields = origType.fields();
+		List<Field> fields2 = fromDisk.fields();
+
+		assertThat("We have fields!", fields.size() > 0 && fields.size() == fields2.size());
+		for (int j = 0; j < fields.size(); j++) {
+			Field field = fields.get(j);
+			Field testField = fields2.get(j);
+			try {
+				assertThat("fields are correct:", field.equals(testField));
+			} catch (Throwable t) {
+				System.out.println("Old and New fields are NOT the same");
+				System.out.println(field);
+				System.out.println(testField);
+				throw t;
+			}
+		}
+
+	}
+
+	@Test
+	public void testAddingContentTypes() throws Exception {
+		int count = contentTypeApi.count();
+		int runs = 20;
+
+		for (int i = 0; i < runs; i++) {
+			int base = (i % 5) + 1;
+			Thread.sleep(1);
+			ContentType type = ContentTypeBuilder.builder(BaseContentType.getContentTypeClass(base))
+					.description("description" + i).folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
+					.name("ContentTypeTestingWithFields" + i).owner("owner").variable("velocityVarNameTesting" + i).build();
+			type = contentTypeApi.save(type);
+			addFields(type);
+		}
+		int count2 = contentTypeApi.count();
+		assertThat("contenttypes are added", count == count2 - runs);
+
+		for(int i=0;i<runs;i++){
+			ContentType type = contentTypeApi.find("velocityVarNameTesting"+i);
+			contentTypeApi.delete(type);
+		}
+
+	}
+
+	@Test
+	public void testUpdatingContentTypes() throws Exception {
+		List<ContentType> types = contentTypeApi.findUrlMapped();
+		assertThat("findUrlMapped only returns urlmapped content", types.size() > 0);
+		for (ContentType type : types) {
+			assertThat("findUrlMapped only returns urlmapped content", type.urlMapPattern() != null);
+		}
+
+	}
+
+	@Test
+	public void testDefaultType() throws DotDataException, DotSecurityException {
+		//Get the current DefaultContentType
+		final ContentType defaultContentType = contentTypeApi.findDefault();
+
+		ContentType newDefaultContentType = null;
+		try{
+			//Create a new ContentType
+			newDefaultContentType = createContentType("newDefaultContentType");
+
+			//Set as Default ContentType
+			contentTypeApi.setAsDefault(newDefaultContentType);
+
+			//Check that the default ContentType ID is the same as the new contentType
+			assertEquals(newDefaultContentType.id(),contentTypeApi.findDefault().id());
+
+			//Check that the defaultType attribute in the new ContentType is set to true
+			assertTrue(contentTypeApi.find(newDefaultContentType.id()).defaultType());
+		}finally {
+			//Set the DefaultContentType as it was originally
+			contentTypeApi.setAsDefault(defaultContentType);
+
+			//Check that the default ContentType ID is the same as the original defaultContentType
+			assertEquals(defaultContentType.id(),contentTypeApi.findDefault().id());
+
+			//Check that the defaultType attribute in the defaultContentType is set to true
+			assertTrue(contentTypeApi.find(defaultContentType.id()).defaultType());
+
+			//Delete the contentType created
+			if(newDefaultContentType != null){
+				contentTypeApi.delete(newDefaultContentType);
+			}
+		}
+	}
+
+	@Test
+	public void testSearch() throws Exception {
+		String[] searchTerms =
+			{Constants.NEWS, "structuretype = 2", " And structure.inode='" + Constants.NEWS + "'"};
+
+		int totalCount = contentTypeApi.count();
+
+		List<ContentType> types = contentTypeApi.search(null, BaseContentType.ANY, "name", -1, 0);
+		assertThat("we have at least 40 content types", types.size() > 20);
+		types = contentTypeApi.search(null, BaseContentType.ANY, "name", 5, 0);
+		assertThat("limit works and we have max five content types", types.size() < 6);
+		for (int x = 0; x < totalCount; x = x + 5) {
+			types = contentTypeApi.search(null, BaseContentType.ANY, "name asc", 5, 0);
+			assertThat("we have max five content types", types.size() < 6);
+		}
+
+		for (int i = 0; i < BaseContentType.values().length; i++) {
+			types = contentTypeApi.search(null, BaseContentType.getBaseContentType(i), "name", -1, 0);
+			if (!types.isEmpty()) {
+				assertThat("we have content types of " + BaseContentType.getBaseContentType(i),
+					types.size() > 0);
+				int count = contentTypeApi.count(null, BaseContentType.getBaseContentType(i));
+				assertThat("Count works as well", types.size() == count);
+			} else {
+				System.out.println("No data found for BaseContentType: " + BaseContentType.getBaseContentType(i));
+			}
+		}
+
+		for (int i = 0; i < searchTerms.length; i++) {
+			types = contentTypeApi.search(searchTerms[i], BaseContentType.ANY, "mod_date desc", -1, 0);
+			if (!types.isEmpty()) {
+				assertThat("we can search content types:" + searchTerms[i], types.size() > 0);
+				int count = contentTypeApi.count(searchTerms[i], BaseContentType.ANY);
+				assertThat("Count works as well", types.size() == count);
+			} else {
+				System.out.println("No data found for BaseContentType: " + BaseContentType.getBaseContentType(i));
+			}
+		}
+
+	}
+
+	@Test
+	public void testAddingUpdatingDeleting() throws Exception {
+
+		for (BaseContentType baseType : BaseContentType.values()) {
+			if (baseType == BaseContentType.ANY)
+				continue;
+
+			int countAll = contentTypeApi.count();
+			int runs = 10;
+			int countBaseType = contentTypeApi.count(null, baseType);
+
+			for (int i = 0; i < runs; i++) {
+				insert(baseType);
+				Thread.sleep(1);
+			}
+
+			int countAll2 = contentTypeApi.count();
+			int countBaseType2 = contentTypeApi.count(null, baseType);
+			assertThat("counts are working", countAll == countAll2 - runs);
+			assertThat("counts are working", countAll2 > countBaseType2);
+			assertThat("counts are working", countBaseType == countBaseType2 - runs);
+
+			for (int i = 0; i < runs; i++) {
+				insert(baseType);
+				Thread.sleep(1);
+			}
+			int countAll3 = contentTypeApi.count();
+			int countBaseType3 = contentTypeApi.count(null, baseType);
+			assertThat("counts are working", countAll2 == countAll3 - runs);
+			assertThat("counts are working", countAll3 > countBaseType3);
+			assertThat("counts are working", countBaseType2 == countBaseType3 - runs);
+
+		}
+
+		testUpdating();
+
+		testDeleting();
+	}
+
+	@Test
+	public void count() throws Exception {
+		String query = " velocity_var_name like '%content%'";
+		List<ContentType> types = contentTypeApi.search(query);
+
+		int count = contentTypeApi.count(query, BaseContentType.ANY);
+		assertThat("we have the right content types:", types.size() == count);
+	}
+
+	@Test
+	public void suggestVelocityVar() throws DotDataException {
+		String tryVar = "Content" + System.currentTimeMillis();
+		String newVar = contentTypeApi.suggestVelocityVar(tryVar);
+
+		assertThat("random velocity var works", newVar != null);
+		assertThat("random velocity var works : " + newVar + " == " + tryVar, newVar.equals(tryVar));
+
+		tryVar = "News";
+		newVar = contentTypeApi.suggestVelocityVar(tryVar);
+		assertThat("existing velocity var will not work", !newVar.equals(tryVar));
+	}
+
+	private void testDeleting() throws Exception {
+		List<ContentType> types =
+				contentTypeApi.search("velocity_var_name like 'velocityVarNameTesting%'", BaseContentType.ANY, "mod_date", -1, 0);
+		assertThat(types + " search is working", types.size() > 0);
+		for (ContentType type : types) {
+			delete(type);
+		}
+
+	}
+
+	private void testUpdating() throws Exception {
+		List<ContentType> types =
+				contentTypeApi.search("velocity_var_name like 'velocityVarNameTesting%'", BaseContentType.ANY, "mod_date", -1, 0);
+		assertThat(types + " search is working", types.size() > 0);
+		for (ContentType type : types) {
+			ContentType testing = contentTypeApi.find(type.id());
+			assertThat("contenttype is in db", testing.equals(type));
+			ContentTypeBuilder builder = ContentTypeBuilder.builder(type);
+
+			builder.host(Constants.DEFAULT_HOST);
+			builder.folder(Constants.ABOUT_US_FOLDER);
+
+			if (type instanceof UrlMapable) {
+				builder.urlMapPattern("/asdsadsadsad/");
+				builder.detailPage("asdadsad");
+
+			}
+			if (type instanceof Expireable) {
+				builder.publishDateVar("/asdsadsadsad/");
+			}
+			builder.description("new description");
+			builder.variable(type.variable() + "plus");
+
+			type = contentTypeApi.save(builder.build());
+
+			try {
+				testing = contentTypeApi.find(type.id());
+				assertThat("Type is updated", testing.equals(type));
+			} catch (Throwable t) {
+				System.out.println("Old and New Contentyypes are NOT the same");
+				System.out.println(type);
+				System.out.println(testing);
+				throw t;
+			}
+		}
+	}
+
+	private void delete(ContentType type) throws Exception {
+
+		ContentType test1 = contentTypeApi.find(type.id());
+		assertThat("factory find works", test1.equals(type));
+		Exception e = null;
+		try {
+			contentTypeApi.delete(type);
+			test1 = contentTypeApi.find(type.id());
+		} catch (Exception e2) {
+			e = e2;
+			if (!(e instanceof NotFoundInDbException))
+				throw e;
+		}
+		assertThat("Type is not found after delete", e instanceof NotFoundInDbException);
+	}
+
+	private void addFields(ContentType type) throws Exception {
+
+		long time = System.currentTimeMillis();
+		String TEST_VAR_PREFIX = "testField";
+
+		int numFields = 0;
+		for (Class clazz : APILocator.getContentTypeFieldAPI().fieldTypes()) {
+			Field fakeField = FieldBuilder.builder(clazz).name("fake").variable("fake").contentTypeId(type.id()).build();
+			boolean save = true;
+			if (fakeField instanceof OnePerContentType) {
+				for (Field field : type.fields()) {
+					if (field.getClass().equals(fakeField.getClass())) {
+						save = false;
+						break;
+					}
+				}
+			}
+			if (!save)
+				continue;
+			for (DataTypes dt : fakeField.acceptedDataTypes()) {
+				if(fakeField instanceof OnePerContentType){
+				Field savedField = FieldBuilder.builder(clazz).name("test field" + numFields)
+						.variable(TEST_VAR_PREFIX + "textField" + numFields).contentTypeId(type.id()).dataType(dt).build();
+				APILocator.getContentTypeFieldAPI().save(savedField, APILocator.systemUser());
+				numFields++;
+				break;
+				}
+			}
+		}
+	}
+
+	private static class TestCaseUpdateContentTypePermissions {
+		int permissions;
+		boolean shouldExecuteAction;
+
+		TestCaseUpdateContentTypePermissions(final int permissions, final boolean shouldExecuteAction) {
+			this.permissions = permissions;
+			this.shouldExecuteAction = shouldExecuteAction;
+		}
+	}
+
+	@DataProvider
+	public static Object[] testCasesUpdateTypePermissions() {
+		return new Object[] {
+				new TestCaseUpdateContentTypePermissions(PermissionAPI.PERMISSION_EDIT_PERMISSIONS, true),
+				new TestCaseUpdateContentTypePermissions(PermissionAPI.PERMISSION_PUBLISH, false),
+				new TestCaseUpdateContentTypePermissions(PermissionAPI.PERMISSION_EDIT, false),
+				new TestCaseUpdateContentTypePermissions(PermissionAPI.PERMISSION_READ, false)
+		};
+	}
+
+	@Test
+	@UseDataProvider("testCasesUpdateTypePermissions")
+	public void testSaveLimitedUserPermissions(final TestCaseUpdateContentTypePermissions testCase)
+			throws DotDataException, DotSecurityException {
+
+		ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+		ContentType contentGenericType = contentTypeAPI.find("webPageContent");
+		final String updatedContentTypeName = "Updated Content Generic";
+		final String originalName = contentGenericType.name();
+		contentGenericType = ContentTypeBuilder.builder(contentGenericType).name(updatedContentTypeName).build();
+
+		final User limitedUserEditPermsPermOnCT = APILocator.getUserAPI().loadUserById("dotcms.org.2795",
+				APILocator.systemUser(), false);
+
+		final List<Integer> existingPermissions = APILocator.getPermissionAPI()
+				.getPermissionIdsFromUser(contentGenericType, limitedUserEditPermsPermOnCT);
+
+		final Permission editPermissionsPermission = new Permission( contentGenericType.getPermissionId(),
+				APILocator.getRoleAPI().getUserRole(limitedUserEditPermsPermOnCT).getId(),
+				testCase.permissions, true );
+		APILocator.getPermissionAPI().save( editPermissionsPermission, contentGenericType, user,
+				false );
+
+
+		final PermissionAPI permAPI = Mockito.spy(APILocator.getPermissionAPI());
+		Mockito.doReturn(true).when(permAPI).doesUserHavePermissions(contentGenericType.getParentPermissionable(),
+				"PARENT:" + PermissionAPI.PERMISSION_CAN_ADD_CHILDREN + ", STRUCTURES:" + PermissionAPI.PERMISSION_EDIT_PERMISSIONS,
+				limitedUserEditPermsPermOnCT);
+
+		contentTypeAPI = new ContentTypeAPIImpl(limitedUserEditPermsPermOnCT, false, FactoryLocator.getContentTypeFactory(),
+				FactoryLocator.getFieldFactory(), permAPI, APILocator.getContentTypeFieldAPI(),
+				APILocator.getLocalSystemEventsAPI());
+
+		try {
+			List<Field> fields = APILocator.getContentTypeFieldAPI().byContentTypeId(contentGenericType.id());
+			contentGenericType = contentTypeAPI.save(contentGenericType, fields);
+			assertEquals(updatedContentTypeName, contentGenericType.name());
+		} catch(DotSecurityException e) {
+			assertFalse(testCase.shouldExecuteAction);
+			return;
+		}finally {
+			// restore original name
+			contentGenericType = contentTypeAPI.find("webPageContent");
+			contentGenericType = ContentTypeBuilder.builder(contentGenericType).name(originalName).build();
+			ContentTypeAPI contentTypeAPI1 = APILocator.getContentTypeAPI(user);
+			contentTypeAPI1.save(contentGenericType);
+
+			restorePermissionsForUser(limitedUserEditPermsPermOnCT, existingPermissions);
+
+		}
+
+		assertTrue(testCase.shouldExecuteAction);
+	}
+
+	@Test
+	@UseDataProvider("testCasesUpdateTypePermissions")
+	public void testDeleteLimitedUserPermissions(final TestCaseUpdateContentTypePermissions testCase)
+			throws DotDataException, DotSecurityException {
+
+		final long now = System.currentTimeMillis();
+
+		ContentType newType = ContentTypeBuilder.builder(BaseContentType.CONTENT.immutableClass())
+				.description("description").folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
+				.name("ContentTypeTesting"+now).owner("owner").variable("velocityVarNameTesting"+now).build();
+		newType = contentTypeApi.save(newType);
+		final String newTypeId = newType.id();
+
+		final User limitedUserEditPermsPermOnCT = APILocator.getUserAPI().loadUserById("dotcms.org.2795",
+				APILocator.systemUser(), false);
+
+		final List<Integer> existingPermissions = APILocator.getPermissionAPI()
+				.getPermissionIdsFromUser(newType, limitedUserEditPermsPermOnCT);
+
+		final Permission editPermissionsPermission = new Permission( newType.getPermissionId(),
+				APILocator.getRoleAPI().getUserRole(limitedUserEditPermsPermOnCT).getId(),
+				testCase.permissions, true );
+		APILocator.getPermissionAPI().save( editPermissionsPermission, newType, user,
+				false );
+
+
+		final PermissionAPI permAPI = Mockito.spy(APILocator.getPermissionAPI());
+		Mockito.doReturn(true).when(permAPI).doesUserHavePermissions(newType.getParentPermissionable(),
+				"PARENT:" + PermissionAPI.PERMISSION_CAN_ADD_CHILDREN + ", STRUCTURES:" + PermissionAPI.PERMISSION_PUBLISH,
+				limitedUserEditPermsPermOnCT);
+
+		final ContentTypeAPI contentTypeAPI = new ContentTypeAPIImpl(limitedUserEditPermsPermOnCT, false, FactoryLocator.getContentTypeFactory(),
+				FactoryLocator.getFieldFactory(), permAPI, APILocator.getContentTypeFieldAPI(),
+				APILocator.getLocalSystemEventsAPI());
+
+		try {
+			contentTypeAPI.delete(newType);
+			contentTypeAPI.find(newTypeId);
+		} catch(NotFoundInDbException e) {
+			assertTrue(testCase.shouldExecuteAction);
+		} catch(DotSecurityException e) {
+			assertFalse(testCase.shouldExecuteAction);
+			return;
+		}finally {
+			restorePermissionsForUser(limitedUserEditPermsPermOnCT, existingPermissions);
+			contentTypeApi.delete(newType);
+		}
+
+		assertTrue(testCase.shouldExecuteAction);
+	}
+
+	@Test
+	@UseDataProvider("testCasesUpdateTypePermissions")
+	public void testFieldAPISaveLimitedUserPermissions(final TestCaseUpdateContentTypePermissions testCase)
+			throws DotDataException, DotSecurityException {
+
+		final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+		final ContentType contentGenericType = contentTypeAPI.find("webPageContent");
+
+		final User limitedUserEditPermsPermOnCT = APILocator.getUserAPI().loadUserById("dotcms.org.2795",
+				APILocator.systemUser(), false);
+
+		final List<Integer> existingPermissions = APILocator.getPermissionAPI()
+				.getPermissionIdsFromUser(contentGenericType, limitedUserEditPermsPermOnCT);
+
+		final Permission editPermissionsPermission = new Permission( contentGenericType.getPermissionId(),
+				APILocator.getRoleAPI().getUserRole(limitedUserEditPermsPermOnCT).getId(),
+				testCase.permissions, true );
+		APILocator.getPermissionAPI().save( editPermissionsPermission, contentGenericType, user,
+				false );
+
+		final FieldAPI fieldAPI = APILocator.getContentTypeFieldAPI();
+		final Field titleField = fieldAPI.byContentTypeAndVar(contentGenericType, "title");
+
+
+		try {
+			fieldAPI.save(titleField,limitedUserEditPermsPermOnCT);
+		} catch(DotSecurityException e) {
+			assertFalse(testCase.shouldExecuteAction);
+			return;
+		} finally {
+			restorePermissionsForUser(limitedUserEditPermsPermOnCT, existingPermissions);
+		}
+		assertTrue(testCase.shouldExecuteAction);
+	}
+
+	@Test
+	@UseDataProvider("testCasesUpdateTypePermissions")
+	public void testFieldAPIDeleteLimitedUserPermissions(final TestCaseUpdateContentTypePermissions testCase)
+			throws DotDataException, DotSecurityException {
+
+		final long now = System.currentTimeMillis();
+
+		ContentType newType = ContentTypeBuilder.builder(BaseContentType.CONTENT.immutableClass())
+				.description("description").folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
+				.name("ContentTypeTesting"+now).owner("owner").variable("velocityVarNameTesting"+now).build();
+		newType = contentTypeApi.save(newType);
+		final String newTypeId = newType.id();
+
+		final User limitedUser = APILocator.getUserAPI().loadUserById("dotcms.org.2795",
+				APILocator.systemUser(), false);
+
+		final List<Integer> existingPermissions = APILocator.getPermissionAPI()
+				.getPermissionIdsFromUser(newType, limitedUser);
+
+		Permission readPermissions = new Permission( newType.getPermissionId(),
+				APILocator.getRoleAPI().getUserRole(limitedUser).getId(), PermissionAPI.PERMISSION_READ );
+		APILocator.getPermissionAPI().save( readPermissions, newType, user, false );
+
+		final Permission editPermissionsPermission = new Permission( newType.getPermissionId(),
+				APILocator.getRoleAPI().getUserRole(limitedUser).getId(),
+				testCase.permissions, false );
+		APILocator.getPermissionAPI().save( editPermissionsPermission, newType, user, false );
+
+		Field newField = FieldBuilder.builder(WysiwygField.class).name("my test field")
+				.variable(now + "textField").contentTypeId(newType.id()).dataType(DataTypes.LONG_TEXT).build();
+		newField = APILocator.getContentTypeFieldAPI().save(newField, APILocator.systemUser());
+		final String newFieldId = newField.id();
+
+
+		try {
+			APILocator.getContentTypeFieldAPI().delete(newField, limitedUser);
+			APILocator.getContentTypeFieldAPI().find(newFieldId);
+		} catch(NotFoundInDbException e) {
+			assertTrue(testCase.shouldExecuteAction);
+		} catch(DotSecurityException e) {
+			assertFalse(testCase.shouldExecuteAction);
+			return;
+		} finally {
+			restorePermissionsForUser(limitedUser, existingPermissions);
+			contentTypeApi.delete(newType);
+		}
+		assertTrue(testCase.shouldExecuteAction);
+	}
+
+	@DataProvider
+	public static Object[] testCasesSaveContentTypePermissions() {
+		return new Object[] {
+				new TestCaseUpdateContentTypePermissions(PermissionAPI.PERMISSION_EDIT_PERMISSIONS, true),
+				new TestCaseUpdateContentTypePermissions(PermissionAPI.PERMISSION_PUBLISH, false),
+				new TestCaseUpdateContentTypePermissions(PermissionAPI.PERMISSION_EDIT, false),
+				new TestCaseUpdateContentTypePermissions(PermissionAPI.PERMISSION_READ, false)
+		};
+	}
+
+	@Test
+	@UseDataProvider("testCasesSaveContentTypePermissions")
+	public void testSaveContentTypeLimitedUserPermissions(final TestCaseUpdateContentTypePermissions testCase)
+			throws DotDataException, DotSecurityException{
+	    //Create Folder
+		final Folder folder = new FolderDataGen().host(APILocator.systemHost()).nextPersisted();
+
+		//Create Content Type
+		long time = System.currentTimeMillis();
+
+		ContentType contentType = ContentTypeBuilder.builder(BaseContentType.getContentTypeClass(BaseContentType.CONTENT.ordinal()))
+				.description("ContentTypeSave " + time).name("ContentTypeSave " + time).folder(folder.getInode())
+				.owner(APILocator.systemUser().toString()).variable("CTVariable" + time).build();
+
+		//Get Limited User
+		final User limitedUserEditPermsPermOnCT = APILocator.getUserAPI().loadUserById("dotcms.org.2795",
+				APILocator.systemUser(), false);
+
+		final PermissionAPI permAPI = Mockito.spy(APILocator.getPermissionAPI());
+		Mockito.doReturn(true).when(permAPI).doesUserHavePermissions(contentType.getParentPermissionable(),
+				"PARENT:" + PermissionAPI.PERMISSION_CAN_ADD_CHILDREN + ", STRUCTURES:" + testCase.permissions,
+				limitedUserEditPermsPermOnCT);
+		//Give READ PERMISSIONS to the folder
+		Permission readPermissions = new Permission(folder.getPermissionId(),
+				APILocator.getRoleAPI().getUserRole(limitedUserEditPermsPermOnCT).getId(), PermissionAPI.PERMISSION_READ );
+		APILocator.getPermissionAPI().save( readPermissions, folder, user, false );
+
+		ContentTypeAPI contentTypeAPI = new ContentTypeAPIImpl(limitedUserEditPermsPermOnCT, false, FactoryLocator.getContentTypeFactory(),
+				FactoryLocator.getFieldFactory(), permAPI, APILocator.getContentTypeFieldAPI(),
+				APILocator.getLocalSystemEventsAPI());
+		//Try to Save Content Type
+		try{
+			contentType = contentTypeAPI.save(contentType);
+		}catch (DotSecurityException e){
+			assertFalse(e.getMessage(), testCase.shouldExecuteAction);
+			return;
+		}finally {
+			if(UtilMethods.isSet(contentType.id())) {
+				//Delete content Type
+				contentTypeApi.delete(contentType);
+			}
+			//Delete folder
+			APILocator.getFolderAPI().delete(folder,user,false);
+		}
+		assertTrue(testCase.shouldExecuteAction);
+	}
+
+	@Test(expected = NotFoundInDbException.class)
+	public void testDeleteContentType_GivenLimitedUserWithNoPermissionsUnderContentAndEnoughPermissionsToDeleteType_ShouldDeleteTypeRegardless()
+			throws DotDataException, DotSecurityException {
+
+		final long now = System.currentTimeMillis();
+
+		ContentType newType = ContentTypeBuilder.builder(BaseContentType.CONTENT.immutableClass())
+				.description("description").folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
+				.name("ContentTypeTesting"+now).owner("owner").variable("velocityVarNameTesting"+now).build();
+		newType = contentTypeApi.save(newType);
+		final String newTypeId = newType.id();
+
+		final User limitedUserEditPermsPermOnCT = APILocator.getUserAPI().loadUserById("dotcms.org.2795",
+				APILocator.systemUser(), false);
+
+		final List<Integer> existingPermissions = APILocator.getPermissionAPI()
+				.getPermissionIdsFromUser(newType, limitedUserEditPermsPermOnCT);
+
+		final Permission editPermissionsPermission = new Permission( newType.getPermissionId(),
+				APILocator.getRoleAPI().getUserRole(limitedUserEditPermsPermOnCT).getId(),
+				PermissionAPI.PERMISSION_EDIT_PERMISSIONS, true );
+		APILocator.getPermissionAPI().save( editPermissionsPermission, newType, user,
+				false );
+
+		ContentletDataGen contentletDataGen = new ContentletDataGen(newTypeId);
+		contentletDataGen.nextPersisted();
+		final ContentTypeAPI contentTypeAPI = new ContentTypeAPIImpl(limitedUserEditPermsPermOnCT, false, FactoryLocator.getContentTypeFactory(),
+				FactoryLocator.getFieldFactory(), APILocator.getPermissionAPI(), APILocator.getContentTypeFieldAPI(),
+				APILocator.getLocalSystemEventsAPI());
+
+		try {
+			contentTypeAPI.delete(newType);
+			contentTypeAPI.find(newTypeId);
+		}  finally {
+			restorePermissionsForUser(limitedUserEditPermsPermOnCT, existingPermissions);
+			contentTypeApi.delete(newType);
+		}
+	}
+
+	private void restorePermissionsForUser(User limitedUserEditPermsPermOnCT, List<Integer> existingPermissions) throws DotSecurityException, DotDataException {
+		final ContentType restoredContentGeneric = contentTypeApi.find("webPageContent");
+
+		// restore original permissions
+		existingPermissions.forEach((permission)-> {
+			try {
+				final Permission originalPermissions = new Permission( restoredContentGeneric.getPermissionId(),
+						APILocator.getRoleAPI().getUserRole(limitedUserEditPermsPermOnCT).getId(),
+						permission, true );
+				APILocator.getPermissionAPI().save( originalPermissions, restoredContentGeneric, user,
+						false );
+			} catch (DotDataException | DotSecurityException e) {
+				Logger.error(this, "Error restoring original state");
+			}
+
+		});
+	}
+
+	/**
+	 * This test create a Content type with fixed fields, update some fields and delete the content type
+	 * @throws Exception
+	 */
+	@Test
+	public void testAddingUpdatingDeletingContentTypeWithFixedFields() throws Exception{
+		
+		int count = contentTypeApi.count();
+		String TEST_VAR_PREFIX = "myTestField";
+		
+		long time = System.currentTimeMillis();
+		int base = BaseContentType.WIDGET.ordinal();
+		Thread.sleep(1);
+		ContentType type = ContentTypeBuilder.builder(BaseContentType.getContentTypeClass(base))
+					.description("description" + time).folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
+					.name("ContentTypeTestingWithFixedFields" + time).owner("owner").variable("velocityVarNameTesting" + time).build();
+		type = contentTypeApi.save(type, null, null);
+		
+		int count2 = contentTypeApi.count();
+		assertThat("contenttypes are added", count == count2 - 1);
+		type = contentTypeApi.find(type.id());
+		assertThat("Content type found", type != null && StringUtils.isNotEmpty(type.id()) );
+		
+		//Add Field
+		List<Field> fields = type.fields();
+		int fieldsCount = fields.size();
+		Field savedField = FieldBuilder.builder(WysiwygField.class).name("my test field")
+				.variable(TEST_VAR_PREFIX + "textField").contentTypeId(type.id()).dataType(DataTypes.LONG_TEXT).build();
+		APILocator.getContentTypeFieldAPI().save(savedField, APILocator.systemUser());
+		type = contentTypeApi.find(type.id());
+		List<Field> newFields = type.fields();
+		
+		int fieldsCount2 = newFields.size();
+		assertThat("contenttypes field added", fieldsCount < fieldsCount2);
+		
+		//remove field
+		contentTypeApi.save(type, fields);
+		type = contentTypeApi.find(type.id());
+		fieldsCount2 = type.fields().size();
+		assertThat("contenttypes field removed", fieldsCount == fieldsCount2);
+		
+		//deleting content type
+		delete(type);
+	}
+
+    /**
+     * Test the updateModDate method of the contenttypeapi
+     * to help detect the changes on fields and field variables
+     * @throws Exception
+     */
+    @Test
+    public void testUpdateContentTypeModDate() throws Exception{
+        long time = System.currentTimeMillis();
+        String TEST_VAR_PREFIX = "myTestField";
+        String TEST_FIELD_VAR_PREFIX = "myTestFieldVar";
+        String TEST_FIELD_VAR_VALUE_PREFIX = "myTestFieldVar";
+        int base = BaseContentType.CONTENT.ordinal();
+
         Thread.sleep(1);
-      }
+        ContentType type = ContentTypeBuilder.builder(BaseContentType.getContentTypeClass(base))
+                .description("description" + time).folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
+                .name("ContentTypeTestingUpdateModDate" + time).owner("owner").variable("velocityVarNameTesting" + time).build();
+        type = contentTypeApi.save(type, null, null);
 
-      int countAll2 = contentTypeApi.count();
-      int countBaseType2 = contentTypeApi.count(null, baseType);
-      assertThat("counts are working", countAll == countAll2 - runs);
-      assertThat("counts are working", countAll2 > countBaseType2);
-      assertThat("counts are working", countBaseType == countBaseType2 - runs);
+        int fieldsCount = type.fields().size();
+        Date creationModDate = type.modDate();
+        assertThat("contenttypes mod_date is not null", creationModDate != null);
+        //calling updatemod_date method
+        Thread.sleep(1000);
+        contentTypeApi.updateModDate(type);
+        //getting new mod_date
+        type = contentTypeApi.find(type.id());
+        Date currentModDate = type.modDate();
+        assertThat("contenttypes current mod_date is not null", currentModDate != null);
+        assertThat("contenttypes mod_date is updated", creationModDate != currentModDate);
+        assertThat("contenttypes mod_date is updated", currentModDate.compareTo(creationModDate) > 0);
 
-      for (int i = 0; i < runs; i++) {
-        insert(baseType);
-        Thread.sleep(1);
-      }
-      int countAll3 = contentTypeApi.count();
-      int countBaseType3 = contentTypeApi.count(null, baseType);
-      assertThat("counts are working", countAll2 == countAll3 - runs);
-      assertThat("counts are working", countAll3 > countBaseType3);
-      assertThat("counts are working", countBaseType2 == countBaseType3 - runs);
+        //Test Content Type mod_date changes after adding a Field
+        Thread.sleep(1000);
+        Field savedField = FieldBuilder.builder(WysiwygField.class).name("my test field")
+                .variable(TEST_VAR_PREFIX + "textField").contentTypeId(type.id()).dataType(DataTypes.LONG_TEXT).build();
+        savedField = APILocator.getContentTypeFieldAPI().save(savedField, APILocator.systemUser());
+        type = contentTypeApi.find(type.id());
+        int updatedFieldsCount = type.fields().size();
+        Date addFieldDate = type.modDate();
+        assertThat("contenttypes current mod_date is not null", addFieldDate != null);
+        assertThat("contenttypes mod_date is updated", addFieldDate != currentModDate);
+        assertThat("contenttypes mod_date is updated after add Field", addFieldDate.compareTo(currentModDate) > 0);
+        assertThat("contenttypes fields incremented", updatedFieldsCount > fieldsCount);
+
+        //Test Content Type mod_date changes after  edit Field
+        Thread.sleep(1000);
+        savedField = FieldBuilder.builder(savedField).indexed(true).build();
+        savedField = APILocator.getContentTypeFieldAPI().save(savedField, APILocator.systemUser());
+        type = contentTypeApi.find(type.id());
+        Date editFieldDate = type.modDate();
+        int updatedFieldsCount2 = type.fields().size();
+        assertThat("contenttypes current mod_date is not null", editFieldDate != null);
+        assertThat("contenttypes mod_date is updated", editFieldDate != addFieldDate);
+        assertThat("contenttypes mod_date is updated after edit Field", editFieldDate.compareTo(addFieldDate) > 0);
+        assertThat("contenttypes fields are the same", updatedFieldsCount == updatedFieldsCount2);
+
+        //Test Content Type mod_date changes after adding a Field Variable
+        Thread.sleep(1000);
+        FieldVariable savedFieldVar = ImmutableFieldVariable.builder().id(null)
+                .fieldId(savedField.id()).name(TEST_FIELD_VAR_PREFIX+time)
+                .key(TEST_FIELD_VAR_PREFIX+time).value(TEST_FIELD_VAR_VALUE_PREFIX+time)
+                .userId(APILocator.systemUser().getUserId()).modDate(new Date()).build();
+        savedFieldVar = APILocator.getContentTypeFieldAPI().save(savedFieldVar, APILocator.systemUser());
+        type = contentTypeApi.find(type.id());
+        Date addFieldVariableDate = type.modDate();
+        assertThat("contenttypes current mod_date is not null", addFieldVariableDate != null);
+        assertThat("contenttypes mod_date is updated", addFieldVariableDate != editFieldDate);
+        assertThat("contenttypes mod_date is updated after add Field Variable", addFieldVariableDate.compareTo(editFieldDate) > 0);
+        assertThat("Field Variable is added ",APILocator.getContentTypeFieldAPI().find(savedField.id()).fieldVariables().size() == 1);
+
+        //Test Content Type mod_date changes after editing a Field Variable
+        Thread.sleep(1000);
+        savedFieldVar = ImmutableFieldVariable.builder().id(savedFieldVar.id())
+                .fieldId(savedField.id()).name(TEST_FIELD_VAR_PREFIX+time)
+                .key(TEST_FIELD_VAR_PREFIX+time).value(TEST_FIELD_VAR_VALUE_PREFIX+(time+1))
+                .userId(APILocator.systemUser().getUserId()).modDate(new Date()).build();
+        savedFieldVar = APILocator.getContentTypeFieldAPI().save(savedFieldVar, APILocator.systemUser());
+        type = contentTypeApi.find(type.id());
+        Date editFieldVariableDate = type.modDate();
+        assertThat("contenttypes current mod_date is not null", editFieldVariableDate != null);
+        assertThat("contenttypes mod_date is updated", editFieldVariableDate != addFieldVariableDate);
+        assertThat("contenttypes mod_date is updated", editFieldVariableDate.compareTo(addFieldVariableDate) > 0);
+        assertThat("Field Variable is updated ",APILocator.getContentTypeFieldAPI().find(savedField.id()).fieldVariables().size() == 1);
+        assertThat("Field Variable was updated properly",APILocator.getContentTypeFieldAPI().find(savedField.id()).fieldVariables().get(0).value().equals(TEST_FIELD_VAR_VALUE_PREFIX+(time+1)));
+
+        //Test Content Type mod_date changes after deleting a Field Variable
+        Thread.sleep(1000);
+        APILocator.getContentTypeFieldAPI().delete(savedFieldVar);
+        type = contentTypeApi.find(type.id());
+        Date deleteFieldVarDate = type.modDate();
+        updatedFieldsCount = type.fields().size();
+        assertThat("contenttypes current mod_date is not null", deleteFieldVarDate != null);
+        assertThat("contenttypes mod_date is updated", deleteFieldVarDate != editFieldVariableDate);
+        assertThat("contenttypes mod_date is updated after delete Field Variable", deleteFieldVarDate.compareTo(editFieldVariableDate) > 0);
+        assertThat("Field Variable is removed ",APILocator.getContentTypeFieldAPI().find(savedField.id()).fieldVariables().size() == 0);
+
+        //Test Content Type mod_date changes after deleting a Field
+        Thread.sleep(1000);
+        APILocator.getContentTypeFieldAPI().delete(savedField);
+        type = contentTypeApi.find(type.id());
+        Date deleteFieldDate = type.modDate();
+        updatedFieldsCount = type.fields().size();
+        assertThat("contenttypes current mod_date is not null", deleteFieldDate != null);
+        assertThat("contenttypes mod_date is updated", deleteFieldDate != deleteFieldVarDate);
+        assertThat("contenttypes mod_date is updated after delete Field", deleteFieldDate.compareTo(deleteFieldVarDate) > 0);
+        assertThat("contenttypes field removed", updatedFieldsCount == fieldsCount);
+        //deleting content type
+        delete(type);
     }
 
-    testUpdating();
+	/**
+	 * Creates a Content Type with a fixed field and then tries to update it with a field with same VarName and DBColumn but different ID.
+	 * @throws Exception
+	 */
+	@Test
+	public void testUpdatingContentTypeWithFixedFieldsDifferentFieldID() throws Exception{
 
-    testDeleting();
-  }
+        int base = BaseContentType.WIDGET.ordinal();
+        long time = System.currentTimeMillis();
 
-  @Test
-  public void count() throws Exception {
-    String query = " velocity_var_name like '%content%'";
-    List<ContentType> types = contentTypeApi.search(query);
+        final String FIRST_UUID = UUID.randomUUID().toString();
+        final String FIRST_NAME = "My Fixed Field";
+        final String SECOND_UUID = UUID.randomUUID().toString();
+        final String SECOND_NAME = "My Fixed Field Updated";
 
-    int count = contentTypeApi.count(query, BaseContentType.ANY);
-    assertThat("we have the right content types:", types.size() == count);
-  }
+	    ContentType contentType = ContentTypeBuilder
+                .builder(BaseContentType.getContentTypeClass(base))
+                .description("Description" + time)
+                .folder(FolderAPI.SYSTEM_FOLDER)
+                .host(Host.SYSTEM_HOST)
+                .name("ContentTypeWithFixedFieldsDifferentFieldID" + time)
+                .owner("Me")
+                .variable("CTVariable" + time)
+                .build();
+        contentType = contentTypeApi.save(contentType);
 
-  @Test
-  public void suggestVelocityVar() throws DotDataException {
-    String tryVar = "Content" + System.currentTimeMillis();
-    String newVar = contentTypeApi.suggestVelocityVar(tryVar);
+        assertThat("ContentType exists", contentTypeApi.find( contentType.inode() ) != null);
 
-    assertThat("random velocity var works", newVar != null);
-    assertThat("random velocity var works : " + newVar + " == " + tryVar, newVar.equals(tryVar));
+        //Add Field.
+        List<Field> fields = new ArrayList<>( contentType.fields() );
+        List<Field> originalFields = new ArrayList<>( fields );
 
-    tryVar = "News";
-    newVar = contentTypeApi.suggestVelocityVar(tryVar);
-    assertThat("existing velocity var will not work", !newVar.equals(tryVar));
-  }
+        int originalFieldSize = fields.size();
 
-  private void testDeleting() throws Exception {
-    List<ContentType> types =
-        contentTypeApi.search(
-            "velocity_var_name like 'velocityVarNameTesting%'",
-            BaseContentType.ANY, "mod_date", -1, 0);
-    assertThat(types + " search is working", types.size() > 0);
-    for (ContentType type : types) {
-      delete(type);
-    }
-  }
+        final String TEST_VAR_NAME = "myFixedVarName";
 
-  private void testUpdating() throws Exception {
-    List<ContentType> types =
-        contentTypeApi.search(
-            "velocity_var_name like 'velocityVarNameTesting%'",
-            BaseContentType.ANY, "mod_date", -1, 0);
-    assertThat(types + " search is working", types.size() > 0);
-    for (ContentType type : types) {
-      ContentType testing = contentTypeApi.find(type.id());
-      assertThat("contenttype is in db", testing.equals(type));
-      ContentTypeBuilder builder = ContentTypeBuilder.builder(type);
+        Field fieldToSave = FieldBuilder.builder( TextField.class )
+                .name( FIRST_NAME )
+                .variable( TEST_VAR_NAME )
+                .contentTypeId( contentType.id() )
+                .dataType( DataTypes.TEXT )
+                .fixed( true )
+                .dbColumn( "text15" )
+                .id( FIRST_UUID )
+                .build();
 
-      builder.host(Constants.DEFAULT_HOST);
-      builder.folder(Constants.ABOUT_US_FOLDER);
+        fields.add( fieldToSave );
 
-      if (type instanceof UrlMapable) {
-        builder.urlMapPattern("/asdsadsadsad/");
-        builder.detailPage("asdadsad");
-      }
-      if (type instanceof Expireable) {
-        builder.publishDateVar("/asdsadsadsad/");
-      }
-      builder.description("new description");
-      builder.variable(type.variable() + "plus");
+        contentType = contentTypeApi.save( contentType, fields );
 
-      type = contentTypeApi.save(builder.build());
-
-      try {
-        testing = contentTypeApi.find(type.id());
-        assertThat("Type is updated", testing.equals(type));
-      } catch (Throwable t) {
-        System.out.println("Old and New Contentyypes are NOT the same");
-        System.out.println(type);
-        System.out.println(testing);
-        throw t;
-      }
-    }
-  }
-
-  private void delete(ContentType type) throws Exception {
-
-    ContentType test1 = contentTypeApi.find(type.id());
-    assertThat("factory find works", test1.equals(type));
-    Exception e = null;
-    try {
-      contentTypeApi.delete(type);
-      test1 = contentTypeApi.find(type.id());
-    } catch (Exception e2) {
-      e = e2;
-      if (!(e instanceof NotFoundInDbException)) throw e;
-    }
-    assertThat("Type is not found after delete", e instanceof NotFoundInDbException);
-  }
-
-  private void addFields(ContentType type) throws Exception {
-
-    long time = System.currentTimeMillis();
-    String TEST_VAR_PREFIX = "testField";
-
-    int numFields = 0;
-    for (Class clazz : APILocator.getContentTypeFieldAPI().fieldTypes()) {
-      Field fakeField =
-          FieldBuilder.builder(clazz)
-              .name("fake")
-              .variable("fake")
-              .contentTypeId(type.id())
-              .build();
-      boolean save = true;
-      if (fakeField instanceof OnePerContentType) {
-        for (Field field : type.fields()) {
-          if (field.getClass().equals(fakeField.getClass())) {
-            save = false;
-            break;
-          }
+        //Lets check that the Field was added.
+        Field fieldFound = null;
+        for ( Field field : contentType.fields() ) {
+            if ( field.id().equals( FIRST_UUID ) ){
+                fieldFound = field;
+            }
         }
-      }
-      if (!save) continue;
-      for (DataTypes dt : fakeField.acceptedDataTypes()) {
-        if (fakeField instanceof OnePerContentType) {
-          Field savedField =
-              FieldBuilder.builder(clazz)
-                  .name("test field" + numFields)
-                  .variable(TEST_VAR_PREFIX + "textField" + numFields)
-                  .contentTypeId(type.id())
-                  .dataType(dt)
-                  .build();
-          APILocator.getContentTypeFieldAPI().save(savedField, APILocator.systemUser());
-          numFields++;
-          break;
+        Assert.assertNotNull( fieldFound );
+        Assert.assertEquals( FIRST_NAME, fieldFound.name() );
+
+        Field fieldToSaveDifferentID = FieldBuilder.builder( TextField.class )
+                .name( SECOND_NAME )
+                .variable( TEST_VAR_NAME )
+                .contentTypeId( contentType.id() )
+                .dataType( DataTypes.TEXT )
+                .fixed( true )
+                .dbColumn( "text15" )
+                .id( SECOND_UUID )
+                .build();
+
+        originalFields.add( fieldToSaveDifferentID );
+
+        contentType = contentTypeApi.save( contentType, originalFields );
+
+        //Lets check that the Field was updated.
+        fieldFound = null;
+        for ( Field field : contentType.fields() ) {
+            if ( field.id().equals( FIRST_UUID ) ){
+                fieldFound = field;
+            }
         }
-      }
-    }
-  }
-
-  private static class TestCaseUpdateContentTypePermissions {
-    int permissions;
-    boolean shouldExecuteAction;
-
-    TestCaseUpdateContentTypePermissions(final int permissions, final boolean shouldExecuteAction) {
-      this.permissions = permissions;
-      this.shouldExecuteAction = shouldExecuteAction;
-    }
-  }
-
-  @DataProvider
-  public static Object[] testCasesUpdateTypePermissions() {
-    return new Object[] {
-      new TestCaseUpdateContentTypePermissions(PermissionAPI.PERMISSION_EDIT_PERMISSIONS, true),
-      new TestCaseUpdateContentTypePermissions(PermissionAPI.PERMISSION_PUBLISH, false),
-      new TestCaseUpdateContentTypePermissions(PermissionAPI.PERMISSION_EDIT, false),
-      new TestCaseUpdateContentTypePermissions(PermissionAPI.PERMISSION_READ, false)
-    };
-  }
-
-  @Test
-  @UseDataProvider("testCasesUpdateTypePermissions")
-  public void testSaveLimitedUserPermissions(final TestCaseUpdateContentTypePermissions testCase)
-      throws DotDataException, DotSecurityException {
-
-    ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
-    ContentType contentGenericType = contentTypeAPI.find("webPageContent");
-    final String updatedContentTypeName = "Updated Content Generic";
-    final String originalName = contentGenericType.name();
-    contentGenericType =
-        ContentTypeBuilder.builder(contentGenericType).name(updatedContentTypeName).build();
-
-    final User limitedUserEditPermsPermOnCT =
-        APILocator.getUserAPI().loadUserById("dotcms.org.2795", APILocator.systemUser(), false);
-
-    final List<Integer> existingPermissions =
-        APILocator.getPermissionAPI()
-            .getPermissionIdsFromUser(contentGenericType, limitedUserEditPermsPermOnCT);
-
-    final Permission editPermissionsPermission =
-        new Permission(
-            contentGenericType.getPermissionId(),
-            APILocator.getRoleAPI().getUserRole(limitedUserEditPermsPermOnCT).getId(),
-            testCase.permissions,
-            true);
-    APILocator.getPermissionAPI().save(editPermissionsPermission, contentGenericType, user, false);
-
-    final PermissionAPI permAPI = Mockito.spy(APILocator.getPermissionAPI());
-    Mockito.doReturn(true)
-        .when(permAPI)
-        .doesUserHavePermissions(
-            contentGenericType.getParentPermissionable(),
-            "PARENT:"
-                + PermissionAPI.PERMISSION_CAN_ADD_CHILDREN
-                + ", STRUCTURES:"
-                + PermissionAPI.PERMISSION_EDIT_PERMISSIONS,
-            limitedUserEditPermsPermOnCT);
-
-    contentTypeAPI =
-        new ContentTypeAPIImpl(
-            limitedUserEditPermsPermOnCT,
-            false,
-            FactoryLocator.getContentTypeFactory(),
-            FactoryLocator.getFieldFactory(),
-            permAPI,
-            APILocator.getContentTypeFieldAPI(),
-            APILocator.getLocalSystemEventsAPI());
-
-    try {
-      List<Field> fields =
-          APILocator.getContentTypeFieldAPI().byContentTypeId(contentGenericType.id());
-      contentGenericType = contentTypeAPI.save(contentGenericType, fields);
-      assertEquals(updatedContentTypeName, contentGenericType.name());
-    } catch (DotSecurityException e) {
-      assertFalse(testCase.shouldExecuteAction);
-      return;
-    } finally {
-      // restore original name
-      contentGenericType = contentTypeAPI.find("webPageContent");
-      contentGenericType =
-          ContentTypeBuilder.builder(contentGenericType).name(originalName).build();
-      ContentTypeAPI contentTypeAPI1 = APILocator.getContentTypeAPI(user);
-      contentTypeAPI1.save(contentGenericType);
-
-      restorePermissionsForUser(limitedUserEditPermsPermOnCT, existingPermissions);
-    }
-
-    assertTrue(testCase.shouldExecuteAction);
-  }
-
-  @Test
-  @UseDataProvider("testCasesUpdateTypePermissions")
-  public void testDeleteLimitedUserPermissions(final TestCaseUpdateContentTypePermissions testCase)
-      throws DotDataException, DotSecurityException {
-
-    final long now = System.currentTimeMillis();
-
-    ContentType newType =
-        ContentTypeBuilder.builder(BaseContentType.CONTENT.immutableClass())
-            .description("description")
-            .folder(FolderAPI.SYSTEM_FOLDER)
-            .host(Host.SYSTEM_HOST)
-            .name("ContentTypeTesting" + now)
-            .owner("owner")
-            .variable("velocityVarNameTesting" + now)
-            .build();
-    newType = contentTypeApi.save(newType);
-    final String newTypeId = newType.id();
-
-    final User limitedUserEditPermsPermOnCT =
-        APILocator.getUserAPI().loadUserById("dotcms.org.2795", APILocator.systemUser(), false);
-
-    final List<Integer> existingPermissions =
-        APILocator.getPermissionAPI()
-            .getPermissionIdsFromUser(newType, limitedUserEditPermsPermOnCT);
-
-    final Permission editPermissionsPermission =
-        new Permission(
-            newType.getPermissionId(),
-            APILocator.getRoleAPI().getUserRole(limitedUserEditPermsPermOnCT).getId(),
-            testCase.permissions,
-            true);
-    APILocator.getPermissionAPI().save(editPermissionsPermission, newType, user, false);
-
-    final PermissionAPI permAPI = Mockito.spy(APILocator.getPermissionAPI());
-    Mockito.doReturn(true)
-        .when(permAPI)
-        .doesUserHavePermissions(
-            newType.getParentPermissionable(),
-            "PARENT:"
-                + PermissionAPI.PERMISSION_CAN_ADD_CHILDREN
-                + ", STRUCTURES:"
-                + PermissionAPI.PERMISSION_PUBLISH,
-            limitedUserEditPermsPermOnCT);
-
-    final ContentTypeAPI contentTypeAPI =
-        new ContentTypeAPIImpl(
-            limitedUserEditPermsPermOnCT,
-            false,
-            FactoryLocator.getContentTypeFactory(),
-            FactoryLocator.getFieldFactory(),
-            permAPI,
-            APILocator.getContentTypeFieldAPI(),
-            APILocator.getLocalSystemEventsAPI());
-
-    try {
-      contentTypeAPI.delete(newType);
-      contentTypeAPI.find(newTypeId);
-    } catch (NotFoundInDbException e) {
-      assertTrue(testCase.shouldExecuteAction);
-    } catch (DotSecurityException e) {
-      assertFalse(testCase.shouldExecuteAction);
-      return;
-    } finally {
-      restorePermissionsForUser(limitedUserEditPermsPermOnCT, existingPermissions);
-      contentTypeApi.delete(newType);
-    }
-
-    assertTrue(testCase.shouldExecuteAction);
-  }
-
-  @Test
-  @UseDataProvider("testCasesUpdateTypePermissions")
-  public void testFieldAPISaveLimitedUserPermissions(
-      final TestCaseUpdateContentTypePermissions testCase)
-      throws DotDataException, DotSecurityException {
-
-    final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
-    final ContentType contentGenericType = contentTypeAPI.find("webPageContent");
-
-    final User limitedUserEditPermsPermOnCT =
-        APILocator.getUserAPI().loadUserById("dotcms.org.2795", APILocator.systemUser(), false);
-
-    final List<Integer> existingPermissions =
-        APILocator.getPermissionAPI()
-            .getPermissionIdsFromUser(contentGenericType, limitedUserEditPermsPermOnCT);
-
-    final Permission editPermissionsPermission =
-        new Permission(
-            contentGenericType.getPermissionId(),
-            APILocator.getRoleAPI().getUserRole(limitedUserEditPermsPermOnCT).getId(),
-            testCase.permissions,
-            true);
-    APILocator.getPermissionAPI().save(editPermissionsPermission, contentGenericType, user, false);
-
-    final FieldAPI fieldAPI = APILocator.getContentTypeFieldAPI();
-    final Field titleField = fieldAPI.byContentTypeAndVar(contentGenericType, "title");
-
-    try {
-      fieldAPI.save(titleField, limitedUserEditPermsPermOnCT);
-    } catch (DotSecurityException e) {
-      assertFalse(testCase.shouldExecuteAction);
-      return;
-    } finally {
-      restorePermissionsForUser(limitedUserEditPermsPermOnCT, existingPermissions);
-    }
-    assertTrue(testCase.shouldExecuteAction);
-  }
-
-  @Test
-  @UseDataProvider("testCasesUpdateTypePermissions")
-  public void testFieldAPIDeleteLimitedUserPermissions(
-      final TestCaseUpdateContentTypePermissions testCase)
-      throws DotDataException, DotSecurityException {
-
-    final long now = System.currentTimeMillis();
-
-    ContentType newType =
-        ContentTypeBuilder.builder(BaseContentType.CONTENT.immutableClass())
-            .description("description")
-            .folder(FolderAPI.SYSTEM_FOLDER)
-            .host(Host.SYSTEM_HOST)
-            .name("ContentTypeTesting" + now)
-            .owner("owner")
-            .variable("velocityVarNameTesting" + now)
-            .build();
-    newType = contentTypeApi.save(newType);
-    final String newTypeId = newType.id();
-
-    final User limitedUser =
-        APILocator.getUserAPI().loadUserById("dotcms.org.2795", APILocator.systemUser(), false);
-
-    final List<Integer> existingPermissions =
-        APILocator.getPermissionAPI().getPermissionIdsFromUser(newType, limitedUser);
-
-    Permission readPermissions =
-        new Permission(
-            newType.getPermissionId(),
-            APILocator.getRoleAPI().getUserRole(limitedUser).getId(),
-            PermissionAPI.PERMISSION_READ);
-    APILocator.getPermissionAPI().save(readPermissions, newType, user, false);
-
-    final Permission editPermissionsPermission =
-        new Permission(
-            newType.getPermissionId(),
-            APILocator.getRoleAPI().getUserRole(limitedUser).getId(),
-            testCase.permissions,
-            false);
-    APILocator.getPermissionAPI().save(editPermissionsPermission, newType, user, false);
-
-    Field newField =
-        FieldBuilder.builder(WysiwygField.class)
-            .name("my test field")
-            .variable(now + "textField")
-            .contentTypeId(newType.id())
-            .dataType(DataTypes.LONG_TEXT)
-            .build();
-    newField = APILocator.getContentTypeFieldAPI().save(newField, APILocator.systemUser());
-    final String newFieldId = newField.id();
-
-    try {
-      APILocator.getContentTypeFieldAPI().delete(newField, limitedUser);
-      APILocator.getContentTypeFieldAPI().find(newFieldId);
-    } catch (NotFoundInDbException e) {
-      assertTrue(testCase.shouldExecuteAction);
-    } catch (DotSecurityException e) {
-      assertFalse(testCase.shouldExecuteAction);
-      return;
-    } finally {
-      restorePermissionsForUser(limitedUser, existingPermissions);
-      contentTypeApi.delete(newType);
-    }
-    assertTrue(testCase.shouldExecuteAction);
-  }
-
-  @DataProvider
-  public static Object[] testCasesSaveContentTypePermissions() {
-    return new Object[] {
-      new TestCaseUpdateContentTypePermissions(PermissionAPI.PERMISSION_EDIT_PERMISSIONS, true),
-      new TestCaseUpdateContentTypePermissions(PermissionAPI.PERMISSION_PUBLISH, false),
-      new TestCaseUpdateContentTypePermissions(PermissionAPI.PERMISSION_EDIT, false),
-      new TestCaseUpdateContentTypePermissions(PermissionAPI.PERMISSION_READ, false)
-    };
-  }
-
-  @Test
-  @UseDataProvider("testCasesSaveContentTypePermissions")
-  public void testSaveContentTypeLimitedUserPermissions(
-      final TestCaseUpdateContentTypePermissions testCase)
-      throws DotDataException, DotSecurityException {
-    // Create Folder
-    final Folder folder = new FolderDataGen().host(APILocator.systemHost()).nextPersisted();
-
-    // Create Content Type
-    long time = System.currentTimeMillis();
-
-    ContentType contentType =
-        ContentTypeBuilder.builder(
-                BaseContentType.getContentTypeClass(BaseContentType.CONTENT.ordinal()))
-            .description("ContentTypeSave " + time)
-            .name("ContentTypeSave " + time)
-            .folder(folder.getInode())
-            .owner(APILocator.systemUser().toString())
-            .variable("CTVariable" + time)
-            .build();
-
-    // Get Limited User
-    final User limitedUserEditPermsPermOnCT =
-        APILocator.getUserAPI().loadUserById("dotcms.org.2795", APILocator.systemUser(), false);
-
-    final PermissionAPI permAPI = Mockito.spy(APILocator.getPermissionAPI());
-    Mockito.doReturn(true)
-        .when(permAPI)
-        .doesUserHavePermissions(
-            contentType.getParentPermissionable(),
-            "PARENT:"
-                + PermissionAPI.PERMISSION_CAN_ADD_CHILDREN
-                + ", STRUCTURES:"
-                + testCase.permissions,
-            limitedUserEditPermsPermOnCT);
-    // Give READ PERMISSIONS to the folder
-    Permission readPermissions =
-        new Permission(
-            folder.getPermissionId(),
-            APILocator.getRoleAPI().getUserRole(limitedUserEditPermsPermOnCT).getId(),
-            PermissionAPI.PERMISSION_READ);
-    APILocator.getPermissionAPI().save(readPermissions, folder, user, false);
-
-    ContentTypeAPI contentTypeAPI =
-        new ContentTypeAPIImpl(
-            limitedUserEditPermsPermOnCT,
-            false,
-            FactoryLocator.getContentTypeFactory(),
-            FactoryLocator.getFieldFactory(),
-            permAPI,
-            APILocator.getContentTypeFieldAPI(),
-            APILocator.getLocalSystemEventsAPI());
-    // Try to Save Content Type
-    try {
-      contentType = contentTypeAPI.save(contentType);
-    } catch (DotSecurityException e) {
-      assertFalse(e.getMessage(), testCase.shouldExecuteAction);
-      return;
-    } finally {
-      if (UtilMethods.isSet(contentType.id())) {
-        // Delete content Type
-        contentTypeApi.delete(contentType);
-      }
-      // Delete folder
-      APILocator.getFolderAPI().delete(folder, user, false);
-    }
-    assertTrue(testCase.shouldExecuteAction);
-  }
-
-  @Test(expected = NotFoundInDbException.class)
-  public void
-      testDeleteContentType_GivenLimitedUserWithNoPermissionsUnderContentAndEnoughPermissionsToDeleteType_ShouldDeleteTypeRegardless()
-          throws DotDataException, DotSecurityException {
-
-    final long now = System.currentTimeMillis();
-
-    ContentType newType =
-        ContentTypeBuilder.builder(BaseContentType.CONTENT.immutableClass())
-            .description("description")
-            .folder(FolderAPI.SYSTEM_FOLDER)
-            .host(Host.SYSTEM_HOST)
-            .name("ContentTypeTesting" + now)
-            .owner("owner")
-            .variable("velocityVarNameTesting" + now)
-            .build();
-    newType = contentTypeApi.save(newType);
-    final String newTypeId = newType.id();
-
-    final User limitedUserEditPermsPermOnCT =
-        APILocator.getUserAPI().loadUserById("dotcms.org.2795", APILocator.systemUser(), false);
-
-    final List<Integer> existingPermissions =
-        APILocator.getPermissionAPI()
-            .getPermissionIdsFromUser(newType, limitedUserEditPermsPermOnCT);
-
-    final Permission editPermissionsPermission =
-        new Permission(
-            newType.getPermissionId(),
-            APILocator.getRoleAPI().getUserRole(limitedUserEditPermsPermOnCT).getId(),
-            PermissionAPI.PERMISSION_EDIT_PERMISSIONS,
-            true);
-    APILocator.getPermissionAPI().save(editPermissionsPermission, newType, user, false);
-
-    ContentletDataGen contentletDataGen = new ContentletDataGen(newTypeId);
-    contentletDataGen.nextPersisted();
-    final ContentTypeAPI contentTypeAPI =
-        new ContentTypeAPIImpl(
-            limitedUserEditPermsPermOnCT,
-            false,
-            FactoryLocator.getContentTypeFactory(),
-            FactoryLocator.getFieldFactory(),
-            APILocator.getPermissionAPI(),
-            APILocator.getContentTypeFieldAPI(),
-            APILocator.getLocalSystemEventsAPI());
-
-    try {
-      contentTypeAPI.delete(newType);
-      contentTypeAPI.find(newTypeId);
-    } finally {
-      restorePermissionsForUser(limitedUserEditPermsPermOnCT, existingPermissions);
-      contentTypeApi.delete(newType);
-    }
-  }
-
-  private void restorePermissionsForUser(
-      User limitedUserEditPermsPermOnCT, List<Integer> existingPermissions)
-      throws DotSecurityException, DotDataException {
-    final ContentType restoredContentGeneric = contentTypeApi.find("webPageContent");
-
-    // restore original permissions
-    existingPermissions.forEach(
-        (permission) -> {
-          try {
-            final Permission originalPermissions =
-                new Permission(
-                    restoredContentGeneric.getPermissionId(),
-                    APILocator.getRoleAPI().getUserRole(limitedUserEditPermsPermOnCT).getId(),
-                    permission,
-                    true);
-            APILocator.getPermissionAPI()
-                .save(originalPermissions, restoredContentGeneric, user, false);
-          } catch (DotDataException | DotSecurityException e) {
-            Logger.error(this, "Error restoring original state");
-          }
-        });
-  }
-
-  /**
-   * This test create a Content type with fixed fields, update some fields and delete the content
-   * type
-   *
-   * @throws Exception
-   */
-  @Test
-  public void testAddingUpdatingDeletingContentTypeWithFixedFields() throws Exception {
-
-    int count = contentTypeApi.count();
-    String TEST_VAR_PREFIX = "myTestField";
-
-    long time = System.currentTimeMillis();
-    int base = BaseContentType.WIDGET.ordinal();
-    Thread.sleep(1);
-    ContentType type =
-        ContentTypeBuilder.builder(BaseContentType.getContentTypeClass(base))
-            .description("description" + time)
-            .folder(FolderAPI.SYSTEM_FOLDER)
-            .host(Host.SYSTEM_HOST)
-            .name("ContentTypeTestingWithFixedFields" + time)
-            .owner("owner")
-            .variable("velocityVarNameTesting" + time)
-            .build();
-    type = contentTypeApi.save(type, null, null);
-
-    int count2 = contentTypeApi.count();
-    assertThat("contenttypes are added", count == count2 - 1);
-    type = contentTypeApi.find(type.id());
-    assertThat("Content type found", type != null && StringUtils.isNotEmpty(type.id()));
-
-    // Add Field
-    List<Field> fields = type.fields();
-    int fieldsCount = fields.size();
-    Field savedField =
-        FieldBuilder.builder(WysiwygField.class)
-            .name("my test field")
-            .variable(TEST_VAR_PREFIX + "textField")
-            .contentTypeId(type.id())
-            .dataType(DataTypes.LONG_TEXT)
-            .build();
-    APILocator.getContentTypeFieldAPI().save(savedField, APILocator.systemUser());
-    type = contentTypeApi.find(type.id());
-    List<Field> newFields = type.fields();
-
-    int fieldsCount2 = newFields.size();
-    assertThat("contenttypes field added", fieldsCount < fieldsCount2);
-
-    // remove field
-    contentTypeApi.save(type, fields);
-    type = contentTypeApi.find(type.id());
-    fieldsCount2 = type.fields().size();
-    assertThat("contenttypes field removed", fieldsCount == fieldsCount2);
-
-    // deleting content type
-    delete(type);
-  }
-
-  /**
-   * Test the updateModDate method of the contenttypeapi to help detect the changes on fields and
-   * field variables
-   *
-   * @throws Exception
-   */
-  @Test
-  public void testUpdateContentTypeModDate() throws Exception {
-    long time = System.currentTimeMillis();
-    String TEST_VAR_PREFIX = "myTestField";
-    String TEST_FIELD_VAR_PREFIX = "myTestFieldVar";
-    String TEST_FIELD_VAR_VALUE_PREFIX = "myTestFieldVar";
-    int base = BaseContentType.CONTENT.ordinal();
-
-    Thread.sleep(1);
-    ContentType type =
-        ContentTypeBuilder.builder(BaseContentType.getContentTypeClass(base))
-            .description("description" + time)
-            .folder(FolderAPI.SYSTEM_FOLDER)
-            .host(Host.SYSTEM_HOST)
-            .name("ContentTypeTestingUpdateModDate" + time)
-            .owner("owner")
-            .variable("velocityVarNameTesting" + time)
-            .build();
-    type = contentTypeApi.save(type, null, null);
-
-    int fieldsCount = type.fields().size();
-    Date creationModDate = type.modDate();
-    assertThat("contenttypes mod_date is not null", creationModDate != null);
-    // calling updatemod_date method
-    Thread.sleep(1000);
-    contentTypeApi.updateModDate(type);
-    // getting new mod_date
-    type = contentTypeApi.find(type.id());
-    Date currentModDate = type.modDate();
-    assertThat("contenttypes current mod_date is not null", currentModDate != null);
-    assertThat("contenttypes mod_date is updated", creationModDate != currentModDate);
-    assertThat("contenttypes mod_date is updated", currentModDate.compareTo(creationModDate) > 0);
-
-    // Test Content Type mod_date changes after adding a Field
-    Thread.sleep(1000);
-    Field savedField =
-        FieldBuilder.builder(WysiwygField.class)
-            .name("my test field")
-            .variable(TEST_VAR_PREFIX + "textField")
-            .contentTypeId(type.id())
-            .dataType(DataTypes.LONG_TEXT)
-            .build();
-    savedField = APILocator.getContentTypeFieldAPI().save(savedField, APILocator.systemUser());
-    type = contentTypeApi.find(type.id());
-    int updatedFieldsCount = type.fields().size();
-    Date addFieldDate = type.modDate();
-    assertThat("contenttypes current mod_date is not null", addFieldDate != null);
-    assertThat("contenttypes mod_date is updated", addFieldDate != currentModDate);
-    assertThat(
-        "contenttypes mod_date is updated after add Field",
-        addFieldDate.compareTo(currentModDate) > 0);
-    assertThat("contenttypes fields incremented", updatedFieldsCount > fieldsCount);
-
-    // Test Content Type mod_date changes after  edit Field
-    Thread.sleep(1000);
-    savedField = FieldBuilder.builder(savedField).indexed(true).build();
-    savedField = APILocator.getContentTypeFieldAPI().save(savedField, APILocator.systemUser());
-    type = contentTypeApi.find(type.id());
-    Date editFieldDate = type.modDate();
-    int updatedFieldsCount2 = type.fields().size();
-    assertThat("contenttypes current mod_date is not null", editFieldDate != null);
-    assertThat("contenttypes mod_date is updated", editFieldDate != addFieldDate);
-    assertThat(
-        "contenttypes mod_date is updated after edit Field",
-        editFieldDate.compareTo(addFieldDate) > 0);
-    assertThat("contenttypes fields are the same", updatedFieldsCount == updatedFieldsCount2);
-
-    // Test Content Type mod_date changes after adding a Field Variable
-    Thread.sleep(1000);
-    FieldVariable savedFieldVar =
-        ImmutableFieldVariable.builder()
-            .id(null)
-            .fieldId(savedField.id())
-            .name(TEST_FIELD_VAR_PREFIX + time)
-            .key(TEST_FIELD_VAR_PREFIX + time)
-            .value(TEST_FIELD_VAR_VALUE_PREFIX + time)
-            .userId(APILocator.systemUser().getUserId())
-            .modDate(new Date())
-            .build();
-    savedFieldVar =
-        APILocator.getContentTypeFieldAPI().save(savedFieldVar, APILocator.systemUser());
-    type = contentTypeApi.find(type.id());
-    Date addFieldVariableDate = type.modDate();
-    assertThat("contenttypes current mod_date is not null", addFieldVariableDate != null);
-    assertThat("contenttypes mod_date is updated", addFieldVariableDate != editFieldDate);
-    assertThat(
-        "contenttypes mod_date is updated after add Field Variable",
-        addFieldVariableDate.compareTo(editFieldDate) > 0);
-    assertThat(
-        "Field Variable is added ",
-        APILocator.getContentTypeFieldAPI().find(savedField.id()).fieldVariables().size() == 1);
-
-    // Test Content Type mod_date changes after editing a Field Variable
-    Thread.sleep(1000);
-    savedFieldVar =
-        ImmutableFieldVariable.builder()
-            .id(savedFieldVar.id())
-            .fieldId(savedField.id())
-            .name(TEST_FIELD_VAR_PREFIX + time)
-            .key(TEST_FIELD_VAR_PREFIX + time)
-            .value(TEST_FIELD_VAR_VALUE_PREFIX + (time + 1))
-            .userId(APILocator.systemUser().getUserId())
-            .modDate(new Date())
-            .build();
-    savedFieldVar =
-        APILocator.getContentTypeFieldAPI().save(savedFieldVar, APILocator.systemUser());
-    type = contentTypeApi.find(type.id());
-    Date editFieldVariableDate = type.modDate();
-    assertThat("contenttypes current mod_date is not null", editFieldVariableDate != null);
-    assertThat("contenttypes mod_date is updated", editFieldVariableDate != addFieldVariableDate);
-    assertThat(
-        "contenttypes mod_date is updated",
-        editFieldVariableDate.compareTo(addFieldVariableDate) > 0);
-    assertThat(
-        "Field Variable is updated ",
-        APILocator.getContentTypeFieldAPI().find(savedField.id()).fieldVariables().size() == 1);
-    assertThat(
-        "Field Variable was updated properly",
-        APILocator.getContentTypeFieldAPI()
-            .find(savedField.id())
-            .fieldVariables()
-            .get(0)
-            .value()
-            .equals(TEST_FIELD_VAR_VALUE_PREFIX + (time + 1)));
-
-    // Test Content Type mod_date changes after deleting a Field Variable
-    Thread.sleep(1000);
-    APILocator.getContentTypeFieldAPI().delete(savedFieldVar);
-    type = contentTypeApi.find(type.id());
-    Date deleteFieldVarDate = type.modDate();
-    updatedFieldsCount = type.fields().size();
-    assertThat("contenttypes current mod_date is not null", deleteFieldVarDate != null);
-    assertThat("contenttypes mod_date is updated", deleteFieldVarDate != editFieldVariableDate);
-    assertThat(
-        "contenttypes mod_date is updated after delete Field Variable",
-        deleteFieldVarDate.compareTo(editFieldVariableDate) > 0);
-    assertThat(
-        "Field Variable is removed ",
-        APILocator.getContentTypeFieldAPI().find(savedField.id()).fieldVariables().size() == 0);
-
-    // Test Content Type mod_date changes after deleting a Field
-    Thread.sleep(1000);
-    APILocator.getContentTypeFieldAPI().delete(savedField);
-    type = contentTypeApi.find(type.id());
-    Date deleteFieldDate = type.modDate();
-    updatedFieldsCount = type.fields().size();
-    assertThat("contenttypes current mod_date is not null", deleteFieldDate != null);
-    assertThat("contenttypes mod_date is updated", deleteFieldDate != deleteFieldVarDate);
-    assertThat(
-        "contenttypes mod_date is updated after delete Field",
-        deleteFieldDate.compareTo(deleteFieldVarDate) > 0);
-    assertThat("contenttypes field removed", updatedFieldsCount == fieldsCount);
-    // deleting content type
-    delete(type);
-  }
-
-  /**
-   * Creates a Content Type with a fixed field and then tries to update it with a field with same
-   * VarName and DBColumn but different ID.
-   *
-   * @throws Exception
-   */
-  @Test
-  public void testUpdatingContentTypeWithFixedFieldsDifferentFieldID() throws Exception {
-
-    int base = BaseContentType.WIDGET.ordinal();
-    long time = System.currentTimeMillis();
-
-    final String FIRST_UUID = UUID.randomUUID().toString();
-    final String FIRST_NAME = "My Fixed Field";
-    final String SECOND_UUID = UUID.randomUUID().toString();
-    final String SECOND_NAME = "My Fixed Field Updated";
-
-    ContentType contentType =
-        ContentTypeBuilder.builder(BaseContentType.getContentTypeClass(base))
-            .description("Description" + time)
-            .folder(FolderAPI.SYSTEM_FOLDER)
-            .host(Host.SYSTEM_HOST)
-            .name("ContentTypeWithFixedFieldsDifferentFieldID" + time)
-            .owner("Me")
-            .variable("CTVariable" + time)
-            .build();
-    contentType = contentTypeApi.save(contentType);
-
-    assertThat("ContentType exists", contentTypeApi.find(contentType.inode()) != null);
-
-    // Add Field.
-    List<Field> fields = new ArrayList<>(contentType.fields());
-    List<Field> originalFields = new ArrayList<>(fields);
-
-    int originalFieldSize = fields.size();
-
-    final String TEST_VAR_NAME = "myFixedVarName";
-
-    Field fieldToSave =
-        FieldBuilder.builder(TextField.class)
-            .name(FIRST_NAME)
-            .variable(TEST_VAR_NAME)
-            .contentTypeId(contentType.id())
-            .dataType(DataTypes.TEXT)
-            .fixed(true)
-            .dbColumn("text15")
-            .id(FIRST_UUID)
-            .build();
-
-    fields.add(fieldToSave);
-
-    contentType = contentTypeApi.save(contentType, fields);
-
-    // Lets check that the Field was added.
-    Field fieldFound = null;
-    for (Field field : contentType.fields()) {
-      if (field.id().equals(FIRST_UUID)) {
-        fieldFound = field;
-      }
-    }
-    Assert.assertNotNull(fieldFound);
-    Assert.assertEquals(FIRST_NAME, fieldFound.name());
-
-    Field fieldToSaveDifferentID =
-        FieldBuilder.builder(TextField.class)
-            .name(SECOND_NAME)
-            .variable(TEST_VAR_NAME)
-            .contentTypeId(contentType.id())
-            .dataType(DataTypes.TEXT)
-            .fixed(true)
-            .dbColumn("text15")
-            .id(SECOND_UUID)
-            .build();
-
-    originalFields.add(fieldToSaveDifferentID);
-
-    contentType = contentTypeApi.save(contentType, originalFields);
-
-    // Lets check that the Field was updated.
-    fieldFound = null;
-    for (Field field : contentType.fields()) {
-      if (field.id().equals(FIRST_UUID)) {
-        fieldFound = field;
-      }
-    }
-    Assert.assertNotNull(fieldFound);
-    Assert.assertEquals(SECOND_NAME, fieldFound.name());
-
-    // Deleting content type.
-    delete(contentType);
-  }
-
-  /*
-   * Github: https://github.com/dotCMS/core/issues/11861
-   *
-   * Creates a Widget and a couple of DateTimeFields (Publish and Expire) and set it as Publish and Expire properties in the Content Type.
-   */
-  @Test
-  public void testWidgetContentTypeWithPublishExpireFields() throws Exception {
-    int base = BaseContentType.WIDGET.ordinal();
-    createContentTypeWithPublishExpireFields(base);
-  }
-
-  /*
-   * Github: https://github.com/dotCMS/core/issues/11861
-   *
-   * Creates a Page and a couple of DateTimeFields (Publish and Expire) and set it as Publish and Expire properties in the Content Type.
-   */
-  @Test
-  public void testPageContentTypeWithPublishExpireFields() throws Exception {
-    int base = BaseContentType.HTMLPAGE.ordinal();
-    createContentTypeWithPublishExpireFields(base);
-  }
-
-  /*
-   * Github: https://github.com/dotCMS/core/issues/11861
-   *
-   * Creates a File and a couple of DateTimeFields (Publish and Expire) and set it as Publish and Expire properties in the Content Type.
-   */
-  @Test
-  public void testFileContentTypeWithPublishExpireFields() throws Exception {
-    int base = BaseContentType.FILEASSET.ordinal();
-    createContentTypeWithPublishExpireFields(base);
-  }
-
-  /*
-   * Github: https://github.com/dotCMS/core/issues/11861
-   *
-   * Creates a Form and a couple of DateTimeFields (Publish and Expire) and set it as Publish and Expire properties in the Content Type.
-   */
-  @Test
-  public void testFormContentTypeWithPublishExpireFields() throws Exception {
-    int base = BaseContentType.FORM.ordinal();
-    createContentTypeWithPublishExpireFields(base);
-  }
-
-  /*
-   * Github: https://github.com/dotCMS/core/issues/11861
-   *
-   * Creates a Persona and a couple of DateTimeFields (Publish and Expire) and set it as Publish and Expire properties in the Content Type.
-   */
-  @Test
-  public void testPersonaContentTypeWithPublishExpireFields() throws Exception {
-    int base = BaseContentType.PERSONA.ordinal();
-    createContentTypeWithPublishExpireFields(base);
-  }
-
-  @Test
-  public void testSave_GivenFixedTrueAndHostDifferentThanSYSTEMHOST_HostShouldBeSYSTEMHOST()
-      throws DotDataException, DotSecurityException {
-
-    final ContentType languageVariableType = contentTypeApi.find("Languagevariable");
-    final List<Field> fields = languageVariableType.fields();
-    final ContentType languageVariableTypeWithAnotherHost =
-        ContentTypeBuilder.builder(languageVariableType).host("ANY-OTHER-HOST").build();
-    languageVariableTypeWithAnotherHost.constructWithFields(fields);
-
-    final ContentType savedLanguagaVariableType =
-        contentTypeApi.save(languageVariableTypeWithAnotherHost);
-    assertEquals(savedLanguagaVariableType.host(), Host.SYSTEM_HOST);
-    assertEquals(fields, savedLanguagaVariableType.fields());
-  }
-
-  private void createContentTypeWithPublishExpireFields(int base) throws Exception {
-    long time = System.currentTimeMillis();
-
-    ContentType contentType =
-        ContentTypeBuilder.builder(BaseContentType.getContentTypeClass(base))
-            .description("ContentTypeWithPublishExpireFields " + time)
-            .folder(FolderAPI.SYSTEM_FOLDER)
-            .host(Host.SYSTEM_HOST)
-            .name("ContentTypeWithPublishExpireFields " + time)
-            .owner(APILocator.systemUser().toString())
-            .variable("CTVariable711")
-            .publishDateVar("publishDate")
-            .expireDateVar("expireDate")
-            .build();
-    contentType = contentTypeApi.save(contentType);
-
-    assertThat("ContentType exists", contentTypeApi.find(contentType.inode()) != null);
-
-    List<Field> fields = new ArrayList<>(contentType.fields());
-
-    Field fieldToSave =
-        FieldBuilder.builder(DateTimeField.class)
-            .name("Publish Date")
-            .variable("publishDate")
-            .contentTypeId(contentType.id())
-            .dataType(DataTypes.DATE)
-            .indexed(true)
-            .build();
-    fields.add(fieldToSave);
-
-    fieldToSave =
-        FieldBuilder.builder(DateTimeField.class)
-            .name("Expire Date")
-            .variable("expireDate")
-            .contentTypeId(contentType.id())
-            .dataType(DataTypes.DATE)
-            .indexed(true)
-            .build();
-    fields.add(fieldToSave);
-
-    contentType = contentTypeApi.save(contentType, fields);
-
-    // Deleting content type.
-    delete(contentType);
-  }
-
-  private ContentType createContentType(final String name)
-      throws DotSecurityException, DotDataException {
-    return contentTypeApi.save(
-        ContentTypeBuilder.builder(SimpleContentType.class)
-            .folder(FolderAPI.SYSTEM_FOLDER)
-            .host(Host.SYSTEM_HOST)
-            .name(name)
-            .owner(user.getUserId())
-            .build());
-  }
-
-  private Field createRelationshipField(
-      final String fieldName,
-      final String parentContentTypeID,
-      final String childContentTypeVariable)
-      throws DotDataException, DotSecurityException {
-    final Field field =
-        FieldBuilder.builder(RelationshipField.class)
-            .name(fieldName)
-            .contentTypeId(parentContentTypeID)
-            .values(
-                String.valueOf(
-                    WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal()))
-            .indexed(true)
-            .listed(false)
-            .relationType(childContentTypeVariable)
-            .build();
-
-    return APILocator.getContentTypeFieldAPI().save(field, APILocator.systemUser());
-  }
-  /**
-   * This test creates a 2 content types and a Relationship Field on the parent, then deletes the
-   * parent content type so the relationship must be deleted.
-   *
-   * @throws Exception
-   */
-  @Test
-  public void testDeleteContentTypeParent_deleteRelationship() throws Exception {
-    ContentType parentContentType = null;
-    ContentType childContentType = null;
-    try {
-      // Create content types
-      parentContentType = createContentType("parentContentType" + System.currentTimeMillis());
-      childContentType = createContentType("childContentType" + System.currentTimeMillis());
-
-      // Create Relationship Field
-      final Field field =
-          createRelationshipField(
-              "testRelationship", parentContentType.id(), childContentType.variable());
-
-      // Check that the parentContentType has the field
-      parentContentType = contentTypeApi.find(parentContentType.id());
-      assertEquals(1, parentContentType.fields().size());
-
-      // Check that the relationship exists
-      assertEquals(1, APILocator.getRelationshipAPI().byContentType(childContentType).size());
-
-      // Delete parentContentType
-      contentTypeApi.delete(parentContentType);
-
-      // Check that the relationship is deleted
-      assertTrue(
-          "Relationship Still Exists",
-          APILocator.getRelationshipAPI().byContentType(childContentType).isEmpty());
-
-    } finally {
-      if (parentContentType != null) {
-        contentTypeApi.delete(parentContentType);
-      }
-      if (childContentType != null) {
-        contentTypeApi.delete(childContentType);
-      }
-    }
-  }
-
-  /**
-   * This test creates a 2 content types and a Relationship Field on the parent, then deletes the
-   * child content type so the Relationship Field on the parent and the relationship must be
-   * deleted.
-   *
-   * @throws Exception
-   */
-  @Test
-  public void testDeleteContentTypeChild_deleteRelationshipFieldOnParent_deleteRelationship()
-      throws Exception {
-    ContentType parentContentType = null;
-    ContentType childContentType = null;
-    try {
-      // Create content types
-      parentContentType = createContentType("parentContentType" + System.currentTimeMillis());
-      childContentType = createContentType("childContentType" + System.currentTimeMillis());
-
-      // Create Relationship Field
-      final Field field =
-          createRelationshipField(
-              "testRelationship", parentContentType.id(), childContentType.variable());
-
-      // Check that the parentContentType has the field
-      parentContentType = contentTypeApi.find(parentContentType.id());
-      assertEquals(1, parentContentType.fields().size());
-
-      // Check that the relationship exists
-      assertEquals(1, APILocator.getRelationshipAPI().byContentType(childContentType).size());
-
-      // Delete childContentType
-      contentTypeApi.delete(childContentType);
-
-      // Check that the field is deleted on the parentContentType
-      parentContentType = contentTypeApi.find(parentContentType.id());
-      assertEquals(0, parentContentType.fields().size());
-
-      // Check that the relationship is deleted
-      assertTrue(
-          "Relationship Still Exists",
-          APILocator.getRelationshipAPI().byContentType(parentContentType).isEmpty());
-
-    } finally {
-      if (parentContentType != null) {
-        contentTypeApi.delete(parentContentType);
-      }
-      if (childContentType != null) {
-        contentTypeApi.delete(childContentType);
-      }
-    }
-  }
-
-  /**
-   * This test creates a 2 content types and a Relationship Field on both content types(relationship
-   * both ways), then deletes the parent content type so the Relationship Field on the child and the
-   * relationship must be deleted.
-   *
-   * @throws Exception
-   */
-  @Test
-  public void
-      testDeleteContentTypeParent_deleteRelationshipFieldOnChild_deleteRelationship_bothWays()
-          throws Exception {
-    ContentType parentContentType = null;
-    ContentType childContentType = null;
-    try {
-      // Create content types
-      parentContentType = createContentType("parentContentType" + System.currentTimeMillis());
-      childContentType = createContentType("childContentType" + System.currentTimeMillis());
-
-      // Create Relationship Field on Parent
-      final Field parentRelationshipField =
-          createRelationshipField(
-              "testRelationship", parentContentType.id(), childContentType.variable());
-
-      // Check that the parentContentType has the field
-      parentContentType = contentTypeApi.find(parentContentType.id());
-      assertEquals(1, parentContentType.fields().size());
-
-      // Check that the relationship exists
-      assertEquals(1, APILocator.getRelationshipAPI().byContentType(childContentType).size());
-
-      // Create Relationship Field on Child
-      createRelationshipField(
-          "testRelationship",
-          childContentType.id(),
-          parentContentType.variable() + "." + parentRelationshipField.variable());
-
-      // Check that the childContentType has the field
-      childContentType = contentTypeApi.find(childContentType.id());
-      assertEquals(1, childContentType.fields().size());
-
-      // Check that there is only one relationship regardless the 2 fields
-      assertEquals(1, APILocator.getRelationshipAPI().byContentType(childContentType).size());
-
-      // Delete parentContentType
-      contentTypeApi.delete(parentContentType);
-
-      // Check that the field is deleted on the childContentType
-      childContentType = contentTypeApi.find(childContentType.id());
-      assertEquals(0, childContentType.fields().size());
-
-      // Check that the relationship is deleted
-      assertTrue(
-          "Relationship Still Exists",
-          APILocator.getRelationshipAPI().byContentType(childContentType).isEmpty());
-
-    } finally {
-      if (parentContentType != null) {
-        contentTypeApi.delete(parentContentType);
-      }
-      if (childContentType != null) {
-        contentTypeApi.delete(childContentType);
-      }
-    }
-  }
-
-  /**
-   * This test creates a 2 content types and a Relationship Field on both content types(relationship
-   * both ways), then deletes the child content type so the Relationship Field on the parent and the
-   * relationship must be deleted.
-   *
-   * @throws Exception
-   */
-  @Test
-  public void
-      testDeleteContentTypeChild_deleteRelationshipFieldOnParent_deleteRelationship_bothWays()
-          throws Exception {
-    ContentType parentContentType = null;
-    ContentType childContentType = null;
-    try {
-      // Create content types
-      parentContentType = createContentType("parentContentType" + System.currentTimeMillis());
-      childContentType = createContentType("childContentType" + System.currentTimeMillis());
-
-      // Create Relationship Field on Parent
-      final Field parentRelationshipField =
-          createRelationshipField(
-              "testRelationship", parentContentType.id(), childContentType.variable());
-
-      // Check that the parentContentType has the field
-      parentContentType = contentTypeApi.find(parentContentType.id());
-      assertEquals(1, parentContentType.fields().size());
-
-      // Check that the relationship exists
-      assertEquals(1, APILocator.getRelationshipAPI().byContentType(childContentType).size());
-
-      // Create Relationship Field on Child
-      createRelationshipField(
-          "testRelationship",
-          childContentType.id(),
-          parentContentType.variable() + "." + parentRelationshipField.variable());
-
-      // Check that the childContentType has the field
-      childContentType = contentTypeApi.find(childContentType.id());
-      assertEquals(1, childContentType.fields().size());
-
-      // Check that there is only one relationship regardless the 2 fields
-      assertEquals(1, APILocator.getRelationshipAPI().byContentType(childContentType).size());
-
-      // Delete childContentType
-      contentTypeApi.delete(childContentType);
-
-      // Check that the field is deleted on the parentContentType
-      parentContentType = contentTypeApi.find(parentContentType.id());
-      assertEquals(0, parentContentType.fields().size());
-
-      // Check that the relationship is deleted
-      assertTrue(
-          "Relationship Still Exists",
-          APILocator.getRelationshipAPI().byContentType(parentContentType).isEmpty());
-
-    } finally {
-      if (parentContentType != null) {
-        contentTypeApi.delete(parentContentType);
-      }
-      if (childContentType != null) {
-        contentTypeApi.delete(childContentType);
-      }
-    }
-  }
+        Assert.assertNotNull( fieldFound );
+        Assert.assertEquals( SECOND_NAME, fieldFound.name() );
+
+		//Deleting content type.
+		delete(contentType);
+	}
+	
+	/*
+	 * Github: https://github.com/dotCMS/core/issues/11861
+	 * 
+	 * Creates a Widget and a couple of DateTimeFields (Publish and Expire) and set it as Publish and Expire properties in the Content Type.
+	 */
+	@Test
+	public void testWidgetContentTypeWithPublishExpireFields() throws Exception{
+		int base = BaseContentType.WIDGET.ordinal();
+		createContentTypeWithPublishExpireFields(base);
+        
+	}
+	
+	/*
+	 * Github: https://github.com/dotCMS/core/issues/11861
+	 * 
+	 * Creates a Page and a couple of DateTimeFields (Publish and Expire) and set it as Publish and Expire properties in the Content Type.
+	 */
+	@Test
+	public void testPageContentTypeWithPublishExpireFields() throws Exception{
+		int base = BaseContentType.HTMLPAGE.ordinal();
+		createContentTypeWithPublishExpireFields(base);
+	}
+	
+	/*
+	 * Github: https://github.com/dotCMS/core/issues/11861
+	 * 
+	 * Creates a File and a couple of DateTimeFields (Publish and Expire) and set it as Publish and Expire properties in the Content Type.
+	 */
+	@Test
+	public void testFileContentTypeWithPublishExpireFields() throws Exception{
+		int base = BaseContentType.FILEASSET.ordinal();
+		createContentTypeWithPublishExpireFields(base);
+        
+	}
+	
+	/*
+	 * Github: https://github.com/dotCMS/core/issues/11861
+	 * 
+	 * Creates a Form and a couple of DateTimeFields (Publish and Expire) and set it as Publish and Expire properties in the Content Type.
+	 */
+	@Test
+	public void testFormContentTypeWithPublishExpireFields() throws Exception{
+		int base = BaseContentType.FORM.ordinal();
+		createContentTypeWithPublishExpireFields(base);
+        
+	}
+	
+	/*
+	 * Github: https://github.com/dotCMS/core/issues/11861
+	 * 
+	 * Creates a Persona and a couple of DateTimeFields (Publish and Expire) and set it as Publish and Expire properties in the Content Type.
+	 */
+	@Test
+	public void testPersonaContentTypeWithPublishExpireFields() throws Exception{
+		int base = BaseContentType.PERSONA.ordinal();
+        createContentTypeWithPublishExpireFields(base);
+	}
+
+	@Test
+	public void testSave_GivenFixedTrueAndHostDifferentThanSYSTEMHOST_HostShouldBeSYSTEMHOST()
+			throws DotDataException, DotSecurityException {
+
+		final ContentType languageVariableType = contentTypeApi.find("Languagevariable");
+		final List<Field> fields = languageVariableType.fields();
+		final ContentType languageVariableTypeWithAnotherHost =
+				ContentTypeBuilder.builder(languageVariableType).host("ANY-OTHER-HOST").build();
+		languageVariableTypeWithAnotherHost.constructWithFields(fields);
+
+		final ContentType savedLanguagaVariableType = contentTypeApi.save(languageVariableTypeWithAnotherHost);
+		assertEquals(savedLanguagaVariableType.host(), Host.SYSTEM_HOST);
+		assertEquals(fields, savedLanguagaVariableType.fields());
+	}
+	
+	private void createContentTypeWithPublishExpireFields(int base) throws Exception{
+		long time = System.currentTimeMillis();
+
+		ContentType contentType = ContentTypeBuilder.builder(BaseContentType.getContentTypeClass(base))
+				.description("ContentTypeWithPublishExpireFields " + time).folder(FolderAPI.SYSTEM_FOLDER)
+				.host(Host.SYSTEM_HOST).name("ContentTypeWithPublishExpireFields " + time)
+				.owner(APILocator.systemUser().toString()).variable("CTVariable711").publishDateVar("publishDate")
+				.expireDateVar("expireDate").build();
+		contentType = contentTypeApi.save(contentType);
+
+		assertThat("ContentType exists", contentTypeApi.find(contentType.inode()) != null);
+
+		List<Field> fields = new ArrayList<>(contentType.fields());
+
+		Field fieldToSave = FieldBuilder.builder(DateTimeField.class).name("Publish Date").variable("publishDate")
+				.contentTypeId(contentType.id()).dataType(DataTypes.DATE).indexed(true).build();
+		fields.add(fieldToSave);
+
+		fieldToSave = FieldBuilder.builder(DateTimeField.class).name("Expire Date").variable("expireDate")
+				.contentTypeId(contentType.id()).dataType(DataTypes.DATE).indexed(true).build();
+		fields.add(fieldToSave);
+
+		contentType = contentTypeApi.save(contentType, fields);
+
+		// Deleting content type.
+		delete(contentType);
+	}
+
+	private ContentType createContentType(final String name) throws DotSecurityException, DotDataException {
+		return contentTypeApi.save(ContentTypeBuilder.builder(SimpleContentType.class).folder(
+				FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name(name)
+				.owner(user.getUserId()).build());
+	}
+
+	private Field createRelationshipField(final String fieldName, final String parentContentTypeID, final String childContentTypeVariable)
+			throws DotDataException, DotSecurityException {
+		final Field field = FieldBuilder.builder(RelationshipField.class)
+				.name(fieldName)
+				.contentTypeId(parentContentTypeID)
+				.values(String.valueOf(WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal()))
+				.indexed(true)
+				.listed(false)
+				.relationType(childContentTypeVariable)
+				.build();
+
+		return APILocator.getContentTypeFieldAPI().save(field, APILocator.systemUser());
+	}
+	/**
+	 * This test creates a 2 content types and a Relationship Field on the parent,
+	 * then deletes the parent content type so the relationship
+	 * must be deleted.
+	 *
+	 * @throws Exception
+	 */
+	@Test
+	public void testDeleteContentTypeParent_deleteRelationship() throws Exception{
+		ContentType parentContentType = null;
+		ContentType childContentType = null;
+		try {
+			//Create content types
+			parentContentType = createContentType("parentContentType" + System.currentTimeMillis());
+			childContentType = createContentType("childContentType" + System.currentTimeMillis());
+
+			//Create Relationship Field
+			final Field field = createRelationshipField("testRelationship",parentContentType.id(),childContentType.variable());
+
+			//Check that the parentContentType has the field
+			parentContentType = contentTypeApi.find(parentContentType.id());
+			assertEquals(1,parentContentType.fields().size());
+
+			//Check that the relationship exists
+			assertEquals(1,APILocator.getRelationshipAPI().byContentType(childContentType).size());
+
+			//Delete parentContentType
+			contentTypeApi.delete(parentContentType);
+
+			//Check that the relationship is deleted
+			assertTrue("Relationship Still Exists",APILocator.getRelationshipAPI().byContentType(childContentType).isEmpty());
+
+		} finally{
+			if(parentContentType != null){
+				contentTypeApi.delete(parentContentType);
+			}
+			if(childContentType != null){
+				contentTypeApi.delete(childContentType);
+			}
+		}
+	}
+
+	/**
+	 * This test creates a 2 content types and a Relationship Field on the parent,
+	 * then deletes the child content type so the Relationship Field on the parent and the relationship
+	 * must be deleted.
+	 *
+	 * @throws Exception
+	 */
+	@Test
+	public void testDeleteContentTypeChild_deleteRelationshipFieldOnParent_deleteRelationship() throws Exception{
+		ContentType parentContentType = null;
+		ContentType childContentType = null;
+		try {
+			//Create content types
+			parentContentType = createContentType("parentContentType" + System.currentTimeMillis());
+			childContentType = createContentType("childContentType" + System.currentTimeMillis());
+
+			//Create Relationship Field
+			final Field field = createRelationshipField("testRelationship",parentContentType.id(),childContentType.variable());
+
+			//Check that the parentContentType has the field
+			parentContentType = contentTypeApi.find(parentContentType.id());
+			assertEquals(1,parentContentType.fields().size());
+
+			//Check that the relationship exists
+			assertEquals(1,APILocator.getRelationshipAPI().byContentType(childContentType).size());
+
+			//Delete childContentType
+			contentTypeApi.delete(childContentType);
+
+			//Check that the field is deleted on the parentContentType
+			parentContentType = contentTypeApi.find(parentContentType.id());
+			assertEquals(0,parentContentType.fields().size());
+
+			//Check that the relationship is deleted
+			assertTrue("Relationship Still Exists",APILocator.getRelationshipAPI().byContentType(parentContentType).isEmpty());
+
+		} finally{
+			if(parentContentType != null){
+				contentTypeApi.delete(parentContentType);
+			}
+			if(childContentType != null){
+				contentTypeApi.delete(childContentType);
+			}
+		}
+	}
+
+	/**
+	 * This test creates a 2 content types and a Relationship Field on both content types(relationship both ways),
+	 * then deletes the parent content type so the Relationship Field on the child and the relationship
+	 * must be deleted.
+	 *
+	 * @throws Exception
+	 */
+	@Test
+	public void testDeleteContentTypeParent_deleteRelationshipFieldOnChild_deleteRelationship_bothWays() throws Exception{
+		ContentType parentContentType = null;
+		ContentType childContentType = null;
+		try {
+			//Create content types
+			parentContentType = createContentType("parentContentType" + System.currentTimeMillis());
+			childContentType = createContentType("childContentType" + System.currentTimeMillis());
+
+			//Create Relationship Field on Parent
+			final Field parentRelationshipField = createRelationshipField("testRelationship",parentContentType.id(),childContentType.variable());
+
+			//Check that the parentContentType has the field
+			parentContentType = contentTypeApi.find(parentContentType.id());
+			assertEquals(1,parentContentType.fields().size());
+
+			//Check that the relationship exists
+			assertEquals(1,APILocator.getRelationshipAPI().byContentType(childContentType).size());
+
+			//Create Relationship Field on Child
+			createRelationshipField("testRelationship",childContentType.id(),parentContentType.variable()+"."+parentRelationshipField.variable());
+
+			//Check that the childContentType has the field
+			childContentType = contentTypeApi.find(childContentType.id());
+			assertEquals(1,childContentType.fields().size());
+
+			//Check that there is only one relationship regardless the 2 fields
+			assertEquals(1,APILocator.getRelationshipAPI().byContentType(childContentType).size());
+
+			//Delete parentContentType
+			contentTypeApi.delete(parentContentType);
+
+			//Check that the field is deleted on the childContentType
+			childContentType = contentTypeApi.find(childContentType.id());
+			assertEquals(0,childContentType.fields().size());
+
+			//Check that the relationship is deleted
+			assertTrue("Relationship Still Exists",APILocator.getRelationshipAPI().byContentType(childContentType).isEmpty());
+
+		} finally{
+			if(parentContentType != null){
+				contentTypeApi.delete(parentContentType);
+			}
+			if(childContentType != null){
+				contentTypeApi.delete(childContentType);
+			}
+		}
+	}
+
+	/**
+	 * This test creates a 2 content types and a Relationship Field on both content types(relationship both ways),
+	 * then deletes the child content type so the Relationship Field on the parent and the relationship
+	 * must be deleted.
+	 *
+	 * @throws Exception
+	 */
+	@Test
+	public void testDeleteContentTypeChild_deleteRelationshipFieldOnParent_deleteRelationship_bothWays() throws Exception{
+		ContentType parentContentType = null;
+		ContentType childContentType = null;
+		try {
+			//Create content types
+			parentContentType = createContentType("parentContentType" + System.currentTimeMillis());
+			childContentType = createContentType("childContentType" + System.currentTimeMillis());
+
+			//Create Relationship Field on Parent
+			final Field parentRelationshipField = createRelationshipField("testRelationship",parentContentType.id(),childContentType.variable());
+
+			//Check that the parentContentType has the field
+			parentContentType = contentTypeApi.find(parentContentType.id());
+			assertEquals(1,parentContentType.fields().size());
+
+			//Check that the relationship exists
+			assertEquals(1,APILocator.getRelationshipAPI().byContentType(childContentType).size());
+
+			//Create Relationship Field on Child
+			createRelationshipField("testRelationship",childContentType.id(),parentContentType.variable()+"."+parentRelationshipField.variable());
+
+			//Check that the childContentType has the field
+			childContentType = contentTypeApi.find(childContentType.id());
+			assertEquals(1,childContentType.fields().size());
+
+			//Check that there is only one relationship regardless the 2 fields
+			assertEquals(1,APILocator.getRelationshipAPI().byContentType(childContentType).size());
+
+			//Delete childContentType
+			contentTypeApi.delete(childContentType);
+
+			//Check that the field is deleted on the parentContentType
+			parentContentType = contentTypeApi.find(parentContentType.id());
+			assertEquals(0,parentContentType.fields().size());
+
+			//Check that the relationship is deleted
+			assertTrue("Relationship Still Exists",APILocator.getRelationshipAPI().byContentType(parentContentType).isEmpty());
+
+		} finally{
+			if(parentContentType != null){
+				contentTypeApi.delete(parentContentType);
+			}
+			if(childContentType != null){
+				contentTypeApi.delete(childContentType);
+			}
+		}
+	}
 }

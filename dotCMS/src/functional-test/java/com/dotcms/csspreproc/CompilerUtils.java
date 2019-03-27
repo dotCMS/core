@@ -11,35 +11,33 @@ import java.io.File;
 
 class CompilerUtils {
 
-  static Contentlet newFile(File file, Folder f, Host host) throws Exception {
+    static Contentlet newFile(File file, Folder f, Host host) throws Exception {
 
-    Contentlet fileAsset = new Contentlet();
-    fileAsset.setStructureInode(
-        CacheLocator.getContentTypeCache()
-            .getStructureByVelocityVarName(
-                FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME)
-            .getInode());
-    fileAsset.setHost(host.getIdentifier());
-    fileAsset.setFolder(f.getInode());
-    fileAsset.setBinary(FileAssetAPI.BINARY_FIELD, file);
-    fileAsset.setStringProperty(FileAssetAPI.TITLE_FIELD, file.getName());
-    fileAsset.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, file.getName());
-    fileAsset.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
-    fileAsset.setIndexPolicy(IndexPolicy.FORCE);
-    fileAsset =
+        Contentlet fileAsset = new Contentlet();
+        fileAsset.setStructureInode(CacheLocator.getContentTypeCache()
+                .getStructureByVelocityVarName(
+                        FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME).getInode());
+        fileAsset.setHost(host.getIdentifier());
+        fileAsset.setFolder(f.getInode());
+        fileAsset.setBinary(FileAssetAPI.BINARY_FIELD, file);
+        fileAsset.setStringProperty(FileAssetAPI.TITLE_FIELD, file.getName());
+        fileAsset.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, file.getName());
+        fileAsset.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+        fileAsset.setIndexPolicy(IndexPolicy.FORCE);
+        fileAsset = APILocator.getContentletAPI()
+                .checkin(fileAsset, APILocator.getUserAPI().getSystemUser(), false);
+
+        fileAsset.setIndexPolicy(IndexPolicy.FORCE);
         APILocator.getContentletAPI()
-            .checkin(fileAsset, APILocator.getUserAPI().getSystemUser(), false);
+                .publish(fileAsset, APILocator.getUserAPI().getSystemUser(), false);
 
-    fileAsset.setIndexPolicy(IndexPolicy.FORCE);
-    APILocator.getContentletAPI()
-        .publish(fileAsset, APILocator.getUserAPI().getSystemUser(), false);
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            //Do nothing...
+        }
 
-    try {
-      Thread.sleep(2000);
-    } catch (InterruptedException e) {
-      // Do nothing...
+        return fileAsset;
     }
 
-    return fileAsset;
-  }
 }

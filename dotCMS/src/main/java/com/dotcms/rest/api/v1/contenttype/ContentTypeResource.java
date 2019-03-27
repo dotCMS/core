@@ -58,382 +58,340 @@ import javax.servlet.http.HttpSession;
 
 @Path("/v1/contenttype")
 public class ContentTypeResource implements Serializable {
-  private final WebResource webResource;
-  private final ContentTypeHelper contentTypeHelper;
-  private final PaginationUtil paginationUtil;
-  private final WorkflowHelper workflowHelper;
-  private final PermissionAPI permissionAPI;
-
-  public ContentTypeResource() {
-    this(
-        ContentTypeHelper.getInstance(),
-        new WebResource(),
-        new PaginationUtil(new ContentTypesPaginator()),
-        WorkflowHelper.getInstance(),
-        APILocator.getPermissionAPI());
-  }
-
-  @VisibleForTesting
-  public ContentTypeResource(
-      final ContentTypeHelper contentletHelper,
-      final WebResource webresource,
-      final PaginationUtil paginationUtil,
-      final WorkflowHelper workflowHelper,
-      final PermissionAPI permissionAPI) {
-
-    this.webResource = webresource;
-    this.contentTypeHelper = contentletHelper;
-    this.paginationUtil = paginationUtil;
-    this.workflowHelper = workflowHelper;
-    this.permissionAPI = permissionAPI;
-  }
-
-  private static final long serialVersionUID = 1L;
-
-  static final String SELECTED_STRUCTURE_KEY = "selectedStructure";
-
-  @POST
-  @JSONP
-  @NoCache
-  @Consumes(MediaType.APPLICATION_JSON)
-  @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-  public final Response createType(
-      @Context final HttpServletRequest req, final ContentTypeForm form) throws DotDataException {
-    final InitDataObject initData = this.webResource.init(null, true, req, true, null);
-    final User user = initData.getUser();
-
-    Response response = null;
-
-    try {
-      Logger.debug(this, String.format("Saving new content type '%s' ", form.getRequestJson()));
-      final HttpSession session = req.getSession(false);
-      final Iterable<ContentTypeForm.ContentTypeFormEntry> typesToSave = form.getIterable();
-      final List<Map<Object, Object>> retTypes = new ArrayList<>();
-
-      // Validate input
-      for (final ContentTypeForm.ContentTypeFormEntry entry : typesToSave) {
-        final ContentType type = entry.contentType;
-        final Set<String> workflowsIds = new HashSet<>(entry.workflowsIds);
-
-        if (UtilMethods.isSet(type.id()) && !UUIDUtil.isUUID(type.id())) {
-          return ExceptionMapperUtil.createResponse(
-              null, "ContentType 'id' if set, should be a uuid");
-        }
-        final ContentType contentTypeSaved = APILocator.getContentTypeAPI(user, true).save(type);
-        this.workflowHelper.saveSchemesByContentType(contentTypeSaved.id(), user, workflowsIds);
-
-        ImmutableMap<Object, Object> responseMap =
-            ImmutableMap.builder()
-                .putAll(new JsonContentTypeTransformer(contentTypeSaved).mapObject())
-                .put(
-                    "workflows",
-                    this.workflowHelper.findSchemesByContentType(
-                        contentTypeSaved.id(), initData.getUser()))
-                .build();
-        retTypes.add(responseMap);
-        // save the last one to the session to be compliant with #13719
-        if (null != session) {
-          session.setAttribute(SELECTED_STRUCTURE_KEY, contentTypeSaved.inode());
-        }
-      }
-
-      response = Response.ok(new ResponseEntityView(retTypes)).build();
-
-    } catch (DotStateException | DotDataException e) {
-      Logger.error(this, e.getMessage(), e);
-      response =
-          ExceptionMapperUtil.createResponse(
-              null, "Content-type is not valid (" + e.getMessage() + ")");
-    } catch (DotSecurityException e) {
-      throw new ForbiddenException(e);
-
-    } catch (Exception e) {
-      Logger.error(this, e.getMessage(), e);
-      response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
-    }
-
-    return response;
-  }
-
-  @PUT
-  @Path("/id/{idOrVar}")
-  @JSONP
-  @NoCache
-  @Consumes(MediaType.APPLICATION_JSON)
-  @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-  public Response updateType(
-      @PathParam("idOrVar") final String idOrVar,
-      final ContentTypeForm form,
-      @Context final HttpServletRequest req)
-      throws DotDataException {
+	private final WebResource 		webResource;
+	private final ContentTypeHelper contentTypeHelper;
+	private final PaginationUtil 	paginationUtil;
+	private final WorkflowHelper 	workflowHelper;
+	private final PermissionAPI     permissionAPI;
+
+	public ContentTypeResource() {
+		this(ContentTypeHelper.getInstance(), new WebResource(),
+				new PaginationUtil(new ContentTypesPaginator()),
+				WorkflowHelper.getInstance(), APILocator.getPermissionAPI());
+	}
+
+	@VisibleForTesting
+	public ContentTypeResource(final ContentTypeHelper contentletHelper, final WebResource webresource,
+							   final PaginationUtil paginationUtil, final WorkflowHelper workflowHelper,
+							   final PermissionAPI permissionAPI) {
+
+		this.webResource       = webresource;
+		this.contentTypeHelper = contentletHelper;
+		this.paginationUtil    = paginationUtil;
+		this.workflowHelper    = workflowHelper;
+		this.permissionAPI     = permissionAPI;
+	}
 
-    final InitDataObject initData = this.webResource.init(null, false, req, false, null);
-    final User user = initData.getUser();
-    final ContentTypeAPI capi = APILocator.getContentTypeAPI(user, true);
+	private static final long serialVersionUID = 1L;
+
+	static final String SELECTED_STRUCTURE_KEY = "selectedStructure";
 
-    Response response = null;
+	@POST
+	@JSONP
+	@NoCache
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	public final Response createType(@Context final HttpServletRequest req, final ContentTypeForm form)
+			throws DotDataException {
+		final InitDataObject initData = this.webResource.init(null, true, req, true, null);
+		final User user = initData.getUser();
+
+		Response response = null;
 
-    try {
-      ContentType contentType = form.getContentType();
+		try {
+			Logger.debug(this, String.format("Saving new content type '%s' ", form.getRequestJson()));
+			final HttpSession session = req.getSession(false);
+			final Iterable<ContentTypeForm.ContentTypeFormEntry> typesToSave = form.getIterable();
+			final List<Map<Object, Object>> retTypes = new ArrayList<>();
 
-      Logger.debug(this, String.format("Updating content type  '%s' ", form.getRequestJson()));
+			// Validate input
+			for (final ContentTypeForm.ContentTypeFormEntry entry : typesToSave) {
+				final ContentType type = entry.contentType;
+				final Set<String> workflowsIds = new HashSet<>(entry.workflowsIds);
 
-      if (!UtilMethods.isSet(contentType.id())) {
+				if (UtilMethods.isSet(type.id()) && !UUIDUtil.isUUID(type.id())) {
+					return ExceptionMapperUtil.createResponse(null, "ContentType 'id' if set, should be a uuid");
+				}
+				final ContentType contentTypeSaved = APILocator.getContentTypeAPI(user, true).save(type);
+				this.workflowHelper.saveSchemesByContentType(contentTypeSaved.id(), user, workflowsIds);
 
-        response = ExceptionMapperUtil.createResponse(null, "Field 'id' should be set");
+				ImmutableMap<Object, Object> responseMap = ImmutableMap.builder()
+						.putAll(new JsonContentTypeTransformer(contentTypeSaved).mapObject())
+						.put("workflows", this.workflowHelper.findSchemesByContentType(contentTypeSaved.id(), initData.getUser()))
+						.build();
+				retTypes.add(responseMap);
+				// save the last one to the session to be compliant with #13719
+				if(null != session){
+                    session.setAttribute(SELECTED_STRUCTURE_KEY, contentTypeSaved.inode());
+				}
+			}
 
-      } else {
 
-        ContentType currentContentType = capi.find(idOrVar);
+			response = Response.ok(new ResponseEntityView(retTypes)).build();
 
-        if (!currentContentType.id().equals(contentType.id())) {
+		} catch (DotStateException | DotDataException e) {
+			Logger.error(this, e.getMessage(), e);
+			response = ExceptionMapperUtil
+					.createResponse(null, "Content-type is not valid (" + e.getMessage() + ")");
+		} catch (DotSecurityException e) {
+			throw new ForbiddenException(e);
 
-          response =
-              ExceptionMapperUtil.createResponse(
-                  null,
-                  "Field id '"
-                      + idOrVar
-                      + "' does not match a content-type with id '"
-                      + contentType.id()
-                      + "'");
+		} catch (Exception e) {
+			Logger.error(this, e.getMessage(), e);
+			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+		}
 
-        } else {
+		return response;
+	}
 
-          contentType = capi.save(contentType);
 
-          final Set<String> workflowsIds = new HashSet<>(form.getWorkflowsIds());
-          workflowHelper.saveSchemesByContentType(contentType.id(), user, workflowsIds);
+	@PUT
+	@Path("/id/{idOrVar}")
+	@JSONP
+	@NoCache
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
+	public Response updateType(@PathParam("idOrVar") final String idOrVar, final ContentTypeForm form,
+							   @Context final HttpServletRequest req) throws DotDataException {
 
-          ImmutableMap<Object, Object> responseMap =
-              ImmutableMap.builder()
-                  .putAll(new JsonContentTypeTransformer(contentType).mapObject())
-                  .put(
-                      "workflows",
-                      this.workflowHelper.findSchemesByContentType(
-                          contentType.id(), initData.getUser()))
-                  .build();
-
-          response = Response.ok(new ResponseEntityView(responseMap)).build();
-        }
-      }
-    } catch (NotFoundInDbException e) {
-
-      response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
-
-    } catch (DotStateException | DotDataException e) {
-
-      response =
-          ExceptionMapperUtil.createResponse(
-              null, "Content-type is not valid (" + e.getMessage() + ")");
-
-    } catch (DotSecurityException e) {
-      throw new ForbiddenException(e);
-
-    } catch (Exception e) {
-
-      response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
-    }
-
-    return response;
-  }
-
-  @DELETE
-  @Path("/id/{idOrVar}")
-  @JSONP
-  @NoCache
-  @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-  public Response deleteType(
-      @PathParam("idOrVar") final String idOrVar, @Context final HttpServletRequest req)
-      throws DotDataException, JSONException {
-
-    final InitDataObject initData = this.webResource.init(null, true, req, true, null);
-    final User user = initData.getUser();
-
-    ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user, true);
-
-    try {
-
-      ContentType type = null;
-      try {
-        type = contentTypeAPI.find(idOrVar);
-      } catch (NotFoundInDbException nfdb) {
-        return Response.status(404).build();
-      }
-
-      contentTypeAPI.delete(type);
-
-      JSONObject joe = new JSONObject();
-      joe.put("deleted", type.id());
-
-      Response response = Response.ok(new ResponseEntityView(joe.toString())).build();
-      return response;
-
-    } catch (DotSecurityException e) {
-      throw new ForbiddenException(e);
-    } catch (Exception e) {
-      return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
-    }
-  }
-
-  @GET
-  @Path("/id/{idOrVar}")
-  @JSONP
-  @NoCache
-  @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-  public Response getType(
-      @PathParam("idOrVar") final String idOrVar, @Context final HttpServletRequest req)
-      throws DotDataException {
-
-    final InitDataObject initData = this.webResource.init(null, false, req, false, null);
-    final User user = initData.getUser();
-    ContentTypeAPI tapi = APILocator.getContentTypeAPI(user, true);
-    Response response = Response.status(404).build();
-    final Map<String, Object> resultMap = new HashMap<>();
-    final HttpSession session = req.getSession(false);
-    try {
-
-      Logger.debug(this, () -> "Getting the Type: " + idOrVar);
-
-      final ContentType type = tapi.find(idOrVar);
-
-      if (null != session && null != type) {
-        session.setAttribute(SELECTED_STRUCTURE_KEY, type.inode());
-      }
-
-      resultMap.putAll(new JsonContentTypeTransformer(type).mapObject());
-      resultMap.put(
-          "workflows", this.workflowHelper.findSchemesByContentType(type.id(), initData.getUser()));
-
-      response =
-          ("true".equalsIgnoreCase(req.getParameter("include_permissions")))
-              ? Response.ok(
-                      new ResponseEntityView(
-                          resultMap,
-                          PermissionsUtil.getInstance()
-                              .getPermissionsArray(type, initData.getUser())))
-                  .build()
-              : Response.ok(new ResponseEntityView(resultMap)).build();
-    } catch (DotSecurityException e) {
-      throw new ForbiddenException(e);
-    } catch (NotFoundInDbException nfdb2) {
-      // nothing to do here, will throw a 404
-    }
-
-    return response;
-  }
-
-  @GET
-  @Path("/basetypes")
-  @JSONP
-  @InitRequestRequired
-  @NoCache
-  @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-  public final Response getRecentBaseTypes(@Context final HttpServletRequest request) {
-
-    Response response = null;
-
-    try {
-      final List<BaseContentTypesView> types = contentTypeHelper.getTypes(request);
-      response = Response.ok(new ResponseEntityView(types)).build();
-    } catch (Exception e) { // this is an unknown error, so we report as a 500.
-
-      response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
-    }
-
-    return response;
-  } // getTypes.
-
-  /**
-   * Return a list of {@link ContentType}, entity response syntax:.
-   *
-   * <code>
-   *  {
-   *      contentTypes: array of ContentType
-   *      total: total number of content types
-   *  }
-   * <code/>
-   *
-   * Url sintax: contenttype?query=query-string&limit=n-limit&offset=n-offset&orderby=fieldname-order_direction
-   *
-   * where:
-   *
-   * <ul>
-   *     <li>filter: just return ContentTypes who content this pattern</li>
-   *     <li>n-limit: limit of items to return</li>
-   *     <li>n-offset: offset</li>
-   *     <li>fieldname: field to order by</li>
-   *     <li>order_direction: asc for upward order and desc for downward order</li>
-   * </ul>
-   *
-   * Url example: v1/contenttype?query=New%20L&limit=4&offset=5&orderby=name-asc
-   *
-   * @param request
-   * @return
-   */
-  @GET
-  @JSONP
-  @NoCache
-  @Consumes(MediaType.APPLICATION_JSON)
-  @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-  public final Response getContentTypes(
-      @Context final HttpServletRequest request,
-      @QueryParam(PaginationUtil.FILTER) final String filter,
-      @QueryParam(PaginationUtil.PAGE) final int page,
-      @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
-      @DefaultValue("upper(name)") @QueryParam(PaginationUtil.ORDER_BY) String orderbyParam,
-      @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) String direction,
-      @QueryParam("type") String types)
-      throws DotDataException {
-
-    final InitDataObject initData = webResource.init(null, true, request, true, null);
-
-    Response response = null;
-
-    final String orderBy = getOrderByRealName(orderbyParam);
-    final User user = initData.getUser();
-
-    try {
-
-      final Map<String, Object> extraParams =
-          types == null
-              ? Collections.EMPTY_MAP
-              : ImmutableMap.<String, Object>builder()
-                  .put(ContentTypesPaginator.TYPE_PARAMETER_NAME, Arrays.asList(types.split(",")))
-                  .build();
-
-      final PaginationUtil paginationUtil =
-          new PaginationUtil(new ContentTypesPaginator(APILocator.getContentTypeAPI(user)));
-
-      response =
-          paginationUtil.getPage(
-              request,
-              user,
-              filter,
-              page,
-              perPage,
-              orderBy,
-              OrderDirection.valueOf(direction),
-              extraParams);
-    } catch (IllegalArgumentException e) {
-      throw new DotDataException(e.getMessage());
-    } catch (Exception e) {
-      if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
-        throw new ForbiddenException(e);
-      }
-      response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
-      Logger.error(this, e.getMessage(), e);
-    }
-
-    return response;
-  }
-
-  private String getOrderByRealName(final String orderbyParam) {
-    if ("modDate".equals(orderbyParam)) {
-      return "mod_date";
-    } else if ("variable".equals(orderbyParam)) {
-      return "velocity_var_name";
-    } else {
-      return orderbyParam;
-    }
-  }
+		final InitDataObject initData = this.webResource.init(null, false, req, false, null);
+		final User user = initData.getUser();
+		final ContentTypeAPI capi = APILocator.getContentTypeAPI(user, true);
+
+		Response response = null;
+
+		try {
+			ContentType contentType = form.getContentType();
+
+			Logger.debug(this, String.format("Updating content type  '%s' ", form.getRequestJson()));
+
+			if (!UtilMethods.isSet(contentType.id())) {
+
+				response = ExceptionMapperUtil.createResponse(null, "Field 'id' should be set");
+
+			} else {
+
+				ContentType currentContentType = capi.find(idOrVar);
+
+				if (!currentContentType.id().equals(contentType.id())) {
+
+					response = ExceptionMapperUtil.createResponse(null, "Field id '"+ idOrVar +"' does not match a content-type with id '"+ contentType.id() +"'");
+
+				} else {
+
+					contentType = capi.save(contentType);
+
+					final Set<String> workflowsIds = new HashSet<>(form.getWorkflowsIds());
+					workflowHelper.saveSchemesByContentType(contentType.id(), user, workflowsIds);
+
+					ImmutableMap<Object, Object> responseMap = ImmutableMap.builder()
+							.putAll(new JsonContentTypeTransformer(contentType).mapObject())
+							.put("workflows", this.workflowHelper.findSchemesByContentType(contentType.id(), initData.getUser()))
+							.build();
+
+					response = Response.ok(new ResponseEntityView(responseMap)).build();
+				}
+			}
+		} catch (NotFoundInDbException e) {
+
+			response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
+
+		} catch ( DotStateException | DotDataException e) {
+
+			response = ExceptionMapperUtil.createResponse(null, "Content-type is not valid ("+ e.getMessage() +")");
+
+		} catch (DotSecurityException e) {
+			throw new ForbiddenException(e);
+
+		} catch (Exception e) {
+
+			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+		}
+
+		return response;
+	}
+
+
+	@DELETE
+	@Path("/id/{idOrVar}")
+	@JSONP
+	@NoCache
+	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	public Response deleteType(@PathParam("idOrVar") final String idOrVar, @Context final HttpServletRequest req)
+			throws DotDataException, JSONException {
+
+		final InitDataObject initData = this.webResource.init(null, true, req, true, null);
+		final User user = initData.getUser();
+
+		ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user, true);
+
+		try {
+
+			ContentType type = null;
+			try {
+				type = contentTypeAPI.find(idOrVar);
+			} catch (NotFoundInDbException nfdb) {
+				return Response.status(404).build();
+			}
+
+			contentTypeAPI.delete(type);
+
+			JSONObject joe = new JSONObject();
+			joe.put("deleted", type.id());
+
+			Response response = Response.ok(new ResponseEntityView(joe.toString())).build();
+			return response;
+
+		} catch (DotSecurityException e) {
+			throw new ForbiddenException(e);
+		} catch (Exception e) {
+			return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+		}
+	}
+
+
+	@GET
+	@Path("/id/{idOrVar}")
+	@JSONP
+	@NoCache
+	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	public Response getType(@PathParam("idOrVar") final String idOrVar, @Context final HttpServletRequest req)
+			throws DotDataException {
+
+		final InitDataObject initData = this.webResource.init(null, false, req, false, null);
+		final User user = initData.getUser();
+		ContentTypeAPI tapi = APILocator.getContentTypeAPI(user, true);
+		Response response = Response.status(404).build();
+		final Map<String, Object> resultMap = new HashMap<>();
+		final HttpSession session = req.getSession(false);
+		try {
+
+			Logger.debug(this, ()-> "Getting the Type: " + idOrVar);
+
+			final ContentType type = tapi.find(idOrVar);
+
+			if(null != session && null != type){
+				session.setAttribute(SELECTED_STRUCTURE_KEY, type.inode());
+			}
+
+			resultMap.putAll(new JsonContentTypeTransformer(type).mapObject());
+			resultMap.put("workflows", 		 this.workflowHelper.findSchemesByContentType(type.id(), initData.getUser()));
+
+			response = ("true".equalsIgnoreCase(req.getParameter("include_permissions")))?
+					Response.ok(new ResponseEntityView(resultMap, PermissionsUtil.getInstance().getPermissionsArray(type, initData.getUser()))).build():
+					Response.ok(new ResponseEntityView(resultMap)).build();
+		} catch (DotSecurityException e) {
+			throw new ForbiddenException(e);
+		} catch (NotFoundInDbException nfdb2) {
+			// nothing to do here, will throw a 404
+		}
+
+		return response;
+	}
+
+
+	@GET
+	@Path("/basetypes")
+	@JSONP
+	@InitRequestRequired
+	@NoCache
+	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	public final Response getRecentBaseTypes(@Context final HttpServletRequest request) {
+
+		Response response = null;
+
+		try {
+			final List<BaseContentTypesView> types = contentTypeHelper.getTypes(request);
+			response = Response.ok(new ResponseEntityView(types)).build();
+		} catch (Exception e) { // this is an unknown error, so we report as a 500.
+
+			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+		}
+
+		return response;
+	} // getTypes.
+
+	/**
+	 * Return a list of {@link ContentType}, entity response syntax:.
+	 *
+	 * <code>
+	 *  {
+	 *      contentTypes: array of ContentType
+	 *      total: total number of content types
+	 *  }
+	 * <code/>
+	 *
+	 * Url sintax: contenttype?query=query-string&limit=n-limit&offset=n-offset&orderby=fieldname-order_direction
+	 *
+	 * where:
+	 *
+	 * <ul>
+	 *     <li>filter: just return ContentTypes who content this pattern</li>
+	 *     <li>n-limit: limit of items to return</li>
+	 *     <li>n-offset: offset</li>
+	 *     <li>fieldname: field to order by</li>
+	 *     <li>order_direction: asc for upward order and desc for downward order</li>
+	 * </ul>
+	 *
+	 * Url example: v1/contenttype?query=New%20L&limit=4&offset=5&orderby=name-asc
+	 *
+	 * @param request
+	 * @return
+	 */
+	@GET
+	@JSONP
+	@NoCache
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	public final Response getContentTypes(@Context final HttpServletRequest request,
+										  @QueryParam(PaginationUtil.FILTER)   final String filter,
+										  @QueryParam(PaginationUtil.PAGE) final int page,
+										  @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
+										  @DefaultValue("upper(name)") @QueryParam(PaginationUtil.ORDER_BY) String orderbyParam,
+										  @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) String direction,
+										  @QueryParam("type") String types) throws DotDataException {
+
+		final InitDataObject initData = webResource.init(null, true, request, true, null);
+
+		Response response = null;
+
+		final String orderBy = getOrderByRealName(orderbyParam);
+		final User user = initData.getUser();
+
+		try {
+
+			final Map<String, Object> extraParams = types == null ? Collections.EMPTY_MAP :
+					ImmutableMap.<String, Object>builder()
+							.put(ContentTypesPaginator.TYPE_PARAMETER_NAME, Arrays.asList(types.split(",")))
+							.build();
+
+			
+			final PaginationUtil paginationUtil = new PaginationUtil(new ContentTypesPaginator(APILocator.getContentTypeAPI(user)));
+			
+			
+			response = paginationUtil.getPage(request, user, filter, page, perPage, orderBy,
+					OrderDirection.valueOf(direction), extraParams);
+		} catch (IllegalArgumentException e) {
+			throw new DotDataException(e.getMessage());
+		} catch (Exception e) {
+			if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
+				throw new ForbiddenException(e);
+			}
+			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+			Logger.error(this, e.getMessage(), e);
+		}
+
+		return response;
+	}
+
+	private String getOrderByRealName(final String orderbyParam) {
+		if ("modDate".equals(orderbyParam)){
+			return "mod_date";
+		}else if ("variable".equals(orderbyParam)) {
+			return "velocity_var_name";
+		} else {
+			return orderbyParam;
+		}
+	}
+
 }

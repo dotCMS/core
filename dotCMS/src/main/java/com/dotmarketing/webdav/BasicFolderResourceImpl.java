@@ -22,114 +22,98 @@ import java.io.OutputStream;
 import java.util.Map;
 
 public abstract class BasicFolderResourceImpl implements FolderResource {
+    
+    protected String path;
+    protected Host host;
+    protected boolean isAutoPub;
+    protected DotWebdavHelper dotDavHelper=new DotWebdavHelper();
+    protected long lang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
 
-  protected String path;
-  protected Host host;
-  protected boolean isAutoPub;
-  protected DotWebdavHelper dotDavHelper = new DotWebdavHelper();
-  protected long lang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
-
-  private String originalPath;
-
-  public BasicFolderResourceImpl(String path) {
-    this.originalPath = path;
-    this.path = path.toLowerCase();
-    try {
-      this.host =
-          APILocator.getHostAPI()
-              .findByName(
-                  dotDavHelper.getHostName(path), APILocator.getUserAPI().getSystemUser(), false);
-    } catch (Exception e) {
-      throw new RuntimeException(e);
+    private String originalPath;
+    
+    public BasicFolderResourceImpl(String path) {
+        this.originalPath = path;
+        this.path=path.toLowerCase();
+        try {
+            this.host=APILocator.getHostAPI().findByName(
+                    dotDavHelper.getHostName(path),APILocator.getUserAPI().getSystemUser(),false);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        try {
+			dotDavHelper.stripMapping(path);
+		} catch (IOException e) {
+			Logger.error( this, "Error happened with uri: [" + path + "]", e);
+		}
+        this.lang = dotDavHelper.getLanguage();
+        this.isAutoPub=dotDavHelper.isAutoPub(path);
     }
-    try {
-      dotDavHelper.stripMapping(path);
-    } catch (IOException e) {
-      Logger.error(this, "Error happened with uri: [" + path + "]", e);
+    
+    public Resource createNew(String newName, InputStream in, Long length, String contentType) throws IOException, DotRuntimeException {
+    	if(newName.matches("^\\.(.*)-Spotlight$")){
+            // http://jira.dotmarketing.net/browse/DOTCMS-7285
+    		newName = newName + ".spotlight";
+    	}
+   
+        User user=(User)HttpManager.request().getAuthorization().getTag();
+        
+        if(!path.endsWith("/")){
+            path = path + "/";
+        }
+
+        newName = dotDavHelper.deleteSpecialCharacter(newName);
+        newName = newName.toLowerCase();
+        if(!dotDavHelper.isTempResource(newName)){
+            try {
+            	dotDavHelper.setResourceContent(path + newName, in, contentType, null, java.util.Calendar.getInstance().getTime(), user, isAutoPub);
+                final IFileAsset iFileAsset = dotDavHelper.loadFile(path + newName,user);
+                final Resource fileResource = new FileResourceImpl(iFileAsset, iFileAsset.getFileName());
+                return fileResource;
+                
+            }catch (Exception e){
+            	Logger.error(this, "An error occurred while creating new file: " + (newName != null ? newName : "Unknown") 
+                		+ " in this path: " + (path != null ? path : "Unknown") + " " 
+                		+ e.getMessage(), e);
+            	throw new DotRuntimeException(e.getMessage(), e);
+            }
+        } else {
+            try {
+                originalPath = (!originalPath.endsWith("/"))?originalPath + "/":originalPath;
+                final File tempFile = dotDavHelper.createTempFile("/" + host.getHostname() + originalPath + newName);
+                FileUtils.copyStreamToFile(tempFile, in, null);
+                final Resource tempFileResource = new TempFileResourceImpl(tempFile, originalPath + newName, isAutoPub);
+                return tempFileResource;
+            } catch (Exception e){
+                Logger.error(this, "Error creating temp file", e);
+                throw new DotRuntimeException(e.getMessage(), e);
+            }
+        }
     }
-    this.lang = dotDavHelper.getLanguage();
-    this.isAutoPub = dotDavHelper.isAutoPub(path);
-  }
 
-  public Resource createNew(String newName, InputStream in, Long length, String contentType)
-      throws IOException, DotRuntimeException {
-    if (newName.matches("^\\.(.*)-Spotlight$")) {
-      // http://jira.dotmarketing.net/browse/DOTCMS-7285
-      newName = newName + ".spotlight";
+    
+    public void delete() throws DotRuntimeException{
+        User user=(User)HttpManager.request().getAuthorization().getTag();
+        try {
+            dotDavHelper.removeObject(path, user);
+        } catch (Exception e) {
+            Logger.error(this, e.getMessage(), e);
+            throw new DotRuntimeException(e.getMessage(), e);
+        }
     }
 
-    User user = (User) HttpManager.request().getAuthorization().getTag();
-
-    if (!path.endsWith("/")) {
-      path = path + "/";
+    @Override
+    public Long getMaxAgeSeconds(Auth arg0) {
+        return new Long(60);
     }
 
-    newName = dotDavHelper.deleteSpecialCharacter(newName);
-    newName = newName.toLowerCase();
-    if (!dotDavHelper.isTempResource(newName)) {
-      try {
-        dotDavHelper.setResourceContent(
-            path + newName,
-            in,
-            contentType,
-            null,
-            java.util.Calendar.getInstance().getTime(),
-            user,
-            isAutoPub);
-        final IFileAsset iFileAsset = dotDavHelper.loadFile(path + newName, user);
-        final Resource fileResource = new FileResourceImpl(iFileAsset, iFileAsset.getFileName());
-        return fileResource;
-
-      } catch (Exception e) {
-        Logger.error(
-            this,
-            "An error occurred while creating new file: "
-                + (newName != null ? newName : "Unknown")
-                + " in this path: "
-                + (path != null ? path : "Unknown")
-                + " "
-                + e.getMessage(),
-            e);
-        throw new DotRuntimeException(e.getMessage(), e);
-      }
-    } else {
-      try {
-        originalPath = (!originalPath.endsWith("/")) ? originalPath + "/" : originalPath;
-        final File tempFile =
-            dotDavHelper.createTempFile("/" + host.getHostname() + originalPath + newName);
-        FileUtils.copyStreamToFile(tempFile, in, null);
-        final Resource tempFileResource =
-            new TempFileResourceImpl(tempFile, originalPath + newName, isAutoPub);
-        return tempFileResource;
-      } catch (Exception e) {
-        Logger.error(this, "Error creating temp file", e);
-        throw new DotRuntimeException(e.getMessage(), e);
-      }
+    @Override
+    public void sendContent(OutputStream arg0, Range arg1,
+            Map<String, String> arg2, String arg3) throws IOException,
+            NotAuthorizedException, BadRequestException, NotFoundException {
+        return;
     }
-  }
-
-  public void delete() throws DotRuntimeException {
-    User user = (User) HttpManager.request().getAuthorization().getTag();
-    try {
-      dotDavHelper.removeObject(path, user);
-    } catch (Exception e) {
-      Logger.error(this, e.getMessage(), e);
-      throw new DotRuntimeException(e.getMessage(), e);
+    
+    public String getPath() {
+        return path;
     }
-  }
-
-  @Override
-  public Long getMaxAgeSeconds(Auth arg0) {
-    return new Long(60);
-  }
-
-  @Override
-  public void sendContent(OutputStream arg0, Range arg1, Map<String, String> arg2, String arg3)
-      throws IOException, NotAuthorizedException, BadRequestException, NotFoundException {
-    return;
-  }
-
-  public String getPath() {
-    return path;
-  }
 }

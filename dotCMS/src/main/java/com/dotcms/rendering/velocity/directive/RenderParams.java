@@ -1,11 +1,14 @@
 package com.dotcms.rendering.velocity.directive;
 
+import javax.servlet.http.HttpServletRequest;
+
+import com.dotcms.rendering.velocity.directive.RenderParams;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.PageMode;
 import com.liferay.portal.model.User;
-import javax.servlet.http.HttpServletRequest;
 
 public class RenderParams {
   public static final String RENDER_PARAMS_ATTRIBUTE = "com.dotcms.directive.renderparams";
@@ -14,8 +17,10 @@ public class RenderParams {
   final Host currentHost;
   final PageMode mode;
 
+
   public RenderParams(HttpServletRequest request) {
     this(request, (RenderParams) request.getAttribute(RENDER_PARAMS_ATTRIBUTE));
+
   }
 
   RenderParams(HttpServletRequest request, RenderParams params) {
@@ -31,14 +36,16 @@ public class RenderParams {
       currentHost = WebAPILocator.getHostWebAPI().getHost(request);
       request.setAttribute(RENDER_PARAMS_ATTRIBUTE, this);
     }
+    
   }
-
-  public RenderParams(
-      final User user, final Language language, final Host currentHost, final PageMode mode) {
+  public RenderParams(final User user, final Language language, final Host currentHost, final PageMode mode) {
 
     this.user = user;
     this.language = language;
     this.currentHost = currentHost;
     this.mode = mode;
+
   }
+
+
 }

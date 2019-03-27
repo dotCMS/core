@@ -2,7 +2,7 @@ package net.sourceforge.squirrel_sql.plugins.mssql.prefs;
 /*
  * Copyright (C) 2007 Rob Manning
  * manningr@users.sourceforge.net
- *
+ * 
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -18,133 +18,159 @@ package net.sourceforge.squirrel_sql.plugins.mssql.prefs;
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 import java.io.Serializable;
+
 import net.sourceforge.squirrel_sql.fw.preferences.IQueryTokenizerPreferenceBean;
 
-/** A bean class to store preferences for the MS SQL-Server plugin. */
-public class MSSQLPreferenceBean implements Cloneable, Serializable, IQueryTokenizerPreferenceBean {
+/**
+ * A bean class to store preferences for the MS SQL-Server plugin.
+ */
+public class MSSQLPreferenceBean implements Cloneable, 
+                                             Serializable,
+                                             IQueryTokenizerPreferenceBean {    
+    
+	static final long serialVersionUID = -8870273703050156986L;
 
-  static final long serialVersionUID = -8870273703050156986L;
+    static final String UNSUPPORTED = "Unsupported";
 
-  static final String UNSUPPORTED = "Unsupported";
+    /** Client Name. */
+	private String _clientName;
 
-  /** Client Name. */
-  private String _clientName;
+	/** Client version. */
+	private String _clientVersion;
+    
+    private String statementSeparator = "GO";
+    
+    private String lineComment = "--";
+    
+    private boolean removeMultiLineComments = false;
+    
+    private boolean installCustomQueryTokenizer = true;
+    
+    
+	public MSSQLPreferenceBean() {
+		super();
+	}
 
-  /** Client version. */
-  private String _clientVersion;
+	/**
+	 * Return a copy of this object.
+	 */
+	public Object clone() {
+		try {
+			return super.clone();
+		} catch (CloneNotSupportedException ex) {
+			throw new InternalError(ex.getMessage()); // Impossible.
+		}
+	}
 
-  private String statementSeparator = "GO";
+	/**
+	 * Retrieve the client to use. This is only
+	 * used if <TT>useAnonymousClient</TT> is false.
+	 *
+	 * @return	Client name.
+	 */
+	public String getClientName() {
+		return _clientName;
+	}
 
-  private String lineComment = "--";
+	/**
+	 * Set the client name.
+	 *
+	 * @param	value	Client name
+	 */
+	public void setClientName(String value) {
+		_clientName = value;
+	}
 
-  private boolean removeMultiLineComments = false;
+	/**
+	 * Retrieve the client version to use. This is only
+	 * used if <TT>useAnonymousLogon</TT> is false.
+	 *
+	 * @return	Client version.
+	 */
+	public String getClientVersion() {
+		return _clientVersion;
+	}
 
-  private boolean installCustomQueryTokenizer = true;
+	/**
+	 * Set the client version.
+	 *
+	 * @param	value	Client version
+	 */
+	public void setClientVersion(String value) {
+		_clientVersion = value;
+	}
 
-  public MSSQLPreferenceBean() {
-    super();
-  }
-
-  /** Return a copy of this object. */
-  public Object clone() {
-    try {
-      return super.clone();
-    } catch (CloneNotSupportedException ex) {
-      throw new InternalError(ex.getMessage()); // Impossible.
+    /**
+     * @param statementSeparator the statementSeparator to set
+     */
+    public void setStatementSeparator(String statementSeparator) {
+        this.statementSeparator = statementSeparator;
     }
-  }
 
-  /**
-   * Retrieve the client to use. This is only used if <TT>useAnonymousClient</TT> is false.
-   *
-   * @return Client name.
-   */
-  public String getClientName() {
-    return _clientName;
-  }
+    /**
+     * @return the statementSeparator
+     */
+    public String getStatementSeparator() {
+        return statementSeparator;
+    }
 
-  /**
-   * Set the client name.
-   *
-   * @param value Client name
-   */
-  public void setClientName(String value) {
-    _clientName = value;
-  }
+    /**
+     * @param lineComment the lineComment to set
+     */
+    public void setLineComment(String lineComment) {
+        this.lineComment = lineComment;
+    }
 
-  /**
-   * Retrieve the client version to use. This is only used if <TT>useAnonymousLogon</TT> is false.
-   *
-   * @return Client version.
-   */
-  public String getClientVersion() {
-    return _clientVersion;
-  }
+    /**
+     * @return the lineComment
+     */
+    public String getLineComment() {
+        return lineComment;
+    }
 
-  /**
-   * Set the client version.
-   *
-   * @param value Client version
-   */
-  public void setClientVersion(String value) {
-    _clientVersion = value;
-  }
+    /**
+     * @param removeMultiLineComments the removeMultiLineComments to set
+     */
+    public void setRemoveMultiLineComments(boolean removeMultiLineComments) {
+        this.removeMultiLineComments = removeMultiLineComments;
+    }
 
-  /** @param statementSeparator the statementSeparator to set */
-  public void setStatementSeparator(String statementSeparator) {
-    this.statementSeparator = statementSeparator;
-  }
+    /**
+     * @return the removeMultiLineComments
+     */
+    public boolean isRemoveMultiLineComments() {
+        return removeMultiLineComments;
+    }
 
-  /** @return the statementSeparator */
-  public String getStatementSeparator() {
-    return statementSeparator;
-  }
+    /**
+     * @param installCustomQueryTokenizer the installCustomQueryTokenizer to set
+     */
+    public void setInstallCustomQueryTokenizer(boolean installCustomQueryTokenizer) {
+        this.installCustomQueryTokenizer = installCustomQueryTokenizer;
+    }
 
-  /** @param lineComment the lineComment to set */
-  public void setLineComment(String lineComment) {
-    this.lineComment = lineComment;
-  }
+    /**
+     * @return the installCustomQueryTokenizer
+     */
+    public boolean isInstallCustomQueryTokenizer() {
+        return installCustomQueryTokenizer;
+    }
 
-  /** @return the lineComment */
-  public String getLineComment() {
-    return lineComment;
-  }
+    /**
+     * This is not implemented at the moment, but will be soon.
+     * @see net.sourceforge.squirrel_sql.fw.preferences.IQueryTokenizerPreferenceBean#getProcedureSeparator()
+     */
+    public String getProcedureSeparator() {
+        return null;
+    }
 
-  /** @param removeMultiLineComments the removeMultiLineComments to set */
-  public void setRemoveMultiLineComments(boolean removeMultiLineComments) {
-    this.removeMultiLineComments = removeMultiLineComments;
-  }
-
-  /** @return the removeMultiLineComments */
-  public boolean isRemoveMultiLineComments() {
-    return removeMultiLineComments;
-  }
-
-  /** @param installCustomQueryTokenizer the installCustomQueryTokenizer to set */
-  public void setInstallCustomQueryTokenizer(boolean installCustomQueryTokenizer) {
-    this.installCustomQueryTokenizer = installCustomQueryTokenizer;
-  }
-
-  /** @return the installCustomQueryTokenizer */
-  public boolean isInstallCustomQueryTokenizer() {
-    return installCustomQueryTokenizer;
-  }
-
-  /**
-   * This is not implemented at the moment, but will be soon.
-   *
-   * @see
-   *     net.sourceforge.squirrel_sql.fw.preferences.IQueryTokenizerPreferenceBean#getProcedureSeparator()
-   */
-  public String getProcedureSeparator() {
-    return null;
-  }
-
-  /**
-   * This is not implemented at the moment, but will be soon.
-   *
-   * @see
-   *     net.sourceforge.squirrel_sql.fw.preferences.IQueryTokenizerPreferenceBean#setProcedureSeparator(java.lang.String)
-   */
-  public void setProcedureSeparator(String procedureSeparator) {}
+    /**
+     * This is not implemented at the moment, but will be soon. 
+     * @see net.sourceforge.squirrel_sql.fw.preferences.IQueryTokenizerPreferenceBean#setProcedureSeparator(java.lang.String)
+     */
+    public void setProcedureSeparator(String procedureSeparator) {
+        
+    }
+	
 }
+

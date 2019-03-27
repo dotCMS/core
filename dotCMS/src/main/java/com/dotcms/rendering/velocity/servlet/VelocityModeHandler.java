@@ -16,86 +16,68 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.liferay.portal.model.User;
+import org.apache.velocity.Template;
+import org.apache.velocity.exception.ParseErrorException;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Map;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import org.apache.velocity.Template;
-import org.apache.velocity.exception.ParseErrorException;
 
 public abstract class VelocityModeHandler {
 
-  protected static final String CHARSET = Config.getStringProperty("CHARSET", "UTF-8");
-  protected static final HostWebAPI hostWebAPI = WebAPILocator.getHostWebAPI();
-  protected static final VisitorAPI visitorAPI = APILocator.getVisitorAPI();
+    protected static final String CHARSET = Config.getStringProperty("CHARSET", "UTF-8");
+    protected static final HostWebAPI hostWebAPI = WebAPILocator.getHostWebAPI();
+    protected static final VisitorAPI visitorAPI = APILocator.getVisitorAPI();
 
-  private static final Map<PageMode, Function> pageModeVelocityMap =
-      ImmutableMap.<PageMode, VelocityModeHandler.Function>builder()
-          .put(PageMode.PREVIEW_MODE, VelocityPreviewMode::new)
-          .put(PageMode.EDIT_MODE, VelocityEditMode::new)
-          .put(PageMode.LIVE, VelocityLiveMode::new)
-          .put(PageMode.ADMIN_MODE, VelocityAdminMode::new)
-          .put(PageMode.NAVIGATE_EDIT_MODE, VelocityNavigateEditMode::new)
-          .build();
+    private static final Map<PageMode, Function> pageModeVelocityMap =ImmutableMap.<PageMode, VelocityModeHandler.Function>builder()
+            .put(PageMode.PREVIEW_MODE, VelocityPreviewMode::new)
+            .put(PageMode.EDIT_MODE, VelocityEditMode::new)
+            .put(PageMode.LIVE, VelocityLiveMode::new)
+            .put(PageMode.ADMIN_MODE, VelocityAdminMode::new)
+            .put(PageMode.NAVIGATE_EDIT_MODE, VelocityNavigateEditMode::new)
+            .build();
 
-  protected void processException(final User user, final String name, final ParseErrorException e) {
+    protected void processException(final User user, final String name, final ParseErrorException e) {
 
-    Logger.warn(this, "The resource " + name + " has a parse error, msg: " + e.getMessage());
-    Logger.warn(
-        this,
-        "ParseErrorException on the page: " + name + ", with the user: " + user.getNickName(),
-        e);
-  }
-
-  @FunctionalInterface
-  private interface Function {
-    VelocityModeHandler apply(
-        HttpServletRequest request, HttpServletResponse response, String uri, Host host);
-  }
-
-  abstract void serve() throws DotDataException, IOException, DotSecurityException;
-
-  abstract void serve(OutputStream out) throws DotDataException, IOException, DotSecurityException;
-
-  public final String eval() {
-    try (ByteArrayOutputStream out = new ByteArrayOutputStream(4096)) {
-      serve(out);
-      return new String(out.toByteArray());
-    } catch (DotDataException | IOException | DotSecurityException e) {
-      throw new DotRuntimeException(e);
+        Logger.warn(this, "The resource " + name + " has a parse error, msg: " + e.getMessage());
+        Logger.warn(this, "ParseErrorException on the page: " + name + ", with the user: " + user.getNickName(), e);
     }
-  }
 
-  public static final VelocityModeHandler modeHandler(
-      PageMode mode,
-      HttpServletRequest request,
-      HttpServletResponse response,
-      String uri,
-      Host host) {
-    return pageModeVelocityMap.get(mode).apply(request, response, uri, host);
-  }
+    @FunctionalInterface
+    private interface Function {
+        VelocityModeHandler apply(HttpServletRequest request, HttpServletResponse response, String uri, Host host);
+    }
 
-  public static final VelocityModeHandler modeHandler(
-      PageMode mode, HttpServletRequest request, HttpServletResponse response) {
-    return pageModeVelocityMap
-        .get(mode)
-        .apply(
-            request, response, request.getRequestURI(), hostWebAPI.getCurrentHostNoThrow(request));
-  }
 
-  public final Template getTemplate(IHTMLPage page, PageMode mode) {
+    abstract void serve() throws DotDataException, IOException, DotSecurityException;
 
-    return VelocityUtil.getEngine()
-        .getTemplate(
-            mode.name()
-                + File.separator
-                + page.getIdentifier()
-                + "_"
-                + page.getLanguageId()
-                + "."
-                + VelocityType.HTMLPAGE.fileExtension);
-  }
+    abstract void serve(OutputStream out) throws DotDataException, IOException, DotSecurityException;
+
+
+    public final String eval() {
+        try(ByteArrayOutputStream out = new ByteArrayOutputStream(4096)) {
+            serve(out);
+            return new String(out.toByteArray());
+        } catch (DotDataException | IOException | DotSecurityException e) {
+            throw new DotRuntimeException(e);
+        }
+    }
+    
+    public static final VelocityModeHandler modeHandler(PageMode mode, HttpServletRequest request, HttpServletResponse response, String uri, Host host) {
+        return pageModeVelocityMap.get(mode).apply(request, response, uri, host);
+    }
+    
+    public static final VelocityModeHandler modeHandler(PageMode mode, HttpServletRequest request, HttpServletResponse response) {
+        return pageModeVelocityMap.get(mode).apply(request, response, request.getRequestURI(), hostWebAPI.getCurrentHostNoThrow(request));
+    }
+
+    public final Template getTemplate(IHTMLPage page, PageMode mode) {
+
+        return VelocityUtil.getEngine().getTemplate(mode.name() + File.separator + page.getIdentifier() + "_"
+                + page.getLanguageId() + "." + VelocityType.HTMLPAGE.fileExtension);
+    }
 }

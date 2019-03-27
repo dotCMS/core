@@ -1,85 +1,80 @@
 package com.dotcms.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 import com.dotcms.UnitTestBase;
-import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.Test;
 
-public class OptionalBooleanTest extends UnitTestBase {
+import java.util.concurrent.atomic.AtomicBoolean;
 
-  @Test
-  public void testNull() {
+import static org.junit.Assert.*;
 
-    final OptionalBoolean optionalBoolean = OptionalBoolean.of(null);
-    final AtomicBoolean changeOnFalseGet = new AtomicBoolean(false);
-    final AtomicBoolean changeOnFalse = new AtomicBoolean(false);
+public class OptionalBooleanTest  extends UnitTestBase {
 
-    optionalBoolean.orElse(() -> changeOnFalse.set(true));
+    @Test
+    public void testNull(){
 
-    assertFalse(optionalBoolean.isPresent());
-    assertEquals(null, optionalBoolean.orElseGet(() -> changeOnFalseGet.set(true)));
-    assertTrue(changeOnFalseGet.get());
-    assertTrue(changeOnFalse.get());
+        final OptionalBoolean optionalBoolean = OptionalBoolean.of(null);
+        final AtomicBoolean changeOnFalseGet = new AtomicBoolean(false);
+        final AtomicBoolean changeOnFalse = new AtomicBoolean(false);
 
-    try {
+        optionalBoolean.orElse(() -> changeOnFalse.set(true));
 
-      optionalBoolean.get();
-      fail("Should try exception");
-    } catch (Exception e) {
+        assertFalse(optionalBoolean.isPresent());
+        assertEquals(null, optionalBoolean.orElseGet(() -> changeOnFalseGet.set(true)));
+        assertTrue(changeOnFalseGet.get());
+        assertTrue(changeOnFalse.get());
+
+        try {
+
+            optionalBoolean.get();
+            fail("Should try exception");
+        } catch (Exception e) {}
     }
-  }
 
-  @Test
-  public void testTrue() {
+    @Test
+    public void testTrue(){
 
-    final OptionalBoolean optionalBoolean = OptionalBoolean.of(true);
-    final AtomicBoolean changeOnTrueGet = new AtomicBoolean(false);
-    final AtomicBoolean changeOnTrue = new AtomicBoolean(false);
+        final OptionalBoolean optionalBoolean = OptionalBoolean.of(true);
+        final AtomicBoolean changeOnTrueGet = new AtomicBoolean(false);
+        final AtomicBoolean changeOnTrue = new AtomicBoolean(false);
 
-    optionalBoolean.ifTrue(() -> changeOnTrue.set(true));
+        optionalBoolean.ifTrue(() -> changeOnTrue.set(true));
 
-    assertTrue(optionalBoolean.isPresent());
-    assertEquals(true, optionalBoolean.ifTrueGet(() -> changeOnTrueGet.set(true)));
-    assertTrue(changeOnTrueGet.get());
-    assertTrue(changeOnTrue.get());
-    assertTrue(optionalBoolean.get());
-  }
+        assertTrue(optionalBoolean.isPresent());
+        assertEquals(true, optionalBoolean.ifTrueGet(() -> changeOnTrueGet.set(true)));
+        assertTrue(changeOnTrueGet.get());
+        assertTrue(changeOnTrue.get());
+        assertTrue(optionalBoolean.get());
+    }
 
-  @Test
-  public void testFalse() {
+    @Test
+    public void testFalse(){
 
-    final OptionalBoolean optionalBoolean = OptionalBoolean.of(false);
-    final AtomicBoolean changeOnFalseGet = new AtomicBoolean(false);
-    final AtomicBoolean changeOnFalse = new AtomicBoolean(false);
+        final OptionalBoolean optionalBoolean = OptionalBoolean.of(false);
+        final AtomicBoolean changeOnFalseGet = new AtomicBoolean(false);
+        final AtomicBoolean changeOnFalse = new AtomicBoolean(false);
 
-    optionalBoolean.orElse(() -> changeOnFalse.set(true));
+        optionalBoolean.orElse(() -> changeOnFalse.set(true));
 
-    assertTrue(optionalBoolean.isPresent());
-    assertEquals(false, optionalBoolean.orElseGet(() -> changeOnFalseGet.set(true)));
-    assertTrue(changeOnFalseGet.get());
-    assertTrue(changeOnFalse.get());
-    assertFalse(optionalBoolean.get());
-  }
+        assertTrue(optionalBoolean.isPresent());
+        assertEquals(false, optionalBoolean.orElseGet(() -> changeOnFalseGet.set(true)));
+        assertTrue(changeOnFalseGet.get());
+        assertTrue(changeOnFalse.get());
+        assertFalse(optionalBoolean.get());
+    }
 
-  @Test
-  public void testChain() {
+    @Test
+    public void testChain(){
 
-    final OptionalBoolean optionalBoolean = OptionalBoolean.of(false);
-    final AtomicBoolean changeOnTrue = new AtomicBoolean(false);
-    final AtomicBoolean changeOnFalse = new AtomicBoolean(false);
+        final OptionalBoolean optionalBoolean = OptionalBoolean.of(false);
+        final AtomicBoolean changeOnTrue  = new AtomicBoolean(false);
+        final AtomicBoolean changeOnFalse = new AtomicBoolean(false);
 
-    assertTrue(optionalBoolean.isPresent());
-    assertFalse(
-        optionalBoolean
-            .ifTrue(() -> changeOnTrue.set(true))
-            .orElse(() -> changeOnFalse.set(true))
-            .get());
+        assertTrue(optionalBoolean.isPresent());
+        assertFalse(optionalBoolean.ifTrue(() -> changeOnTrue.set(true)).orElse(() -> changeOnFalse.set(true)).get());
 
-    assertFalse(changeOnTrue.get());
-    assertTrue(changeOnFalse.get());
-  }
+        assertFalse(changeOnTrue.get());
+        assertTrue(changeOnFalse.get());
+    }
+
 }

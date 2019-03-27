@@ -56,259 +56,248 @@ import org.jetbrains.annotations.NotNull;
  */
 public class PageResourceHelper implements Serializable {
 
-  private static final long serialVersionUID = 296763857542258211L;
+    private static final long serialVersionUID = 296763857542258211L;
 
-  private final HostWebAPI hostWebAPI = WebAPILocator.getHostWebAPI();
-  private final HTMLPageAssetAPI htmlPageAssetAPI = APILocator.getHTMLPageAssetAPI();
-  private final TemplateAPI templateAPI = APILocator.getTemplateAPI();
-  private final ContentletAPI contentletAPI = APILocator.getContentletAPI();
-  private final HostAPI hostAPI = APILocator.getHostAPI();
-  private final LanguageAPI langAPI = APILocator.getLanguageAPI();
-  private final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
-  private final UserAPI userAPI = APILocator.getUserAPI();
-  private final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+    private final HostWebAPI hostWebAPI = WebAPILocator.getHostWebAPI();
+    private final HTMLPageAssetAPI htmlPageAssetAPI = APILocator.getHTMLPageAssetAPI();
+    private final TemplateAPI templateAPI = APILocator.getTemplateAPI();
+    private final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+    private final HostAPI hostAPI = APILocator.getHostAPI();
+    private final LanguageAPI langAPI = APILocator.getLanguageAPI();
+    private final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
+    private final UserAPI userAPI = APILocator.getUserAPI();
+    private final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 
-  /** Private constructor */
-  private PageResourceHelper() {}
+    /**
+     * Private constructor
+     */
+    private PageResourceHelper() {
 
-  public void saveContent(
-      final String pageId, final List<PageContainerForm.ContainerEntry> containerEntries)
-      throws DotDataException {
-
-    final List<MultiTree> multiTrees = new ArrayList<>();
-
-    for (final PageContainerForm.ContainerEntry containerEntry : containerEntries) {
-      int i = 0;
-      final List<String> contentIds = containerEntry.getContentIds();
-
-      for (final String contentletId : contentIds) {
-        final MultiTree multiTree =
-            new MultiTree()
-                .setContainer(containerEntry.getContainerId())
-                .setContentlet(contentletId)
-                .setInstanceId(containerEntry.getContainerUUID())
-                .setTreeOrder(i++)
-                .setHtmlPage(pageId);
-
-        multiTrees.add(multiTree);
-      }
     }
 
-    multiTreeAPI.saveMultiTrees(pageId, multiTrees);
-  }
+    public void saveContent(final String pageId, final List<PageContainerForm.ContainerEntry> containerEntries) throws DotDataException {
 
-  public void saveMultiTree(
-      final String containerId,
-      final String contentletId,
-      final int order,
-      final String uid,
-      final Contentlet page)
-      throws DotDataException {
+        final List<MultiTree> multiTrees = new ArrayList<>();
 
-    final MultiTree multiTree =
-        new MultiTree()
-            .setContainer(containerId)
-            .setContentlet(contentletId)
-            .setRelationType(uid)
-            .setTreeOrder(order)
-            .setHtmlPage(page.getIdentifier());
+        for (final PageContainerForm.ContainerEntry containerEntry : containerEntries) {
+            int i = 0;
+            final  List<String> contentIds = containerEntry.getContentIds();
 
-    multiTreeAPI.saveMultiTree(multiTree);
-  }
+            for (final String contentletId : contentIds) {
+                final MultiTree multiTree = new MultiTree().setContainer(containerEntry.getContainerId())
+                        .setContentlet(contentletId)
+                        .setInstanceId(containerEntry.getContainerUUID())
+                        .setTreeOrder(i++)
+                        .setHtmlPage(pageId);
 
-  /** Provides a singleton instance of the {@link PageResourceHelper} */
-  private static class SingletonHolder {
-    private static final PageResourceHelper INSTANCE = new PageResourceHelper();
-  }
-
-  /**
-   * Returns a singleton instance of this class.
-   *
-   * @return A single instance of this class.
-   */
-  public static PageResourceHelper getInstance() {
-    return PageResourceHelper.SingletonHolder.INSTANCE;
-  }
-
-  @WrapInTransaction
-  public HTMLPageAsset saveTemplate(
-      final User user, final HTMLPageAsset htmlPageAsset, final PageForm pageForm)
-      throws BadRequestException, DotDataException, DotSecurityException {
-
-    try {
-      final Template templateSaved = this.saveTemplate(htmlPageAsset, user, pageForm);
-
-      final String templateId = htmlPageAsset.getTemplateId();
-
-      Contentlet contentlet = htmlPageAsset;
-
-      if (!templateId.equals(templateSaved.getIdentifier())) {
-        contentlet = this.contentletAPI.checkout(htmlPageAsset.getInode(), user, false);
-        contentlet.setStringProperty(
-            HTMLPageAssetAPI.TEMPLATE_FIELD, templateSaved.getIdentifier());
-        contentlet = this.contentletAPI.checkin(contentlet, user, false);
-      }
-
-      return contentlet instanceof HTMLPageAsset
-          ? (HTMLPageAsset) contentlet
-          : this.htmlPageAssetAPI.fromContentlet(contentlet);
-    } catch (BadRequestException | DotDataException | DotSecurityException e) {
-      throw new DotRuntimeException(e);
-    }
-  }
-
-  @NotNull
-  public IHTMLPage getPage(final User user, final String pageId, final HttpServletRequest request)
-      throws DotDataException, DotSecurityException {
-
-    try {
-      final PageMode mode = PageMode.get(request);
-      final Language currentLanguage = WebAPILocator.getLanguageWebAPI().getLanguage(request);
-
-      final IHTMLPage page =
-          this.htmlPageAssetAPI.findByIdLanguageFallback(
-              pageId, currentLanguage.getId(), mode.showLive, user, mode.respectAnonPerms);
-
-      if (page == null) {
-        throw new HTMLPageAssetNotFoundException(pageId);
-      }
-
-      return page;
-    } catch (DotContentletStateException e) {
-      throw new HTMLPageAssetNotFoundException(pageId, e);
-    }
-  }
-
-  @WrapInTransaction
-  public Template saveTemplate(final IHTMLPage page, final User user, final PageForm pageForm)
-      throws BadRequestException, DotDataException, DotSecurityException {
-
-    try {
-      final Host host = getHost(pageForm.getHostId(), user);
-      final User systemUser = userAPI.getSystemUser();
-      final Template template = getTemplate(page, systemUser, pageForm);
-      final boolean hasPermission =
-          template.isAnonymous()
-              ? permissionAPI.doesUserHavePermission(page, PermissionLevel.EDIT.getType(), user)
-              : permissionAPI.doesUserHavePermission(
-                  template, PermissionLevel.EDIT.getType(), user);
-
-      if (!hasPermission) {
-        throw new DotSecurityException("The user doesn't have permission to EDIT");
-      }
-
-      template.setDrawed(true);
-
-      updateMultiTrees(page, pageForm);
-
-      return this.templateAPI.saveTemplate(template, host, user, false);
-    } catch (BadRequestException | DotDataException | DotSecurityException e) {
-      throw new DotRuntimeException(e);
-    }
-  }
-
-  @WrapInTransaction
-  protected void updateMultiTrees(final IHTMLPage page, final PageForm pageForm)
-      throws DotDataException, DotSecurityException {
-
-    final Table<String, String, Set<String>> pageContents =
-        multiTreeAPI.getPageMultiTrees(page, false);
-
-    final String pageIdentifier = page.getIdentifier();
-    APILocator.getMultiTreeAPI().deleteMultiTreeByParent(pageIdentifier);
-    final List<MultiTree> multiTrees = new ArrayList<>();
-
-    for (final String containerId : pageContents.rowKeySet()) {
-      int treeOrder = 0;
-
-      for (final String uniqueId : pageContents.row(containerId).keySet()) {
-        final Map<String, Set<String>> row = pageContents.row(containerId);
-        final Set<String> contents = row.get(uniqueId);
-
-        if (!contents.isEmpty()) {
-          final String newUUID = getNewUUID(pageForm, containerId, uniqueId);
-
-          for (final String identifier : contents) {
-            final MultiTree multiTree =
-                new MultiTree()
-                    .setContainer(containerId)
-                    .setContentlet(identifier)
-                    .setRelationType(newUUID)
-                    .setTreeOrder(treeOrder++)
-                    .setHtmlPage(pageIdentifier);
-
-            multiTrees.add(multiTree);
-          }
+                multiTrees.add(multiTree);
+            }
         }
-      }
+
+        multiTreeAPI.saveMultiTrees(pageId, multiTrees);
     }
 
-    multiTreeAPI.saveMultiTrees(pageIdentifier, multiTrees);
-  }
+    public void saveMultiTree(final String containerId,
+                              final String contentletId,
+                              final int order,
+                              final String uid,
+                              final Contentlet page) throws DotDataException {
 
-  private String getNewUUID(
-      final PageForm pageForm, final String containerId, final String uniqueId)
-      throws DotDataException, DotSecurityException {
+        final MultiTree multiTree = new MultiTree().setContainer(containerId)
+                .setContentlet(contentletId)
+                .setRelationType(uid)
+                .setTreeOrder(order)
+                .setHtmlPage(page.getIdentifier());
 
-    // If we have a FileAssetContainer we may need to search also by path
-    String containerPath = null;
-    final Container foundContainer =
-        APILocator.getContainerAPI()
-            .getWorkingContainerById(containerId, userAPI.getSystemUser(), false);
-    if (foundContainer instanceof FileAssetContainer) {
-      containerPath = FileAssetContainer.class.cast(foundContainer).getPath();
+        multiTreeAPI.saveMultiTree(multiTree);
     }
 
-    if (ContainerUUID.UUID_DEFAULT_VALUE.equals(uniqueId)) {
-      String newlyContainerUUID = pageForm.getNewlyContainerUUID(containerId);
-      if (newlyContainerUUID == null
-          && containerPath != null) { // Searching also by path if nothing found
-        newlyContainerUUID = pageForm.getNewlyContainerUUID(containerPath);
-      }
-      return newlyContainerUUID != null ? newlyContainerUUID : ContainerUUID.UUID_DEFAULT_VALUE;
-    } else {
-      ContainerUUIDChanged change = pageForm.getChange(containerId, uniqueId);
-      if (change == null && containerPath != null) { // Searching also by path if nothing found
-        change = pageForm.getChange(containerPath, uniqueId);
-      }
-      return change != null ? change.getNew().getUUID() : ContainerUUID.UUID_DEFAULT_VALUE;
-    }
-  }
 
-  public Template saveTemplate(final User user, final PageForm pageForm)
-      throws BadRequestException, DotDataException, DotSecurityException, IOException {
-    return this.saveTemplate(null, user, pageForm);
-  }
-
-  private Template getTemplate(final IHTMLPage page, final User user, final PageForm form)
-      throws DotDataException, DotSecurityException {
-
-    final Template oldTemplate =
-        this.templateAPI.findWorkingTemplate(page.getTemplateId(), user, false);
-    final Template saveTemplate;
-
-    if (UtilMethods.isSet(oldTemplate)
-        && (!form.isAnonymousLayout() || oldTemplate.isAnonymous())) {
-      saveTemplate = oldTemplate;
-    } else {
-      saveTemplate = new Template();
+    /**
+     * Provides a singleton instance of the {@link PageResourceHelper}
+     */
+    private static class SingletonHolder {
+        private static final PageResourceHelper INSTANCE = new PageResourceHelper();
     }
 
-    saveTemplate.setTitle(form.getTitle());
-    saveTemplate.setTheme((form.getThemeId() == null) ? oldTemplate.getTheme() : form.getThemeId());
-    saveTemplate.setDrawedBody(form.getLayout());
-    saveTemplate.setDrawed(true);
-
-    return saveTemplate;
-  }
-
-  private Host getHost(final String hostId, final User user) {
-    try {
-      return UtilMethods.isSet(hostId)
-          ? hostAPI.find(hostId, user, false)
-          : hostWebAPI.getCurrentHost(HttpServletRequestThreadLocal.INSTANCE.getRequest());
-    } catch (DotDataException | DotSecurityException | PortalException | SystemException e) {
-      throw new DotRuntimeException(e);
+    /**
+     * Returns a singleton instance of this class.
+     *
+     * @return A single instance of this class.
+     */
+    public static PageResourceHelper getInstance() {
+        return PageResourceHelper.SingletonHolder.INSTANCE;
     }
-  }
+
+    @WrapInTransaction
+    public HTMLPageAsset saveTemplate(final User user, final HTMLPageAsset htmlPageAsset, final PageForm pageForm)
+
+            throws BadRequestException, DotDataException, DotSecurityException {
+
+        try {
+            final Template templateSaved = this.saveTemplate(htmlPageAsset, user, pageForm);
+
+            final String templateId = htmlPageAsset.getTemplateId();
+
+            Contentlet contentlet = htmlPageAsset;
+
+            if (!templateId.equals( templateSaved.getIdentifier() )) {
+                contentlet = this.contentletAPI.checkout(htmlPageAsset.getInode(), user, false);
+                contentlet.setStringProperty(HTMLPageAssetAPI.TEMPLATE_FIELD, templateSaved.getIdentifier());
+                contentlet = this.contentletAPI.checkin(contentlet, user, false);
+            }
+
+            return contentlet instanceof  HTMLPageAsset ?
+                    (HTMLPageAsset) contentlet :
+                    this.htmlPageAssetAPI.fromContentlet(contentlet);
+        } catch (BadRequestException | DotDataException | DotSecurityException e) {
+            throw new DotRuntimeException(e);
+        }
+    }
+
+    @NotNull
+    public IHTMLPage getPage(final User user, final String pageId, final HttpServletRequest request)
+            throws DotDataException, DotSecurityException {
+
+        try {
+            final PageMode mode = PageMode.get(request);
+            final Language currentLanguage = WebAPILocator.getLanguageWebAPI().getLanguage(request);
+            
+            
+            final IHTMLPage page = this.htmlPageAssetAPI.findByIdLanguageFallback(pageId, currentLanguage.getId(), mode.showLive, user, mode.respectAnonPerms);
+
+            if (page == null) {
+                throw new HTMLPageAssetNotFoundException(pageId);
+            }
+
+            return page;
+        }catch (DotContentletStateException e) {
+            throw new HTMLPageAssetNotFoundException(pageId, e);
+        }
+
+    }
+
+    @WrapInTransaction
+    public Template saveTemplate(final IHTMLPage page, final User user, final PageForm pageForm)
+            throws BadRequestException, DotDataException, DotSecurityException {
+
+        
+        try {
+            final Host host = getHost(pageForm.getHostId(), user);
+            final User systemUser = userAPI.getSystemUser();
+            final Template template = getTemplate(page, systemUser, pageForm);
+            final boolean hasPermission = template.isAnonymous() ?
+                    permissionAPI.doesUserHavePermission(page, PermissionLevel.EDIT.getType(), user) :
+                    permissionAPI.doesUserHavePermission(template, PermissionLevel.EDIT.getType(), user);
+
+            if (!hasPermission) {
+                throw new DotSecurityException("The user doesn't have permission to EDIT");
+            }
+
+            template.setDrawed(true);
+
+            updateMultiTrees(page, pageForm);
+
+            return this.templateAPI.saveTemplate(template, host, user, false);
+        } catch (BadRequestException | DotDataException | DotSecurityException e) {
+            throw new DotRuntimeException(e);
+        }
+    }
+
+    @WrapInTransaction
+    protected void updateMultiTrees(final IHTMLPage page, final PageForm pageForm) throws DotDataException, DotSecurityException {
+
+        final Table<String, String, Set<String>> pageContents = multiTreeAPI.getPageMultiTrees(page, false);
+
+        final String pageIdentifier = page.getIdentifier();
+        APILocator.getMultiTreeAPI().deleteMultiTreeByParent(pageIdentifier);
+        final List<MultiTree> multiTrees = new ArrayList<>();
+
+        for (final String containerId : pageContents.rowKeySet()) {
+            int treeOrder = 0;
+
+            for (final String uniqueId : pageContents.row(containerId).keySet()) {
+                final Map<String, Set<String>> row = pageContents.row(containerId);
+                final Set<String> contents = row.get(uniqueId);
+
+                if (!contents.isEmpty()) {
+                    final String newUUID = getNewUUID(pageForm, containerId, uniqueId);
+
+                    for (final String identifier : contents) {
+                        final MultiTree multiTree = new MultiTree().setContainer(containerId)
+                                .setContentlet(identifier)
+                                .setRelationType(newUUID)
+                                .setTreeOrder(treeOrder++)
+                                .setHtmlPage(pageIdentifier);
+
+                        multiTrees.add(multiTree);
+                    }
+                }
+            }
+        }
+
+        multiTreeAPI.saveMultiTrees(pageIdentifier, multiTrees);
+    }
+
+    private String getNewUUID(final PageForm pageForm, final String containerId,
+            final String uniqueId)
+            throws DotDataException, DotSecurityException {
+
+        //If we have a FileAssetContainer we may need to search also by path
+        String containerPath = null;
+        final Container foundContainer = APILocator.getContainerAPI()
+                .getWorkingContainerById(containerId, userAPI.getSystemUser(), false);
+        if (foundContainer instanceof FileAssetContainer) {
+            containerPath = FileAssetContainer.class.cast(foundContainer).getPath();
+        }
+
+        if (ContainerUUID.UUID_DEFAULT_VALUE.equals(uniqueId)) {
+            String newlyContainerUUID = pageForm.getNewlyContainerUUID(containerId);
+            if (newlyContainerUUID == null && containerPath != null) {//Searching also by path if nothing found
+                newlyContainerUUID = pageForm.getNewlyContainerUUID(containerPath);
+            }
+            return newlyContainerUUID != null ? newlyContainerUUID
+                    : ContainerUUID.UUID_DEFAULT_VALUE;
+        } else {
+            ContainerUUIDChanged change = pageForm.getChange(containerId, uniqueId);
+            if (change == null && containerPath != null) {//Searching also by path if nothing found
+                change = pageForm.getChange(containerPath, uniqueId);
+            }
+            return change != null ? change.getNew().getUUID() : ContainerUUID.UUID_DEFAULT_VALUE;
+        }
+    }
+
+    public Template saveTemplate(final User user, final PageForm pageForm)
+            throws BadRequestException, DotDataException, DotSecurityException, IOException {
+        return this.saveTemplate(null, user, pageForm);
+    }
+
+    private Template getTemplate(final IHTMLPage page, final User user, final PageForm form)
+            throws DotDataException, DotSecurityException {
+
+        final Template oldTemplate = this.templateAPI.findWorkingTemplate(page.getTemplateId(), user, false);
+        final Template saveTemplate;
+
+        if (UtilMethods.isSet(oldTemplate) && (!form.isAnonymousLayout() || oldTemplate.isAnonymous())) {
+            saveTemplate = oldTemplate;
+        } else {
+            saveTemplate = new Template();
+        }
+
+        saveTemplate.setTitle(form.getTitle());
+        saveTemplate.setTheme((form.getThemeId()==null) ? oldTemplate.getTheme() : form.getThemeId());
+        saveTemplate.setDrawedBody(form.getLayout());
+        saveTemplate.setDrawed(true);
+        
+        return saveTemplate;
+    }
+
+    private Host getHost(final String hostId, final User user) {
+        try {
+            return UtilMethods.isSet(hostId) ? hostAPI.find(hostId, user, false) :
+                        hostWebAPI.getCurrentHost(HttpServletRequestThreadLocal.INSTANCE.getRequest());
+        } catch (DotDataException | DotSecurityException | PortalException | SystemException e) {
+            throw new DotRuntimeException(e);
+        }
+    }
 }

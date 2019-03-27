@@ -15,32 +15,28 @@ import org.apache.struts.action.ActionMapping;
 
 public class ViewCategoriesAction extends DotPortletAction {
 
-  private CategoryAPI categoryAPI = APILocator.getCategoryAPI();
+	private CategoryAPI categoryAPI = APILocator.getCategoryAPI();
+	
+    public CategoryAPI getCategoryAPI() {
+		return categoryAPI;
+	}
 
-  public CategoryAPI getCategoryAPI() {
-    return categoryAPI;
-  }
+	public void setCategoryAPI(CategoryAPI categoryAPI) {
+		this.categoryAPI = categoryAPI;
+	}
 
-  public void setCategoryAPI(CategoryAPI categoryAPI) {
-    this.categoryAPI = categoryAPI;
-  }
-
-  public ActionForward render(
-      ActionMapping mapping,
-      ActionForm form,
-      PortletConfig config,
-      RenderRequest req,
-      RenderResponse res)
-      throws Exception {
-
-    User user = _getUser(req);
-
-    req.setAttribute(WebKeys.CATEGORY_LIST_TOP, categoryAPI.findTopLevelCategories(user, false));
-
-    if (req.getWindowState().equals(WindowState.NORMAL)) {
-      return mapping.findForward("portlet.ext.categories.view");
-    } else {
-      return mapping.findForward("portlet.ext.categories.view_categories");
+	public ActionForward render(ActionMapping mapping, ActionForm form, PortletConfig config, RenderRequest req,
+            RenderResponse res) throws Exception {
+        
+		User user = _getUser(req);
+		
+        req.setAttribute(WebKeys.CATEGORY_LIST_TOP, categoryAPI.findTopLevelCategories(user, false));
+        
+        if (req.getWindowState().equals(WindowState.NORMAL)) {
+            return mapping.findForward("portlet.ext.categories.view");
+        } else {
+            return mapping.findForward("portlet.ext.categories.view_categories");
+        }
     }
-  }
+    
 }

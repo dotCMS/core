@@ -1,7 +1,7 @@
 package com.dotmarketing.osgi;
 
-import com.dotmarketing.util.Logger;
 import java.util.Arrays;
+
 import org.apache.velocity.tools.view.PrimitiveToolboxManager;
 import org.apache.velocity.tools.view.ToolInfo;
 import org.osgi.framework.BundleActivator;
@@ -10,99 +10,106 @@ import org.osgi.framework.ServiceEvent;
 import org.osgi.framework.ServiceListener;
 import org.osgi.framework.ServiceReference;
 
+import com.dotmarketing.util.Logger;
+
 /**
  * @see GenericBundleActivator
- * @see GenericBundleActivator#registerViewToolService(org.osgi.framework.BundleContext,
- *     org.apache.velocity.tools.view.ToolInfo)
- * @deprecated Class initially used to register ViewTool objects from and OSGI plugin, now you
- *     should use the {@link GenericBundleActivator} class instead of this class to register those
- *     ViewTool objects using the method {@link
- *     GenericBundleActivator#registerViewToolService(org.osgi.framework.BundleContext,
- *     org.apache.velocity.tools.view.ToolInfo)}.
+ * @see GenericBundleActivator#registerViewToolService(org.osgi.framework.BundleContext, org.apache.velocity.tools.view.ToolInfo)
+ * @deprecated Class initially used to register ViewTool objects from and OSGI plugin, now you should use the {@link GenericBundleActivator} class instead of this class
+ *             to register those ViewTool objects using the method {@link GenericBundleActivator#registerViewToolService(org.osgi.framework.BundleContext, org.apache.velocity.tools.view.ToolInfo)}.
  */
 public class AbstractViewToolActivator implements BundleActivator, ServiceListener {
+	
+	private PrimitiveToolboxManager tm;
+	
+	private BundleContext context;
+	
+	private ToolInfo info;
+	
+	public AbstractViewToolActivator(ToolInfo info) {
+		this.info = info;
+	}
+	
+	public void start(BundleContext context) throws Exception {
+		
+		// Save OSGI context
+		this.context = context;
+		
+		// Try to register to ViewTool service
+		doRegister();
 
-  private PrimitiveToolboxManager tm;
+		// Register itself as listener for service adding/removal
+		context.addServiceListener(this);
+		
+	}
 
-  private BundleContext context;
+	public void stop(BundleContext context) throws Exception {
+		
+		// Try to remove ViewTool
+		unregister();
+		
+		// Remove itselt as listener
+		context.removeServiceListener(this);
 
-  private ToolInfo info;
+	}
+	
+	private void doRegister() {
+		
+		ServiceReference serviceRefSelected = context.getServiceReference(PrimitiveToolboxManager.class.getName());
 
-  public AbstractViewToolActivator(ToolInfo info) {
-    this.info = info;
-  }
+		if ( serviceRefSelected == null )
+			return;
+		
+		Object service = context.getService(serviceRefSelected);
+		this.tm = (PrimitiveToolboxManager) service;
+		register();
+		
+	}
+		
+	private void register() {
+		tm.addTool(info);
+	    Logger.info(this,"Added View Tool: " + info.getKey());
+	}
+	
+	private void unregister() {
+		if ( tm != null ) {
+			tm.removeTool(info);
+		}
+		Logger.info(this,"Removed View Tool: " + info.getKey());
+	}
 
-  public void start(BundleContext context) throws Exception {
+	public void serviceChanged(ServiceEvent serviceEvent) {
+		
+		String[] objectClass = (String[]) serviceEvent.getServiceReference().getProperty("objectClass");
 
-    // Save OSGI context
-    this.context = context;
+		if ( objectClass == null )
+			return;
+		
+		if ( objectClass.length == 0 )
+			return;
+		
+		if (!Arrays.asList(objectClass).contains(PrimitiveToolboxManager.class.getName()))
+			return;
 
-    // Try to register to ViewTool service
-    doRegister();
+		switch (serviceEvent.getType()) {
+			
+			case ServiceEvent.MODIFIED:
+				unregister();
+				doRegister();
+				break;
 
-    // Register itself as listener for service adding/removal
-    context.addServiceListener(this);
-  }
+			case ServiceEvent.MODIFIED_ENDMATCH:
+				break;
 
-  public void stop(BundleContext context) throws Exception {
+			case ServiceEvent.REGISTERED:
+				doRegister();
+				break;
+				
+			case ServiceEvent.UNREGISTERING:
+				unregister();
+				break;
+		}
+				
+	}
 
-    // Try to remove ViewTool
-    unregister();
-
-    // Remove itselt as listener
-    context.removeServiceListener(this);
-  }
-
-  private void doRegister() {
-
-    ServiceReference serviceRefSelected =
-        context.getServiceReference(PrimitiveToolboxManager.class.getName());
-
-    if (serviceRefSelected == null) return;
-
-    Object service = context.getService(serviceRefSelected);
-    this.tm = (PrimitiveToolboxManager) service;
-    register();
-  }
-
-  private void register() {
-    tm.addTool(info);
-    Logger.info(this, "Added View Tool: " + info.getKey());
-  }
-
-  private void unregister() {
-    if (tm != null) {
-      tm.removeTool(info);
-    }
-    Logger.info(this, "Removed View Tool: " + info.getKey());
-  }
-
-  public void serviceChanged(ServiceEvent serviceEvent) {
-
-    String[] objectClass = (String[]) serviceEvent.getServiceReference().getProperty("objectClass");
-
-    if (objectClass == null) return;
-
-    if (objectClass.length == 0) return;
-
-    if (!Arrays.asList(objectClass).contains(PrimitiveToolboxManager.class.getName())) return;
-
-    switch (serviceEvent.getType()) {
-      case ServiceEvent.MODIFIED:
-        unregister();
-        doRegister();
-        break;
-
-      case ServiceEvent.MODIFIED_ENDMATCH:
-        break;
-
-      case ServiceEvent.REGISTERED:
-        doRegister();
-        break;
-
-      case ServiceEvent.UNREGISTERING:
-        unregister();
-        break;
-    }
-  }
 }

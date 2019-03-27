@@ -14,6 +14,7 @@ public class ContainerCacheImpl extends ContainerCache {
 
   private static String primaryGroup = "ContainerCache";
 
+
   // region's name for the cache
   private static String[] groupNames = {primaryGroup};
 
@@ -28,6 +29,8 @@ public class ContainerCacheImpl extends ContainerCache {
       if (UtilMethods.isSet(container)) {
         String key = primaryGroup + container.getInode();
         cache.put(key, container, primaryGroup);
+
+
       }
     } catch (Exception e) {
       Logger.debug(this, "Could not add entre to cache", e);
@@ -36,21 +39,24 @@ public class ContainerCacheImpl extends ContainerCache {
     return container;
   }
 
+
+
   public void clearCache() {
     // Clear the cache for all group.
     cache.flushGroup(primaryGroup);
   }
-
   @Override
   public void remove(VersionInfo cvinfo) {
-    cache.remove(primaryGroup + cvinfo.getWorkingInode(), primaryGroup);
-    cache.remove(primaryGroup + cvinfo.getIdentifier(), primaryGroup);
-    if (UtilMethods.isSet(cvinfo.getLiveInode())) {
-      cache.remove(primaryGroup + cvinfo.getLiveInode(), primaryGroup);
-    }
+      cache.remove(primaryGroup + cvinfo.getWorkingInode(), primaryGroup);
+      cache.remove(primaryGroup + cvinfo.getIdentifier(), primaryGroup);
+      if(UtilMethods.isSet(cvinfo.getLiveInode())) {
+          cache.remove(primaryGroup + cvinfo.getLiveInode(), primaryGroup);
+      }
+      
   }
-
   public void remove(Container container) {
+
+
 
     try {
       cache.remove(primaryGroup + container.getInode(), primaryGroup);
@@ -76,6 +82,7 @@ public class ContainerCacheImpl extends ContainerCache {
       return (Container) cache.get(key, primaryGroup);
     } catch (DotCacheException e) {
       Logger.debug(this, "Cache not able to be gotten", e);
+
     }
     return null;
   }

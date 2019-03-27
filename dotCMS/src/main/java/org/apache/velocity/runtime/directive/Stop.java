@@ -16,69 +16,83 @@ package org.apache.velocity.runtime.directive;
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
- * under the License.
+ * under the License.    
  */
 
 import java.io.Writer;
+
 import org.apache.velocity.context.InternalContextAdapter;
 import org.apache.velocity.exception.VelocityException;
 import org.apache.velocity.runtime.RuntimeServices;
 import org.apache.velocity.runtime.parser.node.Node;
 
 /**
- * This class implements the #stop directive which allows a user to stop the merging and rendering
- * process. The #stop directive will accept a single message argument with info about the reason for
+ * This class implements the #stop directive which allows
+ * a user to stop the merging and rendering process. The #stop directive
+ * will accept a single message argument with info about the reason for
  * stopping.
  */
-public class Stop extends Directive {
-  private static final StopCommand STOP_ALL = new StopCommand("StopCommand to exit merging");
+public class Stop extends Directive
+{  
+    private static final StopCommand STOP_ALL = new StopCommand("StopCommand to exit merging");
 
-  private boolean hasMessage = false;
+    private boolean hasMessage = false;
 
-  /**
-   * Return name of this directive.
-   *
-   * @return The name of this directive.
-   */
-  public String getName() {
-    return "stop";
-  }
-
-  /**
-   * Return type of this directive.
-   *
-   * @return The type of this directive.
-   */
-  public int getType() {
-    return LINE;
-  }
-
-  /** Since there is no processing of content, there is never a need for an internal scope. */
-  public boolean isScopeProvided() {
-    return false;
-  }
-
-  public void init(RuntimeServices rs, InternalContextAdapter context, Node node) {
-    super.init(rs, context, node);
-
-    int kids = node.jjtGetNumChildren();
-    if (kids > 1) {
-      throw new VelocityException(
-          "The #stop directive only accepts a single message parameter at "
-              + VelocityException.formatFileString(this));
-    } else {
-      hasMessage = (kids == 1);
-    }
-  }
-
-  public boolean render(InternalContextAdapter context, Writer writer, Node node) {
-    if (!hasMessage) {
-      throw STOP_ALL;
+    /**
+     * Return name of this directive.
+     * @return The name of this directive.
+     */
+    public String getName()
+    {
+        return "stop";
     }
 
-    Object argument = node.jjtGetChild(0).value(context);
+    /**
+     * Return type of this directive.
+     * @return The type of this directive.
+     */
+    public int getType()
+    {
+        return LINE;
+    }
 
-    // stop all and use specified message
-    throw new StopCommand(String.valueOf(argument));
-  }
+    /**
+     * Since there is no processing of content,
+     * there is never a need for an internal scope.
+     */
+    public boolean isScopeProvided()
+    {
+        return false;
+    }
+
+    public void init(RuntimeServices rs, InternalContextAdapter context, Node node)
+    {
+        super.init(rs, context, node);
+
+        int kids = node.jjtGetNumChildren();
+        if (kids > 1)
+        {  
+            throw new VelocityException("The #stop directive only accepts a single message parameter at "
+                 + VelocityException.formatFileString(this));
+        }
+        else
+        {
+            hasMessage = (kids == 1);
+        }
+    }
+
+    public boolean render(InternalContextAdapter context, Writer writer, Node node)
+    {
+        if (!hasMessage)
+        {
+            throw STOP_ALL;
+        }
+
+        Object argument = node.jjtGetChild(0).value(context);
+
+        // stop all and use specified message
+        throw new StopCommand(String.valueOf(argument));
+    }
+
 }
+

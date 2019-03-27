@@ -5,26 +5,28 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.tag.model.Tag;
+
 import java.util.List;
 import java.util.Map;
 
 public interface ContentWrapper {
 
-  Contentlet getContent();
+    Contentlet getContent ();
 
-  List<Map<String, Object>> getTree();
+    List<Map<String, Object>> getTree ();
 
-  List<Map<String, Object>> getMultiTree();
+    List<Map<String, Object>> getMultiTree ();
 
-  List<String> getCategories();
+    List<String> getCategories ();
 
-  List<Tag> getTags();
+    List<Tag> getTags ();
 
-  Operation getOperation();
+    Operation getOperation ();
 
-  ContentletVersionInfo getInfo();
+    ContentletVersionInfo getInfo ();
 
-  Language getLanguage();
+    Language getLanguage();
 
-  Map<String, List<Tag>> getContentTags();
+    Map<String, List<Tag>> getContentTags();
+
 }

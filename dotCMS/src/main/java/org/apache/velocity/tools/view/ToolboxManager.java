@@ -28,25 +28,31 @@ import org.apache.velocity.tools.view.context.ToolboxContext;
  * @author <a href="mailto:henning@schmiedehausen.org">Henning P. Schmiedehausen</a>
  * @version $Id: ToolboxManager.java 290235 2005-09-19 18:52:47Z nbubna $
  */
-public interface ToolboxManager extends PrimitiveToolboxManager {
+public interface ToolboxManager extends PrimitiveToolboxManager
+{
 
-  /**
-   * Adds a data object for the context.
-   *
-   * @param info An object that implements ToolInfo
-   */
-  void addData(ToolInfo info);
+    /**
+     * Adds a data object for the context.
+     *
+     * @param info An object that implements ToolInfo
+     */
+    void addData(ToolInfo info);
 
-  /** @deprecated Use getToolbox(Object initData) */
-  ToolboxContext getToolboxContext(Object initData);
+    /**
+     * @deprecated Use getToolbox(Object initData)
+     */
+    ToolboxContext getToolboxContext(Object initData);
 
-  /**
-   * Retrieves a map of the tools and data being managed. Tools that implement the ViewTool
-   * interface will be (re)initialized using the specified initData.
-   *
-   * @param initData data used to initialize ViewTools
-   * @return the created ToolboxContext
-   * @since VelocityTools 1.2
-   */
-  Map getToolbox(Object initData);
+
+    /**
+     * Retrieves a map of the tools and data being managed. Tools
+     * that implement the ViewTool interface will be (re)initialized
+     * using the specified initData.
+     *
+     * @param initData data used to initialize ViewTools
+     * @return the created ToolboxContext
+     * @since VelocityTools 1.2
+     */
+    Map getToolbox(Object initData);
+
 }

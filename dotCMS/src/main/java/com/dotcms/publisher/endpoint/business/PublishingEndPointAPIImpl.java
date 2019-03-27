@@ -1,111 +1,132 @@
 package com.dotcms.publisher.endpoint.business;
 
+import java.util.List;
+
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.integritycheckers.IntegrityUtil;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotmarketing.exception.DotDataException;
-import java.util.List;
 
 /**
  * Implementation of publishing_end_point API.
  *
  * @author Graziano Aliberti - Engineering Ingegneria Informatica S.p.a
- *     <p>Oct 26, 2012 - 9:59:53 AM
+ *
+ * Oct 26, 2012 - 9:59:53 AM
  */
 public class PublishingEndPointAPIImpl implements PublishingEndPointAPI {
 
-  private PublishingEndPointFactory publishingEndPointFactory;
+	private PublishingEndPointFactory publishingEndPointFactory;
 
-  public PublishingEndPointAPIImpl(PublishingEndPointFactory publishingEndPointFactory) {
-    this.publishingEndPointFactory = publishingEndPointFactory;
-  }
+	public PublishingEndPointAPIImpl(PublishingEndPointFactory publishingEndPointFactory){
+		this.publishingEndPointFactory = publishingEndPointFactory;
+	}
 
-  @CloseDBIfOpened
-  @Override
-  public List<String> findSendGroups() throws DotDataException {
-    return publishingEndPointFactory.findSendGroups();
-  }
+	@CloseDBIfOpened
+	@Override
+	public List<String> findSendGroups() throws DotDataException {
+		return publishingEndPointFactory.findSendGroups();
+	}
 
-  /** Returns the end points list. */
-  @CloseDBIfOpened
-  @Override
-  public List<PublishingEndPoint> getAllEndPoints() throws DotDataException {
-    return publishingEndPointFactory.getEndPoints();
-  }
 
-  @CloseDBIfOpened
-  @Override
-  public List<PublishingEndPoint> getReceivingEndPoints() throws DotDataException {
-    return publishingEndPointFactory.getReceivingEndPoints();
-  }
+	/**
+	 * Returns the end points list.
+	 */
+	@CloseDBIfOpened
+	@Override
+	public List<PublishingEndPoint> getAllEndPoints() throws DotDataException{
+		return publishingEndPointFactory.getEndPoints();
+	}
 
-  /** Returns a single end point based on id. */
-  @CloseDBIfOpened
-  @Override
-  public PublishingEndPoint findEndPointById(String id) throws DotDataException {
-    return publishingEndPointFactory.getEndPointById(id);
-  }
+	@CloseDBIfOpened
+	@Override
+	public List<PublishingEndPoint> getReceivingEndPoints() throws DotDataException{
+		return publishingEndPointFactory.getReceivingEndPoints();
+	}
 
-  /** Save a new end point */
-  @WrapInTransaction
-  @Override
-  public void saveEndPoint(PublishingEndPoint anEndPoint) throws DotDataException {
-    publishingEndPointFactory.store(anEndPoint);
-  }
+	/**
+	 * Returns a single end point based on id.
+	 */
+	@CloseDBIfOpened
+	@Override
+	public PublishingEndPoint findEndPointById(String id) throws DotDataException {
+		return publishingEndPointFactory.getEndPointById(id);
+	}
 
-  /** Update an end point */
-  @WrapInTransaction
-  @Override
-  public void updateEndPoint(PublishingEndPoint anEndPoint) throws DotDataException {
-    publishingEndPointFactory.update(anEndPoint);
-  }
+	/**
+	 * Save a new end point
+	 */
+	@WrapInTransaction
+	@Override
+	public void saveEndPoint(PublishingEndPoint anEndPoint) throws DotDataException {
+		publishingEndPointFactory.store(anEndPoint);
+	}
 
-  /** Delete an end point by id */
-  @WrapInTransaction
-  @Override
-  public void deleteEndPointById(String id) throws DotDataException {
-    // Delete all conflicts reported for this Endpoint
-    final IntegrityUtil integrityUtil = new IntegrityUtil();
-    integrityUtil.completeDiscardConflicts(id);
-    // Delete the Endpoint
-    publishingEndPointFactory.deleteEndPointById(id);
-  }
+	/**
+	 * Update an end point
+	 */
+	@WrapInTransaction
+	@Override
+	public void updateEndPoint(PublishingEndPoint anEndPoint) throws DotDataException {
+		publishingEndPointFactory.update(anEndPoint);
+	}
 
-  /** Returns the single end point configured like sender. Null otherwise. */
-  @CloseDBIfOpened
-  @Override
-  public PublishingEndPoint findEnabledSendingEndPointByAddress(String address)
-      throws DotDataException {
-    return publishingEndPointFactory.getEnabledSendingEndPointByAddress(address);
-  }
+	/**
+	 * Delete an end point by id
+	 */
+	@WrapInTransaction
+	@Override
+	public void deleteEndPointById(String id) throws DotDataException {
+	    //Delete all conflicts reported for this Endpoint
+	    final IntegrityUtil integrityUtil = new IntegrityUtil();
+	    integrityUtil.completeDiscardConflicts(id);
+	    //Delete the Endpoint
+		publishingEndPointFactory.deleteEndPointById(id);
+	}
 
-  /** Returns a single end point configured like sender. Null otherwise. */
-  @CloseDBIfOpened
-  @Override
-  public List<PublishingEndPoint> findSendingEndPointsByEnvironment(String environmentId)
-      throws DotDataException {
-    return publishingEndPointFactory.getSendingEndPointsByEnvironment(environmentId);
-  }
+	/**
+	 * Returns the single end point configured like sender. Null otherwise.
+	 *
+	 */
+	@CloseDBIfOpened
+	@Override
+	public PublishingEndPoint findEnabledSendingEndPointByAddress(String address) throws DotDataException {
+		return publishingEndPointFactory.getEnabledSendingEndPointByAddress(address);
+	}
 
-  /** Returns all the receiver end points. */
-  @CloseDBIfOpened
-  @Override
-  public List<PublishingEndPoint> getEnabledReceivingEndPoints() throws DotDataException {
-    return publishingEndPointFactory.getEnabledReceivingEndPoints();
-  }
+	/**
+	 * Returns a single end point configured like sender. Null otherwise.
+	 *
+	 */
+	@CloseDBIfOpened
+	@Override
+	public List<PublishingEndPoint> findSendingEndPointsByEnvironment(String environmentId) throws DotDataException {
+		return publishingEndPointFactory.getSendingEndPointsByEnvironment(environmentId);
 
-  @CloseDBIfOpened
-  @Override
-  public PublishingEndPoint findEndPointByName(String name) throws DotDataException {
-    return publishingEndPointFactory.getEndPointByName(name);
-  }
+	}
 
-  public PublishingEndPointFactory getPublishingEndPointFactory() {
-    return publishingEndPointFactory;
-  }
+	/**
+	 * Returns all the receiver end points.
+	 */
+	@CloseDBIfOpened
+	@Override
+	public List<PublishingEndPoint> getEnabledReceivingEndPoints() throws DotDataException {
+		return publishingEndPointFactory.getEnabledReceivingEndPoints();
+	}
 
-  public void setPublishingEndPointFactory(PublishingEndPointFactory publishingEndPointFactory) {
-    this.publishingEndPointFactory = publishingEndPointFactory;
-  }
+	@CloseDBIfOpened
+	@Override
+	public PublishingEndPoint findEndPointByName(String name) throws DotDataException {
+		return publishingEndPointFactory.getEndPointByName(name);
+	}
+
+	public PublishingEndPointFactory getPublishingEndPointFactory() {
+		return publishingEndPointFactory;
+	}
+
+	public void setPublishingEndPointFactory(
+			PublishingEndPointFactory publishingEndPointFactory) {
+		this.publishingEndPointFactory = publishingEndPointFactory;
+	}
 }
