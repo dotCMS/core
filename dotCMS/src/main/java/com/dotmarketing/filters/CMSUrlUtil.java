@@ -232,8 +232,8 @@ public class CMSUrlUtil {
 									false);
 					return (c.getContentType().baseType() == BaseContentType.FILEASSET);
 				}
-			} catch (DotDataException | DotSecurityException e) {
-				Logger.debug(this.getClass(), UNABLE_TO_FIND + uri);
+			} catch (Exception e) {
+				Logger.warnAndDebug(this.getClass(), UNABLE_TO_FIND + uri +":"+e.getMessage(),e);
 				return false;
 			}
 		}

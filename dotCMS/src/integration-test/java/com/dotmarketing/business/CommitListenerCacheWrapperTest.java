@@ -96,9 +96,9 @@ public class CommitListenerCacheWrapperTest {
 
             Thread.sleep(500);
             
-            // Because we are in a transaction, the IdentifierAPI uses the DB, so it has the NEW name, while the thread has the old Name
+            // Because we are in a transaction, the IdentifierAPI cache has not been flushed, so we get the old name
             id2 = Try.of(() -> api.find(identifierId)).get();
-            assertTrue(id2.getAssetName().equals(newName));
+            assertTrue(id2.getAssetName().equals(originalName));
 
             // Cache has the OLD name (cache should not be flushed until after the commit
             assertEquals(originalName, cache.getIdentifier(syshost.getIdentifier(), "/" + originalName).getAssetName());
@@ -124,8 +124,8 @@ public class CommitListenerCacheWrapperTest {
             
             
             // this should load the identifier in both cache entries (by url and by id)
-            api.find(identifierId);
-
+            id2= api.find(identifierId);
+            assertTrue(id2.getAssetName().equals(newName));
             assertEquals(newName, cache.getIdentifier(syshost.getIdentifier(), "/" + newName).getAssetName());
             assertEquals(newName, cache.getIdentifier(identifierId).getAssetName());
 

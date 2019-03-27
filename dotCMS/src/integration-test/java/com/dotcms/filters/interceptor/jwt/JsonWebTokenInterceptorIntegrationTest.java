@@ -2,32 +2,23 @@ package com.dotcms.filters.interceptor.jwt;
 
 import com.dotcms.auth.providers.jwt.beans.UserToken;
 import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
-import com.dotcms.auth.providers.jwt.factories.KeyFactoryUtils;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenService;
 import com.dotcms.cms.login.LoginServiceAPI;
-import com.dotcms.enterprise.cluster.ClusterFactory;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.security.Encryptor;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
-import com.dotmarketing.util.Config;
 import com.liferay.portal.ejb.CompanyLocalManager;
+import com.liferay.portal.model.User;
 import com.liferay.portal.util.CookieKeys;
 import com.liferay.portal.util.WebKeys;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-
-import javax.servlet.ServletContext;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -37,21 +28,18 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
 
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Mockito.*;
 
-@PowerMockIgnore({"javax.management.*", "javax.crypto.*"})
-@PrepareForTest({ClusterFactory.class})
-@RunWith(PowerMockRunner.class)
 public class JsonWebTokenInterceptorIntegrationTest {
 
-    private static final String clusterId = "CLUSTER-123";
     private static JsonWebTokenService jsonWebTokenService;
     private LoginServiceAPI loginService;
     private static UserAPI userAPI;
     private static final String jwtId  = "jwt1";
-    private static final String userId = "dotcms.org.1";
+    private static String userId;
     private static final SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
     private static Date date;
     private final HttpServletRequest request = mock(HttpServletRequest.class);
@@ -66,15 +54,13 @@ public class JsonWebTokenInterceptorIntegrationTest {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
 
-        //Mocking data
-        PowerMockito.mockStatic(ClusterFactory.class);
-        PowerMockito.when(ClusterFactory.getClusterId()).thenReturn(clusterId);
-        final FileAssetAPI fileAssetAPI = mock(FileAssetAPI.class);
-        Config.CONTEXT = mock(ServletContext.class);
-        Config.CONTEXT_PATH = "/tmp";
-        KeyFactoryUtils.getInstance(fileAssetAPI);
-        when(fileAssetAPI.getRealAssetsRootPath()).thenReturn("/tmp/assets");
         userAPI = APILocator.getUserAPI();
+
+        //Create User
+        final User newUser = new UserDataGen().nextPersisted();
+        APILocator.getRoleAPI().addRoleToUser(APILocator.getRoleAPI().loadCMSAdminRole(), newUser);
+        assertTrue(userAPI.isCMSAdmin(newUser));
+        userId = newUser.getUserId();
 
         dateFormat.setTimeZone(TimeZone.getTimeZone("GMT-8:00"));
         dateFormat.setLenient(true);
@@ -191,7 +177,6 @@ public class JsonWebTokenInterceptorIntegrationTest {
      * Test the scenario when the user from the data base (mocked) has been modified.
      * @throws IOException
      */
-    //TODO THIS TEST STILL FAILS
     @Test
     public void interceptWithAccessTokenTest() throws IOException, DotSecurityException, DotDataException {
         loginService  = mock(LoginServiceAPI.class);

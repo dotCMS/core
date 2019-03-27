@@ -129,6 +129,24 @@ public class ContentletLoader implements DotLoader {
         ContentType type = content.getContentType();
         sb.append("#set($structureName='").append(type.name()).append("' )");
 
+        /*
+        It is better if we calculate if it is a Widget before to try to evaluate
+        the Widget code, if the code evaluation fails the $isWidget could be false.
+         */
+        if (type.baseType() == BaseContentType.WIDGET) {
+            sb.append("#set( $isWidget= \"").append(true).append("\")");
+            if (type.name().equals(FormAPI.FORM_WIDGET_STRUCTURE_NAME_FIELD_NAME)) {
+                sb.append("#set($isFormWidget= \"").append(true).append("\")");
+            } else {
+                sb.append("#set($isFormWidget= \"").append(false).append("\")");
+            }
+
+            //Cleaning up already loaded Widgets code
+            sb.append("#set($widgetCode= \"\")");
+        } else {
+            sb.append("#set($isWidget= \"").append(false).append("\")");
+        }
+
         if (type.baseType() != BaseContentType.FORM) {
             List<Field> fields = type.fields();
 
@@ -515,16 +533,6 @@ public class ContentletLoader implements DotLoader {
             .append("\" )");
         sb.append("#set( $ContentletStructure=\"").append(content.getContentTypeId()).append("\" )");
         sb.append("#set( $ContentletContentType=\"").append(content.getContentTypeId()).append("\" )");
-        if (type.baseType() == BaseContentType.WIDGET) {
-            sb.append("#set( $isWidget= \"").append(true).append("\")");
-            if (type.name().equals(FormAPI.FORM_WIDGET_STRUCTURE_NAME_FIELD_NAME)) {
-                sb.append("#set($isFormWidget= \"").append(true).append("\")");
-            } else {
-                sb.append("#set($isFormWidget= \"").append(false).append("\")");
-            }
-        } else {
-            sb.append("#set($isWidget= \"").append(false).append("\")");
-        }
 
         return writeOutVelocity(filePath, sb.toString());
     }

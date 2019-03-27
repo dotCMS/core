@@ -33,6 +33,7 @@ public class LocalSystemEventsAPITest extends UnitTestBase {
 
         Assert.assertTrue(testAnnotatedSubscriber.isCalled());
 
+        localSystemEventsAPI.unsubscribe(testAnnotatedSubscriber);
 
     } // annotationSubscribeTest.
 
@@ -51,6 +52,8 @@ public class LocalSystemEventsAPITest extends UnitTestBase {
         localSystemEventsAPI.asyncNotify(new TestEventType2("yeah it works??"));
 
         Assert.assertTrue(testDelegateSubscriber.isCalled());
+
+        localSystemEventsAPI.unsubscribe(testDelegateSubscriber);
     } // delegateSubscribeTest.
 
     @Test
@@ -72,6 +75,8 @@ public class LocalSystemEventsAPITest extends UnitTestBase {
 
         Assert.assertTrue(testDelegateSubscriber.isCalled1());
         Assert.assertTrue(testDelegateSubscriber.isCalled2());
+
+        localSystemEventsAPI.unsubscribe(testDelegateSubscriber);
     } // delegatePlusAnnotationSubscribeTest.
 
     @Test
@@ -98,6 +103,8 @@ public class LocalSystemEventsAPITest extends UnitTestBase {
         Assert.assertTrue(testAnnotatedSubscriber.isCalled());
         Assert.assertTrue(testDelegateSubscriber.isCalled1());
         Assert.assertTrue(testDelegateSubscriber.isCalled2());
+
+        localSystemEventsAPI.unsubscribe(testDelegateSubscriber);
     } // twoAnnotationSubscribeTest.
 
 
@@ -130,6 +137,8 @@ public class LocalSystemEventsAPITest extends UnitTestBase {
         // already removed, so should be false
         Assert.assertFalse(localSystemEventsAPI.unsubscribe(TestEventType1.class,
                 testAnnotatedSubscriber.getClass().getName() + "#test" ));
+
+        localSystemEventsAPI.unsubscribe(testAnnotatedSubscriber);
     } // deleteAnnotatedSubscriberTest.
 
     @Test
@@ -161,6 +170,8 @@ public class LocalSystemEventsAPITest extends UnitTestBase {
 
         // new message not received, so the counter still on 4
         Assert.assertEquals(4, testAnnotatedSubscriber.getCalled());
+
+        localSystemEventsAPI.unsubscribe(testAnnotatedSubscriber);
 
     } // deleteAnnotatedSubscriberTest.
 
