@@ -126,7 +126,7 @@ public class WorkflowHelper {
                     this.contentletAPI
                             .esSearch(query.toLowerCase(), false, user, false).getResponse():
                     this.contentletAPI
-                    .esSearchRaw(query.toLowerCase(), false, user, false);
+                            .esSearchRaw(query.toLowerCase(), false, user, false);
             //Query must be sent lowercase. It's a must.
 
             Logger.debug(getClass(), () -> "luceneQuery: " + sanitizedQuery);
