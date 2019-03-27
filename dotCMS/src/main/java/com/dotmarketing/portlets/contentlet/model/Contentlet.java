@@ -1599,15 +1599,9 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     public void setRelated(final String fieldVarName, final List<Contentlet> contentlets) {
         map.put(fieldVarName, contentlets);
 
-        if (!UtilMethods.isSet(this.relatedIds)){
-            relatedIds = Maps.newConcurrentMap();
-        }
-
-        if (contentlets != null){
-            this.relatedIds.put(fieldVarName,
-                    contentlets.stream().map(contentlet -> contentlet.getIdentifier())
-                            .collect(
-                                    CollectionsUtils.toImmutableList()));
+        if (UtilMethods.isSet(this.relatedIds)) {
+            //clean up cache
+            relatedIds.remove(fieldVarName);
         }
     }
 

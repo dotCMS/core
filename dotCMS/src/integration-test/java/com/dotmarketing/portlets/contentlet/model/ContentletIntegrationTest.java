@@ -68,9 +68,16 @@ public class ContentletIntegrationTest {
     public static class SetRelatedTestCase {
 
         String filterType;
+        boolean checkIn;
 
         public SetRelatedTestCase(final String filterType) {
             this.filterType = filterType;
+            this.checkIn = true;
+        }
+
+        public SetRelatedTestCase(final String filterType, final boolean checkIn) {
+            this.filterType = filterType;
+            this.checkIn = checkIn;
         }
     }
 
@@ -85,6 +92,9 @@ public class ContentletIntegrationTest {
                 new SetRelatedTestCase("id"),
                 //Setting related content by setRelated method
                 new SetRelatedTestCase("method"),
+                //Setting related content by setProperty method without saving the content should
+                //not save related content on cache
+                new SetRelatedTestCase("property", false)
         };
     }
 
@@ -448,23 +458,30 @@ public class ContentletIntegrationTest {
                 break;
         }
 
-        //Save related content
-        final Contentlet savedContentlet = contentletAPI.checkin(parentContentlet, user, false);
+        final Contentlet savedContentlet;
+        if (testCase.checkIn) {
+            //Save related content
+            savedContentlet = contentletAPI.checkin(parentContentlet, user, false);
+            final List<Contentlet> result = contentletAPI.getRelatedContent(savedContentlet,
+                    relationshipAPI.getRelationshipFromField(field, user), user, false);
 
-        //Get cached value
-        final List<Contentlet> result = parentContentlet.getRelated(field.variable(), user, false);
+            if (childContentletList != null) {
+                assertEquals(childContentletList.size(), result.size());
 
-        if (childContentletList != null) {
-            assertEquals(childContentletList.size(), result.size());
+                //validate related content is saved correctly
+                if (!childContentletList.isEmpty()) {
+                    assertEquals(childContentletList.get(0).getIdentifier(),
+                            result.get(0).getIdentifier());
+                }
 
-            if (!childContentletList.isEmpty()) {
-                assertEquals(childContentletList.get(0).getIdentifier(),
-                        result.get(0).getIdentifier());
+            } else {
+                //when calling checkin with null related, related content should keep the same
+                assertFalse(result.isEmpty());
             }
-
         } else {
-            //when null, related content should keep the same
-            assertFalse(result.isEmpty());
+            savedContentlet = parentContentlet;
+            //validate none setter is modifying contentlet.relatedIds cache if the contentlet is not saved
+            assertTrue(parentContentlet.getRelated(field.variable(), user).isEmpty());
         }
 
         return savedContentlet;
