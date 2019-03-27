@@ -140,7 +140,7 @@ public class ESUtilTest extends IntegrationTestBase {
         final String fieldValue = "Test Title 1";
 
         final String expectedHash = Hashing.sha256().hashString(fieldName + "_"
-                + (fieldValue == null ? "" : fieldValue.toString()) + "_"
+                + (fieldValue == null ? "" : fieldValue) + "_"
                 + 1, Charset.forName("UTF-8")).toString();
 
         final String resultHash = ESUtils.sha256(fieldName, fieldValue, 1);
