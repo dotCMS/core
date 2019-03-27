@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -53,6 +54,7 @@ import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.reindex.ReindexEntry;
 import com.dotmarketing.common.reindex.ReindexQueueAPI;
+import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.db.ReindexRunnable;
@@ -87,14 +89,14 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
     private static final String SELECT_CONTENTLET_VERSION_INFO =
             "select working_inode,live_inode from contentlet_version_info where identifier=?";
-    private static ReindexQueueAPI journalAPI = null;
+    private static ReindexQueueAPI queueApi = null;
     private static final ESIndexAPI esIndexApi = new ESIndexAPI();
     private static final ESMappingAPIImpl mappingAPI = new ESMappingAPIImpl();
 
     public static final SimpleDateFormat timestampFormatter = new SimpleDateFormat("yyyyMMddHHmmss");
 
     public ContentletIndexAPIImpl() {
-        journalAPI = APILocator.getReindexQueueAPI();
+        queueApi = APILocator.getReindexQueueAPI();
     }
 
     public synchronized void getRidOfOldIndex() throws DotDataException {
@@ -207,7 +209,61 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         }
 
     }
+    /**
+     * Stops the current re-indexation process and switches the current index to the new one. The main
+     * goal of this method is to allow users to switch to the new index even if one or more contents
+     * could not be re-indexed.
+     * <p>
+     * This is very useful because the new index can be created and used immediately. The user can have
+     * the new re-indexed content available and then work on the conflicting contents, which can be
+     * either fixed or removed from the database.
+     * </p>
+     * 
+     * @throws SQLException An error occurred when interacting with the database.
+     * @throws DotDataException The process to switch to the new failed.
+     * @throws InterruptedException The established pauses to switch to the new index failed.
+     */
+    @Override
+    @CloseDBIfOpened
+    public void stopFullReindexationAndSwitchover() throws  DotDataException {
+        try {
+            ReindexThread.pause();
+            queueApi.deleteReindexAndFailedRecords();
+            this.reindexSwitchover(true);
+        } finally {
+            ReindexThread.unpause();
+        }
+    }
+    
+    /**
+     * Switches the current index structure to the new re-indexed data. This method also allows users to
+     * switch to the new re-indexed data even if there are still remaining contents in the
+     * {@code dist_reindex_journal} table.
+     * 
+     * @param forceSwitch - If {@code true}, the new index will be used, even if there are contents that
+     *        could not be processed. Otherwise, set to {@code false} and the index switch will only
+     *        happen if ALL contents were re-indexed.
+     * @throws SQLException An error occurred when interacting with the database.
+     * @throws DotDataException The process to switch to the new failed.
+     * @throws InterruptedException The established pauses to switch to the new index failed.
+     */
+    @Override
+    @CloseDBIfOpened
+    public void reindexSwitchover(boolean forceSwitch) throws DotDataException {
 
+        // We double check again. Only one node will enter this critical
+        // region, then others will enter just to see that the switchover is
+        // done
+
+        if (forceSwitch || queueApi.recordsInQueue() == 0) {
+            Logger.info(this, "Running Reindex Switchover");
+            // Wait a bit while all records gets flushed to index
+            this.fullReindexSwitchover(forceSwitch);
+            // Wait a bit while elasticsearch flushes it state
+        }
+
+    }
+    
     /**
      * creates new working and live indexes with reading aliases pointing to old index and write aliases
      * pointing to both old and new indexes
@@ -372,7 +428,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                         : ImmutableList.of(parentContenlet);
 
         if (indexBeforeCommit == false && DbConnectionFactory.inTransaction()) {
-            journalAPI.addContentletsReindex(contentToIndex);
+            queueApi.addContentletsReindex(contentToIndex);
         }
 
         addContentToIndex(contentToIndex);

@@ -2314,7 +2314,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         indexAPI.addContentToIndex(contentlet, false);
         CacheLocator.getContentletCache().add(contentlet.getInode(), contentlet);
     }
-
+    @CloseDBIfOpened
     @Override
     public void refresh(Contentlet contentlet) throws DotReindexStateException,
             DotDataException {
@@ -2322,25 +2322,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
         CacheLocator.getContentletCache().add(contentlet.getInode(), contentlet);
     }
 
+    @CloseDBIfOpened
     @Override
     public void refreshAllContent() throws DotReindexStateException {
         try {
-            HibernateUtil.startTransaction();
-
-            // we lock the table dist_reindex_journal until we
-
-
             if(indexAPI.isInFullReindex()){
-                try{
-
-                    HibernateUtil.closeAndCommitTransaction();
-                }catch (Exception e) {
-                    try {
-                        HibernateUtil.rollbackTransaction();
-                    } catch (DotHibernateException e1) {
-                        Logger.warn(this, e1.getMessage(),e1);
-                    }
-                }
                 return;
             }
             // we prepare the new index and aliases to point both old and new
@@ -2349,22 +2335,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
             // new records to index
             reindexQueueAPI.addAllToReindexQueue();
 
-            // then we let the reindexThread start working
-
-
-            HibernateUtil.closeAndCommitTransaction();
-
         } catch (Exception e) {
-            Logger.error(this, e.getMessage(), e);
-            try {
-                HibernateUtil.rollbackTransaction();
-            } catch (DotHibernateException e1) {
-                Logger.warn(this, e1.getMessage(),e1);
-            }
-            throw new DotReindexStateException("Unable to complete reindex",e);
-        } finally {
-            HibernateUtil.closeSessionSilently();
-        }
+            throw new DotReindexStateException(e.getMessage(),e);
+        } 
 
     }
 

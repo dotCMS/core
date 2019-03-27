@@ -265,9 +265,53 @@ public class ReindexThreadTest {
                 respectFrontendRoles) == 0);
         assertTrue(contentletAPI.indexCount("+live:true +identifier:" + content.getIdentifier() , user,
                 respectFrontendRoles) == 0);
-        
-        
-        
+
     }
 
+
+    /**
+     * https://github.com/dotCMS/core/issues/11716
+     * 
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+
+    @Test
+    public void test_starting_stopping_ReindexThread() throws DotDataException, DotSecurityException {
+
+        new DotConnect().setSQL("delete from dist_reindex_journal").loadResult();
+        ReindexThread.startThread();
+        
+
+        
+
+        long startCount = ReindexThread.getInstance().totalESPuts();
+        ContentType type = new ContentTypeDataGen()
+                .fields(ImmutableList
+                        .of(ImmutableTextField.builder().name("Title").variable("title").searchable(true).listed(true).build()))
+                .nextPersisted();
+
+        String title = "contentTest " + System.currentTimeMillis();
+        Contentlet content = new ContentletDataGen(type.id()).setProperty("title", title).nextPersisted();
+
+        ThreadUtils.sleep(4000);
+        contentletAPI.publish(content, user, respectFrontendRoles);
+
+        ThreadUtils.sleep(4000);
+        long latestCount = ReindexThread.getInstance().totalESPuts() - startCount;
+        // 1 for check in (only working index) 2 more for publish (live & working indexes)
+        assert (latestCount == 3);
+
+        contentletAPI.unpublish(content, user, respectFrontendRoles);
+        ThreadUtils.sleep(4000);
+
+        // 1 more reindex working (publish was deleted)
+        latestCount = ReindexThread.getInstance().totalESPuts() - startCount;
+        assert (latestCount == 4);
+    }
+    
+    
+    
+    
+    
 }

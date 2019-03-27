@@ -2,6 +2,7 @@ package com.dotcms.content.elasticsearch.business;
 
 import java.io.IOException;
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
 import java.util.List;
@@ -131,5 +132,9 @@ public interface ContentletIndexAPI {
     BulkRequestBuilder appendBulkRequest(BulkRequestBuilder bulk, ReindexEntry idx) throws DotDataException;
 
     Optional<String> reindexTimeElapsed();
+
+    void stopFullReindexationAndSwitchover() throws DotDataException;
+
+    void reindexSwitchover(boolean forceSwitch) throws DotDataException;
 
 }

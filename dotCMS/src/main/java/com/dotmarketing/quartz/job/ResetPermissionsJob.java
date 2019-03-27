@@ -101,9 +101,9 @@ public class ResetPermissionsJob implements StatefulJob {
 		
 		try {
 		    // First, make sure the Reindex Thread is up and running
-            if (!ReindexThread.getInstance().isWorking()) {
-                ReindexThread.getInstance().unpause();
-            }
+
+            ReindexThread.unpause();
+
 			final Scheduler sched = QuartzUtils.getSequentialScheduler();
 			sched.scheduleJob(jd, trigger);
 		} catch (SchedulerException e) {

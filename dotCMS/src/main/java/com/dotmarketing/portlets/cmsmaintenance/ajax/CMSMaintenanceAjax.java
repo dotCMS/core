@@ -149,7 +149,7 @@ public class CMSMaintenanceAjax {
 	 */
 	public Map stopReindexationAndSwitchover() throws DotDataException, SQLException, InterruptedException {
 		validateUser();
-		ReindexThread.getInstance().stopFullReindexationAndSwitchover();
+		APILocator.getContentletIndexAPI().stopFullReindexationAndSwitchover();
 		return ESReindexationProcessStatus.getProcessIndexationMap();
 	}
 

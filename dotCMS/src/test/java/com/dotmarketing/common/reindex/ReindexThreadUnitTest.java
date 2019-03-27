@@ -59,7 +59,7 @@ public class ReindexThreadUnitTest extends UnitTestBase {
         PayloadVerifier roleVerifier = new RoleVerifier(roleAPI);
         payloadVerifierFactory.register(Visibility.ROLE, roleVerifier);
 
-        final ReindexThread reindexThread = new ReindexThread(jAPI, notificationAPI, userAPI, roleAPI);
+        final ReindexThread reindexThread = new ReindexThread(jAPI, notificationAPI, userAPI, roleAPI, null);
         final String identToIndex = "index1";
         final String msg = "Could not re-index record with the Identifier '"
                 + identToIndex

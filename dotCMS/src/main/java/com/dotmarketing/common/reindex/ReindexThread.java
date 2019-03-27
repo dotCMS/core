@@ -1,12 +1,12 @@
 package com.dotmarketing.common.reindex;
 
 import java.sql.SQLException;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 
@@ -20,24 +20,15 @@ import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.util.I18NMessage;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
-import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.ThreadUtils;
-import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableList;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.model.User;
 
@@ -78,45 +69,44 @@ import com.liferay.portal.model.User;
  * @since Mar 22, 2012
  *
  */
-public class ReindexThread extends Thread {
+public class ReindexThread {
 
-    private static final ContentletIndexAPI indexAPI = APILocator.getContentletIndexAPI();
-    private final ReindexQueueAPI jAPI;
+    private enum ThreadState {
+        STOPPED, PAUSED, RUNNING;
+    }
+
+    private final ContentletIndexAPI indexAPI;
+    private final ReindexQueueAPI queueApi;
     private final NotificationAPI notificationAPI;
     private final RoleAPI roleAPI;
     private final UserAPI userAPI;
 
-    private static ReindexThread instance;
+    private static ReindexThread instance = new ReindexThread();
 
-    private boolean work = false;
     private final int SLEEP = Config.getIntProperty("REINDEX_THREAD_SLEEP", 250);
-    private final int INIT_DELAY = Config.getIntProperty("REINDEX_THREAD_INIT_DELAY", 7500);
     private final int SLEEP_ON_ERROR = Config.getIntProperty("REINDEX_THREAD_SLEEP_ON_ERROR", 500);
     private int failedAttemptsCount = 0;
     private long contentletsIndexed = 0;
     // bulk up to this many requests
     private static final int ELASTICSEARCH_BULK_SIZE = Config.getIntProperty("REINDEX_THREAD_ELASTICSEARCH_BULK_SIZE", 500);
+    private ThreadState STATE = ThreadState.RUNNING;
 
-    private static final String THREAD_NAME = "ReindexThread";
+    private ExecutorService executor = null;
 
     private ReindexThread() {
 
-        this(APILocator.getReindexQueueAPI(), APILocator.getNotificationAPI(), APILocator.getUserAPI(), APILocator.getRoleAPI());
+        this(APILocator.getReindexQueueAPI(), APILocator.getNotificationAPI(), APILocator.getUserAPI(), APILocator.getRoleAPI(),
+                APILocator.getContentletIndexAPI());
     }
 
     @VisibleForTesting
-    public ReindexThread(final ReindexQueueAPI jAPI, final NotificationAPI notificationAPI, final UserAPI userAPI, final RoleAPI roleAPI) {
-        super(THREAD_NAME);
-        this.jAPI = jAPI;
+    public ReindexThread(final ReindexQueueAPI queueApi, final NotificationAPI notificationAPI, final UserAPI userAPI,
+            final RoleAPI roleAPI, final ContentletIndexAPI indexAPI) {
+        this.queueApi = queueApi;
         this.notificationAPI = notificationAPI;
         this.userAPI = userAPI;
         this.roleAPI = roleAPI;
-    }
-
-    private void finish() {
-        work = false;
-        die = true;
-
+        this.indexAPI = indexAPI;
     }
 
     /**
@@ -140,33 +130,29 @@ public class ReindexThread extends Thread {
         }
     }
 
-    private boolean die = false;
-
-    @Override
-    public void run() {
-
-        try {
-            Logger.info(this, "Reindex Thread start delayed for " + INIT_DELAY + " millis.");
-            Thread.sleep(INIT_DELAY);
-        } catch (InterruptedException e) {
-
-        }
-
+    private final Runnable ReindexThreadRunnable = () -> {
+        Logger.info(this.getClass(), "------------------------");
+        Logger.info(this.getClass(), "Reindex Thread is starting, background indexing will begin");
+        Logger.info(this.getClass(), "------------------------");
         try {
             // if the db has dangling server records, wipe them out so we can reindex
-            jAPI.resetServersRecords();
+            APILocator.getReindexQueueAPI().resetServersRecords();
         } catch (DotDataException e) {
             Logger.error(this.getClass(), e.getMessage(), e);
         }
-        while (!die) {
+        Thread.currentThread().setName("ReindexThreadRunnable");
+        unpause();
+        while (STATE != ThreadState.STOPPED) {
             try {
                 runReindexLoop();
             } catch (Exception e) {
                 Logger.error(this.getClass(), e.getMessage(), e);
             }
         }
-
-    }
+        Logger.warn(this.getClass(), "------------------------");
+        Logger.warn(this.getClass(), "Reindex Thread is stopping, background indexing will not take place");
+        Logger.warn(this.getClass(), "------------------------");
+    };
 
     @VisibleForTesting
     long totalESPuts() {
@@ -179,16 +165,14 @@ public class ReindexThread extends Thread {
      * a notification containing the content identifier will be sent to the user via the Notifications
      * API to take care of the problem as soon as possible.
      */
-    public void runReindexLoop() {
-
-        unpause();
+    private void runReindexLoop() {
         BulkRequestBuilder bulk = indexAPI.createBulkRequest();
-        while (isWorking() && !die) {
+        while (STATE != ThreadState.STOPPED) {
             final Map<String, ReindexEntry> workingRecords = new HashMap<>();
             int recordCount = 0;
             try {
                 while (recordCount < ELASTICSEARCH_BULK_SIZE) {
-                    workingRecords.putAll(jAPI.findContentToReindex());
+                    workingRecords.putAll(queueApi.findContentToReindex());
                     if (workingRecords.isEmpty() || recordCount == workingRecords.size()) {
                         break;
                     }
@@ -225,13 +209,16 @@ public class ReindexThread extends Thread {
             } finally {
                 DbConnectionFactory.closeSilently();
             }
+            while (STATE == ThreadState.PAUSED) {
+                ThreadUtils.sleep(1000);
+            }
         }
     }
 
-    boolean switchOverIfNeeded() throws LanguageException, DotDataException, SQLException, InterruptedException {
-        if (ESReindexationProcessStatus.inFullReindexation() && jAPI.recordsInQueue() == 0) {
+    private boolean switchOverIfNeeded() throws LanguageException, DotDataException, SQLException, InterruptedException {
+        if (ESReindexationProcessStatus.inFullReindexation() && queueApi.recordsInQueue() == 0) {
             // The re-indexation process has finished successfully
-            reindexSwitchover(false);
+            indexAPI.reindexSwitchover(false);
 
             // Generate and send an user notification
             sendNotification("notification.reindexing.success", null, null, false);
@@ -245,34 +232,30 @@ public class ReindexThread extends Thread {
      */
     public static void startThread() {
 
-        Logger.info(ReindexThread.class, "ReindexThread ordered to start processing");
+        if (getInstance().executor != null && !getInstance().executor.isShutdown()) {
+            stopThread();
+        }
+        
+        getInstance().executor = Executors.newSingleThreadExecutor();
 
-        // Creates and starts a thread
-        createThread();
+        final Thread thread = new Thread(getInstance().ReindexThreadRunnable, "ReindexThreadRunnable");
 
+        getInstance().executor.execute(thread);
     }
 
-
+    private void state(ThreadState state) {
+        this.STATE = state;
+    }
     /**
      * Tells the thread to stop processing. Doesn't shut down the thread.
      */
     public static void stopThread() {
-        if (instance != null && instance.isAlive()) {
-            Logger.info(ReindexThread.class, "ReindexThread ordered to stop processing");
-            instance.finish();
-        } else {
-            Logger.error(ReindexThread.class, "No ReindexThread available");
-        }
-    }
-
-    /**
-     * Creates and starts a thread that doesn't process anything yet
-     */
-    private static void createThread() {
-
-        if (instance == null) {
-            instance =  new ReindexThread();
-            instance.start();
+        getInstance().state(ThreadState.STOPPED);
+        getInstance().executor.shutdown();
+        try {
+            getInstance().executor.awaitTermination(10, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            Logger.warnAndDebug(ReindexThread.class, e);
         }
     }
 
@@ -281,23 +264,19 @@ public class ReindexThread extends Thread {
      * null.
      */
     public static ReindexThread getInstance() {
-        if (instance == null) {
-            createThread();
-        }
         return instance;
     }
 
-    public void pause() {
-        work = false;
+    public static void pause() {
+        instance.state(ThreadState.PAUSED);
     }
 
-    public void unpause() {
-        die = false;
-        work = true;
+    public static void unpause() {
+        instance.state(ThreadState.RUNNING);
     }
 
-    public boolean isWorking() {
-        return work;
+    public static boolean isWorking() {
+        return instance.STATE == ThreadState.RUNNING;
     }
 
     /**
@@ -310,32 +289,8 @@ public class ReindexThread extends Thread {
     public void stopFullReindexation() throws DotDataException {
         try {
             pause();
-            this.jAPI.deleteReindexAndFailedRecords();
+            queueApi.deleteReindexAndFailedRecords();
             indexAPI.fullReindexAbort();
-        } finally {
-            unpause();
-        }
-    }
-
-    /**
-     * Stops the current re-indexation process and switches the current index to the new one. The main
-     * goal of this method is to allow users to switch to the new index even if one or more contents
-     * could not be re-indexed.
-     * <p>
-     * This is very useful because the new index can be created and used immediately. The user can have
-     * the new re-indexed content available and then work on the conflicting contents, which can be
-     * either fixed or removed from the database.
-     * </p>
-     * 
-     * @throws SQLException An error occurred when interacting with the database.
-     * @throws DotDataException The process to switch to the new failed.
-     * @throws InterruptedException The established pauses to switch to the new index failed.
-     */
-    public void stopFullReindexationAndSwitchover() throws SQLException, DotDataException, InterruptedException {
-        try {
-            pause();
-            this.jAPI.deleteReindexAndFailedRecords();
-            reindexSwitchover(true);
         } finally {
             unpause();
         }
@@ -368,35 +323,6 @@ public class ReindexThread extends Thread {
                 new I18NMessage(key, defaultMsg, msgParams), null, // no actions
                 notificationLevel, NotificationType.GENERIC, Visibility.ROLE, cmsAdminRole.getId(), systemUser.getUserId(),
                 systemUser.getLocale());
-    }
-
-    /**
-     * Switches the current index structure to the new re-indexed data. This method also allows users to
-     * switch to the new re-indexed data even if there are still remaining contents in the
-     * {@code dist_reindex_journal} table.
-     * 
-     * @param forceSwitch - If {@code true}, the new index will be used, even if there are contents that
-     *        could not be processed. Otherwise, set to {@code false} and the index switch will only
-     *        happen if ALL contents were re-indexed.
-     * @throws SQLException An error occurred when interacting with the database.
-     * @throws DotDataException The process to switch to the new failed.
-     * @throws InterruptedException The established pauses to switch to the new index failed.
-     */
-    @CloseDBIfOpened
-    private void reindexSwitchover(boolean forceSwitch) throws SQLException, DotDataException, InterruptedException {
-
-        // We double check again. Only one node will enter this critical
-        // region, then others will enter just to see that the switchover is
-        // done
-
-        if (forceSwitch || jAPI.recordsInQueue() == 0) {
-            Logger.info(this, "Running Reindex Switchover");
-            // Wait a bit while all records gets flushed to index
-            indexAPI.fullReindexSwitchover(forceSwitch);
-            failedAttemptsCount = 0;
-            // Wait a bit while elasticsearch flushes it state
-        }
-
     }
 
 }
