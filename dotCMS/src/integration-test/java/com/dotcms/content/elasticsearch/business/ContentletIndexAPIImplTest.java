@@ -1008,7 +1008,7 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
         contents.add(baseCon);
         
         List<Language> languages = APILocator.getLanguageAPI().getLanguages();
-        if(languages.size()<4) {
+        if(languages.size()<5) {
             // create 3 langauges
             for(int i=0;i<3;i++) {
                 Language newLang = new Language();
@@ -1018,9 +1018,11 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
                 APILocator.getLanguageAPI().saveLanguage(newLang);
             }
         }
-        languages = APILocator.getLanguageAPI().getLanguages();
+        languages = new ArrayList<>();
+        languages.addAll(APILocator.getLanguageAPI().getLanguages());
+        
         languages.removeIf(l->l.getId() ==APILocator.getLanguageAPI().getDefaultLanguage().getId());
-        languages = languages.subList(0, (languages.size()>5) ? 4 :languages.size());
+        languages = languages.subList(0, (languages.size()>5) ? 5 :languages.size());
 
         
 
@@ -1065,7 +1067,7 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
         bulk.setRefreshPolicy(RefreshPolicy.IMMEDIATE);
         indexAPI.appendBulkRequest(bulk, entries.values());
         indexAPI.putToIndex(bulk);
-        ThreadUtils.sleep(10000);
+
         assertTrue(contentletAPI.indexCount("+live:false +identifier:" + baseCon.getIdentifier(), user, false) == 0);
         
         

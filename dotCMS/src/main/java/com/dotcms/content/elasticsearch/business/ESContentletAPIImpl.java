@@ -883,7 +883,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
             try{
                 Map<String, Object> sourceMap = sh.getSourceAsMap();
                 ContentletSearch conwrapper= new ContentletSearch();
-
+                conwrapper.setId(sh.getId());
+                conwrapper.setIndex(sh.getIndex());
                 conwrapper.setIdentifier(sourceMap.get("identifier").toString());
                 conwrapper.setInode(sourceMap.get("inode").toString());
                 conwrapper.setScore(sh.getScore());

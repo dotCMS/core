@@ -681,11 +681,14 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         List<Language> languages = APILocator.getLanguageAPI().getLanguages();
         final Client client = new ESClient().getClient();
         final IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
-
+        
+        
         // delete for every langauge and in every index
         for (Language language : languages) {
             for (final String index : info.asMap().values()) {
                 final String id = entry.getIdentToIndex() + "_" + language.getId();
+                
+                System.err.println("deleteing:" + id);
                 bulk.add(client.prepareDelete(index, "content", id));
             }
         }
