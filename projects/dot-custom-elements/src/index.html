@@ -10,9 +10,17 @@
         <script src='/build/mycomponent.js'></script>
         <script>
             window.onload = function() {
-                let rating = document.querySelector('dot-textfield');
-                rating.addEventListener('onCallback', function(event) {
-                    console.log('--onCallback', event.detail);
+                let inputTxt = document.querySelector('dot-textfield');
+                inputTxt.addEventListener('onCallback', function(event) {
+                    console.log('--inputTxt onCallback', event.detail);
+                });
+                let dropdownElem = document.querySelector('dot-dropdown');
+                dropdownElem.addEventListener('onCallback', function(event) {
+                    console.log('--dropdownElem onCallback', event.detail);
+                });
+                let checkboxElem = document.querySelector('dot-checkbox');
+                checkboxElem.addEventListener('onCallback', function(event) {
+                    console.log('--checkboxElem onCallback', event.detail);
                 });
             };
         </script>
@@ -33,15 +41,20 @@
         <hr />
 
         <dot-dropdown
-            label='Dropdown:'
-            value='Hello|1 World|2'
+            label='Dropdown label:'
+            hint='this is a hint'
+            options='a\r\nb\r\nc\r\nd\r\n'
+            value='b'
         ></dot-dropdown>
 
         <hr />
 
-        <dot-dropdown-slot>
-            <dot-dropdown-slot-item value='1' label='One'></dot-dropdown-slot-item>
-            <dot-dropdown-slot-item value='2' label='Two'></dot-dropdown-slot-item>
-        </dot-dropdown-slot>
+        <dot-checkbox
+            label='Checkbox label:'
+            hint='this is a hint'
+            options='a1\r\nb1\r\nc1\r\nd1\r\n'
+            value='b1'
+        ></dot-checkbox>
+
     </body>
 </html>

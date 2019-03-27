@@ -12,31 +12,31 @@ import '@stencil/core';
 
 export namespace Components {
 
-  interface DotDropdownSlotItem {
+  interface DotCheckbox {
+    'hint': string;
     'label': string;
+    'options': string;
     'value': string;
   }
-  interface DotDropdownSlotItemAttributes extends StencilHTMLAttributes {
+  interface DotCheckboxAttributes extends StencilHTMLAttributes {
+    'hint'?: string;
     'label'?: string;
-    'onDotItemClicked'?: (event: CustomEvent) => void;
+    'onOnCallback'?: (event: CustomEvent) => void;
+    'options'?: string;
     'value'?: string;
   }
 
-  interface DotDropdownSlot {
-    'close': () => void;
-    'open': () => void;
-  }
-  interface DotDropdownSlotAttributes extends StencilHTMLAttributes {
-    'onOnClose'?: (event: CustomEvent) => void;
-    'onOnOpen'?: (event: CustomEvent) => void;
-  }
-
   interface DotDropdown {
+    'hint': string;
     'label': string;
+    'options': string;
     'value': string;
   }
   interface DotDropdownAttributes extends StencilHTMLAttributes {
+    'hint'?: string;
     'label'?: string;
+    'onOnCallback'?: (event: CustomEvent) => void;
+    'options'?: string;
     'value'?: string;
   }
 
@@ -92,32 +92,24 @@ export namespace Components {
 
 declare global {
   interface StencilElementInterfaces {
-    'DotDropdownSlotItem': Components.DotDropdownSlotItem;
-    'DotDropdownSlot': Components.DotDropdownSlot;
+    'DotCheckbox': Components.DotCheckbox;
     'DotDropdown': Components.DotDropdown;
     'DotTextfield': Components.DotTextfield;
     'MyComponent': Components.MyComponent;
   }
 
   interface StencilIntrinsicElements {
-    'dot-dropdown-slot-item': Components.DotDropdownSlotItemAttributes;
-    'dot-dropdown-slot': Components.DotDropdownSlotAttributes;
+    'dot-checkbox': Components.DotCheckboxAttributes;
     'dot-dropdown': Components.DotDropdownAttributes;
     'dot-textfield': Components.DotTextfieldAttributes;
     'my-component': Components.MyComponentAttributes;
   }
 
 
-  interface HTMLDotDropdownSlotItemElement extends Components.DotDropdownSlotItem, HTMLStencilElement {}
-  var HTMLDotDropdownSlotItemElement: {
-    prototype: HTMLDotDropdownSlotItemElement;
-    new (): HTMLDotDropdownSlotItemElement;
-  };
-
-  interface HTMLDotDropdownSlotElement extends Components.DotDropdownSlot, HTMLStencilElement {}
-  var HTMLDotDropdownSlotElement: {
-    prototype: HTMLDotDropdownSlotElement;
-    new (): HTMLDotDropdownSlotElement;
+  interface HTMLDotCheckboxElement extends Components.DotCheckbox, HTMLStencilElement {}
+  var HTMLDotCheckboxElement: {
+    prototype: HTMLDotCheckboxElement;
+    new (): HTMLDotCheckboxElement;
   };
 
   interface HTMLDotDropdownElement extends Components.DotDropdown, HTMLStencilElement {}
@@ -139,16 +131,14 @@ declare global {
   };
 
   interface HTMLElementTagNameMap {
-    'dot-dropdown-slot-item': HTMLDotDropdownSlotItemElement
-    'dot-dropdown-slot': HTMLDotDropdownSlotElement
+    'dot-checkbox': HTMLDotCheckboxElement
     'dot-dropdown': HTMLDotDropdownElement
     'dot-textfield': HTMLDotTextfieldElement
     'my-component': HTMLMyComponentElement
   }
 
   interface ElementTagNameMap {
-    'dot-dropdown-slot-item': HTMLDotDropdownSlotItemElement;
-    'dot-dropdown-slot': HTMLDotDropdownSlotElement;
+    'dot-checkbox': HTMLDotCheckboxElement;
     'dot-dropdown': HTMLDotDropdownElement;
     'dot-textfield': HTMLDotTextfieldElement;
     'my-component': HTMLMyComponentElement;

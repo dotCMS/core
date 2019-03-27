@@ -18,6 +18,7 @@ export class DotTextfieldComponent {
 
     @State() _value: string;
     @State() _error = false;
+    _label: string;
 
     // tslint:disable-next-line:cyclomatic-complexity
     validate(value: string): boolean {
@@ -37,25 +38,25 @@ export class DotTextfieldComponent {
     }
 
     componentWillLoad() {
+        this._label = `dotTextfield_${generateId()}`;
         this._value = this._value && this._value.length > -1 ? this._value : this.value;
     }
 
     // tslint:disable-next-line:cyclomatic-complexity
     render() {
-        const _label = `dotTextfield_${generateId()}`;
         return (
             <Fragment>
-                <label htmlFor={_label}>{this.label}</label>
+                <label htmlFor={this._label}>{this.label}</label>
                 <input
                     class={this._error ? 'dot-textfield__input--error' : ''}
-                    name={_label}
+                    name={this._label}
                     type='text'
                     value={this._value}
                     placeholder={this.placeholder}
                     required={this.required ? true : null}
                     onInput={(event: Event) => this.setValue(event)}
                 />
-                {this.hint ? <span class='hint'>{this.hint}</span> : ''}
+                {this.hint ? <span class='dot-textfield__hint'>{this.hint}</span> : ''}
             </Fragment>
         );
     }

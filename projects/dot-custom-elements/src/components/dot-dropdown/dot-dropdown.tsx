@@ -1,4 +1,4 @@
-import { Component, Prop, State } from '@stencil/core';
+import { Component, Prop, State, Event, EventEmitter } from '@stencil/core';
 import { generateId } from '../../utils/utils';
 import Fragment from 'stencil-fragment';
 
@@ -7,28 +7,46 @@ import Fragment from 'stencil-fragment';
     styleUrl: 'dot-dropdown.scss'
 })
 export class DotDropdownComponent {
-    @Prop() value: string;
     @Prop() label: string;
+    @Prop() hint: string;
+    @Prop() options: string;
+    @Prop() value: string;
+    @Event() onCallback: EventEmitter;
 
-    @State() _value: any;
-    @State() _error = false;
-
+    @State() _options: string[];
+    @State() _value: string;
+    _label: string;
 
     componentWillLoad() {
-        this._value = this.value.split(' ');
+        this._options = this.options
+            .replace(/(\\r\\n|\\n|\\r)/gi, '|')
+            .split('|')
+            .filter((item) => item.length > 0);
+        this._label = `dotDropdown_${generateId()}`;
+    }
+
+    setValue(event): void {
+        this._value = event.target[event.target.selectedIndex].label;
+        this.onCallback.emit({ value: this._value });
     }
 
     render() {
-        const _label = `dotTextfield_${generateId()}`;
         return (
             <Fragment>
-                <label htmlFor={_label}>{this.label}</label>
-                <select id='pet-select'>
-                    { this._value.map((rawItem) => {
-                        const item = rawItem.split('|');
-                        return (<option value={item[1]}>{item[0]}</option>);
+                <label htmlFor={this._label}>{this.label}</label>
+                <select name={this._label} onChange={(event: Event) => this.setValue(event)}>
+                    {this._options.map((item: string, index: number) => {
+                        return (
+                            <option
+                                selected={this.value === item ? true : null}
+                                value={index}
+                            >
+                                {item}
+                            </option>
+                        );
                     })}
                 </select>
+                {this.hint ? <span class='dot-textfield__hint'>{this.hint}</span> : ''}
             </Fragment>
         );
     }
