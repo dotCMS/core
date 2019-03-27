@@ -34,6 +34,7 @@ export class DotTextfieldComponent {
         return false;
     }
 
+    // Todo: find how to set proper TYPE in TS
     setValue(event): void {
         this._value = event.target.value.toString();
         this._error = this.validate(this._value);

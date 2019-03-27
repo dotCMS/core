@@ -1,10 +1,7 @@
+import { DotOption } from '../models/dot-option.model';
+
 export function generateId(): number {
     return Date.now().valueOf();
-}
-
-export interface DotOption {
-    label: string;
-    value: string;
 }
 
 export function getItemsFromString(rawString: string): DotOption[] {

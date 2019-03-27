@@ -1,5 +1,6 @@
 import { Component, Prop, State, Event, EventEmitter } from '@stencil/core';
-import { generateId, getItemsFromString, DotOption } from '../../utils/utils';
+import { generateId, getItemsFromString } from '../../utils/utils';
+import { DotOption } from '../../models/dot-option.model';
 import Fragment from 'stencil-fragment';
 
 @Component({
@@ -23,6 +24,7 @@ export class DotCheckboxComponent {
         this._label = `dotCheckbox_${generateId()}`;
     }
 
+    // Todo: find how to set proper TYPE in TS
     setValue(event): void {
         const checkBoxVal = event.target.value.toString();
         // Format values to be emmitted, this might change when implemented on the form
