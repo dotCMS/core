@@ -203,6 +203,12 @@ public class ReindexQueueAPIImpl implements ReindexQueueAPI {
     public void deleteReindexEntry(Collection<ReindexEntry> recordsToDelete) throws DotDataException {
         reindexQueueFactory.deleteReindexEntry(recordsToDelete);
     }
+    
+    @Override
+    @WrapInTransaction
+    public void deleteReindexEntry(String identiferToDelete) throws DotDataException {
+        reindexQueueFactory.deleteReindexEntry(identiferToDelete);
+    }
 
     @Override
     @WrapInTransaction

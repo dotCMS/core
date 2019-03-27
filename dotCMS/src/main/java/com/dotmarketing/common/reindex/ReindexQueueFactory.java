@@ -55,8 +55,11 @@ public class ReindexQueueFactory {
         }
     }
 
-    public static final int REINDEX_ACTION_REINDEX_OBJECT = 1;
-    public static final int REINDEX_ACTION_DELETE_OBJECT = 2;
+    public enum ReindexAction {
+        NONE, REINDEX, DELETE;
+    }
+    
+
 
     public ReindexQueueFactory() {
 
@@ -87,7 +90,7 @@ public class ReindexQueueFactory {
         DotConnect dc = new DotConnect();
         try {
             String sql = "insert into dist_reindex_journal(inode_to_index,ident_to_index, priority, dist_action, time_entered) "
-                    + " select distinct identifier,identifier," + Priority.REINDEX.dbValue() + "," + REINDEX_ACTION_REINDEX_OBJECT + ", "
+                    + " select distinct identifier,identifier," + Priority.REINDEX.dbValue() + "," + ReindexAction.REINDEX.ordinal() + ", "
                     + timestampSQL() + " from contentlet_version_info where identifier is not null";
             dc.setSQL(sql);
             dc.loadResult();
@@ -100,7 +103,7 @@ public class ReindexQueueFactory {
         DotConnect dc = new DotConnect();
         try {
             String sql = "insert into dist_reindex_journal(inode_to_index,ident_to_index,priority,dist_action, time_entered) "
-                    + " select distinct c.identifier,c.identifier," + Priority.STRUCTURE.dbValue() + "," + REINDEX_ACTION_REINDEX_OBJECT
+                    + " select distinct c.identifier,c.identifier," + Priority.STRUCTURE.dbValue() + "," + ReindexAction.REINDEX.ordinal()
                     + "," + timestampSQL() + " from contentlet c " + " where c.structure_inode = ? and c.identifier is not null";
             dc.setSQL(sql);
             dc.addParam(structureInode);
@@ -158,6 +161,14 @@ public class ReindexQueueFactory {
         dc.loadResult();
     }
 
+    protected void deleteReindexEntry(String identifier) throws DotDataException {
+        DotConnect dc = new DotConnect();
+        dc.setSQL("DELETE FROM dist_reindex_journal where ident_to_index = ? ");
+        dc.addParam(identifier);
+        dc.loadResult();
+    }
+    
+    
     protected void deleteReindexEntry(final Collection<ReindexEntry> recordsToDelete) throws DotDataException {
 
         final DotConnect dotConnect = new DotConnect();
@@ -264,7 +275,7 @@ public class ReindexQueueFactory {
                 String identifier = (String) r.get("ident_to_index");
                 entry.setIdentToIndex(identifier);
                 entry.setPriority(((Number) (r.get("priority"))).intValue());
-                entry.setDelete(((Number) (r.get("priority"))).intValue()==REINDEX_ACTION_DELETE_OBJECT);
+                entry.setDelete(((Number) (r.get("dist_action"))).intValue()==ReindexAction.DELETE.ordinal());
                 contentList.put(identifier, entry);
             }
         } catch (SQLException e1) {
@@ -297,7 +308,7 @@ public class ReindexQueueFactory {
         DotConnect dc = new DotConnect();
         dc.setSQL(sql);
         dc.addParam(Priority.NORMAL.dbValue());
-        dc.addParam(REINDEX_ACTION_REINDEX_OBJECT);
+        dc.addParam(ReindexAction.REINDEX.ordinal());
         dc.addParam(folder.getHostId());
         String folderPath = APILocator.getIdentifierAPI().find(folder).getPath();
         dc.addParam(folderPath + "%");
@@ -312,7 +323,7 @@ public class ReindexQueueFactory {
         DotConnect dc = new DotConnect();
         dc.setSQL(sql);
         dc.addParam(Priority.NORMAL.dbValue());
-        dc.addParam(REINDEX_ACTION_REINDEX_OBJECT);
+        dc.addParam(ReindexAction.REINDEX.ordinal());
         dc.addParam(hostId);
         dc.addParam(folderPath + "%");
         dc.loadResult();
@@ -352,7 +363,7 @@ public class ReindexQueueFactory {
         for (final String identifier : identifiers) {
 
             new DotConnect().setSQL(REINDEX_JOURNAL_INSERT).addParam(identifier).addParam(identifier).addParam(prority)
-                    .addParam(REINDEX_ACTION_REINDEX_OBJECT).addParam(date).loadResult();
+                    .addParam(ReindexAction.REINDEX.ordinal()).addParam(date).loadResult();
 
         }
         return identifiers.size();
@@ -367,7 +378,7 @@ public class ReindexQueueFactory {
         for (final String identifier : identifiers) {
 
             new DotConnect().setSQL(REINDEX_JOURNAL_INSERT).addParam(identifier).addParam(identifier).addParam(prority)
-                    .addParam(REINDEX_ACTION_DELETE_OBJECT).addParam(date).loadResult();
+                    .addParam(ReindexAction.DELETE.ordinal()).addParam(date).loadResult();
 
         }
         return identifiers.size();
@@ -383,7 +394,7 @@ public class ReindexQueueFactory {
         DotConnect dc = new DotConnect();
         dc.setSQL(sql);
         dc.addParam(Priority.STRUCTURE.dbValue());
-        dc.addParam(REINDEX_ACTION_REINDEX_OBJECT);
+        dc.addParam(ReindexAction.REINDEX.ordinal());
         dc.addParam(host.getIdentifier());
         dc.loadResult();
 
@@ -392,7 +403,7 @@ public class ReindexQueueFactory {
                 + " FROM permission_reference " + " WHERE reference_id=?";
         dc.setSQL(sql);
         dc.addParam(Priority.STRUCTURE.dbValue());
-        dc.addParam(REINDEX_ACTION_REINDEX_OBJECT);
+        dc.addParam(ReindexAction.REINDEX.ordinal());
         dc.addParam(host.getIdentifier());
         dc.loadResult();
     }

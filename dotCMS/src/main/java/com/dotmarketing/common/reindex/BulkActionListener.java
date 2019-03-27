@@ -5,9 +5,11 @@ import java.util.List;
 import java.util.Map;
 
 import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.action.DocWriteRequest.OpType;
 import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.action.delete.DeleteResponse;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotmarketing.business.APILocator;
@@ -49,6 +51,8 @@ class BulkActionListener implements ActionListener<BulkResponse> {
         List<ReindexEntry> successful = new ArrayList<>(workingRecords.size());
         for (BulkItemResponse bulkItemResponse : bulkResponse) {
             DocWriteResponse itemResponse = bulkItemResponse.getResponse();
+            
+
             String id = itemResponse.getId().substring(0, itemResponse.getId().lastIndexOf(StringPool.UNDERLINE));
             ReindexEntry idx = workingRecords.get(id);
             if (idx == null)

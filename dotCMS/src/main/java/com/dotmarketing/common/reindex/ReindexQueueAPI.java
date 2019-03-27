@@ -204,4 +204,6 @@ public interface ReindexQueueAPI {
      */
     int addIdentifierDelete(String id) throws DotDataException;
 
+    void deleteReindexEntry(String identiferToDelete) throws DotDataException;
+
 }

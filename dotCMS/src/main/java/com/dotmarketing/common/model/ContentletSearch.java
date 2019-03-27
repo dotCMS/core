@@ -23,5 +23,11 @@ public class  ContentletSearch {
 	public String getInode() {
 		return inode;
 	}
+    @Override
+    public String toString() {
+        return "ContentletSearch [inode=" + inode + ", identifier=" + identifier + ", score=" + score + "]";
+    }
+	
+	
 
 }

@@ -6,13 +6,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.Future;
 
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 
 import com.dotcms.api.system.event.Visibility;
-import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.util.ESReindexationProcessStatus;
 import com.dotcms.notifications.bean.NotificationLevel;
@@ -88,10 +86,10 @@ public class ReindexThread {
     private int failedAttemptsCount = 0;
     private long contentletsIndexed = 0;
     // bulk up to this many requests
-    private static final int ELASTICSEARCH_BULK_SIZE = Config.getIntProperty("REINDEX_THREAD_ELASTICSEARCH_BULK_SIZE", 500);
+    private static final int ELASTICSEARCH_BULK_SIZE = Config.getIntProperty("REINDEX_THREAD_ELASTICSEARCH_BULK_SIZE", 100);
     private ThreadState STATE = ThreadState.RUNNING;
-
-    private ExecutorService executor = null;
+    private Future<?>  threadRunning;
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     private ReindexThread() {
 
@@ -141,8 +139,8 @@ public class ReindexThread {
         } catch (DotDataException e) {
             Logger.error(this.getClass(), e.getMessage(), e);
         }
-        Thread.currentThread().setName("ReindexThreadRunnable");
-        unpause();
+
+        
         while (STATE != ThreadState.STOPPED) {
             try {
                 runReindexLoop();
@@ -212,6 +210,9 @@ public class ReindexThread {
             }
             while (STATE == ThreadState.PAUSED) {
                 ThreadUtils.sleep(1000);
+                if(System.currentTimeMillis() % 5==0) {
+                    Logger.info(this.getClass(), "Reindex Thread Paused");
+                }
             }
         }
     }
@@ -232,16 +233,12 @@ public class ReindexThread {
      * Tells the thread to start processing. Starts the thread
      */
     public static void startThread() {
-
-        if (getInstance().executor != null && !getInstance().executor.isShutdown()) {
-            stopThread();
+        getInstance().state(ThreadState.RUNNING);
+        if(getInstance().threadRunning ==null || getInstance().threadRunning.isDone()) {
+            final Thread thread = new Thread(getInstance().ReindexThreadRunnable, "ReindexThreadRunnable");
+            getInstance().threadRunning = getInstance().executor.submit(thread);
         }
         
-        getInstance().executor = Executors.newSingleThreadExecutor();
-
-        final Thread thread = new Thread(getInstance().ReindexThreadRunnable, "ReindexThreadRunnable");
-
-        getInstance().executor.execute(thread);
     }
 
     private void state(ThreadState state) {
@@ -252,11 +249,13 @@ public class ReindexThread {
      */
     public static void stopThread() {
         getInstance().state(ThreadState.STOPPED);
-        getInstance().executor.shutdown();
-        try {
-            getInstance().executor.awaitTermination(10, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            Logger.warnAndDebug(ReindexThread.class, e);
+        int i=0;
+        while(getInstance().threadRunning !=null && ! getInstance().threadRunning.isDone() && ++i<10) {
+            getInstance().state(ThreadState.STOPPED);
+            ThreadUtils.sleep(500);
+        }
+        while(getInstance().threadRunning !=null && ! getInstance().threadRunning.isDone()) {
+            getInstance().threadRunning.cancel(true);
         }
     }
 
@@ -267,6 +266,7 @@ public class ReindexThread {
     public static ReindexThread getInstance() {
         if(instance==null) {
             instance=new ReindexThread();
+            startThread();
         }
         return instance;
     }

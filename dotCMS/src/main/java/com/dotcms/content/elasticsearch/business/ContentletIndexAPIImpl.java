@@ -72,6 +72,7 @@ import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.ThreadUtils;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.gson.Gson;
 import com.liferay.util.StringPool;
@@ -541,7 +542,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         Logger.debug(this, "Indexing document " + idx.getIdentToIndex());
 
         if (idx.isDelete()) {
-            return appendBulkRemoveRequest(bulk, idx.getIdentToIndex());
+            return appendBulkRemoveRequest(bulk, idx);
         }
 
         List<ContentletVersionInfo> versions = APILocator.getVersionableAPI().findContentletVersionInfos(idx.getIdentToIndex());
@@ -674,15 +675,17 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         removeContentFromIndex(content, false);
     }
 
-    private BulkRequestBuilder appendBulkRemoveRequest(final BulkRequestBuilder bulk, final String identifier) throws DotDataException {
+    @Override
+    @VisibleForTesting
+    public BulkRequestBuilder appendBulkRemoveRequest(final BulkRequestBuilder bulk, final ReindexEntry entry) throws DotDataException {
         List<Language> languages = APILocator.getLanguageAPI().getLanguages();
         final Client client = new ESClient().getClient();
         final IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
 
         // delete for every langauge and in every index
         for (Language language : languages) {
-            for (String index : info.asMap().values()) {
-                final String id = identifier + "_" + language.getId();
+            for (final String index : info.asMap().values()) {
+                final String id = entry.getIdentToIndex() + "_" + language.getId();
                 bulk.add(client.prepareDelete(index, "content", id));
             }
         }

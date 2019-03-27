@@ -185,14 +185,6 @@ public class StartupTasksExecutor {
 								+ e2.getMessage(), e2);
 			}
 
-		}finally {
-		    if(connection!=null) {
-		        try {
-                    connection.close();
-                } catch (SQLException e) {
-                    Logger.warnAndDebug(this.getClass(), e);
-                }
-		    }
 		}
 		Logger.debug(this.getClass(), "Locking db_version succeeded");
 

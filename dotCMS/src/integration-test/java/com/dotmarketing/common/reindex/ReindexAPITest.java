@@ -251,4 +251,44 @@ public class ReindexAPITest extends IntegrationTestBase {
 
     }
 
+    /**
+     * If a record has been claimed by a server, but was never indexed, e.g. the server was shutdown
+     * before the content ever got reindexed, then dotcms should pick it up again after a set period of
+     * time: https://github.com/dotCMS/core/issues/7950
+     * 
+     * @throws Exception
+     */
+    @Test
+    public void test_deleted_records() throws Exception {
+
+        final List<Contentlet> contentlets = new ArrayList<>();
+        ContentType type = new ContentTypeDataGen()
+                .fields(ImmutableList
+                        .of(ImmutableTextField.builder().name("Title").variable("title").searchable(true).listed(true).build()))
+                .nextPersisted();
+
+        for (int i = 0; i < numberToTest; i++) {
+            contentlets.add(
+                    new ContentletDataGen(type.id()).setProperty("title", "contentTest " + System.currentTimeMillis()).nextPersisted());
+        }
+
+        List<String> ids = contentlets.stream().map(c->c.getIdentifier()).collect(Collectors.toList());
+        
+        
+        final ReindexQueueAPI reindexQueueAPI = APILocator.getReindexQueueAPI();
+
+        new DotConnect().setSQL("delete from dist_reindex_journal").loadResult();
+
+        reindexQueueAPI.addIdentifierDelete(ids);
+
+
+        Map<String, ReindexEntry> reindexEntries = reindexQueueAPI.findContentToReindex();
+        assert(reindexEntries.size()==ids.size());
+        for(ReindexEntry entry : reindexEntries.values()) {
+            assert(ids.contains(entry.getIdentToIndex()));
+            assert(entry.isDelete());
+        }
+
+    }
+
 }

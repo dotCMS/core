@@ -139,4 +139,6 @@ public interface ContentletIndexAPI {
 
     void stopFullReindexation() throws DotDataException;
 
+    BulkRequestBuilder appendBulkRemoveRequest(BulkRequestBuilder bulk, final ReindexEntry entry) throws DotDataException;
+
 }

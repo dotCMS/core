@@ -55,7 +55,7 @@ public class ReindexThreadTest {
     protected static Language lang;
     protected static Folder folder;
     protected static ContentletAPI contentletAPI;
-
+    protected static ContentType type;
     @BeforeClass
     public static void prepare() throws Exception {
         // Setting web app environment
@@ -70,6 +70,12 @@ public class ReindexThreadTest {
         HttpServletRequest pageRequest =
                 new MockSessionRequest(new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request()).request();
         HttpServletRequestThreadLocal.INSTANCE.setRequest(pageRequest);
+        
+        type = new ContentTypeDataGen()
+                .fields(ImmutableList
+                        .of(ImmutableTextField.builder().name("Title").variable("title").searchable(true).listed(true).build()))
+                .nextPersisted();
+
     }
 
     /**
@@ -89,10 +95,6 @@ public class ReindexThreadTest {
         int num = 2;
         List<Contentlet> origCons = new ArrayList<>();
 
-        ContentType type = new ContentTypeDataGen()
-                .fields(ImmutableList
-                        .of(ImmutableTextField.builder().name("Title").variable("title").searchable(true).listed(true).build()))
-                .nextPersisted();
 
         for (int i = 0; i < num; i++) {
             Contentlet content = new ContentletDataGen(type.id()).setProperty("title", "contentTest " + System.currentTimeMillis()).next();
@@ -143,10 +145,10 @@ public class ReindexThreadTest {
             HibernateUtil.closeSession();
         }
 
-        ReindexThread.getInstance().unpause();
+        ReindexThread.unpause();
 
         // let any expected reindex finish
-        DateUtil.sleep(10000);
+        DateUtil.sleep(4000);
 
         // make sure that the index is in the same state as before the failed transaction
 
@@ -168,14 +170,16 @@ public class ReindexThreadTest {
     @Test
     public void test_reindex_queue_puts_to_the_index() throws DotDataException, DotSecurityException {
         ReindexThread.stopThread();
+        
+        //make sure we only have live + working
+        APILocator.getContentletIndexAPI().fullReindexAbort();
+        
+        
         new DotConnect().setSQL("delete from dist_reindex_journal").loadResult();
         ReindexThread.startThread();
 
         long startCount = ReindexThread.getInstance().totalESPuts();
-        ContentType type = new ContentTypeDataGen()
-                .fields(ImmutableList
-                        .of(ImmutableTextField.builder().name("Title").variable("title").searchable(true).listed(true).build()))
-                .nextPersisted();
+
 
         String title = "contentTest " + System.currentTimeMillis();
         Contentlet content = new ContentletDataGen(type.id()).setProperty("title", title).nextPersisted();
@@ -205,66 +209,72 @@ public class ReindexThreadTest {
 
     @Test
     public void test_reindex_thread_removing_from_index() throws DotDataException, DotSecurityException {
-        // respect CMS Anonymous permissions
 
-        // stop the reindex thread
+        //make sure we only have live + working indexes
+        APILocator.getContentletIndexAPI().fullReindexAbort();
         ReindexThread.startThread();
-
-        ContentType type = new ContentTypeDataGen()
-                .fields(ImmutableList
-                        .of(ImmutableTextField.builder().name("Title").variable("title").searchable(true).listed(true).build()))
-                .nextPersisted();
+        List<Contentlet> contents = new ArrayList<>();
+        // create contentlet
         final String conTitle = "contentTest " + System.currentTimeMillis();
-
-        Contentlet content = new ContentletDataGen(type.id()).setProperty("title", conTitle).next();
-
-        content.setStringProperty("title", conTitle);
-
-        content.setIndexPolicy(IndexPolicy.FORCE);
-
         // check in the content
-        content = contentletAPI.checkin(content, user, respectFrontendRoles);
+        Contentlet baseCon = new ContentletDataGen(type.id()).setProperty("title", conTitle).next();
+        baseCon.setIndexPolicy(IndexPolicy.FORCE);
+        baseCon = contentletAPI.checkin(baseCon, user, respectFrontendRoles);
+        contents.add(baseCon);
+        
+        
+        // create 3 langauges
+        for(int i=0;i<3;i++) {
+            Language newLang = new Language();
+            newLang.setCountry("x"+i);
+            newLang.setLanguage("en");
+            newLang.setCountryCode("x"+i);
+            APILocator.getLanguageAPI().saveLanguage(newLang);
+        }
+        List<Language> languages = APILocator.getLanguageAPI().getLanguages();
+        languages.removeIf(l->l.getId() ==lang.getId());
+        
 
-        assertTrue(content.getIdentifier() != null);
-        assertTrue(content.isWorking());
-        assertFalse(content.isLive());
-        assertTrue(contentletAPI.indexCount("+live:false +identifier:" + content.getIdentifier() + " +inode:" + content.getInode() + " +languageId:"+ content.getLanguageId(), user,
-                respectFrontendRoles) > 0);
-        assertTrue(contentletAPI.indexCount("+live:true +identifier:" + content.getIdentifier() + " +inode:" + content.getInode() + " +languageId:"+ content.getLanguageId(), user,
-                respectFrontendRoles) == 0);
 
-        content.setIndexPolicy(IndexPolicy.FORCE);
-        contentletAPI.publish(content, user, respectFrontendRoles);
-        assertTrue(content.isWorking());
-        assertTrue(content.isLive());
-        assertTrue(contentletAPI.indexCount("+live:true +identifier:" + content.getIdentifier() + " +inode:" + content.getInode() + " +languageId:"+ content.getLanguageId(), user,
-                respectFrontendRoles) > 0);
+        for(Language lang : languages) {
+            Contentlet newCon = new ContentletDataGen(type.id()).setProperty("title", conTitle).next();
+            newCon.setLanguageId(lang.getId());
+            newCon.setInode(null);
+            newCon.setIdentifier(baseCon.getIdentifier());
+            contents.add(contentletAPI.checkin(newCon, user, respectFrontendRoles));
+        }
         
-        // create a spanish content
-        content.setLanguageId(2);
-        content.setInode(null);
-        content = contentletAPI.checkin(content, user, respectFrontendRoles);
         
-        assertTrue(contentletAPI.indexCount("+live:false +identifier:" + content.getIdentifier() + " +inode:" + content.getInode() + " +languageId:"+ content.getLanguageId(), user,
-                respectFrontendRoles) > 0);
-        assertTrue(contentletAPI.indexCount("+live:true +identifier:" + content.getIdentifier() + " +inode:" + content.getInode() + " +languageId:"+ content.getLanguageId(), user,
-                respectFrontendRoles) == 0);
+        for(Contentlet content : contents) {
+            assertTrue(content.getIdentifier() != null);
+            assertTrue(content.isWorking());
+            assertFalse(content.isLive());
+            assertTrue(contentletAPI.indexCount("+live:false +identifier:" + content.getIdentifier() + " +inode:" + content.getInode() + " +languageId:"+ content.getLanguageId(), user,
+                    respectFrontendRoles) > 0);
+            assertTrue(contentletAPI.indexCount("+live:true +identifier:" + content.getIdentifier() + " +inode:" + content.getInode() + " +languageId:"+ content.getLanguageId(), user,
+                    respectFrontendRoles) == 0);
+
+        }
         
-        content.setIndexPolicy(IndexPolicy.FORCE);
-        contentletAPI.publish(content, user, respectFrontendRoles);
-        assertTrue(content.isWorking());
-        assertTrue(content.isLive());
-        assertTrue(contentletAPI.indexCount("+live:true +identifier:" + content.getIdentifier() + " +inode:" + content.getInode() + " +languageId:"+ content.getLanguageId(), user,
-                respectFrontendRoles) > 0);
+        for(Contentlet content : contents) {
+            content.setIndexPolicy(IndexPolicy.FORCE);
+            contentletAPI.publish(content, user, respectFrontendRoles);
+            assertTrue(content.isLive());
+            assertTrue(contentletAPI.indexCount("+live:true +identifier:" + content.getIdentifier() + " +inode:" + content.getInode() + " +languageId:"+ content.getLanguageId(), user,
+                    respectFrontendRoles) > 0);
+        }
         
-        ReindexThread.startThread();
-        ThreadUtils.sleep(4000);
-        APILocator.getReindexQueueAPI().addIdentifierDelete(content.getIdentifier());
-        ThreadUtils.sleep(4000);
-        assertTrue(contentletAPI.indexCount("+live:false +identifier:" + content.getIdentifier() , user,
-                respectFrontendRoles) == 0);
-        assertTrue(contentletAPI.indexCount("+live:true +identifier:" + content.getIdentifier() , user,
-                respectFrontendRoles) == 0);
+
+
+        // add content to be deleted from index
+        APILocator.getReindexQueueAPI().addIdentifierDelete(baseCon.getIdentifier());
+        ThreadUtils.sleep(10000);
+        
+
+        assertTrue(contentletAPI.indexCount("+live:false +identifier:" + baseCon.getIdentifier(), user, respectFrontendRoles) == 0);
+        assertTrue(contentletAPI.indexCount("+live:true +identifier:" + baseCon.getIdentifier(), user, respectFrontendRoles) == 0);
+
+        assertTrue(contentletAPI.indexCount("+identifier:" + baseCon.getIdentifier(), user, respectFrontendRoles) == 0);
 
     }
 
@@ -273,43 +283,103 @@ public class ReindexThreadTest {
      * https://github.com/dotCMS/core/issues/11716
      * 
      * @throws DotDataException
-     * @throws DotSecurityException
+    ack  * @throws DotSecurityException
      */
 
     @Test
-    public void test_starting_stopping_ReindexThread() throws DotDataException, DotSecurityException {
+    public void test_pause_unpause_ReindexThread() throws DotDataException, DotSecurityException {
 
+        
+        
+        //make sure we only have live + working indexes
+        APILocator.getContentletIndexAPI().fullReindexAbort();
         new DotConnect().setSQL("delete from dist_reindex_journal").loadResult();
+        
+        
         ReindexThread.startThread();
         
 
         
 
         long startCount = ReindexThread.getInstance().totalESPuts();
-        ContentType type = new ContentTypeDataGen()
-                .fields(ImmutableList
-                        .of(ImmutableTextField.builder().name("Title").variable("title").searchable(true).listed(true).build()))
-                .nextPersisted();
 
         String title = "contentTest " + System.currentTimeMillis();
         Contentlet content = new ContentletDataGen(type.id()).setProperty("title", title).nextPersisted();
-
         ThreadUtils.sleep(4000);
-        contentletAPI.publish(content, user, respectFrontendRoles);
-
-        ThreadUtils.sleep(4000);
+        // thread is running and has indexed the content
         long latestCount = ReindexThread.getInstance().totalESPuts() - startCount;
-        // 1 for check in (only working index) 2 more for publish (live & working indexes)
-        assert (latestCount == 3);
-
-        contentletAPI.unpublish(content, user, respectFrontendRoles);
+        assert (latestCount == 1);
+        
+        // pause thread and it is not working
+        ReindexThread.pause();
+        assertFalse(ReindexThread.isWorking());
+        
+        // with thread paused, you can publish content
+        // and it will not be picked up for reindex
+        contentletAPI.publish(content, user, respectFrontendRoles);
         ThreadUtils.sleep(4000);
-
-        // 1 more reindex working (publish was deleted)
         latestCount = ReindexThread.getInstance().totalESPuts() - startCount;
-        assert (latestCount == 4);
+        assert (latestCount == 1);
+        
+        
+        // unpause and then it gets picked up for reindex
+        ReindexThread.unpause();
+        ThreadUtils.sleep(4000);
+        latestCount = ReindexThread.getInstance().totalESPuts() - startCount;
+        assert (latestCount == 3);
+        
+        
+        
     }
     
+    /**
+     * https://github.com/dotCMS/core/issues/11716
+     * 
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+
+    @Test
+    public void test_stop_start_ReindexThread() throws DotDataException, DotSecurityException {
+
+
+        new DotConnect().setSQL("delete from dist_reindex_journal").loadResult();
+        ReindexThread.startThread();
+        ReindexThread.stopThread();
+        ReindexThread.startThread();
+        ReindexThread.stopThread();
+        ReindexThread.startThread();
+        long startCount = ReindexThread.getInstance().totalESPuts();
+
+        String title = "contentTest " + System.currentTimeMillis();
+        Contentlet content = new ContentletDataGen(type.id()).setProperty("title", title).nextPersisted();
+        ThreadUtils.sleep(4000);
+        
+        // thread is running and has indexed the content
+        long latestCount = ReindexThread.getInstance().totalESPuts() - startCount;
+        assert (latestCount == 1);
+        
+        // pause thread and it is not working
+        ReindexThread.stopThread();
+        assertFalse(ReindexThread.isWorking());
+        
+        // with thread paused, you can publish content
+        // and it will not be picked up for reindex
+        contentletAPI.publish(content, user, respectFrontendRoles);
+        ThreadUtils.sleep(4000);
+        latestCount = ReindexThread.getInstance().totalESPuts() - startCount;
+        assert (latestCount == 1);
+        
+        
+        // unpause and then it gets picked up for reindex
+        ReindexThread.startThread();
+        ThreadUtils.sleep(4000);
+        latestCount = ReindexThread.getInstance().totalESPuts() - startCount;
+        assert (latestCount == 3);
+        
+        
+        
+    }
     
     
     

@@ -8,8 +8,6 @@ import com.dotmarketing.business.cache.transport.CacheTransport;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.DotHibernateException;
-import com.dotmarketing.util.Logger;
 
 /**
  * this class wraps our cache administrator and will automatically make cache removes and puts
