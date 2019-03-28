@@ -84,8 +84,7 @@
 				<table  class="listingTable" style="margin-bottom: 50px;">
 					<tr>
 						<th width="100%" onclick="goToEditBundle('<%=bundle.getId()%>')" style="cursor:pointer">
-
-							<b><%=StringEscapeUtils.unescapeJava(bundle.getName())%></b>
+							<b><%=StringEscapeUtils.unescapeJava(bundle.getName())%></b> (<span> <%=bundle.getId() %> </span>)
 						</th>
 						<th align="right" nowrap="nowrap">
 							
