@@ -14,11 +14,12 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.dotcms.repackage.org.json.HTTP;
-import com.dotcms.repackage.org.json.JSONArray;
-import com.dotcms.repackage.org.json.JSONException;
-import com.dotcms.repackage.org.json.JSONObject;
+
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.json.JSONArray;
+import com.dotmarketing.util.json.JSONException;
+import com.dotmarketing.util.json.JSONObject;
 import com.google.common.io.CharStreams;
 
 /**
@@ -77,9 +78,12 @@ public class AjaxDirectorServlet extends HttpServlet {
         try (BufferedReader reader = req.getReader()) {
             jsonStr = CharStreams.toString(reader);
         }
+        if(!UtilMethods.isSet(jsonStr)) {
+            return req;
+        }
 
         try {
-            JSONObject json = HTTP.toJSONObject(jsonStr);
+            JSONObject json = new JSONObject(jsonStr);
             Map<String, String[]> map = new HashMap<>();
             for (Iterator<String> i = json.keys(); i.hasNext();) {
                 String key = i.next();
@@ -87,14 +91,14 @@ public class AjaxDirectorServlet extends HttpServlet {
                     List<String> strArray = new ArrayList<>();
                     JSONArray arr = json.optJSONArray(key);
                     for (int j = 0; j < arr.length(); j++) {
-                        if (arr.optString(j) != null) {
-                            strArray.add(arr.optString(j));
+                        if (UtilMethods.isSet(arr.opt(j))) {
+                            strArray.add(arr.opt(j).toString());
                         }
                     }
                     map.put(key, strArray.toArray(new String[strArray.size()]));
 
-                } else if (json.optJSONObject(key) != null) {
-                    map.put(key, new String[] {json.optJSONObject(key).toString()});
+                } else if (json.opt(key) != null) {
+                    map.put(key, new String[] {json.opt(key).toString()});
                 }
 
             }

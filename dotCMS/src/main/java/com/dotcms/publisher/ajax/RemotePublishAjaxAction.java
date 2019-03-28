@@ -822,7 +822,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
         String _contentFilterDate = request.getParameter( "remoteFilterDate" );
         String bundleName = request.getParameter( "bundleName" );
         String bundleId = request.getParameter( "bundleSelect" );
-
+        String query = request.getParameter( "query" );
         try {
             Bundle bundle;
 
@@ -847,7 +847,14 @@ public class RemotePublishAjaxAction extends AjaxAction {
             request.getSession().setAttribute( WebKeys.SELECTED_BUNDLE + getUser().getUserId(), bundle );
 
             List<String> ids;
-            if ( _assetId.startsWith( "query_" ) ) { //Support for lucene queries
+            // allow content to be added by query
+            if(UtilMethods.isSet(query)) {
+                String luceneQuery = query;
+                List<String> queries = new ArrayList<String>();
+                queries.add( luceneQuery );
+                ids = PublisherUtil.getContentIds( queries );
+            }
+            else if ( _assetId.startsWith( "query_" ) ) { //Support for lucene queries in the _assetId field (legacy support)
 
                 String luceneQuery = _assetId.replace( "query_", "" );
                 List<String> queries = new ArrayList<String>();
@@ -875,7 +882,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
                 jsonResponse.put( "errorMessages", jsonErrors.toArray() );
                 jsonResponse.put( "errors", responseMap.get( "errors" ) );
                 jsonResponse.put( "total", responseMap.get( "total" ) );
-
+                jsonResponse.put( "bundleId", responseMap.get( "bundleId" ) );
                 //And send it back to the user
                 response.getWriter().println( jsonResponse.toString() );
             }
@@ -947,7 +954,8 @@ public class RemotePublishAjaxAction extends AjaxAction {
 			}
 
             if(envsToSendTo.isEmpty()) {
-                response.sendError(HttpServletResponse.SC_FORBIDDEN);
+                Logger.warn(this.getClass(), "Push Publishing environment(s) not found - looking for :" + whereToSend);
+                response.sendError(HttpServletResponse.SC_NOT_FOUND);
                 return;
             }
 
