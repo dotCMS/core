@@ -4421,10 +4421,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             assertNotNull(newsContentReturned);
             assertEquals (newsContentReturned.getIdentifier(), identifier);
             newsContent = newsContentReturned;
-        } catch (DoesNotExistException e) {
-
-            // good
-        } finally {
+        }  finally {
             if(newsContent!=null && UtilMethods.isSet(newsContent.getIdentifier())) {
                 contentletAPI.destroy(newsContent, user, false);
             }
