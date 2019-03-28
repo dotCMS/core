@@ -63,6 +63,7 @@ public class ESReindexationProcessStatus implements Serializable {
             theMap.put("lastIndexationProgress", getLastIndexationProgress(countToIndex));
             theMap.put("currentIndexPath", currentIndexPath());
             theMap.put("newIndexPath", getNewIndexPath());
+            theMap.put("reindexTimeElapsed", indexAPI.reindexTimeElapsed().orElse(null));
         }
         return theMap;
     }
