@@ -29,7 +29,7 @@ public class RequestBodyVelocityReader implements VelocityReader {
             Logger.warn(this, "User does not have the required role. User: " + params.getUser());
             throw new DotSecurityException("User does not have the required role");
         }
-        final String velocityString = params.getBodyMap().get(EMBEDDED_VELOCITY_KEY_NAME);
+        final String velocityString = (String)params.getBodyMap().get(EMBEDDED_VELOCITY_KEY_NAME);
         return new StringReader(velocityString);
     }
 }

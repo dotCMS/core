@@ -1,6 +1,7 @@
 package com.dotcms.rest.exception.mapper;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.repackage.javax.ws.rs.WebApplicationException;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.rest.ErrorEntity;
@@ -160,6 +161,12 @@ public final class ExceptionMapperUtil {
      */
     public static Response  createResponse(final Throwable exception, final String key, final Response.Status status){
         //Create the message.
+
+        if (exception instanceof WebApplicationException) {
+
+            return WebApplicationException.class.cast(exception).getResponse();
+        }
+
         final String message = getI18NMessage(exception.getMessage()); // todo: this must be switchable by osgi plugin, also the  error must be returned as ResponseEntityView
 
         //Creating the message in JSON format.
