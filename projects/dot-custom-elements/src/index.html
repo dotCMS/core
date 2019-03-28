@@ -11,15 +11,15 @@
         <script>
             window.onload = function() {
                 let inputTxt = document.querySelector('dot-textfield');
-                inputTxt.addEventListener('change', function(event) {
+                inputTxt.addEventListener('onChange', function(event) {
                     console.log('--inputTxt onChange', event.detail);
                 });
                 let dropdownElem = document.querySelector('dot-dropdown');
-                dropdownElem.addEventListener('change', function(event) {
+                dropdownElem.addEventListener('onChange', function(event) {
                     console.log('--dropdownElem onChange', event.detail);
                 });
                 let checkboxElem = document.querySelector('dot-checkbox');
-                checkboxElem.addEventListener('change', function(event) {
+                checkboxElem.addEventListener('onChange', function(event) {
                     console.log('--checkboxElem onChange', event.detail);
                 });
             };

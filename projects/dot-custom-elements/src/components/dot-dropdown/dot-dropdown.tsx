@@ -12,7 +12,7 @@ export class DotDropdownComponent {
     @Prop() hint: string;
     @Prop() options: string;
     @Prop() value: string;
-    @Event() change: EventEmitter;
+    @Event() onChange: EventEmitter;
 
     @State() _options: DotOption[];
     @State() _value: string;
@@ -26,7 +26,7 @@ export class DotDropdownComponent {
     // Todo: find how to set proper TYPE in TS
     setValue(event): void {
         this._value = event.target[event.target.selectedIndex].label;
-        this.change.emit({ value: this._value });
+        this.onChange.emit({ value: this._value });
     }
 
     render() {

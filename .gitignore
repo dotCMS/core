@@ -43,3 +43,4 @@ Thumbs.db
 .stencil/
 projects/dot-custom-elements/dist/
 projects/dot-custom-elements/www/
+projects/dot-custom-elements/src/components.d.ts

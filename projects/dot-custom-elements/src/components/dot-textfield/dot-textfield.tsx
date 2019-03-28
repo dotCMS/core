@@ -14,7 +14,7 @@ export class DotTextfieldComponent {
     @Prop() hint: string;
     @Prop() placeholder: string;
     @Prop() required: boolean;
-    @Event() change: EventEmitter;
+    @Event() onChange: EventEmitter;
 
     @State() _value: string;
     @State() _error = false;
@@ -38,7 +38,7 @@ export class DotTextfieldComponent {
     setValue(event): void {
         this._value = event.target.value.toString();
         this._error = this.validate(this._value);
-        this.change.emit({ error: this._error, value: this._value });
+        this.onChange.emit({ error: this._error, value: this._value });
     }
 
     componentWillLoad() {
