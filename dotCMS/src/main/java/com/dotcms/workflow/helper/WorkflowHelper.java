@@ -4,6 +4,7 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.rest.api.v1.workflow.*;
@@ -21,6 +22,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.workflows.actionlet.NotifyAssigneeActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
 import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
+import com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
@@ -95,10 +97,6 @@ public class WorkflowHelper {
     public BulkActionView findBulkActions(final User user,
                                           final BulkActionForm bulkActionForm) throws DotSecurityException, DotDataException {
 
-        if (!workflowAPI.hasValidLicense()) {
-            throw new InvalidLicenseException("Workflow-Schemes-License-required");
-        }
-
         return (UtilMethods.isSet(bulkActionForm.getContentletIds()))?
                     // 1) case with contentlet ids
                     this.findBulkActionByContentlets(bulkActionForm.getContentletIds(), user):
@@ -124,8 +122,11 @@ public class WorkflowHelper {
 
             final String query = String.format(ES_WFSTEP_AGGREGATES_QUERY, sanitizedQuery);
             //We should only be considering Working content.
-            final SearchResponse response = this.contentletAPI
-                    .esSearchRaw(query.toLowerCase(), false, user, false);
+            final SearchResponse response = LicenseManager.getInstance().isCommunity()?
+                    this.contentletAPI
+                            .esSearch(query.toLowerCase(), false, user, false).getResponse():
+                    this.contentletAPI
+                            .esSearchRaw(query.toLowerCase(), false, user, false);
             //Query must be sent lowercase. It's a must.
 
             Logger.debug(getClass(), () -> "luceneQuery: " + sanitizedQuery);
@@ -297,18 +298,27 @@ public class WorkflowHelper {
     public BulkActionsResultView fireBulkActions(final FireBulkActionsForm form,
             final User user) throws DotSecurityException, DotDataException {
 
-        if (!workflowAPI.hasValidLicense()) {
-            throw new InvalidLicenseException("Workflow-Schemes-License-required");
-        }
-
         final WorkflowAction action = this.workflowAPI.findAction(form.getWorkflowActionId(), user);
         if(null != action) {
+
+            this.checkActionLicense(action);
+
             if(UtilMethods.isSet(form.getQuery())){
                 return this.workflowAPI.fireBulkActions(action, user, form.getQuery(), form.getPopupParamsBean());
             }
             return this.workflowAPI.fireBulkActions(action, user, form.getContentletIds(), form.getPopupParamsBean());
         } else {
             throw new DoesNotExistException("Workflow-does-not-exists-action");
+        }
+    }
+
+
+    private void checkActionLicense(final WorkflowAction action) {
+
+        // if does not have license and the action is not system workflow action
+        if (!workflowAPI.hasValidLicense() && !action.getSchemeId().equals(SystemWorkflowConstants.SYSTEM_WORKFLOW_ID)) {
+
+            throw new InvalidLicenseException("Workflow-Schemes-License-required");
         }
     }
 
