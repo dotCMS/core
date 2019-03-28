@@ -40,7 +40,7 @@ public class AjaxDirectorServlet extends HttpServlet {
 
     protected void service(HttpServletRequest req, HttpServletResponse response) throws ServletException, IOException {
 
-        final HttpServletRequest request = loadJson(req);
+        final HttpServletRequest request = loadJsonAsParams(req);
         
         
         try {
@@ -72,7 +72,7 @@ public class AjaxDirectorServlet extends HttpServlet {
 
     }
 
-    private HttpServletRequest loadJson(HttpServletRequest req) throws IOException {
+    private HttpServletRequest loadJsonAsParams(HttpServletRequest req) throws IOException {
 
         String jsonStr = null;
         try (BufferedReader reader = req.getReader()) {
