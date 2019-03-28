@@ -85,7 +85,6 @@ public class ContentResource {
     private static final String REFERER = "referer";
     private static final String REQUEST_METHOD = "requestMethod";
     private static final String ACCEPT_LANGUAGE = "acceptLanguage";
-    private static final MediaType MEDIA_TYPE_GENERIC_TEXT = new MediaType("text","*");
 
     private final WebResource webResource = new WebResource();
     private final ContentHelper contentHelper = ContentHelper.getInstance();
@@ -1129,21 +1128,6 @@ public class ContentResource {
                             .status(HttpStatus.SC_INTERNAL_SERVER_ERROR);
                     responseBuilder.entity(e.getMessage());
                     return responseBuilder.build();
-                }
-            } else if (part.getMediaType().equals(MEDIA_TYPE_GENERIC_TEXT)) {
-                try {
-
-                    this.processFile(contentlet, usedBinaryFields, binaryFields, part);
-                } catch (IOException e) {
-
-                    Logger.error(this.getClass(), "Error processing Stream", e);
-
-                    Response.ResponseBuilder responseBuilder = Response
-                            .status(HttpStatus.SC_INTERNAL_SERVER_ERROR);
-                    responseBuilder.entity(e.getMessage());
-                    return responseBuilder.build();
-                } catch (DotSecurityException e) {
-                    throw new ForbiddenException(e);
                 }
             } else if (part.getContentDisposition() != null) {
 
