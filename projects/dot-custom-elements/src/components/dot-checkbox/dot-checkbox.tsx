@@ -1,5 +1,5 @@
 import { Component, Prop, State, Event, EventEmitter } from '@stencil/core';
-import { generateId, getItemsFromString } from '../../utils/utils';
+import { generateId, getItemsFromString } from '../../utils';
 import { DotOption } from '../../models/dot-option.model';
 import Fragment from 'stencil-fragment';
 
@@ -12,7 +12,7 @@ export class DotCheckboxComponent {
     @Prop() hint: string;
     @Prop() options: string;
     @Prop() value: string;
-    @Event() onChange: EventEmitter;
+    @Event() change: EventEmitter;
 
     @State() _options: DotOption[];
     @State() _value: string;
@@ -29,7 +29,7 @@ export class DotCheckboxComponent {
         const checkBoxVal = event.target.value.toString();
         // Format values to be emmitted, this might change when implemented on the form
         this._values = { ...this._values, [checkBoxVal]: !this._values[checkBoxVal] };
-        this.onChange.emit({ value: this._values });
+        this.change.emit({ value: this._values });
     }
 
     render() {

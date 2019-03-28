@@ -1,5 +1,5 @@
 import { Component, Prop, State, Event, EventEmitter } from '@stencil/core';
-import { generateId, getItemsFromString } from '../../utils/utils';
+import { generateId, getItemsFromString } from '../../utils';
 import Fragment from 'stencil-fragment';
 import { DotOption } from '../../models/dot-option.model';
 
@@ -12,7 +12,7 @@ export class DotDropdownComponent {
     @Prop() hint: string;
     @Prop() options: string;
     @Prop() value: string;
-    @Event() onChange: EventEmitter;
+    @Event() change: EventEmitter;
 
     @State() _options: DotOption[];
     @State() _value: string;
@@ -26,7 +26,7 @@ export class DotDropdownComponent {
     // Todo: find how to set proper TYPE in TS
     setValue(event): void {
         this._value = event.target[event.target.selectedIndex].label;
-        this.onChange.emit({ value: this._value });
+        this.change.emit({ value: this._value });
     }
 
     render() {

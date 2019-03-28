@@ -21,7 +21,7 @@ export namespace Components {
   interface DotCheckboxAttributes extends StencilHTMLAttributes {
     'hint'?: string;
     'label'?: string;
-    'onOnChange'?: (event: CustomEvent) => void;
+    'onChange'?: (event: CustomEvent) => void;
     'options'?: string;
     'value'?: string;
   }
@@ -35,7 +35,7 @@ export namespace Components {
   interface DotDropdownAttributes extends StencilHTMLAttributes {
     'hint'?: string;
     'label'?: string;
-    'onOnChange'?: (event: CustomEvent) => void;
+    'onChange'?: (event: CustomEvent) => void;
     'options'?: string;
     'value'?: string;
   }
@@ -52,7 +52,7 @@ export namespace Components {
   interface DotTextfieldAttributes extends StencilHTMLAttributes {
     'hint'?: string;
     'label'?: string;
-    'onOnChange'?: (event: CustomEvent) => void;
+    'onChange'?: (event: CustomEvent) => void;
     'placeholder'?: string;
     'readOnly'?: string;
     'regexcheck'?: string;
