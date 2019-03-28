@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html dir='ltr' lang='en'>
+    <head>
+        <meta charset='utf-8' />
+        <meta
+            name='viewport'
+            content='width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=5.0'
+        />
+        <title>Stencil Component Starter</title>
+        <script src='/build/mycomponent.js'></script>
+        <script>
+            window.onload = function() {
+                let inputTxt = document.querySelector('dot-textfield');
+                inputTxt.addEventListener('onChange', function(event) {
+                    console.log('--inputTxt onChange', event.detail);
+                });
+                let dropdownElem = document.querySelector('dot-dropdown');
+                dropdownElem.addEventListener('onChange', function(event) {
+                    console.log('--dropdownElem onChange', event.detail);
+                });
+                let checkboxElem = document.querySelector('dot-checkbox');
+                checkboxElem.addEventListener('onChange', function(event) {
+                    console.log('--checkboxElem onChange', event.detail);
+                });
+            };
+        </script>
+    </head>
+    <body>
+        <my-component first='Stencil' last=''Don't call me a framework' JS'></my-component>
+        <hr />
+        <dot-textfield
+            label='Name:'
+            value='John'
+            hint='this is a hint'
+            placeholder='Enter Name'
+            regexcheck='^[A-Za-z ]+$'
+            readOnly='false'
+            required
+        ></dot-textfield>
+
+        <hr />
+
+        <dot-dropdown
+            label='Dropdown label:'
+            hint='this is a hint'
+            options='a1|1\r\nb1|2\r\nc1|3\r\nd1|4\r\n'
+            value='2'
+        ></dot-dropdown>
+
+        <hr />
+
+        <dot-checkbox
+            label='Checkbox label:'
+            hint='this is a hint'
+            options='a1|1\r\nb1|2\r\nc1|3\r\nd1|4\r\n'
+            value='3'
+        ></dot-checkbox>
+
+    </body>
+</html>
