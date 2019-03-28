@@ -262,7 +262,7 @@ public class VTLResourceIntegrationTest {
         private final UriInfo uriInfo;
         private final String folderName;
         private final String pathParam;
-        private final Map<String, String> bodyMap;
+        private final Map<String, Object> bodyMap;
         private final WebResource webResource;
         private final String bodyMapString;
 
@@ -286,7 +286,7 @@ public class VTLResourceIntegrationTest {
             return pathParam;
         }
 
-        Map<String, String> getBodyMap() {
+        Map<String, Object> getBodyMap() {
             return bodyMap;
         }
 
@@ -299,7 +299,7 @@ public class VTLResourceIntegrationTest {
         }
 
         HTTPMethodParams(final HttpServletRequest request, final HttpServletResponse servletResponse, final UriInfo uriInfo,
-                         final String folderName, final String pathParam, final Map<String, String> bodyMap,
+                         final String folderName, final String pathParam, final Map<String, Object> bodyMap,
                          final WebResource webResource, final String bodyMapString) {
             this.request = request;
             this.servletResponse = servletResponse;
