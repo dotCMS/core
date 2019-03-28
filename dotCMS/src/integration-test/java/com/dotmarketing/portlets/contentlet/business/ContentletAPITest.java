@@ -21,7 +21,9 @@ import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.*;
 import com.dotmarketing.business.*;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.model.ContentletSearch;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
@@ -53,6 +55,7 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.*;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.io.Files;
@@ -66,11 +69,13 @@ import org.apache.velocity.runtime.parser.node.SimpleNode;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.quartz.utils.DBConnectionManager;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.nio.charset.Charset;
+import java.sql.Connection;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -3179,7 +3184,8 @@ public class ContentletAPITest extends ContentletBaseTest {
         w.setLanguageId(def.getId());
         w = contentletAPI.checkin(w, user, false);
         APILocator.getVersionableAPI().setLive(w);
-        APILocator.getContentletIndexAPI().addContentToIndex(w,false,true);
+        w.setIndexPolicy(IndexPolicy.FORCE);
+        APILocator.getContentletIndexAPI().addContentToIndex(w, false);
         contentletAPI.isInodeIndexed(w.getInode(),true);
 
 
@@ -5686,6 +5692,71 @@ public class ContentletAPITest extends ContentletBaseTest {
         } catch (IOException e) {
             fail(e.getMessage());
         }
+    }
+    
+    
+    @Test
+    public void insure_contentlet_checkin_is_transactional() throws Exception {
+    
+        HibernateUtil.startTransaction();
+
+        ContentType type = new ContentTypeDataGen()
+                .fields(ImmutableList
+                        .of(ImmutableTextField.builder().name("Title").variable("title").searchable(true).listed(true).build()))
+                .nextPersisted();
+
+
+        final Contentlet contentlet = new ContentletDataGen(type.id()).setProperty("title", "contentTest " + System.currentTimeMillis()).nextPersisted();
+        
+        
+        try(Connection conn = DbConnectionFactory.getDataSource().getConnection()){
+            DateUtil.sleep(3000);
+            // content is not visible to other connection
+            assertTrue(new DotConnect().setSQL("select id from identifier where id=?").addParam(contentlet.getIdentifier()).loadObjectResults(conn).isEmpty());
+            assertTrue(contentletAPI.indexCount("+live:true +identifier:" +contentlet.getIdentifier() + " +inode:" + contentlet.getInode() , user, false)==0);
+        }
+        
+        
+        HibernateUtil.commitTransaction();
+        
+        
+        try(Connection conn = DbConnectionFactory.getDataSource().getConnection()){
+            DateUtil.sleep(3000);
+            // content is not visible to other connection
+            assertTrue(new DotConnect().setSQL("select id from identifier where id=?").addParam(contentlet.getIdentifier()).loadObjectResults(conn).size()==1);
+            assertTrue(contentletAPI.indexCount("+live:true +identifier:" +contentlet.getIdentifier() + " +inode:" + contentlet.getInode() , user, false)>0);
+        }
+    }
+    
+    @Test
+    public void test_findInDb_returns_properly() throws Exception {
+        
+        
+        ContentType type = new ContentTypeDataGen()
+                .fields(ImmutableList
+                        .of(ImmutableTextField.builder().name("Title").variable("title").searchable(true).listed(true).build()))
+                .nextPersisted();
+
+        
+        // test null value
+        Optional<Contentlet> conOpt= contentletAPI.findInDb(null);
+        assert(conOpt.isPresent()==false);
+        
+        
+        // test non-existing
+        conOpt= contentletAPI.findInDb("not-here");
+        assert(conOpt.isPresent()==false);
+        
+        final Contentlet contentlet = new ContentletDataGen(type.id()).setProperty("title", "contentTest " + System.currentTimeMillis()).nextPersisted();
+        contentlet.setStringProperty("title", "nope");
+        
+        conOpt= contentletAPI.findInDb(contentlet.getInode());
+        assert(conOpt.isPresent());
+        
+        assertNotEquals(conOpt.get().getTitle(), contentlet.getTitle());
+        
+    
+    
     }
 
 }

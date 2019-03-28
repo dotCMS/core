@@ -6,16 +6,19 @@ import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.DateTimeField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.field.WysiwygField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchResult;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchResults;
+import com.dotcms.repackage.net.sf.hibernate.mapping.Index;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
@@ -23,6 +26,10 @@ import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.model.ContentletSearch;
+import com.dotmarketing.common.reindex.ReindexEntry;
+import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeFactory;
@@ -44,13 +51,18 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.ThreadUtils;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import org.apache.felix.framework.OSGIUtil;
+import org.elasticsearch.action.bulk.BulkRequest;
+import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.support.WriteRequest.RefreshPolicy;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.QueryStringQueryBuilder;
@@ -62,6 +74,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -72,7 +85,7 @@ import static org.junit.Assert.*;
  * @author Jonathan Gamba
  *         Date: 4/18/13
  */
-public class ESContentletIndexAPITest extends IntegrationTestBase {
+public class ContentletIndexAPIImplTest extends IntegrationTestBase {
 
     private static String stemmerText;
     private static User user;
@@ -142,7 +155,7 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
             final List<Contentlet> contentlets = new ArrayList<>();
             contentlets.add(contentlet);
 
-            APILocator.getContentletIndexAPI().indexContentList(contentlets, null, false);
+            APILocator.getContentletIndexAPI().addContentToIndex(contentlets);
 
             assertTrue(APILocator.getContentletAPI()
                     .indexCount("+identifier:" + contentlet.getIdentifier(), user, false) > 0);
@@ -181,7 +194,7 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
         contentletsWaitForRefresh.stream().forEach(contentlet -> contentlet.setIndexPolicy(IndexPolicy.WAIT_FOR));
 
 
-        APILocator.getContentletIndexAPI().indexContentList(contentlets, null, false);
+        APILocator.getContentletIndexAPI().addContentToIndex(contentlets);
 
         for (final Contentlet contentlet : contentletsDefaultRefresh) {
 
@@ -217,7 +230,7 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
      *
      * @throws Exception
      * @see ContentletIndexAPI
-     * @see ESContentletIndexAPI
+     * @see ContentletIndexAPIImpl
      */
     @Test
     public void createContentIndexAndDelete () throws Exception {
@@ -226,8 +239,8 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
 
         //Build the index names
         String timeStamp = String.valueOf( new Date().getTime() );
-        String workingIndex = ESContentletIndexAPI.ES_WORKING_INDEX_NAME + "_" + timeStamp;
-        String liveIndex = ESContentletIndexAPI.ES_LIVE_INDEX_NAME + "_" + timeStamp;
+        String workingIndex = ContentletIndexAPIImpl.ES_WORKING_INDEX_NAME + "_" + timeStamp;
+        String liveIndex = ContentletIndexAPIImpl.ES_LIVE_INDEX_NAME + "_" + timeStamp;
 
         //Get all the indices
         List<String> indices = indexAPI.listDotCMSIndices();
@@ -310,7 +323,7 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
      *
      * @throws Exception
      * @see ContentletIndexAPI
-     * @see ESContentletIndexAPI
+     * @see ContentletIndexAPIImpl
      */
     @Test
     @Ignore
@@ -320,8 +333,8 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
 
         //Build the index names
         String timeStamp = String.valueOf( new Date().getTime() );
-        String workingIndex = ESContentletIndexAPI.ES_WORKING_INDEX_NAME + "_" + timeStamp;
-        String liveIndex = ESContentletIndexAPI.ES_LIVE_INDEX_NAME + "_" + timeStamp;
+        String workingIndex = ContentletIndexAPIImpl.ES_WORKING_INDEX_NAME + "_" + timeStamp;
+        String liveIndex = ContentletIndexAPIImpl.ES_LIVE_INDEX_NAME + "_" + timeStamp;
 
         String oldActiveLive = indexAPI.getActiveIndexName(ContentletIndexAPI.ES_LIVE_INDEX_NAME);
         String oldActiveWorking = indexAPI.getActiveIndexName(ContentletIndexAPI.ES_WORKING_INDEX_NAME);
@@ -363,7 +376,7 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
      *
      * @throws Exception
      * @see ContentletIndexAPI
-     * @see ESContentletIndexAPI
+     * @see ContentletIndexAPIImpl
      */
     @Test
     public void isDotCMSIndexName () throws Exception {
@@ -372,7 +385,7 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
 
         //Build the index names
         String timeStamp = String.valueOf( new Date().getTime() );
-        String workingIndex = ESContentletIndexAPI.ES_WORKING_INDEX_NAME + "_" + timeStamp;
+        String workingIndex = ContentletIndexAPIImpl.ES_WORKING_INDEX_NAME + "_" + timeStamp;
 
         //Verify with a proper name
         boolean isIndexName = indexAPI.isDotCMSIndexName( workingIndex );
@@ -389,7 +402,7 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
      *
      * @throws Exception
      * @see ContentletIndexAPI
-     * @see ESContentletIndexAPI
+     * @see ContentletIndexAPIImpl
      */
     @Test
     public void optimize () throws Exception {
@@ -398,8 +411,8 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
 
         //Build the index names
         String timeStamp = String.valueOf( new Date().getTime() );
-        String workingIndex = ESContentletIndexAPI.ES_WORKING_INDEX_NAME + "_" + timeStamp;
-        String liveIndex = ESContentletIndexAPI.ES_LIVE_INDEX_NAME + "_" + timeStamp;
+        String workingIndex = ContentletIndexAPIImpl.ES_WORKING_INDEX_NAME + "_" + timeStamp;
+        String liveIndex = ContentletIndexAPIImpl.ES_LIVE_INDEX_NAME + "_" + timeStamp;
 
         //Creates the working index
         Boolean result = indexAPI.createContentIndex( workingIndex );
@@ -427,7 +440,7 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
      * @throws Exception
      * @see ContentletAPI
      * @see ContentletIndexAPI
-     * @see ESContentletIndexAPI
+     * @see ContentletIndexAPIImpl
      */
     @Test
     public void addRemoveContentToIndex () throws Exception {
@@ -481,7 +494,7 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
      * @throws Exception
      * @see ContentletAPI
      * @see ContentletIndexAPI
-     * @see ESContentletIndexAPI
+     * @see ContentletIndexAPIImpl
      */
     @Test
     public void removeContentFromIndexByStructureInode () throws Exception {
@@ -532,7 +545,7 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
      * @throws Exception
      * @see ContentletAPI
      * @see ContentletIndexAPI
-     * @see ESContentletIndexAPI
+     * @see ContentletIndexAPIImpl
      */
     @Test
     public void testSearch () throws Exception {
@@ -545,7 +558,7 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
         String currentSiteSearchIndex = indiciesInfo.site_search;
         String indexName = currentSiteSearchIndex;
         if ( currentSiteSearchIndex == null ) {
-            indexName = SiteSearchAPI.ES_SITE_SEARCH_NAME + "_" + ESContentletIndexAPI.timestampFormatter.format( new Date() );
+            indexName = SiteSearchAPI.ES_SITE_SEARCH_NAME + "_" + ContentletIndexAPIImpl.timestampFormatter.format( new Date() );
             APILocator.getSiteSearchAPI().createSiteSearchIndex( indexName, null, 1 );
             APILocator.getSiteSearchAPI().activateIndex( indexName );
         }
@@ -912,7 +925,7 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
         indexToHit = info.site_search;
         String indexName = indexToHit;
         if ( indexName == null ) {
-            indexName = SiteSearchAPI.ES_SITE_SEARCH_NAME + "_" + ESContentletIndexAPI.timestampFormatter.format( new Date() );
+            indexName = SiteSearchAPI.ES_SITE_SEARCH_NAME + "_" + ContentletIndexAPIImpl.timestampFormatter.format( new Date() );
             APILocator.getSiteSearchAPI().createSiteSearchIndex( indexName, null, 1 );
             APILocator.getSiteSearchAPI().activateIndex( indexName );
         }
@@ -974,4 +987,100 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
         return removed;
     }
 
+    @Test
+    public void test_bulk_removing_from_index() throws DotDataException, DotSecurityException {
+        
+        ContentType type = new ContentTypeDataGen()
+                .fields(ImmutableList
+                        .of(ImmutableTextField.builder().name("Title").variable("title").searchable(true).listed(true).build()))
+                .nextPersisted();
+
+        ContentletIndexAPI indexAPI = APILocator.getContentletIndexAPI();
+        
+        ContentletAPI contentletAPI =APILocator.getContentletAPI();
+        List<Contentlet> contents = new ArrayList<>();
+        // create contentlet
+        final String conTitle = "contentTest " + System.currentTimeMillis();
+        // check in the content
+        Contentlet baseCon = new ContentletDataGen(type.id()).setProperty("title", conTitle).next();
+        baseCon.setIndexPolicy(IndexPolicy.FORCE);
+        baseCon = contentletAPI.checkin(baseCon, user, false);
+        contents.add(baseCon);
+        
+        List<Language> languages = APILocator.getLanguageAPI().getLanguages();
+        if(languages.size()<5) {
+            // create 3 langauges
+            for(int i=0;i<3;i++) {
+                Language newLang = new Language();
+                newLang.setCountry("x"+i);
+                newLang.setLanguage("en");
+                newLang.setCountryCode("x"+i);
+                APILocator.getLanguageAPI().saveLanguage(newLang);
+            }
+        }
+        languages = new ArrayList<>();
+        languages.addAll(APILocator.getLanguageAPI().getLanguages());
+        
+        languages.removeIf(l->l.getId() ==APILocator.getLanguageAPI().getDefaultLanguage().getId());
+        languages = languages.subList(0, (languages.size()>5) ? 5 :languages.size());
+
+        
+
+        // building contentents in multiple languages
+        for(Language lang : languages) {
+            Contentlet newCon = new ContentletDataGen(type.id()).setProperty("title", conTitle).next();
+            newCon.setLanguageId(lang.getId());
+            newCon.setInode(null);
+            newCon.setIdentifier(baseCon.getIdentifier());
+            newCon.setIndexPolicy(IndexPolicy.FORCE);
+            contents.add(contentletAPI.checkin(newCon, user, false));
+        }
+        
+        // content is in the index
+        for(Contentlet content : contents) {
+            assertTrue(content.getIdentifier() != null);
+            assertTrue(content.isWorking());
+            assertFalse(content.isLive());
+            assertTrue(contentletAPI.indexCount("+live:false +identifier:" + content.getIdentifier() + " +inode:" + content.getInode() + " +languageId:"+ content.getLanguageId(), user,
+                    false) > 0);
+            assertTrue(contentletAPI.indexCount("+live:true +identifier:" + content.getIdentifier() + " +inode:" + content.getInode() + " +languageId:"+ content.getLanguageId(), user,
+                    false) == 0);
+
+        }
+        
+        // testing publish
+        for(Contentlet content : contents) {
+            content.setIndexPolicy(IndexPolicy.FORCE);
+            contentletAPI.publish(content, user, false);
+            assertTrue(content.isLive());
+            assertTrue(contentletAPI.indexCount("+live:true +identifier:" + content.getIdentifier() + " +inode:" + content.getInode() + " +languageId:"+ content.getLanguageId(), user,
+                    false) > 0);
+        }
+        new DotConnect().setSQL("delete from dist_reindex_journal").loadResult();
+        
+        APILocator.getReindexQueueAPI().addIdentifierDelete(baseCon.getIdentifier());
+        
+        Map<String, ReindexEntry> entries = APILocator.getReindexQueueAPI().findContentToReindex();
+        
+        
+        BulkRequestBuilder bulk = indexAPI.createBulkRequest();
+        bulk.setRefreshPolicy(RefreshPolicy.IMMEDIATE);
+        indexAPI.appendBulkRequest(bulk, entries.values());
+        indexAPI.putToIndex(bulk);
+
+        assertTrue(contentletAPI.indexCount("+live:false +identifier:" + baseCon.getIdentifier(), user, false) == 0);
+        
+        
+        for(ContentletSearch indexentry :contentletAPI.searchIndex("+live:true +identifier:" + baseCon.getIdentifier(), 0, 0,"moddate", user, false)) {
+            System.err.println(indexentry);
+        }
+        assertTrue(contentletAPI.indexCount("+live:true +identifier:" + baseCon.getIdentifier(), user, false) == 0);
+
+        assertTrue(contentletAPI.indexCount("+identifier:" + baseCon.getIdentifier(), user, false) == 0);
+
+    }
+    
+    
+    
+    
 }

@@ -855,7 +855,7 @@ public class ImportExportUtil {
         }
 
         MaintenanceUtil.flushCache();
-        ReindexThread.startThread(Config.getIntProperty("REINDEX_THREAD_SLEEP", 500), Config.getIntProperty("REINDEX_THREAD_INIT_DELAY", 5000));
+        ReindexThread.startThread();
 
         ContentletAPI conAPI = APILocator.getContentletAPI();
         Logger.info(this, "Building Initial Index");
@@ -872,7 +872,7 @@ public class ImportExportUtil {
         conAPI.refreshAllContent();
         long recordsToIndex = 0;
         try {
-            recordsToIndex = APILocator.getDistributedJournalAPI().recordsLeftToIndexForServer();
+            recordsToIndex = APILocator.getReindexQueueAPI().recordsInQueue();
             Logger.info(this, "Records left to index : " + recordsToIndex);
         } catch (DotDataException e) {
             Logger.error(ImportExportUtil.class,e.getMessage() + " while trying to get the number of records left to index",e);
@@ -882,7 +882,7 @@ public class ImportExportUtil {
         while(recordsToIndex > 0){
             if(counter > 600){
                 try {
-                    Logger.info(this, "Records left to index : " + APILocator.getDistributedJournalAPI().recordsLeftToIndexForServer());
+                    Logger.info(this, "Records left to index : " + APILocator.getReindexQueueAPI().recordsInQueue());
                 } catch (DotDataException e) {
                     Logger.error(ImportExportUtil.class,e.getMessage() + " while trying to get the number of records left to index",e);
                 }
@@ -890,7 +890,7 @@ public class ImportExportUtil {
             }
             if(counter % 100 == 0){
                 try{
-                    recordsToIndex = APILocator.getDistributedJournalAPI().recordsLeftToIndexForServer();
+                    recordsToIndex = APILocator.getReindexQueueAPI().recordsInQueue();
                 } catch (DotDataException e) {
                     Logger.error(ImportExportUtil.class,e.getMessage() + " while trying to get the number of records left to index",e);
                 }
@@ -903,7 +903,6 @@ public class ImportExportUtil {
             counter++;
         }
         Logger.info(this, "Finished Building Initial Index");
-        ReindexThread.stopThread();
 
         CacheLocator.getCacheAdministrator().flushAll();
         MaintenanceUtil.deleteStaticFileStore();

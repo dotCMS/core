@@ -5,7 +5,7 @@ import static com.dotcms.util.DotPreconditions.checkArgument;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.elasticsearch.business.DotIndexException;
-import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;
+import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImpl;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESIndexHelper;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
@@ -157,7 +157,7 @@ public class ESIndexResource {
 
     public static String create(String indexName, int shards, boolean live) throws DotIndexException, IOException {
         if(indexName == null)
-            indexName=ESContentletIndexAPI.timestampFormatter.format(new Date());
+            indexName=ContentletIndexAPIImpl.timestampFormatter.format(new Date());
         indexName = (live) ? "live_" + indexName : "working_" + indexName;
 
         APILocator.getContentletIndexAPI().createContentIndex(indexName, shards);

@@ -114,11 +114,11 @@ public class ESIndexAPI {
     public static final String BACKUP_REPOSITORY = "backup";
     private final String REPOSITORY_PATH = "path.repo";
 
-	public static final int INDEX_OPERATIONS_TIMEOUT_IN_MS =
-			Config.getIntProperty("ES_INDEX_OPERATIONS_TIMEOUT", 15000);
+	public static final long INDEX_OPERATIONS_TIMEOUT_IN_MS =
+			Config.getLongProperty("ES_INDEX_OPERATIONS_TIMEOUT", 15000);
 
 	final private ESClient esclient;
-	final private ESContentletIndexAPI iapi;
+	final private ContentletIndexAPIImpl iapi;
 	final private ESIndexHelper esIndexHelper;
 	private final ServerAPI serverAPI;
 	private final ClusterAPI clusterAPI;
@@ -137,14 +137,14 @@ public class ESIndexAPI {
 
 	public ESIndexAPI(){
 		this.esclient = new ESClient();
-		this.iapi = new ESContentletIndexAPI();
+		this.iapi = new ContentletIndexAPIImpl();
 		this.esIndexHelper = ESIndexHelper.INSTANCE;
 		this.serverAPI = APILocator.getServerAPI();
 		this.clusterAPI = APILocator.getClusterAPI();
 	}
 
 	@VisibleForTesting
-	protected ESIndexAPI(final ESClient esclient, final ESContentletIndexAPI iapi, final ESIndexHelper esIndexHelper,
+	protected ESIndexAPI(final ESClient esclient, final ContentletIndexAPIImpl iapi, final ESIndexHelper esIndexHelper,
 						 final ServerAPI serverAPI, final ClusterAPI clusterAPI){
 		this.esclient = esclient;
 		this.iapi = iapi;
@@ -556,7 +556,7 @@ public class ESIndexAPI {
 	 * @param index
 	 * @throws IOException
 	 */
-    public  void moveIndexBackToCluster(final String index) throws IOException {
+    public void moveIndexBackToCluster(final String index) throws IOException {
         final Client client=new ESClient().getClient();
         final ReplicasMode replicasMode = clusterAPI.getReplicasMode();
 

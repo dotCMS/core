@@ -6,6 +6,7 @@ import com.dotcms.api.system.event.PayloadVerifier;
 import com.dotcms.api.system.event.PayloadVerifierFactory;
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.api.system.event.verifier.RoleVerifier;
+import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.notifications.business.NotificationAPI;
@@ -14,7 +15,6 @@ import com.dotcms.util.I18NMessage;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.common.business.journal.DistributedJournalAPI;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
@@ -34,7 +34,7 @@ import static org.mockito.Mockito.*;
  * Test for {@link ReindexThread}
  * @author jsanca
  */
-public class ReindexThreadTest extends UnitTestBase {
+public class ReindexThreadUnitTest extends UnitTestBase {
 
     private boolean testGenerateNotification = false;
     private PayloadVerifier originalRoleVerifier;
@@ -46,7 +46,8 @@ public class ReindexThreadTest extends UnitTestBase {
         final RoleAPI roleAPI = mock(RoleAPI.class);
         final UserAPI userAPI = mock(UserAPI.class);
         final ServletContext context = mock(ServletContext.class);
-        final DistributedJournalAPI<String> jAPI = mock(DistributedJournalAPI.class);
+        final ReindexQueueAPI jAPI = mock(ReindexQueueAPI.class);
+        final ContentletIndexAPI indexApi = mock(ContentletIndexAPI.class);
         final Locale locale = new Locale.Builder().setLanguage("en").setRegion("US").build();
 
         String cmsAdminRoleId = UUID.randomUUID().toString();
@@ -60,7 +61,7 @@ public class ReindexThreadTest extends UnitTestBase {
         PayloadVerifier roleVerifier = new RoleVerifier(roleAPI);
         payloadVerifierFactory.register(Visibility.ROLE, roleVerifier);
 
-        final ReindexThread reindexThread = new ReindexThread(jAPI, notificationAPI, userAPI, roleAPI);
+        final ReindexThread reindexThread = new ReindexThread(jAPI, notificationAPI, userAPI, roleAPI, indexApi);
         final String identToIndex = "index1";
         final String msg = "Could not re-index record with the Identifier '"
                 + identToIndex
@@ -121,5 +122,8 @@ public class ReindexThreadTest extends UnitTestBase {
         payloadVerifierFactory.register(Visibility.ROLE, this.originalRoleVerifier);
 
     }
+    
+    
+    
 
 }

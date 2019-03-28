@@ -12,6 +12,7 @@ import com.dotmarketing.portlets.languagesmanager.transform.LanguageTransformer;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableList;
 import com.liferay.portal.struts.MultiMessageResources;
 import com.liferay.util.FileUtil;
 import java.io.File;
@@ -190,7 +191,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
 	protected List<Language> getLanguages() {
 		List<Language> languages = CacheLocator.getLanguageCache().getLanguages();
 		if(languages != null){
-			return languages;
+			return ImmutableList.copyOf(languages);
 		}
 		try {
 			final Language defaultLang = getDefaultLanguage();
@@ -199,7 +200,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
 					.loadObjectResults());
 
 			languages.add(0,defaultLang);
-
+			languages = ImmutableList.copyOf(languages);
 			CacheLocator.getLanguageCache().putLanguages(languages);
 			return languages;
 		} catch (DotDataException e) {

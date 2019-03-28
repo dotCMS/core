@@ -727,31 +727,46 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }
 	}
 
-	@Override
-	protected Contentlet find(String inode) throws ElasticsearchException, DotStateException, DotDataException, DotSecurityException {
-		Contentlet con = contentletCache.get(inode);
-		if (con != null && InodeUtils.isSet(con.getInode())) {
-			if(CACHE_404_CONTENTLET.equals(con.getInode())){
-				return null;
-			}
-			return con;
-		}
-		com.dotmarketing.portlets.contentlet.business.Contentlet fatty = null;
-        try{
-            fatty = (com.dotmarketing.portlets.contentlet.business.Contentlet)HibernateUtil.load(com.dotmarketing.portlets.contentlet.business.Contentlet.class, inode);
-        } catch (DotHibernateException e) {
-            if(!(e.getCause() instanceof ObjectNotFoundException))
-                throw e;
+	
+    @Override
+    public Optional<Contentlet> findInDb(final String inode) {
+
+
+        try {
+            com.dotmarketing.portlets.contentlet.business.Contentlet fatty = (com.dotmarketing.portlets.contentlet.business.Contentlet) HibernateUtil
+                    .load(com.dotmarketing.portlets.contentlet.business.Contentlet.class, inode);
+            return Optional.ofNullable(convertFatContentletToContentlet(fatty));
+        } catch (DotDataException | DotSecurityException e) {
+            if (!(e.getCause() instanceof ObjectNotFoundException)) {
+                throw new DotRuntimeException(e);
+            }
         }
-        if(fatty == null){
-        	contentletCache.add(inode, cache404Content);
+
+        return Optional.empty();
+
+    }
+	
+	
+	
+    @Override
+    protected Contentlet find(String inode) throws ElasticsearchException, DotStateException, DotDataException, DotSecurityException {
+        Contentlet con = contentletCache.get(inode);
+        if (con != null && InodeUtils.isSet(con.getInode())) {
+            if (CACHE_404_CONTENTLET.equals(con.getInode())) {
+                return null;
+            }
+            return con;
+        }
+        Optional<Contentlet> dbContentlet = this.findInDb(inode);
+        if (dbContentlet.isPresent()) {
+            con = dbContentlet.get();
+            contentletCache.add(con.getInode(), con);
+            return con;
+        } else {
             return null;
-        }else{
-            Contentlet c = convertFatContentletToContentlet(fatty);
-            contentletCache.add(c.getInode(), c);
-            return c;
         }
-	}
+
+    }
 
 	@Override
 	protected List<Contentlet> findAllCurrent() throws DotDataException {
@@ -1517,15 +1532,18 @@ public class ESContentFactoryImpl extends ContentletFactory {
 			}
             
             
-        } catch (IndexNotFoundException infe) {
-            Logger.error(this.getClass(), "----------------------------------------------");
-            Logger.error(this.getClass(), "Elasticsearch Index Not Found : " + indexToHit);
-            Logger.error(this.getClass(), "----------------------------------------------");
+        } catch (IndexNotFoundException | SearchPhaseExecutionException infe ) {
+            Logger.warn(this.getClass(), "----------------------------------------------");
+            Logger.warn(this.getClass(), "Elasticsearch Index Error : " + indexToHit);
+            Logger.warnAndDebug(this.getClass(), infe.getMessage(), infe);
+            Logger.warn(this.getClass(), "----------------------------------------------");
+            
             return new SearchHits(new SearchHit[] {}, 0, 0);
-                    
+
+
         } catch (Exception e) {
             Logger.debug(this, e.getMessage(), e); 
-            throw new RuntimeException(e);
+            throw new DotRuntimeException(e);
         }
 	    return resp.getHits();
 	}
@@ -1591,7 +1609,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             long totalCount;
 
             if (UtilMethods.isSet(contentlets)) {
-                final ESContentletIndexAPI indexAPI = new ESContentletIndexAPI();
+                final ContentletIndexAPIImpl indexAPI = new ContentletIndexAPIImpl();
                 List<Contentlet> contentToIndex = new ArrayList<>();
                 totalCount = contentlets.size();
                 final int batchSize = 100;
@@ -1608,9 +1626,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
                     identifierCache.removeFromCacheByIdentifier(content.getIdentifier());
 
                     contentToIndex.add(content);
-                    contentToIndex.addAll(indexAPI.loadDeps(content));
                     if (counter % batchSize == 0) {
-                        indexAPI.indexContentList(contentToIndex, null, false);
+                        indexAPI.addContentToIndex(contentToIndex);
                         completed += batchSize;
                         contentToIndex = new ArrayList<>();
                         Logger.info(this, String.format("Reindexing related content after " +
@@ -1622,7 +1639,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 }
                 // index remaining records if any
                 if (!contentToIndex.isEmpty()) {
-                    indexAPI.indexContentList(contentToIndex, null, false);
+                    indexAPI.addContentToIndex(contentToIndex);
                 }
 
                 Logger.info(this, String.format("Reindexing of updated related content after " +
@@ -1757,7 +1774,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
              String inode = ident.get("inode");
              contentletCache.remove(inode);
              Contentlet content = find(inode);
-             new ESContentletIndexAPI().addContentToIndex(content);
+             new ContentletIndexAPIImpl().addContentToIndex(content);
         }
 	}
 
