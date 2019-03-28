@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.List;
 
 import com.dotcms.business.CloseDBIfOpened;
@@ -98,12 +100,24 @@ public class DotCMSInitDb {
 		if (UtilMethods.isSet(starter)) {
 			starterZip = new File(starter);
 		}
-		
-		if(starterZip==null || (starterZip!=null && !starterZip.exists())){
+
+		try {
+			if (starterZip == null || !starterZip.exists()) {
+				URL starterURL = Thread.currentThread().getContextClassLoader()
+						.getResource("starter.zip");
+				if (starterURL != null) {
+					starterZip = new File(starterURL.toURI());
+				}
+			}
+		} catch (URISyntaxException e) {
+			throw new IOException(e.getMessage(), e);
+		}
+
+		if (starterZip == null || !starterZip.exists()) {
 			String starterSitePath = "/starter.zip";
 			String zipPath = FileUtil.getRealPath(starterSitePath);
-			starterZip = new File(zipPath); 
-		 }
+			starterZip = new File(zipPath);
+		}
 		
 		ImportExportUtil ieu = new ImportExportUtil();
 		if(ieu.validateZipFile(starterZip)){

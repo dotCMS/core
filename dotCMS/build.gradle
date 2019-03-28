@@ -38,6 +38,7 @@ configurations {
     compile
     buildlibs
     starter
+    testsStarter
     profiler
     profilerDependencies
     provided
@@ -94,6 +95,7 @@ tasks.matching {it instanceof Test}.all {
 project.integrationTest {
     outputs.upToDateWhen { false }
 }
+integrationTest.dependsOn('downloadTestsStarter')
 
 //Avoid skipping running tests when the test task is invoked
 project.test {
@@ -156,6 +158,7 @@ dependencies {
     compile fileTree("src/main/plugins/com.dotcms.config/build/jar").include('plugin-com.dotcms.config.jar')
 
     starter group: 'com.dotcms', name: 'starter', version: '20190207', ext: 'zip'
+    testsStarter group: 'com.dotcms', name: 'starter', version: '20190207', ext: 'zip'
 
     profiler group: 'glowroot-custom', name: 'glowroot-agent', version: '0.13.1'
     profilerDependencies group: 'glowroot-custom', name: 'collector-https-linux', version: '0.13.1'
@@ -329,7 +332,7 @@ task testDev(type: Test) {
     reports.html.setDestination(file("$buildDir/test-results/unit-tests/html"))
 }
 
-integrationTest{
+integrationTest {
     doFirst
             {
                 if (project.hasProperty('databaseType')){
@@ -337,6 +340,14 @@ integrationTest{
                 }
             }
 }
+integrationTest.group='dotCMS tests'
+
+task downloadTestsStarter (type: Copy) {
+    from configurations.testsStarter
+    into integrationTestResourcesFolder
+    rename ( /starter(.+)\.zip/, "starter.zip" )
+}
+downloadTestsStarter.group='dotCMS tests'
 
 // Delete ROOT under tomcat8/webapps
 task undeployWarTomcat(type: Delete) {
