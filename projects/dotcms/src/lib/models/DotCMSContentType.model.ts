@@ -1,4 +1,20 @@
-import { DotCMSContentTypeField } from './DotCMSContentTypeField.model';
+export interface DotCMSContentTypeField {
+    clazz?: string;
+    contentTypeId?: string;
+    fixed?: boolean;
+    id?: string;
+    indexed?: boolean;
+    listed?: boolean;
+    name?: string;
+    readOnly?: boolean;
+    required?: boolean;
+    searchable?: boolean;
+    sortOrder?: number;
+    dataType?: string;
+    hint?: string;
+    fieldTypeLabel?: string;
+    variable?: string;
+}
 
 export interface DotCMSContentType {
     baseType?: string;
