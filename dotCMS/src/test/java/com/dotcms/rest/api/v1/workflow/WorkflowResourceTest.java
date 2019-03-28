@@ -7,6 +7,7 @@ import com.dotcms.rest.ContentHelper;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
+import com.dotcms.rest.api.MultiPartUtils;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.exception.ValidationException;
 import com.dotcms.workflow.form.WorkflowSchemeForm;
@@ -27,11 +28,9 @@ import javax.servlet.http.HttpServletRequest;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.*;
+import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.*;
 
 public class WorkflowResourceTest extends UnitTestBase {
 
@@ -93,7 +92,7 @@ public class WorkflowResourceTest extends UnitTestBase {
 
         final ResponseUtil responseUtil = mock(ResponseUtil.class);
         final WorkflowImportExportUtil exportUtil = mock(WorkflowImportExportUtil.class);
-        return new WorkflowResource(workflowHelper, contentHelper, workflowAPI, contentletAPI, responseUtil, permissionAPI, exportUtil, webResource);
+        return new WorkflowResource(workflowHelper, contentHelper, workflowAPI, contentletAPI, responseUtil, permissionAPI, exportUtil,new MultiPartUtils(), webResource);
     }
 
     @Test
