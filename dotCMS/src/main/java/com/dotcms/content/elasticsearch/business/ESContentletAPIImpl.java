@@ -32,6 +32,8 @@ import com.dotcms.services.VanityUrlServices;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.type.content.CommitListenerEvent;
 import com.dotcms.util.CollectionsUtils;
+import com.dotcms.uuid.shorty.ShortType;
+import com.dotcms.uuid.shorty.ShortyId;
 import com.dotmarketing.beans.*;
 import com.dotmarketing.business.*;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
@@ -4904,13 +4906,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         if (UtilMethods.isSet(contentlet.getIdentifier())) {
 
-            boolean isIdentifier = false;
-
-            try {
-                isIdentifier = APILocator.getIdentifierAPI().isIdentifier(contentlet.getIdentifier());
-            } catch (DotDataException e) {
-                isIdentifier = false;
-            }
+            final Optional<ShortyId> shortyId = APILocator.getShortyAPI().getShorty(contentlet.getIdentifier());
+            final boolean isIdentifier = shortyId.isPresent() && shortyId.get().subType== ShortType.IDENTIFIER;
 
             if (!isIdentifier) {
 
