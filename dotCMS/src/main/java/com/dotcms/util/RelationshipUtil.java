@@ -66,13 +66,18 @@ public class RelationshipUtil {
      * Returns a list of contentlets filtering by lucene query and/or identifiers
      * @param language
      * @param filter Comma-separated list of filtering criteria, which can be lucene queries and contentlets identifier
+     * @param sortBy
      * @param user
+     * @param respectFrontendRoles
+     * @param isCheckout
      * @return
      * @throws DotDataException
      * @throws DotSecurityException
      */
     public static List<Contentlet> filterContentlet(final long language, final String filter,
-            final User user, final boolean isCheckout) throws DotDataException, DotSecurityException {
+            final String sortBy,
+            final User user, final boolean respectFrontendRoles, final boolean isCheckout)
+            throws DotDataException, DotSecurityException {
 
         final Map<String, Contentlet> relatedContentlets = new HashMap<>();
 
@@ -83,17 +88,34 @@ public class RelationshipUtil {
                 final Contentlet relatedContentlet = contentletAPI
                         .findContentletForLanguage(language, identifier);
                 relatedContentlets.put(relatedContentlet.getIdentifier(), isCheckout ? contentletAPI
-                        .checkout(relatedContentlet.getInode(), user, false) : relatedContentlet);
+                        .checkout(relatedContentlet.getInode(), user, respectFrontendRoles)
+                        : relatedContentlet);
             } else {
                 relatedContentlets
                         .putAll((isCheckout ? contentletAPI.checkoutWithQuery(elem, user, false)
-                                : contentletAPI.search(elem, 0, 0, null, user, false)).stream()
+                                : contentletAPI.search(elem, 0, 0, sortBy, user, false)).stream()
                                 .collect(Collectors
                                         .toMap(Contentlet::getIdentifier, Function.identity())));
             }
         }
 
         return relatedContentlets.values().stream().collect(CollectionsUtils.toImmutableList());
+    }
+
+    /**
+     * Returns a list of contentlets filtering by lucene query and/or identifiers
+     * @param language Comma-separated list of filtering criteria, which can be lucene queries and contentlets identifier
+     * @param filter
+     * @param user
+     * @param isCheckout
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    public static List<Contentlet> filterContentlet(final long language, final String filter,
+            final User user, final boolean isCheckout)
+            throws DotDataException, DotSecurityException {
+        return filterContentlet(language, filter, null, user, false, isCheckout);
     }
 
     /**
