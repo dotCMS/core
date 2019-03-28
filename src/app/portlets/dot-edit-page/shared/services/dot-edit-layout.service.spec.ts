@@ -7,6 +7,7 @@ import { DotContainerColumnBox } from '../models/dot-container-column-box.model'
 import { DotLayoutBody } from '@portlets/dot-edit-page/shared/models/dot-layout-body.model';
 import { DotLayoutGridBox } from '@portlets/dot-edit-page/shared/models/dot-layout-grid-box.model';
 import { CONTAINER_SOURCE } from '@models/container/dot-container.model';
+import { DotLayoutGrid } from '../models/dot-layout-grid.model';
 
 describe('DotEditLayoutService', () => {
     const containers = {
@@ -144,11 +145,11 @@ describe('DotEditLayoutService', () => {
             ]
         };
 
-        const grid: DotLayoutGridBox[] = dotEditLayoutService.getDotLayoutGridBox(dotLayoutBody);
+        const grid: DotLayoutGrid = dotEditLayoutService.getDotLayoutGridBox(dotLayoutBody);
 
-        expect(grid.length).toEqual(4);
-        expect(grid[2].containers.length).toEqual(2);
-        expect(grid[3].config).toEqual({
+        expect(grid.boxes.length).toEqual(4);
+        expect(grid.boxes[2].containers.length).toEqual(2);
+        expect(grid.boxes[3].config).toEqual({
             col: 4,
             row: 2,
             sizex: 3,
@@ -156,11 +157,11 @@ describe('DotEditLayoutService', () => {
             maxCols: 12,
             maxRows: 1
         });
-        expect(grid[0].containers.length).toEqual(1, 'map FILE type containers');
+        expect(grid.boxes[0].containers.length).toEqual(1, 'map FILE type containers');
     });
 
     it('should transform the grid data to LayoutBody to export the data', () => {
-        const grid: DotLayoutGridBox[] = [
+        const gridBoxes: DotLayoutGridBox[] = [
             {
                 containers: [
                     {
@@ -187,7 +188,10 @@ describe('DotEditLayoutService', () => {
                     resizeHandle: null,
                     draggable: true,
                     resizable: true,
-                    borderSize: 25
+                    borderSize: 25,
+                    payload: {
+                        styleClass: 'test_column_class'
+                    }
                 }
             },
             {
@@ -233,9 +237,13 @@ describe('DotEditLayoutService', () => {
                 }
             }
         ];
+        const grid: DotLayoutGrid = new  DotLayoutGrid(gridBoxes, ['test_row_class']);
         const layoutBody: DotLayoutBody = dotEditLayoutService.getDotLayoutBody(grid);
 
         expect(layoutBody.rows.length).toEqual(1);
+        expect(layoutBody.rows[0].styleClass).toEqual('test_row_class');
+        expect(layoutBody.rows[0].columns[0].styleClass).toEqual('test_column_class');
+        expect(layoutBody.rows[0].columns[1].styleClass).toBeUndefined();
         expect(layoutBody.rows[0].columns.length).toEqual(2, 'create two columns');
         expect(layoutBody.rows[0].columns[1].containers.length).toEqual(2, 'create two containers');
         expect(layoutBody.rows[0].columns[1].leftOffset).toEqual(9, 'set leftOffset to 9');

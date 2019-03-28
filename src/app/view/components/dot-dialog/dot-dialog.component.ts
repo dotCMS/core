@@ -83,7 +83,7 @@ export class DotDialogComponent implements OnChanges {
      */
     acceptAction(): void {
         if (this.actions && this.canTriggerAction(this.actions.accept)) {
-            this.actions.accept.action();
+            this.actions.accept.action(this);
             this.unBindEvents();
         }
     }
@@ -97,7 +97,7 @@ export class DotDialogComponent implements OnChanges {
         this.close();
 
         if (this.actions && this.canTriggerAction(this.actions.cancel)) {
-            this.actions.cancel.action();
+            this.actions.cancel.action(this);
         }
     }
 

@@ -2,17 +2,13 @@ import { Component, OnInit, forwardRef, ViewChild } from '@angular/core';
 import * as _ from 'lodash';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm/dot-alert-confirm.service';
 import { DotMessageService } from '@services/dot-messages-service';
-import { DotLayoutGridBox } from '../../../shared/models/dot-layout-grid-box.model';
-import {
-    DOT_LAYOUT_GRID_MAX_COLUMNS,
-    DOT_LAYOUT_GRID_NEW_ROW_TEMPLATE,
-    DOT_LAYOUT_DEFAULT_GRID
-} from '../../../shared/models/dot-layout.const';
 import { DotLayoutBody } from '../../../shared/models/dot-layout-body.model';
 import { DotEditLayoutService } from '../../../shared/services/dot-edit-layout.service';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormGroup, FormBuilder } from '@angular/forms';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
-import { NgGrid, NgGridConfig, NgGridItemConfig } from 'dot-layout-grid';
+import { NgGrid, NgGridConfig } from 'dot-layout-grid';
+import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
+import { DotLayoutGrid, DOT_LAYOUT_GRID_MAX_COLUMNS } from '@portlets/dot-edit-page/shared/models/dot-layout-grid.model';
 
 /**
  * Component in charge of update the model that will be used be the NgGrid to display containers
@@ -35,8 +31,12 @@ export class DotEditLayoutGridComponent implements OnInit, ControlValueAccessor 
     @ViewChild(NgGrid)
     ngGrid: NgGrid;
 
+    form: FormGroup;
     value: DotLayoutBody;
-    grid: DotLayoutGridBox[];
+    grid: DotLayoutGrid;
+
+    showAddClassDialog = false;
+    dialogActions: DotDialogActions;
 
     gridConfig: NgGridConfig = <NgGridConfig>{
         margins: [0, 8, 8, 0],
@@ -65,7 +65,8 @@ export class DotEditLayoutGridComponent implements OnInit, ControlValueAccessor 
         private dotDialogService: DotAlertConfirmService,
         private dotEditLayoutService: DotEditLayoutService,
         public dotMessageService: DotMessageService,
-        private dotEventsService: DotEventsService
+        private dotEventsService: DotEventsService,
+        public fb: FormBuilder,
     ) {}
 
     ngOnInit() {
@@ -76,7 +77,9 @@ export class DotEditLayoutGridComponent implements OnInit, ControlValueAccessor 
                 'editpage.confirm.message.delete.warning',
                 'editpage.action.cancel',
                 'editpage.action.delete',
-                'editpage.action.save'
+                'editpage.action.save',
+                'dot.common.dialog.accept',
+                'dot.common.dialog.reject'
             ])
             .subscribe();
 
@@ -90,6 +93,22 @@ export class DotEditLayoutGridComponent implements OnInit, ControlValueAccessor 
 
         // needed it because the transition between content & layout.
         this.resizeGrid();
+
+        this.form = this.fb.group({
+            classToAdd: ''
+        });
+
+        this.form.valueChanges.subscribe(() => {
+            this.dialogActions = {
+                cancel: {
+                    ...this.dialogActions.cancel
+                },
+                accept: {
+                    ...this.dialogActions.accept,
+                    disabled: !this.form.valid
+                }
+            };
+        });
     }
 
     /**
@@ -98,9 +117,8 @@ export class DotEditLayoutGridComponent implements OnInit, ControlValueAccessor 
      * @memberof DotEditLayoutGridComponent
      */
     addBox(): void {
-        const conf: NgGridItemConfig = this.setConfigOfNewContainer();
-        this.grid.push({ config: conf, containers: [] });
-        this.propagateChange(this.getModel());
+        this.grid.addBox();
+        this.propagateGridLayoutChange();
     }
 
     /**
@@ -120,7 +138,7 @@ export class DotEditLayoutGridComponent implements OnInit, ControlValueAccessor 
      */
     updateModel(): void {
         this.deleteEmptyRows();
-        this.propagateChange(this.getModel());
+        this.propagateGridLayoutChange();
     }
 
     /**
@@ -130,7 +148,7 @@ export class DotEditLayoutGridComponent implements OnInit, ControlValueAccessor 
      * @memberof DotEditLayoutGridComponent
      */
     onRemoveContainer(index: number): void {
-        if (this.grid[index].containers.length) {
+        if (this.grid.boxes[index].containers.length) {
             this.dotDialogService.confirm({
                 accept: () => {
                     this.removeContainer(index);
@@ -167,11 +185,11 @@ export class DotEditLayoutGridComponent implements OnInit, ControlValueAccessor 
     registerOnTouched(): void {}
 
     /**
-     * Update the model when a container is added to a box
+     * Update the model when the grid is changed
      *
      * @memberof DotEditLayoutGridComponent
      */
-    updateContainers(): void {
+    propagateGridLayoutChange(): void {
         this.propagateChange(this.getModel());
     }
 
@@ -188,68 +206,82 @@ export class DotEditLayoutGridComponent implements OnInit, ControlValueAccessor 
         }
     }
 
+    /**
+     * Add style class to a column
+     * @param index column index into {@link DotLayoutGrid#boxes}
+     */
+    addColumnClass(index: number): void {
+        this.addClass(
+            () => this.grid.boxes[index].config.payload ? this.grid.boxes[index].config.payload.styleClass || null : null,
+            (value: string) => {
+                if (!this.grid.boxes[index].config.payload) {
+                    this.grid.boxes[index].config.payload = {
+                        styleClass: value
+                    };
+                } else {
+                    this.grid.boxes[index].config.payload.styleClass = value;
+                }
+            }
+        );
+    }
+
+    /**
+     * Add style class to a row
+     * @param index row index
+     */
+    addRowClass(index: number): void {
+        this.addClass(
+            () => this.grid.getRowClass(index) || '',
+            (value) => this.grid.setRowClass(value, index)
+        );
+    }
+
+    private addClass(getterFunc: () => string, setterFunc: (value: string) => void): void {
+        this.form.setValue(
+            {
+                classToAdd: getterFunc.bind(this)()
+            },
+            {
+                emitEvent: false
+            }
+        );
+
+        this.dialogActions = {
+            accept: {
+                action: (dialog?: any) => {
+                    setterFunc.bind(this)(this.form.get('classToAdd').value);
+                    this.propagateGridLayoutChange();
+                    dialog.close();
+                },
+                label: 'Ok',
+                disabled: true
+            },
+            cancel: {
+                label: 'Cancel'
+            }
+        };
+
+        this.showAddClassDialog = true;
+    }
+
     private setGridValue(): void {
         this.grid = this.isHaveRows()
             ? this.dotEditLayoutService.getDotLayoutGridBox(this.value)
-            : [...DOT_LAYOUT_DEFAULT_GRID];
+            : DotLayoutGrid.getDefaultGrid();
     }
 
     private removeContainer(index: number): void {
-        if (this.grid[index]) {
-            this.grid.splice(index, 1);
-            this.deleteEmptyRows();
-            this.propagateChange(this.getModel());
+        if (this.grid.boxes[index]) {
+            this.grid.removeContainer(index);
+            this.propagateGridLayoutChange();
         }
-    }
-
-    private setConfigOfNewContainer(): any {
-        const newRow: any = Object.assign({}, DOT_LAYOUT_GRID_NEW_ROW_TEMPLATE);
-
-        if (this.grid.length) {
-            const lastContainer = _.chain(this.grid)
-                .groupBy('config.row')
-                .values()
-                .last()
-                .maxBy('config.col')
-                .value();
-
-            let busyColumns: number = DOT_LAYOUT_GRID_NEW_ROW_TEMPLATE.sizex;
-
-            busyColumns += lastContainer.config.col - 1 + lastContainer.config.sizex;
-
-            if (busyColumns <= DOT_LAYOUT_GRID_MAX_COLUMNS) {
-                newRow.row = lastContainer.config.row;
-                newRow.col = lastContainer.config.col + lastContainer.config.sizex;
-            } else {
-                newRow.row = lastContainer.config.row + 1;
-                newRow.col = 1;
-            }
-        }
-
-        return newRow;
     }
 
     private deleteEmptyRows(): void {
         // TODO: Find a solution to remove setTimeout
         setTimeout(() => {
-            this.grid = _.chain(this.grid)
-                .sortBy('config.row')
-                .groupBy('config.row')
-                .values()
-                .map(this.updateContainerIndex)
-                .flatten()
-                .value();
+            this.grid.deleteEmptyRows();
         }, 0);
-    }
-
-    private updateContainerIndex(rowArray, index) {
-        if (rowArray[0].row !== index + 1) {
-            return rowArray.map((container) => {
-                container.config.row = index + 1;
-                return container;
-            });
-        }
-        return rowArray;
     }
 
     private isHaveRows(): boolean {

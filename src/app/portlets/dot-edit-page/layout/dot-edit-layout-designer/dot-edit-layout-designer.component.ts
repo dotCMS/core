@@ -8,7 +8,6 @@ import { TemplateContainersCacheService } from '../../template-containers-cache.
 import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { ResponseView } from 'dotcms-js';
 import * as _ from 'lodash';
-import { DotEditLayoutService } from '../../shared/services/dot-edit-layout.service';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotRenderedPage } from '../../shared/models/dot-rendered-page.model';
 import { LoginService } from 'dotcms-js';
@@ -47,7 +46,6 @@ export class DotEditLayoutDesignerComponent implements OnInit {
     showTemplateLayoutSelectionDialog = false;
 
     constructor(
-        private dotEditLayoutService: DotEditLayoutService,
         private dotEventsService: DotEventsService,
         private dotGlobalMessageService: DotGlobalMessageService,
         private dotDialogService: DotAlertConfirmService,
@@ -223,8 +221,7 @@ export class DotEditLayoutDesignerComponent implements OnInit {
             themeId: this.pageState.template.theme,
             layout: this.fb.group({
                 body:
-                    this.dotEditLayoutService.cleanupDotLayoutBody(this.pageState.layout.body) ||
-                    {},
+                    this.pageState.layout.body || {},
                 header: this.pageState.layout.header,
                 footer: this.pageState.layout.footer,
                 sidebar: this.createSidebarForm()

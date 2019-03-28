@@ -1,8 +1,42 @@
-<div [ngGrid]="gridConfig" (onDragStop)="updateModel()" (onResizeStop)="updateModel()">
-    <div class="box" *ngFor="let gridBox of grid; let i = index" [(ngGridItem)]="gridBox.config">
-        <button class="box__remove" type="button" pButton icon="fa fa-times" (click)="onRemoveContainer(i)"></button>
-        <dot-container-selector (change)="updateContainers($event)" (remove)="onRemoveContainer(i)" [data]="gridBox.containers"
-            [multiple]="true">
+<div class="grid" [ngGrid]="gridConfig" (onDragStop)="updateModel()" (onResizeStop)="updateModel()">
+    <button
+        class="box__add-row-class-button"
+        *ngFor="let rowClass of grid.getAllRowClass(); let i = index"
+        [ngStyle]="{ 'top.px': i ? (206 + 8) * i : 0 }"
+        (click)="addRowClass(i)"
+    >
+        <span>Add class</span>
+    </button>
+
+    <div
+        class="box"
+        *ngFor="let gridBox of grid.boxes; let i = index"
+        [(ngGridItem)]="gridBox.config"
+    >
+        <dot-container-selector
+            (change)="propagateGridLayoutChange($event)"
+            (remove)="onRemoveContainer(i)"
+            [data]="gridBox.containers"
+            [multiple]="true"
+        >
         </dot-container-selector>
+        <div class="box__actions">
+            <dot-icon-button icon="more_horiz" (click)="addColumnClass(i)"></dot-icon-button>
+            <dot-icon-button icon="close" (click)="onRemoveContainer(i)"></dot-icon-button>
+        </div>
     </div>
 </div>
+
+<dot-dialog
+    #dialog
+    (hide)="showAddClassDialog = false"
+    [actions]="dialogActions"
+    header="Add Class"
+    [(visible)]="showAddClassDialog"
+    [width]="300"
+>
+    <form [formGroup]="form" novalidate>
+        <label for="content-type-form-workflow" class="form__label">Class Names</label>
+        <input pInputText formControlName="classToAdd" type="text" required xc/>
+    </form>
+</dot-dialog>
