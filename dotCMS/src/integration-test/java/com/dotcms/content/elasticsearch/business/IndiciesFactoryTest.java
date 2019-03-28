@@ -63,8 +63,6 @@ public class IndiciesFactoryTest {
         IndiciesInfo info = new IndiciesInfo();
         info.working="info.working";
         info.live="info.live";
-        //info.reindex_live="info.reindex_live";
-        //info.reindex_working="info.reindex_working";
         ifac.point(info);
         
         
@@ -75,8 +73,6 @@ public class IndiciesFactoryTest {
         assertNull(cachedInfo.reindex_working);
         
         info = new IndiciesInfo();
-        //info.working="info.working";
-        //info.live="info.live";
         info.reindex_live="info.reindex_live";
         info.reindex_working="info.reindex_working";
         ifac.point(info);
