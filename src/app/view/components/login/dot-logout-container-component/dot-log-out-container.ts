@@ -1,17 +1,21 @@
 import { Component, ViewEncapsulation } from '@angular/core';
 import { LoginService } from 'dotcms-js';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
+import { DotRouterService } from '../../../../api/services/dot-router/dot-router.service';
+import { take } from 'rxjs/operators';
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
     selector: 'dot-log-out-container',
     template: ''
 })
-export class LogOutContainerComponent {
+export class DotLogOutContainerComponent {
     constructor(loginService: LoginService, router: DotRouterService) {
-        loginService.isLogin$.subscribe((isLogin) => {
+        loginService.isLogin$.pipe(take(1)).subscribe(isLogin => {
             if (isLogin) {
-                loginService.logOutUser().subscribe(() => {});
+                loginService
+                    .logOutUser()
+                    .pipe(take(1))
+                    .subscribe(() => {});
             } else {
                 router.goToLogin();
             }

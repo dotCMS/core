@@ -33,7 +33,7 @@ textarea.ui-inputtext {
 
     &.ui-state-filled {
         @extend #field-active-state;
-        @extend #inputtext-active-border;
+        @extend #inputtext-normal-border;
     }
 }
 

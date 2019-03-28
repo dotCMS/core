@@ -1,16 +1,15 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Routes } from '@angular/router';
-import { FormsModule } from '@angular/forms';
-
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ButtonModule, InputTextModule } from 'primeng/primeng';
-
-import { ResetPasswordContainerComponent } from './reset-password-container.component';
 import { ResetPasswordComponent } from './reset-password.component';
+import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
+import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 
 const routes: Routes = [
     {
-        component: ResetPasswordContainerComponent,
+        component: ResetPasswordComponent,
         path: ''
     }
 ];
@@ -21,8 +20,11 @@ const routes: Routes = [
         FormsModule,
         InputTextModule,
         ButtonModule,
+        ReactiveFormsModule,
+        DotFieldValidationMessageModule,
+        DotAutofocusModule,
         RouterModule.forChild(routes)
     ],
-    declarations: [ResetPasswordContainerComponent, ResetPasswordComponent]
+    declarations: [ResetPasswordComponent]
 })
 export class ResetPasswordModule {}

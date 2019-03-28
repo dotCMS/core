@@ -9,6 +9,56 @@ export const mockUser: User = {
     userId: '123'
 };
 
+export const mockLoginFormResponse = {
+    errors: [],
+    entity: {
+        serverId: '860173b0',
+        levelName: 'COMMUNITY EDITION',
+        version: '5.0.0',
+        buildDateString: 'March 13, 2019',
+        languages: [
+            { language: 'en', country: 'US', displayName: 'English (United States)' },
+            { language: 'es', country: 'ES', displayName: 'español (España)' },
+            { language: 'it', country: 'IT', displayName: 'italiano (Italia)' },
+            { language: 'fr', country: 'FR', displayName: 'français (France)' },
+            { language: 'de', country: 'DE', displayName: 'Deutsch (Deutschland)' },
+            { language: 'zh', country: 'CN', displayName: '中文 (中国)' },
+            { language: 'nl', country: 'NL', displayName: 'Nederlands (Nederland)' },
+            { language: 'ru', country: 'RU', displayName: 'русский (Россия)' },
+            { language: 'fi', country: 'FI', displayName: 'suomi (Suomi)' }
+        ],
+        backgroundColor: '#3a3847',
+        backgroundPicture: '/html/images/backgrounds/bg-11.jpg',
+        logo: '/image/company_logo?img_id=dotcms.org&key=954201',
+        authorizationType: 'emailAddress',
+        currentLanguage: { language: 'en', country: 'US', displayName: 'English (United States)' },
+        companyEmail: '@dotcms.com'
+    },
+    messages: [],
+    i18nMessagesMap: {
+        'cancel': 'Cancel',
+        'sign-in': 'Sign In',
+        'angular.login.component.community.licence.message':
+            '<a href="https://dotcms.com/features" target="_blank">upgrade</a>',
+        'email-address': 'Email Address',
+        'Server': 'Server',
+        'a-new-password-has-been-sent-to-x': 'An Email with instructions has been sent to {0}.',
+        'user-id': 'User ID',
+        'remember-me': 'Remember Me',
+        'password': 'Password',
+        'get-new-password': 'Recover Password',
+        'error.form.mandatory': 'The field {0} is required',
+        'reset-password-success': 'Your password has been successfully changed',
+        'welcome-back': 'Welcome Back!',
+        'forgot-password': 'Forgot Password',
+        'reset-password': 'Password Reset',
+        'enter-password': 'Enter Password',
+        're-enter-password': 'Confirm Password',
+        'change-password': 'Change Password'
+    },
+    permissions: []
+};
+
 const mockUserWithRedirect = {
     ...mockUser,
     editModeUrl: 'redirect/to'
@@ -35,9 +85,7 @@ export class LoginServiceMock {
         return this._auth;
     }
 
-    setAuth(): void {
-
-    }
+    setAuth(): void {}
 
     loginAs(): Observable<any> {
         return observableOf({});
@@ -78,5 +126,13 @@ export class LoginServiceMock {
                 currentLanguage: ''
             }
         });
+    }
+
+    recoverPassword(): Observable<any> {
+        return observableOf({});
+    }
+
+    changePassword(): Observable<any> {
+        return observableOf({});
     }
 }

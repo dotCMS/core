@@ -1,92 +1,99 @@
-import { Component, ViewEncapsulation, Input, Output, EventEmitter, OnInit } from '@angular/core';
-import { LoginService, LoggerService } from 'dotcms-js';
-import { ChangePasswordData } from './reset-password-container.component';
+import { Component, OnInit } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Observable } from 'rxjs';
+import { DotLoginInformation } from '@models/dot-login';
+import { take, tap } from 'rxjs/operators';
+import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
+import { LoginService } from 'dotcms-js';
+import { ActivatedRoute } from '@angular/router';
+import { DotRouterService } from '@services/dot-router/dot-router.service';
 
 @Component({
-    encapsulation: ViewEncapsulation.Emulated,
     providers: [],
     selector: 'dot-reset-password-component',
-    styleUrls: [],
+    styleUrls: ['./reset-password.component.scss'],
     templateUrl: 'reset-password.component.html'
 })
 export class ResetPasswordComponent implements OnInit {
-    @Input()
-    token = '';
-    @Input()
+    resetPasswordForm: FormGroup;
+    loginInfo$: Observable<DotLoginInformation>;
     message = '';
-    @Output()
-    changePassword = new EventEmitter<ChangePasswordData>();
+    private passwordDontMatchMessage = '';
+    private changePasswordSuccessfully = '';
 
-    // labels
-    changePasswordButton = '';
-    confirmPassword = '';
-    confirmPasswordLabel = '';
-    confirmPasswordMandatoryFieldError = '';
-    enterPasswordLabel = '';
-    password = '';
-    passwordMandatoryFieldError = '';
-    resetPasswordLabel = '';
-
-    private language = '';
-    // Message
-    private resetPasswordConfirmationDoNotMessage = '';
-    private mandatoryFieldError = '';
-    private i18nMessages: Array<string> = [
-        'error.form.mandatory',
-        'reset-password',
-        'enter-password',
-        're-enter-password',
-        'change-password',
-        'reset-password-success',
-        'reset-password-confirmation-do-not-match'
-    ];
-
-    constructor(private loginService: LoginService, private loggerService: LoggerService) {}
+    constructor(
+        private fb: FormBuilder,
+        private loginService: LoginService,
+        public loginPageStateService: DotLoginPageStateService,
+        private dotRouterService: DotRouterService,
+        private route: ActivatedRoute
+    ) {}
 
     ngOnInit(): void {
-        this.loginService.getLoginFormInfo(this.language, this.i18nMessages).subscribe(
-            (data) => {
-                const dataI18n = data.i18nMessagesMap;
-
-                this.resetPasswordLabel = dataI18n['reset-password'];
-                this.enterPasswordLabel = dataI18n['enter-password'];
-                this.confirmPasswordLabel = dataI18n['re-enter-password'];
-                this.changePasswordButton = dataI18n['change-password'];
-                this.mandatoryFieldError = dataI18n['error.form.mandatory'];
-                this.passwordMandatoryFieldError = this.mandatoryFieldError.replace(
-                    '{0}',
-                    this.enterPasswordLabel
-                );
-                this.confirmPasswordMandatoryFieldError = this.mandatoryFieldError.replace(
-                    '{0}',
-                    this.confirmPasswordLabel
-                );
-                this.resetPasswordConfirmationDoNotMessage =
-                    dataI18n['reset-password-confirmation-do-not-match'];
-            },
-            (error) => {
-                this.loggerService.error(error);
-            }
+        this.loginInfo$ = this.loginPageStateService.get().pipe(
+            take(1),
+            tap((loginInfo: DotLoginInformation) => {
+                this.passwordDontMatchMessage =
+                    loginInfo.i18nMessagesMap['reset-password-confirmation-do-not-match'];
+                this.changePasswordSuccessfully =
+                    loginInfo.i18nMessagesMap['message.forgot.password.password.updated'];
+            })
         );
+
+        this.resetPasswordForm = this.fb.group({
+            password: ['', [Validators.required]],
+            confirmPassword: ['', [Validators.required]]
+        });
     }
 
+    /**
+     * Clean confirm password field value.
+     *
+     * @memberof ResetPasswordComponent
+     */
     cleanConfirmPassword(): void {
-        this.clean();
-        this.confirmPassword = '';
+        this.cleanMessage();
+        this.resetPasswordForm.get('confirmPassword').setValue('');
     }
 
-    ok(): void {
-        if (this.password === this.confirmPassword) {
-            this.changePassword.emit({
-                password: this.password,
-                token: this.token
-            });
-        } else {
-            this.message = this.resetPasswordConfirmationDoNotMessage;
-        }
-    }
-
-    clean(): void {
+    /**
+     * Clean the error message
+     *
+     * @memberof ResetPasswordComponent
+     */
+    cleanMessage(): void {
         this.message = '';
+    }
+
+    /**
+     * Validate password change and make the request.
+     *
+     * @memberof ResetPasswordComponent
+     */
+    submit(): void {
+        if (
+            this.resetPasswordForm.valid &&
+            this.resetPasswordForm.get('password').value ===
+                this.resetPasswordForm.get('confirmPassword').value
+        ) {
+            this.cleanMessage();
+            this.loginService
+                .changePassword(
+                    this.resetPasswordForm.get('password').value,
+                    this.route.snapshot.paramMap.get('token')
+                )
+                .pipe(take(1))
+                .subscribe(
+                    () => {
+                        alert(this.changePasswordSuccessfully);
+                        this.dotRouterService.goToLogin({ changedPassword: true });
+                    },
+                    error => {
+                        this.message = error.errorsMessages;
+                    }
+                );
+        } else {
+            this.message = this.passwordDontMatchMessage;
+        }
     }
 }

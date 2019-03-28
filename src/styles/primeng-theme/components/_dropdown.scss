@@ -20,6 +20,10 @@
         }
     }
 
+    [noBorder] & {
+        box-shadow: none;
+    }
+
     &.ui-state-focus {
         @extend #inputtext-active-border;
     }

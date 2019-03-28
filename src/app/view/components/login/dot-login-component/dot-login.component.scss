@@ -1,0 +1,49 @@
+@import "variables";
+@import "mixins";
+@import "../styles/primeng-theme/utils/theme-variables";
+
+:host {
+    @include login-container;
+}
+
+.login__header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+}
+
+.login__logo {
+    margin: $basic-padding / 2 0 $basic-padding;
+
+    img {
+        width: 102px;
+        height: 19px;
+    }
+}
+
+.login__title {
+    margin: $basic-padding * 8 0 $basic-padding * 6 0;
+}
+
+.login__password-settings {
+    display: flex;
+
+    p-checkbox {
+        flex-grow: 1;
+    }
+
+    a {
+        align-self: center;
+    }
+}
+
+.login__footer {
+    color: $gray-light;
+    text-align: center;
+    text-transform: uppercase;
+    font-size: $font-size-x-small;
+}
+
+.login__button {
+    margin-right: $basic-padding;
+}

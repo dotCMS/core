@@ -1,82 +1,81 @@
-import { Component, EventEmitter, Input, Output, ViewEncapsulation, OnInit } from '@angular/core';
-import { LoginService, LoggerService } from 'dotcms-js';
+import { Component, ViewEncapsulation, OnInit } from '@angular/core';
+import { DotLoginInformation } from '@models/dot-login';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Observable } from 'rxjs';
+import { take, tap } from 'rxjs/operators';
+import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
+import { LoginService, ResponseView } from 'dotcms-js';
+import { DotRouterService } from '@services/dot-router/dot-router.service';
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
     selector: 'dot-forgot-password-component',
-    templateUrl: 'forgot-password.component.html'
+    templateUrl: 'forgot-password.component.html',
+    styleUrls: ['./forgot-password.component.scss']
 })
 export class ForgotPasswordComponent implements OnInit {
-    @Input()
-    message: string;
-    @Output()
-    cancel = new EventEmitter<any>();
-    @Output()
-    recoverPassword = new EventEmitter<string>();
+    message = '';
 
-    forgotPasswordLogin: string;
-    cancelButton = '';
-    forgotPasswordButton = '';
-    forgotPasswordLabel = '';
-    userIdOrEmailLabel = '';
-    emailMandatoryFieldError = '';
+    forgotPasswordForm: FormGroup;
+    loginInfo$: Observable<DotLoginInformation>;
 
     private forgotPasswordConfirmationMessage = '';
-    private language = '';
-    private i18nMessages: Array<string> = [
-        'error.form.mandatory',
-        'user-id',
-        'email-address',
-        'forgot-password',
-        'get-new-password',
-        'cancel',
-        'an-email-with-instructions-will-be-sent'
-    ];
 
-    constructor(private loginService: LoginService, private loggerService: LoggerService) {}
+    constructor(
+        private fb: FormBuilder,
+        public loginPageStateService: DotLoginPageStateService,
+        private dotRouterService: DotRouterService,
+        private loginService: LoginService
+    ) {}
 
     ngOnInit(): void {
-        this.loadLabels();
+        this.loginInfo$ = this.loginPageStateService.get().pipe(
+            take(1),
+            tap((loginInfo: DotLoginInformation) => {
+                this.forgotPasswordConfirmationMessage =
+                    loginInfo.i18nMessagesMap['an-email-with-instructions-will-be-sent'];
+            })
+        );
+        this.forgotPasswordForm = this.fb.group({
+            login: ['', [Validators.required]]
+        });
     }
 
     /**
      * Executes the recover password service
+     *
+     * @memberof ForgotPasswordComponent
      */
-    ok(): void {
+    submit(): void {
         if (confirm(this.forgotPasswordConfirmationMessage)) {
-            this.recoverPassword.emit(this.forgotPasswordLogin);
+            this.message = '';
+            this.loginService
+                .recoverPassword(this.forgotPasswordForm.get('login').value)
+                .pipe(take(1))
+                .subscribe(
+                    () => {
+                        this.goToLogin();
+                    },
+                    (resp: ResponseView) => {
+                        if (!resp.existError('a-new-password-has-been-sent-to-x')) {
+                            this.message = resp.errorsMessages;
+                        } else {
+                            this.goToLogin();
+                        }
+                    }
+                );
         }
     }
 
     /**
-     * Update the color and or image according to the values specified
+     * Executes the recover password service
+     *
+     * @memberof ForgotPasswordComponent
      */
-    private loadLabels(): void {
-        this.loginService.getLoginFormInfo(this.language, this.i18nMessages).subscribe(
-            (data) => {
-                // Translate labels and messages
-                const dataI18n = data.i18nMessagesMap;
-                const entity = data.entity;
-
-                if ('emailAddress' === entity.authorizationType) {
-                    this.userIdOrEmailLabel = dataI18n['email-address'];
-                } else {
-                    this.userIdOrEmailLabel = dataI18n['user-id'];
-                }
-
-                this.forgotPasswordLabel = dataI18n['forgot-password'];
-                this.forgotPasswordButton = dataI18n['get-new-password'];
-                this.cancelButton = dataI18n.cancel;
-                this.forgotPasswordConfirmationMessage =
-                    dataI18n['an-email-with-instructions-will-be-sent'];
-                this.emailMandatoryFieldError = dataI18n['error.form.mandatory'].replace(
-                    '{0}',
-                    this.userIdOrEmailLabel
-                );
-            },
-            (error) => {
-                this.loggerService.error(error);
-            }
-        );
+    goToLogin(): void {
+        this.dotRouterService.goToLogin({
+            resetEmailSent: true,
+            resetEmail: this.forgotPasswordForm.get('login').value
+        });
     }
 }

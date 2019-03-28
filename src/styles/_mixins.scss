@@ -6,11 +6,11 @@
 }
 
 @mixin md-icon {
-    -webkit-font-feature-settings: 'liga';
+    -webkit-font-feature-settings: "liga";
     -webkit-font-smoothing: antialiased;
     direction: ltr;
     display: inline-block;
-    font-family: 'Material Icons';
+    font-family: "Material Icons";
     font-size: $md-icon-size-normal;
     font-style: normal;
     font-weight: normal;
@@ -31,7 +31,8 @@
     display: inline-flex;
     height: $icon-button-size;
     justify-content: center;
-    transition: background-color $field-animation-speed ease-in, box-shadow $field-animation-speed ease-in;
+    transition: background-color $field-animation-speed ease-in,
+        box-shadow $field-animation-speed ease-in;
     width: $icon-button-size;
 
     &:focus {
@@ -94,4 +95,9 @@
     margin: 0;
     padding: 0;
     list-style: none;
+}
+
+@mixin login-container {
+    max-width: 360px;
+    width: 80%;
 }

@@ -41,6 +41,7 @@ describe('FieldValidationComponent', () => {
         const fakeInput: any = {};
         fakeInput.dirty = true;
         fakeInput.valid = false;
+        fakeInput.enabled = true;
         component.field = fakeInput;
         component.message = 'Error message';
         fixture.detectChanges();

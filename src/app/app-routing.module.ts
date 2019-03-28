@@ -2,35 +2,16 @@ import { Routes, RouterModule } from '@angular/router';
 import { NgModule } from '@angular/core';
 import { MainCoreLegacyComponent } from '@components/main-core-legacy/main-core-legacy-component';
 import { MainComponentLegacyComponent } from '@components/main-legacy/main-legacy.component';
-import { LoginPageComponent } from '@components/login/login-page-component';
-import { LogOutContainerComponent } from '@components/login/login-component/log-out-container';
+
+import { DotLogOutContainerComponent } from '@components/login/dot-logout-container-component/dot-log-out-container';
 import { IframePortletLegacyComponent } from '@components/_common/iframe/iframe-porlet-legacy/index';
 import { AuthGuardService } from '@services/guards/auth-guard.service';
 import { ContentletGuardService } from '@services/guards/contentlet-guard.service';
 import { DefaultGuardService } from '@services/guards/default-guard.service';
 import { MenuGuardService } from '@services/guards/menu-guard.service';
 import { PublicAuthGuardService } from '@services/guards/public-auth-guard.service';
-
-const AUTH_MODULES: Routes = [
-    {
-        path: 'forgotPassword',
-        loadChildren:
-            '@components/login/forgot-password-component/forgot-password.module#ForgotPasswordModule'
-    },
-    {
-        path: 'login',
-        loadChildren: '@components/login/login-component/login.module#LoginModule'
-    },
-    {
-        path: 'resetPassword/:token',
-        loadChildren:
-            '@components/login/reset-password-component/reset-password.module#ResetPasswordModule'
-    },
-    {
-        path: '',
-        children: []
-    }
-];
+import { DotLoginPageComponent } from '@components/login/main/dot-login-page.component';
+import { DotLoginPageResolver } from '@components/login/dot-login-page-resolver.service';
 
 const PORTLETS_ANGULAR = [
     {
@@ -111,9 +92,12 @@ const PORTLETS_IFRAME = [
 const appRoutes: Routes = [
     {
         canActivate: [PublicAuthGuardService],
-        children: AUTH_MODULES,
-        component: LoginPageComponent,
-        path: 'public'
+        path: 'public',
+        component: DotLoginPageComponent,
+        resolve: {
+            loginFormInfo: DotLoginPageResolver
+        },
+        loadChildren: '@components/login/dot-login-page.module#DotLoginPageModule'
     },
     {
         canActivate: [AuthGuardService],
@@ -128,7 +112,7 @@ const appRoutes: Routes = [
         path: 'fromCore'
     },
     {
-        component: LogOutContainerComponent,
+        component: DotLogOutContainerComponent,
         path: 'logout'
     },
     {

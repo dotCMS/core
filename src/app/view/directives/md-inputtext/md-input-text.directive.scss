@@ -17,7 +17,6 @@
     p-autocomplete {
         width: 100%;
 
-        &.ui-state-filled,
         &.ui-inputwrapper-filled,
         &:focus {
             & ~ label {
@@ -29,8 +28,6 @@
 
         &.ui-state-filled,
         &.ui-inputwrapper-focus,
-        &.ng-dirty.ng-invalid.ng-touched,
-        &.ng-invalid.ng-touched,
         &:focus {
             & ~ label {
                 top: 0;
@@ -38,7 +35,6 @@
             }
         }
 
-        &.ui-state-filled,
         &:focus {
             & ~ label {
                 color: $brand-primary;
