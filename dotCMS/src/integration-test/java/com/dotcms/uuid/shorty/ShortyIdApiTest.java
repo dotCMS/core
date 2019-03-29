@@ -30,7 +30,7 @@ import org.junit.Test;
  * @author 
  * @since Oct 10, 2016
  */
-public class TestShortyIdApi {
+public class ShortyIdApiTest {
 
     static List<String> fourOhFours = new ArrayList<>();
 
