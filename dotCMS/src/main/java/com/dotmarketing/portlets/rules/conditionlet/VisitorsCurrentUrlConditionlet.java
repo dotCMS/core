@@ -20,6 +20,8 @@ import com.dotmarketing.portlets.rules.parameter.comparison.Comparison;
 import com.dotmarketing.portlets.rules.parameter.display.TextInput;
 import com.dotmarketing.portlets.rules.parameter.type.TextType;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import java.io.UnsupportedEncodingException;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
@@ -57,14 +59,19 @@ public class VisitorsCurrentUrlConditionlet extends Conditionlet<VisitorsCurrent
     public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance instance) {
         String requestUri = null;
 
-		try {
-			requestUri = HttpRequestDataUtil.getUri(request);
-			Object rewriteOpt = request.getAttribute(Constants.CMS_FILTER_URI_OVERRIDE);
-			if(rewriteOpt != null)
-				requestUri = (String) rewriteOpt;
-		} catch (UnsupportedEncodingException e) {
-			Logger.error(this, "Could not retrieved a valid URI from request: "
-					+ request.getRequestURL());
+        //Attribute set when it is an URL Map Content
+        if(UtilMethods.isSet(request.getAttribute(WebKeys.WIKI_CONTENTLET_URL))){
+        	requestUri = request.getAttribute(WebKeys.WIKI_CONTENTLET_URL).toString();
+		}else {
+			try {
+				requestUri = HttpRequestDataUtil.getUri(request);
+				Object rewriteOpt = request.getAttribute(Constants.CMS_FILTER_URI_OVERRIDE);
+				if (rewriteOpt != null)
+					requestUri = (String) rewriteOpt;
+			} catch (UnsupportedEncodingException e) {
+				Logger.error(this, "Could not retrieved a valid URI from request: "
+						+ request.getRequestURL());
+			}
 		}
 
 		String index = CMSFilter.CMS_INDEX_PAGE;
