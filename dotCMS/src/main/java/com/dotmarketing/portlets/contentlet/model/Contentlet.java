@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.contentlet.model;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.ImageField;
+import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
@@ -11,6 +12,7 @@ import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.ConversionUtils;
+import com.dotcms.util.RelationshipUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -685,17 +687,30 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * @throws DotRuntimeException
 	 */
 	public void setProperty( String fieldVarName, Object objValue) throws DotRuntimeException {
-		map.put(fieldVarName, objValue);
-		if (!NULL_PROPERTIES.equals(fieldVarName)) { // No need to keep track of the null property it self.
-			if (null == objValue) {
-				addNullProperty(fieldVarName);
-			} else {
-				removeNullProperty(fieldVarName);
-			}
-		}
+	    if (fieldVarName!= null && isRelationshipField(fieldVarName)){
+	        setRelated(fieldVarName, (List<Contentlet>) objValue);
+        } else{
+            map.put(fieldVarName, objValue);
+            if (!NULL_PROPERTIES.equals(fieldVarName)) { // No need to keep track of the null property it self.
+                if (null == objValue) {
+                    addNullProperty(fieldVarName);
+                } else {
+                    removeNullProperty(fieldVarName);
+                }
+            }
+        }
 	}
 
-	/**
+    /**
+     * @param fieldVarName
+     * @return
+     */
+    private boolean isRelationshipField(String fieldVarName) {
+        return this.getContentType().fieldMap().containsKey(fieldVarName) && this.getContentType()
+                .fieldMap().get(fieldVarName) instanceof RelationshipField;
+    }
+
+    /**
 	 * Returns a map of the contentlet properties based on the fields of the structure
 	 * The keys used in the map will be the velocity variables names
 	 */
@@ -1565,4 +1580,90 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
 		return relatedList;
 	}
+
+    /**
+     * Set related content for a content given a relationship field
+     * @param field Relationship {@link com.dotcms.contenttype.model.field.Field}
+     * @param contentlets {@link List} of contentlets to be related
+     */
+    public void setRelated(final com.dotcms.contenttype.model.field.Field field,
+            final List<Contentlet> contentlets) {
+        setRelated(field.variable(), contentlets);
+    }
+
+    /**
+     * Set related content for a content given a relationship field variable
+     * @param fieldVarName Relationship field variable
+     * @param contentlets {@link List} of contentlets to be related
+     */
+    public void setRelated(final String fieldVarName, final List<Contentlet> contentlets) {
+        map.put(fieldVarName, contentlets);
+
+        if (UtilMethods.isSet(this.relatedIds)) {
+            //clean up cache
+            relatedIds.remove(fieldVarName);
+        }
+    }
+
+    /**
+     * Set related content for a content given their IDs and a relationship field
+     * @param field Relationship {@link com.dotcms.contenttype.model.field.Field}
+     * @param ids {@link List} of contentlets identifiers to be related
+     * @param user User to execute search (respect permissions)
+     * @param respectFrontendRoles
+     */
+    public void setRelatedById(final com.dotcms.contenttype.model.field.Field field,
+            final List<String> ids, final User user, final boolean respectFrontendRoles) {
+        setRelatedById(field.variable(), ids, user, respectFrontendRoles);
+    }
+
+    /**
+     * Set related content for a content given their IDs and a relationship field variable
+     * @param fieldVarName Relationship field variable
+     * @param ids {@link List} of contentlets identifiers to be related
+     * @param user User to execute search (respect permissions)
+     * @param respectFrontendRoles
+     */
+    public void setRelatedById(String fieldVarName, List<String> ids, final User user,
+            final boolean respectFrontendRoles) {
+
+        setRelatedByQuery(fieldVarName, ids != null ? String.join(",", ids) : null, null, user,
+                respectFrontendRoles);
+    }
+
+    /**
+     * Set related content for a content given a relationship field filtering by lucene query
+     * @param field Relationship {@link com.dotcms.contenttype.model.field.Field}
+     * @param luceneQuery Query to filter related content
+     * @param sortBy Field to sort by query results
+     * @param user User to execute search (respect permissions)
+     * @param respectFrontendRoles
+     */
+    public void setRelatedByQuery(final com.dotcms.contenttype.model.field.Field field,
+            final String luceneQuery, final String sortBy, final User user,
+            final boolean respectFrontendRoles) {
+
+        setRelatedByQuery(field.variable(), luceneQuery, sortBy, user, respectFrontendRoles);
+    }
+
+    /**
+     * Set related content for a content given a relationship field variable filtering by lucene query
+     * @param fieldVarName Relationship field variable
+     * @param luceneQuery Query to filter related content
+     * @param sortBy Field to sort by query results
+     * @param user User to execute search (respect permissions)
+     * @param respectFrontendRoles
+     */
+    public void setRelatedByQuery(final String fieldVarName, final String luceneQuery,
+            final String sortBy, final User user, final boolean respectFrontendRoles) {
+        try {
+            setRelated(fieldVarName, luceneQuery != null ? RelationshipUtil
+                    .filterContentlet(this.getLanguageId(), luceneQuery, sortBy, user,
+                            respectFrontendRoles, false): null);
+        } catch (DotDataException | DotSecurityException e) {
+            Logger.error(this, "Error setting related content for field " + fieldVarName
+                    + ". Content identifier: " + this.getIdentifier(), e);
+            throw new DotStateException(e);
+        }
+    }
 }
