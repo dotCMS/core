@@ -9,6 +9,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.FieldVariable;
@@ -728,6 +729,30 @@ public class FieldAPITest extends IntegrationTestBase {
                     .contentTypeId(type.id()).values(CARDINALITY).indexed(false)
                     .listed(false).variable("testContentType-videos").build();
 
+            fieldAPI.save(field, user);
+        }finally {
+            contentTypeAPI.delete(type);
+        }
+    }
+
+    @Test(expected = DotDataValidationException.class)
+    public void testSave_UpdateExistingFieldWithDifferentContentType_ShouldThrowException()
+        throws DotSecurityException, DotDataException {
+
+
+        final long time = System.currentTimeMillis();
+        final ContentType type = createAndSaveSimpleContentType("testContentType" + time);
+        try {
+            final Field field = FieldBuilder.builder(BinaryField.class)
+                .name("Photo")
+                .id("07cfbc2c-47de-4c78-a411-176fe8bb24a5")
+                .contentTypeId(type.id())
+                .values(CARDINALITY)
+                .indexed(false)
+                .listed(false)
+                .variable("photo")
+                .fixed(true)
+                .build();
             fieldAPI.save(field, user);
         }finally {
             contentTypeAPI.delete(type);

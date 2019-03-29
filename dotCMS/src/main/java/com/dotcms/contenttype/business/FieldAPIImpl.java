@@ -136,6 +136,11 @@ public class FieldAPIImpl implements FieldAPI {
                     throw new DotDataValidationException("Field variable can not be modified, please use the following: " + oldField.variable());
                 }
 
+                if(!oldField.contentTypeId().equals(field.contentTypeId()) ){
+                  throw new DotDataValidationException("Field content type can not be modified, "
+                      + "please use the following: " + oldField.contentTypeId());
+                }
+
                 if (oldField.sortOrder() != field.sortOrder()){
 	    		    if (oldField.sortOrder() > field.sortOrder()) {
                         fieldFactory.moveSortOrderForward(type.id(), field.sortOrder(), oldField.sortOrder());

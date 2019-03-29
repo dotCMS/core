@@ -41,9 +41,7 @@ import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Field;
-import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
-import com.dotmarketing.portlets.structure.transform.ContentletRelationshipsTransformer;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.util.*;
 import com.liferay.portal.model.User;
@@ -64,6 +62,7 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
@@ -85,7 +84,6 @@ public class ContentResource {
     private static final String REFERER = "referer";
     private static final String REQUEST_METHOD = "requestMethod";
     private static final String ACCEPT_LANGUAGE = "acceptLanguage";
-    private static final MediaType MEDIA_TYPE_GENERIC_TEXT = new MediaType("text","*");
 
     private final WebResource webResource = new WebResource();
     private final ContentHelper contentHelper = ContentHelper.getInstance();
@@ -1130,21 +1128,6 @@ public class ContentResource {
                     responseBuilder.entity(e.getMessage());
                     return responseBuilder.build();
                 }
-            } else if (part.getMediaType().equals(MEDIA_TYPE_GENERIC_TEXT)) {
-                try {
-
-                    this.processFile(contentlet, usedBinaryFields, binaryFields, part);
-                } catch (IOException e) {
-
-                    Logger.error(this.getClass(), "Error processing Stream", e);
-
-                    Response.ResponseBuilder responseBuilder = Response
-                            .status(HttpStatus.SC_INTERNAL_SERVER_ERROR);
-                    responseBuilder.entity(e.getMessage());
-                    return responseBuilder.build();
-                } catch (DotSecurityException e) {
-                    throw new ForbiddenException(e);
-                }
             } else if (part.getContentDisposition() != null) {
 
                 try {
@@ -1175,14 +1158,16 @@ public class ContentResource {
         final InputStream input = part.getEntityAs(InputStream.class);
         final String filename = part.getContentDisposition().getFileName();
         final File tmpFolder = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + UUIDUtil.uuid());
-        tmpFolder.mkdirs();
-        final File tmp = new File(
-                tmpFolder.getAbsolutePath() + File.separator + filename);
-        if (tmp.exists()) {
-            tmp.delete();
+
+        if(!tmpFolder.mkdirs()) {
+            throw new IOException("Unable to create temp folder to save binaries");
         }
 
-        FileUtils.copyInputStreamToFile(input, tmp);
+        final File tempFile = new File(
+                tmpFolder.getAbsolutePath() + File.separator + filename);
+        Files.deleteIfExists(tempFile.toPath());
+
+        FileUtils.copyInputStreamToFile(input, tempFile);
         final List<Field> fields = new LegacyFieldTransformer(
                 APILocator.getContentTypeAPI(APILocator.systemUser()).
                         find(contentlet.getContentType().inode()).fields())
@@ -1197,7 +1182,7 @@ public class ContentResource {
                 if (binaryFields.size() > 0) {
                     fieldVarName = binaryFields.remove(0);
                 }
-                contentlet.setBinary(fieldVarName, tmp);
+                contentlet.setBinary(fieldVarName, tempFile);
                 usedBinaryFields.add(fieldName);
                 break;
             }
@@ -1284,64 +1269,24 @@ public class ContentResource {
         try {
 
             // preparing categories
-            List<Category> cats = new ArrayList<>();
-            List<Field> fields = new LegacyFieldTransformer(
-                    APILocator.getContentTypeAPI(APILocator.systemUser()).
-                            find(contentlet.getContentType().inode()).fields()).asOldFieldList();
-            for (Field field : fields) {
-                if (field.getFieldType().equals(FieldType.CATEGORY.toString())) {
-                    String catValue = contentlet.getStringProperty(field.getVelocityVarName());
-                    if (UtilMethods.isSet(catValue)) {
-                        for (String cat : catValue.split("\\s*,\\s*")) {
-                            // take it as catId
-                            Category category = APILocator.getCategoryAPI()
-                                    .find(cat, init.getUser(), ALLOW_FRONT_END_SAVING);
-                            if (category != null && InodeUtils.isSet(category.getCategoryId())) {
-                                cats.add(category);
-                            } else {
-                                // try it as catKey
-                                category = APILocator.getCategoryAPI()
-                                        .findByKey(cat, init.getUser(), ALLOW_FRONT_END_SAVING);
-                                if (category != null && InodeUtils
-                                        .isSet(category.getCategoryId())) {
-                                    cats.add(category);
-                                } else {
-                                    // try it as variable
-                                    // FIXME: https://github.com/dotCMS/dotCMS/issues/2847
-                                    HibernateUtil hu = new HibernateUtil(Category.class);
-                                    hu.setQuery("from " + Category.class.getCanonicalName()
-                                            + " WHERE category_velocity_var_name=?");
-                                    hu.setParam(cat);
-                                    category = (Category) hu.load();
-                                    if (category != null && InodeUtils
-                                            .isSet(category.getCategoryId())) {
-                                        cats.add(category);
-                                    }
-                                }
-                            }
-
-                        }
-                    }
-                }
-            }
-
+            List<Category> categories = MapToContentletPopulator.INSTANCE.getCategories
+                    (contentlet, init.getUser(), ALLOW_FRONT_END_SAVING);
             // running a workflow action?
             final ContentWorkflowResult contentWorkflowResult = processWorkflowAction(contentlet, init, live);
-
-            live = contentWorkflowResult.publish;
-            Map<Relationship, List<Contentlet>> relationships = (Map<Relationship, List<Contentlet>>) contentlet
+            final Map<Relationship, List<Contentlet>> relationships = (Map<Relationship, List<Contentlet>>) contentlet
                     .get(RELATIONSHIP_KEY);
+            live = contentWorkflowResult.publish;
 
             HibernateUtil.startTransaction();
 
-            cats = UtilMethods.isSet(cats)?cats:null;
+            categories = UtilMethods.isSet(categories)?categories:null;
 
             // if one of the actions does not have save, so call the checkin
             if (!contentWorkflowResult.save) {
 
                 contentlet.setIndexPolicy(IndexPolicyProvider.getInstance().forSingleContent());
                 contentlet = APILocator.getContentletAPI()
-                        .checkin(contentlet, relationships, cats, init.getUser(), ALLOW_FRONT_END_SAVING);
+                        .checkin(contentlet, relationships, categories, init.getUser(), ALLOW_FRONT_END_SAVING);
                 if (live) {
                     APILocator.getContentletAPI()
                             .publish(contentlet, init.getUser(), ALLOW_FRONT_END_SAVING);
@@ -1351,8 +1296,8 @@ public class ContentResource {
                 contentlet = APILocator.getWorkflowAPI().fireContentWorkflow(contentlet,
                         new ContentletDependencies.Builder()
                         .respectAnonymousPermissions(ALLOW_FRONT_END_SAVING)
-                        .modUser(init.getUser()).categories(cats)
-                        .relationships(this.getContentletRelationshipsFromMap(contentlet, relationships))
+                        .modUser(init.getUser()).categories(categories)
+                        .relationships(MapToContentletPopulator.INSTANCE.getContentletRelationshipsFromMap(contentlet, relationships))
                         .indexPolicy(IndexPolicyProvider.getInstance().forSingleContent())
                         .build());
             }
@@ -1465,11 +1410,7 @@ public class ContentResource {
         }
     }
 
-    private ContentletRelationships getContentletRelationshipsFromMap(final Contentlet contentlet,
-                                                                      final Map<Relationship, List<Contentlet>> contentRelationships) {
 
-        return new ContentletRelationshipsTransformer(contentlet, contentRelationships).findFirst();
-    }
 
     private ContentWorkflowResult processWorkflowAction(final Contentlet contentlet,
                                           final InitDataObject init,

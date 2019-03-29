@@ -16,7 +16,7 @@ public class VTLResourceTestCase {
     private final String expectedOutput;
     private final int expectedException;
     private final String userId;
-    private final Map<String, String> bodyMap;
+    private final Map<String, Object> bodyMap;
     private final ResourceMethod resourceMethod;
     private final String bodyMapString;
 
@@ -56,7 +56,7 @@ public class VTLResourceTestCase {
         return resourceMethod;
     }
 
-    public Map<String, String> getBodyMap() {
+    public Map<String, Object> getBodyMap() {
         return bodyMap;
     }
 
@@ -66,7 +66,7 @@ public class VTLResourceTestCase {
 
     private VTLResourceTestCase(final File vtlFile, final String folderName, final MultivaluedMap<String, String> queryParameters,
                                 final String pathParameter, final String expectedJSON, final String expectedOutput,
-                                final int expectedException, final String user, final Map<String, String> bodyMap,
+                                final int expectedException, final String user, final Map<String, Object> bodyMap,
                                 final ResourceMethod resourceMethod, final String bodyMapString) {
         this.vtlFile = vtlFile;
         this.folderName = folderName;
@@ -90,7 +90,7 @@ public class VTLResourceTestCase {
         private String expectedOutput;
         private int expectedException;
         private String user = "system";
-        private Map<String, String> bodyMap = null;
+        private Map<String, Object> bodyMap = null;
         private ResourceMethod resourceMethod = ResourceMethod.GET;
         private String bodyMapString;
 
@@ -134,7 +134,7 @@ public class VTLResourceTestCase {
             return this;
         }
 
-        Builder setBodyMap(final Map<String, String> bodyMap) {
+        Builder setBodyMap(final Map<String, Object> bodyMap) {
             this.bodyMap = bodyMap;
             return this;
         }

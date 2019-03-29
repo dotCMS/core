@@ -170,6 +170,7 @@ import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.BeanUtils;
 
 /**
@@ -1214,37 +1215,78 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return permissionAPI.filterCollection(contentlets, PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
     }
 
+    /**
+     * Get all relationships in a contentlet given its inode
+     * @param contentletInode
+     * @param user
+     * @param respectFrontendRoles
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     @Override
-    public ContentletRelationships getAllRelationships(String contentletInode, User user, boolean respectFrontendRoles)throws DotDataException, DotSecurityException {
+    public ContentletRelationships getAllRelationships(String contentletInode, User user,
+            boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
         return getAllRelationships(find(contentletInode, user, respectFrontendRoles));
     }
 
+    /**
+     * Get all relationships in a contentlet
+     * @param contentlet
+     * @return
+     * @throws DotDataException
+     */
     @CloseDBIfOpened
     @Override
-    public ContentletRelationships getAllRelationships(Contentlet contentlet)throws DotDataException {
+    public ContentletRelationships getAllRelationships(final Contentlet contentlet)
+            throws DotDataException {
+        return getAllRelationships(contentlet, null);
+    }
 
-        final ContentletRelationships cRelationships = new ContentletRelationships(contentlet);
+    /**
+     * Get all relationships in a contentlet
+     * @param contentlet
+     * @param cRelationships If this param is set, all relationships on this object will be ignored
+     * @return
+     * @throws DotDataException
+     */
+    @CloseDBIfOpened
+    private ContentletRelationships getAllRelationships(final Contentlet contentlet,
+            ContentletRelationships cRelationships) throws DotDataException {
+
+        if (cRelationships == null) {
+            cRelationships = new ContentletRelationships(contentlet);
+        }
+
         final ContentType contentType = contentlet.getContentType();
         final List<Relationship> relationships = FactoryLocator.getRelationshipFactory()
                 .byContentType(contentType);
 
         for (Relationship relationship : relationships) {
 
-            if (FactoryLocator.getRelationshipFactory().sameParentAndChild(relationship)) {
+            final List relatedByRelationship = cRelationships.getRelationshipsRecords().stream()
+                    .filter(record -> record.getRelationship().getInode()
+                            .equals(relationship.getInode())).collect(
+                            Collectors.toList());
 
-                //If it's a same structure kind of relationship we need to pull all related content
-                //on both roles as parent and a child of the relationship
+            if (relatedByRelationship.size() == 0) {
+                if (FactoryLocator.getRelationshipFactory().sameParentAndChild(relationship)) {
 
-                //Pulling as child
-                pullRelated(contentlet, cRelationships, relationship, false);
+                    //If it's a same structure kind of relationship we need to pull all related content
+                    //on both roles as parent and a child of the relationship
 
-                //Pulling as parent
-                pullRelated(contentlet, cRelationships, relationship, true);
+                    //Pulling as child
+                    pullRelated(contentlet, cRelationships, relationship, false);
 
-            } else {
-                pullRelated(contentlet, cRelationships, relationship,
-                        FactoryLocator.getRelationshipFactory().isParent(relationship, contentType));
+                    //Pulling as parent
+                    pullRelated(contentlet, cRelationships, relationship, true);
+
+                } else {
+                    pullRelated(contentlet, cRelationships, relationship,
+                            FactoryLocator.getRelationshipFactory()
+                                    .isParent(relationship, contentType));
+                }
             }
         }
 
@@ -2953,7 +2995,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 contentlet.getMap().get("_validateEmptyFile_") == null;
 
         if(contentRelationships == null) {
-            contentRelationships = getAllRelationships(contentlet);
+
+            //Obtain all relationships
+            contentRelationships = getAllRelationships(contentlet,
+                    getContentletRelationships(contentlet, user));
         }
 
         if(cats == null) {
@@ -3659,6 +3704,54 @@ public class ESContentletAPIImpl implements ContentletAPI {
             bubbleUpException(e);
         }
         return contentlet;
+    }
+
+    /**
+     * Return a ContentletRelationships with all relationships found on the contentlet map
+     * @param contentlet
+     * @param user
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @NotNull
+    private ContentletRelationships getContentletRelationships(final Contentlet contentlet,
+            final User user)
+            throws DotDataException, DotSecurityException {
+        final ContentletRelationships contentRelationships = new ContentletRelationships(
+                contentlet);
+
+        //Get all relationship fields
+        final List<com.dotcms.contenttype.model.field.Field> relationshipFields = contentlet
+                .getContentType().fields().stream()
+                .filter(field -> field instanceof RelationshipField)
+                .collect(Collectors.toList());
+
+        if (contentlet.getMap() != null) {
+            //verify if the contentlet map contains related content for each relationship field
+            //and add it to the ContentletRelationships to be persisted
+            for (final com.dotcms.contenttype.model.field.Field field : relationshipFields) {
+                if (contentlet.getMap().containsKey(field.variable())) {
+                    final Relationship relationship = relationshipAPI
+                            .getRelationshipFromField(field, user);
+                    final boolean hasParent;
+                    if (relationshipAPI.sameParentAndChild(relationship)) {
+                        hasParent = relationship.getParentRelationName() == null || !relationship
+                                .getParentRelationName().equals(field.variable());
+                    } else {
+                        hasParent = relationshipAPI
+                                .isParent(relationship, contentlet.getContentType());
+                    }
+                    final ContentletRelationshipRecords relationshipRecords = contentRelationships.new ContentletRelationshipRecords(
+                            relationship, hasParent);
+                    relationshipRecords.getRecords()
+                            .addAll((List<Contentlet>) contentlet.get(field.variable()));
+
+                    contentRelationships.getRelationshipsRecords().add(relationshipRecords);
+                }
+            }
+        }
+        return contentRelationships;
     }
 
     private void cleanupCacheOnChangedURI(final Contentlet contentlet){

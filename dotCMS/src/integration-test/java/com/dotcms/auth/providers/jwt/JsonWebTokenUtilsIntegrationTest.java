@@ -3,46 +3,30 @@ package com.dotcms.auth.providers.jwt;
 import com.dotcms.auth.providers.jwt.beans.JWToken;
 import com.dotcms.auth.providers.jwt.beans.UserToken;
 import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
-import com.dotcms.auth.providers.jwt.factories.KeyFactoryUtils;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenService;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.liferay.portal.model.User;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-
-import javax.servlet.ServletContext;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
 
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
-@PowerMockIgnore({"javax.management.*", "javax.crypto.*"})
-@PrepareForTest({ClusterFactory.class, JsonWebTokenFactory.class})
-@RunWith(PowerMockRunner.class)
 public class JsonWebTokenUtilsIntegrationTest {
 
     private static final String jwtId = "jwt1";
-    private static final String userId = "dotcms.org.1";
-    private static final String clusterId = "CLUSTER-123";
-    private static final String tempPath = "/tmp";
-    private static final String assetsPath = "/tmp/assets";
+    private static String userId;
+    private static String clusterId;
     private static final SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
     private static Date date;
     private static UserAPI userAPI;
@@ -57,14 +41,14 @@ public class JsonWebTokenUtilsIntegrationTest {
         date = dateFormat.parse("04/10/1981");
 
         //Mocking data
-        PowerMockito.mockStatic(ClusterFactory.class);
-        PowerMockito.when(ClusterFactory.getClusterId()).thenReturn(clusterId);
-        Config.CONTEXT = mock(ServletContext.class);
-        Config.CONTEXT_PATH = tempPath;
-        final FileAssetAPI fileAssetAPI = mock(FileAssetAPI.class);
-        KeyFactoryUtils.getInstance(fileAssetAPI);
-        when(fileAssetAPI.getRealAssetsRootPath()).thenReturn(assetsPath);
+        clusterId = ClusterFactory.getClusterId();
         userAPI = APILocator.getUserAPI();
+
+        //Create User
+        final User newUser = new UserDataGen().nextPersisted();
+        APILocator.getRoleAPI().addRoleToUser(APILocator.getRoleAPI().loadCMSAdminRole(), newUser);
+        assertTrue(userAPI.isCMSAdmin(newUser));
+        userId = newUser.getUserId();
     }
 
     /**

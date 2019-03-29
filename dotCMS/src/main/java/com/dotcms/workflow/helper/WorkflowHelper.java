@@ -4,11 +4,13 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.rest.api.v1.workflow.*;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.util.CollectionsUtils;
+import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.workflow.form.*;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
@@ -17,10 +19,12 @@ import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.exception.*;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.workflows.actionlet.NotifyAssigneeActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
 import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
+import com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
@@ -47,7 +51,9 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.util.*;
 import java.util.concurrent.Future;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.dotcms.rest.api.v1.authentication.ResponseUtil.getFormattedMessage;
 import static com.dotmarketing.db.HibernateUtil.addSyncCommitListener;
@@ -95,10 +101,6 @@ public class WorkflowHelper {
     public BulkActionView findBulkActions(final User user,
                                           final BulkActionForm bulkActionForm) throws DotSecurityException, DotDataException {
 
-        if (!workflowAPI.hasValidLicense()) {
-            throw new InvalidLicenseException("Workflow-Schemes-License-required");
-        }
-
         return (UtilMethods.isSet(bulkActionForm.getContentletIds()))?
                     // 1) case with contentlet ids
                     this.findBulkActionByContentlets(bulkActionForm.getContentletIds(), user):
@@ -124,8 +126,11 @@ public class WorkflowHelper {
 
             final String query = String.format(ES_WFSTEP_AGGREGATES_QUERY, sanitizedQuery);
             //We should only be considering Working content.
-            final SearchResponse response = this.contentletAPI
-                    .esSearchRaw(query.toLowerCase(), false, user, false);
+            final SearchResponse response = LicenseManager.getInstance().isCommunity()?
+                    this.contentletAPI
+                            .esSearch(query.toLowerCase(), false, user, false).getResponse():
+                    this.contentletAPI
+                            .esSearchRaw(query.toLowerCase(), false, user, false);
             //Query must be sent lowercase. It's a must.
 
             Logger.debug(getClass(), () -> "luceneQuery: " + sanitizedQuery);
@@ -286,6 +291,33 @@ public class WorkflowHelper {
     }
 
     /**
+     * Try to find an action by name
+     * @param actionName {@link String}
+     * @param contentlet {@link Contentlet}
+     * @param user       {@link User}
+     * @return String
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @CloseDBIfOpened
+    public String getActionIdByName(final String actionName,
+                                    final Contentlet contentlet,
+                                    final User user) throws DotSecurityException, DotDataException {
+
+        final List<WorkflowAction> availableActionsOnListing =
+                APILocator.getWorkflowAPI().findAvailableActionsListing(contentlet, user);
+
+        final List<WorkflowAction> availableActionsOnEditing =
+                APILocator.getWorkflowAPI().findAvailableActionsEditing(contentlet, user);
+
+        final Optional<WorkflowAction> foundAction =
+                Stream.concat(availableActionsOnListing.stream(), availableActionsOnEditing.stream())
+                        .filter(action -> action.getName().equalsIgnoreCase(actionName)).findFirst();
+
+        return foundAction.isPresent()?foundAction.get().getId():null;
+    }
+
+    /**
      *
      * @param form
      * @param user
@@ -297,18 +329,27 @@ public class WorkflowHelper {
     public BulkActionsResultView fireBulkActions(final FireBulkActionsForm form,
             final User user) throws DotSecurityException, DotDataException {
 
-        if (!workflowAPI.hasValidLicense()) {
-            throw new InvalidLicenseException("Workflow-Schemes-License-required");
-        }
-
         final WorkflowAction action = this.workflowAPI.findAction(form.getWorkflowActionId(), user);
         if(null != action) {
+
+            this.checkActionLicense(action);
+
             if(UtilMethods.isSet(form.getQuery())){
                 return this.workflowAPI.fireBulkActions(action, user, form.getQuery(), form.getPopupParamsBean());
             }
             return this.workflowAPI.fireBulkActions(action, user, form.getContentletIds(), form.getPopupParamsBean());
         } else {
             throw new DoesNotExistException("Workflow-does-not-exists-action");
+        }
+    }
+
+
+    private void checkActionLicense(final WorkflowAction action) {
+
+        // if does not have license and the action is not system workflow action
+        if (!workflowAPI.hasValidLicense() && !action.getSchemeId().equals(SystemWorkflowConstants.SYSTEM_WORKFLOW_ID)) {
+
+            throw new InvalidLicenseException("Workflow-Schemes-License-required");
         }
     }
 
@@ -1683,5 +1724,62 @@ public class WorkflowHelper {
         }
     } // delete.
 
+    /**
+     * Figure out the contentlet by identifier (when not language) depending on the following rules:
+     * If there is a contentlet associated to the current session language tries the id+session lang combination
+     * If there is not a contentlet associated and the default language is diff to the session lang will tries this combination.
+     * Otherwise will try to get the content on some language
+     * @param identifier {@link String} shorty or long identifier
+     * @param mode {@link PageMode} page mode
+     * @param user {@link User} user
+     * @param sessionLanguageSupplier {@link Supplier} supplier to get the session language in case needed
+     * @return Optional contentlet
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @CloseDBIfOpened
+    public Optional<Contentlet> getContentletByIdentifier(final String identifier,
+                                                           final PageMode mode,
+                                                           final User     user,
+                                                           final Supplier<Long> sessionLanguageSupplier) throws DotSecurityException, DotDataException {
 
+        Contentlet contentlet = null;
+        final Optional<ShortyId> shortyIdOptional = APILocator.getShortyAPI().getShorty(identifier);
+        final String longIdentifier = shortyIdOptional.isPresent()? shortyIdOptional.get().longId:identifier;
+        final long sessionLanguage  = sessionLanguageSupplier.get();
+
+        if(sessionLanguage > 0) {
+
+            contentlet = this.getContentletByIdentifier
+                    (longIdentifier, mode.showLive, sessionLanguage, user, mode.respectAnonPerms);
+        }
+
+        if (null == contentlet) {
+
+            final long defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+            if (defaultLanguage != sessionLanguage) {
+
+
+                contentlet = this.getContentletByIdentifier
+                        (longIdentifier, mode.showLive, defaultLanguage, user, mode.respectAnonPerms);
+            }
+        }
+
+        return null == contentlet?
+                Optional.ofNullable(this.contentletAPI.findContentletByIdentifierAnyLanguage(longIdentifier)):
+                Optional.ofNullable(contentlet);
+    }
+
+    public Contentlet getContentletByIdentifier(final String longIdentifier, final boolean showLive,
+                                                final long languageId, final User user, final boolean respectAnonPerms) {
+
+        try {
+            return this.contentletAPI.findContentletByIdentifier
+                    (longIdentifier, showLive, languageId, user, respectAnonPerms);
+        } catch (DotContentletStateException | DotSecurityException | DotDataException e) {
+
+            Logger.error(this, e.getMessage(), e);
+            return null;
+        }
+    }
 } // E:O:F:WorkflowHelper.

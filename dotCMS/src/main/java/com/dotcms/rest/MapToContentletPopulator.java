@@ -9,19 +9,25 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.portlets.structure.transform.ContentletRelationshipsTransformer;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -38,7 +44,7 @@ import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_COM
 public class MapToContentletPopulator  {
 
     public  static final MapToContentletPopulator INSTANCE = new MapToContentletPopulator();
-    private static final String RELATIONSHIP_KEY           = "__##relationships##__";
+    private static final String RELATIONSHIP_KEY           = Contentlet.RELATIONSHIP_KEY;
     private static final String LANGUAGE_ID                = "languageId";
     private static final String IDENTIFIER                 = "identifier";
 
@@ -57,6 +63,11 @@ public class MapToContentletPopulator  {
     }
 
     protected String getStInode (final Map<String, Object> map) {
+
+        return getContentTypeInode(map);
+    }
+
+    public String getContentTypeInode (final Map<String, Object> map) {
 
         String stInode = (String) map.get(Contentlet.STRUCTURE_INODE_KEY);
 
@@ -268,6 +279,60 @@ public class MapToContentletPopulator  {
             }
         }
     } // processSeveralHostsOrFolders.
+
+    @CloseDBIfOpened
+    public List<Category> getCategories (final Contentlet contentlet, final User user,
+                                         final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+
+        final List<Category> categories = new ArrayList<>();
+        final List<Field> fields = new LegacyFieldTransformer(
+                APILocator.getContentTypeAPI(APILocator.systemUser()).
+                        find(contentlet.getContentType().inode()).fields()).asOldFieldList();
+
+        for (final Field field : fields) {
+            if (field.getFieldType().equals(FieldType.CATEGORY.toString())) {
+
+                final String catValue = contentlet.getStringProperty(field.getVelocityVarName());
+                if (UtilMethods.isSet(catValue)) {
+                    for (final String categoryValue : catValue.split("\\s*,\\s*")) {
+                        // take it as catId
+                        Category category = APILocator.getCategoryAPI()
+                                .find(categoryValue, user, respectFrontendRoles);
+                        if (category != null && InodeUtils.isSet(category.getCategoryId())) {
+                            categories.add(category);
+                        } else {
+                            // try it as catKey
+                            category = APILocator.getCategoryAPI()
+                                    .findByKey(categoryValue, user, respectFrontendRoles);
+                            if (category != null && InodeUtils.isSet(category.getCategoryId())) {
+                                categories.add(category);
+                            } else {
+                                // try it as variable
+                                // FIXME: https://github.com/dotCMS/dotCMS/issues/2847
+                                final HibernateUtil hu = new HibernateUtil(Category.class);
+                                hu.setQuery("from " + Category.class.getCanonicalName()
+                                        + " WHERE category_velocity_var_name=?");
+                                hu.setParam(categoryValue);
+                                category = (Category) hu.load();
+                                if (category != null && InodeUtils.isSet(category.getCategoryId())) {
+                                    categories.add(category);
+                                }
+                            }
+                        }
+
+                    }
+                }
+            }
+        }
+
+        return categories;
+    }
+
+    public ContentletRelationships getContentletRelationshipsFromMap(final Contentlet contentlet,
+                                                                      final Map<Relationship, List<Contentlet>> contentRelationships) {
+
+        return new ContentletRelationshipsTransformer(contentlet, contentRelationships).findFirst();
+    }
 
     private Map<Relationship, List<Contentlet>> getRelationshipListMap(final Map<String, Object> map,
                                                                        final Contentlet contentlet) throws DotDataException {
