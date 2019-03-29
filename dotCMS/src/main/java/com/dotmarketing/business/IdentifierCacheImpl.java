@@ -8,6 +8,7 @@ package com.dotmarketing.business;
 
 import java.util.List;
 
+import com.dotcms.uuid.shorty.ShortyIdCache;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.VersionInfo;
@@ -179,6 +180,8 @@ public class IdentifierCacheImpl extends IdentifierCache {
 		        Logger.warn(this, ex.getMessage(),ex);
 		    }
 		}
+		
+		new ShortyIdCache().remove(id.getId());
 	}
 	
 	public void removeFromCacheByIdentifier(String ident) {
