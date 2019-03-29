@@ -61,10 +61,11 @@ public class PageViewSerializer extends JsonSerializer<PageView> {
 
                 final String path = FileAssetContainer.class.cast(containerRaw.getContainer()).getPath();
                 containerRawMap.put(path, containerRaw);
-            }
+            } else {
 
-            final String identifier = containerRaw.getContainer().getIdentifier();
-            containerRawMap.put(identifier, containerRaw);
+                final String identifier = containerRaw.getContainer().getIdentifier();
+                containerRawMap.put(identifier, containerRaw);
+            }
         });
 
         return containerRawMap;
