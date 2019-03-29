@@ -24,13 +24,13 @@ export class ResetPasswordComponent implements OnInit {
     constructor(
         private fb: FormBuilder,
         private loginService: LoginService,
-        public loginPageStateService: DotLoginPageStateService,
+        public dotLoginPageStateService: DotLoginPageStateService,
         private dotRouterService: DotRouterService,
         private route: ActivatedRoute
     ) {}
 
     ngOnInit(): void {
-        this.loginInfo$ = this.loginPageStateService.get().pipe(
+        this.loginInfo$ = this.dotLoginPageStateService.get().pipe(
             take(1),
             tap((loginInfo: DotLoginInformation) => {
                 this.passwordDontMatchMessage =

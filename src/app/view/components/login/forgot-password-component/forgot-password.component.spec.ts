@@ -4,7 +4,7 @@ import { DebugElement } from '@angular/core';
 import { DOTTestBed } from '@tests/dot-test-bed';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { LoginService } from 'dotcms-js';
-import { LoginServiceMock, mockLoginFormResponse } from '@tests/login-service.mock';
+import { LoginServiceMock } from '@tests/login-service.mock';
 import { By } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
@@ -14,12 +14,13 @@ import { of } from 'rxjs';
 import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
 import { RouterTestingModule } from '@angular/router/testing';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
+import { MdInputTextModule } from '@directives/md-inputtext/md-input-text.module';
+import { MockDotLoginPageStateService } from '@components/login/dot-login-page-resolver.service.spec';
 
 describe('ForgotPasswordComponent', () => {
     let component: ForgotPasswordComponent;
     let fixture: ComponentFixture<ForgotPasswordComponent>;
     let de: DebugElement;
-    let loginPageStateService: DotLoginPageStateService;
     let dotRouterService: DotRouterService;
     let loginService: LoginService;
 
@@ -30,25 +31,24 @@ describe('ForgotPasswordComponent', () => {
                 BrowserAnimationsModule,
                 FormsModule,
                 ButtonModule,
+                MdInputTextModule,
                 InputTextModule,
                 DotFieldValidationMessageModule,
                 RouterTestingModule
             ],
             providers: [
                 { provide: LoginService, useClass: LoginServiceMock },
-                DotLoginPageStateService
+                { provide: DotLoginPageStateService, useClass: MockDotLoginPageStateService }
             ]
         });
 
         fixture = DOTTestBed.createComponent(ForgotPasswordComponent);
         component = fixture.componentInstance;
         de = fixture.debugElement;
-        loginPageStateService = de.injector.get(DotLoginPageStateService);
         loginService = de.injector.get(LoginService);
         dotRouterService = de.injector.get(DotRouterService);
         spyOn(loginService, 'recoverPassword').and.returnValue(of({}));
         spyOn(dotRouterService, 'goToLogin');
-        spyOn(loginPageStateService, 'get').and.returnValue(of(mockLoginFormResponse));
 
         fixture.detectChanges();
         this.requestPasswordButton = de.query(By.css('button[type="submit"]'));
@@ -56,10 +56,12 @@ describe('ForgotPasswordComponent', () => {
 
     it('should load form labels correctly', () => {
         const header: DebugElement = de.query(By.css('h3'));
+        const inputLabel: DebugElement = de.query(By.css('span[dotmdinputtext] label'));
         const cancelButton: DebugElement = de.query(By.css('button'));
         const submitButton: DebugElement = de.query(By.css('button[type="submit"]'));
 
         expect(header.nativeElement.innerHTML).toEqual('Forgot Password');
+        expect(inputLabel.nativeElement.innerHTML).toEqual('Email Address');
         expect(cancelButton.nativeElement.innerHTML).toContain('Cancel');
         expect(submitButton.nativeElement.innerHTML).toContain('Recover Password');
     });
@@ -87,8 +89,8 @@ describe('ForgotPasswordComponent', () => {
         component.forgotPasswordForm.get('login').markAsDirty();
         fixture.detectChanges();
 
-        const errorrMessages = de.queryAll(By.css('.ui-messages-error'));
-        expect(errorrMessages.length).toBe(1);
+        const errorMessages = de.queryAll(By.css('.ui-messages-error'));
+        expect(errorMessages.length).toBe(1);
     });
 
     it('should show messages', () => {

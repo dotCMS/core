@@ -2,10 +2,22 @@ import { DotLoginPageResolver } from '@components/login/dot-login-page-resolver.
 import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
 import { DOTTestBed } from '@tests/dot-test-bed';
 import { Injectable } from '@angular/core';
+import { mockLoginFormResponse } from '@tests/login-service.mock';
+import { of } from 'rxjs';
 
 @Injectable()
-class MockDotLoginPageStateService {
-    set = jasmine.createSpy('set');
+export class MockDotLoginPageStateService {
+    mockLoginInfo = of({
+        ...mockLoginFormResponse,
+        i18nMessagesMap: {
+            ...mockLoginFormResponse.i18nMessagesMap,
+            emailAddressLabel: 'Email Address'
+        }
+    });
+
+    set = jasmine.createSpy('set').and.returnValue(this.mockLoginInfo);
+    get = jasmine.createSpy('get').and.returnValue(this.mockLoginInfo);
+    update = jasmine.createSpy('update');
 }
 
 describe('DotLoginPageResolver', () => {

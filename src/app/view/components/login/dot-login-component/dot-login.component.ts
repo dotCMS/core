@@ -3,7 +3,7 @@ import { HttpCode, LoggerService, LoginService, User } from 'dotcms-js';
 import { DotLoginInformation, DotLoginLanguage } from '@models/dot-login';
 import { SelectItem } from 'primeng/api';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { map, take, takeUntil, tap } from 'rxjs/operators';
+import { take, takeUntil, tap } from 'rxjs/operators';
 import { Observable, Subject } from 'rxjs';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
@@ -47,15 +47,6 @@ export class DotLoginComponent implements OnInit, OnDestroy {
 
         this.loginInfo$ = this.loginPageStateService.get().pipe(
             takeUntil(this.destroy$),
-            map((loginInfo: DotLoginInformation) => {
-                return {
-                    ...loginInfo,
-                    i18nMessagesMap: {
-                        ...loginInfo.i18nMessagesMap,
-                        emailAddressLabel: this.getUserNameLabel(loginInfo)
-                    }
-                };
-            }),
             tap((loginInfo: DotLoginInformation) => {
                 this.setInitialFormValues(loginInfo);
             })
@@ -160,12 +151,6 @@ export class DotLoginComponent implements OnInit, OnDestroy {
         } else {
             this.loginForm.enable();
         }
-    }
-
-    private getUserNameLabel(loginInfo: DotLoginInformation): string {
-        return loginInfo.entity.authorizationType === 'emailAddress'
-            ? loginInfo.i18nMessagesMap['email-address']
-            : loginInfo.i18nMessagesMap['user-id'];
     }
 
     private isBadRequestOrUnathorized(status: number) {

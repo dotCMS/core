@@ -38,6 +38,11 @@
     }
 }
 
+.form__group--validation {
+    min-height: 79px;
+    margin: 6px 0 0;
+}
+
 .form__group-hint {
     color: $gray;
     display: block;

@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { DotLoginInformation } from '@models/dot-login';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { LoginService } from 'dotcms-js';
-import { pluck, take, tap } from 'rxjs/operators';
+import { map, pluck, take, tap } from 'rxjs/operators';
 
 export const LOGIN_LABELS = [
     'email-address',
@@ -44,6 +44,15 @@ export class DotLoginPageStateService {
         return this.loginService.getLoginFormInfo(lang, LOGIN_LABELS).pipe(
             take(1),
             pluck('bodyJsonObject'),
+            map((loginInfo: DotLoginInformation) => {
+                return {
+                    ...loginInfo,
+                    i18nMessagesMap: {
+                        ...loginInfo.i18nMessagesMap,
+                        emailAddressLabel: this.getUserNameLabel(loginInfo)
+                    }
+                };
+            }),
             tap((loginInfo: DotLoginInformation) => {
                 this.dotLoginInformation$.next(loginInfo);
             })
@@ -51,11 +60,14 @@ export class DotLoginPageStateService {
     }
 
     update(lang: string): void {
-        this.loginService
-            .getLoginFormInfo(lang, LOGIN_LABELS)
-            .pipe(take(1), pluck('bodyJsonObject'))
-            .subscribe((loginInfo: DotLoginInformation) => {
-                this.dotLoginInformation$.next(loginInfo);
-            });
+        this.set(lang)
+            .pipe(take(1))
+            .subscribe();
+    }
+
+    private getUserNameLabel(loginInfo: DotLoginInformation): string {
+        return loginInfo.entity.authorizationType === 'emailAddress'
+            ? loginInfo.i18nMessagesMap['email-address']
+            : loginInfo.i18nMessagesMap['user-id'];
     }
 }

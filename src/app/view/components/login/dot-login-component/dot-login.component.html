@@ -14,8 +14,8 @@
 
         <h3 class="login__title" >{{ loginInfo.i18nMessagesMap['welcome-back'] }}</h3>
 
-        <div class="error-message" [innerHTML]="message" *ngIf="message"></div>
-        <div class="form__group">
+        <div class="error-message" [innerHTML]="message"></div>
+        <div class="form__group form__group--validation">
         <span dotMdInputtext label="{{ loginInfo.i18nMessagesMap['emailAddressLabel'] }}">
             <input pInputText type="text" dotAutofocus
                    formControlName="login"
@@ -26,7 +26,7 @@
             </dot-field-validation-message>
         </span>
         </div>
-        <div class="form__group">
+        <div class="form__group form__group--validation">
         <span dotMdInputtext label="{{ loginInfo.i18nMessagesMap['password'] }}">
             <input pInputText type="password"
                    formControlName="password"
@@ -37,7 +37,7 @@
             </dot-field-validation-message>
         </span>
         </div>
-        <div class="form__group login__password-settings">
+        <div class="login__password-settings">
             <p-checkbox  formControlName="rememberMe" binary="true" [label]="loginInfo.i18nMessagesMap['remember-me']"></p-checkbox>
             <a actionLink *ngIf="!isLoginInProgress" (click)="goToForgotPassword()" >{{ loginInfo.i18nMessagesMap['get-new-password'] }}</a>
         </div>

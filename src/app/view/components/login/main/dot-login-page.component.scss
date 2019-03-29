@@ -5,6 +5,15 @@
     width: 100%;
     display: flex;
     justify-content: center;
+
+    ::ng-deep {
+        .error-message {
+            min-height: $line-height;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+    }
 }
 
 .login {

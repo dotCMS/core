@@ -65,7 +65,7 @@ body {
     font-family: $body-text;
     font-size: $body-font-size-base;
     height: 100%;
-    line-height: 1.5em;
+    line-height: $line-height;
     margin: 0;
     padding: 0;
 }
@@ -87,7 +87,7 @@ code {
 }
 
 p {
-    line-height: 1.5em;
+    line-height: $line-height;
 }
 
 a {

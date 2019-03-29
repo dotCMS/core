@@ -4,7 +4,7 @@ import { DebugElement } from '@angular/core';
 import { DOTTestBed } from '@tests/dot-test-bed';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { LoginService } from 'dotcms-js';
-import { LoginServiceMock, mockLoginFormResponse } from '@tests/login-service.mock';
+import { LoginServiceMock } from '@tests/login-service.mock';
 import { By } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
@@ -18,11 +18,11 @@ import {
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { MdInputTextModule } from '@directives/md-inputtext/md-input-text.module';
 import { DotLoadingIndicatorModule } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.module';
-import { of } from 'rxjs';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { RouterTestingModule } from '@angular/router/testing';
 import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
 import { DotLoadingIndicatorService } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.service';
+import { MockDotLoginPageStateService } from '@components/login/dot-login-page-resolver.service.spec';
 
 describe('DotLoginComponent', () => {
     let component: DotLoginComponent;
@@ -56,7 +56,7 @@ describe('DotLoginComponent', () => {
             ],
             providers: [
                 { provide: LoginService, useClass: LoginServiceMock },
-                DotLoginPageStateService,
+                { provide: DotLoginPageStateService, useClass: MockDotLoginPageStateService },
                 DotLoadingIndicatorService
             ]
         });
@@ -68,8 +68,6 @@ describe('DotLoginComponent', () => {
         loginService = de.injector.get(LoginService);
         dotRouterService = de.injector.get(DotRouterService);
         loginPageStateService = de.injector.get(DotLoginPageStateService);
-        spyOn(loginPageStateService, 'get').and.returnValue(of(mockLoginFormResponse));
-        spyOn(loginPageStateService, 'update');
         fixture.detectChanges();
         signInButton = de.query(By.css('button[pButton]'));
     });
