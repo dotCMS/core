@@ -87,9 +87,10 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
   @Override
   public String shortify(final String shortStr) {
     try {
-      return shortStr.replaceAll("-", "").substring(0, MINIMUM_SHORTY_ID_LENGTH);
+      return shortStr.trim().replaceAll("-", "").substring(0, MINIMUM_SHORTY_ID_LENGTH);
     } catch (Exception se) {
-      return null;
+        throw new ShortyException("shorty " + shortStr + " is not a short id.  Short Ids should be "
+                + MINIMUM_SHORTY_ID_LENGTH + " alphanumeric chars in length");
     }
   }
 
