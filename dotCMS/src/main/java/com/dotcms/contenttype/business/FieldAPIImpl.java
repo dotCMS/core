@@ -132,7 +132,7 @@ public class FieldAPIImpl implements FieldAPI {
 	    	try {
 	    		oldField = fieldFactory.byId(field.id());
 
-                if(!oldField.variable().equals(field.variable()) ){
+                if(!oldField.variable().equals(field.variable())){
                     throw new DotDataValidationException("Field variable can not be modified, please use the following: " + oldField.variable());
                 }
 
