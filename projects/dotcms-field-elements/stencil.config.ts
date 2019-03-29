@@ -2,7 +2,7 @@ import { Config } from '@stencil/core';
 import { sass } from '@stencil/sass';
 
 export const config: Config = {
-  namespace: 'mycomponent',
+  namespace: 'dotcmsFields',
   outputTargets: [
     { type: 'dist' },
     { type: 'docs' },

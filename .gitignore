@@ -41,6 +41,6 @@ Thumbs.db
 
 #STENCIL.JS
 .stencil/
-projects/dot-custom-elements/dist/
-projects/dot-custom-elements/www/
-projects/dot-custom-elements/src/components.d.ts
+projects/dotcms-field-elements/dist/
+projects/dotcms-field-elements/www/
+projects/dotcms-field-elements/src/components.d.ts
