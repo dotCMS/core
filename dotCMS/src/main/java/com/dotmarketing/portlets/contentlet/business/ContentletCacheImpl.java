@@ -6,6 +6,7 @@ import com.dotcms.contenttype.model.type.PageContentType;
 import com.dotcms.rendering.velocity.services.PageLoader;
 import com.dotcms.rendering.velocity.services.SiteLoader;
 import com.dotcms.services.VanityUrlServices;
+import com.dotcms.uuid.shorty.ShortyIdCache;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -185,6 +186,7 @@ public class ContentletCacheImpl extends ContentletCache {
 			CacheLocator.getHostCache().remove(h);
 		}
 		CacheLocator.getHTMLPageCache().remove(key);
+		new ShortyIdCache().remove(key);
 	}
 	public String[] getGroups() {
 		return groupNames;

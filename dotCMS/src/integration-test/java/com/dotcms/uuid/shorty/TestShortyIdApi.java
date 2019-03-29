@@ -1,12 +1,20 @@
 package com.dotcms.uuid.shorty;
 
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList.Builder;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.UUIDGenerator;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -190,7 +198,7 @@ public class TestShortyIdApi {
             try {
                 for (String[] values : expectedIdsFromStarter) {
                     val = values;
-                    key = val[0].substring(0, ShortyIdAPIImpl.MINIMUM_SHORTY_ID_LENGTH);
+                    key = api.shortify(val[0]);
                     shortType = ShortType.fromString(val[1]);
                     shortSubType = ShortType.fromString(val[2]);
                     Optional<ShortyId> opt = APILocator.getShortyAPI().getShorty(key);
@@ -228,7 +236,7 @@ public class TestShortyIdApi {
         // load cache
         for (String[] values : expectedIds) {
             val = values;
-            String key = val[0].substring(0, ShortyIdAPIImpl.MINIMUM_SHORTY_ID_LENGTH);
+            String key = api.shortify(val[0]);
             Optional<ShortyId> opt = api.getShorty(key);
         }
 
@@ -238,7 +246,7 @@ public class TestShortyIdApi {
 
             for (String[] values : expectedIds) {
                 val = values;
-                String key = val[0].substring(0, ShortyIdAPIImpl.MINIMUM_SHORTY_ID_LENGTH);
+                String key = api.shortify(val[0]);
                 Optional<ShortyId> opt = api.getShorty(key);
             }
         }
@@ -252,7 +260,7 @@ public class TestShortyIdApi {
         // load cache
         for (String[] values : expectedIds) {
             val = values;
-            String key = val[0].substring(0, ShortyIdAPIImpl.MINIMUM_SHORTY_ID_LENGTH);
+            String key = api.shortify(val[0]);
             Optional<ShortyId> opt = api.getShorty(key);
         }
 
@@ -324,6 +332,78 @@ public class TestShortyIdApi {
         assert (dbQueries3 == dbQueries2 + fourOhFours.size());
     }
 
+    @Test
+    public void testIdentifier404CacheInvalidation() throws Exception{
+        
+        
+        String uuid = UUIDGenerator.generateUuid();
+        String testUuid = uuid.replace("-","");
+        ShortyIdAPI api = APILocator.getShortyAPI();
+        assert(!api.getShorty(uuid).isPresent());
+        assert(!api.getShorty(testUuid).isPresent());
+        
+        for(int i=testUuid.length();i>ShortyIdAPIImpl.MINIMUM_SHORTY_ID_LENGTH;i--) {
+            String test=testUuid.substring(0, i);
+            assert(!api.getShorty(test).isPresent());
+        }
+        
+        
+        
+
+        ContentType type = new ContentTypeDataGen().nextPersisted();
+        Contentlet con = new ContentletDataGen(type.id()).next();
+        con.setInode(UUIDGenerator.generateUuid());
+        Host host =APILocator.systemHost();
+        Identifier id = APILocator.getIdentifierAPI().createNew(con, host, uuid);
+        
+        
+        assert(api.getShorty(uuid).isPresent());
+        assert(api.getShorty(testUuid).isPresent());
+        
+        for(int i=testUuid.length();i>ShortyIdAPIImpl.MINIMUM_SHORTY_ID_LENGTH;i--) {
+            String test=testUuid.substring(0, i);
+            assert(api.getShorty(test).isPresent());
+        }
+        
+    }
+    
+    @Test
+    public void testContentlet404CacheInvalidation() throws Exception{
+        
+        
+        String uuid = UUIDGenerator.generateUuid();
+        String testUuid = uuid.replace("-","");
+        ShortyIdAPI api = APILocator.getShortyAPI();
+        assert(!api.getShorty(uuid).isPresent());
+        assert(!api.getShorty(testUuid).isPresent());
+        
+        for(int i=testUuid.length();i>ShortyIdAPIImpl.MINIMUM_SHORTY_ID_LENGTH;i--) {
+            String test=testUuid.substring(0, i);
+            assert(!api.getShorty(test).isPresent());
+        }
+        
+        
+        
+
+        ContentType type = new ContentTypeDataGen().nextPersisted();
+        Contentlet con = new ContentletDataGen(type.id()).next();
+        con.setInode(uuid);
+        con.setProperty(Contentlet.DONT_VALIDATE_ME, true);
+        con = APILocator.getContentletAPI().checkin(con, APILocator.systemUser(), false);
+
+        assert(con.getInode().equals(uuid));
+        assert(api.getShorty(uuid).isPresent());
+        assert(api.getShorty(testUuid).isPresent());
+        
+        for(int i=testUuid.length();i>ShortyIdAPIImpl.MINIMUM_SHORTY_ID_LENGTH;i--) {
+            String test=testUuid.substring(0, i);
+            assert(api.getShorty(test).isPresent());
+        }
+        
+    }
+    
+    
+    
     @Test
     public void testUuidIfy() {
 
