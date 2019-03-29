@@ -1,5 +1,6 @@
 package com.dotmarketing.business.portal;
 
+import java.util.Collection;
 import java.util.List;
 
 import com.liferay.portal.SystemException;
@@ -14,7 +15,7 @@ public interface PortletAPI {
 	
 	Portlet findPortlet(String id);
 	
-	List<Portlet> findAllPortlets () throws SystemException;
+	Collection<Portlet> findAllPortlets () throws SystemException;
 	
 	boolean canAddPortletToLayout(Portlet portlet);
 

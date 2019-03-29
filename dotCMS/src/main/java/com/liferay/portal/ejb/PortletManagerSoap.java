@@ -23,6 +23,7 @@
 package com.liferay.portal.ejb;
 
 import java.rmi.RemoteException;
+import java.util.Collection;
 
 /**
  * <a href="PortletManagerSoap.java.html"><b><i>View Source</i></b></a>
@@ -32,31 +33,6 @@ import java.rmi.RemoteException;
  *
  */
 public class PortletManagerSoap {
-	public static java.util.Map getEARDisplay(java.lang.String xml)
-		throws RemoteException {
-		try {
-			java.util.Map returnValue = PortletManagerUtil.getEARDisplay(xml);
-
-			return returnValue;
-		}
-		catch (Exception e) {
-			throw new RemoteException(e.getMessage(),e);
-		}
-	}
-
-	public static java.util.Map getWARDisplay(
-		java.lang.String servletContextName, java.lang.String xml)
-		throws RemoteException {
-		try {
-			java.util.Map returnValue = PortletManagerUtil.getWARDisplay(servletContextName,
-					xml);
-
-			return returnValue;
-		}
-		catch (Exception e) {
-			throw new RemoteException(e.getMessage(),e);
-		}
-	}
 
 	public static com.liferay.portal.model.PortletModel getPortletById(
 		java.lang.String companyId, java.lang.String portletId)
@@ -72,19 +48,7 @@ public class PortletManagerSoap {
 		}
 	}
 
-	public static com.liferay.portal.model.PortletModel getPortletById(
-		java.lang.String companyId, java.lang.String groupId,
-		java.lang.String portletId) throws RemoteException {
-		try {
-			com.liferay.portal.model.Portlet returnValue = PortletManagerUtil.getPortletById(companyId,
-					groupId, portletId);
 
-			return returnValue;
-		}
-		catch (Exception e) {
-			throw new RemoteException(e.getMessage(),e);
-		}
-	}
 
 	public static com.liferay.portal.model.PortletModel getPortletByStrutsPath(
 		java.lang.String companyId, java.lang.String strutsPath)
@@ -100,24 +64,12 @@ public class PortletManagerSoap {
 		}
 	}
 
-	public static com.liferay.portal.model.PortletModel getPortletByStrutsPath(
-		java.lang.String companyId, java.lang.String groupId,
-		java.lang.String strutsPath) throws RemoteException {
-		try {
-			com.liferay.portal.model.Portlet returnValue = PortletManagerUtil.getPortletByStrutsPath(companyId,
-					groupId, strutsPath);
 
-			return returnValue;
-		}
-		catch (Exception e) {
-			throw new RemoteException(e.getMessage(),e);
-		}
-	}
 
 	public static com.liferay.portal.model.PortletModel[] getPortlets(
 		java.lang.String companyId) throws RemoteException {
 		try {
-			java.util.List returnValue = PortletManagerUtil.getPortlets(companyId);
+		    Collection returnValue = PortletManagerUtil.getPortlets(companyId);
 
 			return (com.liferay.portal.model.Portlet[])returnValue.toArray(new com.liferay.portal.model.Portlet[0]);
 		}
@@ -126,29 +78,8 @@ public class PortletManagerSoap {
 		}
 	}
 
-	public static void initEAR(java.lang.String[] xmls)
-		throws RemoteException {
-		try {
-			PortletManagerUtil.initEAR(xmls);
-		}
-		catch (Exception e) {
-			throw new RemoteException(e.getMessage(),e);
-		}
-	}
 
-	public static com.liferay.portal.model.PortletModel[] initWAR(
-		java.lang.String servletContextName, java.lang.String[] xmls)
-		throws RemoteException {
-		try {
-			java.util.List returnValue = PortletManagerUtil.initWAR(servletContextName,
-					xmls);
 
-			return (com.liferay.portal.model.Portlet[])returnValue.toArray(new com.liferay.portal.model.Portlet[0]);
-		}
-		catch (Exception e) {
-			throw new RemoteException(e.getMessage(),e);
-		}
-	}
 
 	public static com.liferay.portal.model.PortletModel updatePortlet(
 		java.lang.String portletId, java.lang.String groupId,

@@ -31,14 +31,15 @@ package com.liferay.portal.ejb;
  */
 public class PortletHBMUtil {
 	public static com.liferay.portal.model.Portlet model(PortletHBM portletHBM) {
-		com.liferay.portal.model.Portlet portlet = PortletPool.get(portletHBM.getPrimaryKey());
+	    PortletCache cache= new PortletCache();
+		com.liferay.portal.model.Portlet portlet = cache.get(portletHBM.getPortletId());
 
 		if (portlet == null) {
 			portlet = new com.liferay.portal.model.Portlet(portletHBM.getPortletId(),
 					portletHBM.getGroupId(), portletHBM.getCompanyId(),
 					portletHBM.getDefaultPreferences(), portletHBM.getNarrow(),
 					portletHBM.getRoles(), portletHBM.getActive());
-			PortletPool.put(portlet.getPrimaryKey(), portlet);
+			cache.put(portlet);
 		}
 
 		return portlet;

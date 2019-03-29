@@ -10,6 +10,37 @@ import static com.dotmarketing.osgi.ActivatorUtil.moveVelocityResources;
 import static com.dotmarketing.osgi.ActivatorUtil.unfreeze;
 import static com.dotmarketing.osgi.ActivatorUtil.unregisterAll;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+
+import org.apache.felix.framework.OSGIUtil;
+import org.apache.felix.http.proxy.DispatcherTracker;
+import org.apache.struts.action.ActionForward;
+import org.apache.struts.action.ActionMapping;
+import org.apache.struts.config.ActionConfig;
+import org.apache.struts.config.ForwardConfig;
+import org.apache.struts.config.ModuleConfig;
+import org.apache.velocity.tools.view.PrimitiveToolboxManager;
+import org.apache.velocity.tools.view.ToolInfo;
+import org.apache.velocity.tools.view.servlet.ServletToolboxManager;
+import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleActivator;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceReference;
+import org.quartz.SchedulerException;
+import org.tuckey.web.filters.urlrewrite.NormalRule;
+import org.tuckey.web.filters.urlrewrite.Rule;
+
 import com.dotcms.enterprise.cache.provider.CacheProviderAPI;
 import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotmarketing.business.APILocator;
@@ -30,7 +61,6 @@ import com.dotmarketing.portlets.workflows.business.WorkflowAPIOsgiService;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.quartz.ScheduledTask;
 import com.dotmarketing.util.Logger;
-import org.apache.felix.framework.OSGIUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
@@ -43,38 +73,11 @@ import com.liferay.portal.model.Portlet;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.util.Http;
 import com.liferay.util.SimpleCachePool;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
+
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.agent.ByteBuddyAgent;
 import net.bytebuddy.dynamic.ClassFileLocator;
 import net.bytebuddy.dynamic.loading.ClassReloadingStrategy;
-import org.apache.felix.http.proxy.DispatcherTracker;
-import org.apache.struts.action.ActionForward;
-import org.apache.struts.action.ActionMapping;
-import org.apache.struts.config.ActionConfig;
-import org.apache.struts.config.ForwardConfig;
-import org.apache.struts.config.ModuleConfig;
-import org.apache.velocity.tools.view.PrimitiveToolboxManager;
-import org.apache.velocity.tools.view.ToolInfo;
-import org.apache.velocity.tools.view.servlet.ServletToolboxManager;
-import org.osgi.framework.Bundle;
-import org.osgi.framework.BundleActivator;
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.ServiceReference;
-import org.quartz.SchedulerException;
-import org.tuckey.web.filters.urlrewrite.NormalRule;
-import org.tuckey.web.filters.urlrewrite.Rule;
 
 /**
  * Created by Jonathan Gamba
@@ -384,7 +387,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
                 Http.URLtoString( context.getBundle().getResource( xmls[1] ) )};
 
         //Read the portlets xml files and create them
-        portlets = PortletManagerUtil.initWAR( null, confFiles );
+        portlets = PortletManagerUtil.addPortlets( confFiles );
 
         for ( Portlet portlet : portlets ) {
 
@@ -1026,7 +1029,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
                 }
 
                 //Clean-up the caches
-                portletManager.removePortletFromPool( company.getCompanyId(), id.getPortletId() );
+                portletManager.deletePortlet( id.getPortletId() );
                 //Clean-up the caches
                 Map map = (Map) SimpleCachePool.get( scpId );
                 if ( map != null ) {

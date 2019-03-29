@@ -26,6 +26,7 @@ import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -43,6 +44,7 @@ import javax.servlet.ServletContextListener;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.ejb.PortletManagerUtil;
 import com.liferay.portal.job.Scheduler;
@@ -93,13 +95,9 @@ public class PortletContextListener implements ServletContextListener {
 
 			// Initialize portlets
 
-			String[] xmls = new String[] {
-				Http.URLtoString(ctx.getResource("/WEB-INF/portlet.xml")),
-				Http.URLtoString(ctx.getResource(
-					"/WEB-INF/liferay-portlet.xml"))
-			};
 
-			_portlets = PortletManagerUtil.initWAR(_servletContextName, xmls);
+			_portlets = APILocator.getPortletAPI().findAllPortlets();
+			      
 
 			// Portlet context wrapper
 
@@ -225,24 +223,6 @@ public class PortletContextListener implements ServletContextListener {
 
 			// Portlet display
 
-			String xml = Http.URLtoString(ctx.getResource(
-				"/WEB-INF/liferay-display.xml"));
-
-			Map newCategories = PortletManagerUtil.getWARDisplay(
-				_servletContextName, xml);
-
-			for (int i = 0; i < _companyIds.length; i++) {
-				String companyId = _companyIds[i];
-
-				Map oldCategories = (Map)WebAppPool.get(
-					companyId, WebKeys.PORTLET_DISPLAY);
-
-				Map mergedCategories =
-					PortalUtil.mergeCategories(oldCategories, newCategories);
-
-				WebAppPool.put(
-					companyId, WebKeys.PORTLET_DISPLAY, mergedCategories);
-			}
 
 			// Reinitialize portal properties
 
@@ -306,6 +286,6 @@ public class PortletContextListener implements ServletContextListener {
 
 	private String _servletContextName;
 	private String[] _companyIds;
-	private List _portlets;
+	private Collection<Portlet> _portlets;
 
 }

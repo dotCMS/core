@@ -65,6 +65,7 @@ import com.dotmarketing.tag.business.TagInodeCacheImpl;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys;
+import com.liferay.portal.ejb.PortletCache;
 
 
 /**
@@ -182,7 +183,9 @@ public class CacheLocator extends Locator<CacheIndex>{
 	public static LayoutCache getLayoutCache() {
 		return (LayoutCache)getInstance(CacheIndex.Layout);
 	}
-
+    public static PortletCache getPortletCache() {
+        return (PortletCache)getInstance(CacheIndex.Portlet);
+    }
 	public static IdentifierCache getIdentifierCache() {
 		return (IdentifierCache)getInstance(CacheIndex.Identifier);
 	}
@@ -384,6 +387,7 @@ enum CacheIndex
 	NavTool2("Navigation Tool2"),
 	MultiTreeCache("MultiTree Cache"),
 	ApiTokenCache("ApiTokenCache"),
+	Portlet("PortletCache"),
 	KeyValueCache("Key/Value Cache");
 
 	Cachable create() {
@@ -430,6 +434,7 @@ enum CacheIndex
 	      	case KeyValueCache : return new KeyValueCacheImpl();
 	      	case MultiTreeCache : return new MultiTreeCache();
 	      	case ApiTokenCache : return new ApiTokenCache();
+	      	case Portlet : return new PortletCache();
 	      	
 		}
 		throw new AssertionError("Unknown Cache index: " + this);

@@ -131,10 +131,9 @@ public class EditPortletAction extends PortletAction {
 	private void _editPortlet(ActionRequest req) throws Exception {
 		String portletId = ParamUtil.getString(req, "portlet_id");
 
-		String groupId = ParamUtil.getString(req, "group_id");
 
 		Portlet portlet = PortletManagerUtil.getPortletById(
-			PortalUtil.getCompanyId(req), groupId, portletId);
+			PortalUtil.getCompanyId(req), portletId);
 
 		if (portlet == null) {
 			throw new NoSuchPortletException();
