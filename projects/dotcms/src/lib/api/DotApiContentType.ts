@@ -12,21 +12,20 @@ export class DotApiContentType {
         this.dotCMSHttpClient = httpClient;
     }
 
-    get(contentTypeId): Promise<DotCMSContentType> {
-        return this.dotCMSHttpClient.request({
+    async get(contentTypeId): Promise<DotCMSContentType> {
+        const response = await this.dotCMSHttpClient.request({
             url: `/api/v1/contenttype/id/${contentTypeId}`
-        })
-        .then(async (response: Response) => {
-            if (response.status === 200) {
-                const data = await response.json();
-                return data.entity;
-            }
+        });
 
+        if (response.status !== 200) {
             throw <DotCMSError>{
                 message: await response.text(),
                 status: response.status
             };
-        });
+        }
+
+        const data = await response.json();
+        return data.entity;
     }
 
     getFields(contentTypeId): Promise<DotCMSContentTypeField[]> {
