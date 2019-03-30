@@ -3,19 +3,17 @@ package com.dotcms.integritycheckers;
 import com.dotcms.repackage.com.csvreader.CsvReader;
 import com.dotcms.repackage.com.csvreader.CsvWriter;
 import com.dotcms.rest.IntegrityResource;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.MaintenanceUtil;
 import com.dotmarketing.util.UtilMethods;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+
+import java.io.*;
 import java.math.BigDecimal;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
@@ -401,9 +399,17 @@ public class IntegrityUtil {
         // lets generate the tables with the data to be fixed
         generateDataToFixTable(endpointId, type);
         fixConflicts(endpointId, type);
+
+        this.flushAllCache();
     }
 
-	/**
+    private void flushAllCache() throws DotDataException {
+
+        MaintenanceUtil.flushCache();
+        APILocator.getPermissionAPI().resetAllPermissionReferences();
+    }
+
+    /**
 	 * Takes the information from the .ZIP file and stores it in the results
 	 * table so that the process to fix records begins. Every type of object
 	 * (Content Page, Folder, Content Type, etc.) has its own results table
