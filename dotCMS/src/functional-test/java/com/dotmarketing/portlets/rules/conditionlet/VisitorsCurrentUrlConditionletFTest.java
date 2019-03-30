@@ -249,7 +249,7 @@ public class VisitorsCurrentUrlConditionletFTest {
     public void testContainsComparison() throws IOException {
         final String randomKey = "test-" + random.nextInt();
         final String value = randomKey + "-value";
-        final String pattern = "duct";
+        String pattern = "duct";
         final String call1 = "products/"; // should work
         final String call2 = "products/index";  // should work
         final String call3 = "blogs/index?products=1";  // should fail
@@ -272,6 +272,19 @@ public class VisitorsCurrentUrlConditionletFTest {
 
         conn = apiRequest.makeRequest(call4);
         assertNull("Specified '" + pattern + "' , requested '" + call4 + "', response header should be present in the Response.", conn.getHeaderField(randomKey));
+
+        //Test for urlmap content
+        pattern = "china-syndrome";
+        condition = conditionDataGen.next();
+        condition.setConditionletId(VisitorsCurrentUrlConditionlet.class.getSimpleName());
+        condition.addValue(Conditionlet.COMPARISON_KEY, CONTAINS.getId());
+        condition.addValue(VisitorsCurrentUrlConditionlet.PATTERN_URL_INPUT_KEY, pattern);
+        createRandomSetResponseHeaderRule(condition, randomKey, value);
+
+        final String call5 = "news/the-china-syndrome-it-s-getting-rough-but-us-firms-can-t-quit-china";//should work
+        apiRequest = new ApiRequest(request);
+        conn = apiRequest.makeRequest(call5);
+        assertEquals("Specified '" + pattern + "' , requested '" + call5 + "', response header should be present in the Response.", value, conn.getHeaderField(randomKey));
     }
 
     @Test

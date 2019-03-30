@@ -115,11 +115,10 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
         contentlet.setIndexPolicy(IndexPolicy.FORCE);
         contentlet.setIndexPolicyDependencies(IndexPolicy.FORCE);
         contentlet.setBoolProperty(Contentlet.IS_TEST_MODE, true);
+        contentlet.setContentTypeId(structureId);
         for(Entry<String, Object> element:properties.entrySet()){
             contentlet.setProperty(element.getKey(), element.getValue());
         }
-
-        contentlet.setContentTypeId(structureId);
 
         return contentlet;
     }
