@@ -342,19 +342,19 @@ integrationTest {
 }
 integrationTest.group='dotCMS tests'
 
-task prepareIntegrationTests(dependsOn: ['downloadTestsStarter', 'downloadTestsFelixBundle']) {
+task prepareIntegrationTests(dependsOn: ['dowloadStarterForTests', 'prepareFelixForTests']) {
 }
 prepareIntegrationTests.group='dotCMS tests'
 
-task downloadTestsStarter (type: Copy) {
+task dowloadStarterForTests (type: Copy) {
     from configurations.testsStarter
     into integrationTestResourcesFolder
     rename ( /starter(.+)\.zip/, "starter.zip" )
 }
-downloadTestsStarter.group='dotCMS tests'
-downloadTestsStarter.description='Downloads the test starter zip to the integration tests resources folder'
+dowloadStarterForTests.group='dotCMS tests'
+dowloadStarterForTests.description='Downloads the test starter zip to the integration tests resources folder'
 
-task downloadTestsFelixBundle () {
+task prepareFelixForTests () {
 
     copy {
         from configurations.felix
@@ -378,8 +378,8 @@ task downloadTestsFelixBundle () {
         include '**/org.apache.felix.http.bundle*.jar'
     }
 }
-downloadTestsFelixBundle.group='dotCMS tests'
-downloadTestsFelixBundle.description='Copies the felix bundle jars and the osgi-extra-generated.conf file to the specified felix home location'
+prepareFelixForTests.group='dotCMS tests'
+prepareFelixForTests.description='Copies the felix bundle jars and the osgi-extra-generated.conf file to the specified felix home location'
 
 // Delete ROOT under tomcat8/webapps
 task undeployWarTomcat(type: Delete) {
