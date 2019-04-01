@@ -108,27 +108,16 @@
       <!-- Category Admin -->
 
       <!-- Contentlet Management -->
-      <action path="/ext/contentlet/view_contentlets" type="com.dotmarketing.portlets.contentlet.action.ViewContentletAction">
-         <forward name="portlet.ext.contentlet.view_contentlets" path="portlet.ext.contentlet.view_contentlets" />
-         <forward name="portlet.ext.contentlet.view" path="portlet.ext.contentlet.view" />
-         <forward name="portlet.ext.contentlet.error" path="portlet.ext.contentlet.error" />
-      </action>
       <action path="/ext/contentlet/edit_contentlet" type="com.dotmarketing.portlets.contentlet.action.EditContentletAction" name="ContentletForm"  input="portlet.ext.contentlet.edit_contentlet" scope="request" validate="false">
          <forward name="portlet.ext.contentlet.edit_contentlet" path="portlet.ext.contentlet.edit_contentlet"></forward>
       </action>
 
-      <action path="/ext/contentlet/view_contentlets_popup" type="com.dotmarketing.portlets.contentlet.action.ViewContentletAction">
-         <forward name="portlet.ext.contentlet.view_contentlets" path="portlet.ext.contentlet.view_contentlets_popup" />
-         <forward name="portlet.ext.contentlet.view" path="portlet.ext.contentlet.view_contentlets_popup" />
-      </action>
       <action path="/ext/contentlet/import_contentlets" type="com.dotmarketing.portlets.contentlet.action.ImportContentletsAction" name="ImportContentletsForm" scope="request" validate="false">
          <forward name="portlet.ext.contentlet.import_contentlets" path="portlet.ext.contentlet.import_contentlets" />
          <forward name="portlet.ext.contentlet.import_contentlets_preview" path="portlet.ext.contentlet.import_contentlets_preview" />
          <forward name="portlet.ext.contentlet.import_contentlets_results" path="portlet.ext.contentlet.import_contentlets_results" />
       </action>
-      <action path="/ext/contentlet/order_contentlets" type="com.dotmarketing.portlets.contentlet.action.OrderContentletAction">
-         <forward name="portlet.ext.contentlet.order_contentlets" path="portlet.ext.contentlet.order_contentlets" />
-      </action>
+
       <!-- Contentlet  Management -->
 
 
@@ -231,14 +220,6 @@
       </action>
       <!-- Template  Management -->
 
-
-
-      <!-- Vanity URL Link Management -->      
-      <action path="/ext/virtuallinks/view_virtuallinks" type="com.dotcms.vanityurl.action.ViewVanityURLAction">
-         <forward name="portlet.ext.virtuallinks.view_virtuallinks" path="portlet.ext.virtuallinks.view_virtuallinks" />
-         <forward name="portlet.ext.virtuallinks.view" path="portlet.ext.virtuallinks.view" />
-      </action>
-      <!-- Vanity Link  Management -->
 
 
 

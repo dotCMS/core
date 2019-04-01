@@ -56,18 +56,7 @@ public class PortletManagerUtil {
         }
     }
 
-    public static com.liferay.portal.model.Portlet getPortletByStrutsPath(final java.lang.String companyId,
-            final java.lang.String strutsPath) throws com.liferay.portal.SystemException {
-        try {
-            final PortletManager portletManager = PortletManagerFactory.getManager();
 
-            return portletManager.getPortletByStrutsPath( strutsPath);
-        } catch (final com.liferay.portal.SystemException se) {
-            throw se;
-        } catch (final Exception e) {
-            throw new com.liferay.portal.SystemException(e);
-        }
-    }
 
     @CloseDBIfOpened
     public static java.util.Collection<Portlet> getPortlets(final java.lang.String companyId) throws com.liferay.portal.SystemException {

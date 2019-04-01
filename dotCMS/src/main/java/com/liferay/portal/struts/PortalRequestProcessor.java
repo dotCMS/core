@@ -395,26 +395,7 @@ public class PortalRequestProcessor extends StxxTilesRequestProcessor {
 			}
 		}
 
-		// Authenticated users must have proper roles
 
-		if (isPortletPath(path)) {
-			try {
-				String strutsPath = path.substring(
-					1, path.lastIndexOf(StringPool.SLASH));
-
-				Portlet portlet = PortletManagerUtil.getPortletByStrutsPath(
-					companyId, strutsPath);
-
-				if (portlet != null && portlet.isActive()) {
-					defineObjects(req, res, portlet);
-				}
-			}
-			catch (Exception e) {
-				req.setAttribute(PageContext.EXCEPTION, e);
-
-				path = _PATH_COMMON_ERROR;
-			}
-		}
 
 
 		/**
@@ -601,8 +582,7 @@ public class PortalRequestProcessor extends StxxTilesRequestProcessor {
 				String strutsPath = path.substring(
 					1, path.lastIndexOf(StringPool.SLASH));
 
-				Portlet portlet = PortletManagerUtil.getPortletByStrutsPath(
-					user.getCompanyId(), strutsPath);
+				Portlet portlet = null;
 
 				if (portlet != null && portlet.isActive()) {
 //					if (!RoleLocalManagerUtil.hasRoles(user.getUserId(), portlet.getRolesArray())) {

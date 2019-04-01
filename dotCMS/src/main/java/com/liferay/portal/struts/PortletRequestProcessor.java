@@ -233,8 +233,7 @@ public class PortletRequestProcessor extends StxxTilesRequestProcessor {
 				String strutsPath = path.substring(
 					1, path.lastIndexOf(StringPool.SLASH));
 
-				Portlet portlet = PortletManagerUtil.getPortletByStrutsPath(
-					user.getCompanyId(), strutsPath);
+				Portlet portlet = null;
 
 				if (portlet != null && portlet.isActive()) {
 //					if (!RoleLocalManagerUtil.hasRoles(

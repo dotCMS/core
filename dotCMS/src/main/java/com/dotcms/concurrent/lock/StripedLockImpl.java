@@ -1,8 +1,11 @@
 package com.dotcms.concurrent.lock;
 
+import com.dotcms.cmsmaintenance.ajax.ThreadMonitorTool;
 import com.dotcms.concurrent.DotConcurrentException;
 import com.dotcms.util.ReturnableDelegate;
 import com.dotcms.util.VoidDelegate;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.ThreadUtils;
 import com.google.common.util.concurrent.Striped;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
@@ -71,6 +74,11 @@ public class StripedLockImpl<K> implements DotKeyLockManager<K> {
             final TimeUnit unit) throws Throwable {
         final Lock lock = lockStripes.get(key);
         if (!lock.tryLock(time, unit)) {
+            String[] threads=  new ThreadMonitorTool().getThreads();
+            Logger.warn(this.getClass(), String.format("Unable to acquire Lock on key %s ", key));
+            for(String thread: threads) {
+                System.out.println(thread);
+            }
             throw new DotConcurrentException(
                     String.format("Unable to acquire Lock on key %s ", key)
                     );

@@ -19,21 +19,22 @@
 
 package com.liferay.portal.ejb;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.jdom.Document;
 import org.jdom.Element;
 import org.jdom.JDOMException;
 import org.jdom.input.SAXBuilder;
+import org.jdom.output.Format;
+import org.jdom.output.XMLOutputter;
 
 import com.dotcms.business.WrapInTransaction;
-import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.NoSuchPortletException;
@@ -52,60 +53,57 @@ import com.liferay.util.FileUtil;
  */
 public class PortletManagerImpl extends PrincipalBean implements PortletManager {
 
-  private static final Log _log = LogFactory.getLog(PortletManagerImpl.class);
-
   private static final String _SHARED_KEY = "SHARED_KEY";
 
-  private Map<String, Portlet> _readPortletXMLIntoDb(final String xml) throws  IOException, JDOMException {
+  private Map<String, Portlet> portletsXMLtoPortlets(final String pathToXmlFile) throws IOException, JDOMException {
 
     final Map<String, Portlet> portlets = new HashMap<>();
 
-    if (xml == null) {
+    if (pathToXmlFile == null) {
       return portlets;
     }
 
     SAXBuilder builder = new SAXBuilder();
     // reader.setEntityResolver(resolver);
-    Document doc = (Document) builder.build(xml);
+    Document doc = (Document) builder.build(pathToXmlFile);
 
-
-    final Element root = doc.getRootElement();
-
-    List<Element> list = root.getChildren("portlet");
+    List<Element> list = doc.getRootElement().getChildren("portlet");
 
     for (Element node : list) {
-      final String portletId =  node.getChildText("portlet-name");
-      final Portlet portletModel = new Portlet(new PortletPK(portletId, _SHARED_KEY, _SHARED_KEY));
-      portletModel.setPortletClass(node.getChildText("portlet-class"));
-
-      for (Object n : node.getChildren("init-param")) {
-        final Element initParam = (Element) n;
-        portletModel.getInitParams().put(initParam.getChildText("name"), initParam.getChildText("value"));
-      }
-      portletModel.setResourceBundle(node.getChildText("resource-bundle"));
-
-
-      
-
-      try {
-        PortletUtil.update(portletModel);
-      } catch (SystemException e) {
-        // TODO Auto-generated catch block
-        e.printStackTrace();
-      }
-      portlets.put(portletModel.getPortletId(), portletModel);
-
+      String portletXML = new XMLOutputter(Format.getCompactFormat()).outputString(node);
+      Portlet portlet = portletXMLtoPortlet(portletXML);
+      portlets.put(portlet.getPortletId(), portlet);
     }
 
     return portlets;
   }
 
+  private Portlet portletXMLtoPortlet(String xml) throws IOException, JDOMException {
+    InputStream stream = new ByteArrayInputStream(xml.getBytes("UTF-8"));
+    SAXBuilder builder = new SAXBuilder();
+    Document doc = (Document) builder.build(stream);
+    final Element node = doc.getRootElement();
+    final String portletId = node.getChildText("portlet-name");
+    String portletClass = node.getChildText("portlet-class");
+    final Portlet portlet = new Portlet(portletId, portletClass, _SHARED_KEY, xml, false, null, true);
+    portlet.setPortletClass(portletClass);
+    portlet.setDefaultPreferences(xml);
+    Map<String, String> params = new HashMap<>();
+    for (Object n : node.getChildren("init-param")) {
+      final Element initParam = (Element) n;
+      params.put(initParam.getChildText("name"), initParam.getChildText("value"));
+    }
+    portlet.setInitParams(params);
+    portlet.setResourceBundle(node.getChildText("resource-bundle"));
+    return portlet;
+  }
+
   @Override
-  public Map<String, Portlet> addPortlets(final String[] xmls) throws com.liferay.portal.SystemException {
+  public Map<String, Portlet> addPortlets(final String[] xmlFiles) throws com.liferay.portal.SystemException {
     final Map<String, Portlet> portlets = new HashMap<>();
-    for (final String xml : xmls) {
+    for (final String xml : xmlFiles) {
       try {
-        portlets.putAll(_readPortletXMLIntoDb(xml));
+        portlets.putAll(portletsXMLtoPortlets(xml));
       } catch (final Exception e) {
         throw new SystemException(e);
       }
@@ -123,8 +121,7 @@ public class PortletManagerImpl extends PrincipalBean implements PortletManager 
 
       db.setSQL("delete from portlet where portletid=?").addParam(portletId).loadResult();
 
-      CacheLocator.getPortletCache().clearCache();
-      CacheLocator.getLayoutCache().clearCache();
+
     } catch (final Exception e) {
       throw new SystemException(e);
     }
@@ -136,12 +133,6 @@ public class PortletManagerImpl extends PrincipalBean implements PortletManager 
     return getPortletMap().get(portletId);
   }
 
-  @Override
-  public Portlet getPortletByStrutsPath(final String strutsPath) throws SystemException {
-
-    return getPortletById(strutsPath);
-  }
-
   private synchronized final Map<String, Portlet> loadSystemPortlets() throws SystemException {
     final Map<String, Portlet> portlets = new HashMap<>();
 
@@ -151,7 +142,7 @@ public class PortletManagerImpl extends PrincipalBean implements PortletManager 
           // FileUtil.getRealPath("/WEB-INF/liferay-portlet-ext.xml")
       };
 
-      addPortlets(xmls);
+      portlets.putAll(addPortlets(xmls));
     } catch (final Exception e) {
       Logger.error(this, e.getMessage(), e);
     }
@@ -170,7 +161,7 @@ public class PortletManagerImpl extends PrincipalBean implements PortletManager 
     final PortletCache cache = new PortletCache();
 
     Map<String, Portlet> portletsMap = cache.getAllPortlets();
-    
+
     if (portletsMap.isEmpty()) {
 
       portletsMap.putAll(loadSystemPortlets());

@@ -291,66 +291,7 @@ public class PortalUtil {
         return getCompanyId(reqImpl.getHttpServletRequest());
     }
 
-    public static Date getDate(int month, int day, int year, PortalException pe) throws PortalException {
 
-        return getDate(month, day, year, 0, 0, pe);
-    }
-
-    public static Date getDate(int month, int day, int year, int hour, int min, PortalException pe) throws PortalException {
-
-        return getDate(month, day, year, hour, min, null, pe);
-    }
-
-    public static Date getDate(int month, int day, int year, int hour, int min, TimeZone timeZone, PortalException pe)
-            throws PortalException {
-
-        if (!Validator.isGregorianDate(month, day, year)) {
-            throw pe;
-        } else {
-            Calendar cal = null;
-            if (timeZone == null) {
-                cal = new GregorianCalendar();
-            } else {
-                cal = new GregorianCalendar(timeZone);
-            }
-
-            cal.set(year, month, day, hour, min);
-
-            Date date = cal.getTime();
-
-            /*
-             * if (timeZone != null && cal.before(new GregorianCalendar(timeZone))) {
-             * 
-             * throw pe; }
-             */
-
-            return date;
-        }
-    }
-
-    // public static String getLayoutIdWithPortletId(
-    // Layout[] allLayouts, String portletId) {
-    //
-    // return getLayoutIdWithPortletId(allLayouts, portletId, null);
-    // }
-
-    // public static String getLayoutIdWithPortletId(
-    // Layout[] allLayouts, String portletId, String defaultLayoutId) {
-    //
-    // if (defaultLayoutId == null) {
-    // defaultLayoutId = Layout.DEFAULT_LAYOUT_ID;
-    // }
-    //
-    // for (int i = 0; i < allLayouts.length; i++) {
-    // Layout layout = (Layout)allLayouts[i];
-    //
-    // if (layout.hasPortletId(portletId)) {
-    // return layout.getLayoutId();
-    // }
-    // }
-    //
-    // return defaultLayoutId;
-    // }
 
     public static Locale getLocale(HttpServletRequest req) {
         return (Locale) req.getSession().getAttribute(Globals.LOCALE_KEY);
@@ -424,35 +365,11 @@ public class PortalUtil {
         return portletCtx;
     }
 
-    // public static String getPortletGroupId(String layoutId) {
-    // return GetterUtil.get(
-    // Layout.getGroupId(layoutId), Group.DEFAULT_PARENT_GROUP_ID);
-    // }
 
-    // public static String getPortletGroupId(HttpServletRequest req) {
-    // Layout layout = (Layout)req.getAttribute(WebKeys.LAYOUT);
-    //
-    // return getPortletGroupId(layout.getLayoutId());
-    // }
-
-    // public static String getPortletGroupId(ActionRequest req) {
-    // ActionRequestImpl reqImpl = (ActionRequestImpl)req;
-    //
-    // return getPortletGroupId(reqImpl.getHttpServletRequest());
-    // }
-
-    // public static String getPortletGroupId(RenderRequest req) {
-    // RenderRequestImpl reqImpl = (RenderRequestImpl)req;
-    //
-    // return getPortletGroupId(reqImpl.getHttpServletRequest());
-    // }
 
     public static CachePortlet getPortletInstance(Portlet portlet, ServletContext ctx) throws PortletException {
 
         String scpId = PortalUtil.class.getName() + "." + com.dotcms.repackage.javax.portlet.Portlet.class.getName();
-        if (!portlet.isWARFile()) {
-            scpId += "." + portlet.getCompanyId();
-        }
 
         Map map = (Map) SimpleCachePool.get(scpId);
 
@@ -569,25 +486,7 @@ public class PortalUtil {
         }
     }
 
-    // public static List getRecipients() throws PortalException, SystemException {
-    // List recipients = new ArrayList();
-    //
-    // recipients.addAll(CompanyManagerUtil.getUsers());
-    //
-    // Iterator itr = CompanyManagerUtil.getGroups().iterator();
-    //
-    // while (itr.hasNext()) {
-    // Group group = (Group)itr.next();
-    //
-    // if (!isSystemGroup(group.getName())) {
-    // recipients.add(group);
-    // }
-    // }
-    //
-    // Collections.sort(recipients, new RecipientComparator());
-    //
-    // return recipients;
-    // }
+
 
     public static User getSelectedUser(HttpServletRequest req) {
         String emailAddress = ParamUtil.getString(req, "p_u_e_a");

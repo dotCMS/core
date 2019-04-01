@@ -38,8 +38,6 @@ public interface PortletManager {
 
     public Portlet getPortletById(String portletId) throws SystemException, java.rmi.RemoteException;
 
-    public Portlet getPortletByStrutsPath(String strutsPath) throws SystemException, java.rmi.RemoteException;
-
     public Collection<Portlet> getPortlets() throws SystemException, java.rmi.RemoteException;
 
     public Map<String, Portlet> addPortlets(String[] xmls) throws SystemException;
