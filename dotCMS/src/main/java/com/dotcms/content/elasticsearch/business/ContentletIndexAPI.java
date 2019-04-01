@@ -1,22 +1,19 @@
 package com.dotcms.content.elasticsearch.business;
 
+import com.dotmarketing.common.reindex.BulkProcessorListener;
+import com.dotmarketing.common.reindex.ReindexEntry;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import java.io.IOException;
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-
 import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.action.bulk.BulkProcessor;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
-
-import com.dotcms.content.business.DotMappingException;
-import com.dotmarketing.common.reindex.ReindexEntry;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 
 public interface ContentletIndexAPI {
     public static final SimpleDateFormat timestampFormatter = new SimpleDateFormat("yyyyMMddHHmmss");
@@ -75,7 +72,7 @@ public interface ContentletIndexAPI {
     /**
      * optimizes shards for a list of elasticsearch indicies
      * 
-     * @param indexName
+     * @param indexNames
      * @return
      */
     boolean optimize(List<String> indexNames);
@@ -141,4 +138,7 @@ public interface ContentletIndexAPI {
 
     BulkRequestBuilder appendBulkRemoveRequest(BulkRequestBuilder bulk, final ReindexEntry entry) throws DotDataException;
 
+    BulkProcessor createBulkProcessor(BulkProcessorListener bulkListener);
+
+    void appendToBulkProcessor(final BulkProcessor bulk, final Collection<ReindexEntry> idxs) throws DotDataException;
 }

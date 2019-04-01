@@ -91,7 +91,6 @@ function checkReindexationCallback (response) {
 
 		reindexationInProgressDiv.style.display = "";
 
-
 		var bar = dijit.byId("reindexProgressBar");
 		if(bar != undefined){
 		    bar.update({
@@ -112,7 +111,7 @@ function checkReindexationCallback (response) {
 
 		}
 	}
-	setTimeout("checkReindexation()", 8000);
+	setTimeout("checkReindexation()", 5000);
 }
 
 function checkReindexation () {

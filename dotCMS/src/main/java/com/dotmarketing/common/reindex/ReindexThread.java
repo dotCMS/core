@@ -1,15 +1,5 @@
 package com.dotmarketing.common.reindex;
 
-import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
-
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.util.ESReindexationProcessStatus;
@@ -29,6 +19,13 @@ import com.dotmarketing.util.ThreadUtils;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.model.User;
+import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import org.elasticsearch.action.bulk.BulkProcessor;
 
 /**
  * This thread is in charge of re-indexing the contenlet information placed in the
@@ -61,7 +58,7 @@ import com.liferay.portal.model.User;
  * anymore.</li>
  * </ul>
  * </p>
- * 
+ *
  * @author root
  * @version 3.3
  * @since Mar 22, 2012
@@ -86,7 +83,14 @@ public class ReindexThread {
     private int failedAttemptsCount = 0;
     private long contentletsIndexed = 0;
     // bulk up to this many requests
-    private static final int ELASTICSEARCH_BULK_SIZE = Config.getIntProperty("REINDEX_THREAD_ELASTICSEARCH_BULK_SIZE", 100);
+    public static final int ELASTICSEARCH_BULK_ACTIONS = Config
+            .getIntProperty("REINDEX_THREAD_ELASTICSEARCH_BULK_ACTIONS", 2000);
+    //how many threads will be used per shard
+    public static final int ELASTICSEARCH_CONCURRENT_REQUESTS = Config
+            .getIntProperty("REINDEX_THREAD_CONCURRENT_REQUESTS", 4);
+    //Bulk size in MB. -1 means disabled
+    public static final int ELASTICSEARCH_BULK_SIZE = Config
+            .getIntProperty("REINDEX_THREAD_ELASTICSEARCH_BULK_SIZE", 20);
     private ThreadState STATE = ThreadState.RUNNING;
     private Future<?>  threadRunning;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -140,7 +144,7 @@ public class ReindexThread {
             Logger.error(this.getClass(), e.getMessage(), e);
         }
 
-        
+
         while (STATE != ThreadState.STOPPED) {
             try {
                 runReindexLoop();
@@ -165,36 +169,28 @@ public class ReindexThread {
      * API to take care of the problem as soon as possible.
      */
     private void runReindexLoop() {
-        BulkRequestBuilder bulk = indexAPI.createBulkRequest();
+        BulkProcessor bulkProcessor = null;
+        BulkProcessorListener bulkProcessorListener = null;
         while (STATE != ThreadState.STOPPED) {
-            final Map<String, ReindexEntry> workingRecords = new HashMap<>();
-            int recordCount = 0;
             try {
-                while (recordCount < ELASTICSEARCH_BULK_SIZE) {
-                    workingRecords.putAll(queueApi.findContentToReindex());
-                    if (workingRecords.isEmpty() || recordCount == workingRecords.size()) {
-                        break;
-                    }
-                    recordCount = workingRecords.size();
-                }
+                final Map<String, ReindexEntry> workingRecords = queueApi.findContentToReindex();
 
                 if (!workingRecords.isEmpty()) {
 
-                    bulk = indexAPI.appendBulkRequest(bulk, workingRecords.values());
-
-                    contentletsIndexed += bulk.numberOfActions();
-                    Logger.info(this.getClass(), "-----------");
-                    Logger.info(this.getClass(), "Total Indexed :" + contentletsIndexed);
-                    Logger.info(this.getClass(), "ReindexEntries found : " + workingRecords.size());
-                    Logger.info(this.getClass(), "BulkRequests created : " + bulk.numberOfActions());
-                    Optional<String> duration = indexAPI.reindexTimeElapsed();
-                    if (duration.isPresent()) {
-                        Logger.info(this, "Full Reindex Elapsed : " + duration.get() + "");
+                    if (bulkProcessor == null){
+                        bulkProcessorListener = new BulkProcessorListener();
+                        bulkProcessor = indexAPI.createBulkProcessor(bulkProcessorListener);
                     }
-                    Logger.info(this.getClass(), "-----------");
-                    indexAPI.putToIndex(bulk, new BulkActionListener(workingRecords));
-                    bulk = indexAPI.createBulkRequest();
+
+                    bulkProcessorListener.workingRecords.putAll(workingRecords);
+                    indexAPI.appendToBulkProcessor(bulkProcessor, workingRecords.values());
+                    contentletsIndexed = bulkProcessorListener.getContentletsIndexed();
                 } else {
+                    if (bulkProcessor != null){
+                        bulkProcessor.close();
+                        bulkProcessor = null;
+                    }
+
                     switchOverIfNeeded();
                     Thread.sleep(SLEEP);
                 }
@@ -221,7 +217,6 @@ public class ReindexThread {
         if (ESReindexationProcessStatus.inFullReindexation() && queueApi.recordsInQueue() == 0) {
             // The re-indexation process has finished successfully
             indexAPI.reindexSwitchover(false);
-
             // Generate and send an user notification
             sendNotification("notification.reindexing.success", null, null, false);
             return true;
@@ -238,7 +233,7 @@ public class ReindexThread {
             final Thread thread = new Thread(getInstance().ReindexThreadRunnable, "ReindexThreadRunnable");
             getInstance().threadRunning = getInstance().executor.submit(thread);
         }
-        
+
     }
 
     private void state(ThreadState state) {
@@ -288,7 +283,7 @@ public class ReindexThread {
      * Generates a new notification displayed at the top left side of the back-end page in dotCMS. This
      * utility method allows you to send reports to the user regarding the operations performed during
      * the re-index, whether they succeeded or failed.
-     * 
+     *
      * @param key - The message key that should be present in the language properties files.
      * @param msgParams - The parameters, if any, that will replace potential placeholders in the
      *        message. E.g.: "This is {0} test."

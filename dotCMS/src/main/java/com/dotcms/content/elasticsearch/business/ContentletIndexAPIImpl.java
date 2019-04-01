@@ -1,8 +1,10 @@
 package com.dotcms.content.elasticsearch.business;
 
 import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
+import static com.dotmarketing.common.reindex.ReindexThread.ELASTICSEARCH_CONCURRENT_REQUESTS;
 import static com.dotmarketing.util.StringUtils.builder;
 
+import com.dotmarketing.common.reindex.BulkProcessorListener;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -28,12 +30,15 @@ import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRequest;
 import org.elasticsearch.action.admin.indices.stats.IndexStats;
+import org.elasticsearch.action.bulk.BulkProcessor;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.action.support.WriteRequest.RefreshPolicy;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.common.unit.ByteSizeUnit;
+import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -78,7 +83,6 @@ import com.google.gson.Gson;
 import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 
-import io.vavr.API;
 import io.vavr.control.Try;
 
 public class ContentletIndexAPIImpl implements ContentletIndexAPI {
@@ -321,7 +325,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
     /**
      * This will drop old index and will point read aliases to new index. This method should be called
-     * after call to {@link #setUpFullReindex()}
+     * after call to {@link #fullReindexStart()}
      * 
      * @return
      */
@@ -516,13 +520,24 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     }
 
     @Override
-    public BulkRequestBuilder createBulkRequest(List<Contentlet> contentToIndex) {
-        return this.appendBulkRequest(createBulkRequest(), contentToIndex);
+    public BulkRequestBuilder createBulkRequest(final List<Contentlet> contentToIndex) {
+        final BulkIndexWrapper bulkIndexWrapper = new BulkIndexWrapper(createBulkRequest());
+        this.appendBulkRequest(bulkIndexWrapper, contentToIndex);
+        return bulkIndexWrapper.getRequestBuilder();
     }
 
     @Override
     public BulkRequestBuilder createBulkRequest() {
         return new ESClient().getClient().prepareBulk().setRefreshPolicy(RefreshPolicy.NONE);
+    }
+
+    public BulkProcessor createBulkProcessor(final BulkProcessorListener bulkListener) {
+        final BulkProcessor.Builder builder = BulkProcessor.builder(
+                new ESClient().getClient(), bulkListener);
+        builder.setBulkActions(ReindexThread.ELASTICSEARCH_BULK_ACTIONS)
+                .setBulkSize(new ByteSizeValue(ReindexThread.ELASTICSEARCH_BULK_SIZE, ByteSizeUnit.MB))
+                .setConcurrentRequests(ELASTICSEARCH_CONCURRENT_REQUESTS);
+        return builder.build();
     }
 
     @Override
@@ -535,16 +550,30 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         return bulk;
     }
 
-    @CloseDBIfOpened
+    public void appendToBulkProcessor(final BulkProcessor bulk, final Collection<ReindexEntry> idxs)
+            throws DotDataException {
+
+        for (ReindexEntry idx : idxs) {
+            appendToBulkProcessor(bulk, idx);
+        }
+    }
+
     @Override
-    public BulkRequestBuilder appendBulkRequest(BulkRequestBuilder bulk, final ReindexEntry idx) throws DotDataException {
+    public BulkRequestBuilder appendBulkRequest(BulkRequestBuilder bulk, final ReindexEntry idx)  throws DotDataException {
         bulk = (bulk == null) ? createBulkRequest() : bulk;
         Logger.debug(this, "Indexing document " + idx.getIdentToIndex());
 
+        BulkIndexWrapper bulkIndexWrapper = new BulkIndexWrapper(bulk);
         if (idx.isDelete()) {
-            return appendBulkRemoveRequest(bulk, idx);
+            appendBulkRemoveRequest(bulkIndexWrapper, idx);
+        } else {
+            appendBulkRequest(bulkIndexWrapper, idx);
         }
+        return bulkIndexWrapper.getRequestBuilder();
+    }
 
+    @CloseDBIfOpened
+    public void appendBulkRequest(BulkIndexWrapper bulk, final ReindexEntry idx) throws DotDataException {
         List<ContentletVersionInfo> versions = APILocator.getVersionableAPI().findContentletVersionInfos(idx.getIdentToIndex());
 
         final Map<String, Contentlet> inodes = new HashMap<>();
@@ -566,42 +595,60 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             contentlet.setIndexPolicy(IndexPolicy.DEFER);
 
             try {
-
-                bulk = addBulkRequest(bulk, ImmutableList.of(contentlet), idx.isReindex());
+                addBulkRequest(bulk, ImmutableList.of(contentlet), idx.isReindex());
 
             } catch (Exception e) {
                 APILocator.getReindexQueueAPI().markAsFailed(idx, e.getMessage());
 
             }
         }
-        return bulk;
     }
 
-    private BulkRequestBuilder appendBulkRequest(final BulkRequestBuilder bulk, final List<Contentlet> contentToIndex) {
+    public BulkProcessor appendToBulkProcessor(BulkProcessor bulk, final ReindexEntry idx) throws DotDataException {
+        Logger.debug(this, "Indexing document " + idx.getIdentToIndex());
 
-        return this.addBulkRequest(bulk, contentToIndex, false);
+        BulkIndexWrapper bulkIndexWrapper = new BulkIndexWrapper(bulk);
+        if (idx.isDelete()) {
+            appendBulkRemoveRequest(bulkIndexWrapper, idx);
+        } else {
+            appendBulkRequest(bulkIndexWrapper, idx);
+        }
+
+        return bulkIndexWrapper.getBulkProcessor();
     }
 
-    private BulkRequestBuilder addBulkRequest(final BulkRequestBuilder bulk, final List<Contentlet> contentToIndex,
+    private void appendBulkRequest(final BulkIndexWrapper bulk, final List<Contentlet> contentToIndex) {
+        this.addBulkRequest(bulk, contentToIndex, false);
+    }
+
+    private void addBulkRequest(final BulkIndexWrapper bulk, final List<Contentlet> contentToIndex,
             final boolean forReindex) {
         if (contentToIndex != null && !contentToIndex.isEmpty()) {
-            Logger.debug(this.getClass(), "Indexing " + contentToIndex.size() + " contents, starting with identifier [ "
-                    + contentToIndex.get(0).getMap().get("identifier") + "]");
+            Logger.debug(this.getClass(),
+                    "Indexing " + contentToIndex.size() + " contents, starting with identifier [ "
+                            + contentToIndex.get(0).getMap().get("identifier") + "]");
         }
 
         // eliminate dups
-        Set<Contentlet> contentToIndexSet = new HashSet<>(contentToIndex);
+        final Set<Contentlet> contentToIndexSet = new HashSet<>(contentToIndex);
 
         for (final Contentlet contentlet : contentToIndexSet) {
 
             final String id = contentlet.getIdentifier() + "_" + contentlet.getLanguageId();
-            Logger.debug(this, () -> "\n*********----------- Indexing : " + Thread.currentThread().getName() + ", id: "
-                    + contentlet.getIdentifier() + ", identityHashCode: " + System.identityHashCode(contentlet));
-            Logger.debug(this, () -> "*********-----------  " + DbConnectionFactory.getConnection());
+            Logger.debug(this,
+                    () -> "\n*********----------- Indexing : " + Thread.currentThread().getName()
+                            + ", id: "
+                            + contentlet.getIdentifier() + ", identityHashCode: " + System
+                            .identityHashCode(contentlet));
+            Logger.debug(this,
+                    () -> "*********-----------  " + DbConnectionFactory.getConnection());
             Logger.debug(this, () -> "*********-----------  "
-                    + ExceptionUtil.getCurrentStackTraceAsString(Config.getIntProperty("stacktracelimit", 10)) + "\n");
+                    + ExceptionUtil
+                    .getCurrentStackTraceAsString(Config.getIntProperty("stacktracelimit", 10))
+                    + "\n");
 
-            final IndiciesInfo info = Sneaky.sneak(() -> APILocator.getIndiciesAPI().loadIndicies());
+            final IndiciesInfo info = Sneaky
+                    .sneak(() -> APILocator.getIndiciesAPI().loadIndicies());
             final Gson gson = new Gson(); // todo why do we create a new Gson everytime
             String mapping = null;
 
@@ -610,10 +657,12 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 if (Sneaky.sneak(() -> contentlet.isWorking())) {
                     mapping = gson.toJson(mappingAPI.toMap(contentlet));
                     if (!forReindex || info.reindex_working == null) {
-                        bulk.add(new IndexRequest(info.working, "content", id).source(mapping, XContentType.JSON));
+                        bulk.add(new IndexRequest(info.working, "content", id)
+                                .source(mapping, XContentType.JSON));
                     }
                     if (info.reindex_working != null) {
-                        bulk.add(new IndexRequest(info.reindex_working, "content", id).source(mapping, XContentType.JSON));
+                        bulk.add(new IndexRequest(info.reindex_working, "content", id)
+                                .source(mapping, XContentType.JSON));
                     }
                 }
 
@@ -622,20 +671,23 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                         mapping = gson.toJson(mappingAPI.toMap(contentlet));
                     }
                     if (!forReindex || info.reindex_live == null) {
-                        bulk.add(new IndexRequest(info.live, "content", id).source(mapping, XContentType.JSON));
+                        bulk.add(new IndexRequest(info.live, "content", id)
+                                .source(mapping, XContentType.JSON));
                     }
                     if (info.reindex_live != null) {
-                        bulk.add(new IndexRequest(info.reindex_live, "content", id).source(mapping, XContentType.JSON));
+                        bulk.add(new IndexRequest(info.reindex_live, "content", id)
+                                .source(mapping, XContentType.JSON));
                     }
                 }
 
                 contentlet.markAsReindexed();
             } catch (Exception ex) {
-                Logger.error(this, "Can't get a mapping for contentlet with id_lang:" + id + " Content data: " + contentlet.getMap());
+                Logger.error(this,
+                        "Can't get a mapping for contentlet with id_lang:" + id + " Content data: "
+                                + contentlet.getMap(), ex);
                 throw ex;
             }
         }
-        return bulk;
     }
 
     @CloseDBIfOpened
@@ -675,25 +727,36 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         removeContentFromIndex(content, false);
     }
 
-    @Override
-    @VisibleForTesting
-    public BulkRequestBuilder appendBulkRemoveRequest(final BulkRequestBuilder bulk, final ReindexEntry entry) throws DotDataException {
-        List<Language> languages = APILocator.getLanguageAPI().getLanguages();
-        final Client client = new ESClient().getClient();
+    public void appendBulkRemoveRequest(final BulkIndexWrapper bulk, final ReindexEntry entry)
+            throws DotDataException {
+        final List<Language> languages = APILocator.getLanguageAPI().getLanguages();
         final IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
-        
-        
-        // delete for every langauge and in every index
+        final Client client = new ESClient().getClient();
+
+        // delete for every language and in every index
         for (Language language : languages) {
             for (final String index : info.asMap().values()) {
                 final String id = entry.getIdentToIndex() + "_" + language.getId();
-                
-                System.err.println("deleteing:" + id);
-                bulk.add(client.prepareDelete(index, "content", id));
+
+                System.err.println("deleting:" + id);
+                bulk.add(client.prepareDelete(index, "content", id).request());
             }
         }
-        return bulk;
+    }
 
+    @Override
+    @VisibleForTesting
+    public BulkRequestBuilder appendBulkRemoveRequest(final BulkRequestBuilder bulk,
+            final ReindexEntry entry) throws DotDataException {
+        final BulkIndexWrapper bulkIndexWrapper = new BulkIndexWrapper(bulk);
+        appendBulkRemoveRequest(bulkIndexWrapper, entry);
+        return bulkIndexWrapper.getRequestBuilder();
+    }
+
+    public BulkProcessor appendBulkRemoveRequest(final BulkProcessor bulk, final ReindexEntry entry) throws DotDataException {
+        final BulkIndexWrapper bulkIndexWrapper = new BulkIndexWrapper(bulk);
+        appendBulkRemoveRequest(bulkIndexWrapper, entry);
+        return bulkIndexWrapper.getBulkProcessor();
     }
 
     private void removeContentFromIndex(final Contentlet content, final boolean onlyLive, final List<Relationship> relationships)
@@ -787,7 +850,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             // content to be deleted. Those contentlets are reindexed
             // to avoid left those fields making noise in the index
             if (UtilMethods.isSet(relationships)) {
-                reindexDependenciesForDeletedContent(contentlet, relationships, bulk, indexPolicyDependencies);
+                reindexDependenciesForDeletedContent(contentlet, relationships, new BulkIndexWrapper(bulk), indexPolicyDependencies);
             }
 
             bulk.add(client.prepareDelete(info.working, "content", id));
@@ -800,7 +863,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     }
 
     private void reindexDependenciesForDeletedContent(final Contentlet contentlet, final List<Relationship> relationships,
-            final BulkRequestBuilder bulk, final IndexPolicy indexPolicy)
+            final BulkIndexWrapper bulk, final IndexPolicy indexPolicy)
             throws DotDataException, DotSecurityException, DotMappingException {
 
         for (final Relationship relationship : relationships) {
@@ -824,7 +887,8 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                     indexContentListNow(related);
                     break;
                 default: // DEFER
-                    putToIndex(appendBulkRequest(bulk, related));
+                    appendBulkRequest(bulk, related);
+                    putToIndex(bulk.getRequestBuilder());
                     break;
             }
         }

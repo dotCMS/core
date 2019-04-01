@@ -44,7 +44,7 @@ public class ReindexQueueFactory {
     // running, tee them back up
     private static final int REQUEUE_REINDEX_RECORDS_OLDER_THAN_SEC = Config.getIntProperty("REQUEUE_REINDEX_RECORDS_OLDER_THAN_SEC", 120);
 
-    public int REINDEX_RECORDS_TO_FETCH = Config.getIntProperty("REINDEX_RECORDS_TO_FETCH", 100);
+    public static int REINDEX_RECORDS_TO_FETCH = Config.getIntProperty("REINDEX_RECORDS_TO_FETCH", 100);
 
     public static final int REINDEX_MAX_FAILURE_ATTEMPTS = Config.getIntProperty("RETRY_FAILED_INDEX_TIMES", 5);
 
