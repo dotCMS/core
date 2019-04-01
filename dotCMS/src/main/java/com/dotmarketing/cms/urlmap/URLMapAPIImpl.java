@@ -268,7 +268,7 @@ public class URLMapAPIImpl implements URLMapAPI {
      * @throws DotDataException An error occurred when retrieving information from the database.
      */
     private synchronized void loadPatterns() throws DotDataException {
-        patternsCache = new TreeSet<>();
+        patternsCache = new ArrayList<>();
 
         final List<SimpleStructureURLMap> urlMaps = StructureFactory.findStructureURLMapPatterns();
         final StringBuilder masterRegEx = new StringBuilder();

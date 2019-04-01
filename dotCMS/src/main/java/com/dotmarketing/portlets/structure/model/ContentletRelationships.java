@@ -170,7 +170,7 @@ public class ContentletRelationships
 		public ContentletRelationshipRecords(Relationship relationship, boolean hasParent) {
 			super();
 			this.relationship = relationship;
-			this.records = new ArrayList<Contentlet>();
+			this.records = new ArrayList<>();
 			this.hasParent = hasParent;
 		}
 
