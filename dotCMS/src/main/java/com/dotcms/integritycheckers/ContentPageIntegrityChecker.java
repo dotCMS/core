@@ -1,19 +1,8 @@
 package com.dotcms.integritycheckers;
 
-import java.io.File;
-import java.io.IOException;
-import java.math.BigDecimal;
-import java.nio.charset.Charset;
-import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.repackage.com.csvreader.CsvReader;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
@@ -24,10 +13,19 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.ConfigUtils;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+
+import java.io.File;
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.nio.charset.Charset;
+import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Contentlet page integrity checker implementation.
@@ -955,16 +953,10 @@ public class ContentPageIntegrityChecker extends AbstractIntegrityChecker {
 		String identifier = updatedWorkingPage.getIdentifier();
 		// If page was removed before in the end point, remove the NOTFOUND flag
 		// for that page from the cache
-		CacheLocator.getIdentifierCache().removeContentletVersionInfoToCache(
-				identifier, updatedWorkingPage.getLanguageId());
-		CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(
-				identifier);
 		indexAPI.addContentToIndex(updatedWorkingPage);
 		// If working and live pages are different...
 		if (updatedLivePage != null) {
-			CacheLocator.getIdentifierCache()
-					.removeContentletVersionInfoToCache(identifier,
-							updatedLivePage.getLanguageId());
+
 			indexAPI.addContentToIndex(updatedLivePage);
 		}
 		// Remove the Lucene index for the old page
@@ -973,17 +965,7 @@ public class ContentPageIntegrityChecker extends AbstractIntegrityChecker {
 				&& !oldWorkingPage.getInode().equals(oldLivePage.getInode())) {
 			indexAPI.removeContentFromIndex(oldLivePage);
 		}
-		// Clear cache entries of ALL versions of the Contentlet too
-		CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(identifier);
-		CacheLocator.getContentletCache().remove(localWorkingInode);
-		CacheLocator.getIdentifierCache().removeFromCacheByInode(
-				localWorkingInode);
-		if (UtilMethods.isSet(localLiveInode)
-				&& !localWorkingInode.equals(localLiveInode)) {
-			CacheLocator.getContentletCache().remove(localLiveInode);
-			CacheLocator.getIdentifierCache().removeFromCacheByInode(
-					localLiveInode);
-		}
+
 		// Refresh either all or only language-specific versions of the page
 		DotConnect dc = new DotConnect();
 		if (fixAllVersions) {
@@ -993,11 +975,6 @@ public class ContentPageIntegrityChecker extends AbstractIntegrityChecker {
 			dc.setSQL("SELECT inode FROM contentlet c WHERE c.identifier = ? AND c.language_id = ?");
 			dc.addParam(identifier);
 			dc.addParam(languageId);
-		}
-		List<Map<String, Object>> versions = dc.loadObjectResults();
-		for (Map<String, Object> result : versions) {
-			String historyInode = (String) result.get("inode");
-			CacheLocator.getContentletCache().remove(historyInode);
 		}
 	}
 

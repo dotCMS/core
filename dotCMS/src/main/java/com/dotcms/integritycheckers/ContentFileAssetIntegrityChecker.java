@@ -4,7 +4,6 @@ import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.rendering.velocity.services.ContainerLoader;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -418,19 +417,10 @@ public class ContentFileAssetIntegrityChecker extends AbstractIntegrityChecker {
         // Remove the Lucene index for the old page
         cleanIndex(existingWorkingContentlet, existingLiveContentlet);
 
-        // Clear cache entries of ALL versions of the Contentlet too
-        cleanCache(localWorkingInode, localLiveInode);
-
         // Refresh all or only language-specific versions of the contentlet
         dc.setSQL("SELECT inode FROM contentlet WHERE identifier = ? AND language_id = ?");
         dc.addParam(newContentletIdentifier);
         dc.addParam(languageId);
-
-        List<Map<String, Object>> versions = dc.loadObjectResults();
-        for (Map<String, Object> result : versions) {
-            String historyInode = (String) result.get("inode");
-            CacheLocator.getContentletCache().remove(historyInode);
-        }
     }
 
     private void fixFileAssetContainer(final String oldContentletIdentifier, final String newContentletIdentifier,
@@ -445,12 +435,6 @@ public class ContentFileAssetIntegrityChecker extends AbstractIntegrityChecker {
         dotConnect.addParam(newContentletIdentifier);
         dotConnect.addParam(oldContentletIdentifier);
         dotConnect.loadResult();
-
-        // remove the multi tree for each page associated to the container
-        for (final Map<String, Object> page : pages) {
-            final String pageId = (String) page.get("parent1");
-            CacheLocator.getMultiTreeCache().removePageMultiTrees(pageId);
-        }
 
         dotConnect.setSQL("SELECT parent_path, host_inode FROM identifier WHERE id = ?");
         dotConnect.addParam(newContentletIdentifier);
@@ -482,9 +466,6 @@ public class ContentFileAssetIntegrityChecker extends AbstractIntegrityChecker {
                                 fileAssetContainer.setIdentifier(oldContentletIdentifier);
                                 fileAssetContainer.setInode(localWorkingInode);
 
-                                containerLoader
-                                        .invalidate(fileAssetContainer, folder, "container.vtl");
-                                CacheLocator.getContainerCache().remove(fileAssetContainer);
                             } catch (Exception e) {
                                 Logger.error(this, e.getMessage(), e);
                             }
@@ -514,22 +495,6 @@ public class ContentFileAssetIntegrityChecker extends AbstractIntegrityChecker {
         if (UtilMethods.isSet(existingLiveContentlet)
                 && !existingWorkingContentlet.getInode().equals(existingLiveContentlet.getInode())) {
             indexAPI.removeContentFromIndex(existingLiveContentlet);
-        }
-    }
-
-    /**
-     * Clean cache
-     * 
-     * @param localWorkingInode
-     * @param localLiveInode
-     */
-    private void cleanCache(final String localWorkingInode, final String localLiveInode) {
-        CacheLocator.getContentletCache().remove(localWorkingInode);
-        CacheLocator.getIdentifierCache().removeFromCacheByInode(localWorkingInode);
-
-        if (UtilMethods.isSet(localLiveInode) && !localWorkingInode.equals(localLiveInode)) {
-            CacheLocator.getContentletCache().remove(localLiveInode);
-            CacheLocator.getIdentifierCache().removeFromCacheByInode(localLiveInode);
         }
     }
 

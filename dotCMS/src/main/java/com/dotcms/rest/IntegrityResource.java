@@ -1069,11 +1069,11 @@ public class IntegrityResource {
     @GET
     @Path ("/fixconflicts/{params:.*}")
     @Produces (MediaType.APPLICATION_JSON)
-    public Response fixConflicts ( @Context final HttpServletRequest request, @PathParam ("params") String params ) throws JSONException {
+    public Response fixConflicts ( @Context final HttpServletRequest request, @PathParam ("params") final String params ) throws JSONException {
 
-        InitDataObject initData = webResource.init(params, true, request, true, null);
-        Map<String, String> paramsMap = initData.getParamsMap();
-        JSONObject jsonResponse = new JSONObject();
+        final InitDataObject initData = webResource.init(params, true, request, true, null);
+        final Map<String, String> paramsMap = initData.getParamsMap();
+        final JSONObject jsonResponse = new JSONObject();
 
         //Validate the parameters
         String endpointId = paramsMap.get( "endpoint" );

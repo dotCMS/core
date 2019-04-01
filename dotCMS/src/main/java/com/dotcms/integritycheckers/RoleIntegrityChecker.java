@@ -2,19 +2,16 @@ package com.dotcms.integritycheckers;
 
 import com.dotcms.repackage.com.csvreader.CsvReader;
 import com.dotcms.repackage.com.csvreader.CsvWriter;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Role;
-import com.dotmarketing.business.RoleAPI;
-import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.business.*;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.util.ConfigUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.mutable.MutableInt;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -27,8 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 import java.util.function.Consumer;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.mutable.MutableInt;
 
 /**
  * Role integrity checker implementation
@@ -214,12 +209,6 @@ public class RoleIntegrityChecker extends AbstractIntegrityChecker {
                 permissionAPI.removePermissionableFromCache(oldRole.getId());
         	}
         }
-
-        HibernateUtil.addCommitListener(
-            	CacheLocator.getCmsRoleCache()::clearCache
-            	//we should remove permissions cached for edited roles only
-            	//CacheLocator.getPermissionCache().clearCache();
-		);
 	}
 
     private void applyFixToRole( DotConnect dc, Role oldRole, String oldRoleId, String newRoleId) throws DotDataException, DotSecurityException {

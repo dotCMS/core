@@ -6,6 +6,8 @@ import com.dotcms.rest.IntegrityResource;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.FlushCacheRunnable;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.ConfigUtils;
@@ -400,17 +402,28 @@ public class IntegrityUtil {
         generateDataToFixTable(endpointId, type);
         fixConflicts(endpointId, type);
 
-        this.flushAllCache();
+        HibernateUtil.addCommitListener(new FlushCacheRunnable() {
+            @Override
+            public void run() {
+
+               IntegrityUtil.this.flushAllCache();
+            }
+        });
+
     }
 
     /**
      * Flush all caches
      * @throws DotDataException
      */
-    public void flushAllCache() throws DotDataException {
+    public void flushAllCache() {
 
-        MaintenanceUtil.flushCache();
-        APILocator.getPermissionAPI().resetAllPermissionReferences();
+        try {
+            MaintenanceUtil.flushCache();
+            APILocator.getPermissionAPI().resetAllPermissionReferences();
+        } catch (Exception e) {
+            Logger.error(this, e.getMessage(), e);
+        }
     }
 
     /**

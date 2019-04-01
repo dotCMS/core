@@ -1,9 +1,18 @@
 package com.dotcms.integritycheckers;
 
-import com.dotmarketing.business.DotCacheException;
-import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.portlets.structure.model.Relationship;
-import com.dotmarketing.util.Logger;
+import com.dotcms.repackage.com.csvreader.CsvReader;
+import com.dotcms.repackage.com.csvreader.CsvWriter;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.model.User;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -15,22 +24,6 @@ import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-
-import com.dotcms.repackage.com.csvreader.CsvReader;
-import com.dotcms.repackage.com.csvreader.CsvWriter;
-import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.util.ConfigUtils;
-import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.model.User;
 
 /**
  * Structure integrity checker implementation.
@@ -197,31 +190,6 @@ public class StructureIntegrityChecker extends AbstractIntegrityChecker {
 
                 Structure st = CacheLocator.getContentTypeCache().getStructureByInode(oldStructureInode);
 
-                List<Contentlet> contents = APILocator.getContentletAPI().findByStructure(st,
-                		systemUser, false, 0, 0);
-                for (Contentlet contentlet : contents) {
-                    CacheLocator.getContentletCache().remove(contentlet.getInode());
-                }
-
-                //Clean relationShips cache
-                List<Relationship> relationships = FactoryLocator.getRelationshipFactory().byContentType(st);
-                if(null != relationships) {
-                    for (Relationship rel : relationships) {
-                        try {
-                            CacheLocator.getRelationshipCache()
-                                    .removeRelationshipsByStruct(rel.getParentStructure());
-                            CacheLocator.getRelationshipCache()
-                                    .removeRelationshipsByStruct(rel.getChildStructure());
-                        } catch (DotCacheException e) {
-                            Logger.warn(StructureIntegrityChecker.class,
-                                    String.format("Unable to clean relationship cache [%s]",
-                                            e.getMessage()));
-                        }
-                    }
-                }
-
-                CacheLocator.getContentTypeCache().remove(st);
-                
                 // Inconsistency fix process
                 final String TEMP_INODE = "TEMP_INODE_" + System.currentTimeMillis();
                 
@@ -301,15 +269,7 @@ public class StructureIntegrityChecker extends AbstractIntegrityChecker {
 				List<Map<String, Object>> referencedFolders = dc
 						.loadObjectResults();
 				if (!referencedFolders.isEmpty()) {
-					for (Map<String, Object> row : referencedFolders) {
-						Folder folder = APILocator.getFolderAPI()
-								.find(row.get("inode").toString(), systemUser,
-										false);
-						Identifier identifier = APILocator.getIdentifierAPI().find(
-								folder.getIdentifier());
-						CacheLocator.getFolderCache().removeFolder(folder,
-								identifier);
-					}
+
 					dc.executeStatement("UPDATE folder SET default_file_type = '"
 							+ TEMP_INODE + "' WHERE default_file_type = '"
 							+ oldStructureInode + "'");
