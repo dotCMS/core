@@ -403,7 +403,11 @@ public class IntegrityUtil {
         this.flushAllCache();
     }
 
-    private void flushAllCache() throws DotDataException {
+    /**
+     * Flush all caches
+     * @throws DotDataException
+     */
+    public void flushAllCache() throws DotDataException {
 
         MaintenanceUtil.flushCache();
         APILocator.getPermissionAPI().resetAllPermissionReferences();
