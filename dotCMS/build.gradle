@@ -95,7 +95,7 @@ tasks.matching {it instanceof Test}.all {
 project.integrationTest {
     outputs.upToDateWhen { false }
 }
-integrationTest.dependsOn('downloadTestsStarter')
+integrationTest.dependsOn('prepareIntegrationTests')
 
 //Avoid skipping running tests when the test task is invoked
 project.test {
@@ -295,16 +295,16 @@ war {
     }
 
     from (configurations.felix) {
-        into felixFolder
+        into felixFolder.concat("/bundle")
     }
 
     from(configurations.compile) {
-        into felixFolder
+        into felixFolder.concat("/bundle")
         include '**/org.apache.felix.http.api*.jar'
     }
 
     from(configurations.compile) {
-        into felixFolder
+        into felixFolder.concat("/bundle")
         include '**/org.apache.felix.http.bundle*.jar'
     }
 
@@ -342,12 +342,44 @@ integrationTest {
 }
 integrationTest.group='dotCMS tests'
 
+task prepareIntegrationTests(dependsOn: ['downloadTestsStarter', 'downloadTestsFelixBundle']) {
+}
+prepareIntegrationTests.group='dotCMS tests'
+
 task downloadTestsStarter (type: Copy) {
     from configurations.testsStarter
     into integrationTestResourcesFolder
     rename ( /starter(.+)\.zip/, "starter.zip" )
 }
 downloadTestsStarter.group='dotCMS tests'
+downloadTestsStarter.description='Downloads the test starter zip to the integration tests resources folder'
+
+task downloadTestsFelixBundle () {
+
+    copy {
+        from configurations.felix
+        into felixFolder.concat("/bundle")
+    }
+
+    copy {
+        from 'src/main/webapp/WEB-INF/felix/osgi-extra-generated.conf'
+        into felixFolder
+    }
+
+    copy {
+        from configurations.compile
+        into felixFolder.concat("/bundle")
+        include '**/org.apache.felix.http.api*.jar'
+    }
+
+    copy {
+        from configurations.compile
+        into felixFolder.concat("/bundle")
+        include '**/org.apache.felix.http.bundle*.jar'
+    }
+}
+downloadTestsFelixBundle.group='dotCMS tests'
+downloadTestsFelixBundle.description='Copies the felix bundle jars and the osgi-extra-generated.conf file to the specified felix home location'
 
 // Delete ROOT under tomcat8/webapps
 task undeployWarTomcat(type: Delete) {
