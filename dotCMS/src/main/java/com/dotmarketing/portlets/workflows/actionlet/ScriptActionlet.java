@@ -38,7 +38,7 @@ public class ScriptActionlet extends WorkFlowActionlet {
         paramList.add(new WorkflowActionletParameter
                 ("script", "Script Code", null, false));
         paramList.add(new WorkflowActionletParameter
-                ("resultKey", "Result key", null, true));
+                ("resultKey", "Result key", null, false));
 
         return paramList.build();
     }
@@ -82,7 +82,10 @@ public class ScriptActionlet extends WorkFlowActionlet {
                             "contentlet", processor.getContentlet(),
                             "content", processor.getContentlet()));
 
-            processor.getContentlet().setProperty(resultKey, result);
+            if (null != result && null != resultKey) {
+                processor.getContentlet().setProperty(resultKey, result);
+                //processor.getContentlet().setTransientProperty(resultKey, result)
+            }
         } catch (IOException e) {
 
             throw new WorkflowActionFailureException(e.getMessage(), e);
