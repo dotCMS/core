@@ -11,6 +11,7 @@ import { DotCMSHttpClient } from './lib/utils/DotCMSHttpClient';
 import { DotCMSConfigurationParams } from './lib/models';
 import { DotApiContent } from './lib/api/DotApiContent';
 import { DotApiContentType } from './lib/api/DotApiContentType';
+import { DotApiForm } from './lib/api/DotApiForm';
 
 export interface DotCMSApp {
     auth: DotApiAuthorization;
@@ -21,6 +22,7 @@ export interface DotCMSApp {
     nav: DotApiNavigation;
     page: DotApiPage;
     site: DotApiSite;
+    form: DotApiForm;
     widget: DotApiWidget;
     config: DotApiConfiguration;
     language: DotApiLanguage;
@@ -39,6 +41,7 @@ export const initDotCMS = (config: DotCMSConfigurationParams): DotCMSApp => {
         contentType: new DotApiContentType(httpClient),
         esSearch: new DotApiElasticSearch(httpClient),
         event: new DotApiEvent(),
+        form: new DotApiForm(httpClient),
         language: apiLanguage,
         nav: new DotApiNavigation(httpClient),
         page: new DotApiPage(httpClient, apiLanguage),
