@@ -1,5 +1,6 @@
 package com.dotcms.osgi;
 
+import static org.apache.felix.framework.OSGIUtil.WEB_INF_FOLDER;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import com.dotcms.util.IntegrationTestInitService;
@@ -25,6 +26,11 @@ public class OSGIUtilTest {
         IntegrationTestInitService.getInstance().init();
 
         Mockito.when(Config.CONTEXT.getRealPath("/WEB-INF/felix")).thenReturn(Config.getStringProperty("context.path.felix","/WEB-INF/felix"));
+
+        final String WEB_INF_PATH = new File(Config.getStringProperty("context.path.felix"
+            ,"/WEB-INF/felix")).getParent();
+
+        Mockito.when(Config.CONTEXT.getRealPath(WEB_INF_FOLDER)).thenReturn(WEB_INF_PATH);
 
         // Initialize OSGI
         initializeOSGIFramework();

@@ -11,6 +11,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.ResourceCollectorUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
+import com.google.common.annotations.VisibleForTesting;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -49,7 +50,8 @@ public class OSGIUtil {
     private List<String> dotCMSJarPrefixes = ImmutableList
             .copyOf(CollectionsUtils.list("dotcms", "ee-"));
 
-    private static final String WEB_INF_FOLDER = "/WEB-INF";
+    @VisibleForTesting
+    public static final String WEB_INF_FOLDER = "/WEB-INF";
     private static final String FELIX_BASE_DIR = "felix.base.dir";
     private static final String FELIX_FILEINSTALL_DIR = "felix.fileinstall.dir";
     private static final String FELIX_UNDEPLOYED_DIR = "felix.undeployed.dir";
