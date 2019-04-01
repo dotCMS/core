@@ -22,7 +22,9 @@ package com.liferay.portal.ejb;
 import java.rmi.RemoteException;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Optional;
 
+import com.dotmarketing.exception.DotDataException;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.Portlet;
@@ -36,14 +38,20 @@ import com.liferay.portal.model.Portlet;
  */
 public interface PortletManager {
 
-    public Portlet getPortletById(String portletId) throws SystemException, java.rmi.RemoteException;
+  public Portlet getPortletById(String portletId) throws SystemException, java.rmi.RemoteException;
 
-    public Collection<Portlet> getPortlets() throws SystemException, java.rmi.RemoteException;
+  public Collection<Portlet> getPortlets() throws SystemException, java.rmi.RemoteException;
 
-    public Map<String, Portlet> addPortlets(String[] xmls) throws SystemException;
+  public Map<String, Portlet> addPortlets(String[] xmls) throws SystemException;
 
-    public void deletePortlet(String portletId) throws SystemException, PortalException;
+  public void deletePortlet(String portletId) throws SystemException, PortalException;
 
-    public Portlet updatePortlet(String portletId, String groupId, String defaultPreferences, boolean narrow, String roles, boolean active)
-            throws PortalException, SystemException, RemoteException;
+  public Portlet updatePortlet(String portletId, String groupId, String defaultPreferences, boolean narrow, String roles, boolean active)
+      throws PortalException, SystemException, RemoteException;
+
+  Optional<Portlet> findById(String portletId) throws DotDataException;
+
+  Portlet savePortlet(Portlet portlet) throws DotDataException;
+
+  String portletToXml(Portlet portlet) throws DotDataException;
 }
