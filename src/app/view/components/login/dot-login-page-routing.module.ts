@@ -18,7 +18,7 @@ const routes: Routes = [
     },
     {
         path: '',
-        children: []
+        redirectTo: '/login'
     }
 ];
 
