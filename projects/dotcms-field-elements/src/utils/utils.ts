@@ -6,8 +6,7 @@ export function generateId(): number {
 
 export function getItemsFromString(rawString: string): DotOption[] {
     const items = rawString
-        .replace(/(\\r\\n|\\n|\\r)/gi, '~')
-        .split('~')
+        .split(',')
         .filter((item) => item.length > 0)
         .map((item) => {
             const splittedItem = item.split('|');
