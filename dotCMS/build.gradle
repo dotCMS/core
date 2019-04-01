@@ -354,7 +354,7 @@ task dowloadStarterForTests (type: Copy) {
 dowloadStarterForTests.group='dotCMS tests'
 dowloadStarterForTests.description='Downloads the test starter zip to the integration tests resources folder'
 
-task prepareFelixForTests () {
+task prepareFelixForTests << {
 
     copy {
         from configurations.felix
