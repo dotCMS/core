@@ -23,7 +23,6 @@ import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -484,7 +483,6 @@ public class VTLResource {
                 .setHttpMethod(httpMethod)
                 .setRequest(request)
                 .setUser(user)
-                .setPageMode(PageMode.get(request))
                 .build();
 
         try {
@@ -559,16 +557,14 @@ public class VTLResource {
         private final String folderName;
         private final User user;
         private final Map<String, Object> bodyMap;
-        private final PageMode pageMode;
 
         VelocityReaderParams(final HTTPMethod httpMethod, final HttpServletRequest request, final String folderName,
-                             final User user, final Map<String, Object> bodyMap, final PageMode pageMode) {
+                             final User user, final Map<String, Object> bodyMap) {
             this.httpMethod = httpMethod;
             this.request = request;
             this.folderName = folderName;
             this.user = user;
             this.bodyMap = bodyMap;
-            this.pageMode = pageMode;
         }
 
         HTTPMethod getHttpMethod() {
@@ -591,22 +587,12 @@ public class VTLResource {
             return bodyMap;
         }
 
-        public PageMode getPageMode() {
-            return pageMode;
-        }
-
         public static class VelocityReaderParamsBuilder {
             private HTTPMethod httpMethod;
             private HttpServletRequest request;
             private String folderName;
             private User user;
             private Map<String, Object> bodyMap;
-            private PageMode pageMode;
-
-            public VelocityReaderParamsBuilder setPageMode(final PageMode pageMode) {
-                this.pageMode = pageMode;
-                return this;
-            }
 
             public VelocityReaderParamsBuilder setHttpMethod(final HTTPMethod httpMethod) {
                 this.httpMethod = httpMethod;
@@ -634,7 +620,7 @@ public class VTLResource {
             }
 
             public VTLResource.VelocityReaderParams build() {
-                return new VTLResource.VelocityReaderParams(httpMethod, request, folderName, user, bodyMap, pageMode);
+                return new VTLResource.VelocityReaderParams(httpMethod, request, folderName, user, bodyMap);
             }
         }
     }
