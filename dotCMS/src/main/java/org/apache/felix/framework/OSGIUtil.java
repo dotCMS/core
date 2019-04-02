@@ -102,11 +102,9 @@ public class OSGIUtil {
      * @return Properties
      */
     private Properties defaultProperties() {
+
         Properties felixProps = new Properties();
-        final String felixDirectory = new File(Config
-                .getStringProperty(FELIX_BASE_DIR,
-                        Config.CONTEXT.getRealPath(WEB_INF_FOLDER) + File.separator + "felix"))
-                .getAbsolutePath();
+        final String felixDirectory = getFelixBaseDirFromConfig(null);
 
         Logger.info(this, () -> "Felix base dir: " + felixDirectory);
 
@@ -534,21 +532,21 @@ public class OSGIUtil {
      * @return String
      */
     public String getBaseDirectory(ServletContext context) {
+
         String baseDirectory = null;
-        if (context != null) {
-            baseDirectory = context.getRealPath(WEB_INF_FOLDER);
-        }
 
-        if (!UtilMethods.isSet(baseDirectory)) {
-            baseDirectory = Config.CONTEXT.getRealPath(WEB_INF_FOLDER);
-
-            if (!UtilMethods.isSet(baseDirectory)) {
-                baseDirectory = parseBaseDirectoryFromConfig();
+        if (this.isInitialized()) {
+            if (this.getConfig().containsKey(FELIX_BASE_DIR)) {
+                baseDirectory = (String) this.getConfig().get(FELIX_BASE_DIR);
             }
         }
 
         if (!UtilMethods.isSet(baseDirectory)) {
-            String errorMessage = "The default WEB-INF base directory is not found. Value is null";
+            baseDirectory = getFelixBaseDirFromConfig(context);
+        }
+
+        if (!UtilMethods.isSet(baseDirectory)) {
+            String errorMessage = "Base directory for the Felix framework is not found. Value is null";
             Logger.error(this, errorMessage);
 
             throw new RuntimeException(errorMessage);
@@ -557,18 +555,20 @@ public class OSGIUtil {
         return baseDirectory;
     }
 
-    /**
-     * Parses the base directory from config
-     *
-     * @return String
-     */
-    public String parseBaseDirectoryFromConfig() {
-        String baseDirectory = Config.getStringProperty(FELIX_BASE_DIR, WEB_INF_FOLDER);
-        if (baseDirectory.endsWith(WEB_INF_FOLDER)) {
-            baseDirectory = baseDirectory.substring(0, baseDirectory.indexOf((WEB_INF_FOLDER)) + 8);
+    private String getFelixBaseDirFromConfig(ServletContext context) {
+
+        String defaultBasePath;
+
+        if (context != null) {
+            defaultBasePath = context.getRealPath(WEB_INF_FOLDER);
+        } else {
+            defaultBasePath = Config.CONTEXT.getRealPath(WEB_INF_FOLDER);
         }
 
-        return baseDirectory;
+        return new File(Config
+                .getStringProperty(FELIX_BASE_DIR,
+                        defaultBasePath + File.separator + "felix"))
+                .getAbsolutePath();
     }
 
     /**

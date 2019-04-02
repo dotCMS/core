@@ -1,6 +1,5 @@
 package com.dotcms.osgi;
 
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 
 import com.dotcms.util.IntegrationTestInitService;
@@ -101,6 +100,36 @@ public class OSGIUtilTest {
         assertEquals(configuredUndeployPath, undeployPath);
     }
 
+    @Test
+    public void test_validate_felix_custom_base_dir() {
+
+        Assert.assertNotNull(felixDirectory);
+
+        String customFelixBasePath = felixDirectory.replace("/felix", "/customfelix");
+
+        try {
+            //Changing the base path and restarting the OSGI framework
+            Config.setProperty(FELIX_BASE_DIR, customFelixBasePath);
+            restartOSGi();
+
+            //Validate we are using the property we just set
+            String deployBasePath = OSGIUtil.getInstance().getBaseDirectory(Config.CONTEXT);
+            Assert.assertNotNull(deployBasePath);
+            assertEquals(deployBasePath, customFelixBasePath);
+
+            //Setting back to the original value the base path and restarting the OSGI framework
+            Config.setProperty(FELIX_BASE_DIR, felixDirectory);
+            restartOSGi();
+
+            //Validate we are using the property we just set
+            deployBasePath = OSGIUtil.getInstance().getBaseDirectory(Config.CONTEXT);
+            assertEquals(felixDirectory, deployBasePath);
+        } finally {
+            //Clean up
+            removeFolder(customFelixBasePath);
+        }
+    }
+
     /**
      * Test the felix deploy path is a custom path
      */
@@ -169,20 +198,15 @@ public class OSGIUtilTest {
         }
     }
 
-    /**
-     * Test the parse base directory from 'felix.base.dir' property
-     */
-    @Test
-    public void test07ParseBaseDirectory() {
-        String baseDirectory = OSGIUtil.getInstance().parseBaseDirectoryFromConfig();
-        assertThat("WEB-INF Path exists", new File(baseDirectory).exists());
+    private void removeFolder(String path) {
+        try {
+            File directory = new File(path);
+            FileUtils.deleteDirectory(directory);
+        } catch (Exception ex) {
+            //Do nothing...
+        }
     }
 
-    /**
-     * Remove created path
-     *
-     * @param path The path to remove
-     */
     private void removeParentFolder(String path) {
         try {
             File directory = new File(path);
