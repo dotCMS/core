@@ -1,81 +1,61 @@
 package com.dotcms.rest.api.v1.vtl;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Reader;
-import java.io.StringWriter;
-import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-
-
-import org.apache.velocity.exception.MethodInvocationException;
-
 import com.dotcms.api.vtl.model.DotJSON;
 import com.dotcms.cache.DotJSONCache;
 import com.dotcms.cache.DotJSONCacheFactory;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.rendering.velocity.viewtools.exception.DotToolException;
-import com.dotcms.repackage.javax.ws.rs.Consumes;
-import com.dotcms.repackage.javax.ws.rs.DELETE;
-import com.dotcms.repackage.javax.ws.rs.GET;
-import com.dotcms.repackage.javax.ws.rs.POST;
-import com.dotcms.repackage.javax.ws.rs.PUT;
-import com.dotcms.repackage.javax.ws.rs.Path;
-import com.dotcms.repackage.javax.ws.rs.PathParam;
-import com.dotcms.repackage.javax.ws.rs.Produces;
+import com.dotcms.repackage.javax.ws.rs.*;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.javax.ws.rs.core.UriInfo;
-import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
-import com.dotcms.repackage.org.glassfish.jersey.media.multipart.BodyPart;
-import com.dotcms.repackage.org.glassfish.jersey.media.multipart.ContentDisposition;
-import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataBodyPart;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.PATCH;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.api.MultiPartUtils;
 import com.dotcms.rest.api.v1.HTTPMethod;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.DotPreconditions;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
+import org.apache.velocity.exception.MethodInvocationException;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import java.io.File;
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringWriter;
+import java.util.*;
 
 
 @Path("/vtl")
 public class VTLResource {
 
+    private final MultiPartUtils multiPartUtils;
     private final WebResource webResource;
     @VisibleForTesting
     static final String VTL_PATH = "/application/apivtl";
 
     public VTLResource() {
-        this(new WebResource());
+        this(new WebResource(), new MultiPartUtils());
     }
 
     @VisibleForTesting
-    VTLResource(final WebResource webResource) {
-        this.webResource = webResource;
+    VTLResource(final WebResource webResource, final MultiPartUtils multiPartUtils) {
+        this.webResource   = webResource;
+        this.multiPartUtils = multiPartUtils;
     }
 
     /**
@@ -91,7 +71,7 @@ public class VTLResource {
     @Consumes({MediaType.APPLICATION_JSON})
     public Response get(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                         @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
-                        @PathParam("pathParam") final String pathParam, final Map<String, String> bodyMap) {
+                        @PathParam("pathParam") final String pathParam, final Map<String, Object> bodyMap) {
 
         return processRequest(request, response, uriInfo, folderName, pathParam, HTTPMethod.GET, bodyMap);
     }
@@ -103,7 +83,7 @@ public class VTLResource {
     @Consumes({MediaType.APPLICATION_JSON})
     public Response get(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                         @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
-                        final Map<String, String> bodyMap) {
+                        final Map<String, Object> bodyMap) {
 
         return processRequest(request, response, uriInfo, folderName, null, HTTPMethod.GET, bodyMap);
     }
@@ -123,7 +103,7 @@ public class VTLResource {
     public final Response post(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                                @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
                                @PathParam("pathParam") final String pathParam,
-                                   final Map<String, String> bodyMap) {
+                                   final Map<String, Object> bodyMap) {
 
         return processRequest(request, response, uriInfo, folderName, pathParam, HTTPMethod.POST, bodyMap);
     }
@@ -136,7 +116,7 @@ public class VTLResource {
     @Consumes({MediaType.APPLICATION_JSON})
     public final Response post(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                                @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
-                               final Map<String, String> bodyMap) {
+                               final Map<String, Object> bodyMap) {
 
         return processRequest(request, response, uriInfo, folderName, null, HTTPMethod.POST, bodyMap);
     }
@@ -156,7 +136,7 @@ public class VTLResource {
     public final Response put(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                                @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
                                @PathParam("pathParam") final String pathParam,
-                               final Map<String, String> bodyMap) {
+                               final Map<String, Object> bodyMap) {
 
         return processRequest(request, response, uriInfo, folderName, pathParam, HTTPMethod.PUT, bodyMap);
     }
@@ -169,7 +149,7 @@ public class VTLResource {
     @Consumes({MediaType.APPLICATION_JSON})
     public final Response put(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                               @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
-                              final Map<String, String> bodyMap) {
+                              final Map<String, Object> bodyMap) {
 
         return processRequest(request, response, uriInfo, folderName, null, HTTPMethod.PUT, bodyMap);
     }
@@ -189,7 +169,7 @@ public class VTLResource {
     public final Response patch(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                               @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
                               @PathParam("pathParam") final String pathParam,
-                              final Map<String, String> bodyMap) {
+                              final Map<String, Object> bodyMap) {
 
         return processRequest(request, response, uriInfo, folderName, pathParam, HTTPMethod.PATCH, bodyMap);
     }
@@ -202,7 +182,7 @@ public class VTLResource {
     @Consumes({MediaType.APPLICATION_JSON})
     public final Response patch(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                                 @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
-                                final Map<String, String> bodyMap) {
+                                final Map<String, Object> bodyMap) {
 
         return processRequest(request, response, uriInfo, folderName, null, HTTPMethod.PATCH, bodyMap);
     }
@@ -222,7 +202,7 @@ public class VTLResource {
     public final Response delete(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                                @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
                                @PathParam("pathParam") final String pathParam,
-                               final Map<String, String> requestJSONMap) {
+                               final Map<String, Object> requestJSONMap) {
 
         return processRequest(request, response, uriInfo, folderName, pathParam, HTTPMethod.DELETE, requestJSONMap);
     }
@@ -235,7 +215,7 @@ public class VTLResource {
     @Consumes({MediaType.APPLICATION_JSON})
     public final Response delete(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                                  @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
-                                 final Map<String, String> requestJSONMap) {
+                                 final Map<String, Object> requestJSONMap) {
 
         return processRequest(request, response, uriInfo, folderName, null, HTTPMethod.DELETE, requestJSONMap);
     }
@@ -347,7 +327,7 @@ public class VTLResource {
                                @Context UriInfo uriInfo, @PathParam("pathParam") final String pathParam,
                                final String bodyMapString) {
 
-        final Map<String, String> bodyMap = parseBodyMap(bodyMapString);
+        final Map<String, Object> bodyMap = parseBodyMap(bodyMapString);
 
         return processRequest(request, response, uriInfo, null, pathParam, HTTPMethod.GET, bodyMap);
     }
@@ -377,7 +357,7 @@ public class VTLResource {
                                 @Context UriInfo uriInfo, @PathParam("pathParam") final String pathParam,
                                 final String bodyMapString) {
 
-        final Map<String, String> bodyMap = parseBodyMap(bodyMapString);
+        final Map<String, Object> bodyMap = parseBodyMap(bodyMapString);
 
         return processRequest(request, response, uriInfo, null, pathParam, HTTPMethod.POST, bodyMap);
     }
@@ -407,7 +387,7 @@ public class VTLResource {
                                @Context UriInfo uriInfo, @PathParam("pathParam") final String pathParam,
                                final String bodyMapString) {
 
-        final Map<String, String> bodyMap = parseBodyMap(bodyMapString);
+        final Map<String, Object> bodyMap = parseBodyMap(bodyMapString);
 
         return processRequest(request, response, uriInfo, null, pathParam, HTTPMethod.PUT, bodyMap);
     }
@@ -437,7 +417,7 @@ public class VTLResource {
                                  @Context UriInfo uriInfo, @PathParam("pathParam") final String pathParam,
                                  final String bodyMapString) {
 
-        final Map<String, String> bodyMap = parseBodyMap(bodyMapString);
+        final Map<String, Object> bodyMap = parseBodyMap(bodyMapString);
 
         return processRequest(request, response, uriInfo, null, pathParam, HTTPMethod.PATCH, bodyMap);
     }
@@ -456,7 +436,7 @@ public class VTLResource {
                                   final @Context UriInfo uriInfo, @PathParam("pathParam") final String pathParam,
                                   final String bodyMapString) {
 
-        final Map<String, String> bodyMap = parseBodyMap(bodyMapString);
+        final Map<String, Object> bodyMap = parseBodyMap(bodyMapString);
 
         return processRequest(request, response, uriInfo, null, pathParam, HTTPMethod.DELETE, bodyMap);
     }
@@ -468,7 +448,7 @@ public class VTLResource {
                                              final FormDataMultiPart multipart) {
         try {
             final List<File> binaries = getBinariesFromMultipart(multipart);
-            final Map<String, String> bodyMap = getBodyMapFromMultipart(multipart);
+            final Map<String, Object> bodyMap = getBodyMapFromMultipart(multipart);
 
             return processRequest(request, response, uriInfo, folderName, pathParam, httpMethod, bodyMap,
                     binaries.toArray(new File[0]));
@@ -482,7 +462,7 @@ public class VTLResource {
                                     final UriInfo uriInfo, final String folderName,
                                     final String pathParam,
                                     final HTTPMethod httpMethod,
-                                    final Map<String, String> bodyMap,
+                                    final Map<String, Object> bodyMap,
                                     final File...binaries) {
         final InitDataObject initDataObject = this.webResource.init
                 (null, false, request, false, null);
@@ -561,47 +541,14 @@ public class VTLResource {
         }
     }
 
-    private Map<String, String> getBodyMapFromMultipart(final FormDataMultiPart multipart) throws IOException, JSONException {
-        Map<String, String> bodyMap = null;
+    private Map<String, Object> getBodyMapFromMultipart(final FormDataMultiPart multipart) throws IOException, JSONException {
 
-        for (final BodyPart part : multipart.getBodyParts()) {
-            final ContentDisposition contentDisposition = part.getContentDisposition();
-            final String name = contentDisposition != null && contentDisposition.getParameters().containsKey("name")
-                    ? contentDisposition.getParameters().get("name")
-                    : "";
-
-            if (part.getMediaType().equals(MediaType.APPLICATION_JSON_TYPE) || name
-                    .equals("json")) {
-
-                bodyMap = WebResource.processJSON(part.getEntityAs(InputStream.class));
-            }
-        }
-
-        return bodyMap;
+        return this.multiPartUtils.getBodyMapFromMultipart(multipart);
     }
 
     private List<File> getBinariesFromMultipart(final FormDataMultiPart multipart) throws IOException {
-        final List<File> binaries = new ArrayList<>();
 
-        for (final FormDataBodyPart part : multipart.getFields("file")) {
-            final File tmpFolder = new File(
-                    APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + UUIDUtil.uuid());
-
-            if(!tmpFolder.mkdirs()) {
-                throw new IOException("Unable to create temp folder to save binaries");
-            }
-
-            final String filename = part.getContentDisposition().getFileName();
-            final File tempFile = new File(
-                    tmpFolder.getAbsolutePath() + File.separator + filename);
-
-            Files.deleteIfExists(tempFile.toPath());
-
-            FileUtils.copyInputStreamToFile(part.getEntityAs(InputStream.class), tempFile);
-            binaries.add(tempFile);
-        }
-
-        return binaries;
+        return this.multiPartUtils.getBinariesFromMultipart(multipart);
     }
 
     static class VelocityReaderParams {
@@ -609,10 +556,10 @@ public class VTLResource {
         private final HttpServletRequest request;
         private final String folderName;
         private final User user;
-        private final Map<String, String> bodyMap;
+        private final Map<String, Object> bodyMap;
 
         VelocityReaderParams(final HTTPMethod httpMethod, final HttpServletRequest request, final String folderName,
-                             final User user, final Map<String, String> bodyMap) {
+                             final User user, final Map<String, Object> bodyMap) {
             this.httpMethod = httpMethod;
             this.request = request;
             this.folderName = folderName;
@@ -636,7 +583,7 @@ public class VTLResource {
             return user;
         }
 
-        Map<String, String> getBodyMap() {
+        Map<String, Object> getBodyMap() {
             return bodyMap;
         }
 
@@ -645,7 +592,7 @@ public class VTLResource {
             private HttpServletRequest request;
             private String folderName;
             private User user;
-            private Map<String, String> bodyMap;
+            private Map<String, Object> bodyMap;
 
             public VelocityReaderParamsBuilder setHttpMethod(final HTTPMethod httpMethod) {
                 this.httpMethod = httpMethod;
@@ -667,7 +614,7 @@ public class VTLResource {
                 return this;
             }
 
-            public VelocityReaderParamsBuilder setBodyMap(final Map<String, String> bodyMap) {
+            public VelocityReaderParamsBuilder setBodyMap(final Map<String, Object> bodyMap) {
                 this.bodyMap = bodyMap;
                 return this;
             }
@@ -678,15 +625,15 @@ public class VTLResource {
         }
     }
 
-    private Map<String, String> parseBodyMap(final String bodyMapString) {
-        Map<String, String> bodyMap = new HashMap<>();
+    private Map<String, Object> parseBodyMap(final String bodyMapString) {
+        Map<String, Object> bodyMap = new HashMap<>();
 
         // 1) try parsing as is
         try {
             bodyMap = new ObjectMapper().readValue(bodyMapString, HashMap.class);
 
             if(bodyMap.containsKey("velocity")){
-                bodyMap.put("velocity", unescapeValue(bodyMap.get("velocity"), "\n"));
+                bodyMap.put("velocity", unescapeValue((String)bodyMap.get("velocity"), "\n"));
             }
         } catch (IOException e) {
             // 2) let's try escaping then parsing
@@ -696,7 +643,7 @@ public class VTLResource {
                 bodyMap = new ObjectMapper().readValue(escapedJsonValues, HashMap.class);
 
                 if(bodyMap.containsKey("velocity")){
-                    bodyMap.put("velocity", unescapeValue(bodyMap.get("velocity"), "\n"));
+                    bodyMap.put("velocity", unescapeValue((String)bodyMap.get("velocity"), "\n"));
                 }
             } catch (IOException e1) {
                 bodyMap.put("velocity", bodyMapString);

@@ -11,7 +11,6 @@ import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.ConfigUtils;
@@ -22,7 +21,6 @@ import com.dotmarketing.util.UtilMethods;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.nio.charset.Charset;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -267,20 +265,6 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
 
             final Folder folder = APILocator.getFolderAPI().find(oldFolderInode, APILocator.getUserAPI().getSystemUser(), false);
 
-            /*
-            Clean up the caches
-             */
-            List<Contentlet> contents = APILocator.getContentletAPI().findContentletsByFolder(folder, APILocator.getUserAPI().getSystemUser(), false);
-            for ( Contentlet contentlet : contents ) {
-                APILocator.getContentletIndexAPI().removeContentFromIndex(contentlet);
-                CacheLocator.getContentletCache().remove(contentlet.getInode());
-            }
-
-            Identifier folderIdentifier = APILocator.getIdentifierAPI().find(folder.getIdentifier());
-            CacheLocator.getFolderCache().removeFolder(folder, folderIdentifier);
-            CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(oldFolderIdentifier);
-            CacheLocator.getIdentifierCache().removeFromCacheByInode(oldFolderInode);
-
             // THIS IS THE NEW CODE
 
             // 1.1) Insert dummy temp row on INODE table
@@ -443,10 +427,6 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
 
                     String folderPath = null;
                     try {
-
-                        //Cleaning the cache for the new ids
-                        CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(newFolderIdentifier);
-                        CacheLocator.getIdentifierCache().removeFromCacheByInode(newFolderInode);
 
                         //In oder to avoid duplicated code: Create a dummy Identifier object in order to use the getPath method logic
                         Identifier dummyIdentifier = new Identifier();

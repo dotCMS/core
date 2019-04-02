@@ -29,7 +29,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * @author Graziano Aliberti - Engineering Ingegneria Informatica
  * @date Apr 20, 2012
  */
-public class TemplateLayout implements Serializable{
+public class TemplateLayout implements Serializable {
 
     private String pageWidth;
     private String width;

@@ -66,7 +66,6 @@
 			"name": "Photo",
 			"variable": "photo",
 			"fixed": true,
-			"id": "07cfbc2c-47de-4c78-a411-176fe8bb24a5"
 		},
 		{
 			"clazz": "com.dotcms.contenttype.model.field.TagField",

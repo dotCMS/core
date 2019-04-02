@@ -1,7 +1,12 @@
 package com.dotmarketing.util;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionLevel;
+import com.dotmarketing.business.web.WebAPILocator;
+import com.liferay.portal.model.User;
+import com.liferay.portal.util.PortalUtil;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -32,7 +37,8 @@ public enum PageMode {
 
     LIVE(true, false), 
     ADMIN_MODE(true, true, true),
-    PREVIEW_MODE(false, true), 
+    PREVIEW_MODE(false, true),
+    WORKING(false, true),
     EDIT_MODE(false, true),
     NAVIGATE_EDIT_MODE(false, true);
 
@@ -72,15 +78,62 @@ public enum PageMode {
     }
 
     public static PageMode get(final HttpServletRequest req) {
-        if (req == null || req.getSession(false) == null || null!= req.getHeader("X-Requested-With")) {
+
+        if (req == null || null!= req.getHeader("X-Requested-With")) {
+
             return DEFAULT_PAGE_MODE;
         }
-        return get(req.getSession());
+
+        PageMode pageMode = null;
+
+        if (null != req.getParameter(WebKeys.PAGE_MODE_PARAMETER)) {
+
+            pageMode = PageMode.get(req.getParameter(WebKeys.PAGE_MODE_PARAMETER));
+            req.setAttribute(WebKeys.PAGE_MODE_PARAMETER, pageMode);
+        }
+
+        if (null == pageMode && null != req.getAttribute(WebKeys.PAGE_MODE_PARAMETER)) {
+
+            pageMode = (PageMode)req.getAttribute(WebKeys.PAGE_MODE_PARAMETER);
+        }
+
+        final HttpSession session = req.getSession(false);
+        if (null == pageMode) {
+
+            if (session == null) {
+
+                return DEFAULT_PAGE_MODE;
+            }
+
+            pageMode = get(session);
+        }
+
+        if (PageMode.LIVE != pageMode) {
+
+            final User user = PortalUtil.getUser(req);
+            try {
+
+                if (null != user && APILocator.getUserAPI().getAnonymousUser().equals(user)) {
+
+                    final Host host = WebAPILocator.getHostWebAPI().getCurrentHost(req, pageMode);
+                    if (null == host || !APILocator.getPermissionAPI().doesUserHavePermission
+                            (host, PermissionLevel.READ.getType(), user)) {
+
+                        pageMode = DEFAULT_PAGE_MODE;
+                    }
+                }
+            } catch (Exception e) {
+
+                Logger.debug(PageMode.class, e.getMessage(), e);
+            }
+        }
+
+        return pageMode;
     }
     
     public static PageMode get(final String modeStr) {
-        for(PageMode mode : values()) {
-                if(mode.name().equals(modeStr)) {
+        for(final PageMode mode : values()) {
+                if(mode.name().equalsIgnoreCase(modeStr)) {
                     return mode;
                 }
         }
