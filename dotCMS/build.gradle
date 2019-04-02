@@ -294,18 +294,46 @@ war {
         into 'WEB-INF/lib'
     }
 
-    from (configurations.felix) {
-        into felixFolder.concat("/bundle")
-    }
+    // Verify if the felix folder is outside the war
+    if (!felixFolder.startsWith("/")) { // Relative to the war
+        from(configurations.felix) {
+            into felixFolder.concat("/bundle")
+        }
 
-    from(configurations.compile) {
-        into felixFolder.concat("/bundle")
-        include '**/org.apache.felix.http.api*.jar'
-    }
+        from(configurations.compile) {
+            into felixFolder.concat("/bundle")
+            include '**/org.apache.felix.http.api*.jar'
+        }
 
-    from(configurations.compile) {
-        into felixFolder.concat("/bundle")
-        include '**/org.apache.felix.http.bundle*.jar'
+        from(configurations.compile) {
+            into felixFolder.concat("/bundle")
+            include '**/org.apache.felix.http.bundle*.jar'
+        }
+    } else { //Outside the war
+
+        exclude 'WEB-INF/felix'
+
+        copy {
+            from configurations.felix
+            into felixFolder.concat("/bundle")
+        }
+
+        copy {
+            from 'src/main/webapp/WEB-INF/felix/osgi-extra-generated.conf'
+            into felixFolder
+        }
+
+        copy {
+            from configurations.compile
+            into felixFolder.concat("/bundle")
+            include '**/org.apache.felix.http.api*.jar'
+        }
+
+        copy {
+            from configurations.compile
+            into felixFolder.concat("/bundle")
+            include '**/org.apache.felix.http.bundle*.jar'
+        }
     }
 
     from (configurations.starter) {
@@ -356,27 +384,33 @@ dowloadStarterForTests.description='Downloads the test starter zip to the integr
 
 task prepareFelixForTests << {
 
-    copy {
-        from configurations.felix
-        into felixFolder.concat("/bundle")
+    //If we want the felix folder to live in a custom folder
+    if (project.hasProperty("integrationTestFelixFolder")
+            && integrationTestFelixFolder?.trim()) {
+
+        copy {
+            from configurations.felix
+            into integrationTestFelixFolder.concat("/bundle")
+        }
+
+        copy {
+            from 'src/main/webapp/WEB-INF/felix/osgi-extra-generated.conf'
+            into integrationTestFelixFolder
+        }
+
+        copy {
+            from configurations.compile
+            into integrationTestFelixFolder.concat("/bundle")
+            include '**/org.apache.felix.http.api*.jar'
+        }
+
+        copy {
+            from configurations.compile
+            into integrationTestFelixFolder.concat("/bundle")
+            include '**/org.apache.felix.http.bundle*.jar'
+        }
     }
 
-    copy {
-        from 'src/main/webapp/WEB-INF/felix/osgi-extra-generated.conf'
-        into felixFolder
-    }
-
-    copy {
-        from configurations.compile
-        into felixFolder.concat("/bundle")
-        include '**/org.apache.felix.http.api*.jar'
-    }
-
-    copy {
-        from configurations.compile
-        into felixFolder.concat("/bundle")
-        include '**/org.apache.felix.http.bundle*.jar'
-    }
 }
 prepareFelixForTests.group='dotCMS tests'
 prepareFelixForTests.description='Copies the felix bundle jars and the osgi-extra-generated.conf file to the specified felix home location'
