@@ -623,10 +623,6 @@ public class ESIndexAPI {
 			map.put("number_of_replicas", replicasMode.getNumberOfReplicas());
 		}
 		map.put("auto_expand_replicas",replicasMode.getAutoExpandReplicas());
-		//map.put("index.refresh_interval", -1);
-        map.put("index.translog.durability", "async");
-
-        Logger.info(this, "Setting refresh_interval and translog.durability");
 
 		// create actual index
 		CreateIndexRequestBuilder cirb = iac.prepareCreate(indexName).setSettings(map);
