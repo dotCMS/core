@@ -21,7 +21,7 @@ export class AppComponent implements OnInit, AfterViewInit {
         notLicensedService.init();
     }
 
-    ngOnInit() {
+    async ngOnInit() {
         this.dotcms = initDotCMS({
             token:
                 // tslint:disable-next-line:max-line-length
@@ -29,13 +29,12 @@ export class AppComponent implements OnInit, AfterViewInit {
         });
 
         const dotCMSFormConfig = {
-            identifier: '7fcedef5-1048-433d-9f67-bbec281d9c81'
+            identifier: '7fcedef5-1048-433d-9f67-bbec281d9c81',
+            fields: ['text1', 'select2', 'checkbox3']
         };
 
-        this.dotcms.form.get(dotCMSFormConfig);
-        setTimeout(() => {
-            this.dotcms.form.render(this.custom.nativeElement);
-        }, 2000);
+        const formBuilder = await this.dotcms.form.get(dotCMSFormConfig);
+        formBuilder.render(this.custom.nativeElement);
 
         this.dotCmsConfig
             .getConfig()

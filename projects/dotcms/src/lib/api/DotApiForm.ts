@@ -3,69 +3,78 @@ import { DotApiContentType } from './DotApiContentType';
 import { DotCMSHttpClient } from '../utils/DotCMSHttpClient';
 import { FieldElementsTags } from '../utils/fieldsElementsTags';
 
+/**
+ * DotCMS Api Form Builder
+ *
+ */
 export class DotApiForm {
-    private dotCMSHttpClient: DotCMSHttpClient;
     private dotApiContentType: DotApiContentType;
-    private formScript: string;
+    private dotCMSHttpClient: DotCMSHttpClient;
+    private formScript = '';
 
     constructor(httpClient: DotCMSHttpClient) {
         this.dotCMSHttpClient = httpClient;
         this.dotApiContentType = new DotApiContentType(this.dotCMSHttpClient);
     }
 
-    get(config: DotCMSFormConfig): void {
-        this.dotApiContentType
+    /**
+     * Returns a Form Builder instance based on configuration
+     * @param {DotCMSFormConfig} config
+     * @returns {Promise<DotApiForm>}
+     * @memberof DotApiForm
+     */
+    get(config: DotCMSFormConfig): Promise<DotApiForm> {
+        return this.dotApiContentType
             .getFields(config.identifier)
             .then((fields: DotCMSContentTypeField[]) => {
-                this.createForm(fields);
+                if (config.fields && config.fields.length) {
+                    this.createForm(fields, config);
+                }
+                return this;
             });
     }
 
     /**
-     *
+     * Render form on provided html element
+     * @param {HTMLElement} container
+     * @memberof DotApiForm
      */
     render(container: HTMLElement): void {
-        console.log('---container', container);
-        const escript = document.createElement('script');
-        const tag = document.createElement('div');
+        const importScript = document.createElement('script');
+        const formTag = document.createElement('div');
 
-        escript.type = 'module';
-        escript.text = `
-            import { defineCustomElements } from 'https://unpkg.com/dotcms-field-elements@latest/dist/loader';
+        importScript.type = 'module';
+        importScript.text = `
+            import { defineCustomElements } from "https://unpkg.com/dotcms-field-elements@0.0.2/dist/loader";
             defineCustomElements(window);`;
-        tag.innerHTML = this.formScript;
+        formTag.innerHTML = this.formScript;
 
-        container.append(escript);
-        container.appendChild(tag);
+        container.append(importScript, formTag);
     }
 
-    private createForm(fields: DotCMSContentTypeField[]): void {
-console.log('--fields', fields)
-
-        this.formScript = '<form>';
+    private createForm(fields: DotCMSContentTypeField[], config: DotCMSFormConfig): void {
         let fieldTags = '';
+
         fields.map((field) => {
-            fieldTags += this.createField(field);
+            fieldTags += config.fields.includes(field.variable) ? this.createField(field) : '';
         });
-        this.formScript += `${fieldTags}</form>`;
-        console.log('--formScript', this.formScript);
+
+        this.formScript += `<form>${fieldTags}</form>`;
     }
 
     // tslint:disable-next-line:cyclomatic-complexity
     private createField(field: DotCMSContentTypeField): string {
-        let fieldScript = '';
         const fieldClazz = field.clazz.split('.');
         const fieldTag = FieldElementsTags[fieldClazz[fieldClazz.length - 1]];
-        if (fieldTag) {
-                fieldScript = `
-                <${fieldTag}
-                    ${field.name ? `label="${field.name}"` : ''}
-                    ${field.defaultValue ? `defaultValue="${field.defaultValue}"` : ''}
-                    ${field.values ? `options="${field.values.split('\r\n').join(',')}"` : ''}
-                    ${field.hint ? `hint="${field.hint}"` : ''}
-                    ${field.required ? 'required' : ''}
-                ></${fieldTag}>`;
-        }
-        return fieldScript;
+        return fieldTag
+            ? `
+            <${fieldTag}
+                ${field.name ? `label="${field.name}"` : ''}
+                ${field.defaultValue ? `value="${field.defaultValue}"` : ''}
+                ${field.values ? `options="${field.values.split('\r\n').join(',')}"` : ''}
+                ${field.hint ? `hint="${field.hint}"` : ''}
+                ${field.required ? 'required' : ''}
+            ></${fieldTag}>`
+            : '';
     }
 }
