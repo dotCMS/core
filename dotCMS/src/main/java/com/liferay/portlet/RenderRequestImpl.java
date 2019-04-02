@@ -217,13 +217,7 @@ public class RenderRequestImpl implements RenderRequest {
 	}
 
 	public boolean isPortletModeAllowed(PortletMode portletMode) {
-		if (portletMode == null || Validator.isNull(portletMode.toString())) {
-			return true;
-		}
-		else {
-			return _portlet.hasPortletMode(
-				getResponseContentType(), portletMode);
-		}
+		return true;
 	}
 
 	public PortletPreferences getPreferences() {

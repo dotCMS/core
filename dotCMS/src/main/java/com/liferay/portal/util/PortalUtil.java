@@ -146,9 +146,9 @@ public class PortalUtil {
 
   public static void destroyPortletConfig(Portlet portlet) {
     String scpId = PortalUtil.class.getName() + "." + PortletConfig.class.getName();
-    if (!portlet.isWARFile()) {
+
       scpId += "." + portlet.getCompanyId();
-    }
+    
 
     Map map = (Map) SimpleCachePool.get(scpId);
 
@@ -161,9 +161,9 @@ public class PortalUtil {
 
   public static void destroyPortletContext(Portlet portlet) {
     String scpId = PortalUtil.class.getName() + "." + PortletContext.class.getName();
-    if (!portlet.isWARFile()) {
+
       scpId += "." + portlet.getCompanyId();
-    }
+    
 
     Map map = (Map) SimpleCachePool.get(scpId);
 
@@ -176,9 +176,9 @@ public class PortalUtil {
 
   public static void destroyPortletInstance(Portlet portlet) {
     String scpId = PortalUtil.class.getName() + "." + com.dotcms.repackage.javax.portlet.Portlet.class.getName();
-    if (!portlet.isWARFile()) {
+
       scpId += "." + portlet.getCompanyId();
-    }
+    
 
     Map map = (Map) SimpleCachePool.get(scpId);
 
@@ -194,11 +194,6 @@ public class PortalUtil {
       map.remove(portlet.getPortletId());
     }
 
-    if (portlet.isWARFile()) {
-      PortletContextWrapper pcw = (PortletContextWrapper) PortletContextPool.get(portlet.getPortletId());
-
-      pcw.removePortletInstance();
-    }
 
     destroyPortletConfig(portlet);
     destroyPortletContext(portlet);
@@ -372,22 +367,6 @@ public class PortalUtil {
     return prefs;
   }
 
-  public static PreferencesValidator getPreferencesValidator(Portlet portlet) {
-
-    if (portlet.isWARFile()) {
-      PortletContextWrapper pcw = PortletContextPool.get(portlet.getPortletId());
-
-      return pcw.getPreferencesValidator();
-    } else {
-      PreferencesValidator prefsValidator = null;
-
-      if (Validator.isNotNull(portlet.getPreferencesValidator())) {
-        prefsValidator = (PreferencesValidator) InstancePool.get(portlet.getPreferencesValidator());
-      }
-
-      return prefsValidator;
-    }
-  }
 
   public static User getSelectedUser(HttpServletRequest req) {
     String emailAddress = ParamUtil.getString(req, "p_u_e_a");

@@ -699,7 +699,7 @@ public class LiferayPortlet extends PortletModel {
         portletInstance = (com.dotcms.repackage.javax.portlet.Portlet) Class.forName(getPortletClass()).newInstance();
       }
 
-      cachePortlet = new CachePortlet(portletInstance, portletConfig.getPortletContext(), getExpCache());
+      cachePortlet = new CachePortlet(portletInstance, portletConfig.getPortletContext());
 
       cachePortlet.init(portletConfig);
     } catch (ClassNotFoundException cnofe) {

@@ -72,7 +72,7 @@ public class PortletAPIImpl implements PortletAPI {
   public boolean hasTemplateManagerRights(User user) {
     return hasPortletRights(user, "templates");
   }
-
+  @Override
   @CloseDBIfOpened
   public Portlet findPortlet(String portletId) {
 
@@ -80,6 +80,7 @@ public class PortletAPIImpl implements PortletAPI {
 
   }
 
+  @Override
   @CloseDBIfOpened
   public void deletePortlet(String portletId) {
 
@@ -94,12 +95,12 @@ public class PortletAPIImpl implements PortletAPI {
   public void InitPortlets() throws SystemException {
     portletFac.getPortlets();
   }
-
+  @Override
   @CloseDBIfOpened
   public Collection<Portlet> findAllPortlets() throws SystemException {
     return portletFac.getPortlets();
   }
-
+  @Override
   public boolean canAddPortletToLayout(Portlet portlet) {
     String[] portlets = PropsUtil.getArray(PropsUtil.PORTLETS_EXCLUDED_FOR_LAYOUT);
     for (String portletId : portlets) {
@@ -108,7 +109,7 @@ public class PortletAPIImpl implements PortletAPI {
     }
     return true;
   }
-
+  @Override
   public boolean canAddPortletToLayout(String portletId) {
     String[] attachablePortlets = PropsUtil.getArray(PropsUtil.PORTLETS_EXCLUDED_FOR_LAYOUT);
     for (String attachablePortlet : attachablePortlets) {

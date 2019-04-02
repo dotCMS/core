@@ -112,60 +112,7 @@ public class PortletContextListener implements ServletContextListener {
 
 
 
-				Scheduler schedulerInstance = null;
-				if (Validator.isNotNull(portlet.getSchedulerClass())) {
-					schedulerInstance = (Scheduler)contextClassLoader.loadClass(
-						portlet.getSchedulerClass()).newInstance();
-				}
 
-				PreferencesValidator prefsValidator = null;
-				if (Validator.isNotNull(portlet.getPreferencesValidator())) {
-					prefsValidator =
-						(PreferencesValidator)contextClassLoader.loadClass(
-							portlet.getPreferencesValidator()).newInstance();
-
-					try {
-						if (GetterUtil.getBoolean(PropsUtil.get(
-								PropsUtil.PREFERENCE_VALIDATE_ON_STARTUP))) {
-
-							prefsValidator.validate(
-								PortletPreferencesSerializer.fromDefaultXML(
-									portlet.getDefaultPreferences()));
-						}
-					}
-					catch (Exception e1) {
-						_log.warn(
-							"Portlet with the name " + portlet.getPortletId() +
-								" does not have valid default preferences");
-					}
-				}
-
-				Map resourceBundles = null;
-
-				if (Validator.isNotNull(portlet.getResourceBundle())) {
-					resourceBundles = CollectionFactory.getHashMap();
-
-					Iterator itr2 = portlet.getSupportedLocales().iterator();
-
-					while (itr2.hasNext()) {
-						String supportedLocale = (String)itr2.next();
-
-						Locale locale = new Locale(supportedLocale);
-
-						try {
-							ResourceBundle resourceBundle =
-								ResourceBundle.getBundle(
-									portlet.getResourceBundle(), locale,
-									contextClassLoader);
-
-							resourceBundles.put(
-								locale.getLanguage(), resourceBundle);
-						}
-						catch (MissingResourceException mre) {
-							_log.warn(mre.getMessage());
-						}
-					}
-				}
 
 				Map customUserAttributes = CollectionFactory.getHashMap();
 
@@ -173,8 +120,8 @@ public class PortletContextListener implements ServletContextListener {
 
 				PortletContextWrapper pcw = new PortletContextWrapper(
 					portlet.getPortletId(), ctx, portletInstance,
-					schedulerInstance, prefsValidator,
-					resourceBundles, customUserAttributes);
+					null, null,
+					null, customUserAttributes);
 
 				PortletContextPool.put(portlet.getPortletId(), pcw);
 			}

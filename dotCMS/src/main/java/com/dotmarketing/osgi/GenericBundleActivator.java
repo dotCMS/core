@@ -1011,29 +1011,10 @@ public abstract class GenericBundleActivator implements BundleActivator {
      * @throws SchedulerException
      */
     protected void unregisterPortlets () throws Exception {
-
         if ( portlets != null ) {
-
-            PortletFactory portletFactory = PortletManagerFactory.getManager();
-            Company company = PublicCompanyFactory.getDefaultCompany();
-
+            
             for ( Portlet portlet : portlets ) {
-
-                //PK
-
-                //Cache key
-                String scpId = PortalUtil.class.getName() + "." + com.dotcms.repackage.javax.portlet.Portlet.class.getName();
-                if ( !portlet.isWARFile() ) {
-                    scpId += "." + company.getCompanyId();
-                }
-
-                //Clean-up the caches
-                portletFactory.deletePortlet( portlet.getPortletId() );
-                //Clean-up the caches
-                Map map = (Map) SimpleCachePool.get( scpId );
-                if ( map != null ) {
-                    map.remove( portlet.getPortletId() );
-                }
+              APILocator.getPortletAPI().deletePortlet(portlet.getPortletId());
             }
         }
     }
