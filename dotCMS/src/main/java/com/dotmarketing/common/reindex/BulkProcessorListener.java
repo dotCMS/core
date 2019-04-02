@@ -78,7 +78,9 @@ public class BulkProcessorListener implements BulkProcessor.Listener {
     private void handleSuccess(final List<ReindexEntry> successful) {
 
         try {
-            APILocator.getReindexQueueAPI().deleteReindexEntry(successful);
+            if (!successful.isEmpty()) {
+                APILocator.getReindexQueueAPI().deleteReindexEntry(successful);
+            }
         } catch (DotDataException e) {
             Logger.warnAndDebug(this.getClass(), "unable to delete indexjournal:" + e.getMessage(), e);
         }
