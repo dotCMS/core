@@ -12,6 +12,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.datagen.*;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.mock.request.MockInternalRequest;
 import com.dotcms.mock.response.BaseResponse;
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
@@ -24,6 +25,7 @@ import com.dotmarketing.business.*;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.db.LocalTransaction;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.TreeFactory;
@@ -4361,6 +4363,67 @@ public class ContentletAPITest extends ContentletBaseTest {
         } finally {
             if(blogContent!=null && UtilMethods.isSet(blogContent.getIdentifier()))  {
                 contentletAPI.destroy(blogContent, user, false);
+            }
+        }
+    }
+
+    /**
+     * Test checkin with a non-existing contentlet identifier, that should fail
+     *
+     */
+    @Test
+    public void testCheckin_Non_Existing_Identifier_With_Validate_Should_FAIL()
+            throws DotDataException, DotSecurityException {
+        Contentlet newsContent = null;
+
+        try {
+            newsContent = getNewsContent();
+            newsContent.setIdentifier(UUIDGenerator.generateUuid());
+
+            final List<Category> categories = getACoupleOfCategories();
+
+            newsContent = contentletAPI.checkin(newsContent, (ContentletRelationships) null, categories,
+                    null, user,false);
+
+            fail("Should throw DoesNotExistException for an unexisting id");
+        } catch (Exception e) {
+
+            assertTrue(ExceptionUtil.causedBy(e, DoesNotExistException.class));
+            // good
+        } finally {
+            if(newsContent!=null && UtilMethods.isSet(newsContent.getIdentifier()) && UtilMethods.isSet(newsContent.getInode())) {
+                contentletAPI.destroy(newsContent, user, false);
+            }
+        }
+    }
+
+    /**
+     * Test checkin with a non-existing contentlet identifier, that should not fail since the non validate is activated
+     *
+     */
+    @Test
+    public void testCheckin_Non_Existing_Identifier_With_Not_Validate_Success()
+            throws DotDataException, DotSecurityException {
+        Contentlet newsContent = null;
+
+        try {
+            newsContent = getNewsContent();
+            String identifier = UUIDGenerator.generateUuid();
+            newsContent.setIdentifier(identifier);
+            newsContent.setInode(UUIDGenerator.generateUuid());
+            newsContent.setBoolProperty(Contentlet.DONT_VALIDATE_ME, true);
+
+            final List<Category> categories = getACoupleOfCategories();
+
+            final Contentlet newsContentReturned = contentletAPI.checkin(newsContent, (ContentletRelationships) null, categories,
+                    null, user,false);
+
+            assertNotNull(newsContentReturned);
+            assertEquals (newsContentReturned.getIdentifier(), identifier);
+            newsContent = newsContentReturned;
+        }  finally {
+            if(newsContent!=null && UtilMethods.isSet(newsContent.getIdentifier())) {
+                contentletAPI.destroy(newsContent, user, false);
             }
         }
     }
