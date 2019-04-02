@@ -73,8 +73,6 @@
   portletViewMap.put("portletId", portlet.getPortletId());
   portletViewMap.put("portletTitleLength", new Integer(portletTitleLength));
 
-  portletViewMap.put("restoreCurrentView", new Boolean(portlet.isRestoreCurrentView()));
-
   renderRequest.setAttribute(WebKeys.PORTLET_VIEW_MAP, portletViewMap);
 
   if ((cachePortlet != null) && cachePortlet.isStrutsPortlet()) {
@@ -90,9 +88,6 @@
 
   SessionMessages.clear(renderRequest);
   SessionErrors.clear(renderRequest);
-
-  boolean showPortletAccessDenied = portlet.isShowPortletAccessDenied();
-  boolean showPortletInactive = portlet.isShowPortletInactive();
 
   if ((cachePortlet != null) && cachePortlet.isStrutsPortlet()) {
     if (!access || portletException) {
