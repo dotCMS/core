@@ -169,20 +169,7 @@ public class PortletContextListener implements ServletContextListener {
 
 				Map customUserAttributes = CollectionFactory.getHashMap();
 
-				Iterator itr2 =
-					portlet.getCustomUserAttributes().entrySet().iterator();
 
-				while (itr2.hasNext()) {
-					Map.Entry entry = (Map.Entry)itr2.next();
-
-					String attrName = (String)entry.getKey();
-					String attrCustomClass = (String)entry.getValue();
-
-					customUserAttributes.put(
-						attrCustomClass,
-						contextClassLoader.loadClass(
-							attrCustomClass).newInstance());
-				}
 
 				PortletContextWrapper pcw = new PortletContextWrapper(
 					portlet.getPortletId(), ctx, portletInstance,

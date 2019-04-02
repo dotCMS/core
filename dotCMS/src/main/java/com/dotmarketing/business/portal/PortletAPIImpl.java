@@ -125,17 +125,15 @@ public class PortletAPIImpl implements PortletAPI {
       return portlet.getCachedInstance().get();
     } 
 
-    PortletContext portletCtx = getPortletContext();
-    PortletConfig config = new PortletConfigImpl(portlet.getPortletId(), portletCtx, portlet.getInitParams(), portlet.getResourceBundle(),
-        portlet.getPortletInfo());
+
+    PortletConfig config = getPortletConfig(portlet);
 
     return portlet.getCachedInstance(config);
   }
 
   @Override
   public PortletConfig getPortletConfig(Portlet portlet) {
-    return new PortletConfigImpl(portlet.getPortletId(), getPortletContext(), portlet.getInitParams(), portlet.getResourceBundle(),
-        portlet.getPortletInfo());
+    return new PortletConfigImpl(portlet.getPortletId(), getPortletContext(), portlet.getInitParams(), portlet.getResourceBundle());
   }
 
   @Override

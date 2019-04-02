@@ -50,7 +50,11 @@ import com.liferay.util.CollectionFactory;
 public class PortletConfigImpl implements PortletConfig {
 
 	public static String WAR_SEPARATOR = "_WAR_";
-
+  public PortletConfigImpl(String portletName, PortletContext portletCtx,
+      Map params, String resourceBundle) {
+    this(portletName,portletCtx, params, resourceBundle, null);
+    
+  }
 	public PortletConfigImpl(String portletName, PortletContext portletCtx,
 							 Map params, String resourceBundle,
 							 PortletInfo portletInfo) {

@@ -68,7 +68,7 @@ public class Portlet extends PortletModel {
     this(oldPort.getPortletId(), oldPort.getGroupId(), oldPort.getCompanyId(), oldPort.getStrutsPath(), oldPort.getPortletClass(), null,
         null, oldPort.getDefaultPreferences(), oldPort.getPreferencesValidator(), null, false, false, false, false, false, false,
         oldPort.getRoles(), true, false, oldPort.getInitParams(), oldPort.getExpCache(), oldPort.getPortletModes(),
-        oldPort.getSupportedLocales(), oldPort.getResourceBundle(), oldPort.getPortletInfo(), null, null, false);
+        oldPort.getSupportedLocales(), oldPort.getResourceBundle(),  null, null, false);
   }
 
   @Deprecated
@@ -86,7 +86,7 @@ public class Portlet extends PortletModel {
       String schedulerClass, String defaultPreferences, String prefsValidator, String prefsSharingType, boolean useDefaultTemplate,
       boolean showPortletAccessDenied, boolean showPortletInactive, boolean restoreCurrentView, boolean ns4Compatible, boolean narrow,
       String roles, boolean active, boolean include, Map initParams, Integer expCache, Map portletModes, Set supportedLocales,
-      String resourceBundle, PortletInfo portletInfo, Set userAttributes, Map customUserAttributes, boolean warFile) {
+      String resourceBundle, Set userAttributes, Map customUserAttributes, boolean warFile) {
 
     super(portletId, groupId, companyId, defaultPreferences, narrow, roles, active);
     this.portletId = portletId;
@@ -323,32 +323,6 @@ public class Portlet extends PortletModel {
 
   }
 
-  /**
-   * Returns true if the portlet is compatible with Netscape 4.
-   *
-   * @return true if the portlet is compatible with Netscape 4
-   */
-  public boolean getNs4Compatible() {
-    return true;
-  }
-
-  /**
-   * Returns true if the portlet is compatible with Netscape 4.
-   *
-   * @return true if the portlet is compatible with Netscape 4
-   */
-  public boolean isNs4Compatible() {
-    return true;
-  }
-
-  /**
-   * Sets to true if the portlet is compatible with Netscape 4.
-   *
-   * @param ns4Compatible boolean value for whether the portlet is compatible with Netscape 4
-   */
-  public void setNs4Compatible(boolean ns4Compatible) {
-
-  }
 
   /**
    * Sets a string of ordered comma delimited portlet ids.
@@ -504,99 +478,13 @@ public class Portlet extends PortletModel {
     return "com.liferay.portlet.StrutsPortlet".equals(portletClass) ? "com.liferay.portlet.StrutsResourceBundle" : null;
   }
 
-  /**
-   * Sets the resource bundle of the portlet.
-   *
-   * @param resourceBundle the resource bundle of the portlet
-   */
-  public void setResourceBundle(String resourceBundle) {
 
-  }
-
-  /**
-   * Sets the resource bundle of the portlet.
-   *
-   * @param resourceBundle the resource bundle of the portlet
-   */
-  public void setExtendsPortlet(String extendsPortletId) {
-
-  }
-
-  /**
-   *
-   * @param resourceBundle the resource bundle of the portlet
-   */
-  public void setExtendsPortlet(Portlet extendsPortlet) {
-
-  }
-
-  /**
-   * Gets the portlet info of the portlet.
-   *
-   * @return portlet info of the portlet
-   */
-  public PortletInfo getPortletInfo() {
-    return null;
-  }
 
   @Override
   public String getPortletId() {
     return this.portletId;
   }
 
-  /**
-   * Sets the portlet info of the portlet.
-   *
-   * @param portletInfo the portlet info of the portlet
-   */
-  public void setPortletInfo(PortletInfo portletInfo) {
-
-  }
-
-  /**
-   * Gets the user attributes of the portlet.
-   *
-   * @return user attributes of the portlet
-   */
-  public Set getUserAttributes() {
-    return null;
-  }
-
-  /**
-   * Sets the user attributes of the portlet.
-   *
-   * @param userAttributes the user attributes of the portlet
-   */
-  public void setUserAttributes(Set userAttributes) {
-
-  }
-
-  /**
-   * Gets the custom user attributes of the portlet.
-   *
-   * @return custom user attributes of the portlet
-   */
-  public Map getCustomUserAttributes() {
-    return null;
-  }
-
-  /**
-   * Sets the custom user attributes of the portlet.
-   *
-   * @param customUserAttributes the custom user attributes of the portlet
-   */
-  public void setCustomUserAttributes(Map customUserAttributes) {
-
-  }
-
-  /**
-   * Returns true if the portlet is found in a WAR file.
-   *
-   * @return true if the portlet is found in a WAR file
-   */
-  public boolean getWARFile() {
-    return false;
-  }
 
   /**
    * Returns true if the portlet is found in a WAR file.
@@ -607,14 +495,6 @@ public class Portlet extends PortletModel {
     return false;
   }
 
-  /**
-   * Sets to true if the portlet is found in a WAR file.
-   *
-   * @param warFile boolean value for whether the portlet is found in a WAR file
-   */
-  public void setWARFile(boolean warFile) {
-
-  }
 
   /**
    * Compares this portlet to the specified object.
