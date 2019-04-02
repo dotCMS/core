@@ -711,18 +711,12 @@ public class PortalRequestProcessor extends StxxTilesRequestProcessor {
 
 		String portletId = portlet.getPortletId();
 
-		ServletContext ctx =
-			(ServletContext)req.getAttribute(WebKeys.CTX);
+		CachePortlet cachePortlet = (CachePortlet)  APILocator.getPortletAPI().getImplementingInstance(portlet);
 
-		CachePortlet cachePortlet = PortalUtil.getPortletInstance(portlet, ctx);
+    PortletPreferences portletPrefs =
+        PortletPreferencesManagerUtil.getPreferences(portlet.getCompanyId(), PortalUtil.getPortletPreferencesPK(req, portletId));
 
-		PortletPreferences portletPrefs =
-			PortletPreferencesManagerUtil.getPreferences(
-				portlet.getCompanyId(),
-				PortalUtil.getPortletPreferencesPK(req, portletId));
-
-		PortletConfig portletConfig =
-			PortalUtil.getPortletConfig(portlet, ctx);
+		PortletConfig portletConfig = APILocator.getPortletAPI().getPortletConfig(portlet);
 		PortletContext portletCtx =
 			portletConfig.getPortletContext();
 

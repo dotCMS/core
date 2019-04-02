@@ -67,10 +67,10 @@
     <portlet>
         <portlet-name>content</portlet-name>
         <display-name>Contents Manager</display-name>
-        <portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+        <portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
         <init-param>
-            <name>view-action</name>
-            <value>/ext/contentlet/view_contentlets</value>
+            <name>view-jsp</name>
+            <value>/portlet/ext/contentlet/view_contentlets.jsp</value>
         </init-param>
 
 

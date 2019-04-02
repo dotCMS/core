@@ -20,8 +20,10 @@
 package com.liferay.portal.ejb;
 
 import java.util.Collection;
+import java.util.Map;
 
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotmarketing.business.portal.PortletFactory;
 import com.liferay.portal.model.Portlet;
 
 /**
@@ -35,9 +37,14 @@ public class PortletManagerUtil {
 
     public static Collection addPortlets(final java.lang.String[] xmls) throws com.liferay.portal.SystemException {
         try {
-            final PortletManager portletManager = PortletManagerFactory.getManager();
-
-            return portletManager.addPortlets(xmls).values();
+            final PortletFactory portletFactory = PortletManagerFactory.getManager();
+            
+            Map<String,Portlet> portlets = portletFactory.xmlToPortlets(xmls);
+            for(Portlet portlet : portlets.values()) {
+              portletFactory.insertPortlet(portlet);
+            }
+            
+            return portletFactory.getPortlets();
         } catch (final Exception e) {
             throw new com.liferay.portal.SystemException(e);
         }
@@ -46,11 +53,9 @@ public class PortletManagerUtil {
     public static com.liferay.portal.model.Portlet getPortletById(final java.lang.String companyId, final java.lang.String portletId)
             throws com.liferay.portal.SystemException {
         try {
-            final PortletManager portletManager = PortletManagerFactory.getManager();
+            final PortletFactory portletFactory = PortletManagerFactory.getManager();
 
-            return portletManager.getPortletById( portletId);
-        } catch (final com.liferay.portal.SystemException se) {
-            throw se;
+            return portletFactory.findById(portletId);
         } catch (final Exception e) {
             throw new com.liferay.portal.SystemException(e);
         }
@@ -61,9 +66,9 @@ public class PortletManagerUtil {
     @CloseDBIfOpened
     public static java.util.Collection<Portlet> getPortlets(final java.lang.String companyId) throws com.liferay.portal.SystemException {
         try {
-            final PortletManager portletManager = PortletManagerFactory.getManager();
+            final PortletFactory portletFactory = PortletManagerFactory.getManager();
 
-            return portletManager.getPortlets();
+            return portletFactory.getPortlets();
         } catch (final com.liferay.portal.SystemException se) {
             throw se;
         } catch (final Exception e) {
@@ -71,19 +76,5 @@ public class PortletManagerUtil {
         }
     }
 
-    public static com.liferay.portal.model.Portlet updatePortlet(final java.lang.String portletId, final java.lang.String groupId,
-            final java.lang.String defaultPreferences, final boolean narrow, final java.lang.String roles, final boolean active)
-            throws com.liferay.portal.PortalException, com.liferay.portal.SystemException {
-        try {
-            final PortletManager portletManager = PortletManagerFactory.getManager();
 
-            return portletManager.updatePortlet(portletId, groupId, defaultPreferences, narrow, roles, active);
-        } catch (final com.liferay.portal.PortalException pe) {
-            throw pe;
-        } catch (final com.liferay.portal.SystemException se) {
-            throw se;
-        } catch (final Exception e) {
-            throw new com.liferay.portal.SystemException(e);
-        }
-    }
 }

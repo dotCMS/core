@@ -35,6 +35,7 @@ import com.dotcms.repackage.net.sf.hibernate.Query;
 import com.dotcms.repackage.net.sf.hibernate.ScrollableResults;
 import com.dotcms.repackage.net.sf.hibernate.Session;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.portal.PortletCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 

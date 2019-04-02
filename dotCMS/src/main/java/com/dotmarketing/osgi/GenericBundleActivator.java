@@ -47,6 +47,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Interceptor;
 import com.dotmarketing.business.cache.CacheOSGIService;
 import com.dotmarketing.business.cache.provider.CacheProvider;
+import com.dotmarketing.business.portal.PortletFactory;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.filters.DotUrlRewriteFilter;
@@ -64,10 +65,8 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
-import com.liferay.portal.ejb.PortletManager;
 import com.liferay.portal.ejb.PortletManagerFactory;
 import com.liferay.portal.ejb.PortletManagerUtil;
-import com.liferay.portal.ejb.PortletPK;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.Portlet;
 import com.liferay.portal.util.PortalUtil;
@@ -1015,13 +1014,13 @@ public abstract class GenericBundleActivator implements BundleActivator {
 
         if ( portlets != null ) {
 
-            PortletManager portletManager = PortletManagerFactory.getManager();
+            PortletFactory portletFactory = PortletManagerFactory.getManager();
             Company company = PublicCompanyFactory.getDefaultCompany();
 
             for ( Portlet portlet : portlets ) {
 
                 //PK
-                PortletPK id = portlet.getPrimaryKey();
+
                 //Cache key
                 String scpId = PortalUtil.class.getName() + "." + com.dotcms.repackage.javax.portlet.Portlet.class.getName();
                 if ( !portlet.isWARFile() ) {
@@ -1029,7 +1028,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
                 }
 
                 //Clean-up the caches
-                portletManager.deletePortlet( id.getPortletId() );
+                portletFactory.deletePortlet( portlet.getPortletId() );
                 //Clean-up the caches
                 Map map = (Map) SimpleCachePool.get( scpId );
                 if ( map != null ) {

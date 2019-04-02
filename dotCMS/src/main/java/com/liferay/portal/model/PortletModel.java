@@ -60,13 +60,13 @@ public class PortletModel extends BaseModel {
 			XSS_ALLOW_BY_MODEL);
 	public static long LOCK_EXPIRATION_TIME = GetterUtil.getLong(PropsUtil.get(
 				"lock.expiration.time.com.liferay.portal.model.PortletModel"));
-
+  private final static String noGroup="none";
 	public PortletModel() {
 	}
 
 	public PortletModel(PortletPK pk) {
 		_portletId = pk.portletId;
-		_groupId = pk.groupId;
+		_groupId = (pk.groupId==null)?noGroup:pk.groupId;
 		_companyId = pk.companyId;
 		setNew(true);
 	}
@@ -105,7 +105,7 @@ public class PortletModel extends BaseModel {
 	}
 
 	public String getGroupId() {
-		return _groupId;
+		return (_groupId==null)? noGroup : _groupId;
 	}
 
 	public void setGroupId(String groupId) {
@@ -117,7 +117,7 @@ public class PortletModel extends BaseModel {
 				groupId = Xss.strip(groupId);
 			}
 
-			_groupId = groupId;
+			_groupId = (groupId==null)? noGroup : groupId;
 			setModified(true);
 		}
 	}
@@ -212,10 +212,7 @@ public class PortletModel extends BaseModel {
 	public void protect() {
 	}
 
-	public Object clone() {
-		return new Portlet(getPortletId(), getGroupId(), getCompanyId(),
-			getDefaultPreferences(), getNarrow(), getRoles(), getActive());
-	}
+
 
 	public int compareTo(Object obj) {
 		if (obj == null) {

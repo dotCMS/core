@@ -1,8 +1,9 @@
 package com.dotmarketing.business.portal;
 
 import java.util.Collection;
-import java.util.List;
 
+import com.dotcms.repackage.javax.portlet.PortletConfig;
+import com.dotcms.repackage.javax.portlet.PortletContext;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.User;
@@ -22,5 +23,11 @@ public interface PortletAPI {
 	boolean canAddPortletToLayout(String portletId);
 	
 	boolean hasUserAdminRights(User user);
+
+  com.dotcms.repackage.javax.portlet.Portlet getImplementingInstance(Portlet portlet);
+
+  PortletConfig getPortletConfig(Portlet portlet);
+
+  PortletContext getPortletContext();
 
 }

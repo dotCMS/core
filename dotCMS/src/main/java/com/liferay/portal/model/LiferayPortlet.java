@@ -20,16 +20,22 @@
 package com.liferay.portal.model;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 import com.dotcms.repackage.javax.portlet.PortletConfig;
+import com.dotcms.repackage.javax.portlet.PortletException;
 import com.dotcms.repackage.javax.portlet.PortletMode;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.util.Logger;
+import com.dotcms.repackage.javax.portlet.UnavailableException;
+
 import com.liferay.portal.ejb.PortletPK;
+import com.liferay.portal.util.Constants;
+import com.liferay.portal.util.PropsUtil;
 import com.liferay.portlet.CachePortlet;
+import com.liferay.util.GetterUtil;
+import com.liferay.util.StringUtil;
+import com.liferay.util.Validator;
 
 /**
  * <a href="Portlet.java.html"><b><i>View Source</i></b></a>
@@ -38,61 +44,95 @@ import com.liferay.portlet.CachePortlet;
  * @version $Revision: 1.49 $
  *
  */
-public class Portlet extends PortletModel {
+public class LiferayPortlet extends PortletModel {
 
-  private final String portletId;
-  private final Map<String, String> initParams;
-  private final String portletClass;
+  /**
+   * Do not share preferences.
+   */
+  public static final String PREFERENCES_SHARING_TYPE_NONE = "none";
+
+  /**
+   * Share preferences by user if the portlet is in a personal page or by group if the portlet is in a
+   * group page.
+   */
+  public static final String PREFERENCES_SHARING_TYPE_USER = "user";
+
+  /**
+   * Share preferences by company.
+   */
+  public static final String PREFERENCES_SHARING_TYPE_COMPANY = "company";
+
+  /**
+   * Constructs a portlet with no parameters.
+   */
+  public LiferayPortlet() {
+    super();
+  }
 
   @Deprecated
-  public Portlet(PortletPK pk) {
+  public LiferayPortlet(PortletPK pk) {
     super(pk);
-    this.portletId = pk.portletId;
+
     setStrutsPath(pk.portletId);
     setActive(true);
     setInclude(true);
-    initParams = new HashMap<>();
-    portletClass = null;
+    _initParams = new HashMap();
 
   }
+  
 
-  public Portlet(String portletId, String extendsPortletId, String portletClass, Map<String, String> initParams) {
-    super(portletId, extendsPortletId, "dotcms.org", null, false, null, true);
-    this.portletId = portletId;
-    this.initParams = initParams;
-    this.portletClass = portletClass;
+  public LiferayPortlet(LiferayPortlet oldPort) {
+    this( oldPort.getPortletId(),  oldPort.getGroupId(), oldPort.getCompanyId(),  oldPort.getStrutsPath(),  oldPort.getPortletClass(),  null,
+       null,  oldPort.getDefaultPreferences(),  oldPort.getPreferencesValidator(),  null,  false,
+       false,  false,  false,  false,  false,
+       oldPort.getRoles(),  true,  false,  oldPort.getInitParams(),  oldPort.getExpCache(), oldPort.getPortletModes(),  oldPort.getSupportedLocales(),
+       oldPort.getResourceBundle(),  oldPort.getPortletInfo(),  null,  null,  false);
   }
+  
+  
 
   @Deprecated
-  public Portlet(Portlet oldPort) {
-    this(oldPort.getPortletId(), oldPort.getGroupId(), oldPort.getCompanyId(), oldPort.getStrutsPath(), oldPort.getPortletClass(), null,
-        null, oldPort.getDefaultPreferences(), oldPort.getPreferencesValidator(), null, false, false, false, false, false, false,
-        oldPort.getRoles(), true, false, oldPort.getInitParams(), oldPort.getExpCache(), oldPort.getPortletModes(),
-        oldPort.getSupportedLocales(), oldPort.getResourceBundle(), oldPort.getPortletInfo(), null, null, false);
-  }
-
-  @Deprecated
-  public Portlet(String portletId, String groupId, String companyId, String defaultPreferences, boolean narrow, String roles,
+  public LiferayPortlet(String portletId, String groupId, String companyId, String defaultPreferences, boolean narrow, String roles,
       boolean active) {
 
     super(portletId, groupId, companyId, defaultPreferences, narrow, roles, active);
-    this.portletId = portletId;
-    this.initParams = new HashMap<>();
-    this.portletClass = null;
+
+    setDefaultPreferences(defaultPreferences);
+    setRoles(roles);
   }
 
   @Deprecated
-  public Portlet(String portletId, String groupId, String companyId, String strutsPath, String portletClass, String indexerClass,
+  public LiferayPortlet(String portletId, String groupId, String companyId, String strutsPath, String portletClass, String indexerClass,
       String schedulerClass, String defaultPreferences, String prefsValidator, String prefsSharingType, boolean useDefaultTemplate,
       boolean showPortletAccessDenied, boolean showPortletInactive, boolean restoreCurrentView, boolean ns4Compatible, boolean narrow,
       String roles, boolean active, boolean include, Map initParams, Integer expCache, Map portletModes, Set supportedLocales,
       String resourceBundle, PortletInfo portletInfo, Set userAttributes, Map customUserAttributes, boolean warFile) {
 
     super(portletId, groupId, companyId, defaultPreferences, narrow, roles, active);
-    this.portletId = portletId;
-    this.initParams = initParams;
-    this.portletClass = portletClass;
 
+    _strutsPath = strutsPath;
+    _portletClass = portletClass;
+    _indexerClass = indexerClass;
+    _schedulerClass = schedulerClass;
+    setDefaultPreferences(defaultPreferences);
+    _prefsValidator = prefsValidator;
+    _prefsSharingType = prefsSharingType;
+    _useDefaultTemplate = useDefaultTemplate;
+    _showPortletAccessDenied = showPortletAccessDenied;
+    _showPortletInactive = showPortletInactive;
+    _restoreCurrentView = restoreCurrentView;
+    _ns4Compatible = ns4Compatible;
+    setRoles(roles);
+    _include = include;
+    _initParams = initParams;
+    _expCache = expCache;
+    _portletModes = portletModes;
+    _supportedLocales = supportedLocales;
+    _resourceBundle = resourceBundle;
+    _portletInfo = portletInfo;
+    _userAttributes = userAttributes;
+    _customUserAttributes = customUserAttributes;
+    _warFile = warFile;
   }
 
   /**
@@ -101,16 +141,16 @@ public class Portlet extends PortletModel {
    * @return the struts path of the portlet
    */
   public String getStrutsPath() {
-    return getPortletId();
+    return _strutsPath;
   }
 
-  @Deprecated
+  /**
+   * Sets the struts path of the portlet.
+   *
+   * @param strutsPath the struts path of the portlet
+   */
   public void setStrutsPath(String strutsPath) {
-
-  }
-
-  public String getExtendsPortlet() {
-    return getGroupId();
+    _strutsPath = strutsPath;
   }
 
   /**
@@ -119,7 +159,7 @@ public class Portlet extends PortletModel {
    * @return the name of the portlet class of the portlet
    */
   public String getPortletClass() {
-    return portletClass;
+    return _portletClass;
   }
 
   /**
@@ -128,7 +168,7 @@ public class Portlet extends PortletModel {
    * @param portletClass the name of the portlet class of the portlet
    */
   public void setPortletClass(String portletClass) {
-    portletClass = portletClass;
+    _portletClass = portletClass;
   }
 
   /**
@@ -137,7 +177,7 @@ public class Portlet extends PortletModel {
    * @return the name of the indexer class of the portlet
    */
   public String getIndexerClass() {
-    return null;
+    return _indexerClass;
   }
 
   /**
@@ -146,7 +186,7 @@ public class Portlet extends PortletModel {
    * @param indexerClass the name of the indexer class of the portlet
    */
   public void setIndexerClass(String indexerClass) {
-
+    _indexerClass = indexerClass;
   }
 
   /**
@@ -155,7 +195,7 @@ public class Portlet extends PortletModel {
    * @return the name of the scheduler class of the portlet
    */
   public String getSchedulerClass() {
-    return null;
+    return _schedulerClass;
   }
 
   /**
@@ -164,7 +204,7 @@ public class Portlet extends PortletModel {
    * @param schedulerClass the name of the scheduler class of the portlet
    */
   public void setSchedulerClass(String schedulerClass) {
-
+    _schedulerClass = schedulerClass;
   }
 
   /**
@@ -173,8 +213,13 @@ public class Portlet extends PortletModel {
    * @return the default preferences of the portlet
    */
   public String getDefaultPreferences() {
-    return super.getDefaultPreferences();
+    String defaultPreferences = super.getDefaultPreferences();
 
+    if (Validator.isNull(defaultPreferences)) {
+      return "<portlet-preferences></portlet-preferences>";
+    } else {
+      return defaultPreferences;
+    }
   }
 
   /**
@@ -183,7 +228,7 @@ public class Portlet extends PortletModel {
    * @return the name of the preferences validator class of the portlet
    */
   public String getPreferencesValidator() {
-    return null;
+    return _prefsValidator;
   }
 
   /**
@@ -192,7 +237,7 @@ public class Portlet extends PortletModel {
    * @param prefsValidator the name of the preferences validator class of the portlet
    */
   public void setPreferencesValidator(String prefsValidator) {
-
+    _prefsValidator = prefsValidator;
   }
 
   /**
@@ -201,7 +246,7 @@ public class Portlet extends PortletModel {
    * @return the preferences sharing type of the portlet
    */
   public String getPreferencesSharingType() {
-    return null;
+    return _prefsSharingType;
   }
 
   /**
@@ -210,7 +255,7 @@ public class Portlet extends PortletModel {
    * @param prefsSharingType the preferences sharing type of the portlet
    */
   public void setPreferencesSharingType(String prefsSharingType) {
-
+    _prefsSharingType = prefsSharingType;
   }
 
   /**
@@ -219,7 +264,7 @@ public class Portlet extends PortletModel {
    * @return true if the portlet uses the default template
    */
   public boolean getUseDefaultTemplate() {
-    return true;
+    return _useDefaultTemplate;
   }
 
   /**
@@ -228,7 +273,7 @@ public class Portlet extends PortletModel {
    * @return true if the portlet uses the default template
    */
   public boolean isUseDefaultTemplate() {
-    return true;
+    return _useDefaultTemplate;
   }
 
   /**
@@ -237,7 +282,7 @@ public class Portlet extends PortletModel {
    * @param useDefaultTemplate boolean value for whether the portlet uses the default template
    */
   public void setUseDefaultTemplate(boolean useDefaultTemplate) {
-
+    _useDefaultTemplate = useDefaultTemplate;
   }
 
   /**
@@ -246,7 +291,7 @@ public class Portlet extends PortletModel {
    * @return true if users are shown that they do not have access to the portlet
    */
   public boolean getShowPortletAccessDenied() {
-    return true;
+    return _showPortletAccessDenied;
   }
 
   /**
@@ -255,7 +300,7 @@ public class Portlet extends PortletModel {
    * @return true if users are shown that they do not have access to the portlet
    */
   public boolean isShowPortletAccessDenied() {
-    return true;
+    return _showPortletAccessDenied;
   }
 
   /**
@@ -265,7 +310,7 @@ public class Portlet extends PortletModel {
    *        access to the portlet
    */
   public void setShowPortletAccessDenied(boolean showPortletAccessDenied) {
-
+    _showPortletAccessDenied = showPortletAccessDenied;
   }
 
   /**
@@ -274,7 +319,7 @@ public class Portlet extends PortletModel {
    * @return true if users are shown that the portlet is inactive
    */
   public boolean getShowPortletInactive() {
-    return true;
+    return _showPortletInactive;
   }
 
   /**
@@ -283,7 +328,7 @@ public class Portlet extends PortletModel {
    * @return true if users are shown that the portlet is inactive
    */
   public boolean isShowPortletInactive() {
-    return true;
+    return _showPortletInactive;
   }
 
   /**
@@ -292,7 +337,7 @@ public class Portlet extends PortletModel {
    * @param showPortletInactive boolean value for whether users are shown that the portlet is inactive
    */
   public void setShowPortletInactive(boolean showPortletInactive) {
-
+    _showPortletInactive = showPortletInactive;
   }
 
   /**
@@ -301,7 +346,7 @@ public class Portlet extends PortletModel {
    * @return true if the portlet restores to the current view from the maximized state
    */
   public boolean getRestoreCurrentView() {
-    return true;
+    return _restoreCurrentView;
   }
 
   /**
@@ -310,7 +355,7 @@ public class Portlet extends PortletModel {
    * @return true if the portlet restores to the current view from the maximized state
    */
   public boolean isRestoreCurrentView() {
-    return true;
+    return _restoreCurrentView;
   }
 
   /**
@@ -320,7 +365,7 @@ public class Portlet extends PortletModel {
    *        the maximized state
    */
   public void setRestoreCurrentView(boolean restoreCurrentView) {
-
+    _restoreCurrentView = restoreCurrentView;
   }
 
   /**
@@ -329,7 +374,7 @@ public class Portlet extends PortletModel {
    * @return true if the portlet is compatible with Netscape 4
    */
   public boolean getNs4Compatible() {
-    return true;
+    return _ns4Compatible;
   }
 
   /**
@@ -338,7 +383,7 @@ public class Portlet extends PortletModel {
    * @return true if the portlet is compatible with Netscape 4
    */
   public boolean isNs4Compatible() {
-    return true;
+    return _ns4Compatible;
   }
 
   /**
@@ -347,7 +392,7 @@ public class Portlet extends PortletModel {
    * @param ns4Compatible boolean value for whether the portlet is compatible with Netscape 4
    */
   public void setNs4Compatible(boolean ns4Compatible) {
-
+    _ns4Compatible = ns4Compatible;
   }
 
   /**
@@ -356,7 +401,9 @@ public class Portlet extends PortletModel {
    * @param roles a string of ordered comma delimited portlet ids
    */
   public void setRoles(String roles) {
+    _rolesArray = StringUtil.split(roles);
 
+    super.setRoles(roles);
   }
 
   /**
@@ -365,7 +412,7 @@ public class Portlet extends PortletModel {
    * @return an array of required roles of the portlet
    */
   public String[] getRolesArray() {
-    return null;
+    return _rolesArray;
   }
 
   /**
@@ -374,7 +421,9 @@ public class Portlet extends PortletModel {
    * @param rolesArray an array of required roles of the portlet
    */
   public void setRolesArray(String[] rolesArray) {
+    _rolesArray = rolesArray;
 
+    super.setRoles(StringUtil.merge(rolesArray));
   }
 
   /**
@@ -383,6 +432,11 @@ public class Portlet extends PortletModel {
    * @return true if the portlet has a role with the specified name
    */
   public boolean hasRoleWithName(String roleName) {
+    for (int i = 0; i < _rolesArray.length; i++) {
+      if (_rolesArray[i].equalsIgnoreCase(roleName)) {
+        return true;
+      }
+    }
 
     return false;
   }
@@ -393,7 +447,7 @@ public class Portlet extends PortletModel {
    * @return true to include the portlet and make it available to be made active
    */
   public boolean getInclude() {
-    return false;
+    return _include;
   }
 
   /**
@@ -402,7 +456,7 @@ public class Portlet extends PortletModel {
    * @return true to include the portlet and make it available to be made active
    */
   public boolean isInclude() {
-    return false;
+    return _include;
   }
 
   /**
@@ -412,7 +466,7 @@ public class Portlet extends PortletModel {
    *        active
    */
   public void setInclude(boolean include) {
-
+    _include = include;
   }
 
   /**
@@ -421,7 +475,7 @@ public class Portlet extends PortletModel {
    * @return init parameters of the portlet
    */
   public Map<String, String> getInitParams() {
-    return this.initParams;
+    return _initParams;
   }
 
   /**
@@ -430,7 +484,7 @@ public class Portlet extends PortletModel {
    * @param initParams the init parameters of the portlet
    */
   public void setInitParams(Map initParams) {
-    throw new DotStateException("not supported");
+    _initParams = initParams;
   }
 
   /**
@@ -439,7 +493,7 @@ public class Portlet extends PortletModel {
    * @return expiration cache of the portlet
    */
   public Integer getExpCache() {
-    return 1000;
+    return _expCache;
   }
 
   /**
@@ -448,7 +502,7 @@ public class Portlet extends PortletModel {
    * @param expCache expiration cache of the portlet
    */
   public void setExpCache(Integer expCache) {
-
+    _expCache = expCache;
   }
 
   /**
@@ -457,7 +511,7 @@ public class Portlet extends PortletModel {
    * @return portlet modes of the portlet
    */
   public Map getPortletModes() {
-    return null;
+    return _portletModes;
   }
 
   /**
@@ -466,7 +520,7 @@ public class Portlet extends PortletModel {
    * @param portletModes the portlet modes of the portlet
    */
   public void setPortletModes(Map portletModes) {
-
+    _portletModes = portletModes;
   }
 
   /**
@@ -475,8 +529,21 @@ public class Portlet extends PortletModel {
    * @return true if the portlet supports the specified mime type and portlet mode
    */
   public boolean hasPortletMode(String mimeType, PortletMode portletMode) {
-    return true;
+    if (portletMode.equals(PortletMode.VIEW)) {
+      return true;
+    }
 
+    if (mimeType == null) {
+      mimeType = Constants.TEXT_HTML;
+    }
+
+    Set mimeTypeModes = (Set) _portletModes.get(mimeType);
+
+    if (mimeTypeModes == null) {
+      return false;
+    }
+
+    return mimeTypeModes.contains(portletMode.toString());
   }
 
   /**
@@ -485,7 +552,7 @@ public class Portlet extends PortletModel {
    * @return supported locales of the portlet
    */
   public Set getSupportedLocales() {
-    return null;
+    return _supportedLocales;
   }
 
   /**
@@ -493,7 +560,9 @@ public class Portlet extends PortletModel {
    *
    * @param supportedLocales the supported locales of the portlet
    */
-  public void setSupportedLocales(Set supportedLocales) {}
+  public void setSupportedLocales(Set supportedLocales) {
+    _supportedLocales = supportedLocales;
+  }
 
   /**
    * Gets the resource bundle of the portlet.
@@ -501,7 +570,7 @@ public class Portlet extends PortletModel {
    * @return resource bundle of the portlet
    */
   public String getResourceBundle() {
-    return "com.liferay.portlet.StrutsPortlet".equals(portletClass) ? "com.liferay.portlet.StrutsResourceBundle" : null;
+    return _resourceBundle;
   }
 
   /**
@@ -510,38 +579,31 @@ public class Portlet extends PortletModel {
    * @param resourceBundle the resource bundle of the portlet
    */
   public void setResourceBundle(String resourceBundle) {
-
+    _resourceBundle = resourceBundle;
   }
-
+  
   /**
    * Sets the resource bundle of the portlet.
    *
    * @param resourceBundle the resource bundle of the portlet
    */
   public void setExtendsPortlet(String extendsPortletId) {
-
+    this.setGroupId(extendsPortletId);
   }
-
   /**
-   *
-   * @param resourceBundle the resource bundle of the portlet
-   */
-  public void setExtendsPortlet(Portlet extendsPortlet) {
-
-  }
-
+  *
+  * @param resourceBundle the resource bundle of the portlet
+  */
+ public void setExtendsPortlet(LiferayPortlet extendsPortlet) {
+   this.setGroupId(extendsPortlet.getPortletId());
+ }
   /**
    * Gets the portlet info of the portlet.
    *
    * @return portlet info of the portlet
    */
   public PortletInfo getPortletInfo() {
-    return null;
-  }
-
-  @Override
-  public String getPortletId() {
-    return this.portletId;
+    return _portletInfo;
   }
 
   /**
@@ -550,7 +612,7 @@ public class Portlet extends PortletModel {
    * @param portletInfo the portlet info of the portlet
    */
   public void setPortletInfo(PortletInfo portletInfo) {
-
+    _portletInfo = portletInfo;
   }
 
   /**
@@ -559,7 +621,7 @@ public class Portlet extends PortletModel {
    * @return user attributes of the portlet
    */
   public Set getUserAttributes() {
-    return null;
+    return _userAttributes;
   }
 
   /**
@@ -568,7 +630,7 @@ public class Portlet extends PortletModel {
    * @param userAttributes the user attributes of the portlet
    */
   public void setUserAttributes(Set userAttributes) {
-
+    _userAttributes = userAttributes;
   }
 
   /**
@@ -577,7 +639,7 @@ public class Portlet extends PortletModel {
    * @return custom user attributes of the portlet
    */
   public Map getCustomUserAttributes() {
-    return null;
+    return _customUserAttributes;
   }
 
   /**
@@ -586,7 +648,7 @@ public class Portlet extends PortletModel {
    * @param customUserAttributes the custom user attributes of the portlet
    */
   public void setCustomUserAttributes(Map customUserAttributes) {
-
+    _customUserAttributes = customUserAttributes;
   }
 
   /**
@@ -595,7 +657,7 @@ public class Portlet extends PortletModel {
    * @return true if the portlet is found in a WAR file
    */
   public boolean getWARFile() {
-    return false;
+    return _warFile;
   }
 
   /**
@@ -604,7 +666,7 @@ public class Portlet extends PortletModel {
    * @return true if the portlet is found in a WAR file
    */
   public boolean isWARFile() {
-    return false;
+    return _warFile;
   }
 
   /**
@@ -613,7 +675,55 @@ public class Portlet extends PortletModel {
    * @param warFile boolean value for whether the portlet is found in a WAR file
    */
   public void setWARFile(boolean warFile) {
+    _warFile = warFile;
+  }
 
+  /**
+   * Initialize the portlet instance.
+   */
+  public CachePortlet init(PortletConfig portletConfig) throws PortletException {
+
+    return init(portletConfig, null);
+  }
+
+  /**
+   * Initialize the portlet instance.
+   */
+  public CachePortlet init(PortletConfig portletConfig, com.dotcms.repackage.javax.portlet.Portlet portletInstance)
+      throws PortletException {
+
+    CachePortlet cachePortlet = null;
+
+    try {
+      if (portletInstance == null) {
+        portletInstance = (com.dotcms.repackage.javax.portlet.Portlet) Class.forName(getPortletClass()).newInstance();
+      }
+
+      cachePortlet = new CachePortlet(portletInstance, portletConfig.getPortletContext(), getExpCache());
+
+      cachePortlet.init(portletConfig);
+    } catch (ClassNotFoundException cnofe) {
+      throw new UnavailableException(cnofe.getMessage());
+    } catch (InstantiationException ie) {
+      throw new UnavailableException(ie.getMessage());
+    } catch (IllegalAccessException iae) {
+      throw new UnavailableException(iae.getMessage());
+    }
+
+    return cachePortlet;
+  }
+
+  /**
+   * Creates and returns a copy of this object.
+   *
+   * @return a copy of this object
+   */
+  public Object clone() {
+    return new LiferayPortlet(getPortletId(), getGroupId(), getCompanyId(), getStrutsPath(), getPortletClass(), getIndexerClass(),
+        getSchedulerClass(), getDefaultPreferences(), getPreferencesValidator(), getPreferencesSharingType(), isUseDefaultTemplate(),
+        isShowPortletAccessDenied(), isShowPortletInactive(), isRestoreCurrentView(), isNs4Compatible(), isNarrow(), getRoles(), isActive(),
+        getInclude(), getInitParams(), getExpCache(), getPortletModes(), getSupportedLocales(), getResourceBundle(), getPortletInfo(),
+        getUserAttributes(), getCustomUserAttributes(), isWARFile());
   }
 
   /**
@@ -625,39 +735,119 @@ public class Portlet extends PortletModel {
    *         portlet argument
    */
   public int compareTo(Object obj) {
-    Portlet portlet = (Portlet) obj;
+    LiferayPortlet portlet = (LiferayPortlet) obj;
 
     return getPortletId().compareTo(portlet.getPortletId());
   }
 
-  private transient CachePortlet cachedInstance = null;
+  /**
+   * The struts path of the portlet.
+   */
+  private String _strutsPath;
 
   /**
-   * Initialize the portlet instance.
+   * The name of the portlet class of the portlet.
    */
+  private String _portletClass;
 
-  public Optional<CachePortlet> getCachedInstance() {
-    return Optional.ofNullable(cachedInstance);
+  /**
+   * The name of the indexer class of the portlet.
+   */
+  private String _indexerClass;
 
-  }
+  /**
+   * The name of the scheduler class of the portlet.
+   */
+  private String _schedulerClass;
 
-  public CachePortlet getCachedInstance(PortletConfig portletConfig) {
+  /**
+   * The name of the preferences validator class of the portlet.
+   */
+  private String _prefsValidator;
 
-    try {
-      if (cachedInstance == null) {
-        com.dotcms.repackage.javax.portlet.Portlet realPortlet =
-            (com.dotcms.repackage.javax.portlet.Portlet) Class.forName(getPortletClass()).newInstance();
-        CachePortlet newOne = new CachePortlet(realPortlet, portletConfig.getPortletContext(), getExpCache());
+  /**
+   * The preferences sharing type of the portlet.
+   */
+  private String _prefsSharingType = PREFERENCES_SHARING_TYPE_NONE;
 
-        newOne.init(portletConfig);
-        cachedInstance = newOne;
-      }
+  /**
+   * True if the portlet uses the default template.
+   */
+  private boolean _useDefaultTemplate;
 
-    } catch (Exception e) {
-      Logger.error(this.getClass(), e.getMessage(), e);
-    }
+  /**
+   * True if users are shown that they do not have access to the portlet.
+   */
+  private boolean _showPortletAccessDenied = GetterUtil.getBoolean(PropsUtil.get(PropsUtil.LAYOUT_SHOW_PORTLET_ACCESS_DENIED));
 
-    return cachedInstance;
-  }
+  /**
+   * True if users are shown that the portlet is inactive.
+   */
+  private boolean _showPortletInactive = GetterUtil.getBoolean(PropsUtil.get(PropsUtil.LAYOUT_SHOW_PORTLET_INACTIVE));
+
+  /**
+   * True if the portlet restores to the current view from the maximized state.
+   */
+  private boolean _restoreCurrentView;
+
+  /**
+   * True if the portlet is compatible with Netscape 4.
+   */
+  private boolean _ns4Compatible = true;
+
+  /**
+   * An array of required roles of the portlet.
+   */
+  private String[] _rolesArray;
+
+  /**
+   * True to include the portlet and make it available to be made active.
+   */
+  private boolean _include;
+
+  /**
+   * The init parameters of the portlet.
+   */
+  private Map _initParams;
+
+  /**
+   * The expiration cache of the portlet.
+   */
+  private Integer _expCache;
+
+  /**
+   * The portlet modes of the portlet.
+   */
+  private Map _portletModes;
+
+  /**
+   * The supported locales of the portlet.
+   */
+  private Set _supportedLocales;
+
+  /**
+   * The resource bundle of the portlet.
+   */
+  private String _resourceBundle;
+
+  /**
+   * The portlet info of the portlet.
+   */
+  private PortletInfo _portletInfo;
+
+  /**
+   * The user attributes of the portlet.
+   */
+  private Set _userAttributes;
+
+  /**
+   * The custom user attributes of the portlet.
+   */
+  private Map _customUserAttributes;
+
+  /**
+   * True if the portlet is found in a WAR file.
+   */
+  private boolean _warFile;
 
 }
