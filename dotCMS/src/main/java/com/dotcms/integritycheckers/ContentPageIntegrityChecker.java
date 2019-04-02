@@ -965,17 +965,6 @@ public class ContentPageIntegrityChecker extends AbstractIntegrityChecker {
 				&& !oldWorkingPage.getInode().equals(oldLivePage.getInode())) {
 			indexAPI.removeContentFromIndex(oldLivePage);
 		}
-
-		// Refresh either all or only language-specific versions of the page
-		DotConnect dc = new DotConnect();
-		if (fixAllVersions) {
-			dc.setSQL("SELECT inode FROM contentlet c WHERE c.identifier = ?");
-			dc.addParam(identifier);
-		} else {
-			dc.setSQL("SELECT inode FROM contentlet c WHERE c.identifier = ? AND c.language_id = ?");
-			dc.addParam(identifier);
-			dc.addParam(languageId);
-		}
 	}
 
     /**

@@ -1,24 +1,18 @@
 package com.dotcms.integritycheckers;
 
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
-import com.dotcms.rendering.velocity.services.ContainerLoader;
-import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.FlushCacheRunnable;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
-import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.Logger;
@@ -30,7 +24,10 @@ import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 /**
  * File assets integrity checker implementation.
@@ -416,68 +413,16 @@ public class ContentFileAssetIntegrityChecker extends AbstractIntegrityChecker {
 
         // Remove the Lucene index for the old page
         cleanIndex(existingWorkingContentlet, existingLiveContentlet);
-
-        // Refresh all or only language-specific versions of the contentlet
-        dc.setSQL("SELECT inode FROM contentlet WHERE identifier = ? AND language_id = ?");
-        dc.addParam(newContentletIdentifier);
-        dc.addParam(languageId);
     }
 
     private void fixFileAssetContainer(final String oldContentletIdentifier, final String newContentletIdentifier,
                                        final String localWorkingInode, final DotConnect dotConnect) throws DotDataException {
-        // select the page associated to the old container
-        dotConnect.setSQL("SELECT parent1 FROM multi_tree WHERE parent2 = ?");
-        dotConnect.addParam(oldContentletIdentifier);
-        final List<Map<String, Object>> pages = dotConnect.loadObjectResults();
 
         // Update the multitree with the new containerid
         dotConnect.setSQL("UPDATE multi_tree SET parent2 = ? WHERE parent2 = ?");
         dotConnect.addParam(newContentletIdentifier);
         dotConnect.addParam(oldContentletIdentifier);
         dotConnect.loadResult();
-
-        dotConnect.setSQL("SELECT parent_path, host_inode FROM identifier WHERE id = ?");
-        dotConnect.addParam(newContentletIdentifier);
-        final List<Map<String, Object>> identifier = dotConnect.loadObjectResults();
-
-        if (UtilMethods.isSet(identifier)) {
-
-            final Map<String, Object> identifierMap = identifier.stream().findFirst().orElse(Collections.emptyMap());
-            if (!identifierMap.isEmpty()) {
-
-                try {
-
-                    final String parentPath = (String) identifierMap.get("parent_path");
-                    final String hostId = (String) identifierMap.get("host_inode");
-
-                    HibernateUtil.addCommitListener(new FlushCacheRunnable() {
-                        @Override
-                        public void run() {
-                            try {
-
-                                final Host host = APILocator.getHostAPI()
-                                        .find(hostId, APILocator.systemUser(), false);
-                                final Folder folder = APILocator.getFolderAPI().findFolderByPath
-                                        (parentPath, host, APILocator.systemUser(), false);
-
-                                final ContainerLoader containerLoader = new ContainerLoader();
-                                final FileAssetContainer fileAssetContainer = new FileAssetContainer();
-
-                                fileAssetContainer.setIdentifier(oldContentletIdentifier);
-                                fileAssetContainer.setInode(localWorkingInode);
-
-                            } catch (Exception e) {
-                                Logger.error(this, e.getMessage(), e);
-                            }
-                        }
-                    });
-
-                } catch (Exception e) {
-                    Logger.error(this, e.getMessage(), e);
-                }
-            }
-
-        }
     }
 
     /**
