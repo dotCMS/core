@@ -46,7 +46,7 @@ public class OSGIUtilTest {
     }
 
     @AfterClass
-    public static void cleanUp() throws Exception {
+    public static void cleanUp() {
         //Stopping the OSGI framework
         OSGIUtil.getInstance().stopFramework();
     }
@@ -77,7 +77,7 @@ public class OSGIUtilTest {
      * Test the felix deploy path is the default path
      */
     @Test
-    public void test01DefaultFelixDeployPath() throws Exception {
+    public void test01DefaultFelixDeployPath() {
 
         final String deployPath = OSGIUtil.getInstance().getFelixDeployPath();
         Assert.assertNotNull(deployPath);
@@ -91,7 +91,7 @@ public class OSGIUtilTest {
      * Test the felix undeploy path is the default path
      */
     @Test
-    public void test02DefaultFelixUndeployPath() throws Exception {
+    public void test02DefaultFelixUndeployPath() {
 
         final String undeployPath = OSGIUtil.getInstance().getFelixUndeployPath();
         Assert.assertNotNull(undeployPath);
@@ -105,63 +105,75 @@ public class OSGIUtilTest {
      * Test the felix deploy path is a custom path
      */
     @Test
-    public void test03CustomFelixDeployPath() throws Exception {
-
-        String customFelixPath = felixDirectory.replace("/felix", "/customfelix");
-        Config.setProperty(FELIX_BASE_DIR, customFelixPath);
-
-        restartOSGi();
-
-        String deployFelixPath = OSGIUtil.getInstance().getFelixDeployPath();
-        Assert.assertNotNull(deployFelixPath);
+    public void test03CustomFelixDeployPath() {
 
         final String configuredDeployPath = getDeployPathInConfig();
         Assert.assertNotNull(configuredDeployPath);
-        assertEquals(configuredDeployPath, deployFelixPath);
 
-        Config.setProperty(FELIX_BASE_DIR, felixDirectory);
+        String customFelixDeployPath = configuredDeployPath.replace("/felix", "/customfelix");
 
-        restartOSGi();
+        try {
+            //Changing the deploy path and restarting the OSGI framework
+            Config.setProperty(FELIX_FILEINSTALL_DIR, customFelixDeployPath);
+            restartOSGi();
 
-        deployFelixPath = OSGIUtil.getInstance().getFelixDeployPath();
-        assertEquals(configuredDeployPath, deployFelixPath);
+            //Validate we are using the property we just set
+            String deployFelixPath = OSGIUtil.getInstance().getFelixDeployPath();
+            Assert.assertNotNull(deployFelixPath);
+            assertEquals(deployFelixPath, customFelixDeployPath);
 
-        removeFolder(customFelixPath);
+            //Setting back to the original value the undeploy path and restarting the OSGI framework
+            Config.setProperty(FELIX_FILEINSTALL_DIR, configuredDeployPath);
+            restartOSGi();
+
+            //Validate we are using the property we just set
+            deployFelixPath = OSGIUtil.getInstance().getFelixDeployPath();
+            assertEquals(configuredDeployPath, deployFelixPath);
+        } finally {
+            //Clean up
+            removeParentFolder(customFelixDeployPath);
+        }
     }
 
     /**
      * Test the felix undeploy path is a custom path
      */
     @Test
-    public void test04CustomFelixUndeployPath() throws Exception {
-
-        String customFelixPath = felixDirectory.replace("/felix", "/customfelix");
-        Config.setProperty(FELIX_BASE_DIR, customFelixPath);
-
-        restartOSGi();
-
-        String undeployFelixPath = OSGIUtil.getInstance().getFelixUndeployPath();
-        Assert.assertNotNull(undeployFelixPath);
+    public void test04CustomFelixUndeployPath() {
 
         final String configuredUndeployPath = getUndeployPathInConfig();
         Assert.assertNotNull(configuredUndeployPath);
-        assertEquals(configuredUndeployPath, undeployFelixPath);
 
-        Config.setProperty(FELIX_BASE_DIR, felixDirectory);
+        String customFelixUndeployPath = configuredUndeployPath.replace("/felix", "/customfelix");
 
-        restartOSGi();
+        try {
+            //Changing the undeploy path and restarting the OSGI framework
+            Config.setProperty(FELIX_UNDEPLOYED_DIR, customFelixUndeployPath);
+            restartOSGi();
 
-        undeployFelixPath = OSGIUtil.getInstance().getFelixUndeployPath();
-        assertEquals(configuredUndeployPath, undeployFelixPath);
+            //Validate we are using the property we just set
+            String undeployFelixPath = OSGIUtil.getInstance().getFelixUndeployPath();
+            Assert.assertNotNull(undeployFelixPath);
+            assertEquals(undeployFelixPath, customFelixUndeployPath);
 
-        removeFolder(customFelixPath);
+            //Setting back to the original value the undeploy path and restarting the OSGI framework
+            Config.setProperty(FELIX_UNDEPLOYED_DIR, configuredUndeployPath);
+            restartOSGi();
+
+            //Validate we are using the property we just set
+            undeployFelixPath = OSGIUtil.getInstance().getFelixUndeployPath();
+            assertEquals(configuredUndeployPath, undeployFelixPath);
+        } finally {
+            //Clean up
+            removeParentFolder(customFelixUndeployPath);
+        }
     }
 
     /**
      * Test the parse base directory from 'felix.base.dir' property
      */
     @Test
-    public void test07ParseBaseDirectory() throws Exception {
+    public void test07ParseBaseDirectory() {
         String baseDirectory = OSGIUtil.getInstance().parseBaseDirectoryFromConfig();
         assertThat("WEB-INF Path exists", new File(baseDirectory).exists());
     }
@@ -171,10 +183,10 @@ public class OSGIUtilTest {
      *
      * @param path The path to remove
      */
-    private void removeFolder(String path) {
+    private void removeParentFolder(String path) {
         try {
             File directory = new File(path);
-            FileUtils.deleteDirectory(directory);
+            FileUtils.deleteDirectory(directory.getParentFile());
         } catch (Exception ex) {
             //Do nothing...
         }
