@@ -33,7 +33,7 @@ public class OSGIUtilTest {
         IntegrationTestInitService.getInstance().init();
 
         Mockito.when(Config.CONTEXT.getRealPath("/WEB-INF/felix"))
-                .thenReturn(Config.getStringProperty("felix.base.dir", "/WEB-INF/felix"));
+                .thenReturn(Config.getStringProperty(FELIX_BASE_DIR, "/WEB-INF/felix"));
 
         // Initialize OSGI
         initializeOSGIFramework();
