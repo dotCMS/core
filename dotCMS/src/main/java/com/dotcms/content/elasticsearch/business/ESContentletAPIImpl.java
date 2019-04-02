@@ -5006,7 +5006,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if (UtilMethods.isSet(contentlet.getIdentifier())) {
 
             final Optional<ShortyId> shortyId = APILocator.getShortyAPI().getShorty(contentlet.getIdentifier());
-            final boolean isIdentifier = shortyId.isPresent() && shortyId.get().subType== ShortType.IDENTIFIER;
+            final boolean isIdentifier = shortyId.isPresent() && shortyId.get().type== ShortType.IDENTIFIER;
 
             if (!isIdentifier) {
 
