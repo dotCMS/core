@@ -458,9 +458,9 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         // split the list on three possible subset, one with the default refresh strategy, second one is the
         // wait for and finally the immediate
         final List<List<Contentlet>> partitions =
-                CollectionsUtils.partition(contentToIndex, (contentlet -> contentlet.getIndexPolicy() == IndexPolicy.DEFER),
-                        (contentlet -> contentlet.getIndexPolicy() == IndexPolicy.WAIT_FOR),
-                        (contentlet -> contentlet.getIndexPolicy() == IndexPolicy.FORCE));
+                CollectionsUtils.partition(contentToIndex, contentlet -> contentlet.getIndexPolicy() == IndexPolicy.DEFER,
+                        contentlet -> contentlet.getIndexPolicy() == IndexPolicy.WAIT_FOR,
+                        contentlet -> contentlet.getIndexPolicy() == IndexPolicy.FORCE);
 
         if (UtilMethods.isSet(partitions.get(0))) {
             this.indexContentListDefer(partitions.get(0));
