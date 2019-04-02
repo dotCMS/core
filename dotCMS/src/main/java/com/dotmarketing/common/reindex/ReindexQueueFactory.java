@@ -212,36 +212,36 @@ public class ReindexQueueFactory {
     }
 
     private Map<String, ReindexEntry> loadReindexRecordsFromDb(final int recordsToReturn) throws DotDataException {
-        DotConnect dc = new DotConnect();
-        Map<String, ReindexEntry> contentList = new LinkedHashMap<String, ReindexEntry>();
-        List<Map<String, Object>> results;
-        Connection con = null;
+        final DotConnect dc = new DotConnect();
+        final Map<String, ReindexEntry> contentList = new LinkedHashMap<>();
+        final List<Map<String, Object>> results;
+        final Connection con;
         String serverId = ConfigUtils.getServerId();
 
         try {
 
             // Get the number of records to fetch
 
-            int priorityLevel = Priority.ERROR.dbValue();
+            final int priorityLevel = Priority.ERROR.dbValue();
 
             con = DbConnectionFactory.getConnection();
             if (DbConnectionFactory.isOracle()) {
-                CallableStatement call = con.prepareCall("{ ? = call load_records_to_index(?,?,?) }");
+                final CallableStatement call = con.prepareCall("{ ? = call load_records_to_index(?,?,?) }");
                 call.registerOutParameter(1, OracleTypes.CURSOR);
                 call.setString(2, serverId);
                 call.setInt(3, recordsToReturn);
                 call.setInt(4, priorityLevel);
                 call.execute();
-                ResultSet r = (ResultSet) call.getObject(1);
-                results = new ArrayList<Map<String, Object>>();
+                final ResultSet r = (ResultSet) call.getObject(1);
+                results = new ArrayList<>();
                 while (r.next()) {
-                    Map<String, Object> m = new HashMap<String, Object>();
-                    m.put("id", r.getInt("id"));
-                    m.put("inode_to_index", r.getString("inode_to_index"));
-                    m.put("ident_to_index", r.getString("ident_to_index"));
-                    m.put("priority", r.getInt("priority"));
-                    m.put("action", r.getInt("dist_action"));
-                    results.add(m);
+                    final Map<String, Object> map = new HashMap<>();
+                    map.put("id", r.getInt("id"));
+                    map.put("inode_to_index", r.getString("inode_to_index"));
+                    map.put("ident_to_index", r.getString("ident_to_index"));
+                    map.put("priority", r.getInt("priority"));
+                    map.put("action", r.getInt("dist_action"));
+                    results.add(map);
                 }
                 r.close();
                 call.close();
@@ -252,7 +252,7 @@ public class ReindexQueueFactory {
                 dc.loadResult();
 
                 dc.setSQL("load_records_to_index @server_id='" + serverId + "', @records_to_fetch=" + String.valueOf(recordsToReturn)
-                        + ", @priority_level=" + String.valueOf(priorityLevel));
+                        + ", @priority_level=" + priorityLevel);
                 dc.setForceQuery(true);
                 results = dc.loadObjectResults(con);
             } else if (DbConnectionFactory.isH2()) {
@@ -270,7 +270,7 @@ public class ReindexQueueFactory {
             }
 
             for (Map<String, Object> r : results) {
-                ReindexEntry entry = new ReindexEntry();
+                final ReindexEntry entry = new ReindexEntry();
                 entry.setId(((Number) r.get("id")).longValue());
                 String identifier = (String) r.get("ident_to_index");
                 entry.setIdentToIndex(identifier);
@@ -383,15 +383,11 @@ public class ReindexQueueFactory {
         }
         return identifiers.size();
     }
-    
-    
-    
-    
-    
-    protected void refreshContentUnderHost(Host host) throws DotDataException {
+
+    protected void refreshContentUnderHost(final Host host) throws DotDataException {
         String sql = " INSERT INTO dist_reindex_journal(inode_to_index,ident_to_index,priority,dist_action) " + " SELECT id, id, ?, ? "
                 + " FROM identifier " + " WHERE asset_type='contentlet' and identifier.host_inode=?";
-        DotConnect dc = new DotConnect();
+        final DotConnect dc = new DotConnect();
         dc.setSQL(sql);
         dc.addParam(Priority.STRUCTURE.dbValue());
         dc.addParam(ReindexAction.REINDEX.ordinal());

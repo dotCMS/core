@@ -5,6 +5,7 @@ import static com.dotmarketing.common.reindex.ReindexThread.ELASTICSEARCH_CONCUR
 import static com.dotmarketing.util.StringUtils.builder;
 
 import com.dotmarketing.common.reindex.BulkProcessorListener;
+import com.dotmarketing.util.DateUtil;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -75,7 +76,6 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.ThreadUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
@@ -166,12 +166,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
         int i = 0;
         while (!cir.isAcknowledged()) {
-
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+            DateUtil.sleep(100);
 
             if (i++ > 300) {
                 throw new ElasticsearchException("index timed out creating");
@@ -341,7 +336,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 if (!luckyServer.equals(ConfigUtils.getServerId())) {
                     Logger.info(this.getClass(), "fullReindexSwitchover: Letting server [" + luckyServer + "] make the switch. My id : ["
                             + ConfigUtils.getServerId() + "]");
-                    ThreadUtils.sleep(4000);
+                    DateUtil.sleep(4000);
                     return false;
                 }
             }
@@ -354,7 +349,6 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             APILocator.getIndiciesAPI().point(newInfo);
 
             DotConcurrentFactory.getInstance().getSubmitter().submit(() -> {
-                ;
                 try {
                     Logger.info(this.getClass(), "Updating and optimizing ElasticSearch Indexes");
                     esIndexApi.moveIndexBackToCluster(newInfo.working);

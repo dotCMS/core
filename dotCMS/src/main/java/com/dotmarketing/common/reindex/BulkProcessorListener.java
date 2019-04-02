@@ -34,13 +34,13 @@ public class BulkProcessorListener implements BulkProcessor.Listener {
     }
 
     @Override
-    public void beforeBulk(long executionId, BulkRequest request) {
+    public void beforeBulk(final long executionId, final BulkRequest request) {
         Logger.info(this.getClass(), "-----------");
         Logger.info(this.getClass(), "Total Indexed :" + contentletsIndexed);
         Logger.info(this.getClass(), "ReindexEntries found : " + workingRecords.size());
         Logger.info(this.getClass(), "BulkRequests created : " + request.numberOfActions());
         contentletsIndexed += request.numberOfActions();
-        Optional<String> duration = APILocator.getContentletIndexAPI().reindexTimeElapsed();
+        final Optional<String> duration = APILocator.getContentletIndexAPI().reindexTimeElapsed();
         if (duration.isPresent()) {
             Logger.info(this, "Full Reindex Elapsed : " + duration.get() + "");
         }
@@ -48,8 +48,8 @@ public class BulkProcessorListener implements BulkProcessor.Listener {
     }
 
     @Override
-    public void afterBulk(long executionId, BulkRequest request, BulkResponse response) {
-        List<ReindexEntry> successful = new ArrayList<>();
+    public void afterBulk(final long executionId, final BulkRequest request, final BulkResponse response) {
+        final List<ReindexEntry> successful = new ArrayList<>();
         for (BulkItemResponse bulkItemResponse : response) {
             DocWriteResponse itemResponse = bulkItemResponse.getResponse();
 
@@ -69,7 +69,7 @@ public class BulkProcessorListener implements BulkProcessor.Listener {
     }
 
     @Override
-    public void afterBulk(long executionId, BulkRequest request, Throwable failure) {
+    public void afterBulk(final long executionId, final BulkRequest request, final Throwable failure) {
         Logger.error(ReindexThread.class, "Bulk  process failed entirely:" + failure.getMessage(),
                 failure);
         workingRecords.values().forEach(idx -> handleFailure(idx, failure.getMessage()));
@@ -86,7 +86,7 @@ public class BulkProcessorListener implements BulkProcessor.Listener {
         }
     }
 
-    private void handleFailure(final ReindexEntry idx, String cause) {
+    private void handleFailure(final ReindexEntry idx, final String cause) {
         try {
             APILocator.getReindexQueueAPI().markAsFailed(idx, cause);
         } catch (DotDataException e) {

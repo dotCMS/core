@@ -21,7 +21,7 @@ public abstract class ReindexRunnable implements Runnable {
 		return contentToIndex;
 	}
 
-	public ReindexRunnable(List<Contentlet> reindexIds, Action action) {
+	public ReindexRunnable(final List<Contentlet> reindexIds, final Action action) {
 		super();
 		this.contentToIndex = reindexIds;
 		this.action = action;

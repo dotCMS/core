@@ -8,9 +8,7 @@ import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.Files;
-import java.util.Arrays;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -28,7 +26,6 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDUtil;
-import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.util.FileUtil;
 
@@ -200,15 +197,15 @@ public class ServerAPIImpl implements ServerAPI {
 
         // First We need to check if the heartbeat job is enable.
         if (Config.getBooleanProperty("ENABLE_SERVER_HEARTBEAT", true)) {
-            String realPath = APILocator.getFileAssetAPI().getRealAssetsRootPath() + java.io.File.separator + "server"
-                    + java.io.File.separator + serverId;
+            String realPath = APILocator.getFileAssetAPI().getRealAssetsRootPath() + File.separator + "server"
+                    + File.separator + serverId;
 
             File serverDir = new File(realPath);
             if (!serverDir.exists()) {
                 serverDir.mkdirs();
             }
 
-            File heartBeat = new File(realPath + java.io.File.separator + "heartbeat.dat");
+            File heartBeat = new File(realPath + File.separator + "heartbeat.dat");
 
             try (OutputStream os = Files.newOutputStream(heartBeat.toPath())) {
                 os.write(String.valueOf(System.currentTimeMillis()).getBytes());

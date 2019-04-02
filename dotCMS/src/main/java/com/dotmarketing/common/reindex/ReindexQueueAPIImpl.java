@@ -127,9 +127,9 @@ public class ReindexQueueAPIImpl implements ReindexQueueAPI {
 
     @WrapInTransaction
     @Override
-    public void addIdentifierReindex(final String id, int priority) throws DotDataException {
+    public void addIdentifierReindex(final String identifier, int priority) throws DotDataException {
 
-        this.reindexQueueFactory.addIdentifierReindex(id, priority);
+        this.reindexQueueFactory.addIdentifierReindex(identifier, priority);
     }
 
     @WrapInTransaction

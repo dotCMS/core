@@ -37,23 +37,23 @@ public class IndiciesFactory {
                 info = cache.get();
                 if (info == null) {
                     info = new IndiciesInfo();
-                    DotConnect dc = new DotConnect();
+                    final DotConnect dc = new DotConnect();
                     dc.setSQL("SELECT index_name,index_type FROM indicies");
-                    List<Map<String, Object>> results = dc.loadResults(conn);
+                    final List<Map<String, Object>> results = dc.loadResults(conn);
                     for (Map<String, Object> rr : results) {
                         String name = (String) rr.get("index_name");
                         String type = (String) rr.get("index_type");
-                        if (type.equalsIgnoreCase(IndexTypes.WORKING.toString()))
+                        if (type.equalsIgnoreCase(IndexTypes.WORKING.toString())) {
                             info.working = name;
-                        else if (type.equalsIgnoreCase(IndexTypes.LIVE.toString()))
+                        } else if (type.equalsIgnoreCase(IndexTypes.LIVE.toString())) {
                             info.live = name;
-                        else if (type.equalsIgnoreCase(IndexTypes.REINDEX_LIVE.toString()))
+                        } else if (type.equalsIgnoreCase(IndexTypes.REINDEX_LIVE.toString())) {
                             info.reindex_live = name;
-                        else if (type.equalsIgnoreCase(IndexTypes.REINDEX_WORKING.toString()))
+                        } else if (type.equalsIgnoreCase(IndexTypes.REINDEX_WORKING.toString())) {
                             info.reindex_working = name;
-                        else if (type.equalsIgnoreCase(IndexTypes.SITE_SEARCH.toString()))
+                        } else if (type.equalsIgnoreCase(IndexTypes.SITE_SEARCH.toString())) {
                             info.site_search = name;
-
+                        }
                     }
                     cache.put(info);
                 }

@@ -1,6 +1,7 @@
 package com.dotmarketing.common.reindex;
 
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 import java.sql.Connection;
@@ -68,10 +69,10 @@ public class ReindexAPITest extends IntegrationTestBase {
         final List<Contentlet> contentletsLowPriority = contentlets.subList(numberToTest / 2, contentlets.size());
 
         assertNotNull(contentletsHighPriority);
-        assertTrue(contentletsHighPriority.size() == numberToTest / 2);
+        assertSame(contentletsHighPriority.size(), numberToTest / 2);
 
         assertNotNull(contentletsLowPriority);
-        assertTrue(contentletsLowPriority.size() == numberToTest / 2);
+        assertSame(contentletsLowPriority.size(), numberToTest / 2);
 
         final Set<String> highIdentifiers =
                 contentletsHighPriority.stream().filter(Objects::nonNull).map(Contentlet::getIdentifier).collect(Collectors.toSet());
@@ -85,13 +86,13 @@ public class ReindexAPITest extends IntegrationTestBase {
         Map<String, ReindexEntry> reindexEntries = reindexQueueAPI.findContentToReindex(numberToTest / 2);
 
         assertNotNull(reindexEntries);
-        assertTrue(reindexEntries.size() == numberToTest / 2);
+        assertSame(reindexEntries.size(), numberToTest / 2);
         assertTrue(reindexEntries.keySet().containsAll(highIdentifiers));
 
         reindexEntries = reindexQueueAPI.findContentToReindex(numberToTest / 2);
 
         assertNotNull(reindexEntries);
-        assertTrue(reindexEntries.size() == numberToTest / 2);
+        assertSame(reindexEntries.size(), numberToTest / 2);
         assertTrue(reindexEntries.keySet().containsAll(lowIdentifiers));
 
     }
@@ -111,7 +112,7 @@ public class ReindexAPITest extends IntegrationTestBase {
 
         Map<String, ReindexEntry> reindexEntries = reindexQueueAPI.findContentToReindex(numberToTest / 2);
 
-        assertTrue(reindexEntries.size() == 0);
+        assertTrue(reindexEntries.isEmpty());
         List<Field> origFields = new ArrayList<>();
         List<Field> newFields = new ArrayList<>();
         origFields.addAll(type.fields());
@@ -123,15 +124,15 @@ public class ReindexAPITest extends IntegrationTestBase {
         APILocator.getContentTypeAPI(APILocator.systemUser()).save(type, newFields);
         APILocator.getContentTypeAPI(APILocator.systemUser()).save(type, origFields);
         reindexEntries = reindexQueueAPI.findContentToReindex(numberToTest);
-        assertTrue(reindexEntries.size() == numberToTest);
-        assertTrue(reindexEntries.values().iterator().next().getPriority() == ReindexQueueFactory.Priority.STRUCTURE.dbValue());
+        assertSame(reindexEntries.size(), numberToTest);
+        assertSame(reindexEntries.values().iterator().next().getPriority(), ReindexQueueFactory.Priority.STRUCTURE.dbValue());
 
     }
 
     @Test
     public void test_adding_content_adds_to_queue_after_transaction_commit() throws Exception {
 
-        ContentType type = new ContentTypeDataGen()
+        final ContentType type = new ContentTypeDataGen()
                 .fields(ImmutableList
                         .of(ImmutableTextField.builder().name("Title").variable("title").searchable(true).listed(true).build()))
                 .nextPersisted();
@@ -140,8 +141,9 @@ public class ReindexAPITest extends IntegrationTestBase {
         try {
             HibernateUtil.startTransaction();
 
-            Contentlet con = new ContentletDataGen(type.id()).setProperty("title", "contentTest " + System.currentTimeMillis()).next();
-            APILocator.getContentletAPI().checkin(con, APILocator.systemUser(), false);
+            final Contentlet contentlet = new ContentletDataGen(type.id())
+                    .setProperty("title", "contentTest " + System.currentTimeMillis()).next();
+            APILocator.getContentletAPI().checkin(contentlet, APILocator.systemUser(), false);
 
             assertTrue(reindexQueueAPI.recordsInQueue() > 0);
 
@@ -173,28 +175,31 @@ public class ReindexAPITest extends IntegrationTestBase {
     @Test
     public void test_old_records_get_re_queued() throws Exception {
 
-        ContentType type = new ContentTypeDataGen()
+        final ContentType type = new ContentTypeDataGen()
                 .fields(ImmutableList
-                        .of(ImmutableTextField.builder().name("Title").variable("title").searchable(true).listed(true).build()))
+                        .of(ImmutableTextField.builder().name("Title").variable("title")
+                                .searchable(true).listed(true).build()))
                 .nextPersisted();
         new DotConnect().setSQL("delete from dist_reindex_journal").loadResult();
 
-        Contentlet con = new ContentletDataGen(type.id()).setProperty("title", "contentTest " + System.currentTimeMillis()).nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(type.id())
+                .setProperty("title", "contentTest " + System.currentTimeMillis()).nextPersisted();
 
         // get unclaimed records for reindex, Our new content is in there and is marked as claimed (e.g.
         // serverId is set to
         // this server)
         Map<String, ReindexEntry> reindexEntries = reindexQueueAPI.findContentToReindex();
-        assertTrue(reindexEntries.containsKey(con.getIdentifier()));
+        assertTrue(reindexEntries.containsKey(contentlet.getIdentifier()));
 
         // no more unclaimed records for reindex
         reindexEntries = reindexQueueAPI.findContentToReindex();
         assertTrue(reindexEntries.isEmpty());
 
         // make the reindex record 3 minutes old in db
-        Date oldRecord = new Date((System.currentTimeMillis() - (3 * 60 * 1000)));
+        Date oldRecord = new Date(System.currentTimeMillis() - (3 * 60 * 1000));
 
-        new DotConnect().setSQL("update dist_reindex_journal set time_entered = ?").addParam(oldRecord).loadResult();
+        new DotConnect().setSQL("update dist_reindex_journal set time_entered = ?")
+                .addParam(oldRecord).loadResult();
 
         // record still not available because the server only calls re-queue every two minutes
         reindexEntries = reindexQueueAPI.findContentToReindex();
@@ -205,7 +210,7 @@ public class ReindexAPITest extends IntegrationTestBase {
 
         // record is requeued for reindexing
         reindexEntries = reindexQueueAPI.findContentToReindex();
-        assertTrue(reindexEntries.containsKey(con.getIdentifier()));
+        assertTrue(reindexEntries.containsKey(contentlet.getIdentifier()));
 
     }
 
@@ -219,27 +224,29 @@ public class ReindexAPITest extends IntegrationTestBase {
     @Test
     public void test_failed_records() throws Exception {
 
-        ContentType type = new ContentTypeDataGen()
+        final ContentType type = new ContentTypeDataGen()
                 .fields(ImmutableList
-                        .of(ImmutableTextField.builder().name("Title").variable("title").searchable(true).listed(true).build()))
+                        .of(ImmutableTextField.builder().name("Title").variable("title")
+                                .searchable(true).listed(true).build()))
                 .nextPersisted();
 
         new DotConnect().setSQL("delete from dist_reindex_journal").loadResult();
 
-        Contentlet con = new ContentletDataGen(type.id()).setProperty("title", "contentTest " + System.currentTimeMillis()).nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(type.id())
+                .setProperty("title", "contentTest " + System.currentTimeMillis()).nextPersisted();
 
-        Map<String, ReindexEntry> reindexEntries = null;
-        ReindexEntry entry = null;
+        Map<String, ReindexEntry> reindexEntries;
+        ReindexEntry entry;
         int i = 0;
 
         // we need to fail 1 time more than the REINDEX_MAX_FAILURE_ATTEMPTS
         while (i <= ReindexQueueFactory.REINDEX_MAX_FAILURE_ATTEMPTS) {
             // it has been marked as failed and is available again for reindex
             reindexEntries = reindexQueueAPI.findContentToReindex();
-            assertTrue(reindexEntries.containsKey(con.getIdentifier()));
+            assertTrue(reindexEntries.containsKey(contentlet.getIdentifier()));
             entry = reindexEntries.values().stream().findFirst().orElse(null);
             assertNotNull(entry);
-            assertTrue(entry.errorCount() == i);
+            assertSame(entry.errorCount(), i);
             reindexQueueAPI.markAsFailed(entry, "failure:" + i);
             i++;
         }
@@ -247,7 +254,7 @@ public class ReindexAPITest extends IntegrationTestBase {
         reindexEntries = reindexQueueAPI.findContentToReindex();
         entry = reindexEntries.values().stream().findFirst().orElse(null);
 
-        assertTrue(entry == null);
+        assertSame(entry, null);
 
     }
 
@@ -262,19 +269,22 @@ public class ReindexAPITest extends IntegrationTestBase {
     public void test_deleted_records() throws Exception {
 
         final List<Contentlet> contentlets = new ArrayList<>();
-        ContentType type = new ContentTypeDataGen()
+        final ContentType type = new ContentTypeDataGen()
                 .fields(ImmutableList
-                        .of(ImmutableTextField.builder().name("Title").variable("title").searchable(true).listed(true).build()))
+                        .of(ImmutableTextField.builder().name("Title").variable("title")
+                                .searchable(true).listed(true).build()))
                 .nextPersisted();
 
         for (int i = 0; i < numberToTest; i++) {
             contentlets.add(
-                    new ContentletDataGen(type.id()).setProperty("title", "contentTest " + System.currentTimeMillis()).nextPersisted());
+                    new ContentletDataGen(type.id())
+                            .setProperty("title", "contentTest " + System.currentTimeMillis())
+                            .nextPersisted());
         }
 
-        List<String> ids = contentlets.stream().map(c->c.getIdentifier()).collect(Collectors.toList());
-        
-        
+        final List<String> ids = contentlets.stream().map(c -> c.getIdentifier())
+                .collect(Collectors.toList());
+
         final ReindexQueueAPI reindexQueueAPI = APILocator.getReindexQueueAPI();
 
         new DotConnect().setSQL("delete from dist_reindex_journal").loadResult();
@@ -283,10 +293,10 @@ public class ReindexAPITest extends IntegrationTestBase {
 
 
         Map<String, ReindexEntry> reindexEntries = reindexQueueAPI.findContentToReindex();
-        assert(reindexEntries.size()==ids.size());
+        assertSame(reindexEntries.size(), ids.size());
         for(ReindexEntry entry : reindexEntries.values()) {
-            assert(ids.contains(entry.getIdentToIndex()));
-            assert(entry.isDelete());
+            assertTrue(ids.contains(entry.getIdentToIndex()));
+            assertTrue(entry.isDelete());
         }
 
     }

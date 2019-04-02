@@ -13,11 +13,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
-import com.dotcms.contenttype.business.ContentTypeAPIImpl;
-import com.dotcms.contenttype.business.ContentTypeFactory;
-import com.dotcms.contenttype.business.ContentTypeFactoryImpl;
-import com.dotcms.contenttype.business.FieldAPIImpl;
-import com.dotcms.contenttype.business.FieldFactoryImpl;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
@@ -152,8 +147,10 @@ public class ReindexThreadTest {
 
         // make sure that the index is in the same state as before the failed transaction
 
-        for (Contentlet c : origCons) {
-            assertTrue(contentletAPI.indexCount("+live:true +identifier:" + c.getIdentifier() + " +inode:" + c.getInode(), user,
+        for (final Contentlet contentlet : origCons) {
+            assertTrue(contentletAPI.indexCount(
+                    "+live:true +identifier:" + contentlet.getIdentifier() + " +inode:" + contentlet
+                            .getInode(), user,
                     respectFrontendRoles) > 0);
 
         }

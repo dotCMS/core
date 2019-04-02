@@ -164,7 +164,7 @@ public interface ReindexQueueAPI {
 
     void resetServersRecords() throws DotDataException;
 
-    void addIdentifierReindex(String id, int prority) throws DotDataException;
+    void addIdentifierReindex(String identifier, int priority) throws DotDataException;
 
 
     /**
