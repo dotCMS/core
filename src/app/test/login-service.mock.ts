@@ -49,7 +49,7 @@ export const mockLoginFormResponse = {
         'get-new-password': 'Recover Password',
         'error.form.mandatory': 'The field {0} is required',
         'reset-password-success': 'Your password has been successfully changed',
-        'welcome-back': 'Welcome Back!',
+        'welcome': 'Welcome',
         'forgot-password': 'Forgot Password',
         'reset-password': 'Password Reset',
         'enter-password': 'Enter Password',

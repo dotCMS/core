@@ -17,7 +17,7 @@ export const LOGIN_LABELS = [
     'angular.login.component.community.licence.message',
     'reset-password-success',
     'a-new-password-has-been-sent-to-x',
-    'welcome-back',
+    'welcome',
     'forgot-password',
     'get-new-password',
     'cancel',

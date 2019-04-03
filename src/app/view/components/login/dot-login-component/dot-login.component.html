@@ -12,7 +12,7 @@
             </p-dropdown>
         </div>
 
-        <h3 class="login__title" >{{ loginInfo.i18nMessagesMap['welcome-back'] }}</h3>
+        <h3 class="login__title" >{{ loginInfo.i18nMessagesMap['welcome'] }}</h3>
 
         <div class="error-message" [innerHTML]="message"></div>
         <div class="form__group form__group--validation">
@@ -55,7 +55,7 @@
         </div>
         <div class="login__footer">
             <span>{{ loginInfo.i18nMessagesMap['Server'] }}: {{ loginInfo.entity.serverId }}</span> |
-            <span>{{ loginInfo.entity.levelName }}: {{ loginInfo.entity.version }}</span>
+            <span>{{ loginInfo.entity.levelName }}: {{ loginInfo.entity.version }} - {{ loginInfo.entity.buildDateString }}</span>
             <span *ngIf="loginInfo.entity.levelName.indexOf('COMMUNITY') !== -1"
                   [innerHTML]="' - ' + loginInfo.i18nMessagesMap['angular.login.component.community.licence.message']" >
         </span>
