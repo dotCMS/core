@@ -311,28 +311,30 @@ war {
         }
     } else { //Outside the war
 
-        exclude 'WEB-INF/felix'
+        doLast {
+            exclude 'WEB-INF/felix'
 
-        copy {
-            from configurations.felix
-            into felixFolder.concat("/bundle")
-        }
+            copy {
+                from configurations.felix
+                into felixFolder.concat("/bundle")
+            }
 
-        copy {
-            from 'src/main/webapp/WEB-INF/felix/osgi-extra-generated.conf'
-            into felixFolder
-        }
+            copy {
+                from 'src/main/webapp/WEB-INF/felix/osgi-extra-generated.conf'
+                into felixFolder
+            }
 
-        copy {
-            from configurations.compile
-            into felixFolder.concat("/bundle")
-            include '**/org.apache.felix.http.api*.jar'
-        }
+            copy {
+                from configurations.compile
+                into felixFolder.concat("/bundle")
+                include '**/org.apache.felix.http.api*.jar'
+            }
 
-        copy {
-            from configurations.compile
-            into felixFolder.concat("/bundle")
-            include '**/org.apache.felix.http.bundle*.jar'
+            copy {
+                from configurations.compile
+                into felixFolder.concat("/bundle")
+                include '**/org.apache.felix.http.bundle*.jar'
+            }
         }
     }
 
@@ -370,44 +372,49 @@ integrationTest {
 }
 integrationTest.group='dotCMS tests'
 
-task prepareIntegrationTests(dependsOn: ['dowloadStarterForTests', 'prepareFelixForTests']) {
-}
+task prepareIntegrationTests(dependsOn: ['dowloadStarterForTests', 'prepareFelixForTests']) {}
 prepareIntegrationTests.group='dotCMS tests'
 
-task dowloadStarterForTests (type: Copy) {
-    from configurations.testsStarter
-    into integrationTestResourcesFolder
-    rename ( /starter(.+)\.zip/, "starter.zip" )
+task dowloadStarterForTests {
+
+    copy {
+        from configurations.testsStarter
+        into integrationTestResourcesFolder
+        rename(/starter(.+)\.zip/, "starter.zip")
+    }
 }
-dowloadStarterForTests.group='dotCMS tests'
-dowloadStarterForTests.description='Downloads the test starter zip to the integration tests resources folder'
+dowloadStarterForTests.group = 'dotCMS tests'
+dowloadStarterForTests.description = 'Downloads the test starter zip to the integration tests resources folder'
 
-task prepareFelixForTests << {
+task prepareFelixForTests {
 
-    //If we want the felix folder to live in a custom folder
-    if (project.hasProperty("integrationTestFelixFolder")
-            && integrationTestFelixFolder?.trim()) {
+    doLast {
 
-        copy {
-            from configurations.felix
-            into integrationTestFelixFolder.concat("/bundle")
-        }
+        //If we want the felix folder to live in a custom folder
+        if (project.hasProperty("integrationTestFelixFolder")
+                && integrationTestFelixFolder?.trim()) {
 
-        copy {
-            from 'src/main/webapp/WEB-INF/felix/osgi-extra-generated.conf'
-            into integrationTestFelixFolder
-        }
+            copy {
+                from configurations.felix
+                into integrationTestFelixFolder.concat("/bundle")
+            }
 
-        copy {
-            from configurations.compile
-            into integrationTestFelixFolder.concat("/bundle")
-            include '**/org.apache.felix.http.api*.jar'
-        }
+            copy {
+                from 'src/main/webapp/WEB-INF/felix/osgi-extra-generated.conf'
+                into integrationTestFelixFolder
+            }
 
-        copy {
-            from configurations.compile
-            into integrationTestFelixFolder.concat("/bundle")
-            include '**/org.apache.felix.http.bundle*.jar'
+            copy {
+                from configurations.compile
+                into integrationTestFelixFolder.concat("/bundle")
+                include '**/org.apache.felix.http.api*.jar'
+            }
+
+            copy {
+                from configurations.compile
+                into integrationTestFelixFolder.concat("/bundle")
+                include '**/org.apache.felix.http.bundle*.jar'
+            }
         }
     }
 
