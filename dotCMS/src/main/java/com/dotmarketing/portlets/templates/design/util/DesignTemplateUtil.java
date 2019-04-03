@@ -5,17 +5,25 @@ import com.dotcms.repackage.org.jsoup.Jsoup;
 import com.dotcms.repackage.org.jsoup.nodes.Document;
 import com.dotcms.repackage.org.jsoup.nodes.Element;
 import com.dotcms.repackage.org.jsoup.select.Elements;
+import com.dotcms.uuid.shorty.ShortType;
+import com.dotcms.uuid.shorty.ShortyId;
+import com.dotcms.uuid.shorty.ShortyIdAPI;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.IdentifierAPI;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.design.bean.PreviewFileAsset;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayoutRow;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -380,6 +388,11 @@ public class DesignTemplateUtil {
 				String[] splitArguments = parseContainerArguments.split(",");
 				String id = cleanId(splitArguments[0]);
 				String uuid = splitArguments.length > 1 ? cleanId(splitArguments[1]) : ParseContainer.DEFAULT_UUID_VALUE;
+				try {
+					id = getContainerIdentifierOrPath(id);
+				} catch (DotDataException e) {
+					Logger.error(DesignTemplateUtil.class, e.getMessage(), e);
+				}
 
 				containers.add(new ContainerUUID(id, uuid));
 			}
@@ -388,7 +401,17 @@ public class DesignTemplateUtil {
         return containers;
     }
 
-    private static String cleanId(final String identifier) {
+	private static String getContainerIdentifierOrPath(final String containerId) throws DotDataException {
+
+    	final ShortyIdAPI shortyIdAPI     = APILocator.getShortyAPI();
+    	final IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
+    	final Optional<ShortyId> shortyId = shortyIdAPI.getShorty(containerId);
+
+		return shortyId.isPresent() && shortyId.get().type == ShortType.FOLDER?
+				identifierAPI.find(containerId).getPath():containerId;
+	}
+
+	private static String cleanId(final String identifier) {
 
     	return StringUtils.remove(identifier, StringPool.APOSTROPHE);
 	}
