@@ -32,7 +32,7 @@ public class IndiciesFactoryTest {
 
     }
     
-    @Test
+    //@Test
     public void test_index_pointing_when_previously_null() throws Exception{
         
         new DotConnect().setSQL("delete from indicies").loadResult();
@@ -60,7 +60,7 @@ public class IndiciesFactoryTest {
     
     
     
-    @Test
+    //@Test
     public void test_index_repointing_when_previously_set() throws Exception{
         
         new DotConnect().setSQL("delete from indicies").loadResult();
