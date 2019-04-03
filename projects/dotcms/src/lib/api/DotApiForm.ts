@@ -8,7 +8,7 @@ enum FieldElementsTags {
 }
 
 /**
- * DotCMS Api Form Builder
+ * Creates and provide methods to render a DotCMS Form
  *
  */
 export class DotApiForm {
@@ -27,11 +27,11 @@ export class DotApiForm {
      * @memberof DotApiForm
      */
     async render(container: HTMLElement) {
-        this.fields = this.fields
-            ? this.fields
-            : await this.dotApiContentType.getFields(this.formConfig.identifier);
+        this.fields =
+            this.fields || (await this.dotApiContentType.getFields(this.formConfig.identifier));
 
-        const formScript = this.createForm(this.fields);
+        const fieldScript = this.createFieldTags(this.fields);
+        const formScript = this.createForm(fieldScript);
         const importScript = document.createElement('script');
         const formTag = document.createElement('div');
 
@@ -44,16 +44,17 @@ export class DotApiForm {
         container.append(importScript, formTag);
     }
 
-    private createForm(fields: DotCMSContentTypeField[]): string {
-        let fieldTags = '';
-
-        fields.map((field) => {
-            fieldTags += this.formConfig.fields.includes(field.variable)
-                ? this.createField(field)
-                : '';
-        });
-
+    private createForm(fieldTags: string): string {
         return `<form>${fieldTags}</form>`;
+    }
+
+    private createFieldTags(fields: DotCMSContentTypeField[]): string {
+        const fieldTags = fields
+            .map((field: DotCMSContentTypeField) =>
+                this.formConfig.fields.includes(field.variable) ? this.createField(field) : ''
+            )
+            .join('');
+        return fieldTags;
     }
 
     private getFieldTag(field: DotCMSContentTypeField): string {
@@ -79,9 +80,10 @@ export class DotApiForm {
             <${fieldTag}
                 ${field.name ? `label="${field.name}"` : ''}
                 ${field.defaultValue ? `value="${field.defaultValue}"` : ''}
-                ${field.values
-                    ? `options="${this.formatValuesAttribute(field.values, fieldTag)}"`
-                    : ''
+                ${
+                    field.values
+                        ? `options="${this.formatValuesAttribute(field.values, fieldTag)}"`
+                        : ''
                 }
                 ${field.hint ? `hint="${field.hint}"` : ''}
                 ${field.required ? 'required' : ''}

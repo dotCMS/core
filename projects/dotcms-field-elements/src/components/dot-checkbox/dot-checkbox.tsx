@@ -1,5 +1,5 @@
 import { Component, Prop, State, Event, EventEmitter } from '@stencil/core';
-import { generateId, getItemsFromString } from '../../utils';
+import { generateId, getDotOptionsFromFieldValue } from '../../utils';
 import { DotOption } from '../../models/dot-option.model';
 import Fragment from 'stencil-fragment';
 
@@ -20,7 +20,7 @@ export class DotCheckboxComponent {
     _values = {};
 
     componentWillLoad() {
-        this._options = getItemsFromString(this.options);
+        this._options = getDotOptionsFromFieldValue(this.options);
         this._label = `dotCheckbox_${generateId()}`;
     }
 
