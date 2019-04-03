@@ -191,8 +191,10 @@ public class ReindexThread {
                         bulkProcessor = null;
                     }
 
-                    switchOverIfNeeded();
-                    Thread.sleep(SLEEP);
+                    if (bulkProcessorListener != null) {
+                        switchOverIfNeeded();
+                        Thread.sleep(SLEEP);
+                    }
                 }
             } catch (Exception ex) {
                 Logger.error(this, "ReindexThread Exception", ex);
