@@ -113,7 +113,7 @@ public class WorkflowFactoryTest extends BaseWorkflowIntegrationTest {
         }
     } // cleanup
 
-    @Test
+    //@Test
     public void force_workflow_scheme_delete_without_license_delete_success_Test() throws Exception {
 
         final List<WorkflowScheme> workflowSchemesBeforeDelete = workflowAPI.findSchemesForContentType(type);
