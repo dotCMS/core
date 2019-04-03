@@ -2,9 +2,9 @@ import { DotCMSFormConfig, DotCMSContentTypeField } from '../models';
 import { DotApiContentType } from './DotApiContentType';
 
 enum FieldElementsTags {
-    ImmutableTextField = 'dot-textfield',
-    ImmutableCheckboxField = 'dot-checkbox',
-    ImmutableSelectField = 'dot-dropdown'
+    Text = 'dot-textfield',
+    Checkbox = 'dot-checkbox',
+    Select = 'dot-dropdown'
 }
 
 /**
@@ -57,7 +57,7 @@ export class DotApiForm {
     }
 
     private getFieldTag(field: DotCMSContentTypeField): string {
-        return FieldElementsTags[field.clazz.split('.').pop()];
+        return FieldElementsTags[field.fieldType];
     }
 
     private formatValuesAttribute(values: string, fieldTag: string): string {
@@ -79,10 +79,9 @@ export class DotApiForm {
             <${fieldTag}
                 ${field.name ? `label="${field.name}"` : ''}
                 ${field.defaultValue ? `value="${field.defaultValue}"` : ''}
-                ${
-                    field.values
-                        ? `options="${this.formatValuesAttribute(field.values, fieldTag)}"`
-                        : ''
+                ${field.values
+                    ? `options="${this.formatValuesAttribute(field.values, fieldTag)}"`
+                    : ''
                 }
                 ${field.hint ? `hint="${field.hint}"` : ''}
                 ${field.required ? 'required' : ''}

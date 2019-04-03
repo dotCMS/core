@@ -28,7 +28,7 @@ class DotApiContentTypeMock {
     }
 }
 
-fdescribe('DotApiForm', () => {
+describe('DotApiForm', () => {
     let dotApiContentType;
     let dotApiForm;
 

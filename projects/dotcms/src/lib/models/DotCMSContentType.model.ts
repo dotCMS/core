@@ -2,6 +2,7 @@ export interface DotCMSContentTypeField {
     clazz?: string;
     contentTypeId?: string;
     defaultValue?: string;
+    fieldType?: string;
     fixed?: boolean;
     id?: string;
     indexed?: boolean;
