@@ -101,3 +101,10 @@
     max-width: 360px;
     width: 80%;
 }
+
+@mixin dot-field-helper-on-input {
+    position: absolute;
+    right: 0;
+    top: 19px;
+    z-index: 1;
+}

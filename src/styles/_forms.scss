@@ -1,4 +1,5 @@
 @import "variables";
+@import "mixins";
 
 .form__buttons {
     display: flex;
@@ -41,6 +42,16 @@
 .form__group--validation {
     min-height: 79px;
     margin: 6px 0 0;
+}
+
+.form__group--helper {
+    input[pinputtext] {
+        padding-right: $basic-padding * 4;
+    }
+
+    dot-field-helper {
+        @include dot-field-helper-on-input;
+    }
 }
 
 .form__group-hint {
