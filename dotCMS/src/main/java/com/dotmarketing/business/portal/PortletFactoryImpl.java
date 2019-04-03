@@ -21,9 +21,11 @@ import org.jdom.output.XMLOutputter;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.ejb.PrincipalBean;
@@ -69,7 +71,9 @@ public class PortletFactoryImpl extends PrincipalBean implements PortletFactory 
     return portlets;
   }
 
-  private Optional<DotPortlet> xmlToPortlet(String xml) throws IOException, JDOMException {
+  @Override
+  @VisibleForTesting
+  public Optional<DotPortlet> xmlToPortlet(String xml) throws IOException, JDOMException {
     InputStream stream = new ByteArrayInputStream(xml.getBytes("UTF-8"));
     SAXBuilder builder = new SAXBuilder();
     Document doc = (Document) builder.build(stream);
@@ -78,18 +82,18 @@ public class PortletFactoryImpl extends PrincipalBean implements PortletFactory 
 
     final String portletClass = node.getChildText("portlet-class");
 
-    final String extendsPortlet = node.getChildText("extends-portlet-id");
     Map<String, String> params = new HashMap<>();
     for (Object n : node.getChildren("init-param")) {
       final Element initParam = (Element) n;
       params.put(initParam.getChildText("name"), initParam.getChildText("value"));
     }
+    
 
     if (portletId == null || portletClass == null) {
       return Optional.empty();
     }
 
-    return Optional.of(new DotPortlet(portletId, extendsPortlet, portletClass, params));
+    return Optional.of(new DotPortlet(portletId, portletClass, params));
 
   }
 
@@ -112,7 +116,8 @@ public class PortletFactoryImpl extends PrincipalBean implements PortletFactory 
 
     final DotConnect db = new DotConnect();
 
-    //db.setSQL("delete from cms_layouts_portlets where portlet_id=?").addParam(portletId).loadResult();
+    // db.setSQL("delete from cms_layouts_portlets where
+    // portlet_id=?").addParam(portletId).loadResult();
     db.setSQL("delete from portletpreferences where portletid=?").addParam(portletId).loadResult();
     db.setSQL("delete from portlet where portletid=?").addParam(portletId).loadResult();
     new PortletCache().clear();
@@ -284,9 +289,10 @@ public class PortletFactoryImpl extends PrincipalBean implements PortletFactory 
     child.addContent(portlet.getResourceBundle());
     root.addContent(child);
 
-    child = new Element("init-params");
+    
     Map<String, String> params = portlet.getInitParams();
     for (Entry<String, String> entry : params.entrySet()) {
+      child = new Element("init-param");
       Element grandChild = new Element("name");
       grandChild.addContent(entry.getKey());
       child.addContent(grandChild);
@@ -294,9 +300,8 @@ public class PortletFactoryImpl extends PrincipalBean implements PortletFactory 
       grandChild = new Element("value");
       grandChild.addContent(entry.getValue());
       child.addContent(grandChild);
-
+      root.addContent(child);
     }
-    root.addContent(child);
     doc.setRootElement(root);
 
     return new XMLOutputter().outputString(doc);

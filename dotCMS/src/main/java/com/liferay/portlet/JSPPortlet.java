@@ -60,7 +60,7 @@ public class JSPPortlet extends GenericPortlet {
       String key = e.nextElement();
       params.put(key, this.getInitParameter(key));
     }
-    this.initParms = ImmutableMap.copyOf(params);
+    this.initParams = ImmutableMap.copyOf(params);
 
     _editJSP = getInitParameter("edit-jsp");
     _helpJSP = getInitParameter("help-jsp");
@@ -71,7 +71,7 @@ public class JSPPortlet extends GenericPortlet {
   }
 
   public void doDispatch(RenderRequest req, RenderResponse res) throws IOException, PortletException {
-    req.setAttribute("initParms", initParms);
+    req.setAttribute("initParams", initParams);
     String jspPage = req.getParameter("jsp_page");
 
     if (Validator.isNotNull(jspPage)) {
@@ -108,7 +108,7 @@ public class JSPPortlet extends GenericPortlet {
   }
 
   protected void include(String path, RenderRequest req, RenderResponse res) throws IOException, PortletException {
-    req.setAttribute("initParms", initParms);
+    req.setAttribute("initParams", initParams);
     PortletRequestDispatcher prd = null;
     if (useWEBINFDIR) {
       prd = getPortletContext().getRequestDispatcher("/WEB-INF" + path);
@@ -132,6 +132,6 @@ public class JSPPortlet extends GenericPortlet {
   private String _helpJSP;
   private String _viewJSP;
   private boolean _copyRequestParameters;
-  private Map<String, String> initParms;
+  private Map<String, String> initParams;
 
 }

@@ -12,11 +12,13 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
 import com.dotcms.repackage.javax.portlet.PortletContext;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.Layout;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.CompanyUtils;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.User;
@@ -75,7 +77,9 @@ public class PortletAPIImpl implements PortletAPI {
   @Override
   @CloseDBIfOpened
   public Portlet findPortlet(String portletId) {
-
+    if(portletId==null) {
+      return null;
+    }
     return portletFac.findById(portletId);
 
   }
@@ -91,6 +95,26 @@ public class PortletAPIImpl implements PortletAPI {
     }
   }
 
+  @Override
+  @CloseDBIfOpened
+  public Portlet savePortlet(final Portlet portlet) {
+
+    if(!UtilMethods.isSet(portlet.getPortletId())) {
+      throw new DotStateException("You cannot save a portlet without an ID");
+    }
+    if(!UtilMethods.isSet(portlet.getPortletClass())) {
+      throw new DotStateException("You cannot save a portlet without an implementing portletClass");
+    }
+
+    try {
+      return portletFac.insertPortlet(portlet);
+    } catch (Exception e) {
+      throw new DotRuntimeException(e);
+    }
+  }
+  
+  
+  
   @CloseDBIfOpened
   public void InitPortlets() throws SystemException {
     portletFac.getPortlets();

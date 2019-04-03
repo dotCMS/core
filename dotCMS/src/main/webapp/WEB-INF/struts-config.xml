@@ -108,6 +108,11 @@
       <!-- Category Admin -->
 
       <!-- Contentlet Management -->
+       <action path="/ext/contentlet/view_contentlets" type="com.dotmarketing.portlets.contentlet.action.ViewContentletAction">
+         <forward name="portlet.ext.contentlet.view_contentlets" path="portlet.ext.contentlet.view_contentlets" />
+         <forward name="portlet.ext.contentlet.view" path="portlet.ext.contentlet.view" />
+         <forward name="portlet.ext.contentlet.error" path="portlet.ext.contentlet.error" />
+      </action>
       <action path="/ext/contentlet/edit_contentlet" type="com.dotmarketing.portlets.contentlet.action.EditContentletAction" name="ContentletForm"  input="portlet.ext.contentlet.edit_contentlet" scope="request" validate="false">
          <forward name="portlet.ext.contentlet.edit_contentlet" path="portlet.ext.contentlet.edit_contentlet"></forward>
       </action>

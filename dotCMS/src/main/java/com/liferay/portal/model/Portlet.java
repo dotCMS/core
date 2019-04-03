@@ -6,15 +6,13 @@ import java.util.Optional;
 import java.util.Set;
 
 import com.dotcms.repackage.javax.portlet.PortletConfig;
-import com.dotcms.repackage.javax.portlet.PortletMode;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.ejb.PortletPK;
-import com.liferay.portlet.CachePortlet;
-
+import com.liferay.portlet.ConcretePortletWrapper;
 
 public class Portlet extends PortletModel {
-
 
   private static final long serialVersionUID = 1L;
   private final String portletId;
@@ -32,11 +30,13 @@ public class Portlet extends PortletModel {
 
   }
 
-  public Portlet(String portletId, String extendsPortletId, String portletClass, Map<String, String> initParams) {
-    super(portletId, extendsPortletId, "dotcms.org", null, false, null, true);
+  public Portlet(String portletId, String portletClass, Map<String, String> initParams) {
+    super(portletId, "", "dotcms.org", null, false, null, true);
     this.portletId = portletId;
     this.initParams = initParams;
     this.portletClass = portletClass;
+
+
   }
 
   @Deprecated
@@ -140,7 +140,7 @@ public class Portlet extends PortletModel {
    * @return resource bundle of the portlet
    */
   public String getResourceBundle() {
-    return "com.liferay.portlet.StrutsPortlet".equals(portletClass) ? "com.liferay.portlet.StrutsResourceBundle" : null;
+    return "com.liferay.portlet.StrutsResourceBundle" ;
   }
 
   @Override
@@ -162,25 +162,23 @@ public class Portlet extends PortletModel {
     return getPortletId().compareTo(portlet.getPortletId());
   }
 
-  private transient CachePortlet cachedInstance = null;
+  private transient ConcretePortletWrapper cachedInstance = null;
 
   /**
    * Initialize the portlet instance.
    */
 
-  public Optional<CachePortlet> getCachedInstance() {
+  public Optional<ConcretePortletWrapper> getCachedInstance() {
     return Optional.ofNullable(cachedInstance);
 
   }
 
-  public CachePortlet getCachedInstance(PortletConfig portletConfig) {
+  public ConcretePortletWrapper getCachedInstance(PortletConfig portletConfig) {
 
     try {
       if (cachedInstance == null) {
-        com.dotcms.repackage.javax.portlet.Portlet realPortlet =
-            (com.dotcms.repackage.javax.portlet.Portlet) Class.forName(getPortletClass()).newInstance();
-        CachePortlet newOne = new CachePortlet(realPortlet, portletConfig.getPortletContext());
-
+        com.dotcms.repackage.javax.portlet.Portlet realPortlet = (com.dotcms.repackage.javax.portlet.Portlet) Class.forName(getPortletClass()).newInstance();
+        ConcretePortletWrapper newOne = new ConcretePortletWrapper(realPortlet, portletConfig.getPortletContext());
         newOne.init(portletConfig);
         cachedInstance = newOne;
       }

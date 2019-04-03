@@ -48,7 +48,7 @@ import com.liferay.portal.servlet.PortletContextPool;
 import com.liferay.portal.servlet.PortletContextWrapper;
 import com.liferay.portlet.ActionRequestImpl;
 import com.liferay.portlet.ActionResponseImpl;
-import com.liferay.portlet.CachePortlet;
+import com.liferay.portlet.ConcretePortletWrapper;
 import com.liferay.portlet.PortletConfigImpl;
 import com.liferay.portlet.PortletContextImpl;
 import com.liferay.portlet.PortletPreferencesImpl;
@@ -186,7 +186,7 @@ public class PortalUtil {
       return;
     }
 
-    CachePortlet portletInstance = (CachePortlet) map.get(portlet.getPortletId());
+    ConcretePortletWrapper portletInstance = (ConcretePortletWrapper) map.get(portlet.getPortletId());
 
     if (portletInstance != null) {
       portletInstance.destroy();

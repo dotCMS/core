@@ -8,8 +8,8 @@ public class DotPortlet extends Portlet {
 
   private static final long serialVersionUID = 1L;
 
-  public DotPortlet(String portletId, String extendsPortlet, String portletClass, Map<String, String> initParams) {
-    super(portletId, extendsPortlet, portletClass, initParams);
+  public DotPortlet(String portletId,  String portletClass, Map<String, String> initParams) {
+    super(portletId, portletClass, initParams);
 
   }
 

@@ -9,6 +9,7 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 import com.dotcms.business.CloseDB;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.content.elasticsearch.util.ESUtils;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.PageContentType;
 import com.dotcms.enterprise.FormAJAXProxy;
@@ -400,7 +401,7 @@ public class ContentletAjax {
 			Logger.error(this, "Error trying to obtain the current liferay user from the request.", e);
 		}
 
-		return searchContentletsByUser(structureInode, fields, categories, showDeleted, filterSystemHost, false, false, page, orderBy, perPage, currentUser, sess, null, null);
+		return searchContentletsByUser(ImmutableList.of(BaseContentType.ANY), structureInode, fields, categories, showDeleted, filterSystemHost, false, false, page, orderBy, perPage, currentUser, sess, null, null);
 	}
 	@CloseDB
 	@SuppressWarnings("rawtypes")
@@ -423,7 +424,7 @@ public class ContentletAjax {
 			Logger.error(this, "Error trying to obtain the current liferay user from the request.", e);
 		}
 
-		return searchContentletsByUser(structureInode, fields, categories, showDeleted, filterSystemHost, false, false, page, orderBy, 0,currentUser, sess, modDateFrom, modDateTo);
+		return searchContentletsByUser(ImmutableList.of(BaseContentType.ANY), structureInode, fields, categories, showDeleted, filterSystemHost, false, false, page, orderBy, 0,currentUser, sess, modDateFrom, modDateTo);
 	}
 
 	@CloseDB
@@ -450,7 +451,7 @@ public class ContentletAjax {
 			Logger.error(this, "Error trying to obtain the current liferay user from the request.", e);
 		}
 
-		return searchContentletsByUser(structureInode, fields, categories, showDeleted, filterSystemHost, filterUnpublish, filterLocked,
+		return searchContentletsByUser(ImmutableList.of(BaseContentType.ANY), structureInode, fields, categories, showDeleted, filterSystemHost, filterUnpublish, filterLocked,
 		        page, orderBy, perPage,currentUser, sess, modDateFrom, modDateTo);
 	}
 
@@ -482,6 +483,9 @@ public class ContentletAjax {
 		return fp.searchFormWidget(formStructureInode);
 	}
 
+	 public List searchContentletsByUser(String structureInode, List<String> fields, List<String> categories, boolean showDeleted, boolean filterSystemHost, boolean filterUnpublish, boolean filterLocked, int page, String orderBy,int perPage, final User currentUser, HttpSession sess,String  modDateFrom, String modDateTo) throws DotStateException, DotDataException, DotSecurityException {
+	   return searchContentletsByUser(ImmutableList.of(BaseContentType.ANY), structureInode, fields, categories, showDeleted, filterSystemHost, filterUnpublish, filterLocked, page, orderBy, perPage, currentUser, sess, modDateFrom, modDateTo);
+	 }
 	/**
 	 * This method is used by the back-end to pull the content from the Lucene
 	 * index and also checks the user permissions to see the content.
@@ -523,10 +527,10 @@ public class ContentletAjax {
 	 */
 	@SuppressWarnings("rawtypes")
 	@LogTime
-	public List searchContentletsByUser(String structureInode, List<String> fields, List<String> categories, boolean showDeleted, boolean filterSystemHost, boolean filterUnpublish, boolean filterLocked, int page, String orderBy,int perPage, final User currentUser, HttpSession sess,String  modDateFrom, String modDateTo) throws DotStateException, DotDataException, DotSecurityException {
-    		if(perPage < 1){
-			perPage = Config.getIntProperty("PER_PAGE", 40);
-		}
+	public List searchContentletsByUser(List<BaseContentType> types, String structureInode, List<String> fields, List<String> categories, boolean showDeleted, boolean filterSystemHost, boolean filterUnpublish, boolean filterLocked, int page, String orderBy,int perPage, final User currentUser, HttpSession sess,String  modDateFrom, String modDateTo) throws DotStateException, DotDataException, DotSecurityException {
+    if (perPage < 1) {
+      perPage = Config.getIntProperty("PER_PAGE", 40);
+    }
 		if(!InodeUtils.isSet(structureInode)) {
 			Logger.error(this, "An invalid structure inode =  \"" + structureInode + "\" was passed");
 			throw new DotRuntimeException("a valid structureInode need to be passed");

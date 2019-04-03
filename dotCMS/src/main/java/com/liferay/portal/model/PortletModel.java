@@ -80,6 +80,7 @@ public class PortletModel extends BaseModel {
 		_narrow = narrow;
 		_roles = roles;
 		_active = active;
+		
 	}
 
 	public PortletPK getPrimaryKey() {

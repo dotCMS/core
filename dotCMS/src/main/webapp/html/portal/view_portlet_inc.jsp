@@ -41,7 +41,7 @@
     }
   }
 
-  CachePortlet cachePortlet = (CachePortlet) APILocator.getPortletAPI().getImplementingInstance(portlet);;
+  ConcretePortletWrapper cachePortlet = (ConcretePortletWrapper) APILocator.getPortletAPI().getImplementingInstance(portlet);;
 
 
   PortletPreferences portletPrefs = null;
@@ -91,45 +91,45 @@
 
   if ((cachePortlet != null) && cachePortlet.isStrutsPortlet()) {
     if (!access || portletException) {
-      PortletRequestProcessor portletReqProcessor = (PortletRequestProcessor) portletCtx.getAttribute(WebKeys.PORTLET_STRUTS_PROCESSOR);
+  PortletRequestProcessor portletReqProcessor = (PortletRequestProcessor) portletCtx.getAttribute(WebKeys.PORTLET_STRUTS_PROCESSOR);
 
-      ActionMapping actionMapping =
-          portletReqProcessor.processMapping(request, response, (String) portlet.getInitParams().get("view-action"));
+  ActionMapping actionMapping =
+  portletReqProcessor.processMapping(request, response, (String) portlet.getInitParams().get("view-action"));
 
-      ComponentDefinition definition = null;
+  ComponentDefinition definition = null;
 
-      if (actionMapping != null) {
+  if (actionMapping != null) {
 
-        // See action path /weather/view
+    // See action path /weather/view
 
-        String definitionName = actionMapping.getForward();
+    String definitionName = actionMapping.getForward();
 
-        if (definitionName == null) {
+    if (definitionName == null) {
 
-          // See action path /journal/view_articles
+  // See action path /journal/view_articles
 
-          String[] definitionNames = actionMapping.findForwards();
+  String[] definitionNames = actionMapping.findForwards();
 
-          for (int definitionNamesPos = 0; definitionNamesPos < definitionNames.length; definitionNamesPos++) {
-            if (definitionNames[definitionNamesPos].endsWith("view")) {
-              definitionName = definitionNames[definitionNamesPos];
+  for (int definitionNamesPos = 0; definitionNamesPos < definitionNames.length; definitionNamesPos++) {
+    if (definitionNames[definitionNamesPos].endsWith("view")) {
+      definitionName = definitionNames[definitionNamesPos];
 
-              break;
-            }
-          }
+      break;
+    }
+  }
 
-          if (definitionName == null) {
-            definitionName = definitionNames[0];
-          }
-        }
+  if (definitionName == null) {
+    definitionName = definitionNames[0];
+  }
+    }
 
-        definition = TilesUtil.getDefinition(definitionName, request, application);
-      }
+    definition = TilesUtil.getDefinition(definitionName, request, application);
+  }
 
-      String templatePath = Constants.TEXT_HTML_DIR + "/portal/layout_portal.jsp";
-      if (definition != null) {
-        templatePath = Constants.TEXT_HTML_DIR + definition.getPath();
-      }
+  String templatePath = Constants.TEXT_HTML_DIR + "/portal/layout_portal.jsp";
+  if (definition != null) {
+    templatePath = Constants.TEXT_HTML_DIR + definition.getPath();
+  }
 %>
 
 <%@page import="com.dotmarketing.business.APILocator"%>

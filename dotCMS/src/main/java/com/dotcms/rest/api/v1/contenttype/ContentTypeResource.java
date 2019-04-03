@@ -122,7 +122,7 @@ public class ContentTypeResource implements Serializable {
 				retTypes.add(responseMap);
 				// save the last one to the session to be compliant with #13719
 				if(null != session){
-                    session.setAttribute(SELECTED_STRUCTURE_KEY, contentTypeSaved.inode());
+                  session.removeAttribute(SELECTED_STRUCTURE_KEY);
 				}
 			}
 

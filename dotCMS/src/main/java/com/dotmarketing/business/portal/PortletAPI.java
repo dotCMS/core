@@ -32,4 +32,6 @@ public interface PortletAPI {
 
   void deletePortlet(String portletId);
 
+  Portlet savePortlet(Portlet portlet);
+
 }

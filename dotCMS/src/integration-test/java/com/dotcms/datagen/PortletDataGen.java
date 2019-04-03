@@ -58,21 +58,17 @@ public class PortletDataGen extends AbstractDataGen<Portlet> {
   }
 
   public PortletDataGen extendsPortlet(Portlet extendsPortlet) {
-    this.extendsPortletId = extendsPortlet.getPortletId();
+
     this.portletClass=extendsPortlet.getPortletClass();
     this.initParams=extendsPortlet.getInitParams();
     return this;
   }
 
-  public PortletDataGen extendsPortlet(String extendsPortletId) {
-    this.extendsPortletId = extendsPortletId;
-    return this;
-  }
 
   @Override
   public Portlet next() {
 
-    Portlet portlet = new Portlet((portletId == null) ? UUIDGenerator.generateUuid() : portletId, extendsPortletId,
+    Portlet portlet = new Portlet((portletId == null) ? UUIDGenerator.generateUuid() : portletId, 
         portletClass == null ? "com.liferay.portlet.JSPPortlet" : portletClass, initParams == null ? new HashMap<>() : initParams);
 
     return portlet;

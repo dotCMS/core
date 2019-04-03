@@ -32,7 +32,7 @@ import com.dotcms.repackage.javax.portlet.UnavailableException;
 import com.liferay.portal.ejb.PortletPK;
 import com.liferay.portal.util.Constants;
 import com.liferay.portal.util.PropsUtil;
-import com.liferay.portlet.CachePortlet;
+import com.liferay.portlet.ConcretePortletWrapper;
 import com.liferay.util.GetterUtil;
 import com.liferay.util.StringUtil;
 import com.liferay.util.Validator;
@@ -681,7 +681,7 @@ public class LiferayPortlet extends PortletModel {
   /**
    * Initialize the portlet instance.
    */
-  public CachePortlet init(PortletConfig portletConfig) throws PortletException {
+  public ConcretePortletWrapper init(PortletConfig portletConfig) throws PortletException {
 
     return init(portletConfig, null);
   }
@@ -689,19 +689,19 @@ public class LiferayPortlet extends PortletModel {
   /**
    * Initialize the portlet instance.
    */
-  public CachePortlet init(PortletConfig portletConfig, com.dotcms.repackage.javax.portlet.Portlet portletInstance)
+  public ConcretePortletWrapper init(PortletConfig portletConfig, com.dotcms.repackage.javax.portlet.Portlet portletInstance)
       throws PortletException {
 
-    CachePortlet cachePortlet = null;
+    ConcretePortletWrapper concretePortletWrapper = null;
 
     try {
       if (portletInstance == null) {
         portletInstance = (com.dotcms.repackage.javax.portlet.Portlet) Class.forName(getPortletClass()).newInstance();
       }
 
-      cachePortlet = new CachePortlet(portletInstance, portletConfig.getPortletContext());
+      concretePortletWrapper = new ConcretePortletWrapper(portletInstance, portletConfig.getPortletContext());
 
-      cachePortlet.init(portletConfig);
+      concretePortletWrapper.init(portletConfig);
     } catch (ClassNotFoundException cnofe) {
       throw new UnavailableException(cnofe.getMessage());
     } catch (InstantiationException ie) {
@@ -710,7 +710,7 @@ public class LiferayPortlet extends PortletModel {
       throw new UnavailableException(iae.getMessage());
     }
 
-    return cachePortlet;
+    return concretePortletWrapper;
   }
 
   /**

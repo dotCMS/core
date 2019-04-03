@@ -36,7 +36,7 @@ import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.portlet.ActionRequestImpl;
 import com.liferay.portlet.ActionResponseImpl;
-import com.liferay.portlet.CachePortlet;
+import com.liferay.portlet.ConcretePortletWrapper;
 import com.liferay.portlet.LiferayWindowState;
 import com.liferay.portlet.RenderParametersPool;
 import com.liferay.util.ParamUtil;
@@ -171,7 +171,7 @@ public class LayoutAction extends Action {
 
     ServletContext ctx = (ServletContext) req.getAttribute(WebKeys.CTX);
 
-    CachePortlet cachePortlet = (CachePortlet) APILocator.getPortletAPI().getImplementingInstance(portlet);
+    ConcretePortletWrapper concretePortletWrapper = (ConcretePortletWrapper) APILocator.getPortletAPI().getImplementingInstance(portlet);
 
 
     PortletPreferences portletPrefs = null;
@@ -185,13 +185,13 @@ public class LayoutAction extends Action {
 
     if (action) {
       ActionRequestImpl actionRequest =
-          new ActionRequestImpl(req, portlet, cachePortlet, portletCtx, windowState, portletMode, portletPrefs, layout.getId());
+          new ActionRequestImpl(req, portlet, concretePortletWrapper, portletCtx, windowState, portletMode, portletPrefs, layout.getId());
 
       ActionResponseImpl actionResponse = new ActionResponseImpl(actionRequest, res, portletId, user, layout, windowState, portletMode);
 
       actionRequest.defineObjects(portletConfig, actionResponse);
 
-      cachePortlet.processAction(actionRequest, actionResponse);
+      concretePortletWrapper.processAction(actionRequest, actionResponse);
 
       RenderParametersPool.put(req, layout.getId(), portletId, actionResponse.getRenderParameters());
     } else {
@@ -213,76 +213,6 @@ public class LayoutAction extends Action {
 
   private void _updateLayout(HttpServletRequest req, Layout layout) throws Exception {
 
-    // HttpSession ses = req.getSession();
-    //
-    // // Make sure portlets show up in the correct columns
-    //
-    // boolean updateLayout = false;
-    //
-    // if (layout.getNumOfColumns() > 1) {
-    // Portlet[] narrow1Portlets = layout.getNarrow1Portlets();
-    //
-    // for (int i = 0; i < narrow1Portlets.length; i++) {
-    // if (!narrow1Portlets[i].isNarrow()) {
-    // layout.removePortletId(narrow1Portlets[i].getPortletId());
-    // layout.addPortletId(narrow1Portlets[i].getPortletId());
-    //
-    // updateLayout = true;
-    // }
-    // }
-    //
-    // Portlet[] narrow2Portlets = layout.getNarrow2Portlets();
-    //
-    // for (int i = 0; i < narrow2Portlets.length; i++) {
-    // if (!narrow2Portlets[i].isNarrow()) {
-    // layout.removePortletId(narrow2Portlets[i].getPortletId());
-    // layout.addPortletId(narrow2Portlets[i].getPortletId());
-    //
-    // updateLayout = true;
-    // }
-    // }
-    //
-    // Portlet[] widePortlets = layout.getWidePortlets();
-    //
-    // for (int i = 0; i < widePortlets.length; i++) {
-    // if (widePortlets[i].isNarrow()) {
-    // layout.removePortletId(widePortlets[i].getPortletId());
-    // layout.addPortletId(widePortlets[i].getPortletId());
-    //
-    // updateLayout = true;
-    // }
-    // }
-    // }
-    //
-    // // See action path /my_account/edit_profile
-    //
-    // if (layout.hasStateMax()) {
-    // String maxPortletId = StringUtil.split(layout.getStateMax())[0];
-    // String selPortletId = ParamUtil.getString(req, "p_p_id");
-    //
-    // if ((!selPortletId.equals(maxPortletId)) &&
-    // (!layout.hasPortletId(maxPortletId))) {
-    //
-    // layout.setStateMax(StringPool.BLANK);
-    // layout.setModeEdit(StringPool.BLANK);
-    // layout.setModeHelp(StringPool.BLANK);
-    //
-    // updateLayout = true;
-    // }
-    // }
-    //
-    // if (updateLayout) {
-    // CachePortlet.clearResponses(ses);
-    //
-    // // Update layout without checking for permissions
-    //
-    // LayoutLocalManagerUtil.updateLayout(
-    // layout.getPrimaryKey(), layout.getName(),
-    // layout.getColumnOrder(), layout.getNarrow1(),
-    // layout.getNarrow2(), layout.getWide(),
-    // layout.getStateMax(), layout.getStateMin(),
-    // layout.getModeEdit(), layout.getModeHelp());
-    // }
   }
 
 }

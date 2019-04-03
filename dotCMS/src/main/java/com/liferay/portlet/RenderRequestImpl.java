@@ -68,17 +68,17 @@ import org.apache.struts.Globals;
 public class RenderRequestImpl implements RenderRequest {
 
 	public RenderRequestImpl(HttpServletRequest req, Portlet portlet,
-							 CachePortlet cachePortlet,
+							 ConcretePortletWrapper concretePortletWrapper,
 							 PortletContext portletCtx,
 							 WindowState windowState, PortletMode portletMode,
 							 PortletPreferences prefs) {
 
-		this(req, portlet, cachePortlet, portletCtx, windowState, portletMode,
+		this(req, portlet, concretePortletWrapper, portletCtx, windowState, portletMode,
 			 prefs, null);
 	}
 
 	public RenderRequestImpl(HttpServletRequest req, Portlet portlet,
-							 CachePortlet cachePortlet,
+							 ConcretePortletWrapper concretePortletWrapper,
 							 PortletContext portletCtx,
 							 WindowState windowState, PortletMode portletMode,
 							 PortletPreferences prefs, String layoutId) {
@@ -185,7 +185,7 @@ public class RenderRequestImpl implements RenderRequest {
 
 		_req = dynamicReq;
 		_portlet = portlet;
-		_cachePortlet = cachePortlet;
+		_cachePortlet = concretePortletWrapper;
 		_portalCtx = new PortalContextImpl();
 		_portletCtx = portletCtx;
 		_windowState = WindowState.MAXIMIZED;
@@ -449,7 +449,7 @@ public class RenderRequestImpl implements RenderRequest {
 
 	private DynamicServletRequest _req;
 	private Portlet _portlet;
-	private CachePortlet _cachePortlet;
+	private ConcretePortletWrapper _cachePortlet;
 	private String _portletName;
 	private PortalContext _portalCtx;
 	private PortletContext _portletCtx;

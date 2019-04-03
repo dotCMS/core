@@ -59,7 +59,7 @@ import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.portal.util.WebAppPool;
 import com.liferay.portal.util.WebKeys;
-import com.liferay.portlet.CachePortlet;
+import com.liferay.portlet.ConcretePortletWrapper;
 import com.liferay.portlet.RenderRequestImpl;
 import com.liferay.portlet.RenderResponseImpl;
 import com.liferay.util.CollectionFactory;
@@ -711,7 +711,7 @@ public class PortalRequestProcessor extends StxxTilesRequestProcessor {
 
 		String portletId = portlet.getPortletId();
 
-		CachePortlet cachePortlet = (CachePortlet)  APILocator.getPortletAPI().getImplementingInstance(portlet);
+		ConcretePortletWrapper concretePortletWrapper = (ConcretePortletWrapper)  APILocator.getPortletAPI().getImplementingInstance(portlet);
 
     PortletPreferences portletPrefs =
         PortletPreferencesManagerUtil.getPreferences(portlet.getCompanyId(), PortalUtil.getPortletPreferencesPK(req, portletId));
@@ -721,7 +721,7 @@ public class PortalRequestProcessor extends StxxTilesRequestProcessor {
 			portletConfig.getPortletContext();
 
 		RenderRequestImpl renderRequest = new RenderRequestImpl(
-			req, portlet, cachePortlet, portletCtx, WindowState.MAXIMIZED,
+			req, portlet, concretePortletWrapper, portletCtx, WindowState.MAXIMIZED,
 			PortletMode.VIEW, portletPrefs);
 
 		RenderResponseImpl renderResponse = new RenderResponseImpl(

@@ -1,269 +1,178 @@
-
-<%@page import="com.dotcms.contenttype.model.type.BaseContentType"%>
 <%@page import="com.dotcms.contenttype.transform.contenttype.StructureTransformer"%>
 <%@page import="com.dotcms.contenttype.model.type.ContentType"%>
-<%@page import="com.dotmarketing.portlets.containers.model.Container"%>
-<%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
-<%@page import="com.dotcms.contenttype.business.ContentTypeAPI"%>
-<%@page import="com.dotmarketing.portlets.contentlet.business.ContentletAPI"%>
 <%@page import="com.dotcms.content.elasticsearch.constants.ESMappingConstants"%>
 <%@page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint"%>
 <%@page import="com.dotcms.publisher.endpoint.business.PublishingEndPointAPI"%>
-<%@ include file="/html/portlet/ext/contentlet/init.jsp"%>
-<%@ include file="/html/portlet/ext/remotepublish/init.jsp"%>
+<%@ include file="/html/portlet/ext/contentlet/init.jsp" %>
+<%@ include file="/html/portlet/ext/remotepublish/init.jsp" %>
 
-<%@ page import="com.dotmarketing.business.CacheLocator"%>
-<%@ page import="com.dotmarketing.cache.FieldsCache"%>
-<%@ page import="com.dotmarketing.portlets.languagesmanager.model.Language"%>
-<%@ page import="com.dotmarketing.portlets.structure.factories.StructureFactory"%>
-<%@ page import="com.dotmarketing.portlets.structure.model.Field"%>
-<%@ page import="com.dotmarketing.util.Config"%>
-<%@ page import="com.dotmarketing.util.InodeUtils"%>
-<%@ page import="com.dotmarketing.util.Logger"%>
-<%@ page import="com.dotmarketing.util.PortletID"%>
+<%@ page import="com.dotmarketing.business.CacheLocator" %>
+<%@ page import="com.dotmarketing.cache.FieldsCache" %>
+<%@ page import="com.dotmarketing.portlets.languagesmanager.model.Language" %>
+<%@ page import="com.dotmarketing.portlets.structure.factories.StructureFactory" %>
+<%@ page import="com.dotmarketing.portlets.structure.model.Field" %>
+<%@ page import="com.dotmarketing.util.Config" %>
+<%@ page import="com.dotmarketing.util.InodeUtils" %>
+<%@ page import="com.dotmarketing.util.Logger" %>
+<%@ page import="com.dotmarketing.util.PortletID" %>
 
-<iframe id="AjaxActionJackson" name="AjaxActionJackson" style="border: 0; width: 0; height: 0;"></iframe>
-
-params: <%=request.getAttribute("initParms") %>
+<iframe id="AjaxActionJackson" name="AjaxActionJackson" style="border:0; width:0; height:0;"></iframe>
 <%
 
 
 
 
 
-  ContentletAPI conAPI = APILocator.getContentletAPI();
-  ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
 
-  List<String> tempBinaryImageInodes = (List<String>) session.getAttribute(Contentlet.TEMP_BINARY_IMAGE_INODES_LIST);
-  if (UtilMethods.isSet(tempBinaryImageInodes) && tempBinaryImageInodes.size() > 0) {
-    for (String inode : tempBinaryImageInodes) {
-      conAPI.delete(conAPI.find(inode, APILocator.getUserAPI().getSystemUser(), false), APILocator.getUserAPI().getSystemUser(), false,
-          true);
-    }
-    tempBinaryImageInodes.clear();
-  }
 
-  if (request.getParameter("popup") != null) {
-    if (request.getParameter("container_inode") != null) {
-      
-      Container cont = (Container) APILocator.getContainerAPI().find(request.getParameter("container_inode"), user, false);
 
-      List<Structure> structures = APILocator.getContainerAPI().getStructuresInContainer(cont);
-      request.setAttribute(com.dotmarketing.util.WebKeys.Structure.STRUCTURES, structures);
-    } else if (request.getParameter("structure_id") != null) {
-      Structure st = null;
+    List<ContentType> contentTypes = (List<ContentType>)request.getAttribute ("contentSearchContentTypes");
 
-      //Search for the given ContentType inode
-      ContentType foundContentType = contentTypeAPI.find(request.getParameter("structure_id"));
-      if (null != foundContentType) {
-        //Transform the found content type to a Structure
-        st = new StructureTransformer(foundContentType).asStructure();
-      }
+    List<Structure> structures = new StructureTransformer(contentTypes).asStructureList();
 
-      request.setAttribute(com.dotmarketing.util.WebKeys.Structure.STRUCTURE, st);
-    }
-  } else {
-    if (request.getParameter("baseType") != null) {
-      BaseContentType baseContentType = BaseContentType.getBaseContentType(Integer.parseInt(request.getParameter("baseType")));
-      List<ContentType> contentTypes = contentTypeAPI.findByType(baseContentType);
-      List<Structure> structures = new StructureTransformer(contentTypes).asStructureList();
-      request.setAttribute(com.dotmarketing.util.WebKeys.Structure.STRUCTURES, structures);
-      request.setAttribute("DONT_SHOW_ALL", true);
-    } else if (request.getParameter("structure_id") != null) {
+    List<Language> languages = (List<Language>)request.getAttribute (com.dotmarketing.util.WebKeys.LANGUAGES);
 
-      Structure st = null;
+    java.util.Map params = new java.util.HashMap();
+    params.put("struts_action",new String[] {"/ext/contentlet/view_contentlets"});
 
-      //Search for the given ContentType inode
-      ContentType foundContentType = contentTypeAPI.find(request.getParameter("structure_id"));
-      if (null != foundContentType) {
-        //Transform the found content type to a Structure
-        st = new StructureTransformer(foundContentType).asStructure();
-      }
+    String referer = com.dotmarketing.util.PortletURLUtil.getActionURL(request,WindowState.MAXIMIZED.toString(),params);
 
-      if (st.getStructureType() == Structure.STRUCTURE_TYPE_FORM) {
-        List<Structure> structures =
-            StructureFactory.getStructuresByUser(user, "structuretype=" + st.getStructureType(), "upper(name)", -1, 0, "asc");
-        request.setAttribute(com.dotmarketing.util.WebKeys.Structure.STRUCTURES, structures);
-        request.setAttribute("DONT_SHOW_ALL", true);
-      } else {
-        List<Structure> structures = APILocator.getStructureAPI().find(user, false, true);
-        request.setAttribute(com.dotmarketing.util.WebKeys.Structure.STRUCTURES, structures);
-      }
+    Map lastSearch = (Map)session.getAttribute(com.dotmarketing.util.WebKeys.CONTENTLET_LAST_SEARCH);
+    Structure structure = StructureFactory.getDefaultStructure();
 
-    } else {
-      List<Structure> structures = APILocator.getStructureAPI().find(user, false, true);
-      request.setAttribute(com.dotmarketing.util.WebKeys.Structure.STRUCTURES, structures);
-    }
-  }
-
-  if (request.getParameter("selected_lang") != null) {
-    session.setAttribute(com.dotmarketing.util.WebKeys.LANGUAGE_SEARCHED, request.getParameter("selected_lang"));
-  }
-
-  request.setAttribute(com.dotmarketing.util.WebKeys.LANGUAGES, APILocator.getLanguageAPI().getLanguages());
-
-  List<Structure> structures = (List<Structure>) request.getAttribute(com.dotmarketing.util.WebKeys.Structure.STRUCTURES);
-  List<Language> languages = (List<Language>) request.getAttribute(com.dotmarketing.util.WebKeys.LANGUAGES);
-
-  java.util.Map params = new java.util.HashMap();
-  params.put("struts_action", new String[] {"/ext/contentlet/view_contentlets"});
-
-  String referer = com.dotmarketing.util.PortletURLUtil.getActionURL(request, WindowState.MAXIMIZED.toString(), params);
-
-  Map lastSearch = (Map) session.getAttribute(com.dotmarketing.util.WebKeys.CONTENTLET_LAST_SEARCH);
-  Structure structure = StructureFactory.getDefaultStructure();
-
-  Map<String, String> fieldsSearch = new HashMap<String, String>();
-  Language selectedLanguage = new Language();
-  List<String> categories = new ArrayList();
-  boolean showDeleted = false;
-  boolean filterSystemHost = false;
-  boolean filterLocked = false;
-  boolean filterUnpublish = false;
-  int currpage = 1;
-  String orderBy = "modDate desc";
-  Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
-  String languageId = String.valueOf(defaultLang.getId());
-  if (session.getAttribute(com.dotmarketing.util.WebKeys.LANGUAGE_SEARCHED) != null) {
-    languageId = (String) session.getAttribute(com.dotmarketing.util.WebKeys.LANGUAGE_SEARCHED);
-  }
-
-  String structureSelected = "";
-  if (UtilMethods.isSet(request.getParameter("structure_id"))) {
-    structureSelected = request.getParameter("structure_id");
-  } else if (UtilMethods.isSet(request.getParameter("baseType"))) {
-    structureSelected = structures.get(0).getInode();
-  }
-
-  String schemeSelected = "catchall";
-  if (UtilMethods.isSet(session.getAttribute(ESMappingConstants.WORKFLOW_SCHEME))) {
-    schemeSelected = (String) session.getAttribute(ESMappingConstants.WORKFLOW_SCHEME);
-  }
-
-  String stepsSelected = "catchall";
-  if (UtilMethods.isSet(session.getAttribute(ESMappingConstants.WORKFLOW_STEP))) {
-    stepsSelected = (String) session.getAttribute(ESMappingConstants.WORKFLOW_STEP);
-  }
-
-  if (lastSearch != null && !UtilMethods.isSet(structureSelected)) {
-    String ssstruc = (String) session.getAttribute("selectedStructure");
-    if (session.getAttribute("selectedStructure") != null
-        && CacheLocator.getContentTypeCache().getStructureByInode((String) session.getAttribute("selectedStructure")) != null) {
-      structure = CacheLocator.getContentTypeCache().getStructureByInode((String) session.getAttribute("selectedStructure"));
-      if (!structure.isHost() && structures.contains(structure)) {
-        structureSelected = structure.getInode();
-      } else {
-        session.removeAttribute("selectedStructure");
-
-        structureSelected = null;;
-      }
-    }
-    if (lastSearch.get("fieldsSearch") != null) {
-      fieldsSearch = (Map<String, String>) lastSearch.get("fieldsSearch");
-    }
-    if (lastSearch.get("categories") != null) {
-      categories = (List<String>) lastSearch.get("categories");
-    }
-    if (UtilMethods.isSet(lastSearch.get("showDeleted"))) {
-      showDeleted = (Boolean) lastSearch.get("showDeleted");
-    }
-    if (UtilMethods.isSet(lastSearch.get("filterSystemHost"))) {
-      filterSystemHost = (Boolean) lastSearch.get("filterSystemHost");
-    }
-    if (UtilMethods.isSet(lastSearch.get("filterLocked"))) {
-      filterLocked = (Boolean) lastSearch.get("filterLocked");
-    }
-    if (lastSearch.get("filterUnpublish") != null)
-      filterUnpublish = (Boolean) lastSearch.get("filterUnpublish");
-    if (UtilMethods.isSet(lastSearch.get("page"))) {
-      currpage = (Integer) lastSearch.get("page");
-    }
-    if (UtilMethods.isSet(lastSearch.get("orderBy"))) {
-      orderBy = (String) lastSearch.get("orderBy");
+    Map<String, String> fieldsSearch = new HashMap<String,String>();
+    Language selectedLanguage = new Language();
+    List<String> categories = new ArrayList();
+    boolean showDeleted = false;
+    boolean filterSystemHost = false;
+    boolean filterLocked = false;
+    boolean filterUnpublish = false;
+    int currpage = 1;
+    String orderBy = "modDate desc";
+    Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
+    String languageId = String.valueOf(defaultLang.getId());
+    if(session.getAttribute(com.dotmarketing.util.WebKeys.LANGUAGE_SEARCHED)!= null){
+        languageId = (String)session.getAttribute(com.dotmarketing.util.WebKeys.LANGUAGE_SEARCHED);
     }
 
-  }
+    String structureSelected = (String) request.getAttribute("selectedStructure");
 
-  if (!InodeUtils.isSet(structureSelected)) {
-    if (session.getAttribute("selectedStructure") != null) {
-      String longSelectedStructure = (String) session.getAttribute("selectedStructure");
-      if (InodeUtils.isSet(longSelectedStructure)) {
-        structureSelected = longSelectedStructure.toString();
-      }
+
+
+    String schemeSelected = "catchall";
+    if(UtilMethods.isSet(session.getAttribute(ESMappingConstants.WORKFLOW_SCHEME))){
+        schemeSelected = (String)session.getAttribute(ESMappingConstants.WORKFLOW_SCHEME);
     }
-  }
 
-  if (!InodeUtils.isSet(structureSelected)
-      || !structures.contains(CacheLocator.getContentTypeCache().getStructureByInode(structureSelected))) {
-
-    structureSelected = "catchall";
-
-  }
-
-  List<Field> fields = new ArrayList<Field>();
-  try {
-    fields = FieldsCache.getFieldsByStructureInode(structureSelected);
-  } catch (Exception e) {
-    Logger.debug(this.getClass(), e.getMessage());
-  }
-  boolean hasNoSearcheableHostFolderField = false;
-  boolean hasHostFolderField = false;
-  for (Field field : fields) {
-    if (field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())) {
-      if (APILocator.getPermissionAPI().doesUserHavePermission(APILocator.getHostAPI().findSystemHost(), PermissionAPI.PERMISSION_READ,
-          user, true)) {
-        hasHostFolderField = true;
-      }
-      if (!field.isSearchable()) {
-        hasNoSearcheableHostFolderField = true;
-      }
-      break;
+    String stepsSelected = "catchall";
+    if(UtilMethods.isSet(session.getAttribute(ESMappingConstants.WORKFLOW_STEP))){
+        stepsSelected = (String)session.getAttribute(ESMappingConstants.WORKFLOW_STEP);
     }
-  }
 
-  if (fieldsSearch == null || !UtilMethods.isSet(fieldsSearch.get("conHost")) || hasNoSearcheableHostFolderField) {
-    fieldsSearch.put("conHost", (String) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID));
-  }
 
-  String crumbtrailSelectedHostId = (String) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
-  if ((crumbtrailSelectedHostId == null) || crumbtrailSelectedHostId.equals("allHosts"))
-    crumbtrailSelectedHostId = "";
+    if (lastSearch != null && !UtilMethods.isSet(structureSelected)) {
+        if(lastSearch.get("fieldsSearch") != null){
+            fieldsSearch = (Map<String, String>) lastSearch.get("fieldsSearch");
+        }
+        if(lastSearch.get("categories") != null){
+            categories = (List<String>) lastSearch.get("categories");
+        }
+        if(UtilMethods.isSet(lastSearch.get("showDeleted"))){
+            showDeleted = (Boolean) lastSearch.get("showDeleted");
+        }
+        if(UtilMethods.isSet(lastSearch.get("filterSystemHost"))){
+            filterSystemHost = (Boolean) lastSearch.get("filterSystemHost");
+        }
+        if(UtilMethods.isSet(lastSearch.get("filterLocked"))){
+            filterLocked = (Boolean) lastSearch.get("filterLocked");
+        }
+        if(lastSearch.get("filterUnpublish")!=null)
+            filterUnpublish = (Boolean) lastSearch.get("filterUnpublish");
+        if(UtilMethods.isSet(lastSearch.get("page"))){
+            currpage = (Integer) lastSearch.get("page");
+        }
+        if(UtilMethods.isSet(lastSearch.get("orderBy"))){
+            orderBy = (String) lastSearch.get("orderBy");
+        }
 
-  String structureInodesList = "";
-  String structureVelocityVarNames = "";
+    }
 
-  for (Structure st : structures) {
 
-    if (structureInodesList != "") {
-      structureInodesList += ";" + st.getInode();
-    } else
-      structureInodesList += st.getInode();
+    if (!InodeUtils.isSet(structureSelected)) {
 
-    if (structureVelocityVarNames != "") {
-      structureVelocityVarNames += ";" + st.getVelocityVarName();
-    } else
-      structureVelocityVarNames += st.getVelocityVarName();
+        structureSelected = "catchall";
 
-  }
+    }
 
-  String _allValue =
-      (UtilMethods.webifyString(fieldsSearch.get("catchall")).endsWith("*"))
-          ? UtilMethods.webifyString(fieldsSearch.get("catchall")).substring(0,
-              UtilMethods.webifyString(fieldsSearch.get("catchall")).length() - 1)
-          : UtilMethods.webifyString(fieldsSearch.get("catchall"));
 
-  String[] strTypeNames = new String[] {"", LanguageUtil.get(pageContext, "Content"), LanguageUtil.get(pageContext, "Widget"),
-      LanguageUtil.get(pageContext, "Form"), LanguageUtil.get(pageContext, "File"), LanguageUtil.get(pageContext, "HTMLPage"),
-      LanguageUtil.get(pageContext, "Persona"), LanguageUtil.get(pageContext, "VanityURL"), LanguageUtil.get(pageContext, "KeyValue"),};
+    List<Field> fields = new ArrayList<Field>();
+    try{
+        fields = FieldsCache.getFieldsByStructureInode(structureSelected);
+    }
+    catch(Exception e){
+        Logger.debug(this.getClass(), e.getMessage());
+    }
+    boolean hasNoSearcheableHostFolderField = false;
+    boolean hasHostFolderField = false;
+    for (Field field: fields) {
+        if (field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())) {
+            if(APILocator.getPermissionAPI().doesUserHavePermission(APILocator.getHostAPI().findSystemHost(), PermissionAPI.PERMISSION_READ, user, true)){
+                hasHostFolderField = true;
+            }
+            if(!field.isSearchable()){
+                hasNoSearcheableHostFolderField = true;
+            }
+            break;
+        }
+    }
 
-  final boolean enterprise = (LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level);
-  final PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
-  final List<PublishingEndPoint> sendingEndpointsList = pepAPI.getReceivingEndPoints();
-  final boolean sendingEndpoints = UtilMethods.isSet(sendingEndpointsList) && !sendingEndpointsList.isEmpty();
-  final boolean canReindexContentlets =
-      APILocator.getRoleAPI().doesUserHaveRole(user, APILocator.getRoleAPI().loadRoleByKey(Role.CMS_POWER_USER))
-          || com.dotmarketing.business.APILocator.getRoleAPI().doesUserHaveRole(user,
-              com.dotmarketing.business.APILocator.getRoleAPI().loadCMSAdminRole());
+    if (fieldsSearch == null ||  !UtilMethods.isSet(fieldsSearch.get("conHost")) || hasNoSearcheableHostFolderField) {
+        fieldsSearch.put("conHost", (String) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID));
+    }
+
+    String crumbtrailSelectedHostId = (String) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
+    if ((crumbtrailSelectedHostId == null) || crumbtrailSelectedHostId.equals("allHosts"))
+        crumbtrailSelectedHostId = "";
+
+    String structureInodesList="";
+    String structureVelocityVarNames="";
+
+    for (Structure st : structures) {
+
+        if(structureInodesList!=""){
+            structureInodesList+=";"+st.getInode();
+        }
+        else
+            structureInodesList+=st.getInode();
+
+        if(structureVelocityVarNames!=""){
+            structureVelocityVarNames+=";"+st.getVelocityVarName();
+        }
+        else
+            structureVelocityVarNames+=st.getVelocityVarName();
+
+    }
+
+
+
+    String _allValue = (UtilMethods.webifyString(fieldsSearch.get("catchall")).endsWith("*")) ? UtilMethods.webifyString(fieldsSearch.get("catchall")).substring(0,UtilMethods.webifyString(fieldsSearch.get("catchall")).length()-1) : UtilMethods.webifyString(fieldsSearch.get("catchall"));
+
+    String[] strTypeNames = new String[]{"",LanguageUtil.get(pageContext, "Content"),
+            LanguageUtil.get(pageContext, "Widget"),
+            LanguageUtil.get(pageContext, "Form"),
+            LanguageUtil.get(pageContext, "File"),
+            LanguageUtil.get(pageContext, "HTMLPage"),
+            LanguageUtil.get(pageContext, "Persona"),
+            LanguageUtil.get(pageContext, "VanityURL"),
+            LanguageUtil.get(pageContext, "KeyValue")
+            ,
+    };
+
+    final boolean enterprise = (LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level);
+    final PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
+    final List<PublishingEndPoint> sendingEndpointsList = pepAPI.getReceivingEndPoints();
+    final boolean sendingEndpoints = UtilMethods.isSet(sendingEndpointsList) && !sendingEndpointsList.isEmpty();
+    final boolean canReindexContentlets = APILocator.getRoleAPI().doesUserHaveRole(user,APILocator.getRoleAPI().loadRoleByKey(Role.CMS_POWER_USER))|| com.dotmarketing.business.APILocator.getRoleAPI().doesUserHaveRole(user,com.dotmarketing.business.APILocator.getRoleAPI().loadCMSAdminRole());
 %>
 
 
@@ -608,7 +517,7 @@ params: <%=request.getAttribute("initParms") %>
 
 
 
-<%@ include file="/html/portlet/ext/contentlet/view_contentlets_js_inc.jsp"%>
+<%@ include file="/html/portlet/ext/contentlet/view_contentlets_js_inc.jsp" %>
 
 
 <script language="Javascript">
@@ -628,7 +537,7 @@ params: <%=request.getAttribute("initParms") %>
             style: "display: none;"
         });
         var menuItem1 = new dijit.MenuItem({
-            label: "<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-New-Content"))%>",
+            label: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-New-Content" )) %>",
             iconClass: "plusIcon",
             onClick: function() {
                 addNewContentlet();
@@ -637,10 +546,10 @@ params: <%=request.getAttribute("initParms") %>
         menu.addChild(menuItem1);
 
         var menuItem2 = new dijit.MenuItem({
-            label: "<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Import-Content"))%>",
+            label: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Import-Content" )) %>",
             iconClass: "uploadIcon",
             onClick: function() {
-                window.location='/c/portal/layout?p_l_id=<%=layout.getId()%>&dm_rlout=1&p_p_id=<%=PortletID.CONTENT%>&p_p_action=1&p_p_state=maximized&_<%=PortletID.CONTENT%>_struts_action=/ext/contentlet/import_contentlets&selectedStructure=' + document.getElementById("structureInode").value;
+                window.location='/c/portal/layout?p_l_id=<%= layout.getId() %>&dm_rlout=1&p_p_id=<%=PortletID.CONTENT%>&p_p_action=1&p_p_state=maximized&_<%=PortletID.CONTENT%>_struts_action=/ext/contentlet/import_contentlets&selectedStructure=' + document.getElementById("structureInode").value;
             }
         });
         menu.addChild(menuItem2);
@@ -650,125 +559,90 @@ params: <%=request.getAttribute("initParms") %>
 </script>
 
 
-<%@ include file="/html/portlet/ext/contentlet/view_bulk_actions_inc.jsp"%>
+<%@ include file="/html/portlet/ext/contentlet/view_bulk_actions_inc.jsp" %>
 
 
 <form method="Post" action="" id="search_form" onsubmit="doSearch();return false;">
 
-    <input type="hidden" name="fullCommand" id="fullCommand" value=""> <input type="hidden" name="expiredInodes"
-        id="expiredInodes" value="" /> <input type="hidden" name="expireDateReset" id="expireDateReset" value="" /> <input
-        type="hidden" name="luceneQuery" id="luceneQuery" value=""> <input type="hidden" name="structureInode"
-        id="structureInode" value=""> <input type="hidden" name="fieldsValues" id="fieldsValues" value="">
-    <input type="hidden" name="categoriesValues" id="categoriesValues" value=""> <input type="hidden"
-        name="showDeleted" id="showDeleted" value="<%=showDeleted%>"> <input type="hidden"
-        name="filterSystemHost" id="filterSystemHost" value="<%=filterSystemHost%>"> <input type="hidden"
-        name="filterLocked" id="filterLocked" value="<%=filterLocked%>"> <input type="hidden"
-        name="filterUnpublish" id="filterUnpublish" value="<%=filterUnpublish%>"> <input type="hidden"
-        name="currentPage" id="currentPage" value=""> <input type="hidden" name="currentSortBy"
-        id="currentSortBy" value="modDate desc"> <input type="hidden" value="" name="lastModDateFrom"
-        id="lastModDateFrom" size="10" maxlength="10" readonly="true" /> <input type="hidden" value=""
-        name="lastModDateTo" id="lastModDateTo" size="10" maxlength="10" readonly="true" /> <input type="hidden"
-        name="structureVelocityVarNames" id="structureVelocityVarNames" value="<%=structureVelocityVarNames%>">
-    <input type="hidden" name="structureInodesList" id="structureInodesList" value="<%=structureInodesList%>"> <input
-        type="hidden" name="hostField" id="hostField" value="<%=conHostValue%>" /> <input type="hidden"
-        name="folderField" id="folderField" value="<%=conFolderValue%>" /> <input type="hidden" value=""
-        name="Identifier" id="Identifier" size="10" /> <input type="hidden" value="" name="allSearchedContentsInodes"
-        id="allSearchedContentsInodes" dojoType="dijit.form.TextBox" /> <input type="hidden" value=""
-        name="allUncheckedContentsInodes" id="allUncheckedContentsInodes" dojoType="dijit.form.TextBox" />
+    <input type="hidden" name="fullCommand" id="fullCommand" value="">
+    <input type="hidden" name="expiredInodes" id="expiredInodes" value=""/>
+    <input type="hidden" name="expireDateReset" id="expireDateReset" value=""/>
+    <input type="hidden" name="luceneQuery" id="luceneQuery" value="">
+    <input type="hidden" name="structureInode" id="structureInode" value="">
+    <input type="hidden" name="fieldsValues" id="fieldsValues" value="">
+    <input type="hidden" name="categoriesValues" id="categoriesValues" value="">
+    <input type="hidden" name="showDeleted" id="showDeleted" value="<%= showDeleted %>">
+    <input type="hidden" name="filterSystemHost" id="filterSystemHost" value="<%= filterSystemHost %>">
+    <input type="hidden" name="filterLocked" id="filterLocked" value="<%= filterLocked %>">
+    <input type="hidden" name="filterUnpublish" id="filterUnpublish" value="<%= filterUnpublish %>">
+    <input type="hidden" name="currentPage" id="currentPage" value="">
+    <input type="hidden" name="currentSortBy" id="currentSortBy" value="modDate desc">
+    <input type="hidden" value="" name="lastModDateFrom"  id="lastModDateFrom" size="10" maxlength="10" readonly="true"/>
+    <input type="hidden" value="" name="lastModDateTo"  id="lastModDateTo" size="10" maxlength="10" readonly="true"/>
+    <input type="hidden" name="structureVelocityVarNames" id="structureVelocityVarNames" value="<%= structureVelocityVarNames %>">
+    <input type="hidden" name="structureInodesList" id="structureInodesList" value="<%= structureInodesList %>">
+    <input type="hidden" name="hostField" id="hostField" value="<%= conHostValue %>"/>
+    <input type="hidden" name="folderField" id="folderField" value="<%= conFolderValue %>"/>
+    <input type="hidden" value="" name="Identifier" id="Identifier" size="10"/>
+    <input type="hidden" value="" name="allSearchedContentsInodes" id="allSearchedContentsInodes" dojoType="dijit.form.TextBox"/>
+    <input type="hidden" value="" name="allUncheckedContentsInodes" id="allUncheckedContentsInodes" dojoType="dijit.form.TextBox"/>
     <!-- START Split Screen -->
-    <div dojoType="dijit.layout.BorderContainer" design="sidebar" gutters="false" liveSplitters="true"
-        id="borderContainer">
+    <div dojoType="dijit.layout.BorderContainer" design="sidebar" gutters="false" liveSplitters="true" id="borderContainer">
 
         <!-- START Left Column -->
-        <div dojoType="dijit.layout.ContentPane" id="filterWrapper" splitter="false" region="leading"
-            style="width: 200px;" class="portlet-sidebar-wrapper">
+        <div dojoType="dijit.layout.ContentPane" id="filterWrapper" splitter="false" region="leading" style="width: 200px;" class="portlet-sidebar-wrapper" >
             <div class="portlet-sidebar">
-                <%
-                  List<Structure> readStructs = StructureFactory.getStructuresWithReadPermissions(user, true);
-                %>
-                <%
-                  if ((readStructs.size() == 0)) {
-                %>
-                <div align="center" style="text-align: center;">
-                    <dt>
-                        <FONT COLOR="#FF0000"><%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "No-Structure-Read-Permissions"))%></FONT>
-                    </dt>
+                <% List<Structure> readStructs = StructureFactory.getStructuresWithReadPermissions(user, true);  %>
+                <% if((readStructs.size() == 0)){%>
+                <div align="center" style="text-align:center;">
+                    <dt><FONT COLOR="#FF0000"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "No-Structure-Read-Permissions" )) %></FONT></dt>
                 </div>
-                <%
-                  }
-                %>
+                <%}%>
 
                 <!-- START Advanced Search-->
                 <div id="advancedSearch">
                     <dl class="vertical">
-                        <dt>
-                            <label><%=LanguageUtil.get(pageContext, "Type")%>:</label>
-                        </dt>
-                        <dd>
-                            <span id="structSelectBox"></span>
-                        </dd>
+                        <dt><label><%=LanguageUtil.get(pageContext, "Type") %>:</label></dt>
+                        <dd><span id="structSelectBox"></span></dd>
                         <div class="clear"></div>
 
-                        <dt>
-                            <label><%=LanguageUtil.get(pageContext, "Search")%>:</label>
-                        </dt>
-                        <dd>
-                            <input type="text" dojoType="dijit.form.TextBox" tabindex="1" onKeyUp='doSearch()'
-                                name="allFieldTB" id="allFieldTB" value="<%=_allValue%>">
-                        </dd>
+                        <dt><label><%= LanguageUtil.get(pageContext, "Search") %>:</label></dt>
+                        <dd><input type="text" dojoType="dijit.form.TextBox" tabindex="1" onKeyUp='doSearch()' name="allFieldTB" id="allFieldTB" value="<%=_allValue %>"></dd>
                         <div class="clear"></div>
 
 
                     </dl>
 
-                    <div id="advancedSearchOptions" style="height: 0px; overflow: hidden">
+                    <div id="advancedSearchOptions" style="height:0px;overflow: hidden">
 
                         <dl class="vertical">
-                            <dt>
-                                <label><%=LanguageUtil.get(pageContext, "Workflow-Schemes")%>:</label>
-                            </dt>
-                            <dd>
-                                <span id="schemeSelectBox"></span>
-                            </dd>
+                            <dt><label><%= LanguageUtil.get(pageContext, "Workflow-Schemes") %>:</label></dt>
+                            <dd><span id="schemeSelectBox"></span></dd>
                             <div class="clear"></div>
                         </dl>
 
                         <dl class="vertical">
-                            <dt>
-                                <label><%=LanguageUtil.get(pageContext, "Step")%>:</label>
-                            </dt>
-                            <dd>
-                                <span id="stepSelectBox"></span>
-                            </dd>
+                            <dt><label><%= LanguageUtil.get(pageContext, "Step") %>:</label></dt>
+                            <dd><span id="stepSelectBox"></span></dd>
                             <div class="clear"></div>
                         </dl>
 
-                        <%
-                          if (languages.size() > 1) {
-                        %>
+                        <%if (languages.size() > 1) { %>
                         <dl class="vertical">
                             <!-- Language search fields  --->
-                            <dt>
-                                <label><%=LanguageUtil.get(pageContext, "Language")%>:</label>
-                            </dt>
+                            <dt><label><%= LanguageUtil.get(pageContext, "Language") %>:</label></dt>
                             <dd>
                                 <div id="combo_zone2">
-                                    <input id="language_id" />
+                                    <input id="language_id"/>
                                 </div>
 
-                                <%@include file="languages_select_inc.jsp"%>
+                                <%@include file="languages_select_inc.jsp" %>
                             </dd>
                         </dl>
-                        <%
-                          } else {
-                        %>
-                        <%
-                          long langId = languages.get(0).getId();
-                        %>
-                        <input type="hidden" name="language_id" id="language_id" value="<%=langId%>">
-                        <%
-                          }
-                        %>
+                        <%} else { %>
+                        <% long langId = languages.get(0).getId(); %>
+                        <input type="hidden" name="language_id" id="language_id" value="<%= langId %>">
+                        <% } %>
 
 
                         <!-- Ajax built search fields  --->
@@ -782,17 +656,13 @@ params: <%=request.getAttribute("initParms") %>
                         <!-- /Ajax built Categories   --->
 
                         <dl class="vertical">
-                            <dt>
-                                <label><%=LanguageUtil.get(pageContext, "Show")%>:</label>
-                            </dt>
+                            <dt><label><%= LanguageUtil.get(pageContext, "Show") %>:</label></dt>
                             <dd>
-                                <select name="showingSelect" onchange='doSearch(1);togglePublish()' id="showingSelect"
-                                    dojoType="dijit.form.FilteringSelect">
-                                    <option value="all" <%if (!showDeleted && !filterLocked && !filterUnpublish) {%>
-                                        selected <%}%>><%=LanguageUtil.get(pageContext, "All")%></option>
-                                    <option value="locked" <%if (filterLocked) {%> selected <%}%>><%=LanguageUtil.get(pageContext, "Locked")%></option>
-                                    <option value="unpublished" <%if (filterUnpublish) {%> selected <%}%>><%=LanguageUtil.get(pageContext, "Unpublished")%></option>
-                                    <option value="archived" <%if (showDeleted) {%> selected <%}%>><%=LanguageUtil.get(pageContext, "Archived")%></option>
+                                <select name="showingSelect" onchange='doSearch(1);togglePublish()'  id="showingSelect" dojoType="dijit.form.FilteringSelect">
+                                    <option value="all" <% if (!showDeleted && !filterLocked && !filterUnpublish) { %> selected <% } %>><%= LanguageUtil.get(pageContext, "All") %></option>
+                                    <option value="locked" <% if (filterLocked) { %> selected <% } %>><%= LanguageUtil.get(pageContext, "Locked") %></option>
+                                    <option value="unpublished" <% if (filterUnpublish) { %> selected <% } %>><%= LanguageUtil.get(pageContext, "Unpublished") %></option>
+                                    <option value="archived" <% if (showDeleted) { %> selected <% } %>><%= LanguageUtil.get(pageContext, "Archived") %></option>
                                 </select>
                             </dd>
                         </dl>
@@ -800,13 +670,10 @@ params: <%=request.getAttribute("initParms") %>
                         <div class="clear"></div>
 
                         <dl class="radio-check-one-line" id="filterSystemHostTable">
-                            <dt>
-                                <label for="filterSystemHostCB"><%=LanguageUtil.get(pageContext, "Exclude-system-host")%></label>
-                            </dt>
+                            <dt><label for="filterSystemHostCB"><%= LanguageUtil.get(pageContext, "Exclude-system-host") %></label></dt>
                             <dd>
                                 <div class="checkbox">
-                                    <input type="checkbox" dojoType="dijit.form.CheckBox" id="filterSystemHostCB"
-                                        onclick="doSearch(1);" <%=filterSystemHost ? "checked=\"checked\"" : ""%>>
+                                    <input type="checkbox" dojoType="dijit.form.CheckBox" id="filterSystemHostCB" onclick="doSearch(1);" <%=filterSystemHost?"checked=\"checked\"":""%>>
                                 </div>
                             </dd>
                         </dl>
@@ -820,14 +687,11 @@ params: <%=request.getAttribute("initParms") %>
                 <div class="buttonRow">
                     <dl class="vertical">
                         <dd>
-                            <button dojoType="dijit.form.ComboButton" id="searchButton" optionsTitle='createOptions'
-                                onClick="doSearch();return false;" iconClass="searchIcon"
-                                title="<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "search"))%>">
-                                <span><%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "search"))%></span>
+                            <button dojoType="dijit.form.ComboButton" id="searchButton" optionsTitle='createOptions' onClick="doSearch();return false;" iconClass="searchIcon" title="<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "search")) %>">
+                                <span><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "search")) %></span>
                                 <div dojoType="dijit.Menu" style="display: none;" onClick="doSearch();return false;">
-                                    <div dojoType="dijit.MenuItem" iconClass="searchIcon"
-                                        onClick="doSearch();return false;"><%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "search"))%></div>
-                                    <div dojoType="dijit.MenuItem" iconClass="queryIcon" onClick="showHideQuery()"><%=LanguageUtil.get(pageContext, "Show-Query")%></div>
+                                    <div dojoType="dijit.MenuItem"  iconClass="searchIcon" onClick="doSearch();return false;"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "search")) %></div>
+                                    <div dojoType="dijit.MenuItem" iconClass="queryIcon" onClick="showHideQuery()"><%= LanguageUtil.get(pageContext, "Show-Query")%></div>
                                 </div>
                             </button>
                         </dd>
@@ -835,9 +699,8 @@ params: <%=request.getAttribute("initParms") %>
 
                     <dl class="vertical">
                         <dd>
-                            <button dojoType="dijit.form.Button" id="clearButton" onClick="clearSearch();doSearch();"
-                                iconClass="resetIcon" class="dijitButtonFlat">
-                                <%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Clear"))%>
+                            <button dojoType="dijit.form.Button" id="clearButton" onClick="clearSearch();doSearch();" iconClass="resetIcon" class="dijitButtonFlat">
+                                <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Clear")) %>
                             </button>
                         </dd>
                     </dl>
@@ -846,7 +709,7 @@ params: <%=request.getAttribute("initParms") %>
 
                 <a href="javascript:toggleAdvancedSearchDiv()" class="advanced-search-button">
                     <div id="toggleDivText">
-                        <%=LanguageUtil.get(pageContext, "Advanced")%>
+                        <%= LanguageUtil.get(pageContext, "Advanced") %>
                     </div>
                 </a>
 
@@ -857,34 +720,31 @@ params: <%=request.getAttribute("initParms") %>
 
         <!-- START Right Column -->
 
-        <div dojoType="dijit.layout.ContentPane" splitter="true" region="center" class="portlet-content-search"
-            id="contentWrapper" style="overflow-y: auto; overflow-x: auto;">
+        <div dojoType="dijit.layout.ContentPane" splitter="true" region="center" class="portlet-content-search" id="contentWrapper" style="overflow-y:auto; overflow-x:auto;">
             <div class="portlet-main">
-                <div id="metaMatchingResultsDiv" style="display: none;">
+                <div id="metaMatchingResultsDiv" style="display:none;">
                     <!-- START Listing Results -->
-                    <input type="hidden" name="referer" value="<%=referer%>"> <input type="hidden" name="cmd"
-                        value="prepublish">
+                    <input type="hidden" name="referer" value="<%=referer%>">
+                    <input type="hidden" name="cmd" value="prepublish">
                     <div class="portlet-toolbar">
                         <div class="portlet-toolbar__actions-secondary">
-                            <button id="bulkAvailableActions" dojoType="dijit.form.Button"
-                                data-dojo-props="onClick: doShowAvailableActions" iconClass="actionIcon">
-                                <%=LanguageUtil.get(pageContext, "Available-actions")%>
+                            <button id="bulkAvailableActions" dojoType="dijit.form.Button" data-dojo-props="onClick: doShowAvailableActions" iconClass="actionIcon" >
+                                <%= LanguageUtil.get(pageContext, "Available-actions")%>
                             </button>
                         </div>
                         <div id="matchingResultsDiv" style="display: none" class="portlet-toolbar__info"></div>
                         <div class="portlet-toolbar__actions-primary">
-                            <div data-dojo-type="dijit/form/DropDownButton"
-                                data-dojo-props='iconClass:"actionIcon", class:"dijitDropDownActionButton"'>
+                            <div data-dojo-type="dijit/form/DropDownButton" data-dojo-props='iconClass:"actionIcon", class:"dijitDropDownActionButton"'>
                                 <span></span>
                                 <script type="text/javascript">
                                     function importContent() {
-                                        window.location = '/c/portal/layout?p_l_id=<%=layout.getId()%>&dm_rlout=1&p_p_id=<%=PortletID.CONTENT%>&p_p_action=1&p_p_state=maximized&_<%=PortletID.CONTENT%>_struts_action=/ext/contentlet/import_contentlets&selectedStructure=' + document.getElementById('structureInode').value;
+                                        window.location = '/c/portal/layout?p_l_id=<%= layout.getId() %>&dm_rlout=1&p_p_id=<%=PortletID.CONTENT%>&p_p_action=1&p_p_state=maximized&_<%=PortletID.CONTENT%>_struts_action=/ext/contentlet/import_contentlets&selectedStructure=' + document.getElementById('structureInode').value;
                                     }
                                 </script>
                                 <ul data-dojo-type="dijit/Menu" id="actionPrimaryMenu" style="display: none;">
-                                    <li data-dojo-type="dijit/MenuItem"
-                                        data-dojo-props="onClick:function() {addNewContentlet()}"><%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-New-Content"))%></li>
-                                    <li data-dojo-type="dijit/MenuItem" data-dojo-props="onClick:importContent"><%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Import-Content"))%>
+                                    <li data-dojo-type="dijit/MenuItem" data-dojo-props="onClick:function() {addNewContentlet()}"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-New-Content" )) %></li>
+                                    <li data-dojo-type="dijit/MenuItem" data-dojo-props="onClick:importContent">
+                                        <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Import-Content" )) %>
                                     </li>
                                 </ul>
                             </div>
@@ -899,20 +759,16 @@ params: <%=request.getAttribute("initParms") %>
                 <!-- Start Pagination -->
                 <div class="portlet-pagination">
                     <div id="previousDiv" style="display: none;">
-                        <button dojoType="dijit.form.Button" onClick="previousPage();return false;"
-                            iconClass="previousIcon" id="previousDivButton">
-                            <%=LanguageUtil.get(pageContext, "Previous")%>
+                        <button dojoType="dijit.form.Button" onClick="previousPage();return false;" iconClass="previousIcon" id="previousDivButton">
+                            <%= LanguageUtil.get(pageContext, "Previous")%>
                         </button>
-                    </div>
-                    &nbsp;
+                    </div>&nbsp;
                     <div id="matchingResultsBottomDiv" class="portlet-pagination__results"></div>
                     <div id="nextDiv" style="display: none;">
-                        <button dojoType="dijit.form.Button" onClick="nextPage();return false;" iconClass="nextIcon"
-                            id="nextDivButton">
-                            <%=LanguageUtil.get(pageContext, "Next")%>
+                        <button dojoType="dijit.form.Button" onClick="nextPage();return false;" iconClass="nextIcon" id="nextDivButton">
+                            <%= LanguageUtil.get(pageContext, "Next")%>
                         </button>
-                    </div>
-                    &nbsp;
+                    </div>&nbsp;
                 </div>
                 <!-- END Pagination -->
             </div>
@@ -921,80 +777,57 @@ params: <%=request.getAttribute("initParms") %>
         <!-- END Right Column -->
 
         <!-- START Show Query -->
-        <div id="queryDiv" dojoType="dijit.Dialog" class="content-search__show-query-dialog"
-            style="display: none; padding-top: 15px\9;">
+        <div id="queryDiv" dojoType="dijit.Dialog" class="content-search__show-query-dialog" style="display: none;padding-top:15px\9;">
             <div id="queryResults"></div>
         </div>
         <!-- END Show Query -->
 
         <!-- START Search Hint -->
         <div id="hintsdiv" dojoType="dijit.Dialog" style="display: none">
-            <b><%=LanguageUtil.get(pageContext, "Search-Hints")%></b>
-            <ul style="list-style: none; margin: 0px; padding: 0px;">
-                <li><%=LanguageUtil.get(pageContext, "message.contentlet.hints.text1")%></li>
-                <li><%=LanguageUtil.get(pageContext, "message.contentlet.hints.text2")%></li>
-                <li><%=LanguageUtil.get(pageContext, "message.contentlet.hints.text3")%></li>
-                <li><%=LanguageUtil.get(pageContext, "message.contentlet.hints.text4")%></li>
+            <b><%= LanguageUtil.get(pageContext, "Search-Hints") %></b>
+            <ul style="list-style:none; margin:0px; padding:0px;">
+                <li><%= LanguageUtil.get(pageContext, "message.contentlet.hints.text1") %></li>
+                <li><%= LanguageUtil.get(pageContext, "message.contentlet.hints.text2") %></li>
+                <li><%= LanguageUtil.get(pageContext, "message.contentlet.hints.text3") %></li>
+                <li><%= LanguageUtil.get(pageContext, "message.contentlet.hints.text4") %></li>
             </ul>
         </div>
         <!-- START Search Hint -->
 
         <div id="popups"></div>
 
-        <%
-          if (UtilMethods.isSet(structureSelected) && structure.getStructureType() == Structure.STRUCTURE_TYPE_FORM) {
-        %>
-        <input type="hidden" name="contentStructureType" value="3" />
-        <%
-          }
-        %>
+        <%if(UtilMethods.isSet(structureSelected) && structure.getStructureType()==Structure.STRUCTURE_TYPE_FORM){ %>
+        <input type="hidden" name="contentStructureType" value="3"/>
+        <% } %>
     </div>
 
 </form>
 
 <div class="messageZone" id="messageZone" style="display: none;">
     <i class="loadingIcon"></i>
-    <%=LanguageUtil.get(pageContext, "Loading")%>...
+    <%= LanguageUtil.get(pageContext, "Loading")%>...
 </div>
 
-<div dojoType="dijit.Dialog" id="selectStructureDiv"
-    title='<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-New-Content"))%>'>
+<div dojoType="dijit.Dialog" id="selectStructureDiv"  title='<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-New-Content" )) %>'>
 
     <table class="sTypeTable">
         <tr>
-            <%
-              int stType = 0;
-            %>
-            <%
-              int maxPerCol = Config.getIntProperty("EDIT_CONTENT_STRUCTURES_PER_COLUMN", 15);
-            %>
+            <%int stType=0; %>
+            <%int maxPerCol=Config.getIntProperty("EDIT_CONTENT_STRUCTURES_PER_COLUMN", 15); %>
             <td class="sTypeTd">
-                <%
-                  int i = 0;
-                %> <%
-   for (Structure struc : structures) {
- %> <%
-   if (stType != struc.getStructureType()) {
- %> <%
-   stType = struc.getStructureType();
- %>
-                <div class="sTypeHeader" id="sType<%=strTypeNames[stType]%>"><%=strTypeNames[stType]%></div> <%
-   }
- %>
-                <div class="sTypeItem" id="sType<%=struc.getInode()%>">
-                    <a href="javascript:addNewContentlet('<%=struc.getInode()%>');"><%=struc.getName()%></a>
-                </div> <%
-   if (i++ == maxPerCol) {
- %> <%
-   i = 0;
- %>
+                <%int i=0; %>
+                <%for( Structure struc : structures) {%>
+                <%if(stType != struc.getStructureType()){ %>
+                <% stType = struc.getStructureType(); %>
+                <div class="sTypeHeader" id="sType<%=strTypeNames[stType] %>"><%=strTypeNames[stType] %></div>
+                <%} %>
+                <div class="sTypeItem" id="sType<%=struc.getInode() %>"><a href="javascript:addNewContentlet('<%=struc.getInode() %>');"><%=struc.getName() %></a></div>
+                <%if(i++ == maxPerCol){ %>
+                <%i=0; %>
             </td>
             <td valign="top" class="sTypeTd">
-                <%
-                  }
-                %> <%
-   }
- %>
+                <%} %>
+                <%} %>
             </td>
         </tr>
     </table>

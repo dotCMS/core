@@ -57,27 +57,21 @@
             <name>view-action</name>
             <value>/ext/browser/view_browser</value>
         </init-param>
-
-
         <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
-
-
     </portlet>
-
+    
     <portlet>
         <portlet-name>content</portlet-name>
         <display-name>Contents Manager</display-name>
-        <portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
+        <portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
         <init-param>
-            <name>view-jsp</name>
-            <value>/portlet/ext/contentlet/view_contentlets.jsp</value>
+            <name>view-action</name>
+            <value>/ext/contentlet/view_contentlets</value>
         </init-param>
-
-
         <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
-
-
     </portlet>
+    
+
 
     <!-- BEGIN: PORTLET CONTENT PUBLISHING FRAMEWORK -->
     <portlet>
@@ -196,27 +190,25 @@
             <name>view-action</name>
             <value>/ext/htmlpageviews/view_htmlpage_views</value>
         </init-param>
-
-
         <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
-
-
     </portlet>
+
 
     <portlet>
         <portlet-name>vanity-urls</portlet-name>
-        <display-name>Vanity Urls</display-name>
-        <portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
+        <display-name>Contents Manager</display-name>
+        <portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
         <init-param>
-            <name>view-jsp</name>
-            <value>/portlet/ext/contentlet/view_contentlets.jsp</value>
+            <name>view-action</name>
+            <value>/ext/contentlet/view_contentlets</value>
         </init-param>
         <init-param>
-            <name>content:baseTypes</name>
-            <value>7</value>
+            <name>baseTypes</name>
+            <value>VANITY_URL</value>
         </init-param>
         <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
     </portlet>
+
 
 
     <portlet>
@@ -469,16 +461,6 @@
             <name>view-jsp</name>
             <value>/portlet/ext/linkchecker/view_broken_links.jsp</value>
         </init-param>
-    </portlet>
-    <portlet>
-        <portlet-name>content</portlet-name>
-        <display-name>Content Manager</display-name>
-        <portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
-        <init-param>
-            <name>view-jsp</name>
-            <value>/portlet/ext/contentlet/view_contentlets.jsp</value>
-        </init-param>
-        <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
     </portlet>
 
 
