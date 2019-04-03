@@ -6,7 +6,6 @@
 /dist-lib
 /tmp
 /out-tsc
-/dotAdmin
 
 # dependencies
 /node_modules
