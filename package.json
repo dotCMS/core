@@ -6,6 +6,7 @@
         "ng": "ng",
         "build:dev": "ng build --configuration=development",
         "build:prod": "ng build --configuration=production --prod dotcms-ui",
+        "build:libs": "ng build dotcms-js; ng build dot-rules; ng build dot-layout-grid",
         "watch": "npm run build -w --no-delete-output-path --sourcemap",
         "lint": "ng lint",
         "e2e": "ng e2e",
