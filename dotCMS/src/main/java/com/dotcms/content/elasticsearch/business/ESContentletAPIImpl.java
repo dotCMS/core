@@ -4976,8 +4976,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
             return;
         }
 
-        this.validateIdentifier(contentlet);
-
         String stInode = contentlet.getStructureInode();
         if (!InodeUtils.isSet(stInode)) {
             throw new DotContentletValidationException(
@@ -4999,21 +4997,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         validateRelationships(contentlet, contentRelationships);
 
-    }
-
-    private void validateIdentifier(final Contentlet contentlet) {
-
-        if (UtilMethods.isSet(contentlet.getIdentifier())) {
-
-            final Optional<ShortyId> shortyId = APILocator.getShortyAPI().getShorty(contentlet.getIdentifier());
-            final boolean isIdentifier = shortyId.isPresent() && shortyId.get().type== ShortType.IDENTIFIER;
-
-            if (!isIdentifier) {
-
-                throw new DoesNotExistException("The identifier: " + contentlet.getIdentifier() + " does not exists");
-            }
-
-        }
     }
 
     private void validateRelationships(final Contentlet contentlet,
