@@ -1,37 +1,24 @@
 import { DotCMSFormConfig, DotCMSContentTypeField } from '../models';
 import { DotApiContentType } from './DotApiContentType';
-import { DotCMSHttpClient } from '../utils/DotCMSHttpClient';
-import { FieldElementsTags } from '../utils/fieldsElementsTags';
+
+enum FieldElementsTags {
+    ImmutableTextField = 'dot-textfield',
+    ImmutableCheckboxField = 'dot-checkbox',
+    ImmutableSelectField = 'dot-dropdown'
+}
 
 /**
  * DotCMS Api Form Builder
  *
  */
 export class DotApiForm {
+    private formConfig: DotCMSFormConfig;
+    private fields: DotCMSContentTypeField[];
     private dotApiContentType: DotApiContentType;
-    private dotCMSHttpClient: DotCMSHttpClient;
-    private formScript = '';
 
-    constructor(httpClient: DotCMSHttpClient) {
-        this.dotCMSHttpClient = httpClient;
-        this.dotApiContentType = new DotApiContentType(this.dotCMSHttpClient);
-    }
-
-    /**
-     * Returns a Form Builder instance based on configuration
-     * @param {DotCMSFormConfig} config
-     * @returns {Promise<DotApiForm>}
-     * @memberof DotApiForm
-     */
-    get(config: DotCMSFormConfig): Promise<DotApiForm> {
-        return this.dotApiContentType
-            .getFields(config.identifier)
-            .then((fields: DotCMSContentTypeField[]) => {
-                if (config.fields && config.fields.length) {
-                    this.createForm(fields, config);
-                }
-                return this;
-            });
+    constructor(dotApiContentType: DotApiContentType, config: DotCMSFormConfig) {
+        this.dotApiContentType = dotApiContentType;
+        this.formConfig = config;
     }
 
     /**
@@ -39,7 +26,12 @@ export class DotApiForm {
      * @param {HTMLElement} container
      * @memberof DotApiForm
      */
-    render(container: HTMLElement): void {
+    async render(container: HTMLElement) {
+        this.fields = this.fields
+            ? this.fields
+            : await this.dotApiContentType.getFields(this.formConfig.identifier);
+
+        const formScript = this.createForm(this.fields);
         const importScript = document.createElement('script');
         const formTag = document.createElement('div');
 
@@ -47,31 +39,51 @@ export class DotApiForm {
         importScript.text = `
             import { defineCustomElements } from "https://unpkg.com/dotcms-field-elements@0.0.2/dist/loader";
             defineCustomElements(window);`;
-        formTag.innerHTML = this.formScript;
+        formTag.innerHTML = formScript;
 
         container.append(importScript, formTag);
     }
 
-    private createForm(fields: DotCMSContentTypeField[], config: DotCMSFormConfig): void {
+    private createForm(fields: DotCMSContentTypeField[]): string {
         let fieldTags = '';
 
         fields.map((field) => {
-            fieldTags += config.fields.includes(field.variable) ? this.createField(field) : '';
+            fieldTags += this.formConfig.fields.includes(field.variable)
+                ? this.createField(field)
+                : '';
         });
 
-        this.formScript += `<form>${fieldTags}</form>`;
+        return `<form>${fieldTags}</form>`;
+    }
+
+    private getFieldTag(field: DotCMSContentTypeField): string {
+        return FieldElementsTags[field.clazz.split('.').pop()];
+    }
+
+    private formatValuesAttribute(values: string, fieldTag: string): string {
+        const breakLineTags = ['dot-checkbox', 'dot-dropdown', 'dot-radio-button'];
+        let formattedValue = values;
+
+        // Todo: complete with other DOT-FIELDS as they get created
+        if (breakLineTags.includes(fieldTag)) {
+            formattedValue = values.split('\r\n').join(',');
+        }
+        return formattedValue;
     }
 
     // tslint:disable-next-line:cyclomatic-complexity
     private createField(field: DotCMSContentTypeField): string {
-        const fieldClazz = field.clazz.split('.');
-        const fieldTag = FieldElementsTags[fieldClazz[fieldClazz.length - 1]];
+        const fieldTag = this.getFieldTag(field);
         return fieldTag
             ? `
             <${fieldTag}
                 ${field.name ? `label="${field.name}"` : ''}
                 ${field.defaultValue ? `value="${field.defaultValue}"` : ''}
-                ${field.values ? `options="${field.values.split('\r\n').join(',')}"` : ''}
+                ${
+                    field.values
+                        ? `options="${this.formatValuesAttribute(field.values, fieldTag)}"`
+                        : ''
+                }
                 ${field.hint ? `hint="${field.hint}"` : ''}
                 ${field.required ? 'required' : ''}
             ></${fieldTag}>`
