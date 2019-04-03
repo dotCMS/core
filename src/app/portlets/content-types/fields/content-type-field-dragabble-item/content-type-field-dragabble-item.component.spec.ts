@@ -74,7 +74,7 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
 
         const copyButton: DebugElement = de.query(By.css('dot-copy-button'));
         expect(copyButton.componentInstance.copy).toBe('test');
-        expect(copyButton.componentInstance.label).toBe('test');
+        expect(copyButton.componentInstance.label).toBe('(test)');
     });
 
     it('should have field attributes label', () => {

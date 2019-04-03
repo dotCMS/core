@@ -42,6 +42,13 @@ class MockDotMainNavComponent {
 class MockDotMessageDisplayComponent {
 }
 
+@Component({
+    selector: 'dot-large-message-display',
+    template: ''
+})
+class MockDotLargeMessageDisplayComponent {
+}
+
 describe('MainComponentLegacyComponent', () => {
     let fixture: ComponentFixture<MainComponentLegacyComponent>;
     let de: DebugElement;
@@ -65,7 +72,8 @@ describe('MainComponentLegacyComponent', () => {
                 MockDotDialogComponent,
                 MockDotMainNavComponent,
                 MockDotToolbarComponent,
-                MockDotMessageDisplayComponent
+                MockDotMessageDisplayComponent,
+                MockDotLargeMessageDisplayComponent
             ]
         }).compileComponents();
     }));
@@ -84,6 +92,11 @@ describe('MainComponentLegacyComponent', () => {
         expect(de.query(By.css('dot-toolbar')) !== null).toBe(true);
         expect(de.query(By.css('dot-main-nav')) !== null).toBe(true);
         expect(de.query(By.css('router-outlet')) !== null).toBe(true);
+    });
+
+    it('should have messages components', () => {
+        expect(de.query(By.css('dot-large-message-display')) !== null).toBe(true);
+        expect(de.query(By.css('dot-large-message-display')) !== null).toBe(true);
     });
 
     describe('Create Contentlet', () => {

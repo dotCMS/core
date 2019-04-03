@@ -21,7 +21,7 @@
         >
         </dot-container-selector>
         <div class="box__actions">
-            <dot-icon-button icon="more_horiz" (click)="addColumnClass(i)"></dot-icon-button>
+            <dot-icon-button class="box__add-column-class-button" icon="more_horiz" (click)="addColumnClass(i)"></dot-icon-button>
             <dot-icon-button icon="close" (click)="onRemoveContainer(i)"></dot-icon-button>
         </div>
     </div>
@@ -37,6 +37,6 @@
 >
     <form [formGroup]="form" novalidate>
         <label for="content-type-form-workflow" class="form__label">Class Names</label>
-        <input pInputText formControlName="classToAdd" type="text" required xc/>
+        <input pInputText class="box__add-class-text" formControlName="classToAdd" type="text" required/>
     </form>
 </dot-dialog>
