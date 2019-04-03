@@ -3,6 +3,15 @@ import { Response, ResponseOptions, ConnectionBackend } from '@angular/http';
 import { MockBackend } from '@angular/http/testing';
 import { FieldService } from './';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
+import { FieldType } from '@portlets/content-types/fields';
+
+export const mockFieldType: FieldType = {
+    clazz: 'TextField',
+    helpText: 'helpText',
+    id: 'text',
+    label: 'Text',
+    properties: []
+};
 
 describe('FieldService', () => {
     beforeEach(() => {
@@ -17,18 +26,10 @@ describe('FieldService', () => {
         'should load field types',
         fakeAsync(() => {
             const mockResponse = {
-                entity: [
-                    {
-                        clazz: 'TextField',
-                        helpText: 'helpText',
-                        id: 'text',
-                        label: 'Text',
-                        properties: []
-                    }
-                ]
+                entity: [mockFieldType]
             };
 
-            this.fieldService.loadFieldTypes().subscribe((res) => (this.response = res));
+            this.fieldService.loadFieldTypes().subscribe(res => (this.response = res));
 
             this.lastConnection.mockRespond(
                 new Response(
@@ -58,7 +59,7 @@ describe('FieldService', () => {
 
             this.fieldService
                 .saveFields('1', this.mockData)
-                .subscribe((res) => (this.response = JSON.parse(res)));
+                .subscribe(res => (this.response = JSON.parse(res)));
 
             this.lastConnection.mockRespond(
                 new Response(
@@ -102,7 +103,7 @@ describe('FieldService', () => {
 
             this.fieldService
                 .deleteFields('1', this.mockData)
-                .subscribe((res) => (this.response = res));
+                .subscribe(res => (this.response = res));
 
             this.lastConnection.mockRespond(
                 new Response(

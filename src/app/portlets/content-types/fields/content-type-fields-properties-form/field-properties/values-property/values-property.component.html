@@ -1,4 +1,5 @@
 <div [formGroup]="group">
+    <dot-field-helper *ngIf="helpText && isValidHelperClass()" [message]="helpText"></dot-field-helper>
     <label class="form__label">{{ i18nMessages['contenttypes.field.properties.value.label'] }}*</label>
     <dot-textarea-content #value [formControlName]="property.name" [show]="['code']" height="90px"></dot-textarea-content>
     <dot-field-validation-message 

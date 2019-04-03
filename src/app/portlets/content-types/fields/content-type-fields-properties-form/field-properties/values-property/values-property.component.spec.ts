@@ -7,16 +7,15 @@ import { DotMessageService } from '@services/dot-messages-service';
 import { FormGroup, FormControl, NgControl } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { DotTextareaContentModule } from '@components/_common/dot-textarea-content/dot-textarea-content.module';
+import { DotFieldHelperModule } from '@components/dot-field-helper/dot-field-helper.module';
 
 @Component({
     selector: 'dot-field-validation-message',
     template: ''
 })
 class TestFieldValidationMessageComponent {
-    @Input()
-    field: NgControl;
-    @Input()
-    message: string;
+    @Input() field: NgControl;
+    @Input() message: string;
 }
 
 describe('ValuesPropertyComponent', () => {
@@ -27,26 +26,29 @@ describe('ValuesPropertyComponent', () => {
         'Validation-RegEx': 'Validation-RegEx'
     });
 
-    beforeEach(async(() => {
-        DOTTestBed.configureTestingModule({
-            declarations: [TestFieldValidationMessageComponent, ValuesPropertyComponent],
-            imports: [DotTextareaContentModule],
-            providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
-        });
+    beforeEach(
+        async(() => {
+            DOTTestBed.configureTestingModule({
+                declarations: [TestFieldValidationMessageComponent, ValuesPropertyComponent],
+                imports: [DotTextareaContentModule, DotFieldHelperModule],
+                providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
+            });
 
-        fixture = DOTTestBed.createComponent(ValuesPropertyComponent);
-        comp = fixture.componentInstance;
-        de = fixture.debugElement;
+            fixture = DOTTestBed.createComponent(ValuesPropertyComponent);
+            comp = fixture.componentInstance;
+            de = fixture.debugElement;
 
-        comp.group = new FormGroup({
-            values: new FormControl('')
-        });
-        comp.property = {
-            name: 'values',
-            value: 'value',
-            field: {}
-        };
-    }));
+            comp.group = new FormGroup({
+                values: new FormControl('')
+            });
+            comp.property = {
+                name: 'values',
+                value: 'value',
+                field: {}
+            };
+            comp.helpText = 'Helper Text';
+        })
+    );
 
     it('should have a form', () => {
         const group = new FormGroup({});
@@ -77,5 +79,20 @@ describe('ValuesPropertyComponent', () => {
         fixture.detectChanges();
         expect(comp.value.show).toEqual(['code']);
         expect(comp.value.height).toBe('90px');
+    });
+
+    it('should show dot-helper for required clazz', () => {
+        comp.property.field.clazz = 'com.dotcms.contenttype.model.field.ImmutableRadioField';
+        fixture.detectChanges();
+        const fieldHelper: DebugElement = fixture.debugElement.query(By.css('dot-field-helper'));
+        expect(fieldHelper).not.toBeNull();
+    });
+
+    it('should hide dot-helper except for required', () => {
+        comp.property.field.clazz = 'random';
+        fixture.detectChanges();
+        const fieldHelper: DebugElement = fixture.debugElement.query(By.css('dot-field-helper'));
+
+        expect(fieldHelper).toBeNull();
     });
 });

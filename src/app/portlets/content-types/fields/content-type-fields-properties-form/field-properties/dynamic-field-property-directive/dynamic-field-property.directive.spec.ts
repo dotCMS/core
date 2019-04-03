@@ -9,6 +9,8 @@ import { DynamicFieldPropertyDirective } from './dynamic-field-property.directiv
 import { FieldPropertyService } from '../../../service';
 import { FieldProperty } from '../field-properties.model';
 import { FormGroup } from '@angular/forms';
+import { mockFieldType } from '@portlets/content-types/fields/service/field.service.spec';
+import { FieldType } from '@portlets/content-types/fields';
 
 @Component({
     selector: 'dot-test',
@@ -20,6 +22,10 @@ class TestComponent {
 }
 
 class TestFieldPropertyService {
+    getFieldType(_clazz: string): FieldType {
+        return null;
+    }
+
     getComponent(_propertyName: string): Type<any> {
         return null;
     }
@@ -46,7 +52,8 @@ describe('Directive: DynamicFieldPropertyDirective', () => {
         this.propertyName = 'name';
         this.group = new FormGroup({});
         this.field = {
-            name: 'FieldName'
+            name: 'FieldName',
+            clazz: 'testClazz'
         };
 
         const viewContainerRef = new TestViewContainerRef();
@@ -56,6 +63,9 @@ describe('Directive: DynamicFieldPropertyDirective', () => {
 
         this.getComponent = spyOn(fieldPropertyService, 'getComponent').and.returnValue(
             TestComponent
+        );
+        this.getFieldType = spyOn(fieldPropertyService, 'getFieldType').and.returnValue(
+            mockFieldType
         );
         this.resolveComponentFactory = spyOn(resolver, 'resolveComponentFactory').and.returnValue(
             this.componentFactory
@@ -92,5 +102,6 @@ describe('Directive: DynamicFieldPropertyDirective', () => {
             value: 'FieldName'
         });
         expect(this.component.group).toEqual(this.group);
+        expect(this.component.helpText).toEqual('helpText');
     });
 });
