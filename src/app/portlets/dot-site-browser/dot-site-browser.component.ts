@@ -15,6 +15,5 @@ export class DotSiteBrowserComponent implements OnInit {
 
     getFiles($event: DotUploadFile[]) {
         this.files = $event;
-        console.log($event);
     }
 }

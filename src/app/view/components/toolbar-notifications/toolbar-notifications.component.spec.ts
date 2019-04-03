@@ -50,9 +50,7 @@ class MockDotcmsEventsService {
 
 @Injectable()
 class MockLoginService {
-    public watchUser(func: Function): void {
-        console.log('func', func);
-    }
+    public watchUser(_func: Function): void {}
 }
 
 @Injectable()
