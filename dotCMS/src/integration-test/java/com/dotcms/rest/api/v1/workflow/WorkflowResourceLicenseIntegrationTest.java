@@ -11,6 +11,7 @@ import com.dotcms.rest.ContentHelper;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
+import com.dotcms.rest.api.MultiPartUtils;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.LicenseValiditySupplier;
@@ -32,12 +33,10 @@ import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
-import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.swing.text.AbstractDocument;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -49,9 +48,7 @@ import static com.dotcms.rest.exception.mapper.ExceptionMapperUtil.ACCESS_CONTRO
 import static com.dotmarketing.business.Role.ADMINISTRATOR;
 import static com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest.createContentTypeAndAssignPermissions;
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.*;
 
 public class WorkflowResourceLicenseIntegrationTest {
@@ -121,12 +118,13 @@ public class WorkflowResourceLicenseIntegrationTest {
 
         licenseWorkflowResource = new WorkflowResource(licensedWorkflowHelper, contentHelper,
                 licensedWorkflowAPI,
-                contentletAPI, responseUtil, permissionAPI, workflowImportExportUtil,
+                contentletAPI, responseUtil, permissionAPI, workflowImportExportUtil, new MultiPartUtils(),
                 webResourceThatReturnsAdminUser);
 
         nonLicenseWorkflowResource = new WorkflowResource(nonLicensedWorkflowHelper, contentHelper,
                 nonLicensedWorkflowAPI,
                 contentletAPI, responseUtil, permissionAPI, workflowImportExportUtil,
+                new MultiPartUtils(),
                 webResourceThatReturnsARandomUser); //Returns Bill
     }
 

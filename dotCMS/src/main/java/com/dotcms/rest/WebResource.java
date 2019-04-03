@@ -9,7 +9,6 @@ import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
 import com.dotcms.repackage.org.glassfish.jersey.internal.util.Base64;
 import com.dotcms.repackage.org.glassfish.jersey.server.ContainerRequest;
-import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.SecurityException;
 import com.dotcms.rest.validation.ServletPreconditions;
 import com.dotcms.util.CollectionsUtils;
@@ -21,8 +20,6 @@ import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
@@ -33,9 +30,7 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.util.CookieKeys;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.util.CookieUtil;
-
 import io.vavr.control.Try;
-
 import org.apache.commons.lang.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
@@ -476,14 +471,16 @@ public  class WebResource {
 
     }
 
-    public static Map processJSON(InputStream input) throws JSONException, IOException {
-        HashMap<String,Object> map=new HashMap<String,Object>();
-        JSONObject obj=new JSONObject(IOUtils.toString(input));
-        Iterator<String> keys = obj.keys();
+    public static Map processJSON(final InputStream input) throws JSONException, IOException {
+
+        final HashMap<String,Object> map = new HashMap<>();
+        final JSONObject obj = new JSONObject(IOUtils.toString(input));
+        final Iterator<String> keys = obj.keys();
         while(keys.hasNext()) {
-            String key=keys.next();
-            Object value=obj.get(key);
-            map.put(key, value.toString());
+
+            final String key   = keys.next();
+            final Object value = obj.get(key);
+            map.put(key, value);
         }
 
         return map;
