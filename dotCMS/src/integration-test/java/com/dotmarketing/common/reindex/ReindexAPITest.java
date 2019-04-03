@@ -1,5 +1,6 @@
 package com.dotmarketing.common.reindex;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
@@ -125,7 +126,7 @@ public class ReindexAPITest extends IntegrationTestBase {
         APILocator.getContentTypeAPI(APILocator.systemUser()).save(type, origFields);
         reindexEntries = reindexQueueAPI.findContentToReindex(numberToTest);
         assertSame(reindexEntries.size(), numberToTest);
-        assertSame(reindexEntries.values().iterator().next().getPriority(), ReindexQueueFactory.Priority.STRUCTURE.dbValue());
+        assertEquals(reindexEntries.values().iterator().next().getPriority(), ReindexQueueFactory.Priority.STRUCTURE.dbValue());
 
     }
 
