@@ -70,11 +70,7 @@ margin:0px auto;
 
 
 
-<script>
-dojo.addOnLoad(function(){
-    dijit.byId("newLayouDialog").show();
-});
-</script>
+
 <%-- New Layout Dialog --%>
 
 <div id="newLayouDialog" title="<%= LanguageUtil.get(pageContext, "edit-tab") %>" dojoType="dijit.Dialog" style="display: none;width:625px;">
@@ -89,7 +85,7 @@ dojo.addOnLoad(function(){
                     dojoType="dijit.form.ValidationTextBox" /></td>
             </tr>
             <tr>
-                <td style="text-align:right;"><label for="layoutDescription"><%=LanguageUtil.get(pageContext, "Icon")%>:</label>
+                <td style="text-align:right;vertical-align: top;padding-top:20px;"><label for="layoutDescription"><%=LanguageUtil.get(pageContext, "Icon")%>:</label>
                 <td><input id="layoutDescription" type="text"
                     dojoType="dijit.form.TextBox"
                     onchange="updateIcon(this.value)" /> <i
@@ -123,7 +119,7 @@ dojo.addOnLoad(function(){
         <div class="buttonRow">
             <div style="float: left; padding-left: 20px;">
                 <span id="deleteLayoutButtonWrapper">
-                    <button dojoType="dijit.form.Button" type="button" onClick="deleteLayout()"
+                    <button dojoType="dijit.form.Button" type="button" onClick="deleteLayout()" style="disabled"
                         class="dijitButtonDanger" iconClass="deleteIcon">
                         <%=LanguageUtil.get(pageContext, "Delete")%>
                     </button>
@@ -142,6 +138,73 @@ dojo.addOnLoad(function(){
     </form>
 </div>
 <%-- /New Layout Dialog --%>
+
+
+<div dojoType="dijit.Dialog" style="width:500px;" id="customPortletDialog" title="<%=LanguageUtil.get(pageContext, "custom.content.portlet.create")%>"
+    execute="createCustomContentType(arguments[0]);">
+
+    <table class="listingTable">
+        <tr>
+            <td style="white-space: nowrap;"><label for="customPortletName"><%=LanguageUtil.get(pageContext, "custom.content.portlet.portletName")%>:
+            </label></td>
+
+            <td><input dojoType="dijit.form.TextBox" type="text" required="true" 
+                name="customPortletName" id="customPortletName" value="" onKeyUp="setPortletIdValue(this.getValue())"></td>
+        </tr>
+        <tr>
+            <td style="white-space: nowrap;"><label for="customPortletId"><%=LanguageUtil.get(pageContext, "custom.content.portlet.portletId")%>:
+            </label></td>
+
+            <td><input dojoType="dijit.form.TextBox" type="text" required="true" 
+                name="customPortletId" id="customPortletId" value="" onKeyUp="setPortletIdValue(this.getValue())" onBlur="cleanUpPortletId()"></td>
+        </tr>
+        
+        <tr>
+            <td style="white-space: nowrap;"><label for="customPortletBaseTypes"><%=LanguageUtil.get(pageContext, "custom.content.portlet.baseTypes")%>:
+            </label></td>
+
+            <td><input dojoType="dijit.form.TextBox" type="text"
+                name="customPortletBaseTypes" id="customPortletBaseTypes" value="">
+                <div class="hint-text"><%=LanguageUtil.get(pageContext, "custom.content.portlet.baseTypes.hint")%></div>
+                
+                </td>
+        </tr>
+        <tr>
+            <td style="white-space: nowrap;"><label for="customPortletContentTypes">
+            <%=LanguageUtil.get(pageContext, "OR")%>&nbsp;
+            
+            <%=LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.content-types-angular")%>:
+            </label></td>
+
+            <td><input dojoType="dijit.form.TextBox" type="text"
+                name="customPortletContentTypes" id="customPortletContentTypes" value="">
+                <div class="hint-text"><%=LanguageUtil.get(pageContext, "custom.content.portlet.contentTypes.hint")%></div>
+                
+                </td>
+        </tr>
+
+    </table>
+
+    <div class="buttonRow">
+        <button dojoType="dijit.form.Button" type="button"
+            class="dijitButtonFlat"
+            onClick="dijit.byId('customPortletDialog').hide();"><%=LanguageUtil.get(pageContext, "cancel")%></button>
+        &nbsp;
+        <button dojoType="dijit.form.Button" type="submit"
+            onClick="return dijit.byId('customPortletDialog').isValid();"><%=LanguageUtil.get(pageContext, "ok")%></button>
+    </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -268,9 +331,15 @@ dojo.addOnLoad(function(){
 
 						<div class="view-roles__heading">
 							<h3 class="nameText" id="displayRoleName3"></h3>
-							<button dojoType="dijit.form.Button" onclick="createNewLayout()" type="button" iconClass="plusIcon">
+                            <div style="float:right">
+                            <button dojoType="dijit.form.Button" onclick="showCustomContentPortletDia()" type="button">
+                                <%=LanguageUtil.get(pageContext, "custom.content.portlet.create")%>
+                            </button>
+                            &nbsp;
+							<button dojoType="dijit.form.Button" onclick="createNewLayout()" type="button">
 								<%= LanguageUtil.get(pageContext, "create-custom-tab") %>
 							</button>
+                            </div>
 						</div>
 
 						<div id="loadingRoleLayoutsWrapper"><img src="/html/images/icons/processing.gif"></div>
