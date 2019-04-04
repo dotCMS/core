@@ -727,16 +727,18 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }
 	}
 
-	
+
     @Override
     public Optional<Contentlet> findInDb(final String inode) {
         try {
-            com.dotmarketing.portlets.contentlet.business.Contentlet fatty = (com.dotmarketing.portlets.contentlet.business.Contentlet) HibernateUtil
-                    .load(com.dotmarketing.portlets.contentlet.business.Contentlet.class, inode);
-            return Optional.ofNullable(convertFatContentletToContentlet(fatty));
+            if (inode != null) {
+                com.dotmarketing.portlets.contentlet.business.Contentlet fatty = (com.dotmarketing.portlets.contentlet.business.Contentlet) HibernateUtil
+                        .load(com.dotmarketing.portlets.contentlet.business.Contentlet.class,
+                                inode);
+                return Optional.ofNullable(convertFatContentletToContentlet(fatty));
+            }
         } catch (DotDataException | DotSecurityException e) {
-            if (!((e.getCause() instanceof ObjectNotFoundException) || e
-                    .getCause() instanceof NullPointerException)) {
+            if (!(e.getCause() instanceof ObjectNotFoundException)) {
                 throw new DotRuntimeException(e);
             }
         }
