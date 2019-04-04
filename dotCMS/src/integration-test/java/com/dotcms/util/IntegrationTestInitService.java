@@ -49,10 +49,6 @@ public class IntegrationTestInitService {
             // Init other dotCMS services.
             DotInitializationService.getInstance().initialize();
 
-            //Initializing ReindexThread with forceFlush=true to avoid race conditions
-            // (will reindex immediately all requests when received)
-            ReindexThread.startThread(true);
-
             initCompleted.set(true);
         }
     }

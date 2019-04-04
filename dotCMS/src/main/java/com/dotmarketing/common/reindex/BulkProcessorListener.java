@@ -2,6 +2,7 @@ package com.dotmarketing.common.reindex;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.util.Logger;
 import com.liferay.util.StringPool;
 import java.util.ArrayList;
@@ -14,6 +15,7 @@ import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkProcessor;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.action.support.WriteRequest;
 
 /**
  * {@link BulkProcessor.Listener} that handles the logic before/after reindexing content

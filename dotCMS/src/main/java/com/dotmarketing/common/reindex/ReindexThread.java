@@ -21,10 +21,12 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.model.User;
 import java.sql.SQLException;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import org.elasticsearch.action.bulk.BulkProcessor;
+import org.elasticsearch.action.bulk.BulkRequestBuilder;
 
 /**
  * This thread is in charge of re-indexing the contenlet information placed in the
@@ -92,7 +94,6 @@ public class ReindexThread {
     private ThreadState STATE = ThreadState.RUNNING;
     private Future<?>  threadRunning;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
-    private boolean forceFlush;
 
     private ReindexThread() {
 
@@ -175,18 +176,18 @@ public class ReindexThread {
                 final Map<String, ReindexEntry> workingRecords = queueApi.findContentToReindex();
 
                 if (!workingRecords.isEmpty()) {
+                    if (!ESReindexationProcessStatus.inFullReindexation()) {
+                        reindexWithBulkRequest(workingRecords);
+                    } else {
+                        if (bulkProcessor == null) {
+                            bulkProcessorListener = new BulkProcessorListener();
+                            bulkProcessor = indexAPI.createBulkProcessor(bulkProcessorListener);
+                        }
 
-                    if (bulkProcessor == null){
-                        bulkProcessorListener = new BulkProcessorListener();
-                        bulkProcessor = indexAPI.createBulkProcessor(bulkProcessorListener);
+                        bulkProcessorListener.workingRecords.putAll(workingRecords);
+                        indexAPI.appendToBulkProcessor(bulkProcessor, workingRecords.values());
+                        contentletsIndexed = bulkProcessorListener.getContentletsIndexed();
                     }
-
-                    bulkProcessorListener.workingRecords.putAll(workingRecords);
-                    indexAPI.appendToBulkProcessor(bulkProcessor, workingRecords.values());
-                    if (forceFlush){
-                        bulkProcessor.flush();
-                    }
-                    contentletsIndexed = bulkProcessorListener.getContentletsIndexed();
                 } else {
                     if (bulkProcessor != null){
                         bulkProcessor.close();
@@ -217,6 +218,26 @@ public class ReindexThread {
         }
     }
 
+    private void reindexWithBulkRequest(Map<String, ReindexEntry> workingRecords)
+            throws DotDataException {
+        BulkRequestBuilder bulk = indexAPI.createBulkRequest();
+        bulk = indexAPI.appendBulkRequest(bulk, workingRecords.values());
+
+        contentletsIndexed += bulk.numberOfActions();
+        Logger.info(this.getClass(), "-----------");
+        Logger.info(this.getClass(), "Total Indexed :" + contentletsIndexed);
+        Logger.info(this.getClass(),
+                "ReindexEntries found : " + workingRecords.size());
+        Logger.info(this.getClass(),
+                "BulkRequests created : " + bulk.numberOfActions());
+        Optional<String> duration = indexAPI.reindexTimeElapsed();
+        if (duration.isPresent()) {
+            Logger.info(this, "Full Reindex Elapsed : " + duration.get() + "");
+        }
+        Logger.info(this.getClass(), "-----------");
+        indexAPI.putToIndex(bulk, new BulkActionListener(workingRecords));
+    }
+
     private boolean switchOverIfNeeded() throws LanguageException, DotDataException, SQLException, InterruptedException {
         if (ESReindexationProcessStatus.inFullReindexation() && queueApi.recordsInQueue() == 0) {
             // The re-indexation process has finished successfully
@@ -238,12 +259,6 @@ public class ReindexThread {
             getInstance().threadRunning = getInstance().executor.submit(thread);
         }
 
-    }
-
-    @VisibleForTesting
-    public static void startThread(final boolean forceFlush) {
-        getInstance().forceFlush = forceFlush;
-        startThread();
     }
 
     private void state(ThreadState state) {

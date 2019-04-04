@@ -1,6 +1,5 @@
 package com.dotmarketing.common.reindex;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -172,27 +171,29 @@ public class ReindexThreadTest {
         APILocator.getContentletIndexAPI().fullReindexAbort();
 
         new DotConnect().setSQL("delete from dist_reindex_journal").loadResult();
-        ReindexThread.startThread(true);
+        ReindexThread.startThread();
+        long startCount = ReindexThread.getInstance().totalESPuts();
 
-        final String title = "contentTest " + System.currentTimeMillis();
-        final Contentlet content = new ContentletDataGen(type.id()).setProperty("title", title).nextPersisted();
+
+        String title = "contentTest " + System.currentTimeMillis();
+        Contentlet content = new ContentletDataGen(type.id()).setProperty("title", title).nextPersisted();
 
         ThreadUtils.sleep(4000);
-        // 1 for check in (only working index)
-        assertEquals(1, ReindexThread.getInstance().totalESPuts());
 
-        try{
-            HibernateUtil.startTransaction();
+        HibernateUtil.startTransaction();
+        try {
             contentletAPI.publish(content, user, respectFrontendRoles);
         } finally {
             HibernateUtil.closeSession();
         }
-        ThreadUtils.sleep(4000);
-        //2 more for publish (live & working indexes)
-        assertEquals(2, ReindexThread.getInstance().totalESPuts());
 
-        try{
-            HibernateUtil.startTransaction();
+        ThreadUtils.sleep(4000);
+        long latestCount = ReindexThread.getInstance().totalESPuts() - startCount;
+        // 1 for check in (only working index) 2 more for publish (live & working indexes)
+        assert (latestCount == 3);
+
+        HibernateUtil.startTransaction();
+        try {
             contentletAPI.unpublish(content, user, respectFrontendRoles);
         } finally {
             HibernateUtil.closeSession();
@@ -200,7 +201,8 @@ public class ReindexThreadTest {
         ThreadUtils.sleep(4000);
 
         // 1 more reindex working (publish was deleted)
-        assertEquals(1, ReindexThread.getInstance().totalESPuts());
+        latestCount = ReindexThread.getInstance().totalESPuts() - startCount;
+        assert (latestCount == 4);
     }
 
     /**
@@ -215,8 +217,8 @@ public class ReindexThreadTest {
 
         //make sure we only have live + working indexes
         APILocator.getContentletIndexAPI().fullReindexAbort();
-        ReindexThread.startThread(true);
-        final List<Contentlet> contents = new ArrayList<>();
+        ReindexThread.startThread();
+        List<Contentlet> contents = new ArrayList<>();
         // create contentlet
         final String conTitle = "contentTest " + System.currentTimeMillis();
         // check in the content
@@ -227,7 +229,7 @@ public class ReindexThreadTest {
 
         // create 3 languages
         for (int i = 0; i < 3; i++) {
-            final Language newLang = new Language();
+            Language newLang = new Language();
             newLang.setCountry("x" + i);
             newLang.setLanguage("en");
             newLang.setCountryCode("x" + i);
@@ -275,16 +277,11 @@ public class ReindexThreadTest {
         APILocator.getReindexQueueAPI().addIdentifierDelete(baseCon.getIdentifier());
         ThreadUtils.sleep(10000);
 
-        assertTrue(contentletAPI
-                .indexCount("+live:false +identifier:" + baseCon.getIdentifier(), user,
-                        respectFrontendRoles) == 0);
-        assertTrue(contentletAPI
-                .indexCount("+live:true +identifier:" + baseCon.getIdentifier(), user,
-                        respectFrontendRoles) == 0);
 
-        assertTrue(contentletAPI
-                .indexCount("+identifier:" + baseCon.getIdentifier(), user, respectFrontendRoles)
-                == 0);
+        assertTrue(contentletAPI.indexCount("+live:false +identifier:" + baseCon.getIdentifier(), user, respectFrontendRoles) == 0);
+        assertTrue(contentletAPI.indexCount("+live:true +identifier:" + baseCon.getIdentifier(), user, respectFrontendRoles) == 0);
+
+        assertTrue(contentletAPI.indexCount("+identifier:" + baseCon.getIdentifier(), user, respectFrontendRoles) == 0);
 
     }
 
@@ -303,13 +300,16 @@ public class ReindexThreadTest {
         APILocator.getContentletIndexAPI().fullReindexAbort();
         new DotConnect().setSQL("delete from dist_reindex_journal").loadResult();
 
-        ReindexThread.startThread(true);
+        ReindexThread.startThread();
 
-        final String title = "contentTest " + System.currentTimeMillis();
-        final Contentlet content = new ContentletDataGen(type.id()).setProperty("title", title).nextPersisted();
+        long startCount = ReindexThread.getInstance().totalESPuts();
+
+        String title = "contentTest " + System.currentTimeMillis();
+        Contentlet content = new ContentletDataGen(type.id()).setProperty("title", title).nextPersisted();
         ThreadUtils.sleep(4000);
         // thread is running and has indexed the content
-        assertEquals (1, ReindexThread.getInstance().totalESPuts());
+        long latestCount = ReindexThread.getInstance().totalESPuts() - startCount;
+        assert (latestCount == 1);
         
         // pause thread and it is not working
         ReindexThread.pause();
@@ -317,19 +317,25 @@ public class ReindexThreadTest {
         
         // with thread paused, you can publish content
         // and it will not be picked up for reindex
+        HibernateUtil.startTransaction();
         try{
-            HibernateUtil.startTransaction();
             contentletAPI.publish(content, user, respectFrontendRoles);
         } finally {
             HibernateUtil.closeSession();
         }
         ThreadUtils.sleep(4000);
-        assertEquals (1, ReindexThread.getInstance().totalESPuts());
+        latestCount = ReindexThread.getInstance().totalESPuts() - startCount;
+        assert (latestCount == 1);
+
 
         // unpause and then it gets picked up for reindex
         ReindexThread.unpause();
         ThreadUtils.sleep(4000);
-        assertEquals (2, ReindexThread.getInstance().totalESPuts());
+        latestCount = ReindexThread.getInstance().totalESPuts() - startCount;
+        assert (latestCount == 3);
+
+
+
     }
     
     /**
@@ -343,37 +349,45 @@ public class ReindexThreadTest {
     public void test_stop_start_ReindexThread() throws DotDataException, DotSecurityException {
 
         new DotConnect().setSQL("delete from dist_reindex_journal").loadResult();
-        ReindexThread.startThread(true);
+        ReindexThread.startThread();
         ReindexThread.stopThread();
-        ReindexThread.startThread(true);
+        ReindexThread.startThread();
         ReindexThread.stopThread();
-        ReindexThread.startThread(true);
+        ReindexThread.startThread();
+        long startCount = ReindexThread.getInstance().totalESPuts();
 
-        final String title = "contentTest " + System.currentTimeMillis();
-        final Contentlet content = new ContentletDataGen(type.id()).setProperty("title", title).nextPersisted();
+        String title = "contentTest " + System.currentTimeMillis();
+        Contentlet content = new ContentletDataGen(type.id()).setProperty("title", title).nextPersisted();
         ThreadUtils.sleep(4000);
         
         // thread is running and has indexed the content
-        assertEquals (1, ReindexThread.getInstance().totalESPuts());
+        long latestCount = ReindexThread.getInstance().totalESPuts() - startCount;
+        assert (latestCount == 1);
         
         // pause thread and it is not working
         ReindexThread.stopThread();
         assertFalse(ReindexThread.isWorking());
         
-        // with thread stopped, you can publish content
+        // with thread paused, you can publish content
         // and it will not be picked up for reindex
+        HibernateUtil.startTransaction();
         try{
-            HibernateUtil.startTransaction();
             contentletAPI.publish(content, user, respectFrontendRoles);
         } finally {
             HibernateUtil.closeSession();
         }
         ThreadUtils.sleep(4000);
-        assertEquals (1, ReindexThread.getInstance().totalESPuts());
+        latestCount = ReindexThread.getInstance().totalESPuts() - startCount;
+        assert (latestCount == 1);
+
         
         // unpause and then it gets picked up for reindex
         ReindexThread.startThread();
         ThreadUtils.sleep(4000);
-        assertEquals (2, ReindexThread.getInstance().totalESPuts());
+        latestCount = ReindexThread.getInstance().totalESPuts() - startCount;
+        assert (latestCount == 3);
+
+
+
     }
 }
