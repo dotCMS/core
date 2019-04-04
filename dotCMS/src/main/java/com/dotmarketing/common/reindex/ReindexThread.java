@@ -20,7 +20,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.model.User;
 import java.sql.SQLException;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
