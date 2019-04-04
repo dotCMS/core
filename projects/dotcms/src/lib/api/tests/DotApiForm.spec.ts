@@ -1,13 +1,6 @@
 import { DotApiForm } from '../DotApiForm';
 import { DotCMSContentTypeField } from 'dotcms/lib/models';
 
-function validateForm(formScript: string): void {
-    expect(formScript.includes('label="field1"')).toEqual(true);
-    expect(formScript.includes('hint="hint1"')).toEqual(true);
-    expect(formScript.includes('value="defaultValue1"')).toEqual(true);
-    expect(formScript.includes('required')).toEqual(true);
-}
-
 const fieldReturned = [
     {
         fieldType: 'Text',
@@ -32,6 +25,11 @@ describe('DotApiForm', () => {
     let dotApiContentType;
     let dotApiForm;
 
+    const expectedForm = `<script type="module">
+            import { defineCustomElements } from "https://unpkg.com/dotcms-field-elements@0.0.2/dist/loader";
+            defineCustomElements(window);</script><div><form>
+            <dot-textfield label="field1" value="defaultValue1" hint="hint1" required=""></dot-textfield></form></div>`;
+
     beforeEach(() => {
         dotApiContentType = new DotApiContentTypeMock();
     });
@@ -43,12 +41,7 @@ describe('DotApiForm', () => {
         dotApiForm = new DotApiForm(dotApiContentType, config);
         dotApiForm.render(container).then(() => {
             expect(container.append).toHaveBeenCalled();
-            expect(container.innerHTML.includes('<script type="module">')).toEqual(true);
-            expect(container.innerHTML.includes(
-                    `import { defineCustomElements } from "https://unpkg.com/dotcms-field-elements@0.0.2/dist/loader";`
-                )).toEqual(true);
-            expect(container.innerHTML.includes('defineCustomElements(window);</script>')).toEqual(true);
-            validateForm(container.innerHTML);
+            expect(container.innerHTML).toBe(expectedForm);
         });
     });
 });
