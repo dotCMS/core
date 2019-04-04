@@ -13,6 +13,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -26,13 +27,17 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
-import com.liferay.util.StringPool;
 import org.apache.commons.collections.keyvalue.MultiKey;
-import org.elasticsearch.index.IndexNotFoundException;
 
 import java.text.MessageFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
+import java.util.stream.Collectors;
 
 import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotcms.util.CollectionsUtils.toImmutableList;
@@ -60,11 +65,6 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
     private final long              defaultLanguageId;
     private final User              systemUser;
 
-    private static final String GET_VANITY_URL_BASE_TYPE =
-            "+baseType:" + BaseContentType.VANITY_URL.getType();
-    private static final String GET_ACTIVE_VANITY_URL =
-            GET_VANITY_URL_BASE_TYPE + " +live:true +deleted:false";
-    private static final String GET_VANITY_URL_LANGUAGE_ID = " +languageId:";
     private static final int CODE_404_VALUE = 404;
     private static final VanityMatches VANITY_MATCHES_FALSE =
             new VanityMatches(Boolean.FALSE, null);
@@ -98,53 +98,90 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
     @CloseDBIfOpened
     @Override
     public void initializeVanityURLsCache(final User user) {
-        searchAndPopulate(GET_ACTIVE_VANITY_URL, user, null, null, true);
+        initializeActiveVanityURLsCacheBySiteAndLanguage(null, null);
     }
 
     /**
-     * Searches and populates the cache for live VanityURLs by Site and Language id, each VanityURL
-     * found is added into the cache. <br> Note this method does not uses cache, always does the ES
-     * search, the intention of this method is mainly to populate the cache with the found data.
+     * Searches for all Vanity URLs for a given Site in the system. It goes directly to the database in order to
+     * avoid retrieving data that has not been updated in the ES index yet. This initialization routine will also
+     * add Vanity URLs located under System Host.
      *
-     * @param user The current user
+     * @param siteId String site id
+     * @param languageId Long language id
+     * @return A list of VanityURLs
      */
-    private void initializeActiveVanityURLsCacheBySiteAndLanguage(String siteId,
-            final long languageId, final User user) {
-
-        String siteQuery;
-        Boolean includedSystemSite = Boolean.FALSE;
-
-        if (null != siteId && !siteId.equals(Host.SYSTEM_HOST)) {
-
-            //Verify if we already have cache values for the given host and the System Host
-            final List<CachedVanityUrl> foundVanities = getVanityUrlBySiteAndLanguageFromCache(siteId,
-                    languageId,
-                    false);
-
-            final List<CachedVanityUrl> foundSystemHostVanities = getVanityUrlBySiteAndLanguageFromCache(
-                    Host.SYSTEM_HOST, languageId, false);
-
-            //No cache was initialized, we need to include both hosts in the search
-            if (null == foundVanities && null == foundSystemHostVanities) {
-                includedSystemSite = Boolean.TRUE;
-                siteQuery = String.format(" +(conhost:%s conhost:%s)", siteId, Host.SYSTEM_HOST);
-            } else {
-                if (null == foundVanities) {//We just need to initialize the values for the given host
-                    siteQuery = String.format(" +(conhost:%s)", siteId);
-                } else {
-                    siteId = Host.SYSTEM_HOST;//We just need to initialize the values for the given System Host
-                    siteQuery = String.format(" +(conhost:%s)", Host.SYSTEM_HOST);
-                }
+    private void initializeActiveVanityURLsCacheBySiteAndLanguage(final String siteId, final Long languageId) {
+        final boolean includeSystemHost = Boolean.TRUE;
+        try {
+            final List<Contentlet> contentResults = searchAndPopulate(siteId, languageId, includeSystemHost);
+            if (null == contentResults || contentResults.isEmpty()) {
+                // Empty is a valid cache value
+                this.setEmptyCaches(siteId, languageId, includeSystemHost);
+                return;
             }
-        } else {
-            siteQuery = String.format(" +conhost:%s", Host.SYSTEM_HOST);
+            final List<VanityUrl> vanityUrls = contentResults.stream()
+                    .map(this::getVanityUrlFromContentlet)
+                    .sorted(Comparator.comparing(VanityUrl::getOrder))
+                    .collect(toImmutableList());
+            // Add them to caches
+            vanityUrls.forEach(this::addToSingleVanityURLCache);
+            this.addSecondaryVanityURLCacheCollection (vanityUrls);
+             // If a site was sent we need to make sure it was initialized in the cache
+            if (null != siteId && null != languageId) {
+                this.checkSiteLanguageVanities
+                        (siteId, languageId, includeSystemHost);
+            }
+        } catch (final Exception e) {
+            throw new DotRuntimeException("Error searching and populating the Vanity URL Cache", e);
         }
-
-        final String luceneQuery = GET_ACTIVE_VANITY_URL + siteQuery
-                + GET_VANITY_URL_LANGUAGE_ID
-                + languageId;
-        searchAndPopulate(luceneQuery, user, siteId, languageId, includedSystemSite);
     } // initializeActiveVanityURLsCacheBySiteAndLanguage.
+
+    /**
+     * Executes a SQL query that will return all the Vanity URLs that belong to a specific Site. This method moved from
+     * using the ES index to using a SQL query in order to avoid situations where the index was not fully updated when
+     * reading new data.
+     *
+     * @param siteId            The Identifier of the Site whose Vanity URLs will be retrieved.
+     * @param languageId        The language ID used to created the Vanity URLs.
+     * @param includeSystemHost If set to {@code true}, the results will include Vanity URLs that were created under
+     *                          System Host. Otherwise, set to {@code false}.
+     *
+     * @return The list of Vanity URLs.
+     */
+    @CloseDBIfOpened
+    private List<Contentlet> searchAndPopulate(final String siteId, final Long languageId, final boolean
+            includeSystemHost) {
+        List<Contentlet> contentlets = new ArrayList<>();
+        final StringBuilder query = new StringBuilder();
+        query.append("SELECT cvi.live_inode FROM contentlet c ");
+        query.append("INNER JOIN identifier i ON c.identifier = i.id AND i.host_inode ");
+        if (includeSystemHost) {
+            query.append("IN ('" + Host.SYSTEM_HOST + "', ?) ");
+        } else {
+            query.append("= ? ");
+        }
+        query.append("INNER JOIN contentlet_version_info cvi ON c.identifier = cvi.identifier AND c.inode = cvi" +
+                ".live_inode ");
+        query.append("WHERE c.language_id = ? AND c.structure_inode IN (SELECT s.inode FROM structure s WHERE s" +
+                ".structuretype = ?)");
+        try {
+            final List<Map<String, Object>> vanityUrls = new DotConnect().setSQL(query.toString())
+                    .addParam(siteId)
+                    .addParam(languageId)
+                    .addParam(BaseContentType.VANITY_URL.getType())
+                    .loadObjectResults();
+            final List<String> vanityUrlInodes = vanityUrls.stream().map(vanity -> vanity.get("live_inode").toString
+                    ()).collect(Collectors.toList());
+            contentlets = this.contentletAPI.findContentlets(vanityUrlInodes);
+        } catch (final DotDataException e) {
+            Logger.error(this, String.format("An error occurred when retrieving Vanity URLs: siteId=[%s], " +
+                    "languageId=[%s], includeSystemHost=[%s]", siteId, languageId, includeSystemHost), e);
+        } catch (final DotSecurityException e) {
+            Logger.error(this, String.format("An error occurred when retrieving Vanity URLs: siteId=[%s], " +
+                    "languageId=[%s], includeSystemHost=[%s]", siteId, languageId, includeSystemHost), e);
+        }
+        return contentlets;
+    }
 
     private boolean is404 (final CachedVanityUrl cachedVanityUrl) {
 
@@ -407,7 +444,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
 
                     //Initialize the Cached Vanity URL cache if is null
                     this.initializeActiveVanityURLsCacheBySiteAndLanguage
-                            (siteId, languageId, this.systemUser);
+                            (siteId, languageId);
 
                     //Get the list of site cached Vanities URLs
                     cachedVanityUrls =
@@ -442,79 +479,6 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
 
         return result;
     } // searchLiveCachedVanityUrlBySiteAndLanguage.
-
-    /**
-     * Using a given lucene query this method searches for VanityURLs, each VanityURL found is
-     * added into the cache.
-     * <br>
-     * Note this method does not uses cache, always does the ES search, the intention of this method
-     * is mainly to populate the cache with the found data.
-     *
-     * @param luceneQuery query for the ES search
-     * @param user to use in the ES search
-     * @param siteId String site id
-     * @param languageId Long language id
-     * @param includedSystemHostOnLuceneQuery True is the search will include the System Host
-     * @return A list of VanityURLs
-     */
-    private void searchAndPopulate(final String luceneQuery, final User user,
-            final String siteId, final Long languageId, final Boolean includedSystemHostOnLuceneQuery) {
-
-        try {
-
-            final List<Contentlet> contentResults = this.contentletAPI
-                    .search(luceneQuery, 0, 0, StringPool.BLANK, user, false);
-
-            //Verify if we found something
-            if (null == contentResults || contentResults.isEmpty()) {
-
-                //Empty is a valid cache value
-                this.setEmptyCaches(siteId, languageId, includedSystemHostOnLuceneQuery);
-                return;
-            }
-
-            final List<VanityUrl> vanityUrls = contentResults.stream()
-                    .map(this::getVanityUrlFromContentlet)
-                    .sorted(Comparator.comparing(VanityUrl::getOrder))
-                    .collect(toImmutableList());
-
-            // adds to caches.
-            vanityUrls.forEach(this::addToSingleVanityURLCache);
-            this.addSecondaryVanityURLCacheCollection (vanityUrls);
-
-            /*
-             * If a site was sent we need to make sure it was initialized in the cache
-             */
-            if (null != siteId && null != languageId) {
-
-                this.checkSiteLanguageVanities
-                        (siteId, languageId, includedSystemHostOnLuceneQuery);
-            }
-        } catch (IndexNotFoundException e) {
-            /*
-			 * We catch this exception in order to avoid to stop the
-			 * initialization of dotCMS if for some reason at this point we
-			 * don't have indexes.
-			 */
-            Logger.error(this, "Error when initializing Vanity URLs, no index found ");
-            Logger.debug(this, e.getMessage(), e);
-        } catch (DotDataException | DotSecurityException e) {
-            Logger.error(this, "Error searching for active Vanity URLs [" + luceneQuery + "]", e);
-        } catch (Exception e) {
-            if (e.getCause() instanceof IndexNotFoundException) {
-                /*
-				 * We catch this exception in order to avoid to stop the
-				 * initialization of dotCMS if for some reason at this point we
-				 * don't have indexes.
-				 */
-                Logger.error(this, "Error when initializing Vanity URLs, no index found ");
-                Logger.debug(this, e.getMessage(), e);
-            } else {
-                throw new DotRuntimeException("Error searching and populating the Vanity URL Cache",
-                        e);
-            }
-        }
-    } // searchAndPopulate.
 
     private void checkSiteLanguageVanities(final String siteId,
                                            final Long languageId,
