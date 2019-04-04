@@ -1,3 +1,4 @@
+import { DotIconButtonModule } from './../../../../view/components/_common/dot-icon-button/dot-icon-button.module';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { NgModule } from '@angular/core';
@@ -46,7 +47,8 @@ import { DotThemeSelectorModule } from '../components/dot-theme-selector/dot-the
         DotEditPageInfoModule,
         DotThemeSelectorModule,
         ToolbarModule,
-        TooltipModule
+        TooltipModule,
+        DotIconButtonModule
     ],
     exports: [DotEditLayoutDesignerComponent],
     providers: [

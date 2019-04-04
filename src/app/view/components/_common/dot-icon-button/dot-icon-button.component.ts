@@ -18,6 +18,9 @@ export class DotIconButtonComponent {
     @Input()
     icon: string;
 
+    @Input()
+    size: number;
+
     element: ElementRef;
 
     constructor(elm: ElementRef) {
