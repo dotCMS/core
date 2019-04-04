@@ -95,7 +95,7 @@ public class RelationshipUtil {
                         .putAll((isCheckout ? contentletAPI.checkoutWithQuery(elem, user, false)
                                 : contentletAPI.search(elem, 0, 0, sortBy, user, false)).stream()
                                 .collect(Collectors
-                                        .toMap(Contentlet::getIdentifier, Function.identity())));
+                                        .toMap(Contentlet::getIdentifier, Function.identity(),(oldValue, newValue) -> oldValue)));
             }
         }
 
