@@ -4,6 +4,7 @@ import com.dotcms.config.DotInitializationService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.util.Config;
 import com.liferay.util.SystemProperties;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -47,6 +48,10 @@ public class IntegrationTestInitService {
             Config.setProperty("NETWORK_CACHE_FLUSH_DELAY", (long) 0);
             // Init other dotCMS services.
             DotInitializationService.getInstance().initialize();
+
+            //Initializing ReindexThread with forceFlush=true to avoid race conditions
+            // (will reindex immediately all requests when received)
+            ReindexThread.startThread(true);
 
             initCompleted.set(true);
         }
