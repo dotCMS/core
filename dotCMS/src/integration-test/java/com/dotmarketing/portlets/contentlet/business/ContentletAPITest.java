@@ -21,9 +21,7 @@ import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.*;
 import com.dotmarketing.business.*;
-import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.model.ContentletSearch;
-import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
@@ -69,13 +67,11 @@ import org.apache.velocity.runtime.parser.node.SimpleNode;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.quartz.utils.DBConnectionManager;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.nio.charset.Charset;
-import java.sql.Connection;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -5691,40 +5687,6 @@ public class ContentletAPITest extends ContentletBaseTest {
             bw.write(textToWrite);
         } catch (IOException e) {
             fail(e.getMessage());
-        }
-    }
-    
-    
-    @Test
-    public void insure_contentlet_checkin_is_transactional() throws Exception {
-    
-        HibernateUtil.startTransaction();
-
-        ContentType type = new ContentTypeDataGen()
-                .fields(ImmutableList
-                        .of(ImmutableTextField.builder().name("Title").variable("title").searchable(true).listed(true).build()))
-                .nextPersisted();
-
-
-        final Contentlet contentlet = new ContentletDataGen(type.id()).setProperty("title", "contentTest " + System.currentTimeMillis()).nextPersisted();
-        
-        
-        try(Connection conn = DbConnectionFactory.getDataSource().getConnection()){
-            DateUtil.sleep(3000);
-            // content is not visible to other connection
-            assertTrue(new DotConnect().setSQL("select id from identifier where id=?").addParam(contentlet.getIdentifier()).loadObjectResults(conn).isEmpty());
-            assertTrue(contentletAPI.indexCount("+live:true +identifier:" +contentlet.getIdentifier() + " +inode:" + contentlet.getInode() , user, false)==0);
-        }
-        
-        
-        HibernateUtil.commitTransaction();
-        
-        
-        try(Connection conn = DbConnectionFactory.getDataSource().getConnection()){
-            DateUtil.sleep(3000);
-            // content is not visible to other connection
-            assertTrue(new DotConnect().setSQL("select id from identifier where id=?").addParam(contentlet.getIdentifier()).loadObjectResults(conn).size()==1);
-            assertTrue(contentletAPI.indexCount("+live:true +identifier:" +contentlet.getIdentifier() + " +inode:" + contentlet.getInode() , user, false)>0);
         }
     }
     
