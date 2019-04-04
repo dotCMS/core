@@ -4,7 +4,7 @@ export function generateId(): number {
     return Date.now().valueOf();
 }
 
-export function getItemsFromString(rawString: string): DotOption[] {
+export function getDotOptionsFromFieldValue(rawString: string): DotOption[] {
     const items = rawString
         .split(',')
         .filter((item) => item.length > 0)

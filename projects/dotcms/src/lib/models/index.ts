@@ -10,3 +10,4 @@ export * from './DotCMSPage.model';
 export * from './DotCMSSite.model';
 export * from './DotCMSContent.model';
 export * from './DotCMSContentType.model';
+export * from './DotCMSForm.model';

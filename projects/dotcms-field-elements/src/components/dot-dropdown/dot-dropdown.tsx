@@ -1,5 +1,5 @@
 import { Component, Prop, State, Event, EventEmitter } from '@stencil/core';
-import { generateId, getItemsFromString } from '../../utils';
+import { generateId, getDotOptionsFromFieldValue } from '../../utils';
 import Fragment from 'stencil-fragment';
 import { DotOption } from '../../models/dot-option.model';
 
@@ -19,7 +19,7 @@ export class DotDropdownComponent {
     _label: string;
 
     componentWillLoad() {
-        this._options = getItemsFromString(this.options);
+        this._options = getDotOptionsFromFieldValue(this.options);
         this._label = `dotDropdown_${generateId()}`;
     }
 
