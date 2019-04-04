@@ -396,16 +396,18 @@ public class DbConnectionFactory {
             return _dbType;
         }
 
+        final boolean isNewConnection = !DbConnectionFactory.connectionExists();
         Connection conn = getConnection();
 
         try {
             _dbType = conn.getMetaData().getDatabaseProductName();
-
         } catch (Exception e) {
 
         } finally {
             try {
-                closeConnection();
+                if (isNewConnection) {
+                    conn.close();
+                }
             } catch (Exception e) {
 
             }
