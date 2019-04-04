@@ -11,6 +11,7 @@ import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.design.bean.PreviewFileAsset;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
@@ -390,8 +391,8 @@ public class DesignTemplateUtil {
 				String uuid = splitArguments.length > 1 ? cleanId(splitArguments[1]) : ParseContainer.DEFAULT_UUID_VALUE;
 				try {
 					id = getContainerIdentifierOrPath(id);
-				} catch (DotDataException e) {
-					Logger.error(DesignTemplateUtil.class, e.getMessage(), e);
+				} catch (Exception e) {
+					Logger.error(DesignTemplateUtil.class, e.getMessage());
 				}
 
 				containers.add(new ContainerUUID(id, uuid));
@@ -401,14 +402,25 @@ public class DesignTemplateUtil {
         return containers;
     }
 
-	private static String getContainerIdentifierOrPath(final String containerId) throws DotDataException {
+	/**
+	 * Checks if the identifier is a file asset container, if it is replace the id by the apth
+	 * @param containerId String could be a path or an id (file asset id or db container id)
+	 * @return String if it is a file asset container, returns the path, otherwise the uuid.
+	 * @throws DotDataException
+	 */
+	public static String getContainerIdentifierOrPath(final String containerId) throws DotDataException {
+
+		if (FileAssetContainerUtil.getInstance().isFolderAssetContainerId(containerId)) {
+
+			return containerId;
+		}
 
     	final ShortyIdAPI shortyIdAPI     = APILocator.getShortyAPI();
     	final IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
     	final Optional<ShortyId> shortyId = shortyIdAPI.getShorty(containerId);
 
-		return shortyId.isPresent() && shortyId.get().type == ShortType.FOLDER?
-				identifierAPI.find(containerId).getPath():containerId;
+		return shortyId.isPresent() && shortyId.get().subType == ShortType.CONTAINER?
+				containerId: identifierAPI.find(containerId).getPath();
 	}
 
 	private static String cleanId(final String identifier) {
