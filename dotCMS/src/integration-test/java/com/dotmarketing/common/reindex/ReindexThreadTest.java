@@ -143,7 +143,7 @@ public class ReindexThreadTest {
         ReindexThread.unpause();
 
         // let any expected reindex finish
-        DateUtil.sleep(4000);
+        DateUtil.sleep(6000);
 
         // make sure that the index is in the same state as before the failed transaction
 
