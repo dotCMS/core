@@ -209,7 +209,20 @@
         <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
     </portlet>
 
-
+    <portlet>
+        <portlet-name>landing-pages</portlet-name>
+        <display-name>Landing Pages</display-name>
+        <portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+        <init-param>
+            <name>view-action</name>
+            <value>/ext/contentlet/view_contentlets</value>
+        </init-param>
+        <init-param>
+            <name>contentTypes</name>
+            <value>LandingPage</value>
+        </init-param>
+        <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+    </portlet>
 
     <portlet>
         <portlet-name>languages</portlet-name>

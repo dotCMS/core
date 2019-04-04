@@ -2,6 +2,7 @@ package com.dotmarketing.business.portal;
 
 import java.util.Collection;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.ResourceBundle;
@@ -105,9 +106,17 @@ public class PortletAPIImpl implements PortletAPI {
     if(!UtilMethods.isSet(portlet.getPortletClass())) {
       throw new DotStateException("You cannot save a portlet without an implementing portletClass");
     }
+    
+    HashMap<String,String> newMap=new HashMap<>();
+    newMap.putAll(portlet.getInitParams());
+    newMap.put("portletSource", "db");
+    
+    Portlet newPort = new Portlet(portlet.getPortletId(), portlet.getPortletClass(),newMap);
+    
+    
 
     try {
-      return portletFac.insertPortlet(portlet);
+      return portletFac.insertPortlet(newPort);
     } catch (Exception e) {
       throw new DotRuntimeException(e);
     }

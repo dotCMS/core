@@ -531,6 +531,9 @@ public class ContentletAjax {
     if (perPage < 1) {
       perPage = Config.getIntProperty("PER_PAGE", 40);
     }
+    
+    
+    
 		if(!InodeUtils.isSet(structureInode)) {
 			Logger.error(this, "An invalid structure inode =  \"" + structureInode + "\" was passed");
 			throw new DotRuntimeException("a valid structureInode need to be passed");
@@ -543,6 +546,8 @@ public class ContentletAjax {
 		Map<String, Object> lastSearchMap = new HashMap<String, Object>();
 
 		if (UtilMethods.isSet(sess)) {
+	    sess.removeAttribute("structureSelected");
+	    sess.removeAttribute("selectedStructure");
 			sess.setAttribute(WebKeys.CONTENTLET_LAST_SEARCH, lastSearchMap);
             sess.setAttribute(ESMappingConstants.WORKFLOW_SCHEME, null);
             sess.setAttribute(ESMappingConstants.WORKFLOW_STEP, null);

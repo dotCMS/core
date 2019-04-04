@@ -17,7 +17,7 @@ public class Portlet extends PortletModel {
   private static final long serialVersionUID = 1L;
   private final String portletId;
   private final Map<String, String> initParams;
-  private final String portletClass;
+  private final String portletClass, portletSource;
 
   @Deprecated
   public Portlet(PortletPK pk) {
@@ -27,6 +27,7 @@ public class Portlet extends PortletModel {
     setActive(true);
     initParams = new HashMap<>();
     portletClass = null;
+    portletSource="xml";
 
   }
 
@@ -35,7 +36,7 @@ public class Portlet extends PortletModel {
     this.portletId = portletId;
     this.initParams = initParams;
     this.portletClass = portletClass;
-
+    this.portletSource=initParams.getOrDefault("portletSource", "xml");
 
   }
 
@@ -54,20 +55,21 @@ public class Portlet extends PortletModel {
     this.portletId = portletId;
     this.initParams = new HashMap<>();
     this.portletClass = null;
+    this.portletSource=initParams.getOrDefault("portletSource", "xml");
   }
 
   @Deprecated
   public Portlet(String portletId, String groupId, String companyId, String strutsPath, String portletClass, String indexerClass,
       String schedulerClass, String defaultPreferences, String prefsSharingType, boolean useDefaultTemplate,
       boolean showPortletAccessDenied, boolean showPortletInactive, boolean restoreCurrentView, boolean ns4Compatible, boolean narrow,
-      String roles, boolean active, boolean include, Map initParams, String resourceBundle, Set userAttributes, Map customUserAttributes,
+      String roles, boolean active, boolean include, Map<String,String> initParams, String resourceBundle, Set userAttributes, Map customUserAttributes,
       boolean warFile) {
 
     super(portletId, groupId, companyId, defaultPreferences, narrow, roles, active);
     this.portletId = portletId;
     this.initParams = initParams;
     this.portletClass = portletClass;
-
+    this.portletSource=initParams.getOrDefault("portletSource", "xml");
   }
 
   /**
