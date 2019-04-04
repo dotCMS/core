@@ -241,7 +241,7 @@ public class ReindexThread {
     }
 
     @VisibleForTesting
-    static void startThread(final boolean forceFlush) {
+    public static void startThread(final boolean forceFlush) {
         getInstance().forceFlush = forceFlush;
         startThread();
     }
