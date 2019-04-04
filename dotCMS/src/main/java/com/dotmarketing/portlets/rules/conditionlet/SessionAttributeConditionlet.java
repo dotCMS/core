@@ -60,7 +60,7 @@ public class SessionAttributeConditionlet extends Conditionlet<SessionAttributeC
         if(session.getAttribute(instance.sessionKey) == null){
             evalSuccess = instance.comparison.equals(IS_NOT);
         } else {
-            String sessionActualValue = session.getAttribute(instance.sessionKey).toString();
+            final String sessionActualValue = session.getAttribute(instance.sessionKey).toString();
 
             if(instance.comparison == EXISTS) {
                 evalSuccess = EXISTS.perform(sessionActualValue);
