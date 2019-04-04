@@ -33,16 +33,15 @@ import org.elasticsearch.action.bulk.BulkProcessor;
  * record in the table and will add its information to the Elastic index.
  * <p>
  * The records added to the table will have a priority level set by the
- * {@link ReindexQueueFactory#REINDEX_JOURNAL_PRIORITY_NEWINDEX} constant. During the process, all
+ * {@link ReindexQueueFactory.Priority} enum. During the process, all
  * the "correct" contents will be processed and re-indexed first. All the "bad" records (contents
- * that could not be re-indexed) will be set a different priority level specified by the
- * {@link ReindexQueueFactory#REINDEX_JOURNAL_PRIORITY_FAILED_FIRST_ATTEMPT} constant and will be
+ * that could not be re-indexed) will be set a different priority level and be
  * given more opportunities to be re-indexed after all of the correct contents have already been
  * processed.
  * </p>
  * <p>
  * The number of times the bad contents can re-try the re-index process is specified by the
- * {@link ReindexQueueFactory#RETRY_FAILED_INDEX_TIMES} property, which can be customized through
+ * {@link ReindexQueueFactory#REINDEX_MAX_FAILURE_ATTEMPTS} property, which can be customized through
  * the {@code dotmarketing-config.properties} file. If a content cannot be re-indexed after all the
  * specified attempts, a notification will be sent to the Notification Bar indicating the Identifier
  * of the bad contentlet. This way users can keep track of the failed records and check the logs to
@@ -94,6 +93,7 @@ public class ReindexThread {
     private ThreadState STATE = ThreadState.RUNNING;
     private Future<?>  threadRunning;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private boolean forceFlush;
 
     private ReindexThread() {
 
@@ -184,6 +184,9 @@ public class ReindexThread {
 
                     bulkProcessorListener.workingRecords.putAll(workingRecords);
                     indexAPI.appendToBulkProcessor(bulkProcessor, workingRecords.values());
+                    if (forceFlush){
+                        bulkProcessor.flush();
+                    }
                     contentletsIndexed = bulkProcessorListener.getContentletsIndexed();
                 } else {
                     if (bulkProcessor != null){
@@ -236,6 +239,12 @@ public class ReindexThread {
             getInstance().threadRunning = getInstance().executor.submit(thread);
         }
 
+    }
+
+    @VisibleForTesting
+    static void startThread(final boolean forceFlush) {
+        getInstance().forceFlush = forceFlush;
+        startThread();
     }
 
     private void state(ThreadState state) {

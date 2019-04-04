@@ -505,8 +505,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @Override
     public void publish(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException, DotStateException {
 
-
-
             String contentPushPublishDate = contentlet.getStringProperty("wfPublishDate");
             String contentPushExpireDate = contentlet.getStringProperty("wfExpireDate");
 

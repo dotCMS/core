@@ -1,8 +1,10 @@
 package com.dotmarketing.common.reindex;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import com.dotcms.util.CollectionsUtils;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -88,8 +90,7 @@ public class ReindexThreadTest {
         ReindexThread.pause();
 
         int num = 2;
-        List<Contentlet> origCons = new ArrayList<>();
-
+        final List<Contentlet> origCons = new ArrayList<>();
 
         for (int i = 0; i < num; i++) {
             Contentlet content = new ContentletDataGen(type.id()).setProperty("title", "contentTest " + System.currentTimeMillis()).next();
@@ -114,8 +115,7 @@ public class ReindexThreadTest {
         // commit it index
         HibernateUtil.closeSession();
 
-        for (Contentlet c : origCons) {
-
+        for (final Contentlet c : origCons) {
             // are we good in the index?
             assertTrue(contentletAPI.indexCount("+live:true +identifier:" + c.getIdentifier() + " +inode:" + c.getInode(), user,
                     respectFrontendRoles) > 0);
@@ -123,7 +123,7 @@ public class ReindexThreadTest {
 
         HibernateUtil.startTransaction();
         try {
-            List<Contentlet> checkedOut = contentletAPI.checkout(origCons, user, respectFrontendRoles);
+            final List<Contentlet> checkedOut = contentletAPI.checkout(origCons, user, respectFrontendRoles);
             for (Contentlet c : checkedOut) {
                 c.setStringProperty("title", c.getStringProperty("title") + " new");
                 c.setIndexPolicy(IndexPolicy.FORCE);
@@ -170,31 +170,37 @@ public class ReindexThreadTest {
         
         //make sure we only have live + working
         APILocator.getContentletIndexAPI().fullReindexAbort();
-        
-        
+
         new DotConnect().setSQL("delete from dist_reindex_journal").loadResult();
-        ReindexThread.startThread();
+        ReindexThread.startThread(true);
 
-        long startCount = ReindexThread.getInstance().totalESPuts();
-
-
-        String title = "contentTest " + System.currentTimeMillis();
-        Contentlet content = new ContentletDataGen(type.id()).setProperty("title", title).nextPersisted();
+        final String title = "contentTest " + System.currentTimeMillis();
+        final Contentlet content = new ContentletDataGen(type.id()).setProperty("title", title).nextPersisted();
 
         ThreadUtils.sleep(4000);
-        contentletAPI.publish(content, user, respectFrontendRoles);
+        // 1 for check in (only working index)
+        assertEquals(1, ReindexThread.getInstance().totalESPuts());
 
+        try{
+            HibernateUtil.startTransaction();
+            contentletAPI.publish(content, user, respectFrontendRoles);
+        } finally {
+            HibernateUtil.closeSession();
+        }
         ThreadUtils.sleep(4000);
-        long latestCount = ReindexThread.getInstance().totalESPuts() - startCount;
-        // 1 for check in (only working index) 2 more for publish (live & working indexes)
-        assert (latestCount == 3);
+        //2 more for publish (live & working indexes)
+        assertEquals(2, ReindexThread.getInstance().totalESPuts());
 
-        contentletAPI.unpublish(content, user, respectFrontendRoles);
+        try{
+            HibernateUtil.startTransaction();
+            contentletAPI.unpublish(content, user, respectFrontendRoles);
+        } finally {
+            HibernateUtil.closeSession();
+        }
         ThreadUtils.sleep(4000);
 
         // 1 more reindex working (publish was deleted)
-        latestCount = ReindexThread.getInstance().totalESPuts() - startCount;
-        assert (latestCount == 4);
+        assertEquals(1, ReindexThread.getInstance().totalESPuts());
     }
 
     /**
@@ -209,8 +215,8 @@ public class ReindexThreadTest {
 
         //make sure we only have live + working indexes
         APILocator.getContentletIndexAPI().fullReindexAbort();
-        ReindexThread.startThread();
-        List<Contentlet> contents = new ArrayList<>();
+        ReindexThread.startThread(true);
+        final List<Contentlet> contents = new ArrayList<>();
         // create contentlet
         final String conTitle = "contentTest " + System.currentTimeMillis();
         // check in the content
@@ -218,60 +224,67 @@ public class ReindexThreadTest {
         baseCon.setIndexPolicy(IndexPolicy.FORCE);
         baseCon = contentletAPI.checkin(baseCon, user, respectFrontendRoles);
         contents.add(baseCon);
-        
-        
-        // create 3 langauges
-        for(int i=0;i<3;i++) {
-            Language newLang = new Language();
-            newLang.setCountry("x"+i);
+
+        // create 3 languages
+        for (int i = 0; i < 3; i++) {
+            final Language newLang = new Language();
+            newLang.setCountry("x" + i);
             newLang.setLanguage("en");
-            newLang.setCountryCode("x"+i);
+            newLang.setCountryCode("x" + i);
             APILocator.getLanguageAPI().saveLanguage(newLang);
         }
-        List<Language> languages = APILocator.getLanguageAPI().getLanguages();
-        languages.removeIf(l->l.getId() ==lang.getId());
-        
+        final List<Language> languages = CollectionsUtils
+                .list(APILocator.getLanguageAPI().getLanguages());
+        languages.removeIf(l -> l.getId() == lang.getId());
 
-
-        for(Language lang : languages) {
-            Contentlet newCon = new ContentletDataGen(type.id()).setProperty("title", conTitle).next();
+        for (final Language lang : languages) {
+            Contentlet newCon = new ContentletDataGen(type.id()).setProperty("title", conTitle)
+                    .next();
             newCon.setLanguageId(lang.getId());
             newCon.setInode(null);
             newCon.setIdentifier(baseCon.getIdentifier());
             contents.add(contentletAPI.checkin(newCon, user, respectFrontendRoles));
         }
-        
-        
-        for(Contentlet content : contents) {
+
+        for (final Contentlet content : contents) {
             assertTrue(content.getIdentifier() != null);
             assertTrue(content.isWorking());
             assertFalse(content.isLive());
-            assertTrue(contentletAPI.indexCount("+live:false +identifier:" + content.getIdentifier() + " +inode:" + content.getInode() + " +languageId:"+ content.getLanguageId(), user,
+            assertTrue(contentletAPI.indexCount(
+                    "+live:false +identifier:" + content.getIdentifier() + " +inode:" + content
+                            .getInode() + " +languageId:" + content.getLanguageId(), user,
                     respectFrontendRoles) > 0);
-            assertTrue(contentletAPI.indexCount("+live:true +identifier:" + content.getIdentifier() + " +inode:" + content.getInode() + " +languageId:"+ content.getLanguageId(), user,
+            assertTrue(contentletAPI.indexCount(
+                    "+live:true +identifier:" + content.getIdentifier() + " +inode:" + content
+                            .getInode() + " +languageId:" + content.getLanguageId(), user,
                     respectFrontendRoles) == 0);
 
         }
-        
-        for(Contentlet content : contents) {
+
+        for (final Contentlet content : contents) {
             content.setIndexPolicy(IndexPolicy.FORCE);
             contentletAPI.publish(content, user, respectFrontendRoles);
             assertTrue(content.isLive());
-            assertTrue(contentletAPI.indexCount("+live:true +identifier:" + content.getIdentifier() + " +inode:" + content.getInode() + " +languageId:"+ content.getLanguageId(), user,
+            assertTrue(contentletAPI.indexCount(
+                    "+live:true +identifier:" + content.getIdentifier() + " +inode:" + content
+                            .getInode() + " +languageId:" + content.getLanguageId(), user,
                     respectFrontendRoles) > 0);
         }
-        
-
 
         // add content to be deleted from index
         APILocator.getReindexQueueAPI().addIdentifierDelete(baseCon.getIdentifier());
         ThreadUtils.sleep(10000);
-        
 
-        assertTrue(contentletAPI.indexCount("+live:false +identifier:" + baseCon.getIdentifier(), user, respectFrontendRoles) == 0);
-        assertTrue(contentletAPI.indexCount("+live:true +identifier:" + baseCon.getIdentifier(), user, respectFrontendRoles) == 0);
+        assertTrue(contentletAPI
+                .indexCount("+live:false +identifier:" + baseCon.getIdentifier(), user,
+                        respectFrontendRoles) == 0);
+        assertTrue(contentletAPI
+                .indexCount("+live:true +identifier:" + baseCon.getIdentifier(), user,
+                        respectFrontendRoles) == 0);
 
-        assertTrue(contentletAPI.indexCount("+identifier:" + baseCon.getIdentifier(), user, respectFrontendRoles) == 0);
+        assertTrue(contentletAPI
+                .indexCount("+identifier:" + baseCon.getIdentifier(), user, respectFrontendRoles)
+                == 0);
 
     }
 
@@ -286,26 +299,17 @@ public class ReindexThreadTest {
     @Test
     public void test_pause_unpause_ReindexThread() throws DotDataException, DotSecurityException {
 
-        
-        
         //make sure we only have live + working indexes
         APILocator.getContentletIndexAPI().fullReindexAbort();
         new DotConnect().setSQL("delete from dist_reindex_journal").loadResult();
-        
-        
-        ReindexThread.startThread();
-        
 
-        
+        ReindexThread.startThread(true);
 
-        long startCount = ReindexThread.getInstance().totalESPuts();
-
-        String title = "contentTest " + System.currentTimeMillis();
-        Contentlet content = new ContentletDataGen(type.id()).setProperty("title", title).nextPersisted();
+        final String title = "contentTest " + System.currentTimeMillis();
+        final Contentlet content = new ContentletDataGen(type.id()).setProperty("title", title).nextPersisted();
         ThreadUtils.sleep(4000);
         // thread is running and has indexed the content
-        long latestCount = ReindexThread.getInstance().totalESPuts() - startCount;
-        assert (latestCount == 1);
+        assertEquals (1, ReindexThread.getInstance().totalESPuts());
         
         // pause thread and it is not working
         ReindexThread.pause();
@@ -313,20 +317,19 @@ public class ReindexThreadTest {
         
         // with thread paused, you can publish content
         // and it will not be picked up for reindex
-        contentletAPI.publish(content, user, respectFrontendRoles);
+        try{
+            HibernateUtil.startTransaction();
+            contentletAPI.publish(content, user, respectFrontendRoles);
+        } finally {
+            HibernateUtil.closeSession();
+        }
         ThreadUtils.sleep(4000);
-        latestCount = ReindexThread.getInstance().totalESPuts() - startCount;
-        assert (latestCount == 1);
-        
-        
+        assertEquals (1, ReindexThread.getInstance().totalESPuts());
+
         // unpause and then it gets picked up for reindex
         ReindexThread.unpause();
         ThreadUtils.sleep(4000);
-        latestCount = ReindexThread.getInstance().totalESPuts() - startCount;
-        assert (latestCount == 3);
-        
-        
-        
+        assertEquals (2, ReindexThread.getInstance().totalESPuts());
     }
     
     /**
@@ -339,46 +342,38 @@ public class ReindexThreadTest {
     @Test
     public void test_stop_start_ReindexThread() throws DotDataException, DotSecurityException {
 
-
         new DotConnect().setSQL("delete from dist_reindex_journal").loadResult();
-        ReindexThread.startThread();
+        ReindexThread.startThread(true);
         ReindexThread.stopThread();
-        ReindexThread.startThread();
+        ReindexThread.startThread(true);
         ReindexThread.stopThread();
-        ReindexThread.startThread();
-        long startCount = ReindexThread.getInstance().totalESPuts();
+        ReindexThread.startThread(true);
 
-        String title = "contentTest " + System.currentTimeMillis();
-        Contentlet content = new ContentletDataGen(type.id()).setProperty("title", title).nextPersisted();
+        final String title = "contentTest " + System.currentTimeMillis();
+        final Contentlet content = new ContentletDataGen(type.id()).setProperty("title", title).nextPersisted();
         ThreadUtils.sleep(4000);
         
         // thread is running and has indexed the content
-        long latestCount = ReindexThread.getInstance().totalESPuts() - startCount;
-        assert (latestCount == 1);
+        assertEquals (1, ReindexThread.getInstance().totalESPuts());
         
         // pause thread and it is not working
         ReindexThread.stopThread();
         assertFalse(ReindexThread.isWorking());
         
-        // with thread paused, you can publish content
+        // with thread stopped, you can publish content
         // and it will not be picked up for reindex
-        contentletAPI.publish(content, user, respectFrontendRoles);
+        try{
+            HibernateUtil.startTransaction();
+            contentletAPI.publish(content, user, respectFrontendRoles);
+        } finally {
+            HibernateUtil.closeSession();
+        }
         ThreadUtils.sleep(4000);
-        latestCount = ReindexThread.getInstance().totalESPuts() - startCount;
-        assert (latestCount == 1);
-        
+        assertEquals (1, ReindexThread.getInstance().totalESPuts());
         
         // unpause and then it gets picked up for reindex
         ReindexThread.startThread();
         ThreadUtils.sleep(4000);
-        latestCount = ReindexThread.getInstance().totalESPuts() - startCount;
-        assert (latestCount == 3);
-        
-        
-        
+        assertEquals (2, ReindexThread.getInstance().totalESPuts());
     }
-    
-    
-    
-    
 }

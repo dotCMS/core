@@ -2,6 +2,7 @@ package com.dotcms.content.elasticsearch.business;
 
 import static org.junit.Assert.*;
 
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -18,23 +19,25 @@ public class IndiciesFactoryTest {
     private static final String INFO_WORKING = "info.working";
     private static final String INFO_LIVE = "info.live";
     private static final String INFO_REINDEX_LIVE = "info.reindex_live";
+    private static String ORIGINAL_WORKING_INDEX;
+    private static String ORIGINAL_LIVE_INDEX;
     static IndiciesFactory indiciesFactory;
     static IndiciesAPI indiciesAPI;
-
-
     
     @BeforeClass
     public static void prepare() throws Exception {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
         indiciesFactory = FactoryLocator.getIndiciesFactory();
-        indiciesAPI =APILocator.getIndiciesAPI();
+        indiciesAPI     = APILocator.getIndiciesAPI();
 
+        IndiciesInfo indiciesInfo = indiciesAPI.loadIndicies();
+        ORIGINAL_WORKING_INDEX    = indiciesInfo.working;
+        ORIGINAL_LIVE_INDEX       = indiciesInfo.live;
     }
     
-    //@Test
+    @Test
     public void test_index_pointing_when_previously_null() throws Exception{
-        
         new DotConnect().setSQL("delete from indicies").loadResult();
         CacheLocator.getIndiciesCache().clearCache();
         IndiciesInfo nullInfo = indiciesAPI.loadIndicies();
@@ -49,8 +52,7 @@ public class IndiciesFactoryTest {
         info.reindex_live= INFO_REINDEX_LIVE;
         info.reindex_working= INFO_REINDEX_WORKING;
         indiciesFactory.point(info);
-        
-        
+
         final IndiciesInfo cachedInfo = indiciesAPI.loadIndicies();
         assertEquals(cachedInfo.live, INFO_LIVE);
         assertEquals(cachedInfo.working, INFO_WORKING);
@@ -60,9 +62,8 @@ public class IndiciesFactoryTest {
     
     
     
-    //@Test
+    @Test
     public void test_index_repointing_when_previously_set() throws Exception{
-        
         new DotConnect().setSQL("delete from indicies").loadResult();
         CacheLocator.getIndiciesCache().clearCache();
 
@@ -70,8 +71,7 @@ public class IndiciesFactoryTest {
         info.working= INFO_WORKING;
         info.live= INFO_LIVE;
         indiciesFactory.point(info);
-        
-        
+
         IndiciesInfo cachedInfo = indiciesAPI.loadIndicies();
         assertEquals(cachedInfo.live, INFO_LIVE);
         assertEquals(cachedInfo.working, INFO_WORKING);
@@ -88,7 +88,13 @@ public class IndiciesFactoryTest {
         assertNull(cachedInfo.working);
         assertEquals(cachedInfo.reindex_live, INFO_REINDEX_LIVE);
         assertEquals(cachedInfo.reindex_working, INFO_REINDEX_WORKING);
-        
-        
+    }
+
+    @AfterClass
+    public static void restoreIndex() throws Exception {
+        final IndiciesInfo info = new IndiciesInfo();
+        info.live    = ORIGINAL_LIVE_INDEX;
+        info.working = ORIGINAL_WORKING_INDEX;
+        indiciesFactory.point(info);
     }
 }

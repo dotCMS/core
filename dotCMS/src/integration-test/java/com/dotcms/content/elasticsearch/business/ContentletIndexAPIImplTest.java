@@ -983,7 +983,7 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
         return removed;
     }
 
-    //@Test
+    @Test
     public void testRemoveContentFromIndex() throws DotDataException, DotSecurityException {
         final ContentletIndexAPI indexAPI = APILocator.getContentletIndexAPI();
         final ContentletAPI contentletAPI = APILocator.getContentletAPI();
