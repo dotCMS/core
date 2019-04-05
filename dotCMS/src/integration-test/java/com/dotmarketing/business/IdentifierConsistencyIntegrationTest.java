@@ -14,6 +14,7 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
@@ -24,6 +25,7 @@ import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -34,17 +36,39 @@ public class IdentifierConsistencyIntegrationTest extends IntegrationTestBase {
     private static final String UPDATE_IDENTIFIER_SQL = "UPDATE identifier set parent_path=?, asset_name=?, host_inode=?, asset_type=?, syspublish_date=?, sysexpire_date=? where id=?";
     private static final String DELETE_IDENTIFIER_SQL = "DELETE FROM identifier where id=?";
     private static final String UPDATE_FOLDER = "UPDATE FOLDER SET name = ? WHERE identifier = ? AND inode = ?";
-
+    private static Host host;
     private static final String CONTENTLET = "contentlet";
     private static final String FOLDER = "folder";
-
-    private static final String DEMO = "demo.dotcms.com";
     private static final String UPDATE_IDENTIFIER_FAIL = "updateIdentifier failed: ";
 
     @BeforeClass
     public static void init() throws Exception {
         IntegrationTestInitService.getInstance().init();
+        host = createNewHost();
     }
+
+    @AfterClass
+    public static void tearDown() throws Exception {
+        if (null != host) {
+            final User user = APILocator.systemUser();
+            APILocator.getHostAPI().archive(host, user, false);
+            APILocator.getHostAPI().delete(host, user, false);
+        }
+    }
+
+    private static Host createNewHost() throws DotDataException, DotSecurityException {
+        final long defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+        final User user = APILocator.systemUser();
+        Host host2 = new Host();
+        host2.setHostname("my.testsite-" + System.currentTimeMillis() + ".com");
+        host2.setDefault(false);
+        host2.setLanguageId(defaultLanguage);
+
+        host2.setIndexPolicy(IndexPolicy.FORCE);
+        host2 = APILocator.getHostAPI().save(host2, user, false);
+        return host2;
+    }
+
 
     @Test(expected = DotDataException.class)
     public void Test_Identifier_Insert_Case_Insensitive_Dupe_Asset_Name()
@@ -88,8 +112,7 @@ public class IdentifierConsistencyIntegrationTest extends IntegrationTestBase {
         final FolderAPI folderAPI = APILocator.getFolderAPI();
         final IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
         final User user = APILocator.systemUser();
-        final Host host = APILocator.getHostAPI().findByName(DEMO, user, false);
-        final String rootFolderName = String.format("/%sroot2", prefix);
+        final String rootFolderName = String.format("/%sroot", prefix);
         Folder root = null;
 
         root = folderAPI.createFolders(rootFolderName, host, user, false);
@@ -125,15 +148,12 @@ public class IdentifierConsistencyIntegrationTest extends IntegrationTestBase {
 
         assertEquals("should have been a folder", "folder", testFolderIdentifier.getAssetType());
 
-        final Connection conn = DbConnectionFactory.getDataSource().getConnection();
-        conn.setAutoCommit(true);
         try {
             // Tests actually happen HERE!
+
             try {
-                final String invalidParentPath =
-                        root.getPath() + "lololololololololololololololololo/";
-                updateIdentifier(testFolderIdentifier, testFolderIdentifier.getAssetName(),
-                        invalidParentPath);
+                final String invalidParentPath = root.getPath() + "lol/";
+                updateIdentifier(testFolderIdentifier, testFolderIdentifier.getAssetName(), invalidParentPath);
                 fail("Parent '" + invalidParentPath
                         + "' does not exist and the update should have failed");
             } catch (DotDataException e) {
@@ -141,18 +161,16 @@ public class IdentifierConsistencyIntegrationTest extends IntegrationTestBase {
                         () -> "This exception is expected: " + e.getMessage());
             }
 
-
         } finally {
-
+                CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(testFolderIdentifier.getId());
                 try {
                     Logger.info(getClass(), () -> "Running Cleanup! ");
                     folderAPI.delete(root, user, false);
                 } catch (Exception e) {
+                    e.printStackTrace();
                     Logger.error(getClass(), "Error running cleanup routine.", e);
                 }
 
-            conn.setAutoCommit(false);
-            conn.close();
         }
     }
 
@@ -167,8 +185,7 @@ public class IdentifierConsistencyIntegrationTest extends IntegrationTestBase {
         final FolderAPI folderAPI = APILocator.getFolderAPI();
         final IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
         final User user = APILocator.systemUser();
-        final Host host = APILocator.getHostAPI().findByName(DEMO, user, false);
-        final String rootFolderName = String.format("/%sroot2", prefix);
+        final String rootFolderName = String.format("/%sroot", prefix);
         Folder root = null;
         try {
             root = folderAPI.createFolders(rootFolderName, host, user, false);
@@ -314,7 +331,6 @@ public class IdentifierConsistencyIntegrationTest extends IntegrationTestBase {
         final FolderAPI folderAPI = APILocator.getFolderAPI();
         final IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
         final User user = APILocator.systemUser();
-        final Host host = APILocator.getHostAPI().findByName(DEMO, user, false);
         final String rootFolderName = String.format("/%slevel-0", prefix);
         Folder folder0,folder1,folder2,folder3;
         folder0 = folder1 = folder2 = folder3 = null;
@@ -383,7 +399,6 @@ public class IdentifierConsistencyIntegrationTest extends IntegrationTestBase {
         final String uuid = UUIDGenerator.generateUuid();
         final Identifier identifier = new Identifier(uuid);
         try {
-            final Host host = APILocator.getHostAPI().findByName(DEMO, APILocator.systemUser(), false);
 
             final Connection conn = DbConnectionFactory.getDataSource().getConnection();
             conn.setAutoCommit(true);
