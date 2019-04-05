@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.templates.design.bean;
 
+import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -21,16 +22,30 @@ import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtml
  */
 public class TemplateLayoutRow implements Serializable{
 
+    @JsonIgnore
     private int identifier;
+
+    @JsonIgnore
     private String value;
+
+    @JsonIgnore
     private String id;
+
+    private String styleClass;
 
     private Integer[] gridWidths;
     private List<TemplateLayoutColumn> columns;
-    private final Map<Integer,TemplateLayoutColumn> columnMap;;
+    private final Map<Integer,TemplateLayoutColumn> columnMap;
+
     @JsonCreator
-    public TemplateLayoutRow(@JsonProperty("columns") List<TemplateLayoutColumn> columns) {
+    public TemplateLayoutRow(
+            @JsonProperty("columns") final List<TemplateLayoutColumn> columns,
+            @JsonProperty("styleClass") final String styleClass
+    ) {
+
         this.columns = columns;
+        this.styleClass = styleClass;
+
         columnMap = new HashMap<>();
         if(null != columns) {
             for(TemplateLayoutColumn column : columns) {
@@ -40,8 +55,7 @@ public class TemplateLayoutRow implements Serializable{
     }
 
     public TemplateLayoutRow() {
-        
-        this(null);
+        this(null, null);
         
     }
 
@@ -114,6 +128,10 @@ public class TemplateLayoutRow implements Serializable{
 
     public List<TemplateLayoutColumn> getColumns () {
         return columns;
+    }
+
+    public String getStyleClass() {
+        return styleClass;
     }
 
     /**

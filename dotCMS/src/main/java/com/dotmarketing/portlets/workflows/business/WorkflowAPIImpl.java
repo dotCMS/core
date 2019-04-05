@@ -924,18 +924,16 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					+ " has been deleted by the user: " + user.getUserId());
 		} catch (Exception e) {
 
-			try {
-				HibernateUtil.addRollbackListener(() -> {
-					try {
-						this.systemMessageEventUtil.pushSimpleErrorEvent(new ErrorEntity("Workflow-delete-step-error",
-								LanguageUtil.get(user.getLocale(), "Workflow-delete-step-error", step.getName())), user.getUserId());
-					} catch (LanguageException e1) {
-						Logger.error(this.getClass(), e1.getMessage(), e1);
-					}
-				});
-			} catch (DotHibernateException e1) {
-				Logger.error(this.getClass(), e1.getMessage(), e1);
-			}
+
+			HibernateUtil.addRollbackListener(() -> {
+				try {
+					this.systemMessageEventUtil.pushSimpleErrorEvent(new ErrorEntity("Workflow-delete-step-error",
+							LanguageUtil.get(user.getLocale(), "Workflow-delete-step-error", step.getName())), user.getUserId());
+				} catch (LanguageException e1) {
+					Logger.error(this.getClass(), e1.getMessage(), e1);
+				}
+			});
+
 
 			Logger.error(this.getClass(),
 					"Error deleting the step: " + step.getId() + ", name:" + step.getName() + ". "
