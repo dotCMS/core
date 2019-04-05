@@ -1,5 +1,9 @@
 package com.dotmarketing.business;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -10,6 +14,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
@@ -18,11 +23,15 @@ import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
+import com.liferay.util.FileUtil;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -64,7 +73,7 @@ public class IdentifierFactoryTest {
                 .findByURIPattern(Identifier.ASSET_TYPE_FOLDER, "/products", true,
                         defaultHost);
 
-        Assert.assertNotNull(identifiers);
+        assertNotNull(identifiers);
         Assert.assertFalse(identifiers.isEmpty());
 
         final Identifier identifier = identifiers.get(0);
@@ -80,7 +89,7 @@ public class IdentifierFactoryTest {
                 .findByURIPattern(Identifier.ASSET_TYPE_FOLDER, "/products", false,
                         defaultHost);
 
-        Assert.assertNotNull(identifiers);
+        assertNotNull(identifiers);
         Assert.assertFalse(identifiers.isEmpty());
 
         Assert.assertTrue(identifiers.size() > 1);
@@ -122,6 +131,186 @@ public class IdentifierFactoryTest {
     }
 
     @Test
+    public void testFindByParentPathVsFindByURIEquivalency() throws DotDataException {
+
+        final List<Identifier> identifiers = factory
+                .findByParentPath(defaultHost.getIdentifier(), "/blogs");
+
+        Assert.assertTrue(identifiers != null && !identifiers.isEmpty());
+        Assert.assertEquals("/blogs/", identifiers.get(0).getParentPath());
+
+        final Identifier identifier = factory
+                .findByURI(defaultHost.getIdentifier(), "/blogs");
+
+        assertNotNull(identifier);
+        Assert.assertEquals("/blogs/", identifier.getURI() + "/" );
+
+    }
+
+    @Test
+    public void test_Find_By_Parent_Path_Same_URI_Different_Host() throws IOException, DotDataException, DotSecurityException{
+        final String binaryFieldContentTypeId = contentTypeAPI.find(FileAssetAPI.BINARY_FIELD).id();
+        final String commonPath = "child-1/child-2/child-3/child-4";
+        final String anyContent = "LOL!";
+        final long defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+        final User user = APILocator.systemUser();
+        // Find a default host
+        final Host host1 = APILocator.getHostAPI().findDefaultHost(user, false);
+        Host host2 = null;
+        Folder root1 = null;
+        Folder root2 = null;
+        try {
+        // Create a test host
+            host2 = new Host();
+            host2.setHostname("my.testsite-" + System.currentTimeMillis() + ".com");
+            host2.setDefault(false);
+            host2.setLanguageId(defaultLanguage);
+            host2.setIndexPolicy(IndexPolicy.FORCE);
+            host2 = APILocator.getHostAPI().save(host2, user, false);
+
+            // Create a Folder path that will be used in both host, Same path added in both hosts
+            final String rootFolderName = String
+                    .format("lolFolder-%d", System.currentTimeMillis());
+            root1 = folderAPI.createFolders(rootFolderName, host1, user, false);
+            root2 = folderAPI.createFolders(rootFolderName, host2, user, false);
+
+            final Folder subFolders1 = folderAPI
+                    .createFolders(root1.getPath() + commonPath,
+                            host1, user, false);
+
+            // Create a different binary for each one them
+            Contentlet newContentlet1 = new FileAsset();
+            final String fileName1 = "tempFile" + System.currentTimeMillis();
+            final File tempFile1 = File.createTempFile(fileName1, "txt");
+            FileUtil.write(tempFile1, anyContent);
+            final String fileNameField1 = fileName1 + ".txt";
+            final String title1 = "Contentlet-1";
+
+            newContentlet1.setFolder(subFolders1.getInode());
+            newContentlet1.setContentTypeId(binaryFieldContentTypeId);
+            newContentlet1.setBinary(FileAssetAPI.BINARY_FIELD, tempFile1);
+            newContentlet1.setStringProperty(FileAssetAPI.HOST_FOLDER_FIELD, subFolders1.getInode());
+            newContentlet1.setStringProperty(FileAssetAPI.TITLE_FIELD, title1);
+            newContentlet1.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, fileNameField1);
+            newContentlet1.setIndexPolicy(IndexPolicy.FORCE);
+
+            // Create a piece of content for the default host
+            newContentlet1 = APILocator.getContentletAPI().checkin(newContentlet1, user, false);
+            Logger.info(getClass(),newContentlet1.getIdentifier());
+
+            final Folder subFolders2 = folderAPI
+                    .createFolders(root2.getPath() + commonPath,
+                            host2, user, false);
+
+            Contentlet newContentlet2 = new FileAsset();
+            final String fileName2 = "tempFile" + System.currentTimeMillis();
+            final File tempFile2 = File.createTempFile(fileName2, "txt");
+            FileUtil.write(tempFile2, anyContent);
+            final String fileNameField2 = fileName2 + ".txt";
+            final String title2 = "Contentlet-2";
+
+            newContentlet2.setFolder(subFolders2.getInode());
+            newContentlet2.setContentTypeId(binaryFieldContentTypeId);
+            newContentlet2.setBinary(FileAssetAPI.BINARY_FIELD, tempFile2);
+            newContentlet2.setStringProperty(FileAssetAPI.HOST_FOLDER_FIELD, subFolders2.getInode());
+            newContentlet2.setStringProperty(FileAssetAPI.TITLE_FIELD, title2);
+            newContentlet2.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, fileNameField2);
+            newContentlet2.setIndexPolicy(IndexPolicy.FORCE);
+
+            // Create a piece of content for the new host
+            newContentlet2 = APILocator.getContentletAPI().checkin(newContentlet2, user, false);
+            Logger.info(getClass(),newContentlet2.getIdentifier());
+
+            final String sharedPath1 = root1.getPath() + commonPath;
+            final String sharedPath2 = root2.getPath() + commonPath;
+
+            Logger.info(getClass(), () -> " SharedPath is: " + sharedPath1);
+
+            assertEquals("shared paths must match", sharedPath1, sharedPath2);
+
+            // The actual test. Begins down here...
+
+            // find by parent should bring back each contentlet for the given path and hostId
+            final List<Identifier> identifiers1 = factory
+                    .findByParentPath(host1.getIdentifier(), sharedPath1);
+            assertFalse(identifiers1.isEmpty());
+            assertEquals("assetName does not match", fileNameField1, identifiers1.get(0).getAssetName());
+
+            final List<Identifier> identifiers2 = factory
+                    .findByParentPath(host2.getIdentifier(), sharedPath2);
+            assertFalse(identifiers2.isEmpty());
+            assertEquals("assetName does not match", fileNameField2, identifiers2.get(0).getAssetName());
+
+            final Contentlet contentlet1 = APILocator.getContentletAPI()
+                    .findContentletByIdentifier(newContentlet1.getIdentifier(), false, defaultLanguage, user,
+                            false);
+            final String actualTitle1 = contentlet1.getStringProperty(FileAssetAPI.TITLE_FIELD);
+            assertEquals("Title does not match.", title1, actualTitle1);
+
+            final Contentlet contentlet2 = APILocator.getContentletAPI()
+                    .findContentletByIdentifier(newContentlet2.getIdentifier(), false, defaultLanguage, user,
+                            false);
+            final String actualTitle2 = contentlet2.getStringProperty(FileAssetAPI.TITLE_FIELD);
+            assertEquals("Title does not match.", title2, actualTitle2);
+
+            //Now Let's test findByURIPattern
+            String assetType = "contentlet";
+            final List<String> list = Stream.of(sharedPath1.split("/")).filter(s->!s.isEmpty()).collect(Collectors.toList());
+            for(int i = list.size(); i >=0; i--){
+
+                 final List<String> sublist = list.subList(0,i);
+                 final String uri =  "/" + sublist.stream().collect(Collectors.joining("/"));
+
+                 if(uri.equals("/")){
+                    break;
+                 }
+
+                 String uri1, uri2;
+                 uri1 = uri2 = uri;
+                 if(i < list.size()){
+                   assetType = "folder";
+                 }
+
+                 if("contentlet".equals(assetType) && !uri.endsWith("/")){
+                     uri1 = uri + "/" + fileNameField1;
+                     uri2 = uri + "/" + fileNameField2;
+                 }
+
+                 Logger.info(getClass(), "URI1 : " +  uri1);
+                 Logger.info(getClass(), "URI2 : " +  uri2);
+                 final List<Identifier> host1Identifiers = factory.findByURIPattern(assetType, uri1 ,true, host1);
+                 assertFalse("at least 1 identifier is expected",host1Identifiers.isEmpty());
+                 for(final Identifier id:host1Identifiers){
+                     assertEquals("AssetType not matching expected.", assetType, id.getAssetType());
+                 }
+
+                 final List<Identifier> host2Identifiers = factory.findByURIPattern(assetType, uri2,true, host2);
+                 assertFalse("at least 1 identifier is expected",host2Identifiers.isEmpty());
+                 for(final Identifier id:host2Identifiers){
+                    assertEquals("AssetType not matching expected.", assetType, id.getAssetType());
+                 }
+            }
+
+        }finally {
+
+            if (null != root1) {
+                APILocator.getFolderAPI().delete(root1, user, false);
+            }
+
+            if (null != root2) {
+                APILocator.getFolderAPI().delete(root2, user, false);
+            }
+
+            if (null != host2) {
+                APILocator.getHostAPI().archive(host2, user, false);
+                APILocator.getHostAPI().delete(host2, user, false);
+            }
+
+        }
+
+    }
+
+    @Test
     public void testFindByParentPathNotFound() throws DotDataException {
 
         final List<Identifier> identifiers = factory
@@ -134,7 +323,7 @@ public class IdentifierFactoryTest {
     public void testLoadFromDbFound() throws DotDataException {
         final Identifier identifier = factory.loadFromDb(defaultHost.getIdentifier());
 
-        Assert.assertNotNull(identifier);
+        assertNotNull(identifier);
         Assert.assertEquals(defaultHost.getIdentifier(), identifier.getId());
 
     }
@@ -148,7 +337,7 @@ public class IdentifierFactoryTest {
     public void testLoadFromDbVersionableFound() throws DotDataException {
         final Identifier identifier = factory.loadFromDb(defaultHost);
 
-        Assert.assertNotNull(identifier);
+        assertNotNull(identifier);
         Assert.assertEquals(defaultHost.getIdentifier(), identifier.getId());
 
     }
@@ -175,9 +364,9 @@ public class IdentifierFactoryTest {
             //Creates new identifier
             identifier = factory.createNewIdentifier(newFolder, parentFolder);
 
-            Assert.assertNotNull(identifier.getId());
+            assertNotNull(identifier.getId());
             Assert.assertFalse(identifier.getId().isEmpty());
-            Assert.assertNotNull(newFolder.getVersionId());
+            assertNotNull(newFolder.getVersionId());
             Assert.assertFalse(newFolder.getVersionId().isEmpty());
             Assert.assertEquals(parentFolder.getPath(), identifier.getParentPath());
             Assert.assertEquals(Identifier.ASSET_TYPE_FOLDER, identifier.getAssetType());
@@ -216,9 +405,9 @@ public class IdentifierFactoryTest {
             //Creates new identifier
             identifier = factory.createNewIdentifier(newContentlet, parentFolder);
 
-            Assert.assertNotNull(identifier.getId());
+            assertNotNull(identifier.getId());
             Assert.assertFalse(identifier.getId().isEmpty());
-            Assert.assertNotNull(newContentlet.getVersionId());
+            assertNotNull(newContentlet.getVersionId());
             Assert.assertFalse(newContentlet.getVersionId().isEmpty());
             Assert.assertEquals(parentFolder.getPath(), identifier.getParentPath());
             Assert.assertEquals(Identifier.ASSET_TYPE_CONTENTLET, identifier.getAssetType());
@@ -255,9 +444,9 @@ public class IdentifierFactoryTest {
             //Creates new identifier
             identifier = factory.createNewIdentifier(newContentlet, parentFolder);
 
-            Assert.assertNotNull(identifier.getId());
+            assertNotNull(identifier.getId());
             Assert.assertFalse(identifier.getId().isEmpty());
-            Assert.assertNotNull(newContentlet.getVersionId());
+            assertNotNull(newContentlet.getVersionId());
             Assert.assertFalse(newContentlet.getVersionId().isEmpty());
             Assert.assertEquals(parentFolder.getPath(), identifier.getParentPath());
             Assert.assertEquals(Identifier.ASSET_TYPE_CONTENTLET, identifier.getAssetType());
@@ -286,14 +475,14 @@ public class IdentifierFactoryTest {
             //Creates new identifier
             identifier = factory.createNewIdentifier(newWebAsset, parentFolder);
 
-            Assert.assertNotNull(identifier.getId());
+            assertNotNull(identifier.getId());
             Assert.assertFalse(identifier.getId().isEmpty());
-            Assert.assertNotNull(newWebAsset.getVersionId());
+            assertNotNull(newWebAsset.getVersionId());
             Assert.assertFalse(newWebAsset.getVersionId().isEmpty());
             Assert.assertEquals(parentFolder.getPath(), identifier.getParentPath());
             Assert.assertEquals("template", identifier.getAssetType());
-            Assert.assertNotNull(identifier.getURI());
-            Assert.assertNotNull(identifier.getAssetType());
+            assertNotNull(identifier.getURI());
+            assertNotNull(identifier.getAssetType());
 
         } finally {
             //Deletes the created identifier
@@ -320,14 +509,14 @@ public class IdentifierFactoryTest {
             //Creates new identifier
             identifier = factory.createNewIdentifier(newWebAsset, parentFolder);
 
-            Assert.assertNotNull(identifier.getId());
+            assertNotNull(identifier.getId());
             Assert.assertFalse(identifier.getId().isEmpty());
-            Assert.assertNotNull(newWebAsset.getVersionId());
+            assertNotNull(newWebAsset.getVersionId());
             Assert.assertFalse(newWebAsset.getVersionId().isEmpty());
             Assert.assertEquals(parentFolder.getPath(), identifier.getParentPath());
             Assert.assertEquals("links", identifier.getAssetType());
-            Assert.assertNotNull(identifier.getURI());
-            Assert.assertNotNull(identifier.getAssetType());
+            assertNotNull(identifier.getURI());
+            assertNotNull(identifier.getAssetType());
 
         } finally {
             //Deletes the created identifier
@@ -353,9 +542,9 @@ public class IdentifierFactoryTest {
             //Creates new identifier
             identifier = factory.createNewIdentifier(newFolder, defaultHost);
 
-            Assert.assertNotNull(identifier.getId());
+            assertNotNull(identifier.getId());
             Assert.assertFalse(identifier.getId().isEmpty());
-            Assert.assertNotNull(newFolder.getVersionId());
+            assertNotNull(newFolder.getVersionId());
             Assert.assertFalse(newFolder.getVersionId().isEmpty());
             Assert.assertEquals(Identifier.ASSET_TYPE_FOLDER, identifier.getAssetType());
             Assert.assertEquals(newFolder.getName(), identifier.getAssetName());
@@ -390,9 +579,9 @@ public class IdentifierFactoryTest {
             //Creates new identifier
             identifier = factory.createNewIdentifier(newContentlet, defaultHost);
 
-            Assert.assertNotNull(identifier.getId());
+            assertNotNull(identifier.getId());
             Assert.assertFalse(identifier.getId().isEmpty());
-            Assert.assertNotNull(newContentlet.getVersionId());
+            assertNotNull(newContentlet.getVersionId());
             Assert.assertFalse(newContentlet.getVersionId().isEmpty());
             Assert.assertEquals(Identifier.ASSET_TYPE_CONTENTLET, identifier.getAssetType());
             Assert.assertEquals(
@@ -426,9 +615,9 @@ public class IdentifierFactoryTest {
             //Creates new identifier
             identifier = factory.createNewIdentifier(newContentlet, defaultHost);
 
-            Assert.assertNotNull(identifier.getId());
+            assertNotNull(identifier.getId());
             Assert.assertFalse(identifier.getId().isEmpty());
-            Assert.assertNotNull(newContentlet.getVersionId());
+            assertNotNull(newContentlet.getVersionId());
             Assert.assertFalse(newContentlet.getVersionId().isEmpty());
             Assert.assertEquals(Identifier.ASSET_TYPE_CONTENTLET, identifier.getAssetType());
             Assert.assertEquals(pageName, identifier.getAssetName());
@@ -455,9 +644,9 @@ public class IdentifierFactoryTest {
             //Creates new identifier
             identifier = factory.createNewIdentifier(newContentlet, defaultHost);
 
-            Assert.assertNotNull(identifier.getId());
+            assertNotNull(identifier.getId());
             Assert.assertFalse(identifier.getId().isEmpty());
-            Assert.assertNotNull(newContentlet.getVersionId());
+            assertNotNull(newContentlet.getVersionId());
             Assert.assertFalse(newContentlet.getVersionId().isEmpty());
             Assert.assertEquals(Identifier.ASSET_TYPE_CONTENTLET, identifier.getAssetType());
 
@@ -474,7 +663,7 @@ public class IdentifierFactoryTest {
     public void testLoadAllIdentifiers() throws DotDataException {
         final List<Identifier> identifiers = factory.loadAllIdentifiers();
 
-        Assert.assertNotNull(identifiers);
+        assertNotNull(identifiers);
         Assert.assertTrue(identifiers.size() > 0);
     }
 
@@ -496,7 +685,7 @@ public class IdentifierFactoryTest {
     public void testGetAssetTypeFromDB() throws DotDataException {
        final String assetType = factory.getAssetTypeFromDB(defaultHost.getIdentifier());
 
-        Assert.assertNotNull(assetType);
+        assertNotNull(assetType);
         Assert.assertEquals("contentlet", assetType);
 
     }

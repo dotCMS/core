@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.sql.Connection;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -50,13 +51,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		DotConnect dc = new DotConnect();
 		StringBuilder bob = new StringBuilder("select distinct i.* from identifier i ");
 
-		if(DbConnectionFactory.isMySql()){
-			bob.append("where lower(concat(parent_path, asset_name)) ");
-		}else if (DbConnectionFactory.isMsSql()) {
-			bob.append("where lower(parent_path + asset_name) ");
-		}else {
-			bob.append("where lower(parent_path || asset_name) ");
-		}
+		bob.append("where i.full_path_lc ");
 		bob.append((include ? "":"NOT ") + "LIKE ? and host_inode = ? and asset_type = ? ");
 
 		dc.setSQL(bob.toString());
@@ -141,18 +136,17 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 	}
 
 	@Override
-	protected Identifier findByURI(final String siteId, String uri) throws DotDataException {
+	protected Identifier findByURI(final String siteId, final String uri) throws DotDataException {
 		Identifier identifier = ic.getIdentifier(siteId, uri);
 		if (identifier != null) {
 			return check404(identifier);
 		}
 
-		DotConnect dc = new DotConnect();
-		String parentPath = uri.substring(0, uri.lastIndexOf("/") + 1).toLowerCase();
-		String assetName = uri.substring(uri.lastIndexOf("/") + 1).toLowerCase();
-		dc.setSQL("select * from identifier where lower(parent_path) = ? and lower(asset_name) = ? and host_inode = ?");
-		dc.addParam(parentPath);
-		dc.addParam(assetName);
+		final DotConnect dc = new DotConnect();
+		final String parentPath = uri.substring(0, uri.lastIndexOf("/") + 1).toLowerCase();
+		final String assetName = uri.substring(uri.lastIndexOf("/") + 1).toLowerCase();
+		dc.setSQL("select * from identifier i where i.full_path_lc = ? and host_inode = ?");
+		dc.addParam((parentPath + assetName).toLowerCase());
 		dc.addParam(siteId);
 
 		List<Identifier> results = null;
@@ -176,17 +170,23 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 	}
 
 	@Override
-	protected List<Identifier> findByParentPath(final String siteId, String parent_path) throws DotDataException {
-	    if(!parent_path.endsWith("/")) {
-	        parent_path=parent_path+"/";
+	protected List<Identifier> findByParentPath(final String siteId, String parentPath) throws DotDataException {
+
+	    final Identifier identifier = findByURI(siteId, parentPath);
+        if(!UtilMethods.isSet(identifier) || !UtilMethods.isSet(identifier.getId()) ){
+           return Collections.emptyList();
+        }
+        parentPath = identifier.getURI();
+
+	    if(!parentPath.endsWith("/")) {
+	        parentPath=parentPath+"/";
 	    }
-	    parent_path = parent_path.toLowerCase();
 
+        Logger.info(getClass(),parentPath);
 		DotConnect dc = new DotConnect();
-		dc.setSQL("select * from identifier where lower(parent_path) = ? and host_inode = ?");
-		dc.addParam(parent_path);
+		dc.setSQL("select * from identifier where parent_path = ? and host_inode = ?");
+		dc.addParam(parentPath);
 		dc.addParam(siteId);
-
 
 		return TransformerLocator.createIdentifierTransformer(dc.loadObjectResults()).asList();
 

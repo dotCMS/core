@@ -1,6 +1,8 @@
 package com.dotmarketing.portlets.folders.business;
 
 import static com.dotmarketing.business.APILocator.getPermissionAPI;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
+import static com.dotmarketing.db.HibernateUtil.addCommitListener;
 import static com.liferay.util.StringPool.BLANK;
 
 import com.dotcms.api.system.event.Payload;
@@ -58,7 +60,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
-import org.apache.commons.lang.StringUtils;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -73,10 +74,6 @@ import java.util.TimeZone;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import static com.dotmarketing.business.APILocator.getPermissionAPI;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
-import static com.dotmarketing.db.HibernateUtil.addCommitListener;
-import static com.liferay.util.StringPool.BLANK;
 
 public class FolderAPIImpl implements FolderAPI  {
 
@@ -354,11 +351,9 @@ public class FolderAPIImpl implements FolderAPI  {
 	 * @throws DotSecurityException
 	 */
 	@WrapInTransaction
-	public void delete(Folder folder, User user, boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
+	public void delete(final Folder folder, final User user, final boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
 
-		String path = StringUtils.EMPTY;
-
-		ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user, respectFrontEndPermissions);
+		final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user, respectFrontEndPermissions);
 
 		if(folder==null || !UtilMethods.isSet(folder.getInode()) ){
 			Logger.debug(getClass(), "Cannot delete null folder");
@@ -410,7 +405,7 @@ public class FolderAPIImpl implements FolderAPI  {
 			}
 
 			// delete assets in this folder
-			path = folder.getPath();
+			final String path = folder.getPath();
 			if (Logger.isDebugEnabled(getClass())) {
 				Logger.debug(getClass(), "Deleting the folder assets " + path);
 			}

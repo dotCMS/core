@@ -220,7 +220,7 @@ public abstract class AbstractIntegrityChecker implements IntegrityChecker {
         DotConnect dc = new DotConnect();
         String tempTableName = getTempTableName(endpointId);
 
-		final String INSERT_TEMP_TABLE = "INSERT INTO " + tempTableName + " (working_inode, live_inode, identifier, parent_path, asset_name, host_identifier, language_id) VALUES(?,?,?,?,?,?,?)";
+		final String INSERT_TEMP_TABLE = "INSERT INTO " + tempTableName + " (working_inode, live_inode, identifier, full_path_lc, host_identifier, language_id) VALUES(?,?,?,?,?,?)";
 		boolean hasResultsToCheck = false;
 		while (contentFile.readRecord()) {
 			hasResultsToCheck = true;
@@ -243,8 +243,9 @@ public abstract class AbstractIntegrityChecker implements IntegrityChecker {
 				dc.addParam(workingInode);
 				dc.addParam(liveInode);
 				dc.addParam(contentIdentifier);
-				dc.addParam(contentParentPath);
-				dc.addParam(contentName);
+				//dc.addParam(contentParentPath);
+				//dc.addParam(contentName);
+                dc.addParam((contentParentPath + contentName).toLowerCase());
 				dc.addParam(contentHostIdentifier);
 				dc.addParam(new Long(contentLanguage));
 				dc.loadResult();
@@ -275,7 +276,7 @@ public abstract class AbstractIntegrityChecker implements IntegrityChecker {
                 .append("INNER JOIN contentlet_version_info lcvi ON (lc.identifier = lcvi.identifier) ")
                 .append("INNER JOIN structure ls ON (lc.structure_inode = ls.inode and ls.structuretype = ")
                 .append(structureType).append(") ").append("INNER JOIN ").append(tempTableName)
-                .append(" t ON (li.asset_name = t.asset_name AND li.parent_path = t.parent_path ")
+                .append(" t ON (li.full_path_lc = t.full_path_lc ")
                 .append("AND li.host_inode = host_identifier AND lc.identifier <> t.identifier ")
                 .append("AND lc.language_id = t.language_id)").toString();
 
@@ -289,20 +290,20 @@ public abstract class AbstractIntegrityChecker implements IntegrityChecker {
 
         // If we have conflicts, lets create a table out of them.
         if (!results.isEmpty()) {
+            /*
             String fullContentlet = " li.parent_path || li.asset_name ";
-
             if (DbConnectionFactory.isMySql()) {
                 fullContentlet = " CONCAT(li.parent_path,li.asset_name) ";
             } else if (DbConnectionFactory.isMsSql()) {
                 fullContentlet = " li.parent_path + li.asset_name ";
-            }
+            }*/
 
             String insertSQL = new StringBuilder("INSERT INTO ")
                     .append(getIntegrityType().getResultsTableName())
                     .append(" (" + getIntegrityType().getFirstDisplayColumnLabel() + ", local_working_inode, local_live_inode, remote_working_inode, remote_live_inode, ") 
                     .append("local_identifier, remote_identifier, endpoint_id, language_id)")
-                    .append(" select DISTINCT ")
-                    .append(fullContentlet)
+                    .append(" select DISTINCT li.full_path_lc ")
+                    //.append(fullContentlet)
                     .append(" as ")
                     .append(getIntegrityType().getFirstDisplayColumnLabel())
                     .append(", ")
@@ -319,8 +320,8 @@ public abstract class AbstractIntegrityChecker implements IntegrityChecker {
                     .append(structureType)
                     .append(") INNER JOIN ")
                     .append(tempTableName)
-                    .append(" t ON (li.asset_name = t.asset_name AND li.parent_path = t.parent_path ")
-                    .append("AND li.host_inode = host_identifier AND lc.identifier <> t.identifier AND lc.language_id = t.language_id)")
+                    .append(" t ON (li.full_path_lc = t.full_path_lc ")
+                    .append("AND li.host_inode = host_identifier AND lc.identifier <> t.identifier AND lc.language_id = t.language_id )")
                     .toString();
 
             if (DbConnectionFactory.isOracle()) {
@@ -366,14 +367,19 @@ public abstract class AbstractIntegrityChecker implements IntegrityChecker {
         final String tempKeyword = DbConnectionFactory.getTempKeyword();
         final String integerKeyword = getIntegerKeyword();
 
-        String createTempTableStr = new StringBuilder("create ").append(tempKeyword)
-                .append(" table ").append(tempTableName)
-                .append(" (working_inode varchar(36) not null, live_inode varchar(36) ")
-                .append(", identifier varchar(36) not null, parent_path varchar(255)")
-                .append(", asset_name varchar(255), host_identifier varchar(36) not null, language_id ")
-                .append(integerKeyword).append(" not null, primary key (working_inode, language_id) )")
-                .append((DbConnectionFactory.isOracle() ? " ON COMMIT PRESERVE ROWS " : ""))
-                .toString();
+        String createTempTableStr = "create " + tempKeyword
+                + " table " + tempTableName + " ( "
+                + " working_inode varchar(36) not null, "
+                + " live_inode varchar(36), "
+                + " identifier varchar(36) not null, "
+               // + " parent_path varchar(255), "
+               // + " asset_name varchar(255), "
+                + " full_path_lc varchar(510), "
+                + " host_identifier varchar(36) not null, "
+                + " language_id " + integerKeyword + " not null, "
+                + " primary key (working_inode, language_id) "
+                + " ) "
+                + (DbConnectionFactory.isOracle() ? " ON COMMIT PRESERVE ROWS " : "");
 
         if (DbConnectionFactory.isOracle()) {
             createTempTableStr = createTempTableStr.replaceAll("varchar\\(", "varchar2\\(");

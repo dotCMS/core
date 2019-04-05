@@ -6,7 +6,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import com.dotcms.IntegrationTestBase;
-import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -21,10 +20,12 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class IdentifierConsistencyIntegrationTest extends IntegrationTestBase {
@@ -75,9 +76,90 @@ public class IdentifierConsistencyIntegrationTest extends IntegrationTestBase {
         }
     }
 
+
+
     @Test
-    public void Test_Identifier_Create_Folder_Tree_Then_Update_Parent_Path_Lower_Case_Upper_Case_Non_existing_Path()
-            throws DotDataException, DotSecurityException {
+    public void Test_Identifier_Create_Folder_Tree_Then_Update_Update_Identifier_Non_existing_Path()
+            throws DotDataException, DotSecurityException, SQLException {
+        final String prefix = System.currentTimeMillis() + "_";
+        final FolderAPI folderAPI = APILocator.getFolderAPI();
+        final IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
+        final User user = APILocator.systemUser();
+        final Host host = APILocator.getHostAPI().findByName("demo.dotcms.com", user, false);
+        final String rootFolderName = String.format("/%sroot2", prefix);
+        Folder root = null;
+
+        root = folderAPI.createFolders(rootFolderName, host, user, false);
+
+        final Folder f1 = folderAPI
+                .createFolders(root.getPath() + "child-1/child-1-1/child-1-1-1/child-1-1-1-1",
+                        host, user, false);
+
+        Logger.info(getClass(), () -> "Path1: " + f1.getPath());
+
+        final Folder f2 = folderAPI
+                .createFolders(root.getPath() + "child-2/child-2-1/child-2-1-1/child-2-1-1-1",
+                        host, user, false);
+
+        Logger.info(getClass(), () -> "Path2: " + f2.getPath());
+
+        final Folder f3 = folderAPI
+                .createFolders(root.getPath() + "child-3/child-3-1/child-3-1-1/child-3-1-1-1",
+                        host, user, false);
+
+        Logger.info(getClass(), () -> "Path3: " + f3.getPath());
+
+        final Folder testTargetFolder = folderAPI
+                .findFolderByPath(root.getPath() + "child-3/child-3-1", host, user,
+                        false);
+
+        assertNotNull(testTargetFolder);
+
+        Logger.info(getClass(), () -> "Path4: " + testTargetFolder.getPath());
+
+        final Identifier testFolderIdentifier = identifierAPI
+                .find(testTargetFolder.getIdentifier());
+
+        assertEquals("should have been a folder", "folder", testFolderIdentifier.getAssetType());
+
+        final Connection conn = DbConnectionFactory.getDataSource().getConnection();
+        conn.setAutoCommit(true);
+        try {
+            // Tests actually happen HERE!
+            try {
+                final String invalidParentPath =
+                        root.getPath() + "lololololololololololololololololo/";
+                updateIdentifier(testFolderIdentifier, testFolderIdentifier.getAssetName(),
+                        invalidParentPath);
+                fail("Parent '" + invalidParentPath
+                        + "' does not exist and the update should have failed");
+            } catch (DotDataException e) {
+                Logger.info(getClass(),
+                        () -> "This exception is expected: " + e.getMessage());
+            }
+
+
+        } finally {
+
+                try {
+                    Logger.info(getClass(), () -> "Running Cleanup! ");
+                    folderAPI.delete(root, user, false);
+                } catch (Exception e) {
+                    Logger.error(getClass(), "Error running cleanup routine.", e);
+                }
+
+            conn.setAutoCommit(false);
+            conn.close();
+        }
+    }
+
+    //This Test Fails Because there is no such thing as a trigger in charge of renaming all sub parent_path identifiers when an identifier is updated directly
+    //Updating the directly the identifier table is a bad idea.
+    @Ignore
+    @Test
+    public void Test_Rename_Asset_Expect_SubPaths_Get_Renamed()
+            throws DotDataException, DotSecurityException, SQLException {
+
         final String prefix = System.currentTimeMillis() + "_";
         final FolderAPI folderAPI = APILocator.getFolderAPI();
         final IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
@@ -89,82 +171,31 @@ public class IdentifierConsistencyIntegrationTest extends IntegrationTestBase {
             root = folderAPI.createFolders(rootFolderName, host, user, false);
 
             final Folder f1 = folderAPI
-                    .createFolders(root.getPath() + "child-1/child-1-1/child-1-1-1/child-1-1-1-1",
+                    .createFolders(root.getPath() + "level-1/level-2/level-3/",
                             host, user, false);
 
-            Logger.info(getClass(), () -> "Path1: " + f1.getPath());
+            final List<Identifier> identifiers1 = identifierAPI
+                    .findByURIPattern(Identifier.ASSET_TYPE_FOLDER,
+                            root.getPath() + "level-1/level-2", true, host);
 
-            final Folder f2 = folderAPI
-                    .createFolders(root.getPath() + "child-2/child-2-1/child-2-1-1/child-2-1-1-1",
-                            host, user, false);
+             assertEquals(1, identifiers1.size());
 
-            Logger.info(getClass(), () -> "Path2: " + f2.getPath());
+            final List<Identifier> identifiers2 = identifierAPI
+                    .findByURIPattern(Identifier.ASSET_TYPE_FOLDER,
+                            root.getPath() + "level-1/level-2/level-3", true, host);
 
-            final Folder f3 = folderAPI
-                    .createFolders(root.getPath() + "child-3/child-3-1/child-3-1-1/child-3-1-1-1",
-                            host, user, false);
+            final Identifier level2Identifier = identifiers1.get(0);
+            final Identifier level3Identifier = identifiers2.get(0);
 
-            Logger.info(getClass(), () -> "Path3: " + f3.getPath());
+            level2Identifier.setAssetName("level2");
+            identifierAPI.save(level2Identifier);
 
-            final Folder testTargetFolder = folderAPI
-                    .findFolderByPath(root.getPath() + "child-3/child-3-1", host, user,
-                            false);
+            final Identifier updatedLevel3 = identifierAPI.find(level3Identifier.getId());
+            assertTrue(updatedLevel3.getParentPath().contains("level2"));
 
-            assertNotNull(testTargetFolder);
-
-            Logger.info(getClass(), () -> "Path4: " + testTargetFolder.getPath());
-
-            final Identifier testFolderIdentifier = identifierAPI.find(testTargetFolder.getIdentifier());
-
-            assertEquals("should have been a folder", "folder", testFolderIdentifier.getAssetType());
-
-            try {
-                final Connection conn = DbConnectionFactory.getDataSource().getConnection();
-                conn.setAutoCommit(true);
-                try {
-                    // Tests actually happens HERE!
-                    try {
-                        updateIdentifier(testFolderIdentifier, testFolderIdentifier.getAssetName(), root.getPath() + "child-2/");
-                        // If I update parent folder, all children identifiers are properly renamed.
-                        // But if I rename parent path directly on the identifiers table the change isn't propagated downstream.
-
-                        //final Set<Identifier> subIdentifiers = collectSubIdentifiers(testFolderIdentifier);
-                        //assertFalse(subIdentifiers.isEmpty());
-
-                    } catch (DotDataException e) {
-                        fail("Exception shouldn't have been raised.  Parent Path is valid" + e
-                                .getMessage());
-                    }
-
-                    try {
-                        updateIdentifier(testFolderIdentifier, testFolderIdentifier.getAssetName(), root.getPath() + "Child-2/");
-                    } catch (DotDataException e) {
-                        final Throwable trss = ExceptionUtil.getRootCause(e);
-                        fail("Exception shouldn't have been raised.  Parent Path is valid" + trss.getMessage());
-                    }
-
-                    // This one should fail!
-                    try {
-                        final String invalidParentPath =
-                                root.getPath() + "lololololololololololololololololo/";
-                        updateIdentifier(testFolderIdentifier, testFolderIdentifier.getAssetName(), invalidParentPath);
-                        fail("Parent '" + invalidParentPath
-                                + "' does not exist and the update should have failed");
-                    } catch (DotDataException e) {
-                        Logger.info(getClass(),
-                                () -> "This exception is expected: " + e.getMessage());
-                    }
-
-                } finally {
-                    conn.setAutoCommit(false);
-                    conn.close();
-                }
-            } catch (Exception e) {
-                Logger.error(getClass(), "updateIdentifier failed", e);
-            }
         } finally {
-            if (root != null) {
-                folderAPI.delete(root, user, false);
+            if(null != root){
+             folderAPI.delete(root, user, false);
             }
         }
     }
@@ -274,7 +305,7 @@ public class IdentifierConsistencyIntegrationTest extends IntegrationTestBase {
 
 
     @Test
-    public void Test_Folder_Create_Folder_Tree_Then_Rename_Parent_Verify_Children_Are_Renamed()
+    public void Test_Create_Folder_Tree_Then_Rename_Parent_Verify_Children_Are_Renamed()
             throws DotDataException, DotSecurityException {
         final String prefix = System.currentTimeMillis() + "_";
         final FolderAPI folderAPI = APILocator.getFolderAPI();

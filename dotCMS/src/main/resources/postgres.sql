@@ -1829,6 +1829,14 @@ alter table structure add constraint unique_struct_vel_var_name unique (velocity
 create index idx_structure_host on structure (host);
 create index idx_structure_folder on structure (folder);
 
+-- calculated identifier column
+CREATE OR REPLACE FUNCTION full_path_lc(identifier) RETURNS text
+    AS ' SELECT CASE WHEN $1.parent_path = ''/System folder'' then ''/'' else LOWER($1.parent_path || $1.asset_name) end; '
+LANGUAGE SQL;
+
+-- Case sensitive unique asset-name,parent_path for a given host
+CREATE UNIQUE INDEX idx_ident_uniq_asset_name on identifier (full_path_lc(identifier),host_inode);
+
 CREATE OR REPLACE FUNCTION structure_host_folder_check() RETURNS trigger AS '
 DECLARE
     folderInode varchar(100);
@@ -1969,10 +1977,10 @@ CREATE OR REPLACE FUNCTION identifier_parent_path_check() RETURNS trigger AS '
     folderId varchar(100);
   BEGIN
      IF (tg_op = ''INSERT'' OR tg_op = ''UPDATE'') THEN
-      IF(NEW.parent_path=''/'') OR ( lower(NEW.parent_path)=''/system folder'') THEN
+      IF(NEW.parent_path=''/'') OR (NEW.parent_path=''/System folder'') THEN
         RETURN NEW;
      ELSE
-      select id into folderId from identifier where asset_type=''folder'' and host_inode = NEW.host_inode and lower(parent_path||asset_name||''/'') = lower(NEW.parent_path) and id <> NEW.id;
+      select id into folderId from identifier where asset_type=''folder'' and host_inode = NEW.host_inode and parent_path||asset_name||''/'' = NEW.parent_path and id <> NEW.id;
       IF FOUND THEN
         RETURN NEW;
       ELSE
@@ -1995,7 +2003,7 @@ DECLARE
 BEGIN
    IF (tg_op = ''DELETE'') THEN
       IF(OLD.asset_type =''folder'') THEN
-	   select count(*) into pathCount from identifier where lower(parent_path) = lower(OLD.parent_path||OLD.asset_name||''/'')  and host_inode = OLD.host_inode;
+	   select count(*) into pathCount from identifier where parent_path = OLD.parent_path||OLD.asset_name||''/''  and host_inode = OLD.host_inode;
 	END IF;
 	IF(OLD.asset_type =''contentlet'') THEN
 	   select count(*) into pathCount from identifier where host_inode = OLD.id;
@@ -2062,10 +2070,10 @@ DECLARE
    old_folder_path varchar(255);
 BEGIN
     UPDATE identifier SET  parent_path  = new_path where parent_path = old_path and host_inode = hostInode;
-    FOR fi IN select * from identifier where asset_type=''folder'' and lower(parent_path) = lower(new_path) and host_inode = hostInode LOOP
-     new_folder_path := new_path ||fi.asset_name||''/'';
-     old_folder_path := old_path ||fi.asset_name||''/'';
-     PERFORM renameFolderChildren(old_folder_path,new_folder_path,hostInode);
+    FOR fi IN select * from identifier where asset_type=''folder'' and parent_path = new_path and host_inode = hostInode LOOP
+	 new_folder_path := new_path ||fi.asset_name||''/'';
+	 old_folder_path := old_path ||fi.asset_name||''/'';
+	 PERFORM renameFolderChildren(old_folder_path,new_folder_path,hostInode);
     END LOOP;
 END
 'LANGUAGE plpgsql;
@@ -2096,7 +2104,7 @@ EXECUTE PROCEDURE rename_folder_and_assets();
 CREATE OR REPLACE FUNCTION dotFolderPath(parent_path text, asset_name text)
   RETURNS text AS '
 BEGIN
-  IF(lower(parent_path)=''/system folder'') THEN
+  IF(parent_path=''/System folder'') THEN
     RETURN ''/'';
   ELSE
     RETURN parent_path || asset_name || ''/'';
@@ -2463,6 +2471,7 @@ CREATE INDEX idx_system_event ON system_event (created);
 --Content Types improvement
 CREATE INDEX idx_lower_structure_name ON structure (LOWER(velocity_var_name));
 
+
 CREATE TABLE api_token_issued(
     token_id varchar(255) NOT NULL, 
     token_userid varchar(255) NOT NULL, 
@@ -2480,5 +2489,10 @@ CREATE TABLE api_token_issued(
 
 create index idx_api_token_issued_user ON api_token_issued (token_userid);
 
--- Case sensitive unique asset-name,parent_path for a given host
-CREATE UNIQUE INDEX idx_ident_uniq_asset_name on identifier (LOWER(asset_name),LOWER(parent_path),host_inode);
+
+
+
+
+
+
+
