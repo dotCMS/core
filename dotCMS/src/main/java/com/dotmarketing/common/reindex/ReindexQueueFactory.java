@@ -200,7 +200,6 @@ public class ReindexQueueFactory {
         dc.loadResult();
     }
 
-    @WrapInTransaction
     protected Map<String, ReindexEntry> findContentToReindex(final int recordsToReturn) throws DotDataException {
         Map<String, ReindexEntry> contentToIndex = loadReindexRecordsFromDb(recordsToReturn);
         if (contentToIndex.size() < recordsToReturn) {
@@ -211,6 +210,7 @@ public class ReindexQueueFactory {
         return contentToIndex;
     }
 
+    @WrapInTransaction
     private Map<String, ReindexEntry> loadReindexRecordsFromDb(final int recordsToReturn) throws DotDataException {
         final DotConnect dc = new DotConnect();
         final Map<String, ReindexEntry> contentList = new LinkedHashMap<>();
@@ -406,7 +406,7 @@ public class ReindexQueueFactory {
 
     static long lastTimeIRequedRecords = 0;
 
-    @WrapInTransaction
+    @CloseDBIfOpened
     public boolean requeueStaleReindexRecordsTimer() throws DotDataException {
         if (lastTimeIRequedRecords + (REQUEUE_REINDEX_RECORDS_OLDER_THAN_SEC / 2 * 1000) < System.currentTimeMillis()) {
             lastTimeIRequedRecords = System.currentTimeMillis();
