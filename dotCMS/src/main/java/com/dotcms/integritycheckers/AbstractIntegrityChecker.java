@@ -243,8 +243,6 @@ public abstract class AbstractIntegrityChecker implements IntegrityChecker {
 				dc.addParam(workingInode);
 				dc.addParam(liveInode);
 				dc.addParam(contentIdentifier);
-				//dc.addParam(contentParentPath);
-				//dc.addParam(contentName);
                 dc.addParam((contentParentPath + contentName).toLowerCase());
 				dc.addParam(contentHostIdentifier);
 				dc.addParam(new Long(contentLanguage));
@@ -290,20 +288,12 @@ public abstract class AbstractIntegrityChecker implements IntegrityChecker {
 
         // If we have conflicts, lets create a table out of them.
         if (!results.isEmpty()) {
-            /*
-            String fullContentlet = " li.parent_path || li.asset_name ";
-            if (DbConnectionFactory.isMySql()) {
-                fullContentlet = " CONCAT(li.parent_path,li.asset_name) ";
-            } else if (DbConnectionFactory.isMsSql()) {
-                fullContentlet = " li.parent_path + li.asset_name ";
-            }*/
 
             String insertSQL = new StringBuilder("INSERT INTO ")
                     .append(getIntegrityType().getResultsTableName())
                     .append(" (" + getIntegrityType().getFirstDisplayColumnLabel() + ", local_working_inode, local_live_inode, remote_working_inode, remote_live_inode, ") 
                     .append("local_identifier, remote_identifier, endpoint_id, language_id)")
                     .append(" select DISTINCT li.full_path_lc ")
-                    //.append(fullContentlet)
                     .append(" as ")
                     .append(getIntegrityType().getFirstDisplayColumnLabel())
                     .append(", ")
@@ -372,8 +362,6 @@ public abstract class AbstractIntegrityChecker implements IntegrityChecker {
                 + " working_inode varchar(36) not null, "
                 + " live_inode varchar(36), "
                 + " identifier varchar(36) not null, "
-               // + " parent_path varchar(255), "
-               // + " asset_name varchar(255), "
                 + " full_path_lc varchar(510), "
                 + " host_identifier varchar(36) not null, "
                 + " language_id " + integerKeyword + " not null, "

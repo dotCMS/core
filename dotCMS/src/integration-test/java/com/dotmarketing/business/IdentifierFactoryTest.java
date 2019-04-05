@@ -3,6 +3,8 @@ package com.dotmarketing.business;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.util.IntegrationTestInitService;
@@ -32,7 +34,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -41,6 +42,9 @@ import org.junit.Test;
  */
 public class IdentifierFactoryTest {
 
+    private static final String TEMP_FILE = "tempFile";
+    public static final String TXT = "txt";
+    public static final String DOT_TXT = ".txt";
     private static IdentifierFactory factory;
     private static Host defaultHost;
     private static Host systemHost;
@@ -74,12 +78,12 @@ public class IdentifierFactoryTest {
                         defaultHost);
 
         assertNotNull(identifiers);
-        Assert.assertFalse(identifiers.isEmpty());
+        assertFalse(identifiers.isEmpty());
 
         final Identifier identifier = identifiers.get(0);
-        Assert.assertTrue(identifier.getId() != null && !identifier.getId().isEmpty());
-        Assert.assertEquals("products", identifier.getAssetName());
-        Assert.assertEquals(Identifier.ASSET_TYPE_FOLDER, identifier.getAssetType());
+        assertTrue(identifier.getId() != null && !identifier.getId().isEmpty());
+        assertEquals("products", identifier.getAssetName());
+        assertEquals(Identifier.ASSET_TYPE_FOLDER, identifier.getAssetType());
     }
 
     @Test
@@ -90,9 +94,9 @@ public class IdentifierFactoryTest {
                         defaultHost);
 
         assertNotNull(identifiers);
-        Assert.assertFalse(identifiers.isEmpty());
+        assertFalse(identifiers.isEmpty());
 
-        Assert.assertTrue(identifiers.size() > 1);
+        assertTrue(identifiers.size() > 1);
     }
 
     @Test
@@ -102,9 +106,9 @@ public class IdentifierFactoryTest {
         ic.removeFromCacheByURI(defaultHost.getIdentifier(), "/products");
         final Identifier identifier = factory.findByURI(defaultHost.getIdentifier(), "/products");
 
-        Assert.assertTrue(identifier.getId() != null && !identifier.getId().isEmpty());
-        Assert.assertEquals("products", identifier.getAssetName());
-        Assert.assertEquals(Identifier.ASSET_TYPE_FOLDER, identifier.getAssetType());
+        assertTrue(identifier.getId() != null && !identifier.getId().isEmpty());
+        assertEquals("products", identifier.getAssetName());
+        assertEquals(Identifier.ASSET_TYPE_FOLDER, identifier.getAssetType());
     }
 
     @Test
@@ -115,9 +119,9 @@ public class IdentifierFactoryTest {
 
         final Identifier identifier = factory.findByURI(systemHost.getIdentifier(), "/products");
 
-        Assert.assertTrue(identifier.getId() != null && identifier.getId().isEmpty());
-        Assert.assertNull(identifier.getAssetName());
-        Assert.assertNull(identifier.getAssetType());
+        assertTrue(identifier.getId() != null && identifier.getId().isEmpty());
+        assertNull(identifier.getAssetName());
+        assertNull(identifier.getAssetType());
     }
 
     @Test
@@ -126,8 +130,8 @@ public class IdentifierFactoryTest {
         final List<Identifier> identifiers = factory
                 .findByParentPath(defaultHost.getIdentifier(), "/blogs");
 
-        Assert.assertTrue(identifiers != null && !identifiers.isEmpty());
-        Assert.assertEquals("/blogs/", identifiers.get(0).getParentPath());
+        assertTrue(identifiers != null && !identifiers.isEmpty());
+        assertEquals("/blogs/", identifiers.get(0).getParentPath());
     }
 
     @Test
@@ -136,14 +140,14 @@ public class IdentifierFactoryTest {
         final List<Identifier> identifiers = factory
                 .findByParentPath(defaultHost.getIdentifier(), "/blogs");
 
-        Assert.assertTrue(identifiers != null && !identifiers.isEmpty());
-        Assert.assertEquals("/blogs/", identifiers.get(0).getParentPath());
+        assertTrue(identifiers != null && !identifiers.isEmpty());
+        assertEquals("/blogs/", identifiers.get(0).getParentPath());
 
         final Identifier identifier = factory
                 .findByURI(defaultHost.getIdentifier(), "/blogs");
 
         assertNotNull(identifier);
-        Assert.assertEquals("/blogs/", identifier.getURI() + "/" );
+        assertEquals("/blogs/", identifier.getURI() + "/" );
 
     }
 
@@ -180,10 +184,10 @@ public class IdentifierFactoryTest {
 
             // Create a different binary for each one them
             Contentlet newContentlet1 = new FileAsset();
-            final String fileName1 = "tempFile" + System.currentTimeMillis();
-            final File tempFile1 = File.createTempFile(fileName1, "txt");
+            final String fileName1 = TEMP_FILE + System.currentTimeMillis();
+            final File tempFile1 = File.createTempFile(fileName1, TXT);
             FileUtil.write(tempFile1, anyContent);
-            final String fileNameField1 = fileName1 + ".txt";
+            final String fileNameField1 = fileName1 + DOT_TXT;
             final String title1 = "Contentlet-1";
 
             newContentlet1.setFolder(subFolders1.getInode());
@@ -203,10 +207,10 @@ public class IdentifierFactoryTest {
                             host2, user, false);
 
             Contentlet newContentlet2 = new FileAsset();
-            final String fileName2 = "tempFile" + System.currentTimeMillis();
+            final String fileName2 = TEMP_FILE + System.currentTimeMillis();
             final File tempFile2 = File.createTempFile(fileName2, "txt");
             FileUtil.write(tempFile2, anyContent);
-            final String fileNameField2 = fileName2 + ".txt";
+            final String fileNameField2 = fileName2 + DOT_TXT;
             final String title2 = "Contentlet-2";
 
             newContentlet2.setFolder(subFolders2.getInode());
@@ -261,7 +265,7 @@ public class IdentifierFactoryTest {
                  final List<String> sublist = list.subList(0,i);
                  final String uri =  "/" + sublist.stream().collect(Collectors.joining("/"));
 
-                 if(uri.equals("/")){
+                 if("/".equals(uri)){
                     break;
                  }
 
@@ -316,7 +320,7 @@ public class IdentifierFactoryTest {
         final List<Identifier> identifiers = factory
                 .findByParentPath(systemHost.getIdentifier(), "/blogs");
 
-        Assert.assertTrue(identifiers == null || identifiers.isEmpty());
+        assertTrue(identifiers == null || identifiers.isEmpty());
     }
 
     @Test
@@ -324,7 +328,7 @@ public class IdentifierFactoryTest {
         final Identifier identifier = factory.loadFromDb(defaultHost.getIdentifier());
 
         assertNotNull(identifier);
-        Assert.assertEquals(defaultHost.getIdentifier(), identifier.getId());
+        assertEquals(defaultHost.getIdentifier(), identifier.getId());
 
     }
 
@@ -338,7 +342,7 @@ public class IdentifierFactoryTest {
         final Identifier identifier = factory.loadFromDb(defaultHost);
 
         assertNotNull(identifier);
-        Assert.assertEquals(defaultHost.getIdentifier(), identifier.getId());
+        assertEquals(defaultHost.getIdentifier(), identifier.getId());
 
     }
 
@@ -365,12 +369,12 @@ public class IdentifierFactoryTest {
             identifier = factory.createNewIdentifier(newFolder, parentFolder);
 
             assertNotNull(identifier.getId());
-            Assert.assertFalse(identifier.getId().isEmpty());
+            assertFalse(identifier.getId().isEmpty());
             assertNotNull(newFolder.getVersionId());
-            Assert.assertFalse(newFolder.getVersionId().isEmpty());
-            Assert.assertEquals(parentFolder.getPath(), identifier.getParentPath());
-            Assert.assertEquals(Identifier.ASSET_TYPE_FOLDER, identifier.getAssetType());
-            Assert.assertEquals(newFolder.getName(), identifier.getAssetName());
+            assertFalse(newFolder.getVersionId().isEmpty());
+            assertEquals(parentFolder.getPath(), identifier.getParentPath());
+            assertEquals(Identifier.ASSET_TYPE_FOLDER, identifier.getAssetType());
+            assertEquals(newFolder.getName(), identifier.getAssetName());
         } finally {
             if (identifier != null) {
                 //Deletes the created identifier
@@ -391,27 +395,27 @@ public class IdentifierFactoryTest {
 
         identifier = null;
         newContentlet = new FileAsset();
-        fileName = "tempFile" + System.currentTimeMillis();
-        tempFile = File.createTempFile(fileName, "txt");
+        fileName = TEMP_FILE + System.currentTimeMillis();
+        tempFile = File.createTempFile(fileName, TXT);
         parentFolder = folderAPI.findFolderByPath("/products", defaultHost, systemUser, false);
 
         newContentlet.setContentTypeId(contentTypeAPI.find(FileAssetAPI.BINARY_FIELD).id());
         newContentlet.setBinary(FileAssetAPI.BINARY_FIELD, tempFile);
         newContentlet.setStringProperty(FileAssetAPI.HOST_FOLDER_FIELD, parentFolder.getInode());
-        newContentlet.setStringProperty(FileAssetAPI.TITLE_FIELD, fileName + ".txt");
-        newContentlet.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, fileName + ".txt");
+        newContentlet.setStringProperty(FileAssetAPI.TITLE_FIELD, fileName + DOT_TXT);
+        newContentlet.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, fileName + DOT_TXT);
 
         try {
             //Creates new identifier
             identifier = factory.createNewIdentifier(newContentlet, parentFolder);
 
             assertNotNull(identifier.getId());
-            Assert.assertFalse(identifier.getId().isEmpty());
+            assertFalse(identifier.getId().isEmpty());
             assertNotNull(newContentlet.getVersionId());
-            Assert.assertFalse(newContentlet.getVersionId().isEmpty());
-            Assert.assertEquals(parentFolder.getPath(), identifier.getParentPath());
-            Assert.assertEquals(Identifier.ASSET_TYPE_CONTENTLET, identifier.getAssetType());
-            Assert.assertEquals(
+            assertFalse(newContentlet.getVersionId().isEmpty());
+            assertEquals(parentFolder.getPath(), identifier.getParentPath());
+            assertEquals(Identifier.ASSET_TYPE_CONTENTLET, identifier.getAssetType());
+            assertEquals(
                     newContentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD),
                     identifier.getAssetName());
         } finally {
@@ -445,12 +449,12 @@ public class IdentifierFactoryTest {
             identifier = factory.createNewIdentifier(newContentlet, parentFolder);
 
             assertNotNull(identifier.getId());
-            Assert.assertFalse(identifier.getId().isEmpty());
+            assertFalse(identifier.getId().isEmpty());
             assertNotNull(newContentlet.getVersionId());
-            Assert.assertFalse(newContentlet.getVersionId().isEmpty());
-            Assert.assertEquals(parentFolder.getPath(), identifier.getParentPath());
-            Assert.assertEquals(Identifier.ASSET_TYPE_CONTENTLET, identifier.getAssetType());
-            Assert.assertEquals(pageName, identifier.getAssetName());
+            assertFalse(newContentlet.getVersionId().isEmpty());
+            assertEquals(parentFolder.getPath(), identifier.getParentPath());
+            assertEquals(Identifier.ASSET_TYPE_CONTENTLET, identifier.getAssetType());
+            assertEquals(pageName, identifier.getAssetName());
         } finally {
             //Deletes the created identifier
             if (identifier != null) {
@@ -476,11 +480,11 @@ public class IdentifierFactoryTest {
             identifier = factory.createNewIdentifier(newWebAsset, parentFolder);
 
             assertNotNull(identifier.getId());
-            Assert.assertFalse(identifier.getId().isEmpty());
+            assertFalse(identifier.getId().isEmpty());
             assertNotNull(newWebAsset.getVersionId());
-            Assert.assertFalse(newWebAsset.getVersionId().isEmpty());
-            Assert.assertEquals(parentFolder.getPath(), identifier.getParentPath());
-            Assert.assertEquals("template", identifier.getAssetType());
+            assertFalse(newWebAsset.getVersionId().isEmpty());
+            assertEquals(parentFolder.getPath(), identifier.getParentPath());
+            assertEquals("template", identifier.getAssetType());
             assertNotNull(identifier.getURI());
             assertNotNull(identifier.getAssetType());
 
@@ -510,11 +514,11 @@ public class IdentifierFactoryTest {
             identifier = factory.createNewIdentifier(newWebAsset, parentFolder);
 
             assertNotNull(identifier.getId());
-            Assert.assertFalse(identifier.getId().isEmpty());
+            assertFalse(identifier.getId().isEmpty());
             assertNotNull(newWebAsset.getVersionId());
-            Assert.assertFalse(newWebAsset.getVersionId().isEmpty());
-            Assert.assertEquals(parentFolder.getPath(), identifier.getParentPath());
-            Assert.assertEquals("links", identifier.getAssetType());
+            assertFalse(newWebAsset.getVersionId().isEmpty());
+            assertEquals(parentFolder.getPath(), identifier.getParentPath());
+            assertEquals("links", identifier.getAssetType());
             assertNotNull(identifier.getURI());
             assertNotNull(identifier.getAssetType());
 
@@ -543,11 +547,11 @@ public class IdentifierFactoryTest {
             identifier = factory.createNewIdentifier(newFolder, defaultHost);
 
             assertNotNull(identifier.getId());
-            Assert.assertFalse(identifier.getId().isEmpty());
+            assertFalse(identifier.getId().isEmpty());
             assertNotNull(newFolder.getVersionId());
-            Assert.assertFalse(newFolder.getVersionId().isEmpty());
-            Assert.assertEquals(Identifier.ASSET_TYPE_FOLDER, identifier.getAssetType());
-            Assert.assertEquals(newFolder.getName(), identifier.getAssetName());
+            assertFalse(newFolder.getVersionId().isEmpty());
+            assertEquals(Identifier.ASSET_TYPE_FOLDER, identifier.getAssetType());
+            assertEquals(newFolder.getName(), identifier.getAssetName());
         } finally {
             if (identifier != null) {
                 //Deletes the created identifier
@@ -567,24 +571,24 @@ public class IdentifierFactoryTest {
 
         identifier = null;
         newContentlet = new FileAsset();
-        fileName = "tempFile" + System.currentTimeMillis();
-        tempFile = File.createTempFile(fileName, "txt");
+        fileName = TEMP_FILE + System.currentTimeMillis();
+        tempFile = File.createTempFile(fileName, TXT);
 
         newContentlet.setContentTypeId(contentTypeAPI.find(FileAssetAPI.BINARY_FIELD).inode());
         newContentlet.setBinary(FileAssetAPI.BINARY_FIELD, tempFile);
-        newContentlet.setStringProperty(FileAssetAPI.TITLE_FIELD, fileName + ".txt");
-        newContentlet.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, fileName + ".txt");
+        newContentlet.setStringProperty(FileAssetAPI.TITLE_FIELD, fileName + DOT_TXT);
+        newContentlet.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, fileName + DOT_TXT);
 
         try {
             //Creates new identifier
             identifier = factory.createNewIdentifier(newContentlet, defaultHost);
 
             assertNotNull(identifier.getId());
-            Assert.assertFalse(identifier.getId().isEmpty());
+            assertFalse(identifier.getId().isEmpty());
             assertNotNull(newContentlet.getVersionId());
-            Assert.assertFalse(newContentlet.getVersionId().isEmpty());
-            Assert.assertEquals(Identifier.ASSET_TYPE_CONTENTLET, identifier.getAssetType());
-            Assert.assertEquals(
+            assertFalse(newContentlet.getVersionId().isEmpty());
+            assertEquals(Identifier.ASSET_TYPE_CONTENTLET, identifier.getAssetType());
+            assertEquals(
                     newContentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD),
                     identifier.getAssetName());
         } finally {
@@ -605,7 +609,7 @@ public class IdentifierFactoryTest {
 
         identifier = null;
         newContentlet = new HTMLPageAsset();
-        pageName = "tempPage" + System.currentTimeMillis();
+        pageName = TEMP_FILE + System.currentTimeMillis();
 
         newContentlet.setContentTypeId(contentTypeAPI.find(
                         HTMLPageAssetAPI.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_VARNAME).inode());
@@ -616,11 +620,11 @@ public class IdentifierFactoryTest {
             identifier = factory.createNewIdentifier(newContentlet, defaultHost);
 
             assertNotNull(identifier.getId());
-            Assert.assertFalse(identifier.getId().isEmpty());
+            assertFalse(identifier.getId().isEmpty());
             assertNotNull(newContentlet.getVersionId());
-            Assert.assertFalse(newContentlet.getVersionId().isEmpty());
-            Assert.assertEquals(Identifier.ASSET_TYPE_CONTENTLET, identifier.getAssetType());
-            Assert.assertEquals(pageName, identifier.getAssetName());
+            assertFalse(newContentlet.getVersionId().isEmpty());
+            assertEquals(Identifier.ASSET_TYPE_CONTENTLET, identifier.getAssetType());
+            assertEquals(pageName, identifier.getAssetName());
         } finally {
             //Deletes the created identifier
             if (identifier != null) {
@@ -645,10 +649,10 @@ public class IdentifierFactoryTest {
             identifier = factory.createNewIdentifier(newContentlet, defaultHost);
 
             assertNotNull(identifier.getId());
-            Assert.assertFalse(identifier.getId().isEmpty());
+            assertFalse(identifier.getId().isEmpty());
             assertNotNull(newContentlet.getVersionId());
-            Assert.assertFalse(newContentlet.getVersionId().isEmpty());
-            Assert.assertEquals(Identifier.ASSET_TYPE_CONTENTLET, identifier.getAssetType());
+            assertFalse(newContentlet.getVersionId().isEmpty());
+            assertEquals(Identifier.ASSET_TYPE_CONTENTLET, identifier.getAssetType());
 
         } finally {
             //Deletes the created identifier
@@ -664,21 +668,21 @@ public class IdentifierFactoryTest {
         final List<Identifier> identifiers = factory.loadAllIdentifiers();
 
         assertNotNull(identifiers);
-        Assert.assertTrue(identifiers.size() > 0);
+        assertTrue(identifiers.size() > 0);
     }
 
     @Test
     public void testIsIdentifierFound() {
         final boolean found = factory.isIdentifier(defaultHost.getIdentifier());
 
-        Assert.assertTrue(found);
+        assertTrue(found);
     }
 
     @Test
     public void testIsIdentifierWhenNull() {
         final boolean found = factory.isIdentifier(null);
 
-        Assert.assertFalse(found);
+        assertFalse(found);
     }
 
     @Test
@@ -686,7 +690,7 @@ public class IdentifierFactoryTest {
        final String assetType = factory.getAssetTypeFromDB(defaultHost.getIdentifier());
 
         assertNotNull(assetType);
-        Assert.assertEquals("contentlet", assetType);
+        assertEquals("contentlet", assetType);
 
     }
 
@@ -694,11 +698,11 @@ public class IdentifierFactoryTest {
     public void testGetAssetTypeFromDBWhenNull() throws DotDataException {
         final String assetType = factory.getAssetTypeFromDB(null);
 
-        Assert.assertNull(assetType);
+        assertNull(assetType);
 
     }
 
-    private void deleteIdentifier(Identifier identifier) throws DotDataException {
+    private void deleteIdentifier(final Identifier identifier) throws DotDataException {
         final DotConnect db = new DotConnect();
         db.setSQL("delete from identifier where id = ?");
         db.addParam(identifier.getId());

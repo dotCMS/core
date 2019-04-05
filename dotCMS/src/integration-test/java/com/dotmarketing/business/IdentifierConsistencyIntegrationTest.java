@@ -38,6 +38,9 @@ public class IdentifierConsistencyIntegrationTest extends IntegrationTestBase {
     private static final String CONTENTLET = "contentlet";
     private static final String FOLDER = "folder";
 
+    private static final String DEMO = "demo.dotcms.com";
+    private static final String UPDATE_IDENTIFIER_FAIL = "updateIdentifier failed: ";
+
     @BeforeClass
     public static void init() throws Exception {
         IntegrationTestInitService.getInstance().init();
@@ -85,23 +88,23 @@ public class IdentifierConsistencyIntegrationTest extends IntegrationTestBase {
         final FolderAPI folderAPI = APILocator.getFolderAPI();
         final IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
         final User user = APILocator.systemUser();
-        final Host host = APILocator.getHostAPI().findByName("demo.dotcms.com", user, false);
+        final Host host = APILocator.getHostAPI().findByName(DEMO, user, false);
         final String rootFolderName = String.format("/%sroot2", prefix);
         Folder root = null;
 
         root = folderAPI.createFolders(rootFolderName, host, user, false);
 
-        final Folder f1 = folderAPI
+        final Folder folder1 = folderAPI
                 .createFolders(root.getPath() + "child-1/child-1-1/child-1-1-1/child-1-1-1-1",
                         host, user, false);
 
-        Logger.info(getClass(), () -> "Path1: " + f1.getPath());
+        Logger.info(getClass(), () -> "Path1: " + folder1.getPath());
 
-        final Folder f2 = folderAPI
+        final Folder folder2 = folderAPI
                 .createFolders(root.getPath() + "child-2/child-2-1/child-2-1-1/child-2-1-1-1",
                         host, user, false);
 
-        Logger.info(getClass(), () -> "Path2: " + f2.getPath());
+        Logger.info(getClass(), () -> "Path2: " + folder2.getPath());
 
         final Folder f3 = folderAPI
                 .createFolders(root.getPath() + "child-3/child-3-1/child-3-1-1/child-3-1-1-1",
@@ -164,7 +167,7 @@ public class IdentifierConsistencyIntegrationTest extends IntegrationTestBase {
         final FolderAPI folderAPI = APILocator.getFolderAPI();
         final IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
         final User user = APILocator.systemUser();
-        final Host host = APILocator.getHostAPI().findByName("demo.dotcms.com", user, false);
+        final Host host = APILocator.getHostAPI().findByName(DEMO, user, false);
         final String rootFolderName = String.format("/%sroot2", prefix);
         Folder root = null;
         try {
@@ -217,14 +220,14 @@ public class IdentifierConsistencyIntegrationTest extends IntegrationTestBase {
                 try {
                     deleteIdentifier(subFolderIdentifier.getId());
                 } catch (Exception e) {
-                    Logger.error(getClass(), "updateIdentifier failed", e);
+                    Logger.error(getClass(), UPDATE_IDENTIFIER_FAIL, e);
                 }
             }
             if (null != parentFolderIdentifier) {
                 try {
                     deleteIdentifier(parentFolderIdentifier.getId());
                 } catch (Exception e) {
-                    Logger.error(getClass(), "updateIdentifier failed", e);
+                    Logger.error(getClass(), UPDATE_IDENTIFIER_FAIL, e);
                 }
             }
         }
@@ -251,14 +254,14 @@ public class IdentifierConsistencyIntegrationTest extends IntegrationTestBase {
                 try {
                     deleteIdentifier(subFolderIdentifier1.getId());
                 } catch (Exception e) {
-                    Logger.error(getClass(), "updateIdentifier failed", e);
+                    Logger.error(getClass(), UPDATE_IDENTIFIER_FAIL, e);
                 }
             }
             if (null != subFolderIdentifier2) {
                 try {
                     deleteIdentifier(subFolderIdentifier2.getId());
                 } catch (Exception e) {
-                    Logger.error(getClass(), "updateIdentifier failed", e);
+                    Logger.error(getClass(), UPDATE_IDENTIFIER_FAIL, e);
                 }
             }
 
@@ -266,7 +269,7 @@ public class IdentifierConsistencyIntegrationTest extends IntegrationTestBase {
                 try {
                     deleteIdentifier(parentFolderIdentifier.getId());
                 } catch (Exception e) {
-                    Logger.error(getClass(), "updateIdentifier failed", e);
+                    Logger.error(getClass(), UPDATE_IDENTIFIER_FAIL, e);
                 }
             }
         }
@@ -290,14 +293,14 @@ public class IdentifierConsistencyIntegrationTest extends IntegrationTestBase {
                 try {
                     deleteIdentifier(subFolderIdentifier.getId());
                 } catch (Exception e) {
-                    Logger.error(getClass(), "updateIdentifier failed", e);
+                    Logger.error(getClass(), UPDATE_IDENTIFIER_FAIL, e);
                 }
             }
             if (null != parentFolderIdentifier) {
                 try {
                     deleteIdentifier(parentFolderIdentifier.getId());
                 } catch (Exception e) {
-                    Logger.error(getClass(), "updateIdentifier failed", e);
+                    Logger.error(getClass(), UPDATE_IDENTIFIER_FAIL, e);
                 }
             }
         }
@@ -311,26 +314,26 @@ public class IdentifierConsistencyIntegrationTest extends IntegrationTestBase {
         final FolderAPI folderAPI = APILocator.getFolderAPI();
         final IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
         final User user = APILocator.systemUser();
-        final Host host = APILocator.getHostAPI().findByName("demo.dotcms.com", user, false);
+        final Host host = APILocator.getHostAPI().findByName(DEMO, user, false);
         final String rootFolderName = String.format("/%slevel-0", prefix);
-        Folder f0,f1,f2,f3;
-        f0 = f1 = f2 = f3 = null;
+        Folder folder0,folder1,folder2,folder3;
+        folder0 = folder1 = folder2 = folder3 = null;
         try {
-             f0 = folderAPI
+             folder0 = folderAPI
                     .createFolders(rootFolderName, host, user, false);
 
-             f1 = folderAPI
-                    .createFolders(f0.getPath() + "level-1", host, user, false);
+             folder1 = folderAPI
+                    .createFolders(folder0.getPath() + "level-1", host, user, false);
 
-             f2 = folderAPI
-                    .createFolders(f1.getPath() + "level-2", host, user, false);
+             folder2 = folderAPI
+                    .createFolders(folder1.getPath() + "level-2", host, user, false);
 
-             f3 = folderAPI
-                    .createFolders(f2.getPath() + "level-3", host, user, false);
+             folder3 = folderAPI
+                    .createFolders(folder2.getPath() + "level-3", host, user, false);
 
             final String newFolderName = "newName";
-            updateFolder(f1.getIdentifier(), f1.getInode(), newFolderName);
-            final Identifier identifier = identifierAPI.loadFromDb(f1.getIdentifier());
+            updateFolder(folder1.getIdentifier(), folder1.getInode(), newFolderName);
+            final Identifier identifier = identifierAPI.loadFromDb(folder1.getIdentifier());
             assertEquals(identifier.getAssetName(),newFolderName);
 
             final Set<Identifier> subIdentifiers = collectSubIdentifiers(identifier);
@@ -340,23 +343,23 @@ public class IdentifierConsistencyIntegrationTest extends IntegrationTestBase {
             });
 
         } finally {
-            if (f3 != null) {
-                folderAPI.delete(f3, user, false);
+            if (folder3 != null) {
+                folderAPI.delete(folder3, user, false);
             }
-            if (f2 != null) {
-                folderAPI.delete(f2, user, false);
+            if (folder2 != null) {
+                folderAPI.delete(folder2, user, false);
             }
-            if (f1 != null) {
-                folderAPI.delete(f1, user, false);
+            if (folder1 != null) {
+                folderAPI.delete(folder1, user, false);
             }
-            if (f0 != null) {
-                folderAPI.delete(f0, user, false);
+            if (folder0 != null) {
+                folderAPI.delete(folder0, user, false);
             }
         }
     }
 
 
-    private Set<Identifier> collectSubIdentifiers(Identifier identifier) throws DotDataException {
+    private Set<Identifier> collectSubIdentifiers(final Identifier identifier) throws DotDataException {
         final Set<Identifier> children = new HashSet<>();
         final String path =  identifier.getParentPath() + identifier.getAssetName() + "/";
         //System.out.println(path);
@@ -377,10 +380,10 @@ public class IdentifierConsistencyIntegrationTest extends IntegrationTestBase {
         Logger.debug(this,
                 "Changing FileAsset CT FileName field for :" + DbConnectionFactory.getDBType());
 
-        final String id = UUIDGenerator.generateUuid();
-        final Identifier identifier = new Identifier(id);
+        final String uuid = UUIDGenerator.generateUuid();
+        final Identifier identifier = new Identifier(uuid);
         try {
-            final Host host = APILocator.getHostAPI().findByName("demo.dotcms.com", APILocator.systemUser(), false);
+            final Host host = APILocator.getHostAPI().findByName(DEMO, APILocator.systemUser(), false);
 
             final Connection conn = DbConnectionFactory.getDataSource().getConnection();
             conn.setAutoCommit(true);
@@ -393,19 +396,19 @@ public class IdentifierConsistencyIntegrationTest extends IntegrationTestBase {
                 identifier.setSysExpireDate(null);
                 identifier.setSysPublishDate(null);
 
-                final DotConnect dc = new DotConnect();
-                dc.setSQL(INSERT_IDENTIFIER_SQL);
+                final DotConnect dotConnect = new DotConnect();
+                dotConnect.setSQL(INSERT_IDENTIFIER_SQL);
 
-                dc.addParam(identifier.getParentPath());
-                dc.addParam(identifier.getAssetName());
-                dc.addParam(identifier.getHostId());
-                dc.addParam(identifier.getAssetType());
-                dc.addParam(identifier.getSysPublishDate());
-                dc.addParam(identifier.getSysExpireDate());
-                dc.addParam(id);
+                dotConnect.addParam(identifier.getParentPath());
+                dotConnect.addParam(identifier.getAssetName());
+                dotConnect.addParam(identifier.getHostId());
+                dotConnect.addParam(identifier.getAssetType());
+                dotConnect.addParam(identifier.getSysPublishDate());
+                dotConnect.addParam(identifier.getSysExpireDate());
+                dotConnect.addParam(uuid);
 
                 try {
-                    dc.loadResult();
+                    dotConnect.loadResult();
                 } catch (DotDataException e) {
                     Logger.error(getClass(), "insertIdentifier failed:" + e, e);
                     throw new DotDataException(e);
@@ -434,21 +437,21 @@ public class IdentifierConsistencyIntegrationTest extends IntegrationTestBase {
                 identifier.setParentPath(parentPath);
                 identifier.setAssetName(assetName);
 
-                final DotConnect dc = new DotConnect();
-                dc.setSQL(UPDATE_IDENTIFIER_SQL);
+                final DotConnect dotConnect = new DotConnect();
+                dotConnect.setSQL(UPDATE_IDENTIFIER_SQL);
 
-                dc.addParam(identifier.getParentPath());
-                dc.addParam(identifier.getAssetName());
-                dc.addParam(identifier.getHostId());
-                dc.addParam(identifier.getAssetType());
-                dc.addParam(identifier.getSysPublishDate());
-                dc.addParam(identifier.getSysExpireDate());
-                dc.addParam(identifier.getId());
+                dotConnect.addParam(identifier.getParentPath());
+                dotConnect.addParam(identifier.getAssetName());
+                dotConnect.addParam(identifier.getHostId());
+                dotConnect.addParam(identifier.getAssetType());
+                dotConnect.addParam(identifier.getSysPublishDate());
+                dotConnect.addParam(identifier.getSysExpireDate());
+                dotConnect.addParam(identifier.getId());
 
                 try {
-                    dc.loadResult();
+                    dotConnect.loadResult();
                 } catch (DotDataException e) {
-                    Logger.error(getClass(), "updateIdentifier failed:" + e, e);
+                    Logger.error(getClass(), UPDATE_IDENTIFIER_FAIL + e, e);
                     throw new DotDataException(e);
                 }
 
@@ -476,7 +479,7 @@ public class IdentifierConsistencyIntegrationTest extends IntegrationTestBase {
                 try {
                     dc.loadResult();
                 } catch (DotDataException e) {
-                    Logger.error(IdentifierFactoryImpl.class, "updateIdentifier failed:" + e, e);
+                    Logger.error(IdentifierFactoryImpl.class, UPDATE_IDENTIFIER_FAIL + e, e);
                     throw new DotDataException(e);
                 }
 
@@ -503,7 +506,7 @@ public class IdentifierConsistencyIntegrationTest extends IntegrationTestBase {
                 try {
                     dc.loadResult();
                 } catch (DotDataException e) {
-                    Logger.error(IdentifierFactoryImpl.class, "updateFolder failed:" + e, e);
+                    Logger.error(IdentifierFactoryImpl.class, UPDATE_IDENTIFIER_FAIL + e, e);
                     throw new DotDataException(e);
                 }
 
