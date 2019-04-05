@@ -32,15 +32,7 @@ export class DotEditLayoutService {
         const grid: DotLayoutGridBox[] = [];
 
         dotLayoutBody.rows.forEach((row: DotLayoutRow, rowIndex) => {
-            row.columns.forEach((column) => {
-                const payload: any = column.styleClass
-                    ? {
-                          payload: {
-                              styleClass: column.styleClass
-                          }
-                      }
-                    : {};
-
+            row.columns.forEach((column: DotLayoutColumn) => {
                 grid.push({
                     containers: this.getDotContainerColumnBoxFromDotPageContainer(
                         column.containers
@@ -49,7 +41,7 @@ export class DotEditLayoutService {
                         sizex: column.width,
                         col: column.leftOffset,
                         row: rowIndex + 1,
-                        ...payload
+                        payload: column
                     })
                 });
             });
@@ -65,7 +57,7 @@ export class DotEditLayoutService {
      * @returns DotLayoutBody
      */
     getDotLayoutBody(grid: DotLayoutGrid): DotLayoutBody {
-        return <DotLayoutBody>{
+        return {
             rows: grid.getRows().map((row) => this.getLayoutRowFromLayoutGridBoxes(row))
         };
     }
@@ -80,10 +72,21 @@ export class DotEditLayoutService {
         return this.getDotContainerColumnBoxFromDotPageContainer(containers);
     }
 
+    /**
+     * Add box to the grid system
+     *
+     * @memberof DotEditLayoutService
+     */
     addBox(): void {
         this._addGridBox.next(true);
     }
 
+    /**
+     * Get notified when a box is added to the grid system
+     *
+     * @returns {Observable<boolean>}
+     * @memberof DotEditLayoutService
+     */
     getBoxes(): Observable<boolean> {
         return this._addGridBox.asObservable();
     }
@@ -105,32 +108,28 @@ export class DotEditLayoutService {
 
     private getLayoutRowFromLayoutGridBoxes(dotLayoutGridRow: DotLayoutGridRow): DotLayoutRow {
         return {
-            ...(dotLayoutGridRow.styleClass ? { styleClass: dotLayoutGridRow.styleClass } : {}),
-            columns: dotLayoutGridRow.boxes.map(
-                (layoutGridBox: DotLayoutGridBox) =>
-                    <DotLayoutColumn>{
-                        leftOffset: layoutGridBox.config.col,
-                        width: layoutGridBox.config.sizex,
-                        ...this.getPayload(layoutGridBox),
-                        containers: layoutGridBox.containers
-                            .filter((dotContainersColumnBox) => dotContainersColumnBox.container)
-                            .map(
-                                (dotContainersColumnBox: DotContainerColumnBox) =>
-                                    <DotPageContainer>{
-                                        identifier: this.templateContainersCacheService.getContainerReference(
-                                            dotContainersColumnBox.container
-                                        ),
-                                        uuid: dotContainersColumnBox.uuid
-                                    }
-                            )
-                    }
-            )
+            styleClass: dotLayoutGridRow.styleClass,
+            columns: dotLayoutGridRow.boxes.map(this.getColumn.bind(this))
         };
     }
 
-    private getPayload(layoutGridBox: DotLayoutGridBox): any {
-        return layoutGridBox.config.payload && layoutGridBox.config.payload.styleClass
-            ? { styleClass: layoutGridBox.config.payload.styleClass }
-            : {};
+    private getColumn(layoutGridBox: DotLayoutGridBox): DotLayoutColumn {
+        return {
+            ...layoutGridBox.config.payload,
+            leftOffset: layoutGridBox.config.col,
+            width: layoutGridBox.config.sizex,
+            containers: layoutGridBox.containers
+                .filter((dotContainersColumnBox) => dotContainersColumnBox.container)
+                .map(this.getContainer.bind(this))
+        };
+    }
+
+    private getContainer(dotContainersColumnBox: DotContainerColumnBox): DotPageContainer {
+        return {
+            identifier: this.templateContainersCacheService.getContainerReference(
+                dotContainersColumnBox.container
+            ),
+            uuid: dotContainersColumnBox.uuid
+        };
     }
 }
