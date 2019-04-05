@@ -210,78 +210,98 @@ public class ReindexQueueFactory {
         return contentToIndex;
     }
 
-    @WrapInTransaction
     private Map<String, ReindexEntry> loadReindexRecordsFromDb(final int recordsToReturn) throws DotDataException {
+      Connection conn = null;
+
+      try {
+        conn = DbConnectionFactory.getDataSource().getConnection();
+        if (DbConnectionFactory.isMySql()) {
+          conn.setTransactionIsolation(conn.TRANSACTION_READ_COMMITTED);
+        }
+        conn.setAutoCommit(false);
+
         final DotConnect dc = new DotConnect();
         final Map<String, ReindexEntry> contentList = new LinkedHashMap<>();
         final List<Map<String, Object>> results;
-        final Connection con;
         String serverId = ConfigUtils.getServerId();
 
-        try {
+        // Get the number of records to fetch
 
-            // Get the number of records to fetch
+        final int priorityLevel = Priority.ERROR.dbValue();
 
-            final int priorityLevel = Priority.ERROR.dbValue();
+        if (DbConnectionFactory.isOracle()) {
+          final CallableStatement call = conn.prepareCall("{ ? = call load_records_to_index(?,?,?) }");
+          call.registerOutParameter(1, OracleTypes.CURSOR);
+          call.setString(2, serverId);
+          call.setInt(3, recordsToReturn);
+          call.setInt(4, priorityLevel);
+          call.execute();
+          final ResultSet r = (ResultSet) call.getObject(1);
+          results = new ArrayList<>();
+          while (r.next()) {
+            final Map<String, Object> map = new HashMap<>();
+            map.put("id", r.getInt("id"));
+            map.put("inode_to_index", r.getString("inode_to_index"));
+            map.put("ident_to_index", r.getString("ident_to_index"));
+            map.put("priority", r.getInt("priority"));
+            map.put("action", r.getInt("dist_action"));
+            results.add(map);
+          }
+          r.close();
+          call.close();
+        } else if (DbConnectionFactory.isMsSql()) {
+          // we need to make sure this setting is ON because of the READPAST we use
+          // in the stored procedure
+          dc.setSQL("SET TRANSACTION ISOLATION LEVEL READ COMMITTED;");
+          dc.loadResult();
 
-            con = DbConnectionFactory.getConnection();
-            if (DbConnectionFactory.isOracle()) {
-                final CallableStatement call = con.prepareCall("{ ? = call load_records_to_index(?,?,?) }");
-                call.registerOutParameter(1, OracleTypes.CURSOR);
-                call.setString(2, serverId);
-                call.setInt(3, recordsToReturn);
-                call.setInt(4, priorityLevel);
-                call.execute();
-                final ResultSet r = (ResultSet) call.getObject(1);
-                results = new ArrayList<>();
-                while (r.next()) {
-                    final Map<String, Object> map = new HashMap<>();
-                    map.put("id", r.getInt("id"));
-                    map.put("inode_to_index", r.getString("inode_to_index"));
-                    map.put("ident_to_index", r.getString("ident_to_index"));
-                    map.put("priority", r.getInt("priority"));
-                    map.put("action", r.getInt("dist_action"));
-                    results.add(map);
-                }
-                r.close();
-                call.close();
-            } else if (DbConnectionFactory.isMsSql()) {
-                // we need to make sure this setting is ON because of the READPAST we use
-                // in the stored procedure
-                dc.setSQL("SET TRANSACTION ISOLATION LEVEL READ COMMITTED;");
-                dc.loadResult();
-
-                dc.setSQL("load_records_to_index @server_id='" + serverId + "', @records_to_fetch=" + String.valueOf(recordsToReturn)
-                        + ", @priority_level=" + priorityLevel);
-                dc.setForceQuery(true);
-                results = dc.loadObjectResults(con);
-            } else if (DbConnectionFactory.isH2()) {
-                dc.setSQL("call load_records_to_index(?,?,?)");
-                dc.addParam(serverId);
-                dc.addParam(REINDEX_RECORDS_TO_FETCH);
-                dc.addParam(priorityLevel);
-                results = dc.loadObjectResults();
-            } else {
-                dc.setSQL(reindexSelectSQL());
-                dc.addParam(serverId);
-                dc.addParam(recordsToReturn);
-                dc.addParam(priorityLevel);
-                results = dc.loadObjectResults(con);
-            }
-
-            for (Map<String, Object> r : results) {
-                final ReindexEntry entry = new ReindexEntry();
-                entry.setId(((Number) r.get("id")).longValue());
-                String identifier = (String) r.get("ident_to_index");
-                entry.setIdentToIndex(identifier);
-                entry.setPriority(((Number) (r.get("priority"))).intValue());
-                entry.setDelete(((Number) (r.get("dist_action"))).intValue()==ReindexAction.DELETE.ordinal());
-                contentList.put(identifier, entry);
-            }
-        } catch (SQLException e1) {
-            throw new DotDataException(e1.getMessage(), e1);
+          dc.setSQL("load_records_to_index @server_id='" + serverId + "', @records_to_fetch=" + String.valueOf(recordsToReturn)
+              + ", @priority_level=" + priorityLevel);
+          dc.setForceQuery(true);
+          results = dc.loadObjectResults(conn);
+        } else if (DbConnectionFactory.isH2()) {
+          dc.setSQL("call load_records_to_index(?,?,?)");
+          dc.addParam(serverId);
+          dc.addParam(REINDEX_RECORDS_TO_FETCH);
+          dc.addParam(priorityLevel);
+          results = dc.loadObjectResults();
+        } else {
+          dc.setSQL(reindexSelectSQL());
+          dc.addParam(serverId);
+          dc.addParam(recordsToReturn);
+          dc.addParam(priorityLevel);
+          results = dc.loadObjectResults(conn);
         }
+
+        for (Map<String, Object> r : results) {
+          final ReindexEntry entry = new ReindexEntry();
+          entry.setId(((Number) r.get("id")).longValue());
+          String identifier = (String) r.get("ident_to_index");
+          entry.setIdentToIndex(identifier);
+          entry.setPriority(((Number) (r.get("priority"))).intValue());
+          entry.setDelete(((Number) (r.get("dist_action"))).intValue() == ReindexAction.DELETE.ordinal());
+          contentList.put(identifier, entry);
+        }
+        conn.commit();
         return contentList;
+      } catch (Exception e) {
+        if (conn != null) {
+          try {
+            conn.rollback();
+          } catch (SQLException e1) {
+            Logger.debug(this.getClass(), e1.getMessage(), e1);
+          }
+        }
+        throw new DotDataException(e);
+      } finally {
+        if (conn != null) {
+          try {
+            conn.close();
+          } catch (Exception ex) {
+            Logger.debug(this.getClass(), ex.getMessage(), ex);
+          }
+        }
+      }
     }
 
     protected String getServerId() {

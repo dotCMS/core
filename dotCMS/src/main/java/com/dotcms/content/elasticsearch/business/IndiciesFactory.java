@@ -1,17 +1,19 @@
 package com.dotcms.content.elasticsearch.business;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
 import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo.IndexTypes;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.Logger;
 
 import io.vavr.control.Try;
 
@@ -20,9 +22,9 @@ public class IndiciesFactory {
 
     protected static IndiciesCache cache = CacheLocator.getIndiciesCache();
 
-    @CloseDBIfOpened
+
     public IndiciesInfo loadIndicies() throws DotDataException {
-        return loadIndicies(DbConnectionFactory.getConnection());
+        return loadIndicies(null);
     }
 
     @CloseDBIfOpened
@@ -62,10 +64,17 @@ public class IndiciesFactory {
         return info;
     }
 
-    @WrapInTransaction
-    public void point(final IndiciesInfo newInfo) throws DotDataException {
 
-        if(newInfo==null || newInfo.equals(loadIndicies())) {
+    public void point(final IndiciesInfo newInfo) throws DotDataException {
+      Connection conn = null;
+
+      try {
+        conn = DbConnectionFactory.getDataSource().getConnection();
+        conn.setAutoCommit(false);
+        if (DbConnectionFactory.isMySql()) {
+          conn.setTransactionIsolation(conn.TRANSACTION_READ_COMMITTED);
+        }
+        if(newInfo==null || newInfo.equals(loadIndicies(conn))) {
             return;
         }
         DotConnect dc = new DotConnect();
@@ -75,13 +84,33 @@ public class IndiciesFactory {
             final String indexType = type.toString().toLowerCase();
             final String newValue = Try.of(() -> (String) IndiciesInfo.class.getDeclaredField(indexType).get(newInfo)).getOrNull();
 
-            dc.setSQL(deleteSQL).addParam(indexType).addParam(newValue).loadResult();
+            dc.setSQL(deleteSQL).addParam(indexType).addParam(newValue).loadResult(conn);
             if (newValue != null) {
-                dc.setSQL(insertSQL).addParam(newValue).addParam(indexType).loadResult();
+                dc.setSQL(insertSQL).addParam(newValue).addParam(indexType).loadResult(conn);
             }
 
         }
+        conn.commit();
         cache.clearCache();
+        
+      } catch (Exception e) {
+        if (conn != null) {
+          try {
+            conn.rollback();
+          } catch (SQLException e1) {
+            Logger.debug(this.getClass(), e1.getMessage(), e1);
+          }
+        }
+        throw new DotRuntimeException(e);
+      } finally {
+        if (conn != null) {
+          try {
+            conn.close();
+          } catch (Exception ex) {
+            Logger.debug(this.getClass(), ex.getMessage(), ex);
+          }
+        }
+      }
 
     }
 
