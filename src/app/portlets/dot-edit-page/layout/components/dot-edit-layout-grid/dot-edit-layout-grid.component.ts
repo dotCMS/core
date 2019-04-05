@@ -1,14 +1,19 @@
-import { Component, OnInit, forwardRef, ViewChild } from '@angular/core';
-import * as _ from 'lodash';
-import { DotAlertConfirmService } from '@services/dot-alert-confirm/dot-alert-confirm.service';
-import { DotMessageService } from '@services/dot-messages-service';
-import { DotLayoutBody } from '../../../shared/models/dot-layout-body.model';
-import { DotEditLayoutService } from '../../../shared/services/dot-edit-layout.service';
+import { Component, OnInit, forwardRef, ViewChild, OnDestroy } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormGroup, FormBuilder } from '@angular/forms';
-import { DotEventsService } from '@services/dot-events/dot-events.service';
+
+import * as _ from 'lodash';
 import { NgGrid, NgGridConfig } from 'dot-layout-grid';
+
+import { DOT_LAYOUT_GRID_MAX_COLUMNS } from './../../../shared/models/dot-layout-grid.model';
+import { DotAlertConfirmService } from '@services/dot-alert-confirm/dot-alert-confirm.service';
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
-import { DotLayoutGrid, DOT_LAYOUT_GRID_MAX_COLUMNS } from '@portlets/dot-edit-page/shared/models/dot-layout-grid.model';
+import { DotEditLayoutService } from '../../../shared/services/dot-edit-layout.service';
+import { DotEventsService } from '@services/dot-events/dot-events.service';
+import { DotLayoutBody } from '../../../shared/models/dot-layout-body.model';
+import { DotLayoutGrid } from '@portlets/dot-edit-page/shared/models/dot-layout-grid.model';
+import { DotMessageService } from '@services/dot-messages-service';
+import { Subject } from 'rxjs';
+import { takeUntil, take } from 'rxjs/operators';
 
 /**
  * Component in charge of update the model that will be used be the NgGrid to display containers
@@ -27,7 +32,7 @@ import { DotLayoutGrid, DOT_LAYOUT_GRID_MAX_COLUMNS } from '@portlets/dot-edit-p
         }
     ]
 })
-export class DotEditLayoutGridComponent implements OnInit, ControlValueAccessor {
+export class DotEditLayoutGridComponent implements OnInit, OnDestroy, ControlValueAccessor {
     @ViewChild(NgGrid)
     ngGrid: NgGrid;
 
@@ -61,12 +66,14 @@ export class DotEditLayoutGridComponent implements OnInit, ControlValueAccessor 
         limit_to_screen: true
     };
 
+    private destroy$: Subject<boolean> = new Subject<boolean>();
+
     constructor(
         private dotDialogService: DotAlertConfirmService,
         private dotEditLayoutService: DotEditLayoutService,
         public dotMessageService: DotMessageService,
         private dotEventsService: DotEventsService,
-        public fb: FormBuilder,
+        public fb: FormBuilder
     ) {}
 
     ngOnInit() {
@@ -81,15 +88,22 @@ export class DotEditLayoutGridComponent implements OnInit, ControlValueAccessor 
                 'dot.common.dialog.accept',
                 'dot.common.dialog.reject'
             ])
+            .pipe(take(1))
             .subscribe();
 
-        this.dotEventsService.listen('dot-side-nav-toggle').subscribe(() => {
-            this.resizeGrid(200);
-        });
+        this.dotEventsService
+            .listen('dot-side-nav-toggle')
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(() => {
+                this.resizeGrid(200);
+            });
 
-        this.dotEventsService.listen('layout-sidebar-change').subscribe(() => {
-            this.resizeGrid();
-        });
+        this.dotEventsService
+            .listen('layout-sidebar-change')
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(() => {
+                this.resizeGrid();
+            });
 
         // needed it because the transition between content & layout.
         this.resizeGrid();
@@ -98,7 +112,7 @@ export class DotEditLayoutGridComponent implements OnInit, ControlValueAccessor 
             classToAdd: ''
         });
 
-        this.form.valueChanges.subscribe(() => {
+        this.form.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
             this.dialogActions = {
                 cancel: {
                     ...this.dialogActions.cancel
@@ -109,6 +123,18 @@ export class DotEditLayoutGridComponent implements OnInit, ControlValueAccessor 
                 }
             };
         });
+
+        this.dotEditLayoutService
+            .getBoxes()
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(() => {
+                this.addBox();
+            });
+    }
+
+    ngOnDestroy(): void {
+        this.destroy$.next(true);
+        this.destroy$.complete();
     }
 
     /**
@@ -212,7 +238,10 @@ export class DotEditLayoutGridComponent implements OnInit, ControlValueAccessor 
      */
     addColumnClass(index: number): void {
         this.addClass(
-            () => this.grid.boxes[index].config.payload ? this.grid.boxes[index].config.payload.styleClass || null : null,
+            () =>
+                this.grid.boxes[index].config.payload
+                    ? this.grid.boxes[index].config.payload.styleClass || null
+                    : null,
             (value: string) => {
                 if (!this.grid.boxes[index].config.payload) {
                     this.grid.boxes[index].config.payload = {
@@ -289,8 +318,11 @@ export class DotEditLayoutGridComponent implements OnInit, ControlValueAccessor 
     }
 
     private resizeGrid(timeOut?): void {
-        setTimeout(() => {
-            this.ngGrid.triggerResize();
-        }, timeOut ? timeOut : 0);
+        setTimeout(
+            () => {
+                this.ngGrid.triggerResize();
+            },
+            timeOut ? timeOut : 0
+        );
     }
 }

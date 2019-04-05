@@ -1,3 +1,4 @@
+import { DotEditLayoutService } from '@portlets/dot-edit-page/shared/services/dot-edit-layout.service';
 import { DotRenderedPageState } from './../../shared/models/dot-rendered-page-state.model';
 import { DotAlertConfirmService } from './../../../../api/services/dot-alert-confirm/dot-alert-confirm.service';
 import { FormGroup, FormBuilder, Validators } from '@angular/forms';
@@ -56,7 +57,8 @@ export class DotEditLayoutDesignerComponent implements OnInit {
         private dotRouterService: DotRouterService,
         public dotMessageService: DotMessageService,
         private dotThemesService: DotThemesService,
-        private dotHttpErrorManagerService: DotHttpErrorManagerService
+        private dotHttpErrorManagerService: DotHttpErrorManagerService,
+        private dotEditLayoutService: DotEditLayoutService
     ) {}
 
     ngOnInit(): void {
@@ -85,6 +87,10 @@ export class DotEditLayoutDesignerComponent implements OnInit {
         } else {
             this.setEditLayoutMode();
         }
+    }
+
+    addGridBox() {
+        this.dotEditLayoutService.addBox();
     }
 
     /**
@@ -220,8 +226,7 @@ export class DotEditLayoutDesignerComponent implements OnInit {
             title: this.isLayout() ? null : this.pageState.template.title,
             themeId: this.pageState.template.theme,
             layout: this.fb.group({
-                body:
-                    this.pageState.layout.body || {},
+                body: this.pageState.layout.body || {},
                 header: this.pageState.layout.header,
                 footer: this.pageState.layout.footer,
                 sidebar: this.createSidebarForm()

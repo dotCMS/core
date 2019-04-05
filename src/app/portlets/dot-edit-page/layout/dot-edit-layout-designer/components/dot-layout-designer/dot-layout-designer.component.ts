@@ -2,6 +2,7 @@ import { Component, OnInit, Input, ViewChild } from '@angular/core';
 import { FormGroup } from '@angular/forms';
 import { DotEditLayoutGridComponent } from '../../../components/dot-edit-layout-grid/dot-edit-layout-grid.component';
 import { DotMessageService } from '@services/dot-messages-service';
+import { Observable } from 'rxjs';
 
 @Component({
     selector: 'dot-layout-designer',
@@ -15,20 +16,14 @@ export class DotLayoutDesignerComponent implements OnInit {
     @Input()
     group: FormGroup;
 
+    messages$: Observable<{ [key: string]: string }>;
+
     constructor(public dotMessageService: DotMessageService) {}
 
     ngOnInit() {
-        this.dotMessageService
-            .getMessages(['editpage.layout.designer.header', 'editpage.layout.designer.footer'])
-            .subscribe();
-    }
-
-    /**
-     * Add a grid box to the ng grid layout component
-     *
-     * @memberof DotLayoutDesignerComponent
-     */
-    addGridBox(): void {
-        this.editLayoutGrid.addBox();
+        this.messages$ = this.dotMessageService.getMessages([
+            'editpage.layout.designer.header',
+            'editpage.layout.designer.footer'
+        ]);
     }
 }
