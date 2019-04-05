@@ -1,5 +1,6 @@
 package com.dotcms.publisher.environment.business;
 
+import com.dotmarketing.util.InodeUtils;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -66,9 +67,13 @@ public class EnvironmentFactoryImpl extends EnvironmentFactory {
 
 	@Override
 	public void save(Environment environment) throws DotDataException {
-		environment.setId(UUID.randomUUID().toString());
 		DotConnect dc = new DotConnect();
 		dc.setSQL(INSERT_ENVIRONMENT);
+
+		if(!InodeUtils.isSet(environment.getId())) {
+			environment.setId(UUID.randomUUID().toString());
+		}
+
 		dc.addParam(environment.getId());
 		dc.addParam(environment.getName());
 		dc.addParam(environment.getPushToAll().booleanValue());

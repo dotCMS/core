@@ -1,5 +1,6 @@
 package com.dotmarketing.servlets.ajax;
 
+import com.dotcms.rest.WebResource;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -34,6 +35,16 @@ public class AjaxDirectorServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
 
+    private WebResource webResource;
+
+    public AjaxDirectorServlet() {
+        this(new WebResource());
+    }
+
+    public AjaxDirectorServlet(WebResource webResource) {
+        this.webResource = webResource;
+    }
+
     public void init(ServletConfig config) throws ServletException {
 
     }
@@ -46,22 +57,25 @@ public class AjaxDirectorServlet extends HttpServlet {
         try {
             String clazz = request.getRequestURI().split("/")[2];
 
-            AjaxAction aj = (AjaxAction) Class.forName(clazz).newInstance();
-            if (!(aj instanceof AjaxAction)) {
+            AjaxAction ajaxAction = (AjaxAction) Class.forName(clazz).getConstructor().newInstance();
+
+            ajaxAction.setWebResource(webResource);
+
+            if (!(ajaxAction instanceof AjaxAction)) {
                 throw new ServletException("Class must implement AjaxServletInterface");
             }
 
-            aj.init(request, response);
+            ajaxAction.init(request, response);
             if ("POST".equals(request.getMethod())) {
-                aj.doPost(request, response);
+                ajaxAction.doPost(request, response);
             } else if ("GET".equals(request.getMethod())) {
-                aj.doGet(request, response);
+                ajaxAction.doGet(request, response);
             } else if ("PUT".equals(request.getMethod())) {
-                aj.doPut(request, response);
+                ajaxAction.doPut(request, response);
             } else if ("DELETE".equals(request.getMethod())) {
-                aj.doDelete(request, response);
+                ajaxAction.doDelete(request, response);
             } else {
-                aj.service(request, response);
+                ajaxAction.service(request, response);
             }
             return;
         } catch (Exception e) {

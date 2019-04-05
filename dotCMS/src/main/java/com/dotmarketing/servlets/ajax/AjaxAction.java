@@ -19,7 +19,16 @@ public abstract class AjaxAction {
 	HttpServletRequest request;
 	HttpServletResponse response;
 	Map<String, String> params;
-    private final WebResource webResource = new WebResource();
+    private WebResource webResource;
+
+	public AjaxAction() {
+		this.webResource = new WebResource();
+	}
+
+	public void setWebResource(WebResource webResource) {
+		this.webResource = webResource;
+	}
+
 	public void init(HttpServletRequest request, HttpServletResponse response){
 		setUser( request);
 		setURIParams(request);
