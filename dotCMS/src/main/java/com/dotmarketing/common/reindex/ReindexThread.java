@@ -194,9 +194,8 @@ public class ReindexThread {
                         bulkProcessor = null;
                     }
 
-                    if (bulkProcessorListener != null) {
-                        switchOverIfNeeded();
-                    }
+                    switchOverIfNeeded();
+                    
                     Thread.sleep(SLEEP);
                 }
             } catch (Exception ex) {

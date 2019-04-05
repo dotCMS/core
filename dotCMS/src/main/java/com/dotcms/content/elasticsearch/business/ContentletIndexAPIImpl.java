@@ -76,6 +76,7 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.ThreadUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
@@ -326,6 +327,13 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      */
     @CloseDBIfOpened
     public boolean fullReindexSwitchover(Connection conn, final boolean forceSwitch) {
+      
+      
+        if(reindexTimeElapsedInLong()<Config.getLongProperty("REINDEX_THREAD_MINIMUN_RUNTIME_IN_SEC", 20)*1000) {
+          Logger.info(this.getClass(), "Reindex has been running only " +reindexTimeElapsed().get() + ". Letting the reindex settle.");
+          ThreadUtils.sleep(3000);
+          return false;
+        }
         try {
             final IndiciesInfo oldInfo = APILocator.getIndiciesAPI().loadIndicies();
             final String luckyServer = Try.of(() -> APILocator.getServerAPI().getOldestServer()).getOrElse(ConfigUtils.getServerId());
@@ -365,23 +373,38 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         return true;
     }
 
-    @Override
-    public Optional<String> reindexTimeElapsed() {
+
+    private long reindexTimeElapsedInLong() {
         try {
             final IndiciesInfo oldInfo = APILocator.getIndiciesAPI().loadIndicies();
             if (oldInfo.reindex_working != null) {
-
                 Date startTime = timestampFormatter.parse(oldInfo.reindex_working.replace("working_", ""));
-                long timeTook = System.currentTimeMillis() - startTime.getTime();
-                return Optional
-                        .ofNullable(Duration.ofMillis(timeTook).toString().substring(2).replaceAll("(\\d[HMS])(?!$)", "$1 ").toLowerCase());
+                return System.currentTimeMillis() - startTime.getTime();
             }
         } catch (Exception e) {
             Logger.debug(this, "unable to parse time:" + e, e);
         }
 
-        return Optional.empty();
+        return 0;
     }
+    
+    
+    
+    
+  @Override
+  public Optional<String> reindexTimeElapsed() {
+    try {
+
+      long elapsedTime = reindexTimeElapsedInLong();
+      if (elapsedTime > 0) {
+        return Optional.ofNullable(
+            Duration.ofMillis(reindexTimeElapsedInLong()).toString().substring(2).replaceAll("(\\d[HMS])(?!$)", "$1 ").toLowerCase());
+      }
+    } catch (Exception e) {
+      Logger.debug(this, "unable to parse time:" + e, e);
+    }
+    return Optional.empty();
+  }
 
     private void logSwitchover(IndiciesInfo oldInfo) {
         Logger.info(this, "-------------------------------");
