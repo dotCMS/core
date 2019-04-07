@@ -56,5 +56,11 @@ public interface ServerAPI {
     String getOldestServer(final List<String> serverIds) throws DotDataException, IOException;
 
     String getOldestServer() throws DotDataException, IOException;
+/**
+ * Returns a list of serverIds participating in a reindex
+ * @return
+ * @throws DotDataException
+ */
+  List<String> getReindexingServers() throws DotDataException;
 
 }

@@ -1,16 +1,13 @@
 package com.dotmarketing.common.reindex;
 
-import java.sql.CallableStatement;
 import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
@@ -25,7 +22,6 @@ import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableList;
 
-import oracle.jdbc.OracleTypes;
 
 /**
  * Provides access to all the routines associated to the re-indexation process in dotCMS.
@@ -48,6 +44,12 @@ public class ReindexQueueFactory {
 
     public static final int REINDEX_MAX_FAILURE_ATTEMPTS = Config.getIntProperty("RETRY_FAILED_INDEX_TIMES", 5);
 
+    private static final ConcurrentLinkedQueue<ReindexEntry> queue = new ConcurrentLinkedQueue<>();
+    
+    public ConcurrentLinkedQueue<ReindexEntry> getLocalQueue(){
+      return queue;
+    }
+    
     public enum Priority {
         ASAP, NORMAL, STRUCTURE, REINDEX, ERROR;
         public int dbValue() {
@@ -200,109 +202,74 @@ public class ReindexQueueFactory {
         dc.loadResult();
     }
 
-    protected Map<String, ReindexEntry> findContentToReindex(final int recordsToReturn) throws DotDataException {
-        Map<String, ReindexEntry> contentToIndex = loadReindexRecordsFromDb(recordsToReturn);
-        if (contentToIndex.size() < recordsToReturn) {
-            if (requeueStaleReindexRecordsTimer()) {
-                contentToIndex.putAll(loadReindexRecordsFromDb(recordsToReturn));
-            }
-        }
-        return contentToIndex;
+    
+    
+    
+  protected Map<String, ReindexEntry> findContentToReindex(final int recordsToReturn) throws DotDataException {
+    Map<String, ReindexEntry> contentToIndex = new HashMap<>();
+
+    if (queue.isEmpty()) {
+      loadUpLocalQueue();
     }
 
-    private Map<String, ReindexEntry> loadReindexRecordsFromDb(final int recordsToReturn) throws DotDataException {
-      Connection conn = null;
+    for (ReindexEntry entry; (entry = queue.poll()) != null;) {
+      contentToIndex.put(entry.getIdentToIndex(), entry);
+      if (contentToIndex.size() >= recordsToReturn)
+        break;
+    }
 
-      try {
-        conn = DbConnectionFactory.getDataSource().getConnection();
-        if (DbConnectionFactory.isMySql()) {
-          conn.setTransactionIsolation(conn.TRANSACTION_READ_COMMITTED);
-        }
-        conn.setAutoCommit(false);
+    return contentToIndex;
+  }
+    
+    
+    
+    
+    
 
-        final DotConnect dc = new DotConnect();
-        final Map<String, ReindexEntry> contentList = new LinkedHashMap<>();
-        final List<Map<String, Object>> results;
-        String serverId = ConfigUtils.getServerId();
-
-        // Get the number of records to fetch
-
-        final int priorityLevel = Priority.ERROR.dbValue();
-
-        if (DbConnectionFactory.isOracle()) {
-          final CallableStatement call = conn.prepareCall("{ ? = call load_records_to_index(?,?,?) }");
-          call.registerOutParameter(1, OracleTypes.CURSOR);
-          call.setString(2, serverId);
-          call.setInt(3, recordsToReturn);
-          call.setInt(4, priorityLevel);
-          call.execute();
-          final ResultSet r = (ResultSet) call.getObject(1);
-          results = new ArrayList<>();
-          while (r.next()) {
-            final Map<String, Object> map = new HashMap<>();
-            map.put("id", r.getInt("id"));
-            map.put("inode_to_index", r.getString("inode_to_index"));
-            map.put("ident_to_index", r.getString("ident_to_index"));
-            map.put("priority", r.getInt("priority"));
-            map.put("action", r.getInt("dist_action"));
-            results.add(map);
-          }
-          r.close();
-          call.close();
-        } else if (DbConnectionFactory.isMsSql()) {
-          // we need to make sure this setting is ON because of the READPAST we use
-          // in the stored procedure
-          dc.setSQL("SET TRANSACTION ISOLATION LEVEL READ COMMITTED;");
-          dc.loadResult();
-
-          dc.setSQL("load_records_to_index @server_id='" + serverId + "', @records_to_fetch=" + String.valueOf(recordsToReturn)
-              + ", @priority_level=" + priorityLevel);
-          dc.setForceQuery(true);
-          results = dc.loadObjectResults(conn);
-        } else if (DbConnectionFactory.isH2()) {
-          dc.setSQL("call load_records_to_index(?,?,?)");
-          dc.addParam(serverId);
-          dc.addParam(REINDEX_RECORDS_TO_FETCH);
-          dc.addParam(priorityLevel);
-          results = dc.loadObjectResults();
-        } else {
-          dc.setSQL(reindexSelectSQL());
-          dc.addParam(serverId);
-          dc.addParam(recordsToReturn);
-          dc.addParam(priorityLevel);
-          results = dc.loadObjectResults(conn);
-        }
-
-        for (Map<String, Object> r : results) {
-          final ReindexEntry entry = new ReindexEntry();
-          entry.setId(((Number) r.get("id")).longValue());
-          String identifier = (String) r.get("ident_to_index");
-          entry.setIdentToIndex(identifier);
-          entry.setPriority(((Number) (r.get("priority"))).intValue());
-          entry.setDelete(((Number) (r.get("dist_action"))).intValue() == ReindexAction.DELETE.ordinal());
-          contentList.put(identifier, entry);
-        }
-        conn.commit();
-        return contentList;
-      } catch (Exception e) {
-        if (conn != null) {
-          try {
-            conn.rollback();
-          } catch (SQLException e1) {
-            Logger.debug(this.getClass(), e1.getMessage(), e1);
-          }
-        }
-        throw new DotDataException(e);
-      } finally {
-        if (conn != null) {
-          try {
-            conn.close();
-          } catch (Exception ex) {
-            Logger.debug(this.getClass(), ex.getMessage(), ex);
-          }
-        }
+    
+    private static long lastIdIndexed=0;
+    
+    
+    
+    private void loadUpLocalQueue() throws DotDataException {
+      List<String> reindexingServers = APILocator.getServerAPI().getReindexingServers();
+      if(reindexingServers==null || reindexingServers.size() == 0) {
+        Logger.warn(this.getClass(), "There are no servers in cluster - something is wrong with server heartbeat");
+        return;
       }
+      int myIndex = reindexingServers.indexOf(APILocator.getServerAPI().readServerId());
+      final int priorityLevel = Priority.ERROR.dbValue();
+      DotConnect db  = new DotConnect();
+      db.setSQL("select * from dist_reindex_journal where id % ? = ? and priority <= ? and id > ? ORDER BY priority ASC LIMIT 2000");
+      db.addParam(reindexingServers.size());
+      db.addParam(myIndex);
+      db.addParam(priorityLevel);
+      db.addParam(lastIdIndexed);
+      for (Map<String, Object> map : db.loadObjectResults()) {
+        final ReindexEntry entry = mapToReindexEntry(map);
+        lastIdIndexed=entry.getId();
+        queue.add(entry);
+      }
+      if(queue.isEmpty()) {
+        lastIdIndexed=0;
+      }
+      
     }
+
+    private ReindexEntry mapToReindexEntry(Map<String,Object> map) {
+      final ReindexEntry entry = new ReindexEntry();
+      entry.setId(((Number) map.get("id")).longValue());
+      String identifier = (String) map.get("ident_to_index");
+      entry.setIdentToIndex(identifier);
+      entry.setPriority(((Number) (map.get("priority"))).intValue());
+      entry.setDelete(((Number) (map.get("dist_action"))).intValue() == ReindexAction.DELETE.ordinal());
+      return entry;
+      
+    }
+    
+    
+    
+    
 
     protected String getServerId() {
         return ConfigUtils.getServerId();

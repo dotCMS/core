@@ -5,6 +5,9 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.util.Logger;
 import com.liferay.util.StringPool;
+
+import io.vavr.control.Try;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -38,13 +41,15 @@ public class BulkProcessorListener implements BulkProcessor.Listener {
     @Override
     public void beforeBulk(final long executionId, final BulkRequest request) {
         Logger.info(this.getClass(), "-----------");
-        Logger.info(this.getClass(), "Total Indexed :" + contentletsIndexed);
+        Logger.info(this.getClass(), "Reindexing Server #  : " + Try.of(()->APILocator.getServerAPI().getReindexingServers().indexOf(APILocator.getServerAPI().readServerId())).getOrElse(-1));
+        Logger.info(this.getClass(), "Total Indexed        : " + contentletsIndexed);
         Logger.info(this.getClass(), "ReindexEntries found : " + workingRecords.size());
         Logger.info(this.getClass(), "BulkRequests created : " + request.numberOfActions());
+        
         contentletsIndexed += request.numberOfActions();
         final Optional<String> duration = APILocator.getContentletIndexAPI().reindexTimeElapsed();
         if (duration.isPresent()) {
-            Logger.info(this, "Full Reindex Elapsed : " + duration.get() + "");
+            Logger.info(this,        "Full Reindex Elapsed : " + duration.get() + "");
         }
         Logger.info(this.getClass(), "-----------");
     }

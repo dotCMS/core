@@ -226,7 +226,13 @@ public class ServerAPIImpl implements ServerAPI {
     public List<Server> getAliveServers() throws DotDataException {
         return serverFactory.getAliveServers();
     }
-
+    
+    @CloseDBIfOpened
+    @Override
+    public List<String> getReindexingServers() throws DotDataException {
+        return serverFactory.getReindexingServers();
+    }
+    
     @CloseDBIfOpened
     @Override
     public List<Server> getAliveServers(List<String> toExclude) throws DotDataException {

@@ -184,14 +184,14 @@ public class ReindexQueueAPIImpl implements ReindexQueueAPI {
             try {
                 addIdentifierReindex(con.getIdentifier());
             } catch (DotDataException e) {
-                throw new RuntimeException(e);
+                Logger.warnAndDebug(this.getClass(), e);
             }
 
         });
 
     }
 
-    @CloseDBIfOpened
+    @WrapInTransaction
     @Override
     public void addIdentifierReindex(final Identifier identifier) throws DotDataException {
 
@@ -199,13 +199,13 @@ public class ReindexQueueAPIImpl implements ReindexQueueAPI {
     }
 
     @Override
-    @CloseDBIfOpened
+    @WrapInTransaction
     public void deleteReindexEntry(Collection<ReindexEntry> recordsToDelete) throws DotDataException {
         reindexQueueFactory.deleteReindexEntry(recordsToDelete);
     }
     
     @Override
-    @CloseDBIfOpened
+    @WrapInTransaction
     public void deleteReindexEntry(String identiferToDelete) throws DotDataException {
         reindexQueueFactory.deleteReindexEntry(identiferToDelete);
     }
@@ -221,7 +221,7 @@ public class ReindexQueueAPIImpl implements ReindexQueueAPI {
 
 
     @Override
-    @CloseDBIfOpened
+    @WrapInTransaction
     public void markAsFailed(final ReindexEntry idx, final String cause) throws DotDataException {
         Logger.warn(this.getClass(), "Reindex failed for :" + idx + " because " + cause);
         reindexQueueFactory.markAsFailed(idx, UtilMethods.shortenString(cause, 300));
