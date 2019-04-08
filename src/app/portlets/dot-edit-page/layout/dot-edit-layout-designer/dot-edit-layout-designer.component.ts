@@ -1,3 +1,5 @@
+import { DotLayoutColumn } from './../../shared/models/dot-layout-column.model';
+import { DotLayoutRow } from './../../shared/models/dot-layout-row.model';
 import { Subject } from 'rxjs/internal/Subject';
 import { DotEditLayoutService } from '@portlets/dot-edit-page/shared/services/dot-edit-layout.service';
 import { DotRenderedPageState } from './../../shared/models/dot-rendered-page-state.model';
@@ -23,6 +25,7 @@ import {
     DotHttpErrorHandled
 } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { tap, take, takeUntil } from 'rxjs/operators';
+import { DotLayoutBody } from '@portlets/dot-edit-page/shared/models/dot-layout-body.model';
 
 @Component({
     selector: 'dot-edit-layout-designer',
@@ -242,12 +245,34 @@ export class DotEditLayoutDesignerComponent implements OnInit, OnDestroy {
             });
     }
 
+    // The POST request returns a 400 if we send the same properties we get
+    // ISSUE: https://github.com/dotCMS/core/issues/16344
+    private cleanUpBody(body: DotLayoutBody): DotLayoutBody {
+        return body
+            ? {
+                rows: body.rows.map((row: DotLayoutRow) => {
+                    return {
+                        ...row,
+                        columns: row.columns.map((column: DotLayoutColumn) => {
+                            return {
+                                containers: column.containers,
+                                leftOffset: column.leftOffset,
+                                width: column.width,
+                                styleClass: column.styleClass
+                            };
+                        })
+                    };
+                })
+            }
+            : null;
+    }
+
     private initForm(): void {
         this.form = this.fb.group({
             title: this.isLayout() ? null : this.pageState.template.title,
             themeId: this.pageState.template.theme,
             layout: this.fb.group({
-                body: this.pageState.layout.body || {},
+                body: this.cleanUpBody(this.pageState.layout.body) || {},
                 header: this.pageState.layout.header,
                 footer: this.pageState.layout.footer,
                 sidebar: this.createSidebarForm()

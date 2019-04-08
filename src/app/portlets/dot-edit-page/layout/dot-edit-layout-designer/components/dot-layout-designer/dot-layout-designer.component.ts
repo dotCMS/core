@@ -2,6 +2,7 @@ import { Component, OnInit, Input } from '@angular/core';
 import { FormGroup } from '@angular/forms';
 import { DotMessageService } from '@services/dot-messages-service';
 import { Observable } from 'rxjs';
+import { take } from 'rxjs/operators';
 
 @Component({
     selector: 'dot-layout-designer',
@@ -20,6 +21,6 @@ export class DotLayoutDesignerComponent implements OnInit {
         this.messages$ = this.dotMessageService.getMessages([
             'editpage.layout.designer.header',
             'editpage.layout.designer.footer'
-        ]);
+        ]).pipe(take(1));
     }
 }
