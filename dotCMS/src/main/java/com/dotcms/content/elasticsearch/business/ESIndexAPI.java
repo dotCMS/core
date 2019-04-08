@@ -118,7 +118,7 @@ public class ESIndexAPI {
 			Config.getIntProperty("ES_INDEX_OPERATIONS_TIMEOUT", 15000);
 
 	final private ESClient esclient;
-	final private ContentletIndexAPIImpl iapi;
+	final private ContentletIndexAPI iapi;
 	final private ESIndexHelper esIndexHelper;
 	private final ServerAPI serverAPI;
 	private final ClusterAPI clusterAPI;
