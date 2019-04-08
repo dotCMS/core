@@ -143,6 +143,7 @@ export class DotEditLayoutGridComponent implements OnInit, OnDestroy, ControlVal
      * @memberof DotEditLayoutGridComponent
      */
     addBox(): void {
+        console.log('addBox');
         this.grid.addBox();
         this.propagateGridLayoutChange();
     }
