@@ -33,13 +33,21 @@ import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.liferay.portal.model.User;
 import static org.junit.Assert.*;
 
+import com.liferay.util.StringPool;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 /**
  * @author nollymar
  */
+@RunWith(DataProviderRunner.class)
 public class ContentletIntegrationTest {
 
     private static ContentletAPI contentletAPI;
@@ -54,7 +62,41 @@ public class ContentletIntegrationTest {
     private static User user;
     private static Host defaultHost;
 
-    private final static String CARDINALITY = String.valueOf(RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal());
+    private final static String CARDINALITY = String
+            .valueOf(RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal());
+
+    public static class SetRelatedTestCase {
+
+        String filterType;
+        boolean checkIn;
+
+        public SetRelatedTestCase(final String filterType) {
+            this.filterType = filterType;
+            this.checkIn = true;
+        }
+
+        public SetRelatedTestCase(final String filterType, final boolean checkIn) {
+            this.filterType = filterType;
+            this.checkIn = checkIn;
+        }
+    }
+
+    @DataProvider
+    public static Object[] setRelatedTestCases(){
+        return new SetRelatedTestCase[]{
+                //Setting related content by setProperty method
+                new SetRelatedTestCase("property"),
+                //Setting related content by setRelatedByQuery method
+                new SetRelatedTestCase("query"),
+                //Setting related content by setRelatedById method
+                new SetRelatedTestCase("id"),
+                //Setting related content by setRelated method
+                new SetRelatedTestCase("method"),
+                //Setting related content by setProperty method without saving the content should
+                //not save related content on cache
+                new SetRelatedTestCase("property", false)
+        };
+    }
 
 
     @BeforeClass
@@ -245,8 +287,6 @@ public class ContentletIntegrationTest {
             assertEquals(childContentlet1.getIdentifier(), result.get(0).getIdentifier());
             assertEquals(childContentlet2.getIdentifier(), result.get(1).getIdentifier());
 
-
-
         } finally {
 
             if (parentContentType != null && parentContentType.id() != null) {
@@ -261,6 +301,190 @@ public class ContentletIntegrationTest {
                 roleAPI.delete(newRole);
             }
         }
+    }
+
+    @UseDataProvider("setRelatedTestCases")
+    @Test
+    public void testSetRelatedForOneSidedRelationship(final SetRelatedTestCase testCase)
+            throws DotDataException, DotSecurityException {
+
+        ContentType parentContentType = null;
+        ContentType childContentType  = null;
+
+        try{
+
+            //Create Content Types
+            parentContentType = getNewContentType();
+            childContentType = getNewContentType();
+
+            //Create Content
+            Contentlet parentContentlet = new ContentletDataGen(parentContentType.id())
+                    .languageId(defaultLanguage.getId()).next();
+
+            final Contentlet childContentlet = new ContentletDataGen(childContentType.id())
+                    .languageId(defaultLanguage.getId()).nextPersisted();
+
+            //Create Relationship
+            final Field field = createAndSaveRelationshipField("myChild", parentContentType.id(),
+                    childContentType.variable(), CARDINALITY);
+
+            //case: related child is saved
+            parentContentlet = validateSetRelated(testCase, parentContentlet, CollectionsUtils.list(childContentlet),
+                    field);
+
+            parentContentlet.setInode("");
+
+            //case: related child is kept when property is set as null
+            parentContentlet = validateSetRelated(testCase, parentContentlet, null,
+                    field);
+
+            parentContentlet.setInode("");
+            //case: related child is wiped out when property is set as an empty list
+            validateSetRelated(testCase, parentContentlet, Collections.EMPTY_LIST,
+                    field);
+        }finally{
+
+            if (parentContentType !=null && parentContentType.id() != null){
+                contentTypeAPI.delete(parentContentType);
+            }
+
+            if (childContentType !=null && childContentType.id() != null){
+                contentTypeAPI.delete(childContentType);
+            }
+        }
+    }
+
+    @UseDataProvider("setRelatedTestCases")
+    @Test
+    public void testSetRelatedForSelfRelationship(final SetRelatedTestCase testCase)
+            throws DotDataException, DotSecurityException {
+
+        ContentType contentType = null;
+
+        try{
+            //Create Content Type
+            contentType = getNewContentType();
+
+            //Create Content
+            Contentlet parentContentlet = new ContentletDataGen(contentType.id())
+                    .languageId(defaultLanguage.getId()).next();
+
+            Contentlet childContentlet = new ContentletDataGen(contentType.id())
+                    .languageId(defaultLanguage.getId()).nextPersisted();
+
+            //Create Relationship
+            final Field parentField = createAndSaveRelationshipField("myChild", contentType.id(),
+                    contentType.variable(), CARDINALITY);
+
+            final Field childField = createAndSaveRelationshipField("myParent", contentType.id(),
+                    contentType.variable() + StringPool.PERIOD + parentField.variable(), CARDINALITY);
+
+            //case: related child is saved
+            parentContentlet = validateSetRelated(testCase, parentContentlet, CollectionsUtils.list(childContentlet),
+                    parentField);
+
+            parentContentlet.setInode("");
+            //case: related child is kept when property is set as null
+            parentContentlet = validateSetRelated(testCase, parentContentlet, null,
+                    parentField);
+
+            parentContentlet.setInode("");
+            //case: related child is wiped out when property is set as an empty list
+            parentContentlet = validateSetRelated(testCase, parentContentlet, Collections.EMPTY_LIST,
+                    parentField);
+
+            childContentlet.setInode("");
+            //case: related parent is saved
+            childContentlet = validateSetRelated(testCase, childContentlet, CollectionsUtils.list(parentContentlet),
+                    childField);
+
+            childContentlet.setInode("");
+            //case: related parent is kept when property is set as null
+            childContentlet = validateSetRelated(testCase, childContentlet, null,
+                    childField);
+
+            childContentlet.setInode("");
+            //case: related parent is wiped out when property is set as an empty list
+            validateSetRelated(testCase, childContentlet, Collections.EMPTY_LIST,
+                    childField);
+        }finally{
+
+            if (contentType !=null && contentType.id() != null){
+                contentTypeAPI.delete(contentType);
+            }
+        }
+    }
+
+    /**
+     * Perform validations over all setRelated variants
+     * @param testCase
+     * @param parentContentlet
+     * @param childContentletList
+     * @param field
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    private Contentlet validateSetRelated(final SetRelatedTestCase testCase, final Contentlet parentContentlet,
+            final List<Contentlet> childContentletList, final Field field)
+            throws DotDataException, DotSecurityException {
+        switch (testCase.filterType) {
+            case "property":
+                parentContentlet
+                        .setProperty(field.variable(), childContentletList);
+                break;
+
+            case "id":
+                parentContentlet.setRelatedById(field,
+                        childContentletList != null ? childContentletList.stream().map(
+                                contentlet -> contentlet.getIdentifier())
+                                .collect(Collectors.toList()) : null, user, false);
+                break;
+
+            case "query":
+                String query = null;
+
+                if (childContentletList != null){
+                    if (!childContentletList.isEmpty()){
+                        query = childContentletList.get(0).getIdentifier();
+                    } else{
+                        query = "";
+                    }
+                }
+                parentContentlet.setRelatedByQuery(field, query, null, user, false);
+                break;
+
+            case "method":
+                parentContentlet.setRelated(field, childContentletList);
+                break;
+        }
+
+        final Contentlet savedContentlet;
+        if (testCase.checkIn) {
+            //Save related content
+            savedContentlet = contentletAPI.checkin(parentContentlet, user, false);
+            final List<Contentlet> result = contentletAPI.getRelatedContent(savedContentlet,
+                    relationshipAPI.getRelationshipFromField(field, user), user, false);
+
+            if (childContentletList != null) {
+                assertEquals(childContentletList.size(), result.size());
+
+                //validate related content is saved correctly
+                if (!childContentletList.isEmpty()) {
+                    assertEquals(childContentletList.get(0).getIdentifier(),
+                            result.get(0).getIdentifier());
+                }
+
+            } else {
+                //when calling checkin with null related, related content should keep the same
+                assertFalse(result.isEmpty());
+            }
+        } else {
+            savedContentlet = parentContentlet;
+            //validate none setter is modifying contentlet.relatedIds cache if the contentlet is not saved
+            assertTrue(parentContentlet.getRelated(field.variable(), user).isEmpty());
+        }
+
+        return savedContentlet;
     }
 
     private Role createRole() throws DotDataException {

@@ -1,10 +1,6 @@
 package com.dotcms.content.elasticsearch.business;
 
 
-import static com.dotcms.exception.ExceptionUtil.bubbleUpException;
-import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
-
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
@@ -36,20 +32,10 @@ import com.dotcms.services.VanityUrlServices;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.type.content.CommitListenerEvent;
 import com.dotcms.util.CollectionsUtils;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.beans.MultiTree;
-import com.dotmarketing.beans.Permission;
-import com.dotmarketing.beans.Tree;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.RelationshipAPI;
-import com.dotmarketing.business.Role;
-import com.dotmarketing.business.Treeable;
-import com.dotmarketing.business.UserAPI;
+import com.dotcms.uuid.shorty.ShortType;
+import com.dotcms.uuid.shorty.ShortyId;
+import com.dotmarketing.beans.*;
+import com.dotmarketing.business.*;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.QueryUtil;
 import com.dotmarketing.business.query.ValidationException;
@@ -62,11 +48,7 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.db.LocalTransaction;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.exception.InvalidLicenseException;
+import com.dotmarketing.exception.*;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.factories.TreeFactory;
@@ -74,14 +56,7 @@ import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.contentlet.business.BinaryFileFilter;
-import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.contentlet.business.ContentletCache;
-import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
-import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
-import com.dotmarketing.portlets.contentlet.business.DotLockException;
-import com.dotmarketing.portlets.contentlet.business.DotReindexStateException;
-import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.contentlet.business.*;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
@@ -113,21 +88,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.tag.business.TagAPI;
 import com.dotmarketing.tag.model.Tag;
-import com.dotmarketing.util.ActivityLogger;
-import com.dotmarketing.util.AdminLogger;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.ConfigUtils;
-import com.dotmarketing.util.DateUtil;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PageMode;
-import com.dotmarketing.util.PaginatedArrayList;
-import com.dotmarketing.util.RegEX;
-import com.dotmarketing.util.RegExMatch;
-import com.dotmarketing.util.TrashUtils;
-import com.dotmarketing.util.UUIDGenerator;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
+import com.dotmarketing.util.*;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -139,37 +100,33 @@ import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.DomDriver;
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.Serializable;
-import java.math.BigDecimal;
-import java.nio.file.Files;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
+import org.springframework.beans.BeanUtils;
+
+import java.io.*;
+import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+import static com.dotcms.exception.ExceptionUtil.bubbleUpException;
+import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
+import org.apache.commons.lang.StringUtils;
+import org.elasticsearch.action.search.SearchPhaseExecutionException;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHits;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.BeanUtils;
 
 /**
@@ -1205,37 +1162,78 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return permissionAPI.filterCollection(contentlets, PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
     }
 
+    /**
+     * Get all relationships in a contentlet given its inode
+     * @param contentletInode
+     * @param user
+     * @param respectFrontendRoles
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     @Override
-    public ContentletRelationships getAllRelationships(String contentletInode, User user, boolean respectFrontendRoles)throws DotDataException, DotSecurityException {
+    public ContentletRelationships getAllRelationships(String contentletInode, User user,
+            boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
         return getAllRelationships(find(contentletInode, user, respectFrontendRoles));
     }
 
+    /**
+     * Get all relationships in a contentlet
+     * @param contentlet
+     * @return
+     * @throws DotDataException
+     */
     @CloseDBIfOpened
     @Override
-    public ContentletRelationships getAllRelationships(Contentlet contentlet)throws DotDataException {
+    public ContentletRelationships getAllRelationships(final Contentlet contentlet)
+            throws DotDataException {
+        return getAllRelationships(contentlet, null);
+    }
 
-        final ContentletRelationships cRelationships = new ContentletRelationships(contentlet);
+    /**
+     * Get all relationships in a contentlet
+     * @param contentlet
+     * @param cRelationships If this param is set, all relationships on this object will be ignored
+     * @return
+     * @throws DotDataException
+     */
+    @CloseDBIfOpened
+    private ContentletRelationships getAllRelationships(final Contentlet contentlet,
+            ContentletRelationships cRelationships) throws DotDataException {
+
+        if (cRelationships == null) {
+            cRelationships = new ContentletRelationships(contentlet);
+        }
+
         final ContentType contentType = contentlet.getContentType();
         final List<Relationship> relationships = FactoryLocator.getRelationshipFactory()
                 .byContentType(contentType);
 
         for (Relationship relationship : relationships) {
 
-            if (FactoryLocator.getRelationshipFactory().sameParentAndChild(relationship)) {
+            final List relatedByRelationship = cRelationships.getRelationshipsRecords().stream()
+                    .filter(record -> record.getRelationship().getInode()
+                            .equals(relationship.getInode())).collect(
+                            Collectors.toList());
 
-                //If it's a same structure kind of relationship we need to pull all related content
-                //on both roles as parent and a child of the relationship
+            if (relatedByRelationship.size() == 0) {
+                if (FactoryLocator.getRelationshipFactory().sameParentAndChild(relationship)) {
 
-                //Pulling as child
-                pullRelated(contentlet, cRelationships, relationship, false);
+                    //If it's a same structure kind of relationship we need to pull all related content
+                    //on both roles as parent and a child of the relationship
 
-                //Pulling as parent
-                pullRelated(contentlet, cRelationships, relationship, true);
+                    //Pulling as child
+                    pullRelated(contentlet, cRelationships, relationship, false);
 
-            } else {
-                pullRelated(contentlet, cRelationships, relationship,
-                        FactoryLocator.getRelationshipFactory().isParent(relationship, contentType));
+                    //Pulling as parent
+                    pullRelated(contentlet, cRelationships, relationship, true);
+
+                } else {
+                    pullRelated(contentlet, cRelationships, relationship,
+                            FactoryLocator.getRelationshipFactory()
+                                    .isParent(relationship, contentType));
+                }
             }
         }
 
@@ -2973,7 +2971,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 contentlet.getMap().get("_validateEmptyFile_") == null;
 
         if(contentRelationships == null) {
-            contentRelationships = getAllRelationships(contentlet);
+
+            //Obtain all relationships
+            contentRelationships = getAllRelationships(contentlet,
+                    getContentletRelationships(contentlet, user));
         }
 
         if(cats == null) {
@@ -3679,6 +3680,54 @@ public class ESContentletAPIImpl implements ContentletAPI {
             bubbleUpException(e);
         }
         return contentlet;
+    }
+
+    /**
+     * Return a ContentletRelationships with all relationships found on the contentlet map
+     * @param contentlet
+     * @param user
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @NotNull
+    private ContentletRelationships getContentletRelationships(final Contentlet contentlet,
+            final User user)
+            throws DotDataException, DotSecurityException {
+        final ContentletRelationships contentRelationships = new ContentletRelationships(
+                contentlet);
+
+        //Get all relationship fields
+        final List<com.dotcms.contenttype.model.field.Field> relationshipFields = contentlet
+                .getContentType().fields().stream()
+                .filter(field -> field instanceof RelationshipField)
+                .collect(Collectors.toList());
+
+        if (contentlet.getMap() != null) {
+            //verify if the contentlet map contains related content for each relationship field
+            //and add it to the ContentletRelationships to be persisted
+            for (final com.dotcms.contenttype.model.field.Field field : relationshipFields) {
+                if (contentlet.getMap().containsKey(field.variable())) {
+                    final Relationship relationship = relationshipAPI
+                            .getRelationshipFromField(field, user);
+                    final boolean hasParent;
+                    if (relationshipAPI.sameParentAndChild(relationship)) {
+                        hasParent = relationship.getParentRelationName() == null || !relationship
+                                .getParentRelationName().equals(field.variable());
+                    } else {
+                        hasParent = relationshipAPI
+                                .isParent(relationship, contentlet.getContentType());
+                    }
+                    final ContentletRelationshipRecords relationshipRecords = contentRelationships.new ContentletRelationshipRecords(
+                            relationship, hasParent);
+                    relationshipRecords.getRecords()
+                            .addAll((List<Contentlet>) contentlet.get(field.variable()));
+
+                    contentRelationships.getRelationshipsRecords().add(relationshipRecords);
+                }
+            }
+        }
+        return contentRelationships;
     }
 
     private void cleanupCacheOnChangedURI(final Contentlet contentlet){
@@ -4920,13 +4969,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @CloseDBIfOpened
     @Override
-    public void validateContentlet(Contentlet contentlet,
+    public void validateContentlet(final Contentlet contentlet,
                                    ContentletRelationships contentRelationships, List<Category> cats)
             throws DotContentletValidationException {
         if (contentlet.getMap().get(Contentlet.DONT_VALIDATE_ME) != null) {
             return;
         }
-
 
         String stInode = contentlet.getStructureInode();
         if (!InodeUtils.isSet(stInode)) {

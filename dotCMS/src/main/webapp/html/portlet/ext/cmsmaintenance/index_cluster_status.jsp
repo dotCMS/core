@@ -8,6 +8,8 @@
 <%@page import="org.elasticsearch.action.admin.cluster.node.stats.NodesStatsResponse"%>
 <%@page import="org.elasticsearch.action.admin.cluster.node.stats.NodesStatsRequest"%>
 <%@page import="com.dotcms.content.elasticsearch.util.ESClient"%>
+<%@ page
+        import="static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS" %>
 
 <%@ include file="/html/common/uservalidation.jsp"%>
 
