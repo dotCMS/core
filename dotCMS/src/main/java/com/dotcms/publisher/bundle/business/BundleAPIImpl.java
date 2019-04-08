@@ -1,5 +1,6 @@
 package com.dotcms.publisher.bundle.business;
 
+import com.dotcms.util.DotPreconditions;
 import java.util.List;
 
 import com.dotcms.business.CloseDBIfOpened;
@@ -20,6 +21,9 @@ public class BundleAPIImpl implements BundleAPI {
 	@WrapInTransaction
 	@Override
 	public void saveBundle(Bundle bundle) throws DotDataException {
+		DotPreconditions.checkNotNull(bundle, IllegalArgumentException.class, "Bundle can't be null");
+		DotPreconditions.checkNotNull(bundle.getOwner(), IllegalArgumentException.class, "Bundle needs to have an owner");
+
 		bundleFactory.saveBundle(bundle);
 	}
 
