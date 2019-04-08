@@ -1,29 +1,86 @@
 package com.dotcms.contenttype.model.field.layout;
 
 import com.dotcms.contenttype.model.field.Field;
+import com.dotmarketing.exception.DotRuntimeException;
 
-import java.util.Arrays;
-import java.util.Comparator;
+import java.util.*;
+import java.util.stream.Collectors;
+
 
 public class FieldLayout {
-    final FieldLayoutRow[] rows = null;
+    private final List<Field> fields;
+    private NotStrictFieldLayoutRowSyntaxValidator notStrictFieldLayoutRowSyntaxValidator;
+    private StrictFieldLayoutRowSyntaxValidator strictFieldLayoutRowSyntaxValidator;
 
-    public FieldLayout(final Field[] fields) {
-        /*Arrays.stream(fields)
-            .sorted(new Comparator<Field>() {
-                @Override
-                public int compare(final Field field1, final Field field2) {
-                    return field1.sortOrder() - field2.sortOrder();
+    public FieldLayout(final Collection<Field> fields) {
+        this.fields = new ArrayList<>(fields);
+        this.fields.sort(Comparator.comparingInt(Field::sortOrder));
+    }
+
+    public List<Field> getFields() {
+
+        if (notStrictFieldLayoutRowSyntaxValidator == null) {
+            notStrictFieldLayoutRowSyntaxValidator = new NotStrictFieldLayoutRowSyntaxValidator(this.fields);
+        }
+
+        try {
+            notStrictFieldLayoutRowSyntaxValidator.validate();
+            return notStrictFieldLayoutRowSyntaxValidator.getFields();
+        } catch (FieldLayoutValidationException e) {
+            throw new DotRuntimeException(e);
+        }
+    }
+
+    public void validate() throws FieldLayoutValidationException {
+        if (strictFieldLayoutRowSyntaxValidator == null) {
+            strictFieldLayoutRowSyntaxValidator = new StrictFieldLayoutRowSyntaxValidator(this.fields);
+        }
+        
+        strictFieldLayoutRowSyntaxValidator.validate();
+    }
+
+    public FieldLayout update (final List<Field> fieldsToUpdate) {
+        final List<Field> newFields = new ArrayList<>(fields);
+
+        fieldsToUpdate
+            .stream()
+            .forEach(field -> {
+                if (!Objects.isNull(field.id())) {
+                    remove(newFields, field);
                 }
-            })
-            .map();*/
+
+                newFields.add(field.sortOrder(), field);
+            });
+
+        final List<Field> fieldsOrdered = FieldUtil.fixSortOrder(newFields);
+        return new FieldLayout(fieldsOrdered);
     }
 
-    public Field[] getFields() {
-        return null;
+    private void remove(final List<Field> newFields, final Field field) {
+        final Iterator<Field> fieldsIterator = newFields.iterator();
+
+        while (fieldsIterator.hasNext()) {
+            final Field next = fieldsIterator.next();
+            if (next.id() != null && next.id().equals(field.id())) {
+                fieldsIterator.remove();
+                break;
+            }
+        }
     }
 
-    public FieldLayoutRow[] getRows() {
-        return rows;
+    public FieldLayout remove (final List<String> fieldsIdToRemove) {
+        final List<Field> newFields = new ArrayList<>(fields);
+        final Iterator<Field> fieldIterator = newFields.iterator();
+
+        while(fieldIterator.hasNext()) {
+            final Field field = fieldIterator.next();
+
+            if (fieldsIdToRemove.contains(field.id())) {
+                fieldIterator.remove();
+            }
+        }
+        final List<Field> fieldsOrdered = FieldUtil.fixSortOrder(newFields);
+        return new FieldLayout(fieldsOrdered);
     }
+
 }
