@@ -28,7 +28,6 @@ import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.StringReader;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.Collections;
@@ -57,7 +56,7 @@ public class AjaxDirectorServletIntegrationTest {
     public static Object[] testCases(){
 
         // first test case RemotePublishAjaxAction.addToBundle
-        AjaxDirectorServletTestCase remotePublishAjaxActionAddToBundle = new AjaxDirectorServletTestCase();
+        final AjaxDirectorServletTestCase remotePublishAjaxActionAddToBundle = new AjaxDirectorServletTestCase();
 
         final String assetIdentifier = "71bf1747-56b9-41ca-a3fa-1fc7b8471dba";
         final String bundleName = "testingBundle";
@@ -97,7 +96,7 @@ public class AjaxDirectorServletIntegrationTest {
         }));
 
         // second test case = RemotePublishAjaxAction.pushBundle
-        AjaxDirectorServletTestCase remotePublishAjaxActionPushBundle = new AjaxDirectorServletTestCase();
+        final AjaxDirectorServletTestCase remotePublishAjaxActionPushBundle = new AjaxDirectorServletTestCase();
 
         final String bundleId = UUID.randomUUID().toString();
 
@@ -216,11 +215,11 @@ public class AjaxDirectorServletIntegrationTest {
         when(webResource.init(anyBoolean(), any(HttpServletRequest.class), anyBoolean()))
                 .thenReturn(dataObject);
 
-        AjaxDirectorServlet ajaxDirectorServlet = new AjaxDirectorServlet(webResource);
+        final AjaxDirectorServlet ajaxDirectorServlet = new AjaxDirectorServlet(webResource);
 
-        Reader inputString = new StringReader(testCase.getRequestJSON());
+        final Reader inputString = new StringReader(testCase.getRequestJSON());
 
-        BufferedReader reader = new BufferedReader(inputString);
+        final BufferedReader reader = new BufferedReader(inputString);
         when(request.getReader()).thenReturn(reader);
         when(request.getRequestURI()).thenReturn(testCase.getRequestURI());
         when(request.getSession()).thenReturn(session);

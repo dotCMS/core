@@ -13,7 +13,7 @@ public class JsonDataRequestWrapper extends HttpServletRequestWrapper {
 
     private final Map<String, String[]> requestParamMap;
 
-    public JsonDataRequestWrapper(HttpServletRequest request, Map<String, String[]> jsonData) {
+    public JsonDataRequestWrapper(final HttpServletRequest request, final Map<String, String[]> jsonData) {
         super(request);
         this.requestParamMap = new HashMap<>();
         requestParamMap.putAll(request.getParameterMap());
@@ -28,8 +28,8 @@ public class JsonDataRequestWrapper extends HttpServletRequestWrapper {
     }
 
     @Override
-    public String getParameter(String name) {
-        String[] result = requestParamMap.get(name);
+    public String getParameter(final String name) {
+        final String[] result = requestParamMap.get(name);
         return result != null && result.length > 0 ? result[0] : null;
     }
 
@@ -46,7 +46,7 @@ public class JsonDataRequestWrapper extends HttpServletRequestWrapper {
     }
 
     @Override
-    public String[] getParameterValues(String name) {
+    public String[] getParameterValues(final String name) {
 
         return requestParamMap.get(name);
     }

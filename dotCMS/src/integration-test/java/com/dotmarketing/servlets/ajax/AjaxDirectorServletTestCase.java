@@ -1,6 +1,6 @@
 package com.dotmarketing.servlets.ajax;
 
-public class AjaxDirectorServletTestCase {
+class AjaxDirectorServletTestCase {
 
     private String requestURI;
     private String requestJSON;
@@ -8,43 +8,43 @@ public class AjaxDirectorServletTestCase {
     private AjaxDirectorServletAssertion assertion;
     private AjaxDirectorServletDisposer disposer;
 
-    public String getRequestURI() {
+    String getRequestURI() {
         return requestURI;
     }
 
-    public void setRequestURI(String requestURI) {
+    void setRequestURI(final String requestURI) {
         this.requestURI = requestURI;
     }
 
-    public String getRequestJSON() {
+    String getRequestJSON() {
         return requestJSON;
     }
 
-    public void setRequestJSON(String requestJSON) {
+    void setRequestJSON(final String requestJSON) {
         this.requestJSON = requestJSON;
     }
 
-    public AjaxDirectorServletAssertion getAssertion() {
+    AjaxDirectorServletAssertion getAssertion() {
         return assertion;
     }
 
-    public void setAssertion(AjaxDirectorServletAssertion assertion) {
+    void setAssertion(final AjaxDirectorServletAssertion assertion) {
         this.assertion = assertion;
     }
 
-    public AjaxDirectorServletDisposer getDisposer() {
+    AjaxDirectorServletDisposer getDisposer() {
         return disposer;
     }
 
-    public void setDisposer(AjaxDirectorServletDisposer disposer) {
+    void setDisposer(final AjaxDirectorServletDisposer disposer) {
         this.disposer = disposer;
     }
 
-    public AjaxDirectorServletInitializer getInitializer() {
+    AjaxDirectorServletInitializer getInitializer() {
         return initializer;
     }
 
-    public void setInitializer(AjaxDirectorServletInitializer initializer) {
+    void setInitializer(final AjaxDirectorServletInitializer initializer) {
         this.initializer = initializer;
     }
 }

@@ -25,7 +25,7 @@ public abstract class AjaxAction {
 		this.webResource = new WebResource();
 	}
 
-	public void setWebResource(WebResource webResource) {
+	public void setWebResource(final WebResource webResource) {
 		this.webResource = webResource;
 	}
 
@@ -78,7 +78,7 @@ public abstract class AjaxAction {
 	public void setUser(HttpServletRequest request){
 		
 	    
-	    InitDataObject initData = webResource.init(true, request, true);
+	    final InitDataObject initData = webResource.init(true, request, true);
 	    
 
 	    this.user = initData.getUser();

@@ -41,7 +41,8 @@ public class AjaxDirectorServlet extends HttpServlet {
         this(new WebResource());
     }
 
-    public AjaxDirectorServlet(WebResource webResource) {
+    public AjaxDirectorServlet(final WebResource webResource) {
+        super();
         this.webResource = webResource;
     }
 
@@ -97,13 +98,13 @@ public class AjaxDirectorServlet extends HttpServlet {
         }
 
         try {
-            JSONObject json = new JSONObject(jsonStr);
-            Map<String, String[]> map = new HashMap<>();
+            final JSONObject json = new JSONObject(jsonStr);
+            final Map<String, String[]> map = new HashMap<>();
             for (Iterator<String> i = json.keys(); i.hasNext();) {
                 String key = i.next();
                 if (json.optJSONArray(key) != null) {
-                    List<String> strArray = new ArrayList<>();
-                    JSONArray arr = json.optJSONArray(key);
+                    final List<String> strArray = new ArrayList<>();
+                    final JSONArray arr = json.optJSONArray(key);
                     for (int j = 0; j < arr.length(); j++) {
                         if (UtilMethods.isSet(arr.opt(j))) {
                             strArray.add(arr.opt(j).toString());

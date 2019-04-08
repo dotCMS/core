@@ -97,7 +97,7 @@ public class PortletAPIImpl implements PortletAPI {
         List<Map<String, Object>> ports = new DotConnect()
                 .setSQL("select portletid ,groupid ,companyid , defaultpreferences, narrow,roles ,active_  from portlet where companyid=?")
                 .addParam(companyId).loadObjectResults();
-        List<Portlet> portlets =
+        final List<Portlet> portlets =
                 ports.stream()
                         .map(m -> new Portlet(
                                 (String) m.get("portletid"), 
