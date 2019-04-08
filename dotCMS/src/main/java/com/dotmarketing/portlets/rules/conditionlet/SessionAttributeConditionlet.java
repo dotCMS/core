@@ -51,12 +51,16 @@ public class SessionAttributeConditionlet extends Conditionlet<SessionAttributeC
 
     @Override
     public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance instance) {
+        final HttpSession session = request.getSession(false);
+        if(session==null){
+            return false;
+        }
         boolean evalSuccess;
 
-        if(request.getSession().getAttribute(instance.sessionKey) == null){
+        if(session.getAttribute(instance.sessionKey) == null){
             evalSuccess = instance.comparison.equals(IS_NOT);
         } else {
-            String sessionActualValue = request.getSession().getAttribute(instance.sessionKey).toString();
+            final String sessionActualValue = session.getAttribute(instance.sessionKey).toString();
 
             if(instance.comparison == EXISTS) {
                 evalSuccess = EXISTS.perform(sessionActualValue);
