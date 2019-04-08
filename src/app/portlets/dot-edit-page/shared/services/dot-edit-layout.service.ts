@@ -57,7 +57,6 @@ export class DotEditLayoutService {
      * @returns DotLayoutBody
      */
     getDotLayoutBody(grid: DotLayoutGrid): DotLayoutBody {
-        console.log(grid.getRows().length);
         return {
             rows: grid.getRows().map((row) => this.getLayoutRowFromLayoutGridBoxes(row))
         };
@@ -108,7 +107,6 @@ export class DotEditLayoutService {
     }
 
     private getLayoutRowFromLayoutGridBoxes(dotLayoutGridRow: DotLayoutGridRow): DotLayoutRow {
-        console.log('getLayoutRowFromLayoutGridBoxes', dotLayoutGridRow.boxes.length);
         return {
             styleClass: dotLayoutGridRow.styleClass,
             columns: dotLayoutGridRow.boxes.map(this.getColumn.bind(this))

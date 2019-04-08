@@ -109,7 +109,6 @@ export class DotLayoutGrid {
     }
 
     private setRowClases(): void {
-        console.log(this.dotLayoutGridBoxs);
         const newNRows = this.dotLayoutGridBoxs
             .map((box: DotLayoutGridBox) => box.config.row)
             .reduce((before: number, current: number) => {

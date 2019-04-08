@@ -138,7 +138,7 @@ describe('DotEditLayoutGridComponent', () => {
     });
 
     it('should add one Container to the grid of 3 columns', () => {
-        console.log('here');
+        ('here');
         component.addBox();
         expect(component.grid.boxes.length).toEqual(2);
         expect(component.grid.boxes[1].config.sizex).toEqual(3);
