@@ -60,14 +60,22 @@ public class BulkProcessorListener implements BulkProcessor.Listener {
         for (BulkItemResponse bulkItemResponse : response) {
             DocWriteResponse itemResponse = bulkItemResponse.getResponse();
 
+            String id;
+            if (bulkItemResponse.isFailed() || itemResponse == null) {
+                id = bulkItemResponse.getFailure().getId().substring(0,
+                        bulkItemResponse.getFailure().getId().lastIndexOf(StringPool.UNDERLINE));
+            } else {
+                id = itemResponse.getId()
+                        .substring(0, itemResponse.getId().lastIndexOf(StringPool.UNDERLINE));
+            }
 
-            String id = itemResponse.getId().substring(0, itemResponse.getId().lastIndexOf(
-                    StringPool.UNDERLINE));
-            ReindexEntry idx = workingRecords.remove(id);
-            if (idx == null)
+            ReindexEntry idx = workingRecords.get(id);
+            if (idx == null) {
                 continue;
-            if (bulkItemResponse.isFailed()) {
-                handleFailure(idx, "bulk index failure:" + bulkItemResponse.getFailure().getMessage());
+            }
+            if (bulkItemResponse.isFailed() || itemResponse == null) {
+                handleFailure(idx,
+                        "bulk index failure:" + bulkItemResponse.getFailure().getMessage());
             } else {
                 successful.add(idx);
             }
