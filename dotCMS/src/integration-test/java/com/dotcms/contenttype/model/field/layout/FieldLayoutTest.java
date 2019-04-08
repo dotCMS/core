@@ -529,6 +529,21 @@ public class FieldLayoutTest {
         fieldLayoutRemove.validate();
     }
 
+    @Test
+    public void shouldCreateFieldLayout() throws FieldLayoutValidationException {
+        final List<Field> fields = this.getData();
+
+        final FieldLayout fieldLayout = new FieldLayout(fields);
+        final List<FieldLayoutRow> rows = fieldLayout.getRows();
+
+        assertEquals(2, rows.size());
+        assertEquals(1, rows.get(0).getColumns().size());
+        assertEquals(1, rows.get(0).getColumns().get(0).getFields().size());
+        assertEquals(2, rows.get(1).getColumns().size());
+        assertEquals(2, rows.get(1).getColumns().get(0).getFields().size());
+        assertEquals(1, rows.get(1).getColumns().get(1).getFields().size());
+    }
+
     @NotNull
     private List<Field> getData() {
         return CollectionsUtils.list(

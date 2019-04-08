@@ -1,7 +1,11 @@
 package com.dotcms.contenttype.model.field.layout;
 
+import com.dotcms.contenttype.model.field.ColumnField;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldDivider;
+import com.dotcms.contenttype.model.field.RowField;
 import com.dotmarketing.exception.DotRuntimeException;
+import org.apache.commons.lang.reflect.FieldUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -15,6 +19,26 @@ public class FieldLayout {
     public FieldLayout(final Collection<Field> fields) {
         this.fields = new ArrayList<>(fields);
         this.fields.sort(Comparator.comparingInt(Field::sortOrder));
+    }
+
+    public List<FieldLayoutRow> getRows() {
+        return FieldUtil.splitByFieldDivider(this.getFields())
+            .stream()
+            .map((final FieldUtil.FieldsFragment fragment) ->
+                new FieldLayoutRow (
+                    (FieldDivider) fragment.getFieldDivider(),
+                    FieldUtil.splitByColumnField(fragment.getOthersFields())
+                            .stream()
+                            .map((final List<Field> rowFields) ->
+                                    new FieldLayoutColumn(
+                                            (ColumnField) rowFields.get(0),
+                                            rowFields.subList(1, rowFields.size())
+                                    )
+                            )
+                            .collect(Collectors.toList())
+                )
+            )
+            .collect(Collectors.toList());
     }
 
     public List<Field> getFields() {
@@ -49,7 +73,8 @@ public class FieldLayout {
                     remove(newFields, field);
                 }
 
-                newFields.add(field.sortOrder(), field);
+                final int newIndex = field.sortOrder() < newFields.size() ? field.sortOrder() : newFields.size();
+                newFields.add(newIndex, field);
             });
 
         final List<Field> fieldsOrdered = FieldUtil.fixSortOrder(newFields);

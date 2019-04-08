@@ -12,10 +12,10 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 class FieldUtil {
-    static List<FieldLayoutRowSyntaxValidator.FieldsFragment> splitByFieldDivider(final Collection<Field> fields) {
+    static List<FieldsFragment> splitByFieldDivider(final Collection<Field> fields) {
         return split(fields, FieldDivider.class)
                 .stream()
-                .map(FieldLayoutRowSyntaxValidator.FieldsFragment::new)
+                .map(FieldsFragment::new)
                 .collect(Collectors.toList());
     }
 
@@ -94,5 +94,51 @@ class FieldUtil {
 
         jsonFieldTransformer = new JsonFieldTransformer(jsonObject.toString());
         return jsonFieldTransformer.from();
+    }
+
+    protected static class FieldsFragment {
+        private Field fieldDivider;
+        private List<Field> othersFields;
+
+        public FieldsFragment(final List<Field> fields) {
+            if (!fields.isEmpty() && FieldUtil.isFieldDivider(fields.get(0))) {
+                this.fieldDivider = fields.get(0);
+                this.othersFields = fields.subList(1, fields.size());
+            } else {
+                this.fieldDivider = null;
+                this.othersFields = fields;
+            }
+        }
+
+        public Field getFieldDivider() {
+            return fieldDivider;
+        }
+
+        public List<Field> getOthersFields() {
+            return othersFields;
+        }
+
+        public List<Field> getAllFields() {
+            final List fields = new ArrayList();
+
+            if (fieldDivider != null) {
+                fields.add(fieldDivider);
+            }
+
+            fields.addAll(othersFields);
+            return fields;
+        }
+
+        @Override
+        public String toString() {
+            return "FieldsFragment{" +
+                    "fieldDivider=" + fieldDivider +
+                    ", othersFields=" + othersFields +
+                    '}';
+        }
+
+        public boolean hasOthersFields() {
+            return !this.othersFields.isEmpty();
+        }
     }
 }

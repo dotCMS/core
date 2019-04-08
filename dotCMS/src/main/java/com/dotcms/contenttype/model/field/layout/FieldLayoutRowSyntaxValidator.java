@@ -15,7 +15,7 @@ abstract class FieldLayoutRowSyntaxValidator {
     }
 
     public final void validate() throws FieldLayoutValidationException {
-        for (final FieldsFragment fragment : FieldUtil.splitByFieldDivider(fields)) {
+        for (final FieldUtil.FieldsFragment fragment : FieldUtil.splitByFieldDivider(fields)) {
             final boolean tabDivider = FieldUtil.isTabDivider(fragment.getFieldDivider());
 
             if (tabDivider) {
@@ -54,50 +54,4 @@ abstract class FieldLayoutRowSyntaxValidator {
     protected abstract void processColumn (final List<Field> columnFields) throws FieldLayoutValidationException;
 
     protected abstract void processSortOrder(final List<Field> fields) throws FieldLayoutValidationException;
-
-    protected static class FieldsFragment {
-        private Field fieldDivider;
-        private List<Field> othersFields;
-
-        public FieldsFragment(final List<Field> fields) {
-            if (!fields.isEmpty() && FieldUtil.isFieldDivider(fields.get(0))) {
-                this.fieldDivider = fields.get(0);
-                this.othersFields = fields.subList(1, fields.size());
-            } else {
-                this.fieldDivider = null;
-                this.othersFields = fields;
-            }
-        }
-
-        public Field getFieldDivider() {
-            return fieldDivider;
-        }
-
-        public List<Field> getOthersFields() {
-            return othersFields;
-        }
-
-        public List<Field> getAllFields() {
-            final List fields = new ArrayList();
-
-            if (fieldDivider != null) {
-                fields.add(fieldDivider);
-            }
-
-            fields.addAll(othersFields);
-            return fields;
-        }
-
-        @Override
-        public String toString() {
-            return "FieldsFragment{" +
-                    "fieldDivider=" + fieldDivider +
-                    ", othersFields=" + othersFields +
-                    '}';
-        }
-
-        public boolean hasOthersFields() {
-            return !this.othersFields.isEmpty();
-        }
-    }
 }
