@@ -305,12 +305,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
     @CloseDBIfOpened
     public boolean isInFullReindex() throws DotDataException {
-        return isInFullReindex(DbConnectionFactory.getConnection());
-    }
-
-    @CloseDBIfOpened
-    public boolean isInFullReindex(Connection conn) throws DotDataException {
-        IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies(conn);
+        IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
         return info.reindex_working != null && info.reindex_live != null;
     }
 
@@ -329,7 +324,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     public boolean fullReindexSwitchover(Connection conn, final boolean forceSwitch) {
       
       
-        if(reindexTimeElapsedInLong()<Config.getLongProperty("REINDEX_THREAD_MINIMUM_RUNTIME_IN_SEC", 20)*1000) {
+        if(reindexTimeElapsedInLong()<Config.getLongProperty("REINDEX_THREAD_MINIMUM_RUNTIME_IN_SEC", 15)*1000) {
           Logger.info(this.getClass(), "Reindex has been running only " +reindexTimeElapsed().get() + ". Letting the reindex settle.");
           ThreadUtils.sleep(3000);
           return false;

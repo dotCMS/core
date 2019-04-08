@@ -210,14 +210,6 @@ public class ReindexQueueAPIImpl implements ReindexQueueAPI {
         reindexQueueFactory.deleteReindexEntry(identiferToDelete);
     }
 
-    @Override
-    @WrapInTransaction
-    public void resetServersRecords() throws DotDataException {
-
-        new DotConnect().setSQL("update dist_reindex_journal set serverid=null where serverid=?").addParam(ConfigUtils.getServerId())
-                .loadResult();
-
-    }
 
 
     @Override

@@ -162,8 +162,6 @@ public interface ReindexQueueAPI {
 
     void addContentletsReindex(Collection<Contentlet> contentlet) throws DotDataException;
 
-    void resetServersRecords() throws DotDataException;
-
     void addIdentifierReindex(String identifier, int priority) throws DotDataException;
 
 

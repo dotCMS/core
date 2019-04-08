@@ -137,13 +137,6 @@ public class ReindexThread {
         Logger.info(this.getClass(), "------------------------");
         Logger.info(this.getClass(), "Reindex Thread is starting, background indexing will begin");
         Logger.info(this.getClass(), "------------------------");
-        try {
-            // if the db has dangling server records, wipe them out so we can reindex
-            APILocator.getReindexQueueAPI().resetServersRecords();
-        } catch (DotDataException e) {
-            Logger.error(this.getClass(), e.getMessage(), e);
-        }
-
 
         while (STATE != ThreadState.STOPPED) {
             try {
@@ -162,60 +155,58 @@ public class ReindexThread {
         return contentletsIndexed;
     }
 
-    /**
-     * This method is constantly verifying the existence of records in the {@code dist_reindex_journal}
-     * table. If a record is found, then it must be added to the Elastic index. If that's not possible,
-     * a notification containing the content identifier will be sent to the user via the Notifications
-     * API to take care of the problem as soon as possible.
-     */
-    private void runReindexLoop() {
-        BulkProcessor bulkProcessor = null;
-        BulkProcessorListener bulkProcessorListener = null;
-        while (STATE != ThreadState.STOPPED) {
-            try {
-                final Map<String, ReindexEntry> workingRecords = queueApi.findContentToReindex();
-
-                if (!workingRecords.isEmpty()) {
-                    if (!ESReindexationProcessStatus.inFullReindexation()) {
-                        reindexWithBulkRequest(workingRecords);
-                    } else {
-                        if (bulkProcessor == null) {
-                            bulkProcessorListener = new BulkProcessorListener();
-                            bulkProcessor = indexAPI.createBulkProcessor(bulkProcessorListener);
-                        }
-
-                        bulkProcessorListener.workingRecords.putAll(workingRecords);
-                        indexAPI.appendToBulkProcessor(bulkProcessor, workingRecords.values());
-                        contentletsIndexed = bulkProcessorListener.getContentletsIndexed();
-                    }
-                } else {
-                    if (bulkProcessor != null){
-                        bulkProcessor.close();
-                        bulkProcessor = null;
-                    }
-
-                    switchOverIfNeeded();
-                    
-                    Thread.sleep(SLEEP);
-                }
-            } catch (Exception ex) {
-                Logger.error(this, "ReindexThread Exception", ex);
-                try {
-                    Thread.sleep(SLEEP_ON_ERROR);
-                } catch (InterruptedException e) {
-                    Logger.warn(this, "ReindexThread Sleep InterruptedException: " + e);
-                }
-            } finally {
-                DbConnectionFactory.closeSilently();
+  /**
+   * This method is constantly verifying the existence of records in the {@code dist_reindex_journal}
+   * table. If a record is found, then it must be added to the Elastic index. If that's not possible,
+   * a notification containing the content identifier will be sent to the user via the Notifications
+   * API to take care of the problem as soon as possible.
+   */
+  private void runReindexLoop() {
+    BulkProcessor bulkProcessor = null;
+    BulkProcessorListener bulkProcessorListener = null;
+    while (STATE != ThreadState.STOPPED) {
+      try {
+        final Map<String, ReindexEntry> workingRecords = queueApi.findContentToReindex();
+        if (!workingRecords.isEmpty()) {
+          
+          // if this is a reindex record
+          if (indexAPI.isInFullReindex()
+              && workingRecords.values().stream().findFirst().get().getPriority() >= ReindexQueueFactory.Priority.REINDEX.dbValue()) {
+            if (bulkProcessor == null) {
+              bulkProcessorListener = new BulkProcessorListener();
+              bulkProcessor = indexAPI.createBulkProcessor(bulkProcessorListener);
             }
-            while (STATE == ThreadState.PAUSED) {
-                ThreadUtils.sleep(1000);
-                if(System.currentTimeMillis() % 5==0) {
-                    Logger.info(this.getClass(), "Reindex Thread Paused");
-                }
-            }
+            bulkProcessorListener.workingRecords.putAll(workingRecords);
+            indexAPI.appendToBulkProcessor(bulkProcessor, workingRecords.values());
+            contentletsIndexed = bulkProcessorListener.getContentletsIndexed();
+          // otherwise, reindex normally  
+          } else {
+            reindexWithBulkRequest(workingRecords);
+          }
+        } else {
+          if (bulkProcessor != null) {
+            bulkProcessor.close();
+            bulkProcessor = null;
+          }
+
+          switchOverIfNeeded();
+
+          Thread.sleep(SLEEP);
         }
+      } catch (Exception ex) {
+        Logger.error(this, "ReindexThread Exception", ex);
+        ThreadUtils.sleep(SLEEP_ON_ERROR);
+      } finally {
+        DbConnectionFactory.closeSilently();
+      }
+      while (STATE == ThreadState.PAUSED) {
+        ThreadUtils.sleep(1000);
+        if (System.currentTimeMillis() % 5 == 0) {
+          Logger.info(this.getClass(), "Reindex Thread Paused");
+        }
+      }
     }
+  }
 
     private void reindexWithBulkRequest(Map<String, ReindexEntry> workingRecords)
             throws DotDataException {
@@ -257,7 +248,6 @@ public class ReindexThread {
             final Thread thread = new Thread(getInstance().ReindexThreadRunnable, "ReindexThreadRunnable");
             getInstance().threadRunning = getInstance().executor.submit(thread);
         }
-
     }
 
     private void state(ThreadState state) {
@@ -329,7 +319,7 @@ public class ReindexThread {
         this.notificationAPI.generateNotification(new I18NMessage("notification.reindex.error.title"), // title = Reindex Notification
                 new I18NMessage(key, defaultMsg, msgParams), null, // no actions
                 notificationLevel, NotificationType.GENERIC, Visibility.ROLE, cmsAdminRole.getId(), systemUser.getUserId(),
-                systemUser.getLocale());
-    }
+        systemUser.getLocale());
+  }
 
 }
