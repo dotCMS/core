@@ -174,7 +174,7 @@ public class ReindexThread {
           
           // if this is a reindex record
           if (indexAPI.isInFullReindex()
-              || Try.of(()-> workingRecords.values().stream().findFirst().get().getPriority() >= ReindexQueueFactory.Priority.REINDEX.dbValue()).getOrElse(false) ) {
+              || Try.of(()-> workingRecords.values().stream().findFirst().get().getPriority() >= ReindexQueueFactory.Priority.STRUCTURE.dbValue()).getOrElse(false) ) {
             if (bulkProcessor == null) {
               bulkProcessorListener = new BulkProcessorListener();
               bulkProcessor = indexAPI.createBulkProcessor(bulkProcessorListener);
