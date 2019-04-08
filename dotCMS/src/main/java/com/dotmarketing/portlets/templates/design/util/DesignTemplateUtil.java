@@ -420,7 +420,7 @@ public class DesignTemplateUtil {
     	final Optional<ShortyId> shortyId = shortyIdAPI.getShorty(containerId);
 
 		return shortyId.isPresent() && shortyId.get().subType == ShortType.CONTAINER?
-				containerId: identifierAPI.find(containerId).getPath();
+				containerId: identifierAPI.find(containerId).getParentPath();
 	}
 
 	private static String cleanId(final String identifier) {
