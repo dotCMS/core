@@ -19,6 +19,9 @@ import com.dotmarketing.util.ThreadUtils;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.model.User;
+
+import io.vavr.control.Try;
+
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.Optional;
@@ -171,7 +174,7 @@ public class ReindexThread {
           
           // if this is a reindex record
           if (indexAPI.isInFullReindex()
-              && workingRecords.values().stream().findFirst().get().getPriority() >= ReindexQueueFactory.Priority.REINDEX.dbValue()) {
+              || Try.of(()-> workingRecords.values().stream().findFirst().get().getPriority() >= ReindexQueueFactory.Priority.REINDEX.dbValue()).getOrElse(false) ) {
             if (bulkProcessor == null) {
               bulkProcessorListener = new BulkProcessorListener();
               bulkProcessor = indexAPI.createBulkProcessor(bulkProcessorListener);
