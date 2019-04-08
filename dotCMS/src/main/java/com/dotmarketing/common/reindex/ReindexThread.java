@@ -181,7 +181,7 @@ public class ReindexThread {
             }
             bulkProcessorListener.workingRecords.putAll(workingRecords);
             indexAPI.appendToBulkProcessor(bulkProcessor, workingRecords.values());
-            contentletsIndexed = bulkProcessorListener.getContentletsIndexed();
+            contentletsIndexed += bulkProcessorListener.getContentletsIndexed();
           // otherwise, reindex normally  
           } else {
             reindexWithBulkRequest(workingRecords);
@@ -218,16 +218,9 @@ public class ReindexThread {
 
         contentletsIndexed += bulk.numberOfActions();
         Logger.info(this.getClass(), "-----------");
-        Logger.info(this.getClass(), "Total Indexed :" + contentletsIndexed);
-        Logger.info(this.getClass(),
-                "ReindexEntries found : " + workingRecords.size());
-        Logger.info(this.getClass(),
-                "BulkRequests created : " + bulk.numberOfActions());
-        Optional<String> duration = indexAPI.reindexTimeElapsed();
-        if (duration.isPresent()) {
-            Logger.info(this, "Full Reindex Elapsed : " + duration.get() + "");
-        }
-        Logger.info(this.getClass(), "-----------");
+        Logger.info(this.getClass(), "Total Indexed        : " + contentletsIndexed);
+        Logger.info(this.getClass(), "ReindexEntries found : " + workingRecords.size());
+        Logger.info(this.getClass(), "BulkRequests created : " + bulk.numberOfActions());
         indexAPI.putToIndex(bulk, new BulkActionListener(workingRecords));
     }
 
