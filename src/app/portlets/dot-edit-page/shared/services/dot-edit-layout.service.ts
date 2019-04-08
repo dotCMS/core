@@ -116,8 +116,6 @@ export class DotEditLayoutService {
     }
 
     private getColumn(layoutGridBox: DotLayoutGridBox): DotLayoutColumn {
-
-
         return {
             styleClass: layoutGridBox.config.payload.styleClass,
             leftOffset: layoutGridBox.config.col,

@@ -286,4 +286,13 @@ describe('DotEditLayoutService', () => {
 
         expect(containerColumnBox).toEqual(mockDotContainers);
     });
+
+    it('should emit add box event', (done) => {
+        dotEditLayoutService.getBoxes().subscribe((box: boolean) => {
+            expect(box).toBe(true);
+            done();
+        });
+
+        dotEditLayoutService.addBox();
+    });
 });

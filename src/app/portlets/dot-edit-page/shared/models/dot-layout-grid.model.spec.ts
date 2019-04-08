@@ -2,7 +2,7 @@ import { DotLayoutGrid } from './dot-layout-grid.model';
 import { CONTAINER_SOURCE } from '@shared/models/container/dot-container.model';
 import { DotLayoutGridBox } from './dot-layout-grid-box.model';
 
-fdescribe('DotLayoutGridRow', () => {
+describe('DotLayoutGridRow', () => {
 
     let dotLayoutGrid: DotLayoutGrid;
     const gridBoxes: DotLayoutGridBox[] = [
