@@ -23,7 +23,6 @@ import {
     DotHttpErrorHandled
 } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { tap, take, takeUntil } from 'rxjs/operators';
-import { DotLayout } from '../../shared/models/dot-layout.model';
 
 @Component({
     selector: 'dot-edit-layout-designer',
