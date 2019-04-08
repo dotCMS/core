@@ -290,6 +290,10 @@ public class UtilMethods {
         return ((month < 2) || (month > 12)) ? (month = 12) : (month - 1);
     }
 
+    public static boolean isNotSet(String string) {
+        return !isSet(string);
+    }
+
     public static final boolean isEmpty(String x) {
         return !isSet(x);
     }

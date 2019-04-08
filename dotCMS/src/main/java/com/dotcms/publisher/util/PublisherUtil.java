@@ -12,6 +12,7 @@ import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.util.Logger;
 
+import com.dotmarketing.util.UtilMethods;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
@@ -97,8 +98,9 @@ public class PublisherUtil {
 		b.setName(row.get("name").toString());
 		b.setPublishDate((Date)row.get("publish_date"));
 		b.setExpireDate((Date)row.get("expire_date"));
-		b.setOwner(row.get("owner")!=null?row.get("owner").toString():"");
-		b.setForcePush(row.get("force_push") == null ? false :DbConnectionFactory.isDBTrue(row.get("force_push").toString()));
+		b.setOwner(UtilMethods.isSet(row.get("owner"))?row.get("owner").toString():"");
+		b.setForcePush(UtilMethods.isSet(row.get("force_push")) && DbConnectionFactory
+				.isDBTrue(row.get("force_push").toString()));
 		return b;
 	}
 

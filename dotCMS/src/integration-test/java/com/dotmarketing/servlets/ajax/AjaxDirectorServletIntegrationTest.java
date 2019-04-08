@@ -223,7 +223,6 @@ public class AjaxDirectorServletIntegrationTest {
         when(request.getReader()).thenReturn(reader);
         when(request.getRequestURI()).thenReturn(testCase.getRequestURI());
         when(request.getSession()).thenReturn(session);
-        when(request.getSession()).thenReturn(session);
         when(response.getWriter()).thenReturn(mock(PrintWriter.class));
 
         try {

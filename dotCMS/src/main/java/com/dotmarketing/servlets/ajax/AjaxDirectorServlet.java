@@ -1,5 +1,6 @@
 package com.dotmarketing.servlets.ajax;
 
+import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.rest.WebResource;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -81,7 +82,7 @@ public class AjaxDirectorServlet extends HttpServlet {
             return;
         } catch (Exception e) {
             Logger.error(this.getClass(), e.getMessage(), e);
-            response.sendError(500, e.getMessage());
+            response.sendError(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), e.getMessage());
 
         }
 

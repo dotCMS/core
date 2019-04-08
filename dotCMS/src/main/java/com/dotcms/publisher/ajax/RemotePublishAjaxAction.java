@@ -822,13 +822,13 @@ public class RemotePublishAjaxAction extends AjaxAction {
         String _assetId = request.getParameter( "assetIdentifier" );
         String _contentFilterDate = request.getParameter( "remoteFilterDate" );
         String bundleName = request.getParameter( "bundleName" );
-        String bundleId = (request.getParameter( "bundleSelect" )==null) ? request.getParameter( "bundleId" ):request.getParameter( "bundleSelect" );
+        String bundleId = (UtilMethods.isNotSet(request.getParameter( "bundleSelect" ))) ? request.getParameter( "bundleId" ):request.getParameter( "bundleSelect" );
 
         String query = request.getParameter( "query" );
         try {
             Bundle bundle=null;
 
-            if ( bundleId == null && bundleName!=null ) {
+            if ( UtilMethods.isNotSet(bundleId) && UtilMethods.isSet(bundleName) ) {
                 // if the user has a unsent bundle with that name just add to it
                 for(Bundle b : APILocator.getBundleAPI().getUnsendBundlesByName(getUser().getUserId(), bundleName, 1000, 0)) {
                     if(b.getName().equalsIgnoreCase(bundleName)) {
@@ -844,7 +844,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
             } else {
                 bundle = APILocator.getBundleAPI().getBundleById( bundleId );
                 if(bundle==null){
-                    bundleName = (bundleName==null) ? bundleId : bundleName;
+                    bundleName = (UtilMethods.isNotSet(bundleName)) ? bundleId : bundleName;
                     bundle = new Bundle( bundleName, null, null, getUser().getUserId() );
                     bundle.setId(bundleId);
                     APILocator.getBundleAPI().saveBundle( bundle );
