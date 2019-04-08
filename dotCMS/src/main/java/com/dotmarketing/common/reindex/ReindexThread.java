@@ -87,13 +87,13 @@ public class ReindexThread {
     private long contentletsIndexed = 0;
     // bulk up to this many requests
     public static final int ELASTICSEARCH_BULK_ACTIONS = Config
-            .getIntProperty("REINDEX_THREAD_ELASTICSEARCH_BULK_ACTIONS", 2000);
+            .getIntProperty("REINDEX_THREAD_ELASTICSEARCH_BULK_ACTIONS", 1000);
     //how many threads will be used per shard
     public static final int ELASTICSEARCH_CONCURRENT_REQUESTS = Config
-            .getIntProperty("REINDEX_THREAD_CONCURRENT_REQUESTS", 4);
+            .getIntProperty("REINDEX_THREAD_CONCURRENT_REQUESTS", 3);
     //Bulk size in MB. -1 means disabled
     public static final int ELASTICSEARCH_BULK_SIZE = Config
-            .getIntProperty("REINDEX_THREAD_ELASTICSEARCH_BULK_SIZE", 20);
+            .getIntProperty("REINDEX_THREAD_ELASTICSEARCH_BULK_SIZE", 10);
     private ThreadState STATE = ThreadState.RUNNING;
     private Future<?>  threadRunning;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
