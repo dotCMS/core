@@ -7,17 +7,14 @@ import com.dotcms.filters.interceptor.WebInterceptor;
 import com.dotcms.util.security.Encryptor;
 import com.dotcms.util.security.EncryptorFactory;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.CookieKeys;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.util.CookieUtil;
-
 import io.vavr.control.Try;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 
 /**
  * Default Auto Login implementation
@@ -71,5 +68,6 @@ public class DefaultAutoLoginWebInterceptor implements WebInterceptor {
 
         return result;
     } // intercept.
+
 
 } // E:O:F:DefaultAutoLoginWebInterceptor.
