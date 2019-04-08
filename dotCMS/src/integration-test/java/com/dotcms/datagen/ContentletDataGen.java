@@ -1,5 +1,7 @@
 package com.dotcms.datagen;
 
+import com.dotcms.contenttype.model.field.DataTypes;
+import com.dotcms.contenttype.model.field.Field;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
@@ -10,7 +12,7 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletStateException
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
-
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -24,13 +26,13 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
 
 	private static final ContentletAPI contentletAPI = APILocator.getContentletAPI();
 
-	protected String structureId;
+    protected String contentTypeId;
 	protected Map<String, Object> properties = new HashMap<>();
 	protected long languageId;
 	protected String modUser = UserAPI.SYSTEM_USER_ID;
 
-    public ContentletDataGen(String structureId) {
-        this.structureId = structureId;
+    public ContentletDataGen(String contentTypeId) {
+        this.contentTypeId = contentTypeId;
     }
 
     /**
@@ -46,12 +48,12 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
     
     /**
 	 * Sets the structure that will be the type of the  {@link Contentlet} created by this data-gen.
-	 * 
-	 * @param structureId the id of the structure
+     *
+     * @param contentTypeId the id of the structure
 	 * @return ContentletDataGen with structure set
 	 */
-    public ContentletDataGen structure(String structureId){
-    	this.structureId = structureId;
+    public ContentletDataGen structure(String contentTypeId) {
+        this.contentTypeId = contentTypeId;
     	return this;
     }
 
@@ -108,34 +110,20 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
      */
     @Override
     public Contentlet next(){
-        Contentlet contentlet = new Contentlet();
+
+        final Contentlet contentlet = new Contentlet();
         contentlet.setFolder(folder.getInode());
         contentlet.setHost(host.getIdentifier());
         contentlet.setLanguageId(languageId);
-        contentlet.setIndexPolicy(IndexPolicy.FORCE);
-        contentlet.setIndexPolicyDependencies(IndexPolicy.FORCE);
         contentlet.setBoolProperty(Contentlet.IS_TEST_MODE, true);
-        contentlet.setContentTypeId(structureId);
+        contentlet.setContentTypeId(contentTypeId);
         for(Entry<String, Object> element:properties.entrySet()){
             contentlet.setProperty(element.getKey(), element.getValue());
         }
+        contentlet.setIndexPolicy(IndexPolicy.FORCE);
+        contentlet.setIndexPolicyDependencies(IndexPolicy.FORCE);
 
         return contentlet;
-    }
-
-
-    /**
-     * Creates an instance of a {@link Contentlet} considering a existing one (Contentlet checkout)
-     * @param contentletBase Contentlet instance that will be used as a model for the new Contentlet instance
-     * @return Contentlet instance created from existing one
-     */
-    public static Contentlet checkout(Contentlet contentletBase){
-        try{
-            return APILocator.getContentletAPI().checkout(
-                contentletBase.getInode(), user, false);
-        } catch (DotContentletStateException | DotDataException | DotSecurityException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     /**
@@ -153,12 +141,67 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
 
     /**
      * Persists in DB a given {@link Contentlet} instance
+     *
      * @param contentlet to be persisted
      * @return The persisted Contentlet instance
      */
     @Override
     public Contentlet persist(Contentlet contentlet) {
         return checkin(contentlet);
+    }
+
+    /**
+     * Creates a new {@link Contentlet} instance and persists it in DB
+     *
+     * @return A new Contentlet instance persisted in DB
+     */
+    public Contentlet nextPersistedWithSampleTextValues() {
+        try {
+            return persist(nextWithSampleTextValues());
+        } catch (DotContentletStateException | IllegalArgumentException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Creates a new {@link Contentlet} instance kept in memory (not persisted)
+     *
+     * @return Contentlet instance created
+     */
+    public Contentlet nextWithSampleTextValues() {
+
+        try {
+            final Contentlet contentlet = next();
+
+            final Collection<Field> fields = APILocator.getContentTypeFieldAPI()
+                    .byContentTypeId(contentlet.getContentTypeId());
+            for (Field field : fields) {
+
+                if (field.dataType().equals(DataTypes.TEXT)) {
+                    contentlet.setStringProperty(field,
+                            "TestFieldValue" + System.currentTimeMillis());
+                }
+            }
+            return contentlet;
+        } catch (Exception e) {
+            throw new RuntimeException("Unable to create Contentlet instance.", e);
+        }
+    }
+
+    /**
+     * Creates an instance of a {@link Contentlet} considering a existing one (Contentlet checkout)
+     *
+     * @param contentletBase Contentlet instance that will be used as a model for the new Contentlet
+     * instance
+     * @return Contentlet instance created from existing one
+     */
+    public static Contentlet checkout(Contentlet contentletBase) {
+        try {
+            return APILocator.getContentletAPI().checkout(
+                    contentletBase.getInode(), user, false);
+        } catch (DotContentletStateException | DotDataException | DotSecurityException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static Contentlet checkin(Contentlet contentlet) {

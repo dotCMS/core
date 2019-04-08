@@ -1,29 +1,36 @@
 package com.dotcms.datagen;
 
-import java.util.Date;
-
+import com.dotcms.business.WrapInTransaction;
+import com.dotcms.contenttype.model.field.CategoryField;
+import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
+import java.util.Optional;
 
 public class ContentTypeDataGen extends AbstractDataGen<ContentType> {
 
     private final long currentTime = System.currentTimeMillis();
+
     private BaseContentType baseContentType = BaseContentType.CONTENT;
-    private String descriptionField = "test-structure-desc-" + currentTime;
-    private boolean fixedField;
-    private String name = "test-structure-name-" + currentTime;
+    private String descriptionField = "testDescription" + currentTime;
+    private boolean fixedField = Boolean.FALSE;
+    private String name = "testName" + currentTime;
     private Date iDateField = new Date();
-    private String detailPageField = "";
-    private boolean systemField;
-    private Inode.Type type = Inode.Type.STRUCTURE;
-    private String velocityVarNameField = "test-structure-varname-" + currentTime;
+    private String detailPageField;
+    private boolean systemField = Boolean.FALSE;
+    private String velocityVarNameField = "testVarname" + currentTime;
+    private List<Field> fields = new ArrayList<>();
 
     @SuppressWarnings("unused")
     public ContentTypeDataGen baseContentType(final BaseContentType baseContentType) {
@@ -68,12 +75,6 @@ public class ContentTypeDataGen extends AbstractDataGen<ContentType> {
     }
 
     @SuppressWarnings("unused")
-    public ContentTypeDataGen type(final Inode.Type type) {
-        this.type = type;
-        return this;
-    }
-
-    @SuppressWarnings("unused")
     public ContentTypeDataGen velocityVarName(final String velocityVarName) {
         this.velocityVarNameField = velocityVarName;
         return this;
@@ -97,40 +98,113 @@ public class ContentTypeDataGen extends AbstractDataGen<ContentType> {
         return this;
     }
 
+    @SuppressWarnings("unused")
+    public ContentTypeDataGen fields(final List<Field> fields) {
+        this.fields = fields;
+        return this;
+    }
+
+    @SuppressWarnings("unused")
+    public ContentTypeDataGen field(final Field field) {
+        this.fields.add(field);
+        return this;
+    }
+
     @Override
     public ContentType next() {
-        final Structure s = new Structure();
-        s.setStructureType(baseContentType.getType());
-        s.setDescription(descriptionField);
-        s.setFixed(fixedField);
-        s.setName(name);
-        s.setOwner(user.getUserId());
-        s.setDetailPage(detailPageField);
-        s.setSystem(systemField);
-        s.setType(type.getValue());
-        s.setVelocityVarName(velocityVarNameField);
-        s.setFolder(folder.getInode());
-        s.setHost(host.getIdentifier());
-        s.setIDate(iDateField);
-        return new StructureTransformer(s).from();
+
+        return ContentTypeBuilder.builder(baseContentType.immutableClass())
+                .description(descriptionField)
+                .fixed(fixedField)
+                .name(name)
+                .owner(user.getUserId())
+                .detailPage(detailPageField)
+                .system(systemField)
+                .variable(velocityVarNameField)
+                .folder(folder.getInode())
+                .host(host.getIdentifier())
+                .iDate(iDateField)
+                .build();
     }
 
     @Override
     public ContentType persist(final ContentType contentType) {
         try {
-            return APILocator.getContentTypeAPI(APILocator.systemUser()).save(contentType);
+            if (fields.isEmpty()) {
+                return APILocator.getContentTypeAPI(APILocator.systemUser()).save(contentType);
+            } else {
+                return APILocator.getContentTypeAPI(APILocator.systemUser())
+                        .save(contentType, fields);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Unable to persist ContentType.", e);
+        }
+    }
+
+    /**
+     * Creates a new {@link ContentType} instance and persists it in DB
+     *
+     * @return A new ContentType instance persisted in DB
+     */
+    @Override
+    public ContentType nextPersisted() {
+        return persist(next());
+    }
+
+    /**
+     * Creates a new {@link ContentType} instance and persists it in DB
+     *
+     * @return A new ContentType instance persisted in DB
+     */
+    @WrapInTransaction
+    public ContentType nextPersistedWithSampleFields() {
+
+        final ContentType contentType;
+
+        try {
+
+            //Now we need to add some fields to the content type
+            for (int i = 0; i < 5; i++) {
+                field(new FieldDataGen().next());
+            }
+
+            //Adding a category field
+            final Collection<Category> topLevelCategories = APILocator.getCategoryAPI()
+                    .findTopLevelCategories(APILocator.systemUser(), false);
+            final Optional<Category> anyTopLevelCategory = topLevelCategories.stream().findAny();
+
+            anyTopLevelCategory.map(category -> new FieldDataGen()
+                    .type(CategoryField.class)
+                    .defaultValue(null)
+                    .values(category.getInode())
+                    .next()).ifPresent(this::field);
+
+            //Persist the content type with the sample fields
+            contentType = persist(next());
         } catch (Exception e) {
             throw new RuntimeException("Unable to persist ContentType.", e);
         }
 
-
+        return contentType;
     }
 
     public static void remove(final ContentType contentType) {
-        try {
-            APILocator.getContentTypeAPI(APILocator.systemUser()).delete(contentType);
-        } catch (Exception e) {
-            throw new RuntimeException("Unable to remove ContentType.", e);
+        remove(contentType, false);
+    }
+
+    public static void remove(final ContentType contentType, final Boolean failSilently) {
+
+        if (null != contentType) {
+            try {
+                APILocator.getContentTypeAPI(APILocator.systemUser()).delete(contentType);
+            } catch (Exception e) {
+                if (failSilently) {
+                    Logger.error(ContentTypeDataGen.class, "Unable to remove ContentType.", e);
+                } else {
+                    throw new RuntimeException("Unable to remove ContentType.", e);
+                }
+            }
         }
     }
+
 }

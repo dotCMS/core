@@ -1,11 +1,68 @@
 package com.dotcms.rest.api.v1.workflow;
 
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.ADMIN_DEFAULT_ID;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.ADMIN_DEFAULT_MAIL;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.ADMIN_NAME;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.CURRENT_STEP;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.DM_WORKFLOW;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.PUBLISH;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.SAVE;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.SAVE_AS_DRAFT;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.SAVE_PUBLISH;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.SEND_FOR_REVIEW;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.SEND_TO_LEGAL;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.SYSTEM_WORKFLOW;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.actionName;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.addSteps;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.collectSampleContent;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.createScheme;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.createWorkflowActions;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.doCleanUp;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.findSchemes;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.findSteps;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.getAllWorkflowActions;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.schemeName;
+import static com.dotmarketing.business.Role.ADMINISTRATOR;
+import static com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil.ACTION_ID;
+import static com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil.ACTION_ORDER;
+import static com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil.STEP_ID;
+import static com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil.getInstance;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
-import com.dotcms.contenttype.model.field.*;
+import com.dotcms.contenttype.model.field.CategoryField;
+import com.dotcms.contenttype.model.field.CheckboxField;
+import com.dotcms.contenttype.model.field.CustomField;
+import com.dotcms.contenttype.model.field.DataTypes;
+import com.dotcms.contenttype.model.field.DateField;
+import com.dotcms.contenttype.model.field.DateTimeField;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.ImageField;
+import com.dotcms.contenttype.model.field.KeyValueField;
+import com.dotcms.contenttype.model.field.MultiSelectField;
+import com.dotcms.contenttype.model.field.RadioField;
+import com.dotcms.contenttype.model.field.SelectField;
+import com.dotcms.contenttype.model.field.TextAreaField;
+import com.dotcms.contenttype.model.field.TextField;
+import com.dotcms.contenttype.model.field.TimeField;
+import com.dotcms.contenttype.model.field.WysiwygField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.datagen.RoleDataGen;
+import com.dotcms.datagen.WorkflowDataGen;
 import com.dotcms.mock.response.MockAsyncResponse;
 import com.dotcms.repackage.javax.ws.rs.container.AsyncResponse;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
@@ -18,7 +75,14 @@ import com.dotcms.rest.api.MultiPartUtils;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
-import com.dotcms.workflow.form.*;
+import com.dotcms.workflow.form.BulkActionForm;
+import com.dotcms.workflow.form.FireActionForm;
+import com.dotcms.workflow.form.FireBulkActionsForm;
+import com.dotcms.workflow.form.WorkflowActionForm;
+import com.dotcms.workflow.form.WorkflowActionStepForm;
+import com.dotcms.workflow.form.WorkflowSchemeForm;
+import com.dotcms.workflow.form.WorkflowSchemeImportObjectForm;
+import com.dotcms.workflow.form.WorkflowStepUpdateForm;
 import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
@@ -45,25 +109,27 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
-import org.apache.commons.lang.RandomStringUtils;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import javax.servlet.http.HttpServletRequest;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.*;
-import static com.dotmarketing.business.Role.ADMINISTRATOR;
-import static com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil.*;
-import static org.junit.Assert.*;
-import static org.mockito.Matchers.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import javax.servlet.http.HttpServletRequest;
+import org.apache.commons.lang.RandomStringUtils;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest {
 
@@ -81,6 +147,8 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
     private static Host host;
     private static Role adminRole;
     private static Role systemRole;
+
+    static private WorkflowScheme testScheme;
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -122,16 +190,38 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
         hostAPI = APILocator.getHostAPI();
 
         host = hostAPI.findDefaultHost(systemUser, false);
+
+        //Creating a test role
         adminRole = roleAPI.loadRoleByKey(ADMINISTRATOR);
+        if (adminRole == null) {
+            adminRole = new RoleDataGen().key(ADMINISTRATOR).nextPersisted();
+        }
         systemRole = roleAPI.loadRoleByKey(Role.SYSTEM);
 
-
+        //Creating a workflow for testing
+        testScheme = APILocator.getWorkflowAPI().findSchemeByName(DM_WORKFLOW);
+        if (testScheme == null) {
+            testScheme = new WorkflowDataGen().name(DM_WORKFLOW).nextPersistedWithStepsAndActions();
+        }
     }
 
     //@AfterClass
     public static void cleanup() throws Exception {
 
         doCleanUp(workflowAPI);
+
+        try {
+            adminRole = roleAPI.loadRoleByKey(ADMINISTRATOR);
+            if (adminRole != null) {
+                RoleDataGen.remove(adminRole, true);
+            }
+        } catch (DotDataException e) {
+            // Do nothing...
+        }
+
+        if (testScheme != null) {
+            WorkflowDataGen.remove(testScheme, true);
+        }
 
     }
 

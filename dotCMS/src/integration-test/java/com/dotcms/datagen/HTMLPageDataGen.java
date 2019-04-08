@@ -167,7 +167,7 @@ public class HTMLPageDataGen extends ContentletDataGen {
         htmlPageAsset.setFolder(folder.getInode());
         htmlPageAsset.setHost(host.getIdentifier());
         htmlPageAsset.setLanguageId(languageId);
-        htmlPageAsset.setStructureInode(structureId);
+        htmlPageAsset.setContentTypeId(contentTypeId);
         htmlPageAsset.setCacheTTL(cacheTTL);
         htmlPageAsset.setSeoKeywords(seoKeywords);
         htmlPageAsset.setSeoDescription(seoDescription);

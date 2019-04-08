@@ -13,8 +13,8 @@ import com.dotmarketing.util.UtilMethods;
 
 public class FolderDataGen extends AbstractDataGen<Folder> {
     private long currentTime = System.currentTimeMillis();
-    private String name = "test-folder-name-" + currentTime;
-    private String title = "test-folder-title-" + currentTime;
+    private String name = "testName" + currentTime;
+    private String title = "testTitle" + currentTime;
     private boolean showOnMenu;
     private int sortOrder = 0;
     private String fileMasks = "";
@@ -109,6 +109,16 @@ public class FolderDataGen extends AbstractDataGen<Folder> {
 
     }
 
+    /**
+     * Creates a new {@link Folder} instance and persists it in DB
+     *
+     * @return A new Folder instance persisted in DB
+     */
+    @Override
+    public Folder nextPersisted() {
+        return persist(next());
+    }
+
     public static void remove(Folder folder) {
         try {
             APILocator.getFolderAPI().delete(folder, user, false);
@@ -116,4 +126,5 @@ public class FolderDataGen extends AbstractDataGen<Folder> {
             throw new RuntimeException("Unable to remove folder.", e);
         }
     }
+
 }

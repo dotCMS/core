@@ -3,7 +3,12 @@ package com.dotcms.contenttype.test;
 import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.DM_WORKFLOW;
 import static com.dotmarketing.business.Role.ADMINISTRATOR;
 import static com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest.createContentTypeAndAssignPermissions;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -19,6 +24,7 @@ import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.WorkflowDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequest;
@@ -34,7 +40,12 @@ import com.dotcms.rest.ContentResource;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Permission;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.RelationshipAPI;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -71,6 +82,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import org.apache.xerces.dom.DeferredElementImpl;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -101,6 +113,8 @@ public class ContentResourceTest extends IntegrationTestBase {
     private static User user;
     private static UserAPI userAPI;
 
+    static private WorkflowScheme testScheme;
+
     @BeforeClass
     public static void prepare() throws Exception {
         //Setting web app environment
@@ -116,6 +130,20 @@ public class ContentResourceTest extends IntegrationTestBase {
         languageAPI     = APILocator.getLanguageAPI();
         permissionAPI   = APILocator.getPermissionAPI();
         relationshipAPI = APILocator.getRelationshipAPI();
+
+        //Creating a workflow for testing
+        testScheme = APILocator.getWorkflowAPI().findSchemeByName(DM_WORKFLOW);
+        if (testScheme == null) {
+            testScheme = new WorkflowDataGen().name(DM_WORKFLOW).nextPersistedWithStepsAndActions();
+        }
+    }
+
+    @AfterClass
+    public static void cleanUp() {
+
+        if (testScheme != null) {
+            WorkflowDataGen.remove(testScheme, true);
+        }
     }
 
     public static class TestCase {

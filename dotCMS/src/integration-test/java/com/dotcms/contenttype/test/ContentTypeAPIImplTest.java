@@ -1,16 +1,57 @@
 package com.dotcms.contenttype.test;
 
+import static junit.framework.Assert.assertTrue;
+import static junit.framework.TestCase.assertEquals;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.fail;
+
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
-import com.dotcms.contenttype.model.field.*;
-import com.dotcms.contenttype.model.type.*;
+import com.dotcms.contenttype.model.field.DataTypes;
+import com.dotcms.contenttype.model.field.DateTimeField;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.FieldVariable;
+import com.dotcms.contenttype.model.field.ImmutableDateField;
+import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
+import com.dotcms.contenttype.model.field.ImmutableTextAreaField;
+import com.dotcms.contenttype.model.field.ImmutableTextField;
+import com.dotcms.contenttype.model.field.OnePerContentType;
+import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.TextField;
+import com.dotcms.contenttype.model.field.WysiwygField;
+import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.contenttype.model.type.Expireable;
+import com.dotcms.contenttype.model.type.FileAssetContentType;
+import com.dotcms.contenttype.model.type.FormContentType;
+import com.dotcms.contenttype.model.type.ImmutableFileAssetContentType;
+import com.dotcms.contenttype.model.type.ImmutableFormContentType;
+import com.dotcms.contenttype.model.type.ImmutableKeyValueContentType;
+import com.dotcms.contenttype.model.type.ImmutablePageContentType;
+import com.dotcms.contenttype.model.type.ImmutablePersonaContentType;
+import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
+import com.dotcms.contenttype.model.type.ImmutableVanityUrlContentType;
+import com.dotcms.contenttype.model.type.ImmutableWidgetContentType;
+import com.dotcms.contenttype.model.type.KeyValueContentType;
+import com.dotcms.contenttype.model.type.PageContentType;
+import com.dotcms.contenttype.model.type.PersonaContentType;
+import com.dotcms.contenttype.model.type.SimpleContentType;
+import com.dotcms.contenttype.model.type.UrlMapable;
+import com.dotcms.contenttype.model.type.VanityUrlContentType;
+import com.dotcms.contenttype.model.type.WidgetContentType;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PermissionAPI.PermissionableType;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
@@ -22,12 +63,6 @@ import com.liferay.portal.model.User;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
-import org.apache.commons.lang.StringUtils;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mockito;
-
 import java.io.File;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -36,11 +71,11 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
-
-import static junit.framework.Assert.assertTrue;
-import static junit.framework.TestCase.assertEquals;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.*;
+import org.apache.commons.lang.StringUtils;
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 
 @RunWith(DataProviderRunner.class)
 public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
@@ -157,10 +192,10 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 	@Test
 	public void testFieldsMethod() throws Exception {
 
-		ContentType type = contentTypeApi.find(Constants.NEWS);
+		ContentType type = contentTypeApi.find(Constants.FILEASSET);
 
 		// System.out.println(type);
-		ContentType otherType = contentTypeApi.find(Constants.NEWS);
+		ContentType otherType = contentTypeApi.find(Constants.FILEASSET);
 
 		List<Field> fields = otherType.fields();
 		// System.out.println(type);
@@ -227,7 +262,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 
 		File temp = File.createTempFile("test1", "obj");
 		File temp2 = File.createTempFile("test2", "obj");
-		ContentType origType = contentTypeApi.find(Constants.NEWS);
+		ContentType origType = contentTypeApi.find(Constants.FILEASSET);
 
 
 		try (ObjectOutputStream oos = new ObjectOutputStream(Files.newOutputStream(temp.toPath()))) {
@@ -341,7 +376,8 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 	@Test
 	public void testSearch() throws Exception {
 		String[] searchTerms =
-			{Constants.NEWS, "structuretype = 2", " And structure.inode='" + Constants.NEWS + "'"};
+				{Constants.FILEASSET, "structuretype = 2",
+						" And structure.inode='" + Constants.FILEASSET + "'"};
 
 		int totalCount = contentTypeApi.count();
 
@@ -435,7 +471,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		assertThat("random velocity var works", newVar != null);
 		assertThat("random velocity var works : " + newVar + " == " + tryVar, newVar.equals(tryVar));
 
-		tryVar = "News";
+		tryVar = "FileAsset";
 		newVar = contentTypeApi.suggestVelocityVar(tryVar);
 		assertThat("existing velocity var will not work", !newVar.equals(tryVar));
 	}
@@ -451,6 +487,10 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 	}
 
 	private void testUpdating() throws Exception {
+
+		final Host defaultHost = APILocator.getHostAPI()
+				.findDefaultHost(APILocator.systemUser(), false);
+
 		List<ContentType> types =
 				contentTypeApi.search("velocity_var_name like 'velocityVarNameTesting%'", BaseContentType.ANY, "mod_date", -1, 0);
 		assertThat(types + " search is working", types.size() > 0);
@@ -459,8 +499,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 			assertThat("contenttype is in db", testing.equals(type));
 			ContentTypeBuilder builder = ContentTypeBuilder.builder(type);
 
-			builder.host(Constants.DEFAULT_HOST);
-			builder.folder(Constants.ABOUT_US_FOLDER);
+			builder.host(defaultHost.getIdentifier());
 
 			if (type instanceof UrlMapable) {
 				builder.urlMapPattern("/asdsadsadsad/");
@@ -546,10 +585,17 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 
 	@DataProvider
 	public static Object[] testCasesUpdateTypePermissions() {
-		return new Object[] {
-				new TestCaseUpdateContentTypePermissions(PermissionAPI.PERMISSION_EDIT_PERMISSIONS, true),
-				new TestCaseUpdateContentTypePermissions(PermissionAPI.PERMISSION_PUBLISH, false),
-				new TestCaseUpdateContentTypePermissions(PermissionAPI.PERMISSION_EDIT, false),
+		return new Object[]{
+				new TestCaseUpdateContentTypePermissions(
+						PermissionAPI.PERMISSION_READ
+								| PermissionAPI.PERMISSION_EDIT
+								| PermissionAPI.PERMISSION_PUBLISH
+								| PermissionAPI.PERMISSION_EDIT_PERMISSIONS, true),
+				new TestCaseUpdateContentTypePermissions(PermissionAPI.PERMISSION_READ
+						| PermissionAPI.PERMISSION_EDIT
+						| PermissionAPI.PERMISSION_PUBLISH, false),
+				new TestCaseUpdateContentTypePermissions(PermissionAPI.PERMISSION_READ
+						| PermissionAPI.PERMISSION_EDIT, false),
 				new TestCaseUpdateContentTypePermissions(PermissionAPI.PERMISSION_READ, false)
 		};
 	}
@@ -775,28 +821,50 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		Mockito.doReturn(true).when(permAPI).doesUserHavePermissions(contentType.getParentPermissionable(),
 				"PARENT:" + PermissionAPI.PERMISSION_CAN_ADD_CHILDREN + ", STRUCTURES:" + testCase.permissions,
 				limitedUserEditPermsPermOnCT);
+
 		//Give READ PERMISSIONS to the folder
 		Permission readPermissions = new Permission(folder.getPermissionId(),
 				APILocator.getRoleAPI().getUserRole(limitedUserEditPermsPermOnCT).getId(), PermissionAPI.PERMISSION_READ );
 		APILocator.getPermissionAPI().save( readPermissions, folder, user, false );
 
-		ContentTypeAPI contentTypeAPI = new ContentTypeAPIImpl(limitedUserEditPermsPermOnCT, false, FactoryLocator.getContentTypeFactory(),
+		//Allow the user to read content types in the host
+		int permission = PermissionAPI.PERMISSION_READ;
+		Permission hostPermissions = new Permission(
+				PermissionableType.STRUCTURES.getCanonicalName(),
+				APILocator.systemHost().getPermissionId(),
+				APILocator.getRoleAPI().getUserRole(limitedUserEditPermsPermOnCT).getId(),
+				permission);
+		APILocator.getPermissionAPI().save(
+				hostPermissions, APILocator.systemHost(), user, false);
+
+		ContentTypeAPI contentTypeAPI = new ContentTypeAPIImpl(limitedUserEditPermsPermOnCT, false,
+				FactoryLocator.getContentTypeFactory(),
 				FactoryLocator.getFieldFactory(), permAPI, APILocator.getContentTypeFieldAPI(),
 				APILocator.getLocalSystemEventsAPI());
-		//Try to Save Content Type
-		try{
+
+		try {
+			//Try to Save Content Type
 			contentType = contentTypeAPI.save(contentType);
 		}catch (DotSecurityException e){
 			assertFalse(e.getMessage(), testCase.shouldExecuteAction);
 			return;
-		}finally {
-			if(UtilMethods.isSet(contentType.id())) {
-				//Delete content Type
-				contentTypeApi.delete(contentType);
+		} finally {
+			try {
+				if (UtilMethods.isSet(contentType.id())) {
+					//Delete content Type
+					contentTypeApi.delete(contentType);
+				}
+			} catch (Exception e) {
+				//Do nothing...
 			}
-			//Delete folder
-			APILocator.getFolderAPI().delete(folder,user,false);
+			try {
+				//Delete folder
+				APILocator.getFolderAPI().delete(folder, user, false);
+			} catch (Exception e) {
+				//Do nothing...
+			}
 		}
+
 		assertTrue(testCase.shouldExecuteAction);
 	}
 
