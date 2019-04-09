@@ -23,7 +23,7 @@ import com.liferay.portal.model.User;
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 
-@Path("/v2/contenttype/{typeIdOrVarName}/fields")
+@Path("/v3/contenttype/{typeIdOrVarName}/fields")
 public class FieldResource {
     private WebResource webResource;
     private FieldAPI fieldAPI;

@@ -2,9 +2,11 @@ package com.dotcms.contenttype.model.field.layout;
 
 import com.dotcms.contenttype.model.field.ColumnField;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.dotcms.util.CollectionsUtils;
 import java.util.List;
 
+@JsonSerialize(using = FieldLayoutColumnSerializer.class)
 public class FieldLayoutColumn {
     private final ColumnField column;
     private final List<Field> fields;
