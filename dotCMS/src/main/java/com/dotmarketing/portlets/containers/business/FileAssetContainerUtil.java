@@ -15,10 +15,7 @@ import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.util.Constants;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UUIDUtil;
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.*;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.util.StringPool;
 import org.apache.commons.io.IOUtils;
@@ -163,7 +160,7 @@ public class FileAssetContainerUtil {
 
     public boolean isFolderAssetContainerId(final String containerPath) {
 
-        return UtilMethods.isSet(containerPath) && containerPath.contains(FORWARD_SLASH);
+        return UtilMethods.isSet(containerPath) && containerPath.contains(Constants.CONTAINER_FOLDER_PATH);
     }
 
     /**
