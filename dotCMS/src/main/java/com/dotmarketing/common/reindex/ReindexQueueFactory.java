@@ -1,5 +1,6 @@
 package com.dotmarketing.common.reindex;
 
+import com.dotmarketing.common.db.Params;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -22,6 +23,7 @@ import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import java.util.stream.Collectors;
 
 
 /**
@@ -170,30 +172,12 @@ public class ReindexQueueFactory {
         dc.addParam(identifier);
         dc.loadResult();
     }
-    
-    
+
+    @CloseDBIfOpened
     protected void deleteReindexEntry(final List<ReindexEntry> recordsToDelete) throws DotDataException {
-        for (List<ReindexEntry> partition : Lists.partition(recordsToDelete, 200)) {
-          deleteReindexEntryTransaction(partition);
-        }
-    }
-
-    @WrapInTransaction
-    private void deleteReindexEntryTransaction(final List<ReindexEntry> recordsToDelete) throws DotDataException {
-      final DotConnect dotConnect = new DotConnect();
-      final StringBuilder sql = new StringBuilder().append("DELETE FROM dist_reindex_journal where ident_to_index in (");
-      boolean first = true;
-      for (ReindexEntry idx : recordsToDelete) {
-          if (!first)
-              sql.append(',');
-          else
-              first = false;
-          sql.append("'" + idx.getIdentToIndex() + "'");
-      }
-      sql.append(')');
-
-      dotConnect.setSQL(sql.toString());
-      dotConnect.loadResult();
+        new DotConnect().executeBatch("DELETE FROM dist_reindex_journal where ident_to_index = ?",
+                recordsToDelete.stream().map(entry -> new Params(entry.getIdentToIndex())).collect(
+                        Collectors.toList()));
     }
     
     
@@ -227,42 +211,45 @@ public class ReindexQueueFactory {
 
     return contentToIndex;
   }
-    
-    
-    
-    
-    
 
-    
     private static long lastIdIndexed=0;
     
-    
-    
+    @CloseDBIfOpened
     private void loadUpLocalQueue() throws DotDataException {
-      List<String> reindexingServers = APILocator.getServerAPI().getReindexingServers();
-      if(reindexingServers==null || reindexingServers.size() == 0) {
-        Logger.warn(this.getClass(), "There are no servers in cluster - something is wrong with server heartbeat");
-        return;
-      }
-      int myIndex = reindexingServers.indexOf(APILocator.getServerAPI().readServerId());
-      final int priorityLevel = Priority.ERROR.dbValue();
-      DotConnect db  = new DotConnect();
-        db.setSQL("select * from dist_reindex_journal where " + (DbConnectionFactory.isMsSql()
-                ? "id % ? = ?" : "MOD(id, ?) = ?")
-                + " and priority <= ? and id > ? ORDER BY priority ASC LIMIT 2000");
+        List<String> reindexingServers = APILocator.getServerAPI().getReindexingServers();
+        if(reindexingServers==null || reindexingServers.size() == 0) {
+            Logger.warn(this.getClass(), "There are no servers in cluster - something is wrong with server heartbeat");
+            return;
+        }
+        int myIndex = reindexingServers.indexOf(APILocator.getServerAPI().readServerId());
+        final int priorityLevel = Priority.ERROR.dbValue();
+        DotConnect db  = new DotConnect();
+
+        if (DbConnectionFactory.isOracle()){
+            db.setSQL("select * from (select * from dist_reindex_journal where MOD(id, ?) = ?"
+                    + " and priority <= ? and id > ? ORDER BY priority ASC) where ROWNUM <= 2000");
+        } else if (DbConnectionFactory.isMsSql()){
+            db.setSQL("select TOP 2000 * from dist_reindex_journal where id % ? = ?"
+                    + " and priority <= ? and id > ? ORDER BY priority ASC");
+        } else{
+            db.setSQL("select * from dist_reindex_journal where MOD(id, ?) = ?"
+                    + " and priority <= ? and id > ? ORDER BY priority ASC LIMIT 2000");
+        }
+
         db.addParam(reindexingServers.size());
-      db.addParam(myIndex);
-      db.addParam(priorityLevel);
-      db.addParam(lastIdIndexed);
-      for (Map<String, Object> map : db.loadObjectResults()) {
-        final ReindexEntry entry = mapToReindexEntry(map);
-        lastIdIndexed=entry.getId();
-        queue.add(entry);
-      }
-      if(queue.isEmpty()) {
-        lastIdIndexed=0;
-      }
-      
+        db.addParam(myIndex);
+        db.addParam(priorityLevel);
+        db.addParam(lastIdIndexed);
+
+        for (Map<String, Object> map : db.loadObjectResults()) {
+            final ReindexEntry entry = mapToReindexEntry(map);
+            lastIdIndexed=entry.getId();
+            queue.add(entry);
+        }
+
+        if(queue.isEmpty()) {
+            lastIdIndexed=0;
+        }
     }
 
     private ReindexEntry mapToReindexEntry(Map<String,Object> map) {
