@@ -1,5 +1,6 @@
 package com.dotcms.exception;
 
+import com.dotcms.cmsmaintenance.ajax.ThreadMonitorTool;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
 import com.dotcms.rest.exception.BadRequestException;
@@ -23,6 +24,10 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 
 import javax.servlet.http.HttpServletRequest;
+
+import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.ElasticsearchTimeoutException;
+
 import java.util.*;
 import java.util.Map.Entry;
 
@@ -121,6 +126,14 @@ public class ExceptionUtil {
     public static void bubbleUpException(final Throwable t)
             throws DotDataException, DotSecurityException, DotRuntimeException {
 
+       if(t instanceof ElasticsearchException || t.getCause()!=null && t.getCause() instanceof ElasticsearchException) {
+         
+         for(String x: new ThreadMonitorTool().getThreads()) {
+           System.err.println(x);
+         }
+       }
+      
+      
         if (t instanceof DotDataException) {
             throw (DotDataException) t;
         }
