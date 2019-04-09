@@ -1,8 +1,10 @@
 package com.dotmarketing.common.reindex;
 
+
+import com.google.common.collect.ImmutableList;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
+
 import com.dotmarketing.util.Logger;
 import com.liferay.util.StringPool;
 
@@ -18,7 +20,7 @@ import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkProcessor;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
-import org.elasticsearch.action.support.WriteRequest;
+
 
 /**
  * {@link BulkProcessor.Listener} that handles the logic before/after reindexing content
@@ -40,8 +42,11 @@ public class BulkProcessorListener implements BulkProcessor.Listener {
 
     @Override
     public void beforeBulk(final long executionId, final BulkRequest request) {
+      
+        String serverId=APILocator.getServerAPI().readServerId();
+        List<String> servers = Try.of(()->APILocator.getServerAPI().getReindexingServers()).getOrElse(ImmutableList.of(APILocator.getServerAPI().readServerId()));
         Logger.info(this.getClass(), "-----------");
-        Logger.info(this.getClass(), "Reindexing Server #  : " + Try.of(()->APILocator.getServerAPI().getReindexingServers().indexOf(APILocator.getServerAPI().readServerId())).getOrElse(-1));
+        Logger.info(this.getClass(), "Reindexing Server #  : " + (servers.indexOf(serverId)+1) + " of " + servers.size());
         Logger.info(this.getClass(), "Total Indexed        : " + contentletsIndexed);
         Logger.info(this.getClass(), "ReindexEntries found : " + workingRecords.size());
         Logger.info(this.getClass(), "BulkRequests created : " + request.numberOfActions());

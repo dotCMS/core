@@ -199,8 +199,7 @@ public class ReindexQueueAPIImpl implements ReindexQueueAPI {
     }
 
     @Override
-    @WrapInTransaction
-    public void deleteReindexEntry(Collection<ReindexEntry> recordsToDelete) throws DotDataException {
+    public void deleteReindexEntry(List<ReindexEntry> recordsToDelete) throws DotDataException {
         reindexQueueFactory.deleteReindexEntry(recordsToDelete);
     }
     

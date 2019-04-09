@@ -21,6 +21,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 
 
 /**
@@ -171,25 +172,31 @@ public class ReindexQueueFactory {
     }
     
     
-    protected void deleteReindexEntry(final Collection<ReindexEntry> recordsToDelete) throws DotDataException {
-
-        final DotConnect dotConnect = new DotConnect();
-        final StringBuilder sql = new StringBuilder().append("DELETE FROM dist_reindex_journal where ident_to_index in (");
-        boolean first = true;
-
-        for (ReindexEntry idx : recordsToDelete) {
-            if (!first)
-                sql.append(',');
-            else
-                first = false;
-            sql.append("'" + idx.getIdentToIndex() + "'");
+    protected void deleteReindexEntry(final List<ReindexEntry> recordsToDelete) throws DotDataException {
+        for (List<ReindexEntry> partition : Lists.partition(recordsToDelete, 200)) {
+          deleteReindexEntryTransaction(partition);
         }
-        sql.append(')');
-
-        dotConnect.setSQL(sql.toString());
-        dotConnect.loadResult();
     }
 
+    @WrapInTransaction
+    private void deleteReindexEntryTransaction(final List<ReindexEntry> recordsToDelete) throws DotDataException {
+      final DotConnect dotConnect = new DotConnect();
+      final StringBuilder sql = new StringBuilder().append("DELETE FROM dist_reindex_journal where ident_to_index in (");
+      boolean first = true;
+      for (ReindexEntry idx : recordsToDelete) {
+          if (!first)
+              sql.append(',');
+          else
+              first = false;
+          sql.append("'" + idx.getIdentToIndex() + "'");
+      }
+      sql.append(')');
+
+      dotConnect.setSQL(sql.toString());
+      dotConnect.loadResult();
+    }
+    
+    
     protected void markAsFailed(ReindexEntry idx, String cause) throws DotDataException {
         final int newPriority =
                 (idx.errorCount() >= REINDEX_MAX_FAILURE_ATTEMPTS) ? Priority.ERROR.dbValue() + idx.getPriority() : (1 + idx.getPriority());

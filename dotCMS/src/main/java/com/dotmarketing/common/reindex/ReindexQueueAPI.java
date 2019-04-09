@@ -55,7 +55,7 @@ public interface ReindexQueueAPI {
      */
     public void deleteReindexEntry(ReindexEntry ijournal) throws DotDataException;
 
-    public void deleteReindexEntry(Collection<ReindexEntry> recordsToDelete) throws DotDataException;
+    public void deleteReindexEntry(List<ReindexEntry> recordsToDelete) throws DotDataException;
 
     /**
      * Will find the number of records left to index
