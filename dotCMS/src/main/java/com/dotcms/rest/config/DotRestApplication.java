@@ -121,6 +121,7 @@ public class DotRestApplication extends com.dotcms.repackage.javax.ws.rs.core.Ap
 					REST_CLASSES.add(AppContextInitResource.class);
 					REST_CLASSES.add(SiteResource.class);
 					REST_CLASSES.add(ContentTypeResource.class);
+					REST_CLASSES.add(com.dotcms.rest.api.v2.contenttype.ContentTypeResource.class);
 					REST_CLASSES.add(FieldResource.class);
 					REST_CLASSES.add(com.dotcms.rest.api.v2.contenttype.FieldResource.class);
 					REST_CLASSES.add(com.dotcms.rest.api.v3.contenttype.FieldResource.class);
