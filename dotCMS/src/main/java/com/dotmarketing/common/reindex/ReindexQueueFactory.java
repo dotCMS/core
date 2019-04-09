@@ -247,10 +247,19 @@ public class ReindexQueueFactory {
       int myIndex = reindexingServers.indexOf(APILocator.getServerAPI().readServerId());
       final int priorityLevel = Priority.ERROR.dbValue();
       DotConnect db  = new DotConnect();
-        db.setSQL("select * from dist_reindex_journal where " + (DbConnectionFactory.isMsSql()
-                ? "id % ? = ?" : "MOD(id, ?) = ?")
+
+      if (DbConnectionFactory.isOracle()){
+        db.setSQL("select * from (select * from dist_reindex_journal where MOD(id, ?) = ?"
+                + " and priority <= ? and id > ? ORDER BY priority ASC) where ROWNUM <= 2000");
+      } else if (DbConnectionFactory.isMsSql()){
+        db.setSQL("select TOP 2000 * from dist_reindex_journal where id % ? = ?"
+                + " and priority <= ? and id > ? ORDER BY priority ASC");
+      } else{
+        db.setSQL("select * from dist_reindex_journal where MOD(id, ?) = ?"
                 + " and priority <= ? and id > ? ORDER BY priority ASC LIMIT 2000");
-        db.addParam(reindexingServers.size());
+      }
+
+      db.addParam(reindexingServers.size());
       db.addParam(myIndex);
       db.addParam(priorityLevel);
       db.addParam(lastIdIndexed);
