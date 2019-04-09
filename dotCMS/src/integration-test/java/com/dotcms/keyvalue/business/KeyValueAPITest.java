@@ -1,10 +1,5 @@
 package com.dotcms.keyvalue.business;
 
-import static com.dotcms.integrationtestutil.content.ContentUtils.createTestKeyValueContent;
-import static com.dotcms.integrationtestutil.content.ContentUtils.deleteContentlets;
-import static com.dotcms.integrationtestutil.content.ContentUtils.updateTestKeyValueContent;
-import static org.junit.Assert.fail;
-
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.cache.KeyValueCache;
 import com.dotcms.contenttype.business.ContentTypeAPI;
@@ -16,6 +11,7 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
@@ -23,12 +19,15 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletValidationExce
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import java.util.Date;
-import java.util.List;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import java.util.Date;
+import java.util.List;
+
+import static com.dotcms.integrationtestutil.content.ContentUtils.*;
 
 /**
  * This Integration Test will verify the correct and expected behavior of the {@link KeyValueAPI}.
@@ -129,16 +128,15 @@ public class KeyValueAPITest extends IntegrationTestBase {
      * Updating an existing KeyValue and verifying the cache group.
      */
     @Test
-    public void updateKeyValueContent() throws DotContentletStateException,
-                    IllegalArgumentException, DotDataException, DotSecurityException {
+    public void updateKeyValueContent() throws Exception {
 
         String key1 = "com.dotcms.test.key1." + new Date().getTime();
         String value1 = "Test Key #1";
 
         final KeyValueAPI keyValueAPI = APILocator.getKeyValueAPI();
         final KeyValueCache cache = CacheLocator.getKeyValueCache();
-        Contentlet contentlet = createTestKeyValueContent(key1, value1, englishLanguageId,
-                keyValueContentType, systemUser);
+        final Contentlet contentlet = LocalTransaction.wrapReturn( ()->createTestKeyValueContent(key1, value1, englishLanguageId,
+                keyValueContentType, systemUser));
 
         Assert.assertTrue("Failed creating a new Contentlet using the Key/Value Content Type.",
                         UtilMethods.isSet(contentlet.getIdentifier()));
@@ -152,15 +150,15 @@ public class KeyValueAPITest extends IntegrationTestBase {
         Assert.assertNotNull("Key/Value cache MUST NOT be null.", cachedKeyValue);
 
         final String newValue = keyValue.getValue() + ".updatedvalue";
-        contentlet = updateTestKeyValueContent(contentlet, keyValue.getKey(), newValue, englishLanguageId, keyValueContentType,
-                        systemUser);
+        final Contentlet newContentlet = LocalTransaction.wrapReturn(
+                ()->updateTestKeyValueContent(contentlet, keyValue.getKey(), newValue, englishLanguageId, keyValueContentType,systemUser));
         cachedKeyValue = cache
                 .getByLanguageAndContentType(key1, englishLanguageId, keyValueContentType.id());
 
         System.out.print("cachedKeyValue: " + cachedKeyValue + "\n");
         Assert.assertNull("Key/Value cache MUST BE null.", cachedKeyValue);
 
-        deleteContentlets(systemUser, contentlet);
+        deleteContentlets(systemUser, newContentlet);
     }
 
     /*
