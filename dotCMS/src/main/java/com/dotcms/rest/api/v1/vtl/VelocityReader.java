@@ -11,5 +11,15 @@ import java.io.Reader;
  */
 
 public interface VelocityReader {
+
+    /**
+     * Gets the velocity reader for a given parameters
+     * @param params
+     * @param pageMode
+     * @return
+     * @throws DotSecurityException
+     * @throws IOException
+     * @throws DotDataException
+     */
     Reader getVelocity(final VTLResource.VelocityReaderParams params) throws DotSecurityException, IOException, DotDataException;
 }
