@@ -299,7 +299,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     	if (UtilMethods.isSet(saveType.variable())) {
     		builder.variable(saveType.variable());
     	} else {
-    		builder.variable(suggestVelocityVar(VelocityUtil.convertToVelocityVariable(saveType.name(), true)));
+    		builder.variable(suggestVelocityVar(saveType.name()));
     	}
     } else {
     	builder.variable(oldContentType.variable());

@@ -22,6 +22,7 @@ import com.liferay.portal.model.User;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import io.vavr.Tuple2;
 import org.apache.commons.lang.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -606,6 +607,51 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		}
 
 		assertTrue(testCase.shouldExecuteAction);
+	}
+
+	@DataProvider
+	public static Object[] dataProviderSaveInvalidVariable() {
+		return new Tuple2[] {
+				// actual, should fail
+				new Tuple2<>("123", true),
+				new Tuple2<>("123aaa", true),
+				new Tuple2<>("55_", true),
+				new Tuple2<>("_123", false),
+				new Tuple2<>("_123a", false),
+				new Tuple2<>("asd123asd", false),
+				new Tuple2<>("Asfsdf", false),
+				new Tuple2<>("aa123", false)
+		};
+	}
+
+	@Test
+	@UseDataProvider("dataProviderSaveInvalidVariable")
+	public void testSave_InvalidVariable_ShouldThrowException(final Tuple2<String, Boolean> testCase)
+			throws DotSecurityException, DotDataException {
+
+		final String variableTestCase = testCase._1;
+		final boolean shouldFail = testCase._2;
+
+		final long time = System.currentTimeMillis();
+		ContentType type = null;
+		try {
+			type = APILocator.getContentTypeAPI(APILocator.systemUser())
+					.save(ContentTypeBuilder
+							.builder(SimpleContentType.class)
+							.folder(FolderAPI.SYSTEM_FOLDER)
+							.host(Host.SYSTEM_HOST).name("typeName"+time)
+							.owner(user.getUserId())
+							.variable(variableTestCase)
+							.build());
+
+				assertFalse(shouldFail);
+		} catch (IllegalArgumentException e) {
+			Assert.assertTrue(shouldFail);
+		} finally {
+			if(type!=null) {
+				APILocator.getContentTypeAPI(APILocator.systemUser()).delete(type);
+			}
+		}
 	}
 
 	@Test
