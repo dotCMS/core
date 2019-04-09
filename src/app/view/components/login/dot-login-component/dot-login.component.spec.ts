@@ -80,7 +80,7 @@ describe('DotLoginComponent', () => {
         const submitButton: DebugElement = de.query(By.css('.login__button'));
         const productInformation: DebugElement[] = de.queryAll(By.css('.login__footer span'));
 
-        expect(header.nativeElement.innerHTML).toEqual('Welcome Back!');
+        expect(header.nativeElement.innerHTML).toEqual('Welcome!');
         expect(inputLabels[0].nativeElement.innerHTML).toEqual('Email Address');
         expect(inputLabels[1].nativeElement.innerHTML).toEqual('Password');
         expect(recoverPasswordLink.nativeElement.innerHTML).toEqual('Recover Password');
