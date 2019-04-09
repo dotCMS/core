@@ -1,12 +1,11 @@
 package com.dotcms.uuid.shorty;
 
-import java.util.Optional;
-
-
 import com.dotmarketing.business.Cachable;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
+
+import java.util.Optional;
 
 public class ShortyIdCache implements Cachable {
 
@@ -62,10 +61,12 @@ public class ShortyIdCache implements Cachable {
 
     }
 
-    public void remove(ShortyId ShortyId) {
-        cache.remove(ShortyId.shortId, SHORT_CACHE);
+    public void remove(final ShortyId ShortyId) {
+        remove(ShortyId.shortId);
     }
 
-
+    public void remove(final String shortId) {
+        cache.remove(shortId, SHORT_CACHE);
+    }
 
 }

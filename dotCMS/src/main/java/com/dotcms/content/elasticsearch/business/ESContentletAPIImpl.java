@@ -34,6 +34,7 @@ import com.dotcms.system.event.local.type.content.CommitListenerEvent;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.uuid.shorty.ShortType;
 import com.dotcms.uuid.shorty.ShortyId;
+import com.dotcms.uuid.shorty.ShortyIdCache;
 import com.dotmarketing.beans.*;
 import com.dotmarketing.business.*;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
@@ -3670,7 +3671,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
 
             new ContentletLoader().invalidate(contentlet);
-
+            invalidateShorty(contentlet);
         } catch (Exception e) {
             if(createNewVersion && workingContentlet!= null && UtilMethods.isSet(workingContentlet.getInode())){
                 APILocator.getVersionableAPI().setWorking(workingContentlet);
@@ -3680,6 +3681,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
             bubbleUpException(e);
         }
         return contentlet;
+    }
+
+    /**
+     * Adds the commit listener to remove the shorty
+     * @param contentlet
+     */
+    private void invalidateShorty(final Contentlet contentlet) {
+
+        new ShortyIdCache().remove(APILocator.getShortyAPI().shortify(contentlet.getIdentifier()));
     }
 
     /**
