@@ -129,6 +129,10 @@ public class CustomPortletForm {
       }
     }
 
+    if(contentTypeList.size() < contentTypes.length){
+      throw new IllegalArgumentException("One or more of the Content Types defined does not exist");
+    }
+
     return contentTypeList;
   }
   
