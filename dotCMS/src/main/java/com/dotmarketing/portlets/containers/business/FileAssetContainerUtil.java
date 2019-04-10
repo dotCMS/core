@@ -125,7 +125,7 @@ public class FileAssetContainerUtil {
     public String getContainerIdFromPath(final String fullPath) throws DotDataException {
 
         Host host             = null;
-        final String hostname = this.getHostName(fullPath);
+        String hostname = this.getHostName(fullPath);
 
         try {
             if (null != hostname) {
@@ -144,8 +144,13 @@ public class FileAssetContainerUtil {
             }
         }
 
+        if (null == hostname) {
+
+            hostname = null != host?host.getHostname():StringPool.BLANK;
+        }
+
         final String relativePath = this.getPathFromFullPath (hostname, fullPath);
-        final String containerUri = (relativePath.endsWith(FORWARD_SLASH)?relativePath:relativePath+FORWARD_SLASH)+"container.vtl";
+        final String containerUri = (relativePath.endsWith(FORWARD_SLASH)? relativePath:relativePath+FORWARD_SLASH)+"container.vtl";
 
         final Identifier identifier = APILocator.getIdentifierAPI().find(host, containerUri);
         return identifier.getId();
