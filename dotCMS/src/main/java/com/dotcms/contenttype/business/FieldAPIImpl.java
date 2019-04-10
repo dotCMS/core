@@ -163,7 +163,7 @@ public class FieldAPIImpl implements FieldAPI {
 	    	}
 	    }else {
 	        //This validation should only be for new fields, since the field velocity var name(variable) can not be modified
-            if(UtilMethods.isSet(field.variable()) && !field.variable().matches("^[a-zA-Z0-9]+")) {
+            if(UtilMethods.isSet(field.variable()) && !field.variable().matches("^[A-Za-z][0-9A-Za-z]*")) {
                 final String errorMessage = "Field velocity var name "+ field.variable() +" contains characters not allowed, here is a suggestion of the variable: " + com.dotmarketing.util.StringUtils.camelCaseLower(field.variable());
                 Logger.error(this, errorMessage);
                 throw new DotDataValidationException(errorMessage);
