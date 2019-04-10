@@ -1,8 +1,5 @@
-
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { Component, forwardRef, ViewChild, OnInit } from '@angular/core';
-
-import { take } from 'rxjs/operators';
 
 import { DotMessageService } from '@services/dot-messages-service';
 import { DotLayoutPropertiesItemComponent } from '../dot-layout-properties-item/dot-layout-properties-item.component';
@@ -37,7 +34,6 @@ export class DotLayoutSidebarComponent implements ControlValueAccessor, OnInit {
                 'editpage.layout.properties.sidebar.left',
                 'editpage.layout.properties.sidebar.right'
             ])
-            .pipe(take(1))
             .subscribe((messages: { [key: string]: string }) => {
                 this.messages = messages;
             });

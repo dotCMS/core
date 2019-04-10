@@ -247,7 +247,10 @@ export class DotEditLayoutGridComponent implements OnInit, OnDestroy, ControlVal
 
     /**
      * Add style class to a column
-     * @param index column index into {@link DotLayoutGrid#boxes}
+     *
+     * @param {number} index
+     * @param {string} title
+     * @memberof DotEditLayoutGridComponent
      */
     addColumnClass(index: number, title: string): void {
         this.addClass({
@@ -269,9 +272,13 @@ export class DotEditLayoutGridComponent implements OnInit, OnDestroy, ControlVal
         });
     }
 
+
     /**
      * Add style class to a row
-     * @param index row index
+     *
+     * @param {number} index
+     * @param {string} title
+     * @memberof DotEditLayoutGridComponent
      */
     addRowClass(index: number, title: string): void {
         this.addClass({
@@ -281,6 +288,11 @@ export class DotEditLayoutGridComponent implements OnInit, OnDestroy, ControlVal
         });
     }
 
+    /**
+     * Handle hide event from add class dialog
+     *
+     * @memberof DotEditLayoutGridComponent
+     */
     onAddClassDialogHide(): void {
         this.addClassDialogActions = null;
         this.addClassDialogShow = false;

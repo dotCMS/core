@@ -47,7 +47,7 @@ export class DotEditLayoutService {
             });
         });
 
-        return new DotLayoutGrid(grid, dotLayoutBody.rows.map((row) => row.styleClass));
+        return new DotLayoutGrid(grid, dotLayoutBody.rows.map((row: DotLayoutRow) => row.styleClass));
     }
 
     /**
@@ -58,7 +58,7 @@ export class DotEditLayoutService {
      */
     getDotLayoutBody(grid: DotLayoutGrid): DotLayoutBody {
         return {
-            rows: grid.getRows().map((row) => this.getLayoutRowFromLayoutGridBoxes(row))
+            rows: grid.getRows().map((row: DotLayoutGridRow) => this.getLayoutRowFromLayoutGridBoxes(row))
         };
     }
 
@@ -95,7 +95,7 @@ export class DotEditLayoutService {
         containers: DotPageContainer[]
     ): DotContainerColumnBox[] {
         return containers
-            .filter((dotPageContainer) =>
+            .filter((dotPageContainer: DotPageContainer) =>
                 this.templateContainersCacheService.get(dotPageContainer.identifier)
             )
             .map((dotPageContainer: DotPageContainer) => {
