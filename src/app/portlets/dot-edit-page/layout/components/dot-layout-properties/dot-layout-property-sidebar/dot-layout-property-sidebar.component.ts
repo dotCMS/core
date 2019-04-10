@@ -1,9 +1,12 @@
+
+import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { Component, forwardRef, ViewChild, OnInit } from '@angular/core';
+
+import { take } from 'rxjs/operators';
+
 import { DotMessageService } from '@services/dot-messages-service';
 import { DotLayoutPropertiesItemComponent } from '../dot-layout-properties-item/dot-layout-properties-item.component';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
-import { Component, forwardRef, ViewChild, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { DotLayoutSideBar } from '../../../../shared/models/dot-layout-sidebar.model';
-import { take } from 'rxjs/operators';
 
 @Component({
     selector: 'dot-layout-property-sidebar',
@@ -14,8 +17,7 @@ import { take } from 'rxjs/operators';
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotLayoutSidebarComponent)
         }
-    ],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    ]
 })
 export class DotLayoutSidebarComponent implements ControlValueAccessor, OnInit {
     @ViewChild('propertyItemLeft')
@@ -37,10 +39,7 @@ export class DotLayoutSidebarComponent implements ControlValueAccessor, OnInit {
             ])
             .pipe(take(1))
             .subscribe((messages: { [key: string]: string }) => {
-                console.log('messages', messages);
-                this.messages = {
-                    ...messages
-                };
+                this.messages = messages;
             });
     }
 
