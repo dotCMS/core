@@ -140,22 +140,23 @@ margin:0px auto;
 <%-- /New Layout Dialog --%>
 
 
-<div dojoType="dijit.Dialog" style="width:500px;" id="customPortletDialog" title="<%=LanguageUtil.get(pageContext, "custom.content.portlet.create")%>"
-    execute="createCustomContentType(arguments[0]);">
+<div dojoType="dijit.Dialog" style="width:500px;" id="customPortletDialog" title="<%=LanguageUtil.get(pageContext, "custom.content.portlet.create")%>">
+
+	<div dojoType="dijit.form.Form" style="width:500px;" id="customPortletForm" onsubmit="return false;">
 
     <table class="listingTable">
         <tr>
             <td style="white-space: nowrap;"><label for="customPortletName"><%=LanguageUtil.get(pageContext, "custom.content.portlet.portletName")%>:
             </label></td>
 
-            <td><input dojoType="dijit.form.TextBox" type="text" required="true" 
+            <td><input dojoType="dijit.form.ValidationTextBox" type="text" required="true"
                 name="customPortletName" id="customPortletName" value="" onKeyUp="setPortletIdValue(this.getValue())"></td>
         </tr>
         <tr>
             <td style="white-space: nowrap;"><label for="customPortletId"><%=LanguageUtil.get(pageContext, "custom.content.portlet.portletId")%>:
             </label></td>
 
-            <td><input dojoType="dijit.form.TextBox" type="text" required="true" 
+            <td><input dojoType="dijit.form.ValidationTextBox" type="text" required="true"
                 name="customPortletId" id="customPortletId" value="" onKeyUp="setPortletIdValue(this.getValue())" onBlur="cleanUpPortletId()"></td>
         </tr>
         
@@ -191,8 +192,9 @@ margin:0px auto;
             onClick="dijit.byId('customPortletDialog').hide();"><%=LanguageUtil.get(pageContext, "cancel")%></button>
         &nbsp;
         <button dojoType="dijit.form.Button" type="submit"
-            onClick="return dijit.byId('customPortletDialog').isValid();"><%=LanguageUtil.get(pageContext, "ok")%></button>
+            onClick="createCustomContentType()"><%=LanguageUtil.get(pageContext, "ok")%></button>
     </div>
+</div>
 </div>
 
 

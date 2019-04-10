@@ -1184,26 +1184,15 @@
 	    dijit.byId("customPortletId").setValue(val);    
 	}
 	
-	function createCustomContentType(formData){
-	    
-	    console.log(formData);
-	    if(formData.customPortletId===null || formData.customPortletId.length==0){
-	        alert("PortletId is required");
-	        return false;
-	    }
-	    if(formData.customPortletName===null || formData.customPortletId.length==0){
-	        alert("PortletName is required");
-	        return false;
-	    }
+	function createCustomContentType(){
 
 	    var data={};
 	    
-	    data.portletId =formData.customPortletId;
-	    data.portletName =formData.customPortletName;
-	    data.baseTypes =formData.customPortletBaseTypes;
-	    data.contentTypes =formData.customPortletContentTypes;
+	    data.portletId =dijit.byId("customPortletId").attr('value');
+	    data.portletName =dijit.byId("customPortletName").attr('value');
+	    data.baseTypes =dijit.byId("customPortletBaseTypes").attr('value');
+	    data.contentTypes =dijit.byId("customPortletContentTypes").attr('value');
 
-	    console.log("postData", data);
 	      var xhrArgs = {
 	          url : "/api/v1/portlet/custom",
 	          handleAs: "json",
@@ -1214,11 +1203,10 @@
 	          load : function(data){
 	              initializePortletInfoList();
 	              console.log("custom", data);
+				  dijit.byId('customPortletDialog').hide();
 	          },
 	          error : function(error) {
-	              alert("Error creating new form:" + JSON.parse(error.responseText).message);
-	              
-	              console.error("Error creating new form", error);
+	              alert("Error creating new portlet: " + JSON.parse(error.responseText).message);
 	              return false;
 
 	          }
