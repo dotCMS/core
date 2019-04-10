@@ -22,7 +22,7 @@ public class CreateTokenForm extends Validated {
 
     public final int expirationDays;
     
-    public final String label;;
+    public final String label;
 
     private CreateTokenForm(Builder builder) {
         user = builder.user;

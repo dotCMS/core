@@ -45,7 +45,6 @@ import java.util.Optional;
 public  class WebResource {
 
     public static final String BASIC  = "Basic ";
-    public static final String BEARER = "Bearer ";
 
     private final UserWebAPI        userWebAPI;
     private final UserAPI           userAPI;
