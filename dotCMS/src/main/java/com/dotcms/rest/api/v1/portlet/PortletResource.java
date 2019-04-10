@@ -2,6 +2,8 @@ package com.dotcms.rest.api.v1.portlet;
 
 import static com.dotcms.util.CollectionsUtils.map;
 
+import com.dotcms.rest.api.v1.authentication.ResponseUtil;
+import com.dotmarketing.util.UtilMethods;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
@@ -78,58 +80,75 @@ public class PortletResource implements Serializable {
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
   public final Response contentPortlet(@Context final HttpServletRequest request,
-                                 @Context final HttpServletResponse response,
                                  final CustomPortletForm formData) {
-    InitDataObject init = webResource.init(null, true,request,true, "roles");
-    
-    if(formData.portletId==null) {
-      return ExceptionMapperUtil.createResponse(new DotStateException("Portlet Id is required"), Response.Status.BAD_REQUEST);
-    }
-    if(formData.portletName==null) {
-      return ExceptionMapperUtil.createResponse(new DotStateException("Portlet Nane is required"), Response.Status.BAD_REQUEST);
-    }
-    
-    final String portletId = "c-" + formData.portletId;
-    Portlet portlet = portletApi.findPortlet(portletId);
-    if(portlet!=null) {
-      return ExceptionMapperUtil.createResponse(new DotStateException("PortletId already Exists"), Response.Status.CONFLICT);
-    }
-    List<String> contentTypes= formData.resolveContentTypes().stream().map(ct->ct.variable()).collect(Collectors.toList());
-    List<String> baseTypes= formData.resolveBaseTypes().stream().map(bt->bt.name()).collect(Collectors.toList());
-   
-    if(contentTypes.size() + baseTypes.size()==0) {
-      return ExceptionMapperUtil.createResponse(new DotStateException("You must specify at least one baseType or Content Type"), Response.Status.BAD_REQUEST);
-    }
-    
-    
-    final Portlet contentPortlet = portletApi.findPortlet("content");
-    Map<String,String> initValues=new HashMap<>();
-    
-    initValues.putAll(contentPortlet.getInitParams());
-    initValues.put("name", formData.portletName);
-    initValues.put("baseTypes", String.join(",", baseTypes));
-    initValues.put("contentTypes", String.join(",", contentTypes));
-    initValues.put("portletSource", "db");
-    
+    InitDataObject init = webResource.init(null, true, request, true, "roles");
 
-    Portlet newPortlet = new DotPortlet(portletId, contentPortlet.getPortletClass(), initValues);
-    
+    Response response = null;
 
-    
-    APILocator.getPortletAPI().savePortlet(newPortlet);
-
-    Map<String, String> keys = ImmutableMap.of(com.dotcms.repackage.javax.portlet.Portlet.class.getPackage().getName() + ".title."+portletId, formData.portletName);
     try {
-      for(Language lang : langApi.getLanguages()) {
-        APILocator.getLanguageAPI().saveLanguageKeys(lang, keys, ImmutableMap.of(), ImmutableSet.of());
-      }
-    } catch (DotDataException e) {
-      Logger.warnAndDebug(this.getClass(), e.getMessage(), e);
-    }
-    
-    systemMessageEventUtil.pushSimpleTextEvent(Try.of(()-> LanguageUtil.get(init.getUser(), "custom.content.portlet.created")).getOrElse("Custom Content Created"), init.getUser().getUserId(), "roles");
 
-    return Response.ok(new ResponseEntityView(map("portlet", newPortlet.getPortletId()))).build();
+      if (!UtilMethods.isSet(formData.portletId)) {
+        return ExceptionMapperUtil.createResponse(new DotStateException("Portlet Id is required"),
+                Response.Status.BAD_REQUEST);
+      }
+      if (!UtilMethods.isSet(formData.portletName)) {
+        return ExceptionMapperUtil.createResponse(new DotStateException("Portlet Name is required"),
+                Response.Status.BAD_REQUEST);
+      }
+
+      final String portletId = "c-" + formData.portletId;
+      Portlet portlet = portletApi.findPortlet(portletId);
+      if (portlet != null) {
+        return ExceptionMapperUtil.createResponse(new DotStateException("PortletId already Exists"),
+                Response.Status.CONFLICT);
+      }
+      List<String> contentTypes = formData.resolveContentTypes().stream().map(ct -> ct.variable())
+              .collect(Collectors.toList());
+      List<String> baseTypes = formData.resolveBaseTypes().stream().map(bt -> bt.name())
+              .collect(Collectors.toList());
+
+      if (contentTypes.size() + baseTypes.size() == 0) {
+        return ExceptionMapperUtil.createResponse(
+                new DotStateException("You must specify at least one baseType or Content Type"),
+                Response.Status.BAD_REQUEST);
+      }
+
+      final Portlet contentPortlet = portletApi.findPortlet("content");
+      Map<String, String> initValues = new HashMap<>();
+
+      initValues.putAll(contentPortlet.getInitParams());
+      initValues.put("name", formData.portletName);
+      initValues.put("baseTypes", String.join(",", baseTypes));
+      initValues.put("contentTypes", String.join(",", contentTypes));
+      initValues.put("portletSource", "db");
+
+      Portlet newPortlet = new DotPortlet(portletId, contentPortlet.getPortletClass(), initValues);
+
+      APILocator.getPortletAPI().savePortlet(newPortlet);
+
+      Map<String, String> keys = ImmutableMap
+              .of(com.dotcms.repackage.javax.portlet.Portlet.class.getPackage().getName()
+                      + ".title." + portletId, formData.portletName);
+      try {
+        for (Language lang : langApi.getLanguages()) {
+          APILocator.getLanguageAPI()
+                  .saveLanguageKeys(lang, keys, ImmutableMap.of(), ImmutableSet.of());
+        }
+      } catch (DotDataException e) {
+        Logger.warnAndDebug(this.getClass(), e.getMessage(), e);
+      }
+
+      systemMessageEventUtil.pushSimpleTextEvent(
+              Try.of(() -> LanguageUtil.get(init.getUser(), "custom.content.portlet.created"))
+                      .getOrElse("Custom Content Created"), init.getUser().getUserId(), "roles");
+
+      return Response.ok(new ResponseEntityView(map("portlet", newPortlet.getPortletId()))).build();
+
+    } catch (Exception e){
+      response = ResponseUtil.mapExceptionResponse(e);
+    }
+
+    return response;
   }
 
 }
