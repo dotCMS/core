@@ -15,11 +15,11 @@ public class VelocityUtilTest {
     public static Object[] dataProviderTestConvertToVelocityVariable() {
         return new Tuple3[] {
                 // actual, expected, firstLetterUppercase
-                new Tuple3<>("123", "123", false),
-                new Tuple3<>("123", "123", true),
+                new Tuple3<>("123", "one23", false),
+                new Tuple3<>("123", "one23", true),
                 new Tuple3<>("_123", "_123", false),
-                new Tuple3<>("_123a", "a", false),
-                new Tuple3<>("_123a", "A", true),
+                new Tuple3<>("_123a", "_123a", false),
+                new Tuple3<>("_123a", "_123a", true),
                 new Tuple3<>("asd123asd", "asd123asd", false),
                 new Tuple3<>("asd123asd", "Asd123asd", true)
         };
