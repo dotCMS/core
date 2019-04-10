@@ -394,9 +394,9 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   public ContentType save(ContentType contentType, List<Field> newFields, List<FieldVariable> newFieldVariables)
       throws DotDataException, DotSecurityException {
 
-    DotPreconditions.checkArgument(contentType.name().matches(TYPES_AND_FIELDS_VALID_NAME_REGEX),
-            "Invalid content type name: " + contentType.name(),
-            IllegalArgumentException.class);
+//    DotPreconditions.checkArgument(contentType.name().matches(TYPES_AND_FIELDS_VALID_NAME_REGEX),
+//            "Invalid content type name: " + contentType.name(),
+//            IllegalArgumentException.class);
 
     if(UtilMethods.isSet(contentType.variable())) {
       DotPreconditions.checkArgument(contentType.variable().matches(TYPES_AND_FIELDS_VALID_NAME_REGEX),
