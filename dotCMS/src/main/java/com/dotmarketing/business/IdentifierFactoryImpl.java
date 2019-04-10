@@ -182,7 +182,6 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 	        parentPath=parentPath+"/";
 	    }
 
-        Logger.info(getClass(),parentPath);
 		DotConnect dc = new DotConnect();
 		dc.setSQL("select * from identifier where parent_path = ? and host_inode = ?");
 		dc.addParam(parentPath);
