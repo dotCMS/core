@@ -6,7 +6,7 @@ import { LoginServiceMock, mockLoginFormResponse } from '@tests/login-service.mo
 import { of } from 'rxjs';
 import { DotLoginInformation } from '@models/dot-login';
 
-describe('DotLoginPAgeStateServiceService', () => {
+describe('DotLoginPageStateServiceService', () => {
     let dotloginPageStateService: DotLoginPageStateService;
     let loginService: LoginService;
 
@@ -32,6 +32,7 @@ describe('DotLoginPAgeStateServiceService', () => {
         dotloginPageStateService.set('es_ES').subscribe();
         expect(loginService.getLoginFormInfo).toHaveBeenCalledWith('es_ES', LOGIN_LABELS);
         dotloginPageStateService.get().subscribe((loginInfo: DotLoginInformation) => {
+            console.log(loginInfo, mockLoginFormResponse);
             expect(loginInfo).toEqual(mockLoginFormResponse);
         });
     });

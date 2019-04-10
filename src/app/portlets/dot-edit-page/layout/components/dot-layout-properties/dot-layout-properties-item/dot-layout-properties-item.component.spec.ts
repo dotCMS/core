@@ -13,7 +13,7 @@ import { By } from '@angular/platform-browser';
 })
 class TestHostComponent {
     group: FormGroup;
-    constructor() {
+f;    constructor() {
         this.group = new FormGroup({
             header: new FormControl({
                 header: true
