@@ -1,5 +1,6 @@
 package com.dotcms.contenttype.business;
 
+import static com.dotcms.contenttype.business.ContentTypeAPIImpl.TYPES_AND_FIELDS_VALID_NAME_REGEX;
 import static com.dotcms.util.CollectionsUtils.list;
 
 import com.dotcms.api.system.event.message.MessageSeverity;
@@ -48,6 +49,7 @@ import com.dotcms.rendering.velocity.services.ContentletLoader;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
+import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
@@ -123,6 +125,10 @@ public class FieldAPIImpl implements FieldAPI {
           throw new DotDataValidationException("ContentTypeId needs to be set to save the Field");
       }
 
+      DotPreconditions.checkArgument(field.name().matches(TYPES_AND_FIELDS_VALID_NAME_REGEX),
+              "Invalid field name: " + field.name(),
+              IllegalArgumentException.class);
+
 		ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
 		ContentType type = contentTypeAPI.find(field.contentTypeId()) ;
 		permissionAPI.checkPermission(type, PermissionLevel.EDIT_PERMISSIONS, user);
@@ -163,7 +169,7 @@ public class FieldAPIImpl implements FieldAPI {
 	    	}
 	    }else {
 	        //This validation should only be for new fields, since the field velocity var name(variable) can not be modified
-            if(UtilMethods.isSet(field.variable()) && !field.variable().matches("^[a-zA-Z0-9]+")) {
+            if(UtilMethods.isSet(field.variable()) && !field.variable().matches("^[A-Za-z][0-9A-Za-z]*")) {
                 final String errorMessage = "Field velocity var name "+ field.variable() +" contains characters not allowed, here is a suggestion of the variable: " + com.dotmarketing.util.StringUtils.camelCaseLower(field.variable());
                 Logger.error(this, errorMessage);
                 throw new DotDataValidationException(errorMessage);

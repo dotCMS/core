@@ -1,10 +1,15 @@
 package com.dotmarketing.business.portal;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Layout;
+import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.CompanyUtils;
 import com.dotmarketing.util.Logger;
@@ -13,6 +18,8 @@ import com.liferay.portal.ejb.PortletManagerUtil;
 import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PropsUtil;
+
+import io.vavr.control.Try;
 
 public class PortletAPIImpl implements PortletAPI {
     
@@ -58,7 +65,11 @@ public class PortletAPIImpl implements PortletAPI {
 	@CloseDBIfOpened
 	public List<Portlet> findAllPortlets() throws SystemException {
 		String companyId = CompanyUtils.getDefaultCompany().getCompanyId();
-		return PortletManagerUtil.getPortlets(companyId);
+
+		List<Portlet>allPortlets = new ArrayList<>();
+		allPortlets.addAll(PortletManagerUtil.getPortlets(companyId));
+		Try.of(()->allPortlets.addAll(findPortletsInDb())).onFailure(e-> Logger.warn(PortletAPIImpl.class, e.getMessage()));
+		return allPortlets;
 	}
 
 	public boolean canAddPortletToLayout(Portlet portlet) {
@@ -79,4 +90,32 @@ public class PortletAPIImpl implements PortletAPI {
 		return true;
 	}
 
+	
+	
+	private List<Portlet> findPortletsInDb() throws DotDataException{
+	    String companyId = CompanyUtils.getDefaultCompany().getCompanyId();
+        List<Map<String, Object>> ports = new DotConnect()
+                .setSQL("select portletid ,groupid ,companyid , defaultpreferences, narrow,roles ,active_  from portlet where companyid=?")
+                .addParam(companyId).loadObjectResults();
+        final List<Portlet> portlets =
+                ports.stream()
+                        .map(m -> new Portlet(
+                                (String) m.get("portletid"), 
+                                (String) m.get("groupid"), 
+                                (String) m.get("companyid"),
+                                (String) m.get("defaultpreferences"), 
+                                false, 
+                                null, 
+                                Boolean.parseBoolean((String) m.get("active_"))))
+                        .collect(Collectors.toList());
+        
+        
+	    return portlets;
+	    
+	    
+	}
+	
+	
+	
+	
 }

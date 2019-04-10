@@ -110,12 +110,15 @@ public class VelocityUtil {
 
 
 	public static String convertToVelocityVariable(final String variable, boolean firstLetterUppercase){
-		
 
-	      return (firstLetterUppercase) 
-	              ? StringUtils.camelCaseUpper(variable)
-	              : StringUtils.camelCaseLower(variable);
-		
+		if(variable.matches("[_0-9]*")) {
+			return variable;
+		}
+
+		return (firstLetterUppercase)
+				? StringUtils.camelCaseUpper(variable)
+				: StringUtils.camelCaseLower(variable);
+
 	}
 	
 	

@@ -36,6 +36,7 @@ import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import io.vavr.Tuple2;
 import java.util.Date;
 import java.util.List;
 import org.junit.BeforeClass;
@@ -755,6 +756,90 @@ public class FieldAPITest extends IntegrationTestBase {
                 .build();
             fieldAPI.save(field, user);
         }finally {
+            contentTypeAPI.delete(type);
+        }
+    }
+
+    @DataProvider
+    public static Object[] dataProviderSaveInvalidVariable() {
+        return new Tuple2[] {
+                // actual, should fail
+                new Tuple2<>("123", true),
+                new Tuple2<>("_123", true),
+                new Tuple2<>("_123a", true),
+                new Tuple2<>("asd123asd", false),
+                new Tuple2<>("Asfsdf", false),
+                new Tuple2<>("aa123", false)
+        };
+    }
+
+    @Test
+    @UseDataProvider("dataProviderSaveInvalidVariable")
+    public void testSave_InvalidVariable_ShouldThrowException(final Tuple2<String, Boolean> testCase)
+            throws DotSecurityException, DotDataException {
+
+        final String variableTestCase = testCase._1;
+        final boolean shouldFail = testCase._2;
+
+        final long time = System.currentTimeMillis();
+        final ContentType type = createAndSaveSimpleContentType("testContentType" + time);
+        try {
+            final Field field = FieldBuilder.builder(TextField.class)
+                    .name("testField")
+                    .contentTypeId(type.id())
+                    .indexed(false)
+                    .listed(false)
+                    .variable(variableTestCase)
+                    .fixed(true)
+                    .build();
+            fieldAPI.save(field, user);
+            assertFalse(shouldFail);
+        } catch (DotDataValidationException e) {
+            assertTrue(shouldFail);
+        } finally {
+            contentTypeAPI.delete(type);
+        }
+    }
+
+
+    @DataProvider
+    public static Object[] dataProviderSaveInvalidName() {
+        return new Tuple2[] {
+                // actual, should fail
+                new Tuple2<>("123", true),
+                new Tuple2<>("123abc", true),
+                new Tuple2<>("_123a", false),
+                new Tuple2<>("asd123asd", false),
+                new Tuple2<>("Asfsdf", false),
+                new Tuple2<>("aa123", false),
+                new Tuple2<>("This is a field", false),
+                new Tuple2<>("Field && ,,,..**==} name~~~__", false)
+        };
+    }
+
+    @Test
+    @UseDataProvider("dataProviderSaveInvalidName")
+    public void testSave_InvalidName_ShouldThrowException(final Tuple2<String, Boolean> testCase)
+            throws DotSecurityException, DotDataException {
+
+        final String nameTestCase = testCase._1;
+        final boolean shouldFail = testCase._2;
+
+        final long time = System.currentTimeMillis();
+        final ContentType type = createAndSaveSimpleContentType("testContentType" + time);
+        try {
+            final Field field = FieldBuilder.builder(TextField.class)
+                    .name(nameTestCase)
+                    .contentTypeId(type.id())
+                    .indexed(false)
+                    .listed(false)
+                    .fixed(true)
+                    .build();
+            fieldAPI.save(field, user);
+            assertFalse(shouldFail);
+        } catch (IllegalArgumentException e) {
+            assertTrue(shouldFail);
+        } finally {
             contentTypeAPI.delete(type);
         }
     }
