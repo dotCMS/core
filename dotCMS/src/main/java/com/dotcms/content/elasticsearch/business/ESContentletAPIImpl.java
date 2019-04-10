@@ -3689,6 +3689,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
      */
     private void invalidateShorty(final Contentlet contentlet) {
 
+        new ShortyIdCache().remove(contentlet.getIdentifier());
         new ShortyIdCache().remove(APILocator.getShortyAPI().shortify(contentlet.getIdentifier()));
     }
 
