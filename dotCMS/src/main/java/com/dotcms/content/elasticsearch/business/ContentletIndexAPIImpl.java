@@ -862,7 +862,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             // content to be deleted. Those contentlets are reindexed
             // to avoid left those fields making noise in the index
             if (UtilMethods.isSet(relationships)) {
-                reindexDependenciesForDeletedContent(contentlet, relationships, new BulkIndexWrapper(bulk), indexPolicyDependencies);
+                reindexDependenciesForDeletedContent(contentlet, relationships, indexPolicyDependencies);
             }
 
             bulk.add(client.prepareDelete(info.working, "content", id));
@@ -875,7 +875,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     }
 
     private void reindexDependenciesForDeletedContent(final Contentlet contentlet, final List<Relationship> relationships,
-            final BulkIndexWrapper bulk, final IndexPolicy indexPolicy)
+            final IndexPolicy indexPolicy)
             throws DotDataException, DotSecurityException, DotMappingException {
 
         for (final Relationship relationship : relationships) {
@@ -899,9 +899,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                     indexContentListNow(related);
                     break;
                 default: // DEFER
-                    appendBulkRequest(bulk, related);
-                    putToIndex(bulk.getRequestBuilder());
-                    break;
+                    indexContentListDefer(related);
             }
         }
     }
