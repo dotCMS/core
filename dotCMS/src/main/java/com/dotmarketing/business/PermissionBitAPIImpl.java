@@ -293,9 +293,15 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
 	@CloseDBIfOpened
 	@Override
-	public boolean doesUserHavePermission(final Permissionable permissionable, int permissionType, final User user, final boolean respectFrontendRoles) throws DotDataException {
+	public boolean doesUserHavePermission(final Permissionable permissionable, int permissionType, final User userIn, final boolean respectFrontendRoles) throws DotDataException {
 	    
-        if(user!=null && user.getUserId().equals(APILocator.getUserAPI().getSystemUser().getUserId())){
+	    
+	    final User user = (userIn==null || userIn.getUserId()==null) ? APILocator.getUserAPI().getAnonymousUser() : userIn;
+	    
+	    
+	    
+	    
+        if(user.getUserId().equals(APILocator.getUserAPI().getSystemUser().getUserId())){
             return true;
         }
         
@@ -323,18 +329,21 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		Role anonRole;
 		Role frontEndUserRole;
 		Role cmsOwnerRole;
+		User anonUser;
 		try {
 			adminRole = APILocator.getRoleAPI().loadCMSAdminRole();
 			anonRole = APILocator.getRoleAPI().loadCMSAnonymousRole();
 			frontEndUserRole = APILocator.getRoleAPI().loadLoggedinSiteRole();
 			cmsOwnerRole = APILocator.getRoleAPI().loadCMSOwnerRole();
+			anonUser=APILocator.getUserAPI().getAnonymousUser();
 		} catch (DotDataException e1) {
 			Logger.error(this, e1.getMessage(), e1);
 			throw new DotRuntimeException(e1.getMessage(), e1);
 		}
 
-		if(user != null && APILocator.getRoleAPI().doesUserHaveRole(user, adminRole))
+		if(APILocator.getRoleAPI().doesUserHaveRole(user, adminRole)) {
 			return true;
+		}
 
 		List<RelatedPermissionableGroup> permissionDependencies = permissionable.permissionDependencies(permissionType);
 
@@ -348,14 +357,13 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 					if(p.getRoleId().equals(anonRole.getId())){
 						return true;
 						//if logged in site user has permission
-					}else if(user != null && p.getRoleId().equals(frontEndUserRole.getId())){
+					}else if(!anonUser.getUserId().equals(user.getUserId()) && p.getRoleId().equals(frontEndUserRole.getId())){
 						return true;
 					}
 				} 
 				// if owner and owner has required permission return true
 				try {
-					if(p.getRoleId().equals(cmsOwnerRole.getId()) && user != null &&
-							permissionable.getOwner() != null && permissionable.getOwner().equals(user.getUserId()) &&
+					if(p.getRoleId().equals(cmsOwnerRole.getId()) && permissionable.getOwner() != null && permissionable.getOwner().equals(user.getUserId()) &&
 							checkRelatedPermissions(permissionDependencies, user)){
 						return true;
 					}
@@ -366,9 +374,9 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 			}
 		}
 
-		// at this point, there is no anon, logged in site user and the owner do not have permissions
-		//If we don't have a user, return false
-		if(user ==null){
+		// at this point, there is no anon, logged in site user and the owner do not have permissions 
+		// If we don't have a user, return false
+		if(anonUser.getUserId().equals(user.getUserId())){
 			return false;
 		} 
 
@@ -1270,11 +1278,13 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		Role anonRole;
 		Role frontEndUserRole;
 		Role cmsOwnerRole;
+		User anonUser;
 		try {
 			adminRole = APILocator.getRoleAPI().loadCMSAdminRole();
 			anonRole = APILocator.getRoleAPI().loadCMSAnonymousRole();
 			frontEndUserRole = APILocator.getRoleAPI().loadLoggedinSiteRole();
 			cmsOwnerRole = APILocator.getRoleAPI().loadCMSOwnerRole();
+			 anonUser=APILocator.getUserAPI().getAnonymousUser();
 		} catch (DotDataException e1) {
 			Logger.error(this, e1.getMessage(), e1);
 			throw new DotRuntimeException(e1.getMessage(), e1);
@@ -1386,7 +1396,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 											perCount++;
 											break;
 											//if logged in site user has permission
-										}else if(user != null && p.getRoleId().equals(frontEndUserRole.getId())
+										}else if(user != null && ! user.getUserId().equals(anonUser.getUserId()) && p.getRoleId().equals(frontEndUserRole.getId())
 												&& p.getType().equals(perType)
 												&& p.matchesPermission(requiredPermissionId)
 												&& (isInheriting || (isHost && p.getInode().equals(host.getIdentifier())) ||
