@@ -28,6 +28,7 @@ import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import org.elasticsearch.action.bulk.BulkProcessor;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 
@@ -188,7 +189,7 @@ public class ReindexThread {
           }
         } else {
           if (bulkProcessor != null) {
-            bulkProcessor.close();
+            bulkProcessor.awaitClose(20, TimeUnit.SECONDS);
             bulkProcessor = null;
           }
 
