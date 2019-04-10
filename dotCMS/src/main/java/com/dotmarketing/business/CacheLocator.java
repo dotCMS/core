@@ -185,7 +185,7 @@ public class CacheLocator extends Locator<CacheIndex>{
 		return (LayoutCache)getInstance(CacheIndex.Layout);
 	}
     public static PortletCache getPortletCache() {
-        return (PortletCache)getInstance(CacheIndex.Portlet);
+        return (PortletCache)getInstance(CacheIndex.PortletCache);
     }
 	public static IdentifierCache getIdentifierCache() {
 		return (IdentifierCache)getInstance(CacheIndex.Identifier);
@@ -388,7 +388,7 @@ enum CacheIndex
 	NavTool2("Navigation Tool2"),
 	MultiTreeCache("MultiTree Cache"),
 	ApiTokenCache("ApiTokenCache"),
-	Portlet("PortletCache"),
+	PortletCache("PortletCache"),
 	KeyValueCache("Key/Value Cache");
 
 	Cachable create() {
@@ -435,7 +435,7 @@ enum CacheIndex
 	      	case KeyValueCache : return new KeyValueCacheImpl();
 	      	case MultiTreeCache : return new MultiTreeCache();
 	      	case ApiTokenCache : return new ApiTokenCache();
-	      	case Portlet : return new PortletCache();
+	      	case PortletCache : return new PortletCache();
 	      	
 		}
 		throw new AssertionError("Unknown Cache index: " + this);
