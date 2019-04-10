@@ -75,6 +75,7 @@ describe('DotEditLayoutGridComponent', () => {
     let component: DotEditLayoutGridComponent;
     let de: DebugElement;
     let hostComponentfixture: ComponentFixture<TestHostComponent>;
+    let dotEditLayoutService: DotEditLayoutService;
 
     beforeEach(() => {
         fakeValue = {
@@ -123,6 +124,8 @@ describe('DotEditLayoutGridComponent', () => {
         de = hostComponentfixture.debugElement.query(By.css('dot-edit-layout-grid'));
         component = de.componentInstance;
 
+        dotEditLayoutService = de.injector.get(DotEditLayoutService);
+
         hostComponentfixture.detectChanges();
     });
 
@@ -137,8 +140,13 @@ describe('DotEditLayoutGridComponent', () => {
         expect(component.grid.boxes[0].config.sizex).toEqual(12);
     });
 
+    it('should subscribe to layour service and call addBox', () => {
+        spyOn(component, 'addBox');
+        dotEditLayoutService.addBox();
+        expect(component.addBox).toHaveBeenCalledTimes(1);
+    });
+
     it('should add one Container to the grid of 3 columns', () => {
-        ('here');
         component.addBox();
         expect(component.grid.boxes.length).toEqual(2);
         expect(component.grid.boxes[1].config.sizex).toEqual(3);

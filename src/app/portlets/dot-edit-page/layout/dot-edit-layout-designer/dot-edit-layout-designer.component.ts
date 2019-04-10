@@ -104,6 +104,11 @@ export class DotEditLayoutDesignerComponent implements OnInit, OnDestroy {
         this.destroy$.complete();
     }
 
+    /**
+     * Calling the service to add a new box
+     *
+     * @memberof DotEditLayoutDesignerComponent
+     */
     addGridBox() {
         this.dotEditLayoutService.addBox();
     }

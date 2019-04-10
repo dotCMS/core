@@ -20,9 +20,12 @@ import { take } from 'rxjs/operators';
 export class DotLayoutSidebarComponent implements ControlValueAccessor, OnInit {
     @ViewChild('propertyItemLeft')
     propertyItemLeft: DotLayoutPropertiesItemComponent;
+
     @ViewChild('propertyItemRight')
     propertyItemRight: DotLayoutPropertiesItemComponent;
+
     value: DotLayoutSideBar;
+    messages: { [key: string]: string } = {};
 
     constructor(public dotMessageService: DotMessageService) {}
 
@@ -33,7 +36,12 @@ export class DotLayoutSidebarComponent implements ControlValueAccessor, OnInit {
                 'editpage.layout.properties.sidebar.right'
             ])
             .pipe(take(1))
-            .subscribe();
+            .subscribe((messages: { [key: string]: string }) => {
+                console.log('messages', messages);
+                this.messages = {
+                    ...messages
+                };
+            });
     }
 
     propagateChange = (_: any) => {};
