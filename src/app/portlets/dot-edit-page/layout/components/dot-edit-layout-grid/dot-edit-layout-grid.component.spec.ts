@@ -95,7 +95,17 @@ describe('DotEditLayoutGridComponent', () => {
         };
 
         const messageServiceMock = new MockDotMessageService({
-            cancel: 'Cancel'
+            cancel: 'Cancel',
+            'dot.common.dialog.accept': 'Accept',
+            'dot.common.dialog.reject': 'Cancel',
+            'editpage.action.cancel': 'Cancel',
+            'editpage.action.delete': 'Delete',
+            'editpage.action.save': 'Save',
+            'editpage.confirm.header': 'Header',
+            'editpage.confirm.message.delete': 'Delete',
+            'editpage.confirm.message.delete.warning': 'Warning',
+            'editpage.layout.css.class.add.to.box': 'Add class to box',
+            'editpage.layout.css.class.add.to.row': 'Add class to row'
         });
 
         DOTTestBed.configureTestingModule({
@@ -301,19 +311,36 @@ describe('DotEditLayoutGridComponent', () => {
         expect(dotDialog).not.toBeUndefined();
     });
 
-    it('should show dot-dialog when click any add class to row button', () => {
-        const addRowClassButtons = hostComponentfixture.debugElement.query(
-            By.css('.box__add-row-class-button dot-icon-button-tooltip')
-        );
-        addRowClassButtons.triggerEventHandler('click', null);
+    describe('show dialog for add class', () => {
+        let dotDialog;
+        let dotText;
 
-        hostComponentfixture.detectChanges();
+        function showDialog(type) {
+            const addRowClassButtons = hostComponentfixture.debugElement.query(
+                By.css(type === 'box' ? `.box__add-box-class-button` : `.box__add-${type}-class-button dot-icon-button-tooltip`)
+            );
 
-        const dotDialog = hostComponentfixture.debugElement.query(By.css('dot-dialog'));
-        expect(dotDialog.componentInstance.visible).toBe(true);
+            addRowClassButtons.triggerEventHandler('click', null);
+            hostComponentfixture.detectChanges();
 
-        const dotText = hostComponentfixture.debugElement.query(By.css('.box__add-class-text'));
-        expect(dotText.nativeElement.value).toBe('');
+            dotDialog = hostComponentfixture.debugElement.query(By.css('dot-dialog'))
+                .componentInstance;
+            dotText = hostComponentfixture.debugElement.query(By.css('.box__add-class-text'));
+        }
+
+        it('should show dot-dialog when click any add class to row button', () => {
+            showDialog('row');
+            expect(dotDialog.visible).toBe(true);
+            expect(dotDialog.header).toBe('Add class to row');
+            expect(dotText.nativeElement.value).toBe('');
+        });
+
+        it('should show dot-dialog when click any add class to box button', () => {
+            showDialog('box');
+            expect(dotDialog.visible).toBe(true);
+            expect(dotDialog.header).toBe('Add class to box');
+            expect(dotText.nativeElement.value).toBe('');
+        });
     });
 
     it('should set row class as text value', () => {
@@ -406,7 +433,7 @@ describe('DotEditLayoutGridComponent', () => {
 
         hostComponentfixture.detectChanges();
 
-        expect(component.dialogActions.accept.disabled).toBe(true);
+        expect(component.addClassDialogActions.accept.disabled).toBe(true);
     });
 
     it('should enabled accept add class ok button when class is not undefined', () => {
@@ -419,7 +446,7 @@ describe('DotEditLayoutGridComponent', () => {
 
         hostComponentfixture.detectChanges();
 
-        expect(component.dialogActions.accept.disabled).toBe(false);
+        expect(component.addClassDialogActions.accept.disabled).toBe(false);
     });
 
     it('should set column class as text value', () => {
