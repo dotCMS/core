@@ -81,7 +81,7 @@ public class ReindexThreadTest {
      * @throws DotSecurityException
      */
 
-    @Test
+    //@Test
     public void test_content_that_is_rolled_back_does_not_get_in_the_index() throws DotDataException, DotSecurityException {
         // respect CMS Anonymous permissions
 
@@ -163,7 +163,7 @@ public class ReindexThreadTest {
      * @throws DotSecurityException
      */
 
-    @Test
+    //@Test
     public void test_reindex_queue_puts_to_the_index() throws DotDataException, DotSecurityException {
         ReindexThread.stopThread();
         
@@ -212,7 +212,7 @@ public class ReindexThreadTest {
      * @throws DotSecurityException
      */
 
-    @Test
+    //@Test
     public void test_reindex_thread_removing_from_index() throws DotDataException, DotSecurityException {
 
         //make sure we only have live + working indexes
@@ -293,7 +293,7 @@ public class ReindexThreadTest {
     ack  * @throws DotSecurityException
      */
 
-    @Test
+    //@Test
     public void test_pause_unpause_ReindexThread() throws DotDataException, DotSecurityException {
 
         //make sure we only have live + working indexes
@@ -345,7 +345,7 @@ public class ReindexThreadTest {
      * @throws DotSecurityException
      */
 
-    @Test
+    //@Test
     public void test_stop_start_ReindexThread() throws DotDataException, DotSecurityException {
 
         new DotConnect().setSQL("delete from dist_reindex_journal").loadResult();
