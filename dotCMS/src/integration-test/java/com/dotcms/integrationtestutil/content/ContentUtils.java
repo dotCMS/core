@@ -13,7 +13,7 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletValidationExce
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.liferay.portal.model.User;
-import com.liferay.util.StringPool;
+
 import java.util.Map;
 
 /**
@@ -114,16 +114,22 @@ public class ContentUtils {
             final long languageId, final ContentType keyValueContentType, final User user)
             throws DotContentletValidationException, DotContentletStateException, IllegalArgumentException,
             DotDataException, DotSecurityException {
+
         final ContentletAPI contentletAPI = APILocator.getContentletAPI();
         final Map<String, Field> fields = keyValueContentType.fieldMap();
-        contentletAPI.setContentletProperty(contentlet, asOldField(fields.get(KeyValueContentType.KEY_VALUE_KEY_FIELD_VAR)),
+
+        final Contentlet checkoutContentlet =
+                contentletAPI.checkout(contentlet.getInode(), user, false);
+        final String inode = checkoutContentlet.getInode();
+        contentletAPI.copyProperties(checkoutContentlet, contentlet.getMap());
+        checkoutContentlet.setInode(inode);
+
+        contentletAPI.setContentletProperty(checkoutContentlet, asOldField(fields.get(KeyValueContentType.KEY_VALUE_KEY_FIELD_VAR)),
                 newKey);
-        contentletAPI.setContentletProperty(contentlet, asOldField(fields.get(KeyValueContentType.KEY_VALUE_VALUE_FIELD_VAR)),
+        contentletAPI.setContentletProperty(checkoutContentlet, asOldField(fields.get(KeyValueContentType.KEY_VALUE_VALUE_FIELD_VAR)),
                 newValue);
-        // IMPORTANT: Updating a contentlet requires the Inode to be empty. Otherwise, an exception
-        // will be thrown
-        contentlet.setInode(StringPool.BLANK);
-        return contentletAPI.checkin(contentlet, user, Boolean.FALSE);
+
+        return contentletAPI.checkin(checkoutContentlet, user, Boolean.FALSE);
     }
 
     /**

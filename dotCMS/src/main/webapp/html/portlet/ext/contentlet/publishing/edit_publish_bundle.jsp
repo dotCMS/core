@@ -77,6 +77,7 @@
 		  return unicodeString;
 	}
 
+
 </script>
 
 <style>
@@ -90,9 +91,17 @@
 <div style="margin:auto;">
 	<div dojoType="dijit.form.Form"  name="formSaveEnvironment"  id="formSaveEnvironment" onsubmit="return false;">
 		<input type="hidden" name="identifier" value="<%=UtilMethods.webifyString(String.valueOf(bundle.getId())) %>">
-		<table class="myTable" border=0 style="margin: auto" align="center">
-			<tr>
-				<td align="right" width="40%">
+		<table class="myTable" border=0 style="margin: 20px auto" align="center">
+            <tr style="height:30px">
+                <td align="right">
+                    <%= LanguageUtil.get(pageContext, "id") %>:
+                </td>
+                <td style="white-space: nowrap;" >
+                    <div  class='click-me'><%=bundle.getId() %></div>
+                </td>
+            </tr>
+			<tr style="height:30px">
+				<td align="right">
 					<%= LanguageUtil.get(pageContext, "publisher_dialog_bundle_name") %>:
 				</td>
 				<td>
@@ -104,6 +113,7 @@
 							  />
 				</td>
 			</tr>
+
 		</table>
 
 		<table align="center">
