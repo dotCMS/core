@@ -801,6 +801,49 @@ public class FieldAPITest extends IntegrationTestBase {
         }
     }
 
+
+    @DataProvider
+    public static Object[] dataProviderSaveInvalidName() {
+        return new Tuple2[] {
+                // actual, should fail
+                new Tuple2<>("123", true),
+                new Tuple2<>("123abc", true),
+                new Tuple2<>("_123a", false),
+                new Tuple2<>("asd123asd", false),
+                new Tuple2<>("Asfsdf", false),
+                new Tuple2<>("aa123", false),
+                new Tuple2<>("This is a field", false),
+                new Tuple2<>("Field && ,,,..**==} name~~~__", false)
+        };
+    }
+
+    @Test
+    @UseDataProvider("dataProviderSaveInvalidName")
+    public void testSave_InvalidName_ShouldThrowException(final Tuple2<String, Boolean> testCase)
+            throws DotSecurityException, DotDataException {
+
+        final String nameTestCase = testCase._1;
+        final boolean shouldFail = testCase._2;
+
+        final long time = System.currentTimeMillis();
+        final ContentType type = createAndSaveSimpleContentType("testContentType" + time);
+        try {
+            final Field field = FieldBuilder.builder(TextField.class)
+                    .name(nameTestCase)
+                    .contentTypeId(type.id())
+                    .indexed(false)
+                    .listed(false)
+                    .fixed(true)
+                    .build();
+            fieldAPI.save(field, user);
+            assertFalse(shouldFail);
+        } catch (IllegalArgumentException e) {
+            assertTrue(shouldFail);
+        } finally {
+            contentTypeAPI.delete(type);
+        }
+    }
+
     private ContentType createAndSaveSimpleContentType(final String name) throws DotSecurityException, DotDataException {
         return contentTypeAPI.save(ContentTypeBuilder.builder(SimpleContentType.class).folder(
                 FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name(name)
