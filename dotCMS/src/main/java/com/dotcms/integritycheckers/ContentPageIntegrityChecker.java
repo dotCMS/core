@@ -209,7 +209,7 @@ public class ContentPageIntegrityChecker extends AbstractIntegrityChecker {
 				final String htmlPageParentPath = getStringIfNotBlank(
 						"parent_path", htmlpages.get(3));
 				final String htmlPageAssetName = getStringIfNotBlank(
-						"asset_name", htmlpages.get(4).toLowerCase());
+						"asset_name", htmlpages.get(4));
 				final String htmlPageHostIdentifier = getStringIfNotBlank(
 						"host_identifier", htmlpages.get(5));
 				final String htmlPageLanguage = getStringIfNotBlank(
