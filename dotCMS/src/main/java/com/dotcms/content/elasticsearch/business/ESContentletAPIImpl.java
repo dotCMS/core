@@ -2309,14 +2309,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private void refreshNoDeps(final Contentlet contentlet) throws DotReindexStateException,
             DotDataException {
         indexAPI.addContentToIndex(contentlet, false);
-        CacheLocator.getContentletCache().add(contentlet.getInode(), contentlet);
+
     }
     @CloseDBIfOpened
     @Override
     public void refresh(Contentlet contentlet) throws DotReindexStateException,
             DotDataException {
         indexAPI.addContentToIndex(contentlet);
-        CacheLocator.getContentletCache().add(contentlet.getInode(), contentlet);
+
     }
 
     @CloseDBIfOpened
