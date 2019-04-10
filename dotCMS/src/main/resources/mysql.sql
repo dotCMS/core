@@ -1037,7 +1037,7 @@ create table identifier (
    asset_type varchar(64),
    syspublish_date datetime,
    sysexpire_date datetime,
-   full_path_lc varchar(510) as ( IF(parent_path = 'System folder', '/', concat(parent_path, asset_name))),
+   full_path_lc varchar(510) as ( IF(parent_path = 'System folder', '/', lower(concat(parent_path, asset_name)) )),
    primary key (id),
    unique (parent_path, asset_name, host_inode)
 );

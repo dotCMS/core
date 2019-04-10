@@ -184,7 +184,6 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
                     fullFolder = " c.title + iden.parent_path + iden.asset_name ";
                 }
 
-                //TODO: Verify that this Query works as expected for case-insensitivity
                 final String INSERT_INTO_RESULTS_TABLE = "insert into "
                         + getIntegrityType().getResultsTableName() 
                         + " (folder, local_inode, remote_inode, local_identifier, remote_identifier, endpoint_id)" 

@@ -21,7 +21,7 @@ public class Task05070AddIdentifierVirtualColumn implements StartupTask {
             "CREATE OR REPLACE FUNCTION full_path_lc(identifier) RETURNS text\n"
                     + "    AS ' SELECT CASE WHEN $1.parent_path = ''/System folder'' then ''/'' else LOWER($1.parent_path || $1.asset_name) end; '\n"
                     + "LANGUAGE SQL;\n";
-    private static final String MY_SQL_ADD_VIRTUAL_COLUMN = "ALTER TABLE identifier add column full_path_lc varchar(510) as ( IF(parent_path = 'System Folder', '/', concat(parent_path, asset_name)))";
+    private static final String MY_SQL_ADD_VIRTUAL_COLUMN = "ALTER TABLE identifier add column full_path_lc varchar(510) as ( IF(parent_path = 'System Folder', '/', lower(concat(parent_path, asset_name)) ))";
 
 
 
