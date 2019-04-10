@@ -16,14 +16,14 @@ public class ZipUtilTest extends UnitTestBase {
 
           final File parent = new File("/Users/my-user/code/servers/server1/esdata/");
           final File child = new File("/Users/my-user/code/servers/server1/esdata/essnapshot/snapshots/snap-fHdh_dwrRci5Q7djIKCm7A.dat");
-          assertTrue(ZipUtil.checkNewFileDestination(parent,child));
+          assertTrue(ZipUtil.isNewFileDestinationSafe(parent,child));
      }
 
      @Test
      public void invalidFolderAttemptTest() throws IOException {
           final File parent = new File("/Users/my-user/code/servers/server1/esdata/");
           final File child = new File("/securitytest/jbgtest.txt");
-          assertFalse(ZipUtil.checkNewFileDestination(parent,child));
+          assertFalse(ZipUtil.isNewFileDestinationSafe(parent,child));
      }
 
 
