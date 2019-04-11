@@ -76,7 +76,7 @@ dojo.require("dotcms.dojo.data.StructureReadStore");
 	function beLazy(){
 		var titleField = document.getElementById("friendlyNameField");
 		var ele = document.getElementById("titleField");
-		title = titleField.value.toLowerCase();
+		var title = titleField.value;
 		title = title.replace(/^\s+/g, "");
 		title = title.replace(/\s/g, "-");
 		var arg=/[\+\%\&\!\"\'\#\$\/\\\=\?\�\�}\:\;\*\<\>\`\�\|]/g ;
