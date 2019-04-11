@@ -1,3 +1,4 @@
+import { MdInputTextModule } from '@directives/md-inputtext/md-input-text.module';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { By } from '@angular/platform-browser';
 import { Component, DebugElement, Input, HostBinding, Output, EventEmitter } from '@angular/core';
@@ -17,6 +18,7 @@ import { DotLayoutBody } from '@portlets/dot-edit-page/shared/models/dot-layout-
 import { DotEditLayoutService } from '@portlets/dot-edit-page/shared/services/dot-edit-layout.service';
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import { DotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
+import { DotAutofocusModule } from 'projects/dot-rules/src/lib/directives/dot-autofocus/dot-autofocus.module';
 
 let fakeValue: DotLayoutBody;
 
@@ -119,7 +121,9 @@ describe('DotEditLayoutGridComponent', () => {
                 NgGridModule,
                 DotContainerSelectorModule,
                 BrowserAnimationsModule,
-                DotIconButtonTooltipModule
+                DotIconButtonTooltipModule,
+                MdInputTextModule,
+                DotAutofocusModule
             ],
             providers: [
                 DotAlertConfirmService,
@@ -289,15 +293,18 @@ describe('DotEditLayoutGridComponent', () => {
         expect(containerSelector.attributes['ng-reflect-multiple']).toBeTruthy();
     });
 
-    it('should have a dot-dialog', () => {
+    it('should have a dot-dialog but not form', () => {
         const dotDialog = hostComponentfixture.debugElement.query(By.css('dot-dialog'));
+        const form = hostComponentfixture.debugElement.query(By.css('dot-dialog form'));
 
-        expect(dotDialog).not.toBeUndefined();
+        expect(dotDialog).not.toBeNull();
+        expect(form).toBeNull();
     });
 
     describe('show dialog for add class', () => {
         let dotDialog;
         let dotText;
+        let dotDialogForm;
 
         function showDialog(type) {
             const addRowClassButtons = hostComponentfixture.debugElement.query(
@@ -309,6 +316,7 @@ describe('DotEditLayoutGridComponent', () => {
 
             dotDialog = hostComponentfixture.debugElement.query(By.css('dot-dialog'))
                 .componentInstance;
+            dotDialogForm = hostComponentfixture.debugElement.query(By.css('dot-dialog form'));
             dotText = hostComponentfixture.debugElement.query(By.css('.box__add-class-text'));
         }
 
@@ -317,6 +325,7 @@ describe('DotEditLayoutGridComponent', () => {
             expect(dotDialog.visible).toBe(true);
             expect(dotDialog.header).toBe('Add class to row');
             expect(dotText.nativeElement.value).toBe('');
+            expect(dotDialogForm).toBeDefined();
         });
 
         it('should show dot-dialog when click any add class to box button', () => {
@@ -324,6 +333,7 @@ describe('DotEditLayoutGridComponent', () => {
             expect(dotDialog.visible).toBe(true);
             expect(dotDialog.header).toBe('Add class to box');
             expect(dotText.nativeElement.value).toBe('');
+            expect(dotDialogForm).toBeDefined();
         });
     });
 

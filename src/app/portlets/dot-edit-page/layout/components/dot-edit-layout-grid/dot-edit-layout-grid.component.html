@@ -48,15 +48,17 @@
     [(visible)]="addClassDialogShow"
     [width]="400"
 >
-    <form [formGroup]="form" novalidate>
+    <form *ngIf="addClassDialogShow" [formGroup]="form" novalidate>
         <div class="form__group">
-            <label for="content-type-form-workflow" class="form__label">Class Names</label>
-            <input
-                pInputText
-                class="box__add-class-text"
-                formControlName="classToAdd"
-                type="text"
-            />
+            <span dotMdInputtext [label]="messages['editpage.layout.css.class.names']">
+                <input
+                    class="box__add-class-text"
+                    dotAutofocus
+                    formControlName="classToAdd"
+                    pInputText
+                    type="text"
+                />
+            </span>
         </div>
     </form>
 </dot-dialog>

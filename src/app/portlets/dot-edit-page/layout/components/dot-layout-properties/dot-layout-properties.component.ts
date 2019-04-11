@@ -1,7 +1,6 @@
 import { DotMessageService } from '@services/dot-messages-service';
 import { FormGroup } from '@angular/forms';
 import { Component, Input, OnInit, ViewEncapsulation } from '@angular/core';
-import { take } from 'rxjs/operators';
 
 @Component({
     selector: 'dot-layout-properties',
@@ -20,7 +19,6 @@ export class DotLayoutPropertiesComponent implements OnInit {
     ngOnInit() {
         this.dotMessageService
             .getMessages(['editpage.layout.properties.header', 'editpage.layout.properties.footer'])
-            .pipe(take(1))
             .subscribe((messages: { [key: string]: string }) => {
                 this.messages = messages;
             });

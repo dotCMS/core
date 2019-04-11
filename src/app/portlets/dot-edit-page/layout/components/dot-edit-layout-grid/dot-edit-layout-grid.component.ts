@@ -97,7 +97,8 @@ export class DotEditLayoutGridComponent implements OnInit, OnDestroy, ControlVal
                 'editpage.confirm.message.delete',
                 'editpage.confirm.message.delete.warning',
                 'editpage.layout.css.class.add.to.box',
-                'editpage.layout.css.class.add.to.row'
+                'editpage.layout.css.class.add.to.row',
+                'editpage.layout.css.class.names'
             ])
             .pipe(take(1))
             .subscribe((messages: { [key: string]: string }) => {
