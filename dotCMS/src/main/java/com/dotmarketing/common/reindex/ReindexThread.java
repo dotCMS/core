@@ -128,26 +128,6 @@ public class ReindexThread {
 
     }
 
-    /**
-     * Counts the failed attempts when indexing and handles error notifications
-     */
-    private void addIndexingFailedAttempt() {
-
-        failedAttemptsCount += 1;
-
-        if (failedAttemptsCount == 10) {// We just want to create one notification error
-
-            try {
-                String languageKey = "notification.reindexing.error";
-                String defaultMsg = "An error has occurred during the indexing process, please check your logs and retry later";
-
-                // Generate and send an user notification
-                sendNotification(languageKey, null, defaultMsg, true);
-            } catch (DotDataException | LanguageException e) {
-                Logger.error(this, "Error creating a system notification informing about problems in the indexing process.", e);
-            }
-        }
-    }
 
     private final Runnable ReindexThreadRunnable = () -> {
         Logger.info(this.getClass(), "------------------------");
