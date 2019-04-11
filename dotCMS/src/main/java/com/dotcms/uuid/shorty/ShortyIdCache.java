@@ -1,18 +1,18 @@
 package com.dotcms.uuid.shorty;
 
-import java.util.Optional;
-
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Cachable;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
+
+import java.util.Optional;
 
 public class ShortyIdCache implements Cachable {
 
     private final DotCacheAdministrator cache;
     final String SHORT_CACHE = "ShortyIdCache";
 
-    public ShortyIdCache(DotCacheAdministrator cache) {
+    public ShortyIdCache(final DotCacheAdministrator cache) {
         super();
         this.cache = cache;
     }
@@ -37,28 +37,26 @@ public class ShortyIdCache implements Cachable {
         CacheLocator.getCacheAdministrator().flushGroup(getPrimaryGroup());
     }
 
-    public Optional<ShortyId> get(String id) {
+    public Optional<ShortyId> get(final String id) {
 
         final String shortUId = APILocator.getShortyAPI().shortify(id);
-
         return Optional.ofNullable((ShortyId) cache.getNoThrow(shortUId, SHORT_CACHE));
-
     }
 
-    public void add(ShortyId shortyId) {
+    public void add(final ShortyId shortyId) {
+
         final String shortUId = APILocator.getShortyAPI().shortify(shortyId.shortId);
-        
         cache.put(shortUId, shortyId, SHORT_CACHE);
-
     }
 
-    public void remove(ShortyId ShortyId) {
+    public void remove(final ShortyId ShortyId) {
+
         cache.remove(ShortyId.longId, SHORT_CACHE);
     }
 
     public void remove(final String id) {
-        final String shortUId = APILocator.getShortyAPI().shortify(id);
 
+        final String shortUId = APILocator.getShortyAPI().shortify(id);
         cache.remove(shortUId, SHORT_CACHE);
     }
 

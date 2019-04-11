@@ -1,18 +1,15 @@
 package com.dotmarketing.portlets.contentlet.business;
 
 import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl.TranslatedQuery;
-import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.PageContentType;
 import com.dotcms.rendering.velocity.services.PageLoader;
 import com.dotcms.rendering.velocity.services.SiteLoader;
 import com.dotcms.services.VanityUrlServices;
 import com.dotcms.uuid.shorty.ShortyIdCache;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
-import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -20,7 +17,6 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
@@ -157,12 +153,14 @@ public class ContentletCacheImpl extends ContentletCache {
 	/* (non-Javadoc)
      * @see com.dotmarketing.business.PermissionCache#remove(java.lang.String)
      */
-	public void remove(String key){
+	public void remove(final String key){
 
-		String myKey = primaryGroup + key;
-		String metadataKey = metadataGroup + key;
+		final String myKey = primaryGroup + key;
+		final String metadataKey = metadataGroup + key;
 		com.dotmarketing.portlets.contentlet.model.Contentlet content = null;
+
 		try {
+
 			content = (com.dotmarketing.portlets.contentlet.model.Contentlet)cache.get(key,primaryGroup);
 			try {
 				if(content != null && content.isVanityUrl()){
@@ -175,19 +173,21 @@ public class ContentletCacheImpl extends ContentletCache {
 			Logger.debug(this, "Cache Entry not found", e);
 		}
 
-		try{
+		try {
 			cache.remove(myKey,primaryGroup);
 			cache.remove(metadataKey,metadataGroup);
-		}catch (Exception e) {
+		} catch (Exception e) {
 			Logger.debug(this, "Cache not able to be removed", e);
 		}
-		Host h = CacheLocator.getHostCache().get(key);
-		if(h != null){
-			CacheLocator.getHostCache().remove(h);
+
+		final Host host = CacheLocator.getHostCache().get(key);
+		if(host != null){
+			CacheLocator.getHostCache().remove(host);
 		}
 		CacheLocator.getHTMLPageCache().remove(key);
 		new ShortyIdCache().remove(key);
 	}
+
 	public String[] getGroups() {
 		return groupNames;
 	}
