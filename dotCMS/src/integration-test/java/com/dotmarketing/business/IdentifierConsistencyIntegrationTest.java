@@ -35,7 +35,7 @@ public class IdentifierConsistencyIntegrationTest extends IntegrationTestBase {
     private static final String INSERT_IDENTIFIER_SQL = "INSERT INTO identifier (parent_path,asset_name,host_inode,asset_type,syspublish_date,sysexpire_date,id) values (?,?,?,?,?,?,?)";
     private static final String UPDATE_IDENTIFIER_SQL = "UPDATE identifier set parent_path=?, asset_name=?, host_inode=?, asset_type=?, syspublish_date=?, sysexpire_date=? where id=?";
     private static final String DELETE_IDENTIFIER_SQL = "DELETE FROM identifier where id=?";
-    private static final String UPDATE_FOLDER = "UPDATE FOLDER SET name = ? WHERE identifier = ? AND inode = ?";
+    private static final String UPDATE_FOLDER = "UPDATE folder SET name = ? WHERE identifier = ? AND inode = ?";
     private static Host host;
     private static final String CONTENTLET = "contentlet";
     private static final String FOLDER = "folder";
