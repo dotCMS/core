@@ -10,12 +10,13 @@ import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import org.jetbrains.annotations.NotNull;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class JsonContentTypeTransformer implements ContentTypeTransformer, JsonTransformer {
-  public static final String FIELDS_PROPERTY_NAME = "fields";
   final List<ContentType> list;
 
   public JsonContentTypeTransformer(ContentType type) {
@@ -58,8 +59,7 @@ public class JsonContentTypeTransformer implements ContentTypeTransformer, JsonT
       jsonObject.remove("versionable");
       jsonObject.remove("multilingualable");
 
-      final Object fieldsJsonObject = getFieldsEntryJsonObject(type);
-      jsonObject.put(FIELDS_PROPERTY_NAME, fieldsJsonObject);
+      jsonObject.put("fields", new JsonFieldTransformer(type.fields()).jsonArray());
 
       return jsonObject;
     } catch (JSONException | JsonProcessingException e) {
@@ -74,11 +74,12 @@ public class JsonContentTypeTransformer implements ContentTypeTransformer, JsonT
       if (jo.has("inode") && !jo.has("id")) {
         jo.put("id", jo.get("inode"));
       }
-      ContentType type = mapper.readValue(jo.toString(), ContentType.class);
+      ContentType type = (ContentType) mapper.readValue(jo.toString(), ContentType.class);
 
 
       if (jo.has("fields")) {
-        type.constructWithFields(getFields(type));
+        List<Field> fields = new JsonFieldTransformer(jo.getJSONArray("fields").toString()).asList();
+        type.constructWithFields(fields);
       }
       return type;
     } catch (Exception e) {
@@ -137,8 +138,7 @@ public class JsonContentTypeTransformer implements ContentTypeTransformer, JsonT
     try {
       ContentType type = from();
       Map<String, Object> typeMap = mapper.convertValue(type, HashMap.class);
-
-      typeMap.put(FIELDS_PROPERTY_NAME, getFieldsEntryObject(type));
+      typeMap.put("fields", new JsonFieldTransformer(type.fields()).mapList());
       typeMap.put("baseType", type.baseType());
       typeMap.remove("acceptedDataTypes");
       typeMap.remove("dbColumn");
@@ -149,16 +149,5 @@ public class JsonContentTypeTransformer implements ContentTypeTransformer, JsonT
     }
   }
 
-  protected List<Field> getFields (final ContentType contentType)  {
-    return contentType.fields();
-  }
-
-  protected Object getFieldsEntryJsonObject (final ContentType contentType)  {
-    return new JsonFieldTransformer(contentType.fields()).jsonArray();
-  }
-
-  protected Object getFieldsEntryObject (final ContentType contentType)  {
-    return new JsonFieldTransformer(this.getFields(contentType)).mapList();
-  }
 }
 
