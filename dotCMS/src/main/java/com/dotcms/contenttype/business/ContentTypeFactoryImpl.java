@@ -1,5 +1,7 @@
 package com.dotcms.contenttype.business;
 
+import static com.dotcms.contenttype.business.ContentTypeAPIImpl.TYPES_AND_FIELDS_VALID_VARIABLE_REGEX;
+
 import com.dotcms.contenttype.business.sql.ContentTypeSql;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.Field;
@@ -9,6 +11,7 @@ import com.dotcms.contenttype.model.type.*;
 import com.dotcms.contenttype.transform.contenttype.DbContentTypeTransformer;
 import com.dotcms.contenttype.transform.contenttype.ImplClassContentTypeTransformer;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
+import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.business.*;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
@@ -299,7 +302,13 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     	if (UtilMethods.isSet(saveType.variable())) {
     		builder.variable(saveType.variable());
     	} else {
-    		builder.variable(suggestVelocityVar(saveType.name()));
+    		final String generatedVar = suggestVelocityVar(saveType.name());
+
+    		if(!generatedVar.matches(
+                  TYPES_AND_FIELDS_VALID_VARIABLE_REGEX)) {
+              throw new IllegalArgumentException("Invalid content type variable: " + generatedVar);
+            }
+    		builder.variable(generatedVar);
     	}
     } else {
     	builder.variable(oldContentType.variable());
