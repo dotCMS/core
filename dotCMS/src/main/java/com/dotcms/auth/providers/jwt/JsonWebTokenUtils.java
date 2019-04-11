@@ -1,39 +1,34 @@
 package com.dotcms.auth.providers.jwt;
 
-import static com.dotcms.exception.ExceptionUtil.causedBy;
-
-import com.dotcms.auth.providers.jwt.beans.UserToken;
 import com.dotcms.auth.providers.jwt.beans.JWToken;
+import com.dotcms.auth.providers.jwt.beans.UserToken;
 import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenService;
-import com.dotcms.business.LazyUserAPIWrapper;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.liferay.portal.model.User;
 import io.jsonwebtoken.IncorrectClaimException;
 import io.jsonwebtoken.SignatureException;
-import io.vavr.API;
 
-import java.util.Date;
-import java.util.Optional;
-import java.util.UUID;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.Optional;
+import java.util.UUID;
+
+import static com.dotcms.exception.ExceptionUtil.causedBy;
 
 /**
- * Helper to get things in more simple way.
+ * Helper to get things in more simple way for the Json Web Tokens
  * @author jsanca
  */
 public class JsonWebTokenUtils {
 
     public static final String CLAIM_UPDATED_AT = "xmod";
     public static final String CLAIM_ALLOWED_NETWORK = "xnet";
+
     private static class SingletonHolder {
         private static final JsonWebTokenUtils INSTANCE = new JsonWebTokenUtils();
     }
@@ -48,22 +43,17 @@ public class JsonWebTokenUtils {
 
     private JsonWebTokenUtils() {
         // singleton
-        this(JsonWebTokenFactory.getInstance().getJsonWebTokenService(),
-                new LazyUserAPIWrapper());
+        this(JsonWebTokenFactory.getInstance().getJsonWebTokenService());
     }
 
     @VisibleForTesting
-    protected JsonWebTokenUtils(final  JsonWebTokenService jsonWebTokenService,
-                             final  UserAPI userAPI) {
+    protected JsonWebTokenUtils(final  JsonWebTokenService jsonWebTokenService) {
 
         this.jsonWebTokenService = jsonWebTokenService;
 
     }
 
     private final JsonWebTokenService jsonWebTokenService;
-
-
-
 
     /**
      * Gets from the json web access token, the user.
@@ -73,7 +63,7 @@ public class JsonWebTokenUtils {
      */
     public User getUser(final String jwtAccessToken, final String ipAddress) {
 
-        Optional<JWToken> token = APILocator.getApiTokenAPI().fromJwt(jwtAccessToken, ipAddress);
+        final Optional<JWToken> token = APILocator.getApiTokenAPI().fromJwt(jwtAccessToken, ipAddress);
         return (token.isPresent()) ? token.get().getActiveUser().get() : null;
     } // getUser
 
@@ -86,8 +76,9 @@ public class JsonWebTokenUtils {
      * @return String returns the userId, null if it is not possible to get it.
      */
     public static String getUserIdFromJsonWebToken(final String jwtAccessToken) {
-        JWToken token = getInstance().jsonWebTokenService.parseToken(jwtAccessToken);
-        return (token!=null) ? token.getUserId() : null;
+
+        final JWToken token = getInstance().jsonWebTokenService.parseToken(jwtAccessToken);
+        return token!=null ? token.getUserId() : null;
     } // getUserIdFromJsonWebToken
 
     /**
@@ -114,9 +105,9 @@ public class JsonWebTokenUtils {
     /**
      * When a Invalid JSON Web Token is found this method handles the error
      */
-    public void handleInvalidTokenExceptions(Class from, final Throwable e,
-            HttpServletRequest request,
-            HttpServletResponse response) {
+    public void handleInvalidTokenExceptions(final Class from, final Throwable e,
+            final HttpServletRequest request,
+            final HttpServletResponse response) {
 
         if (Logger.isDebugEnabled(from)) {
             Logger.debug(from, e.getMessage(), e);
@@ -132,15 +123,12 @@ public class JsonWebTokenUtils {
             }
         }
 
-        String securityLoggerMessage;
-        if (null != request) {
-            securityLoggerMessage = String.format("An invalid attempt to use an invalid "
-                            + "JWT has been made from IP [%s] [%s]", request.getRemoteAddr(),
-                    e.getMessage());
-        } else {
-            securityLoggerMessage = String
-                    .format("An invalid attempt to use a JWT [%s]", e.getMessage());
-        }
+        final String securityLoggerMessage =
+             null != request?
+                     String.format("An invalid attempt to use an invalid "
+                            + "JWT has been made from IP [%s] [%s]", request.getRemoteAddr(), e.getMessage()):
+                     String.format("An invalid attempt to use a JWT [%s]", e.getMessage());
+
         SecurityLogger.logInfo(from, () -> securityLoggerMessage);
 
         if (null != request && null != response) {
@@ -156,6 +144,5 @@ public class JsonWebTokenUtils {
             }
         }
     }
-
 
 } // E:O:F:JsonWebTokenUtils.

@@ -1,20 +1,5 @@
 package com.dotcms.auth.providers.jwt.factories;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
-
-import java.time.Duration;
-import java.time.Instant;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
-import java.util.NoSuchElementException;
-
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import com.dotcms.auth.providers.jwt.beans.ApiToken;
 import com.dotcms.auth.providers.jwt.beans.JWToken;
 import com.dotcms.datagen.UserDataGen;
@@ -24,8 +9,18 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.common.db.DotConnect;
 import com.liferay.portal.model.User;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import java.util.NoSuchElementException;
+
+import static org.junit.Assert.*;
 
 public class ApiTokenAPITest {
 
@@ -49,15 +44,12 @@ public class ApiTokenAPITest {
         apiTokenAPI = APILocator.getApiTokenAPI();
         cache = CacheLocator.getApiTokenCache();
         REQUESTING_USER_ID = APILocator.systemUser().getUserId();
-
         TOKEN_USER = new UserDataGen().nextPersisted();
-
     }
 
     Date futureDate(Duration d) {
 
         return Date.from(Instant.now().plus(d));
-
     }
 
     /**
@@ -113,7 +105,6 @@ public class ApiTokenAPITest {
         cache.removeApiToken(issued.id);
 
         assertFalse(cache.getApiToken(issued.id).isPresent());
-
     }
 
     @Test
@@ -159,6 +150,7 @@ public class ApiTokenAPITest {
 
     }
 
+    @Test
     public void test_JWT_claims_json() {
 
         final String key = "realClaim";
@@ -316,13 +308,13 @@ public class ApiTokenAPITest {
 
         try {
             apiTokenAPI.fromJwt(jwt).get();
-            assertTrue("jwt has been deleted and should not exist, throwing an exception", false);
+            fail("jwt has been deleted and should not exist, throwing an exception");
         } catch (NoSuchElementException e) {
             assertTrue("jwt has been deleted and should not exist", true);
         }
         try {
             apiTokenAPI.fromJwt(jwt2).get();
-            assertTrue("jwt has been deleted and should not exist, throwing an exception", false);
+            fail("jwt has been deleted and should not exist, throwing an exception");
         } catch (NoSuchElementException e) {
             assertTrue("jwt has been deleted and should not exist", true);
         }
@@ -333,9 +325,10 @@ public class ApiTokenAPITest {
         long inTheFuture = 5000;
         Date future = new Date(System.currentTimeMillis() + inTheFuture);
 
-        ApiToken skinnyToken = ApiToken.from(getSkinnyToken()).withUserId(APILocator.systemUser().getUserId()).withExpires(future)
-
+        ApiToken skinnyToken = ApiToken.from(getSkinnyToken())
+                .withUserId(APILocator.systemUser().getUserId()).withExpires(future)
                 .build();
+
         skinnyToken = apiTokenAPI.persistApiToken(skinnyToken, APILocator.systemUser());
 
         String jwt = apiTokenAPI.getJWT(skinnyToken, APILocator.systemUser());
@@ -401,6 +394,22 @@ public class ApiTokenAPITest {
 
     }
 
+    @Test
+    public void test_Can_Create_Token_Issue_for_User_with_Expired_Date() {
+        Calendar cal = Calendar.getInstance();
+        cal.add(Calendar.MONTH, -1); // todo; ask Will if this is ok
+        cal.set(Calendar.MILLISECOND, 0);
+        final Date expireDate = cal.getTime();
+        ApiToken issue = apiTokenAPI.persistApiToken(TOKEN_USER.getUserId(), expireDate, REQUESTING_USER_ID, REQUESTING_IP);
+
+        assertEquals(REQUESTING_IP, issue.requestingIp);
+        assertEquals(TOKEN_USER.getUserId(), issue.userId);
+        assertEquals(REQUESTING_USER_ID, issue.requestingUserId);
+        assertEquals(expireDate, issue.expiresDate);
+        assertTrue(issue.isExpired());
+
+    }
+
     @Test(expected = DotStateException.class)
     public void test_revoke_permissions_fail() {
 
@@ -452,7 +461,7 @@ public class ApiTokenAPITest {
         assertTrue("jwt should be here: ", jwt != null);
 
         jwt = apiTokenAPI.getJWT(apiToken, user2);
-        assertTrue("should have errored out alreay: ", false);
+        assertTrue("should have errored out already: ", false);
 
     }
 

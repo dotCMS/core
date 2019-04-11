@@ -639,12 +639,58 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 					.save(ContentTypeBuilder
 							.builder(SimpleContentType.class)
 							.folder(FolderAPI.SYSTEM_FOLDER)
-							.host(Host.SYSTEM_HOST).name("typeName"+time)
+							.host(Host.SYSTEM_HOST)
+							.name("typeName"+time)
 							.owner(user.getUserId())
 							.variable(variableTestCase)
 							.build());
 
 				assertFalse(shouldFail);
+		} catch (IllegalArgumentException e) {
+			Assert.assertTrue(shouldFail);
+		} finally {
+			if(type!=null) {
+				APILocator.getContentTypeAPI(APILocator.systemUser()).delete(type);
+			}
+		}
+	}
+
+
+	@DataProvider
+	public static Object[] dataProviderSaveInvalidName() {
+		return new Tuple2[] {
+				// actual, should fail
+				new Tuple2<>("123", true),
+				new Tuple2<>("123abc", true),
+				new Tuple2<>("_123a", false),
+				new Tuple2<>("asd123asd", false),
+				new Tuple2<>("Asfsdf", false),
+				new Tuple2<>("aa123", false),
+				new Tuple2<>("This is a field", false),
+				new Tuple2<>("Field && ,,,..**==} name~~~__", false)
+		};
+	}
+
+	@Test
+	@UseDataProvider("dataProviderSaveInvalidName")
+	public void testSave_InvalidName_ShouldThrowException(final Tuple2<String, Boolean> testCase)
+			throws DotSecurityException, DotDataException {
+
+		final String nameTestCase = testCase._1;
+		final boolean shouldFail = testCase._2;
+
+		ContentType type = null;
+		try {
+			type = APILocator.getContentTypeAPI(APILocator.systemUser())
+					.save(ContentTypeBuilder
+							.builder(SimpleContentType.class)
+							.folder(FolderAPI.SYSTEM_FOLDER)
+							.host(Host.SYSTEM_HOST)
+							.name(nameTestCase)
+							.owner(user.getUserId())
+							.build());
+
+			assertFalse(shouldFail);
 		} catch (IllegalArgumentException e) {
 			Assert.assertTrue(shouldFail);
 		} finally {

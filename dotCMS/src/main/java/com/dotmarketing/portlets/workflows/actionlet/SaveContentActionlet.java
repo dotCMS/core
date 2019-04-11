@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.workflows.actionlet;
 import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.util.Logger;
@@ -44,6 +45,28 @@ public class SaveContentActionlet extends WorkFlowActionlet {
 	public String getHowTo() {
 
 		return "This actionlet will checkin the content.";
+	}
+
+	@Override
+	public void executePreAction(final WorkflowProcessor processor,
+								 final Map<String, WorkflowActionClassParameter> params)
+			throws WorkflowActionFailureException, DotContentletValidationException {
+
+
+		// Set content tags for already existing content
+		try {
+
+			final Contentlet contentlet = processor.getContentlet();
+			final boolean isNew = this.isNew(contentlet);
+
+			if (!isNew && UtilMethods.isSet(contentlet)) {
+				contentlet.setTags();
+				processor.setContentlet(contentlet);
+			}
+		} catch (Exception e) {
+			Logger.error(this.getClass(),e.getMessage(),e);
+			throw new WorkflowActionFailureException(e.getMessage(),e);
+		}
 	}
 
 	@WrapInTransaction

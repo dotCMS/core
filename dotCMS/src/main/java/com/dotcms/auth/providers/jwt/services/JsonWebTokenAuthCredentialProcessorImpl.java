@@ -9,9 +9,10 @@ import com.dotcms.rest.exception.SecurityException;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
+import org.apache.commons.lang.StringUtils;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
-import org.apache.commons.lang.StringUtils;
 
 /**
  * Default implementation
@@ -19,7 +20,6 @@ import org.apache.commons.lang.StringUtils;
  */
 public class JsonWebTokenAuthCredentialProcessorImpl implements JsonWebTokenAuthCredentialProcessor {
 
-    public static final String BEARER = "Bearer ";
     private final JsonWebTokenUtils jsonWebTokenUtils;
 
     private static class SingletonHolder {
@@ -63,11 +63,15 @@ public class JsonWebTokenAuthCredentialProcessorImpl implements JsonWebTokenAuth
             }
 
             try {
+
                 user = jsonWebTokenUtils.getUser(jsonWebToken.trim(), ipAddress);
             } catch (Exception e) {
+
                 this.jsonWebTokenUtils.handleInvalidTokenExceptions(this.getClass(), e, null, null);
             }
+
             if(user != null && null != session) {
+
                 session.setAttribute(WebKeys.CMS_USER, user);
                 session.setAttribute(com.liferay.portal.util.WebKeys.USER_ID, user.getUserId());
             }
@@ -82,12 +86,9 @@ public class JsonWebTokenAuthCredentialProcessorImpl implements JsonWebTokenAuth
 
         // Extract authentication credentials
         final String authentication = request.getHeader(ContainerRequest.AUTHORIZATION);
-        final HttpSession session = request.getSession(false);
+        final HttpSession session   = request.getSession(false);
 
         return this.processAuthHeaderFromJWT(authentication, session, request.getRemoteAddr());
-
-        
-        
     } // processAuthCredentialsFromJWT.
 
 } // E:O:F:JsonWebTokenAuthCredentialProcessorImpl.

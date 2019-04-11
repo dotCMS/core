@@ -1,15 +1,5 @@
 package com.dotcms.auth.providers.jwt.factories;
 
-import static com.dotcms.auth.providers.jwt.JsonWebTokenUtils.CLAIM_ALLOWED_NETWORK;
-import static com.dotcms.auth.providers.jwt.JsonWebTokenUtils.CLAIM_UPDATED_AT;
-
-import java.io.Serializable;
-import java.security.Key;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
-
 import com.dotcms.auth.providers.jwt.beans.ApiToken;
 import com.dotcms.auth.providers.jwt.beans.JWToken;
 import com.dotcms.auth.providers.jwt.beans.TokenType;
@@ -21,16 +11,18 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
+import io.jsonwebtoken.*;
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.IncorrectClaimException;
-import io.jsonwebtoken.Jws;
-import io.jsonwebtoken.JwtBuilder;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
-import io.vavr.control.Try;
+import java.io.Serializable;
+import java.security.Key;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
+import static com.dotcms.auth.providers.jwt.JsonWebTokenUtils.CLAIM_ALLOWED_NETWORK;
+import static com.dotcms.auth.providers.jwt.JsonWebTokenUtils.CLAIM_UPDATED_AT;
 
 /**
  * This class in is charge of create the Token Factory. It use the
@@ -114,8 +106,8 @@ public class JsonWebTokenFactory implements Serializable {
      */
     private class JsonWebTokenServiceImpl implements JsonWebTokenService {
 
-        private Key signingKey;
-        private String issuerId;
+        private volatile Key signingKey;  // it is volatile since it is lazy loading, to avoid cache issues
+        private volatile String issuerId; // it is volatile since it is lazy loading, to avoid cache issues
 
         private Key getSigningKey() {
 
@@ -150,15 +142,22 @@ public class JsonWebTokenFactory implements Serializable {
         
         @Override
         public String generateApiToken(final ApiToken apiToken) {
-            final Map<String,Object> claims = new HashMap<>();
-            apiToken.getClaims().forEach((k,v)->{if(v!=null) claims.put(k,v);});
-            
 
+            final Map<String,Object> claims = new HashMap<>();
+
+            apiToken.getClaims().forEach((key,value)->{
+                if(value!=null) {
+
+                    claims.put(key,value);
+                }
+            });
             
             claims.put(CLAIM_UPDATED_AT, apiToken.modificationDate);
             if(apiToken.allowNetwork!=null) {
+
                 claims.put(CLAIM_ALLOWED_NETWORK, apiToken.allowNetwork);
             }
+
             //Let's set the JWT Claims
             final JwtBuilder builder = Jwts.builder()
                     .setClaims(claims)
@@ -169,8 +168,6 @@ public class JsonWebTokenFactory implements Serializable {
                     .setIssuer(this.getIssuer())
                     .setNotBefore(apiToken.issueDate);
                     
-            
-            
             return signToken(builder);
             
         }
@@ -198,8 +195,6 @@ public class JsonWebTokenFactory implements Serializable {
                     .setIssuer(this.getIssuer())
                     .setExpiration(jwtBean.getExpiresDate());
 
-            
-
             //Builds the JWT and serializes it to a compact, URL-safe string
             return signToken(builder);
         } // generateToken.
@@ -213,17 +208,14 @@ public class JsonWebTokenFactory implements Serializable {
         @Override
         public JWToken parseToken(final String jsonWebToken, final String requestingIp) {
 
+            final Jws<Claims> jws = Jwts.parser().setSigningKey(this.getSigningKey()).parseClaimsJws(jsonWebToken);
 
-            Jws<Claims> jws = Jwts.parser().setSigningKey(this.getSigningKey()).parseClaimsJws(jsonWebToken);
-  
-
-            
             return validateToken(jws, resolveJWTokenType(jws), requestingIp);
 
         } // parseToken.
-        
 
         private JWToken validateToken(final Jws<Claims> jws, final JWToken jwtToken, final String requestingIp) {
+
             final Claims body = jws.getBody();
             if(jwtToken==null) {
                 IncorrectClaimException claimException = new IncorrectClaimException( jws.getHeader(), body, "No Valid Token Found for:" + body);
@@ -231,6 +223,7 @@ public class JsonWebTokenFactory implements Serializable {
                 claimException.setClaimValue(body.getSubject());
                 throw claimException;
             }
+
             // Validate the issuer is correct, meaning the same cluster id
             if (!this.getIssuer().equals(body.getIssuer())) {
                 IncorrectClaimException claimException = new IncorrectClaimException( jws.getHeader(), body, "Invalid JWT issuer. Expected:"  + this.getIssuer() + " and got:" + body.getIssuer());
@@ -247,7 +240,7 @@ public class JsonWebTokenFactory implements Serializable {
             
             // get the user tied to the token
             final User user = jwtToken.getActiveUser().orElse(null);
-            if(user==null || ! user.isActive()) {
+            if(user==null || !user.isActive()) {
                 IncorrectClaimException claimException = new IncorrectClaimException( jws.getHeader(), body, "JWT Token user: " + jwtToken.getUserId() + " is not found or is not active");
                 claimException.setClaimName(Claims.SUBJECT);
                 claimException.setClaimValue(body.getSubject());
@@ -286,15 +279,12 @@ public class JsonWebTokenFactory implements Serializable {
                 claimException.setClaimValue(apiToken.allowNetwork);
                 throw claimException;
             }
-            
 
             return apiToken;
-            
         }
-        
-        
-        
-        private JWToken resolveJWTokenType(Jws<Claims> jws) {
+
+        private JWToken resolveJWTokenType(final Jws<Claims> jws) {
+
            final Claims body = jws.getBody();
            return TokenType.getTokenType(body.getSubject()) == TokenType.USER_TOKEN ? 
                     new UserToken(body.getId(),
@@ -305,13 +295,8 @@ public class JsonWebTokenFactory implements Serializable {
                             body
                             )
                    : APILocator.getApiTokenAPI().findApiToken(body.getSubject()).orElseGet(()->null);
-            
-            
-            
         }
-        
-        
-        
+
     } // JsonWebTokenServiceImpl.
 
 } // E:O:F:JsonWebTokenFactory.
