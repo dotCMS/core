@@ -1208,6 +1208,7 @@ create table identifier (
    asset_type varchar(64),
    syspublish_date timestamp,
    sysexpire_date timestamp,
+   full_path_lc varchar(510) as CASE WHEN parent_path = 'System folder' THEN '/' ELSE LOWER(CONCAT(parent_path, asset_name)) END,
    primary key (id),
    unique (parent_path, asset_name, host_inode)
 );
@@ -2303,3 +2304,4 @@ CREATE TABLE api_token_issued(
 
 create index idx_api_token_issued_user ON api_token_issued (token_userid);
 
+CREATE UNIQUE INDEX idx_ident_uniq_asset_name on identifier (full_path_lc,host_inode);
