@@ -18,13 +18,12 @@ class DeleteFieldsForm {
     }
 
     public static final class Builder {
+        @JsonProperty
         private List<String> fieldsID;
 
-        Builder(@JsonProperty List<String> fieldsID) {
-            this.fieldsID = fieldsID;
-        }
+        Builder(){}
 
-        public Builder fields(final List<String> fieldsID) {
+        public Builder fieldsID(final List<String> fieldsID) {
             this.fieldsID = fieldsID;
             return this;
         }
