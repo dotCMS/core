@@ -17,6 +17,8 @@ dot-layout-designer {
     flex-grow: 1;
     margin: 0 $basic-padding * 2 $basic-padding * 2;
     padding: $basic-padding * 4;
+    // This canculating the space of the layout editor
+    // based on the toolbars and required margin
     height: calc(100vh - 60px - 68px - 48px - 16px);
     overflow: auto;
 }
