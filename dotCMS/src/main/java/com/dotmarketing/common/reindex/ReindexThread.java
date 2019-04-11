@@ -29,6 +29,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import org.elasticsearch.action.bulk.BulkProcessor;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 
@@ -99,6 +101,16 @@ public class ReindexThread {
     private Future<?>  threadRunning;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
+    
+    private final static AtomicBoolean rebuildBulkIndexer=new AtomicBoolean(false);
+    
+    public static void rebuildBulkIndexer() {
+      Logger.warn(ReindexThread.class, "------------------------");
+      Logger.warn(ReindexThread.class, "ReindexThread BulkProcessor needs to be Rebuilt");
+      Logger.warn(ReindexThread.class, "------------------------");
+      ReindexThread.rebuildBulkIndexer.set(true);
+    }
+    
     private ReindexThread() {
 
         this(APILocator.getReindexQueueAPI(), APILocator.getNotificationAPI(), APILocator.getUserAPI(), APILocator.getRoleAPI(),
@@ -159,6 +171,17 @@ public class ReindexThread {
         return contentletsIndexed;
     }
 
+    
+    private BulkProcessor closeBulkProcessor(final BulkProcessor bulkProcessor) throws InterruptedException {
+      if(bulkProcessor!=null) {
+        bulkProcessor.awaitClose(20, TimeUnit.SECONDS);
+      }
+      rebuildBulkIndexer.set(false);
+      return null;
+    }
+    
+    
+    
   /**
    * This method is constantly verifying the existence of records in the {@code dist_reindex_journal}
    * table. If a record is found, then it must be added to the Elastic index. If that's not possible,
@@ -176,7 +199,8 @@ public class ReindexThread {
           // if this is a reindex record
           if (indexAPI.isInFullReindex()
               || Try.of(()-> workingRecords.values().stream().findFirst().get().getPriority() >= ReindexQueueFactory.Priority.STRUCTURE.dbValue()).getOrElse(false) ) {
-            if (bulkProcessor == null) {
+            if (bulkProcessor == null || rebuildBulkIndexer.get()) {
+              closeBulkProcessor(bulkProcessor);
               bulkProcessorListener = new BulkProcessorListener();
               bulkProcessor = indexAPI.createBulkProcessor(bulkProcessorListener);
             }
@@ -188,11 +212,8 @@ public class ReindexThread {
             reindexWithBulkRequest(workingRecords);
           }
         } else {
-          if (bulkProcessor != null) {
-            bulkProcessor.awaitClose(20, TimeUnit.SECONDS);
-            bulkProcessor = null;
-          }
-
+          
+          bulkProcessor = closeBulkProcessor(bulkProcessor);
           switchOverIfNeeded();
 
           Thread.sleep(SLEEP);
