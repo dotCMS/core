@@ -11,7 +11,49 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Util class that provide method to handle {@link Field}
+ */
 class FieldUtil {
+
+    /**
+     * Split a set of fields by {@link FieldDivider}, for example if we have to follow set of fields:
+     *
+     * <pre>
+     * [
+     *      RowField(id=1),
+     *      ColumnField(id=2),
+     *      TextField(id=3),
+     *      TabDividerField(id=4),
+     *      RowField(id=5),
+     *      ColumnField(id=6),
+     *      TextField(id=7),
+     *      TextField(id=8)
+     * ]
+     * </pre>
+     *
+     * this method return the follow:
+     *
+     * <ul>
+     *     <li>
+     *         fieldDivider: RowField(id=1)
+     *         othersFields; [ColumnField(id=2), TextField(id=3)]
+     *     </li>
+     *
+     *     <li>
+     *         fieldDivider: TabDividerField(id=4)
+     *         othersFields; []
+     *     </li>
+     *
+     *     <li>
+     *         fieldDivider: RowField(id=5)
+     *         othersFields; [ColumnField(id=6), TextField(id=7), TextField(id=8)]
+     *     </li>
+     * </ul>
+     *
+     * @param fields
+     * @return
+     */
     static List<FieldsFragment> splitByFieldDivider(final Collection<Field> fields) {
         return split(fields, FieldDivider.class)
                 .stream()
@@ -19,6 +61,38 @@ class FieldUtil {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Split a set of fields by {@link ColumnField}, for example if we have to follow set of fields:
+     *
+     * <pre>
+     * [
+     *      ColumnField(id=1),
+     *      TextField(id=2),
+     *      ColumnField(id=3),
+     *      TextField(id=4),
+     *      TextField(id=5)
+     * ]
+     * </pre>
+     *
+     * this method return the follow:
+     *
+     * <pre>
+     * [
+     *      [
+     *        ColumnField(id=1),
+     *        TextField(id=2),
+     *        ColumnField(id=3)
+     *      ],
+     *      [
+     *        TextField(id=4),
+     *        TextField(id=5)
+     *      ]
+     * ]
+     * </pre>
+     *
+     * @param fields
+     * @return
+     */
     static List<List<Field>> splitByColumnField(final Collection<Field> fields) {
         return split(fields, ColumnField.class);
     }
@@ -45,18 +119,42 @@ class FieldUtil {
         return fieldDividersSplit;
     }
 
+    /**
+     * Return true if the field implement {@link FieldDivider}, otherwise return false
+     *
+     * @param field
+     * @return
+     */
     static boolean isFieldDivider(final Field field) {
         return isType(field, FieldDivider.class);
     }
 
+    /**
+     * Return true if the field is a {@link RowField}, otherwise return false
+     *
+     * @param field
+     * @return
+     */
     static boolean isRowDivider(final Field field) {
         return isType(field, RowField.class);
     }
 
+    /**
+     * Return true if the field is a {@link TabDividerField}, otherwise return false
+     *
+     * @param field
+     * @return
+     */
     static boolean isTabDivider(final Field field) {
         return isType(field, TabDividerField.class);
     }
 
+    /**
+     * Return true if the field is a {@link ColumnField}, otherwise return false
+     *
+     * @param field
+     * @return
+     */
     static boolean isColumnField(final Field field) {
         return isType(field, ColumnField.class);
     }
@@ -65,6 +163,12 @@ class FieldUtil {
         return field != null &&  clazz.isAssignableFrom(field.getClass());
     }
 
+    /**
+     * Set the {@link Field#sortOrder()} to be equals the fields list index
+     *
+     * @param fields
+     * @return
+     */
     static List<Field> fixSortOrder(final List<Field> fields) {
         final List<Field> newFieldsWithSorOrder = new ArrayList<>();
 
@@ -96,6 +200,9 @@ class FieldUtil {
         return jsonFieldTransformer.from();
     }
 
+    /**
+     * Represent a fragment from a set of fields split by {@link FieldDivider}
+     */
     protected static class FieldsFragment {
         private Field fieldDivider;
         private List<Field> othersFields;

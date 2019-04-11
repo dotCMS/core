@@ -5,6 +5,9 @@ import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.util.SecurityLogger;
 
+/**
+ * Mapper for {@link DoesNotExistException}
+ */
 public class DoesNotExistExceptionMapper
         implements com.dotcms.repackage.javax.ws.rs.ext.ExceptionMapper<DoesNotExistException> {
 

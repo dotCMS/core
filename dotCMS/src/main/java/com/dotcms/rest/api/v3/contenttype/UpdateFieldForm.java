@@ -7,9 +7,13 @@ import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.dotmarketing.util.json.JSONArray;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Form to {@link FieldResource#updateFields(String, UpdateFieldForm, HttpServletRequest)}
+ */
 @JsonDeserialize(builder = UpdateFieldForm.Builder.class)
 class UpdateFieldForm {
 

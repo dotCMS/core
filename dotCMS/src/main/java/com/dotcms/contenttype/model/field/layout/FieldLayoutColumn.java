@@ -8,6 +8,11 @@ import com.dotcms.util.CollectionsUtils;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * Represent a column into a {@link FieldLayoutRow}
+ *
+ * @see FieldLayout
+ */
 @JsonSerialize(using = FieldLayoutColumnSerializer.class)
 public class FieldLayoutColumn {
     private final ColumnField column;
@@ -18,10 +23,18 @@ public class FieldLayoutColumn {
         this.fields = fields == null ? Collections.EMPTY_LIST : fields;
     }
 
+    /**
+     * Return the {@link ColumnField}
+     * @return
+     */
     public ColumnField getColumn() {
         return column;
     }
 
+    /**
+     * Return the fields into the column
+     * @return
+     */
     public List<Field> getFields() {
         return CollectionsUtils.asList(fields.iterator());
     }

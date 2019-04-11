@@ -2,9 +2,14 @@ package com.dotcms.rest.api.v3.contenttype;
 
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.liferay.portal.model.User;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 
+/**
+ * Form to {@link FieldResource#deleteFields(String, DeleteFieldsForm, HttpServletRequest)} (List, User)}
+ */
 @JsonDeserialize(builder = DeleteFieldsForm.Builder.class)
 class DeleteFieldsForm {
     private List<String> fieldsID;

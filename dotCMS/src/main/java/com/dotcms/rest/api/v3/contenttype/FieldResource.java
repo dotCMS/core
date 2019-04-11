@@ -23,6 +23,11 @@ import com.liferay.portal.model.User;
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 
+/**
+ * Resource for handle fields operations, all this end point check if the {@link ContentType}'s layout is valid
+ *
+ * @see FieldLayout
+ */
 @Path("/v3/contenttype/{typeIdOrVarName}/fields")
 public class FieldResource {
     private WebResource webResource;
@@ -33,6 +38,16 @@ public class FieldResource {
         this.fieldAPI = APILocator.getContentTypeFieldAPI();
     }
 
+    /**
+     * Update a set of fields and return the new {@link ContentType}'s layout in the response
+     *
+     * @param typeIdOrVarName
+     * @param updateFieldForm
+     * @param req
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     @PUT
     @JSONP
     @NoCache
@@ -58,6 +73,15 @@ public class FieldResource {
         return Response.ok(new ResponseEntityView(fieldLayoutUpdated.getRows())).build();
     }
 
+    /**
+     * Return the {@link ContentType}'s layout
+     *
+     * @param typeIdOrVarName
+     * @param req
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     @GET
     @JSONP
     @NoCache
@@ -77,6 +101,15 @@ public class FieldResource {
         return Response.ok(new ResponseEntityView(fieldLayout.getRows())).build();
     }
 
+    /**
+     * Delete a set of fields from the {@link ContentType} and return the new {@link ContentType}'s layout
+     * @param typeIdOrVarName
+     * @param deleteFieldsForm
+     * @param req
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     @DELETE
     @JSONP
     @NoCache
