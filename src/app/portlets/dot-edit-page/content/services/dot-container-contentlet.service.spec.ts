@@ -48,7 +48,7 @@ describe('DotContainerContentletService', () => {
 
             tick();
             expect(lastConnection.request.url).toContain(
-                `v1/containers/${pageContainer.identifier}/content/${contentletId}`
+                `v1/containers/content/${contentletId}?containerId=${pageContainer.identifier}`
             );
         })
     );

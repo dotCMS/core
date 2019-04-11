@@ -26,7 +26,7 @@ export class DotContainerContentletService {
         return this.coreWebService
             .requestView({
                 method: RequestMethod.Get,
-                url: `v1/containers/${container.identifier}/content/${content.identifier}`
+                url: `v1/containers/content/${content.identifier}?containerId=${container.identifier}`
             })
             .pipe(pluck('entity', 'render'));
     }
