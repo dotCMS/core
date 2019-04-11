@@ -4,6 +4,8 @@ import com.dotcms.contenttype.model.field.ColumnField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.dotcms.util.CollectionsUtils;
+
+import java.util.Collections;
 import java.util.List;
 
 @JsonSerialize(using = FieldLayoutColumnSerializer.class)
@@ -13,7 +15,7 @@ public class FieldLayoutColumn {
 
     FieldLayoutColumn(final ColumnField column, final List<Field> fields) {
         this.column = column;
-        this.fields = fields;
+        this.fields = fields == null ? Collections.EMPTY_LIST : fields;
     }
 
     public ColumnField getColumn() {

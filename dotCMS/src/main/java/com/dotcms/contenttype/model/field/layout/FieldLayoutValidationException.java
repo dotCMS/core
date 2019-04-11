@@ -1,6 +1,8 @@
 package com.dotcms.contenttype.model.field.layout;
 
-public class FieldLayoutValidationException extends Exception {
+import com.dotmarketing.exception.DotDataValidationException;
+
+public class FieldLayoutValidationException extends DotDataValidationException {
 
     FieldLayoutValidationException(final String message) {
         super(message);

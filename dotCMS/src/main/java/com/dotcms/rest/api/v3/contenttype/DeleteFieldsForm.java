@@ -24,6 +24,11 @@ class DeleteFieldsForm {
             this.fieldsID = fieldsID;
         }
 
+        public Builder fields(final List<String> fieldsID) {
+            this.fieldsID = fieldsID;
+            return this;
+        }
+
         public DeleteFieldsForm build(){
             return new DeleteFieldsForm(fieldsID);
         }

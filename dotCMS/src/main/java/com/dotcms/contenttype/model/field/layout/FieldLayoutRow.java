@@ -8,16 +8,16 @@ import java.util.List;
 
 @JsonSerialize(using = FieldLayoutRowSerializer.class)
 public class FieldLayoutRow {
-    private final FieldDivider fieldDivider;
+    private final FieldDivider divider;
     private final List<FieldLayoutColumn> columns;
 
     FieldLayoutRow(final FieldDivider fieldDivider, final List<FieldLayoutColumn> columns) {
-        this.fieldDivider = fieldDivider;
+        this.divider = fieldDivider;
         this.columns = columns;
     }
 
-    public FieldDivider getFieldDivider() {
-        return fieldDivider;
+    public FieldDivider getDivider() {
+        return divider;
     }
 
     public List<FieldLayoutColumn> getColumns() {

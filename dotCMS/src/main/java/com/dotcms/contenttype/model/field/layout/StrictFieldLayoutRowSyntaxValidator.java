@@ -48,4 +48,9 @@ public class StrictFieldLayoutRowSyntaxValidator extends FieldLayoutRowSyntaxVal
             }
         }
     }
+
+    @Override
+    protected void processEmptyFields() throws FieldLayoutValidationException {
+
+    }
 }

@@ -53,13 +53,9 @@ public class FieldResource {
         final FieldLayout fieldLayout = new FieldLayout(contentType.fields());
         final FieldLayout fieldLayoutUpdated = fieldLayout.update(fieldsToUpdate);
 
-        try {
-            fieldLayoutUpdated.validate();
-            this.saveFields(fieldsToUpdate, user);
-            return Response.ok(new ResponseEntityView(fieldLayoutUpdated.getRows())).build();
-        } catch (FieldLayoutValidationException e) {
-            throw new BadRequestException(e);
-        }
+        fieldLayoutUpdated.validate();
+        this.saveFields(fieldsToUpdate, user);
+        return Response.ok(new ResponseEntityView(fieldLayoutUpdated.getRows())).build();
     }
 
     @GET
@@ -100,13 +96,9 @@ public class FieldResource {
         final FieldLayout fieldLayout = new FieldLayout(contentType.fields());
         final FieldLayout fieldLayoutUpdated = fieldLayout.remove(fieldsID);
 
-        try {
-            fieldLayoutUpdated.validate();
-            this.deleteFields(fieldsID, user);
-            return Response.ok(new ResponseEntityView(fieldLayoutUpdated.getRows())).build();
-        } catch (FieldLayoutValidationException e) {
-            throw new BadRequestException(e);
-        }
+        fieldLayoutUpdated.validate();
+        this.deleteFields(fieldsID, user);
+        return Response.ok(new ResponseEntityView(fieldLayoutUpdated.getRows())).build();
     }
 
     private void deleteFields(final List<String> fieldsID, final User user)

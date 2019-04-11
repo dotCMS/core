@@ -15,25 +15,28 @@ abstract class FieldLayoutRowSyntaxValidator {
     }
 
     public final void validate() throws FieldLayoutValidationException {
-        for (final FieldUtil.FieldsFragment fragment : FieldUtil.splitByFieldDivider(fields)) {
-            final boolean tabDivider = FieldUtil.isTabDivider(fragment.getFieldDivider());
+        if (this.fields.isEmpty()) {
+            processEmptyFields();
+        } else {
+            for (final FieldUtil.FieldsFragment fragment : FieldUtil.splitByFieldDivider(fields)) {
+                final boolean tabDivider = FieldUtil.isTabDivider(fragment.getFieldDivider());
 
-            if (tabDivider) {
-                processTab((TabDividerField) fragment.getFieldDivider());
+                if (tabDivider) {
+                    processTab((TabDividerField) fragment.getFieldDivider());
 
-                if (fragment.hasOthersFields()) {
-                    processRow(fragment.getOthersFields());
+                    if (fragment.hasOthersFields()) {
+                        processRow(fragment.getOthersFields());
+                        processColumns(fragment.getOthersFields());
+                    }
+                } else {
+                    processRow(fragment.getAllFields());
                     processColumns(fragment.getOthersFields());
                 }
-            } else {
-                processRow(fragment.getAllFields());
-                processColumns(fragment.getOthersFields());
             }
+
+            processSortOrder(fields);
         }
-
-        processSortOrder(fields);
     }
-
 
     protected final void processColumns (final List<Field> columns)
             throws FieldLayoutValidationException {
@@ -54,4 +57,6 @@ abstract class FieldLayoutRowSyntaxValidator {
     protected abstract void processColumn (final List<Field> columnFields) throws FieldLayoutValidationException;
 
     protected abstract void processSortOrder(final List<Field> fields) throws FieldLayoutValidationException;
+
+    protected abstract void processEmptyFields() throws FieldLayoutValidationException;
 }

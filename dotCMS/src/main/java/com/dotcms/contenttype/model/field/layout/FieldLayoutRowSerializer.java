@@ -19,8 +19,8 @@ public class FieldLayoutRowSerializer extends JsonSerializer<FieldLayoutRow> {
         jsonGenerator.writeStartObject();
 
         final JsonFieldTransformer jsonFieldDividerTransformer =
-                new JsonFieldTransformer((Field) fieldLayoutRow.getFieldDivider());
-        jsonGenerator.writeObjectField("fieldDivider", jsonFieldDividerTransformer.mapObject());
+                new JsonFieldTransformer((Field) fieldLayoutRow.getDivider());
+        jsonGenerator.writeObjectField("divider", jsonFieldDividerTransformer.mapObject());
         jsonGenerator.writeObjectField("columns", fieldLayoutRow.getColumns());
 
         jsonGenerator.writeEndObject();

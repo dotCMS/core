@@ -52,6 +52,12 @@ public class NotStrictFieldLayoutRowSyntaxValidator extends FieldLayoutRowSyntax
         this.newFields = FieldUtil.fixSortOrder(this.newFields);
     }
 
+    @Override
+    protected void processEmptyFields()  {
+        newFields.add(getNewRowField());
+        newFields.add(getNewColumnField());
+    }
+
     private ColumnField getNewColumnField() {
         return ImmutableColumnField.builder()
                 .name("Column Field")
