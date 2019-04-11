@@ -62,9 +62,10 @@ public class BulkProcessorListener implements BulkProcessor.Listener {
     @Override
     public void afterBulk(final long executionId, final BulkRequest request, final BulkResponse response) {
         final List<ReindexEntry> successful = new ArrayList<>();
+        float totolResponses=0;
         for (BulkItemResponse bulkItemResponse : response) {
             DocWriteResponse itemResponse = bulkItemResponse.getResponse();
-
+            totolResponses++;
             String id;
             if (bulkItemResponse.isFailed() || itemResponse == null) {
                 id = bulkItemResponse.getFailure().getId().substring(0,
@@ -86,6 +87,9 @@ public class BulkProcessorListener implements BulkProcessor.Listener {
             }
         }
         handleSuccess(successful);
+        if(totolResponses==0 || (successful.size() / totolResponses< .5)) {
+          ReindexThread.rebuildBulkIndexer();
+        }
     }
 
     @Override
