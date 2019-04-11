@@ -12,11 +12,15 @@ export class DotLayoutPropertiesComponent implements OnInit {
     @Input()
     group: FormGroup;
 
+    messages: { [key: string]: string } = {};
+
     constructor(public dotMessageService: DotMessageService) {}
 
     ngOnInit() {
         this.dotMessageService
             .getMessages(['editpage.layout.properties.header', 'editpage.layout.properties.footer'])
-            .subscribe();
+            .subscribe((messages: { [key: string]: string }) => {
+                this.messages = messages;
+            });
     }
 }

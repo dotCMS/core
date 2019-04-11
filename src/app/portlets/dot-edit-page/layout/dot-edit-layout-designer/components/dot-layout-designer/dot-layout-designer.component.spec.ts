@@ -88,26 +88,6 @@ describe('DotLayoutDesignerComponent', () => {
             expect(sidebar).toBe(null);
         });
 
-        describe('add box button', () => {
-            let addBoxButton: DebugElement;
-
-            beforeEach(() => {
-                addBoxButton = fixture.debugElement.query(
-                    By.css('.dot-layout-designer__toolbar-add')
-                );
-            });
-
-            it('should show', () => {
-                expect(addBoxButton).toBeTruthy();
-            });
-
-            it('should be binded to add box in the grid', () => {
-                spyOn(component.editLayoutGrid, 'addBox');
-                addBoxButton.nativeElement.click();
-                expect(component.editLayoutGrid.addBox).toHaveBeenCalledTimes(1);
-            });
-        });
-
         describe('dot-edit-layout-grid', () => {
             let gridLayout: DebugElement;
 

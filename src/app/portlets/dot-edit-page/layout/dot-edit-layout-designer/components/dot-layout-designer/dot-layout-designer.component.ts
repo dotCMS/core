@@ -1,7 +1,8 @@
-import { Component, OnInit, Input, ViewChild } from '@angular/core';
+import { Component, OnInit, Input } from '@angular/core';
 import { FormGroup } from '@angular/forms';
-import { DotEditLayoutGridComponent } from '../../../components/dot-edit-layout-grid/dot-edit-layout-grid.component';
 import { DotMessageService } from '@services/dot-messages-service';
+import { Observable } from 'rxjs';
+import { take } from 'rxjs/operators';
 
 @Component({
     selector: 'dot-layout-designer',
@@ -9,26 +10,17 @@ import { DotMessageService } from '@services/dot-messages-service';
     styleUrls: ['./dot-layout-designer.component.scss']
 })
 export class DotLayoutDesignerComponent implements OnInit {
-    @ViewChild('editLayoutGrid')
-    editLayoutGrid: DotEditLayoutGridComponent;
-
     @Input()
     group: FormGroup;
+
+    messages$: Observable<{ [key: string]: string }>;
 
     constructor(public dotMessageService: DotMessageService) {}
 
     ngOnInit() {
-        this.dotMessageService
-            .getMessages(['editpage.layout.designer.header', 'editpage.layout.designer.footer'])
-            .subscribe();
-    }
-
-    /**
-     * Add a grid box to the ng grid layout component
-     *
-     * @memberof DotLayoutDesignerComponent
-     */
-    addGridBox(): void {
-        this.editLayoutGrid.addBox();
+        this.messages$ = this.dotMessageService.getMessages([
+            'editpage.layout.designer.header',
+            'editpage.layout.designer.footer'
+        ]).pipe(take(1));
     }
 }

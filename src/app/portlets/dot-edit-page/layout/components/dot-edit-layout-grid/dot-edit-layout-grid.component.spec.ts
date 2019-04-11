@@ -1,3 +1,4 @@
+import { MdInputTextModule } from '@directives/md-inputtext/md-input-text.module';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { By } from '@angular/platform-browser';
 import { Component, DebugElement, Input, HostBinding, Output, EventEmitter } from '@angular/core';
@@ -16,14 +17,18 @@ import { NgGridModule } from 'dot-layout-grid';
 import { DotLayoutBody } from '@portlets/dot-edit-page/shared/models/dot-layout-body.model';
 import { DotEditLayoutService } from '@portlets/dot-edit-page/shared/services/dot-edit-layout.service';
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
+import { DotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
+import { DotAutofocusModule } from 'projects/dot-rules/src/lib/directives/dot-autofocus/dot-autofocus.module';
 
 let fakeValue: DotLayoutBody;
 
 @Component({
     selector: 'dot-test-host-component',
-    template: `<form [formGroup]="form">
-                    <dot-edit-layout-grid formControlName="body"></dot-edit-layout-grid>
-                </form>`
+    template: `
+        <form [formGroup]="form">
+            <dot-edit-layout-grid formControlName="body"></dot-edit-layout-grid>
+        </form>
+    `
 })
 class TestHostComponent {
     form: FormGroup;
@@ -37,7 +42,6 @@ class TestHostComponent {
         });
     }
 }
-
 
 @Component({
     selector: 'dot-dialog',
@@ -60,30 +64,29 @@ class DotDialogMockComponent {
     @Output()
     hide: EventEmitter<any> = new EventEmitter();
 
-    close(): void {
-
-    }
+    close(): void {}
 }
 
 @Component({
     selector: 'dot-icon-button',
     template: ''
 })
-class DotIconButtonMockComponent {
-
-}
+class DotIconButtonMockComponent {}
 
 describe('DotEditLayoutGridComponent', () => {
     let component: DotEditLayoutGridComponent;
     let de: DebugElement;
     let hostComponentfixture: ComponentFixture<TestHostComponent>;
+    let dotEditLayoutService: DotEditLayoutService;
 
     beforeEach(() => {
         fakeValue = {
             rows: [
                 {
+                    styleClass: '',
                     columns: [
                         {
+                            styleClass: '',
                             containers: [],
                             leftOffset: 1,
                             width: 2
@@ -94,7 +97,17 @@ describe('DotEditLayoutGridComponent', () => {
         };
 
         const messageServiceMock = new MockDotMessageService({
-            cancel: 'Cancel'
+            cancel: 'Cancel',
+            'dot.common.dialog.accept': 'Accept',
+            'dot.common.dialog.reject': 'Cancel',
+            'editpage.action.cancel': 'Cancel',
+            'editpage.action.delete': 'Delete',
+            'editpage.action.save': 'Save',
+            'editpage.confirm.header': 'Header',
+            'editpage.confirm.message.delete': 'Delete',
+            'editpage.confirm.message.delete.warning': 'Warning',
+            'editpage.layout.css.class.add.to.box': 'Add class to box',
+            'editpage.layout.css.class.add.to.row': 'Add class to row'
         });
 
         DOTTestBed.configureTestingModule({
@@ -104,7 +117,14 @@ describe('DotEditLayoutGridComponent', () => {
                 DotDialogMockComponent,
                 DotIconButtonMockComponent
             ],
-            imports: [NgGridModule, DotContainerSelectorModule, BrowserAnimationsModule],
+            imports: [
+                NgGridModule,
+                DotContainerSelectorModule,
+                BrowserAnimationsModule,
+                DotIconButtonTooltipModule,
+                MdInputTextModule,
+                DotAutofocusModule
+            ],
             providers: [
                 DotAlertConfirmService,
                 DotEditLayoutService,
@@ -118,6 +138,8 @@ describe('DotEditLayoutGridComponent', () => {
         de = hostComponentfixture.debugElement.query(By.css('dot-edit-layout-grid'));
         component = de.componentInstance;
 
+        dotEditLayoutService = de.injector.get(DotEditLayoutService);
+
         hostComponentfixture.detectChanges();
     });
 
@@ -130,6 +152,12 @@ describe('DotEditLayoutGridComponent', () => {
 
         expect(component.grid.boxes.length).toEqual(1);
         expect(component.grid.boxes[0].config.sizex).toEqual(12);
+    });
+
+    it('should subscribe to layour service and call addBox', () => {
+        spyOn(component, 'addBox');
+        dotEditLayoutService.addBox();
+        expect(component.addBox).toHaveBeenCalledTimes(1);
     });
 
     it('should add one Container to the grid of 3 columns', () => {
@@ -187,27 +215,27 @@ describe('DotEditLayoutGridComponent', () => {
             col: 1,
             fixed: true,
             maxCols: 12,
-            maxRows: 1
+            maxRows: 1,
+            payload: {
+                styleClass: ''
+            }
         });
     });
 
-    it(
-        'should remove the empty rows in the grid',
-        fakeAsync(() => {
-            component.addBox();
-            component.addBox();
-            component.grid.boxes[0].config.row = 5;
-            component.grid.boxes[0].config.sizex = 5;
-            component.grid.boxes[1].config.row = 2;
-            component.grid.boxes[2].config.row = 4;
-            component.grid.boxes[2].config.sizex = 1;
-            component.updateModel();
-            tick();
-            expect(component.grid.boxes[0].config.sizex).toEqual(3);
-            expect(component.grid.boxes[1].config.sizex).toEqual(1);
-            expect(component.grid.boxes[2].config.sizex).toEqual(5);
-        })
-    );
+    it('should remove the empty rows in the grid', fakeAsync(() => {
+        component.addBox();
+        component.addBox();
+        component.grid.boxes[0].config.row = 5;
+        component.grid.boxes[0].config.sizex = 5;
+        component.grid.boxes[1].config.row = 2;
+        component.grid.boxes[2].config.row = 4;
+        component.grid.boxes[2].config.sizex = 1;
+        component.updateModel();
+        tick();
+        expect(component.grid.boxes[0].config.sizex).toEqual(3);
+        expect(component.grid.boxes[1].config.sizex).toEqual(1);
+        expect(component.grid.boxes[2].config.sizex).toEqual(5);
+    }));
 
     it('should Propagate Change after a grid box is deleted', () => {
         component.addBox();
@@ -239,31 +267,21 @@ describe('DotEditLayoutGridComponent', () => {
         expect(component.propagateChange).toHaveBeenCalled();
     });
 
-    it(
-        'should resize the grid when the left menu is toggle',
-        fakeAsync(() => {
-            const dotEventsService = hostComponentfixture.debugElement.injector.get(
-                DotEventsService
-            );
-            spyOn(component.ngGrid, 'triggerResize');
-            dotEventsService.notify('dot-side-nav-toggle');
-            tick(210);
-            expect(component.ngGrid.triggerResize).toHaveBeenCalled();
-        })
-    );
+    it('should resize the grid when the left menu is toggle', fakeAsync(() => {
+        const dotEventsService = hostComponentfixture.debugElement.injector.get(DotEventsService);
+        spyOn(component.ngGrid, 'triggerResize');
+        dotEventsService.notify('dot-side-nav-toggle');
+        tick(210);
+        expect(component.ngGrid.triggerResize).toHaveBeenCalled();
+    }));
 
-    it(
-        'should resize the grid when the layout sidebar change',
-        fakeAsync(() => {
-            const dotEventsService = hostComponentfixture.debugElement.injector.get(
-                DotEventsService
-            );
-            spyOn(component.ngGrid, 'triggerResize');
-            dotEventsService.notify('layout-sidebar-change');
-            tick(0);
-            expect(component.ngGrid.triggerResize).toHaveBeenCalled();
-        })
-    );
+    it('should resize the grid when the layout sidebar change', fakeAsync(() => {
+        const dotEventsService = hostComponentfixture.debugElement.injector.get(DotEventsService);
+        spyOn(component.ngGrid, 'triggerResize');
+        dotEventsService.notify('layout-sidebar-change');
+        tick(0);
+        expect(component.ngGrid.triggerResize).toHaveBeenCalled();
+    }));
 
     it('should call writeValue to define the initial value of grid', () => {
         hostComponentfixture.detectChanges();
@@ -275,36 +293,48 @@ describe('DotEditLayoutGridComponent', () => {
         expect(containerSelector.attributes['ng-reflect-multiple']).toBeTruthy();
     });
 
-    it('should has a add class to row  button', () => {
-        const addRowClassButtons = hostComponentfixture.debugElement.queryAll(By.css('.box__add-row-class-button'));
-
-        expect(addRowClassButtons.length).toEqual(1);
-    });
-
-    it('should has a add class to column  button', () => {
-        const addRowClassButtons = hostComponentfixture.debugElement.queryAll(By.css('.box__add-column-class-button'));
-
-        expect(addRowClassButtons.length).toEqual(1);
-    });
-
-
-    it('should has a dot-dialog', () => {
+    it('should have a dot-dialog but not form', () => {
         const dotDialog = hostComponentfixture.debugElement.query(By.css('dot-dialog'));
+        const form = hostComponentfixture.debugElement.query(By.css('dot-dialog form'));
 
-        expect(dotDialog).not.toBeUndefined();
+        expect(dotDialog).not.toBeNull();
+        expect(form).toBeNull();
     });
 
-    it('should show dot-dialog when click any add class to row button', () => {
-        const addRowClassButtons = hostComponentfixture.debugElement.query(By.css('.box__add-row-class-button'));
-        addRowClassButtons.triggerEventHandler('click', null);
+    describe('show dialog for add class', () => {
+        let dotDialog;
+        let dotText;
+        let dotDialogForm;
 
-        hostComponentfixture.detectChanges();
+        function showDialog(type) {
+            const addRowClassButtons = hostComponentfixture.debugElement.query(
+                By.css(type === 'box' ? `.box__add-box-class-button` : `.box__add-${type}-class-button dot-icon-button-tooltip`)
+            );
 
-        const dotDialog = hostComponentfixture.debugElement.query(By.css('dot-dialog'));
-        expect(dotDialog.componentInstance.visible).toBe(true);
+            addRowClassButtons.triggerEventHandler('click', null);
+            hostComponentfixture.detectChanges();
 
-        const dotText = hostComponentfixture.debugElement.query(By.css('.box__add-class-text'));
-        expect(dotText.nativeElement.value).toBe('');
+            dotDialog = hostComponentfixture.debugElement.query(By.css('dot-dialog'))
+                .componentInstance;
+            dotDialogForm = hostComponentfixture.debugElement.query(By.css('dot-dialog form'));
+            dotText = hostComponentfixture.debugElement.query(By.css('.box__add-class-text'));
+        }
+
+        it('should show dot-dialog when click any add class to row button', () => {
+            showDialog('row');
+            expect(dotDialog.visible).toBe(true);
+            expect(dotDialog.header).toBe('Add class to row');
+            expect(dotText.nativeElement.value).toBe('');
+            expect(dotDialogForm).toBeDefined();
+        });
+
+        it('should show dot-dialog when click any add class to box button', () => {
+            showDialog('box');
+            expect(dotDialog.visible).toBe(true);
+            expect(dotDialog.header).toBe('Add class to box');
+            expect(dotText.nativeElement.value).toBe('');
+            expect(dotDialogForm).toBeDefined();
+        });
     });
 
     it('should set row class as text value', () => {
@@ -312,7 +342,9 @@ describe('DotEditLayoutGridComponent', () => {
         hostComponentfixture.componentInstance.createForm();
         hostComponentfixture.detectChanges();
 
-        const addRowClassButtons = hostComponentfixture.debugElement.query(By.css('.box__add-row-class-button'));
+        const addRowClassButtons = hostComponentfixture.debugElement.query(
+            By.css('.box__add-row-class-button dot-icon-button-tooltip')
+        );
         addRowClassButtons.triggerEventHandler('click', null);
 
         hostComponentfixture.detectChanges();
@@ -325,7 +357,9 @@ describe('DotEditLayoutGridComponent', () => {
         const dotDialog = hostComponentfixture.debugElement.query(By.css('dot-dialog'));
         spyOn(dotDialog.componentInstance, 'close').and.callThrough();
 
-        const addRowClassButtons = hostComponentfixture.debugElement.query(By.css('.box__add-row-class-button'));
+        const addRowClassButtons = hostComponentfixture.debugElement.query(
+            By.css('.box__add-row-class-button dot-icon-button-tooltip')
+        );
         addRowClassButtons.triggerEventHandler('click', null);
 
         component.form.setValue({ classToAdd: 'test_row_class' });
@@ -336,7 +370,9 @@ describe('DotEditLayoutGridComponent', () => {
 
         dotDialog.componentInstance.actions.accept.action(dotDialog.componentInstance);
 
-        expect(hostComponentfixture.componentInstance.form.value.body.rows[0].styleClass).toBe('test_row_class');
+        expect(hostComponentfixture.componentInstance.form.value.body.rows[0].styleClass).toBe(
+            'test_row_class'
+        );
         expect(dotDialog.componentInstance.close).toHaveBeenCalled();
     });
 
@@ -348,7 +384,9 @@ describe('DotEditLayoutGridComponent', () => {
         const dotDialog = hostComponentfixture.debugElement.query(By.css('dot-dialog'));
         spyOn(dotDialog.componentInstance, 'close').and.callThrough();
 
-        const addRowClassButtons = hostComponentfixture.debugElement.query(By.css('.box__add-row-class-button'));
+        const addRowClassButtons = hostComponentfixture.debugElement.query(
+            By.css('.box__add-row-class-button dot-icon-button-tooltip')
+        );
         addRowClassButtons.triggerEventHandler('click', null);
 
         component.form.setValue({ classToAdd: 'test_row_class_2' });
@@ -360,12 +398,16 @@ describe('DotEditLayoutGridComponent', () => {
 
         dotDialog.componentInstance.actions.accept.action(dotDialog.componentInstance);
 
-        expect(hostComponentfixture.componentInstance.form.value.body.rows[0].styleClass).toBe('test_row_class_2');
+        expect(hostComponentfixture.componentInstance.form.value.body.rows[0].styleClass).toBe(
+            'test_row_class_2'
+        );
         expect(dotDialog.componentInstance.close).toHaveBeenCalled();
     });
 
     it('should show dot-dialog when click any add class to column button', () => {
-        const addRowClassButtons = hostComponentfixture.debugElement.query(By.css('.box__add-column-class-button'));
+        const addRowClassButtons = hostComponentfixture.debugElement.query(
+            By.css('.box__add-box-class-button')
+        );
         addRowClassButtons.triggerEventHandler('click', null);
 
         hostComponentfixture.detectChanges();
@@ -378,23 +420,27 @@ describe('DotEditLayoutGridComponent', () => {
     });
 
     it('should disabled accept add class ok button when class is undefined', () => {
-        const addRowClassButtons = hostComponentfixture.debugElement.query(By.css('.box__add-column-class-button'));
+        const addRowClassButtons = hostComponentfixture.debugElement.query(
+            By.css('.box__add-box-class-button')
+        );
         addRowClassButtons.triggerEventHandler('click', null);
 
         hostComponentfixture.detectChanges();
 
-        expect(component.dialogActions.accept.disabled).toBe(true);
+        expect(component.addClassDialogActions.accept.disabled).toBe(true);
     });
 
     it('should enabled accept add class ok button when class is not undefined', () => {
-        const addRowClassButtons = hostComponentfixture.debugElement.query(By.css('.box__add-column-class-button'));
+        const addRowClassButtons = hostComponentfixture.debugElement.query(
+            By.css('.box__add-box-class-button')
+        );
         addRowClassButtons.triggerEventHandler('click', null);
 
         component.form.setValue({ classToAdd: 'test_class' });
 
         hostComponentfixture.detectChanges();
 
-        expect(component.dialogActions.accept.disabled).toBe(false);
+        expect(component.addClassDialogActions.accept.disabled).toBe(false);
     });
 
     it('should set column class as text value', () => {
@@ -402,7 +448,9 @@ describe('DotEditLayoutGridComponent', () => {
         hostComponentfixture.componentInstance.createForm();
         hostComponentfixture.detectChanges();
 
-        const addRowClassButtons = hostComponentfixture.debugElement.query(By.css('.box__add-column-class-button'));
+        const addRowClassButtons = hostComponentfixture.debugElement.query(
+            By.css('.box__add-box-class-button')
+        );
         addRowClassButtons.triggerEventHandler('click', null);
 
         hostComponentfixture.detectChanges();
@@ -415,7 +463,9 @@ describe('DotEditLayoutGridComponent', () => {
         const dotDialog = hostComponentfixture.debugElement.query(By.css('dot-dialog'));
         spyOn(dotDialog.componentInstance, 'close').and.callThrough();
 
-        const addRowClassButtons = hostComponentfixture.debugElement.query(By.css('.box__add-column-class-button'));
+        const addRowClassButtons = hostComponentfixture.debugElement.query(
+            By.css('.box__add-box-class-button')
+        );
         addRowClassButtons.triggerEventHandler('click', null);
 
         component.form.setValue({ classToAdd: 'test_column_class' });
@@ -427,19 +477,24 @@ describe('DotEditLayoutGridComponent', () => {
 
         dotDialog.componentInstance.actions.accept.action(dotDialog.componentInstance);
 
-        expect(hostComponentfixture.componentInstance.form.value.body.rows[0].columns[0].styleClass).toBe('test_column_class');
+        expect(
+            hostComponentfixture.componentInstance.form.value.body.rows[0].columns[0].styleClass
+        ).toBe('test_column_class');
         expect(dotDialog.componentInstance.close).toHaveBeenCalled();
     });
 
     it('should trigger change when column class is edit', () => {
-        hostComponentfixture.componentInstance.form.value.body.rows[0].columns[0].styleClass = 'test_column_class';
+        hostComponentfixture.componentInstance.form.value.body.rows[0].columns[0].styleClass =
+            'test_column_class';
         hostComponentfixture.componentInstance.createForm();
         hostComponentfixture.detectChanges();
 
         const dotDialog = hostComponentfixture.debugElement.query(By.css('dot-dialog'));
         spyOn(dotDialog.componentInstance, 'close').and.callThrough();
 
-        const addRowClassButtons = hostComponentfixture.debugElement.query(By.css('.box__add-column-class-button'));
+        const addRowClassButtons = hostComponentfixture.debugElement.query(
+            By.css('.box__add-box-class-button')
+        );
         addRowClassButtons.triggerEventHandler('click', null);
 
         component.form.setValue({ classToAdd: 'test_column_class_2' });
@@ -451,7 +506,9 @@ describe('DotEditLayoutGridComponent', () => {
 
         dotDialog.componentInstance.actions.accept.action(dotDialog.componentInstance);
 
-        expect(hostComponentfixture.componentInstance.form.value.body.rows[0].columns[0].styleClass).toBe('test_column_class_2');
+        expect(
+            hostComponentfixture.componentInstance.form.value.body.rows[0].columns[0].styleClass
+        ).toBe('test_column_class_2');
         expect(dotDialog.componentInstance.close).toHaveBeenCalled();
     });
 });

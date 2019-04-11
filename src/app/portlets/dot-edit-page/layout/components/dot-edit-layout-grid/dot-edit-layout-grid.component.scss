@@ -55,23 +55,14 @@ $box-height: 206px;
 }
 
 .box__add-row-class-button {
-    cursor: pointer;
-    position: absolute;
-    background-color: $brand-secondary;
-    z-index: 1;
-    left: -14px;
-    width: 16px;
-    height: $box-height;
+    align-items: center;
     border: 0;
+    cursor: pointer;
+    display: flex;
+    height: $box-height;
     padding: 0;
-
-    span {
-        white-space: nowrap;
-        text-transform: uppercase;
-        color: $white;
-        display: block;
-        writing-mode: vertical-lr;
-        position: relative;
-        transform: rotate(180deg);
-    }
+    position: absolute;
+    right: -23px;
+    width: 32px;
+    z-index: 1;
 }

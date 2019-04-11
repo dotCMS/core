@@ -1,12 +1,16 @@
 <div class="grid" [ngGrid]="gridConfig" (onDragStop)="updateModel()" (onResizeStop)="updateModel()">
-    <button
+    <div
         class="box__add-row-class-button"
         *ngFor="let rowClass of grid.getAllRowClass(); let i = index"
         [ngStyle]="{ 'top.px': i ? (206 + 8) * i : 0 }"
-        (click)="addRowClass(i)"
     >
-        <span>Add class</span>
-    </button>
+        <dot-icon-button-tooltip
+            [tooltipText]="messages['editpage.layout.css.class.add.to.row']"
+            (click)="addRowClass(i, messages['editpage.layout.css.class.add.to.row'])"
+            icon="more_horiz"
+        >
+        </dot-icon-button-tooltip>
+    </div>
 
     <div
         class="box"
@@ -21,22 +25,40 @@
         >
         </dot-container-selector>
         <div class="box__actions">
-            <dot-icon-button class="box__add-column-class-button" icon="more_horiz" (click)="addColumnClass(i)"></dot-icon-button>
-            <dot-icon-button icon="close" (click)="onRemoveContainer(i)"></dot-icon-button>
+            <dot-icon-button-tooltip
+                class="box__add-box-class-button"
+                icon="more_horiz"
+                (click)="addColumnClass(i, messages['editpage.layout.css.class.add.to.box'])"
+                [tooltipText]="messages['editpage.layout.css.class.add.to.box']"
+            ></dot-icon-button-tooltip>
+            <dot-icon-button-tooltip
+                [tooltipText]="messages['editpage.action.delete']"
+                icon="close"
+                (click)="onRemoveContainer(i)"
+            ></dot-icon-button-tooltip>
         </div>
     </div>
 </div>
 
 <dot-dialog
     #dialog
-    (hide)="showAddClassDialog = false"
-    [actions]="dialogActions"
-    header="Add Class"
-    [(visible)]="showAddClassDialog"
-    [width]="300"
+    (hide)="onAddClassDialogHide()"
+    [actions]="addClassDialogActions"
+    [header]="addClassDialogHeader"
+    [(visible)]="addClassDialogShow"
+    [width]="400"
 >
-    <form [formGroup]="form" novalidate>
-        <label for="content-type-form-workflow" class="form__label">Class Names</label>
-        <input pInputText class="box__add-class-text" formControlName="classToAdd" type="text" required/>
+    <form *ngIf="addClassDialogShow" [formGroup]="form" novalidate>
+        <div class="form__group">
+            <span dotMdInputtext [label]="messages['editpage.layout.css.class.names']">
+                <input
+                    class="box__add-class-text"
+                    dotAutofocus
+                    formControlName="classToAdd"
+                    pInputText
+                    type="text"
+                />
+            </span>
+        </div>
     </form>
 </dot-dialog>

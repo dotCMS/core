@@ -32,7 +32,9 @@ export class DotEditLayoutSidebarComponent implements OnInit, ControlValueAccess
     ) {}
 
     ngOnInit() {
-        this.dotMessageService.getMessages(['editpage.layout.designer.sidebar']).subscribe();
+        this.dotMessageService
+            .getMessages(['editpage.layout.designer.sidebar'])
+            .subscribe();
     }
 
     /**

@@ -1,7 +1,11 @@
+import { DotLayoutColumn } from './../../shared/models/dot-layout-column.model';
+import { DotLayoutRow } from './../../shared/models/dot-layout-row.model';
+import { Subject } from 'rxjs/internal/Subject';
+import { DotEditLayoutService } from '@portlets/dot-edit-page/shared/services/dot-edit-layout.service';
 import { DotRenderedPageState } from './../../shared/models/dot-rendered-page-state.model';
 import { DotAlertConfirmService } from './../../../../api/services/dot-alert-confirm/dot-alert-confirm.service';
 import { FormGroup, FormBuilder, Validators } from '@angular/forms';
-import { Component, OnInit, ViewChild, ElementRef, Input } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef, Input, OnDestroy } from '@angular/core';
 import { PageViewService } from '@services/page-view/page-view.service';
 import { DotMessageService } from '@services/dot-messages-service';
 import { TemplateContainersCacheService } from '../../template-containers-cache.service';
@@ -20,15 +24,15 @@ import {
     DotHttpErrorManagerService,
     DotHttpErrorHandled
 } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { tap } from 'rxjs/operators';
-import { DotLayout } from '../../shared/models/dot-layout.model';
+import { tap, take, takeUntil } from 'rxjs/operators';
+import { DotLayoutBody } from '@portlets/dot-edit-page/shared/models/dot-layout-body.model';
 
 @Component({
     selector: 'dot-edit-layout-designer',
     templateUrl: './dot-edit-layout-designer.component.html',
     styleUrls: ['./dot-edit-layout-designer.component.scss']
 })
-export class DotEditLayoutDesignerComponent implements OnInit {
+export class DotEditLayoutDesignerComponent implements OnInit, OnDestroy {
     @ViewChild('templateName')
     templateName: ElementRef;
     @Input()
@@ -45,37 +49,45 @@ export class DotEditLayoutDesignerComponent implements OnInit {
     saveAsTemplate: boolean;
     showTemplateLayoutSelectionDialog = false;
 
+    private destroy$: Subject<boolean> = new Subject<boolean>();
+
     constructor(
+        private dotDialogService: DotAlertConfirmService,
+        private dotEditLayoutService: DotEditLayoutService,
         private dotEventsService: DotEventsService,
         private dotGlobalMessageService: DotGlobalMessageService,
-        private dotDialogService: DotAlertConfirmService,
+        private dotHttpErrorManagerService: DotHttpErrorManagerService,
+        private dotRouterService: DotRouterService,
+        private dotThemesService: DotThemesService,
         private fb: FormBuilder,
+        private loginService: LoginService,
         private pageViewService: PageViewService,
         private templateContainersCacheService: TemplateContainersCacheService,
-        private loginService: LoginService,
-        private dotRouterService: DotRouterService,
-        public dotMessageService: DotMessageService,
-        private dotThemesService: DotThemesService,
-        private dotHttpErrorManagerService: DotHttpErrorManagerService
+        public dotMessageService: DotMessageService
     ) {}
 
     ngOnInit(): void {
         this.dotMessageService
             .getMessages([
                 'common.validation.name.error.required',
+                'dot.common.cancel',
                 'dot.common.message.saved',
                 'dot.common.message.saving',
-                'dot.common.cancel',
+                'editpage.layout.dialog.edit.page',
                 'editpage.layout.dialog.edit.page',
                 'editpage.layout.dialog.edit.template',
+                'editpage.layout.dialog.edit.template',
+                'editpage.layout.dialog.header',
                 'editpage.layout.dialog.header',
                 'editpage.layout.dialog.info',
+                'editpage.layout.dialog.info',
+                'editpage.layout.theme.button.label',
                 'editpage.layout.toolbar.action.save',
                 'editpage.layout.toolbar.save.template',
                 'editpage.layout.toolbar.template.name',
-                'editpage.layout.theme.button.label',
                 'org.dotcms.frontend.content.submission.not.proper.permissions'
             ])
+            .pipe(take(1))
             .subscribe();
 
         this.setupLayout();
@@ -85,6 +97,20 @@ export class DotEditLayoutDesignerComponent implements OnInit {
         } else {
             this.setEditLayoutMode();
         }
+    }
+
+    ngOnDestroy(): void {
+        this.destroy$.next(true);
+        this.destroy$.complete();
+    }
+
+    /**
+     * Calling the service to add a new box
+     *
+     * @memberof DotEditLayoutDesignerComponent
+     */
+    addGridBox() {
+        this.dotEditLayoutService.addBox();
     }
 
     /**
@@ -145,20 +171,23 @@ export class DotEditLayoutDesignerComponent implements OnInit {
         this.dotGlobalMessageService.loading(
             this.dotMessageService.get('dot.common.message.saving')
         );
-        const dotLayout: DotLayout = this.form.value;
-        this.pageViewService.save(this.pageState.page.identifier, dotLayout).subscribe(
-            (updatedPage: DotRenderedPage) => {
-                this.dotGlobalMessageService.display(
-                    this.dotMessageService.get('dot.common.message.saved')
-                );
-                this.setupLayout(
-                    new DotRenderedPageState(this.loginService.auth.user, updatedPage)
-                );
-            },
-            (err: ResponseView) => {
-                this.dotGlobalMessageService.error(err.response.statusText);
-            }
-        );
+
+        this.pageViewService
+            .save(this.pageState.page.identifier, this.form.value)
+            .pipe(take(1))
+            .subscribe(
+                (updatedPage: DotRenderedPage) => {
+                    this.dotGlobalMessageService.display(
+                        this.dotMessageService.get('dot.common.message.saved')
+                    );
+                    this.setupLayout(
+                        new DotRenderedPageState(this.loginService.auth.user, updatedPage)
+                    );
+                },
+                (err: ResponseView) => {
+                    this.dotGlobalMessageService.error(err.response.statusText);
+                }
+            );
     }
 
     /**
@@ -203,16 +232,44 @@ export class DotEditLayoutDesignerComponent implements OnInit {
         this.templateContainersCacheService.set(this.pageState.containers);
         this.initForm();
         this.saveAsTemplateHandleChange(false);
-        this.dotThemesService.get(this.form.get('themeId').value).subscribe(
-            (theme: DotTheme) => {
-                this.currentTheme = theme;
-            },
-            (error: ResponseView) => this.errorHandler(error)
-        );
+        this.dotThemesService
+            .get(this.form.get('themeId').value)
+            .pipe(take(1))
+            .subscribe(
+                (theme: DotTheme) => {
+                    this.currentTheme = theme;
+                },
+                (error: ResponseView) => this.errorHandler(error)
+            );
         // Emit event to redraw the grid when the sidebar change
-        this.form.get('layout.sidebar').valueChanges.subscribe(() => {
-            this.dotEventsService.notify('layout-sidebar-change');
-        });
+        this.form
+            .get('layout.sidebar')
+            .valueChanges.pipe(takeUntil(this.destroy$))
+            .subscribe(() => {
+                this.dotEventsService.notify('layout-sidebar-change');
+            });
+    }
+
+    // The POST request returns a 400 if we send the same properties we get
+    // ISSUE: https://github.com/dotCMS/core/issues/16344
+    private cleanUpBody(body: DotLayoutBody): DotLayoutBody {
+        return body
+            ? {
+                rows: body.rows.map((row: DotLayoutRow) => {
+                    return {
+                        ...row,
+                        columns: row.columns.map((column: DotLayoutColumn) => {
+                            return {
+                                containers: column.containers,
+                                leftOffset: column.leftOffset,
+                                width: column.width,
+                                styleClass: column.styleClass
+                            };
+                        })
+                    };
+                })
+            }
+            : null;
     }
 
     private initForm(): void {
@@ -220,8 +277,7 @@ export class DotEditLayoutDesignerComponent implements OnInit {
             title: this.isLayout() ? null : this.pageState.template.title,
             themeId: this.pageState.template.theme,
             layout: this.fb.group({
-                body:
-                    this.pageState.layout.body || {},
+                body: this.cleanUpBody(this.pageState.layout.body) || {},
                 header: this.pageState.layout.header,
                 footer: this.pageState.layout.footer,
                 sidebar: this.createSidebarForm()
@@ -230,36 +286,27 @@ export class DotEditLayoutDesignerComponent implements OnInit {
 
         this.initialFormValue = _.cloneDeep(this.form.value);
         this.isModelUpdated = false;
-        this.form.valueChanges.subscribe(() => {
+        this.form.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
             this.isModelUpdated = !_.isEqual(this.form.value, this.initialFormValue);
             // TODO: Set sidebar to null if sidebar location is empty, we're expecting a change in the backend to accept null value
         });
     }
 
     private showTemplateLayoutDialog(): void {
-        this.dotMessageService
-            .getMessages([
-                'editpage.layout.dialog.header',
+        this.dotDialogService.alert({
+            header: this.dotMessageService.get('editpage.layout.dialog.header'),
+            message: this.dotMessageService.get(
                 'editpage.layout.dialog.info',
-                'editpage.layout.dialog.edit.page',
-                'editpage.layout.dialog.edit.template'
-            ])
-            .subscribe(() => {
-                this.dotDialogService.alert({
-                    header: this.dotMessageService.get('editpage.layout.dialog.header'),
-                    message: this.dotMessageService.get(
-                        'editpage.layout.dialog.info',
-                        this.pageState.template.name
-                    ),
-                    footerLabel: {
-                        accept: this.dotMessageService.get('editpage.layout.dialog.edit.page'),
-                        reject: this.dotMessageService.get('editpage.layout.dialog.edit.template')
-                    },
-                    accept: () => {
-                        this.setEditLayoutMode();
-                    }
-                });
-            });
+                this.pageState.template.name
+            ),
+            footerLabel: {
+                accept: this.dotMessageService.get('editpage.layout.dialog.edit.page'),
+                reject: this.dotMessageService.get('editpage.layout.dialog.edit.template')
+            },
+            accept: () => {
+                this.setEditLayoutMode();
+            }
+        });
     }
 
     // tslint:disable-next-line:cyclomatic-complexity

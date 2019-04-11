@@ -1,4 +1,4 @@
-import { DotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
+
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DotEditLayoutGridComponent } from './dot-edit-layout-grid.component';
@@ -8,6 +8,9 @@ import { ButtonModule, InputTextModule } from 'primeng/primeng';
 import { NgGridModule } from 'dot-layout-grid';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { DotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
+import { MdInputTextModule } from '@directives/md-inputtext/md-input-text.module';
+import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 
 @NgModule({
     declarations: [DotEditLayoutGridComponent],
@@ -18,10 +21,12 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
         DotContainerSelectorModule,
         ButtonModule,
         DotDialogModule,
-        DotIconButtonModule,
         InputTextModule,
         FormsModule,
-        ReactiveFormsModule
+        ReactiveFormsModule,
+        DotIconButtonTooltipModule,
+        DotAutofocusModule,
+        MdInputTextModule
     ],
     exports: [DotEditLayoutGridComponent],
     providers: []

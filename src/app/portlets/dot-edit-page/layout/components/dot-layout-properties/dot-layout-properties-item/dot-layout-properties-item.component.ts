@@ -1,5 +1,13 @@
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
-import { Component, Input, Output, EventEmitter, forwardRef, HostListener } from '@angular/core';
+import {
+    Component,
+    Input,
+    Output,
+    EventEmitter,
+    forwardRef,
+    HostListener,
+    ChangeDetectionStrategy
+} from '@angular/core';
 
 @Component({
     selector: 'dot-layout-properties-item',
@@ -11,11 +19,13 @@ import { Component, Input, Output, EventEmitter, forwardRef, HostListener } from
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotLayoutPropertiesItemComponent)
         }
-    ]
+    ],
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotLayoutPropertiesItemComponent implements ControlValueAccessor {
     @Input()
     label: string;
+
     @Output()
     change: EventEmitter<boolean> = new EventEmitter();
 

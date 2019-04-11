@@ -93,7 +93,10 @@ describe('DotLayoutGridRow', () => {
             fixed: true,
             sizex: 3,
             maxCols: 12,
-            maxRows: 1
+            maxRows: 1,
+            payload: {
+                styleClass: ''
+            }
         });
     });
 
@@ -108,7 +111,10 @@ describe('DotLayoutGridRow', () => {
                     maxCols: 12,
                     maxRows: 1,
                     col: 1,
-                    row: 1
+                    row: 1,
+                    payload: {
+                        styleClass: ''
+                    }
                 },
                 containers: []
             }
@@ -145,7 +151,10 @@ describe('DotLayoutGridRow', () => {
                 maxCols: 12,
                 maxRows: 1,
                 row: 2,
-                col: 1
+                col: 1,
+                payload: {
+                    styleClass: ''
+                }
             },
             containers: []
         });

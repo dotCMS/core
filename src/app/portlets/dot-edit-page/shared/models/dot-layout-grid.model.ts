@@ -11,13 +11,19 @@ const DOT_LAYOUT_GRID_DEFAULT_EMPTY_GRID_ROWS: any = {
     maxCols: 12,
     maxRows: 1,
     col: 1,
-    row: 1
+    row: 1,
+    payload: {
+        styleClass: ''
+    }
 };
 const DEFAULT_CONFIG_FOR_NOT_EMPTY_GRID_TEMPLATE: any = {
     fixed: true,
     sizex: 3,
     maxCols: 12,
-    maxRows: 1
+    maxRows: 1,
+    payload: {
+        styleClass: ''
+    }
 };
 
 /**
@@ -104,8 +110,8 @@ export class DotLayoutGrid {
 
     private setRowClases(): void {
         const newNRows = this.dotLayoutGridBoxs
-            .map(box => box.config.row)
-            .reduce((before, current) => {
+            .map((box: DotLayoutGridBox) => box.config.row)
+            .reduce((before: number, current: number) => {
                 return before > current ? before : current;
             }, 0);
 

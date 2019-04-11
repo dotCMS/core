@@ -1,7 +1,8 @@
-import { DotMessageService } from '@services/dot-messages-service';
-import { DotLayoutPropertiesItemComponent } from '../dot-layout-properties-item/dot-layout-properties-item.component';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { Component, forwardRef, ViewChild, OnInit } from '@angular/core';
+
+import { DotMessageService } from '@services/dot-messages-service';
+import { DotLayoutPropertiesItemComponent } from '../dot-layout-properties-item/dot-layout-properties-item.component';
 import { DotLayoutSideBar } from '../../../../shared/models/dot-layout-sidebar.model';
 
 @Component({
@@ -18,9 +19,12 @@ import { DotLayoutSideBar } from '../../../../shared/models/dot-layout-sidebar.m
 export class DotLayoutSidebarComponent implements ControlValueAccessor, OnInit {
     @ViewChild('propertyItemLeft')
     propertyItemLeft: DotLayoutPropertiesItemComponent;
+
     @ViewChild('propertyItemRight')
     propertyItemRight: DotLayoutPropertiesItemComponent;
+
     value: DotLayoutSideBar;
+    messages: { [key: string]: string } = {};
 
     constructor(public dotMessageService: DotMessageService) {}
 
@@ -30,7 +34,9 @@ export class DotLayoutSidebarComponent implements ControlValueAccessor, OnInit {
                 'editpage.layout.properties.sidebar.left',
                 'editpage.layout.properties.sidebar.right'
             ])
-            .subscribe();
+            .subscribe((messages: { [key: string]: string }) => {
+                this.messages = messages;
+            });
     }
 
     propagateChange = (_: any) => {};

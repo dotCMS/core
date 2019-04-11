@@ -155,7 +155,12 @@ describe('DotEditLayoutService', () => {
             sizex: 3,
             fixed: true,
             maxCols: 12,
-            maxRows: 1
+            maxRows: 1,
+            payload: {
+                containers: [{ identifier: '6a12bbda-0ae2-4121-a98b-ad8069eaff3a', uuid: '5' }],
+                leftOffset: 4,
+                width: 3
+            }
         });
         expect(grid.boxes[0].containers.length).toEqual(1, 'map FILE type containers');
     });
@@ -233,17 +238,21 @@ describe('DotEditLayoutService', () => {
                     resizeHandle: null,
                     draggable: true,
                     resizable: true,
-                    borderSize: 25
+                    borderSize: 25,
+                    payload: {
+                        styleClass: ''
+                    }
                 }
             }
         ];
-        const grid: DotLayoutGrid = new  DotLayoutGrid(gridBoxes, ['test_row_class']);
+        const grid: DotLayoutGrid = new DotLayoutGrid(gridBoxes, ['test_row_class']);
         const layoutBody: DotLayoutBody = dotEditLayoutService.getDotLayoutBody(grid);
 
         expect(layoutBody.rows.length).toEqual(1);
+
         expect(layoutBody.rows[0].styleClass).toEqual('test_row_class');
         expect(layoutBody.rows[0].columns[0].styleClass).toEqual('test_column_class');
-        expect(layoutBody.rows[0].columns[1].styleClass).toBeUndefined();
+        expect(layoutBody.rows[0].columns[1].styleClass).toEqual('');
         expect(layoutBody.rows[0].columns.length).toEqual(2, 'create two columns');
         expect(layoutBody.rows[0].columns[1].containers.length).toEqual(2, 'create two containers');
         expect(layoutBody.rows[0].columns[1].leftOffset).toEqual(9, 'set leftOffset to 9');
@@ -276,5 +285,14 @@ describe('DotEditLayoutService', () => {
         delete containerColumnBox[1].uuid;
 
         expect(containerColumnBox).toEqual(mockDotContainers);
+    });
+
+    it('should emit add box event', (done) => {
+        dotEditLayoutService.getBoxes().subscribe((box: boolean) => {
+            expect(box).toBe(true);
+            done();
+        });
+
+        dotEditLayoutService.addBox();
     });
 });

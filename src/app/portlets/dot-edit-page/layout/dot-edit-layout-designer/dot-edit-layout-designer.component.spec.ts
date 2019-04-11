@@ -30,6 +30,7 @@ import { SiteServiceMock } from '../../../../test/site-service.mock';
 import { DotTheme } from '@portlets/dot-edit-page/shared/models/dot-theme.model';
 import { DotEditLayoutService } from '@portlets/dot-edit-page/shared/services/dot-edit-layout.service';
 import { DotRenderedPageState } from '@portlets/dot-edit-page/shared/models/dot-rendered-page-state.model';
+import { DotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 
 @Component({
     selector: 'dot-template-addtional-actions-menu',
@@ -101,7 +102,8 @@ const testConfigObject = {
         DotFieldValidationMessageModule,
         FormsModule,
         RouterTestingModule,
-        TooltipModule
+        TooltipModule,
+        DotIconButtonModule
     ],
     providers: [
         DotRouterService,
@@ -483,7 +485,7 @@ describe('DotEditLayoutDesignerComponent', () => {
         });
 
         describe('not show', () => {
-            it("when user can't edit the template and set layout mode", () => {
+            it('when user can\'t edit the template and set layout mode', () => {
                 component.pageState = new DotRenderedPageState(mockUser, {
                     ...mockDotRenderedPage,
                     template: {
