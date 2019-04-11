@@ -1,5 +1,6 @@
 package com.dotcms.contenttype.business;
 
+import static com.dotcms.contenttype.business.ContentTypeAPIImpl.TYPES_AND_FIELDS_VALID_VARIABLE_REGEX;
 import static com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_ONE;
 import static com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY.ONE_TO_MANY;
 import static org.junit.Assert.assertEquals;
@@ -39,6 +40,7 @@ import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import io.vavr.Tuple2;
 import java.util.Date;
 import java.util.List;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -803,42 +805,38 @@ public class FieldAPITest extends IntegrationTestBase {
 
 
     @DataProvider
-    public static Object[] dataProviderSaveInvalidName() {
-        return new Tuple2[] {
-                // actual, should fail
-                new Tuple2<>("123", true),
-                new Tuple2<>("123abc", true),
-                new Tuple2<>("_123a", false),
-                new Tuple2<>("asd123asd", false),
-                new Tuple2<>("Asfsdf", false),
-                new Tuple2<>("aa123", false),
-                new Tuple2<>("This is a field", false),
-                new Tuple2<>("Field && ,,,..**==} name~~~__", false)
+    public static Object[] dataProviderTypeNames() {
+        return new String[] {
+                "123",
+                "123abc",
+                "_123a",
+                "asd123asd",
+                "Asfsdf",
+                "aa123",
+                "This is a field",
+                "Field && ,,,..**==} name~~~__",
+                "__"
         };
     }
 
     @Test
-    @UseDataProvider("dataProviderSaveInvalidName")
-    public void testSave_InvalidName_ShouldThrowException(final Tuple2<String, Boolean> testCase)
+    @UseDataProvider("dataProviderTypeNames")
+    public void testSave_InvalidName_ShouldThrowException(final String fieldName)
             throws DotSecurityException, DotDataException {
-
-        final String nameTestCase = testCase._1;
-        final boolean shouldFail = testCase._2;
 
         final long time = System.currentTimeMillis();
         final ContentType type = createAndSaveSimpleContentType("testContentType" + time);
         try {
-            final Field field = FieldBuilder.builder(TextField.class)
-                    .name(nameTestCase)
+            Field field = FieldBuilder.builder(TextField.class)
+                    .name(fieldName)
                     .contentTypeId(type.id())
                     .indexed(false)
                     .listed(false)
                     .fixed(true)
                     .build();
-            fieldAPI.save(field, user);
-            assertFalse(shouldFail);
-        } catch (IllegalArgumentException e) {
-            assertTrue(shouldFail);
+            field = fieldAPI.save(field, user);
+
+            Assert.assertTrue(field.variable().matches(TYPES_AND_FIELDS_VALID_VARIABLE_REGEX));
         } finally {
             contentTypeAPI.delete(type);
         }
