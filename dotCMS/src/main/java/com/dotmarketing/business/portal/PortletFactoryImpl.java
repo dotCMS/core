@@ -18,10 +18,6 @@ import org.jdom.JDOMException;
 import org.jdom.input.SAXBuilder;
 import org.jdom.output.Format;
 import org.jdom.output.XMLOutputter;
-
-import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.business.WrapInTransaction;
-import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
@@ -110,7 +106,6 @@ public class PortletFactoryImpl extends PrincipalBean implements PortletFactory 
     return portlets;
   }
 
-  @WrapInTransaction
   @Override
   public void deletePortlet(final String portletId) throws DotDataException {
 
@@ -175,7 +170,6 @@ public class PortletFactoryImpl extends PrincipalBean implements PortletFactory 
     return getPortletMap().values();
   }
 
-  @CloseDBIfOpened
   public List<Portlet> findAllDb() throws DotDataException {
 
     DotConnect db = new DotConnect();
@@ -214,7 +208,6 @@ public class PortletFactoryImpl extends PrincipalBean implements PortletFactory 
 
   }
 
-  @WrapInTransaction
   @Override
   public Portlet insertPortlet(final Portlet portlet) throws DotDataException {
     if (doesPortletExistInDb(portlet)) {
@@ -232,7 +225,7 @@ public class PortletFactoryImpl extends PrincipalBean implements PortletFactory 
 
   }
 
-  @WrapInTransaction
+
   @Override
   public Portlet updatePortlet(final Portlet portlet) throws DotDataException {
 

@@ -1,5 +1,7 @@
 package com.dotmarketing.business.portal;
 
+import com.dotmarketing.exception.DotDataException;
+import com.liferay.portal.language.LanguageException;
 import java.util.Collection;
 
 import com.dotcms.repackage.javax.portlet.PortletConfig;
@@ -10,28 +12,28 @@ import com.liferay.portal.model.User;
 
 public interface PortletAPI {
 
-	boolean hasContainerManagerRights(User user);
+	boolean hasContainerManagerRights(final User user);
 
-	boolean hasTemplateManagerRights(User user);
+	boolean hasTemplateManagerRights(final User user);
 	
-	Portlet findPortlet(String id);
+	Portlet findPortlet(final String id);
 	
 	Collection<Portlet> findAllPortlets () throws SystemException;
 	
-	boolean canAddPortletToLayout(Portlet portlet);
+	boolean canAddPortletToLayout(final Portlet portlet);
 
-	boolean canAddPortletToLayout(String portletId);
+	boolean canAddPortletToLayout(final String portletId);
 	
-	boolean hasUserAdminRights(User user);
+	boolean hasUserAdminRights(final User user);
 
-  com.dotcms.repackage.javax.portlet.Portlet getImplementingInstance(Portlet portlet);
+  com.dotcms.repackage.javax.portlet.Portlet getImplementingInstance(final Portlet portlet);
 
-  PortletConfig getPortletConfig(Portlet portlet);
+  PortletConfig getPortletConfig(final Portlet portlet);
 
   PortletContext getPortletContext();
 
-  void deletePortlet(String portletId);
+  void deletePortlet(final String portletId);
 
-  Portlet savePortlet(Portlet portlet);
+  Portlet savePortlet(final Portlet portlet, final User user) throws DotDataException, LanguageException;
 
 }

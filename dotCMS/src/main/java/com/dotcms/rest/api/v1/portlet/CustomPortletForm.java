@@ -1,22 +1,9 @@
 package com.dotcms.rest.api.v1.portlet;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.annotation.Nonnull;
-
-import com.dotcms.contenttype.business.ContentTypeAPI;
-import com.dotcms.contenttype.model.type.BaseContentType;
-import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.dotcms.repackage.com.google.common.collect.ImmutableList;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.UUIDGenerator;
-import com.dotmarketing.util.UtilMethods;
-
-import io.vavr.control.Try;
+import javax.annotation.Nonnull;
 
 @JsonDeserialize(builder = CustomPortletForm.Builder.class)
 public class CustomPortletForm {
@@ -96,44 +83,6 @@ public class CustomPortletForm {
     public CustomPortletForm build() {
       return new CustomPortletForm(this);
     }
-  }
-  @JsonIgnore
-  public List<BaseContentType> resolveBaseTypes() {
-    if (!UtilMethods.isSet(this.baseTypes)) {
-      return ImmutableList.of();
-    }
-    String[] baseTypes = this.baseTypes.trim().split(",");
-    List<BaseContentType> baseTypeList = new ArrayList<>();
-    for (String type : baseTypes) {
-      if (UtilMethods.isSet(type) && UtilMethods.isNumeric(type.trim())) {
-        baseTypeList.add(BaseContentType.getBaseContentType(Integer.parseInt(type.trim())));
-      } else {
-        baseTypeList.add(BaseContentType.getBaseContentType(type.trim()));
-      }
-    }
-    return baseTypeList;
-  }
-  @JsonIgnore
-  public List<ContentType> resolveContentTypes() {
-    if (!UtilMethods.isSet(this.contentTypes)) {
-      return ImmutableList.of();
-    }
-    ContentTypeAPI contentTypeApi = APILocator.getContentTypeAPI(APILocator.systemUser());
-    List<ContentType> contentTypeList = new ArrayList<>();
-    String[] contentTypes = this.contentTypes.trim().split(",");
-
-    for (String type : contentTypes) {
-      ContentType contentType = Try.of(() -> contentTypeApi.find(type.trim())).getOrNull();
-      if (contentType != null) {
-        contentTypeList.add(contentType);
-      }
-    }
-
-    if(contentTypeList.size() < contentTypes.length){
-      throw new IllegalArgumentException("One or more of the Content Types defined does not exist");
-    }
-
-    return contentTypeList;
   }
   
 }
