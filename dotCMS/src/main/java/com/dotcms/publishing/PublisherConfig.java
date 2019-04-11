@@ -12,6 +12,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -79,6 +80,8 @@ public class PublisherConfig implements Map<String, Object>, Cloneable {
 	Map<String, Object> params;
 	private boolean liveOnly = true;
 	private boolean isStatic = false;
+
+	private Map<String, String> existingContent = new HashMap<>();
 
 	@SuppressWarnings("unchecked")
 	public Set<String> getFolders() {
@@ -586,4 +589,34 @@ public class PublisherConfig implements Map<String, Object>, Cloneable {
 	public Language getMappedRemoteLanguage(final Long remoteId){
 		return getWritableMappedRemoteLanguages().get(remoteId);
 	}
+
+	/**
+	 * Gets a map that matches bundle content identifiers with existing content found on the local
+	 * instance (content matched by unique field)
+	 * @return map with matches between bundle identifiers and local content
+	 */
+	public Map<String, String> getExistingContent() {
+		return existingContent == null ? Collections.emptyMap() : new HashMap<>(existingContent);
+	}
+
+	/**
+	 * Store a map that matches bundle content identifiers with existing content found on the local
+	 * instance (content matched by unique field)
+	 *
+	 * @param existingContentMap map with matches between bundle identifiers and local content
+	 */
+	public void setExistingContent(Map<String, String> existingContentMap) {
+		existingContent =
+				existingContentMap == null ? new HashMap<>() : new HashMap<>(existingContentMap);
+	}
+
+	/**
+	 * Clean up the map that matches bundle content identifiers with existing content.
+	 */
+	public void cleanupExistingContent() {
+		if (existingContent != null) {
+			existingContent.clear();
+		}
+	}
+
 }
