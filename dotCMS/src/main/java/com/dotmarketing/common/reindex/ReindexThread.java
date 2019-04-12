@@ -24,7 +24,6 @@ import io.vavr.control.Try;
 
 import java.sql.SQLException;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -97,6 +96,9 @@ public class ReindexThread {
     //Bulk size in MB. -1 means disabled
     public static final int ELASTICSEARCH_BULK_SIZE = Config
             .getIntProperty("REINDEX_THREAD_ELASTICSEARCH_BULK_SIZE", 10);
+    //Time (in seconds) to wait before closing bulk processor in a full reindex
+    private static final int BULK_PROCESSOR_AWAIT_TIMEOUT = Config
+            .getIntProperty("BULK_PROCESSOR_AWAIT_TIMEOUT", 10);
     private ThreadState STATE = ThreadState.RUNNING;
     private Future<?>  threadRunning;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -154,7 +156,7 @@ public class ReindexThread {
     
     private BulkProcessor closeBulkProcessor(final BulkProcessor bulkProcessor) throws InterruptedException {
       if(bulkProcessor!=null) {
-        bulkProcessor.awaitClose(20, TimeUnit.SECONDS);
+        bulkProcessor.awaitClose(BULK_PROCESSOR_AWAIT_TIMEOUT, TimeUnit.SECONDS);
       }
       rebuildBulkIndexer.set(false);
       return null;
