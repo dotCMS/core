@@ -1,6 +1,6 @@
 import { newE2EPage } from '@stencil/core/testing';
 
-describe('dot-checkbox', () => {
+xdescribe('dot-checkbox', () => {
   it('renders', async () => {
     const page = await newE2EPage();
 

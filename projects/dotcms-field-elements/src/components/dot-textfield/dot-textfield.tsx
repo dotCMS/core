@@ -7,8 +7,7 @@ import { DotFieldStatus } from '../../models/dot-field-status.model';
     styleUrl: 'dot-textfield.scss'
 })
 export class DotTextfieldComponent {
-    @Prop({ mutable: true })
-    value: string;
+    @Prop({ mutable: true }) value: string;
     @Prop() name: string;
     @Prop() regexcheck: string;
     @Prop() regexcheckmessage: string;
@@ -18,6 +17,7 @@ export class DotTextfieldComponent {
     @Prop() required: boolean;
     @Prop() requiredmessage: string;
     @Prop() disabled = false;
+
     @Event() valueChanges: EventEmitter;
     @Event() statusChanges: EventEmitter;
 

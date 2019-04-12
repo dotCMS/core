@@ -33,18 +33,19 @@ export const initDotCMS = (config: DotCMSConfigurationParams): DotCMSApp => {
     const httpClient = new DotCMSHttpClient(config);
     const apiConfig = new DotApiConfiguration(httpClient);
     const apiLanguage = new DotApiLanguage(apiConfig);
+    const content = new DotApiContent(httpClient);
 
     return {
         auth: new DotApiAuthorization(),
         config: apiConfig,
-        content: new DotApiContent(httpClient),
+        content: content,
         contentType: new DotApiContentType(httpClient),
         esSearch: new DotApiElasticSearch(httpClient),
         event: new DotApiEvent(),
         form: {
             get: (formConfig: DotCMSFormConfig) => {
                 const dotApiContentType = new DotApiContentType(httpClient);
-                return new DotApiForm(dotApiContentType, formConfig);
+                return new DotApiForm(dotApiContentType, formConfig, content);
             }
         },
         language: apiLanguage,

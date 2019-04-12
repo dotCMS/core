@@ -11,15 +11,16 @@
 | --------- | --------- | ----------- | -------- | ----------- |
 | `hint`    | `hint`    |             | `string` | `undefined` |
 | `label`   | `label`   |             | `string` | `undefined` |
+| `name`    | `name`    |             | `string` | `undefined` |
 | `options` | `options` |             | `string` | `undefined` |
 | `value`   | `value`   |             | `string` | `undefined` |
 
 
 ## Events
 
-| Event      | Description | Type                |
-| ---------- | ----------- | ------------------- |
-| `onChange` |             | `CustomEvent<void>` |
+| Event          | Description | Type                |
+| -------------- | ----------- | ------------------- |
+| `valueChanges` |             | `CustomEvent<void>` |
 
 
 ----------------------------------------------

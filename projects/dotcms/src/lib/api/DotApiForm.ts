@@ -1,25 +1,26 @@
-import { DotCMSFormConfig, DotCMSContentTypeField } from '../models';
+import {
+    DotCMSFormConfig,
+    DotCMSContentTypeField,
+    DotCMSContentType,
+    DotCMSError
+} from '../models';
 import { DotApiContentType } from './DotApiContentType';
-
-enum FieldElementsTags {
-    Text = 'dot-textfield',
-    Checkbox = 'dot-checkbox',
-    Select = 'dot-dropdown'
-}
+import { DotApiContent } from './DotApiContent';
+import { DotFormComponent } from 'projects/dotcms-field-elements/dist/collection/components/dot-form/dot-form.js';
 
 /**
  * Creates and provide methods to render a DotCMS Form
  *
  */
 export class DotApiForm {
-    private formConfig: DotCMSFormConfig;
+    private contentType: DotCMSContentType;
     private fields: DotCMSContentTypeField[];
-    private dotApiContentType: DotApiContentType;
 
-    constructor(dotApiContentType: DotApiContentType, config: DotCMSFormConfig) {
-        this.dotApiContentType = dotApiContentType;
-        this.formConfig = config;
-    }
+    constructor(
+        private dotApiContentType: DotApiContentType,
+        private formConfig: DotCMSFormConfig,
+        private content: DotApiContent
+    ) {}
 
     /**
      * Render form on provided html element
@@ -27,67 +28,58 @@ export class DotApiForm {
      * @memberof DotApiForm
      */
     async render(container: HTMLElement) {
-        this.fields =
-            this.fields || (await this.dotApiContentType.getFields(this.formConfig.identifier));
+        this.contentType =
+            this.contentType || (await this.dotApiContentType.get(this.formConfig.identifier));
+        this.fields = this.contentType.fields;
 
-        const fieldScript = this.createFieldTags(this.fields);
-        const formScript = this.createForm(fieldScript);
         const importScript = document.createElement('script');
-        const formTag = document.createElement('div');
-
         importScript.type = 'module';
         importScript.text = `
-            import { defineCustomElements } from "https://unpkg.com/dotcms-field-elements@0.0.2/dist/loader";
+            import { defineCustomElements } from 'http://localhost:8080/fieldElements/loader/index.js';
+            //import { defineCustomElements } from 'https://unpkg.com/dotcms-field-elements@latest/dist/loader';
             defineCustomElements(window);`;
-        formTag.innerHTML = formScript;
 
+        const formTag = this.createForm(this.fields);
         container.append(importScript, formTag);
     }
 
-    private createForm(fieldTags: string): string {
-        return `<form>${fieldTags}</form>`;
+    private shouldSetFormLabel(label: string, labelConfig: {submit?: string, reset?: string}): boolean {
+        return !!(labelConfig && labelConfig[label]);
     }
 
-    private createFieldTags(fields: DotCMSContentTypeField[]): string {
-        const fieldTags = fields
-            .map((field: DotCMSContentTypeField) =>
-                this.formConfig.fields.includes(field.variable) ? this.createField(field) : ''
-            )
-            .join('');
-        return fieldTags;
+    private createForm(fields: DotCMSContentTypeField[]): HTMLElement {
+        const dotFormEl: DotFormComponent = document.createElement('dot-form');
+
+        ['submit', 'reset'].forEach((label: string) => {
+            if (this.shouldSetFormLabel(label, this.formConfig.labels)) {
+                dotFormEl.setAttribute(`${label}-label`, this.formConfig.labels[label]);
+            }
+        });
+
+        dotFormEl.fields = fields;
+        dotFormEl.fieldsToShow = this.formConfig.fields;
+
+        dotFormEl.addEventListener('onSubmit', (e: CustomEvent) => {
+            e.preventDefault();
+            this.content
+                .save({
+                    contentHost: this.formConfig.contentHost,
+                    stName: this.contentType.variable,
+                    ...e.detail
+                })
+                .then((data: Response) => {
+                    if (this.formConfig.onSuccess) {
+                        this.formConfig.onSuccess(data);
+                    }
+                })
+                .catch((error: DotCMSError) => {
+                    if (this.formConfig.onError) {
+                        this.formConfig.onError(error);
+                    }
+                });
+        });
+
+        return dotFormEl;
     }
 
-    private getFieldTag(field: DotCMSContentTypeField): string {
-        return FieldElementsTags[field.fieldType];
-    }
-
-    private formatValuesAttribute(values: string, fieldTag: string): string {
-        const breakLineTags = ['dot-checkbox', 'dot-dropdown', 'dot-radio-button'];
-        let formattedValue = values;
-
-        // Todo: complete with other DOT-FIELDS as they get created
-        if (breakLineTags.includes(fieldTag)) {
-            formattedValue = values.split('\r\n').join(',');
-        }
-        return formattedValue;
-    }
-
-    // tslint:disable-next-line:cyclomatic-complexity
-    private createField(field: DotCMSContentTypeField): string {
-        const fieldTag = this.getFieldTag(field);
-        return fieldTag
-            ? `
-            <${fieldTag}
-                ${field.name ? `label="${field.name}"` : ''}
-                ${field.defaultValue ? `value="${field.defaultValue}"` : ''}
-                ${
-                    field.values
-                        ? `options="${this.formatValuesAttribute(field.values, fieldTag)}"`
-                        : ''
-                }
-                ${field.hint ? `hint="${field.hint}"` : ''}
-                ${field.required ? 'required' : ''}
-            ></${fieldTag}>`
-            : '';
-    }
 }

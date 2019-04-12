@@ -1,6 +1,6 @@
 import { newE2EPage } from '@stencil/core/testing';
 
-describe('dot-dropdown', () => {
+xdescribe('dot-dropdown', () => {
   it('renders', async () => {
     const page = await newE2EPage();
 

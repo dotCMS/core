@@ -11,6 +11,7 @@
 | ------------- | ------------- | ----------- | --------- | ----------- |
 | `hint`        | `hint`        |             | `string`  | `undefined` |
 | `label`       | `label`       |             | `string`  | `undefined` |
+| `name`        | `name`        |             | `string`  | `undefined` |
 | `placeholder` | `placeholder` |             | `string`  | `undefined` |
 | `readOnly`    | `read-only`   |             | `string`  | `undefined` |
 | `regexcheck`  | `regexcheck`  |             | `string`  | `undefined` |
@@ -20,9 +21,22 @@
 
 ## Events
 
-| Event      | Description | Type                |
-| ---------- | ----------- | ------------------- |
-| `onChange` |             | `CustomEvent<void>` |
+| Event          | Description | Type                |
+| -------------- | ----------- | ------------------- |
+| `valueChanges` |             | `CustomEvent<void>` |
+
+
+## Methods
+
+### `reset() => void`
+
+
+
+#### Returns
+
+Type: `void`
+
+
 
 
 ----------------------------------------------
