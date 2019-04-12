@@ -1,6 +1,15 @@
 package com.dotmarketing.portlets.folders.business;
 
-import com.dotcms.api.system.event.*;
+import static com.dotmarketing.business.APILocator.getPermissionAPI;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
+import static com.dotmarketing.db.HibernateUtil.addCommitListener;
+import static com.liferay.util.StringPool.BLANK;
+
+import com.dotcms.api.system.event.Payload;
+import com.dotcms.api.system.event.SystemEventType;
+import com.dotcms.api.system.event.SystemEventsAPI;
+import com.dotcms.api.system.event.Visibility;
+import com.dotcms.api.system.event.VisibilityRoles;
 import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
@@ -16,8 +25,16 @@ import com.dotcms.system.event.local.model.EventSubscriber;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotIdentifierStateException;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionAPI.PermissionableType;
+import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.QueryUtil;
 import com.dotmarketing.business.query.ValidationException;
@@ -35,23 +52,28 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.AdminLogger;
+import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDUtil;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
-import org.apache.commons.lang.StringUtils;
-
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.StringTokenizer;
+import java.util.TimeZone;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-
-import static com.dotmarketing.business.APILocator.getPermissionAPI;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
-import static com.dotmarketing.db.HibernateUtil.addCommitListener;
-import static com.liferay.util.StringPool.BLANK;
 
 public class FolderAPIImpl implements FolderAPI  {
 
@@ -130,7 +152,7 @@ public class FolderAPIImpl implements FolderAPI  {
 			DotDataException, DotSecurityException {
 		Identifier id = APILocator.getIdentifierAPI().find(asset.getIdentifier());
 		if(id==null) return null;
-		if(id.getParentPath()==null || id.getParentPath().equals("/") || id.getParentPath().equals("/System folder"))
+		if(id.getParentPath()==null || id.getParentPath().equals("/") || id.getParentPath().equals(SYSTEM_FOLDER_PARENT_PATH))
 			return null;
 		Host host = APILocator.getHostAPI().find(id.getHostId(), user, respectFrontEndPermissions);
 		Folder f = folderFactory.findFolderByPath(id.getParentPath(), host);
@@ -329,11 +351,9 @@ public class FolderAPIImpl implements FolderAPI  {
 	 * @throws DotSecurityException
 	 */
 	@WrapInTransaction
-	public void delete(Folder folder, User user, boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
+	public void delete(final Folder folder, final User user, final boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
 
-		String path = StringUtils.EMPTY;
-
-		ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user, respectFrontEndPermissions);
+		final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user, respectFrontEndPermissions);
 
 		if(folder==null || !UtilMethods.isSet(folder.getInode()) ){
 			Logger.debug(getClass(), "Cannot delete null folder");
@@ -385,7 +405,7 @@ public class FolderAPIImpl implements FolderAPI  {
 			}
 
 			// delete assets in this folder
-			path = folder.getPath();
+			final String path = folder.getPath();
 			if (Logger.isDebugEnabled(getClass())) {
 				Logger.debug(getClass(), "Deleting the folder assets " + path);
 			}
@@ -557,7 +577,7 @@ public class FolderAPIImpl implements FolderAPI  {
 
 		boolean isNew = folder.getInode() == null;
 		folder.setModDate(new Date());
-		folder.setName(folder.getName().toLowerCase());
+		folder.setName(folder.getName());
 		folderFactory.save(folder, existingId);
 
 		SystemEventType systemEventType = isNew ? SystemEventType.SAVE_FOLDER : SystemEventType.UPDATE_FOLDER;

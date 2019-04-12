@@ -10,6 +10,7 @@ import com.dotcms.business.CloseDB;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.PageContentType;
 import com.dotcms.enterprise.FormAJAXProxy;
@@ -755,26 +756,37 @@ public class ContentletAjax {
 								} catch (Exception e) {
 									Logger.debug(this, "An error occured when processing field name '" + fieldbcontentname + "'");
 								}
-							}else if( FieldFactory.isTagField(fieldbcontentname,st)== false){
+							}else {
 								fieldValue = fieldValue.trim();
-								boolean hasQuotes = fieldValue != null && fieldValue.length() > 1 && fieldValue.endsWith("\"") && fieldValue.startsWith("\"");
+								final boolean hasQuotes = fieldValue != null && fieldValue.length() > 1 && fieldValue.endsWith("\"") && fieldValue.startsWith("\"");
 								if(hasQuotes){
-									fieldValue = fieldValue.replaceFirst("\"", "");
-									fieldValue = fieldValue.substring(0, fieldValue.length()-1);
+									fieldValue = CharMatcher.is('\"').trimFrom(fieldValue);
+								}
+								final String valueForQuery = ESUtils.escape(fieldValue);
+								String valueDelimiter = wildCard;
+								if (valueForQuery.startsWith("\"") && valueForQuery.endsWith("\"")) {
+									valueDelimiter = "";
+								} else if (hasQuotes) {
+									valueDelimiter = "\"";
 								}
 
-								luceneQuery.append("+" + st.getVelocityVarName() + "." + fieldVelocityVarName + ":" + (hasQuotes ? "\"":wildCard) +
-                                        (hasQuotes && CharMatcher.WHITESPACE.matchesAnyOf(fieldValue.toString())? fieldValue: ESUtils.escape(fieldValue.toString())) +
-                                        (hasQuotes ? "\"":wildCard) + " ");
+								luceneQuery.append("+" + st.getVelocityVarName() + "." + fieldVelocityVarName + ":"
+										+ valueDelimiter + valueForQuery + valueDelimiter + " ");
 							}
-							else{
-								String[] splitValues = fieldValue.split(",");
-								for(String splitValue : splitValues)
-								{
-									splitValue = splitValue.trim();
-									String quotes = splitValue.contains(" ") ? "\"" : "";
-									luceneQuery.append("+" + st.getVelocityVarName() + "." + fieldVelocityVarName+ ":" + quotes + ESUtils.escape(splitValue.toString()) + quotes + " ");
+						}
+						else if(fieldbcontentname.startsWith("system")
+								&& APILocator.getContentTypeFieldAPI().byContentTypeIdAndVar(st.getInode(), fieldVelocityVarName) instanceof TagField) {
+							String[] splitValues = fieldValue.split(",");
+							for(String splitValue : splitValues)
+							{
+								splitValue = splitValue.trim();
+								final String valueForQuery = ESUtils.escape(splitValue);
+								String valueDelimiter = "\"";
+								if (valueForQuery.startsWith("\"") && valueForQuery.endsWith("\"")) {
+									valueDelimiter = "";
 								}
+								luceneQuery.append("+" + st.getVelocityVarName() + "." + fieldVelocityVarName+ ":"
+										+ valueDelimiter + valueForQuery + valueDelimiter + " ");
 							}
 						}
 						else if( fieldbcontentname.startsWith("date") ){

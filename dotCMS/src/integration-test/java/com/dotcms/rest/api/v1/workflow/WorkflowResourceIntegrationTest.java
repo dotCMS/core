@@ -8,8 +8,13 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.mock.response.MockAsyncResponse;
 import com.dotcms.repackage.javax.ws.rs.container.AsyncResponse;
+import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.javax.ws.rs.core.Response.Status;
+import com.dotcms.repackage.org.glassfish.jersey.media.multipart.BodyPart;
+import com.dotcms.repackage.org.glassfish.jersey.media.multipart.ContentDisposition;
+import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataBodyPart;
+import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import com.dotcms.rest.ContentHelper;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
@@ -45,11 +50,15 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.input.ReaderInputStream;
 import org.apache.commons.lang.RandomStringUtils;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import javax.servlet.http.HttpServletRequest;
+import java.io.*;
+import java.nio.charset.Charset;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -1438,6 +1447,158 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
 
     private static final String NON_REQUIRED_NUMERIC_TEXT_FIELD_NAME = "nonRequiredNumericTextField";
     private static final String NON_REQUIRED_NUMERIC_TEXT_FIELD_VALUE= "0";
+    private static final String MULTIPART_JSON = "{\n" +
+            "\t'contentlet': {\t\n" +
+            "   \t\t\"contentType\":\"%s\",\n" +
+            "   \t\t\"title\":\"Test\",\n" +
+            "   \t\t\"requiredTextField\":\"Test\",\n" +
+            "\t    \"binaryFields\": [ \"file1\", \"file2\" ]\n" +
+            "   }\n" +
+            "}";
+
+    @Test
+    public void test_Fire_Save_Content_Type_Binary_File() throws Exception {
+
+        final User sysUser      = APILocator.systemUser();
+        final FieldAPI fieldAPI = APILocator.getContentTypeFieldAPI();
+        final String   fieldNameTitle = "title";
+        final String   fieldNameFile1 = "file1";
+        final String   fieldNameFile2 = "file2";
+        final String   inputFile1Text = "Text file 1";
+        final String   inputFile2Text = "Text file 2";
+        ContentType contentType = null;
+
+        try {
+            // We create a contentType that is associated with the two workflows that come out of the box.
+            contentType                   = createSampleContentType();
+            Contentlet brandNewContentlet = null;
+
+            try {
+
+                //Lets add even more fields to the contentType.
+                final String uu1 = UUID.randomUUID().toString();
+                final Field binaryField1 = ImmutableBinaryField.builder().name("file1 binary field")
+                        .variable(fieldNameFile1).contentTypeId(contentType.id()).hint("my hint").id(uu1).build();
+
+                final String uu2 = UUID.randomUUID().toString();
+                final Field binaryField2 = ImmutableBinaryField.builder().name("file2 binary field")
+                        .variable(fieldNameFile2).contentTypeId(contentType.id()).hint("my hint").id(uu2).build();
+
+                final String uu3 = UUID.randomUUID().toString();
+                final Field textField = ImmutableTextField.builder().name("text field")
+                        .variable(fieldNameTitle).contentTypeId(contentType.id()).hint("my hint").id(uu3).build();
+
+                final List<Field> fields = Stream.concat (
+                        Stream.of(fieldAPI.save(textField, sysUser),
+                                fieldAPI.save(binaryField1, sysUser),
+                                fieldAPI.save(binaryField2, sysUser)),contentType.fields().stream()).collect(
+                        CollectionsUtils.toImmutableList()
+                );
+
+                contentType = contentTypeAPI.save(contentType, fields);
+
+                //Save Action (Creates the initial content)
+                // body multi part with title, file1, file2
+                FormDataMultiPart formDataMultiPart = this.createFormMultiPart(contentType, inputFile1Text, inputFile2Text);
+                final HttpServletRequest request1 = mock(HttpServletRequest.class);
+                final Response response1 = workflowResource
+                        .fireActionMultipart(request1, SAVE_ACTION_ID, null,null,-1, formDataMultiPart);
+                final int statusCode1 = response1.getStatus();
+                assertEquals(Status.OK.getStatusCode(), statusCode1);
+                final ResponseEntityView fireEntityView1 = ResponseEntityView.class
+                        .cast(response1.getEntity());
+                brandNewContentlet = Contentlet.class.cast(fireEntityView1.getEntity());
+                checkBrandNewContentlet(fieldNameTitle, fieldNameFile1, fieldNameFile2, inputFile1Text, inputFile2Text, brandNewContentlet);
+
+                // update existing by content inode.
+                formDataMultiPart = this.createFormMultiPart(contentType, inputFile1Text, inputFile2Text);
+                final HttpServletRequest request2 = mock(HttpServletRequest.class);
+                final Response response2 = workflowResource
+                        .fireActionMultipart(request2, SAVE_ACTION_ID, brandNewContentlet.getInode(),null,-1, formDataMultiPart);
+                final int statusCode2 = response2.getStatus();
+                assertEquals(Status.OK.getStatusCode(), statusCode2);
+                final ResponseEntityView fireEntityView2 = ResponseEntityView.class
+                        .cast(response2.getEntity());
+                String identifier = brandNewContentlet.getIdentifier();
+                brandNewContentlet = Contentlet.class.cast(fireEntityView2.getEntity());
+                checkBrandNewContentlet(fieldNameTitle, fieldNameFile1, fieldNameFile2, inputFile1Text, inputFile2Text, brandNewContentlet);
+                assertEquals(identifier, brandNewContentlet.getIdentifier());
+
+                // update existing by identifier
+                formDataMultiPart = this.createFormMultiPart(contentType, inputFile1Text, inputFile2Text);
+                final HttpServletRequest request3 = mock(HttpServletRequest.class);
+                identifier = brandNewContentlet.getIdentifier();
+                final Response response3 = workflowResource
+                        .fireActionMultipart(request3, SAVE_ACTION_ID, null,identifier,-1, formDataMultiPart);
+                final int statusCode3 = response3.getStatus();
+                assertEquals(Status.OK.getStatusCode(), statusCode3);
+                final ResponseEntityView fireEntityView3 = ResponseEntityView.class
+                        .cast(response3.getEntity());
+                brandNewContentlet = Contentlet.class.cast(fireEntityView3.getEntity());
+                checkBrandNewContentlet(fieldNameTitle, fieldNameFile1, fieldNameFile2, inputFile1Text, inputFile2Text, brandNewContentlet);
+                assertEquals(identifier, brandNewContentlet.getIdentifier());
+            } finally {
+                if(null != brandNewContentlet){
+                    contentletAPI.archive(brandNewContentlet, APILocator.systemUser(), false);
+                    contentletAPI.delete(brandNewContentlet, APILocator.systemUser(), false);
+                }
+            }
+
+        } finally {
+            if(null != contentType){
+                contentTypeAPI.delete(contentType);
+            }
+        }
+    }
+
+    private FormDataMultiPart createFormMultiPart(final ContentType contentType, final String inputFile1Text,
+                                                  final String inputFile2Text) {
+        final Charset           charset              = Charset.defaultCharset();
+        final FormDataMultiPart formDataMultiPart    = mock(FormDataMultiPart.class);
+        final BodyPart          bodyPart             = mock(BodyPart.class);
+        final ContentDisposition contentDisposition1 = mock(ContentDisposition.class);
+        final ContentDisposition contentDisposition2 = mock(ContentDisposition.class);
+        final ContentDisposition contentDisposition3 = mock(ContentDisposition.class);
+        final ImmutableMap<String, String> params    = ImmutableMap.of("name", "json");
+        final FormDataBodyPart formDataBodyPart1     = mock(FormDataBodyPart.class);
+        final FormDataBodyPart formDataBodyPart2     = mock(FormDataBodyPart.class);
+        when(formDataMultiPart.getBodyParts()).thenReturn(Arrays.asList(bodyPart));
+        when(formDataMultiPart.getFields("file")).thenReturn(Arrays.asList(formDataBodyPart1, formDataBodyPart2));
+        when(bodyPart.getContentDisposition()).thenReturn(contentDisposition1);
+        when(bodyPart.getMediaType()).thenReturn(MediaType.APPLICATION_JSON_TYPE);
+        final String jsonBody = String.format(MULTIPART_JSON, contentType.variable());
+        when(bodyPart.getEntityAs(InputStream.class))
+                .thenReturn(new ReaderInputStream(new StringReader(jsonBody), charset));
+        when(contentDisposition1.getParameters()).thenReturn(params);
+        when(contentDisposition2.getFileName()).thenReturn("file1.txt");
+        when(formDataBodyPart1.getContentDisposition()).thenReturn(contentDisposition2);
+        when(contentDisposition3.getFileName()).thenReturn("file2.txt");
+        when(formDataBodyPart2.getContentDisposition()).thenReturn(contentDisposition3);
+        when(formDataBodyPart1.getEntityAs(InputStream.class))
+                .thenReturn(new ReaderInputStream(new StringReader(inputFile1Text), charset));
+        when(formDataBodyPart2.getEntityAs(InputStream.class))
+                .thenReturn(new ReaderInputStream(new StringReader(inputFile2Text), charset));
+        return formDataMultiPart;
+    }
+
+    private void checkBrandNewContentlet(String fieldNameTitle, String fieldNameFile1, String fieldNameFile2, String inputFile1Text, String inputFile2Text, Contentlet brandNewContentlet) throws IOException {
+        assertNotNull(brandNewContentlet);
+        assertNotNull(brandNewContentlet.getMap());
+        assertTrue(brandNewContentlet.getMap().containsKey(fieldNameTitle));
+        assertTrue(brandNewContentlet.getMap().containsKey(fieldNameFile1));
+        assertTrue(brandNewContentlet.getMap().containsKey(fieldNameFile2));
+        assertEquals("Test", brandNewContentlet.getMap().get("title"));
+        final File file1 = brandNewContentlet.getBinary("file1");
+        final File file2 = brandNewContentlet.getBinary("file2");
+        assertNotNull(file1);
+        assertNotNull(file1);
+        final String fileString1 = IOUtils.toString(new FileReader(file1));
+        final String fileString2 = IOUtils.toString(new FileReader(file2));
+        assertNotNull(fileString1);
+        assertNotNull(fileString2);
+        assertEquals(inputFile1Text, fileString1);
+        assertEquals(inputFile2Text, fileString2);
+    }
 
     @Test
     public void Test_Fire_Save_Remove_Image_Then_Verify_Fields_Were_Cleared_Issue_15340() throws Exception {

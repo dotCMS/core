@@ -22,7 +22,12 @@ import com.dotcms.rest.api.v1.HTTPMethod;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.DotPreconditions;
+import com.dotcms.uuid.shorty.ShortType;
+import com.dotcms.uuid.shorty.ShortyId;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -43,6 +48,7 @@ import java.util.*;
 @Path("/vtl")
 public class VTLResource {
 
+    public static final String IDENTIFIER = "identifier";
     private final MultiPartUtils multiPartUtils;
     private final WebResource webResource;
     @VisibleForTesting
@@ -458,34 +464,58 @@ public class VTLResource {
         }
     }
 
+    private void validateBodyMap(final Map<String, Object> bodyMap, final HTTPMethod httpMethod) {
+
+        // if it is an update method (not get) and the
+        if (UtilMethods.isSet(bodyMap) && bodyMap.containsKey(IDENTIFIER) &&
+                UtilMethods.isSet(bodyMap.get(IDENTIFIER))
+                // an non-existing identifier could be just on get or post, put, patch or delete needs an existing id.
+                && httpMethod != HTTPMethod.GET && httpMethod != HTTPMethod.POST) {
+
+            final Optional<ShortyId> shortyId = APILocator.getShortyAPI().getShorty(bodyMap.get(IDENTIFIER).toString());
+            final boolean isIdentifier = shortyId.isPresent() && shortyId.get().type == ShortType.IDENTIFIER;
+
+            if (!isIdentifier) {
+
+                throw new DoesNotExistException("The identifier: " + bodyMap.get(IDENTIFIER) + " does not exists");
+            }
+        }
+    }
+
+
     private Response processRequest(final HttpServletRequest request, final HttpServletResponse response,
                                     final UriInfo uriInfo, final String folderName,
                                     final String pathParam,
                                     final HTTPMethod httpMethod,
                                     final Map<String, Object> bodyMap,
                                     final File...binaries) {
-        final InitDataObject initDataObject = this.webResource.init
-                (null, false, request, false, null);
-
-        final User user = initDataObject.getUser();
-        setUserInSession(request.getSession(false), user);
-
-        final DotJSONCache cache = DotJSONCacheFactory.getCache(httpMethod);
-        final Optional<DotJSON> dotJSONOptional = cache.get(request, user);
-
-        if(dotJSONOptional.isPresent()) {
-            return Response.ok(dotJSONOptional.get().getMap()).build();
-        }
-
-        final VelocityReaderParams velocityReaderParams = new VelocityReaderParams.VelocityReaderParamsBuilder()
-                .setBodyMap(bodyMap)
-                .setFolderName(folderName)
-                .setHttpMethod(httpMethod)
-                .setRequest(request)
-                .setUser(user)
-                .build();
 
         try {
+
+            this.validateBodyMap(bodyMap, httpMethod);
+
+            final InitDataObject initDataObject = this.webResource.init
+                    (null, false, request, false, null);
+
+            final User user = initDataObject.getUser();
+            setUserInSession(request.getSession(false), user);
+
+            final DotJSONCache cache = DotJSONCacheFactory.getCache(httpMethod);
+            final Optional<DotJSON> dotJSONOptional = cache.get(request, user);
+
+            if(dotJSONOptional.isPresent()) {
+                return Response.ok(dotJSONOptional.get().getMap()).build();
+            }
+
+            final VelocityReaderParams velocityReaderParams = new VelocityReaderParams.VelocityReaderParamsBuilder()
+                    .setBodyMap(bodyMap)
+                    .setFolderName(folderName)
+                    .setHttpMethod(httpMethod)
+                    .setRequest(request)
+                    .setUser(user)
+                    .setPageMode(PageMode.get(request))
+                    .build();
+
             final VelocityReader velocityReader = VelocityReaderFactory.getVelocityReader(UtilMethods.isSet(folderName));
 
             final Map<String, Object> contextParams = CollectionsUtils.map(
@@ -557,14 +587,16 @@ public class VTLResource {
         private final String folderName;
         private final User user;
         private final Map<String, Object> bodyMap;
+        private final PageMode pageMode;
 
         VelocityReaderParams(final HTTPMethod httpMethod, final HttpServletRequest request, final String folderName,
-                             final User user, final Map<String, Object> bodyMap) {
+                             final User user, final Map<String, Object> bodyMap, final PageMode pageMode) {
             this.httpMethod = httpMethod;
             this.request = request;
             this.folderName = folderName;
             this.user = user;
             this.bodyMap = bodyMap;
+            this.pageMode = pageMode;
         }
 
         HTTPMethod getHttpMethod() {
@@ -587,12 +619,22 @@ public class VTLResource {
             return bodyMap;
         }
 
+        public PageMode getPageMode() {
+            return pageMode;
+        }
+
         public static class VelocityReaderParamsBuilder {
             private HTTPMethod httpMethod;
             private HttpServletRequest request;
             private String folderName;
             private User user;
             private Map<String, Object> bodyMap;
+            private PageMode pageMode;
+
+            public VelocityReaderParamsBuilder setPageMode(final PageMode pageMode) {
+                this.pageMode = pageMode;
+                return this;
+            }
 
             public VelocityReaderParamsBuilder setHttpMethod(final HTTPMethod httpMethod) {
                 this.httpMethod = httpMethod;
@@ -620,7 +662,7 @@ public class VTLResource {
             }
 
             public VTLResource.VelocityReaderParams build() {
-                return new VTLResource.VelocityReaderParams(httpMethod, request, folderName, user, bodyMap);
+                return new VTLResource.VelocityReaderParams(httpMethod, request, folderName, user, bodyMap, pageMode);
             }
         }
     }

@@ -18,6 +18,7 @@ import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.REGEX;
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.STARTS_WITH;
 
+import com.dotmarketing.util.UtilMethods;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
@@ -58,7 +59,7 @@ public class RequestAttributeConditionlet extends Conditionlet<RequestAttributeC
     
     @Override
     public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance instance) {
-        String attributeActualValue = request.getAttribute(instance.attributeKey).toString();
+        String attributeActualValue = (UtilMethods.isSet(request.getAttribute(instance.attributeKey))) ? request.getAttribute(instance.attributeKey).toString() : null;
         boolean evalSuccess;
         if(instance.comparison == EXISTS) {
             evalSuccess = EXISTS.perform(attributeActualValue);
