@@ -55,9 +55,7 @@ import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.mapper.*;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.AlreadyExistException;
-import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataValidationException;
-import com.dotmarketing.portlets.workflows.business.WorkflowPortletAccessException;
 import com.dotmarketing.util.Logger;
 
 import javax.servlet.*;

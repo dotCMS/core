@@ -11,18 +11,15 @@ import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.request.MockSessionRequest;
-import com.dotcms.repackage.javax.ws.rs.BadRequestException;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.glassfish.jersey.internal.util.Base64;
 import com.dotcms.rest.ResponseEntityView;
-import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.json.JSONException;
-import com.dotmarketing.util.json.JSONObject;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -32,6 +29,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.dotcms.util.CollectionsUtils.list;
+import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 
 public class FieldResourceTest {
@@ -84,11 +82,11 @@ public class FieldResourceTest {
         assertEquals(1, rows.get(0).getColumns().size());
         assertEquals(0, rows.get(0).getColumns().get(0).getFields().size());
 
-        final List<String> deletedIds = (List<String>) responseMap.get("deletedIds");;
+        final List<String> deletedIds = (List<String>) responseMap.get("deletedIds");
 
         assertEquals(2, deletedIds.size());
-        assertEquals(true, deletedIds.contains(fields.get(2).id()));
-        assertEquals(true, deletedIds.contains(fields.get(3).id()));
+        assertTrue(deletedIds.contains(fields.get(2).id()));
+        assertTrue(deletedIds.contains(fields.get(3).id()));
 
         final ContentType contentTypeFromDB = APILocator.getContentTypeAPI(APILocator.systemUser()).find(type.id());
         final List<Field> listExpected = list(fields.get(0), fields.get(1));
@@ -174,7 +172,7 @@ public class FieldResourceTest {
         fieldResource.updateFields(type.id(), form, getHttpRequest());
     }
 
-    private List<Field> createFields(ContentType type) throws DotDataException, DotSecurityException {
+    private List<Field> createFields(final ContentType type) throws DotDataException, DotSecurityException {
         Field rowField = FieldBuilder.builder(RowField.class)
                 .name("row field")
                 .sortOrder(0)
@@ -207,7 +205,7 @@ public class FieldResourceTest {
     }
 
     private static HttpServletRequest getHttpRequest() {
-        MockHeaderRequest request = new MockHeaderRequest(
+        final MockHeaderRequest request = new MockHeaderRequest(
                 (
                         new MockSessionRequest(new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
                 ).request()

@@ -16,6 +16,8 @@ import java.util.stream.Collectors;
  */
 class FieldUtil {
 
+    private FieldUtil() {}
+
     /**
      * Split a set of fields by {@link FieldDivider}, for example if we have to follow set of fields:
      *

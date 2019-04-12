@@ -28,7 +28,7 @@ public class NotStrictFieldLayoutRowSyntaxValidator extends FieldLayoutRowSyntax
 
     private List<Field> newFields = new ArrayList<>();
 
-    NotStrictFieldLayoutRowSyntaxValidator(List<Field> fields) {
+    NotStrictFieldLayoutRowSyntaxValidator(final List<Field> fields) {
         super(fields);
     }
 
