@@ -3,6 +3,11 @@ package com.dotcms.rest.exception.mapper;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotmarketing.util.SecurityLogger;
 
+/**
+ * It is a base class for exception mapper that need to response with a HTTP code of 403
+ *
+ * @param <T>  <T> Exception class to mapper
+ */
 public abstract class DotForbiddenExceptionMapper<T extends Throwable> extends DotExceptionMapper<T> {
 
     @Override

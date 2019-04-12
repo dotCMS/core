@@ -72,7 +72,7 @@ public class FieldResourceTest {
         final List<Field> fields = createFields(type);
 
         final DeleteFieldsForm form =
-                new DeleteFieldsForm.Builder(list(fields.get(2).id(), fields.get(3).id())).build();
+                new DeleteFieldsForm.Builder().fieldsID(list(fields.get(2).id(), fields.get(3).id())).build();
         final FieldResource fieldResource = new FieldResource();
         final Response contentTypeFields = fieldResource.deleteFields(type.id(), form, getHttpRequest());
 
@@ -91,7 +91,7 @@ public class FieldResourceTest {
         );
     }
 
-    @Test(expected = BadRequestException.class)
+    @Test(expected = FieldLayoutValidationException.class)
     public void shouldThrowExceptionAndNotDeleteAny () throws DotSecurityException, DotDataException {
         final String typeName="fieldResourceTest" + UUIDUtil.uuid();
 
@@ -101,7 +101,7 @@ public class FieldResourceTest {
         final List<Field> fields = createFields(type);
 
         final DeleteFieldsForm form =
-                new DeleteFieldsForm.Builder(list(fields.get(0).id())).build();
+                new DeleteFieldsForm.Builder().fieldsID(list(fields.get(0).id())).build();
 
         final FieldResource fieldResource = new FieldResource();
         fieldResource.deleteFields(type.id(), form, getHttpRequest());
@@ -122,7 +122,7 @@ public class FieldResourceTest {
         fieldToUpdatetMap.put("sortOrder", 2);
 
         final UpdateFieldForm form =
-                new UpdateFieldForm.Builder(list(fieldToUpdatetMap))
+                new UpdateFieldForm.Builder().fields(list(fieldToUpdatetMap))
                         .build();
         final FieldResource fieldResource = new FieldResource();
         final Response contentTypeFields = fieldResource.updateFields(type.id(), form, getHttpRequest());
@@ -146,7 +146,7 @@ public class FieldResourceTest {
         );
     }
 
-    @Test(expected = BadRequestException.class)
+    @Test(expected = FieldLayoutValidationException.class)
     public void shouldUpdateFieldsANdThrowException () throws DotSecurityException, DotDataException, JSONException {
         final String typeName="fieldResourceTest" + UUIDUtil.uuid();
 
@@ -161,7 +161,7 @@ public class FieldResourceTest {
         fieldToUpdatetMap.put("sortOrder", 4);
 
         final UpdateFieldForm form =
-                new UpdateFieldForm.Builder(list(fieldToUpdatetMap))
+                new UpdateFieldForm.Builder().fields(list(fieldToUpdatetMap))
                         .build();
         final FieldResource fieldResource = new FieldResource();
         fieldResource.updateFields(type.id(), form, getHttpRequest());

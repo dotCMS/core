@@ -1,8 +1,18 @@
 package com.dotcms.rest.exception.mapper;
 
 import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotmarketing.util.SecurityLogger;
 
+/**
+ * Mapper for all the exceptions that represent a BadRequest
+ *
+ * @see com.dotmarketing.business.DotStateException
+ * @see com.dotmarketing.exception.AlreadyExistException
+ * @see IllegalArgumentException
+ * @see com.dotmarketing.exception.DotDataValidationException
+ * @see com.fasterxml.jackson.core.JsonProcessingException
+ *
+ * @param <T> Exception class to mapper
+ */
 public abstract class DotBadRequestExceptionMapper<T extends Throwable> extends DotExceptionMapper<T> {
 
     @Override

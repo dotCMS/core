@@ -8,6 +8,32 @@ import com.dotcms.repackage.com.fasterxml.jackson.databind.SerializerProvider;
 
 import java.io.IOException;
 
+/**
+ * {@link FieldLayoutRow} serializer, it serialize a json with the follow format:
+ *
+ * <pre>
+ *     {
+ *         divider: {
+ *             ...
+ *         }
+ *         columns: [
+ *            {
+ *                ...
+ *            }
+ *         ]
+ *     }
+ * </pre>
+ *
+ * where:
+ *
+ * <ul>
+ *     <li><b>divider:</b> it is the {@link com.dotcms.contenttype.model.field.FieldDivider} return by
+ *     {@link FieldLayoutRow#getDivider()}</li>
+ *     <li><b>columns:</b> COlumns into the row, return by {@link FieldLayoutRow#getColumns()}</li>
+ * </ul>
+ *
+ * @see FieldLayoutColumnSerializer
+ */
 public class FieldLayoutRowSerializer extends JsonSerializer<FieldLayoutRow> {
 
     @Override

@@ -35,7 +35,7 @@ public class StrictFieldLayoutRowSyntaxValidator extends FieldLayoutRowSyntaxVal
 
     @Override
     protected  void processTab (final TabDividerField tabDividerField) {
-
+        // DO nothing
     }
 
     @Override
@@ -50,7 +50,7 @@ public class StrictFieldLayoutRowSyntaxValidator extends FieldLayoutRowSyntaxVal
     }
 
     @Override
-    protected void processEmptyFields() throws FieldLayoutValidationException {
-
+    protected void processEmptyFields() {
+        // DO nothing
     }
 }

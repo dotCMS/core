@@ -653,10 +653,27 @@ public class FieldAPIImpl implements FieldAPI {
 		throw new DotDataException("Error updating Content Type mode_date for FieldVariable("+fieldVar.id()+"). "+e.getMessage());
 	}
   }
-  
-  
-  
-  
+
+  @WrapInTransaction
+  public void deleteFields(final List<String> fieldsID, final User user) throws DotDataException, DotSecurityException {
+
+    for (final String fieldId : fieldsID) {
+        try {
+            final Field field = find(fieldId);
+            delete(field, user);
+        } catch (NotFoundInDbException e) {
+            continue;
+        }
+    }
+  }
+
+  @WrapInTransaction
+  public void saveFields(final List<Field> fields, final User user) throws DotSecurityException, DotDataException {
+    for (final Field field : fields) {
+        save(field, user);
+    }
+  }
+
   
   
 }
