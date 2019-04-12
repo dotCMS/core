@@ -1,7 +1,5 @@
 package com.dotcms.datagen;
 
-import java.util.Date;
-
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
@@ -11,6 +9,8 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.liferay.portal.model.User;
+
+import java.util.Date;
 
 public class ContentTypeDataGen extends AbstractDataGen<ContentType> {
 
@@ -23,7 +23,7 @@ public class ContentTypeDataGen extends AbstractDataGen<ContentType> {
     private String detailPageField = "";
     private boolean systemField;
     private Inode.Type type = Inode.Type.STRUCTURE;
-    private String velocityVarNameField = "test-structure-varname-" + currentTime;
+    private String velocityVarNameField = "test_structure_varname_" + currentTime;
 
     @SuppressWarnings("unused")
     public ContentTypeDataGen baseContentType(final BaseContentType baseContentType) {
