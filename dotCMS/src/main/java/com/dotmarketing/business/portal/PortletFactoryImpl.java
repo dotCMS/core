@@ -110,9 +110,6 @@ public class PortletFactoryImpl extends PrincipalBean implements PortletFactory 
   public void deletePortlet(final String portletId) throws DotDataException {
 
     final DotConnect db = new DotConnect();
-
-    // db.setSQL("delete from cms_layouts_portlets where
-    // portlet_id=?").addParam(portletId).loadResult();
     db.setSQL("delete from portletpreferences where portletid=?").addParam(portletId).loadResult();
     db.setSQL("delete from portlet where portletid=?").addParam(portletId).loadResult();
     new PortletCache().clear();
