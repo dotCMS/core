@@ -1,18 +1,21 @@
 package com.dotcms.uuid.shorty;
 
-import com.dotmarketing.business.APILocator;
+import java.util.Optional;
+
+
 import com.dotmarketing.business.Cachable;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
-
-import java.util.Optional;
+import com.dotmarketing.business.DotCacheException;
 
 public class ShortyIdCache implements Cachable {
+
 
     private final DotCacheAdministrator cache;
     final String SHORT_CACHE = "ShortyIdCache";
 
-    public ShortyIdCache(final DotCacheAdministrator cache) {
+
+    public ShortyIdCache(DotCacheAdministrator cache) {
         super();
         this.cache = cache;
     }
@@ -27,6 +30,7 @@ public class ShortyIdCache implements Cachable {
         return SHORT_CACHE;
     }
 
+
     @Override
     public String[] getGroups() {
         return new String[] {getPrimaryGroup()};
@@ -37,27 +41,31 @@ public class ShortyIdCache implements Cachable {
         CacheLocator.getCacheAdministrator().flushGroup(getPrimaryGroup());
     }
 
-    public Optional<ShortyId> get(final String id) {
 
-        final String shortUId = APILocator.getShortyAPI().shortify(id);
-        return Optional.ofNullable((ShortyId) cache.getNoThrow(shortUId, SHORT_CACHE));
+    public Optional<ShortyId> get(String shortId) {
+
+        try { 
+            ShortyId shorty = (ShortyId) cache.get(shortId, SHORT_CACHE);
+            if(shorty!=null)
+                return Optional.of(shorty) ;
+        } catch (DotCacheException e) {
+            
+        }
+
+        return Optional.empty();
     }
 
-    public void add(final ShortyId shortyId) {
+    public void add(ShortyId shortyId) {
 
-        final String shortUId = APILocator.getShortyAPI().shortify(shortyId.shortId);
-        cache.put(shortUId, shortyId, SHORT_CACHE);
+        cache.put(shortyId.shortId, shortyId, SHORT_CACHE);
+
+
     }
 
-    public void remove(final ShortyId ShortyId) {
-
-        cache.remove(ShortyId.longId, SHORT_CACHE);
+    public void remove(ShortyId ShortyId) {
+        cache.remove(ShortyId.shortId, SHORT_CACHE);
     }
 
-    public void remove(final String id) {
 
-        final String shortUId = APILocator.getShortyAPI().shortify(id);
-        cache.remove(shortUId, SHORT_CACHE);
-    }
 
 }
