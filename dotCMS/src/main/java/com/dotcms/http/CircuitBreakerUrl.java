@@ -11,9 +11,14 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 
@@ -52,6 +57,7 @@ public class CircuitBreakerUrl {
     private final CircuitBreaker circuitBreaker;
     private final HttpRequestBase request;
     private final boolean verbose;
+    private final String rawData;
     /**
      * 
      * @param proxyUrl
@@ -91,7 +97,10 @@ public class CircuitBreakerUrl {
         this(proxyUrl, timeoutMs, CurcuitBreakerPool.getBreaker(circuitBreakerKey), new HttpGet(proxyUrl), ImmutableMap.of(),
                 ImmutableMap.of(), false);
     }
-
+    public CircuitBreakerUrl(String proxyUrl, long timeoutMs, CircuitBreaker circuitBreaker, HttpRequestBase request,
+        Map<String, String> params, Map<String, String> headers, boolean verbose) {
+      this(proxyUrl, timeoutMs, circuitBreaker, new HttpGet(proxyUrl), ImmutableMap.of(),ImmutableMap.of(), verbose, null);
+    }
     /**
      * Full featured constructor
      * 
@@ -104,17 +113,31 @@ public class CircuitBreakerUrl {
      */
     @VisibleForTesting
     public CircuitBreakerUrl(String proxyUrl, long timeoutMs, CircuitBreaker circuitBreaker, HttpRequestBase request,
-            Map<String, String> params, Map<String, String> headers, boolean verbose) {
+            Map<String, String> params, Map<String, String> headers, boolean verbose, final String rawData) {
         this.proxyUrl = proxyUrl;
         this.timeoutMs = timeoutMs;
         this.circuitBreaker = circuitBreaker;
         this.verbose=verbose;
         this.request = request;
+        this.rawData=rawData;
         for (final String head : headers.keySet()) {
             request.addHeader(head, headers.get(head));
         }
         try {
             URIBuilder uriBuilder = new URIBuilder(this.proxyUrl);
+            if(this.rawData!=null) {
+              try {
+                String contentType = this.rawData.trim().startsWith("{") ? "application/json" : this.rawData.trim().startsWith("<") ? "application/xml" : "application/x-www-form-urlencoded";
+                
+                StringEntity postingString = new StringEntity(rawData, ContentType.create(contentType, "UTF-8"));
+                if(request instanceof HttpEntityEnclosingRequestBase) {
+                  ((HttpEntityEnclosingRequestBase)request).setEntity(postingString);
+                }
+              }
+              catch(Exception e) {
+                Logger.warnAndDebug(this.getClass(), "unable to set rawData",e);
+              }
+            }
             for (final String param : params.keySet()) {
                 uriBuilder.addParameter(param, params.get(param));
             }
@@ -148,7 +171,8 @@ public class CircuitBreakerUrl {
                     .onSuccess(connection -> { 
                         if(verbose) Logger.info(this, "success to " + this.proxyUrl);
                     })
-                    .onFailure(failure -> Logger.warn(this, "Connection attempts failed " + failure.getMessage())).run(ctx -> {
+                    .onFailure(failure -> Logger.warn(this, "Connection attempts failed " + failure.getMessage()))
+                    .run(ctx -> {
                         RequestConfig config = RequestConfig.custom()
                                 .setConnectTimeout(Math.toIntExact(this.timeoutMs))
                                 .setConnectionRequestTimeout(Math.toIntExact(this.timeoutMs))
