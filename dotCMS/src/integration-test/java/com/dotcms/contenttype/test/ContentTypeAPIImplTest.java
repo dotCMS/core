@@ -38,6 +38,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
+import static com.dotcms.contenttype.business.ContentTypeAPIImpl.TYPES_AND_FIELDS_VALID_VARIABLE_REGEX;
 import static junit.framework.Assert.assertTrue;
 import static junit.framework.TestCase.assertEquals;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -657,27 +658,23 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 
 
 	@DataProvider
-	public static Object[] dataProviderSaveInvalidName() {
-		return new Tuple2[] {
-				// actual, should fail
-				new Tuple2<>("123", true),
-				new Tuple2<>("123abc", true),
-				new Tuple2<>("_123a", false),
-				new Tuple2<>("asd123asd", false),
-				new Tuple2<>("Asfsdf", false),
-				new Tuple2<>("aa123", false),
-				new Tuple2<>("This is a field", false),
-				new Tuple2<>("Field && ,,,..**==} name~~~__", false)
+	public static Object[] dataProviderTypeNames() {
+		return new String[] {
+				"123",
+				"123abc",
+				"_123a",
+				"asd123asd",
+				"Asfsdf",
+				"aa123",
+				"This is a field",
+				"Field && ,,,..**==} name~~~__"
 		};
 	}
 
 	@Test
-	@UseDataProvider("dataProviderSaveInvalidName")
-	public void testSave_InvalidName_ShouldThrowException(final Tuple2<String, Boolean> testCase)
+	@UseDataProvider("dataProviderTypeNames")
+	public void testSave_GivenTypeNamesWithNumbers_ExpectedValidVariableName(final String typeName)
 			throws DotSecurityException, DotDataException {
-
-		final String nameTestCase = testCase._1;
-		final boolean shouldFail = testCase._2;
 
 		ContentType type = null;
 		try {
@@ -686,13 +683,11 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 							.builder(SimpleContentType.class)
 							.folder(FolderAPI.SYSTEM_FOLDER)
 							.host(Host.SYSTEM_HOST)
-							.name(nameTestCase)
+							.name(typeName)
 							.owner(user.getUserId())
 							.build());
 
-			assertFalse(shouldFail);
-		} catch (IllegalArgumentException e) {
-			Assert.assertTrue(shouldFail);
+			Assert.assertTrue(type.variable().matches(TYPES_AND_FIELDS_VALID_VARIABLE_REGEX));
 		} finally {
 			if(type!=null) {
 				APILocator.getContentTypeAPI(APILocator.systemUser()).delete(type);
