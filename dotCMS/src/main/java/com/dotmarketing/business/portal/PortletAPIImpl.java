@@ -110,7 +110,7 @@ public class PortletAPIImpl implements PortletAPI {
     if(!UtilMethods.isSet(portlet.getPortletId())) {
       throw new DotDataValidationException("Portlet Id is Required");
     }
-    final String portletId = "c-" + portlet.getPortletId();
+    final String portletId = "c_" + portlet.getPortletId();
     if (UtilMethods.isSet(findPortlet(portletId))) {
       throw new DotDataValidationException("Portlet Id already Exists");
     }
