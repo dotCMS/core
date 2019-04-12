@@ -25,6 +25,7 @@ import com.dotcms.uuid.shorty.ShortType;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotmarketing.beans.ContainerStructure;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionLevel;
@@ -33,6 +34,7 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
+import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -228,6 +230,38 @@ public class ContainerResource implements Serializable {
     }
 
     /**
+     * This method is pretty much the same of {@link #containerContent(HttpServletRequest, HttpServletResponse, String, String)}
+     * But there is a limitation on the vanity url for the rest call since the container id path parameter is a path itself
+     * (for {@link com.dotmarketing.portlets.containers.model.FileAssetContainer)} so we need to pass it by query string
+     *
+     * <i>Example:</i>
+     * <code>
+     *     /api/v1/containers/content/27108d63-969e-4086-a405-86777be16230?containerId=/application/containers/large-column
+     * </code>
+     * @param req {@link HttpServletRequest}
+     * @param res {@link HttpServletResponse}
+     * @param containerId {@link String}   query string with the container id, could be uuid or path
+     * @param contentletId {@link String}  path parameter with the contentlet id
+     * @return Response
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @GET
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Path("/content/{contentletId}")
+    public final Response containerContentByQueryParam(@Context final HttpServletRequest req,
+                                           @Context final HttpServletResponse res,
+                                           @QueryParam("containerId") final String containerId,
+                                           @PathParam("contentletId") final String contentletId)
+            throws DotDataException, DotSecurityException {
+
+        return this.containerContent(req, res, containerId, contentletId);
+    }
+
+    /**
      * Return a form render into a specific container
      *
      * @param req
@@ -279,7 +313,7 @@ public class ContainerResource implements Serializable {
                            final Contentlet contentlet) throws DotDataException, DotSecurityException {
 
         final PageMode mode = PageMode.EDIT_MODE;
-        final Container container = getContainer(containerId, user);
+        final Container container = getContainer(containerId, user, WebAPILocator.getHostWebAPI().getHost(req));
         ContainerResourceHelper.getInstance().setContainerLanguage(container, req);
 
         final org.apache.velocity.context.Context context = velocityUtil.getContext(req, res);
@@ -295,8 +329,17 @@ public class ContainerResource implements Serializable {
     }
 
 
-    private Container getContainer(final String containerId, final User user) throws DotDataException, DotSecurityException {
+    private Container getContainer(final String containerId, final User user, final Host host) throws DotDataException, DotSecurityException {
+
         final PageMode mode = PageMode.EDIT_MODE; // todo: ask for this, does not make sense ask for mode.showLive
+
+        if (FileAssetContainerUtil.getInstance().isFolderAssetContainerId(containerId)) {
+
+            return mode.showLive?
+                    this.containerAPI.getLiveContainerByFolderPath   (containerId, host, user, mode.respectAnonPerms):
+                    this.containerAPI.getWorkingContainerByFolderPath(containerId, host, user, mode.respectAnonPerms);
+        }
+
         final ShortyId containerShorty = this.shortyAPI.getShorty(containerId)
                 .orElseGet(() -> {
                     throw new ResourceNotFoundException("Can't find Container:" + containerId);
