@@ -25,6 +25,10 @@ public interface ShortyIdAPI {
 
     long getDbHits();
 
+    /**
+     * Validates if a shorty is valid, basically if has valid characters
+     * @param test {@link String}
+     */
     void validShorty(final String test);
 
     String uuidIfy(String shorty);
