@@ -1552,9 +1552,6 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                 assertNotNull(fileString2);
                 assertEquals(inputFile1Text, fileString1);
                 assertEquals(inputFile2Text, fileString2);
-            } catch (Exception e) {
-
-                System.out.println(e.getMessage());
             } finally {
                 if(null != brandNewContentlet){
                     contentletAPI.archive(brandNewContentlet, APILocator.systemUser(), false);
