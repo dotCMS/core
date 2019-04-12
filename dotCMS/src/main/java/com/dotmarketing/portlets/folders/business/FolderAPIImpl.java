@@ -1147,4 +1147,15 @@ public class FolderAPIImpl implements FolderAPI  {
 			}
 		}
 	}
+
+	@Override
+	public void cleanUpNavigationCache(Folder folder) throws DotDataException {
+
+		CacheLocator.getNavToolCache().removeNav(folder.getHostId(), folder.getInode());
+		final Identifier folderId = APILocator.getIdentifierAPI().find(folder);
+		CacheLocator.getNavToolCache()
+				.removeNavByPath(folderId.getHostId(), folderId.getParentPath());
+
+	}
+
 }

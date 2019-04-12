@@ -401,10 +401,7 @@ public class EditFolderAction extends DotPortletAction {
 				if (!(!previousShowMenu && !f.isShowOnMenu())) 
 				{
 					//if the not, doesn't show before and doesn't show now, delete the menus
-					RefreshMenus.deleteMenu(f);
-					CacheLocator.getNavToolCache().removeNav(f.getHostId(), f.getInode());
-					Identifier ident=APILocator.getIdentifierAPI().find(f);
-					CacheLocator.getNavToolCache().removeNavByPath(ident.getHostId(), ident.getParentPath());
+					folderAPI.cleanUpNavigationCache(f);
 				}
 				CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(f.getIdentifier());
 				// For messages to be displayed on messages page

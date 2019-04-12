@@ -15,7 +15,6 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.liferay.portal.model.User;
-
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.List;
@@ -550,5 +549,12 @@ import java.util.function.Predicate;
 	 * @param childNameFilter {@link Predicate} filter
 	 */
 	void subscribeFolderListener (final Folder folder, final FolderListener folderListener, final Predicate<String> childNameFilter);
+
+	/**
+	 * Removes the given folder and parent from navigation cache
+	 * @param folder Folder to be removed from navigation cache
+	 * @throws DotDataException
+	 */
+	void cleanUpNavigationCache(Folder folder) throws DotDataException;
 
 }
