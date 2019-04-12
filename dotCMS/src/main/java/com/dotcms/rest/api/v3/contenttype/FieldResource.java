@@ -20,7 +20,10 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.model.User;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.Collection;
 import java.util.List;
+
+import static com.dotcms.util.CollectionsUtils.map;
 
 /**
  * Resource for handle fields operations, all this end point check if the {@link ContentType}'s layout is valid
@@ -129,7 +132,11 @@ public class FieldResource {
         final FieldLayout fieldLayoutUpdated = fieldLayout.remove(fieldsID);
 
         fieldLayoutUpdated.validate();
-        fieldAPI.deleteFields(fieldsID, user);
-        return Response.ok(new ResponseEntityView(fieldLayoutUpdated.getRows())).build();
+        final Collection<String> ids = fieldAPI.deleteFields(fieldsID, user);
+        return Response.ok(new ResponseEntityView(
+                map(
+                   "fields", fieldLayoutUpdated.getRows(), "deletedIds", ids
+                )
+        )).build();
     }
 }

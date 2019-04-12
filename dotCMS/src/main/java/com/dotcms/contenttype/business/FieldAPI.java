@@ -1,6 +1,8 @@
 package com.dotcms.contenttype.business;
 
 import com.dotcms.business.CloseDBIfOpened;
+
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -208,7 +210,7 @@ public interface FieldAPI {
      */
     String nextAvailableColumn(Field field) throws DotDataException;
 
-    void deleteFields(final List<String> fieldsID, final User user) throws DotDataException, DotSecurityException;
+	Collection<String> deleteFields(final List<String> fieldsID, final User user) throws DotDataException, DotSecurityException;
 
     void saveFields(final List<Field> fields, final User user) throws DotSecurityException, DotDataException;
 }

@@ -76,12 +76,19 @@ public class FieldResourceTest {
         final FieldResource fieldResource = new FieldResource();
         final Response contentTypeFields = fieldResource.deleteFields(type.id(), form, getHttpRequest());
 
-        final List<FieldLayoutRow> rows =
-                (List<FieldLayoutRow>) ((ResponseEntityView) contentTypeFields.getEntity()).getEntity();
+        final Map<String, Object> responseMap = (Map<String, Object>)
+                ((ResponseEntityView) contentTypeFields.getEntity()).getEntity();
+        final List<FieldLayoutRow> rows = (List<FieldLayoutRow>) responseMap.get("fields");
 
         assertEquals(1, rows.size());
         assertEquals(1, rows.get(0).getColumns().size());
         assertEquals(0, rows.get(0).getColumns().get(0).getFields().size());
+
+        final List<String> deletedIds = (List<String>) responseMap.get("deletedIds");;
+
+        assertEquals(2, deletedIds.size());
+        assertEquals(true, deletedIds.contains(fields.get(2).id()));
+        assertEquals(true, deletedIds.contains(fields.get(3).id()));
 
         final ContentType contentTypeFromDB = APILocator.getContentTypeAPI(APILocator.systemUser()).find(type.id());
         final List<Field> listExpected = list(fields.get(0), fields.get(1));
