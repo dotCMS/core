@@ -70,6 +70,9 @@ import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import org.apache.commons.lang.StringUtils;
@@ -685,10 +688,32 @@ public class FieldAPIImpl implements FieldAPI {
 		throw new DotDataException("Error updating Content Type mode_date for FieldVariable("+fieldVar.id()+"). "+e.getMessage());
 	}
   }
-  
-  
-  
-  
+
+  @WrapInTransaction
+  public Collection<String> deleteFields(final List<String> fieldsID, final User user) throws DotDataException, DotSecurityException {
+
+    final List<String> deleteIds = new ArrayList<>();
+
+    for (final String fieldId : fieldsID) {
+        try {
+            final Field field = find(fieldId);
+            delete(field, user);
+            deleteIds.add(field.id());
+        } catch (NotFoundInDbException e) {
+            continue;
+        }
+    }
+
+    return deleteIds;
+  }
+
+  @WrapInTransaction
+  public void saveFields(final List<Field> fields, final User user) throws DotSecurityException, DotDataException {
+    for (final Field field : fields) {
+        save(field, user);
+    }
+  }
+
   
   
 }
