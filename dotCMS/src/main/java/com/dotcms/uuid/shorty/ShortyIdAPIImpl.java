@@ -90,7 +90,7 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
       return shortStr.trim().replaceAll("-", "").substring(0, MINIMUM_SHORTY_ID_LENGTH);
     } catch (Exception se) {
         throw new ShortyException("shorty " + shortStr + " is not a short id.  Short Ids should be "
-                + MINIMUM_SHORTY_ID_LENGTH + " alphanumeric chars in length");
+                + MINIMUM_SHORTY_ID_LENGTH + " alphanumeric chars in length", se);
     }
   }
 

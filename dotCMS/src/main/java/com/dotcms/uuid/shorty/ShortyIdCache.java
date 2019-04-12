@@ -4,6 +4,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Cachable;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
+import com.dotmarketing.util.UtilMethods;
 
 import java.util.Optional;
 
@@ -56,8 +57,10 @@ public class ShortyIdCache implements Cachable {
 
     public void remove(final String id) {
 
-        final String shortUId = APILocator.getShortyAPI().shortify(id);
-        cache.remove(shortUId, SHORT_CACHE);
+        if (UtilMethods.isSet(id)) {
+            final String shortUId = APILocator.getShortyAPI().shortify(id);
+            cache.remove(shortUId, SHORT_CACHE);
+        }
     }
 
 }
