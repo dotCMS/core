@@ -57,10 +57,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.File;
-import java.io.FileReader;
-import java.io.InputStream;
-import java.io.StringReader;
+import java.io.*;
 import java.nio.charset.Charset;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
@@ -1502,32 +1499,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
 
                 //Save Action (Creates the initial content)
                 // body multi part with title, file1, file2
-                final Charset           charset              = Charset.defaultCharset();
-                final FormDataMultiPart formDataMultiPart    = mock(FormDataMultiPart.class);
-                final BodyPart          bodyPart             = mock(BodyPart.class);
-                final ContentDisposition contentDisposition1 = mock(ContentDisposition.class);
-                final ContentDisposition contentDisposition2 = mock(ContentDisposition.class);
-                final ContentDisposition contentDisposition3 = mock(ContentDisposition.class);
-                final ImmutableMap<String, String> params    = ImmutableMap.of("name", "json");
-                final FormDataBodyPart formDataBodyPart1     = mock(FormDataBodyPart.class);
-                final FormDataBodyPart formDataBodyPart2     = mock(FormDataBodyPart.class);
-                when(formDataMultiPart.getBodyParts()).thenReturn(Arrays.asList(bodyPart));
-                when(formDataMultiPart.getFields("file")).thenReturn(Arrays.asList(formDataBodyPart1, formDataBodyPart2));
-                when(bodyPart.getContentDisposition()).thenReturn(contentDisposition1);
-                when(bodyPart.getMediaType()).thenReturn(MediaType.APPLICATION_JSON_TYPE);
-                final String jsonBody = String.format(MULTIPART_JSON, contentType.variable());
-                when(bodyPart.getEntityAs(InputStream.class))
-                        .thenReturn(new ReaderInputStream(new StringReader(jsonBody), charset));
-                when(contentDisposition1.getParameters()).thenReturn(params);
-                when(contentDisposition2.getFileName()).thenReturn("file1.txt");
-                when(formDataBodyPart1.getContentDisposition()).thenReturn(contentDisposition2);
-                when(contentDisposition3.getFileName()).thenReturn("file2.txt");
-                when(formDataBodyPart2.getContentDisposition()).thenReturn(contentDisposition3);
-                when(formDataBodyPart1.getEntityAs(InputStream.class))
-                        .thenReturn(new ReaderInputStream(new StringReader(inputFile1Text), charset));
-                when(formDataBodyPart2.getEntityAs(InputStream.class))
-                        .thenReturn(new ReaderInputStream(new StringReader(inputFile2Text), charset));
-
+                FormDataMultiPart formDataMultiPart = this.createFormMultiPart(contentType, inputFile1Text, inputFile2Text);
                 final HttpServletRequest request1 = mock(HttpServletRequest.class);
                 final Response response1 = workflowResource
                         .fireActionMultipart(request1, SAVE_ACTION_ID, null,null,-1, formDataMultiPart);
@@ -1536,22 +1508,35 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                 final ResponseEntityView fireEntityView1 = ResponseEntityView.class
                         .cast(response1.getEntity());
                 brandNewContentlet = Contentlet.class.cast(fireEntityView1.getEntity());
-                assertNotNull(brandNewContentlet);
-                assertNotNull(brandNewContentlet.getMap());
-                assertTrue(brandNewContentlet.getMap().containsKey(fieldNameTitle));
-                assertTrue(brandNewContentlet.getMap().containsKey(fieldNameFile1));
-                assertTrue(brandNewContentlet.getMap().containsKey(fieldNameFile2));
-                assertEquals("Test", brandNewContentlet.getMap().get("title"));
-                final File file1 = brandNewContentlet.getBinary("file1");
-                final File file2 = brandNewContentlet.getBinary("file2");
-                assertNotNull(file1);
-                assertNotNull(file1);
-                final String fileString1 = IOUtils.toString(new FileReader(file1));
-                final String fileString2 = IOUtils.toString(new FileReader(file2));
-                assertNotNull(fileString1);
-                assertNotNull(fileString2);
-                assertEquals(inputFile1Text, fileString1);
-                assertEquals(inputFile2Text, fileString2);
+                checkBrandNewContentlet(fieldNameTitle, fieldNameFile1, fieldNameFile2, inputFile1Text, inputFile2Text, brandNewContentlet);
+
+                // update existing by content inode.
+                formDataMultiPart = this.createFormMultiPart(contentType, inputFile1Text, inputFile2Text);
+                final HttpServletRequest request2 = mock(HttpServletRequest.class);
+                final Response response2 = workflowResource
+                        .fireActionMultipart(request2, SAVE_ACTION_ID, brandNewContentlet.getInode(),null,-1, formDataMultiPart);
+                final int statusCode2 = response2.getStatus();
+                assertEquals(Status.OK.getStatusCode(), statusCode2);
+                final ResponseEntityView fireEntityView2 = ResponseEntityView.class
+                        .cast(response2.getEntity());
+                String identifier = brandNewContentlet.getIdentifier();
+                brandNewContentlet = Contentlet.class.cast(fireEntityView2.getEntity());
+                checkBrandNewContentlet(fieldNameTitle, fieldNameFile1, fieldNameFile2, inputFile1Text, inputFile2Text, brandNewContentlet);
+                assertEquals(identifier, brandNewContentlet.getIdentifier());
+
+                // update existing by identifier
+                formDataMultiPart = this.createFormMultiPart(contentType, inputFile1Text, inputFile2Text);
+                final HttpServletRequest request3 = mock(HttpServletRequest.class);
+                identifier = brandNewContentlet.getIdentifier();
+                final Response response3 = workflowResource
+                        .fireActionMultipart(request3, SAVE_ACTION_ID, null,identifier,-1, formDataMultiPart);
+                final int statusCode3 = response3.getStatus();
+                assertEquals(Status.OK.getStatusCode(), statusCode3);
+                final ResponseEntityView fireEntityView3 = ResponseEntityView.class
+                        .cast(response3.getEntity());
+                brandNewContentlet = Contentlet.class.cast(fireEntityView3.getEntity());
+                checkBrandNewContentlet(fieldNameTitle, fieldNameFile1, fieldNameFile2, inputFile1Text, inputFile2Text, brandNewContentlet);
+                assertEquals(identifier, brandNewContentlet.getIdentifier());
             } finally {
                 if(null != brandNewContentlet){
                     contentletAPI.archive(brandNewContentlet, APILocator.systemUser(), false);
@@ -1564,6 +1549,55 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                 contentTypeAPI.delete(contentType);
             }
         }
+    }
+
+    private FormDataMultiPart createFormMultiPart(final ContentType contentType, final String inputFile1Text,
+                                                  final String inputFile2Text) {
+        final Charset           charset              = Charset.defaultCharset();
+        final FormDataMultiPart formDataMultiPart    = mock(FormDataMultiPart.class);
+        final BodyPart          bodyPart             = mock(BodyPart.class);
+        final ContentDisposition contentDisposition1 = mock(ContentDisposition.class);
+        final ContentDisposition contentDisposition2 = mock(ContentDisposition.class);
+        final ContentDisposition contentDisposition3 = mock(ContentDisposition.class);
+        final ImmutableMap<String, String> params    = ImmutableMap.of("name", "json");
+        final FormDataBodyPart formDataBodyPart1     = mock(FormDataBodyPart.class);
+        final FormDataBodyPart formDataBodyPart2     = mock(FormDataBodyPart.class);
+        when(formDataMultiPart.getBodyParts()).thenReturn(Arrays.asList(bodyPart));
+        when(formDataMultiPart.getFields("file")).thenReturn(Arrays.asList(formDataBodyPart1, formDataBodyPart2));
+        when(bodyPart.getContentDisposition()).thenReturn(contentDisposition1);
+        when(bodyPart.getMediaType()).thenReturn(MediaType.APPLICATION_JSON_TYPE);
+        final String jsonBody = String.format(MULTIPART_JSON, contentType.variable());
+        when(bodyPart.getEntityAs(InputStream.class))
+                .thenReturn(new ReaderInputStream(new StringReader(jsonBody), charset));
+        when(contentDisposition1.getParameters()).thenReturn(params);
+        when(contentDisposition2.getFileName()).thenReturn("file1.txt");
+        when(formDataBodyPart1.getContentDisposition()).thenReturn(contentDisposition2);
+        when(contentDisposition3.getFileName()).thenReturn("file2.txt");
+        when(formDataBodyPart2.getContentDisposition()).thenReturn(contentDisposition3);
+        when(formDataBodyPart1.getEntityAs(InputStream.class))
+                .thenReturn(new ReaderInputStream(new StringReader(inputFile1Text), charset));
+        when(formDataBodyPart2.getEntityAs(InputStream.class))
+                .thenReturn(new ReaderInputStream(new StringReader(inputFile2Text), charset));
+        return formDataMultiPart;
+    }
+
+    private void checkBrandNewContentlet(String fieldNameTitle, String fieldNameFile1, String fieldNameFile2, String inputFile1Text, String inputFile2Text, Contentlet brandNewContentlet) throws IOException {
+        assertNotNull(brandNewContentlet);
+        assertNotNull(brandNewContentlet.getMap());
+        assertTrue(brandNewContentlet.getMap().containsKey(fieldNameTitle));
+        assertTrue(brandNewContentlet.getMap().containsKey(fieldNameFile1));
+        assertTrue(brandNewContentlet.getMap().containsKey(fieldNameFile2));
+        assertEquals("Test", brandNewContentlet.getMap().get("title"));
+        final File file1 = brandNewContentlet.getBinary("file1");
+        final File file2 = brandNewContentlet.getBinary("file2");
+        assertNotNull(file1);
+        assertNotNull(file1);
+        final String fileString1 = IOUtils.toString(new FileReader(file1));
+        final String fileString2 = IOUtils.toString(new FileReader(file2));
+        assertNotNull(fileString1);
+        assertNotNull(fileString2);
+        assertEquals(inputFile1Text, fileString1);
+        assertEquals(inputFile2Text, fileString2);
     }
 
     @Test
