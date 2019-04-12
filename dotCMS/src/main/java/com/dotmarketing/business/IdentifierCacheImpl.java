@@ -6,7 +6,8 @@
  */
 package com.dotmarketing.business;
 
-import com.dotcms.uuid.shorty.ShortyIdCache;
+import java.util.List;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.VersionInfo;
@@ -14,8 +15,6 @@ import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-
-import java.util.List;
 
 /**
  * @author David
@@ -154,10 +153,8 @@ public class IdentifierCacheImpl extends IdentifierCache {
 	}
 	
 
-	protected void removeFromCacheByIdentifier(final Identifier id) {
-		if(id==null) {
-			return;
-		}
+	protected void removeFromCacheByIdentifier(Identifier id) {
+		if(id==null) return;
 		
 		if(InodeUtils.isSet(id.getId())) {
 		    final String key = getPrimaryGroup() + id.getId();
@@ -165,7 +162,7 @@ public class IdentifierCacheImpl extends IdentifierCache {
 		    cache.remove(key,  get404Group());
 		}
 		
-		final String uri = id.getURI();
+		String uri = id.getURI();
 		if(UtilMethods.isSet(id.getHostId()) && UtilMethods.isSet(uri)) {
     		final String key = getPrimaryGroup() + id.getHostId() + "-" + uri;
     		cache.remove(key, getPrimaryGroup());
@@ -174,20 +171,14 @@ public class IdentifierCacheImpl extends IdentifierCache {
 		
 		if(UtilMethods.isSet(id.getAssetType()) && id.getAssetType().equals("folder")) {
 		    try {
-
-		        final List<Identifier> identifiers = APILocator.getIdentifierAPI()
-						.findByParentPath(id.getHostId(), id.getURI());
-
-		        for(final Identifier identifier : identifiers) {
-					removeFromCacheByIdentifier(identifier);
-				}
+		        List<Identifier> idents=APILocator.getIdentifierAPI().findByParentPath(id.getHostId(), id.getURI());
+		        for(Identifier ii : idents)
+		            removeFromCacheByIdentifier(ii);
 		    }
 		    catch(Exception ex) {
 		        Logger.warn(this, ex.getMessage(),ex);
 		    }
 		}
-		
-		new ShortyIdCache().remove(id.getId());
 	}
 	
 	public void removeFromCacheByIdentifier(String ident) {

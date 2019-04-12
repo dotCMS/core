@@ -20,9 +20,6 @@ import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.util.CollectionsUtils;
-import com.dotcms.uuid.shorty.ShortyId;
-import com.dotcms.uuid.shorty.ShortyIdAPI;
-import com.dotcms.uuid.shorty.ShortyIdCache;
 import com.dotmarketing.beans.*;
 import com.dotmarketing.business.*;
 import com.dotmarketing.common.model.ContentletSearch;
@@ -69,7 +66,6 @@ import org.apache.velocity.context.Context;
 import org.apache.velocity.context.InternalContextAdapterImpl;
 import org.apache.velocity.runtime.parser.node.SimpleNode;
 import org.jetbrains.annotations.NotNull;
-import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -125,75 +121,6 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         //Validations
         assertTrue( contentlet != null && ( contentlet.getInode() != null && !contentlet.getInode().isEmpty() ) );
-    }
-
-    @Test
-    public void test_invalidate_shorty_cache () throws DotDataException, DotSecurityException {
-
-        Contentlet contentletToDestroy = null;
-        ContentType type = null;
-        try {
-            final String velocityContentTypeName = "InvalidateShortyCacheContentType";
-            type = contentTypeAPI.save(
-                    ContentTypeBuilder.builder(BaseContentType.CONTENT.immutableClass())
-                            .expireDateVar(null).folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
-                            .name("InvalidateShortyCache").owner(APILocator.systemUser().toString())
-                            .variable(velocityContentTypeName).build());
-
-            final List<com.dotcms.contenttype.model.field.Field> fields = new ArrayList<>(type.fields());
-
-            fields.add(FieldBuilder.builder(TextField.class).name("title").variable("title")
-                    .contentTypeId(type.id()).dataType(DataTypes.TEXT).indexed(true).build());
-            fields.add(FieldBuilder.builder(TextField.class).name("txt").variable("txt")
-                    .contentTypeId(type.id()).dataType(DataTypes.TEXT).indexed(true).build());
-
-            contentTypeAPI.save(type, fields);
-
-            final Contentlet contentlet = new Contentlet();
-            final User user = APILocator.systemUser();
-            contentlet.setContentTypeId(type.id());
-            contentlet.setOwner(APILocator.systemUser().toString());
-            contentlet.setModDate(new Date());
-            contentlet.setLanguageId(1);
-            contentlet.setStringProperty("title", "Test Save");
-            contentlet.setStringProperty("txt", "Test Save Text");
-            contentlet.setHost(Host.SYSTEM_HOST);
-            contentlet.setFolder(FolderAPI.SYSTEM_FOLDER);
-            contentlet.setIndexPolicy(IndexPolicy.FORCE);
-
-            // first save
-            final ShortyIdAPI shortyIdAPI = APILocator.getShortyAPI();
-            final Contentlet contentlet1 = contentletAPI.checkin(contentlet, user, false);
-            contentletToDestroy = contentlet1;
-            final Optional<ShortyId> shortyId = shortyIdAPI.getShorty(contentlet1.getIdentifier());
-            Assert.assertTrue(shortyId.isPresent());
-            Assert.assertTrue(new ShortyIdCache().get(shortyId.get().shortId).isPresent());
-            final Contentlet contentletCheckout = contentletAPI.checkout(contentlet1.getInode(), user, false);
-            final String inode = contentletCheckout.getInode();
-            this.contentletAPI.copyProperties(contentletCheckout, contentlet.getMap());
-            contentletCheckout.setIdentifier(contentlet1.getIdentifier());
-            contentletCheckout.setInode(inode);
-            contentletAPI.checkin(contentletCheckout, user, false);
-            Assert.assertFalse(new ShortyIdCache().get(shortyId.get().shortId).isPresent());
-        } finally {
-
-
-            if (null != contentletToDestroy) {
-                try {
-                    this.contentletAPI.destroy(contentletToDestroy, user, false);
-                } catch (Exception e) {
-                    // quiet
-                }
-            }
-
-            if (null != type) {
-                try {
-                    contentTypeAPI.delete(type);
-                } catch (Exception e) {
-                    // quiet
-                }
-            }
-        }
     }
 
     @Ignore ( "Not Ready to Run." )
