@@ -1,5 +1,8 @@
 package com.dotcms.content.elasticsearch.util;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
@@ -15,18 +18,16 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
+import com.google.common.hash.Hashing;
 import com.liferay.portal.model.User;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import java.nio.charset.Charset;
+import java.util.List;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
-import java.util.List;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 
 @RunWith(DataProviderRunner.class)
 public class ESUtilTest extends IntegrationTestBase {
@@ -42,7 +43,9 @@ public class ESUtilTest extends IntegrationTestBase {
 
     @DataProvider
     public static Object[] dataProviderSpecialChars() {
-        return ESUtils.SPECIAL_CHARS;
+        return new String[]{
+                "+", "-", "&&", "||", "!", "(", ")", "{", "}", "[", "]", "^", "\"", "?", ":", "\\"
+        };
     }
 
     @Test
@@ -130,4 +133,19 @@ public class ESUtilTest extends IntegrationTestBase {
 
     }
 
+    @Test
+    public void testSha256() {
+
+        final String fieldName = "testContentType.testTitle";
+        final String fieldValue = "Test Title 1";
+
+        final String expectedHash = Hashing.sha256().hashString(fieldName + "_"
+                + (fieldValue == null ? "" : fieldValue) + "_"
+                + 1, Charset.forName("UTF-8")).toString();
+
+        final String resultHash = ESUtils.sha256(fieldName, fieldValue, 1);
+
+        assertEquals(expectedHash, resultHash);
+
+    }
 }
