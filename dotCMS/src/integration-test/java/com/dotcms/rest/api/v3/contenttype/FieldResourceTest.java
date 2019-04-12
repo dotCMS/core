@@ -41,7 +41,7 @@ public class FieldResourceTest {
 
     @Test
     public void shouldFixContentTypesFieldsBeforeReturn () throws DotSecurityException, DotDataException {
-        final String typeName="fieldResourceTest" + UUIDUtil.uuid();
+        final String typeName="fieldResourceTest" + System.currentTimeMillis();
 
         ContentType type = ContentTypeBuilder.builder(SimpleContentType.class).name(typeName).variable(typeName).build();
         type = APILocator.getContentTypeAPI(APILocator.systemUser()).save(type);
@@ -62,7 +62,7 @@ public class FieldResourceTest {
 
     @Test
     public void shouldDeleteFields () throws DotSecurityException, DotDataException {
-        final String typeName="fieldResourceTest" + UUIDUtil.uuid();
+        final String typeName="fieldResourceTest" + System.currentTimeMillis();
 
         ContentType type = ContentTypeBuilder.builder(SimpleContentType.class).name(typeName).variable(typeName).build();
         type = APILocator.getContentTypeAPI(APILocator.systemUser()).save(type);
@@ -98,7 +98,8 @@ public class FieldResourceTest {
 
     @Test(expected = FieldLayoutValidationException.class)
     public void shouldThrowExceptionAndNotDeleteAny () throws DotSecurityException, DotDataException {
-        final String typeName="fieldResourceTest" + UUIDUtil.uuid();
+
+        final String typeName="fieldResourceTest" + System.currentTimeMillis();
 
         ContentType type = ContentTypeBuilder.builder(SimpleContentType.class).name(typeName).variable(typeName).build();
         type = APILocator.getContentTypeAPI(APILocator.systemUser()).save(type);
@@ -114,7 +115,7 @@ public class FieldResourceTest {
 
     @Test
     public void shouldUpdateFields () throws DotSecurityException, DotDataException, JSONException {
-        final String typeName="fieldResourceTest" + UUIDUtil.uuid();
+        final String typeName="fieldResourceTest" + System.currentTimeMillis();
 
         ContentType type = ContentTypeBuilder.builder(SimpleContentType.class).name(typeName).variable(typeName).build();
         type = APILocator.getContentTypeAPI(APILocator.systemUser()).save(type);
@@ -153,7 +154,7 @@ public class FieldResourceTest {
 
     @Test(expected = FieldLayoutValidationException.class)
     public void shouldUpdateFieldsANdThrowException () throws DotSecurityException, DotDataException, JSONException {
-        final String typeName="fieldResourceTest" + UUIDUtil.uuid();
+        final String typeName="fieldResourceTest" + System.currentTimeMillis();
 
         ContentType type = ContentTypeBuilder.builder(SimpleContentType.class).name(typeName).variable(typeName).build();
         type = APILocator.getContentTypeAPI(APILocator.systemUser()).save(type);

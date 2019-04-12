@@ -810,7 +810,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		APILocator.getPermissionAPI().save( editPermissionsPermission, newType, user, false );
 
 		Field newField = FieldBuilder.builder(WysiwygField.class).name("my test field")
-				.variable(now + "textField").contentTypeId(newType.id()).dataType(DataTypes.LONG_TEXT).build();
+				.variable("textField"+now).contentTypeId(newType.id()).dataType(DataTypes.LONG_TEXT).build();
 		newField = APILocator.getContentTypeFieldAPI().save(newField, APILocator.systemUser());
 		final String newFieldId = newField.id();
 
