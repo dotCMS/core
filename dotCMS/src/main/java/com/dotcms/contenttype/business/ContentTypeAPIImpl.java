@@ -49,7 +49,6 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   private final LocalSystemEventsAPI localSystemEventsAPI;
 
   public static final String TYPES_AND_FIELDS_VALID_VARIABLE_REGEX = "[_A-Za-z][_0-9A-Za-z]*";
-  public static final String TYPES_AND_FIELDS_VALID_NAME_REGEX = "[^0-9].+";
 
 
   public ContentTypeAPIImpl(User user, boolean respectFrontendRoles, ContentTypeFactory fac, FieldFactory ffac,
@@ -394,10 +393,6 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   @Override
   public ContentType save(ContentType contentType, List<Field> newFields, List<FieldVariable> newFieldVariables)
       throws DotDataException, DotSecurityException {
-
-    DotPreconditions.checkArgument(contentType.name().matches(TYPES_AND_FIELDS_VALID_NAME_REGEX),
-            "Invalid content type name: " + contentType.name(),
-            IllegalArgumentException.class);
 
     if(UtilMethods.isSet(contentType.variable())) {
       DotPreconditions.checkArgument(contentType.variable().matches(
