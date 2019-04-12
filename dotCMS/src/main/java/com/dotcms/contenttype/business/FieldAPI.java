@@ -1,10 +1,13 @@
 package com.dotcms.contenttype.business;
 
 import com.dotcms.business.CloseDBIfOpened;
+
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -206,5 +209,8 @@ public interface FieldAPI {
      * @throws DotDataException Error occurred when performing the action.
      */
     String nextAvailableColumn(Field field) throws DotDataException;
-	
+
+	Collection<String> deleteFields(final List<String> fieldsID, final User user) throws DotDataException, DotSecurityException;
+
+    void saveFields(final List<Field> fields, final User user) throws DotSecurityException, DotDataException;
 }
