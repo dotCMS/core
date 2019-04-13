@@ -398,11 +398,6 @@ public class EditFolderAction extends DotPortletAction {
 				}
 				
 				folderAPI.save(f,user,false);
-				if (!(!previousShowMenu && !f.isShowOnMenu())) 
-				{
-					//if the not, doesn't show before and doesn't show now, delete the menus
-					folderAPI.cleanUpNavigationCache(f);
-				}
 				CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(f.getIdentifier());
 				// For messages to be displayed on messages page
 				SessionMessages.add(req, "message", "message.folder.save");

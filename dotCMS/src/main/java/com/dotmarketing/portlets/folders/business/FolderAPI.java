@@ -550,11 +550,4 @@ import java.util.function.Predicate;
 	 */
 	void subscribeFolderListener (final Folder folder, final FolderListener folderListener, final Predicate<String> childNameFilter);
 
-	/**
-	 * Removes the given folder and parent from navigation cache
-	 * @param folder Folder to be removed from navigation cache
-	 * @throws DotDataException
-	 */
-	void cleanUpNavigationCache(Folder folder) throws DotDataException;
-
 }
