@@ -2,8 +2,10 @@ package com.dotmarketing.portlets.workflows.actionlet;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
+import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.rendering.engine.ScriptEngine;
 import com.dotcms.rendering.engine.ScriptEngineFactory;
+import com.dotcms.repackage.org.directwebremoting.util.FakeHttpServletRequest;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
@@ -12,6 +14,8 @@ import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableList;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.List;
@@ -33,7 +37,7 @@ public class VelocityScriptActionlet extends WorkFlowActionlet {
         paramList.add(new WorkflowActionletParameter
                 ("script", "Script Code", null, false));
         paramList.add(new WorkflowActionletParameter
-                ("resultKey", "Result key", "result", false));
+                ("resultKey", "Contentlet Result Property Name", "result", false));
 
         return paramList.build();
     }
@@ -52,7 +56,9 @@ public class VelocityScriptActionlet extends WorkFlowActionlet {
     @Override
     public String getHowTo() {
 
-        return "This actionlet give the ability to run a velocity script as part of the workflow action.";
+        return "This actionlet give the ability to run a velocity script as part of the workflow action." +
+                " The Script Code allows to add the velocity, can include a vtl by #dotParse directive."  +
+                " The Result Property Name is the name to store the result of the velocity execution in the contentlet, will store the dotJson and the output (if empty won't add any result to the contentlet).";
     }
 
     @Override
@@ -60,15 +66,19 @@ public class VelocityScriptActionlet extends WorkFlowActionlet {
                               final Map<String, WorkflowActionClassParameter> params) throws WorkflowActionFailureException {
 
         try {
-
+            final HttpServletRequest request =
+                    null == HttpServletRequestThreadLocal.INSTANCE.getRequest()?
+                            new FakeHttpServletRequest(): HttpServletRequestThreadLocal.INSTANCE.getRequest();
+            final HttpServletResponse response =
+                    null == HttpServletResponseThreadLocal.INSTANCE.getResponse()?
+                            new MockHttpResponse(): HttpServletResponseThreadLocal.INSTANCE.getResponse();
             final WorkflowActionClassParameter scriptParameter = params.get("script");
             final WorkflowActionClassParameter keyParameter    = params.get("resultKey");
             final ScriptEngine engine = ScriptEngineFactory.getInstance().getEngine(ENGINE);
             final String script       = scriptParameter.getValue();
             final String resultKey    = keyParameter.getValue();
             final Reader reader       = new StringReader(script);
-            final Object result       = engine.eval(HttpServletRequestThreadLocal.INSTANCE.getRequest(),
-                    HttpServletResponseThreadLocal.INSTANCE.getResponse(), reader,
+            final Object result       = engine.eval(request, response, reader,
                     CollectionsUtils.map("workflow", processor,
                             "user", processor.getUser(),
                             "contentlet", processor.getContentlet(),

@@ -47,6 +47,7 @@ public class VelocityScriptEngine implements ScriptEngine {
             }
         }
 
-        return CollectionsUtils.map("output", evalResult, "dotJSON",context.get("dotJSON"));
+        return CollectionsUtils.map("output", evalResult, "dotJSON", context.get("dotJSON"));
     }
+
 }
