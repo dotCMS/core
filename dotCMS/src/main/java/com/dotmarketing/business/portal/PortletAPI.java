@@ -12,6 +12,8 @@ import com.liferay.portal.model.User;
 
 public interface PortletAPI {
 
+	public final static String CONTENT_PORTLET_PREFIX="c_";
+
 	boolean hasContainerManagerRights(final User user);
 
 	boolean hasTemplateManagerRights(final User user);

@@ -62,7 +62,7 @@ public class PortletAPIImpl implements PortletAPI {
     protected boolean hasPortletRights(final User user, final String pId) {
         boolean hasRights = false;
         try {
-            return APILocator.getLayoutAPI().loadLayoutsForUser(user).stream().anyMatch(layout -> layout.getPortletIds().contains(pId));
+            return APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(pId, user);
         } catch (Exception ex) {
             Logger.warn(this, "can't determine if user " + user.getUserId() + " has rights to portlet " + pId, ex);
             hasRights = false;
@@ -110,7 +110,7 @@ public class PortletAPIImpl implements PortletAPI {
         if(!UtilMethods.isSet(portlet.getPortletId())) {
             throw new DotDataValidationException("Portlet Id is Required");
         }
-        final String portletId = "c_" + portlet.getPortletId();
+        final String portletId = CONTENT_PORTLET_PREFIX + portlet.getPortletId();
         if (UtilMethods.isSet(findPortlet(portletId))) {
             throw new DotDataValidationException("Portlet Id already Exists");
         }

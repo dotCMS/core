@@ -3,6 +3,7 @@
  */
 package com.dotmarketing.business;
 
+import com.dotmarketing.business.portal.PortletAPI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -109,16 +110,34 @@ public class LayoutAPIImpl implements LayoutAPI {
 	}
 
 	@Override
-	public boolean doesUserHaveAccessToPortlet(String portletId, User user) throws DotDataException {
+	public boolean doesUserHaveAccessToPortlet(final String portletId, final User user) throws DotDataException {
+		if(portletId==null) {
+			return false;
+		}
+
 		List<Layout> layouts = loadLayoutsForUser(user);
-		boolean hasAccess = false;
-		for (Layout layout : layouts) {
-			if(layout.getPortletIds().contains(portletId)){
-				hasAccess = true;
-				break;
+		if ("content".equals(portletId)) {
+			for (Layout layout : layouts) {
+				if (layout.getPortletIds().stream().anyMatch(p -> p.startsWith(PortletAPI.CONTENT_PORTLET_PREFIX))) {
+					return true;
+				}
 			}
 		}
-		return hasAccess;
+		else if (portletId.startsWith(PortletAPI.CONTENT_PORTLET_PREFIX)) {
+			for (Layout layout : layouts) {
+				if (layout.getPortletIds().stream().anyMatch(p -> p.equals("content"))) {
+					return true;
+				}
+			}
+		}
+		else {
+			for (Layout layout : layouts) {
+				if (layout.getPortletIds().contains(portletId)) {
+					return true;
+				}
+			}
+		}
+		return APILocator.getRoleAPI().doesUserHaveRole(user, APILocator.getRoleAPI().loadCMSAdminRole());
 	}
 
 	@Override
