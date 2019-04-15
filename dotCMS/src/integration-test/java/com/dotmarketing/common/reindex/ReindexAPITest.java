@@ -7,7 +7,6 @@ import static org.junit.Assert.assertTrue;
 
 import java.sql.Connection;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -178,61 +177,6 @@ public class ReindexAPITest extends IntegrationTestBase {
             assertTrue("other connections should NOW see the uncommited reindex records", reindexQueueAPI.recordsInQueue(conn) > 0);
 
         }
-
-    }
-
-    /**
-     * If a record has been claimed by a server, but was never indexed, e.g. the server was shutdown
-     * before the content ever got reindexed, then dotcms should pick it up again after a set period of
-     * time: https://github.com/dotCMS/core/issues/7950
-     * 
-     * @throws Exception
-     */
-    @Test
-    public void test_old_records_get_re_queued() throws Exception {
-
-        final ContentType type = new ContentTypeDataGen()
-                .fields(ImmutableList
-                        .of(ImmutableTextField.builder().name("Title").variable("title")
-                                .searchable(true).listed(true).build()))
-                .nextPersisted();
-        new DotConnect().setSQL("delete from dist_reindex_journal").loadResult();
-
-        //Pausing reindex to avoid race condition when findContentToReindex is called (no content will be indexed)
-        ReindexThread.pause();
-
-        final Contentlet contentlet = new ContentletDataGen(type.id())
-                .setProperty("title", "contentTest " + System.currentTimeMillis()).nextPersisted();
-
-
-        // get unclaimed records for reindex, Our new content is in there and is marked as claimed (e.g.
-        // serverId is set to
-        // this server)
-        Map<String, ReindexEntry> reindexEntries = reindexQueueAPI.findContentToReindex();
-        assertTrue(reindexEntries.containsKey(contentlet.getIdentifier()));
-
-        ReindexThread.unpause();
-
-        // no more unclaimed records for reindex
-        reindexEntries = reindexQueueAPI.findContentToReindex();
-        assertTrue(reindexEntries.isEmpty());
-
-        // make the reindex record 3 minutes old in db
-        Date oldRecord = new Date(System.currentTimeMillis() - (3 * 60 * 1000));
-
-        new DotConnect().setSQL("update dist_reindex_journal set time_entered = ?")
-                .addParam(oldRecord).loadResult();
-
-        // record still not available because the server only calls re-queue every two minutes
-        reindexEntries = reindexQueueAPI.findContentToReindex();
-        assertTrue(reindexEntries.isEmpty());
-
-        // force a requeue
-        new ReindexQueueFactory().requeueStaleReindexRecords();
-
-        // record is requeued for reindexing
-        reindexEntries = reindexQueueAPI.findContentToReindex();
-        assertTrue(reindexEntries.containsKey(contentlet.getIdentifier()));
 
     }
 
