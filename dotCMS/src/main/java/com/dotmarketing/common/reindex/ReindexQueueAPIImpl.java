@@ -61,8 +61,8 @@ public class ReindexQueueAPIImpl implements ReindexQueueAPI {
 
     @Override
     @CloseDBIfOpened
-    public Map<String, ReindexEntry> findContentToReindex(final int recordsToReture) throws DotDataException {
-        return reindexQueueFactory.findContentToReindex(recordsToReture);
+    public Map<String, ReindexEntry> findContentToReindex(final int recordsToReturn) throws DotDataException {
+        return reindexQueueFactory.findContentToReindex(recordsToReturn);
     }
 
     @Override
