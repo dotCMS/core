@@ -210,20 +210,23 @@ public class ReindexAPITest extends IntegrationTestBase {
         // we need to fail 1 time more than the REINDEX_MAX_FAILURE_ATTEMPTS
         while (i <= ReindexQueueFactory.REINDEX_MAX_FAILURE_ATTEMPTS) {
             // it has been marked as failed and is available again for reindex
+            ReindexQueueFactory.resetLastIdReindexed();
             reindexEntries = reindexQueueAPI.findContentToReindex();
             assertTrue(reindexEntries.containsKey(contentlet.getIdentifier()));
             entry = reindexEntries.values().stream().findFirst().orElse(null);
             assertNotNull(entry);
             assertEquals(i, entry.errorCount());
             reindexQueueAPI.markAsFailed(entry, "failure:" + i);
-            ReindexQueueFactory.resetLastIdReindexed();
             i++;
         }
+
         // entry has errored out and is no longer in queue
         reindexEntries = reindexQueueAPI.findContentToReindex();
         entry = reindexEntries.values().stream().findFirst().orElse(null);
 
         assertNull(entry);
+
+        ReindexThread.unpause();
 
     }
 
