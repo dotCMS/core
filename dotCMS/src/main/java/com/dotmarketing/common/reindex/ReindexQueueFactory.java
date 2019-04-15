@@ -1,6 +1,7 @@
 package com.dotmarketing.common.reindex;
 
 import com.dotmarketing.common.db.Params;
+import com.google.common.annotations.VisibleForTesting;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -213,6 +214,11 @@ public class ReindexQueueFactory {
   }
 
     private static long lastIdIndexed=0;
+
+    @VisibleForTesting
+    static void resetLastIdReindexed(){
+        lastIdIndexed = 0;
+    }
     
     @CloseDBIfOpened
     private void loadUpLocalQueue() throws DotDataException {
