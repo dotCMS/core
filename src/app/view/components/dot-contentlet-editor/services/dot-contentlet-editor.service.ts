@@ -2,7 +2,6 @@ import { Injectable } from '@angular/core';
 import { Subject, Observable, of } from 'rxjs';
 import { mergeMap, map, filter } from 'rxjs/operators';
 import { DotMenuService } from '@services/dot-menu.service';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
 
 interface DotAddEditEvents {
     load?: ($event: any) => void;
@@ -32,10 +31,7 @@ export class DotContentletEditorService {
     private _load: ($event: any) => void;
     private _keyDown: ($event: KeyboardEvent) => void;
 
-    constructor(
-        private dotMenuService: DotMenuService,
-        private dotRouterService: DotRouterService
-    ) {}
+    constructor(private dotMenuService: DotMenuService) {}
 
     get addUrl$(): Observable<string> {
         return this.data.pipe(
@@ -158,20 +154,19 @@ export class DotContentletEditorService {
     }
 
     private getEditUrl(action: DotEditorAction): Observable<string> {
-        const name = this.dotRouterService.currentPortlet.url.split('/')[2];
         return action === null
             ? of('')
-            : this.dotMenuService.getDotMenuId(name).pipe(
+            : this.dotMenuService.getDotMenuId('content').pipe(
                   map((portletId: string) => {
                       return [
                           `/c/portal/layout`,
                           `?p_l_id=${portletId}`,
-                          `&p_p_id=${name}`,
+                          `&p_p_id=content`,
                           `&p_p_action=1`,
                           `&p_p_state=maximized`,
                           `&p_p_mode=view`,
-                          `&_${name}_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet`,
-                          `&_${name}_cmd=edit&inode=${action.data.inode}`
+                          `&_content_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet`,
+                          `&_content_cmd=edit&inode=${action.data.inode}`
                       ].join('');
                   })
               );
