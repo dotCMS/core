@@ -47,7 +47,7 @@ public class ReindexAPITest extends IntegrationTestBase {
         reindexQueueAPI = APILocator.getReindexQueueAPI();
     }
 
-    //@Test
+    @Test
     public void test_highestpriority_reindex_vs_normal_reindex() throws DotDataException {
 
         //Pausing reindex to avoid race condition when findContentToReindex is called (no content will be indexed)
@@ -110,7 +110,7 @@ public class ReindexAPITest extends IntegrationTestBase {
         ReindexThread.unpause();
     }
 
-    //@Test
+    @Test
     public void test_content_type_reindex() throws Exception {
 
         ContentType type = new ContentTypeDataGen().nextPersisted();
@@ -145,7 +145,7 @@ public class ReindexAPITest extends IntegrationTestBase {
         ReindexThread.unpause();
     }
 
-    //@Test
+    @Test
     public void test_adding_content_adds_to_queue_after_transaction_commit() throws Exception {
 
         final ContentType type = new ContentTypeDataGen()
@@ -188,7 +188,7 @@ public class ReindexAPITest extends IntegrationTestBase {
      * 
      * @throws Exception
      */
-    //@Test
+    @Test
     public void test_old_records_get_re_queued() throws Exception {
 
         final ContentType type = new ContentTypeDataGen()
@@ -243,7 +243,7 @@ public class ReindexAPITest extends IntegrationTestBase {
      * 
      * @throws Exception
      */
-    //@Test
+    @Test
     public void test_failed_records() throws Exception {
 
         final ContentType type = new ContentTypeDataGen()
@@ -272,11 +272,7 @@ public class ReindexAPITest extends IntegrationTestBase {
             assertNotNull(entry);
             assertEquals(i, entry.errorCount());
             reindexQueueAPI.markAsFailed(entry, "failure:" + i);
-
-            if (i==0){
-                ReindexThread.pause();
-            }
-
+            ReindexQueueFactory.resetLastIdReindexed();
             i++;
         }
         // entry has errored out and is no longer in queue
@@ -294,7 +290,7 @@ public class ReindexAPITest extends IntegrationTestBase {
      * 
      * @throws Exception
      */
-    //@Test
+    @Test
     public void test_deleted_records() throws Exception {
 
         final List<Contentlet> contentlets = new ArrayList<>();
