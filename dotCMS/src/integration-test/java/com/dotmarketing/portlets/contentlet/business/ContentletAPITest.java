@@ -5797,6 +5797,48 @@ public class ContentletAPITest extends ContentletBaseTest {
                     }
                 },
 
+                // case 3 setBoolProperty
+                // contentTypeAndField is a Tuple of contentType and Field
+                (contentTypeIdAndFieldVar) -> {
+                    try {
+
+                        final Contentlet testContentlet
+                                = tryToCheckinContentWithNullValueForRequiredField(
+                                (Tuple2<String, String>) contentTypeIdAndFieldVar);
+                        // lets give a value to the required field using setStringProperty
+
+                        testContentlet.setBoolProperty((
+                                        (Tuple2<String, String>) contentTypeIdAndFieldVar)._2,
+                                true);
+
+                        // this time should succeed
+                        contentletAPI.checkin(testContentlet, user, false);
+                    } catch (DotDataException | DotSecurityException e) {
+                        throw new DotRuntimeException(e);
+                    }
+                },
+
+                // case 3 setFloatProperty
+                // contentTypeAndField is a Tuple of contentType and Field
+                (contentTypeIdAndFieldVar) -> {
+                    try {
+
+                        final Contentlet testContentlet
+                                = tryToCheckinContentWithNullValueForRequiredField(
+                                (Tuple2<String, String>) contentTypeIdAndFieldVar);
+                        // lets give a value to the required field using setStringProperty
+
+                        testContentlet.setFloatProperty((
+                                        (Tuple2<String, String>) contentTypeIdAndFieldVar)._2,
+                                1500);
+
+                        // this time should succeed
+                        contentletAPI.checkin(testContentlet, user, false);
+                    } catch (DotDataException | DotSecurityException e) {
+                        throw new DotRuntimeException(e);
+                    }
+                },
+
         };
 
 
