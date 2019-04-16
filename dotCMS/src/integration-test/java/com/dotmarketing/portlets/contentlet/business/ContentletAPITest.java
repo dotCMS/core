@@ -12,7 +12,6 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.datagen.*;
-import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.mock.request.MockInternalRequest;
 import com.dotcms.mock.response.BaseResponse;
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
@@ -28,9 +27,9 @@ import com.dotmarketing.business.*;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.db.LocalTransaction;
-import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.portlets.AssetUtil;
@@ -69,9 +68,7 @@ import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import io.vavr.Tuple2;
-import java.lang.reflect.Array;
 import java.util.function.Consumer;
-import java.util.function.Predicate;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.context.InternalContextAdapterImpl;
@@ -4455,7 +4452,7 @@ public class ContentletAPITest extends ContentletBaseTest {
      * Test checkin with a non-existing contentlet identifier, that should fail
      *
      */
-    @Test
+    @Test(expected = DotHibernateException.class)
     public void testCheckin_Non_Existing_Identifier_With_Validate_Should_FAIL()
             throws DotDataException, DotSecurityException {
         Contentlet newsContent = null;
@@ -4469,11 +4466,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             newsContent = contentletAPI.checkin(newsContent, (ContentletRelationships) null, categories,
                     null, user,false);
 
-            fail("Should throw DoesNotExistException for an unexisting id");
-        } catch (Exception e) {
-
-            assertTrue(ExceptionUtil.causedBy(e, DoesNotExistException.class));
-            // good
+            fail("Should throw a constrain exception for an unexisting id");
         } finally {
             if(newsContent!=null && UtilMethods.isSet(newsContent.getIdentifier()) && UtilMethods.isSet(newsContent.getInode())) {
                 contentletAPI.destroy(newsContent, user, false);
