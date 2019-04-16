@@ -97,7 +97,7 @@ public class UserDataGen extends AbstractDataGen<User> {
     }
 
     public static void remove(final User user) {
-        remove(user, false);
+        remove(user, true);
     }
 
     public static void remove(final User user, final Boolean failSilently) {

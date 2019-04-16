@@ -213,14 +213,14 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
         try {
             adminRole = roleAPI.loadRoleByKey(ADMINISTRATOR);
             if (adminRole != null) {
-                RoleDataGen.remove(adminRole, true);
+                RoleDataGen.remove(adminRole);
             }
         } catch (DotDataException e) {
             // Do nothing...
         }
 
         if (testScheme != null) {
-            WorkflowDataGen.remove(testScheme, true);
+            WorkflowDataGen.remove(testScheme);
         }
 
     }

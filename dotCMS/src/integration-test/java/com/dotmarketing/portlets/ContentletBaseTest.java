@@ -3,15 +3,9 @@ package com.dotmarketing.portlets;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
-import com.dotcms.contenttype.exception.NotFoundInDbException;
-import com.dotcms.contenttype.model.field.CategoryField;
-import com.dotcms.contenttype.model.field.DateField;
-import com.dotcms.contenttype.model.field.RelationshipField;
-import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
-import com.dotcms.datagen.ContentTypeDataGen;
-import com.dotcms.datagen.FieldDataGen;
+import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -53,7 +47,6 @@ import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.tag.business.TagAPI;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import java.util.ArrayList;
@@ -63,7 +56,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Random;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -118,6 +110,9 @@ public class ContentletBaseTest extends IntegrationTestBase {
     protected static ContentType commentsContentType;
     protected static ContentType newsContentType;
     protected static ContentType wikiContentType;
+    protected static ContentType simpleWidgetContentType;
+
+    protected static Language spanishLanguage;
 
     @BeforeClass
     public static void prepare () throws Exception {
@@ -217,10 +212,14 @@ public class ContentletBaseTest extends IntegrationTestBase {
         IntegrationTestInitService.getInstance().mockStrutsActionModule();
 
         //Test content types
-        blogContentType = getBlogContentType();
-        commentsContentType = getCommentsContentType();
-        newsContentType = getNewsContentType();
-        wikiContentType = getWikiContentType();
+        blogContentType = TestDataUtils.getBlogLikeContentType();
+        commentsContentType = TestDataUtils.getCommentsLikeContentType();
+        newsContentType = TestDataUtils.getNewsLikeContentType();
+        wikiContentType = TestDataUtils.getWikiLikeContentType();
+        simpleWidgetContentType = TestDataUtils.getWidgetLikeContentType();
+
+        //Search for the Spanish language, if does not exist we need to create it
+        spanishLanguage = TestDataUtils.getSpanishLanguage();
     }
 
     @AfterClass
@@ -258,22 +257,6 @@ public class ContentletBaseTest extends IntegrationTestBase {
             }
             contentTypeAPI.delete(new StructureTransformer(structure).from());
         }
-
-        //Delete the identifiers
-        /*for ( Identifier identifier : identifiers ) {
-            APILocator.getIdentifierAPI().delete( identifier );
-        }*/
-
-        //hostAPI.delete( defaultHost, user, false );
-
-        //Delete the folder
-        //folderAPI.delete( testFolder, user, false );
-
-        //Delete test Content Types
-        ContentTypeDataGen.remove(blogContentType, true);
-        ContentTypeDataGen.remove(commentsContentType, true);
-        ContentTypeDataGen.remove(newsContentType, true);
-        ContentTypeDataGen.remove(wikiContentType, true);
     }
 
     /**
@@ -665,242 +648,6 @@ public class ContentletBaseTest extends IntegrationTestBase {
         contentletRelationships.setRelationshipsRecords( relationshipsRecords );
 
         return contentletRelationships;
-    }
-
-    private static ContentType getBlogContentType() throws DotDataException, DotSecurityException {
-
-        ContentType blogType = null;
-        try {
-            blogType = APILocator.getContentTypeAPI(user).find("Blog");
-        } catch (NotFoundInDbException e) {
-            //Do nothing...
-        }
-        if (blogType == null) {
-
-            List<com.dotcms.contenttype.model.field.Field> fields = new ArrayList<>();
-            fields.add(
-                    new FieldDataGen()
-                            .name("title")
-                            .velocityVarName("title")
-                            .next()
-            );
-            fields.add(
-                    new FieldDataGen()
-                            .name("urlTitle")
-                            .velocityVarName("urlTitle")
-                            .next()
-            );
-            fields.add(
-                    new FieldDataGen()
-                            .name("author")
-                            .velocityVarName("author")
-                            .next()
-            );
-            fields.add(
-                    new FieldDataGen()
-                            .name("body")
-                            .velocityVarName("body")
-                            .next()
-            );
-            fields.add(
-                    new FieldDataGen()
-                            .name("Publish")
-                            .velocityVarName("sysPublishDate")
-                            .defaultValue(null)
-                            .type(DateField.class)
-                            .next()
-            );
-
-            //Category field
-            final Collection<Category> topLevelCategories = APILocator.getCategoryAPI()
-                    .findTopLevelCategories(APILocator.systemUser(), false);
-            final Optional<Category> anyTopLevelCategory = topLevelCategories.stream().findAny();
-
-            anyTopLevelCategory.map(category -> new FieldDataGen()
-                    .type(CategoryField.class)
-                    .defaultValue(null)
-                    .values(category.getInode())
-                    .next()).ifPresent(fields::add);
-
-            //Relationships field
-            fields.add(
-                    new FieldDataGen()
-                            .name("Blog-Comments")
-                            .velocityVarName("blogComments")
-                            .defaultValue(null)
-                            .type(RelationshipField.class)
-                            .values(String.valueOf(RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal()))
-                            .relationType("Comments")
-                            .next()
-            );
-
-            blogType = new ContentTypeDataGen()
-                    .name("Blog")
-                    .velocityVarName("blog")
-                    .fields(fields)
-                    .nextPersisted();
-        }
-
-        return blogType;
-    }
-
-    private static ContentType getCommentsContentType()
-            throws DotDataException, DotSecurityException {
-
-        ContentType commentsType = null;
-        try {
-            commentsType = APILocator.getContentTypeAPI(user).find("Comments");
-        } catch (NotFoundInDbException e) {
-            //Do nothing...
-        }
-        if (commentsType == null) {
-
-            List<com.dotcms.contenttype.model.field.Field> fields = new ArrayList<>();
-            fields.add(
-                    new FieldDataGen()
-                            .name("title")
-                            .velocityVarName("title")
-                            .next()
-            );
-            fields.add(
-                    new FieldDataGen()
-                            .name("email")
-                            .velocityVarName("email")
-                            .next()
-            );
-            fields.add(
-                    new FieldDataGen()
-                            .name("comment")
-                            .velocityVarName("comment")
-                            .next()
-            );
-
-            commentsType = new ContentTypeDataGen()
-                    .name("Comments")
-                    .velocityVarName("Comments")
-                    .fields(fields)
-                    .nextPersisted();
-        }
-
-        return commentsType;
-    }
-
-    private static ContentType getNewsContentType()
-            throws DotDataException, DotSecurityException {
-
-        ContentType newsType = null;
-        try {
-            newsType = APILocator.getContentTypeAPI(user).find("News");
-        } catch (NotFoundInDbException e) {
-            //Do nothing...
-        }
-        if (newsType == null) {
-
-            List<com.dotcms.contenttype.model.field.Field> fields = new ArrayList<>();
-            fields.add(
-                    new FieldDataGen()
-                            .name("Title")
-                            .velocityVarName("title")
-                            .next()
-            );
-            fields.add(
-                    new FieldDataGen()
-                            .name("urlTitle")
-                            .velocityVarName("urlTitle")
-                            .next()
-            );
-            fields.add(
-                    new FieldDataGen()
-                            .name("By line")
-                            .velocityVarName("byline")
-                            .next()
-            );
-            fields.add(
-                    new FieldDataGen()
-                            .name("Publish")
-                            .velocityVarName("sysPublishDate")
-                            .defaultValue(null)
-                            .type(DateField.class)
-                            .next()
-            );
-            fields.add(
-                    new FieldDataGen()
-                            .name("Story")
-                            .velocityVarName("story")
-                            .next()
-            );
-            fields.add(
-                    new FieldDataGen()
-                            .name("Tags")
-                            .velocityVarName("tags")
-                            .defaultValue(null)
-                            .type(TagField.class)
-                            .next()
-            );
-
-            newsType = new ContentTypeDataGen()
-                    .name("News")
-                    .velocityVarName("News")
-                    .fields(fields)
-                    .nextPersisted();
-        }
-
-        return newsType;
-    }
-
-    private static ContentType getWikiContentType()
-            throws DotDataException, DotSecurityException {
-
-        ContentType wikiType = null;
-        try {
-            wikiType = APILocator.getContentTypeAPI(user).find("Wiki");
-        } catch (NotFoundInDbException e) {
-            //Do nothing...
-        }
-        if (wikiType == null) {
-
-            List<com.dotcms.contenttype.model.field.Field> fields = new ArrayList<>();
-            fields.add(
-                    new FieldDataGen()
-                            .name("Title")
-                            .velocityVarName("title")
-                            .next()
-            );
-            fields.add(
-                    new FieldDataGen()
-                            .name("urlTitle")
-                            .velocityVarName("urlTitle")
-                            .next()
-            );
-            fields.add(
-                    new FieldDataGen()
-                            .name("By line")
-                            .velocityVarName("byline")
-                            .next()
-            );
-            fields.add(
-                    new FieldDataGen()
-                            .name("Publish")
-                            .velocityVarName("sysPublishDate")
-                            .defaultValue(null)
-                            .type(DateField.class)
-                            .next()
-            );
-            fields.add(
-                    new FieldDataGen()
-                            .name("Story")
-                            .velocityVarName("story")
-                            .next()
-            );
-
-            wikiType = new ContentTypeDataGen()
-                    .name("Wiki")
-                    .velocityVarName("Wiki")
-                    .fields(fields)
-                    .nextPersisted();
-        }
-
-        return wikiType;
     }
 
 }

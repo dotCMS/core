@@ -12,6 +12,7 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletStateException
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.util.Logger;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -24,12 +25,12 @@ import java.util.Map.Entry;
  */
 public class ContentletDataGen extends AbstractDataGen<Contentlet> {
 
-	private static final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+    private static final ContentletAPI contentletAPI = APILocator.getContentletAPI();
 
     protected String contentTypeId;
-	protected Map<String, Object> properties = new HashMap<>();
-	protected long languageId;
-	protected String modUser = UserAPI.SYSTEM_USER_ID;
+    protected Map<String, Object> properties = new HashMap<>();
+    protected long languageId;
+    protected String modUser = UserAPI.SYSTEM_USER_ID;
 
     public ContentletDataGen(String contentTypeId) {
         this.contentTypeId = contentTypeId;
@@ -42,32 +43,32 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
      * @return ContentletDataGen with languageId set
      */
     public ContentletDataGen languageId(long languageId){
-    	this.languageId = languageId;
-    	return this;
-    }
-    
-    /**
-	 * Sets the structure that will be the type of the  {@link Contentlet} created by this data-gen.
-     *
-     * @param contentTypeId the id of the structure
-	 * @return ContentletDataGen with structure set
-	 */
-    public ContentletDataGen structure(String contentTypeId) {
-        this.contentTypeId = contentTypeId;
-    	return this;
+        this.languageId = languageId;
+        return this;
     }
 
-	/**
-	 * Sets host property to the ContentletDataGen instance. This will
-	 * be used when a new {@link Contentlet} instance is created
-	 *
-	 * @param host the host
-	 * @return the datagen with host set
-	 */
-	public ContentletDataGen host(Host host) {
-		this.host = host;
-		return this;
-	}
+    /**
+     * Sets the structure that will be the type of the  {@link Contentlet} created by this data-gen.
+     *
+     * @param contentTypeId the id of the structure
+     * @return ContentletDataGen with structure set
+     */
+    public ContentletDataGen structure(String contentTypeId) {
+        this.contentTypeId = contentTypeId;
+        return this;
+    }
+
+    /**
+     * Sets host property to the ContentletDataGen instance. This will be used when a new {@link
+     * Contentlet} instance is created
+     *
+     * @param host the host
+     * @return the datagen with host set
+     */
+    public ContentletDataGen host(Host host) {
+        this.host = host;
+        return this;
+    }
 
     /**
      * Sets folder property to the ContentletDataGen instance. This will
@@ -80,7 +81,7 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
         this.folder = folder;
         return this;
     }
-    
+
     /**
      * Sets properties to the ContentletDataGen instance. 
      * This will be used when a new {@link Contentlet} instance is created
@@ -89,10 +90,10 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
      * @return ContentletDataGen with a new property set
      */
     public ContentletDataGen setProperty(String key, Object value){
-    	this.properties.put(key, value);
-    	return this;
+        this.properties.put(key, value);
+        return this;
     }
-    
+
     /**
      * Removes an existing property from the ContentletDataGen instance.
      * @param key the key
@@ -100,8 +101,8 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
      */
     @SuppressWarnings("unused")
     public ContentletDataGen removeProperty(String key){
-    	this.properties.remove(key);
-    	return this;
+        this.properties.remove(key);
+        return this;
     }
 
     /**
@@ -212,6 +213,16 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
         }
     }
 
+    public static Contentlet publish(Contentlet contentlet) {
+        try {
+            contentletAPI.publish(contentlet, user, false);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        return contentlet;
+    }
+
     /**
      * Archives a given {@link Contentlet} instance
      * @param contentlet to be archived
@@ -249,5 +260,24 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
             throw new RuntimeException(e);
         }
     }
-    
+
+    public static void destroy(final Contentlet contentlet) {
+        destroy(contentlet, true);
+    }
+
+    public static void destroy(final Contentlet contentlet, final Boolean failSilently) {
+
+        if (null != contentlet) {
+            try {
+                APILocator.getContentletAPI().destroy(contentlet, APILocator.systemUser(), false);
+            } catch (Exception e) {
+                if (failSilently) {
+                    Logger.error(ContentTypeDataGen.class, "Unable to destroy Contentlet.", e);
+                } else {
+                    throw new RuntimeException("Unable to destroy Contentlete.", e);
+                }
+            }
+        }
+    }
+
 }

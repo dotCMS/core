@@ -79,7 +79,7 @@ public class WorkflowDataGen extends AbstractDataGen<WorkflowScheme> {
     }
 
     public static void remove(final WorkflowScheme workflowScheme) {
-        remove(workflowScheme, false);
+        remove(workflowScheme, true);
     }
 
     public static void remove(final WorkflowScheme workflowScheme, final Boolean failSilently) {

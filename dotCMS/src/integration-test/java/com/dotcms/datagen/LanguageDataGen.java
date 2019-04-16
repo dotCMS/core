@@ -72,17 +72,20 @@ public class LanguageDataGen extends AbstractDataGen<Language> {
     }
 
     public static void remove(final Language language) {
-        remove(language, false);
+        remove(language, true);
     }
 
     public static void remove(final Language language, final Boolean failSilently) {
-        try {
-            APILocator.getLanguageAPI().deleteLanguage(language);
-        } catch (Exception e) {
-            if (failSilently) {
-                Logger.error(ContentTypeDataGen.class, "Unable to delete Language.", e);
-            } else {
-                throw new RuntimeException("Unable to delete Language.", e);
+
+        if (null != language) {
+            try {
+                APILocator.getLanguageAPI().deleteLanguage(language);
+            } catch (Exception e) {
+                if (failSilently) {
+                    Logger.error(ContentTypeDataGen.class, "Unable to delete Language.", e);
+                } else {
+                    throw new RuntimeException("Unable to delete Language.", e);
+                }
             }
         }
     }

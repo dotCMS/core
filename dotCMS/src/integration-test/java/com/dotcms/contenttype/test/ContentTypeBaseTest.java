@@ -133,8 +133,8 @@ public class ContentTypeBaseTest extends IntegrationTestBase {
 
 	@AfterClass
 	public static void cleanUp() {
-		ContentTypeDataGen.remove(languageVariableContentType, true);
-		UserDataGen.remove(chrisPublisher, true);
+		ContentTypeDataGen.remove(languageVariableContentType);
+		UserDataGen.remove(chrisPublisher);
 	}
 
 	protected void insert(BaseContentType baseType) throws Exception {

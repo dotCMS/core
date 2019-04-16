@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.contentlet.business;
 
 import static com.dotcms.util.CollectionsUtils.map;
+import static com.dotmarketing.business.APILocator.getContentTypeFieldAPI;
 import static java.io.File.separator;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
@@ -36,7 +37,7 @@ import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.StructureDataGen;
 import com.dotcms.datagen.TemplateDataGen;
-import com.dotcms.exception.ExceptionUtil;
+import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.mock.request.MockInternalRequest;
 import com.dotcms.mock.response.BaseResponse;
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
@@ -58,13 +59,12 @@ import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.db.LocalTransaction;
-import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.portlets.AssetUtil;
 import com.dotmarketing.portlets.ContentletBaseTest;
-import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -122,7 +122,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -345,18 +344,20 @@ public class ContentletAPITest extends ContentletBaseTest {
     @Test()
     public void test_findContentletByIdentifierOrFallback_existing_DotContentletStateException_expected_true () throws DotDataException, DotSecurityException {
 
-
         //Getting our test contentlet
-        final Contentlet contentletWidget =
-                APILocator.getContentletAPI()
-                        .findContentletByIdentifier("a79d70ba-3307-4a91-ac70-d239558acd12", false, 1, user, false);
-
+        Contentlet contentletWidget = TestDataUtils
+                .getWidgetContent(true, languageAPI.getDefaultLanguage().getId(),
+                        simpleWidgetContentType.id());
         assertNotNull(contentletWidget);
+
         final Optional<Contentlet> optionalContentlet =
-                APILocator.getContentletAPI().findContentletByIdentifierOrFallback(contentletWidget.getIdentifier(), false, 2, user, false);
+                APILocator.getContentletAPI()
+                        .findContentletByIdentifierOrFallback(contentletWidget.getIdentifier(),
+                                false, spanishLanguage.getId(), user, false);
 
         assertTrue(optionalContentlet.isPresent());
-        assertEquals(1, optionalContentlet.get().getLanguageId());
+        assertEquals(languageAPI.getDefaultLanguage().getId(),
+                optionalContentlet.get().getLanguageId());
     }
 
     /**
@@ -374,15 +375,14 @@ public class ContentletAPITest extends ContentletBaseTest {
     @Test()
     public void test_findContentletByIdentifierOrFallback_existing_English_version_no_Spanish_fallback_false_expecting_false () throws DotDataException, DotSecurityException {
 
-
         //Getting our test contentlet
-        final Contentlet contentletWidget =
-                APILocator.getContentletAPI()
-                        .findContentletByIdentifier("767509b1-2392-4661-a16b-e0e31ce27719", false, 1, user, false);
+        Contentlet genericContent = TestDataUtils.getGenericContentContent(true, 1);
 
-        assertNotNull(contentletWidget);
+        assertNotNull(genericContent);
         final Optional<Contentlet> optionalContentlet =
-                APILocator.getContentletAPI().findContentletByIdentifierOrFallback(contentletWidget.getIdentifier(), false, 2, user, false);
+                APILocator.getContentletAPI()
+                        .findContentletByIdentifierOrFallback(genericContent.getIdentifier(),
+                                false, spanishLanguage.getId(), user, false);
 
         assertFalse(optionalContentlet.isPresent());
     }
@@ -402,15 +402,14 @@ public class ContentletAPITest extends ContentletBaseTest {
     @Test()
     public void test_findContentletByIdentifierOrFallback_existing_EnglishSpanish_fallback_true_expecting_Spanish_true () throws DotDataException, DotSecurityException {
 
-
         //Getting our test contentlet
-        final Contentlet contentletWidget =
-                APILocator.getContentletAPI()
-                        .findContentletByIdentifier("a9f30020-54ef-494e-92ed-645e757171c2", false, 2, user, false);
-
+        Contentlet contentletWidget = TestDataUtils.getPageContent(true, spanishLanguage.getId());
         assertNotNull(contentletWidget);
+
         final Optional<Contentlet> optionalContentlet =
-                APILocator.getContentletAPI().findContentletByIdentifierOrFallback(contentletWidget.getIdentifier(), false, 2, user, false);
+                APILocator.getContentletAPI()
+                        .findContentletByIdentifierOrFallback(contentletWidget.getIdentifier(),
+                                false, spanishLanguage.getId(), user, false);
 
         assertTrue(optionalContentlet.isPresent());
         assertEquals(contentletWidget.getInode(), optionalContentlet.get().getInode());
@@ -431,15 +430,17 @@ public class ContentletAPITest extends ContentletBaseTest {
     @Test()
     public void test_findContentletByIdentifierOrFallback_existing_English_No_Spanish_fallback_false_expecting_False () throws DotDataException, DotSecurityException {
 
-
         //Getting our test contentlet
-        final Contentlet newsContentlet =
-                APILocator.getContentletAPI()
-                        .findContentletByIdentifier("90b6e398-50ba-40ee-bd9a-9445286a165f", false, 1, user, false);
+        Contentlet newsContentlet = TestDataUtils
+                .getNewsContent(true, languageAPI.getDefaultLanguage().getId(),
+                        newsContentType.id());
 
         assertNotNull(newsContentlet);
         final Optional<Contentlet> optionalContentlet =
-                APILocator.getContentletAPI().findContentletByIdentifierOrFallback(newsContentlet.getIdentifier(), false, 2, user, false);
+                APILocator.getContentletAPI()
+                        .findContentletByIdentifierOrFallback(newsContentlet.getIdentifier(),
+                                false,
+                                spanishLanguage.getId(), user, false);
 
         assertFalse(optionalContentlet.isPresent());
     }
@@ -459,117 +460,57 @@ public class ContentletAPITest extends ContentletBaseTest {
     @Test()
     public void test_findContentletByIdentifierOrFallback_existing_EnglishSpanish_fallback_false_expecting_Spanish_true () throws DotDataException, DotSecurityException {
 
+        //Getting our test contentlet
+        Contentlet newsContentlet = TestDataUtils
+                .getNewsContent(true, languageAPI.getDefaultLanguage().getId(),
+                        newsContentType.id());
+        assertNotNull(newsContentlet);
 
-        Contentlet spanishNewsContentlet = null;
-        try {
-            //Getting our test contentlet
-            final Contentlet newsContentlet =
-                    APILocator.getContentletAPI()
-                            .findContentletByIdentifier("db6f8100-134b-48fb-bef8-d1e8efa125ec", false, 1, user, false);
+        final Contentlet checkoutContentlet =
+                APILocator.getContentletAPI()
+                        .checkout(newsContentlet.getInode(), user, false);
+        assertNotNull(checkoutContentlet);
+        checkoutContentlet.setIdentifier(newsContentlet.getIdentifier());
+        checkoutContentlet.setLanguageId(spanishLanguage.getId()); // spanish
+        checkoutContentlet.setIndexPolicy(IndexPolicy.FORCE);
 
-            assertNotNull(newsContentlet);
-            final Contentlet checkoutContentlet =
-                    APILocator.getContentletAPI()
-                            .checkout(newsContentlet.getInode(), user, false);
+        Contentlet spanishNewsContentlet =
+                APILocator.getContentletAPI()
+                        .checkin(checkoutContentlet, user, false);
 
-            assertNotNull(checkoutContentlet);
-            checkoutContentlet.setIdentifier(newsContentlet.getIdentifier());
-            checkoutContentlet.setLanguageId(2); // spanish
-            checkoutContentlet.setIndexPolicy(IndexPolicy.FORCE);
+        final Optional<Contentlet> optionalContentlet =
+                APILocator.getContentletAPI()
+                        .findContentletByIdentifierOrFallback(newsContentlet.getIdentifier(),
+                                false, spanishLanguage.getId(), user, false);
 
-            spanishNewsContentlet =
-                    APILocator.getContentletAPI()
-                            .checkin(checkoutContentlet, user, false);
-
-
-            final Optional<Contentlet> optionalContentlet =
-                    APILocator.getContentletAPI().findContentletByIdentifierOrFallback(newsContentlet.getIdentifier(), false, 2, user, false);
-
-            assertTrue(optionalContentlet.isPresent());
-            assertEquals(spanishNewsContentlet.getInode(), optionalContentlet.get().getInode());
-        } finally {
-
-            try {
-                if (null != spanishNewsContentlet) {
-                    final Contentlet contentlet =
-                            APILocator.getContentletAPI().find(spanishNewsContentlet.getInode(), user, false);
-
-                    if (null != contentlet) {
-
-                        APILocator.getContentletAPI().deleteVersion(contentlet, user, false);
-                    }
-                }
-            } catch (Exception e) {
-                Logger.error(this, e.getMessage(), e);
-            }
-        }
+        assertTrue(optionalContentlet.isPresent());
+        assertEquals(spanishNewsContentlet.getInode(), optionalContentlet.get().getInode());
     }
 
     /**
-     * Testing {@link ContentletAPI#findContentletByIdentifierOrFallback(String, boolean, long, User, boolean)}
+     * Testing {@link ContentletAPI#findContentletByIdentifierOrFallback(String, boolean, long,
+     * User, boolean)}
      *
      * No English version, with Spanish, fallback true, request Spanish -> Return Spanish
-     *
-     * @throws com.dotmarketing.exception.DotDataException
-     *
-     * @throws com.dotmarketing.exception.DotSecurityException
      *
      * @see ContentletAPI
      * @see Contentlet
      */
     @Test()
-    public void test_findContentletByIdentifierOrFallback_existing_NonEnglish_WithSpanish_fallback_true_expecting_Spanish_true () throws DotDataException, DotSecurityException, IOException {
+    public void test_findContentletByIdentifierOrFallback_existing_NonEnglish_WithSpanish_fallback_true_expecting_Spanish_true() {
 
+        //Getting our test contentlet
+        Contentlet spanishGenericContentContentlet = TestDataUtils.getFileAssetContent(true,
+                spanishLanguage.getId());
 
-        Contentlet spanishNewFileAssetContentlet = null;
-        try {
-            //Getting our test contentlet
-            final Contentlet fileAssetContentletEng =
-                    APILocator.getContentletAPI()
-                            .findContentletByIdentifier("06869b9f-25ec-4b5c-b1fb-65e152a44000", false, 1, user, false);
+        final Optional<Contentlet> optionalContentlet =
+                APILocator.getContentletAPI().findContentletByIdentifierOrFallback(
+                        spanishGenericContentContentlet.getIdentifier(), false,
+                        spanishLanguage.getId(), user, false);
 
-            assertNotNull(fileAssetContentletEng);
-            spanishNewFileAssetContentlet = new Contentlet(); // no eng version
-            APILocator.getContentletAPI().copyProperties(spanishNewFileAssetContentlet, fileAssetContentletEng.getMap());
-            spanishNewFileAssetContentlet.setHost(fileAssetContentletEng.getHost());
-            spanishNewFileAssetContentlet.setContentType(fileAssetContentletEng.getContentType());
-            spanishNewFileAssetContentlet.setIdentifier(null);
-            spanishNewFileAssetContentlet.setInode(null);
-            spanishNewFileAssetContentlet.setIndexPolicy(IndexPolicy.FORCE);
-            spanishNewFileAssetContentlet.setLanguageId(2); // spanish
-            spanishNewFileAssetContentlet.setProperty("title", "Spanish Test");
-
-            final File file = fileAssetContentletEng.getBinary(FileAssetAPI.BINARY_FIELD);
-            final File copy = new File(org.apache.commons.io.FileUtils.getTempDirectory(), UUIDGenerator.generateUuid());
-            org.apache.commons.io.FileUtils.copyFile(file, copy);
-            spanishNewFileAssetContentlet.setBinary(FileAssetAPI.BINARY_FIELD, copy);
-
-            spanishNewFileAssetContentlet =
-                    APILocator.getContentletAPI()
-                            .checkin(spanishNewFileAssetContentlet, user, false);
-
-
-            final Optional<Contentlet> optionalContentlet =
-                    APILocator.getContentletAPI().findContentletByIdentifierOrFallback(spanishNewFileAssetContentlet.getIdentifier(), false, 2, user, false);
-
-            assertTrue(optionalContentlet.isPresent());
-            assertEquals(spanishNewFileAssetContentlet.getInode(), optionalContentlet.get().getInode());
-        } finally {
-
-            try {
-                if (null != spanishNewFileAssetContentlet) {
-                    final Contentlet contentlet =
-                            APILocator.getContentletAPI().find(spanishNewFileAssetContentlet.getInode(), user, false);
-
-                    if (null != contentlet) {
-
-                        APILocator.getContentletAPI().delete(contentlet, user, false);
-                    }
-                }
-            } catch (Exception e) {
-                Logger.error(this, e.getMessage(), e);
-            }
-        }
+        assertTrue(optionalContentlet.isPresent());
+        assertEquals(spanishGenericContentContentlet.getInode(),
+                optionalContentlet.get().getInode());
     }
 
     /**
@@ -587,55 +528,18 @@ public class ContentletAPITest extends ContentletBaseTest {
     @Test()
     public void test_findContentletByIdentifierOrFallback_existing_NonEnglish_WithSpanish_fallback_false_expecting_Spanish_true () throws DotDataException, DotSecurityException, IOException {
 
+        //Getting our test contentlet
+        Contentlet spanishGenericContentContentlet = TestDataUtils.getGenericContentContent(true,
+                spanishLanguage.getId());
 
-        Contentlet spanishNewNewsContentlet = null;
-        try {
-            //Getting our test contentlet
-            final Contentlet newsContentletEng =
-                    APILocator.getContentletAPI()
-                            .findContentletByIdentifier("c1857ef4-fdbd-4e08-a4f4-bd2ff68ea60b", false, 1, user, false);
+        final Optional<Contentlet> optionalContentlet =
+                APILocator.getContentletAPI().findContentletByIdentifierOrFallback(
+                        spanishGenericContentContentlet.getIdentifier(), false,
+                        spanishLanguage.getId(), user, false);
 
-            assertNotNull(newsContentletEng);
-            spanishNewNewsContentlet = new Contentlet(); // no eng version
-            APILocator.getContentletAPI().copyProperties(spanishNewNewsContentlet, newsContentletEng.getMap());
-            spanishNewNewsContentlet.setHost(newsContentletEng.getHost());
-            spanishNewNewsContentlet.setContentType(newsContentletEng.getContentType());
-            spanishNewNewsContentlet.setIdentifier(null);
-            spanishNewNewsContentlet.setInode(null);
-            spanishNewNewsContentlet.setIndexPolicy(IndexPolicy.FORCE);
-            spanishNewNewsContentlet.setLanguageId(2); // spanish
-            spanishNewNewsContentlet.setProperty("title", "Spanish Test");
-            spanishNewNewsContentlet.setProperty("urlTitle", "/news/spanish_test");
-            spanishNewNewsContentlet.setProperty("byline",   newsContentletEng.getStringProperty("byline"));
-            spanishNewNewsContentlet.setProperty("sysPublishDate",   newsContentletEng.getMap().get("sysPublishDate"));
-            spanishNewNewsContentlet.setProperty("story",   newsContentletEng.getMap().get("story"));
-
-            spanishNewNewsContentlet =
-                    APILocator.getContentletAPI()
-                            .checkin(spanishNewNewsContentlet, user, false);
-
-
-            final Optional<Contentlet> optionalContentlet =
-                    APILocator.getContentletAPI().findContentletByIdentifierOrFallback(spanishNewNewsContentlet.getIdentifier(), false, 2, user, false);
-
-            assertTrue(optionalContentlet.isPresent());
-            assertEquals(spanishNewNewsContentlet.getInode(), optionalContentlet.get().getInode());
-        } finally {
-
-            try {
-                if (null != spanishNewNewsContentlet) {
-                    final Contentlet contentlet =
-                            APILocator.getContentletAPI().find(spanishNewNewsContentlet.getInode(), user, false);
-
-                    if (null != contentlet) {
-
-                        APILocator.getContentletAPI().delete(contentlet, user, false);
-                    }
-                }
-            } catch (Exception e) {
-                Logger.error(this, e.getMessage(), e);
-            }
-        }
+        assertTrue(optionalContentlet.isPresent());
+        assertEquals(spanishGenericContentContentlet.getInode(),
+                optionalContentlet.get().getInode());
     }
 
     /**
@@ -653,56 +557,41 @@ public class ContentletAPITest extends ContentletBaseTest {
     @Test()
     public void test_findContentletByIdentifierOrFallback_existing_EnglishLive_WithSpanishWorking_fallback_true_expecting_SpanishWorking_true () throws DotDataException, DotSecurityException, IOException {
 
+        //Getting our test contentlet
+        Contentlet fileAssetContentletEngLive = TestDataUtils.getFileAssetContent(true,
+                languageAPI.getDefaultLanguage().getId());
 
-        Contentlet spanishFileAssetContentletWorking = null;
-        try {
-            //Getting our test contentlet
-            final Contentlet fileAssetContentletEngLive =
-                    APILocator.getContentletAPI()
-                            .findContentletByIdentifier("e8f77c15-24d2-4f4e-b6f0-87ecbdfbec51", true, 1, user, false);
+        assertNotNull(fileAssetContentletEngLive);
+        Contentlet spanishFileAssetContentletWorking = new Contentlet(); // no eng version
+        APILocator.getContentletAPI().copyProperties(spanishFileAssetContentletWorking,
+                fileAssetContentletEngLive.getMap());
+        spanishFileAssetContentletWorking.setHost(fileAssetContentletEngLive.getHost());
+        spanishFileAssetContentletWorking
+                .setContentType(fileAssetContentletEngLive.getContentType());
+        spanishFileAssetContentletWorking.setIdentifier(fileAssetContentletEngLive.getIdentifier());
+        spanishFileAssetContentletWorking.setInode(null);
+        spanishFileAssetContentletWorking.setIndexPolicy(IndexPolicy.FORCE);
+        spanishFileAssetContentletWorking.setLanguageId(spanishLanguage.getId()); // spanish
+        spanishFileAssetContentletWorking.setProperty("title", "Spanish Main.scss");
 
-            assertNotNull(fileAssetContentletEngLive);
-            spanishFileAssetContentletWorking = new Contentlet(); // no eng version
-            APILocator.getContentletAPI().copyProperties(spanishFileAssetContentletWorking, fileAssetContentletEngLive.getMap());
-            spanishFileAssetContentletWorking.setHost(fileAssetContentletEngLive.getHost());
-            spanishFileAssetContentletWorking.setContentType(fileAssetContentletEngLive.getContentType());
-            spanishFileAssetContentletWorking.setIdentifier(fileAssetContentletEngLive.getIdentifier());
-            spanishFileAssetContentletWorking.setInode(null);
-            spanishFileAssetContentletWorking.setIndexPolicy(IndexPolicy.FORCE);
-            spanishFileAssetContentletWorking.setLanguageId(2); // spanish
-            spanishFileAssetContentletWorking.setProperty("title", "Spanish Main.scss");
+        final File file = fileAssetContentletEngLive.getBinary(FileAssetAPI.BINARY_FIELD);
+        final File copy = new File(org.apache.commons.io.FileUtils.getTempDirectory(),
+                UUIDGenerator.generateUuid());
+        org.apache.commons.io.FileUtils.copyFile(file, copy);
+        spanishFileAssetContentletWorking.setBinary(FileAssetAPI.BINARY_FIELD, copy);
 
-            final File file = fileAssetContentletEngLive.getBinary(FileAssetAPI.BINARY_FIELD);
-            final File copy = new File(org.apache.commons.io.FileUtils.getTempDirectory(), UUIDGenerator.generateUuid());
-            org.apache.commons.io.FileUtils.copyFile(file, copy);
-            spanishFileAssetContentletWorking.setBinary(FileAssetAPI.BINARY_FIELD, copy);
+        spanishFileAssetContentletWorking =
+                APILocator.getContentletAPI()
+                        .checkin(spanishFileAssetContentletWorking, user, false);
 
-            spanishFileAssetContentletWorking =
-                    APILocator.getContentletAPI()
-                            .checkin(spanishFileAssetContentletWorking, user, false);
+        final Optional<Contentlet> optionalContentlet =
+                APILocator.getContentletAPI().findContentletByIdentifierOrFallback(
+                        fileAssetContentletEngLive.getIdentifier(), false,
+                        spanishLanguage.getId(), user, false);
 
-
-            final Optional<Contentlet> optionalContentlet =
-                    APILocator.getContentletAPI().findContentletByIdentifierOrFallback(fileAssetContentletEngLive.getIdentifier(), false, 2, user, false);
-
-            assertTrue(optionalContentlet.isPresent());
-            assertEquals(spanishFileAssetContentletWorking.getInode(), optionalContentlet.get().getInode());
-        } finally {
-
-            try {
-                if (null != spanishFileAssetContentletWorking) {
-                    final Contentlet contentlet =
-                            APILocator.getContentletAPI().find(spanishFileAssetContentletWorking.getInode(), user, false);
-
-                    if (null != contentlet) {
-
-                        APILocator.getContentletAPI().delete(contentlet, user, false);
-                    }
-                }
-            } catch (Exception e) {
-                Logger.error(this, e.getMessage(), e);
-            }
-        }
+        assertTrue(optionalContentlet.isPresent());
+        assertEquals(spanishFileAssetContentletWorking.getInode(),
+                optionalContentlet.get().getInode());
     }
 
     /**
@@ -720,57 +609,42 @@ public class ContentletAPITest extends ContentletBaseTest {
     @Test()
     public void test_findContentletByIdentifierOrFallback_existing_EnglishLive_WithSpanishWorking_fallback_true_expecting_English_true () throws DotDataException, DotSecurityException, IOException {
 
+        //Getting our test contentlet
+        Contentlet fileAssetContentletEngLive = TestDataUtils.getFileAssetContent(true,
+                languageAPI.getDefaultLanguage().getId());
 
-        Contentlet spanishFileAssetContentletWorking = null;
-        try {
-            //Getting our test contentlet
-            final Contentlet fileAssetContentletEngLive =
-                    APILocator.getContentletAPI()
-                            .findContentletByIdentifier("e8f77c15-24d2-4f4e-b6f0-87ecbdfbec51", true, 1, user, false);
+        assertNotNull(fileAssetContentletEngLive);
+        Contentlet spanishFileAssetContentletWorking = new Contentlet(); // no eng version
+        APILocator.getContentletAPI().copyProperties(spanishFileAssetContentletWorking,
+                fileAssetContentletEngLive.getMap());
+        spanishFileAssetContentletWorking.setIdentifier(fileAssetContentletEngLive.getIdentifier());
+        spanishFileAssetContentletWorking.setHost(fileAssetContentletEngLive.getHost());
+        spanishFileAssetContentletWorking
+                .setContentType(fileAssetContentletEngLive.getContentType());
+        spanishFileAssetContentletWorking.setInode(null);
+        spanishFileAssetContentletWorking.setIndexPolicy(IndexPolicy.FORCE);
+        spanishFileAssetContentletWorking.setLanguageId(spanishLanguage.getId()); // spanish
+        spanishFileAssetContentletWorking.setProperty("title", "Spanish Main.scss");
 
-            assertNotNull(fileAssetContentletEngLive);
-            spanishFileAssetContentletWorking = new Contentlet(); // no eng version
-            APILocator.getContentletAPI().copyProperties(spanishFileAssetContentletWorking, fileAssetContentletEngLive.getMap());
-            spanishFileAssetContentletWorking.setIdentifier(fileAssetContentletEngLive.getIdentifier());
-            spanishFileAssetContentletWorking.setHost(fileAssetContentletEngLive.getHost());
-            spanishFileAssetContentletWorking.setContentType(fileAssetContentletEngLive.getContentType());
-            spanishFileAssetContentletWorking.setInode(null);
-            spanishFileAssetContentletWorking.setIndexPolicy(IndexPolicy.FORCE);
-            spanishFileAssetContentletWorking.setLanguageId(2); // spanish
-            spanishFileAssetContentletWorking.setProperty("title", "Spanish Main.scss");
+        final File file = fileAssetContentletEngLive.getBinary(FileAssetAPI.BINARY_FIELD);
+        final File copy = new File(org.apache.commons.io.FileUtils.getTempDirectory(),
+                UUIDGenerator.generateUuid());
+        org.apache.commons.io.FileUtils.copyFile(file, copy);
+        spanishFileAssetContentletWorking.setBinary(FileAssetAPI.BINARY_FIELD, copy);
 
-            final File file = fileAssetContentletEngLive.getBinary(FileAssetAPI.BINARY_FIELD);
-            final File copy = new File(org.apache.commons.io.FileUtils.getTempDirectory(), UUIDGenerator.generateUuid());
-            org.apache.commons.io.FileUtils.copyFile(file, copy);
-            spanishFileAssetContentletWorking.setBinary(FileAssetAPI.BINARY_FIELD, copy);
+        spanishFileAssetContentletWorking =
+                APILocator.getContentletAPI()
+                        .checkin(spanishFileAssetContentletWorking, user, false);
 
-            spanishFileAssetContentletWorking =
-                    APILocator.getContentletAPI()
-                            .checkin(spanishFileAssetContentletWorking, user, false);
+        final Optional<Contentlet> optionalContentlet =
+                APILocator.getContentletAPI().findContentletByIdentifierOrFallback(
+                        fileAssetContentletEngLive.getIdentifier(), true,
+                        spanishLanguage.getId(), user, false);
 
-
-            final Optional<Contentlet> optionalContentlet =
-                    APILocator.getContentletAPI().findContentletByIdentifierOrFallback(fileAssetContentletEngLive.getIdentifier(), true, 2, user, false);
-
-            assertTrue(optionalContentlet.isPresent());
-            assertNotEquals(spanishFileAssetContentletWorking.getInode(), optionalContentlet.get().getInode());
-            assertEquals(fileAssetContentletEngLive.getInode(), optionalContentlet.get().getInode());
-        } finally {
-
-            try {
-                if (null != spanishFileAssetContentletWorking) {
-                    final Contentlet contentlet =
-                            APILocator.getContentletAPI().find(spanishFileAssetContentletWorking.getInode(), user, false);
-
-                    if (null != contentlet) {
-
-                        APILocator.getContentletAPI().delete(contentlet, user, false);
-                    }
-                }
-            } catch (Exception e) {
-                Logger.error(this, e.getMessage(), e);
-            }
-        }
+        assertTrue(optionalContentlet.isPresent());
+        assertNotEquals(spanishFileAssetContentletWorking.getInode(),
+                optionalContentlet.get().getInode());
+        assertEquals(fileAssetContentletEngLive.getInode(), optionalContentlet.get().getInode());
     }
 
     /**
@@ -788,53 +662,38 @@ public class ContentletAPITest extends ContentletBaseTest {
     @Test()
     public void test_findContentletByIdentifierOrFallback_existing_OnlySpanishWorking_fallback_true_expecting_English_true () throws DotDataException, DotSecurityException, IOException {
 
-        Contentlet spanishNewNewsContentlet = null;
-        try {
-            //Getting our test contentlet
-            final Contentlet newsContentletEng =
-                    APILocator.getContentletAPI()
-                            .findContentletByIdentifier("c1857ef4-fdbd-4e08-a4f4-bd2ff68ea60b", false, 1, user, false);
+        //Getting our test contentlet
+        Contentlet newsContentletEng = TestDataUtils
+                .getNewsContent(true, languageAPI.getDefaultLanguage().getId(),
+                        newsContentType.id());
 
-            assertNotNull(newsContentletEng);
-            spanishNewNewsContentlet = new Contentlet(); // no eng version
-            APILocator.getContentletAPI().copyProperties(spanishNewNewsContentlet, newsContentletEng.getMap());
-            spanishNewNewsContentlet.setHost(newsContentletEng.getHost());
-            spanishNewNewsContentlet.setContentType(newsContentletEng.getContentType());
-            spanishNewNewsContentlet.setIdentifier(null);
-            spanishNewNewsContentlet.setInode(null);
-            spanishNewNewsContentlet.setIndexPolicy(IndexPolicy.FORCE);
-            spanishNewNewsContentlet.setLanguageId(2); // spanish
-            spanishNewNewsContentlet.setProperty("title", "Spanish Test2");
-            spanishNewNewsContentlet.setProperty("urlTitle", "/news/spanish_test2");
-            spanishNewNewsContentlet.setProperty("byline",   newsContentletEng.getStringProperty("byline"));
-            spanishNewNewsContentlet.setProperty("sysPublishDate",   newsContentletEng.getMap().get("sysPublishDate"));
-            spanishNewNewsContentlet.setProperty("story",   newsContentletEng.getMap().get("story"));
+        assertNotNull(newsContentletEng);
+        Contentlet spanishNewNewsContentlet = new Contentlet(); // no eng version
+        APILocator.getContentletAPI()
+                .copyProperties(spanishNewNewsContentlet, newsContentletEng.getMap());
+        spanishNewNewsContentlet.setHost(newsContentletEng.getHost());
+        spanishNewNewsContentlet.setContentType(newsContentletEng.getContentType());
+        spanishNewNewsContentlet.setIdentifier(null);
+        spanishNewNewsContentlet.setInode(null);
+        spanishNewNewsContentlet.setIndexPolicy(IndexPolicy.FORCE);
+        spanishNewNewsContentlet.setLanguageId(spanishLanguage.getId()); // spanish
+        spanishNewNewsContentlet.setProperty("title", "Spanish Test2");
+        spanishNewNewsContentlet.setProperty("urlTitle", "/news/spanish_test2");
+        spanishNewNewsContentlet
+                .setProperty("byline", newsContentletEng.getStringProperty("byline"));
+        spanishNewNewsContentlet
+                .setProperty("sysPublishDate", newsContentletEng.getMap().get("sysPublishDate"));
+        spanishNewNewsContentlet.setProperty("story", newsContentletEng.getMap().get("story"));
 
-            spanishNewNewsContentlet =
-                    APILocator.getContentletAPI()
-                            .checkin(spanishNewNewsContentlet, user, false);
+        spanishNewNewsContentlet =
+                APILocator.getContentletAPI()
+                        .checkin(spanishNewNewsContentlet, user, false);
 
+        final Optional<Contentlet> optionalContentlet =
+                APILocator.getContentletAPI().findContentletByIdentifierOrFallback(
+                        spanishNewNewsContentlet.getIdentifier(), false, 1, user, false);
 
-            final Optional<Contentlet> optionalContentlet =
-                    APILocator.getContentletAPI().findContentletByIdentifierOrFallback(spanishNewNewsContentlet.getIdentifier(), false, 1, user, false);
-
-            assertFalse(optionalContentlet.isPresent());
-        } finally {
-
-            try {
-                if (null != spanishNewNewsContentlet) {
-                    final Contentlet contentlet =
-                            APILocator.getContentletAPI().find(spanishNewNewsContentlet.getInode(), user, false);
-
-                    if (null != contentlet) {
-
-                        APILocator.getContentletAPI().delete(contentlet, user, false);
-                    }
-                }
-            } catch (Exception e) {
-                Logger.error(this, e.getMessage(), e);
-            }
-        }
+        assertFalse(optionalContentlet.isPresent());
     }
 
     /**
@@ -1528,7 +1387,7 @@ public class ContentletAPITest extends ContentletBaseTest {
     @Test
     public void getContentletReferences() throws Exception {
         int english = 1;
-        int spanish = 2;
+        long spanish = spanishLanguage.getId();
 
         try {
             HibernateUtil.startTransaction();
@@ -1854,7 +1713,7 @@ public class ContentletAPITest extends ContentletBaseTest {
                 .relationType(childContentTypeVariable)
                 .build();
 
-        return APILocator.getContentTypeFieldAPI().save(field, APILocator.systemUser());
+        return getContentTypeFieldAPI().save(field, APILocator.systemUser());
     }
 
     /**
@@ -3220,18 +3079,16 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         initMessages();
 
-        Structure sw=CacheLocator.getContentTypeCache().getStructureByVelocityVarName("SimpleWidget");
         Language def=APILocator.getLanguageAPI().getDefaultLanguage();
         Contentlet w = new Contentlet();
-        w.setStructureInode(sw.getInode());
+        w.setStructureInode(simpleWidgetContentType.id());
         w.setStringProperty("widgetTitle", "A testing widget "+UUIDGenerator.generateUuid());
         w.setStringProperty("code", "Initial code");
         w.setLanguageId(def.getId());
+        w.setIndexPolicy(IndexPolicy.FORCE);
+        w.setIndexPolicyDependencies(IndexPolicy.FORCE);
         w = contentletAPI.checkin(w, user, false);
-        APILocator.getVersionableAPI().setLive(w);
-        APILocator.getContentletIndexAPI().addContentToIndex(w,false,true);
-        contentletAPI.isInodeIndexed(w.getInode(),true);
-
+        contentletAPI.publish(w, user, false);
 
         /*
          * For every language we should get the same content and contentMap template code
@@ -3248,7 +3105,8 @@ public class ContentletAPITest extends ContentletBaseTest {
                 File.separator + PageMode.LIVE.name() + File.separator + w.getIdentifier() + "_1."
                         + VelocityType.CONTENT.fileExtension);
         org.apache.velocity.Template tesp1 = engine.getTemplate(
-                File.separator + PageMode.LIVE.name() + File.separator + w.getIdentifier() + "_2."
+                File.separator + PageMode.LIVE.name() + File.separator + w.getIdentifier() + "_"
+                        + spanishLanguage.getId() + "."
                         + VelocityType.CONTENT.fileExtension);
 
         Context ctx = VelocityUtil.getWebContext(requestProxy, responseProxy);
@@ -3267,7 +3125,8 @@ public class ContentletAPITest extends ContentletBaseTest {
         w2 = contentletAPI.checkin(w2, user, false);
         contentletAPI.publish(w2, user, false);
         contentletAPI.isInodeIndexed(w2.getInode(),true);
-        VelocityResourceKey key = new VelocityResourceKey(w2,PageMode.LIVE,2);
+        VelocityResourceKey key = new VelocityResourceKey(w2, PageMode.LIVE,
+                spanishLanguage.getId());
         CacheLocator.getVeloctyResourceCache().remove(key);
 
         // now if everything have been cleared correctly those should match again
@@ -3275,7 +3134,8 @@ public class ContentletAPITest extends ContentletBaseTest {
                 File.separator + PageMode.LIVE.name() + File.separator + w.getIdentifier() + "_1."
                         + VelocityType.CONTENT.fileExtension);
         org.apache.velocity.Template tesp3 = engine.getTemplate(
-                File.separator + PageMode.LIVE.name() + File.separator + w.getIdentifier() + "_2."
+                File.separator + PageMode.LIVE.name() + File.separator + w.getIdentifier() + "_"
+                        + spanishLanguage.getId() + "."
                         + VelocityType.CONTENT.fileExtension);
         ctx = VelocityUtil.getWebContext(requestProxy, responseProxy);
         writer=new StringWriter();
@@ -3289,27 +3149,27 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertEquals("code:Modified Code to make templates different",writer.toString());
 
         // clean up
-        APILocator.getVersionableAPI().removeLive(w2);
-        contentletAPI.archive(w2, user, false);
-        contentletAPI.delete(w2, user, false);
         Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE",false);
     }
     @Test
-    public void testFileCopyOnSecondLanguageVersion() throws DotDataException, DotSecurityException {
+    public void testFileCopyOnSecondLanguageVersion()
+            throws DotDataException, DotSecurityException {
+
+        final String contentTypeName = "structure2709" + System.currentTimeMillis();
 
     	// Structure
         Structure testStructure = new Structure();
 
         testStructure.setDefaultStructure( false );
-        testStructure.setDescription( "structure2709" );
+        testStructure.setDescription(contentTypeName);
         testStructure.setFixed( false );
         testStructure.setIDate( new Date() );
-        testStructure.setName( "structure2709" );
+        testStructure.setName(contentTypeName);
         testStructure.setOwner( user.getUserId() );
         testStructure.setDetailPage( "" );
         testStructure.setStructureType( BaseContentType.CONTENT.getType() );
         testStructure.setType( "structure" );
-        testStructure.setVelocityVarName( "structure2709" );
+        testStructure.setVelocityVarName(contentTypeName);
 
         StructureFactory.saveStructure( testStructure );
 
@@ -3360,8 +3220,9 @@ public class ContentletAPITest extends ContentletBaseTest {
         englishContent.setStructureInode( testStructure.getInode() );
         englishContent.setLanguageId(1);
 
-        List<Contentlet> files =  APILocator.getContentletAPI().search("+structureName:FileAsset", 10, -1, null, user, false);
-        Contentlet fileA = files.get(0);
+        //Create a test file asset
+        Contentlet fileA = TestDataUtils
+                .getFileAssetContent(true, languageAPI.getDefaultLanguage().getId());
 
         contentletAPI.setContentletProperty( englishContent, title, "englishTitle2709" );
         contentletAPI.setContentletProperty( englishContent, file, fileA.getInode() );
@@ -3372,7 +3233,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 		Contentlet spanishContent = new Contentlet();
 		spanishContent.setReviewInterval("1m");
 		spanishContent.setStructureInode(testStructure.getInode());
-		spanishContent.setLanguageId(2);
+        spanishContent.setLanguageId(spanishLanguage.getId());
 		spanishContent.setIdentifier(englishContent.getIdentifier());
 
 		contentletAPI.setContentletProperty( spanishContent, title, "spanishTitle2709" );
@@ -3395,7 +3256,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
     @Test
     public void newFileAssetLanguageDifferentThanDefault() throws DotSecurityException, DotDataException, IOException {
-        int spanish = 2;
+        long spanish = spanishLanguage.getId();
         Folder folder = APILocator.getFolderAPI().findSystemFolder();
         java.io.File file = java.io.File.createTempFile("texto", ".txt");
         FileUtil.write(file, "helloworld");
@@ -3413,7 +3274,7 @@ public class ContentletAPITest extends ContentletBaseTest {
     @Test
     public void newVersionFileAssetLanguageDifferentThanDefault() throws DotDataException, IOException, DotSecurityException{
     	int english = 1;
-    	int spanish = 2;
+        long spanish = spanishLanguage.getId();
     	
     	Folder folder = APILocator.getFolderAPI().findSystemFolder();
     	java.io.File file = java.io.File.createTempFile("file", ".txt");
@@ -3444,7 +3305,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
     	// languages
     	int english = 1;
-    	int spanish = 2;
+        long spanish = spanishLanguage.getId();
 
         // new template
         Template template = new TemplateDataGen().nextPersisted();
@@ -3532,7 +3393,7 @@ public class ContentletAPITest extends ContentletBaseTest {
     public void testDelete_GivenMultiLangMultiVersionContent_WhenDeletingOneSpanishVersion_ShouldDeleteAllSpanishVersions() throws Exception{
         // languages
         int english = 1;
-        int spanish = 2;
+        long spanish = spanishLanguage.getId();
 
         ContentType contentType = null;
         com.dotcms.contenttype.model.field.Field textField1 = null;
@@ -3844,7 +3705,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             fileAssetDataGen = new FileAssetDataGen(testFolder, initialContent.getBinary(binaryField.variable()));
 
             //Creating file asset content in Spanish
-            spanishContent = fileAssetDataGen.languageId(2).nextPersisted();
+            spanishContent = fileAssetDataGen.languageId(spanishLanguage.getId()).nextPersisted();
 
             //Creating content version in English
             englishContent = contentletAPI.checkout(spanishContent.getInode(), user, false);
@@ -4224,7 +4085,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             //Contentlet in Spanish (should not be an issue since the unique is per lang)
             Contentlet contentlet2 = new Contentlet();
             contentlet2.setContentTypeId(contentType.inode());
-            contentlet2.setLanguageId(2);
+            contentlet2.setLanguageId(spanishLanguage.getId());
             contentlet2.setStringProperty(field.variable(),"test");
             contentlet2.setIndexPolicy(IndexPolicy.FORCE);
             contentlet2 = contentletAPI.checkin(contentlet2, user, false);
@@ -4256,7 +4117,9 @@ public class ContentletAPITest extends ContentletBaseTest {
         Contentlet blogContent = null;
 
         try {
-            blogContent = getBlogContent();
+            blogContent = TestDataUtils
+                    .getBlogContent(false, APILocator.getLanguageAPI().getDefaultLanguage().getId(),
+                            blogContentType.id());
 
             final List<Category> categories = getACoupleOfCategories();
 
@@ -4292,7 +4155,9 @@ public class ContentletAPITest extends ContentletBaseTest {
         Contentlet blogContent = null;
 
         try {
-            blogContent = getBlogContent();
+            blogContent = TestDataUtils
+                    .getBlogContent(false, APILocator.getLanguageAPI().getDefaultLanguage().getId(),
+                            blogContentType.id());
 
             final List<Category> categories = getACoupleOfCategories();
 
@@ -4329,7 +4194,9 @@ public class ContentletAPITest extends ContentletBaseTest {
         Contentlet blogContent = null;
 
         try {
-            blogContent = getBlogContent();
+            blogContent = TestDataUtils
+                    .getBlogContent(false, APILocator.getLanguageAPI().getDefaultLanguage().getId(),
+                            blogContentType.id());
 
             final List<Category> categories = getACoupleOfCategories();
 
@@ -4365,7 +4232,9 @@ public class ContentletAPITest extends ContentletBaseTest {
         Contentlet blogContent = null;
 
         try {
-            blogContent = getBlogContent();
+            blogContent = TestDataUtils
+                    .getBlogContent(false, APILocator.getLanguageAPI().getDefaultLanguage().getId(),
+                            blogContentType.id());
 
             final List<Category> categories = getACoupleOfCategories();
 
@@ -4394,7 +4263,9 @@ public class ContentletAPITest extends ContentletBaseTest {
         Contentlet blogContent = null;
 
         try {
-            blogContent = getBlogContent();
+            blogContent = TestDataUtils
+                    .getBlogContent(false, APILocator.getLanguageAPI().getDefaultLanguage().getId(),
+                            blogContentType.id());
 
             final List<Category> categories = getACoupleOfCategories();
 
@@ -4419,13 +4290,15 @@ public class ContentletAPITest extends ContentletBaseTest {
      * Test checkin with a non-existing contentlet identifier, that should fail
      *
      */
-    @Test
+    @Test(expected = DotHibernateException.class)
     public void testCheckin_Non_Existing_Identifier_With_Validate_Should_FAIL()
             throws DotDataException, DotSecurityException {
         Contentlet newsContent = null;
 
         try {
-            newsContent = getNewsContent();
+            newsContent = TestDataUtils
+                    .getNewsContent(false, languageAPI.getDefaultLanguage().getId(),
+                            newsContentType.id());
             newsContent.setIdentifier(UUIDGenerator.generateUuid());
 
             final List<Category> categories = getACoupleOfCategories();
@@ -4433,11 +4306,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             newsContent = contentletAPI.checkin(newsContent, (ContentletRelationships) null, categories,
                     null, user,false);
 
-            fail("Should throw DoesNotExistException for an unexisting id");
-        } catch (Exception e) {
-
-            assertTrue(ExceptionUtil.causedBy(e, DoesNotExistException.class));
-            // good
+            fail("Should throw a constrain exception for an unexisting id");
         } finally {
             if(newsContent!=null && UtilMethods.isSet(newsContent.getIdentifier()) && UtilMethods.isSet(newsContent.getInode())) {
                 contentletAPI.destroy(newsContent, user, false);
@@ -4455,7 +4324,9 @@ public class ContentletAPITest extends ContentletBaseTest {
         Contentlet newsContent = null;
 
         try {
-            newsContent = getNewsContent();
+            newsContent = TestDataUtils
+                    .getNewsContent(false, languageAPI.getDefaultLanguage().getId(),
+                            newsContentType.id());
             String identifier = UUIDGenerator.generateUuid();
             newsContent.setIdentifier(identifier);
             newsContent.setInode(UUIDGenerator.generateUuid());
@@ -4489,7 +4360,9 @@ public class ContentletAPITest extends ContentletBaseTest {
         Contentlet newsContent = null;
 
         try {
-            newsContent = getNewsContent();
+            newsContent = TestDataUtils
+                    .getNewsContent(false, languageAPI.getDefaultLanguage().getId(),
+                            newsContentType.id());
 
             final List<Category> categories = getACoupleOfCategories();
 
@@ -4527,7 +4400,9 @@ public class ContentletAPITest extends ContentletBaseTest {
         Contentlet newsContent = null;
 
         try {
-            newsContent = getNewsContent();
+            newsContent = TestDataUtils
+                    .getNewsContent(false, languageAPI.getDefaultLanguage().getId(),
+                            newsContentType.id());
 
             final List<Category> categories = getACoupleOfCategories();
 
@@ -4563,7 +4438,9 @@ public class ContentletAPITest extends ContentletBaseTest {
         Contentlet newsContent = null;
 
         try {
-            newsContent = getNewsContent();
+            newsContent = TestDataUtils
+                    .getNewsContent(false, languageAPI.getDefaultLanguage().getId(),
+                            newsContentType.id());
 
             final List<Category> categories = getACoupleOfCategories();
 
@@ -4601,7 +4478,9 @@ public class ContentletAPITest extends ContentletBaseTest {
         Contentlet newsContent = null;
 
         try {
-            newsContent = getNewsContent();
+            newsContent = TestDataUtils
+                    .getNewsContent(false, languageAPI.getDefaultLanguage().getId(),
+                            newsContentType.id());
 
             final List<Category> categories = getACoupleOfCategories();
 
@@ -4630,7 +4509,9 @@ public class ContentletAPITest extends ContentletBaseTest {
         Contentlet newsContent = null;
 
         try {
-            newsContent = getNewsContent();
+            newsContent = TestDataUtils
+                    .getNewsContent(false, languageAPI.getDefaultLanguage().getId(),
+                            newsContentType.id());
 
             final List<Category> categories = getACoupleOfCategories();
 
@@ -4654,48 +4535,42 @@ public class ContentletAPITest extends ContentletBaseTest {
     @Test
     public void testCheckin1_ExistingContentWithRels_NullRels_ShouldKeepExistingRels()
             throws DotDataException, DotSecurityException {
-        Contentlet blogContent = null;
-        List<Contentlet> relatedContent = null;
 
-        try {
+        Contentlet blogContent = TestDataUtils
+                .getBlogContent(false, APILocator.getLanguageAPI().getDefaultLanguage().getId(),
+                        blogContentType.id());
 
-            blogContent = getBlogContent();
+        final ContentletRelationships relationships = getACoupleOfChildRelationships(blogContent);
+        final Relationship relationship = relationships.getRelationshipsRecords().get(0)
+                .getRelationship();
+        List<Contentlet> relatedContent = relationships.getRelationshipsRecords().get(0)
+                .getRecords();
 
-            final ContentletRelationships relationships = getACoupleOfChildRelationships(blogContent);
-            final Relationship relationship = relationships.getRelationshipsRecords().get(0).getRelationship();
-            relatedContent = relationships.getRelationshipsRecords().get(0).getRecords();
+        final List<Category> categories = getACoupleOfCategories();
 
-            final List<Category> categories = getACoupleOfCategories();
+        blogContent = contentletAPI.checkin(blogContent, relationships, categories, null, user,
+                false);
+        blogContent.setIndexPolicy(IndexPolicy.FORCE);
+        blogContent.setIndexPolicyDependencies(IndexPolicy.FORCE);
 
-            blogContent = contentletAPI.checkin(blogContent, relationships, categories, null, user,
-                    false);
-            blogContent.setIndexPolicy(IndexPolicy.FORCE);
-            blogContent.setIndexPolicyDependencies(IndexPolicy.FORCE);
+        List<Contentlet> relatedContentFromDB = relationshipAPI
+                .dbRelatedContent(relationship, blogContent);
 
-            //contentletAPI.isInodeIndexed(blogContent.getInode());
+        assertTrue(relatedContentFromDB.containsAll(relatedContent));
 
-            List<Contentlet> relatedContentFromDB = relationshipAPI.dbRelatedContent(relationship, blogContent);
+        Contentlet checkedoutBlogContent = contentletAPI
+                .checkout(blogContent.getInode(), user, false);
 
-            assertTrue(relatedContentFromDB.containsAll(relatedContent));
+        checkedoutBlogContent.setIndexPolicy(IndexPolicy.FORCE);
+        checkedoutBlogContent.setIndexPolicyDependencies(IndexPolicy.FORCE);
+        Contentlet reCheckedinContent = contentletAPI
+                .checkin(checkedoutBlogContent, (ContentletRelationships) null,
+                        null, null, user, false);
 
-            Contentlet checkedoutBlogContent = contentletAPI.checkout(blogContent.getInode(), user, false);
+        List<Contentlet> existingRelationships = relationshipAPI
+                .dbRelatedContent(relationship, reCheckedinContent);
 
-            checkedoutBlogContent.setIndexPolicy(IndexPolicy.FORCE);
-            checkedoutBlogContent.setIndexPolicyDependencies(IndexPolicy.FORCE);
-            Contentlet reCheckedinContent = contentletAPI.checkin(checkedoutBlogContent, (ContentletRelationships) null,
-                    null, null, user, false);
-
-            List<Contentlet> existingRelationships = relationshipAPI.dbRelatedContent(relationship, reCheckedinContent);
-
-            assertTrue(existingRelationships.containsAll(relatedContent));
-        } finally {
-            contentletAPI.archive(blogContent, user, false);
-            contentletAPI.delete(blogContent, user, false);
-            for(Contentlet c : relatedContent){
-                contentletAPI.archive(c, user, false);
-                contentletAPI.delete(c, user, false);
-            }
-        }
+        assertTrue(existingRelationships.containsAll(relatedContent));
     }
 
     @Test
@@ -4707,7 +4582,9 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         try {
 
-            blogContent = getBlogContent();
+            blogContent = TestDataUtils
+                    .getBlogContent(false, APILocator.getLanguageAPI().getDefaultLanguage().getId(),
+                            blogContentType.id());
 
             final ContentletRelationships relationships = getACoupleOfParentAndChildrenSelfJoinRelationships(blogContent);
             relationship = relationships.getRelationshipsRecords().get(0).getRelationship();
@@ -4760,320 +4637,270 @@ public class ContentletAPITest extends ContentletBaseTest {
     @Test
     public void testCheckin2_ExistingContentWithRels_NullRels_ShouldKeepExistingRels()
         throws DotDataException, DotSecurityException {
-        Contentlet blogContent = null;
-        List<Contentlet> relatedContent = null;
 
-        try {
-            blogContent = getBlogContent();
+        Contentlet blogContent = TestDataUtils
+                .getBlogContent(false, APILocator.getLanguageAPI().getDefaultLanguage().getId(),
+                        blogContentType.id());
 
-            final ContentletRelationships relationships = getACoupleOfChildRelationships(blogContent);
+        final ContentletRelationships relationships = getACoupleOfChildRelationships(blogContent);
 
-            final List<Category> categories = getACoupleOfCategories();
-            blogContent.setIndexPolicy(IndexPolicy.FORCE);
-            blogContent.setIndexPolicyDependencies(IndexPolicy.FORCE);
-            blogContent = contentletAPI.checkin(blogContent, relationships,
+        final List<Category> categories = getACoupleOfCategories();
+        blogContent.setIndexPolicy(IndexPolicy.FORCE);
+        blogContent.setIndexPolicyDependencies(IndexPolicy.FORCE);
+        blogContent = contentletAPI.checkin(blogContent, relationships,
                 categories, null, user, false, false);
 
-            Contentlet checkedoutBlogContent = contentletAPI.checkout(blogContent.getInode(), user, false);
+        Contentlet checkedoutBlogContent = contentletAPI
+                .checkout(blogContent.getInode(), user, false);
 
-            checkedoutBlogContent.setIndexPolicy(IndexPolicy.FORCE);
-            checkedoutBlogContent.setIndexPolicyDependencies(IndexPolicy.FORCE);
-            Contentlet reCheckedinContent = contentletAPI.checkin(checkedoutBlogContent, (ContentletRelationships) null,
+        checkedoutBlogContent.setIndexPolicy(IndexPolicy.FORCE);
+        checkedoutBlogContent.setIndexPolicyDependencies(IndexPolicy.FORCE);
+        Contentlet reCheckedinContent = contentletAPI
+                .checkin(checkedoutBlogContent, (ContentletRelationships) null,
                 null, null, user, false, false);
 
-            Relationship relationship = relationships.getRelationshipsRecords().get(0).getRelationship();
+        Relationship relationship = relationships.getRelationshipsRecords().get(0)
+                .getRelationship();
 
-            relatedContent = relationships.getRelationshipsRecords().get(0).getRecords();
+        List<Contentlet> relatedContent = relationships.getRelationshipsRecords().get(0)
+                .getRecords();
+        assertFalse(relatedContent.isEmpty());
 
-            RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
-
-            List<Contentlet> existingRelationships = relationshipAPI.dbRelatedContent(relationship, reCheckedinContent);
-
-            assertTrue(existingRelationships.containsAll(relatedContent));
-        } finally {
-            if(blogContent!=null && UtilMethods.isSet(blogContent.getIdentifier())) {
-                contentletAPI.destroy(blogContent, user, false);
-            }
-            for(Contentlet c : relatedContent){
-                contentletAPI.archive(c, user, false);
-                contentletAPI.delete(c, user, false);
-            }
-        }
+        RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
+        List<Contentlet> existingRelationships = relationshipAPI
+                .dbRelatedContent(relationship, reCheckedinContent);
+        assertTrue(existingRelationships.containsAll(relatedContent));
     }
 
     @Test
     public void testCheckin3_ExistingContentWithRels_NullRels_ShouldKeepExistingRels()
         throws DotDataException, DotSecurityException {
-        Contentlet blogContent = null;
-        List<Contentlet> relatedContent = null;
 
-        try {
-            blogContent = getBlogContent();
+        Contentlet blogContent = TestDataUtils
+                .getBlogContent(false, APILocator.getLanguageAPI().getDefaultLanguage().getId(),
+                        blogContentType.id());
 
-            final ContentletRelationships relationships = getACoupleOfChildRelationships(blogContent);
+        final ContentletRelationships relationships = getACoupleOfChildRelationships(blogContent);
 
-            final List<Category> categories = getACoupleOfCategories();
+        final List<Category> categories = getACoupleOfCategories();
 
-            final Map<Relationship, List<Contentlet>> relationshipsMap = new HashMap<>();
-            relationshipsMap.put(relationships.getRelationshipsRecords().get(0).getRelationship(),
+        final Map<Relationship, List<Contentlet>> relationshipsMap = new HashMap<>();
+        relationshipsMap.put(relationships.getRelationshipsRecords().get(0).getRelationship(),
                 relationships.getRelationshipsRecords().get(0).getRecords());
 
-            blogContent.setIndexPolicy(IndexPolicy.FORCE);
-            blogContent = contentletAPI.checkin(blogContent, relationshipsMap, categories,
+        blogContent.setIndexPolicy(IndexPolicy.FORCE);
+        blogContent = contentletAPI.checkin(blogContent, relationshipsMap, categories,
                 null, user,false);
 
-            Contentlet checkedoutBlogContent = contentletAPI.checkout(blogContent.getInode(), user, false);
+        Contentlet checkedoutBlogContent = contentletAPI
+                .checkout(blogContent.getInode(), user, false);
 
-            Contentlet reCheckedinContent = contentletAPI.checkin(checkedoutBlogContent,
+        Contentlet reCheckedinContent = contentletAPI.checkin(checkedoutBlogContent,
                 (Map<Relationship, List<Contentlet>>) null, null, null, user, false);
 
-            Relationship relationship = relationships.getRelationshipsRecords().get(0).getRelationship();
+        Relationship relationship = relationships.getRelationshipsRecords().get(0)
+                .getRelationship();
 
-            relatedContent = relationships.getRelationshipsRecords().get(0).getRecords();
+        List<Contentlet> relatedContent = relationships.getRelationshipsRecords().get(0)
+                .getRecords();
+        assertFalse(relatedContent.isEmpty());
 
-            RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
-
-            List<Contentlet> existingRelationships = relationshipAPI.dbRelatedContent(relationship, reCheckedinContent);
-
-            assertTrue(existingRelationships.containsAll(relatedContent));
-        } finally {
-            if(blogContent!=null && UtilMethods.isSet(blogContent.getIdentifier())) {
-                contentletAPI.destroy(blogContent, user, false);
-            }
-            for(Contentlet c :relatedContent){
-                contentletAPI.archive(c, user, false);
-                contentletAPI.delete(c, user, false);
-            }
-        }
+        RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
+        List<Contentlet> existingRelationships = relationshipAPI
+                .dbRelatedContent(relationship, reCheckedinContent);
+        assertTrue(existingRelationships.containsAll(relatedContent));
     }
 
     @Test
     public void testCheckin4_ExistingContentWithRels_NullRels_ShouldKeepExistingRels()
         throws DotDataException, DotSecurityException {
-        Contentlet blogContent = null;
-        List<Contentlet> relatedContent = null;
 
-        try {
-            blogContent = getBlogContent();
+        Contentlet blogContent = TestDataUtils
+                .getBlogContent(false, APILocator.getLanguageAPI().getDefaultLanguage().getId(),
+                        blogContentType.id());
 
-            final ContentletRelationships relationships = getACoupleOfChildRelationships(blogContent);
+        final ContentletRelationships relationships = getACoupleOfChildRelationships(blogContent);
 
-            final List<Category> categories = getACoupleOfCategories();
+        final List<Category> categories = getACoupleOfCategories();
 
-            final Map<Relationship, List<Contentlet>> relationshipsMap = new HashMap<>();
-            relationshipsMap.put(relationships.getRelationshipsRecords().get(0).getRelationship(),
+        final Map<Relationship, List<Contentlet>> relationshipsMap = new HashMap<>();
+        relationshipsMap.put(relationships.getRelationshipsRecords().get(0).getRelationship(),
                 relationships.getRelationshipsRecords().get(0).getRecords());
 
-            blogContent.setIndexPolicy(IndexPolicy.FORCE);
-            blogContent.setIndexPolicyDependencies(IndexPolicy.FORCE);
-            blogContent = contentletAPI.checkin(blogContent, relationshipsMap, categories, user,false);
+        blogContent.setIndexPolicy(IndexPolicy.FORCE);
+        blogContent.setIndexPolicyDependencies(IndexPolicy.FORCE);
+        blogContent = contentletAPI.checkin(blogContent, relationshipsMap, categories, user, false);
 
-            Contentlet checkedoutBlogContent = contentletAPI.checkout(blogContent.getInode(), user, false);
+        Contentlet checkedoutBlogContent = contentletAPI
+                .checkout(blogContent.getInode(), user, false);
 
-            checkedoutBlogContent.setIndexPolicy(IndexPolicy.FORCE);
-            checkedoutBlogContent.setIndexPolicyDependencies(IndexPolicy.FORCE);
-            Contentlet reCheckedinContent = contentletAPI.checkin(checkedoutBlogContent,
+        checkedoutBlogContent.setIndexPolicy(IndexPolicy.FORCE);
+        checkedoutBlogContent.setIndexPolicyDependencies(IndexPolicy.FORCE);
+        Contentlet reCheckedinContent = contentletAPI.checkin(checkedoutBlogContent,
                 (Map<Relationship, List<Contentlet>>) null, null, user, false);
 
-            Relationship relationship = relationships.getRelationshipsRecords().get(0).getRelationship();
+        Relationship relationship = relationships.getRelationshipsRecords().get(0)
+                .getRelationship();
 
-            relatedContent = relationships.getRelationshipsRecords().get(0).getRecords();
+        List<Contentlet> relatedContent = relationships.getRelationshipsRecords().get(0)
+                .getRecords();
+        assertFalse(relatedContent.isEmpty());
 
-            RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
-
-            List<Contentlet> existingRelationships = relationshipAPI.dbRelatedContent(relationship, reCheckedinContent);
-
-            assertTrue(existingRelationships.containsAll(relatedContent));
-        } finally {
-            if(blogContent!=null && UtilMethods.isSet(blogContent.getIdentifier())) {
-                contentletAPI.destroy(blogContent, user, false);
-            }
-            for(Contentlet c :relatedContent){
-                contentletAPI.archive(c, user, false);
-                contentletAPI.delete(c, user, false);
-            }
-        }
+        RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
+        List<Contentlet> existingRelationships = relationshipAPI
+                .dbRelatedContent(relationship, reCheckedinContent);
+        assertTrue(existingRelationships.containsAll(relatedContent));
     }
 
     @Test
     public void testCheckinWithoutVersioning_ExistingContentWithRels_NullRels_ShouldKeepExistingRels()
         throws DotDataException, DotSecurityException {
-        Contentlet blogContent = null;
-        List<Contentlet> relatedContent = null;
 
-        try {
-            blogContent = getBlogContent();
+        Contentlet blogContent = TestDataUtils
+                .getBlogContent(false, APILocator.getLanguageAPI().getDefaultLanguage().getId(),
+                        blogContentType.id());
 
-            final ContentletRelationships relationships = getACoupleOfChildRelationships(blogContent);
+        final ContentletRelationships relationships = getACoupleOfChildRelationships(blogContent);
 
-            final List<Category> categories = getACoupleOfCategories();
+        final List<Category> categories = getACoupleOfCategories();
 
-            final Map<Relationship, List<Contentlet>> relationshipsMap = new HashMap<>();
-            relationshipsMap.put(relationships.getRelationshipsRecords().get(0).getRelationship(),
+        final Map<Relationship, List<Contentlet>> relationshipsMap = new HashMap<>();
+        relationshipsMap.put(relationships.getRelationshipsRecords().get(0).getRelationship(),
                 relationships.getRelationshipsRecords().get(0).getRecords());
-            blogContent.setIndexPolicy(IndexPolicy.FORCE);
-            blogContent.setIndexPolicyDependencies(IndexPolicy.FORCE);
-            blogContent = contentletAPI.checkin(blogContent, relationshipsMap, categories, user,false);
+        blogContent.setIndexPolicy(IndexPolicy.FORCE);
+        blogContent.setIndexPolicyDependencies(IndexPolicy.FORCE);
+        blogContent = contentletAPI.checkin(blogContent, relationshipsMap, categories, user, false);
 
-            blogContent.setIndexPolicy(IndexPolicy.FORCE);
-            blogContent.setIndexPolicyDependencies(IndexPolicy.FORCE);
-            Contentlet reCheckedinContent = contentletAPI.checkinWithoutVersioning(blogContent,
+        blogContent.setIndexPolicy(IndexPolicy.FORCE);
+        blogContent.setIndexPolicyDependencies(IndexPolicy.FORCE);
+        Contentlet reCheckedinContent = contentletAPI.checkinWithoutVersioning(blogContent,
                 null, null, null, user, false);
 
-            Relationship relationship = relationships.getRelationshipsRecords().get(0).getRelationship();
+        Relationship relationship = relationships.getRelationshipsRecords().get(0)
+                .getRelationship();
 
-            relatedContent = relationships.getRelationshipsRecords().get(0).getRecords();
+        List<Contentlet> relatedContent = relationships.getRelationshipsRecords().get(0)
+                .getRecords();
+        assertFalse(relatedContent.isEmpty());
 
-            RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
-
-            List<Contentlet> existingRelationships = relationshipAPI.dbRelatedContent(relationship, reCheckedinContent);
-
-            assertTrue(existingRelationships.containsAll(relatedContent));
-        } finally {
-            if(blogContent!=null && UtilMethods.isSet(blogContent.getIdentifier())) {
-                contentletAPI.destroy(blogContent, user, false);
-            }
-            for(Contentlet c :relatedContent){
-                contentletAPI.archive(c, user, false);
-                contentletAPI.delete(c, user, false);
-            }
-        }
+        RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
+        List<Contentlet> existingRelationships = relationshipAPI
+                .dbRelatedContent(relationship, reCheckedinContent);
+        assertTrue(existingRelationships.containsAll(relatedContent));
     }
 
     @Test
     public void testCheckin3_ExistingContentWithRels_EmptyRels_ShouldWipeExistingRels()
         throws DotDataException, DotSecurityException {
-        Contentlet blogContent = null;
-        List<Contentlet> relatedContent = null;
 
-        try {
-            blogContent = getBlogContent();
+        Contentlet blogContent = TestDataUtils
+                .getBlogContent(false, APILocator.getLanguageAPI().getDefaultLanguage().getId(),
+                        blogContentType.id());
 
-            final ContentletRelationships relationships = getACoupleOfChildRelationships(blogContent);
+        final ContentletRelationships relationships = getACoupleOfChildRelationships(blogContent);
 
-            final List<Category> categories = getACoupleOfCategories();
+        final List<Category> categories = getACoupleOfCategories();
 
-            final ContentletRelationships.ContentletRelationshipRecords relationshipRecords =
+        final ContentletRelationships.ContentletRelationshipRecords relationshipRecords =
                 relationships.getRelationshipsRecords().get(0);
 
-            final Relationship relationship = relationshipRecords.getRelationship();
+        final Relationship relationship = relationshipRecords.getRelationship();
 
-            final Map<Relationship, List<Contentlet>> relationshipsMap = new HashMap<>();
-            relationshipsMap.put(relationship,
+        final Map<Relationship, List<Contentlet>> relationshipsMap = new HashMap<>();
+        relationshipsMap.put(relationship,
                 relationshipRecords.getRecords());
 
-            blogContent.setIndexPolicy(IndexPolicy.FORCE);
-            blogContent = contentletAPI.checkin(blogContent, relationshipsMap, categories,
+        blogContent.setIndexPolicy(IndexPolicy.FORCE);
+        blogContent = contentletAPI.checkin(blogContent, relationshipsMap, categories,
                 null, user,false);
 
-            Contentlet checkedoutBlogContent = contentletAPI.checkout(blogContent.getInode(), user, false);
+        Contentlet checkedoutBlogContent = contentletAPI
+                .checkout(blogContent.getInode(), user, false);
 
-            Contentlet reCheckedinContent = contentletAPI.checkin(checkedoutBlogContent,
+        Contentlet reCheckedinContent = contentletAPI.checkin(checkedoutBlogContent,
                 new HashMap<>(), null, null, user, false);
 
-            RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
+        RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
 
-            List<Contentlet> existingRelationships = relationshipAPI.dbRelatedContent(relationship, reCheckedinContent);
+        List<Contentlet> existingRelationships = relationshipAPI
+                .dbRelatedContent(relationship, reCheckedinContent);
+        List<Contentlet> relatedContent = relationships.getRelationshipsRecords().get(0)
+                .getRecords();
 
-            relatedContent = relationships.getRelationshipsRecords().get(0).getRecords();
-
-            assertFalse(UtilMethods.isSet(existingRelationships));
-        } finally {
-            if(blogContent!=null && UtilMethods.isSet(blogContent.getIdentifier())) {
-                contentletAPI.destroy(blogContent, user, false);
-            }
-            for(Contentlet c :relatedContent){
-                contentletAPI.archive(c, user, false);
-                contentletAPI.delete(c, user, false);
-            }
-        }
+        assertFalse(relatedContent.isEmpty());
+        assertFalse(UtilMethods.isSet(existingRelationships));
     }
 
     @Test
     public void testCheckin4_ExistingContentWithRels_EmptyRels_ShouldWipeExistingRels()
         throws DotDataException, DotSecurityException {
-        Contentlet blogContent = null;
-        List<Contentlet> relatedContent = null;
 
-        try {
-            blogContent = getBlogContent();
+        Contentlet blogContent = TestDataUtils
+                .getBlogContent(false, APILocator.getLanguageAPI().getDefaultLanguage().getId(),
+                        blogContentType.id());
 
-            final ContentletRelationships relationships = getACoupleOfChildRelationships(blogContent);
+        final ContentletRelationships relationships = getACoupleOfChildRelationships(blogContent);
 
-            final List<Category> categories = getACoupleOfCategories();
+        final List<Category> categories = getACoupleOfCategories();
 
-            final Map<Relationship, List<Contentlet>> relationshipsMap = new HashMap<>();
-            relationshipsMap.put(relationships.getRelationshipsRecords().get(0).getRelationship(),
+        final Map<Relationship, List<Contentlet>> relationshipsMap = new HashMap<>();
+        relationshipsMap.put(relationships.getRelationshipsRecords().get(0).getRelationship(),
                 relationships.getRelationshipsRecords().get(0).getRecords());
 
-            blogContent.setIndexPolicy(IndexPolicy.FORCE);
-            blogContent = contentletAPI.checkin(blogContent, relationshipsMap, categories, user,false);
+        blogContent.setIndexPolicy(IndexPolicy.FORCE);
+        blogContent = contentletAPI.checkin(blogContent, relationshipsMap, categories, user, false);
 
-            Contentlet checkedoutBlogContent = contentletAPI.checkout(blogContent.getInode(), user, false);
+        Contentlet checkedoutBlogContent = contentletAPI
+                .checkout(blogContent.getInode(), user, false);
 
-            Contentlet reCheckedinContent = contentletAPI.checkin(checkedoutBlogContent,
+        Contentlet reCheckedinContent = contentletAPI.checkin(checkedoutBlogContent,
                 new HashMap<>(), null, user, false);
 
-            Relationship relationship = relationships.getRelationshipsRecords().get(0).getRelationship();
+        Relationship relationship = relationships.getRelationshipsRecords().get(0)
+                .getRelationship();
 
-            relatedContent = relationships.getRelationshipsRecords().get(0).getRecords();
+        List<Contentlet> relatedContent = relationships.getRelationshipsRecords().get(0)
+                .getRecords();
+        assertFalse(relatedContent.isEmpty());
 
-            RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
-
-            List<Contentlet> existingRelationships = relationshipAPI.dbRelatedContent(relationship, reCheckedinContent);
-
-            assertFalse(UtilMethods.isSet(existingRelationships));
-        } finally {
-            if(blogContent!=null && UtilMethods.isSet(blogContent.getIdentifier())) {
-                contentletAPI.destroy(blogContent, user, false);
-            }
-            for(Contentlet c :relatedContent){
-                contentletAPI.archive(c, user, false);
-                contentletAPI.delete(c, user, false);
-            }
-        }
+        RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
+        List<Contentlet> existingRelationships = relationshipAPI
+                .dbRelatedContent(relationship, reCheckedinContent);
+        assertFalse(UtilMethods.isSet(existingRelationships));
     }
 
     @Test
     public void testCheckinWithoutVersioning_ExistingContentWithRels_EmptyRels_ShouldWipeExistingRels()
         throws DotDataException, DotSecurityException {
-        Contentlet blogContent = null;
-        List<Contentlet> relatedContent = null;
 
-        try {
-            blogContent = getBlogContent();
+        Contentlet blogContent = TestDataUtils
+                .getBlogContent(false, APILocator.getLanguageAPI().getDefaultLanguage().getId(),
+                        blogContentType.id());
 
-            final ContentletRelationships relationships = getACoupleOfChildRelationships(blogContent);
+        final ContentletRelationships relationships = getACoupleOfChildRelationships(blogContent);
 
-            final List<Category> categories = getACoupleOfCategories();
+        final List<Category> categories = getACoupleOfCategories();
 
-            final Map<Relationship, List<Contentlet>> relationshipsMap = new HashMap<>();
-            relationshipsMap.put(relationships.getRelationshipsRecords().get(0).getRelationship(),
+        final Map<Relationship, List<Contentlet>> relationshipsMap = new HashMap<>();
+        relationshipsMap.put(relationships.getRelationshipsRecords().get(0).getRelationship(),
                 relationships.getRelationshipsRecords().get(0).getRecords());
 
-            blogContent.setIndexPolicy(IndexPolicy.FORCE);
-            blogContent = contentletAPI.checkin(blogContent, relationshipsMap, categories, user,false);
+        blogContent.setIndexPolicy(IndexPolicy.FORCE);
+        blogContent = contentletAPI.checkin(blogContent, relationshipsMap, categories, user, false);
 
-            Contentlet reCheckedinContent = contentletAPI.checkinWithoutVersioning(blogContent,
+        Contentlet reCheckedinContent = contentletAPI.checkinWithoutVersioning(blogContent,
                 new HashMap<>(), null, null, user, false);
 
-            Relationship relationship = relationships.getRelationshipsRecords().get(0).getRelationship();
-            relatedContent = relationships.getRelationshipsRecords().get(0).getRecords();
+        Relationship relationship = relationships.getRelationshipsRecords().get(0)
+                .getRelationship();
+        List<Contentlet> relatedContent = relationships.getRelationshipsRecords().get(0)
+                .getRecords();
+        assertFalse(relatedContent.isEmpty());
 
-            RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
-
-            List<Contentlet> existingRelationships = relationshipAPI.dbRelatedContent(relationship, reCheckedinContent);
-
-            assertFalse(UtilMethods.isSet(existingRelationships));
-        } finally {
-            if(blogContent!=null && UtilMethods.isSet(blogContent.getIdentifier())) {
-                contentletAPI.destroy(blogContent, user, false);
-            }
-            for(Contentlet c :relatedContent){
-                contentletAPI.archive(c, user, false);
-                contentletAPI.delete(c, user, false);
-            }
-        }
+        RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
+        List<Contentlet> existingRelationships = relationshipAPI
+                .dbRelatedContent(relationship, reCheckedinContent);
+        assertFalse(UtilMethods.isSet(existingRelationships));
     }
 
     @Test
@@ -5081,7 +4908,9 @@ public class ContentletAPITest extends ContentletBaseTest {
         throws DotSecurityException, DotDataException {
         Contentlet newsContent = null;
         try {
-            newsContent = getNewsContent();
+            newsContent = TestDataUtils
+                    .getNewsContent(false, languageAPI.getDefaultLanguage().getId(),
+                            newsContentType.id());
             Map<String, Object> innerMap = new HashMap<>(newsContent.getMap());
             newsContent = contentletAPI.checkin(newsContent, user,false);
             Contentlet checkedoutNewsContent = contentletAPI.checkout(newsContent.getInode(), user, false);
@@ -5112,17 +4941,25 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         final ContentletRelationships.ContentletRelationshipRecords parentRecords =
             contentletRelationships.new ContentletRelationshipRecords(selfJoinRelationship, false);
-        Contentlet parentBlog1 = getBlogContent();
+        Contentlet parentBlog1 = TestDataUtils
+                .getBlogContent(false, APILocator.getLanguageAPI().getDefaultLanguage().getId(),
+                        blogContentType.id());
         parentBlog1 = contentletAPI.checkin(parentBlog1, new HashMap<>(), getACoupleOfCategories(),  user, false);
-        Contentlet parentBlog2 = getBlogContent();
+        Contentlet parentBlog2 = TestDataUtils
+                .getBlogContent(false, APILocator.getLanguageAPI().getDefaultLanguage().getId(),
+                        blogContentType.id());
         parentBlog2 = contentletAPI.checkin(parentBlog2, new HashMap<>(), getACoupleOfCategories(), user, false);
         parentRecords.setRecords(Arrays.asList(parentBlog1, parentBlog2));
 
         final ContentletRelationships.ContentletRelationshipRecords childRecords =
             contentletRelationships.new ContentletRelationshipRecords(selfJoinRelationship, true);
-        Contentlet childBlog1 = getBlogContent();
+        Contentlet childBlog1 = TestDataUtils
+                .getBlogContent(false, APILocator.getLanguageAPI().getDefaultLanguage().getId(),
+                        blogContentType.id());
         childBlog1 = contentletAPI.checkin(childBlog1, new HashMap<>(), getACoupleOfCategories(), user, false);
-        Contentlet childBlog2 = getBlogContent();
+        Contentlet childBlog2 = TestDataUtils
+                .getBlogContent(false, APILocator.getLanguageAPI().getDefaultLanguage().getId(),
+                        blogContentType.id());
         childBlog2 = contentletAPI.checkin(childBlog2, new HashMap<>(), getACoupleOfCategories(), user, false);
         childRecords.setRecords(Arrays.asList(childBlog1, childBlog2));
 
@@ -5133,16 +4970,30 @@ public class ContentletAPITest extends ContentletBaseTest {
 
     private ContentletRelationships getACoupleOfChildRelationships(Contentlet contentlet)
         throws DotDataException, DotSecurityException {
+
         ContentletRelationships relationships = new ContentletRelationships(contentlet);
-        final Relationship blogComments = APILocator.getRelationshipAPI().byInode("631a07ea-c840-402d-a330-37ed2826ba30");
+
+        Relationship blogComments = APILocator.getRelationshipAPI().byTypeValue(
+                "Parent" + blogContentType.variable() + "-" + "Child" + commentsContentType
+                        .variable());
+        if (blogComments == null) {
+            blogComments = new Relationship();
+            blogComments.setRelationTypeValue(
+                    "Parent" + blogContentType.variable() + "-" + "Child" + commentsContentType
+                            .variable());
+            blogComments.setParentStructureInode(contentlet.getContentTypeId());
+            blogComments.setChildStructureInode(commentsContentType.id());
+            blogComments.setCardinality(1);
+            blogComments.setParentRelationName("Parent" + blogContentType.variable());
+            blogComments.setChildRelationName("Child" + commentsContentType.variable());
+            relationshipAPI.save(blogComments);
+        }
 
         ContentletRelationships.ContentletRelationshipRecords records =
             relationships.new ContentletRelationshipRecords(blogComments, true);
 
-        final ContentType commentsType = APILocator.getContentTypeAPI(user).find("Comments");
-
         Contentlet comment1 = new Contentlet();
-        comment1.setContentTypeId(commentsType.id());
+        comment1.setContentTypeId(commentsContentType.id());
         comment1.setStringProperty("title", "comment1");
         comment1.setStringProperty("email", "email");
         comment1.setStringProperty("comment", "comment");
@@ -5154,7 +5005,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         comment1.setIndexPolicyDependencies(IndexPolicy.FORCE);
 
         Contentlet comment2 = new Contentlet();
-        comment2.setContentTypeId(commentsType.id());
+        comment2.setContentTypeId(commentsContentType.id());
         comment2.setStringProperty("title", "comment2");
         comment2.setStringProperty("email", "email");
         comment2.setStringProperty("comment", "comment");
@@ -5173,54 +5024,8 @@ public class ContentletAPITest extends ContentletBaseTest {
 
     @NotNull
     private List<Category> getACoupleOfCategories() throws DotDataException, DotSecurityException {
-        final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
-        final String firstTimeInvestorCatId = "36abf3c4-d58b-4e42-8e1d-e9a1fe661831";
-        final String retirementCatId = "bba0fcba-eb79-46dc-ae36-fe2f3d9cf1e7";
-        final Category firstTimeInvestorCat = categoryAPI.find(firstTimeInvestorCatId, user, false);
-        final Category retirementCat = categoryAPI.find(retirementCatId, user, false);
-
-        return Arrays.asList(firstTimeInvestorCat, retirementCat);
-    }
-
-    @NotNull
-    private Contentlet getWikiContent() {
-
-        return new ContentletDataGen(wikiContentType.id())
-                .languageId(languageAPI.getDefaultLanguage().getId())
-                .setProperty("title", "wikiContent")
-                .setProperty("urlTitle", "wikiContent")
-                .setProperty("story", "story")
-                .setProperty("sysPublishDate", new Date())
-                .setProperty("byline", "byline")
-                .next();
-    }
-
-    @NotNull
-    private Contentlet getBlogContent() {
-
-        return new ContentletDataGen(blogContentType.id())
-                .languageId(languageAPI.getDefaultLanguage().getId())
-                .setProperty("title", "blogContent")
-                .setProperty("urlTitle", "blogContent")
-                .setProperty("author", "systemUser")
-                .setProperty("sysPublishDate", new Date())
-                .setProperty("body", "blogBody")
-                .next();
-    }
-
-    @NotNull
-    private Contentlet getNewsContent() {
-
-        return new ContentletDataGen(newsContentType.id())
-                .languageId(languageAPI.getDefaultLanguage().getId())
-                .host(defaultHost)
-                .setProperty("title", "newsContent")
-                .setProperty("urlTitle", "newsContent")
-                .setProperty("byline", "byline")
-                .setProperty("sysPublishDate", new Date())
-                .setProperty("story", "newsStory")
-                .setProperty("tags", "test")
-                .next();
+        return APILocator.getCategoryAPI()
+                .findTopLevelCategories(APILocator.systemUser(), false);
     }
 
     @Test
@@ -5278,7 +5083,12 @@ public class ContentletAPITest extends ContentletBaseTest {
     }
 
     @Test
-    public void testSearchFileAssetByMetadata() throws DotSecurityException, DotDataException {
+    public void testSearchFileAssetByMetadata()
+            throws DotSecurityException, DotDataException {
+
+        //Creating a test file asset
+        TestDataUtils.getFileAssetContent(true,
+                APILocator.getLanguageAPI().getDefaultLanguage().getId());
 
         final String query = "+contentType:FileAsset +metaData.contentType:*image/jpeg*";
         List<Contentlet> result = contentletAPI.search(query, 100, 0, null, user, false);
@@ -5321,7 +5131,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             //Create the Spanish version of the page using a different template
             spanishPage = HTMLPageDataGen.checkout(englishPage);
 
-            spanishPage.setLanguageId(2);
+            spanishPage.setLanguageId(spanishLanguage.getId());
             spanishPage.setProperty(HTMLPageAssetAPI.TEMPLATE_FIELD, spanishTemplate.getIdentifier());
             spanishPage.setProperty(HTMLPageAssetAPI.URL_FIELD, englishPage.getPageUrl() + "SP");
 
@@ -5406,7 +5216,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             //Create the Spanish version of the page using a different template
             Contentlet spanishPage = HTMLPageDataGen.checkout(englishPage);
 
-            spanishPage.setLanguageId(2);
+            spanishPage.setLanguageId(spanishLanguage.getId());
             spanishPage.setProperty(HTMLPageAssetAPI.TEMPLATE_FIELD, spanishTemplate.getIdentifier());
             spanishPage.setProperty(HTMLPageAssetAPI.URL_FIELD, englishPage.getPageUrl() + "SP");
 
@@ -5692,12 +5502,11 @@ public class ContentletAPITest extends ContentletBaseTest {
 
     @Test
     public void test_update_mod_date_contentlet_expect_success() throws Exception {
-        final int min = 1;
-        final int max = 600;
-        final int n = ThreadLocalRandom.current().nextInt(min, max + 1);
-        final List<Contentlet> list = contentletAPI.findAllContent(n, 1);
-        assertFalse(list.isEmpty());
-        final Contentlet beforeTouch = list.get(0);
+
+        //Creating dummy content for testing
+        final Contentlet beforeTouch = TestDataUtils.getGenericContentContent(true,
+                languageAPI.getDefaultLanguage().getId());
+        assertNotNull(beforeTouch);
 
         final Set<String> inodes = Stream.of(beforeTouch).map(Contentlet::getInode).collect(Collectors.toSet());
         contentletAPI.updateModDate(inodes, user);

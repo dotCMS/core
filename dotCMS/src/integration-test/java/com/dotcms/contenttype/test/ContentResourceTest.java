@@ -142,7 +142,7 @@ public class ContentResourceTest extends IntegrationTestBase {
     public static void cleanUp() {
 
         if (testScheme != null) {
-            WorkflowDataGen.remove(testScheme, true);
+            WorkflowDataGen.remove(testScheme);
         }
     }
 

@@ -95,7 +95,7 @@ public class RoleDataGen extends AbstractDataGen<Role> {
     }
 
     public static void remove(final Role role) {
-        remove(role, false);
+        remove(role, true);
     }
 
     public static void remove(final Role role, final Boolean failSilently) {

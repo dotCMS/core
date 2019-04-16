@@ -189,7 +189,7 @@ public class ContentTypeDataGen extends AbstractDataGen<ContentType> {
     }
 
     public static void remove(final ContentType contentType) {
-        remove(contentType, false);
+        remove(contentType, true);
     }
 
     public static void remove(final ContentType contentType, final Boolean failSilently) {

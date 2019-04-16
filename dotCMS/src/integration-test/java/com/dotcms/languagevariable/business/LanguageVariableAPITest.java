@@ -101,8 +101,8 @@ public class LanguageVariableAPITest extends IntegrationTestBase {
 
     @AfterClass
     public static void cleanUp() {
-        LanguageDataGen.remove(spanishLanguage, true);
-        ContentTypeDataGen.remove(languageVariableContentType, true);
+        LanguageDataGen.remove(spanishLanguage);
+        ContentTypeDataGen.remove(languageVariableContentType);
     }
 
     /*
