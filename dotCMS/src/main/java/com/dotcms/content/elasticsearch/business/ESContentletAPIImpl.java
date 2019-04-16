@@ -6636,7 +6636,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         localSystemEventsAPI
                             .notify(new CommitListenerEvent(contentlet));
                     }
-                }, 1001);
+                });
             }
 
             HibernateUtil.addCommitListener(()-> {

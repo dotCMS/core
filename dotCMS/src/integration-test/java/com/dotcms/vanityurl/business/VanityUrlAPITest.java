@@ -837,11 +837,10 @@ public class VanityUrlAPITest {
      * Testing how the cache is working with multiple vanities using on different Sites
      */
     @Test
-    public void test_same_vanity_on_system_and_default_host()
+    public void test_same_vanity_on_system()
             throws DotDataException, DotSecurityException {
 
         Contentlet systemVanityURL = null;
-        Contentlet defaultHostVanityURL = null;
 
         try {
 
@@ -914,7 +913,7 @@ public class VanityUrlAPITest {
             Assert.assertNotEquals(VanityUrlAPI.CACHE_404_VANITY_URL,
                     vanityURLCached.getVanityUrlId());
 
-            ///////
+            /////// UNPUBLISH
 
             filtersUtil.unpublishVanityURL(systemVanityURL);
 
@@ -928,13 +927,6 @@ public class VanityUrlAPITest {
 
             Assert.assertNull(vanityURLCached);
 
-
-            vanityURLCached = vanityUrlAPI
-                    .getLiveCachedVanityUrl(requestedURL, APILocator.systemHost(), defaultLanguageId, user);
-            Assert.assertNotNull(vanityURLCached);
-            Assert.assertEquals(VanityUrlAPI.CACHE_404_VANITY_URL,
-                    vanityURLCached.getVanityUrlId());
-
             vanityURLCached = vanityUrlCache.get(
                     new CacheVanityKey(
                             systemVanityURL.getStringProperty(VanityUrlContentType.SITE_FIELD_VAR),
@@ -942,18 +934,28 @@ public class VanityUrlAPITest {
                             requestedURL
                     ));
 
+            Assert.assertNull(vanityURLCached);
+
+            /////////
+
+            vanityURLCached = vanityUrlAPI
+                    .getLiveCachedVanityUrl(requestedURL, defaultHost, defaultLanguageId, user);
+            Assert.assertNotNull(vanityURLCached);
+            Assert.assertEquals(VanityUrlAPI.CACHE_404_VANITY_URL,
+                    vanityURLCached.getVanityUrlId());
+
+            vanityURLCached = vanityUrlAPI
+                    .getLiveCachedVanityUrl(requestedURL, APILocator.systemHost(), defaultLanguageId, user);
             Assert.assertNotNull(vanityURLCached);
             Assert.assertEquals(VanityUrlAPI.CACHE_404_VANITY_URL,
                     vanityURLCached.getVanityUrlId());
 
         } finally {
             contentletAPI.archive(systemVanityURL, user, false);
-            //contentletAPI.archive(defaultHostVanityURL, user, false);
-
             contentletAPI.delete(systemVanityURL, user, false);
-            //contentletAPI.delete(defaultHostVanityURL, user, false);
         }
     }
+
 
     /**
      * Testing how the cache is working with multiple vanities using on different Sites
@@ -1066,7 +1068,7 @@ public class VanityUrlAPITest {
                     vanityURLCached.getVanityUrlId());
 
             //------------------------------------
-            //Unpublish/Pubish the VanityURL that lives in the SYSTEM_HOST
+            //Unpublish/Pubish the VanityURL that lives in the SYSTEM_HOST todo: something between here and the previous remove the secondary cache
             //------------------------------------
             filtersUtil.unpublishVanityURL(systemHostVanityURL);
 
@@ -1078,6 +1080,15 @@ public class VanityUrlAPITest {
                             systemHostVanityURL.getStringProperty(VanityUrlContentType.URI_FIELD_VAR)
                     ));
             Assert.assertNull(vanityURLCached);
+
+            vanityURLCached = vanityUrlCache.get(
+                    new CacheVanityKey(
+                            systemHostVanityURL.getStringProperty(VanityUrlContentType.SITE_FIELD_VAR),
+                            systemHostVanityURL.getLanguageId(),
+                            requestedURL
+                    ));
+            Assert.assertNull(vanityURLCached);
+
 
             //Request a vanity with a URL with a match
             vanityURLCached = vanityUrlAPI

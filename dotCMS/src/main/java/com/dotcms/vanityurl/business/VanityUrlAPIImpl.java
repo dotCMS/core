@@ -6,11 +6,13 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.VanityUrlContentType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.services.VanityUrlServices;
+import com.dotcms.vanityurl.model.CacheVanityKey;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotcms.vanityurl.model.DefaultVanityUrl;
 import com.dotcms.vanityurl.model.VanityUrl;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.common.db.DotConnect;
@@ -30,12 +32,7 @@ import com.liferay.portal.model.User;
 import org.apache.commons.collections.keyvalue.MultiKey;
 
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
@@ -124,8 +121,8 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
                     .sorted(Comparator.comparing(VanityUrl::getOrder))
                     .collect(toImmutableList());
             // Add them to caches
-            vanityUrls.forEach(this::addToSingleVanityURLCache);
             this.addSecondaryVanityURLCacheCollection (vanityUrls);
+            vanityUrls.forEach(this::addToSingleVanityURLCache);
              // If a site was sent we need to make sure it was initialized in the cache
             if (null != siteId && null != languageId) {
                 this.checkSiteLanguageVanities
@@ -530,9 +527,30 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
             vanityPerSiteLanguageMap.get(key).add(new CachedVanityUrl(vanityUrl));
         }
 
+        // when the site + lang list is gonna be override, the main cache items should be clean too
+        vanityPerSiteLanguageMap.keySet().forEach(this::cleanCurrentVanityUrlsPerSite);
+
         vanityPerSiteLanguageMap.forEach( (k, vanityUrlBuilder) ->
                     this.vanityUrlServices.setCachedVanityUrlList (k.hostId(), k.languageId(), vanityUrlBuilder.build()));
     } // addSecondaryVanityURLCacheCollection.
+
+    private void cleanCurrentVanityUrlsPerSite(final SiteLanguageKey siteLanguageKey) {
+
+        final List<CachedVanityUrl> cachedVanityUrls = this.vanityUrlServices.getCachedVanityUrlList
+                (siteLanguageKey.hostId(), siteLanguageKey.languageId());
+
+        if (null != cachedVanityUrls) {
+
+            for (final CachedVanityUrl cachedVanityUrl : cachedVanityUrls) {
+
+                CacheLocator.getVanityURLCache().remove(new CacheVanityKey(
+                        cachedVanityUrl.getSiteId(),
+                        cachedVanityUrl.getLanguageId(),
+                        cachedVanityUrl.getUrl()
+                ).toString());
+            }
+        }
+    }
 
     @CloseDBIfOpened
     @Override
