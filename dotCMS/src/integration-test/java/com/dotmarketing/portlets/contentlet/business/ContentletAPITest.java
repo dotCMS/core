@@ -23,6 +23,7 @@ import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.*;
 import com.dotmarketing.business.*;
 import com.dotmarketing.common.model.ContentletSearch;
+import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DoesNotExistException;
@@ -2078,10 +2079,9 @@ public class ContentletAPITest extends ContentletBaseTest {
      * @throws DotSecurityException
      */
 
-    @Ignore
     @Test
     public void addRemoveContentFromIndex () throws DotDataException, DotSecurityException {//6 contentlets
-   // respect CMS Anonymous permissions
+      // respect CMS Anonymous permissions
       boolean respectFrontendRoles = false;
       int num = 5;
       Host host = APILocator.getHostAPI().findDefaultHost(user, respectFrontendRoles);
@@ -2122,6 +2122,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
       //commit it index
       HibernateUtil.closeSession();
+      DateUtil.sleep(5000);
       for(Contentlet c : origCons){
         assertTrue(contentletAPI.indexCount("+live:true +identifier:" +c.getIdentifier() + " +inode:" + c.getInode() , user, respectFrontendRoles)>0);
       }
@@ -2151,15 +2152,6 @@ public class ContentletAPITest extends ContentletBaseTest {
 
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
     /**
      * Testing {@link ContentletAPI#delete(com.dotmarketing.portlets.contentlet.model.Contentlet, com.liferay.portal.model.User, boolean)}
      *
