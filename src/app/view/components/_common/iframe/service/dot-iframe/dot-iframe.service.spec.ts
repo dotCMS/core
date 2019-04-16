@@ -46,6 +46,12 @@ describe('DotIframeService', () => {
             expect(service.run).toHaveBeenCalledWith('doSearch');
         });
 
+        it('should reload data for custom content portlet', () => {
+            service.reloadData('c_testing');
+
+            expect(service.run).toHaveBeenCalledWith('doSearch');
+        });
+
         it('should reload data for vanity-urls', () => {
             service.reloadData('vanity-urls');
 

@@ -95,6 +95,6 @@ export class DotIframeService {
             'workflow': 'doFilter'
         };
 
-        return mapOfFunctions[portlet];
+        return portlet.startsWith('c_') ? mapOfFunctions['content'] : mapOfFunctions[portlet];
     }
 }
