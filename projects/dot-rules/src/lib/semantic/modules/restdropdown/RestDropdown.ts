@@ -39,7 +39,7 @@ export class RestDropdown implements AfterViewInit, ControlValueAccessor {
     @Output() change: EventEmitter<any> = new EventEmitter();
     @Output() touch: EventEmitter<any> = new EventEmitter();
 
-    private _modelValue: string[];
+    private _modelValue: string[] | string;
     private _options: Observable<any[]>;
 
     constructor(
@@ -68,7 +68,7 @@ export class RestDropdown implements AfterViewInit, ControlValueAccessor {
         if (value && value.indexOf(',') > -1) {
             this._modelValue = value.split(',');
         } else {
-            this._modelValue = _.isEmpty(value) ? null : [value];
+            this._modelValue = _.isEmpty(value) ? null : value;
         }
     }
 
@@ -112,7 +112,9 @@ export class RestDropdown implements AfterViewInit, ControlValueAccessor {
             change.value.currentValue &&
             change.value.currentValue.indexOf(',') > -1
         ) {
-            this._modelValue = change.value.currentValue.split(',');
+            this._modelValue = change.value.currentValue.includes(',')
+                ? change.value.currentValue.split(',')
+                : change.value.currentValue;
         }
     }
 
@@ -120,9 +122,9 @@ export class RestDropdown implements AfterViewInit, ControlValueAccessor {
         const valuesJson = res.json();
         let ary = [];
         if (Verify.isArray(valuesJson)) {
-            ary = valuesJson.map((valueJson) => this.jsonEntryToOption(valueJson));
+            ary = valuesJson.map(valueJson => this.jsonEntryToOption(valueJson));
         } else {
-            ary = Object.keys(valuesJson).map((key) => {
+            ary = Object.keys(valuesJson).map(key => {
                 return this.jsonEntryToOption(valuesJson[key], key);
             });
         }

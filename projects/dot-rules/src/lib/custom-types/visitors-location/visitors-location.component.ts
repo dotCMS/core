@@ -51,7 +51,7 @@ const I8N_BASE = 'api.sites.ruleengine';
                      (onDropDownChange)="comparisonChange.emit($event)"
                      placeholder="{{comparisonDropdown.placeholder}}">
   </cw-input-dropdown>
-  <div flex="15" layout-fill layout="row" layout-align="start center" class="cw-input">
+  <div flex layout-fill layout="row" layout-align="start center" class="cw-input">
       <input  pInputText
               class="cw-latLong"
               [value]="getRadiusInPreferredUnit() | number:'1.0-0'"

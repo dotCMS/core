@@ -29,7 +29,7 @@ import { map, mergeMap, toArray } from 'rxjs/operators';
             [required]="minSelections > 0"
             [placeholder]="placeholder"
             [options]="dropdownOptions | async"
-            [editable]="allowAdditions"
+            [filter]="allowAdditions"
             [(ngModel)]="modelValue"
             *ngIf="maxSelections <= 1"
             (onChange)="fireChange($event.value)"
