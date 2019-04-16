@@ -142,7 +142,7 @@ public class ReindexThreadTest {
         ReindexThread.unpause();
 
         // let any expected reindex finish
-        DateUtil.sleep(6000);
+        DateUtil.sleep(10000);
 
         // make sure that the index is in the same state as before the failed transaction
 
@@ -178,7 +178,7 @@ public class ReindexThreadTest {
         String title = "contentTest " + System.currentTimeMillis();
         Contentlet content = new ContentletDataGen(type.id()).setProperty("title", title).nextPersisted();
 
-        ThreadUtils.sleep(4000);
+        ThreadUtils.sleep(5000);
 
         HibernateUtil.startTransaction();
         try {
@@ -187,7 +187,7 @@ public class ReindexThreadTest {
             HibernateUtil.closeSession();
         }
 
-        ThreadUtils.sleep(4000);
+        ThreadUtils.sleep(5000);
         long latestCount = ReindexThread.getInstance().totalESPuts() - startCount;
         // 1 for check in (only working index) 2 more for publish (live & working indexes)
         assert (latestCount == 3);
@@ -198,7 +198,7 @@ public class ReindexThreadTest {
         } finally {
             HibernateUtil.closeSession();
         }
-        ThreadUtils.sleep(4000);
+        ThreadUtils.sleep(5000);
 
         // 1 more reindex working (publish was deleted)
         latestCount = ReindexThread.getInstance().totalESPuts() - startCount;
