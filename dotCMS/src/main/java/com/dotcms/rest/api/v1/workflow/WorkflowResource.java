@@ -1117,7 +1117,8 @@ public class WorkflowResource {
 
         return Response.ok(
                 new ResponseEntityView(
-                        this.workflowAPI.fireContentWorkflow(contentlet, formBuilder.build())
+                        this.workflowHelper.contentletToMap
+                                (this.workflowAPI.fireContentWorkflow(contentlet, formBuilder.build()))
                 )
         ).build(); // 200
     }

@@ -2,10 +2,10 @@ package com.dotmarketing.portlets.workflows.actionlet;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
+import com.dotcms.mock.request.FakeHttpServletRequest;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.rendering.engine.ScriptEngine;
 import com.dotcms.rendering.engine.ScriptEngineFactory;
-import com.dotcms.repackage.org.directwebremoting.util.FakeHttpServletRequest;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
