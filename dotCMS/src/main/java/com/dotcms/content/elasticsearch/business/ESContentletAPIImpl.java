@@ -554,15 +554,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     publishAssociated(contentlet, false);
 
                     if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
-                        Identifier ident = APILocator.getIdentifierAPI().find(contentlet);
-                        CacheLocator.getCSSCache().remove(ident.getHostId(), ident.getPath(), true);
-                        IFileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet(contentlet);
-
-                        if(fileAsset.isShowOnMenu()){
-                            Folder folder = APILocator.getFolderAPI().findFolderByPath(ident.getParentPath(), ident.getHostId() , user, respectFrontendRoles);
-                            RefreshMenus.deleteMenu(folder);
-                            CacheLocator.getNavToolCache().removeNav(ident.getHostId(), folder.getInode());
-                        }
+                        cleanFileAssetCache(contentlet, user, respectFrontendRoles);
                     }
 
                     //"Enable" and/or create a tag for this Persona key tag
@@ -2455,7 +2447,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
 
-    private void unpublish(Contentlet contentlet, User user) throws DotDataException,DotSecurityException, DotContentletStateException {
+    private void unpublish(final Contentlet contentlet, final User user) throws DotDataException,DotSecurityException, DotContentletStateException {
 
         if(contentlet == null || !UtilMethods.isSet(contentlet.getInode())) {
 
@@ -2492,16 +2484,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
             indexAPI.removeContentFromLiveIndex(contentlet);
 
             if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
-                Identifier ident = APILocator.getIdentifierAPI().find(contentlet);
-                CacheLocator.getCSSCache().remove(ident.getHostId(), ident.getPath(), true);
-                //remove from navCache
-                IFileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet(contentlet);
-                if(fileAsset.isShowOnMenu()){
-                    Folder folder = APILocator.getFolderAPI().findFolderByPath(ident.getParentPath(), ident.getHostId() , user, false);
-                    RefreshMenus.deleteMenu(folder);
-                    CacheLocator.getNavToolCache().removeNav(ident.getHostId(), folder.getInode());
-                }
+
+                cleanFileAssetCache(contentlet, user, false);
             }
+
             new ContentletLoader().invalidate(contentlet, PageMode.LIVE);
             publishRelatedHtmlPages(contentlet);
 
@@ -2524,8 +2510,20 @@ public class ESContentletAPIImpl implements ContentletAPI {
         ActivityLogger.logInfo(getClass(), "Content Unpublished", "StartDate: " +contentPushPublishDate+ "; "
                 + "EndDate: " +contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown")
                 + "; ContentIdentifier: " + (contentlet != null ? contentlet.getIdentifier() : "Unknown"), contentlet.getHost());
+    }
 
+    private void cleanFileAssetCache(final Contentlet contentlet, final User user,
+                                     final boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
 
+        final Identifier ident = APILocator.getIdentifierAPI().find(contentlet);
+        CacheLocator.getCSSCache().remove(ident.getHostId(), ident.getPath(), true);
+        //remove from navCache
+        final IFileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet(contentlet);
+        if (fileAsset.isShowOnMenu()) {
+            final Folder folder = APILocator.getFolderAPI().findFolderByPath(ident.getParentPath(), ident.getHostId(), user, respectFrontEndPermissions);
+            RefreshMenus.deleteMenu(folder);
+            CacheLocator.getNavToolCache().removeNav(ident.getHostId(), folder.getInode());
+        }
     }
 
     // todo:should be in a transaction?
@@ -6632,10 +6630,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 });
             } else {
 
-                HibernateUtil.addCommitListener(()-> {
-                    //Triggering event listener when this commit listener is executed
-                    localSystemEventsAPI
+                HibernateUtil.addCommitListener(new FlushCacheRunnable() {
+                    public void run() {
+                        //Triggering event listener when this commit listener is executed
+                        localSystemEventsAPI
                             .notify(new CommitListenerEvent(contentlet));
+                    }
                 }, 1001);
             }
 
