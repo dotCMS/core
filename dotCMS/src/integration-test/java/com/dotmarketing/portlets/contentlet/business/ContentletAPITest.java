@@ -5754,19 +5754,20 @@ public class ContentletAPITest extends ContentletBaseTest {
     @SuppressWarnings("unchecked")
     public static Object[] testCasesNullRequiredFieldValues() {
 
-        return new Consumer[] {
-                // case 1 setStringProperty
+        // case 1 setStringProperty
+        final TestCaseNullFieldvalues case1 = new TestCaseNullFieldvalues();
+        case1.fieldType = TextField.class;
+        case1.dataType = DataTypes.TEXT;
+        case1.assertion =
                 // contentTypeAndField is a Tuple of contentType Id and Field variable
                 (contentTypeIdAndFieldVar) -> {
                     try {
-
                         final Contentlet testContentlet
                                 = tryToCheckinContentWithNullValueForRequiredField(
-                                (Tuple2<String, String>) contentTypeIdAndFieldVar);
+                                contentTypeIdAndFieldVar);
                         // lets give a value to the required field using setStringProperty
 
-                        testContentlet.setStringProperty((
-                                (Tuple2<String, String>) contentTypeIdAndFieldVar)._2,
+                        testContentlet.setStringProperty(contentTypeIdAndFieldVar._2,
                                 "this is a valid value");
 
                         // this time should succeed
@@ -5774,20 +5775,22 @@ public class ContentletAPITest extends ContentletBaseTest {
                     } catch (DotDataException | DotSecurityException e) {
                         throw new DotRuntimeException(e);
                     }
-                },
+                };
 
-                // case 2 setLongProperty
+        // case 2 setLongProperty
+        final TestCaseNullFieldvalues case2 = new TestCaseNullFieldvalues();
+        case2.fieldType = TextField.class;
+        case2.dataType = DataTypes.INTEGER;
+        case2.assertion =
                 // contentTypeAndField is a Tuple of contentType and Field
                 (contentTypeIdAndFieldVar) -> {
                     try {
-
                         final Contentlet testContentlet
                                 = tryToCheckinContentWithNullValueForRequiredField(
-                                (Tuple2<String, String>) contentTypeIdAndFieldVar);
+                                contentTypeIdAndFieldVar);
                         // lets give a value to the required field using setStringProperty
 
-                        testContentlet.setLongProperty((
-                                        (Tuple2<String, String>) contentTypeIdAndFieldVar)._2,
+                        testContentlet.setLongProperty(contentTypeIdAndFieldVar._2,
                                 10000L);
 
                         // this time should succeed
@@ -5795,20 +5798,24 @@ public class ContentletAPITest extends ContentletBaseTest {
                     } catch (DotDataException | DotSecurityException e) {
                         throw new DotRuntimeException(e);
                     }
-                },
+                };
 
-                // case 3 setBoolProperty
+
+        // case 3 setBoolProperty
+        final TestCaseNullFieldvalues case3 = new TestCaseNullFieldvalues();
+        case3.fieldType = RadioField.class;
+        case3.dataType = DataTypes.BOOL;
+
+        case3.assertion =
                 // contentTypeAndField is a Tuple of contentType and Field
                 (contentTypeIdAndFieldVar) -> {
                     try {
-
                         final Contentlet testContentlet
                                 = tryToCheckinContentWithNullValueForRequiredField(
-                                (Tuple2<String, String>) contentTypeIdAndFieldVar);
+                                contentTypeIdAndFieldVar);
                         // lets give a value to the required field using setStringProperty
 
-                        testContentlet.setBoolProperty((
-                                        (Tuple2<String, String>) contentTypeIdAndFieldVar)._2,
+                        testContentlet.setBoolProperty(contentTypeIdAndFieldVar._2,
                                 true);
 
                         // this time should succeed
@@ -5816,20 +5823,22 @@ public class ContentletAPITest extends ContentletBaseTest {
                     } catch (DotDataException | DotSecurityException e) {
                         throw new DotRuntimeException(e);
                     }
-                },
+                };
 
-                // case 3 setFloatProperty
+        // case 3 setFloatProperty
+        final TestCaseNullFieldvalues case4 = new TestCaseNullFieldvalues();
+        case4.fieldType = TextField.class;
+        case4.dataType = DataTypes.FLOAT;
+        case4.assertion =
                 // contentTypeAndField is a Tuple of contentType and Field
                 (contentTypeIdAndFieldVar) -> {
                     try {
-
                         final Contentlet testContentlet
                                 = tryToCheckinContentWithNullValueForRequiredField(
-                                (Tuple2<String, String>) contentTypeIdAndFieldVar);
+                                contentTypeIdAndFieldVar);
                         // lets give a value to the required field using setStringProperty
 
-                        testContentlet.setFloatProperty((
-                                        (Tuple2<String, String>) contentTypeIdAndFieldVar)._2,
+                        testContentlet.setFloatProperty(contentTypeIdAndFieldVar._2,
                                 1500);
 
                         // this time should succeed
@@ -5837,12 +5846,23 @@ public class ContentletAPITest extends ContentletBaseTest {
                     } catch (DotDataException | DotSecurityException e) {
                         throw new DotRuntimeException(e);
                     }
-                },
+                };
 
+        return new TestCaseNullFieldvalues[] {
+                case1,
+                case2,
+                case3,
+                case4
         };
 
-
     }
+
+    private static class TestCaseNullFieldvalues {
+        Consumer<Tuple2<String, String>> assertion;
+        Class<? extends com.dotcms.contenttype.model.field.Field> fieldType;
+        DataTypes dataType;
+    }
+
 
     private static Contentlet tryToCheckinContentWithNullValueForRequiredField(
             final Tuple2<String, String> typeIdFieldVar)
@@ -5869,8 +5889,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
     @Test
     @UseDataProvider("testCasesNullRequiredFieldValues")
-    public void testCheckin_nullRequiredFieldValue(final Consumer<Tuple2<String,
-            String>> testCase)
+    public void testCheckin_nullRequiredFieldValue(final TestCaseNullFieldvalues testCase)
             throws DotDataException, DotSecurityException {
 
         long time = System.currentTimeMillis();
@@ -5909,7 +5928,8 @@ public class ContentletAPITest extends ContentletBaseTest {
                     + System.currentTimeMillis();
 
             final com.dotcms.contenttype.model.field.Field secondField = FieldBuilder
-                    .builder(TextField.class)
+                    .builder(testCase.fieldType)
+                    .dataType(testCase.dataType)
                     .name(secondFieldVarName)
                     .variable(secondFieldVarName)
                     .contentTypeId(contentType.id())
@@ -5920,7 +5940,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
             contentType = contentTypeApi.save(contentType, fields);
 
-            testCase.accept(new Tuple2<>(contentType.id(), secondField.variable()));
+            testCase.assertion.accept(new Tuple2<>(contentType.id(), secondField.variable()));
 
         } finally {
             // Deleting content type.
