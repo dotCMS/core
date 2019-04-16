@@ -254,7 +254,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
     private static final String DELETE_SUBACTION = "Unpublish content";
     private static final String RESET_WORKFLOW_SUBACTION = "Reset Workflow";
 
-    private static final String DATE_FORMAT = "MM-dd-yyyy-HHmmss";
+    private static final String DATE_FORMAT = "MMddyyyy_HHmmss";
     private static final String CONTENTLET_ON_WRONG_STEP_MESSAGE = "Contentlet is on the wrong Workflow Step";
     private static final String WRONG_ACTION_AVAILABLE_MESSAGE = "Wrong action available";
     private static final String INCORRECT_NUMBER_OF_ACTIONS_MESSAGE = "Incorrect number of actions available";
