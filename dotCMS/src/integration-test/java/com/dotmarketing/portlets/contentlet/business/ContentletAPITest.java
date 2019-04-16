@@ -30,6 +30,7 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.portlets.AssetUtil;
@@ -4444,7 +4445,7 @@ public class ContentletAPITest extends ContentletBaseTest {
      * Test checkin with a non-existing contentlet identifier, that should fail
      *
      */
-    @Test
+    @Test(expected = DotHibernateException.class)
     public void testCheckin_Non_Existing_Identifier_With_Validate_Should_FAIL()
             throws DotDataException, DotSecurityException {
         Contentlet newsContent = null;
@@ -4458,11 +4459,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             newsContent = contentletAPI.checkin(newsContent, (ContentletRelationships) null, categories,
                     null, user,false);
 
-            fail("Should throw DoesNotExistException for an unexisting id");
-        } catch (Exception e) {
-
-            assertTrue(ExceptionUtil.causedBy(e, DoesNotExistException.class));
-            // good
+            fail("Should throw a constrain exception for an unexisting id");
         } finally {
             if(newsContent!=null && UtilMethods.isSet(newsContent.getIdentifier()) && UtilMethods.isSet(newsContent.getInode())) {
                 contentletAPI.destroy(newsContent, user, false);
