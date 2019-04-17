@@ -84,7 +84,7 @@ public class ContentTypeResource implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 
-	static final String SELECTED_STRUCTURE_KEY = "selectedStructure";
+	public static final String SELECTED_STRUCTURE_KEY = "selectedStructure";
 
 	@POST
 	@JSONP
@@ -129,7 +129,11 @@ public class ContentTypeResource implements Serializable {
 
 			response = Response.ok(new ResponseEntityView(retTypes)).build();
 
-		} catch (DotStateException | DotDataException e) {
+		} catch (IllegalArgumentException e) {
+			Logger.error(this, e.getMessage());
+			response = ExceptionMapperUtil
+					.createResponse(null, "Content-type is not valid (" + e.getMessage() + ")");
+		}catch (DotStateException | DotDataException e) {
 			Logger.error(this, e.getMessage(), e);
 			response = ExceptionMapperUtil
 					.createResponse(null, "Content-type is not valid (" + e.getMessage() + ")");
@@ -255,6 +259,9 @@ public class ContentTypeResource implements Serializable {
 	@JSONP
 	@NoCache
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	/**
+	 * @deprecated use {@link com.dotcms.rest.api.v2.contenttype.ContentTypeResource#getType(String, HttpServletRequest)}
+	 */
 	public Response getType(@PathParam("idOrVar") final String idOrVar, @Context final HttpServletRequest req)
 			throws DotDataException {
 

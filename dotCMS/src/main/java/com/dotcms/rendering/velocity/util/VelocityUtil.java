@@ -6,6 +6,7 @@ import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.rendering.velocity.viewtools.VelocityRequestWrapper;
 import com.dotcms.rendering.velocity.viewtools.content.ContentMap;
 import com.dotcms.rendering.velocity.viewtools.content.ContentTool;
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.api.v1.container.ContainerResource;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.beans.Host;
@@ -23,6 +24,8 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.*;
 import com.liferay.portal.model.User;
 import com.liferay.util.SystemProperties;
+import java.util.HashMap;
+import java.util.Map;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
@@ -46,6 +49,20 @@ public class VelocityUtil {
     public final static String NO="no";
     public final static String DOTCACHE="dotcache";
 	private static VelocityEngine ve = null;
+	private static Map<String, String> digitToLetter = new HashMap<>();
+
+	static {
+		digitToLetter.put("0", "zero");
+		digitToLetter.put("1", "one");
+		digitToLetter.put("2", "two");
+		digitToLetter.put("3", "three");
+		digitToLetter.put("4", "four");
+		digitToLetter.put("5", "five");
+		digitToLetter.put("6", "six");
+		digitToLetter.put("7", "seven");
+		digitToLetter.put("8", "eight");
+		digitToLetter.put("9", "nine");
+	}
 
 	private static class Holder {
 		private static final VelocityUtil INSTANCE = new VelocityUtil();
@@ -110,12 +127,32 @@ public class VelocityUtil {
 
 
 	public static String convertToVelocityVariable(final String variable, boolean firstLetterUppercase){
-		
 
-	      return (firstLetterUppercase) 
-	              ? StringUtils.camelCaseUpper(variable)
-	              : StringUtils.camelCaseLower(variable);
-		
+		if(variable.matches("_.*")) {
+			return variable;
+		}
+
+		if(variable.matches("[0-9]*")) {
+			return replaceStartingNumberWithWrittenNumber(variable);
+		}
+
+		return (firstLetterUppercase)
+				? StringUtils.camelCaseUpper(variable)
+				: StringUtils.camelCaseLower(variable);
+
+	}
+
+	@VisibleForTesting
+	static String replaceStartingNumberWithWrittenNumber(final String string) {
+
+		final String subString = string.substring(0, 1);
+
+		if(!subString.matches("[0-9]")) {
+			return string;
+		}
+
+		return digitToLetter.get(subString) + string.substring(1);
+
 	}
 	
 	
