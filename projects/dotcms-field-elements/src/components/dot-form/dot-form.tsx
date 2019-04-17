@@ -1,4 +1,4 @@
-import { Component, Element, Event, EventEmitter, Listen, Prop } from '@stencil/core';
+import { Component, Element, Event, EventEmitter, Listen, Prop, State } from '@stencil/core';
 import { DotCMSContentTypeField } from '../../../../dotcms/src/lib/models';
 import { DotFormFields } from './dot-form-fields';
 
@@ -13,12 +13,20 @@ const fieldMap = {
 })
 export class DotFormComponent {
     @Element() el: HTMLElement;
+
     @Event() onSubmit: EventEmitter;
-    @Prop() fields: DotCMSContentTypeField[] = [];
+
+    @Prop({ mutable: true }) fields: DotCMSContentTypeField[] = [];
     @Prop() fieldsToShow: string[] = [];
     @Prop() resetLabel = 'Reset';
     @Prop() submitLabel = 'Submit';
     @Prop({ mutable: true }) value = {};
+
+    @State() _touched = false;
+    @State() _pristine = true;
+    @State() _valid = true;
+
+    fieldsStatus: {[key: string]: string} = {};
 
     /**
      * Listen for "valueChanges" and updates the form value with new value.
@@ -26,27 +34,36 @@ export class DotFormComponent {
      * @param CustomEvent event
      * @memberof DotFormComponent
      */
-    @Listen('valueChanges')
-    onValueChanges(event: CustomEvent): void {
+    @Listen('valueChange')
+    onValueChange(event: CustomEvent): void {
         this.value[event.detail.name] = event.detail.value;
+        this.updateFieldsValues();
     }
 
     /**
-     * Listen for "stateChanges" and updates the form status with new value.
+     * Listen for "statusChange" and updates the form status with new value.
      *
      * @param CustomEvent event
      * @memberof DotFormComponent
      */
-    @Listen('stateChanges')
-    onStateChanges(event: CustomEvent): void {
-        // refresh variables from hostData
+    @Listen('statusChange')
+    onStatusChange(event: CustomEvent): void {
+        this.fieldsStatus[event.detail.name] = event.detail.status;
+        this._pristine = this.getStatusValue('dotPristine');
+        this._touched = this.getStatusValue('dotTouched');
+        this._valid = this.getStatusValue('dotValid');
     }
 
     hostData() {
-        // TODO: do validation here
         return {
-          'class': { 'is-open': this.value },
-          'aria-hidden': this.value ? 'false' : 'true'
+            class: {
+                'dot-valid': this._valid,
+                'dot-invalid': !this._valid,
+                'dot-pristine': this._pristine,
+                'dot-dirty': !this._pristine,
+                'dot-touched': this._touched,
+                'dot-untouched': !this._touched
+            }
         };
       }
 
@@ -63,10 +80,29 @@ export class DotFormComponent {
             <form onSubmit={(evt: Event) => this.handleSubmit(evt)}>
                 <slot />
                 {this.fields.map((field: DotCMSContentTypeField) => this.getField(field))}
-                <button type='submit'>{this.submitLabel}</button>
+                <button type='submit' disabled={this._valid ? null : true }>{this.submitLabel}</button>
                 <button type='button' onClick={() => this.resetForm()} >{this.resetLabel}</button>
             </form>
         );
+    }
+
+    private updateFieldsValues() {
+        this.fields = this.fields.map((field: DotCMSContentTypeField) => {
+            return typeof this.value[field.variable] !== 'undefined' ? { ...field, defaultValue: this.value[field.variable] } : field;
+        });
+    }
+
+    private getStatusValue(statusName: string): boolean {
+        let value;
+        const fields = Object.keys(this.fieldsStatus);
+        for (const field of fields) {
+            if (!this.fieldsStatus[field][statusName]) {
+                value = this.fieldsStatus[field][statusName];
+                break;
+            }
+            value = this.fieldsStatus[field][statusName];
+        }
+        return value;
     }
 
     private handleSubmit(evt: Event): void {

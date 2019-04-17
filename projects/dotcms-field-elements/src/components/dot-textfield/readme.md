@@ -7,30 +7,33 @@
 
 ## Properties
 
-| Property      | Attribute     | Description | Type      | Default     |
-| ------------- | ------------- | ----------- | --------- | ----------- |
-| `hint`        | `hint`        |             | `string`  | `undefined` |
-| `label`       | `label`       |             | `string`  | `undefined` |
-| `name`        | `name`        |             | `string`  | `undefined` |
-| `placeholder` | `placeholder` |             | `string`  | `undefined` |
-| `readOnly`    | `read-only`   |             | `string`  | `undefined` |
-| `regexcheck`  | `regexcheck`  |             | `string`  | `undefined` |
-| `required`    | `required`    |             | `boolean` | `undefined` |
-| `value`       | `value`       |             | `string`  | `undefined` |
+| Property            | Attribute           | Description | Type      | Default     |
+| ------------------- | ------------------- | ----------- | --------- | ----------- |
+| `disabled`          | `disabled`          |             | `boolean` | `false`     |
+| `hint`              | `hint`              |             | `string`  | `undefined` |
+| `label`             | `label`             |             | `string`  | `undefined` |
+| `name`              | `name`              |             | `string`  | `undefined` |
+| `placeholder`       | `placeholder`       |             | `string`  | `undefined` |
+| `regexcheck`        | `regexcheck`        |             | `string`  | `undefined` |
+| `regexcheckmessage` | `regexcheckmessage` |             | `string`  | `undefined` |
+| `required`          | `required`          |             | `boolean` | `undefined` |
+| `requiredmessage`   | `requiredmessage`   |             | `string`  | `undefined` |
+| `value`             | `value`             |             | `string`  | `undefined` |
 
 
 ## Events
 
 | Event          | Description | Type                |
 | -------------- | ----------- | ------------------- |
-| `valueChanges` |             | `CustomEvent<void>` |
+| `statusChange` |             | `CustomEvent<void>` |
+| `valueChange`  |             | `CustomEvent<void>` |
 
 
 ## Methods
 
 ### `reset() => void`
 
-
+Reset properties of the filed, clear value and emit events.
 
 #### Returns
 

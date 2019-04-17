@@ -18,8 +18,8 @@ export class DotTextfieldComponent {
     @Prop() requiredmessage: string;
     @Prop() disabled = false;
 
-    @Event() valueChanges: EventEmitter;
-    @Event() statusChanges: EventEmitter;
+    @Event() valueChange: EventEmitter;
+    @Event() statusChange: EventEmitter;
 
     @State() _valid = true;
     @State() _dotTouched = false;
@@ -124,14 +124,14 @@ export class DotTextfieldComponent {
     }
 
     private emitStatusChange(): void {
-        this.statusChanges.emit({
+        this.statusChange.emit({
             name: this.name,
-            ...this.getStatus()
+            status: this.getStatus()
         });
     }
 
     private emitValueChange(): void {
-        this.valueChanges.emit({ name: this.name, value: this.value });
+        this.valueChange.emit({ name: this.name, value: this.value });
     }
 
     private getStatus(): DotFieldStatus {

@@ -20,7 +20,7 @@ describe('dot-form', () => {
             defaultValue: 'defaultValue',
             hint: 'hint2',
             name: 'field2',
-            required: true,
+            required: false,
             value: 'value2',
             variable: 'field2'
         }
@@ -36,7 +36,7 @@ describe('dot-form', () => {
         await page.waitForChanges();
         const txtFields = await element.findAll('dot-textfield');
         txtFields.forEach((field, index) => {
-            field.triggerEvent('valueChanges', {
+            field.triggerEvent('valueChange', {
                 bubbles: true,
                 cancelable: false,
                 detail: {
@@ -51,7 +51,7 @@ describe('dot-form', () => {
 
     it('should renders', async () => {
         // tslint:disable-next-line:max-line-length
-        const tagsRenderExpected = `<form><dot-textfield class="hydrated"><label for="field1">field1</label><input name="field1" type="text" required=""><span class="dot-textfield__hint">hint1</span></dot-textfield><dot-textfield class="hydrated"><label for="field2">field2</label><input name="field2" type="text" required=""><span class="dot-textfield__hint">hint2</span></dot-textfield><button type="submit">Saved</button><button type="button">Reseted</button></form>`;
+        const tagsRenderExpected = `<form><dot-textfield class=\"dot-valid dot-pristine dot-untouched hydrated\"><label>field1</label><input name=\"field1\" type=\"text\" required=\"\"><span class=\"dot-field__hint\">hint1</span></dot-textfield><dot-textfield class=\"dot-valid dot-pristine dot-untouched hydrated\"><label>field2</label><input name=\"field2\" type=\"text\"><span class=\"dot-field__hint\">hint2</span></dot-textfield><button type=\"submit\">Saved</button><button type=\"button\">Reseted</button></form>`;
         expect(element.innerHTML).toBe(tagsRenderExpected);
     });
 
@@ -69,14 +69,14 @@ describe('dot-form', () => {
         expect(spy).toHaveReceivedEventDetail(expectedSubmit);
     });
 
-    it('should listen for valueChanges', async () => {
+    it('should listen for valueChange', async () => {
         const textField = await page.find('dot-textfield');
         const newValue = {
             name: 'field1',
             value: 'test2'
         };
 
-        textField.triggerEvent('valueChanges', {
+        textField.triggerEvent('valueChange', {
             bubbles: true,
             cancelable: false,
             detail: newValue
@@ -88,6 +88,29 @@ describe('dot-form', () => {
         element.getProperty('value').then((data) => {
             expect(data).toEqual(formStatus);
         });
+    });
+
+    it('should listen for statusChange, change form classes and invalidate Submit button', async () => {
+        const textField = await page.find('dot-textfield');
+        const newValue = {
+            name: 'field1',
+            status: {
+                dotPristine: false,
+                dotTouched: false,
+                dotValid: false
+            }
+        };
+
+        textField.triggerEvent('statusChange', {
+            bubbles: true,
+            cancelable: false,
+            detail: newValue
+        });
+
+        // tslint:disable-next-line:max-line-length
+        const formStatusExpectedMarkup = `<dot-form submit-label="Saved" reset-label="Reseted" class="dot-untouched hydrated dot-invalid dot-dirty"><form><dot-textfield class="dot-valid dot-pristine dot-untouched hydrated"><label>field1</label><input name="field1" type="text" required=""><span class="dot-field__hint">hint1</span></dot-textfield><dot-textfield class="dot-valid dot-pristine dot-untouched hydrated"><label>field2</label><input name="field2" type="text"><span class="dot-field__hint">hint2</span></dot-textfield><button type="submit" disabled="">Saved</button><button type="button">Reseted</button></form></dot-form>`;
+        await page.waitForChanges();
+        expect(element.outerHTML).toBe(formStatusExpectedMarkup);
     });
 
     it('should reset event', async () => {

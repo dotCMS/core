@@ -6,7 +6,7 @@ describe('dot-textfield', () => {
     let element: E2EElement;
     let input: E2EElement;
     let spyStatusChangeEvent: EventSpy;
-    let spyValueChanges: EventSpy;
+    let spyValueChange: EventSpy;
     beforeEach(async () => {
         page = await newE2EPage({
             html: `
@@ -23,8 +23,8 @@ describe('dot-textfield', () => {
                 ></dot-textfield>`
         });
 
-        spyStatusChangeEvent = await page.spyOnEvent('statusChanges');
-        spyValueChanges = await page.spyOnEvent('valueChanges');
+        spyStatusChangeEvent = await page.spyOnEvent('statusChange');
+        spyValueChange = await page.spyOnEvent('valueChange');
         element = await page.find('dot-textfield');
         input = await page.find('input');
     });
@@ -96,9 +96,11 @@ describe('dot-textfield', () => {
             await page.waitForChanges();
             expect(spyStatusChangeEvent).toHaveReceivedEventDetail({
                 name: 'fullName',
-                dotPristine: false,
-                dotTouched: true,
-                dotValid: true
+                status: {
+                    dotPristine: false,
+                    dotTouched: true,
+                    dotValid: true
+                }
             });
         });
 
@@ -107,17 +109,19 @@ describe('dot-textfield', () => {
             await page.waitForChanges();
             expect(spyStatusChangeEvent).toHaveReceivedEventDetail({
                 name: 'fullName',
-                dotPristine: true,
-                dotTouched: false,
-                dotValid: false
+                status: {
+                    dotPristine: true,
+                    dotTouched: false,
+                    dotValid: false
+                }
             });
-            expect(spyValueChanges).toHaveReceivedEventDetail({ name: 'fullName', value: '' });
+            expect(spyValueChange).toHaveReceivedEventDetail({ name: 'fullName', value: '' });
         });
 
         it('should emit change value', async () => {
             input.press('a');
             await page.waitForChanges();
-            expect(spyValueChanges).toHaveReceivedEventDetail({ name: 'fullName', value: 'Johna' });
+            expect(spyValueChange).toHaveReceivedEventDetail({ name: 'fullName', value: 'Johna' });
         });
     });
 });
