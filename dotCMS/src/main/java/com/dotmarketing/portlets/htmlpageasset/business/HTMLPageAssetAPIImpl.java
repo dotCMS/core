@@ -867,7 +867,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
                     user, respectFrontEndPermissions);
             htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
 
-        } catch (DotContentletStateException dse) {
+        } catch (DotStateException dse) {
             htmlPage = findPageInDefaultLanguageDifferentThanProvided(identifier, tryLang, live, user,
                     respectFrontEndPermissions, dse);
 
@@ -878,7 +878,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
     private IHTMLPage findPageInDefaultLanguageDifferentThanProvided(String identifier, long providedLang, boolean live,
                                                                      User user, boolean respectFrontEndPermissions,
-                                                                     DotContentletStateException dse)
+            DotStateException dse)
             throws DotDataException, DotSecurityException {
         Contentlet contentlet;
         IHTMLPage htmlPage;
@@ -889,7 +889,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
                 contentlet = APILocator.getContentletAPI().findContentletByIdentifier(identifier, live,
                     languageAPI.getDefaultLanguage().getId(), user, respectFrontEndPermissions);
                 htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
-            } catch(DotContentletStateException e) {
+            } catch(DotStateException e) {
                 throw new ResourceNotFoundException(
                         "Can't find content. Identifier: " + identifier + ", Live: " + live + ", Lang: "
                                 + languageAPI.getDefaultLanguage().getId(), e);

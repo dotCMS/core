@@ -22,6 +22,7 @@
 
 package com.liferay.portal.servlet;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.config.DotInitializationService;
 import com.dotcms.repackage.com.httpbridge.webproxy.http.TaskController;
 import com.dotmarketing.business.APILocator;
@@ -102,6 +103,7 @@ import org.dom4j.io.SAXReader;
  */
 public class MainServlet extends ActionServlet {
 
+    @CloseDBIfOpened
 	public void init(ServletConfig config) throws ServletException {
 		synchronized (MainServlet.class) {
 			super.init(config);

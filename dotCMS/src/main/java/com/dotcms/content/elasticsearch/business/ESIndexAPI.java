@@ -118,7 +118,7 @@ public class ESIndexAPI {
 			Config.getIntProperty("ES_INDEX_OPERATIONS_TIMEOUT", 15000);
 
 	final private ESClient esclient;
-	final private ESContentletIndexAPI iapi;
+	final private ContentletIndexAPI iapi;
 	final private ESIndexHelper esIndexHelper;
 	private final ServerAPI serverAPI;
 	private final ClusterAPI clusterAPI;
@@ -137,14 +137,14 @@ public class ESIndexAPI {
 
 	public ESIndexAPI(){
 		this.esclient = new ESClient();
-		this.iapi = new ESContentletIndexAPI();
+		this.iapi = new ContentletIndexAPIImpl();
 		this.esIndexHelper = ESIndexHelper.INSTANCE;
 		this.serverAPI = APILocator.getServerAPI();
 		this.clusterAPI = APILocator.getClusterAPI();
 	}
 
 	@VisibleForTesting
-	protected ESIndexAPI(final ESClient esclient, final ESContentletIndexAPI iapi, final ESIndexHelper esIndexHelper,
+	protected ESIndexAPI(final ESClient esclient, final ContentletIndexAPIImpl iapi, final ESIndexHelper esIndexHelper,
 						 final ServerAPI serverAPI, final ClusterAPI clusterAPI){
 		this.esclient = esclient;
 		this.iapi = iapi;
@@ -233,7 +233,7 @@ public class ESIndexAPI {
 
 		Client client = esclient.getClient();
 
-		BufferedWriter bw = null;
+		BufferedWriter bw;
 		try (final ZipOutputStream zipOut = new ZipOutputStream(Files.newOutputStream(toFile.toPath()))){
 		    zipOut.setLevel(9);
 		    zipOut.putNextEntry(new ZipEntry(toFile.getName()));
@@ -330,109 +330,111 @@ public class ESIndexAPI {
 
         AdminLogger.log(this.getClass(), "restoreIndex", "Trying to restore index: " + index);
 
-		BufferedReader br = null;
+        BufferedReader br = null;
 
-		boolean indexExists = indexExists(index);
+        boolean indexExists = indexExists(index);
 
+        try {
+            if (!indexExists) {
 
+                createIndex(index);
+            }
 
-		try {
-			if (!indexExists) {
-				final IndicesAdminClient iac = new ESClient().getClient().admin().indices();
+            final ZipInputStream zipIn = new ZipInputStream(
+                    Files.newInputStream(backupFile.toPath()));
+            zipIn.getNextEntry();
+            br = new BufferedReader(new InputStreamReader(zipIn));
 
-				createIndex(index);
-			}
+            // setting number_of_replicas=0 to improve the indexing while restoring
+            // also we restrict the index to the current server
+            moveIndexToLocalNode(index);
 
-			final ZipInputStream zipIn=new ZipInputStream(Files.newInputStream(backupFile.toPath()));
-			zipIn.getNextEntry();
-			br = new BufferedReader(new InputStreamReader(zipIn));
+            // wait a bit for the changes be made
+            Thread.sleep(1000L);
 
-			// setting number_of_replicas=0 to improve the indexing while restoring
-			// also we restrict the index to the current server
-			moveIndexToLocalNode(index);
+            // setting up mapping
+            String mapping = br.readLine();
+            boolean mappingExists = mapping.startsWith(MAPPING_MARKER);
+            String type = "content";
+            ArrayList<String> jsons = new ArrayList<String>();
+            if (mappingExists) {
 
-			// wait a bit for the changes be made
-			Thread.sleep(1000L);
+                String patternStr = "^" + MAPPING_MARKER + "\\s*\\{\\s*\"(\\w+)\"";
+                Pattern pattern = Pattern.compile(patternStr);
+                Matcher matcher = pattern.matcher(mapping);
+                boolean matchFound = matcher.find();
+                if (matchFound) {
+                    type = matcher.group(1);
 
-			// setting up mapping
-			String mapping=br.readLine();
-			boolean mappingExists=mapping.startsWith(MAPPING_MARKER);
-			String type="content";
-			ArrayList<String> jsons = new ArrayList<String>();
-			if(mappingExists) {
+                    // we recover the line that wasn't a mapping so it should be content
 
-			    String patternStr = "^"+MAPPING_MARKER+"\\s*\\{\\s*\"(\\w+)\"";
-			    Pattern pattern = Pattern.compile(patternStr);
-			    Matcher matcher = pattern.matcher(mapping);
-			    boolean matchFound = matcher.find();
-			    if (matchFound){
-			        type = matcher.group(1);
+                    ObjectMapper mapper = new ObjectMapper();
+                    while (br.ready()) {
+                        //read in 100 lines
+                        for (int i = 0; i < 100; i++) {
+                            if (!br.ready()) {
+                                break;
+                            }
+                            jsons.add(br.readLine());
+                        }
 
-			// we recover the line that wasn't a mapping so it should be content
+                        if (jsons.size() > 0) {
+                            try {
+                                Client client = new ESClient().getClient();
+                                BulkRequestBuilder req = client.prepareBulk();
+                                for (String raw : jsons) {
+                                    int delimidx = raw.indexOf(JSON_RECORD_DELIMITER);
+                                    if (delimidx > 0) {
+                                        String id = raw.substring(0, delimidx);
+                                        String json = raw.substring(
+                                                delimidx + JSON_RECORD_DELIMITER.length(),
+                                                raw.length());
+                                        if (id != null) {
+                                            @SuppressWarnings("unchecked")
+                                            Map<String, Object> oldMap = mapper
+                                                    .readValue(json, HashMap.class);
+                                            Map<String, Object> newMap = new HashMap<String, Object>();
 
-			ObjectMapper mapper = new ObjectMapper();
-			while(br.ready()){
-				//read in 100 lines
-				for (int i = 0; i < 100; i++){
-					if(!br.ready()){
-						break;
-					}
-					jsons.add(br.readLine());
-				}
+                                            for (String key : oldMap.keySet()) {
+                                                Object val = oldMap.get(key);
+                                                if (val != null && UtilMethods
+                                                        .isSet(val.toString())) {
+                                                    newMap.put(key, oldMap.get(key));
+                                                }
+                                            }
+                                            req.add(new IndexRequest(index, type, id)
+                                                    .source(mapper.writeValueAsString(newMap)));
+                                        }
+                                    }
+                                }
+                                if (req.numberOfActions() > 0) {
+                                    req.execute().actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
+                                }
+                            } finally {
+                                jsons = new ArrayList<String>();
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            throw new IOException(e.getMessage(), e);
+        } finally {
+            if (br != null) {
+                br.close();
+            }
 
-				if (jsons.size() > 0) {
-				    try {
-						Client client = new ESClient().getClient();
-    				    BulkRequestBuilder req = client.prepareBulk();
-    				    for (String raw : jsons) {
-    					    int delimidx=raw.indexOf(JSON_RECORD_DELIMITER);
-    					    if(delimidx>0) {
-        						String id = raw.substring(0, delimidx);
-        						String json = raw.substring(delimidx + JSON_RECORD_DELIMITER.length(), raw.length());
-        						if (id != null){
-        							@SuppressWarnings("unchecked")
-									Map<String, Object> oldMap= mapper.readValue(json, HashMap.class);
-        							Map<String, Object> newMap = new HashMap<String, Object>();
+            // back to the original configuration for number_of_replicas
+            // also let it go other servers
+            moveIndexBackToCluster(index);
 
-        							for(String key : oldMap.keySet()){
-        								Object val = oldMap.get(key);
-        								if(val!= null && UtilMethods.isSet(val.toString())){
-        									newMap.put(key, oldMap.get(key));
-        								}
-        							}
-            						req.add(new IndexRequest(index, type, id).source(mapper.writeValueAsString(newMap)));
-        						}
-    					    }
-    					}
-    				    if(req.numberOfActions()>0) {
-    				        req.execute().actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
-    				    }
-				    }
-				    finally {
-				    	jsons = new ArrayList<String>();
-				    }
-				}
-			}
-		}
-		}
-		} catch (Exception e) {
-			throw new IOException(e.getMessage(),e);
-		} finally {
-			if (br != null) {
-				br.close();
-			}
-
-			// back to the original configuration for number_of_replicas
-			// also let it go other servers
-			moveIndexBackToCluster(index);
-
-            final List<String> list=new ArrayList<>();
+            final List<String> list = new ArrayList<>();
             list.add(index);
             iapi.optimize(list);
 
             AdminLogger.log(this.getClass(), "restoreIndex", "Index restored: " + index);
-		}
-	}
+        }
+    }
 
 	/**
 	 * List of all indicies
@@ -556,7 +558,7 @@ public class ESIndexAPI {
 	 * @param index
 	 * @throws IOException
 	 */
-    public  void moveIndexBackToCluster(final String index) throws IOException {
+    public void moveIndexBackToCluster(final String index) throws IOException {
         final Client client=new ESClient().getClient();
         final ReplicasMode replicasMode = clusterAPI.getReplicasMode();
 

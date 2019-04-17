@@ -4,6 +4,7 @@ import com.dotcms.config.DotInitializationService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.util.Config;
 import com.liferay.util.SystemProperties;
 import java.util.concurrent.atomic.AtomicBoolean;

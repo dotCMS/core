@@ -3,7 +3,6 @@ package com.dotmarketing.business;
 import com.dotcms.cluster.business.ServerFactory;
 import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
 import com.dotcms.content.elasticsearch.business.IndiciesFactory;
-import com.dotcms.content.elasticsearch.business.IndiciesFactoryImpl;
 import com.dotcms.contenttype.business.ContentTypeFactory;
 import com.dotcms.contenttype.business.ContentTypeFactoryImpl;
 import com.dotcms.contenttype.business.FieldFactory;
@@ -17,7 +16,6 @@ import com.dotcms.enterprise.cluster.ServerFactoryImpl;
 import com.dotcms.enterprise.cluster.action.business.ServerActionFactory;
 import com.dotcms.enterprise.linkchecker.LinkCheckerFactoryImpl;
 import com.dotcms.enterprise.rules.RulesFactory;
-import com.dotcms.journal.business.ESDistributedJournalFactoryImpl;
 import com.dotcms.notifications.business.NotificationFactory;
 import com.dotcms.notifications.business.NotificationFactoryImpl;
 import com.dotcms.publisher.assets.business.PushedAssetsFactory;
@@ -28,7 +26,7 @@ import com.dotcms.publisher.endpoint.business.PublishingEndPointFactory;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointFactoryImpl;
 import com.dotcms.publisher.environment.business.EnvironmentFactory;
 import com.dotcms.publisher.environment.business.EnvironmentFactoryImpl;
-import com.dotmarketing.common.business.journal.DistributedJournalFactory;
+import com.dotmarketing.common.reindex.ReindexQueueFactory;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.plugin.business.PluginFactory;
 import com.dotmarketing.plugin.business.PluginFactoryDBImpl;
@@ -112,8 +110,8 @@ public class FactoryLocator extends Locator<FactoryIndex>{
     	return (LanguageFactory)getInstance(FactoryIndex.LANGUAGE_FACTORY);
     }
 
-    public static DistributedJournalFactory<String> getDistributedJournalFactory(){
-    	return (DistributedJournalFactory<String>)getInstance(FactoryIndex.DISTRIBUTED_JOURNAL_FACTORY);
+    public static ReindexQueueFactory getReindexQueueFactory() {
+        return (ReindexQueueFactory) getInstance(FactoryIndex.DISTRIBUTED_JOURNAL_FACTORY);
     }
 
     public static UserFactory getUserFactory(){
@@ -306,7 +304,7 @@ enum FactoryIndex
             case CONTENTLET_FACTORY: return new ESContentFactoryImpl();
             case PLUGIN_FACTORY: return new PluginFactoryDBImpl();
             case LANGUAGE_FACTORY: return new LanguageFactoryImpl();
-            case DISTRIBUTED_JOURNAL_FACTORY: return new ESDistributedJournalFactoryImpl<String>("0");
+            case DISTRIBUTED_JOURNAL_FACTORY: return new ReindexQueueFactory();
             case USER_FACTORY : return new UserFactoryLiferayImpl();
             case CALENDAR_REMINDER_FACTORY: return new CalendarReminderFactoryImpl();
             case TEMPLATE_FACTORY: return new TemplateFactoryImpl();
@@ -321,7 +319,7 @@ enum FactoryIndex
             case VERSIONABLE_FACTORY : return new VersionableFactoryImpl();
             case FOLDER_FACTORY : return new FolderFactoryImpl();
             case WORKFLOWS_FACTORY :return new WorkflowFactoryImpl();
-            case INDICIES_FACTORY: return new IndiciesFactoryImpl();
+            case INDICIES_FACTORY: return new IndiciesFactory();
             case LINKCHECKER_FACTORY: return new LinkCheckerFactoryImpl();
             case PUBLISHER_END_POINT_FACTORY: return new PublishingEndPointFactoryImpl();
             case ENVIRONMENT_FACTORY: return new EnvironmentFactoryImpl();
