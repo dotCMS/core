@@ -111,31 +111,8 @@ public class LayoutAPIImpl implements LayoutAPI {
 
 	@Override
 	public boolean doesUserHaveAccessToPortlet(final String portletId, final User user) throws DotDataException {
-		if(portletId==null) {
-			return false;
-		}
-
-		List<Layout> layouts = loadLayoutsForUser(user);
-		if ("content".equals(portletId)) {
-			for (Layout layout : layouts) {
-				if (layout.getPortletIds().stream().anyMatch(p -> p.startsWith(PortletAPI.CONTENT_PORTLET_PREFIX))) {
-					return true;
-				}
-			}
-		}
-		else if (portletId.startsWith(PortletAPI.CONTENT_PORTLET_PREFIX)) {
-			for (Layout layout : layouts) {
-				if (layout.getPortletIds().stream().anyMatch(p -> p.equals("content"))) {
-					return true;
-				}
-			}
-		}
-		else {
-			for (Layout layout : layouts) {
-				if (layout.getPortletIds().contains(portletId)) {
-					return true;
-				}
-			}
+		if(loadLayoutsForUser(user).stream(). anyMatch(layout -> layout.getPortletIds().contains(portletId))){
+			return true;
 		}
 		return APILocator.getRoleAPI().doesUserHaveRole(user, APILocator.getRoleAPI().loadCMSAdminRole());
 	}
