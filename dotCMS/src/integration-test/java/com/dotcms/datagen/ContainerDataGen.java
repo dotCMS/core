@@ -1,14 +1,12 @@
 package com.dotcms.datagen;
 
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.structure.model.Structure;
-
+import com.liferay.portal.model.User;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -23,12 +21,24 @@ import java.util.Map;
  */
 public class ContainerDataGen extends AbstractDataGen<Container> {
 
-	private String friendlyName;
-	private String notes;
-	private String title;
-    private Map<Structure, String> structures = new HashMap<>();
+    private String friendlyName = "testFriendlyName" + System.currentTimeMillis();
+    private String notes = "testNotes" + System.currentTimeMillis();
+    private String title = "testTitle" + System.currentTimeMillis();
+    private int maxContentlets = 5;
+    private User modUser = user;
+    private User owner = user;
+    private String code;
+    private String preLoop = "<div>";
+    private String postLoop = "</div>";
+    private Boolean showOnMenu = Boolean.FALSE;
+    private String sortContenletsBy;
+    private int sortOrder;
+    private Boolean staticify = Boolean.TRUE;
+    private Boolean useDiv = Boolean.TRUE;
 
-	private static final String type = "containers";
+    private static final String type = "containers";
+
+    private Map<ContentType, String> contentTypes = new HashMap<>();
 
 	/**
 	 * Sets friendlyName property to the ContainerDataGen instance. This will be
@@ -67,33 +77,99 @@ public class ContainerDataGen extends AbstractDataGen<Container> {
 	}
 
     /**
-     * Adds a structure to the list of structures to be included in the {@link Container} this data-gen will create.
+     * Adds a structure to the list of contentTypes to be included in the {@link Container} this data-gen will create.
      * Takes the structure to be included and the code to be displayed in the container
      * @param structure the structure to include
      * @param codeForStructure the code to be displayed
      * @return the data-gen with the added structure
      */
     public ContainerDataGen withStructure(Structure structure, String codeForStructure) {
-        structures.put(structure, codeForStructure);
+
+        final ContentType toContentType = new StructureTransformer(structure).asList().get(0);
+        return withContentType(toContentType, codeForStructure);
+    }
+
+    public ContainerDataGen withContentType(ContentType contentType, String codeForStructure) {
+        contentTypes.put(contentType, codeForStructure);
         return this;
     }
 
     /**
-     * Removes a structure from the list of structures be included to the {@link Container} this data-gen will create
+     * Removes a structure from the list of contentTypes be included to the {@link Container} this data-gen will create
      * @param structure the structure to remove
      * @return the data-gen with the removed structure
      */
     public ContainerDataGen withoutStructure(Structure structure) {
-        structures.remove(structure);
+        final ContentType toContentType = new StructureTransformer(structure).asList().get(0);
+        return withoutContentType(toContentType);
+    }
+
+    public ContainerDataGen withoutContentType(ContentType contentType) {
+        contentTypes.remove(contentType);
         return this;
     }
 
     /**
-     * Clears the list of structures be included to the {@link Container} this data-gen will create
-     * @return the data-gen with the cleared list of structures
+     * Clears the list of contentTypes be included to the {@link Container} this data-gen will create
+     * @return the data-gen with the cleared list of contentTypes
      */
-    public ContainerDataGen clearStructures() {
-        structures.clear();
+    public ContainerDataGen clearContentTypes() {
+        contentTypes.clear();
+        return this;
+    }
+
+    public ContainerDataGen maxContentlets(int maxContentlets) {
+        this.maxContentlets = maxContentlets;
+        return this;
+    }
+
+    public ContainerDataGen modUser(User modUser) {
+        this.modUser = modUser;
+        return this;
+    }
+
+    public ContainerDataGen owner(User owner) {
+        this.owner = owner;
+        return this;
+    }
+
+    public ContainerDataGen code(String code) {
+        this.code = code;
+        return this;
+    }
+
+    public ContainerDataGen preLoop(String preLoop) {
+        this.preLoop = preLoop;
+        return this;
+    }
+
+    public ContainerDataGen postLoop(String postLoop) {
+        this.postLoop = postLoop;
+        return this;
+    }
+
+    public ContainerDataGen showOnMenu(Boolean showOnMenu) {
+        this.showOnMenu = showOnMenu;
+        return this;
+    }
+
+    public ContainerDataGen sortContenletsBy(String sortContenletsBy) {
+        this.sortContenletsBy = sortContenletsBy;
+        return this;
+    }
+
+    public ContainerDataGen sortOrder(int sortOrder) {
+        this.sortOrder = sortOrder;
+        return this;
+    }
+
+    public ContainerDataGen staticify(Boolean staticify) {
+        this.staticify = staticify;
+        return this;
+    }
+
+    public ContainerDataGen useDiv(Boolean useDiv) {
+        this.useDiv = useDiv;
         return this;
     }
 
@@ -104,25 +180,27 @@ public class ContainerDataGen extends AbstractDataGen<Container> {
      */
     @Override
     public Container next() {
+
         // Create the new container
         Container container = new Container();
 
-        container.setFriendlyName(this.friendlyName);
+        container.setFriendlyName(friendlyName);
         container.setIDate(new Date());
-        container.setMaxContentlets(1);
+        container.setMaxContentlets(maxContentlets);
         container.setModDate(new Date());
-        container.setModUser(user.getUserId());
-        container.setNotes(this.notes);
-        container.setOwner(user.getUserId());
-        container.setPostLoop("");
-        container.setPreLoop("");
-        container.setShowOnMenu(true);
-        container.setSortContentletsBy("");
-        container.setSortOrder(2);
-        container.setStaticify(true);
-        container.setTitle(this.title);
+        container.setModUser(modUser.getUserId());
+        container.setNotes(notes);
+        container.setOwner(owner.getUserId());
+        container.setCode(code);
+        container.setPreLoop(preLoop);
+        container.setPostLoop(postLoop);
+        container.setShowOnMenu(showOnMenu);
+        container.setSortContentletsBy(sortContenletsBy);
+        container.setSortOrder(sortOrder);
+        container.setStaticify(staticify);
+        container.setTitle(title);
         container.setType(type);
-        container.setUseDiv(true);
+        container.setUseDiv(useDiv);
 
         return container;
     }
@@ -142,31 +220,30 @@ public class ContainerDataGen extends AbstractDataGen<Container> {
      */
     @Override
     public Container persist(Container container) {
-        try{
-            WebAssetFactory.createAsset(container, user.getUserId(), host);
-        }catch(DotStateException | DotDataException | DotSecurityException e){
-            throw new RuntimeException(e);
-        }
 
-        // Container structures
-        List<ContainerStructure> csList = new ArrayList<>();
+        try {
 
-        for (Structure structure : structures.keySet()) {
-
-            ContainerStructure cs = new ContainerStructure();
-            cs.setContainerId(container.getIdentifier());
-            cs.setContainerInode(container.getInode());
-            cs.setStructureId(structure.getInode());
-            cs.setCode(structures.get(structure));
-            csList.add(cs);
-        }
-
-        if(!csList.isEmpty()) {
-            try {
-                APILocator.getContainerAPI().saveContainerStructures(csList);
-            } catch (DotDataException | DotSecurityException e) {
-                throw new RuntimeException("Error saving container-structure relationships", e);
+            if (contentTypes.isEmpty()) {
+                ContentType pageContentType = APILocator.getContentTypeAPI(APILocator.systemUser())
+                        .find("htmlpageasset");
+                withContentType(pageContentType, "Sample Code" + System.currentTimeMillis());
             }
+
+            // Container contentTypes
+            List<ContainerStructure> csList = new ArrayList<>();
+            for (ContentType contentType : contentTypes.keySet()) {
+                ContainerStructure cs = new ContainerStructure();
+                cs.setContainerId(container.getIdentifier());
+                cs.setContainerInode(container.getInode());
+                cs.setStructureId(contentType.id());
+                cs.setCode(contentTypes.get(contentType));
+                csList.add(cs);
+            }
+
+            container = APILocator.getContainerAPI()
+                    .save(container, csList, host, owner, false);
+        } catch (Exception e) {
+            throw new RuntimeException("Error persisting Container", e);
         }
 
         return container;

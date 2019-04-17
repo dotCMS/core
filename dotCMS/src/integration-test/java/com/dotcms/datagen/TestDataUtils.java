@@ -7,7 +7,6 @@ import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.util.ConfigTestHelper;
-import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -17,7 +16,6 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.util.UUIDGenerator;
 import com.google.common.io.Files;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
@@ -510,39 +508,13 @@ public class TestDataUtils {
                     .findDefaultHost(APILocator.systemUser(), false);
             final User systemUser = APILocator.systemUser();
 
-            ContentType pageContentType = APILocator.getContentTypeAPI(APILocator.systemUser())
-                    .find("htmlpageasset");
-
             //Create a container for the given contentlet
-            Container container = new Container();
-            container.setCode("this is the code");
-            container.setFriendlyName("test container");
-            container.setTitle("his is the title");
-            container.setMaxContentlets(5);
-            container.setPreLoop("preloop code");
-            container.setPostLoop("postloop code");
-
-            //Save it
-            List<ContainerStructure> csList = new ArrayList<>();
-            ContainerStructure cs = new ContainerStructure();
-            cs.setStructureId(pageContentType.id());
-            cs.setCode("this is the code");
-            csList.add(cs);
-
-            container = APILocator.getContainerAPI()
-                    .save(container, csList, defaultHost, systemUser, false);
+            Container container = new ContainerDataGen()
+                    .nextPersisted();
 
             //Create a template
-            String body =
-                    "<html><body> #parseContainer('" + container.getIdentifier()
-                            + "') </body></html>";
-            String title = "empty test template " + UUIDGenerator.generateUuid();
-
-            Template template = new Template();
-            template.setTitle(title);
-            template.setBody(body);
-            template = APILocator.getTemplateAPI()
-                    .saveTemplate(template, defaultHost, systemUser, false);
+            Template template = new TemplateDataGen().withContainer(container.getIdentifier())
+                    .nextPersisted();
 
             //Create the html page
             Folder testFolder = APILocator.getFolderAPI()
