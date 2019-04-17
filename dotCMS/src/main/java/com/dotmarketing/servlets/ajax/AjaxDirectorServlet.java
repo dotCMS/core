@@ -24,6 +24,8 @@ import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.google.common.io.CharStreams;
 
+import io.vavr.control.Try;
+
 /**
  * This class acts like an invoker for classes that extend AjaxAction. It is intended to allow
  * developers a quick, safe and easy way to write AJAX servlets in dotCMS without having to wire
@@ -88,43 +90,46 @@ public class AjaxDirectorServlet extends HttpServlet {
 
     }
 
-    private HttpServletRequest loadJsonAsParams(HttpServletRequest req) throws IOException {
+  private HttpServletRequest loadJsonAsParams(HttpServletRequest req) throws IOException {
 
-        String jsonStr = null;
-        try (BufferedReader reader = req.getReader()) {
-            jsonStr = CharStreams.toString(reader);
-        }
-        if(!UtilMethods.isSet(jsonStr)) {
-            return req;
-        }
-
-        try {
-            final JSONObject json = new JSONObject(jsonStr);
-            final Map<String, String[]> map = new HashMap<>();
-            for (Iterator<String> i = json.keys(); i.hasNext();) {
-                String key = i.next();
-                if (json.optJSONArray(key) != null) {
-                    final List<String> strArray = new ArrayList<>();
-                    final JSONArray arr = json.optJSONArray(key);
-                    for (int j = 0; j < arr.length(); j++) {
-                        if (UtilMethods.isSet(arr.opt(j))) {
-                            strArray.add(arr.opt(j).toString());
-                        }
-                    }
-                    map.put(key, strArray.toArray(new String[strArray.size()]));
-
-                } else if (json.opt(key) != null) {
-                    map.put(key, new String[] {json.opt(key).toString()});
-                }
-
-            }
-
-            return new JsonDataRequestWrapper(req, map);
-        } catch (JSONException e) {
-            // crash and burn
-            throw new IOException("Error parsing JSON request string");
-        }
-
+    if (req.getContentType() != null && req.getContentType().toLowerCase().indexOf("multipart/form-data") > -1) {
+      return req;
     }
+    String jsonStr = null;
+    try (BufferedReader reader = req.getReader()) {
+      jsonStr = CharStreams.toString(reader);
+    }
+    if (!UtilMethods.isSet(jsonStr)) {
+      return req;
+    }
+
+    try {
+      final JSONObject json = new JSONObject(jsonStr);
+      final Map<String, String[]> map = new HashMap<>();
+      for (Iterator<String> i = json.keys(); i.hasNext();) {
+        String key = i.next();
+        if (json.optJSONArray(key) != null) {
+          final List<String> strArray = new ArrayList<>();
+          final JSONArray arr = json.optJSONArray(key);
+          for (int j = 0; j < arr.length(); j++) {
+            if (UtilMethods.isSet(arr.opt(j))) {
+              strArray.add(arr.opt(j).toString());
+            }
+          }
+          map.put(key, strArray.toArray(new String[strArray.size()]));
+
+        } else if (json.opt(key) != null) {
+          map.put(key, new String[] {json.opt(key).toString()});
+        }
+
+      }
+
+      return new JsonDataRequestWrapper(req, map);
+    } catch (JSONException e) {
+      // crash and burn
+      throw new IOException("Error parsing JSON request string");
+    }
+
+  }
 
 }

@@ -1265,6 +1265,7 @@ create table identifier (
    asset_type NVARCHAR(64) null,
    syspublish_date datetime null,
    sysexpire_date datetime null,
+   full_path_lc  as CASE WHEN parent_path = 'System folder' THEN '/' ELSE LOWER(CONCAT(parent_path, asset_name)) END,
    primary key (id),
    unique (parent_path, asset_name, host_inode)
 );
@@ -2668,3 +2669,4 @@ CREATE TABLE api_token_issued(
 
 create index idx_api_token_issued_user ON api_token_issued (token_userid);
 
+CREATE UNIQUE INDEX idx_ident_uniq_asset_name on identifier (full_path_lc,host_inode);

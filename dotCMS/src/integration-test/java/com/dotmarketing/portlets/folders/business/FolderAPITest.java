@@ -9,7 +9,11 @@ import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.IdentifierAPI;
+import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.cache.FolderCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -38,15 +42,14 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
 
 public class FolderAPITest {//24 contentlets
 
@@ -125,7 +128,7 @@ public class FolderAPITest {//24 contentlets
         final Identifier ident2 = identifierAPI.loadFromDb(ftest2.getVersionId());
         final Identifier ident3 = identifierAPI.loadFromDb(ftest3.getVersionId());
 
-		Assert.assertTrue(ident.getAssetName().startsWith("foldertestxx"));//After 4.1 the asset_name is saved lowercase
+		Assert.assertTrue(ident.getAssetName().startsWith("folderTestXX"));
 		Assert.assertEquals(ident.getPath(),ident1.getParentPath());
 		Assert.assertEquals(ident1.getPath(),ident2.getParentPath());
 		Assert.assertEquals(ident2.getPath(),ident3.getParentPath());

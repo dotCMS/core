@@ -24,7 +24,7 @@ public class StructureDataGen extends AbstractDataGen<Structure> {
     private String detailPage = "";
     private boolean system;
     private Inode.Type type = Inode.Type.STRUCTURE;
-    private String velocityVarName = "test-structure-varname-" + currentTime;
+    private String velocityVarName = "test_structure_varname_" + currentTime;
 
     @SuppressWarnings("unused")
     public StructureDataGen structureType(BaseContentType structureType) {

@@ -2,23 +2,41 @@ package com.dotcms.publisher.business;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
+import com.dotcms.contenttype.model.field.DataTypes;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.TextField;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.contenttype.model.type.SimpleContentType;
+import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.enterprise.publishing.remote.bundler.ContentBundler;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.environment.bean.Environment;
+import com.dotcms.publisher.receiver.BundlePublisher;
 import com.dotcms.publishing.BundlerStatus;
+import com.dotcms.publishing.DotBundleException;
+import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.PublishStatus;
+import com.dotcms.publishing.PublisherConfig;
+import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import java.io.IOException;
+import java.util.Map;
 import org.apache.felix.framework.OSGIUtil;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -32,6 +50,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -41,6 +60,9 @@ import static org.junit.Assert.assertTrue;
 @RunWith(DataProviderRunner.class)
 public class PublisherTest extends IntegrationTestBase {
 
+
+    private static final String TEST_DESCRIPTION = "testDescription";
+    private static final String TEST_TITLE = "testTitle";
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -88,6 +110,76 @@ public class PublisherTest extends IntegrationTestBase {
         }
     }
 
+    @Test
+    public void testPushContentWithUniqueField() throws Exception {
+
+        final User systemUser = APILocator.getUserAPI().getSystemUser();
+        ContentType testContentType = null;
+        PPBean ppBean = null;
+        Contentlet resultContentlet = null;
+
+        final String uniqueValue = "\"A+” Student";
+        final String replaceValue = "Replaced value";
+
+        try {
+
+            // Create test content type
+            testContentType = createContentType("Test Content Type", systemUser);
+
+            // Create test environment and endpoint
+            final User adminUser = APILocator.getUserAPI().loadByUserByEmail("admin@dotcms.com",
+                    systemUser, false);
+            ppBean = createPushPublishEnv(adminUser);
+            assertPPBean(ppBean);
+
+            // Generate bundle
+            final Contentlet contentlet = new ContentletDataGen(testContentType.id())
+                    .setProperty(TEST_TITLE, uniqueValue)
+                    .setProperty(TEST_DESCRIPTION, replaceValue).nextPersisted();
+            final Map<String, Object> bundleData = generateContentBundle(
+                    "unique-content-test-1", contentlet, adminUser, ppBean);
+            assertNotNull(bundleData);
+            assertNotNull(bundleData.get(PublisherTestUtil.FILE));
+
+            // Test content to be replaced using unique field match
+            APILocator.getContentletAPI().archive(contentlet, adminUser, false);
+            APILocator.getContentletAPI().delete(contentlet, adminUser, false);
+            final Contentlet contentToReplace = new ContentletDataGen(testContentType.id())
+                    .setProperty(TEST_TITLE, uniqueValue)
+                    .setProperty(TEST_DESCRIPTION, "Other value").nextPersisted();
+
+            // Publish bundle
+            final PublisherConfig publisherConfig = publishContentBundle(
+                    (File) bundleData.get(PublisherTestUtil.FILE), ppBean.endPoint);
+            assertNotNull(publisherConfig);
+            assertEquals(((File) bundleData.get(PublisherTestUtil.FILE)).getName(),
+                    publisherConfig.getId());
+
+            // Check result content
+            resultContentlet = APILocator.getContentletAPI()
+                    .findContentletByIdentifierAnyLanguage(contentToReplace.getIdentifier());
+            assertNotNull(resultContentlet);
+            assertEquals(replaceValue, resultContentlet.getStringProperty(TEST_DESCRIPTION));
+
+        } finally {
+
+            if (UtilMethods.isSet(resultContentlet)) {
+                APILocator.getContentletAPI().archive(resultContentlet, systemUser, false);
+                APILocator.getContentletAPI().delete(resultContentlet, systemUser, false);
+
+            }
+
+            if (UtilMethods.isSet(ppBean)) {
+                PublisherTestUtil.cleanBundleEndpointEnv(null, ppBean.endPoint, ppBean.environment);
+            }
+
+            if (UtilMethods.isSet(testContentType) && UtilMethods.isSet(testContentType.id())) {
+                APILocator.getContentTypeAPI(systemUser).delete(testContentType);
+            }
+
+        }
+
+    }
 
     private FolderPage createNewPage (final  FolderPage folderPage, final User user) throws Exception {
 
@@ -179,6 +271,74 @@ public class PublisherTest extends IntegrationTestBase {
 
         return
                 new PushResult(bundle, PublisherTestUtil.remoteRemove (assets, bundle, user), assetRealPath + "/bundles/" + bundle.getId());
+    }
+
+    private ContentType createContentType(final String contentTypeName, final User user)
+            throws DotSecurityException, DotDataException {
+
+        final long time = System.currentTimeMillis();
+
+        ContentType contentType = ContentTypeBuilder.builder(SimpleContentType.class).folder(
+                FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name(contentTypeName + time)
+                .description("description" + time).variable("velocityVarNameTesting" + time)
+                .owner(user.getUserId()).build();
+
+        contentType = APILocator.getContentTypeAPI(user).save(contentType);
+
+        final Field textField = FieldBuilder.builder(TextField.class).name(TEST_TITLE)
+                .variable(TEST_TITLE).contentTypeId(contentType.id()).required(true)
+                .listed(true).unique(true).indexed(true).sortOrder(1).readOnly(false)
+                .fixed(false).searchable(true).dataType(DataTypes.TEXT).build();
+
+        APILocator.getContentTypeFieldAPI().save(textField, user);
+
+        final Field descField = FieldBuilder.builder(TextField.class).name(TEST_DESCRIPTION)
+                .variable(TEST_DESCRIPTION).contentTypeId(contentType.id()).required(false)
+                .listed(false).unique(false).indexed(false).sortOrder(1).readOnly(false)
+                .fixed(false).searchable(false).dataType(DataTypes.TEXT).build();
+
+        APILocator.getContentTypeFieldAPI().save(descField, user);
+
+        return contentType;
+
+    }
+
+    private Map<String, Object> generateContentBundle(final String bundleName,
+            final Contentlet contentlet,
+            final User user, final PPBean ppBean)
+            throws DotDataException, DotPublisherException, DotPublishingException, DotBundleException, InstantiationException, IOException, IllegalAccessException {
+
+        final PublisherAPI publisherAPI = PublisherAPI.getInstance();
+        final Bundle bundle = PublisherTestUtil.createBundle(bundleName, user, ppBean.environment);
+
+        publisherAPI.saveBundleAssets(Arrays.asList(contentlet.getIdentifier()),
+                bundle.getId(), user);
+
+        return PublisherTestUtil.generateBundle(bundle.getId(), Operation.PUBLISH);
+
+    }
+
+    private PublisherConfig publishContentBundle(final File bundleFile,
+            final PublishingEndPoint endpoint)
+            throws DotPublisherException, DotPublishingException {
+
+        final String fileName = bundleFile.getName();
+        final String bundleFolder = fileName.substring(0, fileName.indexOf(".tar.gz"));
+
+        final PublishAuditStatus status = PublishAuditAPI
+                .getInstance()
+                .updateAuditTable(endpoint.getId(), endpoint.getGroupId(), bundleFolder, true);
+
+        final PublisherConfig publisherConfig = new PublisherConfig();
+        publisherConfig.setId(fileName);
+        publisherConfig.setEndpoint(endpoint.getId());
+        publisherConfig.setGroupId(endpoint.getGroupId());
+        publisherConfig.setPublishAuditStatus(status);
+
+        final BundlePublisher bundlePublisher = new BundlePublisher();
+        bundlePublisher.init(publisherConfig);
+        return bundlePublisher.process(null);
+
     }
 
     /**

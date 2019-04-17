@@ -17,7 +17,6 @@ import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
-
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -110,15 +109,18 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
                     + tempKeyword
                     + " table "
                     + tempTableName
-                    + " (inode varchar(36) not null, identifier varchar(36) not null,parent_path varchar(255), "
-                    + "asset_name varchar(255), host_identifier varchar(36) not null, primary key (inode) )"
+                    + " (inode varchar(36) not null, "
+                    + " identifier varchar(36) not null,"
+                    + " full_path_lc varchar(510), "
+                    + " host_identifier varchar(36) not null, "
+                    + " primary key (inode) )"
                     + (DbConnectionFactory.isOracle() ? " ON COMMIT PRESERVE ROWS " : "");
 
             if (DbConnectionFactory.isOracle()) {
                 createTempTable = createTempTable.replaceAll("varchar\\(", "varchar2\\(");
             }
 
-			final String INSERT_TEMP_TABLE = "insert into " + tempTableName + " (inode, identifier, parent_path, asset_name, host_identifier) values(?,?,?,?,?)";
+			final String INSERT_TEMP_TABLE = "insert into " + tempTableName + " (inode, identifier, full_path_lc, host_identifier) values(?,?,?,?)";
             while (folders.readRecord()) {
 
                 if (!tempCreated) {
@@ -141,8 +143,7 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
 					dc.setSQL(INSERT_TEMP_TABLE);
 					dc.addParam(folderInode);
 					dc.addParam(folderIdentifier);
-					dc.addParam(parentPath);
-					dc.addParam(assetName);
+                    dc.addParam((parentPath + assetName).toLowerCase());
 					dc.addParam(hostIdentifier);
 					dc.loadResult();
 				} catch (DotDataException e) {
@@ -165,8 +166,8 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
             dc.setSQL("select 1 from identifier iden "
                     + "join folder f on iden.id = f.identifier join "
                     + tempTableName
-                    + " ft on iden.parent_path = ft.parent_path "
-                    + "join contentlet c on iden.host_inode = c.identifier and iden.asset_name = ft.asset_name and ft.host_identifier = iden.host_inode "
+                    + " ft on iden.full_path_lc = ft.full_path_lc "
+                    + "join contentlet c on iden.host_inode = c.identifier and ft.host_identifier = iden.host_inode "
                     + "join contentlet_version_info cvi on c.inode = cvi.working_inode "
                     + "where asset_type = 'folder' and f.inode <> ft.inode order by c.title, iden.asset_name");
 
@@ -195,8 +196,8 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
                         + "' from identifier iden "
                         + "join folder f on iden.id = f.identifier join "
                         + tempTableName
-                        + " ft on iden.parent_path = ft.parent_path "
-                        + "join contentlet c on iden.host_inode = c.identifier and iden.asset_name = ft.asset_name and ft.host_identifier = iden.host_inode "
+                        + " ft on iden.full_path_lc = ft.full_path_lc "
+                        + "join contentlet c on iden.host_inode = c.identifier and ft.host_identifier = iden.host_inode "
                         + "join contentlet_version_info cvi on c.inode = cvi.working_inode "
                         + "where asset_type = 'folder' and f.inode <> ft.inode order by c.title, iden.asset_name";
 

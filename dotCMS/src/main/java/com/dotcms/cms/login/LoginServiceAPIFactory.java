@@ -2,27 +2,11 @@ package com.dotcms.cms.login;
 
 import static com.dotmarketing.util.CookieUtil.createJsonWebTokenCookie;
 
-import java.io.Serializable;
-import java.util.Date;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Optional;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-
-import com.dotcms.enterprise.LicenseUtil;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.auth.providers.jwt.JsonWebTokenUtils;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.ReflectionUtils;
 import com.dotcms.util.security.EncryptorFactory;
@@ -31,7 +15,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.UserWebAPI;
-import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.cms.login.struts.LoginForm;
@@ -58,6 +41,19 @@ import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.InstancePool;
+import java.io.Serializable;
+import java.util.Date;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * Login Service Factory that allows developers to inject custom login services.
@@ -311,9 +307,9 @@ public class LoginServiceAPIFactory implements Serializable {
             user.setLastLoginDate(new Date());
             user.setFailedLoginAttempts(0);
             user.setLastLoginIP(req.getRemoteAddr());
-            
-            
-            
+
+
+
             userAPI.save(user, userAPI.getSystemUser(), true);
 
             ses.setAttribute(WebKeys.USER_ID, userId);
@@ -406,7 +402,7 @@ public class LoginServiceAPIFactory implements Serializable {
                                          final HttpServletResponse res,
                                          final User user,
                                          final int maxAge) throws PortalException, SystemException {
-            
+
             final String jwtAccessToken = this.jsonWebTokenUtils.createUserToken(user, Math.abs(maxAge));
             createJsonWebTokenCookie(req, res, jwtAccessToken, Optional.of(maxAge));
         }

@@ -110,6 +110,9 @@ sed -i "s,^path.repo *:.*$,path.repo: $PWD/dotserver/tomcat/webapps/ROOT/dotsecu
 sed -i "s,^path.logs *:.*$,path.logs: $PWD/dotserver/tomcat/webapps/ROOT/dotsecure/logs,g" dotserver/tomcat/webapps/ROOT/WEB-INF/elasticsearch/config/elasticsearch.yml
 sed -i "s,^es.path.home *=.*$,es.path.home=$PWD/dotserver/tomcat/webapps/ROOT/WEB-INF/elasticsearch,g" core/dotCMS/src/integration-test/resources/it-dotcms-config-cluster.properties
 
+sed -i "s,^felix.base.dir=.*$,felix.base.dir=$PWD/dotserver/tomcat/webapps/ROOT/WEB-INF/felix,g" core/dotCMS/src/integration-test/resources/it-dotmarketing-config.properties
+sed -i "s,^GEOIP2_CITY_DATABASE_PATH_OVERRIDE=.*$,GEOIP2_CITY_DATABASE_PATH_OVERRIDE=$PWD/dotserver/tomcat/webapps/ROOT/WEB-INF/geoip2/GeoLite2-City.mmdb,g" core/dotCMS/src/integration-test/resources/it-dotmarketing-config.properties
+
 echo "
 AUTOWIRE_CLUSTER_TRANSPORT=false
 " >> core/dotCMS/src/integration-test/resources/it-dotcms-config-cluster.properties
@@ -121,15 +124,8 @@ sed -i "s,^ASSET_REAL_PATH *=.*$,ASSET_REAL_PATH=$PWD/dotserver/tomcat/webapps/R
 sed -i "s,^DYNAMIC_CONTENT_PATH *=.*$,DYNAMIC_CONTENT_PATH=$PWD/dotserver/tomcat/webapps/ROOT/dotsecure,g" core/dotCMS/src/integration-test/resources/it-dotmarketing-config.properties
 sed -i "s,^VELOCITY_ROOT *=.*$,VELOCITY_ROOT=$PWD/dotserver/tomcat/webapps/ROOT/WEB-INF/velocity,g" core/dotCMS/src/integration-test/resources/it-dotmarketing-config.properties
 echo "
-GEOIP2_CITY_DATABASE_PATH_OVERRIDE=$PWD/dotserver/tomcat/webapps/ROOT/WEB-INF/geoip2/GeoLite2-City.mmdb
-" >> core/dotCMS/src/integration-test/resources/it-dotmarketing-config.properties
-echo "
 TOOLBOX_MANAGER_PATH=$PWD/dotserver/tomcat/webapps/ROOT/WEB-INF/toolbox.xml
 " >> core/dotCMS/src/integration-test/resources/it-dotmarketing-config.properties
-echo "
-felix.base.dir=$PWD/dotserver/tomcat/webapps/ROOT/WEB-INF/felix
-" >> core/dotCMS/src/integration-test/resources/it-dotmarketing-config.properties
-
 
 # Create output directory
 mkdir tests
