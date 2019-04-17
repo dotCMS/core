@@ -90,7 +90,7 @@ public class FolderAPITest {//24 contentlets
 		templateAPI      = APILocator.getTemplateAPI();
 
 		user   = userAPI.getSystemUser();
-		host   = hostAPI.findByName("demo.dotcms.com", user, false);
+		host   = hostAPI.findDefaultHost(user, false);
 		langId = languageAPI.getDefaultLanguage().getId();
 		fc     = CacheLocator.getFolderCache();
 
