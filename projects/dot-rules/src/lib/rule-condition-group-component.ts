@@ -30,7 +30,7 @@ import { LoggerService } from 'dotcms-js';
   <div flex layout="column" class="cw-conditions">
     <div layout="row"
          class="cw-condition-row"
-         *ngFor="let condition of group?._conditions; let i=index">
+         *ngFor="let condition of group?._conditions; trackBy: trackByFn; let i=index">
       <rule-condition flex layout="row"
                       [condition]="condition"
                       [conditionTypes]="conditionTypes"
@@ -124,5 +124,9 @@ export class ConditionGroupComponent implements OnChanges {
                 }
             }
         );
+    }
+
+    trackByFn(index) {
+        return index;
     }
 }
