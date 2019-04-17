@@ -131,7 +131,7 @@ public class ContentTypeDataGen extends AbstractDataGen<ContentType> {
     public ContentType persist(final ContentType contentType) {
         try {
             if (fields.isEmpty()) {
-                return APILocator.getContentTypeAPI(APILocator.systemUser()).save(contentType);
+                return APILocator.getContentTypeAPI(APILocator.systemUser()).save(contentType, fields);
             } else {
                 return APILocator.getContentTypeAPI(APILocator.systemUser())
                         .save(contentType, fields);
