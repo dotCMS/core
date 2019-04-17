@@ -14,15 +14,16 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.UUIDGenerator;
+import org.apache.commons.lang.RandomStringUtils;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import org.apache.commons.lang.RandomStringUtils;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
 
 /**
  * Integration tests for the Shorty ID API class.
@@ -184,6 +185,40 @@ public class ShortyIdApiTest {
 		builder.add(new String[] { res.get(0).get("inode").toString(), "inode", "template" });
 		this.expectedIdsFromStarter = builder.build();
 	}
+
+    @Test
+    public void testShortify() {
+
+	    final String nullString = null;
+        Assert.assertEquals(APILocator.getShortyAPI().shortify(nullString), nullString);
+
+        final String emptyString = "";
+        Assert.assertEquals(APILocator.getShortyAPI().shortify(emptyString), emptyString);
+
+        final String emptyString2 = "            ";
+        Assert.assertEquals(APILocator.getShortyAPI().shortify(emptyString2), emptyString2);
+
+        final String shortId4 = "1234";
+        Assert.assertEquals(APILocator.getShortyAPI().shortify(shortId4), shortId4);
+
+        final String shortId5 = "12345";
+        Assert.assertEquals(APILocator.getShortyAPI().shortify(shortId5), shortId5);
+
+        final String shortId6 = "12345-6";
+        Assert.assertEquals(APILocator.getShortyAPI().shortify(shortId6), "123456");
+
+        final String shortId7 = "12345-67";
+        Assert.assertEquals(APILocator.getShortyAPI().shortify(shortId7), "1234567");
+
+        final String shortId10 = "12345-6789-0";
+        Assert.assertEquals(APILocator.getShortyAPI().shortify(shortId10), "1234567890");
+
+        final String shortId12 = "12345-6789-012";
+        Assert.assertEquals(APILocator.getShortyAPI().shortify(shortId12), "1234567890");
+
+        final String shortId14 = "12345-6789-012-11";
+        Assert.assertEquals(APILocator.getShortyAPI().shortify(shortId14), "1234567890");
+    }
 
 	@Test
     public void testShortyLookup() {
