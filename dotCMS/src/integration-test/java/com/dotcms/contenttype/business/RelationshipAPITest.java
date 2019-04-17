@@ -58,7 +58,7 @@ public class RelationshipAPITest extends IntegrationTestBase {
 
         structure = new Structure();
         structure.setFixed(false);
-        structure.setVelocityVarName("IT-Structure-" + System.currentTimeMillis());
+        structure.setVelocityVarName("ITStructure" + System.currentTimeMillis());
         structure.setName("IT-Structure-"+ System.currentTimeMillis());
         StructureFactory.saveStructure(structure);
 
