@@ -14,17 +14,7 @@ import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.RelationshipUtil;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.PermissionSummary;
-import com.dotmarketing.business.Permissionable;
-import com.dotmarketing.business.RelatedPermissionableGroup;
-import com.dotmarketing.business.Ruleable;
-import com.dotmarketing.business.Treeable;
-import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.business.Versionable;
+import com.dotmarketing.business.*;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -45,24 +35,18 @@ import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a content unit in the system. Ideally, every single domain object
@@ -148,6 +132,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	private transient boolean needsReindex = false;
 
 	private transient Map<String, List<String>> relatedIds;
+	private transient boolean loadedTags = false;
 
 	/**
 	 * Returns true if this contentlet needs reindex
@@ -548,6 +533,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 */
 	public void setStringProperty(String fieldVarName,String stringValue) throws DotRuntimeException {
 		map.put(fieldVarName, stringValue);
+		addRemoveNullProperty(fieldVarName, stringValue);
 	}
 
     /**
@@ -555,7 +541,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
      * @throws DotRuntimeException
      */
     public void setStringProperty(com.dotcms.contenttype.model.field.Field field,String stringValue) throws DotRuntimeException {
-        map.put(field.variable(), stringValue);
+        setStringProperty(field.variable(), stringValue);
     }
 	/**
 	 *
@@ -565,9 +551,11 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 */
 	public void setLongProperty(String fieldVarName, long longValue) throws DotRuntimeException {
 		map.put(fieldVarName, longValue);
+		addRemoveNullProperty(fieldVarName, longValue);
 	}
-    public void setLongProperty(com.dotcms.contenttype.model.field.Field field,long stringValue) throws DotRuntimeException {
-        map.put(field.variable(), stringValue);
+    public void setLongProperty(com.dotcms.contenttype.model.field.Field field,long longValue) throws DotRuntimeException {
+        setLongProperty(field.variable(), longValue);
+
     }
 	/**
 	 *
@@ -591,13 +579,14 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 */
 	public void setBoolProperty(String fieldVarName, boolean boolValue) throws DotRuntimeException {
 		map.put(fieldVarName, boolValue);
+		addRemoveNullProperty(fieldVarName, boolValue);
 	}
     /**
      * @param boolValue
      * @throws DotRuntimeException
      */
     public void setBoolProperty(com.dotcms.contenttype.model.field.Field field, boolean boolValue) throws DotRuntimeException {
-        map.put(field.variable(), boolValue);
+        setBoolProperty(field.variable(), boolValue);
     }
 
 	/**
@@ -656,6 +645,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 */
 	public void setFloatProperty(String fieldVarName, float floatValue) throws DotRuntimeException {
 		map.put(fieldVarName, floatValue);
+		addRemoveNullProperty(fieldVarName, floatValue);
 	}
 
     /**
@@ -663,7 +653,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
      * @throws DotRuntimeException
      */
     public void setFloatProperty(com.dotcms.contenttype.model.field.Field field, float floatValue) throws DotRuntimeException {
-        map.put(field.variable(), floatValue);
+		setFloatProperty(field.variable(), floatValue);
     }
 
 	/**
@@ -691,17 +681,21 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	        setRelated(fieldVarName, (List<Contentlet>) objValue);
         } else{
             map.put(fieldVarName, objValue);
-            if (!NULL_PROPERTIES.equals(fieldVarName)) { // No need to keep track of the null property it self.
-                if (null == objValue) {
-                    addNullProperty(fieldVarName);
-                } else {
-                    removeNullProperty(fieldVarName);
-                }
-            }
-        }
+			addRemoveNullProperty(fieldVarName, objValue);
+		}
 	}
 
-    /**
+	private void addRemoveNullProperty(String fieldVarName, Object objValue) {
+		if (!NULL_PROPERTIES.equals(fieldVarName)) { // No need to keep track of the null property it self.
+			if (null == objValue) {
+				addNullProperty(fieldVarName);
+			} else {
+				removeNullProperty(fieldVarName);
+			}
+		}
+	}
+
+	/**
      * @param fieldVarName
      * @return
      */
@@ -1250,52 +1244,58 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	}
 
     /**
-     *
+     * Set the tags to the contentlet
      * @throws DotDataException
      */
 	public void setTags() throws DotDataException {
-		HashMap<String, StringBuilder> contentletTags = new HashMap<>();
-		List<TagInode> foundTagInodes = APILocator.getTagAPI().getTagInodesByInode(this.getInode());
-		if ( foundTagInodes != null && !foundTagInodes.isEmpty() ) {
 
-			for ( TagInode foundTagInode : foundTagInodes ) {
+		if (!this.loadedTags) {
 
-				StringBuilder contentletTagsBuilder = new StringBuilder();
-				String fieldVarName = foundTagInode.getFieldVarName();
+			final HashMap<String, StringBuilder> contentletTags = new HashMap<>();
+			final List<TagInode> foundTagInodes = APILocator.getTagAPI().getTagInodesByInode(this.getInode());
+			if (foundTagInodes != null && !foundTagInodes.isEmpty()) {
 
-				if ( UtilMethods.isSet(fieldVarName) ) {
-					//Getting the related tag object
-					Tag relatedTag = APILocator.getTagAPI().getTagByTagId(foundTagInode.getTagId());
+				for (final TagInode foundTagInode : foundTagInodes) {
 
-					if ( contentletTags.containsKey(fieldVarName) ) {
-						contentletTagsBuilder = contentletTags.get(fieldVarName);
-					}
-					if ( contentletTagsBuilder.length() > 0 ) {
-						contentletTagsBuilder.append(",");
-					}
-					if ( relatedTag.isPersona() ) {
-						contentletTagsBuilder.append(relatedTag.getTagName() + ":persona");
+					StringBuilder contentletTagsBuilder = new StringBuilder();
+					final String fieldVarName = foundTagInode.getFieldVarName();
+
+					if (UtilMethods.isSet(fieldVarName)) {
+						//Getting the related tag object
+						Tag relatedTag = APILocator.getTagAPI().getTagByTagId(foundTagInode.getTagId());
+
+						if (contentletTags.containsKey(fieldVarName)) {
+							contentletTagsBuilder = contentletTags.get(fieldVarName);
+						}
+						if (contentletTagsBuilder.length() > 0) {
+							contentletTagsBuilder.append(",");
+						}
+						if (relatedTag.isPersona()) {
+							contentletTagsBuilder.append(relatedTag.getTagName() + ":persona");
+						} else {
+							contentletTagsBuilder.append(relatedTag.getTagName());
+						}
+
+						contentletTags.put(fieldVarName, contentletTagsBuilder);
 					} else {
-						contentletTagsBuilder.append(relatedTag.getTagName());
+						Logger.error(this, "Found Tag with id [" + foundTagInode.getTagId() + "] related with Contentlet " +
+								"[" + foundTagInode.getInode() + "] without an associated Field var name.");
 					}
-
-					contentletTags.put(fieldVarName, contentletTagsBuilder);
-				} else {
-					Logger.error(this, "Found Tag with id [" + foundTagInode.getTagId() + "] related with Contentlet " +
-							"[" + foundTagInode.getInode() + "] without an associated Field var name.");
 				}
 			}
-		}
 
 		/*
 			Now we need to populate the contentlet tag fields with the related tags info for the edit mode,
 			this is done only for display purposes.
 			 */
-		if ( !contentletTags.isEmpty() ) {
-			for ( Map.Entry<String, StringBuilder> tagsList : contentletTags.entrySet() ) {
-				//We should not store the tags inside the field, the relation must only exist on the tag_inode table
-				this.setStringProperty(tagsList.getKey(), tagsList.getValue().toString());
+			if (!contentletTags.isEmpty()) {
+				for (final Map.Entry<String, StringBuilder> tagsList : contentletTags.entrySet()) {
+					//We should not store the tags inside the field, the relation must only exist on the tag_inode table
+					this.setStringProperty(tagsList.getKey(), tagsList.getValue().toString());
+				}
 			}
+
+			this.loadedTags = true;
 		}
 	}
 

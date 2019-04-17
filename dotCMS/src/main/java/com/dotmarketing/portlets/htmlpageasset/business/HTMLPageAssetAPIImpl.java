@@ -446,7 +446,9 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         Identifier sourceIdent = identifierAPI.find( page );
         Host host = APILocator.getHostAPI().find( sourceIdent.getHostId(), user, false );
         Identifier targetIdent = identifierAPI.find( host, sourceIdent.getParentPath() + newName );
-        if ( targetIdent == null || !InodeUtils.isSet( targetIdent.getId() ) ) {
+        if (targetIdent == null || !InodeUtils.isSet(targetIdent.getId())
+          || sourceIdent.getId().equals(targetIdent.getId())) // we can rename the page itself
+         {
             Contentlet cont = contentletAPI.checkout( page.getInode(), user, false );
             cont.setStringProperty( URL_FIELD, newName );
             cont = contentletAPI.checkin( cont, user, false );

@@ -83,7 +83,7 @@ public class JsonWebTokenUtilsIntegrationTest {
         assertEquals(subject, userId);
 
         //Get the user
-        JsonWebTokenUtils jsonWebTokenUtils = new JsonWebTokenUtils(jsonWebTokenService, userAPI);
+        JsonWebTokenUtils jsonWebTokenUtils = new JsonWebTokenUtils(jsonWebTokenService);
         User userInToken = jsonWebTokenUtils.getUser(jsonWebToken, "127.0.0.1");
         assertNotNull(userInToken);
         assertEquals(user, userInToken);
@@ -123,7 +123,7 @@ public class JsonWebTokenUtilsIntegrationTest {
         userAPI.loadUserById(userId).setModificationDate(new Date());
 
         //Get the user
-        JsonWebTokenUtils jsonWebTokenUtils = new JsonWebTokenUtils(jsonWebTokenService, userAPI);
+        JsonWebTokenUtils jsonWebTokenUtils = new JsonWebTokenUtils(jsonWebTokenService);
         User userInToken = jsonWebTokenUtils.getUser(jsonWebToken, "127.0.0.1");
         assertNull(userInToken);
     }
