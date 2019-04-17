@@ -6,6 +6,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
@@ -263,8 +264,9 @@ public class FolderAPITest {//24 contentlets
 		link.setParent(ftest1.getInode());
 		link.setTarget("_blank");
 		link.setModUser(user.getUserId());
-		IHTMLPage page = htmlPageAssetAPI
-				.getPageByPath("/about-us/locations/index", host, langId, true);
+
+		Contentlet pageContentlet = TestDataUtils.getPageContent(true, langId);
+		IHTMLPage page = APILocator.getHTMLPageAssetAPI().fromContentlet(pageContentlet);
 
   		Identifier internalLinkIdentifier = identifierAPI.find(page.getIdentifier());
 		link.setLinkType(Link.LinkType.INTERNAL.toString());
@@ -306,8 +308,9 @@ public class FolderAPITest {//24 contentlets
 		link2.setParent(ftest2.getInode());
 		link2.setTarget("_blank");
 		link2.setModUser(user.getUserId());
-		page = htmlPageAssetAPI
-				.getPageByPath("/about-us/locations/index", host, langId, true);
+
+		pageContentlet = TestDataUtils.getPageContent(true, langId);
+		page = APILocator.getHTMLPageAssetAPI().fromContentlet(pageContentlet);
 
   		internalLinkIdentifier = identifierAPI.findFromInode(page.getIdentifier());
 		link2.setLinkType(Link.LinkType.INTERNAL.toString());
@@ -371,14 +374,9 @@ public class FolderAPITest {//24 contentlets
 		contentAsset5.setFolder(ftest1.getInode());
 		contentAsset5= contentletAPI.checkin(contentAsset5, user, false);
 		contentletAPI.publish(contentAsset5, user, false);
-		Container container =null;
-		final List<Container> containers = containerAPI.findContainersForStructure(st.getInode());
-		for(final Container c : containers){
-			if(c.getTitle().equals("Large Column (lg-1)")){
-				container=c;
-				break;
-			}
-		}
+
+		Container container = new ContainerDataGen()
+				.nextPersisted();
 		/*Relate content to page*/
 		final MultiTree m = new MultiTree(contentAsset4.getIdentifier(), container.getIdentifier(), contentAsset2.getIdentifier());
 		APILocator.getMultiTreeAPI().saveMultiTree(m);
@@ -550,8 +548,9 @@ public class FolderAPITest {//24 contentlets
 		link.setParent(ftest1.getInode());
 		link.setTarget("_blank");
 		link.setModUser(user.getUserId());
-		page = htmlPageAssetAPI
-				.getPageByPath("/about-us/locations/index", host, langId, true);
+
+		Contentlet pageContentlet = TestDataUtils.getPageContent(true, langId);
+		page = APILocator.getHTMLPageAssetAPI().fromContentlet(pageContentlet);
 
   		Identifier internalLinkIdentifier = identifierAPI.findFromInode(page.getIdentifier());
 		link.setLinkType(Link.LinkType.INTERNAL.toString());
@@ -605,8 +604,9 @@ public class FolderAPITest {//24 contentlets
 		link2.setParent(ftest3.getInode());
 		link2.setTarget("_blank");
 		link2.setModUser(user.getUserId());
-		page = htmlPageAssetAPI
-				.getPageByPath("/about-us/locations/index", host, langId, true);
+
+		pageContentlet = TestDataUtils.getPageContent(true, langId);
+		page = APILocator.getHTMLPageAssetAPI().fromContentlet(pageContentlet);
 
   		internalLinkIdentifier = identifierAPI.findFromInode(page.getIdentifier());
 		link2.setLinkType(Link.LinkType.INTERNAL.toString());
@@ -888,6 +888,11 @@ public class FolderAPITest {//24 contentlets
 
 	@Test
 	public void testFindThemes() throws DotDataException, DotSecurityException {
+
+		//Create a test theme folder
+		final String themeFolderPath = "/application/themes/testTheme" + System.currentTimeMillis();
+		folderAPI.createFolders(themeFolderPath, host, user, false);
+
 		final List<Folder> folders = folderAPI.findThemes(host, user, false);
 
 		Assert.assertNotNull(folders);
