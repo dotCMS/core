@@ -155,8 +155,7 @@ public class HibernateUtilTest {
     @DataProvider
     public static Object[] testCases() {
 
-        final Runnable reindexRunnable=new ReindexRunnable(Collections.emptyList(), ReindexRunnable.Action.ADDING,
-                null, false) {};
+        final Runnable reindexRunnable=new ReindexRunnable(Collections.emptyList(), ReindexRunnable.Action.ADDING) {};
 
         final Runnable flushCacheRunnable = new FlushCacheRunnable() {
             public void run() {}

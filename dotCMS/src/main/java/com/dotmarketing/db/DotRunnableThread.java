@@ -141,11 +141,11 @@ public class DotRunnableThread implements Runnable {
                         break;
 
                     case INDEX_AND_RUN_LISTENERS:
-                        APILocator.getContentletIndexAPI().indexContentList(batchList, null, false, new ReindexActionListeners(otherListenerList));
+                        APILocator.getContentletIndexAPI().addContentToIndex(batchList);
                         break;
 
                     default:
-                        APILocator.getContentletIndexAPI().indexContentList(batchList, null, false);
+                        APILocator.getContentletIndexAPI().addContentToIndex(batchList);
                 }
             } catch (DotDataException e) {
                 Logger.error(this, e.getMessage(), e);

@@ -132,6 +132,21 @@ public class DbConnectionFactory {
     }
 
     /**
+     * return the number of db connections called for
+     * (Useful in tests where we want to make sure
+     * we are not hitting the db)
+     * @return
+     */
+    public static long connectionsCalledFor() {
+        return connectionsCalledFor;
+    }
+    
+    private static long connectionsCalledFor=0;
+    
+    
+    
+    
+    /**
      * This method retrieves the default connection to the dotCMS DB
      */
     public static Connection getConnection() {
@@ -139,7 +154,7 @@ public class DbConnectionFactory {
         try {
             HashMap<String, Connection> connectionsList = (HashMap<String, Connection>) connectionsHolder.get();
             Connection connection = null;
-
+            connectionsCalledFor++;
             if (connectionsList == null) {
                 connectionsList = new HashMap<String, Connection>();
                 connectionsHolder.set(connectionsList);
@@ -381,16 +396,18 @@ public class DbConnectionFactory {
             return _dbType;
         }
 
+        final boolean isNewConnection = !DbConnectionFactory.connectionExists();
         Connection conn = getConnection();
 
         try {
             _dbType = conn.getMetaData().getDatabaseProductName();
-
         } catch (Exception e) {
 
         } finally {
             try {
-                closeConnection();
+                if (isNewConnection) {
+                    conn.close();
+                }
             } catch (Exception e) {
 
             }

@@ -240,7 +240,7 @@ public class StartupTasksExecutor {
 		//HibernateUtil.startTransaction();
 		try {
 			if(runOnce.size() > 0)
-				ReindexThread.stopThread();
+				ReindexThread.pause();
 			for (Class<?> c : runOnce) {
 				name = c.getCanonicalName();
 				name = name.substring(name.lastIndexOf(".") + 1);
@@ -306,8 +306,8 @@ public class StartupTasksExecutor {
 
 				}
 			}
-			//if(runOnce.size() > 0)
-				//ReindexThread.startThread(Config.getIntProperty("REINDEX_THREAD_SLEEP", 500), Config.getIntProperty("REINDEX_THREAD_INIT_DELAY", 5000));
+	
+			ReindexThread.unpause();
 			
 		} catch (Exception e) {
 			HibernateUtil.rollbackTransaction();

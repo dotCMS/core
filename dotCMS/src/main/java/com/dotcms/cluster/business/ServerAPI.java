@@ -51,6 +51,16 @@ public interface ServerAPI {
 
 	Server getOrCreateMyServer() throws DotDataException;
 
+    void writeHeartBeatToDisk(String serverId) throws IOException;
 
+    String getOldestServer(final List<String> serverIds) throws DotDataException, IOException;
+
+    String getOldestServer() throws DotDataException, IOException;
+/**
+ * Returns a list of serverIds participating in a reindex
+ * @return
+ * @throws DotDataException
+ */
+  List<String> getReindexingServers() throws DotDataException;
 
 }

@@ -348,13 +348,8 @@ public class IndexAjaxAction extends AjaxAction {
 		response.getWriter().println(inactives);
 	}
 
-	public void stopReindexThread(HttpServletRequest request, HttpServletResponse response) throws IOException {
-		ReindexThread.stopThread();
-	}
 
-	public void startReindexThread(HttpServletRequest request, HttpServletResponse response) throws IOException {
-		ReindexThread.startThread(Config.getIntProperty("REINDEX_THREAD_SLEEP", 500), Config.getIntProperty("REINDEX_THREAD_INIT_DELAY", 5000));
-	}
+
 
 	public void getReindexThreadStatus(HttpServletRequest request, HttpServletResponse response) throws IOException {
 		response.getWriter().println(ReindexThread.getInstance().isWorking()?"active":"stopped");
