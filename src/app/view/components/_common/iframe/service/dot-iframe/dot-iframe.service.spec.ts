@@ -2,12 +2,26 @@ import { DOTTestBed } from '../../../../../../test/dot-test-bed';
 import { DotIframeService } from './dot-iframe.service';
 import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
 import { async } from '@angular/core/testing';
+import { DotRouterService } from '@services/dot-router/dot-router.service';
+import { Injectable } from '@angular/core';
+
+@Injectable()
+export class DotRouterServiceMock {
+    isCustomPortlet(portletId: string): boolean {
+        return portletId === 'c_testing';
+    }
+}
 
 describe('DotIframeService', () => {
     let service: DotIframeService;
+    const dotRouterService: DotRouterServiceMock = new DotRouterServiceMock();
 
     beforeEach(() => {
-        const injector = DOTTestBed.resolveAndCreate([DotIframeService, DotUiColorsService]);
+        const injector = DOTTestBed.resolveAndCreate([
+            DotIframeService,
+            DotUiColorsService,
+            { provide: DotRouterService, useValue: dotRouterService }
+        ]);
         service = injector.get(DotIframeService);
     });
 

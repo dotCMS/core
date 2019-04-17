@@ -95,4 +95,22 @@ describe('DotRouterService', () => {
         router.routerState.snapshot.url = 'edit-page';
         expect(service.isEditPage()).toBe(true);
     });
+
+    it('should return true if the portletid is a custom portlet', () => {
+        expect(service.isCustomPortlet('c-testing')).toBe(true);
+    });
+
+    it('should return false if the portletid is not a custom portlet', () => {
+        expect(service.isCustomPortlet('site-browser')).toBe(false);
+    });
+
+    it('should return false if the currentPortlet is not a custom portlet', () => {
+        expect(service.isCustomPortlet('site-browser')).toBe(false);
+    });
+
+
+    it('should return true if the currentPortlet is not a custom portlet', () => {
+        router.routerState.snapshot.url = '/c/c-testing';
+        expect(service.isCustomPortlet('site-browser')).toBe(false);
+    });
 });

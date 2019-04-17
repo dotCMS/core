@@ -61,7 +61,7 @@ describe('DotContentletEditorService', () => {
     it('should set data to edit', () => {
         spyOnProperty(dotRouterService, 'currentPortlet').and.returnValue({
             url: '/c/c-Test/123',
-            id: '123'
+            id: 'c-Test'
         });
         service.editUrl$.subscribe((url: string) => {
             expect(url).toEqual(
@@ -118,6 +118,38 @@ describe('DotContentletEditorService', () => {
             header: 'This is a header for edit',
             data: {
                 inode: '999'
+            }
+        });
+    });
+
+    it('should set data to edit when current portlet is site-browser', () => {
+        spyOnProperty(dotRouterService, 'currentPortlet').and.returnValue({
+            url: '/#/c/site-browser/ad5acc23-a466-4ac6-9c76-e6a3bc1d609e',
+            id: 'site-browser'
+        });
+        service.editUrl$.subscribe((url: string) => {
+            expect(url).toEqual(
+                [
+                    `/c/portal/layout`,
+                    `?p_l_id=456`,
+                    `&p_p_id=content`,
+                    `&p_p_action=1`,
+                    `&p_p_state=maximized`,
+                    `&p_p_mode=view`,
+                    `&_content_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet`,
+                    `&_content_cmd=edit&inode=ad5acc23-a466-4ac6-9c76-e6a3bc1d609e`
+                ].join('')
+            );
+        });
+
+        service.header$.subscribe((header: string) => {
+            expect(header).toEqual('This is a header for edit');
+        });
+
+        service.edit({
+            header: 'This is a header for edit',
+            data: {
+                inode: 'ad5acc23-a466-4ac6-9c76-e6a3bc1d609e'
             }
         });
     });

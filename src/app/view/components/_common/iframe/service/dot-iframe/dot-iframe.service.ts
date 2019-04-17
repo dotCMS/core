@@ -1,12 +1,13 @@
 import { Injectable } from '@angular/core';
 import { Observable, Subject } from 'rxjs';
 import { filter, map } from 'rxjs/operators';
+import { DotRouterService } from '@services/dot-router/dot-router.service';
 
 @Injectable()
 export class DotIframeService {
     private _actions: Subject<any> = new Subject();
 
-    constructor() {}
+    constructor(private dotRouterService: DotRouterService) {}
 
     /**
      * Trigger reload action
@@ -95,6 +96,8 @@ export class DotIframeService {
             'workflow': 'doFilter'
         };
 
-        return portlet.startsWith('c_') ? mapOfFunctions['content'] : mapOfFunctions[portlet];
+        return this.dotRouterService.isCustomPortlet(portlet) 
+            ? mapOfFunctions['content'] 
+            : mapOfFunctions[portlet];
     }
 }

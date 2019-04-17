@@ -8,6 +8,7 @@ import { Subject } from 'rxjs';
 export class DotRouterService {
     portletReload$ = new Subject();
     private _previousSavedURL: string;
+    private CUSTOM_PORTLET_ID_PREFIX: string = 'c-';
 
     constructor(private router: Router) {}
 
@@ -155,6 +156,27 @@ export class DotRouterService {
 
     isPublicPage(): boolean {
         return this.currentPortlet.url.startsWith('/public');
+    }
+
+    /**
+     * Return true if the current portlet is a custom portlet
+     *
+     * @returns {boolean}
+     * @memberof DotRouterService
+     */
+    isCurrentPortletCustom(): boolean {
+        return this.isCustomPortlet(this.currentPortlet.id);
+    }
+
+    /**
+     * Return true if potlrtId represent a custom portlet
+     *
+     * @param {string} portletId
+     * @returns {boolean}
+     * @memberof DotRouterService
+     */
+    isCustomPortlet(portletId: string): boolean {
+        return portletId.startsWith(this.CUSTOM_PORTLET_ID_PREFIX);
     }
 
     private redirectMain(): Promise<boolean> {
