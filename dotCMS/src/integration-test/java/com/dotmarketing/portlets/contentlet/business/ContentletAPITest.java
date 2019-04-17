@@ -12,7 +12,6 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.datagen.*;
-import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.mock.request.MockInternalRequest;
 import com.dotcms.mock.response.BaseResponse;
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
@@ -28,8 +27,9 @@ import com.dotmarketing.business.*;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.db.LocalTransaction;
-import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.portlets.AssetUtil;
@@ -64,6 +64,11 @@ import com.google.common.io.Files;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import io.vavr.Tuple2;
+import java.util.function.Consumer;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.context.InternalContextAdapterImpl;
@@ -86,6 +91,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.junit.runner.RunWith;
 
 import static com.dotcms.util.CollectionsUtils.map;
 import static java.io.File.separator;
@@ -97,6 +103,8 @@ import static org.junit.Assert.*;
  * Date: 3/20/12
  * Time: 12:12 PM
  */
+
+@RunWith(DataProviderRunner.class)
 public class ContentletAPITest extends ContentletBaseTest {
 
     /**
@@ -4444,7 +4452,7 @@ public class ContentletAPITest extends ContentletBaseTest {
      * Test checkin with a non-existing contentlet identifier, that should fail
      *
      */
-    @Test
+    @Test(expected = DotHibernateException.class)
     public void testCheckin_Non_Existing_Identifier_With_Validate_Should_FAIL()
             throws DotDataException, DotSecurityException {
         Contentlet newsContent = null;
@@ -4458,11 +4466,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             newsContent = contentletAPI.checkin(newsContent, (ContentletRelationships) null, categories,
                     null, user,false);
 
-            fail("Should throw DoesNotExistException for an unexisting id");
-        } catch (Exception e) {
-
-            assertTrue(ExceptionUtil.causedBy(e, DoesNotExistException.class));
-            // good
+            fail("Should throw a constrain exception for an unexisting id");
         } finally {
             if(newsContent!=null && UtilMethods.isSet(newsContent.getIdentifier()) && UtilMethods.isSet(newsContent.getInode())) {
                 contentletAPI.destroy(newsContent, user, false);
@@ -5739,7 +5743,207 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertEquals(user.getUserId(),afterTouch.getModUser());
     }
 
-        private File getBinaryAsset(String inode, String varName, String binaryName) {
+    @DataProvider
+    @SuppressWarnings("unchecked")
+    public static Object[] testCasesNullRequiredFieldValues() {
+
+        // case 1 setStringProperty
+        final TestCaseNullFieldvalues case1 = new TestCaseNullFieldvalues();
+        case1.fieldType = TextField.class;
+        case1.dataType = DataTypes.TEXT;
+        case1.assertion =
+                // contentTypeAndField is a Tuple of contentType Id and Field variable
+                (contentTypeIdAndFieldVar) -> {
+                    try {
+                        final Contentlet testContentlet
+                                = tryToCheckinContentWithNullValueForRequiredField(
+                                contentTypeIdAndFieldVar);
+                        // lets give a value to the required field using setStringProperty
+
+                        testContentlet.setStringProperty(contentTypeIdAndFieldVar._2,
+                                "this is a valid value");
+
+                        // this time should succeed
+                        contentletAPI.checkin(testContentlet, user, false);
+                    } catch (DotDataException | DotSecurityException e) {
+                        throw new DotRuntimeException(e);
+                    }
+                };
+
+        // case 2 setLongProperty
+        final TestCaseNullFieldvalues case2 = new TestCaseNullFieldvalues();
+        case2.fieldType = TextField.class;
+        case2.dataType = DataTypes.INTEGER;
+        case2.assertion =
+                // contentTypeAndField is a Tuple of contentType and Field
+                (contentTypeIdAndFieldVar) -> {
+                    try {
+                        final Contentlet testContentlet
+                                = tryToCheckinContentWithNullValueForRequiredField(
+                                contentTypeIdAndFieldVar);
+                        // lets give a value to the required field using setStringProperty
+
+                        testContentlet.setLongProperty(contentTypeIdAndFieldVar._2,
+                                10000L);
+
+                        // this time should succeed
+                        contentletAPI.checkin(testContentlet, user, false);
+                    } catch (DotDataException | DotSecurityException e) {
+                        throw new DotRuntimeException(e);
+                    }
+                };
+
+
+        // case 3 setBoolProperty
+        final TestCaseNullFieldvalues case3 = new TestCaseNullFieldvalues();
+        case3.fieldType = RadioField.class;
+        case3.dataType = DataTypes.BOOL;
+
+        case3.assertion =
+                // contentTypeAndField is a Tuple of contentType and Field
+                (contentTypeIdAndFieldVar) -> {
+                    try {
+                        final Contentlet testContentlet
+                                = tryToCheckinContentWithNullValueForRequiredField(
+                                contentTypeIdAndFieldVar);
+                        // lets give a value to the required field using setStringProperty
+
+                        testContentlet.setBoolProperty(contentTypeIdAndFieldVar._2,
+                                true);
+
+                        // this time should succeed
+                        contentletAPI.checkin(testContentlet, user, false);
+                    } catch (DotDataException | DotSecurityException e) {
+                        throw new DotRuntimeException(e);
+                    }
+                };
+
+        // case 3 setFloatProperty
+        final TestCaseNullFieldvalues case4 = new TestCaseNullFieldvalues();
+        case4.fieldType = TextField.class;
+        case4.dataType = DataTypes.FLOAT;
+        case4.assertion =
+                // contentTypeAndField is a Tuple of contentType and Field
+                (contentTypeIdAndFieldVar) -> {
+                    try {
+                        final Contentlet testContentlet
+                                = tryToCheckinContentWithNullValueForRequiredField(
+                                contentTypeIdAndFieldVar);
+                        // lets give a value to the required field using setStringProperty
+
+                        testContentlet.setFloatProperty(contentTypeIdAndFieldVar._2,
+                                1500);
+
+                        // this time should succeed
+                        contentletAPI.checkin(testContentlet, user, false);
+                    } catch (DotDataException | DotSecurityException e) {
+                        throw new DotRuntimeException(e);
+                    }
+                };
+
+        return new TestCaseNullFieldvalues[] {
+                case1,
+                case2,
+                case3,
+                case4
+        };
+
+    }
+
+    private static class TestCaseNullFieldvalues {
+        Consumer<Tuple2<String, String>> assertion;
+        Class<? extends com.dotcms.contenttype.model.field.Field> fieldType;
+        DataTypes dataType;
+    }
+
+
+    private static Contentlet tryToCheckinContentWithNullValueForRequiredField(
+            final Tuple2<String, String> typeIdFieldVar)
+            throws DotSecurityException, DotDataException {
+
+        final String testTypeId = typeIdFieldVar._1;
+
+        final String testFieldVar = typeIdFieldVar._2;
+
+        final ContentletDataGen contentletDataGen = new ContentletDataGen(
+                testTypeId);
+        final Contentlet testContentlet = contentletDataGen.next();
+        testContentlet.setProperty(testFieldVar, null);
+
+        try {
+            contentletAPI.checkin(testContentlet, user, false);
+        } catch (DotContentletValidationException e) {
+            // expected because of required field
+            Logger.info(ContentletAPITest.class, "All good");
+        }
+
+        return testContentlet;
+    }
+
+    @Test
+    @UseDataProvider("testCasesNullRequiredFieldValues")
+    public void testCheckin_nullRequiredFieldValue(final TestCaseNullFieldvalues testCase)
+            throws DotDataException, DotSecurityException {
+
+        long time = System.currentTimeMillis();
+
+        ContentType contentType = ContentTypeBuilder
+                .builder(BaseContentType.getContentTypeClass(BaseContentType.CONTENT.getType()))
+                .description("ContentTypeWithPublishExpireFields " + time)
+                .folder(FolderAPI.SYSTEM_FOLDER)
+                .host(Host.SYSTEM_HOST)
+                .name("ContentTypeWithPublishExpireFields " + time)
+                .owner(APILocator.systemUser().toString())
+                .variable("CTVariable711").publishDateVar("publishDate")
+                .expireDateVar("expireDate")
+                .build();
+
+        final ContentTypeAPI contentTypeApi = APILocator.getContentTypeAPI(APILocator.systemUser());
+
+        try {
+            contentType = contentTypeApi.save(contentType);
+
+            List<com.dotcms.contenttype.model.field.Field> fields = new ArrayList<>(
+                    contentType.fields());
+
+            final String titleFieldVarname = "testTitle" + time;
+
+            final com.dotcms.contenttype.model.field.Field titleField = FieldBuilder
+                    .builder(TextField.class)
+                    .name(titleFieldVarname)
+                    .variable(titleFieldVarname)
+                    .contentTypeId(contentType.id())
+                    .build();
+
+            fields.add(titleField);
+
+            final String secondFieldVarName = "testSecondField"
+                    + System.currentTimeMillis();
+
+            final com.dotcms.contenttype.model.field.Field secondField = FieldBuilder
+                    .builder(testCase.fieldType)
+                    .dataType(testCase.dataType)
+                    .name(secondFieldVarName)
+                    .variable(secondFieldVarName)
+                    .contentTypeId(contentType.id())
+                    .required(true)
+                    .build();
+
+            fields.add(secondField);
+
+            contentType = contentTypeApi.save(contentType, fields);
+
+            testCase.assertion.accept(new Tuple2<>(contentType.id(), secondField.variable()));
+
+        } finally {
+            // Deleting content type.
+            contentTypeApi.delete(contentType);
+        }
+    }
+
+
+
+    private File getBinaryAsset(String inode, String varName, String binaryName) {
 
         FileAssetAPI fileAssetAPI = APILocator.getFileAssetAPI();
 
