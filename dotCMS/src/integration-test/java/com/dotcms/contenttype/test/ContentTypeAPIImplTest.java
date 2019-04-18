@@ -47,6 +47,7 @@ import com.dotcms.contenttype.model.type.VanityUrlContentType;
 import com.dotcms.contenttype.model.type.WidgetContentType;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.TestDataUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
@@ -381,10 +382,20 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 				{Constants.FILEASSET, "structuretype = 2",
 						" And structure.inode='" + Constants.FILEASSET + "'"};
 
+		//Creating test content types
+		for (int i = 0; i < 2; i++) {
+			TestDataUtils.getWidgetLikeContentType();
+			TestDataUtils.getCommentsLikeContentType();
+			TestDataUtils.getNewsLikeContentType();
+			TestDataUtils.getWikiLikeContentType();
+			TestDataUtils.getFormLikeContentType();
+			TestDataUtils.getBlogLikeContentType();
+		}
+
 		int totalCount = contentTypeApi.count();
 
 		List<ContentType> types = contentTypeApi.search(null, BaseContentType.ANY, "name", -1, 0);
-		assertThat("we have at least 40 content types", types.size() > 20);
+		assertThat("we should have at least 10 content types", types.size() > 10);
 		types = contentTypeApi.search(null, BaseContentType.ANY, "name", 5, 0);
 		assertThat("limit works and we have max five content types", types.size() < 6);
 		for (int x = 0; x < totalCount; x = x + 5) {
@@ -1324,7 +1335,9 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 				ContentTypeBuilder.builder(languageVariableType).host("ANY-OTHER-HOST").build();
 		languageVariableTypeWithAnotherHost.constructWithFields(fields);
 
-		final ContentType savedLanguagaVariableType = contentTypeApi.save(languageVariableTypeWithAnotherHost);
+		ContentType savedLanguagaVariableType = contentTypeApi
+				.save(languageVariableTypeWithAnotherHost);
+		savedLanguagaVariableType = contentTypeApi.find(savedLanguagaVariableType.variable());
 		assertEquals(savedLanguagaVariableType.host(), Host.SYSTEM_HOST);
 		assertEquals(fields, savedLanguagaVariableType.fields());
 	}
