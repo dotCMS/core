@@ -1,13 +1,5 @@
 package com.dotmarketing.db;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.util.List;
-
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -24,6 +16,13 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.List;
+import org.apache.commons.io.FileUtils;
 
 public class DotCMSInitDb {
 
@@ -101,16 +100,15 @@ public class DotCMSInitDb {
 			starterZip = new File(starter);
 		}
 
-		try {
-			if (starterZip == null || !starterZip.exists()) {
-				URL starterURL = Thread.currentThread().getContextClassLoader()
-						.getResource("starter.zip");
-				if (starterURL != null) {
-					starterZip = new File(starterURL.toURI());
-				}
+		if (starterZip == null || !starterZip.exists()) {
+
+			InputStream starterStream = Thread.currentThread().getContextClassLoader()
+					.getResourceAsStream("starter.zip");
+
+			if (starterStream != null) {
+				starterZip = File.createTempFile("starter", ".zip");
+				FileUtils.copyInputStreamToFile(starterStream, starterZip);
 			}
-		} catch (URISyntaxException e) {
-			throw new IOException(e.getMessage(), e);
 		}
 
 		if (starterZip == null || !starterZip.exists()) {
