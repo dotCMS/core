@@ -1,6 +1,7 @@
 package com.dotcms.rest;
 
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
@@ -11,7 +12,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
@@ -32,6 +32,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_ASSIGN_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_COMMENTS_KEY;
@@ -345,7 +348,12 @@ public class MapToContentletPopulator  {
 
             //searches for legacy relationships(those with legacy relation type value) and field
             //relationships (those with period. For example: News.comments)
-            final String query = getRelationshipQuery(map, relationship);
+            final Optional<String> queryOptional = getRelationshipQuery(contentType, map, relationship);
+            String query = null;
+
+            if (queryOptional.isPresent()){
+                query = queryOptional.get();
+            }
 
             if (UtilMethods.isSet(query)) {
 
@@ -386,27 +394,36 @@ public class MapToContentletPopulator  {
 
     /**
      * Gets the query to be used for filtering related contentlet. It supports legacy and field relationships
+     * @param contentType
      * @param fieldsMap
      * @param relationship
      * @return
      */
-    private String getRelationshipQuery(Map<String, Object> fieldsMap, Relationship relationship){
+    private Optional<String> getRelationshipQuery(final ContentType contentType,
+            final Map<String, Object> fieldsMap, final Relationship relationship) {
         final String relationTypeValue = relationship.getRelationTypeValue();
 
-        if (fieldsMap.containsKey(relationTypeValue)){
-
+        //Important: On this method fieldsMap.contains is not valid
+        if (!relationship.isRelationshipField() && fieldsMap.get(relationTypeValue) != null) {
             //returns a legacy relationship
-            return (String)fieldsMap.get(relationTypeValue);
+            return Optional.of((String)fieldsMap.get(relationTypeValue));
         } else {
-            //returns a field relationship
+            //returns a field relationship if exists
+            Set<String> relationshipFields = contentType.fields().stream()
+                    .filter(field -> (field instanceof RelationshipField))
+                    .map(field -> field.variable()).collect(
+                            Collectors.toSet());
             if (relationTypeValue.contains(StringPool.PERIOD) && fieldsMap
-                    .containsKey(relationship.getChildRelationName())) {
-                return (String) fieldsMap.get(relationship.getChildRelationName());
-            } else {
-                return (String) fieldsMap.get(relationship.getParentRelationName());
+                    .get(relationship.getChildRelationName()) != null && relationshipFields
+                    .contains(relationship.getChildRelationName())) {
+                return Optional.of((String)fieldsMap.get(relationship.getChildRelationName()));
+            } else if (fieldsMap.get(relationship.getParentRelationName()) != null && relationshipFields
+                    .contains(relationship.getParentRelationName())) {
+                return Optional.of((String)fieldsMap.get(relationship.getParentRelationName()));
             }
         }
 
+        return Optional.empty();
     }
 
     private void processIdentifier(final Contentlet contentlet,

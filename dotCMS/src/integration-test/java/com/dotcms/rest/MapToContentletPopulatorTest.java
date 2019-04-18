@@ -5,6 +5,7 @@ import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
@@ -214,6 +215,56 @@ public class MapToContentletPopulatorTest {
             //validates the contentlet
             assertEquals(1, result.getValue().size());
             assertEquals(contentlet.getInode(), result.getValue().get(0).getInode());
+        } finally {
+            if (UtilMethods.isSet(parentContentType) && UtilMethods.isSet(parentContentType.id())) {
+                contentTypeAPI.delete(parentContentType);
+            }
+
+            if (UtilMethods.isSet(childContentType) && UtilMethods.isSet(childContentType.id())) {
+                contentTypeAPI.delete(childContentType);
+            }
+        }
+    }
+
+    @Test
+    public void testPopulateContentletWithTwoSidedRelationshipAndParentRelationNameEqualsToAnotherFieldVarInChild()
+            throws DotDataException, DotSecurityException {
+        final MapToContentletPopulator populator = new MapToContentletPopulator();
+
+        ContentType parentContentType = null;
+        ContentType childContentType = null;
+        try {
+            parentContentType = createAndSaveSimpleContentType("parentContentType");
+            childContentType = createAndSaveSimpleContentType("childContentType");
+            Contentlet contentlet = createContentlet(childContentType);
+
+            //Adding a RelationshipField to the parent
+            final Field parentTypeRelationshipField = createAndSaveRelationshipField("newRel",
+                    parentContentType.id(), childContentType.variable());
+
+            final String fullFieldVar =
+                    parentContentType.variable() + StringPool.PERIOD + parentTypeRelationshipField
+                            .variable();
+
+            //Adding a RelationshipField to the child
+            final Field childTypeRelationshipField = createAndSaveRelationshipField("otherSideRel",
+                    childContentType.id(), fullFieldVar);
+
+            //Creating text field in the child with relationship field variable set in the parent
+            Field textField = FieldBuilder.builder(TextField.class)
+                    .name(parentTypeRelationshipField.variable())
+                    .variable(parentTypeRelationshipField.variable())
+                    .contentTypeId(childContentType.id()).build();
+
+            textField = fieldAPI.save(textField, user);
+
+            final Map<String, Object> properties = new HashMap<>();
+            properties.put(Contentlet.STRUCTURE_INODE_KEY, childContentType.id());
+            properties.put(textField.variable(), contentlet.getIdentifier());
+
+            contentlet = populator.populate(contentlet, properties);
+
+            assertNull(contentlet.get(Contentlet.RELATIONSHIP_KEY));
         } finally {
             if (UtilMethods.isSet(parentContentType) && UtilMethods.isSet(parentContentType.id())) {
                 contentTypeAPI.delete(parentContentType);
