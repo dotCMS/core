@@ -482,7 +482,7 @@ public class TestDataUtils {
     public static Contentlet getFileAssetContent(Boolean persist, long languageId) {
 
         try {
-            Folder folder = APILocator.getFolderAPI().findSystemFolder();
+            Folder folder = new FolderDataGen().nextPersisted();
 
             //Test file
             final String testImagePath = "com/dotmarketing/portlets/contentlet/business/test_files/test_image1.jpg";
