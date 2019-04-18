@@ -1,6 +1,4 @@
 package com.dotcms.rendering.velocity.viewtools;
-import static com.dotcms.contenttype.model.type.KeyValueContentType.MULTILINGUABLE_FALLBACK_KEY;
-
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
@@ -10,16 +8,17 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
-import com.liferay.portal.PortalException;
-import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-import java.util.List;
-import javax.servlet.http.HttpServletRequest;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
+
+import javax.servlet.http.HttpServletRequest;
+import java.util.List;
+
+import static com.dotcms.contenttype.model.type.KeyValueContentType.MULTILINGUABLE_FALLBACK_KEY;
 
 
 public class LanguageViewtool implements ViewTool {
@@ -145,11 +144,12 @@ public class LanguageViewtool implements ViewTool {
 	/**
 	 * Glosssary webapi
 	 */
-	public String get(String key) {
-		String language;
-		language = (String) request.getSession().getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE);
-		if (language == null)
+	public String get(final String key) {
+		String language = (String) (null != request && null != request.getSession()?
+				request.getSession().getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE):null);
+		if (language == null) {
 			language = String.valueOf(langAPI.getDefaultLanguage().getId());
+		}
 		return get(key, language);
 	}
 

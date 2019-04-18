@@ -4261,17 +4261,22 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 velFieldmap.put(field.getVelocityVarName(),field);
             }
         }
-        for (Map.Entry<String, Object> property : properties.entrySet()) {
-            if(fieldNames.contains(property.getKey())){
+        for (final Map.Entry<String, Object> property : properties.entrySet()) {
+
+            if(fieldNames.contains(property.getKey())) {
+
                 Logger.debug(this, "The map found a field not within the contentlet's structure");
             }
-            if(property.getValue() == null)
+
+            if(property.getValue() == null) {
                 continue;
+            }
+
             if((!property.getKey().equals("recurrence")) &&
                     !(
-                         property.getValue() instanceof Set || property.getValue() instanceof String || property.getValue() instanceof Boolean ||property.getValue() instanceof File ||
-                         property.getValue() instanceof Float || property.getValue() instanceof Integer || property.getValue() instanceof Date || property.getValue() instanceof Long ||
-                         property.getValue() instanceof List || property.getValue() instanceof BigDecimal || property.getValue() instanceof Short || property.getValue() instanceof Double
+                         property.getValue() instanceof Set   || property.getValue() instanceof Map        || property.getValue() instanceof String || property.getValue() instanceof Boolean || property.getValue() instanceof File ||
+                         property.getValue() instanceof Float || property.getValue() instanceof Integer    || property.getValue() instanceof Date   || property.getValue() instanceof Long    ||
+                         property.getValue() instanceof List  || property.getValue() instanceof BigDecimal || property.getValue() instanceof Short  || property.getValue() instanceof Double
                     )
             ){
                 throw new DotContentletStateException("The map contains an invalid value: " + property.getValue().getClass());

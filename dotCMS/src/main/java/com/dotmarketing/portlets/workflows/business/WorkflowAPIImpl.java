@@ -157,7 +157,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				SaveContentActionlet.class,
 				SaveContentAsDraftActionlet.class,
 				CopyActionlet.class,
-				MessageActionlet.class
+				MessageActionlet.class,
+				VelocityScriptActionlet.class
 		));
 
 		refreshWorkFlowActionletMap();
