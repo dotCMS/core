@@ -2,17 +2,6 @@ package com.dotcms.contenttype.test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-
-import org.junit.FixMethodOrder;
-import org.junit.Test;
-import org.junit.runners.MethodSorters;
-
 import com.dotcms.contenttype.business.ContentTypeFactoryImpl;
 import com.dotcms.contenttype.business.FieldFactory;
 import com.dotcms.contenttype.business.sql.FieldSql;
@@ -47,7 +36,16 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.util.Config;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import org.junit.FixMethodOrder;
+import org.junit.Test;
+import org.junit.runners.MethodSorters;
 
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
@@ -73,8 +71,8 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
 	@Test
 	public void testFindByTypeMethods() throws Exception {
 
-		List<Field> fields1 = fieldFactory.byContentTypeId(Constants.NEWS);
-		List<Field> fields2 = fieldFactory.byContentTypeId(Constants.NEWS);
+		List<Field> fields1 = fieldFactory.byContentTypeId(newsLikeContentType.id());
+		List<Field> fields2 = fieldFactory.byContentTypeId(newsLikeContentType.id());
 		for (int i = 0; i < fields1.size(); i++) {
 
 			Field field1 = fields1.get(i);
@@ -88,7 +86,7 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
 
 	@Test
 	public void testFieldVariables() throws Exception {
-		List<Field> fields = fieldFactory.byContentTypeId(Constants.NEWS);
+		List<Field> fields = fieldFactory.byContentTypeId(newsLikeContentType.id());
 		final int runs = 10;
 
 
@@ -136,7 +134,7 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
 		String uu = UUID.randomUUID().toString();
 
 		TextField textField = ImmutableTextField.builder().name("test field" + uu)
-				.variable(TEST_VAR_PREFIX + uu).contentTypeId(Constants.NEWS).hint("my hint")
+				.variable(TEST_VAR_PREFIX + uu).contentTypeId(newsLikeContentType.id()).hint("my hint")
 				.dataType(DataTypes.TEXT).id(uu).build();
 
 		Field savedField = fieldFactory.save(textField);
@@ -154,7 +152,7 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
 	    String uu = UUID.randomUUID().toString();
 
 	    TextField textField = ImmutableTextField.builder().name("test field" + uu)
-	            .variable(TEST_VAR_PREFIX + uu).contentTypeId(Constants.NEWS).hint("my hint")
+	            .variable(TEST_VAR_PREFIX + uu).contentTypeId(newsLikeContentType.id()).hint("my hint")
 	            .dataType(DataTypes.TEXT).id(uu).build();
 
 	    Field savedField = fieldFactory.save(textField);
@@ -172,7 +170,7 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
         String uu = UUID.randomUUID().toString();
 
         TextField textField = ImmutableTextField.builder().name("test field" + uu)
-                .variable(TEST_VAR_PREFIX + uu).contentTypeId(Constants.NEWS).hint("my hint")
+                .variable(TEST_VAR_PREFIX + uu).contentTypeId(newsLikeContentType.id()).hint("my hint")
                 .dataType(DataTypes.INTEGER).dbColumn("bad1").build();
 
         Field savedField = fieldFactory.save(textField);
@@ -194,7 +192,7 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
             .name("test field" + uu)
             .id(uu)
             .variable(TEST_VAR_PREFIX + uu)
-            .contentTypeId(Constants.NEWS).hint("my hint")
+            .contentTypeId(newsLikeContentType.id()).hint("my hint")
             .dataType(DataTypes.INTEGER)
             .sortOrder(99)
             .dbColumn("section_divider1").build();
@@ -268,7 +266,7 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
         String uu = UUID.randomUUID().toString();
 
         SelectField selectField = ImmutableSelectField.builder().name("test field" + uu)
-                .variable(TEST_VAR_PREFIX + uu).contentTypeId(Constants.NEWS).hint("my hint")
+                .variable(TEST_VAR_PREFIX + uu).contentTypeId(newsLikeContentType.id()).hint("my hint")
                 .dataType(DataTypes.BOOL).dbColumn("notreal").values("").build();
 
         Field savedField = fieldFactory.save(selectField);
@@ -286,7 +284,7 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
         String uu = UUID.randomUUID().toString();
 
         TextField textField = ImmutableTextField.builder().name("test field" + uu)
-                .variable(TEST_VAR_PREFIX + uu).contentTypeId(Constants.NEWS).hint("my hint")
+                .variable(TEST_VAR_PREFIX + uu).contentTypeId(newsLikeContentType.id()).hint("my hint")
                 .dataType(DataTypes.INTEGER).id(uu).build();
 
         Field savedField = fieldFactory.save(textField);
@@ -301,7 +299,7 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
         String uu = UUID.randomUUID().toString();
 
         TextField textField = ImmutableTextField.builder().name("test field" + uu)
-                .variable(TEST_VAR_PREFIX + uu).contentTypeId(Constants.NEWS).hint("my hint")
+                .variable(TEST_VAR_PREFIX + uu).contentTypeId(newsLikeContentType.id()).hint("my hint")
                 .dataType(DataTypes.FLOAT).id(uu).build();
 
         Field savedField = fieldFactory.save(textField);
@@ -316,7 +314,7 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
         String uu = UUID.randomUUID().toString();
 
         BinaryField binField = ImmutableBinaryField.builder().name("test field" + uu)
-                .variable(TEST_VAR_PREFIX + uu).contentTypeId(Constants.NEWS).hint("my hint").id(uu).build();
+                .variable(TEST_VAR_PREFIX + uu).contentTypeId(newsLikeContentType.id()).hint("my hint").id(uu).build();
 
         Field savedField = fieldFactory.save(binField);
         Field field2 = fieldFactory.byId(savedField.inode());
@@ -331,7 +329,7 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
         String uu = UUID.randomUUID().toString();
 
         BinaryField binField = ImmutableBinaryField.builder().name("test field" + uu).sortOrder(15)
-                .variable(TEST_VAR_PREFIX + uu).contentTypeId(Constants.NEWS).hint("my hint").id(uu).build();
+                .variable(TEST_VAR_PREFIX + uu).contentTypeId(newsLikeContentType.id()).hint("my hint").id(uu).build();
 
         Field savedField = fieldFactory.save(binField);
         assertThat("binField sort order ", savedField.sortOrder() == 15);
@@ -430,9 +428,9 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
 	@Test
 	public void testLegacyFieldBuilder() throws Exception {
 
-		List<Field> newFields = Arrays.asList(fieldFactory.byContentTypeId(Constants.NEWS).toArray(new Field[0]));
+		List<Field> newFields = Arrays.asList(fieldFactory.byContentTypeId(newsLikeContentType.id()).toArray(new Field[0]));
 		List<com.dotmarketing.portlets.structure.model.Field> oldFields = APILocator
-				.getStructureAPI().find(Constants.NEWS, APILocator.getUserAPI().getSystemUser())
+				.getStructureAPI().find(newsLikeContentType.id(), APILocator.getUserAPI().getSystemUser())
 				.getFieldsBySortOrder();
 
 		assertThat("newFields == oldFields", newFields.size() == oldFields.size());

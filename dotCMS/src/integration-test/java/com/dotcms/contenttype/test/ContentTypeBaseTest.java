@@ -15,6 +15,7 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.mock.request.MockAttributeRequest;
@@ -44,6 +45,7 @@ public class ContentTypeBaseTest extends IntegrationTestBase {
 
 	private static User chrisPublisher;
 	private static ContentType languageVariableContentType;
+	protected static ContentType newsLikeContentType;
 
 	@BeforeClass
 	public static void prepare () throws Exception {
@@ -108,6 +110,9 @@ public class ContentTypeBaseTest extends IntegrationTestBase {
 				.firstName("Chris")
 				.lastName("Publisher")
 				.nextPersisted();
+
+		//Test news content type
+		newsLikeContentType = TestDataUtils.getNewsLikeContentType();
 
 		final String contentTypeVelocityVarName = LanguageVariableAPI.LANGUAGEVARIABLE;
 		try {
