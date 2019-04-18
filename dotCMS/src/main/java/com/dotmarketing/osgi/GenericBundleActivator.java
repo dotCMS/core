@@ -10,39 +10,6 @@ import static com.dotmarketing.osgi.ActivatorUtil.moveVelocityResources;
 import static com.dotmarketing.osgi.ActivatorUtil.unfreeze;
 import static com.dotmarketing.osgi.ActivatorUtil.unregisterAll;
 
-import com.dotcms.enterprise.cache.provider.CacheProviderAPI;
-import com.dotcms.enterprise.rules.RulesAPI;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.Interceptor;
-import com.dotmarketing.business.cache.CacheOSGIService;
-import com.dotmarketing.business.cache.provider.CacheProvider;
-import com.dotmarketing.cms.factories.PublicCompanyFactory;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.filters.DotUrlRewriteFilter;
-import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.portlets.rules.actionlet.RuleActionlet;
-import com.dotmarketing.portlets.rules.actionlet.RuleActionletOSGIService;
-import com.dotmarketing.portlets.rules.conditionlet.Conditionlet;
-import com.dotmarketing.portlets.rules.conditionlet.ConditionletOSGIService;
-import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
-import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
-import com.dotmarketing.portlets.workflows.business.WorkflowAPIOsgiService;
-import com.dotmarketing.quartz.QuartzUtils;
-import com.dotmarketing.quartz.ScheduledTask;
-import com.dotmarketing.util.Logger;
-import org.apache.felix.framework.OSGIUtil;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.VelocityUtil;
-import com.dotmarketing.util.WebKeys;
-import com.liferay.portal.ejb.PortletManager;
-import com.liferay.portal.ejb.PortletManagerFactory;
-import com.liferay.portal.ejb.PortletManagerUtil;
-import com.liferay.portal.ejb.PortletPK;
-import com.liferay.portal.model.Company;
-import com.liferay.portal.model.Portlet;
-import com.liferay.portal.util.PortalUtil;
-import com.liferay.util.Http;
-import com.liferay.util.SimpleCachePool;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -55,10 +22,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
-import net.bytebuddy.ByteBuddy;
-import net.bytebuddy.agent.ByteBuddyAgent;
-import net.bytebuddy.dynamic.ClassFileLocator;
-import net.bytebuddy.dynamic.loading.ClassReloadingStrategy;
+
+import org.apache.felix.framework.OSGIUtil;
 import org.apache.felix.http.proxy.DispatcherTracker;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
@@ -75,6 +40,43 @@ import org.osgi.framework.ServiceReference;
 import org.quartz.SchedulerException;
 import org.tuckey.web.filters.urlrewrite.NormalRule;
 import org.tuckey.web.filters.urlrewrite.Rule;
+
+import com.dotcms.enterprise.cache.provider.CacheProviderAPI;
+import com.dotcms.enterprise.rules.RulesAPI;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.Interceptor;
+import com.dotmarketing.business.cache.CacheOSGIService;
+import com.dotmarketing.business.cache.provider.CacheProvider;
+import com.dotmarketing.business.portal.PortletFactory;
+import com.dotmarketing.cms.factories.PublicCompanyFactory;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.filters.DotUrlRewriteFilter;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.rules.actionlet.RuleActionlet;
+import com.dotmarketing.portlets.rules.actionlet.RuleActionletOSGIService;
+import com.dotmarketing.portlets.rules.conditionlet.Conditionlet;
+import com.dotmarketing.portlets.rules.conditionlet.ConditionletOSGIService;
+import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
+import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
+import com.dotmarketing.portlets.workflows.business.WorkflowAPIOsgiService;
+import com.dotmarketing.quartz.QuartzUtils;
+import com.dotmarketing.quartz.ScheduledTask;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.VelocityUtil;
+import com.dotmarketing.util.WebKeys;
+import com.liferay.portal.ejb.PortletManagerFactory;
+import com.liferay.portal.ejb.PortletManagerUtil;
+import com.liferay.portal.model.Company;
+import com.liferay.portal.model.Portlet;
+import com.liferay.portal.util.PortalUtil;
+import com.liferay.util.Http;
+import com.liferay.util.SimpleCachePool;
+
+import net.bytebuddy.ByteBuddy;
+import net.bytebuddy.agent.ByteBuddyAgent;
+import net.bytebuddy.dynamic.ClassFileLocator;
+import net.bytebuddy.dynamic.loading.ClassReloadingStrategy;
 
 /**
  * Created by Jonathan Gamba
@@ -384,7 +386,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
                 Http.URLtoString( context.getBundle().getResource( xmls[1] ) )};
 
         //Read the portlets xml files and create them
-        portlets = PortletManagerUtil.initWAR( null, confFiles );
+        portlets = PortletManagerUtil.addPortlets( confFiles );
 
         for ( Portlet portlet : portlets ) {
 
@@ -1009,29 +1011,10 @@ public abstract class GenericBundleActivator implements BundleActivator {
      * @throws SchedulerException
      */
     protected void unregisterPortlets () throws Exception {
-
         if ( portlets != null ) {
-
-            PortletManager portletManager = PortletManagerFactory.getManager();
-            Company company = PublicCompanyFactory.getDefaultCompany();
-
+            
             for ( Portlet portlet : portlets ) {
-
-                //PK
-                PortletPK id = portlet.getPrimaryKey();
-                //Cache key
-                String scpId = PortalUtil.class.getName() + "." + com.dotcms.repackage.javax.portlet.Portlet.class.getName();
-                if ( !portlet.isWARFile() ) {
-                    scpId += "." + company.getCompanyId();
-                }
-
-                //Clean-up the caches
-                portletManager.removePortletFromPool( company.getCompanyId(), id.getPortletId() );
-                //Clean-up the caches
-                Map map = (Map) SimpleCachePool.get( scpId );
-                if ( map != null ) {
-                    map.remove( portlet.getPortletId() );
-                }
+              APILocator.getPortletAPI().deletePortlet(portlet.getPortletId());
             }
         }
     }

@@ -239,7 +239,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		
 		User user = _getUser(req);
 
-		if(user ==null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("content", user)){
+		if(user ==null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(reqImpl.getPortletName(), user)){
 		  _sendToReferral(req, res, "/api/v1/logout");
 		  return;
 		}
@@ -846,7 +846,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		//This parameter is used to determine if the structure was selected from Add/Edit Content link in subnav.jsp, from
 		//the Content Search Manager
 		if(httpReq.getParameter("selected") != null){
-			httpReq.getSession().setAttribute("selectedStructure", contentType.getInode());
+			//httpReq.getSession().setAttribute("selectedStructure", contentType.getInode());
 		}
 
 		if(contentlet.getLanguageId() != 0){

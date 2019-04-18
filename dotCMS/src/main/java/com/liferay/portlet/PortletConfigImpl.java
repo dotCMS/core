@@ -50,7 +50,11 @@ import com.liferay.util.CollectionFactory;
 public class PortletConfigImpl implements PortletConfig {
 
 	public static String WAR_SEPARATOR = "_WAR_";
-
+  public PortletConfigImpl(String portletName, PortletContext portletCtx,
+      Map params, String resourceBundle) {
+    this(portletName,portletCtx, params, resourceBundle, null);
+    
+  }
 	public PortletConfigImpl(String portletName, PortletContext portletCtx,
 							 Map params, String resourceBundle,
 							 PortletInfo portletInfo) {
@@ -96,7 +100,7 @@ public class PortletConfigImpl implements PortletConfig {
 			String poolId = _portletId;
 
 			ResourceBundle bundle = (ResourceBundle)_bundlePool.get(poolId);
-
+			if(bundle==null) bundle=new com.liferay.portlet.StrutsResourceBundle(poolId, "dotcms.org", locale);
 			if (bundle == null) {
 				StringBuffer sb = new StringBuffer();
 

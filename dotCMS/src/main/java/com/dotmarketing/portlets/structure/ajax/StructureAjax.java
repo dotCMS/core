@@ -151,7 +151,7 @@ public class StructureAjax {
 		  }
 		}
 		Structure structure = StructureFactory.getStructureByInode(structureInode);
-		req.getSession().setAttribute("selectedStructure", structureInode);
+		//req.getSession().setAttribute("selectedStructure", structureInode);
 
 		return searchableFields;
 	}
@@ -591,10 +591,7 @@ public class StructureAjax {
 	public void setSelectedStructure(String StructureVelocityVarName){
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest request = ctx.getHttpServletRequest();
-		
-		if(CacheLocator.getContentTypeCache().getStructureByVelocityVarName(StructureVelocityVarName) != null){
-			request.getSession().setAttribute("selectedStructure", CacheLocator.getContentTypeCache().getStructureByVelocityVarName(StructureVelocityVarName).getInode());	
-		}
+
 	}
 
 }

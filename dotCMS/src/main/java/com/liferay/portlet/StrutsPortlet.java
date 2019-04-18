@@ -22,6 +22,7 @@
 
 package com.liferay.portlet;
 
+import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.GenericPortlet;
@@ -57,7 +58,13 @@ public class StrutsPortlet extends GenericPortlet {
 
 	public void init(PortletConfig config) throws PortletException {
 		super.init(config);
-
+    Map<String, String> params = new HashMap<>();
+    Enumeration<String> e = this.getInitParameterNames();
+    while (e.hasMoreElements()) {
+      String key = e.nextElement();
+      params.put(key, this.getInitParameter(key));
+    }
+    this.initParams = ImmutableMap.copyOf(params);
 		_portletConfig = (PortletConfigImpl)config;
 
 		_editAction = getInitParameter("edit-action");
@@ -70,7 +77,7 @@ public class StrutsPortlet extends GenericPortlet {
 
 	public void doEdit(RenderRequest req, RenderResponse res)
 		throws IOException, PortletException {
-
+	  req.setAttribute("initParams", initParams);
 		if (req.getPreferences() == null) {
 			super.doEdit(req, res);
 		}
@@ -91,7 +98,7 @@ public class StrutsPortlet extends GenericPortlet {
 
 	public void doView(RenderRequest req, RenderResponse res)
 		throws IOException, PortletException {
-
+	  req.setAttribute("initParams", initParams);
 		req.setAttribute(WebKeys.PORTLET_STRUTS_ACTION, _viewAction);
 
 		include(req, res);
@@ -99,7 +106,7 @@ public class StrutsPortlet extends GenericPortlet {
 
 	public void processAction(ActionRequest req, ActionResponse res)
 		throws IOException, PortletException {
-
+	  req.setAttribute("initParams", initParams);
 		String path = req.getParameter("struts_action");
 
 		if (Validator.isNotNull(path)) {
@@ -124,7 +131,7 @@ public class StrutsPortlet extends GenericPortlet {
 
 	protected void include(RenderRequest req, RenderResponse res)
 		throws IOException, PortletException {
-
+	  req.setAttribute("initParams", initParams);
 		// Call render of com.liferay.portal.struts.PortletAction
 
 		Map strutsAttributes = null;
@@ -229,5 +236,6 @@ public class StrutsPortlet extends GenericPortlet {
 	private String _helpAction;
 	private String _viewAction;
 	private boolean _copyRequestParameters;
+  private Map<String, String> initParams;
 
 }
