@@ -46,37 +46,48 @@ public class JsonWebTokenAuthCredentialProcessorImpl implements JsonWebTokenAuth
     }
 
 
+    
+    public User processAuthHeaderFromJWT(final String authorizationHeader,final String ipAddress) {
+    
+      final String jsonWebToken;
+      User user = null;
+
+      if (StringUtils.isNotEmpty(authorizationHeader) && authorizationHeader.trim().startsWith(BEARER)) {
+
+          jsonWebToken = authorizationHeader.substring(BEARER.length());
+
+          if(!UtilMethods.isSet(jsonWebToken)) {
+              // "Invalid syntax for username and password"
+              throw new SecurityException("Invalid Json Web Token", Response.Status.BAD_REQUEST);
+          }
+
+          try {
+
+              user = jsonWebTokenUtils.getUser(jsonWebToken.trim(), ipAddress);
+          } catch (Exception e) {
+
+              this.jsonWebTokenUtils.handleInvalidTokenExceptions(this.getClass(), e, null, null);
+          }
+
+
+      }
+      return user;
+      
+      
+    }
+    
     @Override
     public User processAuthHeaderFromJWT(final String authorizationHeader,
                                               final HttpSession session, final String ipAddress) {
 
-        final String jsonWebToken;
-        User user = null;
 
-        if (StringUtils.isNotEmpty(authorizationHeader) && authorizationHeader.trim().startsWith(BEARER)) {
-
-            jsonWebToken = authorizationHeader.substring(BEARER.length());
-
-            if(!UtilMethods.isSet(jsonWebToken)) {
-                // "Invalid syntax for username and password"
-                throw new SecurityException("Invalid Json Web Token", Response.Status.BAD_REQUEST);
-            }
-
-            try {
-
-                user = jsonWebTokenUtils.getUser(jsonWebToken.trim(), ipAddress);
-            } catch (Exception e) {
-
-                this.jsonWebTokenUtils.handleInvalidTokenExceptions(this.getClass(), e, null, null);
-            }
-
-            if(user != null && null != session) {
-
-                session.setAttribute(WebKeys.CMS_USER, user);
-                session.setAttribute(com.liferay.portal.util.WebKeys.USER_ID, user.getUserId());
-            }
-
+        User user =processAuthHeaderFromJWT(authorizationHeader, ipAddress);
+        if(user != null && null != session) {
+            session.setAttribute(WebKeys.CMS_USER, user);
+            session.setAttribute(com.liferay.portal.util.WebKeys.USER_ID, user.getUserId());
         }
+
+        
 
         return user;
     } // processAuthCredentialsFromJWT.
@@ -86,9 +97,18 @@ public class JsonWebTokenAuthCredentialProcessorImpl implements JsonWebTokenAuth
 
         // Extract authentication credentials
         final String authentication = request.getHeader(ContainerRequest.AUTHORIZATION);
-        final HttpSession session   = request.getSession(false);
 
-        return this.processAuthHeaderFromJWT(authentication, session, request.getRemoteAddr());
+        
+        User user =  processAuthHeaderFromJWT(authentication, request.getRemoteAddr());
+        if(user!=null) {
+          request.setAttribute(com.liferay.portal.util.WebKeys.USER_ID, user.getUserId());
+          request.setAttribute(com.liferay.portal.util.WebKeys.USER, user);
+        }
+        return user;
+        
+        
+        
+
     } // processAuthCredentialsFromJWT.
 
 } // E:O:F:JsonWebTokenAuthCredentialProcessorImpl.
