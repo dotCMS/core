@@ -39,14 +39,6 @@ dot-sub-nav {
         transition: background-color $basic-speed ease $basic-speed;
         width: $navigation-width;
 
-        dot-nav-icon {
-            display: flex;
-        }
-
-        dot-icon {
-            margin-left: auto;
-        }
-
         &-label {
             margin-left: $basic-padding * 2;
             word-break: break-word;

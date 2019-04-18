@@ -1,3 +1,8 @@
-.fa {
-    margin-left: 4px;
+:host {
+    display: flex;
+    align-items: center;
+    height: 18px;
+    justify-content: center;
+    overflow: hidden;
+    width: 18px;
 }
