@@ -23,9 +23,9 @@ public class FileAssetDataGen extends ContentletDataGen {
 
     private FileAssetDataGen(File file) throws DotDataException, DotSecurityException {
 
-        super(APILocator.getContentTypeAPI(user)
+        super(APILocator.getContentTypeAPI(APILocator.systemUser())
                 .find("FileAsset").id());
-
+        this.user = APILocator.systemUser();
         setProperty(FileAssetAPI.TITLE_FIELD, file.getName());
         setProperty(FileAssetAPI.FILE_NAME_FIELD, file.getName());
         setProperty(FileAssetAPI.BINARY_FIELD, file);

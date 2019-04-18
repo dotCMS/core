@@ -3915,11 +3915,11 @@ public class ContentletAPITest extends ContentletBaseTest {
         try {
             // Create Content Type.
             contentType = ContentTypeBuilder.builder(BaseContentType.CONTENT.immutableClass())
-                    .description("Nested")
+                    .description("Nested" + System.currentTimeMillis())
                     .host(defaultHost.getIdentifier())
-                    .name("Nested")
+                    .name("Nested" + System.currentTimeMillis())
                     .owner("owner")
-                    .variable("nested")
+                    .variable("nested" + System.currentTimeMillis())
                     .build();
 
             contentType = contentTypeAPI.save(contentType);
