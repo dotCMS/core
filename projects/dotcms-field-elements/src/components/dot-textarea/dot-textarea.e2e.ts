@@ -1,45 +1,38 @@
 import { E2EElement, E2EPage, newE2EPage } from '@stencil/core/testing';
 import { EventSpy } from '@stencil/core/dist/declarations';
 
-describe('dot-textfield', () => {
+describe('dot-textarea', () => {
     let page: E2EPage;
     let element: E2EElement;
     let input: E2EElement;
-    let spyStatusChangeEvent: EventSpy;
-    let spyValueChange: EventSpy;
 
     beforeEach(async () => {
         page = await newE2EPage({
             html: `
-              <dot-textfield
-                    label='Name:'
-                    name='fullName'
-                    value='John'
-                    hint='this is a hint'
-                    placeholder='Enter Name'
-                    regexcheck='^[A-Za-z ]+$'
-                    regexcheckmessage="Invalid Name"
-                    required
-                    requiredmessage="Required Name"
-                ></dot-textfield>`
+            <dot-textarea
+                label='Address:'
+                name='Address'
+                value='Address'>
+            </dot-textarea>`
         });
 
-        spyStatusChangeEvent = await page.spyOnEvent('statusChange');
-        spyValueChange = await page.spyOnEvent('valueChange');
-        element = await page.find('dot-textfield');
-        input = await page.find('input');
+        element = await page.find('dot-textarea');
+        input = await page.find('textarea');
     });
 
-    it('should render', () => {
-        const tagsRenderExpected = `<label>Name:</label><input name="fullName" type="text" placeholder="Enter Name" required=""><span class="dot-field__hint">this is a hint</span>`;
+    it('should render', async () => {
+        const tagsRenderExpected = `<label>Address:</label><textarea name="Address"></textarea>`;
         expect(element.innerHTML).toBe(tagsRenderExpected);
     });
 
     it('should show Regex validation message', async () => {
+        element.setProperty('regexcheck', '^[A-Za-z ]+$');
+        element.setProperty('regexcheckmessage', 'Invalid Address');
+
         await input.press('@');
         await page.waitForChanges();
         const errorMessage = await page.find('.dot-field__error-meessage');
-        expect(errorMessage.innerHTML).toBe('Invalid Name');
+        expect(errorMessage.innerHTML).toBe('Invalid Address');
     });
 
     it('should load as pristine and untouched', () => {
@@ -50,22 +43,25 @@ describe('dot-textfield', () => {
     it('should mark as dirty and touched when type', async () => {
         await input.press('a');
         await page.waitForChanges();
+
         expect(element).toHaveClasses(['dot-dirty', 'dot-touched']);
     });
 
     it('should mark as invalid when value dont match REgex', async () => {
+        element.setProperty('regexcheck', '^[A-Za-z ]+$');
+
         await input.press('@');
         await page.waitForChanges();
+
         expect(element).toHaveClasses(['dot-invalid']);
     });
 
     it('should clear value, set pristine and untouched  when input set reset', async () => {
+        await input.press('A');
         element.callMethod('reset');
         await page.waitForChanges();
 
-        expect(element.classList.contains('dot-pristine')).toBe(true);
-        expect(element.classList.contains('dot-untouched')).toBe(true);
-        expect(element.classList.contains('dot-invalid')).toBe(true);
+        expect(element).toHaveClasses(['dot-pristine', 'dot-untouched', 'dot-valid']);
         expect(await input.getProperty('value')).toBe('');
     });
 
@@ -76,16 +72,27 @@ describe('dot-textfield', () => {
     });
 
     it('should mark as required when prop is present', async () => {
+        element.setProperty('required', 'true');
+        element.setProperty('requiredmessage', 'Invalid Address');
+        await page.waitForChanges();
         expect(await input.getProperty('required')).toBe(true);
     });
 
     describe('emit events', () => {
+        let spyStatusChangeEvent: EventSpy;
+        let spyValueChange: EventSpy;
+
+        beforeEach(async () => {
+            spyStatusChangeEvent = await page.spyOnEvent('statusChange');
+            spyValueChange = await page.spyOnEvent('valueChange');
+        });
+
         it('should send status onBlur', async () => {
             await input.triggerEvent('blur');
             await page.waitForChanges();
 
             expect(spyStatusChangeEvent).toHaveReceivedEventDetail({
-                name: 'fullName',
+                name: 'Address',
                 status: {
                     dotPristine: true,
                     dotTouched: true,
@@ -100,7 +107,7 @@ describe('dot-textfield', () => {
             await page.waitForChanges();
 
             expect(spyStatusChangeEvent).toHaveReceivedEventDetail({
-                name: 'fullName',
+                name: 'Address',
                 status: {
                     dotPristine: false,
                     dotTouched: true,
@@ -113,7 +120,7 @@ describe('dot-textfield', () => {
             input.press('a');
             await page.waitForChanges();
             expect(spyStatusChangeEvent).toHaveReceivedEventDetail({
-                name: 'fullName',
+                name: 'Address',
                 status: {
                     dotPristine: false,
                     dotTouched: true,
@@ -126,20 +133,28 @@ describe('dot-textfield', () => {
             element.callMethod('reset');
             await page.waitForChanges();
             expect(spyStatusChangeEvent).toHaveReceivedEventDetail({
-                name: 'fullName',
+                name: 'Address',
                 status: {
                     dotPristine: true,
                     dotTouched: false,
-                    dotValid: false
+                    dotValid: true
                 }
             });
-            expect(spyValueChange).toHaveReceivedEventDetail({ name: 'fullName', value: '' });
+            expect(spyValueChange).toHaveReceivedEventDetail({ name: 'Address', value: '' });
         });
 
         it('should emit change value', async () => {
             input.press('a');
             await page.waitForChanges();
-            expect(spyValueChange).toHaveReceivedEventDetail({ name: 'fullName', value: 'Johna' });
+            expect(spyValueChange).toHaveReceivedEventDetail({ name: 'Address', value: 'Addressa' });
         });
+    });
+
+    it('should render with hint', async () => {
+        element.setProperty('hint', 'this is a hint');
+        await page.waitForChanges();
+        // tslint:disable-next-line:max-line-length
+        const tagsRenderExpected = `<label>Address:</label><textarea name="Address"></textarea><span class="dot-field__hint">this is a hint</span>`;
+        expect(element.innerHTML).toBe(tagsRenderExpected);
     });
 });

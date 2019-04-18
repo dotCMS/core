@@ -11,18 +11,26 @@
         <script>
             window.onload = function() {
                 let inputTxt = document.querySelector('dot-textfield');
-                inputTxt.addEventListener('onChange', function(event) {
-                    console.log('--inputTxt onChange', event.detail);
+                inputTxt.addEventListener('valueChange', function(event) {
+                    console.log('--inputTxt valueChange', event.detail);
                 });
                 let dropdownElem = document.querySelector('dot-dropdown');
-                dropdownElem.addEventListener('onChange', function(event) {
-                    console.log('--dropdownElem onChange', event.detail);
+                dropdownElem.addEventListener('valueChange', function(event) {
+                    console.log('--dropdownElem valueChange', event.detail);
                 });
                 let checkboxElem = document.querySelector('dot-checkbox');
-                checkboxElem.addEventListener('onChange', function(event) {
-                    console.log('--checkboxElem onChange', event.detail);
+                checkboxElem.addEventListener('valueChange', function(event) {
+                    console.log('--checkboxElem valueChange', event.detail);
+                });
+                let textareaElem = document.querySelector('dot-textarea');
+                textareaElem.addEventListener('valueChange', function(event) {
+                    console.log('--textareaElem valueChange', event.detail);
                 });
 
+                let dotForm = document.querySelector('dot-form');
+                dotForm.addEventListener('onSubmit', function(event) {
+                    console.log('--dotForm onSubmit', event.detail);
+                });
             };
 
             function resetFrom() {
@@ -40,44 +48,59 @@
         <my-component first='Stencil' last=''Don't call me a framework' JS'></my-component>
         <hr />
         <dot-form>
-        <dot-textfield
-            label='Name:'
-            name='fullName'
-            value='John'
-            hint='this is a hint'
-            placeholder='Enter Name'
-            regexcheck='^[A-Za-z ]+$'
-            regexcheckmessage="Invalid Name"
-            required
-            requiredmessage="Required Name"
-        ></dot-textfield>
-        <br />
-        <dot-textfield
-            label='Last Name:'
-            name='lastName'
-            value='Morera'
-            hint='Hint: Disabled field'
-            disabled
-        ></dot-textfield>
+            <dot-textfield
+                label='Name:'
+                name='fullName'
+                value='John'
+                hint='this is a hint'
+                placeholder='Enter Name'
+                regexcheck='^[A-Za-z ]+$'
+                regexcheckmessage="Invalid Name"
+                required
+                requiredmessage="Required Name"
+            ></dot-textfield>
+            <br />
+            <dot-textfield
+                label='Last Name:'
+                name='lastName'
+                value='Morera'
+                hint='Hint: Disabled field'
+                disabled
+            ></dot-textfield>
 
-        <hr />
+            <hr />
 
-        <dot-dropdown
-            label='Dropdown label:'
-            hint='this is a hint'
-            options='a1|1,b1|2,c1|3,d1|4'
-            value='2'
-        ></dot-dropdown>
+            <dot-dropdown
+                label='Dropdown label:'
+                hint='this is a hint'
+                options='a1|1,b1|2,c1|3,d1|4'
+                value='2'
+            ></dot-dropdown>
 
-        <hr />
+            <hr />
 
-        <dot-checkbox
-            label='Checkbox label:'
-            hint='this is a hint'
-            options='a1|1,b1|2,c1|3,d1|4'
-            value='3'
-        ></dot-checkbox>
-    </dot-form>
+            <dot-checkbox
+                label='Checkbox label:'
+                hint='this is a hint'
+                options='a1|1,b1|2,c1|3,d1|4'
+                value='3'
+            ></dot-checkbox>
+
+            <hr />
+
+            <dot-textarea
+                label='Address:'
+                name='Address'
+                value='Address'
+                hint='this is a hint'
+                regexcheck='^[A-Za-z ]+$'
+                regexcheckmessage="Invalid Name"
+                required
+                requiredmessage="Required Name"
+            ></dot-textarea>
+
+            <hr />
+        </dot-form>
 
         <input id="test">
 
