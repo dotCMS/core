@@ -353,6 +353,35 @@ public class TestDataUtils {
         return simpleWidgetContentType;
     }
 
+    public static ContentType getFormLikeContentType() {
+        return getFormLikeContentType("Form" + System.currentTimeMillis());
+    }
+
+    public static ContentType getFormLikeContentType(final String contentTypeName) {
+
+        ContentType formContentType = null;
+        try {
+            try {
+                formContentType = APILocator.getContentTypeAPI(APILocator.systemUser())
+                        .find(contentTypeName);
+            } catch (NotFoundInDbException e) {
+                //Do nothing...
+            }
+            if (formContentType == null) {
+
+                formContentType = new ContentTypeDataGen()
+                        .baseContentType(BaseContentType.FORM)
+                        .name(contentTypeName)
+                        .velocityVarName(contentTypeName)
+                        .nextPersisted();
+            }
+        } catch (Exception e) {
+            throw new DotRuntimeException(e);
+        }
+
+        return formContentType;
+    }
+
     public static Contentlet getWikiContent(Boolean persist, long languageId,
             String contentTypeId) {
 
@@ -413,6 +442,32 @@ public class TestDataUtils {
                     .host(APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false))
                     .setProperty("widgetTitle", "titleContent")
                     .setProperty("code", "Widget code");
+
+            if (persist) {
+                return contentletDataGen.nextPersisted();
+            } else {
+                return contentletDataGen.next();
+            }
+        } catch (Exception e) {
+            throw new DotRuntimeException(e);
+        }
+    }
+
+    public static Contentlet getFormContent(Boolean persist, long languageId,
+            String contentTypeId) {
+
+        if (null == contentTypeId) {
+            contentTypeId = getFormLikeContentType().id();
+        }
+
+        try {
+            ContentletDataGen contentletDataGen = new ContentletDataGen(contentTypeId)
+                    .languageId(languageId)
+                    .host(APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false))
+                    .setProperty("formTitle", "title" + System.currentTimeMillis())
+                    .setProperty("formEmail", "email@" + System.currentTimeMillis() + ".com")
+                    .setProperty("formHost", APILocator.getHostAPI()
+                            .findDefaultHost(APILocator.systemUser(), false));
 
             if (persist) {
                 return contentletDataGen.nextPersisted();
