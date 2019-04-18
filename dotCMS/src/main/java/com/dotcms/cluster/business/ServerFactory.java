@@ -32,4 +32,6 @@ public abstract class ServerFactory {
 
 	public abstract List<Server> getInactiveServers() throws DotDataException;
 
+  public abstract List<String> getReindexingServers() throws DotDataException;
+
 }

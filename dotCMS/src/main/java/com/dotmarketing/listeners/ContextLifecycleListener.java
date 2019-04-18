@@ -35,7 +35,7 @@ public class ContextLifecycleListener implements ServletContextListener {
 			Logger.error(this, "A error ocurred trying to shutdown the Schedulers.");
 		}
         try {
-        	ReindexThread.shutdownThread();
+        	ReindexThread.stopThread();
 
         } catch (Exception e) {
             Logger.error(this, "A error ocurred trying to shutdown the ReindexThread.");

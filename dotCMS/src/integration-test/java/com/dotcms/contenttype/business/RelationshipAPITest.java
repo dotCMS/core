@@ -24,6 +24,7 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.DateUtil;
 import java.sql.Timestamp;
 import java.util.stream.Collectors;
 
@@ -234,6 +235,9 @@ public class RelationshipAPITest extends IntegrationTestBase {
         //Checkin of the parent to validate Relationships
         contentletParent = APILocator
                 .getContentletAPI().checkin(contentletParent,relationshipListMap,user,false);
+
+        //wait for reindex
+        DateUtil.sleep(4000);
 
         //List Related Contentlets
         List<Contentlet> relatedContent = APILocator.getContentletAPI()
