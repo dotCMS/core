@@ -47,14 +47,12 @@ public class JsonWebTokenAuthCredentialProcessorImpl implements JsonWebTokenAuth
 
 
     
-    public User processAuthHeaderFromJWT(final String authorizationHeader,final String ipAddress) {
+    protected User processAuthHeaderFromJWT(final String authorizationHeader,final String ipAddress) {
     
-      final String jsonWebToken;
-      User user = null;
 
       if (StringUtils.isNotEmpty(authorizationHeader) && authorizationHeader.trim().startsWith(BEARER)) {
 
-          jsonWebToken = authorizationHeader.substring(BEARER.length());
+          final String jsonWebToken = authorizationHeader.substring(BEARER.length());
 
           if(!UtilMethods.isSet(jsonWebToken)) {
               // "Invalid syntax for username and password"
@@ -63,7 +61,7 @@ public class JsonWebTokenAuthCredentialProcessorImpl implements JsonWebTokenAuth
 
           try {
 
-              user = jsonWebTokenUtils.getUser(jsonWebToken.trim(), ipAddress);
+              return jsonWebTokenUtils.getUser(jsonWebToken.trim(), ipAddress);
           } catch (Exception e) {
 
               this.jsonWebTokenUtils.handleInvalidTokenExceptions(this.getClass(), e, null, null);
@@ -71,7 +69,7 @@ public class JsonWebTokenAuthCredentialProcessorImpl implements JsonWebTokenAuth
 
 
       }
-      return user;
+      return null;
       
       
     }
@@ -81,7 +79,7 @@ public class JsonWebTokenAuthCredentialProcessorImpl implements JsonWebTokenAuth
                                               final HttpSession session, final String ipAddress) {
 
 
-        User user =processAuthHeaderFromJWT(authorizationHeader, ipAddress);
+        final User user =processAuthHeaderFromJWT(authorizationHeader, ipAddress);
         if(user != null && null != session) {
             session.setAttribute(WebKeys.CMS_USER, user);
             session.setAttribute(com.liferay.portal.util.WebKeys.USER_ID, user.getUserId());
