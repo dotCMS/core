@@ -33,6 +33,7 @@ import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.felix.framework.OSGIUtil;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -76,7 +77,7 @@ public class ReindexThreadTest {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-
+    @Ignore
     @Test
     public void test_content_that_is_rolled_back_does_not_get_in_the_index() throws DotDataException, DotSecurityException {
         // respect CMS Anonymous permissions
@@ -158,7 +159,7 @@ public class ReindexThreadTest {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-
+    @Ignore
     @Test
     public void test_reindex_queue_puts_to_the_index() throws DotDataException, DotSecurityException {
         ReindexThread.stopThread();
@@ -207,7 +208,7 @@ public class ReindexThreadTest {
      * @throws DotDataException
     ack  * @throws DotSecurityException
      */
-
+    @Ignore
     @Test
     public void test_pause_unpause_ReindexThread() throws DotDataException, DotSecurityException {
 
@@ -259,7 +260,7 @@ public class ReindexThreadTest {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-
+    @Ignore
     @Test
     public void test_stop_start_ReindexThread() throws DotDataException, DotSecurityException {
 
