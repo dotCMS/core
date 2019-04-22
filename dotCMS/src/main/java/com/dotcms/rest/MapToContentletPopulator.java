@@ -409,8 +409,8 @@ public class MapToContentletPopulator  {
             return Optional.of((String)fieldsMap.get(relationTypeValue));
         } else {
             //returns a field relationship if exists
-            Set<String> relationshipFields = contentType.fields().stream()
-                    .filter(field -> (field instanceof RelationshipField))
+            final Set<String> relationshipFields = contentType.fields().stream()
+                    .filter(field -> field instanceof RelationshipField)
                     .map(field -> field.variable()).collect(
                             Collectors.toSet());
             if (relationTypeValue.contains(StringPool.PERIOD) && fieldsMap

@@ -247,7 +247,7 @@ public class MapToContentletPopulatorTest {
                             .variable();
 
             //Adding a RelationshipField to the child
-            final Field childTypeRelationshipField = createAndSaveRelationshipField("otherSideRel",
+            createAndSaveRelationshipField("otherSideRel",
                     childContentType.id(), fullFieldVar);
 
             //Creating text field in the child with relationship field variable set in the parent
