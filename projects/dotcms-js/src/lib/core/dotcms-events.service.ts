@@ -3,37 +3,39 @@ import { Observable } from 'rxjs';
 import { LoggerService } from './logger.service';
 import { Subject } from 'rxjs';
 import { DotEventTypeWrapper } from './models';
-import { DotEventsSocketFactoryService } from './dot-events-socket-factory.service';
 import { DotEventsSocket } from './util/dot-event-socket';
 import { DotEventMessage } from './util/models/dot-event-message';
 
 @Injectable()
 export class DotcmsEventsService {
-    private socket: DotEventsSocket;
     private subjects: Subject<any>[] = [];
 
-    constructor(private socketFactory: DotEventsSocketFactoryService, private loggerService: LoggerService) {
+    constructor(private dotEventsSocket: DotEventsSocket, private loggerService: LoggerService) {
     }
 
     /**
      * Close the socket
+     *
+     * @memberof DotcmsEventsService
      */
     destroy(): void {
-        this.socket.destroy();
-        this.socketFactory.clean();
-        this.socket = null;
+        this.dotEventsSocket.destroy();
+        this.dotEventsSocket = null;
     }
 
     /**
      * Start the socket
+     *
+     * @memberof DotcmsEventsService
      */
     start(): void {
-        this.loggerService.debug('start DotcmsEventsService');
-        if (!this.socket) {
-            this.socketFactory.createSocket().subscribe((socket) => {
-                this.socket = socket;
+        this.loggerService.debug('start DotcmsEventsService', this.dotEventsSocket.isConnected());
+        if (!this.dotEventsSocket.isConnected()) {
 
-                socket.messages().subscribe(
+            this.loggerService.debug('Connecting with socket');
+
+            this.dotEventsSocket.connect().subscribe(() => {
+                this.dotEventsSocket.messages().subscribe(
                     (data: DotEventMessage) => {
                         if (!this.subjects[data.event]) {
                             this.subjects[data.event] = new Subject();
@@ -49,9 +51,6 @@ export class DotcmsEventsService {
                         this.loggerService.debug('Completed');
                     }
                 );
-
-                this.loggerService.debug('Connecting with socket');
-                socket.connect();
             });
         }
     }
@@ -87,5 +86,15 @@ export class DotcmsEventsService {
         );
 
         return subject.asObservable();
+    }
+
+    /**
+     * Listen  when the socket is opened
+     *
+     * @returns {Observable<boolean>}
+     * @memberof DotcmsEventsService
+     */
+    open(): Observable<boolean> {
+        return this.dotEventsSocket.open();
     }
 }

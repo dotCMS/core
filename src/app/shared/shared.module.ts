@@ -11,7 +11,8 @@ import {
     SiteService,
     StringUtils,
     UserModel,
-    DotEventsSocketFactoryService
+    DotEventsSocket,
+    DotEventsSocketURL
 } from 'dotcms-js';
 
 // Common Modules
@@ -33,6 +34,13 @@ import { DotNavigationService } from '@components/dot-navigation/services/dot-na
     ]
 })
 export class SharedModule {
+
+    private static readonly dotEventSocketURL =
+        new DotEventsSocketURL(
+            `${window.location.hostname}:${window.location.port}/api/ws/v1/system/events`,
+            window.location.protocol === 'https'
+        );
+
     static forRoot(): ModuleWithProviders {
         return {
             ngModule: SharedModule,
@@ -47,7 +55,8 @@ export class SharedModule {
                 LoggerService,
                 LoginService,
                 SiteService,
-                DotEventsSocketFactoryService,
+                { provide: DotEventsSocketURL, useValue: SharedModule.dotEventSocketURL},
+                DotEventsSocket,
                 StringUtils,
                 UserModel
             ]

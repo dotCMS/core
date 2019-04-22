@@ -10,7 +10,6 @@ import {
     CoreWebService,
     DotcmsConfig,
     DotcmsEventsService,
-    DotEventsSocketFactoryService,
     LoggerService,
     StringUtils,
     UserModel
@@ -61,7 +60,6 @@ export class DOTTestBed {
             FormatDateService,
             Http,
             LoggerService,
-            DotEventsSocketFactoryService,
             StringUtils,
             UserModel,
             DotLicenseService

@@ -6,7 +6,7 @@ import { DebugElement } from '@angular/core/src/debug/debug_node';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm';
 import { DotEditLayoutDesignerComponent } from './dot-edit-layout-designer.component';
 import { DotEditLayoutGridModule } from '../components/dot-edit-layout-grid/dot-edit-layout-grid.module';
-import { LoginService, DotEventsSocketFactoryService, SiteService } from 'dotcms-js';
+import { LoginService, DotEventsSocket, SiteService } from 'dotcms-js';
 import { DotMessageService } from '@services/dot-messages-service';
 import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
 import { PageViewService } from '@services/page-view/page-view.service';
@@ -111,7 +111,7 @@ const testConfigObject = {
         LoginService,
         PageViewService,
         PaginatorService,
-        DotEventsSocketFactoryService,
+        DotEventsSocket,
         DotEditLayoutService,
         TemplateContainersCacheService,
         { provide: DotMessageService, useValue: messageServiceMock },

@@ -14,7 +14,7 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
 import { DotMessageService } from '@services/dot-messages-service';
-import { LoginService, DotEventsSocketFactoryService } from 'dotcms-js';
+import { LoginService, DotEventsSocket } from 'dotcms-js';
 import { Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 import { Observable, Subject } from 'rxjs';
@@ -167,7 +167,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
                 { provide: FieldDragDropService, useValue: this.testFieldDragDropService },
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: DotLoadingIndicatorService, useValue: dotLoadingIndicatorServiceMock },
-                DotEventsSocketFactoryService,
+                DotEventsSocket,
                 LoginService,
                 FormatDateService,
                 FieldService,
@@ -387,7 +387,7 @@ describe('Load fields and drag and drop', () => {
                 FieldService,
                 FormatDateService,
                 LoginService,
-                DotEventsSocketFactoryService,
+                DotEventsSocket,
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: FieldDragDropService, useValue: this.testFieldDragDropService },
                 { provide: HotkeysService, useClass: TestHotkeysMock },
