@@ -13,7 +13,7 @@ import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { FormBuilder, FormGroup, ValidationErrors, Validators } from '@angular/forms';
 import { FieldPropertyService } from '../service';
 import { DotMessageService } from '@services/dot-messages-service';
-import { ContentTypeField } from '../index';
+import { DotContentTypeField } from '../index';
 import { By } from '@angular/platform-browser';
 
 const mockDFormFieldData = {
@@ -27,7 +27,7 @@ const mockDFormFieldData = {
         '<dot-content-type-fields-properties-form [formFieldData]="mockDFormFieldData"></dot-content-type-fields-properties-form>'
 })
 class DotHostTesterComponent {
-    mockDFormFieldData: ContentTypeField = {};
+    mockDFormFieldData: DotContentTypeField = {};
 
     constructor() {}
 }
@@ -39,7 +39,7 @@ class TestDynamicFieldPropertyDirective {
     @Input()
     propertyName: string;
     @Input()
-    field: ContentTypeField;
+    field: DotContentTypeField;
     @Input()
     group: FormGroup;
 }

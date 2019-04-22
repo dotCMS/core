@@ -1,7 +1,7 @@
 import { Component, Input, OnInit, Output, EventEmitter } from '@angular/core';
-import { FieldTab, ContentTypeField } from '../shared';
+import { DotContentTypeField } from '../shared';
 import { DotMessageService } from '@services/dot-messages-service';
-import { FieldDivider } from '@portlets/content-types/fields/shared/field-divider.interface';
+import { DotFieldDivider } from '@portlets/content-types/fields/shared/dot-field-divider.model';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm/dot-alert-confirm.service';
 import { take } from 'rxjs/operators';
 
@@ -18,13 +18,13 @@ import { take } from 'rxjs/operators';
 })
 export class ContentTypeFieldsTabComponent implements OnInit {
     @Input()
-    fieldTab: FieldTab;
+    fieldTab: DotFieldDivider;
 
     @Output()
-    editTab: EventEmitter<ContentTypeField> = new EventEmitter();
+    editTab: EventEmitter<DotContentTypeField> = new EventEmitter();
 
     @Output()
-    removeTab: EventEmitter<FieldDivider> = new EventEmitter();
+    removeTab: EventEmitter<DotFieldDivider> = new EventEmitter();
 
     i18nMessages: any = {};
     label: string;
@@ -46,7 +46,7 @@ export class ContentTypeFieldsTabComponent implements OnInit {
             .subscribe((res) => {
                 this.i18nMessages = res;
             });
-        this.label = this.fieldTab.getFieldDivider().name;
+        this.label = this.fieldTab.divider.name;
     }
 
     /**
@@ -57,13 +57,13 @@ export class ContentTypeFieldsTabComponent implements OnInit {
         $event.stopPropagation();
         $event.preventDefault();
         const label = $event.target.textContent;
-        if (label && label !== this.fieldTab.getFieldDivider().name) {
+        if (label && label !== this.fieldTab.divider.name) {
             this.editTab.emit({
-                ...this.fieldTab.getFieldDivider(),
+                ...this.fieldTab.divider,
                 name: label
             });
         } else {
-            this.label = this.fieldTab.getFieldDivider().name;
+            this.label = this.fieldTab.divider.name;
         }
     }
 
@@ -84,7 +84,7 @@ export class ContentTypeFieldsTabComponent implements OnInit {
             }`,
             message: this.dotMessageService.get(
                 'contenttypes.confirm.message.delete.field',
-                this.fieldTab.getFieldDivider().name
+                this.fieldTab.divider.name
             ),
             footerLabel: {
                 accept: this.i18nMessages['contenttypes.action.delete'],

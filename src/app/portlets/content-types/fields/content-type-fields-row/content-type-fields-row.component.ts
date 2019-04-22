@@ -1,6 +1,6 @@
 import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
 
-import { ContentTypeField, FieldRow } from '../shared';
+import { DotContentTypeField, DotFieldDivider } from '../shared';
 import { DotMessageService } from '@services/dot-messages-service';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm';
 import { FieldColumn } from '..';
@@ -19,14 +19,14 @@ import { take } from 'rxjs/operators';
 })
 export class ContentTypeFieldsRowComponent implements OnInit {
     @Input()
-    fieldRow: FieldRow;
+    fieldRow: DotFieldDivider;
 
     @Output()
-    editField: EventEmitter<ContentTypeField> = new EventEmitter();
+    editField: EventEmitter<DotContentTypeField> = new EventEmitter();
     @Output()
-    removeField: EventEmitter<ContentTypeField> = new EventEmitter();
+    removeField: EventEmitter<DotContentTypeField> = new EventEmitter();
     @Output()
-    removeRow: EventEmitter<FieldRow> = new EventEmitter();
+    removeRow: EventEmitter<DotFieldDivider> = new EventEmitter();
 
     i18nMessages: any = {};
 
@@ -61,10 +61,10 @@ export class ContentTypeFieldsRowComponent implements OnInit {
     /**
      * Remove a field
      *
-     * @param ContentTypeField field
+     * @param DotContentTypeField field
      * @memberof ContentTypeFieldsRowComponent
      */
-    onRemoveField(field: ContentTypeField): void {
+    onRemoveField(field: DotContentTypeField): void {
         this.dotDialogService.confirm({
             accept: () => {
                 this.removeField.emit(field);
@@ -110,7 +110,7 @@ export class ContentTypeFieldsRowComponent implements OnInit {
      * @returns boolean
      * @memberof ContentTypeFieldsRowComponent
      */
-    rowHaveFields(row: FieldRow): boolean {
+    rowHaveFields(row: DotFieldDivider): boolean {
         return row.columns
             .map((column: FieldColumn) => column.fields.length)
             .every((fieldsNumber: number) => fieldsNumber === 0);

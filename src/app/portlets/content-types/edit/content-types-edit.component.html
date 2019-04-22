@@ -31,7 +31,7 @@
     <dot-content-type-fields-drop-zone
         #fieldsDropZone
         *ngIf="data.id"
-        [fields]="fields"
+        [layout]="fields"
         [loading]="loadingFields"
         (saveFields)="saveFields($event)"
         (removeFields)="removeFields($event)"

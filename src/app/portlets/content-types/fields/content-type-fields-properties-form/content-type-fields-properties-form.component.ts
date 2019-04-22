@@ -11,7 +11,7 @@ import {
 } from '@angular/core';
 import { FormGroup, FormBuilder, AbstractControl } from '@angular/forms';
 import { DotMessageService } from '@services/dot-messages-service';
-import { ContentTypeField } from '../shared';
+import { DotContentTypeField } from '../shared';
 import { FieldPropertyService } from '../service/';
 import { take, takeUntil } from 'rxjs/operators';
 import * as _ from 'lodash';
@@ -27,7 +27,7 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
 
     @Output() valid: EventEmitter<boolean> = new EventEmitter();
 
-    @Input() formFieldData: ContentTypeField;
+    @Input() formFieldData: DotContentTypeField;
 
     @ViewChild('properties') propertiesContainer;
 

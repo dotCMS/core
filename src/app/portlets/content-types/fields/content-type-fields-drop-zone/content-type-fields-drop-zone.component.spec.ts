@@ -4,11 +4,9 @@ import { DebugElement, Component, Input, Output, EventEmitter, Injectable } from
 import { ContentTypeFieldsDropZoneComponent } from './';
 import { By } from '@angular/platform-browser';
 import {
-    ContentTypeField,
-    FieldRow,
+    DotContentTypeField,
     ContentTypeFieldsAddRowModule,
-    FieldTab,
-    FieldDivider
+    DotFieldDivider
 } from '../';
 import { ReactiveFormsModule } from '@angular/forms';
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
@@ -34,6 +32,8 @@ import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { TableModule } from 'primeng/table';
 import { DotContentTypeFieldsVariablesModule } from '../dot-content-type-fields-variables/dot-content-type-fields-variables.module';
 import { DotLoadingIndicatorService } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.service';
+import { FieldUtil } from '../util/field-util';
+import { DotEventsService } from '@services/dot-events/dot-events.service';
 
 @Component({
     selector: 'dot-content-type-fields-row',
@@ -41,11 +41,11 @@ import { DotLoadingIndicatorService } from '@components/_common/iframe/dot-loadi
 })
 class TestContentTypeFieldsRowComponent {
     @Input()
-    fieldRow: FieldRow;
+    fieldRow: DotFieldDivider;
     @Output()
-    editField: EventEmitter<ContentTypeField> = new EventEmitter();
+    editField: EventEmitter<DotContentTypeField> = new EventEmitter();
     @Output()
-    removeField: EventEmitter<ContentTypeField> = new EventEmitter();
+    removeField: EventEmitter<DotContentTypeField> = new EventEmitter();
 }
 
 @Component({
@@ -56,7 +56,7 @@ class TestContentTypeFieldsPropertiesFormComponent {
     @Output()
     saveField: EventEmitter<any> = new EventEmitter();
     @Input()
-    formFieldData: ContentTypeField;
+    formFieldData: DotContentTypeField;
 
     public destroy(): void {}
 }
@@ -67,12 +67,12 @@ class TestContentTypeFieldsPropertiesFormComponent {
 })
 class TestDotContentTypeFieldsTabComponent {
     @Input()
-    fieldTab: FieldTab;
+    fieldTab: DotFieldDivider;
 
     @Output()
-    editTab: EventEmitter<ContentTypeField> = new EventEmitter();
+    editTab: EventEmitter<DotContentTypeField> = new EventEmitter();
     @Output()
-    removeTab: EventEmitter<FieldDivider> = new EventEmitter();
+    removeTab: EventEmitter<DotFieldDivider> = new EventEmitter();
 }
 
 @Component({
@@ -202,11 +202,15 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
     });
 
     it('should reset values when close dialog', () => {
+        const fieldRow: DotFieldDivider = FieldUtil.createFieldRow(1);
+        comp.fieldRows = [fieldRow];
+
         comp.displayDialog = true;
         spyOn(comp, 'setDialogOkButtonState');
         fixture.detectChanges();
         const dialog = de.query(By.css('dot-dialog')).componentInstance;
         dialog.hide.emit();
+        fixture.detectChanges();
         expect(comp.displayDialog).toBe(false);
         expect(comp.hideButtons).toBe(false);
         expect(comp.formData).toBe(null);
@@ -230,30 +234,33 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
     });
 
     it('should emit removeFields event when a Row is removed', () => {
-        let fieldsToRemove: ContentTypeField[];
+        let fieldsToRemove: DotContentTypeField[];
 
-        const fieldRow: FieldRow = new FieldRow();
+        const fieldRow: DotFieldDivider = FieldUtil.createFieldRow(1);
         const field = {
             clazz: 'classField',
             name: 'nameField'
         };
-        fieldRow.addFields([field]);
-        fieldRow.getFieldDivider().id = 'test';
+        fieldRow.columns[0].fields = [field];
+        fieldRow.divider.id = 'test';
+
+        comp.fieldRows = [fieldRow];
 
         comp.removeFields.subscribe((removeFields) => (fieldsToRemove = removeFields));
 
         comp.removeFieldRow(fieldRow);
 
-        expect([fieldRow.getFieldDivider(), fieldRow.columns[0].columnDivider, field]).toEqual(
+        expect([fieldRow.divider, fieldRow.columns[0].columnDivider, field]).toEqual(
             fieldsToRemove
         );
     });
 
     it('should remove and empty row without lineDivider id, and not emit removeFields ', () => {
-        const fieldRow1 = new FieldRow();
-        const fieldRow2 = new FieldRow();
-        fieldRow1.getFieldDivider().id = 'test';
+        const fieldRow1 = FieldUtil.createFieldRow(1);
+        const fieldRow2 = FieldUtil.createFieldRow(1);
+        fieldRow1.divider.id = 'test';
         comp.fieldRows = [fieldRow1, fieldRow2];
+
         spyOn(comp.removeFields, 'emit');
         comp.removeFieldRow(fieldRow2);
 
@@ -262,55 +269,40 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
     });
 
     it('should cancel last drag and drop operation fields', () => {
-        comp.fields = [];
 
-        const fieldRow1: FieldRow = new FieldRow();
+        const fieldRow1: DotFieldDivider = FieldUtil.createFieldRow(1);
         const field = {
             clazz: 'classField',
             name: 'nameField'
         };
-        fieldRow1.addFields([field]);
+        fieldRow1.columns[0].fields = [field];
 
-        const fieldRow2 = new FieldRow();
+        comp.layout = [fieldRow1];
+
+        const fieldRow2 = FieldUtil.createFieldRow(1);
         comp.fieldRows = [fieldRow1, fieldRow2];
 
         comp.cancelLastDragAndDrop();
 
         expect(comp.fieldRows.length).toEqual(1);
-        expect((<FieldRow> comp.fieldRows[0]).columns.length).toEqual(1);
-        expect((<FieldRow> comp.fieldRows[0]).columns[0].fields).toEqual([]);
+        expect(comp.fieldRows[0].columns.length).toEqual(1);
+        expect(comp.fieldRows[0].columns[0].fields).toEqual([field]);
     });
 });
 
-let fakeFields: ContentTypeField[];
+let fakeFields: DotFieldDivider[];
 
 @Component({
     selector: 'dot-test-host-component',
     template:
-        '<dot-content-type-fields-drop-zone [fields]="fields" [loading]="loading"></dot-content-type-fields-drop-zone>'
+        '<dot-content-type-fields-drop-zone [layout]="layout" [loading]="loading"></dot-content-type-fields-drop-zone>'
 })
 class TestHostComponent {
-    fields: ContentTypeField[];
+    layout: DotFieldDivider[];
     loading: boolean;
 
     constructor() {}
 }
-
-const removeSortOrder = (fieldRows: FieldRow[]) => {
-    return fieldRows.map((fieldRow: FieldRow) => {
-        fieldRow.getFieldDivider().sortOrder = null;
-        if (fieldRow.columns) {
-            fieldRow.columns = fieldRow.columns.map((column) => {
-                column.columnDivider.sortOrder = null;
-                column.fields = column.fields.map((field) => {
-                    field.sortOrder = null;
-                    return field;
-                });
-                return column;
-            });
-        }
-    });
-};
 
 describe('Load fields and drag and drop', () => {
     const dotLoadingIndicatorServiceMock: TestDotLoadingIndicatorService = new TestDotLoadingIndicatorService();
@@ -334,18 +326,6 @@ describe('Load fields and drag and drop', () => {
         const fieldToMove = fieldsMoved[2].columns[0].fields[0];
         fieldsMoved[2].columns[0].fields = [];
         fieldsMoved[0].columns[1].fields.unshift(fieldToMove);
-
-        this.testFieldDragDropService._fieldDropFromTarget.next({
-            item: fieldToMove,
-            source: {
-                columnId: fieldsMoved[2].columns[0].columnDivider.id,
-                model: fieldsMoved[2].columns[0].fields
-            },
-            target: {
-                columnId: fieldsMoved[0].columns[1].columnDivider.id,
-                model: fieldsMoved[0].columns[1].fields
-            }
-        });
 
         return fieldsMoved;
     };
@@ -404,71 +384,95 @@ describe('Load fields and drag and drop', () => {
 
         fakeFields = [
             {
-                name: 'field 1',
-                id: '1',
-                clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField',
-                sortOrder: 0,
-                contentTypeId: '1b'
+                divider: {
+                    name: 'field 1',
+                    id: '1',
+                    clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField',
+                    sortOrder: 0,
+                    contentTypeId: '1b'
+                },
+                columns: [
+                    {
+                        columnDivider: {
+                            name: 'field 2',
+                            id: '2',
+                            clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
+                            sortOrder: 1,
+                            contentTypeId: '2b'
+                        },
+                        fields: [
+                            {
+                                clazz: 'text',
+                                id: '3',
+                                name: 'field 3',
+                                sortOrder: 2,
+                                contentTypeId: '3b'
+                            }
+                        ]
+
+                    },
+                    {
+                        columnDivider: {
+                            clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
+                            id: '4',
+                            name: 'field 4',
+                            sortOrder: 3,
+                            contentTypeId: '4b'
+                        },
+                        fields: [
+                            {
+                                clazz: 'text',
+                                id: '5',
+                                name: 'field 5',
+                                sortOrder: 4,
+                                contentTypeId: '5b'
+                            }
+                        ]
+
+                    }
+                ]
             },
             {
-                name: 'field 2',
-                id: '2',
-                clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
-                sortOrder: 1,
-                contentTypeId: '2b'
+                divider: {
+                    clazz: 'com.dotcms.contenttype.model.field.ImmutableTabDividerField',
+                    id: '6',
+                    name: 'field 6',
+                    sortOrder: 5,
+                    contentTypeId: '6b'
+                }
             },
             {
-                clazz: 'text',
-                id: '3',
-                name: 'field 3',
-                sortOrder: 2,
-                contentTypeId: '3b'
-            },
-            {
-                clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
-                id: '4',
-                name: 'field 4',
-                sortOrder: 3,
-                contentTypeId: '4b'
-            },
-            {
-                clazz: 'text',
-                id: '5',
-                name: 'field 5',
-                sortOrder: 4,
-                contentTypeId: '5b'
-            },
-            {
-                clazz: 'com.dotcms.contenttype.model.field.ImmutableTabDividerField',
-                id: '6',
-                name: 'field 6',
-                sortOrder: 5,
-                contentTypeId: '6b'
-            },
-            {
-                clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField',
-                id: '7',
-                name: 'field 7',
-                sortOrder: 6,
-                contentTypeId: '7b'
-            },
-            {
-                clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
-                id: '8',
-                name: 'field 8',
-                sortOrder: 7,
-                contentTypeId: '8b'
-            },
-            {
-                clazz: 'text',
-                id: '9',
-                name: 'field 9',
-                sortOrder: 8,
-                contentTypeId: '9b'
+                divider: {
+                    clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField',
+                    id: '7',
+                    name: 'field 7',
+                    sortOrder: 6,
+                    contentTypeId: '7b'
+                },
+                columns: [
+                    {
+                        columnDivider:             {
+                            clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
+                            id: '8',
+                            name: 'field 8',
+                            sortOrder: 7,
+                            contentTypeId: '8b'
+                        },
+                        fields: [
+                            {
+                                clazz: 'text',
+                                id: '9',
+                                name: 'field 9',
+                                sortOrder: 8,
+                                contentTypeId: '9b'
+                            }
+                        ]
+                    }
+                ]
             }
         ];
 
-        hostComp.fields = fakeFields;
+        hostComp.layout = fakeFields;
     }));
 
     it('should handler editField event', () => {
@@ -492,7 +496,18 @@ describe('Load fields and drag and drop', () => {
         const addRowsContainer = de.query(By.css('dot-add-rows')).componentInstance;
         addRowsContainer.selectColums.emit(2);
         expect(comp.addRow).toHaveBeenCalled();
-        expect((<FieldRow>comp.fieldRows[0]).columns.length).toBe(2);
+        expect(comp.fieldRows[0].columns.length).toBe(2);
+    });
+
+    it('should emit and create tab divider', () => {
+        const dotEventsService: DotEventsService = de.injector.get(DotEventsService);
+
+        fixture.detectChanges();
+        dotEventsService.notify('add-tab-divider', {});
+
+        expect(comp.fieldRows.length).toBe(4);
+        expect(comp.fieldRows[comp.fieldRows.length - 1].divider.clazz)
+            .toBe('com.dotcms.contenttype.model.field.ImmutableTabDividerField');
     });
 
     it('should have FieldRow and FieldColumn', () => {
@@ -510,19 +525,20 @@ describe('Load fields and drag and drop', () => {
     });
 
     it('should set dropped field if a drop event happen from source', () => {
-        becomeNewField(fakeFields[8]);
+        const dropField = fakeFields[2].columns[0].fields[0];
+        becomeNewField(dropField);
         fixture.detectChanges();
 
         this.testFieldDragDropService._fieldDropFromSource.next({
-            item: fakeFields[8],
+            item: dropField,
             target: {
                 columnId: '8',
-                model: [fakeFields[8]]
+                model: [dropField]
             }
         });
 
 
-        expect(fakeFields[8]).toBe(comp.formData);
+        expect(dropField).toBe(comp.formData);
     });
 
     it('should do drag and drop without throwing error', () => {
@@ -533,55 +549,78 @@ describe('Load fields and drag and drop', () => {
     });
 
 
-    it('should save all the fields (moving the last line to the top)', () => {
-        spyOn(comp.saveFields, 'emit');
-
+    it('should save all the fields (moving the last line to the top)', (done) => {
         fixture.detectChanges();
 
         const fieldMoved = [_.cloneDeep(comp.fieldRows[1]), _.cloneDeep(comp.fieldRows[0])];
 
-        this.testFieldDragDropService._fieldRowDropFromTarget.next(fieldMoved);
+        comp.fieldRows = [
+            fakeFields[1],
+            fakeFields[0],
+            fakeFields[2]
+        ];
 
-        const expected = [fakeFields[5], fakeFields[0], fakeFields[1], fakeFields[2], fakeFields[3], fakeFields[4]].map(
-            (fakeField, index) => {
-                fakeField.sortOrder = index;
-                return fakeField;
-            }
-        );
-        expect(comp.saveFields.emit).toHaveBeenCalledWith(expected);
-        expect(removeSortOrder(<FieldRow[]> comp.fieldRows)).toEqual(removeSortOrder(fieldMoved));
+        comp.saveFields.subscribe((data) => {
+            const expected = [
+                fakeFields[1].divider,
+                fakeFields[0].divider,
+                fakeFields[0].columns[0].columnDivider,
+                fakeFields[0].columns[0].fields[0],
+                fakeFields[0].columns[1].columnDivider,
+                fakeFields[0].columns[1].fields[0],
+            ].map(
+                (fakeField, index) => {
+                    fakeField.sortOrder = index;
+                    return fakeField;
+                }
+            );
+
+            expect(data).toEqual(expected);
+            done();
+        });
+
+        this.testFieldDragDropService._fieldRowDropFromTarget.next(fieldMoved);
     });
 
-    it('should save all the fields (moving just the last field)', () => {
-        spyOn(comp.saveFields, 'emit');
-
+    it('should save all the fields (moving just the last field)', (done) => {
         fixture.detectChanges();
         const fieldsMoved = moveFromSecondRowToFirstRowAndEmitEvent();
 
+        comp.fieldRows = fieldsMoved;
         fixture.detectChanges();
 
-        let expectedIndex = 4;
+        comp.saveFields.subscribe((data) => {
+            let expectedIndex = 4;
 
-        const expected = [fakeFields[8], fakeFields[4], fakeFields[5], fakeFields[6], fakeFields[7]].map(
-            (fakeField) => {
-                fakeField.sortOrder = expectedIndex++;
-                return fakeField;
-            }
-        );
+            const expected = [
+                fakeFields[2].columns[0].fields[0],
+                fakeFields[0].columns[1].fields[0],
+                fakeFields[1].divider,
+                fakeFields[2].divider,
+                fakeFields[2].columns[0].columnDivider
+            ].map(
+                (fakeField) => {
+                    fakeField.sortOrder = expectedIndex++;
+                    return fakeField;
+                }
+            );
 
-        expect(comp.saveFields.emit).toHaveBeenCalledWith(expected);
-        expect(removeSortOrder(<FieldRow[]>  comp.fieldRows)).toEqual(removeSortOrder(fieldsMoved));
+            expect(data).toEqual(expected);
+            done();
+        });
+
+        this.testFieldDragDropService._fieldDropFromTarget.next({});
     });
 
-    it('should save all the new fields', () => {
+    it('should save all the new fields', (done) => {
 
-        let saveFields;
+        becomeNewField(fakeFields[2].divider);
+        becomeNewField(fakeFields[2].columns[0].columnDivider);
+        becomeNewField(fakeFields[2].columns[0].fields[0]);
 
-        becomeNewField(fakeFields[6]);
-        becomeNewField(fakeFields[7]);
-        becomeNewField(fakeFields[8]);
+        const newlyField = fakeFields[2].columns[0].fields[0];
 
-        fakeFields[7].id = 'ng-1';
+        delete newlyField.id;
 
         fixture.detectChanges();
 
@@ -589,55 +628,55 @@ describe('Load fields and drag and drop', () => {
 
         // select the fields[8] as the current field
         this.testFieldDragDropService._fieldDropFromSource.next({
-            item: fakeFields[8],
-            target: {
-                columnId: fakeFields[7].id ,
-                model: [fakeFields[8]]
-            }
+            item: newlyField
         });
 
-        comp.saveFields.subscribe((fields) => (saveFields = fields));
-        comp.saveFieldsHandler(fakeFields[8]);
+        comp.saveFields.subscribe((fields) => {
+            const expected = [
+                fakeFields[2].divider,
+                fakeFields[2].columns[0].columnDivider,
+                fakeFields[2].columns[0].fields[0]
+            ];
+            expected[0].sortOrder = 6;
+            expected[1].sortOrder = 7;
+            expected[2].sortOrder = 8;
 
-        const expected = [fakeFields[6], fakeFields[7], fakeFields[8]];
-        expected[0].sortOrder = 6;
-        expected[1].sortOrder = 7;
-        expected[2].sortOrder = 8;
+            expect(expected).toEqual(fields);
+            expect(comp.propertiesForm.destroy).toHaveBeenCalled();
 
-        expect(expected).toEqual(saveFields);
-        expect(comp.propertiesForm.destroy).toHaveBeenCalled();
+            done();
+        });
+        comp.saveFieldsHandler(newlyField);
     });
 
     it('should save all updated fields', () => {
-        let saveFields;
+        const updatedField = fakeFields[2].columns[0].fields[0];
 
         fixture.detectChanges();
-        comp.editField(fakeFields[8]);
+        comp.editField(updatedField);
 
         comp.saveFields.subscribe((fields) => {
-            saveFields = fields;
-        });
+            const fieldUpdated = {
+                fixed: true,
+                indexed: true
+            };
 
-        const fieldUpdated = {
-            fixed: true,
-            indexed: true
-        };
+            comp.displayDialog = false;
+            comp.saveFieldsHandler(fieldUpdated);
 
-        comp.displayDialog = false;
-        comp.saveFieldsHandler(fieldUpdated);
+            const { fixed, indexed, ...original } = fields[0];
 
-        const { fixed, indexed, ...original } = saveFields[0];
-
-        expect(original).toEqual(fakeFields[8]);
-        expect(saveFields[0].fixed).toEqual(true);
-        expect(saveFields[0].indexed).toEqual(true);
-        expect(comp.currentField).toEqual({
-            fieldId: fakeFields[8].id,
-            contentTypeId: fakeFields[8].contentTypeId
+            expect(original).toEqual(fakeFields[8]);
+            expect(fields[0].fixed).toEqual(true);
+            expect(fields[0].indexed).toEqual(true);
+            expect(comp.currentField).toEqual({
+                fieldId: updatedField.id,
+                contentTypeId: updatedField.contentTypeId
+            });
         });
     });
 
-    it('should handler removeField event', () => {
+   it('should handler removeField event', () => {
         const field = {
             clazz: 'classField',
             name: 'nameField'
@@ -652,19 +691,6 @@ describe('Load fields and drag and drop', () => {
         fieldRows[0].componentInstance.removeField.emit(field);
 
         expect(spy).toHaveBeenCalledWith(field);
-    });
-
-    it('should create empty row and column when no fields present', () => {
-        hostComp.fields = [];
-        fixture.detectChanges();
-
-        expect((<FieldRow>comp.fieldRows[0]).columns[0].fields.length).toEqual(0);
-        expect((<FieldRow>comp.fieldRows[0]).columns[0].columnDivider.clazz).toEqual(
-            'com.dotcms.contenttype.model.field.ImmutableColumnField'
-        );
-        expect(comp.fieldRows[0].getFieldDivider().clazz).toEqual(
-            'com.dotcms.contenttype.model.field.ImmutableRowField'
-        );
     });
 
     it('should disable field variable tab', () => {
@@ -685,39 +711,6 @@ describe('Load fields and drag and drop', () => {
 
         const tabLinks = de.queryAll(By.css('.ui-tabview-nav li'));
         expect(tabLinks[1].nativeElement.classList.contains('ui-state-disabled')).toBe(false);
-    });
-
-    it('should add FieldRow when them does not exists into a TabDivider', () => {
-        hostComp.fields = [
-            {
-                clazz: 'text',
-                id: '1',
-                name: 'field 1',
-                sortOrder: 1,
-                contentTypeId: '5b'
-            },
-            {
-                clazz: 'com.dotcms.contenttype.model.field.ImmutableTabDividerField',
-                id: '2',
-                name: 'field 2',
-                sortOrder: 2,
-                contentTypeId: '6b'
-            },
-            {
-                clazz: 'text',
-                id: '3',
-                name: 'field 3',
-                sortOrder: 3,
-                contentTypeId: '5b'
-            },
-        ];
-
-        fixture.detectChanges();
-
-        expect(comp.fieldRows.length).toEqual(3);
-        expect(comp.fieldRows[0] instanceof FieldRow).toBeTruthy();
-        expect(comp.fieldRows[1] instanceof FieldTab).toBeTruthy();
-        expect(comp.fieldRows[2] instanceof FieldRow).toBeTruthy();
     });
 
     describe('Edit Field Dialog', () => {
@@ -777,3 +770,4 @@ describe('Load fields and drag and drop', () => {
         });
     });
 });
+
