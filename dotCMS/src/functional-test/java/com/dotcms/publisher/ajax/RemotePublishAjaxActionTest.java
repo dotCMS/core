@@ -157,7 +157,7 @@ public class RemotePublishAjaxActionTest {
 		String publishDate = dateFormat.format( new Date() );
 		String publishTime = timeFormat.format( new Date() );
 
-		String baseURL = "http://" + req.getServerName() + ":" + req.getServerPort() + "/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/publish/u/admin@dotcms.com/p/admin";
+		String baseURL = "http://" + req.getServerName() + ":" + req.getServerPort() + "/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/publish/user/admin@dotcms.com/password/admin";
 		String completeURL = baseURL +
 				"?remotePublishDate=" + UtilMethods.encodeURIComponent( publishDate ) +
 				"&remotePublishTime=" + UtilMethods.encodeURIComponent( publishTime ) +
@@ -212,7 +212,7 @@ public class RemotePublishAjaxActionTest {
 		//Now we can try the retry
 		PublishAuditAPI.getInstance().updatePublishAuditStatus(bundleId, PublishAuditStatus.Status.FAILED_TO_PUBLISH, PublishAuditAPI.getInstance().getPublishAuditStatus(bundleId).getStatusPojo());
 		req = ServletTestRunner.localRequest.get();
-		baseURL = "http://" + req.getServerName() + ":" + req.getServerPort() + "/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/retry/u/admin@dotcms.com/p/admin";
+		baseURL = "http://" + req.getServerName() + ":" + req.getServerPort() + "/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/retry/user/admin@dotcms.com/password/admin";
 		completeURL = baseURL + "?bundlesIds=" + UtilMethods.encodeURIComponent( bundleId );
 
 		//Execute the call
@@ -465,7 +465,7 @@ public class RemotePublishAjaxActionTest {
 		String publishDate = dateFormat.format( new Date() );
 		String publishTime = timeFormat.format( new Date() );
 
-		String baseURL = "http://" + req.getServerName() + ":" + req.getServerPort() + "/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/publish/u/admin@dotcms.com/p/admin";
+		String baseURL = "http://" + req.getServerName() + ":" + req.getServerPort() + "/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/publish/user/admin@dotcms.com/password/admin";
 		String completeURL = baseURL +
 				"?remotePublishDate=" + UtilMethods.encodeURIComponent( publishDate ) +
 				"&remotePublishTime=" + UtilMethods.encodeURIComponent( publishTime ) +
@@ -796,7 +796,7 @@ public class RemotePublishAjaxActionTest {
 		String publishDate = dateFormat.format( new Date() );
 		String publishTime = timeFormat.format( new Date() );
 
-		String baseURL = "http://" + req.getServerName() + ":" + req.getServerPort() + "/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/publish/u/admin@dotcms.com/p/admin";
+		String baseURL = "http://" + req.getServerName() + ":" + req.getServerPort() + "/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/publish/user/admin@dotcms.com/password/admin";
 		String completeURL = baseURL +
 				"?remotePublishDate=" + UtilMethods.encodeURIComponent( publishDate ) +
 				"&remotePublishTime=" + UtilMethods.encodeURIComponent( publishTime ) +
