@@ -699,6 +699,51 @@ public class FieldAPITest extends IntegrationTestBase {
         }
     }
 
+    @Test
+    public void testUpdateSelfRelatedFields_shouldNotChangeRelationNames()
+            throws DotDataException, DotSecurityException {
+
+        ContentType parentContentType = null;
+
+        final long time = System.currentTimeMillis();
+        final String newCardinality = String.valueOf(RELATIONSHIP_CARDINALITY.ONE_TO_ONE.ordinal());
+
+        try {
+            parentContentType = createAndSaveSimpleContentType("parentContentType" + time);
+
+            final Field childField = createAndSaveManyToManyRelationshipField("newRel",
+                    parentContentType.id(), parentContentType.variable(), CARDINALITY);
+
+            final String fullFieldVar =
+                    parentContentType.variable() + StringPool.PERIOD + childField.variable();
+
+            //Adding the other side of the relationship
+            Field parentField = FieldBuilder.builder(RelationshipField.class).name("otherSideRel")
+                    .contentTypeId(parentContentType.id()).values(CARDINALITY)
+                    .relationType(fullFieldVar).required(true).build();
+
+            parentField = fieldAPI.save(parentField, user);
+
+            //Update parent field
+            fieldAPI
+                    .save(FieldBuilder.builder(parentField).values(newCardinality).build(), user);
+
+            //Update child field
+            fieldAPI
+                    .save(FieldBuilder.builder(childField).values(newCardinality).build(), user);
+
+            final Relationship relationship = relationshipAPI.byTypeValue(fullFieldVar);
+
+            assertEquals(childField.variable(), relationship.getChildRelationName());
+            assertEquals(parentField.variable(), relationship.getParentRelationName());
+
+        } finally {
+            if (UtilMethods.isSet(parentContentType) && UtilMethods.isSet(parentContentType.id())) {
+                contentTypeAPI.delete(parentContentType);
+            }
+        }
+    }
+
     @Test(expected = DotDataException.class)
     @UseDataProvider("testCases")
     public void testValidateRelationshipField_shouldThrowAnException(TestCase testCase)

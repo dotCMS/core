@@ -48,7 +48,6 @@ import com.dotcms.rendering.velocity.services.ContentletLoader;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
-import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
@@ -338,10 +337,23 @@ public class FieldAPIImpl implements FieldAPI {
     private void updateRelationshipObject(final Field field, final ContentType type, final ContentType relatedContentType,
             final Relationship relationship, final int cardinality, final User user)
             throws DotDataException {
+
+        final boolean isChildField;
         final String relationName = field.variable();
         FieldBuilder builder;
+
+        if (relationshipAPI.sameParentAndChild(relationship)){
+            isChildField = relationship.getParentRelationName() != null && relationship
+                    .getParentRelationName().equals(field.variable()) || (
+                    relationship.getParentRelationName() == null && !relationship
+                            .getChildRelationName().equals(field.variable()));
+
+        } else{
+            isChildField = relationship.getChildStructureInode().equals(type.id());
+        }
+
         //check which side of the relationship is being updated (parent or child)
-        if (relationship.getChildStructureInode().equals(type.id())) {
+        if (isChildField) {
             //parent is updated
             relationship.setParentRelationName(relationName);
             relationship.setParentRequired(field.required());
