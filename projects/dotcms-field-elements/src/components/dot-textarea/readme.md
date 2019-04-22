@@ -13,7 +13,6 @@
 | `hint`              | `hint`              |             | `string`  | `undefined` |
 | `label`             | `label`             |             | `string`  | `undefined` |
 | `name`              | `name`              |             | `string`  | `undefined` |
-| `placeholder`       | `placeholder`       |             | `string`  | `undefined` |
 | `regexcheck`        | `regexcheck`        |             | `string`  | `undefined` |
 | `regexcheckmessage` | `regexcheckmessage` |             | `string`  | `undefined` |
 | `required`          | `required`          |             | `boolean` | `undefined` |
@@ -33,7 +32,7 @@
 
 ### `reset() => void`
 
-Reset properties of the filed, clear value and emit events.
+Reset properties of the field, clear value and emit events.
 
 #### Returns
 

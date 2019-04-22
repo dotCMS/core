@@ -6,105 +6,65 @@
             name='viewport'
             content='width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=5.0'
         />
-        <title>Stencil Component Starter</title>
+        <title>Dot-Fields</title>
+        <style>
+            form > * {
+                display: block;
+                margin-bottom: 16px;
+            }
+        </style>
         <script src='/build/dotcmsfields.js'></script>
         <script>
+            const fieldsConfig = [
+            {
+                fieldType: 'Text',
+                label: 'Name:',
+                name: 'fullName',
+                defaultValue: 'John',
+                hint: 'this is a hint',
+                placeholder: 'Enter Name',
+                regexCheck: '^[A-Za-z ]+$',
+                regexCheckMessage: 'Invalid Name',
+                required: true,
+                requiredMessage: 'Required Name',
+                variable: 'text1'
+            }, {
+                defaultValue: '2',
+                fieldType: 'Select',
+                hint: 'dropdown hint',
+                name: 'dropdown',
+                required: true,
+                requiredMessage: 'this field is required',
+                values: '|,labelA|1,labelB|2,labelC|3',
+                variable: 'dropdown2'
+            }, {
+                fieldType: 'Textarea',
+                label: 'Address:',
+                name: 'Address',
+                defaultValue: 'Address',
+                hint: 'this is a hint',
+                placeholder: 'Enter Name',
+                regexCheck: '^[A-Za-z ]+$',
+                regexCheckMessage: 'Invalid Name',
+                required: true,
+                requiredMessage: 'Required Address',
+                variable: 'textarea3'
+            }];
+
             window.onload = function() {
-                let inputTxt = document.querySelector('dot-textfield');
-                inputTxt.addEventListener('valueChange', function(event) {
-                    console.log('--inputTxt valueChange', event.detail);
-                });
-                let dropdownElem = document.querySelector('dot-dropdown');
-                dropdownElem.addEventListener('valueChange', function(event) {
-                    console.log('--dropdownElem valueChange', event.detail);
-                });
-                let checkboxElem = document.querySelector('dot-checkbox');
-                checkboxElem.addEventListener('valueChange', function(event) {
-                    console.log('--checkboxElem valueChange', event.detail);
-                });
-                let textareaElem = document.querySelector('dot-textarea');
-                textareaElem.addEventListener('valueChange', function(event) {
-                    console.log('--textareaElem valueChange', event.detail);
+                const dotFormEl = document.createElement('dot-form');
+                dotFormEl.fields = fieldsConfig;
+                dotFormEl.addEventListener('onSubmit', (e) => {
+                    e.preventDefault();
+                    console.log(e)
                 });
 
-                let dotForm = document.querySelector('dot-form');
-                dotForm.addEventListener('onSubmit', function(event) {
-                    console.log('--dotForm onSubmit', event.detail);
-                });
+                let container = document.querySelector('#container');
+                container.append(dotFormEl);
             };
-
-            function resetFrom() {
-                let inputTxt = document.querySelector('dot-textfield');
-                inputTxt.reset();
-            }
-
-            document.addEventListener('statusChanges', function(event){
-                console.log('statusChanges', event.detail);
-            });
-
         </script>
     </head>
     <body>
-        <my-component first='Stencil' last=''Don't call me a framework' JS'></my-component>
-        <hr />
-        <dot-form>
-            <dot-textfield
-                label='Name:'
-                name='fullName'
-                value='John'
-                hint='this is a hint'
-                placeholder='Enter Name'
-                regexcheck='^[A-Za-z ]+$'
-                regexcheckmessage="Invalid Name"
-                required
-                requiredmessage="Required Name"
-            ></dot-textfield>
-            <br />
-            <dot-textfield
-                label='Last Name:'
-                name='lastName'
-                value='Morera'
-                hint='Hint: Disabled field'
-                disabled
-            ></dot-textfield>
-
-            <hr />
-
-            <dot-dropdown
-                label='Dropdown label:'
-                hint='this is a hint'
-                options='a1|1,b1|2,c1|3,d1|4'
-                value='2'
-            ></dot-dropdown>
-
-            <hr />
-
-            <dot-checkbox
-                label='Checkbox label:'
-                hint='this is a hint'
-                options='a1|1,b1|2,c1|3,d1|4'
-                value='3'
-            ></dot-checkbox>
-
-            <hr />
-
-            <dot-textarea
-                label='Address:'
-                name='Address'
-                value='Address'
-                hint='this is a hint'
-                regexcheck='^[A-Za-z ]+$'
-                regexcheckmessage="Invalid Name"
-                required
-                requiredmessage="Required Name"
-            ></dot-textarea>
-
-            <hr />
-        </dot-form>
-
-        <input id="test">
-
-
-        <button onclick="resetFrom()">Reset</button>
+        <div id="container"></div>
     </body>
 </html>

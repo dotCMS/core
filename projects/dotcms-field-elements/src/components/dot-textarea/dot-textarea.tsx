@@ -65,9 +65,10 @@ export class DotTextareaComponent {
     render() {
         return (
             <Fragment>
-                <label>{this.label}</label>
+                <label htmlFor={this.name}>{this.label}</label>
                 <textarea
                     class={this.getInputClassName()}
+                    id={this.name}
                     name={this.name}
                     value={this.value}
                     required={this.getRequiredAttr()}

@@ -51,7 +51,7 @@ describe('dot-form', () => {
 
     it('should renders', async () => {
         // tslint:disable-next-line:max-line-length
-        const tagsRenderExpected = `<form><dot-textfield class=\"dot-valid dot-pristine dot-untouched hydrated\"><label>field1</label><input name=\"field1\" type=\"text\" required=\"\"><span class=\"dot-field__hint\">hint1</span></dot-textfield><dot-textfield class=\"dot-valid dot-pristine dot-untouched hydrated\"><label>field2</label><input name=\"field2\" type=\"text\"><span class=\"dot-field__hint\">hint2</span></dot-textfield><button type=\"submit\">Saved</button><button type=\"button\">Reseted</button></form>`;
+        const tagsRenderExpected = `<form><dot-textfield class=\"dot-valid dot-pristine dot-untouched hydrated\"><label for=\"field1\">field1</label><input id=\"field1\" type=\"text\" required=\"\"><span class=\"dot-field__hint\">hint1</span></dot-textfield><dot-textfield class=\"dot-valid dot-pristine dot-untouched hydrated\"><label for=\"field2\">field2</label><input id=\"field2\" type=\"text\"><span class=\"dot-field__hint\">hint2</span></dot-textfield><button type=\"submit\">Saved</button><button type=\"button\">Reseted</button></form>`;
         expect(element.innerHTML).toBe(tagsRenderExpected);
     });
 
@@ -108,7 +108,7 @@ describe('dot-form', () => {
         });
 
         // tslint:disable-next-line:max-line-length
-        const formStatusExpectedMarkup = `<dot-form submit-label="Saved" reset-label="Reseted" class="dot-untouched hydrated dot-invalid dot-dirty"><form><dot-textfield class="dot-valid dot-pristine dot-untouched hydrated"><label>field1</label><input name="field1" type="text" required=""><span class="dot-field__hint">hint1</span></dot-textfield><dot-textfield class="dot-valid dot-pristine dot-untouched hydrated"><label>field2</label><input name="field2" type="text"><span class="dot-field__hint">hint2</span></dot-textfield><button type="submit" disabled="">Saved</button><button type="button">Reseted</button></form></dot-form>`;
+        const formStatusExpectedMarkup = `<dot-form submit-label=\"Saved\" reset-label=\"Reseted\" class=\"dot-untouched hydrated dot-invalid dot-dirty\"><form><dot-textfield class=\"dot-valid dot-pristine dot-untouched hydrated\"><label for=\"field1\">field1</label><input id=\"field1\" type=\"text\" required=\"\"><span class=\"dot-field__hint\">hint1</span></dot-textfield><dot-textfield class=\"dot-valid dot-pristine dot-untouched hydrated\"><label for=\"field2\">field2</label><input id=\"field2\" type=\"text\"><span class=\"dot-field__hint\">hint2</span></dot-textfield><button type=\"submit\" disabled=\"\">Saved</button><button type=\"button\">Reseted</button></form></dot-form>`;
         await page.waitForChanges();
         expect(element.outerHTML).toBe(formStatusExpectedMarkup);
     });

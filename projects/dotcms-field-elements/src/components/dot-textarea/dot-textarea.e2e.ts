@@ -21,7 +21,7 @@ describe('dot-textarea', () => {
     });
 
     it('should render', async () => {
-        const tagsRenderExpected = `<label>Address:</label><textarea name="Address"></textarea>`;
+        const tagsRenderExpected = `<label for=\"Address\">Address:</label><textarea id=\"Address\" name=\"Address\"></textarea>`;
         expect(element.innerHTML).toBe(tagsRenderExpected);
     });
 
@@ -154,7 +154,7 @@ describe('dot-textarea', () => {
         element.setProperty('hint', 'this is a hint');
         await page.waitForChanges();
         // tslint:disable-next-line:max-line-length
-        const tagsRenderExpected = `<label>Address:</label><textarea name="Address"></textarea><span class="dot-field__hint">this is a hint</span>`;
+        const tagsRenderExpected = `<label for=\"Address\">Address:</label><textarea id=\"Address\" name=\"Address\"></textarea><span class=\"dot-field__hint\">this is a hint</span>`;
         expect(element.innerHTML).toBe(tagsRenderExpected);
     });
 });

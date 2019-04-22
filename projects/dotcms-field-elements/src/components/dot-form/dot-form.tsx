@@ -1,9 +1,10 @@
 import { Component, Element, Event, EventEmitter, Listen, Prop, State } from '@stencil/core';
-import { DotCMSContentTypeField } from '../../../../dotcms/src/lib/models';
+import { DotCMSContentTypeField } from '../../models/dot-content-type-field';
 import { DotFormFields } from './dot-form-fields';
 
 const fieldMap = {
     Text : ((fieldParam: DotCMSContentTypeField) => DotFormFields.Text(fieldParam)),
+    Textarea : ((fieldParam: DotCMSContentTypeField) => DotFormFields.Textarea(fieldParam)),
     Checkbox : ((fieldParam: DotCMSContentTypeField) => DotFormFields.Checkbox(fieldParam)),
     Select : ((fieldParam: DotCMSContentTypeField) => DotFormFields.Select(fieldParam))
 };
@@ -78,7 +79,6 @@ export class DotFormComponent {
     render() {
         return (
             <form onSubmit={(evt: Event) => this.handleSubmit(evt)}>
-                <slot />
                 {this.fields.map((field: DotCMSContentTypeField) => this.getField(field))}
                 <button type='submit' disabled={this._valid ? null : true }>{this.submitLabel}</button>
                 <button type='button' onClick={() => this.resetForm()} >{this.resetLabel}</button>

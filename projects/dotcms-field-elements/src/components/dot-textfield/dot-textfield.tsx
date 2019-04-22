@@ -59,10 +59,10 @@ export class DotTextfieldComponent {
     render() {
         return (
             <Fragment>
-                <label>{this.label}</label>
+                <label htmlFor={this.name}>{this.label}</label>
                 <input
                     class={this._valid ? '' : 'dot-field__input--error'}
-                    name={this.name}
+                    id={this.name}
                     type="text"
                     value={this.value}
                     placeholder={this.placeholder}
