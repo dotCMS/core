@@ -12,6 +12,7 @@ import com.liferay.portal.model.User;
 
 public interface PortletAPI {
 
+	//Prefix used for new custom portlets
 	public final static String CONTENT_PORTLET_PREFIX="c_";
 
 	boolean hasContainerManagerRights(final User user);
@@ -19,7 +20,7 @@ public interface PortletAPI {
 	boolean hasTemplateManagerRights(final User user);
 	
 	Portlet findPortlet(final String id);
-	
+
 	Collection<Portlet> findAllPortlets () throws SystemException;
 	
 	boolean canAddPortletToLayout(final Portlet portlet);

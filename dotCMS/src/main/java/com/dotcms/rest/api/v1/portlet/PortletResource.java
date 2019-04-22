@@ -26,7 +26,10 @@ import java.util.HashMap;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 
-
+/**
+ * This Resource is for create custom portlets.
+ * These kind of custom portlets are to show diff types or content (content types or base types).
+ */
 @Path("/v1/portlet")
 @SuppressWarnings("serial")
 public class PortletResource implements Serializable {
@@ -46,6 +49,8 @@ public class PortletResource implements Serializable {
     this.webResource = webResource;
     this.portletApi = portletApi;
   }
+
+
 
   @POST
   @Path("/custom")

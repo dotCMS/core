@@ -100,7 +100,9 @@ public class PortletConfigImpl implements PortletConfig {
 			String poolId = _portletId;
 
 			ResourceBundle bundle = (ResourceBundle)_bundlePool.get(poolId);
-			if(bundle==null) bundle=new com.liferay.portlet.StrutsResourceBundle(poolId, "dotcms.org", locale);
+			if(bundle==null) {
+				bundle=new com.liferay.portlet.StrutsResourceBundle(poolId, "dotcms.org", locale);
+			}
 			if (bundle == null) {
 				StringBuffer sb = new StringBuffer();
 

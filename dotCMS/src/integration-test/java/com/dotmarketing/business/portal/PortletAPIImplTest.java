@@ -125,7 +125,6 @@ public class PortletAPIImplTest {
         try {
             Collection<Portlet> portlets =  portletApi.findAllPortlets();
             portlet = createCustomPortlet("testCustomPortlet", "testCustomPortlet", "Persona", "");
-            Assert.assertNotEquals(portlets.size(),portletApi.findAllPortlets().size());
             Assert.assertEquals(portlets.size()+1,portletApi.findAllPortlets().size());
         }finally {
             if(portlet!=null){

@@ -192,14 +192,14 @@ public class PortletFactoryImpl extends PrincipalBean implements PortletFactory 
     return portlets;
   }
 
-  private Optional<DotPortlet> fromMap(Map<String, Object> map) {
-    Portlet testPortlet = new Portlet((String) map.get("portletid"), (String) map.get("groupid"), (String) map.get("companyid"),
+  private Optional<DotPortlet> fromMap(final Map<String, Object> map) {
+    final Portlet portlet = new Portlet((String) map.get("portletid"), (String) map.get("groupid"), (String) map.get("companyid"),
         (String) map.get("defaultpreferences"), false, (String) map.get("roles"), true);
     try {
       return xmlToPortlet((String) map.get("defaultpreferences"));
 
     } catch (Exception e) {
-      Logger.warn(this.getClass(), "unable to parse portlet from xml:" + testPortlet.getPortletId() + " " + e);
+      Logger.warn(this.getClass(), "unable to parse portlet from xml:" + portlet.getPortletId() + " " + e);
     }
     return Optional.empty();
 
