@@ -82,5 +82,6 @@ public enum SystemEventType {
 
 	UPDATE_PORTLET_LAYOUTS,
 
-	MESSAGE
+	MESSAGE,
+	LARGE_MESSAGE
 }
