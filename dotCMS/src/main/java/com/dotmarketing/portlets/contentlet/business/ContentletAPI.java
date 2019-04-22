@@ -1765,4 +1765,11 @@ public interface ContentletAPI {
     Optional<Contentlet> findContentletByIdentifierOrFallback(String identifier, boolean live, long incomingLangId, User user,
             boolean respectFrontendRoles);
 
+    /**
+     * System function for finding a contentlet by inode via the database
+     * @param inode
+     * @return
+     */
+    Optional<Contentlet> findInDb(String inode);
+
 }

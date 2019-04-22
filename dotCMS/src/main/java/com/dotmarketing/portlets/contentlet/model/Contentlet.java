@@ -533,6 +533,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 */
 	public void setStringProperty(String fieldVarName,String stringValue) throws DotRuntimeException {
 		map.put(fieldVarName, stringValue);
+		addRemoveNullProperty(fieldVarName, stringValue);
 	}
 
     /**
@@ -540,7 +541,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
      * @throws DotRuntimeException
      */
     public void setStringProperty(com.dotcms.contenttype.model.field.Field field,String stringValue) throws DotRuntimeException {
-        map.put(field.variable(), stringValue);
+        setStringProperty(field.variable(), stringValue);
     }
 	/**
 	 *
@@ -550,9 +551,11 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 */
 	public void setLongProperty(String fieldVarName, long longValue) throws DotRuntimeException {
 		map.put(fieldVarName, longValue);
+		addRemoveNullProperty(fieldVarName, longValue);
 	}
-    public void setLongProperty(com.dotcms.contenttype.model.field.Field field,long stringValue) throws DotRuntimeException {
-        map.put(field.variable(), stringValue);
+    public void setLongProperty(com.dotcms.contenttype.model.field.Field field,long longValue) throws DotRuntimeException {
+        setLongProperty(field.variable(), longValue);
+
     }
 	/**
 	 *
@@ -576,13 +579,14 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 */
 	public void setBoolProperty(String fieldVarName, boolean boolValue) throws DotRuntimeException {
 		map.put(fieldVarName, boolValue);
+		addRemoveNullProperty(fieldVarName, boolValue);
 	}
     /**
      * @param boolValue
      * @throws DotRuntimeException
      */
     public void setBoolProperty(com.dotcms.contenttype.model.field.Field field, boolean boolValue) throws DotRuntimeException {
-        map.put(field.variable(), boolValue);
+        setBoolProperty(field.variable(), boolValue);
     }
 
 	/**
@@ -641,6 +645,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 */
 	public void setFloatProperty(String fieldVarName, float floatValue) throws DotRuntimeException {
 		map.put(fieldVarName, floatValue);
+		addRemoveNullProperty(fieldVarName, floatValue);
 	}
 
     /**
@@ -648,7 +653,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
      * @throws DotRuntimeException
      */
     public void setFloatProperty(com.dotcms.contenttype.model.field.Field field, float floatValue) throws DotRuntimeException {
-        map.put(field.variable(), floatValue);
+		setFloatProperty(field.variable(), floatValue);
     }
 
 	/**
@@ -676,17 +681,21 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	        setRelated(fieldVarName, (List<Contentlet>) objValue);
         } else{
             map.put(fieldVarName, objValue);
-            if (!NULL_PROPERTIES.equals(fieldVarName)) { // No need to keep track of the null property it self.
-                if (null == objValue) {
-                    addNullProperty(fieldVarName);
-                } else {
-                    removeNullProperty(fieldVarName);
-                }
-            }
-        }
+			addRemoveNullProperty(fieldVarName, objValue);
+		}
 	}
 
-    /**
+	private void addRemoveNullProperty(String fieldVarName, Object objValue) {
+		if (!NULL_PROPERTIES.equals(fieldVarName)) { // No need to keep track of the null property it self.
+			if (null == objValue) {
+				addNullProperty(fieldVarName);
+			} else {
+				removeNullProperty(fieldVarName);
+			}
+		}
+	}
+
+	/**
      * @param fieldVarName
      * @return
      */

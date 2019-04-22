@@ -29,7 +29,7 @@ public class SiteSearchAjaxActionTest {
 	@Before
 	public void prepare() throws Exception {
 		HttpServletRequest req=ServletTestRunner.localRequest.get();
-		baseURL = "http://"+req.getServerName()+":"+req.getServerPort()+"/DotAjaxDirector/com.dotmarketing.sitesearch.ajax.SiteSearchAjaxAction/cmd/scheduleJob/u/admin@dotcms.com/p/admin";
+		baseURL = "http://"+req.getServerName()+":"+req.getServerPort()+"/DotAjaxDirector/com.dotmarketing.sitesearch.ajax.SiteSearchAjaxAction/cmd/scheduleJob/user/admin@dotcms.com/password/admin";
 	}
 
 	@Test

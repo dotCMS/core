@@ -113,20 +113,7 @@ public class ConfigUtils {
     } //getStaticPublishPath.
 
 	public static String getServerId(){
-		String serverId;
-		if (Config.getStringProperty("DIST_INDEXATION_SERVER_ID")==null || Config.getStringProperty("DIST_INDEXATION_SERVER_ID").equalsIgnoreCase("")) {
-			serverId = APILocator.getServerAPI().readServerId();
-
-			if(!UtilMethods.isSet(serverId)) {
-				serverId = UUID.randomUUID().toString();
-
-			}
-
-			Config.setProperty("DIST_INDEXATION_SERVER_ID", serverId);
-		} else {
-			serverId= Config.getStringProperty("DIST_INDEXATION_SERVER_ID");
-		}
-		return serverId;
+		return APILocator.getServerAPI().readServerId();
 	}
 
 

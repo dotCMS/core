@@ -2489,6 +2489,22 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 
         return savedContentlet;
     }
+    @Override
+    public Optional<Contentlet> findInDb(String inode) {
+        for (ContentletAPIPreHook pre : preHooks) {
+            boolean preResult = pre.findInDb(inode);
+            if (!preResult) {
+                Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+                throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+            }
+        }
+        Optional<Contentlet> savedContentlet =
+                conAPI.findInDb(inode);
+        for (ContentletAPIPostHook post : postHooks) {
+            post.findInDb(inode);
+        }
 
+        return savedContentlet;
+    }
 
 }

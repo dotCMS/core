@@ -4,7 +4,7 @@
 <%@page import="com.dotcms.listeners.SessionMonitor"%>
 <%@page import="com.dotcms.content.elasticsearch.business.ContentletIndexAPI"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
-<%@page import="com.dotcms.content.elasticsearch.business.ESContentletIndexAPI"%>
+<%@page import="com.dotcms.content.elasticsearch.business.ContentletIndexAPIImpl"%>
 <%@page import="com.dotmarketing.portlets.structure.factories.StructureFactory"%>
 <%@page import="com.dotmarketing.util.Config"%>
 <%@page import="com.dotcms.content.elasticsearch.business.ESIndexAPI"%>
@@ -77,8 +77,8 @@ function checkReindexationCallback (response) {
 	var lastIndexationProgress = response['lastIndexationProgress'];
 	var currentIndexPath = response['currentIndexPath'];
 	var newIndexPath = response['newIndexPath'];
-	var lastIndexationStartTime = ' ';
-	var lastIndexationEndTime = ' ';
+	var reindexTimeElapsed = response['reindexTimeElapsed'];
+
 
 	var reindexationInProgressDiv = document.getElementById("reindexationInProgressDiv");
 	if (inFullReindexation) {
@@ -91,17 +91,17 @@ function checkReindexationCallback (response) {
 
 		reindexationInProgressDiv.style.display = "";
 
-
 		var bar = dijit.byId("reindexProgressBar");
 		if(bar != undefined){
-		    dijit.byId("reindexProgressBar").update({
+		    bar.update({
 		      maximum: contentCountToIndex,
 		      progress: lastIndexationProgress
 		    });
+		    bar.attr("style", "width:500px;margin:10px;");
 		}
 		stillInReindexation = true;
 		var indexationProgressDiv = document.getElementById("indexationProgressDiv");
-		indexationProgressDiv.innerHTML = "<%= LanguageUtil.get(pageContext,"Reindex-Progress") %>: " + lastIndexationProgress + " / " + contentCountToIndex + " ";
+		indexationProgressDiv.innerHTML = "<div style='text-align:center;'><%= LanguageUtil.get(pageContext,"Reindex-Progress") %> : " + lastIndexationProgress + " / " + contentCountToIndex + "<br><%= LanguageUtil.get(pageContext,"Time") %> : "  + reindexTimeElapsed ;
 	} else {
 		dojo.query(".indexActionsDiv").style("display","");
 		reindexationInProgressDiv.style.display = "none";
@@ -111,7 +111,7 @@ function checkReindexationCallback (response) {
 
 		}
 	}
-	setTimeout("checkReindexation()", 8000);
+	setTimeout("checkReindexation()", 5000);
 }
 
 function checkReindexation () {

@@ -1037,6 +1037,7 @@ create table identifier (
    asset_type varchar(64),
    syspublish_date datetime,
    sysexpire_date datetime,
+   full_path_lc varchar(510) as ( IF(parent_path = 'System folder', '/', lower(concat(parent_path, asset_name)) )),
    primary key (id),
    unique (parent_path, asset_name, host_inode)
 );
@@ -1736,7 +1737,7 @@ DECLARE v_time_entered TIMESTAMP;
 DECLARE v_index_val VARCHAR(325);
 DECLARE v_dist_action INT;
 DECLARE cursor_end BOOL DEFAULT FALSE;
-DECLARE cur1 CURSOR FOR SELECT * FROM dist_reindex_journal WHERE serverid IS NULL or serverid='' AND priority <= priority_level ORDER BY priority ASC LIMIT records_to_fetch FOR UPDATE;
+DECLARE cur1 CURSOR FOR SELECT * FROM dist_reindex_journal WHERE serverid IS NULL or serverid='' AND priority <= priority_level ORDER BY priority ASC LIMIT records_to_fetch;
 DECLARE CONTINUE HANDLER FOR NOT FOUND SET cursor_end:=TRUE;
 
 DROP TEMPORARY TABLE IF EXISTS tmp_records_reindex;
@@ -1770,7 +1771,7 @@ BEGIN
 DECLARE idCount INT;
 DECLARE canUpdate boolean default false;
  IF @disable_trigger IS NULL THEN
-   select count(id)into idCount from identifier where asset_type='folder' and CONCAT(parent_path,asset_name,'/')= NEW.parent_path and host_inode = NEW.host_inode and id <> NEW.id;
+   select count(id)into idCount from identifier where asset_type='folder' and CONCAT(parent_path,asset_name,'/') = NEW.parent_path and host_inode = NEW.host_inode and id <> NEW.id;
    IF(idCount > 0 OR NEW.parent_path = '/' OR NEW.parent_path = '/System folder') THEN
      SET canUpdate := TRUE;
    END IF;
@@ -2335,3 +2336,4 @@ CREATE TABLE api_token_issued(
 
 create index idx_api_token_issued_user ON api_token_issued (token_userid);
 
+CREATE UNIQUE INDEX idx_ident_uniq_asset_name on identifier (full_path_lc,host_inode);

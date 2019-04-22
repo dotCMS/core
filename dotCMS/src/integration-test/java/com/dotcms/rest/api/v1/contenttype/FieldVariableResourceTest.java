@@ -40,7 +40,7 @@ public class FieldVariableResourceTest {
 
 	private static final ObjectMapper mapper = new ObjectMapper();
 
-	private static final String typeName="fieldVariableResourceTest" + UUIDUtil.uuid();
+	private static final String typeName="fieldVariableResourceTest" + System.currentTimeMillis();
 	private static final String fieldName="name";
 
 	@BeforeClass

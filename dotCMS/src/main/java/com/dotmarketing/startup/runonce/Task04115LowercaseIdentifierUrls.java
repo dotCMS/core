@@ -1,5 +1,7 @@
 package com.dotmarketing.startup.runonce;
 
+import static com.dotmarketing.portlets.folders.business.FolderAPI.SYSTEM_FOLDER_PARENT_PATH;
+
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -83,7 +85,7 @@ public class Task04115LowercaseIdentifierUrls implements StartupTask {
                     final String originalParentPath = identifiers.getString(2);
                     final String originalAssetName = identifiers.getString(3);
                     // Double-check that '/System folder' must not be modified
-                    if ("/system folder".equalsIgnoreCase(originalParentPath)) {
+                    if (SYSTEM_FOLDER_PARENT_PATH.equalsIgnoreCase(originalParentPath)) {
                         continue;
                     }
                     final String parentPathLowercase = originalParentPath.toLowerCase();
