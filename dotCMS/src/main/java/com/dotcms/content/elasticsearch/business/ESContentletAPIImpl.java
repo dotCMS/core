@@ -4278,10 +4278,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
         }
 
+
         for (Map.Entry<String, Object> property : properties.entrySet()) {
             String conVariable = property.getKey();
             Object value = property.getValue();
             try{
+                if(conVariable.equals(Contentlet.NULL_PROPERTIES)) {
+                    continue;
+                }
                 if(conVariable.equals(Contentlet.INODE_KEY)){
                     contentlet.setInode((String)value);
                 }else if(conVariable.equals(Contentlet.LANGUAGEID_KEY)){
@@ -4345,7 +4349,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 Logger.error(this,"IO Error in copying Binary File object ", ioe);
             }
 
+        }
 
+         //if we have a nullProperties variable, it needs to be the last one set
+        if(UtilMethods.isSet(properties.get(Contentlet.NULL_PROPERTIES))) {
+            contentlet.setProperty(Contentlet.NULL_PROPERTIES,
+                    properties.get(Contentlet.NULL_PROPERTIES));
         }
 
         // workflow
