@@ -181,11 +181,11 @@ public class ContentletAjaxTest {
 
 			final ContentletAjax contentletAjax = new ContentletAjax();
 			List<String[]> languageVariablesList = contentletAjax.doSearchGlossaryTerm("test","1");
-			Assert.assertEquals(1,languageVariablesList.size());
+			Assert.assertEquals("languageVariablesList: " + languageVariablesList.toString(),1,languageVariablesList.size());
 			languageVariablesList = contentletAjax.doSearchGlossaryTerm("powered.by.dot","1");
-			Assert.assertEquals(1,languageVariablesList.size());
+			Assert.assertEquals("languageVariablesList: " + languageVariablesList.toString(),1,languageVariablesList.size());
 			languageVariablesList = contentletAjax.doSearchGlossaryTerm("powered.by","1");
-			Assert.assertEquals(2,languageVariablesList.size());
+			Assert.assertEquals("languageVariablesList: " + languageVariablesList.toString(),2,languageVariablesList.size());
 
 		}finally {
 			if(languageVariable1 != null){
