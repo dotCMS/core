@@ -91,7 +91,7 @@ export class DotcmsEventsService {
     /**
      * Listen  when the socket is opened
      *
-     * @returns {Observable<boolean>}
+     * @returns Observable<boolean>
      * @memberof DotcmsEventsService
      */
     open(): Observable<boolean> {
