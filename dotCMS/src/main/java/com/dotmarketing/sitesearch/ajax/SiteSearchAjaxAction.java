@@ -12,7 +12,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.dotcms.content.elasticsearch.business.DotIndexException;
-import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;
+import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImpl;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchConfig;
@@ -114,7 +114,7 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
 			Logger.warn(this, e.getMessage(), e);
 		}
 
-		String indexName = SiteSearchAPI.ES_SITE_SEARCH_NAME + "_" + ESContentletIndexAPI.timestampFormatter.format(new Date());
+		String indexName = SiteSearchAPI.ES_SITE_SEARCH_NAME + "_" + ContentletIndexAPIImpl.timestampFormatter.format(new Date());
 		APILocator.getSiteSearchAPI().createSiteSearchIndex(indexName, alias, shards);
 
 		if(def)

@@ -10,6 +10,7 @@ import com.dotcms.content.business.ContentMappingAPI;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.content.elasticsearch.util.ESClient;
+import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -274,14 +275,26 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 				if (UtilMethods.isSet(lowerCaseValue) && (lowerCaseValue instanceof String || (
 						//filters relationships
-						lowerCaseValue instanceof List && !lowerCaseKey
+						 !lowerCaseKey
 								.endsWith(ESMappingConstants.TAGS) && !lowerCaseKey
 								.endsWith(ESMappingConstants.SUFFIX_ORDER)))) {
 
 					if (lowerCaseValue instanceof String){
 						lowerCaseValue = ((String) lowerCaseValue).toLowerCase();
 					}
-
+					// add relationships to catchall
+                    if (lowerCaseValue instanceof List){
+                        List<Object> valList = (List<Object>) lowerCaseValue;
+                        for(Object listVal : valList) {
+                            if (listVal!=null && listVal instanceof String){
+                                sw.append(((String) listVal).toLowerCase().toString()).append(' ');
+                            }
+                        }
+                    }
+					
+					
+					
+					
 					if (!lowerCaseKey.endsWith(TEXT)){
 						//for example: when lowerCaseValue=moddate, moddate_dotraw must be created from its moddate_text if exists
 						//when the moddate_text is evaluated.
@@ -647,6 +660,14 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 						m.put(keyNameText, valueObj.toString());
 					}
 				}
+
+				// Store sha256 hash for unique fields in the index
+				if (f.isUnique() && m.containsKey(keyName)) {
+					final Object uniqueValue = m.get(keyName);
+					m.put(keyName + ESUtils.SHA_256,
+							ESUtils.sha256(keyName, uniqueValue, con.getLanguageId()));
+				}
+
 			} catch (Exception e) {
 				Logger.warn(ESMappingAPIImpl.class, "Error indexing field: " + f.getFieldName()
 						+ " of contentlet: " + con.getInode(), e);

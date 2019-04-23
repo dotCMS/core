@@ -12,6 +12,8 @@ import java.io.Serializable;
  */
 public interface JsonWebTokenAuthCredentialProcessor extends Serializable {
 
+    String BEARER = "Bearer ";
+
     /**
      * Process the authentication credentials based on the jwt authorization header (it should starts with BEARER prefix)
      * @param authorizationHeader {@link String}

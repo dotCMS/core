@@ -15,8 +15,13 @@ import com.dotcms.content.elasticsearch.business.event.ContentletCheckinEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletDeletedEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletPublishEvent;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
+import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.contenttype.business.ContentTypeAPI;
-import com.dotcms.contenttype.model.field.*;
+import com.dotcms.contenttype.model.field.CategoryField;
+import com.dotcms.contenttype.model.field.ConstantField;
+import com.dotcms.contenttype.model.field.DataTypes;
+import com.dotcms.contenttype.model.field.HostFolderField;
+import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeIf;
@@ -54,10 +59,9 @@ import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.QueryUtil;
 import com.dotmarketing.business.query.ValidationException;
 import com.dotmarketing.cache.FieldsCache;
-import com.dotmarketing.common.business.journal.DistributedJournalAPI;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.model.ContentletSearch;
-import com.dotmarketing.common.reindex.ReindexThread;
+import com.dotmarketing.common.reindex.ReindexQueueAPI;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
@@ -189,14 +193,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private static final String NEVER_EXPIRE                              = "NeverExpire";
     private static final String CHECKIN_IN_PROGRESS                      = "__checkin_in_progress__";
 
-    private final ESContentletIndexAPI  indexAPI;
+    private final ContentletIndexAPIImpl  indexAPI;
     private final ESContentFactoryImpl  contentFactory;
     private final PermissionAPI         permissionAPI;
     private final CategoryAPI           categoryAPI;
     private final RelationshipAPI       relationshipAPI;
     private final FieldAPI              fieldAPI;
     private final LanguageAPI           languageAPI;
-    private final DistributedJournalAPI<String> distributedJournalAPI;
+    private final ReindexQueueAPI reindexQueueAPI;
     private final TagAPI                tagAPI;
     private final IdentifierStripedLock lockManager;
 
@@ -215,14 +219,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * Default class constructor.
      */
     public ESContentletAPIImpl () {
-        indexAPI = new ESContentletIndexAPI();
+        indexAPI = new ContentletIndexAPIImpl();
         fieldAPI = APILocator.getFieldAPI();
         contentFactory = new ESContentFactoryImpl();
         permissionAPI = APILocator.getPermissionAPI();
         categoryAPI = APILocator.getCategoryAPI();
         relationshipAPI = APILocator.getRelationshipAPI();
         languageAPI = APILocator.getLanguageAPI();
-        distributedJournalAPI = APILocator.getDistributedJournalAPI();
+        reindexQueueAPI = APILocator.getReindexQueueAPI();
         tagAPI = APILocator.getTagAPI();
         contentletSystemEventUtil = ContentletSystemEventUtil.getInstance();
         localSystemEventsAPI      = APILocator.getLocalSystemEventsAPI();
@@ -289,6 +293,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DotSecurityException("User:" + userId + " does not have permissions on Contentlet "+ContentletUtil
                     .toShortString(contentlet));
         }
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public Optional<Contentlet> findInDb(final String inode) {
+
+        return contentFactory.findInDb(inode);
+
     }
 
     @CloseDBIfOpened
@@ -497,8 +509,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @Override
     public void publish(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException, DotStateException {
 
-
-
             String contentPushPublishDate = contentlet.getStringProperty("wfPublishDate");
             String contentPushExpireDate = contentlet.getStringProperty("wfExpireDate");
 
@@ -607,7 +617,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if (!contentlet.isWorking())
             throw new DotContentletStateException("Only the working version can be published");
 
-        indexAPI.addContentToIndex(contentlet, true, true);
+        indexAPI.addContentToIndex(contentlet, true, false);
 
         // Publishes the files associated with the Contentlet
         List<Field> fields = FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode());
@@ -868,7 +878,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
             try{
                 Map<String, Object> sourceMap = sh.getSourceAsMap();
                 ContentletSearch conwrapper= new ContentletSearch();
-
+                conwrapper.setId(sh.getId());
+                conwrapper.setIndex(sh.getIndex());
                 conwrapper.setIdentifier(sourceMap.get("identifier").toString());
                 conwrapper.setInode(sourceMap.get("inode").toString());
                 conwrapper.setScore(sh.getScore());
@@ -1695,10 +1706,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
             // Force unpublishing and archiving the contentlet
             try{
                 if (con.isLive()) {
-                    unpublish(con, user);
+                    unpublish(con, user, 0);
                 }
                 if (!con.isArchived()) {
-                    archive(con, user, false);
+                    archive(con, user, false, true);
                 }
             }
             // make destroy more robust if we cannot find ContentletVersionInfo
@@ -1724,6 +1735,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     respectFrontendRoles));
             // Remove page contents (if the content is a Content Page)
             List<MultiTree> mts = APILocator.getMultiTreeAPI().getMultiTreesByChild(con.getIdentifier());
+
             for (MultiTree mt : mts) {
                 Identifier pageIdent = APILocator.getIdentifierAPI().find(mt.getParent1());
                 if (pageIdent != null && UtilMethods.isSet(pageIdent.getInode())) {
@@ -1732,7 +1744,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     if (page != null && UtilMethods.isSet(page.getIdentifier()))
                         new PageLoader().invalidate(page);
                     }
-                    catch(DotContentletStateException dcse) {
+                    catch(DotStateException dcse) {
                         Logger.warn(this.getClass(), "Page with id:" +pageIdent.getId() +" does not exist" );
                     }
                 }
@@ -2140,6 +2152,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @WrapInTransaction
     @Override
     public void archive(final Contentlet contentlet, final User user, final boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException {
+        archive(contentlet, user, respectFrontendRoles, false);
+    }
+
+    private void archive(final Contentlet contentlet, final User user, final boolean respectFrontendRoles, final boolean isDestroy) throws DotDataException,DotSecurityException, DotContentletStateException {
         logContentletActivity(contentlet, "Archiving Content", user);
         try {
 
@@ -2181,7 +2197,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                 if (liveContentlet != null && InodeUtils.isSet(liveContentlet.getInode())) {
                     APILocator.getVersionableAPI().removeLive(liveContentlet);
-                    indexAPI.removeContentFromLiveIndex(liveContentlet);
+                    if (!isDestroy) {
+                        indexAPI.removeContentFromLiveIndex(liveContentlet);
+                    }
                 }
 
                 // sets deleted to true
@@ -2190,7 +2208,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 // Updating lucene index
                 workingContentlet.setIndexPolicy(indexPolicy);
                 workingContentlet.setIndexPolicyDependencies(indexPolicyDependencies);
-                indexAPI.addContentToIndex(workingContentlet);
+                if (!isDestroy) {
+                    indexAPI.addContentToIndex(workingContentlet);
+                }
 
                 if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
                     Identifier ident = APILocator.getIdentifierAPI().find(contentlet);
@@ -2304,7 +2324,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @Override
     public void reindex(Structure structure)throws DotReindexStateException {
         try {
-            distributedJournalAPI.addStructureReindexEntries(structure.getInode());
+            reindexQueueAPI.addStructureReindexEntries(structure.getInode());
         } catch (DotDataException e) {
             Logger.error(this, e.getMessage(), e);
             throw new DotReindexStateException("Unable to complete reindex",e);
@@ -2320,7 +2340,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @Override
     public void refresh(Structure structure) throws DotReindexStateException {
         try {
-            distributedJournalAPI.addStructureReindexEntries(structure.getInode());
+            reindexQueueAPI.addStructureReindexEntries(structure.getInode());
             //CacheLocator.getContentletCache().clearCache();
         } catch (DotDataException e) {
             Logger.error(this, e.getMessage(), e);
@@ -2338,60 +2358,31 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private void refreshNoDeps(final Contentlet contentlet) throws DotReindexStateException,
             DotDataException {
         indexAPI.addContentToIndex(contentlet, false);
-        CacheLocator.getContentletCache().add(contentlet.getInode(), contentlet);
-    }
 
+    }
+    @CloseDBIfOpened
     @Override
     public void refresh(Contentlet contentlet) throws DotReindexStateException,
             DotDataException {
         indexAPI.addContentToIndex(contentlet);
-        CacheLocator.getContentletCache().add(contentlet.getInode(), contentlet);
+
     }
 
+    @CloseDBIfOpened
     @Override
     public void refreshAllContent() throws DotReindexStateException {
         try {
-            HibernateUtil.startTransaction();
-
-            // we lock the table dist_reindex_journal until we
-            ReindexThread.getInstance().lockCluster();
-
             if(indexAPI.isInFullReindex()){
-                try{
-                    ReindexThread.getInstance().unlockCluster();
-                    HibernateUtil.closeAndCommitTransaction();
-                }catch (Exception e) {
-                    try {
-                        HibernateUtil.rollbackTransaction();
-                    } catch (DotHibernateException e1) {
-                        Logger.warn(this, e1.getMessage(),e1);
-                    }
-                }
                 return;
             }
             // we prepare the new index and aliases to point both old and new
-            indexAPI.setUpFullReindex();
+            indexAPI.fullReindexStart();
 
             // new records to index
-            distributedJournalAPI.addBuildNewIndexEntries();
-
-            // then we let the reindexThread start working
-            ReindexThread.getInstance().unlockCluster();
-            //Make sure all the flags are on and the thread is ready
-            ReindexThread.startThread(Config.getIntProperty("REINDEX_THREAD_SLEEP", 500), Config.getIntProperty("REINDEX_THREAD_INIT_DELAY", 5000));
-
-            HibernateUtil.closeAndCommitTransaction();
+            reindexQueueAPI.addAllToReindexQueue();
 
         } catch (Exception e) {
-            Logger.error(this, e.getMessage(), e);
-            try {
-                HibernateUtil.rollbackTransaction();
-            } catch (DotHibernateException e1) {
-                Logger.warn(this, e1.getMessage(),e1);
-            }
-            throw new DotReindexStateException("Unable to complete reindex",e);
-        } finally {
-            HibernateUtil.closeSessionSilently();
+            throw new DotReindexStateException(e.getMessage(),e);
         }
 
     }
@@ -2400,7 +2391,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @Override
     public void refreshContentUnderHost(Host host) throws DotReindexStateException {
         try {
-            distributedJournalAPI.refreshContentUnderHost(host);
+            reindexQueueAPI.refreshContentUnderHost(host);
         } catch (DotDataException e) {
             Logger.error(this, e.getMessage(), e);
             throw new DotReindexStateException("Unable to complete reindex",e);
@@ -2412,7 +2403,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @Override
     public void refreshContentUnderFolder(Folder folder) throws DotReindexStateException {
         try {
-            distributedJournalAPI.refreshContentUnderFolder(folder);
+            reindexQueueAPI.refreshContentUnderFolder(folder);
         } catch (DotDataException e) {
             Logger.error(this, e.getMessage(), e);
             throw new DotReindexStateException("Unable to complete reindex",e);
@@ -2424,7 +2415,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @Override
     public void refreshContentUnderFolderPath ( String hostId, String folderPath ) throws DotReindexStateException {
         try {
-            distributedJournalAPI.refreshContentUnderFolderPath(hostId, folderPath);
+            reindexQueueAPI.refreshContentUnderFolderPath(hostId, folderPath);
         } catch ( DotDataException e ) {
             Logger.error(this, e.getMessage(), e);
             throw new DotReindexStateException("Unable to complete reindex", e);
@@ -2443,11 +2434,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DotSecurityException("User: " + (user != null ? user.getUserId() : "Unknown") + " cannot unpublish Contentlet");
         }
 
-        unpublish(contentlet, user);
+        unpublish(contentlet, user, -1);
     }
 
 
-    private void unpublish(final Contentlet contentlet, final User user) throws DotDataException,DotSecurityException, DotContentletStateException {
+    private void unpublish(final Contentlet contentlet, final User user, int reindex) throws DotDataException,DotSecurityException, DotContentletStateException {
 
         if(contentlet == null || !UtilMethods.isSet(contentlet.getInode())) {
 
@@ -2480,7 +2471,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 APILocator.getPersonaAPI().enableDisablePersonaTag(contentlet, false);
             }
 
-            indexAPI.addContentToIndex(contentlet);
+            if (reindex == -1) {
+                indexAPI.addContentToIndex(contentlet);
+            }
             indexAPI.removeContentFromLiveIndex(contentlet);
 
             if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
@@ -4283,10 +4276,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
         }
 
+
         for (Map.Entry<String, Object> property : properties.entrySet()) {
             String conVariable = property.getKey();
             Object value = property.getValue();
             try{
+                if(conVariable.equals(Contentlet.NULL_PROPERTIES)) {
+                    continue;
+                }
                 if(conVariable.equals(Contentlet.INODE_KEY)){
                     contentlet.setInode((String)value);
                 }else if(conVariable.equals(Contentlet.LANGUAGEID_KEY)){
@@ -4350,7 +4347,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 Logger.error(this,"IO Error in copying Binary File object ", ioe);
             }
 
+        }
 
+         //if we have a nullProperties variable, it needs to be the last one set
+        if(UtilMethods.isSet(properties.get(Contentlet.NULL_PROPERTIES))) {
+            contentlet.setProperty(Contentlet.NULL_PROPERTIES,
+                    properties.get(Contentlet.NULL_PROPERTIES));
         }
 
         // workflow
@@ -4888,8 +4890,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                     buffy.append(" +languageId:" + contentlet.getLanguageId());
 
-                    buffy.append(" +" + contentlet.getStructure().getVelocityVarName() + "." + field.getVelocityVarName() + ":");
-                    buffy.append( (field.getDataType().contains(DataTypes.INTEGER.toString()) || field.getDataType().contains(DataTypes.FLOAT.toString())) ? escape(getFieldValue(contentlet, field).toString()) : "\""+ escape(getFieldValue(contentlet, field).toString()) + "\"" );
+                    buffy.append(" +" + contentlet.getContentType().variable() + "." + field
+                            .getVelocityVarName() + ESUtils.SHA_256 + ":");
+                    buffy.append(ESUtils.sha256(contentlet.getContentType().variable()
+                                    + "." + field.getVelocityVarName(),
+                            getFieldValue(contentlet, new LegacyFieldTransformer(field).from()),
+                            contentlet.getLanguageId()));
                     List<ContentletSearch> contentlets = new ArrayList<ContentletSearch>();
                     try {
                         contentlets = searchIndex(buffy.toString(), -1, 0, "inode", APILocator.getUserAPI().getSystemUser(), false);
@@ -5011,13 +5017,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @CloseDBIfOpened
     @Override
-    public void validateContentlet(Contentlet contentlet,
+    public void validateContentlet(final Contentlet contentlet,
                                    ContentletRelationships contentRelationships, List<Category> cats)
             throws DotContentletValidationException {
         if (contentlet.getMap().get(Contentlet.DONT_VALIDATE_ME) != null) {
             return;
         }
-
 
         String stInode = contentlet.getStructureInode();
         if (!InodeUtils.isSet(stInode)) {

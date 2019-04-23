@@ -8,8 +8,6 @@ import com.dotmarketing.business.cache.transport.CacheTransport;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.DotHibernateException;
-import com.dotmarketing.util.Logger;
 
 /**
  * this class wraps our cache administrator and will automatically make cache removes and puts
@@ -38,11 +36,32 @@ class CommitListenerCacheWrapper implements DotCacheAdministrator {
 
     @Override
     public void flushAll() {
+        if (DbConnectionFactory.inTransaction()) {
+            final Runnable runner = new FlushCacheRunnable() {
+                public void run() {
+                    dotcache.flushAll();
+                }
+            };
+            HibernateUtil.addRollbackListener("flushAll" ,runner);
+            HibernateUtil.addCommitListener("flushAll" , runner);
+        }
+        
         dotcache.flushAll();
     }
 
     @Override
     public void flushGroup(String group) {
+        
+        if (DbConnectionFactory.inTransaction()) {
+            final Runnable runner = new FlushCacheRunnable() {
+                public void run() {
+                    dotcache.flushGroup(group);
+                }
+            };
+            HibernateUtil.addRollbackListener("flushGroup" + group,runner);
+            HibernateUtil.addCommitListener("flushGroup" + group, runner);
+    }
+        
         dotcache.flushGroup(group);
     }
 

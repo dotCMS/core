@@ -446,7 +446,9 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         Identifier sourceIdent = identifierAPI.find( page );
         Host host = APILocator.getHostAPI().find( sourceIdent.getHostId(), user, false );
         Identifier targetIdent = identifierAPI.find( host, sourceIdent.getParentPath() + newName );
-        if ( targetIdent == null || !InodeUtils.isSet( targetIdent.getId() ) ) {
+        if (targetIdent == null || !InodeUtils.isSet(targetIdent.getId())
+          || sourceIdent.getId().equals(targetIdent.getId())) // we can rename the page itself
+         {
             Contentlet cont = contentletAPI.checkout( page.getInode(), user, false );
             cont.setStringProperty( URL_FIELD, newName );
             cont = contentletAPI.checkin( cont, user, false );
@@ -865,7 +867,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
                     user, respectFrontEndPermissions);
             htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
 
-        } catch (DotContentletStateException dse) {
+        } catch (DotStateException dse) {
             htmlPage = findPageInDefaultLanguageDifferentThanProvided(identifier, tryLang, live, user,
                     respectFrontEndPermissions, dse);
 
@@ -876,7 +878,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
     private IHTMLPage findPageInDefaultLanguageDifferentThanProvided(String identifier, long providedLang, boolean live,
                                                                      User user, boolean respectFrontEndPermissions,
-                                                                     DotContentletStateException dse)
+            DotStateException dse)
             throws DotDataException, DotSecurityException {
         Contentlet contentlet;
         IHTMLPage htmlPage;
@@ -887,7 +889,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
                 contentlet = APILocator.getContentletAPI().findContentletByIdentifier(identifier, live,
                     languageAPI.getDefaultLanguage().getId(), user, respectFrontEndPermissions);
                 htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
-            } catch(DotContentletStateException e) {
+            } catch(DotStateException e) {
                 throw new ResourceNotFoundException(
                         "Can't find content. Identifier: " + identifier + ", Live: " + live + ", Lang: "
                                 + languageAPI.getDefaultLanguage().getId(), e);

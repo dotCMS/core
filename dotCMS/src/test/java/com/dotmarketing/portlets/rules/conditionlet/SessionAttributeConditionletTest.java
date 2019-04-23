@@ -242,8 +242,8 @@ public class SessionAttributeConditionletTest extends UnitTestBase {
         }
 
         TestCase withMockedActualValue(String key, String value){
-            when(this.request.getSession()).thenReturn(stubSession);
-            when(this.request.getSession().getAttribute(key)).thenReturn(value);
+            when(this.request.getSession(false)).thenReturn(stubSession);
+            when(this.request.getSession(false).getAttribute(key)).thenReturn(value);
             return this;
         }
 

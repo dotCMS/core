@@ -8,9 +8,9 @@ import java.util.Map;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 
-import com.dotmarketing.business.APILocator;
+import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.WebResource;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 
@@ -19,6 +19,16 @@ public abstract class AjaxAction {
 	HttpServletRequest request;
 	HttpServletResponse response;
 	Map<String, String> params;
+    private WebResource webResource;
+
+	public AjaxAction() {
+		this.webResource = new WebResource();
+	}
+
+	public void setWebResource(final WebResource webResource) {
+		this.webResource = webResource;
+	}
+
 	public void init(HttpServletRequest request, HttpServletResponse response){
 		setUser( request);
 		setURIParams(request);
@@ -66,19 +76,9 @@ public abstract class AjaxAction {
     }
 
 	public void setUser(HttpServletRequest request){
-		
-		HttpSession session = request.getSession(false);
-
-        try {
-            if (session != null && session.getAttribute("USER_ID") != null){
-        		String userId = session.getAttribute("USER_ID").toString();
-                user = APILocator.getUserAPI().loadUserById(userId, APILocator.getUserAPI().getSystemUser(), false);
-
-            }
-        } catch (Exception nsue) {
-            Logger.warn(this, "Exception trying to getUser: " + nsue.getMessage(), nsue);
-        }
-
+		String val = request.getRequestURI().substring(request.getRequestURI().indexOf("/cmd"));
+		final InitDataObject initData = webResource.init(val, true, request, true, null);
+	    this.user = initData.getUser();
 	}
 	
 	

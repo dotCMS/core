@@ -41,7 +41,20 @@ public final class ThreadUtils
 	}
 
 
+    /**
+     * Basically the Thread.sleep without exception
+     * @param millis
+     */
+    public static void sleep (final long millis) {
 
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException e) {
+
+            Logger.error(DateUtil.class, e.getMessage(), e);
+            Thread.currentThread().interrupt();
+        }
+    }
 
 
 // Thread groups

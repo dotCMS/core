@@ -4,10 +4,7 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UUIDGenerator;
-import com.dotmarketing.util.UUIDUtil;
+import com.dotmarketing.util.*;
 
 import java.util.List;
 import java.util.Map;
@@ -53,7 +50,7 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
     try {
       validShorty(shortStr);
       ShortyId shortyId = null;
-      Optional<ShortyId> opt = new ShortyIdCache().get(shortStr);
+      final Optional<ShortyId> opt = new ShortyIdCache().get(shortStr);
       if (opt.isPresent()) {
         shortyId = opt.get();
       } else if (shortStr.length() == 36) {
@@ -87,10 +84,20 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
   @Override
   public String shortify(final String shortStr) {
     try {
-      validShorty(shortStr);
-      return shortStr.replaceAll("-", "").substring(0, MINIMUM_SHORTY_ID_LENGTH);
-    } catch (ShortyException se) {
-      return null;
+
+      if (UtilMethods.isSet(shortStr)) {
+
+        final String trimmedShortStr = shortStr.trim().replaceAll("-", "");
+        final int    min             = Math.min(trimmedShortStr.length(), MINIMUM_SHORTY_ID_LENGTH);
+
+        return
+                trimmedShortStr.substring(0, min);
+      }
+
+      return shortStr;
+    } catch (Exception se) {
+        throw new ShortyException("shorty " + shortStr + " is not a short id.  Short Ids should be "
+                + MINIMUM_SHORTY_ID_LENGTH + " alphanumeric chars in length", se);
     }
   }
 
@@ -197,19 +204,26 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
     return null;
   }
 
-  public void validShorty(final String test) {
+  @Override
+  public void validShorty(final String incoming) {
+
+    final String test = shortify(incoming);
+
     if (test == null || test.length() < MINIMUM_SHORTY_ID_LENGTH || test.length() > 36) {
+
       throw new ShortyException("shorty " + test + " is not a short id.  Short Ids should be "
           + MINIMUM_SHORTY_ID_LENGTH + " chars in length");
     }
 
-    for (char c : test.toCharArray()) {
-      if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')
-          || c == '-')) {
+    for (final char character : test.toCharArray()) {
+
+      if (!((character >= 'a' && character <= 'z') || (character >= 'A' && character <= 'Z') || (character >= '0' && character <= '9')
+          || character == '-')) {
+
         throw new ShortyException(
             "shorty " + test + " is not an alpha numeric id.  Short Ids should be "
                 + MINIMUM_SHORTY_ID_LENGTH + " alpha/numeric chars in length");
       }
     }
-  }
+  } // validShorty.
 }

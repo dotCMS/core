@@ -1,5 +1,6 @@
 package com.dotcms.contenttype.business;
 
+import static com.dotcms.contenttype.business.ContentTypeAPIImpl.TYPES_AND_FIELDS_VALID_VARIABLE_REGEX;
 import static com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_ONE;
 import static com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY.ONE_TO_MANY;
 import static org.junit.Assert.assertEquals;
@@ -36,8 +37,10 @@ import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import io.vavr.Tuple2;
 import java.util.Date;
 import java.util.List;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -696,6 +699,51 @@ public class FieldAPITest extends IntegrationTestBase {
         }
     }
 
+    @Test
+    public void testUpdateSelfRelatedFields_shouldNotChangeRelationNames()
+            throws DotDataException, DotSecurityException {
+
+        ContentType parentContentType = null;
+
+        final long time = System.currentTimeMillis();
+        final String newCardinality = String.valueOf(RELATIONSHIP_CARDINALITY.ONE_TO_ONE.ordinal());
+
+        try {
+            parentContentType = createAndSaveSimpleContentType("parentContentType" + time);
+
+            final Field childField = createAndSaveManyToManyRelationshipField("newRel",
+                    parentContentType.id(), parentContentType.variable(), CARDINALITY);
+
+            final String fullFieldVar =
+                    parentContentType.variable() + StringPool.PERIOD + childField.variable();
+
+            //Adding the other side of the relationship
+            Field parentField = FieldBuilder.builder(RelationshipField.class).name("otherSideRel")
+                    .contentTypeId(parentContentType.id()).values(CARDINALITY)
+                    .relationType(fullFieldVar).required(true).build();
+
+            parentField = fieldAPI.save(parentField, user);
+
+            //Update parent field
+            fieldAPI
+                    .save(FieldBuilder.builder(parentField).values(newCardinality).build(), user);
+
+            //Update child field
+            fieldAPI
+                    .save(FieldBuilder.builder(childField).values(newCardinality).build(), user);
+
+            final Relationship relationship = relationshipAPI.byTypeValue(fullFieldVar);
+
+            assertEquals(childField.variable(), relationship.getChildRelationName());
+            assertEquals(parentField.variable(), relationship.getParentRelationName());
+
+        } finally {
+            if (UtilMethods.isSet(parentContentType) && UtilMethods.isSet(parentContentType.id())) {
+                contentTypeAPI.delete(parentContentType);
+            }
+        }
+    }
+
     @Test(expected = DotDataException.class)
     @UseDataProvider("testCases")
     public void testValidateRelationshipField_shouldThrowAnException(TestCase testCase)
@@ -755,6 +803,86 @@ public class FieldAPITest extends IntegrationTestBase {
                 .build();
             fieldAPI.save(field, user);
         }finally {
+            contentTypeAPI.delete(type);
+        }
+    }
+
+    @DataProvider
+    public static Object[] dataProviderSaveInvalidVariable() {
+        return new Tuple2[] {
+                // actual, should fail
+                new Tuple2<>("123", true),
+                new Tuple2<>("_123", true),
+                new Tuple2<>("_123a", true),
+                new Tuple2<>("asd123asd", false),
+                new Tuple2<>("Asfsdf", false),
+                new Tuple2<>("aa123", false)
+        };
+    }
+
+    @Test
+    @UseDataProvider("dataProviderSaveInvalidVariable")
+    public void testSave_InvalidVariable_ShouldThrowException(final Tuple2<String, Boolean> testCase)
+            throws DotSecurityException, DotDataException {
+
+        final String variableTestCase = testCase._1;
+        final boolean shouldFail = testCase._2;
+
+        final long time = System.currentTimeMillis();
+        final ContentType type = createAndSaveSimpleContentType("testContentType" + time);
+        try {
+            final Field field = FieldBuilder.builder(TextField.class)
+                    .name("testField")
+                    .contentTypeId(type.id())
+                    .indexed(false)
+                    .listed(false)
+                    .variable(variableTestCase)
+                    .fixed(true)
+                    .build();
+            fieldAPI.save(field, user);
+            assertFalse(shouldFail);
+        } catch (DotDataValidationException e) {
+            assertTrue(shouldFail);
+        } finally {
+            contentTypeAPI.delete(type);
+        }
+    }
+
+
+    @DataProvider
+    public static Object[] dataProviderTypeNames() {
+        return new String[] {
+                "123",
+                "123abc",
+                "_123a",
+                "asd123asd",
+                "Asfsdf",
+                "aa123",
+                "This is a field",
+                "Field && ,,,..**==} name~~~__",
+                "__"
+        };
+    }
+
+    @Test
+    @UseDataProvider("dataProviderTypeNames")
+    public void testSave_InvalidName_ShouldThrowException(final String fieldName)
+            throws DotSecurityException, DotDataException {
+
+        final long time = System.currentTimeMillis();
+        final ContentType type = createAndSaveSimpleContentType("testContentType" + time);
+        try {
+            Field field = FieldBuilder.builder(TextField.class)
+                    .name(fieldName)
+                    .contentTypeId(type.id())
+                    .indexed(false)
+                    .listed(false)
+                    .fixed(true)
+                    .build();
+            field = fieldAPI.save(field, user);
+
+            Assert.assertTrue(field.variable().matches(TYPES_AND_FIELDS_VALID_VARIABLE_REGEX));
+        } finally {
             contentTypeAPI.delete(type);
         }
     }

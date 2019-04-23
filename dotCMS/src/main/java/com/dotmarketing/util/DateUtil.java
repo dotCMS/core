@@ -614,12 +614,6 @@ public class DateUtil {
 	 */
 	public static void sleep (final long millis) {
 
-		try {
-			Thread.sleep(millis);
-		} catch (InterruptedException e) {
-
-			Logger.error(DateUtil.class, e.getMessage(), e);
-			Thread.currentThread().interrupt();
-		}
+		ThreadUtils.sleep(millis);
 	}
 }

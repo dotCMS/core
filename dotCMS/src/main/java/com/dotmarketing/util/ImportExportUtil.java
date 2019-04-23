@@ -21,9 +21,9 @@ import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.logConsole.model.LogMapperRow;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.rules.util.RulesImportExportUtil;
@@ -127,7 +127,7 @@ public class ImportExportUtil {
     private List<File> relationshipXML = new ArrayList<File>();
     
     private static final String CHARSET = UtilMethods.getCharsetConfiguration();
-    private static final String SYSTEM_FOLDER_PATH = "/System folder";
+    private static final String SYSTEM_FOLDER_PATH = FolderAPI.SYSTEM_FOLDER_PARENT_PATH;
 
     /**
 	 * Default class constructor. Sets the appropriate data structures that will
@@ -488,9 +488,8 @@ public class ImportExportUtil {
             // saving folder identifiers
             for(Identifier ident : folderIdents) {
             	if (!SYSTEM_FOLDER_PATH.equals(ident.getParentPath())) {
-            		// Lower-case all folder URLs
-            		ident.setParentPath(ident.getParentPath().toLowerCase());
-                	ident.setAssetName(ident.getAssetName().toLowerCase());
+            		ident.setParentPath(ident.getParentPath());
+                	ident.setAssetName(ident.getAssetName());
             	}
              Logger.info(this, "Importing folder path "+ident.getParentPath()+ident.getAssetName());
              APILocator.getIdentifierAPI().save(ident);
@@ -855,7 +854,7 @@ public class ImportExportUtil {
         }
 
         MaintenanceUtil.flushCache();
-        ReindexThread.startThread(Config.getIntProperty("REINDEX_THREAD_SLEEP", 500), Config.getIntProperty("REINDEX_THREAD_INIT_DELAY", 5000));
+        ReindexThread.startThread();
 
         ContentletAPI conAPI = APILocator.getContentletAPI();
         Logger.info(this, "Building Initial Index");
@@ -872,7 +871,7 @@ public class ImportExportUtil {
         conAPI.refreshAllContent();
         long recordsToIndex = 0;
         try {
-            recordsToIndex = APILocator.getDistributedJournalAPI().recordsLeftToIndexForServer();
+            recordsToIndex = APILocator.getReindexQueueAPI().recordsInQueue();
             Logger.info(this, "Records left to index : " + recordsToIndex);
         } catch (DotDataException e) {
             Logger.error(ImportExportUtil.class,e.getMessage() + " while trying to get the number of records left to index",e);
@@ -882,7 +881,7 @@ public class ImportExportUtil {
         while(recordsToIndex > 0){
             if(counter > 600){
                 try {
-                    Logger.info(this, "Records left to index : " + APILocator.getDistributedJournalAPI().recordsLeftToIndexForServer());
+                    Logger.info(this, "Records left to index : " + APILocator.getReindexQueueAPI().recordsInQueue());
                 } catch (DotDataException e) {
                     Logger.error(ImportExportUtil.class,e.getMessage() + " while trying to get the number of records left to index",e);
                 }
@@ -890,7 +889,7 @@ public class ImportExportUtil {
             }
             if(counter % 100 == 0){
                 try{
-                    recordsToIndex = APILocator.getDistributedJournalAPI().recordsLeftToIndexForServer();
+                    recordsToIndex = APILocator.getReindexQueueAPI().recordsInQueue();
                 } catch (DotDataException e) {
                     Logger.error(ImportExportUtil.class,e.getMessage() + " while trying to get the number of records left to index",e);
                 }
@@ -903,7 +902,6 @@ public class ImportExportUtil {
             counter++;
         }
         Logger.info(this, "Finished Building Initial Index");
-        ReindexThread.stopThread();
 
         CacheLocator.getCacheAdministrator().flushAll();
         MaintenanceUtil.deleteStaticFileStore();
@@ -1345,10 +1343,9 @@ public class ImportExportUtil {
                             if(id.substring(id.length()-2,id.length()).equalsIgnoreCase("id")){
                                 if(obj instanceof Identifier){
                                 	Identifier identifier = Identifier.class.cast(obj);
-                                	// Lower-case all URLs and asset names
                                 	if (!SYSTEM_FOLDER_PATH.equals(identifier.getParentPath())) {
-	                                	identifier.setParentPath(identifier.getParentPath().toLowerCase());
-	                                	identifier.setAssetName(identifier.getAssetName().toLowerCase());
+	                                	identifier.setParentPath(identifier.getParentPath());
+	                                	identifier.setAssetName(identifier.getAssetName());
                                 	}
                                     LocalTransaction.wrap(() -> APILocator.getIdentifierAPI().save(identifier));
                                 }else{

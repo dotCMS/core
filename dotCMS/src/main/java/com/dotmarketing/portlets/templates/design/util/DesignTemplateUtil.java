@@ -5,17 +5,26 @@ import com.dotcms.repackage.org.jsoup.Jsoup;
 import com.dotcms.repackage.org.jsoup.nodes.Document;
 import com.dotcms.repackage.org.jsoup.nodes.Element;
 import com.dotcms.repackage.org.jsoup.select.Elements;
+import com.dotcms.uuid.shorty.ShortType;
+import com.dotcms.uuid.shorty.ShortyId;
+import com.dotcms.uuid.shorty.ShortyIdAPI;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.IdentifierAPI;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.design.bean.PreviewFileAsset;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayoutRow;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -380,6 +389,11 @@ public class DesignTemplateUtil {
 				String[] splitArguments = parseContainerArguments.split(",");
 				String id = cleanId(splitArguments[0]);
 				String uuid = splitArguments.length > 1 ? cleanId(splitArguments[1]) : ParseContainer.DEFAULT_UUID_VALUE;
+				try {
+					id = getContainerIdentifierOrPath(id);
+				} catch (Exception e) {
+					Logger.error(DesignTemplateUtil.class, e.getMessage());
+				}
 
 				containers.add(new ContainerUUID(id, uuid));
 			}
@@ -388,7 +402,28 @@ public class DesignTemplateUtil {
         return containers;
     }
 
-    private static String cleanId(final String identifier) {
+	/**
+	 * Checks if the identifier is a file asset container, if it is replace the id by the apth
+	 * @param containerId String could be a path or an id (file asset id or db container id)
+	 * @return String if it is a file asset container, returns the path, otherwise the uuid.
+	 * @throws DotDataException
+	 */
+	public static String getContainerIdentifierOrPath(final String containerId) throws DotDataException {
+
+		if (FileAssetContainerUtil.getInstance().isFolderAssetContainerId(containerId)) {
+
+			return containerId;
+		}
+
+    	final ShortyIdAPI shortyIdAPI     = APILocator.getShortyAPI();
+    	final IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
+    	final Optional<ShortyId> shortyId = shortyIdAPI.getShorty(containerId);
+
+		return shortyId.isPresent() && shortyId.get().subType == ShortType.CONTAINER?
+				containerId: identifierAPI.find(containerId).getParentPath();
+	}
+
+	private static String cleanId(final String identifier) {
 
     	return StringUtils.remove(identifier, StringPool.APOSTROPHE);
 	}

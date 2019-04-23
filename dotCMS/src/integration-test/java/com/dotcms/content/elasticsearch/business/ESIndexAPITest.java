@@ -233,14 +233,14 @@ public class ESIndexAPITest {
 	private String getLiveIndex(){
 		Set<String> indexesList = esIndexAPI.listIndices();
 		for(String index: indexesList){
-			if(index.toLowerCase().startsWith(ESContentletIndexAPI.ES_LIVE_INDEX_NAME)){
+			if(index.toLowerCase().startsWith(ContentletIndexAPIImpl.ES_LIVE_INDEX_NAME)){
 				return index;
 			}
 		}
 
 		// In case "live" index is not found, create and activate it
         String timeStamp = String.valueOf( new Date().getTime() );
-        String liveIndex = ESContentletIndexAPI.ES_LIVE_INDEX_NAME + "_" + timeStamp;
+        String liveIndex = ContentletIndexAPIImpl.ES_LIVE_INDEX_NAME + "_" + timeStamp;
         try {
         	esIndexAPI.createIndex(liveIndex);
         	contentletIndexAPI.activateIndex(liveIndex);
