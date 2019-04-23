@@ -180,11 +180,15 @@ public class ReindexQueueFactory {
 
         final int batchSize = REINDEX_RECORDS_TO_FETCH / 5;
         int from = 0;
-        while(from <= recordsToDelete.size()){
-            dotConnect.executeBatch("DELETE FROM dist_reindex_journal where id = ?",
+        while (from <= recordsToDelete.size()) {
+            dotConnect.executeBatch(
+                    "DELETE FROM dist_reindex_journal where " + (DbConnectionFactory.isMySql()
+                            ? "id = ?" : "ident_to_index = ?"),
                     recordsToDelete
                             .subList(from, Math.min(recordsToDelete.size(), batchSize + from))
-                            .stream().map(entry -> new Params(entry.getId())).collect(
+                            .stream().map(entry -> new Params(
+                            DbConnectionFactory.isMySql() ? entry.getId()
+                                    : entry.getIdentToIndex())).collect(
                             Collectors.toList()));
 
             from += batchSize;
