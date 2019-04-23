@@ -194,7 +194,7 @@ public class ContentPageIntegrityChecker extends AbstractIntegrityChecker {
 
         DotConnect dc = new DotConnect();
         String tempTableName = getTempTableName(endpointId);
-        final String INSERT_TEMP_TABLE = "insert into " + tempTableName + " (working_inode, live_inode, identifier, parent_path, asset_name, host_identifier, language_id) values(?,?,?,?,?,?,?)";
+        final String INSERT_TEMP_TABLE = "insert into " + tempTableName + " (working_inode, live_inode, identifier, full_path_lc, host_identifier, language_id) values(?,?,?,?,?,?)";
         boolean hasResultsToCheck = false;
         while (htmlpages.readRecord()) {
         	hasResultsToCheck = true;
@@ -209,7 +209,7 @@ public class ContentPageIntegrityChecker extends AbstractIntegrityChecker {
 				final String htmlPageParentPath = getStringIfNotBlank(
 						"parent_path", htmlpages.get(3));
 				final String htmlPageAssetName = getStringIfNotBlank(
-						"asset_name", htmlpages.get(4).toLowerCase());
+						"asset_name", htmlpages.get(4));
 				final String htmlPageHostIdentifier = getStringIfNotBlank(
 						"host_identifier", htmlpages.get(5));
 				final String htmlPageLanguage = getStringIfNotBlank(
@@ -218,8 +218,7 @@ public class ContentPageIntegrityChecker extends AbstractIntegrityChecker {
 				dc.addParam(workingInode);
 				dc.addParam(liveInode);
 				dc.addParam(htmlPageIdentifier);
-				dc.addParam(htmlPageParentPath);
-				dc.addParam(htmlPageAssetName);
+				dc.addParam((htmlPageParentPath + htmlPageAssetName).toLowerCase());
 				dc.addParam(htmlPageHostIdentifier);
 				dc.addParam(new Long(htmlPageLanguage));
 				dc.loadResult();
@@ -252,7 +251,7 @@ public class ContentPageIntegrityChecker extends AbstractIntegrityChecker {
                     + "INNER JOIN contentlet_version_info lcvi ON (lc.identifier = lcvi.identifier) "
                     + "INNER JOIN structure ls ON (lc.structure_inode = ls.inode and ls.structuretype = 5) "
                     + "INNER JOIN " + tempTableName
-                    + " t ON (LOWER(li.asset_name) = t.asset_name AND li.parent_path = t.parent_path "
+                    + " t ON (li.full_path_lc = t.full_path_lc "
                     + "AND li.host_inode = host_identifier AND lc.identifier <> t.identifier "
                     + "AND lc.language_id = t.language_id)";
         
@@ -296,7 +295,7 @@ public class ContentPageIntegrityChecker extends AbstractIntegrityChecker {
                         + "INNER JOIN contentlet_version_info lcvi ON (lc.identifier = lcvi.identifier and lc.language_id = lcvi.lang) "
                         + "INNER JOIN structure ls ON (lc.structure_inode = ls.inode and ls.structuretype = 5) "
                         + "INNER JOIN " + tempTableName
-                        + " t ON (LOWER(li.asset_name) = t.asset_name AND li.parent_path = t.parent_path "
+						+ " t ON (li.full_path_lc = t.full_path_lc "
                         + "AND li.host_inode = host_identifier AND lc.identifier <> t.identifier "
                         + "AND lc.language_id = t.language_id)";
             

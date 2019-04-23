@@ -48,7 +48,6 @@ import com.dotcms.rendering.velocity.services.ContentletLoader;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
-import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
@@ -71,6 +70,9 @@ import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import org.apache.commons.lang.StringUtils;
@@ -335,10 +337,23 @@ public class FieldAPIImpl implements FieldAPI {
     private void updateRelationshipObject(final Field field, final ContentType type, final ContentType relatedContentType,
             final Relationship relationship, final int cardinality, final User user)
             throws DotDataException {
+
+        final boolean isChildField;
         final String relationName = field.variable();
         FieldBuilder builder;
+
+        if (relationshipAPI.sameParentAndChild(relationship)){
+            isChildField = relationship.getParentRelationName() != null && relationship
+                    .getParentRelationName().equals(field.variable()) || (
+                    relationship.getParentRelationName() == null && !relationship
+                            .getChildRelationName().equals(field.variable()));
+
+        } else{
+            isChildField = relationship.getChildStructureInode().equals(type.id());
+        }
+
         //check which side of the relationship is being updated (parent or child)
-        if (relationship.getChildStructureInode().equals(type.id())) {
+        if (isChildField) {
             //parent is updated
             relationship.setParentRelationName(relationName);
             relationship.setParentRequired(field.required());
@@ -654,10 +669,32 @@ public class FieldAPIImpl implements FieldAPI {
 		throw new DotDataException("Error updating Content Type mode_date for FieldVariable("+fieldVar.id()+"). "+e.getMessage());
 	}
   }
-  
-  
-  
-  
+
+  @WrapInTransaction
+  public Collection<String> deleteFields(final List<String> fieldsID, final User user) throws DotDataException, DotSecurityException {
+
+    final List<String> deleteIds = new ArrayList<>();
+
+    for (final String fieldId : fieldsID) {
+        try {
+            final Field field = find(fieldId);
+            delete(field, user);
+            deleteIds.add(field.id());
+        } catch (NotFoundInDbException e) {
+            continue;
+        }
+    }
+
+    return deleteIds;
+  }
+
+  @WrapInTransaction
+  public void saveFields(final List<Field> fields, final User user) throws DotSecurityException, DotDataException {
+    for (final Field field : fields) {
+        save(field, user);
+    }
+  }
+
   
   
 }

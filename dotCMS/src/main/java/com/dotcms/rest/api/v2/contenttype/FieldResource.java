@@ -42,6 +42,7 @@ import javax.servlet.http.HttpServletRequest;
 
 
 @Path("/v2/contenttype/{typeIdOrVarName}/fields")
+@Deprecated
 public class FieldResource implements Serializable {
     private final WebResource webResource;
     private final FieldAPI fieldAPI;
@@ -64,6 +65,9 @@ public class FieldResource implements Serializable {
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
+    /**
+     * @deprecated {@link FieldResource#updateFields(String, String, HttpServletRequest)}
+     */
     public Response updateFields(@PathParam("typeIdOrVarName") final String typeIdOrVarName, final String fieldsJson,
             @Context final HttpServletRequest req) throws DotDataException, DotSecurityException {
 
@@ -125,6 +129,9 @@ public class FieldResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
+    /**
+     * @deprecated {@link FieldResource#getContentTypeFields(String, String, HttpServletRequest)}
+     */
     public final Response getContentTypeFields(@PathParam("typeIdOrVarName") final String typeIdOrVarName,
             @Context final HttpServletRequest req) {
 
@@ -298,6 +305,9 @@ public class FieldResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
+    /**
+     * @deprecated {@link FieldResource#deleteFields(String, String[], HttpServletRequest)}
+     */
     public Response deleteFields(@PathParam("typeIdOrVarName") final String typeIdOrVarName, final String[] fieldsID, @Context final HttpServletRequest req)
             throws DotDataException, DotSecurityException {
 

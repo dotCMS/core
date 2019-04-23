@@ -5,7 +5,7 @@ import com.google.gson.Gson;
 import com.dotcms.rest.exception.ForbiddenException;
 
 import com.dotcms.content.elasticsearch.business.DotIndexException;
-import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;
+import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImpl;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
 import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.enterprise.LicenseUtil;
@@ -128,7 +128,7 @@ public class ESIndexResource {
     
     public static String create(String indexName, int shards, boolean live) throws DotIndexException, IOException {
         if(indexName == null)
-            indexName=ESContentletIndexAPI.timestampFormatter.format(new Date());
+            indexName=ContentletIndexAPIImpl.timestampFormatter.format(new Date());
         indexName = (live) ? "live_" + indexName : "working_" + indexName;
         
         APILocator.getContentletIndexAPI().createContentIndex(indexName, shards);

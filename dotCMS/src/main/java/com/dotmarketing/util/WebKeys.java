@@ -688,9 +688,7 @@ public final class WebKeys {
 	public static final String DOTCMS_STARTUP_TIME_OSGI="dotcms.startup.osgi.ms";
 	
 	// Websocket configuration parameters
-	public static final String DOTCMS_WEBSOCKET_PROTOCOL = "dotcms.websocket.protocol";
-	public static final String DOTCMS_WEBSOCKET_BASEURL = "dotcms.websocket.baseurl";
-	public static final String DOTCMS_WEBSOCKET_ENDPOINTS = "dotcms.websocket.endpoints";
+    public static final String DOTCMS_WEBSOCKET = "websocket";
     public static final String DOTCMS_WEBSOCKET_TIME_TO_WAIT_TO_RECONNECT = "dotcms.websocket.reconnect.time";
     public static final String DOTCMS_DISABLE_WEBSOCKET_PROTOCOL = "dotcms.websocket.disable";
 

@@ -1,17 +1,6 @@
 package com.dotmarketing.fixtask.tasks;
 
-import com.dotcms.UnitTestBase;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.fixtask.tasks.FixTask00090RecreateMissingFoldersInParentPath.LiteFolder;
-
-import org.junit.Before;
-import org.junit.Test;
-
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-
+import static com.dotmarketing.portlets.folders.business.FolderAPI.SYSTEM_FOLDER_PARENT_PATH;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.any;
@@ -21,6 +10,16 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
+
+import com.dotcms.UnitTestBase;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.fixtask.tasks.FixTask00090RecreateMissingFoldersInParentPath.LiteFolder;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import org.junit.Before;
+import org.junit.Test;
 
 public class FixTask00090RecreateMissingFoldersInParentPathTest extends UnitTestBase {
 
@@ -83,7 +82,7 @@ public class FixTask00090RecreateMissingFoldersInParentPathTest extends UnitTest
     @Test
     public void recreateMissingFoldersInParentPath_ShouldDoNothing_WhenSystemFolder() throws DotSecurityException, SQLException, DotDataException {
         FixTask00090RecreateMissingFoldersInParentPath fixTaskSpy = spy(FixTask00090RecreateMissingFoldersInParentPath.class);
-        doReturn(new ArrayList<>()).when(fixTaskSpy).getFoldersFromParentPath("/System folder", aHostId);
+        doReturn(new ArrayList<>()).when(fixTaskSpy).getFoldersFromParentPath(SYSTEM_FOLDER_PARENT_PATH, aHostId);
         fixTaskSpy.recreateMissingFoldersInParentPath("/", aHostId);
         verify(fixTaskSpy, never()).recreateMissingFolders(anyList());
     }

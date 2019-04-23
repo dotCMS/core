@@ -84,22 +84,23 @@ public class Task00001LoadSchema implements StartupTask {
 			}
 			final List<String> tokens = SQLUtil.tokenize(schemaString);
 			final DotConnect dc = new DotConnect();
-			final Connection con = DbConnectionFactory.getDataSource().getConnection();
-			if(DbConnectionFactory.isMySql()){
-				dc.executeStatement("SET " + DbConnectionFactory.getMySQLStorageEngine() + "=INNODB", con);
-			}
-			for (final String token : tokens) {
-				++processedStatementCount;
-				try{
-					dc.executeStatement(token, con);
-				}catch (Exception e) {
-					Logger.fatal(this.getClass(), "Error: " + e.getMessage() + "while trying to execute " + token + " processed "
-							+ processedStatementCount + " statements", e);
-					if (br != null) {
-						br.close();
-					}
-					throw new DotDataException(e.getMessage(),e);
-				}
+			try(Connection con = DbConnectionFactory.getDataSource().getConnection()){
+    			if(DbConnectionFactory.isMySql()){
+    				dc.executeStatement("SET " + DbConnectionFactory.getMySQLStorageEngine() + "=INNODB", con);
+    			}
+    			for (final String token : tokens) {
+    				++processedStatementCount;
+    				try{
+    					dc.executeStatement(token, con);
+    				}catch (Exception e) {
+    					Logger.fatal(this.getClass(), "Error: " + e.getMessage() + "while trying to execute " + token + " processed "
+    							+ processedStatementCount + " statements", e);
+    					if (br != null) {
+    						br.close();
+    					}
+    					throw new DotDataException(e.getMessage(),e);
+    				}
+    			}
 			}
 			Logger.info(this, "Schema created (" + processedStatementCount
 					+ " statements executed)");

@@ -1,5 +1,7 @@
 package com.dotmarketing.fixtask.tasks;
 
+import static com.dotmarketing.portlets.folders.business.FolderAPI.SYSTEM_FOLDER_PARENT_PATH;
+
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.dotcms.repackage.com.google.common.base.Strings;
@@ -87,7 +89,7 @@ public class FixTask00090RecreateMissingFoldersInParentPath implements FixTask {
 		Preconditions.checkArgument(!Strings.isNullOrEmpty(parentPath));
 		Preconditions.checkArgument(!Strings.isNullOrEmpty(hostId));
 
-		if(parentPath.equals("/") || parentPath.equals("/System folder")) return;
+		if(parentPath.equals("/") || parentPath.equals(SYSTEM_FOLDER_PARENT_PATH)) return;
 		List<LiteFolder> folders = getFoldersFromParentPath(parentPath, hostId);
 		recreateMissingFolders(folders);
  	}

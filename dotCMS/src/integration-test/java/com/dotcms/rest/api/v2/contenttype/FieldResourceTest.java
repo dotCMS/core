@@ -38,7 +38,7 @@ public class FieldResourceTest {
 
     private static final ObjectMapper mapper = new ObjectMapper();
 
-    private static final String typeName="fieldResourceTest" + UUIDUtil.uuid();
+    private static final String typeName="fieldResourceTest" + System.currentTimeMillis();
 
     @BeforeClass
     public static void prepare() throws Exception{

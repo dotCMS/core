@@ -264,6 +264,8 @@ public class TaskLocatorUtil {
 		ret.add(Task05040LanguageTableIdentityOff.class);
 		ret.add(Task05050FileAssetContentTypeReadOnlyFileName.class);
 		ret.add(Task05060CreateApiTokensIssuedTable.class);
+		ret.add(Task05070AddIdentifierVirtualColumn.class);
+		ret.add(Task05080RecreateIdentifierIndex.class);
 		
 		return ret;
 	}
