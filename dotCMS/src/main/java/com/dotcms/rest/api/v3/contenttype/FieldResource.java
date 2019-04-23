@@ -72,7 +72,11 @@ public class FieldResource {
 
         fieldLayoutUpdated.validate();
         fieldAPI.saveFields(fieldsToUpdate, user);
-        return Response.ok(new ResponseEntityView(fieldLayoutUpdated.getRows())).build();
+
+        final List<Field> contentTypeFields = fieldAPI.byContentTypeId(contentType.id());
+        final FieldLayout fieldLayoutFromDB = new FieldLayout(contentTypeFields);
+
+        return Response.ok(new ResponseEntityView(fieldLayoutFromDB.getRows())).build();
     }
 
     /**

@@ -2214,6 +2214,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         List<Contentlet> checkedOut=contentletAPI.checkout(origCons, user, respectFrontendRoles);
         for(Contentlet c : checkedOut){
           c.setStringProperty("title", c.getStringProperty("title") + " new");
+          c.setIndexPolicy(IndexPolicy.FORCE);
           c = contentletAPI.checkin(c,user, respectFrontendRoles);
           contentletAPI.publish(c, user, respectFrontendRoles);
           assertTrue( c.isLive());
