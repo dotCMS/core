@@ -98,7 +98,7 @@ public class ReindexThread {
             .getIntProperty("REINDEX_THREAD_ELASTICSEARCH_BULK_SIZE", 10);
     //Time (in seconds) to wait before closing bulk processor in a full reindex
     private static final int BULK_PROCESSOR_AWAIT_TIMEOUT = Config
-            .getIntProperty("BULK_PROCESSOR_AWAIT_TIMEOUT", 10);
+            .getIntProperty("BULK_PROCESSOR_AWAIT_TIMEOUT", 20);
     private ThreadState STATE = ThreadState.RUNNING;
     private Future<?>  threadRunning;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();

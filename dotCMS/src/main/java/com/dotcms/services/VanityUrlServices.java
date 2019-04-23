@@ -1,6 +1,5 @@
 package com.dotcms.services;
 
-import com.dotcms.business.WrapInTransaction;
 import com.dotcms.cache.VanityUrlCache;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.exception.ExceptionUtil;
@@ -24,8 +23,6 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
 
 import java.util.List;
-
-import static com.dotcms.util.FunctionUtils.ifOrElse;
 
 /**
  * This service allows to invalidate the Vanity URL Cache
@@ -200,7 +197,6 @@ public class VanityUrlServices {
      * the commit listener related to this event is executed.
      */
     @Subscriber
-    @WrapInTransaction
     public void onCommitListener(final CommitListenerEvent commitListenerEvent) {
         final Contentlet contentlet =
                 commitListenerEvent.getContentlet();
@@ -209,10 +205,7 @@ public class VanityUrlServices {
                     + contentlet);
 
             if (null != contentlet && contentlet.isVanityUrl()) {
-                ifOrElse(this.contentletAPI.isInodeIndexed // this seems to be necessary
-                                (contentlet.getInode(), contentlet.isLive(), contentlet.isWorking()),
-                        () -> this.invalidateVanityUrl(contentlet),
-                        () -> this.invalidateVanityCache(contentlet));
+                this.invalidateVanityUrl(contentlet);
             }
         } catch (DotStateException | NotFoundInDbException e) {
 

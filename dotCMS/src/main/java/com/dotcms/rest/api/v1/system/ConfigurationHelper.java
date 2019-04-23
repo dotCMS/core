@@ -98,19 +98,15 @@ public class ConfigurationHelper implements Serializable {
 		}
 
 		final Map<String, Object> map = map(
-				DOTCMS_WEBSOCKET_PROTOCOL,
-				Config.getAsString(DOTCMS_WEBSOCKET_PROTOCOL, () -> getWebSocketProtocol(request)),
-				DOTCMS_WEBSOCKET_BASEURL,
-				Config.getAsString(DOTCMS_WEBSOCKET_BASEURL, () -> getHostname(request)),
-				DOTCMS_WEBSOCKET_ENDPOINTS,
-				map(WEBSOCKET_SYSTEMEVENTS_ENDPOINT,
-						Config.getStringProperty(WEBSOCKET_SYSTEMEVENTS_ENDPOINT, SystemEventsWebSocketEndPoint.API_WS_V1_SYSTEM_EVENTS)),
 				EDIT_CONTENT_STRUCTURES_PER_COLUMN,
 				Config.getIntProperty(EDIT_CONTENT_STRUCTURES_PER_COLUMN, 15),
-				DOTCMS_WEBSOCKET_TIME_TO_WAIT_TO_RECONNECT,
-				Config.getIntProperty(DOTCMS_WEBSOCKET_TIME_TO_WAIT_TO_RECONNECT, 15000),
-				DOTCMS_DISABLE_WEBSOCKET_PROTOCOL,
-				Boolean.valueOf(Config.getBooleanProperty(DOTCMS_DISABLE_WEBSOCKET_PROTOCOL, false)),
+				DOTCMS_WEBSOCKET,
+				map(
+					DOTCMS_WEBSOCKET_TIME_TO_WAIT_TO_RECONNECT,
+					Config.getIntProperty(DOTCMS_WEBSOCKET_TIME_TO_WAIT_TO_RECONNECT, 15000),
+					DOTCMS_DISABLE_WEBSOCKET_PROTOCOL,
+					Boolean.valueOf(Config.getBooleanProperty(DOTCMS_DISABLE_WEBSOCKET_PROTOCOL, false))
+				),
 				I18N_MESSAGES_MAP,
 				mapEntries(
 						message("notifications_title", locale), // Notifications
