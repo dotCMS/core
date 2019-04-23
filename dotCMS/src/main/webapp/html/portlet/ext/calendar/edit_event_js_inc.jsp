@@ -37,10 +37,10 @@ function submitfmEvent(form, subcmd)
 		
 	<%
 		boolean found = false;
-		for (Field f : fields) {
-			if (f.isListed()) {
+		for (Field fld : fields) {
+			if (fld.isListed()) {
 	%>
-	form.title.value = form.<%=f.getFieldContentlet()%>.value;
+	form.title.value = form.<%=fld.getFieldContentlet()%>.value;
 	<%			
 				found = true;
 				break;
@@ -178,11 +178,18 @@ function saveEvent(isAutoSave){
 		dojo.connect(endDateTime, 'onChange', 'updateEndDate');
 		dojo.connect(endDateDate, 'onMouseOver', 'endDateMessage');
 		<%if(isAllDayEvent) {%>
-				dijit.byId('alldayevent').attr('checked', true);
-				setAllDayEvent();
+		       if(dijit.byId('alldayevent')){
+				 dijit.byId('alldayevent').attr('checked', true);
+				 setAllDayEvent();
+			   }
 		<%}%>
 
-		updateStartRecurrenceDate('<%=startDateField.getVelocityVarName()%>');
+         if(typeof updateStartRecurrenceDate  === 'function' ){
+
+            updateStartRecurrenceDate('<%=startDateField.getVelocityVarName()%>');
+
+		 }
+
 	});
 	var shownRecurrenceMessage = false;
 	function endDateMessage(){
@@ -297,6 +304,7 @@ function saveEvent(isAutoSave){
 	//Locations and maps management
 	
 	function suggestLocations () {
+	  <% if(UtilMethods.isSet(locationField)) { %>
 		var currentValue = $F('<%=locationField.getFieldContentlet()%>');
 		if(currentValue.length > 1) {
 			CalendarAjax.findLocations(currentValue, suggestLocationsCallback);
@@ -304,6 +312,7 @@ function saveEvent(isAutoSave){
 			$('locationSuggestions').hide({ duration: .4 });
 		}
 		showMapLink();
+	 <%}%>
 	}
 
 	var isShowAllLocations = true;//DOTCMS-
@@ -344,34 +353,38 @@ function saveEvent(isAutoSave){
 			$('locationSuggestions').hide({ duration: .4 });
 		}
 	}
-	<%if(UtilMethods.isSet(locationField.getFieldContentlet())){%>
+	<%if(UtilMethods.isSet(locationField) && UtilMethods.isSet(locationField.getFieldContentlet())){%>
 		$('<%= locationField.getFieldContentlet() %>').observe('keyup', suggestLocations);	
 	<%}%>
 	function setBuilding(id) {
-		var building = buildingsCache[id];
-		var buildingInfo = building.title;
-		if(building.address != null && building.address != "")
-		{
+        <%if(UtilMethods.isSet(locationField) && UtilMethods.isSet(locationField.getFieldContentlet())){%>
+		 var building = buildingsCache[id];
+		 var buildingInfo = building.title;
+		 if(building.address != null && building.address != "")
+		 {
 			buildingInfo += " @ " + building.address;
-		}		
-		$('<%=locationField.getFieldContentlet()%>').value = buildingInfo;
-		$('locationSuggestions').hide({ duration: .4 });
-		isShowAllLocations = true;		
-		dojo.toggleClass('showAllLocationsImg','plusIcon');
-		dojo.toggleClass('showAllLocationsImg','minusIcon');
-		showMapLink();
+		 }
+		 $('<%=locationField.getFieldContentlet()%>').value = buildingInfo;
+		 $('locationSuggestions').hide({ duration: .4 });
+		 isShowAllLocations = true;
+ 		 dojo.toggleClass('showAllLocationsImg','plusIcon');
+	 	 dojo.toggleClass('showAllLocationsImg','minusIcon');
+		 showMapLink();
+        <%}%>
 	}			
 	
 	function setFacility(buildingId, facilityId) {
-		var building = buildingsCache[buildingId];
-		var facility = facilitiesCache[facilityId];
-		var fieldValue = building.title + ", " + facility.title;
-		if(facility.roomId != null && facility.roomId != "")
+        <%if(UtilMethods.isSet(locationField) && UtilMethods.isSet(locationField.getFieldContentlet())){%>
+		 var building = buildingsCache[buildingId];
+		 var facility = facilitiesCache[facilityId];
+		 var fieldValue = building.title + ", " + facility.title;
+		 if(facility.roomId != null && facility.roomId != "")
 			fieldValue += ", Room " + facility.roomId;
-		fieldValue += " @ " + building.address;
-		$('<%=locationField.getFieldContentlet()%>').value = fieldValue;
-		$('locationSuggestions').hide({ duration: .4 });
-		showMapLink();
+		 fieldValue += " @ " + building.address;
+		 $('<%=locationField.getFieldContentlet()%>').value = fieldValue;
+		 $('locationSuggestions').hide({ duration: .4 });
+		 showMapLink();
+        <%}%>
 	}	
 	
 	function hideLocationSuggestions () {
@@ -386,6 +399,7 @@ function saveEvent(isAutoSave){
 	
 	var mapAddress = "";
 	function showMapLink() {
+        <%if(UtilMethods.isSet(locationField) && UtilMethods.isSet(locationField.getFieldContentlet())){%>
 		var currentValue = $F('<%=locationField.getFieldContentlet()%>');
 		var address = '';
 		if(currentValue.indexOf("@") > -1) {
@@ -405,6 +419,7 @@ function saveEvent(isAutoSave){
 		}
 		mapAddress = address;
 		hideMap();
+        <%}%>
 	}		
 
 	function showMap() {

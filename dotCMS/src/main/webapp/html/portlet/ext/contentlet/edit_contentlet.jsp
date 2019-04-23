@@ -13,7 +13,6 @@
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.portlets.containers.model.Container"%>
 <%@page import="com.dotmarketing.portlets.contentlet.struts.ContentletForm"%>
-<%@page import="com.dotmarketing.portlets.structure.model.Field"%>
 <%@page import="com.dotmarketing.portlets.structure.model.ContentletRelationships"%>
 <%@page import="com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords"%>
 <%@page import="com.dotmarketing.portlets.categories.model.Category"%>
@@ -445,10 +444,43 @@
                             }
                         }
                         request.setAttribute("inode",contentlet.getInode());
-                    request.setAttribute("counter", catCounter.toString());
+                        request.setAttribute("counter", catCounter.toString());
                     %>
 
-                    <jsp:include page="/html/portlet/ext/contentlet/field/edit_field.jsp" />
+                    <%if(contentlet.isCalendarEvent()){
+						final String velocityVarName = f.getVelocityVarName();
+
+						if ("startDate".equals(velocityVarName) || "endDate".equals(velocityVarName)) {
+
+								if ("startDate".equals(velocityVarName)) {
+									startDateField = f;
+									%>
+
+									<%if(contentlet.isNew()){%>
+									   <jsp:include page="/html/portlet/ext/calendar/edit_event_start_date_field.jsp" />
+									<%}else{%>
+									   <jsp:include page="/html/portlet/ext/contentlet/field/edit_field.jsp" />
+									<%}%>
+									<%
+								}
+
+								if ("endDate".equals(velocityVarName)) {
+									endDateField = f;
+									%>
+								    <jsp:include page="/html/portlet/ext/contentlet/field/edit_field.jsp" />
+									<%@ include file="/html/portlet/ext/calendar/edit_event_recurrence_inc.jsp" %>
+									<%
+								}
+
+						 } else {
+								%>
+								<jsp:include page="/html/portlet/ext/contentlet/field/edit_field.jsp" />
+								<%
+						 }
+                    } else { %>
+						<jsp:include page="/html/portlet/ext/contentlet/field/edit_field.jsp" />
+					<% } %>
+
                 <%}%>
             <%}
 			if (rowOpen) {
@@ -460,6 +492,10 @@
         <!-- END START EDIT CONTENT FORM -->
 	</div>
 	<!-- END TABS -->
+
+    <%if(contentlet.isCalendarEvent()){%>
+	  <%@include file="/html/portlet/ext/calendar/edit_event_js_inc.jsp" %>
+	<%}%>
 
 	<!-- Relationships -->
 	<% if(legacyRelationshipRecords != null && legacyRelationshipRecords.size() > 0 && !relationshipsTabFieldExists){

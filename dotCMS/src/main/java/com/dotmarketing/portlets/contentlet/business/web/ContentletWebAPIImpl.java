@@ -74,6 +74,7 @@ import java.text.MessageFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -82,6 +83,8 @@ import java.util.Map;
 import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.BooleanUtils;
+
 /*
  *     //http://jira.dotmarketing.net/browse/DOTCMS-2273
  *     To save content via ajax.
@@ -97,6 +100,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 	private UserAPI userAPI;
 	private FolderAPI folderAPI;
 	private IdentifierAPI identAPI;
+	private EventAPI eventAPI;
 
 	private static DateFormat eventRecurrenceStartDateF = new SimpleDateFormat("yyyy-MM-dd HH:mm");
 	private static DateFormat eventRecurrenceEndDateF = new SimpleDateFormat("yyyy-MM-dd");
@@ -112,7 +116,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		this.userAPI = APILocator.getUserAPI();
 		this.folderAPI = APILocator.getFolderAPI();
 		this.identAPI = APILocator.getIdentifierAPI();
-
+        this.eventAPI = APILocator.getEventAPI();
 		contentletSystemEventUtil = ContentletSystemEventUtil.getInstance();
 	}
 
@@ -338,11 +342,21 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 
 		// Getting the contentlets variables to work
 		Contentlet currentContentlet = (Contentlet) contentletFormData.get(WebKeys.CONTENTLET_EDIT);
-		final String currentContentident = currentContentlet.getIdentifier();
+		//Form doesn't always contain this value upfront. And since populateContentlet sets 0 we better set it upfront
+		contentletFormData.put("identifier", currentContentlet.getIdentifier());
 		final boolean isNew = !InodeUtils.isSet(currentContentlet.getInode());
 
 		if (!isNew && Host.HOST_VELOCITY_VAR_NAME.equals(currentContentlet.getStructure().getVelocityVarName())) {
 			currentContentlet = conAPI.checkout(currentContentlet.getInode(), user, false);
+		}
+
+        if(currentContentlet.isCalendarEvent()){
+            //When handling event disconnection a brand new content dupe is created.
+            // So this needs to happen early in the process before all data from the formData us used to populate the target 'currentContentlet'
+	        currentContentlet = handleEventDisconnection(currentContentlet, contentletFormData ,user);
+	        //we need to reset these values (in case the event-disconnect thing re-created a brand new contentlet) so they can be used to populate the new contentlet.
+		    contentletFormData.put("identifier", currentContentlet.getIdentifier());
+		    contentletFormData.put("contentletInode", currentContentlet.getInode());
 		}
 
 		/***
@@ -366,12 +380,11 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 
 		contentletFormData.put(WebKeys.CONTENTLET_FORM_EDIT, currentContentlet);
 		contentletFormData.put(WebKeys.CONTENTLET_EDIT, currentContentlet);
-
 		try{
-			_populateContent(contentletFormData, user, currentContentlet,isAutoSave);
+			_populateContent(contentletFormData, user, currentContentlet, isAutoSave);
 			//http://jira.dotmarketing.net/browse/DOTCMS-1450
 			//The form doesn't have the identifier in it. so the populate content was setting it to 0
-			currentContentlet.setIdentifier(currentContentident);
+			//currentContentlet.setIdentifier(currentContentident);
 			if(UtilMethods.isSet(contentletFormData.get("new_owner_permissions"))) {
 				currentContentlet.setOwner((String) contentletFormData.get("new_owner_permissions"));
 			}
@@ -664,8 +677,8 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		return status;
 	}
 
-	private void handleEventRecurrence(Map<String, Object> contentletFormData, Contentlet contentlet) throws DotRuntimeException, ParseException{
-		if(!contentlet.getStructure().getVelocityVarName().equals(EventAPI.EVENT_STRUCTURE_VAR)){
+	private void handleEventRecurrence(final Map<String, Object> contentletFormData, final Contentlet contentlet) throws DotRuntimeException, ParseException, DotDataException, DotSecurityException{
+		if(!contentlet.isCalendarEvent()){
 			return;
 		}
 		if (contentletFormData.get("recurrenceChanged") != null && Boolean.parseBoolean(contentletFormData.get("recurrenceChanged").toString())) {
@@ -676,6 +689,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 				contentlet.setBoolProperty("noRecurrenceEnd", false);
 			}else if(contentletFormData.get("noEndDate")!=null && Boolean.parseBoolean(contentletFormData.get("noEndDate").toString())){
 				contentlet.setDateProperty("recurrenceEnd",null);
+				contentlet.setProperty("recurrenceEnd", null);
 				contentlet.setBoolProperty("noRecurrenceEnd", true);
 			}
 
@@ -719,7 +733,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 						} catch (Exception e) {}
 
 				   } else {
-					   contentlet.setProperty("recurrenceDayOfMonth","0");
+					   contentlet.setProperty("recurrenceDayOfMonth",0);
 				   }
 
 				contentlet.setProperty("recurrenceInterval",Long.valueOf(contentletFormData.get("recurrenceIntervalMonthly").toString()));
@@ -739,10 +753,43 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 				contentlet.setBoolProperty("recurs",false);
 			}
 
-
 	}
 
-	private void _populateContent(Map<String, Object> contentletFormData,
+	/**
+	 * If an eventDisconnect flag has been sent in formData we actually need to recreate the even.
+	 * @param contentlet
+	 * @param contentletFormData
+	 * @param user
+	 * @return
+	 * @throws ParseException
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	private Contentlet handleEventDisconnection(final Contentlet contentlet, final Map<String, Object> contentletFormData, final User user) throws ParseException, DotDataException, DotSecurityException{
+		boolean disconnectEvent = false;
+		if(UtilMethods.isSet(contentletFormData.get("disconnectEvent"))){
+			 disconnectEvent = BooleanUtils
+					.toBoolean(contentletFormData.get("disconnectEvent").toString());
+		}
+
+			if (!disconnectEvent) {
+				return contentlet;
+			}
+			final Map<String, Object> map = contentlet.getMap();
+			final Date startDate = Date.class.cast(map.get("endDate"));
+			final Date endDate = Date.class.cast(map.get("startDate"));
+
+			final Calendar newStartDate = Calendar.getInstance();
+			final Calendar newEndDate = Calendar.getInstance();
+			newStartDate.setTime(startDate);
+			newEndDate.setTime(endDate);
+
+			final Event in = eventAPI.find(contentlet.getIdentifier(), false, user, false);
+			return eventAPI.disconnectEvent(in, user, newStartDate.getTime(), newEndDate.getTime());
+	}
+
+
+	private Contentlet _populateContent(Map<String, Object> contentletFormData,
 			User user, Contentlet contentlet, boolean isAutoSave)  throws Exception {
 
 		handleEventRecurrence(contentletFormData, contentlet);
@@ -865,6 +912,8 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 			Logger.error(this, "Unable to populate content. ", e);
 			throw new Exception("Unable to populate content");
 		}
+
+		return contentlet;
 	}
 
 	private void _handleException(final Exception ae) {

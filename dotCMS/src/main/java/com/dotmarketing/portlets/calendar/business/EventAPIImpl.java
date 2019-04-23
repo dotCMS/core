@@ -126,9 +126,8 @@ public class EventAPIImpl implements EventAPI {
 	}
 
 	public Event findbyInode(String inode, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-		Event ev = eventFactory.findbyInode(inode, user, respectFrontendRoles); // todo: this method should be here, since it is an API call and convert.
-		Contentlet cont = new Contentlet();
-		cont = contentletAPI.find(ev.getInode(), user, respectFrontendRoles);
+		final Event ev = eventFactory.findbyInode(inode, user, respectFrontendRoles); // todo: this method should be here, since it is an API call and convert.
+		final Contentlet cont = contentletAPI.find(ev.getInode(), user, respectFrontendRoles);
 		if (!permissionAPI.doesUserHavePermission(cont, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles))
 			throw new DotSecurityException("User doesn't have permissions to access this event");
 		return ev;
@@ -284,7 +283,7 @@ public class EventAPIImpl implements EventAPI {
 	public Event disconnectEvent(Event event, User user, Date startDate, Date endDate) throws DotDataException, DotSecurityException{
 		Event newEvent = null;
 		if(event!=null && event.isRecurrent()){
-			Contentlet newCont = contentletAPI.copyContentlet(event,user, true);
+			Contentlet newCont = contentletAPI.copyContentlet(event, user, true);
 			newEvent = eventFactory.convertToEvent(newCont);
 			newEvent.setDisconnectedFrom(event.getIdentifier());
 			newEvent.setRecurrenceDatesToIgnore("");

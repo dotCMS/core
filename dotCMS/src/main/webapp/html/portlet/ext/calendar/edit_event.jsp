@@ -8,7 +8,7 @@
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.portlets.containers.model.Container"%>
 <%@page import="com.dotmarketing.portlets.contentlet.struts.ContentletForm"%>
-<%@page import="com.dotmarketing.portlets.calendar.struts.EventForm"%>
+<%@page import="com.dotmarketing.portlets.contentlet.struts.EventAwareContentletForm"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Field"%>
 <%@page import="com.dotmarketing.portlets.structure.model.ContentletRelationships"%>
 <%@page import="com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords"%>
@@ -40,7 +40,7 @@
 
 	Date dateOfEnd = contentlet.getDateProperty("endDate");
 
-	EventForm contentletForm = (EventForm) request.getAttribute("CalendarEventForm");
+	EventAwareContentletForm contentletForm = (EventAwareContentletForm) request.getAttribute("CalendarEventForm");
 
 	//Content structure or user selected structure
 	Structure structure = contentletForm.getStructure();
@@ -146,6 +146,8 @@ document.addEventListener('DOMContentLoaded', function(){
 	@import url(/html/portlet/ext/contentlet/field/edit_field.css);
 	@import url(/html/portlet/ext/calendar/edit_event.css);*/
 </style>
+
+edit_event.jsp
 
 <html:form action="<%= formAction %>" styleId="fm">
 	<input name="wfActionAssign" id="wfActionAssign" type="hidden" value="">
@@ -395,7 +397,7 @@ document.addEventListener('DOMContentLoaded', function(){
 	    		&& Boolean.parseBoolean(request.getParameter("reuseLastLang")))){
 	    	long newlanguage = contentletForm.getLanguageId();
 	    	if(UtilMethods.isSet(request.getSession().getAttribute("ContentletForm_lastLanguage"))){
-	    		contentletForm = (EventForm) request.getSession().getAttribute("ContentletForm_lastLanguage");
+	    		contentletForm = (EventAwareContentletForm) request.getSession().getAttribute("ContentletForm_lastLanguage");
 	    		contentletForm.setLanguageId(newlanguage);
 	    		contentletForm.setInode("");
 	    		request.setAttribute("ContentletForm", contentletForm);
