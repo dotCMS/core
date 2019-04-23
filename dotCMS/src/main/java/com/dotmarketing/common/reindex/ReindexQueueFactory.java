@@ -176,9 +176,20 @@ public class ReindexQueueFactory {
 
     @CloseDBIfOpened
     protected void deleteReindexEntry(final List<ReindexEntry> recordsToDelete) throws DotDataException {
-        new DotConnect().executeBatch("DELETE FROM dist_reindex_journal where ident_to_index = ?",
-                recordsToDelete.stream().map(entry -> new Params(entry.getIdentToIndex())).collect(
-                        Collectors.toList()));
+        final DotConnect dotConnect = new DotConnect();
+
+        final int batchSize = REINDEX_RECORDS_TO_FETCH / 4;
+        int from = 0;
+        while(from <= recordsToDelete.size()){
+            dotConnect.executeBatch("DELETE FROM dist_reindex_journal where ident_to_index = ?",
+                    recordsToDelete
+                            .subList(from, Math.min(recordsToDelete.size(), batchSize + from))
+                            .stream().map(entry -> new Params(entry.getIdentToIndex())).collect(
+                            Collectors.toList()));
+
+            from += batchSize;
+        }
+
     }
     
     
