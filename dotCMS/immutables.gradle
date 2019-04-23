@@ -1,17 +1,17 @@
 buildscript {
     repositories {
         maven { url "http://repo.dotcms.com/artifactory/libs-release" }
+        maven { url "https://plugins.gradle.org/m2/" }
         jcenter()
     }
     dependencies {
         classpath 'org.ajoberstar:grgit:1.7.0'
         classpath 'com.dotcms.lib:dot.commons-io:2.0.1_2'
+        classpath "net.ltgt.gradle:gradle-apt-plugin:0.21"
     }
 }
 
-plugins {
-    id "net.ltgt.apt" version "0.9"
-}
+
 
 configurations {
     compile
@@ -33,10 +33,9 @@ configurations.all({
     }
 })
 
-
 // Apply the java plugin to add support for Java.
 apply plugin: 'java'
-apply plugin: 'war'
+apply plugin: "net.ltgt.apt"
 
 // In this section you declare where to find the dependencies of your project.
 repositories {
@@ -46,15 +45,17 @@ repositories {
 
 dependencies {
 
-    providedCompile "javax.servlet:javax.servlet-api:3.1.0"
-    providedCompile fileTree("../libs/buildlibs").include('**/*.jar')
-    providedCompile fileTree("../libs/buildlibs").include('mail.jar', 'mysql-conn*.jar', 'ojdbc*.jar', 'postgres*.jar', 'mssql-jdbc*.jar')
+    compile "javax.servlet:javax.servlet-api:3.1.0"
+    compile fileTree("../libs/buildlibs").include('**/*.jar')
+    compile fileTree("../libs/buildlibs").include('mail.jar', 'mysql-conn*.jar', 'ojdbc*.jar', 'postgres*.jar', 'mssql-jdbc*.jar')
 
     if (project.gradle.startParameter.taskNames.contains('deployWarTomcatDev')) {
         configurations.compile.exclude group: 'com.dotcms.enterprise', module: 'ee'
     }
 
-    apt "org.immutables:value:2.3.3"
+    annotationProcessor("org.immutables:value:2.3.3")
+    compileOnly "org.immutables:value:2.3.3:annotations"
+    compile 'org.immutables:gson:2.3.3'
 }
 
 // Import and apply the dependencies from the dependencies scripts.
@@ -89,5 +90,10 @@ compileJava {
     sourceCompatibility = 1.8
     options.incremental = true
 
-    sourceSets.main.output.generatedSourcesDir = "$generatedSourceFolder"
+    File generatedSourceDir = project.file("$generatedSourceFolder")
+    println "Creating and configuring generated source directory $generatedSourceDir"
+    project.mkdir(generatedSourceDir)
+    options.annotationProcessorGeneratedSourcesDirectory = generatedSourceDir
+    outputs.dir(generatedSourceDir)
 }
+

@@ -2,19 +2,21 @@ buildscript {
     repositories {
         
         maven { url "http://repo.dotcms.com/artifactory/libs-release" }
+        maven { url "https://plugins.gradle.org/m2/" }
         jcenter()
     }
     dependencies {
         classpath 'org.ajoberstar:grgit:1.7.0'
-        classpath 'org.unbroken-dome.gradle-plugins:gradle-testsets-plugin:1.4.3'
         classpath 'com.dotcms.lib:dot.commons-io:2.0.1_2'
-        classpath 'nl.eveoh:gradle-aspectj:1.6'
+        classpath "io.freefair.gradle:aspectj-plugin:3.2.0"
     }
 }
 
 plugins {
     id "com.moowork.node" version "1.2.0"
     id "com.palantir.docker" version "0.17.2"  // reference:  https://github.com/palantir/gradle-docker
+    id 'org.unbroken-dome.test-sets' version '2.1.1'
+    id "org.ajoberstar.grgit" version "1.7.2"
 }
 
 project.ext {
@@ -32,7 +34,8 @@ node {
     // If false, it will try to use globally installed node.
     download = true
 }
-import com.dotcms.repackage.org.apache.commons.io.FileUtils;
+
+import com.dotcms.repackage.org.apache.commons.io.FileUtils
 
 configurations {
     compile
@@ -61,7 +64,7 @@ configurations.all({
 
 // Apply the java plugin to add support for Java.
 apply plugin: 'java'
-apply plugin: 'aspectj'
+apply plugin: "io.freefair.aspectj.base"
 apply plugin: 'war'
 apply plugin: 'org.unbroken-dome.test-sets'
 apply plugin: 'project-report' /*For gradle dependencies: ./gradlew htmlDependencyReport*/
@@ -80,9 +83,9 @@ repositories {
 }
 
 testSets {
-    individualTest { dirName = 'test' }
+    individualTest  { dirName = 'test' }
     integrationTest { dirName = 'integration-test' }
-    functionalTest { dirName = 'functional-test' }
+    functionalTest  { dirName = 'functional-test' }
 }
 
 
@@ -179,7 +182,6 @@ dependencies {
 
 // Import and apply the dependencies from the dependencies scripts.
 apply from: "$rootDir/dependencies.gradle"
-
 
 def enterpriseSrcFolder = file("$enterpriseProjectHome/src/main/java")
 
@@ -281,7 +283,7 @@ war {
 
     }
 
-    classpath = classpath - sourceSets.main.output.classesDir
+    classpath = classpath - sourceSets.main.output.classesDirs
 
     if (gradle.startParameter.taskNames.contains("deployWarTomcatTests")) {
         classpath = configurations.testRuntime
@@ -541,10 +543,11 @@ task customDistWar(type: War) {
 customDistWar.group='dotCMS Development'
 customDistWar.description='Builds a dotCMS as a war. (Task mean to be use from a distribution structure using the buildwar.sh script. This task will just use the already deployed folder inside the app server and compressed into a war file.)'
 
-compileAspect.dependsOn 'immutables'
-compileAspect {
+compileJava.dependsOn 'immutables'
+compileJava {
     println "\nCompiling Aspect..."
 }
+
 // This task defines if the immutables folder is generated, otherwise will generate it.
 task immutables() {
     doLast {
@@ -558,7 +561,7 @@ task immutables() {
             def artefactBuild = project.tasks.create([name: "artefactBuild_$gradleTask", type: GradleBuild])
             artefactBuild.buildFile = project.file("immutables.gradle")
             artefactBuild.tasks = [gradleTask]
-            artefactBuild.execute()
+            artefactBuild.build()
         } else {
             println "Immutables already generated, skipping generation... (Delete $generatedSourceFolder folder in order to regenerate them)\n"
         }
@@ -593,7 +596,7 @@ task buildPlugins(dependsOn: 'jar') {
             from "$buildDir/libs/"
         }
 
-        def pluginsFolder = new File("src/main/plugins");
+        def pluginsFolder = new File("$rootDir/src/main/plugins");
 
         if (!pluginsFolder.exists()) {
             pluginsFolder = new File("../plugins");
@@ -601,7 +604,7 @@ task buildPlugins(dependsOn: 'jar') {
 
         pluginsFolder.eachDir() {
             def pluginPath = it
-            println "Compile Plugin: " + pluginPath
+            println "Compile Plugin:   " + pluginPath.getAbsolutePath()
 
             javaexec {
                 workingDir pluginPath
@@ -651,8 +654,8 @@ task deployPlugins(dependsOn: ['buildPlugins']) {
 
     doLast {
 
-        def pluginsFolder = new File("src/main/plugins")
-        def webAppFolder = 'src/main/webapp'
+        def pluginsFolder = new File("$rootDir/src/main/plugins")
+        def webAppFolder = "$rootDir/src/main/webapp"
 
         if (!pluginsFolder.exists()) {
             pluginsFolder = new File("../plugins");
@@ -702,6 +705,7 @@ task undeployPlugins() {
             webAppFolder = "$dotcmsDistBase$webAppRootFolder"
         }
 
+        println "webAppFolder: $webAppFolder dotcmsDistBase: $dotcmsDistBase"
 
         ant.taskdef(
                 name: 'pluginUndeployTask',
@@ -834,13 +838,14 @@ static def replaceText(filePath, fromString, toString) {
 
 // Clones dotCMS's tomcat repo following tomcatInstall under gradle.properties.
 // If the tomcat folder exists: git pull, if not: git clone.
-class ClonePullTomcatTask extends DefaultTask{
+class ClonePullTomcatTask extends DefaultTask {
 
     String tomcatLocation = project.tomcatInstallLocation
+    File projectDir       = project.projectDir;
 
     @TaskAction
     def pull(){
-        def folder = new File( tomcatLocation )
+        def folder = new File( projectDir, tomcatLocation )
         if( !folder.exists() ) {
 
             try {
@@ -851,7 +856,8 @@ class ClonePullTomcatTask extends DefaultTask{
                 //Do nothing, this will fail only if git is not installed on this machine
             }
         } else {
-            def tomcatGit = org.ajoberstar.grgit.Grgit.open(folder);
+            println "\nTomcat Location: $tomcatLocation, " + folder.getAbsolutePath() + ", projectDir: " + projectDir;
+            def tomcatGit = org.ajoberstar.grgit.Grgit.open(folder, null);
             tomcatGit.pull();
         }
     }
