@@ -38,10 +38,12 @@ dot-sub-nav {
         position: relative;
         transition: background-color $basic-speed ease $basic-speed;
         width: $navigation-width;
+        justify-content: space-between;
 
         &-label {
             margin-left: $basic-padding * 2;
             word-break: break-word;
+            flex: 1
         }
     }
 
