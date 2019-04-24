@@ -611,6 +611,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 */
 	public void setDateProperty(String fieldVarName, Date dateValue) throws DotRuntimeException {
 		map.put(fieldVarName, dateValue);
+		addRemoveNullProperty(fieldVarName, dateValue);
 	}
 
     /**
@@ -621,6 +622,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
      */
     public void setDateProperty(com.dotcms.contenttype.model.field.Field field, Date dateValue) throws DotRuntimeException {
         map.put(field.variable(), dateValue);
+		addRemoveNullProperty(field.variable(), dateValue);
     }
 
 	/**

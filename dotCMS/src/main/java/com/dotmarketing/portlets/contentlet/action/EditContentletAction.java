@@ -898,15 +898,6 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		// Asset Versions to list in the versions tab
 		req.setAttribute(WebKeys.VERSIONS_INODE_EDIT, contentlet);
 
-		if(contentlet.isCalendarEvent() && form instanceof EventAwareContentletForm){
-			final EventAwareContentletForm eventForm = (EventAwareContentletForm) form;
-			if(UtilMethods.isSet(contentlet.getInode())){
-			  final Event ev = eventAPI.findbyInode(contentlet.getInode(), user, false);
-			  editEvent(ev, eventForm);
-			} else {
-			    setEventDefaults(eventForm);
-			}
-		}
 	}
 
 	/**
@@ -1238,8 +1229,8 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 	public void _editWebAsset(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form, User user)
 	throws Exception {
 
-		ContentletForm cf = (ContentletForm) form;
-		ContentletAPI contAPI = APILocator.getContentletAPI();
+		final ContentletForm contentletForm = (ContentletForm) form;
+		final ContentletAPI contAPI = APILocator.getContentletAPI();
 
 		Contentlet contentlet = (Contentlet) req.getAttribute(WebKeys.CONTENTLET_EDIT);
 		Contentlet workingContentlet = null;
@@ -1330,7 +1321,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			String message = LanguageUtil.get(comp.getCompanyId(), user.getLocale(), "message.contentlet.edit.deleted");
 			SessionMessages.add(req, "custommessage", message);
 		}
-		cf.setMap(new HashMap<String, Object>(contentlet.getMap()));
+		contentletForm.setMap(new HashMap<>(contentlet.getMap()));
 
 		Logger.debug(this, "EditContentletAction: contentletInode=" + contentlet.getInode());
 
@@ -1342,16 +1333,27 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			Matcher m = p.matcher(interval);
 			boolean b = m.matches();
 			if (b) {
-				cf.setReviewContent(true);
+				contentletForm.setReviewContent(true);
 				String g1 = m.group(1);
 				String g2 = m.group(2);
-				cf.setReviewIntervalNum(g1);
-				cf.setReviewIntervalSelect(g2);
+				contentletForm.setReviewIntervalNum(g1);
+				contentletForm.setReviewIntervalSelect(g2);
 			}
 		}
 		if(UtilMethods.isSet(req.getParameter("is_rel_tab"))) {
 			req.setAttribute("is_rel_tab", req.getParameter("is_rel_tab"));
 		}
+
+		if(contentlet.isCalendarEvent() && form instanceof EventAwareContentletForm){
+			final EventAwareContentletForm eventForm = (EventAwareContentletForm) form;
+			if(UtilMethods.isSet(contentlet.getInode())){
+				final Event ev = eventAPI.findbyInode(contentlet.getInode(), user, false);
+				editEvent(ev, eventForm);
+			} else {
+				setEventDefaults(eventForm);
+			}
+		}
+
 	}
 
 	private void unLockIfNecessary(final Contentlet content, final User user) {

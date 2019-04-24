@@ -472,11 +472,11 @@
 									<%
 								}
 
-						 } else {
+						} else {
 								%>
 								<jsp:include page="/html/portlet/ext/contentlet/field/edit_field.jsp" />
 								<%
-						 }
+						}
                     } else { %>
 						<jsp:include page="/html/portlet/ext/contentlet/field/edit_field.jsp" />
 					<% } %>

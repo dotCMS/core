@@ -289,11 +289,7 @@
 						</dd>
 					</dl>
 				</div>
-
-				<%@ include file="/html/portlet/ext/calendar/edit_event_disconnect_inc.jsp" %>
-
 			</div>
-
 		</div>
 
 		<div class="clear"></div>
@@ -409,11 +405,11 @@
 				$('recurence').show();
 			}
 
-
 			 if(!$('recursNever').checked){
 				var startDate 	= dojo.byId('<%=startDateField.getVelocityVarName()%>');
 				var endDate 	= dojo.byId('<%=endDateField.getVelocityVarName()%>');
-				var endDateDate 	= dijit.byId('<%=endDateField.getVelocityVarName()%>Date');
+				var endDateDate = dijit.byId('<%=endDateField.getVelocityVarName()%>Date');
+                var endDateTime = dijit.byId('<%=endDateField.getVelocityVarName()%>Time');
 				var startDateD = dojo.date.locale.parse(startDate.value, { datePattern: 'yyyy-MM-dd HH:mm', selector: "date" });
 				var endDateD = dojo.date.locale.parse(endDate.value, { datePattern: 'yyyy-MM-dd HH:mm', selector: "date" });
 				shownRecurrenceMessage = false;
@@ -424,12 +420,17 @@
 				endDateDate.setValue(startDateD);
 				endDateDate.setValue(startDateD);
 				updateDate('<%=endDateField.getVelocityVarName()%>');
-				endDateDate.readOnly=true;
+
+                endDateDate.attr('disabled',true);
+                endDateTime.attr('disabled',true);
 
 			}
 			else{
-				var endDateDate 	= dijit.byId('<%=endDateField.getVelocityVarName()%>Date');
-				endDateDate.readOnly=false;
+				var endDateDate = dijit.byId('<%=endDateField.getVelocityVarName()%>Date');
+                var endDateTime = dijit.byId('<%=endDateField.getVelocityVarName()%>Time');
+
+                endDateDate.attr('disabled',false);
+                endDateTime.attr('disabled',false);
 			}
 
 			$('recurrenceChanged').value = "true";

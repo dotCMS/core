@@ -500,6 +500,7 @@
 
 	var glEvent = null;
 	function showEventDetail(jsevent, event) {
+
 		glEvent = event;
 		var doc = Ext.get(document.body);
 		var detailDiv = Ext.get("eventDetail");
@@ -584,10 +585,6 @@
 	}
 
 	function recurrentEventDetail(inode, identifier, startDate, endDate, action){
-
-        editRecurrentEvent(inode, startDate, endDate,'<%= referer %>');
-        <%--
-
 		var actions = '';
 		if(action=="edit"){
 			    actions += '<a class="fakeDojoButton" href="javascript: editRecurrentEvent(\'' + inode + '\',\'' + startDate + '\',\'' + endDate + '\',\'<%= referer %>\');">' +
@@ -620,7 +617,7 @@
 				showEventDetail(e,glEvent);
             }, 500))
 		});
-      --%>
+
 	}
 
 

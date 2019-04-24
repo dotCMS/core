@@ -79,7 +79,12 @@ public class EventFormUtils {
 	public static EventAwareContentletForm editEvent(final Event event, final EventAwareContentletForm eventForm)  {
 		if(!UtilMethods.isSet(event.getInode()))
 			return eventForm;
+
+		eventForm.getMap().put("startDate",event.getStartDate());
+		eventForm.getMap().put("endDate",event.getEndDate());
+
 		if (event.getRecurs()) {
+
 			eventForm.setRecurrenceStartsDate(event.getRecurrenceStart());
 			eventForm.setRecurrenceDayOfMonth(String.valueOf(event.getRecurrenceDayOfMonth()));
 			eventForm.setRecurrenceDayOfWeek(event.getRecurrenceDayOfWeek());
@@ -93,7 +98,7 @@ public class EventFormUtils {
 			String daysOfWeek = event.getRecurrenceDaysOfWeek();
 			if(daysOfWeek == null)
 				daysOfWeek = "";
-			List<String> daysList = new ArrayList<String>();
+			List<String> daysList = new ArrayList<>();
 			for(String day : daysOfWeek.split(",")) {
 				if(UtilMethods.isSet(day)) {
 					daysList.add(day);

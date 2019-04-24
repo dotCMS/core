@@ -85,9 +85,6 @@ public class EventAwareContentletForm extends ContentletForm {
 		this.specificMonthOfYearRecY = specificMonthOfYearRecY;
 	}
 
-	
-	
-	
 	public int getRecurrenceMonthOfYear() {
 		return recurrenceMonthOfYear;
 	}
