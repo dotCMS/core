@@ -67,38 +67,7 @@
 		<property name="createDate" />
 		<property name="password" column="password_" />
 	</class>
-	<class name="com.liferay.portal.ejb.PortletHBM" table="Portlet">
-		<!--<cache usage="read-write" />-->
-		<composite-id name="primaryKey" class="com.liferay.portal.ejb.PortletPK">
-			<key-property name="portletId" />
-			<key-property name="groupId" />
-			<key-property name="companyId" />
-		</composite-id>
-		<property name="defaultPreferences" />
-		<property name="narrow" type="com.liferay.util.dao.hibernate.BooleanType" />
-		<property name="roles" />
-		<property name="active" column="active_" type="com.liferay.util.dao.hibernate.BooleanType" />
-	</class>
-	<class name="com.liferay.portal.ejb.PortletPreferencesHBM" table="PortletPreferences">
-		<!--<cache usage="read-write" />-->
-		<composite-id name="primaryKey" class="com.liferay.portal.ejb.PortletPreferencesPK">
-			<key-property name="portletId" />
-			<key-property name="layoutId" />
-			<key-property name="userId" />
-		</composite-id>
-		<property name="preferences" />
-	</class>
-	<class name="com.liferay.portal.ejb.ReleaseHBM" table="Release_">
-		<!--<cache usage="read-write" />-->
-		<id name="releaseId" type="java.lang.String">
-			<generator class="assigned" />
-		</id>
-		<property name="createDate" />
-		<property name="modifiedDate" />
-		<property name="buildNumber" type="com.liferay.util.dao.hibernate.IntegerType" />
-		<property name="buildDate" />
-	</class>
-	
+
 	<class name="com.liferay.portal.ejb.UserHBM" table="User_">
 		<!--<cache usage="read-write" />-->
 		<id name="userId" type="java.lang.String">
