@@ -130,31 +130,6 @@ public class StructureAjax {
 		return searchableFields;
 	}
 
-	public List<Map> getStructureSearchFields (String structureInode) {
-		Structure st = StructureFactory.getStructureByInode(structureInode);
-		List<Field> fields = st.getFields();
-		ArrayList<Map> searchableFields = new ArrayList<Map> ();
-		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
-		for (Field field : fields) {
-		  if (!field.getFieldType().equals(Field.FieldType.LINE_DIVIDER.toString()) &&
-					  !field.getFieldType().equals(Field.FieldType.TAB_DIVIDER.toString())) {
-			  if (field.isSearchable() && field.isIndexed()) {
-
-					  try {
-						  Map fieldMap = field.getMap();
-						  searchableFields.add(fieldMap);
-					  } catch (Exception e) {
-						  Logger.error(this, "Error getting the map of properties of a field: " + field.getInode());
-					  }
-
-			  }
-		  }
-		}
-		Structure structure = StructureFactory.getStructureByInode(structureInode);
-		req.getSession().setAttribute("selectedStructure", structureInode);
-
-		return searchableFields;
-	}
 
 	public Map<String,Object> getKeyStructureFields (final String contentTypeInode) throws SystemException, PortalException, DotDataException, DotSecurityException {
 		final Map<String,Object> result = new HashMap<String, Object>();
@@ -591,10 +566,7 @@ public class StructureAjax {
 	public void setSelectedStructure(String StructureVelocityVarName){
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest request = ctx.getHttpServletRequest();
-		
-		if(CacheLocator.getContentTypeCache().getStructureByVelocityVarName(StructureVelocityVarName) != null){
-			request.getSession().setAttribute("selectedStructure", CacheLocator.getContentTypeCache().getStructureByVelocityVarName(StructureVelocityVarName).getInode());	
-		}
+
 	}
 
 }

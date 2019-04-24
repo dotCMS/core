@@ -137,9 +137,10 @@ public class FolderAPIImpl implements FolderAPI  {
 		}
 
 		try {
-
 			renamed = folderFactory.renameFolder(folder, newName, user, respectFrontEndPermissions);
-
+			CacheLocator.getNavToolCache().removeNav(folder.getHostId(), folder.getInode());
+			Identifier folderId = APILocator.getIdentifierAPI().find(folder);
+			CacheLocator.getNavToolCache().removeNavByPath(folderId.getHostId(), folderId.getParentPath());
 			return renamed;
 		} catch (Exception e) {
 
@@ -580,7 +581,11 @@ public class FolderAPIImpl implements FolderAPI  {
 		folder.setName(folder.getName());
 		folderFactory.save(folder, existingId);
 
-		SystemEventType systemEventType = isNew ? SystemEventType.SAVE_FOLDER : SystemEventType.UPDATE_FOLDER;
+        // remove folder and parent from navigation cache
+        CacheLocator.getNavToolCache().removeNav(folder.getHostId(), folder.getInode());
+        CacheLocator.getNavToolCache().removeNavByPath(id.getHostId(), id.getParentPath());
+
+        SystemEventType systemEventType = isNew ? SystemEventType.SAVE_FOLDER : SystemEventType.UPDATE_FOLDER;
 		systemEventsAPI.pushAsync(systemEventType, new Payload(folder, Visibility.EXCLUDE_OWNER,
 				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 	}
@@ -1147,4 +1152,5 @@ public class FolderAPIImpl implements FolderAPI  {
 			}
 		}
 	}
+
 }
