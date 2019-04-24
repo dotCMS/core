@@ -1,12 +1,12 @@
 <dot-dialog
-    *ngIf="(data$ | async) as data"
+    *ngIf="data"
     [visible]="!!data.title"
     [header]="data.title"
-    [width]="data.width"
-    [height]="data.height"
+    [width]="data.width || '500px'"
+    [height]="data.height || '400px'"
     (hide)="close()"
 >
-    <div class="dialog-message__body" [innerHTML]="data.body" *ngIf="data.body"></div>
+    <div #body class="dialog-message__body" *ngIf="data.body"></div>
     <div *ngIf="data.code">
         <pre class="dialog-message__code">
             {{ data.code.content }}

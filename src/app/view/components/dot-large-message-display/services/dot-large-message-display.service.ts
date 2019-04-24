@@ -7,6 +7,7 @@ export interface DotLargeMessageDisplayParams {
     width?: string;
     height?: string;
     body?: string;
+    script?: string;
     code?: {
         lang: string;
         content: string;
