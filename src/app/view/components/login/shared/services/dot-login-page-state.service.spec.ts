@@ -32,15 +32,16 @@ describe('DotLoginPageStateServiceService', () => {
         dotloginPageStateService.set('es_ES').subscribe();
         expect(loginService.getLoginFormInfo).toHaveBeenCalledWith('es_ES', LOGIN_LABELS);
         dotloginPageStateService.get().subscribe((loginInfo: DotLoginInformation) => {
-            console.log(loginInfo, mockLoginFormResponse);
-            expect(loginInfo).toEqual(mockLoginFormResponse);
+            expect(loginInfo.entity).toEqual(mockLoginFormResponse.entity);
+            expect(loginInfo.i18nMessagesMap['emailAddressLabel']).toEqual('Email Address');
         });
     });
 
     it('should update value of dotLoginInformation$', () => {
         dotloginPageStateService.update('es_ES');
         dotloginPageStateService.get().subscribe((loginInfo: DotLoginInformation) => {
-            expect(loginInfo).toEqual(mockLoginFormResponse);
+            expect(loginInfo.entity).toEqual(mockLoginFormResponse.entity);
+            expect(loginInfo.i18nMessagesMap['emailAddressLabel']).toEqual('Email Address');
         });
     });
 });

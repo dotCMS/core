@@ -79,7 +79,6 @@ describe('DotLoginComponent', () => {
         const rememberMe: DebugElement = de.query(By.css('p-checkbox label'));
         const submitButton: DebugElement = de.query(By.css('.login__button'));
         const productInformation: DebugElement[] = de.queryAll(By.css('.login__footer span'));
-
         expect(header.nativeElement.innerHTML).toEqual('Welcome!');
         expect(inputLabels[0].nativeElement.innerHTML).toEqual('Email Address');
         expect(inputLabels[1].nativeElement.innerHTML).toEqual('Password');
@@ -87,7 +86,7 @@ describe('DotLoginComponent', () => {
         expect(rememberMe.nativeElement.innerHTML).toEqual('Remember Me');
         expect(submitButton.nativeElement.innerHTML).toContain('Sign In');
         expect(productInformation[0].nativeElement.innerHTML).toEqual('Server: 860173b0');
-        expect(productInformation[1].nativeElement.innerHTML).toEqual('COMMUNITY EDITION: 5.0.0');
+        expect(productInformation[1].nativeElement.innerHTML).toEqual('COMMUNITY EDITION: 5.0.0 - March 13, 2019');
         expect(productInformation[2].nativeElement.innerHTML).toEqual(
             ' - <a href="https://dotcms.com/features" target="_blank">upgrade</a>'
         );
