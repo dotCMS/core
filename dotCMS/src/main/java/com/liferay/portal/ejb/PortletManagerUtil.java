@@ -39,7 +39,7 @@ public class PortletManagerUtil {
         try {
             final PortletFactory portletFactory = PortletManagerFactory.getManager();
             
-            Map<String,Portlet> portlets = portletFactory.xmlToPortlets(xmls);
+            final Map<String,Portlet> portlets = portletFactory.xmlToPortlets(xmls);
             for(Portlet portlet : portlets.values()) {
               portletFactory.insertPortlet(portlet);
             }
@@ -69,8 +69,6 @@ public class PortletManagerUtil {
             final PortletFactory portletFactory = PortletManagerFactory.getManager();
 
             return portletFactory.getPortlets();
-        } catch (final com.liferay.portal.SystemException se) {
-            throw se;
         } catch (final Exception e) {
             throw new com.liferay.portal.SystemException(e);
         }

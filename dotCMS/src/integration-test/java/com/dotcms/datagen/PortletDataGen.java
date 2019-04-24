@@ -1,22 +1,12 @@
 package com.dotcms.datagen;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
-import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
-import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.ejb.PortletManagerFactory;
 import com.liferay.portal.model.Portlet;
+import java.util.HashMap;
+import java.util.Map;
 
 public class PortletDataGen extends AbstractDataGen<Portlet> {
 
@@ -27,37 +17,37 @@ public class PortletDataGen extends AbstractDataGen<Portlet> {
 
   }
 
-  public PortletDataGen portletId(String portletId) {
+  public PortletDataGen portletId(final String portletId) {
     this.portletId = portletId;
     return this;
   }
 
-  public PortletDataGen companyId(String companyId) {
+  public PortletDataGen companyId(final String companyId) {
     this.companyId = companyId;
     return this;
   }
 
-  public PortletDataGen groupId(String groupId) {
+  public PortletDataGen groupId(final String groupId) {
     this.groupId = groupId;
     return this;
   }
 
-  public PortletDataGen portletClass(String portletClass) {
+  public PortletDataGen portletClass(final String portletClass) {
     this.portletClass = portletClass;
     return this;
   }
 
-  public PortletDataGen roles(String roles) {
+  public PortletDataGen roles(final String roles) {
     this.roles = roles;
     return this;
   }
 
-  public PortletDataGen initParams(Map<String, String> initParams) {
+  public PortletDataGen initParams(final Map<String, String> initParams) {
     this.initParams = initParams;
     return this;
   }
 
-  public PortletDataGen extendsPortlet(Portlet extendsPortlet) {
+  public PortletDataGen extendsPortlet(final Portlet extendsPortlet) {
 
     this.portletClass=extendsPortlet.getPortletClass();
     this.initParams=extendsPortlet.getInitParams();
@@ -75,7 +65,7 @@ public class PortletDataGen extends AbstractDataGen<Portlet> {
   }
 
   @Override
-  public Portlet persist(Portlet portlet) {
+  public Portlet persist(final Portlet portlet) {
     try {
       return PortletManagerFactory.getManager().insertPortlet(portlet);
     } catch (DotDataException e) {

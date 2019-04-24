@@ -114,6 +114,7 @@ public class ViewContentletAction extends DotPortletAction {
       return mapping.findForward("portlet.ext.contentlet.view_contentlets");
 
     } catch (final Exception e) {
+      Logger.debug(this,e.getMessage());
       req.setAttribute(PageContext.EXCEPTION, e);
       return mapping.findForward(Constants.COMMON_ERROR);
     }
@@ -171,12 +172,11 @@ public class ViewContentletAction extends DotPortletAction {
   }
 
   private String buildJsArray(List<ContentType> types) {
-    String typeStr = String.join(",", types.stream().map(t ->  t.id() ).collect(Collectors.toList()));
-    return  typeStr ;
+    return String.join(",", types.stream().map(t ->  t.id() ).collect(Collectors.toList()));
 
   }
 
-  private String resolveStructureSelected(HttpServletRequest request, List<ContentType> types) {
+  private String resolveStructureSelected(final HttpServletRequest request, final List<ContentType> types) {
     Portlet portlet = APILocator.getPortletAPI().findPortlet(request.getParameter("p_p_id"));
     String prefix = (portlet != null) ? portlet.getPortletId() : "";
 
