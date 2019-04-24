@@ -1036,11 +1036,6 @@
 		<put name="content" value="/portlet/ext/events/view_events.jsp" />
 	</definition>
 
-	<definition name="portlet.ext.events.edit_event"
-		extends="portlet.ext.events">
-		<put name="content" value="/portlet/ext/events/edit_event.jsp" />
-	</definition>
-
 	<definition name="portlet.ext.events.edit_recurance"
 		extends="portlet.ext.events">
 		<put name="content"
@@ -1472,12 +1467,6 @@
 		extends="portlet.ext.calendar">
 		<put name="content"
 			value="/portlet/ext/calendar/view_calendar.jsp" />
-	</definition>
-
-	<definition name="portlet.ext.calendar.edit_event"
-		extends="portlet.ext.calendar">
-		<put name="content"
-			value="/portlet/ext/calendar/edit_event.jsp" />
 	</definition>
 
 	<!-- calendar -->
