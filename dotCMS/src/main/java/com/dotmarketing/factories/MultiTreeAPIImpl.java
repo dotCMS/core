@@ -23,6 +23,7 @@ import com.dotmarketing.portlets.containers.business.ContainerFinderByIdOrPathSt
 import com.dotmarketing.portlets.containers.business.LiveContainerFinderByIdOrPathStrategyResolver;
 import com.dotmarketing.portlets.containers.business.WorkingContainerFinderByIdOrPathStrategyResolver;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -618,9 +619,8 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
 
                 if (!pageContents.contains(container.getIdentifier(), containerUUID.getUUID())) {
-                    final boolean isLegacyValue = ContainerUUID.UUID_LEGACY_VALUE.equals(containerUUID.getUUID());
 
-                    if (!isLegacyValue || !pageContents.contains(containerUUID.getIdentifier(), ContainerUUID.UUID_START_VALUE)) {
+                    if (isContains(pageContents, containerUUID, container)) {
 
                         pageContents.put(container.getIdentifier(), containerUUID.getUUID(), new LinkedHashSet<>());
                     }
@@ -629,6 +629,20 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         } catch (RuntimeException e) {
             Logger.error(this, e.getMessage(), e);
         }
+    }
+
+    private boolean isContains(
+            final Table<String, String, Set<String>> pageContents,
+            final ContainerUUID containerUUID, Container container) {
+
+        final boolean isLegacyValue = ContainerUUID.UUID_LEGACY_VALUE.equals(containerUUID.getUUID());
+        boolean pageContenstContains = pageContents.contains(containerUUID.getIdentifier(), ContainerUUID.UUID_START_VALUE);
+
+        if (!pageContenstContains && container instanceof FileAssetContainer){
+            pageContenstContains = pageContents.contains(container.getIdentifier(), ContainerUUID.UUID_START_VALUE);
+        }
+
+        return !isLegacyValue || !pageContenstContains;
     }
 
     private Container getLiveContainerById(final String containerIdOrPath, final User user, final Template template) throws NotFoundInDbException {
