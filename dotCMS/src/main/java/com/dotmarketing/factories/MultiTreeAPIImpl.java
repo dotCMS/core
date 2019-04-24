@@ -620,7 +620,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
                 if (!pageContents.contains(container.getIdentifier(), containerUUID.getUUID())) {
 
-                    if (isContains(pageContents, containerUUID, container)) {
+                    if (doesPageContentsHaveContainer(pageContents, containerUUID, container)) {
 
                         pageContents.put(container.getIdentifier(), containerUUID.getUUID(), new LinkedHashSet<>());
                     }
@@ -631,9 +631,19 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         }
     }
 
-    private boolean isContains(
+    /**
+     * Check if a container with the same id or path (in case of {@link FileAssetContainer}), exist into pageContents.
+     * Also support legacy 'LEGACY_RELATION_TYPE' uuid value
+     *
+     * @param pageContents Table of the {@link MultiTree} into the page
+     * @param containerUUID container's UUID link with the page
+     * @param container container
+     * @return true in case of the containerUUId is contains in pageContents
+     */
+    private boolean doesPageContentsHaveContainer(
             final Table<String, String, Set<String>> pageContents,
-            final ContainerUUID containerUUID, Container container) {
+            final ContainerUUID containerUUID,
+            final Container container) {
 
         final boolean isLegacyValue = ContainerUUID.UUID_LEGACY_VALUE.equals(containerUUID.getUUID());
         boolean pageContenstContains = pageContents.contains(containerUUID.getIdentifier(), ContainerUUID.UUID_START_VALUE);
