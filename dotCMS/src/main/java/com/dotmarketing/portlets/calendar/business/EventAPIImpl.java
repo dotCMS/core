@@ -104,6 +104,8 @@ public class EventAPIImpl implements EventAPI {
 	 * @throws DotSecurityException
 	 *             If the user doesn't have permissions to see this event
 	 */
+
+    @CloseDBIfOpened
 	public Event find(String id, boolean live, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		Event ev = eventFactory.find(RecurrenceUtil.getBaseEventIdentifier(id), live, user, respectFrontendRoles);
 		Contentlet cont = new Contentlet();

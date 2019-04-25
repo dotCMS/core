@@ -37,10 +37,10 @@ function submitfmEvent(form, subcmd)
 		
 	<%
 		boolean found = false;
-		for (Field fld : fields) {
-			if (fld.isListed()) {
+		for (Field field : fields) {
+			if (field.isListed()) {
 	%>
-	form.title.value = form.<%=fld.getFieldContentlet()%>.value;
+	form.title.value = form.<%=field.getFieldContentlet()%>.value;
 	<%			
 				found = true;
 				break;

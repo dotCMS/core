@@ -28,25 +28,6 @@ public class EventFormUtils {
 	 * @return
 	 */
     public static EventAwareContentletForm setEventDefaults(final EventAwareContentletForm eventForm){
-     /*
-		eventForm.setRecurrenceStartsDate(new Date());
-		eventForm.setRecurrenceEndsDate(new Date());
-		eventForm.setRecurrenceOccurs("never");
-		eventForm.setRecurrenceDayOfMonth("");
-		eventForm.setNoEndDate(false);
-		eventForm.setRecurrenceInterval(1);
-		eventForm.setRecurrenceIntervalDaily(1);
-		eventForm.setRecurrenceIntervalWeekly(1);
-		eventForm.setRecurrenceIntervalMonthly(1);
-		eventForm.setRecurrenceIntervalYearly(1);
-		eventForm.setRecurrenceDaysOfWeek(daysOfWeekRecurrence);
-		eventForm.setRecurrenceDayOfWeek(1);
-		eventForm.setRecurrenceMonthOfYear(1);
-		eventForm.setRecurrenceWeekOfMonth(1);
-		eventForm.setSpecificDayOfMonthRecY("1");
-		eventForm.setSpecificMonthOfYearRecY("1");
-		eventForm.setSpecificDate(false);
-		*/
 
 		eventForm.setRecurrenceStartsDate(new Date());
 		eventForm.setRecurrenceEndsDate(new Date());

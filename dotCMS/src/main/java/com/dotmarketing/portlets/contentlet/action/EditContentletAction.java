@@ -842,7 +842,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 					req.setAttribute(com.dotmarketing.util.WebKeys.CONTENTLET_EDIT, contentlet);
 					req.setAttribute("inode", sibblingInode);
 				} else {
-					Logger.debug(EditContentletAction.class, ()->"_retrieveWebAsset :: Sibbling Contentlet = " + sibblingContentlet.getInode());
+					Logger.debug(EditContentletAction.class, ()->"retrieveWebAsset :: Sibbling Contentlet = " + sibblingContentlet.getInode());
 					Identifier identifier = APILocator.getIdentifierAPI().find(sibblingContentlet);
 					contentlet.setIdentifier(identifier.getInode());
 					contentlet.setStructureInode(sibblingContentlet.getStructureInode());
@@ -1171,14 +1171,14 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 
 		//Setting review intervals form properties
 		if (contentType.getReviewInterval() != null) {
-			String interval = contentType.getReviewInterval();
-			Pattern p = Pattern.compile("(\\d+)([dmy])");
-			Matcher m = p.matcher(interval);
-			boolean b = m.matches();
+			final String interval = contentType.getReviewInterval();
+			final Pattern pattern = Pattern.compile("(\\d+)([dmy])");
+			final Matcher matcher = pattern.matcher(interval);
+			final boolean b = matcher.matches();
 			if (b) {
 				cf.setReviewContent(true);
-				String g1 = m.group(1);
-				String g2 = m.group(2);
+				String g1 = matcher.group(1);
+				String g2 = matcher.group(2);
 				cf.setReviewIntervalNum(g1);
 				cf.setReviewIntervalSelect(g2);
 			}
@@ -1328,14 +1328,14 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		req.setAttribute(WebKeys.CONTENTLET_EDIT, contentlet);
 
 		if (contentlet.getReviewInterval() != null) {
-			String interval = contentlet.getReviewInterval();
-			Pattern p = Pattern.compile("(\\d+)([dmy])");
-			Matcher m = p.matcher(interval);
-			boolean b = m.matches();
-			if (b) {
+			final String interval = contentlet.getReviewInterval();
+			final Pattern pattern = Pattern.compile("(\\d+)([dmy])");
+			final Matcher matcher = pattern.matcher(interval);
+			final boolean matches = matcher.matches();
+			if (matches) {
 				contentletForm.setReviewContent(true);
-				String g1 = m.group(1);
-				String g2 = m.group(2);
+				final String g1 = matcher.group(1);
+				final String g2 = matcher.group(2);
 				contentletForm.setReviewIntervalNum(g1);
 				contentletForm.setReviewIntervalSelect(g2);
 			}
