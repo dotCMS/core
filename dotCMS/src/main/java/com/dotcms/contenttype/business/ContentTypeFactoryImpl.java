@@ -246,7 +246,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
       if (dc.getInt("test") == 0) {
         return var;
       }
-      var = tryVar + String.valueOf(i);
+      var = var + i;
     }
     throw new DotDataException("Unable to suggest a variable name.  Got to:" + var);
 

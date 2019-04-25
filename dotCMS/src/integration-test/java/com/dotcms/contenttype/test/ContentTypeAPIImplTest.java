@@ -703,6 +703,50 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		}
 	}
 
+	/*
+		This test is for the case of two or more consecutives saves of names with the same length
+		and only differing in the same character, which needs to be a special one different from
+		"_". The two saves should be successful and a valid variable name should be created for the
+		types.
+	 */
+	@Test
+	public void testSave_GivenConsecutiveSavesNameWithSpecialChar_ShouldSaveTheTwoTimes()
+			throws DotSecurityException, DotDataException {
+
+		ContentType type1 = null;
+		ContentType type2 = null;
+		try {
+			type1 = APILocator.getContentTypeAPI(APILocator.systemUser())
+					.save(ContentTypeBuilder
+							.builder(SimpleContentType.class)
+							.folder(FolderAPI.SYSTEM_FOLDER)
+							.host(Host.SYSTEM_HOST)
+							.name("*123")
+							.owner(user.getUserId())
+							.build());
+
+			Assert.assertTrue(type1.variable().matches(TYPES_AND_FIELDS_VALID_VARIABLE_REGEX));
+
+			type2 = APILocator.getContentTypeAPI(APILocator.systemUser())
+					.save(ContentTypeBuilder
+							.builder(SimpleContentType.class)
+							.folder(FolderAPI.SYSTEM_FOLDER)
+							.host(Host.SYSTEM_HOST)
+							.name("?123")
+							.owner(user.getUserId())
+							.build());
+
+			Assert.assertTrue(type2.variable().matches(TYPES_AND_FIELDS_VALID_VARIABLE_REGEX));
+		} finally {
+			if(type1!=null) {
+				APILocator.getContentTypeAPI(APILocator.systemUser()).delete(type1);
+			}
+			if(type2!=null) {
+				APILocator.getContentTypeAPI(APILocator.systemUser()).delete(type2);
+			}
+		}
+	}
+
 	@Test
 	@UseDataProvider("testCasesUpdateTypePermissions")
 	public void testDeleteLimitedUserPermissions(final TestCaseUpdateContentTypePermissions testCase)
