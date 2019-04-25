@@ -195,7 +195,7 @@ public class PushPublisher extends Publisher {
 						ThreadContext.put(BUNDLE_ID, BUNDLE_ID + "=" + b.getName());
 						PushPublishLogger.log(this.getClass(), "Status Update: Sending Bundle");
 	        			WebTarget webTarget = client.target(endpoint.toURL()+"/api/bundlePublisher/publish")
-	        					.queryParam("AUTH_TOKEN", PushPublisher.retriveEndpointKeyDigest(endpoint))
+	        					.queryParam("AUTH_TOKEN", PushPublisher.retriveEndpointKeyDigest(endpoint).get())
 	        					.queryParam("GROUP_ID", UtilMethods.isSet(endpoint.getGroupId()) ? endpoint.getGroupId() : endpoint.getId())
 	        					.queryParam("BUNDLE_NAME", b.getName())
 	        					.queryParam("ENDPOINT_ID", endpoint.getId())

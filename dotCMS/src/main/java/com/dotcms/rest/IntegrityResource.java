@@ -22,7 +22,6 @@ import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataParam;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.file.FileDataBodyPart;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
