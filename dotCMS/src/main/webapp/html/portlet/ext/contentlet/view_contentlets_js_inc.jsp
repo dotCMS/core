@@ -1093,7 +1093,7 @@
 		    loadingSearchFields = true;
 		    setDotFieldTypeStr = "";
 
-		    StructureAjax.getStructureSearchFields (structureInode,
+		    StructureAjax.getSearchableStructureFields (structureInode,
 		            { callback:fillFields, async: async });
 		    StructureAjax.getStructureCategories (structureInode,
 		            { callback:fillCategories, async: async });
