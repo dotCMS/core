@@ -1,20 +1,22 @@
 buildscript {
     repositories {
-        
+
         maven { url "http://repo.dotcms.com/artifactory/libs-release" }
+        maven { url "https://plugins.gradle.org/m2/" }
         jcenter()
     }
     dependencies {
         classpath 'org.ajoberstar:grgit:1.7.0'
         classpath 'org.unbroken-dome.gradle-plugins:gradle-testsets-plugin:1.4.3'
         classpath 'com.dotcms.lib:dot.commons-io:2.0.1_2'
-        classpath 'nl.eveoh:gradle-aspectj:1.6'
+        classpath 'io.freefair.gradle:aspectj-plugin:3.2.0'
     }
 }
 
 plugins {
     id "com.moowork.node" version "1.2.0"
     id "com.palantir.docker" version "0.17.2"  // reference:  https://github.com/palantir/gradle-docker
+    id 'org.unbroken-dome.test-sets' version '2.1.1'
 }
 
 project.ext {
@@ -61,9 +63,8 @@ configurations.all({
 
 // Apply the java plugin to add support for Java.
 apply plugin: 'java'
-apply plugin: 'aspectj'
+apply plugin: 'io.freefair.aspectj.post-compile-weaving'
 apply plugin: 'war'
-apply plugin: 'org.unbroken-dome.test-sets'
 apply plugin: 'project-report' /*For gradle dependencies: ./gradlew htmlDependencyReport*/
 apply plugin: 'idea'
 apply plugin: 'eclipse'
@@ -75,6 +76,7 @@ eclipse {
 
 // In this section you declare where to find the dependencies of your project.
 repositories {
+    maven { url "http://central.maven.org/maven2" } // todo: remove this, check artifactory
     maven { url "http://repo.dotcms.com/artifactory/libs-release" }
     maven { url "http://repo.dotcms.com/artifactory/libs-snapshot-local" }
 }
@@ -281,7 +283,7 @@ war {
 
     }
 
-    classpath = classpath - sourceSets.main.output.classesDir
+    classpath = classpath - sourceSets.main.output.classesDirs
 
     if (gradle.startParameter.taskNames.contains("deployWarTomcatTests")) {
         classpath = configurations.testRuntime
@@ -541,8 +543,8 @@ task customDistWar(type: War) {
 customDistWar.group='dotCMS Development'
 customDistWar.description='Builds a dotCMS as a war. (Task mean to be use from a distribution structure using the buildwar.sh script. This task will just use the already deployed folder inside the app server and compressed into a war file.)'
 
-compileAspect.dependsOn 'immutables'
-compileAspect {
+compileJava.dependsOn 'immutables'
+compileJava {
     println "\nCompiling Aspect..."
 }
 // This task defines if the immutables folder is generated, otherwise will generate it.
@@ -558,7 +560,7 @@ task immutables() {
             def artefactBuild = project.tasks.create([name: "artefactBuild_$gradleTask", type: GradleBuild])
             artefactBuild.buildFile = project.file("immutables.gradle")
             artefactBuild.tasks = [gradleTask]
-            artefactBuild.execute()
+            artefactBuild.build()
         } else {
             println "Immutables already generated, skipping generation... (Delete $generatedSourceFolder folder in order to regenerate them)\n"
         }
@@ -593,7 +595,7 @@ task buildPlugins(dependsOn: 'jar') {
             from "$buildDir/libs/"
         }
 
-        def pluginsFolder = new File("src/main/plugins");
+        def pluginsFolder = new File("$rootDir/src/main/plugins");
 
         if (!pluginsFolder.exists()) {
             pluginsFolder = new File("../plugins");
@@ -651,8 +653,8 @@ task deployPlugins(dependsOn: ['buildPlugins']) {
 
     doLast {
 
-        def pluginsFolder = new File("src/main/plugins")
-        def webAppFolder = 'src/main/webapp'
+        def pluginsFolder = new File("$rootDir/src/main/plugins")
+        def webAppFolder =  "$rootDir/src/main/webapp"
 
         if (!pluginsFolder.exists()) {
             pluginsFolder = new File("../plugins");
@@ -696,12 +698,11 @@ deployPlugins.description='Builds and deploys all the plugins under /plugins fol
 task undeployPlugins() {
 
     doLast {
-        def webAppFolder = 'src/main/webapp'
+        def webAppFolder = '$rootDir/src/main/webapp'
 
         if( !new File("$webAppFolder").exists() ) {
             webAppFolder = "$dotcmsDistBase$webAppRootFolder"
         }
-
 
         ant.taskdef(
                 name: 'pluginUndeployTask',
@@ -837,10 +838,11 @@ static def replaceText(filePath, fromString, toString) {
 class ClonePullTomcatTask extends DefaultTask{
 
     String tomcatLocation = project.tomcatInstallLocation
+    File projectDir       = project.projectDir;
 
     @TaskAction
     def pull(){
-        def folder = new File( tomcatLocation )
+        def folder = new File( projectDir, tomcatLocation )
         if( !folder.exists() ) {
 
             try {

@@ -40,11 +40,12 @@ dependencies {
     }
 
     compile group: 'com.lmax', name: 'disruptor', version: '3.3.4'
-    compile group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.8.2'
-    compile group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.8.2'
-    compile group: 'org.apache.logging.log4j', name: 'log4j-1.2-api', version: '2.8.2'
-    compile group: 'org.apache.logging.log4j', name: 'log4j-jcl', version: '2.8.2'
-    compile group: 'org.apache.logging.log4j', name: 'log4j-web', version: '2.8.2'
+
+    compile group: 'org.apache.logging.log4j', name: 'log4j-api',     version: '2.11.2'
+    compile group: 'org.apache.logging.log4j', name: 'log4j-core',    version: '2.11.2'
+    compile group: 'org.apache.logging.log4j', name: 'log4j-jcl',     version: '2.11.2'
+    compile group: 'org.apache.logging.log4j', name: 'log4j-web',     version: '2.11.2'
+    compile group: 'org.apache.logging.log4j', name: 'log4j-1.2-api', version: '2.11.2'
 
     compile group: 'com.dotcms.lib', name: 'dot.fileupload-ext', version:'ukv_3'
     compile group: 'fop', name: 'fop', version:'0.20.3'
@@ -235,6 +236,9 @@ dependencies {
     compile group: 'org.openjdk.jmh', name: 'jmh-core', version:'0.1'
     compile group: 'com.dotcms.lib', name: 'dot.geoip2', version:'2.1.0_2'
     compile group: 'com.dotcms.lib', name: 'dot.aopalliance-repackaged', version:'2.4.0-b10_2'
+    compile("javax.annotation:javax.annotation-api:1.3.2")
+    compile("javax.activation:javax.activation-api:1.2.0")
+    compile group: 'javax.xml.bind', name: 'jaxb-api', version: '2.2.4'
     compile group: 'com.dotcms.lib', name: 'dot.javax.annotation-api', version:'1.2_2'
     compile group: 'com.dotcms.lib', name: 'dot.javax.ws.rs-api', version:'2.0.1_2'
     compile group: 'com.dotcms.lib', name: 'dot.persistence-api', version:'1.0_2'
