@@ -90,10 +90,12 @@ public class BundlePublisherResource {
 
 					PublishingEndPoint mySelf = endpointAPI.findEnabledSendingEndPointByAddress(remoteIP);
 
-					if(!isValidToken(auth_token_digest, remoteIP, mySelf)) {
+					if(mySelf==null || !isValidToken(auth_token_digest, remoteIP, mySelf)) {
 						bundleStream.close();
-		                return responseResource.responseError( HttpStatus.SC_UNAUTHORIZED );
-		            }
+						Logger.error(this.getClass(), "Push Publishing failed from " + remoteIP + " invalid endpoint or token");
+						
+		        return responseResource.responseError( HttpStatus.SC_UNAUTHORIZED );
+		       }
 
 					String bundlePath = ConfigUtils.getBundlePath()+File.separator+MY_TEMP;
 					String bundleFolder = fileName.substring(0, fileName.indexOf(".tar.gz"));
