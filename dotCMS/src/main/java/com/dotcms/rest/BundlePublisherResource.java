@@ -7,6 +7,7 @@ import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotcms.publisher.business.PublisherQueueJob;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
+import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotcms.repackage.javax.ws.rs.Consumes;
 import com.dotcms.repackage.javax.ws.rs.POST;
 import com.dotcms.repackage.javax.ws.rs.Path;
@@ -30,6 +31,8 @@ import java.io.InputStream;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
+
 import javax.servlet.http.HttpServletRequest;
 
 @Path("/bundlePublisher")
@@ -167,29 +170,15 @@ public class BundlePublisherResource {
     public static boolean isValidToken ( String token, String remoteIP, PublishingEndPoint mySelf ) throws IOException {
 
         //My key
-        String myKey;
-        if ( mySelf != null ) {
-            myKey = retrieveKeyString( PublicEncryptionFactory.decryptString( mySelf.getAuthKey().toString() ) );
-        } else {
-            return false;
+        Optional<String> myKey=PushPublisher.retriveEndpointKeyDigest(mySelf);
+        if(!myKey.isPresent()) {
+          return false;
         }
 
-        return token.equals( myKey );
+
+        return token.equals( myKey.get() );
     }
 
-    public static String retrieveKeyString ( String token ) throws IOException {
 
-        String key = null;
-        if ( token.contains( File.separator ) ) {
-            File tokenFile = new File( token );
-            if ( tokenFile != null && tokenFile.exists() ) {
-                key = FileUtils.readFileToString( tokenFile, "UTF-8" ).trim();
-            }
-        } else {
-            key = token;
-        }
-
-        return key;
-    }
 
 }

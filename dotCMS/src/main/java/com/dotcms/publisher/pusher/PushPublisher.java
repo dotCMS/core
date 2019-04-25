@@ -27,6 +27,7 @@ import com.dotcms.system.event.local.type.pushpublish.SinglePushPublishEndpointF
 import com.dotcms.util.CloseUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
+import com.dotmarketing.portlets.contentlet.business.DotReindexStateException;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -194,7 +195,7 @@ public class PushPublisher extends Publisher {
 						ThreadContext.put(BUNDLE_ID, BUNDLE_ID + "=" + b.getName());
 						PushPublishLogger.log(this.getClass(), "Status Update: Sending Bundle");
 	        			WebTarget webTarget = client.target(endpoint.toURL()+"/api/bundlePublisher/publish")
-	        					.queryParam("AUTH_TOKEN", retriveKeyString(PublicEncryptionFactory.decryptString(endpoint.getAuthKey().toString())))
+	        					.queryParam("AUTH_TOKEN", PushPublisher.retriveEndpointKeyDigest(endpoint))
 	        					.queryParam("GROUP_ID", UtilMethods.isSet(endpoint.getGroupId()) ? endpoint.getGroupId() : endpoint.getId())
 	        					.queryParam("BUNDLE_NAME", b.getName())
 	        					.queryParam("ENDPOINT_ID", endpoint.getId())
@@ -316,7 +317,14 @@ public class PushPublisher extends Publisher {
      * @return
      * @throws IOException
      */
-	public static String retriveKeyString(String token) throws IOException {
+	public static Optional<String> retriveEndpointKeyDigest(final PublishingEndPoint endpoint) throws IOException {
+	  
+	  if(endpoint==null || endpoint.getAuthKey() ==null) {
+	    Logger.warn(PushPublisher.class,"Endpoint or endpoint key is null:" + endpoint);
+	    return Optional.empty();
+	  }
+	  
+	  String token = PublicEncryptionFactory.decryptString(endpoint.getAuthKey().toString());
 		String key = null;
 		if(token.contains(File.separator)) {
 			File tokenFile = new File(token);
@@ -325,8 +333,7 @@ public class PushPublisher extends Publisher {
 		} else {
 			key = token;
 		}
-
-		return PublicEncryptionFactory.encryptString(key);
+		return key==null ? Optional.empty() : Optional.of(PublicEncryptionFactory.digestString(key));
 	}
 
     @Override
