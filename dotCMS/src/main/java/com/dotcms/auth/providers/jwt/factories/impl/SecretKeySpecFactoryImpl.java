@@ -2,17 +2,18 @@ package com.dotcms.auth.providers.jwt.factories.impl;
 
 import com.dotcms.auth.providers.jwt.factories.KeyFactoryUtils;
 import com.dotcms.auth.providers.jwt.factories.SigningKeyFactory;
+import com.dotcms.repackage.javax.xml.bind.DatatypeConverter;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import io.jsonwebtoken.SignatureAlgorithm;
+
+import javax.crypto.spec.SecretKeySpec;
 import java.security.Key;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Locale;
 import java.util.Random;
-import javax.crypto.spec.SecretKeySpec;
-import javax.xml.bind.DatatypeConverter;
 
 /**
  * @author Jonathan Gamba 5/29/18

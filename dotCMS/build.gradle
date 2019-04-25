@@ -1,15 +1,24 @@
 buildscript {
     repositories {
 
-        maven { url "http://repo.dotcms.com/artifactory/libs-release" }
+        maven { url "http://repo.dotcms.com/artifactory/libs-release"
+            content {
+                includeGroupByRegex "com\\.dotcms.*"
+                includeGroup "glowroot-custom"
+
+                excludeGroup "org.aspectj"
+            }
+        }
         maven { url "https://plugins.gradle.org/m2/" }
+        maven { url "https://s3-eu-west-1.amazonaws.com/gskillz-maven-repo" }  // replace this when the official pluig gets fixed for gradle5
         jcenter()
     }
     dependencies {
         classpath 'org.ajoberstar:grgit:1.7.0'
         classpath 'org.unbroken-dome.gradle-plugins:gradle-testsets-plugin:1.4.3'
         classpath 'com.dotcms.lib:dot.commons-io:2.0.1_2'
-        classpath 'io.freefair.gradle:aspectj-plugin:3.2.0'
+        //classpath "gradle.plugin.aspectj:gradle-aspectj:0.1.6" // todo: as soon as the official plugins gets fix replace this
+        classpath "aspectjfork:gradle:1.1-SNAPSHOT"
     }
 }
 
@@ -20,7 +29,7 @@ plugins {
 }
 
 project.ext {
-    aspectjVersion = '1.8.10'
+    aspectjVersion = '1.9.3'
 }
 
 
@@ -63,7 +72,8 @@ configurations.all({
 
 // Apply the java plugin to add support for Java.
 apply plugin: 'java'
-apply plugin: 'io.freefair.aspectj.post-compile-weaving'
+//apply plugin: "aspectj.gradle"
+apply plugin: 'gradle.aspectjfork'
 apply plugin: 'war'
 apply plugin: 'project-report' /*For gradle dependencies: ./gradlew htmlDependencyReport*/
 apply plugin: 'idea'
@@ -76,9 +86,36 @@ eclipse {
 
 // In this section you declare where to find the dependencies of your project.
 repositories {
-    maven { url "http://central.maven.org/maven2" } // todo: remove this, check artifactory
-    maven { url "http://repo.dotcms.com/artifactory/libs-release" }
-    maven { url "http://repo.dotcms.com/artifactory/libs-snapshot-local" }
+
+    // todo: remove these repos, check artifactory
+    maven { url "https://repo.maven.apache.org/maven2" }
+    maven { url "http://central.maven.org/maven2"
+        content {
+            includeGroup "org.aspectj"
+        }
+    }
+    maven { url "http://repo1.maven.org/maven2" }
+
+
+    maven { url "http://repo.dotcms.com/artifactory/libs-release"
+
+        content {
+            includeGroupByRegex "com\\.dotcms.*"
+            includeGroup "glowroot-custom"
+
+            excludeGroup "org.aspectj"
+        }
+    }
+    maven { url "http://repo.dotcms.com/artifactory/libs-snapshot-local"
+
+        content {
+            includeGroupByRegex "com\\.dotcms.*"
+            includeGroup "glowroot-custom"
+
+            excludeGroup "org.aspectj"
+        }
+    }
+
 }
 
 testSets {
@@ -543,8 +580,8 @@ task customDistWar(type: War) {
 customDistWar.group='dotCMS Development'
 customDistWar.description='Builds a dotCMS as a war. (Task mean to be use from a distribution structure using the buildwar.sh script. This task will just use the already deployed folder inside the app server and compressed into a war file.)'
 
-compileJava.dependsOn 'immutables'
-compileJava {
+compileAspect.dependsOn 'immutables'
+compileAspect {
     println "\nCompiling Aspect..."
 }
 // This task defines if the immutables folder is generated, otherwise will generate it.
