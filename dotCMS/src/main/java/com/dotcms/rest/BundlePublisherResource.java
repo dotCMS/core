@@ -64,7 +64,7 @@ public class BundlePublisherResource {
     @Consumes(MediaType.APPLICATION_OCTET_STREAM)
 	public Response publish(
 			@QueryParam("FILE_NAME") String fileName,
-			@QueryParam("AUTH_TOKEN") String auth_token_enc,
+			@QueryParam("AUTH_TOKEN") String auth_token_digest,
 			@QueryParam("GROUP_ID") String groupId,
 			@QueryParam("ENDPOINT_ID") String endpointId,
 			@QueryParam("type") String type,
@@ -83,7 +83,7 @@ public class BundlePublisherResource {
 
 				String remoteIP = "";
 				try {
-					String auth_token = PublicEncryptionFactory.decryptString(auth_token_enc);
+
 					remoteIP = req.getRemoteHost();
 					if(!UtilMethods.isSet(remoteIP))
 						remoteIP = req.getRemoteAddr();
@@ -92,7 +92,7 @@ public class BundlePublisherResource {
 
 					PublishingEndPoint mySelf = endpointAPI.findEnabledSendingEndPointByAddress(remoteIP);
 
-					if(!isValidToken(auth_token, remoteIP, mySelf)) {
+					if(!isValidToken(auth_token_digest, remoteIP, mySelf)) {
 						bundleStream.close();
 		                return responseResource.responseError( HttpStatus.SC_UNAUTHORIZED );
 		            }
