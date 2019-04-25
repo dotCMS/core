@@ -31,9 +31,6 @@ class UpdateFieldForm {
         @JsonProperty
         private List<Map<String, Object>> fields;
 
-        public Builder() {
-        }
-
         public Builder fields(final List<Map<String, Object>> fields) {
             this.fields = fields;
             return this;
