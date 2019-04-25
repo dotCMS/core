@@ -1,6 +1,7 @@
 package com.dotcms.contenttype.model.type;
 
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.transform.field.JsonFieldTransformer;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.util.CollectionsUtils;
@@ -13,6 +14,7 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.json.JSONObject;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
@@ -255,7 +257,26 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
 
   @JsonIgnore
   @Default
-  public List<Field> requiredFields() {
+  public final List<Field> requiredFields() {
+    final List<Field> requiredFields = new ArrayList<>();
+    final List<Field> contentTypeRequiredFields = this.getContentTypeRequiredFields();
+
+    for (int i = 0; i < contentTypeRequiredFields.size(); i++) {
+      final Field field = contentTypeRequiredFields.get(i);
+      final JsonFieldTransformer jsonFieldTransformer = new JsonFieldTransformer(field);
+      final Map<String, Object> fieldToUpdatetMap = jsonFieldTransformer.mapObject();
+      fieldToUpdatetMap.put("sortOrder", i);
+
+      final JsonFieldTransformer jsonFieldTransformer2 = new JsonFieldTransformer(new JSONObject(fieldToUpdatetMap).toString());
+      requiredFields.add(jsonFieldTransformer2.from());
+    }
+
+    return requiredFields;
+  }
+
+  @JsonIgnore
+  @Default
+  public List<Field> getContentTypeRequiredFields() {
     return ImmutableList.of();
   }
 

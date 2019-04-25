@@ -50,14 +50,29 @@ public abstract class KeyValueContentType extends ContentType implements Multili
 	}
 
 	@Override
-	public List<Field> requiredFields() {
-		int order = 1;
-		Field keyField = ImmutableTextField.builder().name(KEY_VALUE_KEY_FIELD_NAME).dataType(DataTypes.TEXT)
-				.variable(KEY_VALUE_KEY_FIELD_VAR).required(Boolean.TRUE).listed(Boolean.TRUE).indexed(Boolean.TRUE)
-				.sortOrder(order++).fixed(Boolean.TRUE).searchable(Boolean.TRUE).unique(Boolean.TRUE).build();
-		Field valueField = ImmutableTextAreaField.builder().name(KEY_VALUE_VALUE_FIELD_NAME)
-				.dataType(DataTypes.LONG_TEXT).variable(KEY_VALUE_VALUE_FIELD_VAR).required(Boolean.TRUE)
-				.listed(Boolean.TRUE).fixed(Boolean.TRUE).searchable(Boolean.TRUE).sortOrder(order++).build();
+	public List<Field> getContentTypeRequiredFields() {
+		Field keyField = ImmutableTextField.builder()
+				.name(KEY_VALUE_KEY_FIELD_NAME)
+				.dataType(DataTypes.TEXT)
+				.variable(KEY_VALUE_KEY_FIELD_VAR)
+				.required(Boolean.TRUE)
+				.listed(Boolean.TRUE)
+				.indexed(Boolean.TRUE)
+				.fixed(Boolean.TRUE)
+				.searchable(Boolean.TRUE)
+				.unique(Boolean.TRUE)
+				.build();
+
+		Field valueField = ImmutableTextAreaField.builder()
+				.name(KEY_VALUE_VALUE_FIELD_NAME)
+				.dataType(DataTypes.LONG_TEXT)
+				.variable(KEY_VALUE_VALUE_FIELD_VAR)
+				.required(Boolean.TRUE)
+				.listed(Boolean.TRUE)
+				.fixed(Boolean.TRUE)
+				.searchable(Boolean.TRUE)
+				.build();
+
 		return ImmutableList.of(keyField, valueField);
 	}
 

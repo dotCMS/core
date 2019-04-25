@@ -39,7 +39,7 @@ public abstract class WidgetContentType extends ContentType implements Expireabl
 	}
 	
 	
-	public  List<Field> requiredFields(){
+	public  List<Field> getContentTypeRequiredFields(){
 		Field titleField = ImmutableTextField.builder()
 				.name(WIDGET_TITLE_FIELD_NAME)
 				.dataType(DataTypes.TEXT)
@@ -47,38 +47,38 @@ public abstract class WidgetContentType extends ContentType implements Expireabl
 				.required(true)
 				.listed(true)
 				.indexed(true)
-				.sortOrder(1)
 				.fixed(true)
 				.searchable(true)
 				.build();
-		
-		Field preExecute = ImmutableConstantField.builder()
-				.name(WIDGET_PRE_EXECUTE_FIELD_NAME)
-				.variable(WIDGET_PRE_EXECUTE_FIELD_VAR)
-				.sortOrder(4)
-				.fixed(true)
-				.readOnly(true)
-				.searchable(true)
-				.build();
-		
-		
-		Field codeField = ImmutableConstantField.builder()
-				.name(WIDGET_CODE_FIELD_NAME)
-				.variable(WIDGET_CODE_FIELD_VAR)
-				.sortOrder(3)
-				.fixed(true)
-				.readOnly(true)
-				.searchable(true)
-				.build();
-		
+
 		Field usageField = ImmutableConstantField.builder()
 				.name(WIDGET_USAGE_FIELD_NAME)
 				.variable(WIDGET_USAGE_FIELD_VAR)
-				.sortOrder(2)
 				.fixed(false)
 				.readOnly(true)
 				.searchable(true)
 				.build();
+
+		Field codeField = ImmutableConstantField.builder()
+				.name(WIDGET_CODE_FIELD_NAME)
+				.variable(WIDGET_CODE_FIELD_VAR)
+				.fixed(true)
+				.readOnly(true)
+				.searchable(true)
+				.build();
+
+		Field preExecute = ImmutableConstantField.builder()
+				.name(WIDGET_PRE_EXECUTE_FIELD_NAME)
+				.variable(WIDGET_PRE_EXECUTE_FIELD_VAR)
+				.fixed(true)
+				.readOnly(true)
+				.searchable(true)
+				.build();
+		
+		
+
+		
+
 		
 
 		

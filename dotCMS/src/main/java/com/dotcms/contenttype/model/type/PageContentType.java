@@ -48,8 +48,8 @@ public abstract class PageContentType extends ContentType implements Expireable{
 	
 	
 	
-	public  List<Field> requiredFields(){
-		int i=0;
+	public  List<Field> getContentTypeRequiredFields(){
+
 		
 		List<Field> fields = new ArrayList<Field>();
 		fields.add(
@@ -61,7 +61,6 @@ public abstract class PageContentType extends ContentType implements Expireable{
 				.indexed(true)
 				.values("$velutil.mergeTemplate('/static/htmlpage_assets/title_custom_field.vtl')")
 				.required(true)
-				.sortOrder(i++)
 				.listed(true)
 				.build()
 		);
@@ -73,7 +72,6 @@ public abstract class PageContentType extends ContentType implements Expireable{
 				.indexed(true)
 				.searchable(true)
 				.required(true)
-				.sortOrder(i++)
 				.fixed(true)
 				.listed(true)
 				.build()
@@ -83,7 +81,6 @@ public abstract class PageContentType extends ContentType implements Expireable{
 				.name("Site or Folder")
 				.dataType(DataTypes.SYSTEM)
 				.variable(PAGE_HOST_FOLDER_FIELD_VAR)
-				.sortOrder(i++)
 				.required(true)
 				.fixed(true)
 				.indexed(true)
@@ -98,7 +95,6 @@ public abstract class PageContentType extends ContentType implements Expireable{
 				.required(true)
 				.fixed(true)
 				.values("$velutil.mergeTemplate('/static/htmlpage_assets/template_custom_field.vtl')")
-				.sortOrder(i++)
 				.searchable(true)
 				.build()
 		);
@@ -111,7 +107,6 @@ public abstract class PageContentType extends ContentType implements Expireable{
 				.defaultValue("false")
 				.fixed(true)
 				.indexed(true)
-				.sortOrder(i++)
 				.build()
 		);
 		
@@ -125,7 +120,6 @@ public abstract class PageContentType extends ContentType implements Expireable{
 				.searchable(true)
 				.defaultValue("0")
 				.indexed(true)
-				.sortOrder(i++)
 				.build()
 		);
 		fields.add(
@@ -137,7 +131,6 @@ public abstract class PageContentType extends ContentType implements Expireable{
 				.fixed(true)
 				.required(true)
 				.values("$velutil.mergeTemplate('/static/htmlpage_assets/cachettl_custom_field.vtl')")
-				.sortOrder(i++)
 				.listed(true)
 				.build()
 		);
@@ -148,14 +141,12 @@ public abstract class PageContentType extends ContentType implements Expireable{
 				.variable(PAGE_FRIENDLY_NAME_FIELD_VAR)
 				.indexed(true)
 				.fixed(true)
-				.sortOrder(i++)
 				.build()
 		);
 		fields.add(
 				ImmutableTabDividerField.builder()
 				.name("Advanced Properties")
 				.variable("advancedtab")
-				.sortOrder(i++)
 				.build()
 		);
 
@@ -168,7 +159,6 @@ public abstract class PageContentType extends ContentType implements Expireable{
 				.dataType(DataTypes.TEXT)
 				.fixed(true)
 				.listed(true)
-				.sortOrder(i++)
 				.build()
 		);
 		
@@ -184,7 +174,6 @@ public abstract class PageContentType extends ContentType implements Expireable{
 				.fixed(true)
 				.values("|true")
 				.defaultValue("false")
-				.sortOrder(i++)
 				.build()
 		);
 		
@@ -195,7 +184,6 @@ public abstract class PageContentType extends ContentType implements Expireable{
 				.variable(PAGE_SEO_DESCRIPTION_FIELD_VAR)
 				.indexed(true)
 				.fixed(true)
-				.sortOrder(i++)
 				.build()
 		);
 		
@@ -206,7 +194,6 @@ public abstract class PageContentType extends ContentType implements Expireable{
 				.variable(PAGE_SEO_KEYWORDS_FIELD_VAR)
 				.indexed(true)
 				.fixed(true)
-				.sortOrder(i++)
 				.build()
 		);
 		
@@ -216,7 +203,6 @@ public abstract class PageContentType extends ContentType implements Expireable{
 				.dataType(DataTypes.LONG_TEXT)
 				.variable(PAGE_PAGE_METADATA_FIELD_VAR)
 				.fixed(true)
-				.sortOrder(i++)
 				.build()
 		);
 		

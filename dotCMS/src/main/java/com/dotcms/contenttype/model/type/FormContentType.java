@@ -37,14 +37,13 @@ public abstract class FormContentType extends ContentType implements Expireable{
 	}
 	
 	
-	public  List<Field> requiredFields(){
+	public  List<Field> getContentTypeRequiredFields(){
 		
 		
 		Field titleField = ImmutableConstantField.builder()
 				.name("Form Title")
 				.variable(FORM_TITLE_FIELD_VAR)
 				.indexed(true)
-				.sortOrder(1)
 				.fixed(true)
 				.searchable(true)
 				.build();
@@ -52,7 +51,6 @@ public abstract class FormContentType extends ContentType implements Expireable{
 		Field emailField = ImmutableConstantField.builder()
 				.name("Form Email")
 				.variable(FORM_EMAIL_FIELD_VAR)
-				.sortOrder(2)
 				.fixed(true)
 				.readOnly(true)
 				.searchable(true)
@@ -62,7 +60,6 @@ public abstract class FormContentType extends ContentType implements Expireable{
 		Field returnField = ImmutableConstantField.builder()
 				.name("Form Return Page")
 				.variable(FORM_RETURN_PAGE_FIELD_VAR)
-				.sortOrder(3)
 				.fixed(true)
 				.readOnly(true)
 				.searchable(true)
@@ -71,7 +68,6 @@ public abstract class FormContentType extends ContentType implements Expireable{
 		Field usageField = ImmutableHostFolderField.builder()
 				.name("Form Host")
 				.variable(FORM_HOST_FIELD_VAR)
-				.sortOrder(4)
 				.fixed(true)
 				.searchable(true)
 				.build();

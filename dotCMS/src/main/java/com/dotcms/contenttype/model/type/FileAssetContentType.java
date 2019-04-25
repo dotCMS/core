@@ -43,7 +43,7 @@ public abstract class FileAssetContentType extends ContentType implements UrlMap
 	}
 
 
-	public  List<Field> requiredFields(){
+	public  List<Field> getContentTypeRequiredFields(){
 		List<Field> fields = new ArrayList<Field>();
 		
 		
@@ -52,7 +52,6 @@ public abstract class FileAssetContentType extends ContentType implements UrlMap
 				.name("Site or Folder")
 				.dataType(DataTypes.SYSTEM)
 				.variable(FILEASSET_SITE_OR_FOLDER_FIELD_VAR)
-				.sortOrder(fields.size())
 				.required(true)
 				.fixed(true)
 				.searchable(true)
@@ -64,7 +63,6 @@ public abstract class FileAssetContentType extends ContentType implements UrlMap
 				ImmutableBinaryField.builder()
 				.name("File Asset")
 				.variable(FILEASSET_FILEASSET_FIELD_VAR)
-				.sortOrder(fields.size())
 				.fixed(true)
 				.required(true)
 				.readOnly(false)
@@ -80,7 +78,6 @@ public abstract class FileAssetContentType extends ContentType implements UrlMap
 				.indexed(true)
 				.searchable(true)
 				.required(true)
-				.sortOrder(fields.size())
 				.build()
 		);
 		
@@ -92,7 +89,6 @@ public abstract class FileAssetContentType extends ContentType implements UrlMap
 				.fixed(true)
 				.indexed(true)
 				.searchable(true)
-				.sortOrder(fields.size())
 				.listed(true)
 				.build()
 		);
@@ -102,7 +98,6 @@ public abstract class FileAssetContentType extends ContentType implements UrlMap
 				ImmutableTabDividerField.builder()
 				.name("Metadata")
 				.variable("metadataTab")
-				.sortOrder(fields.size())
 				.build()
 		);
 		fields.add(
@@ -114,7 +109,6 @@ public abstract class FileAssetContentType extends ContentType implements UrlMap
 				.indexed(true)
 				.readOnly(true)
 				.searchable(true)
-				.sortOrder(fields.size())
 				.build()
 		);
 		fields.add(
@@ -126,7 +120,6 @@ public abstract class FileAssetContentType extends ContentType implements UrlMap
 				.defaultValue("false")
 				.fixed(true)
 				.indexed(true)
-				.sortOrder(fields.size())
 				.build()
 		);
 		
@@ -139,7 +132,6 @@ public abstract class FileAssetContentType extends ContentType implements UrlMap
 				.searchable(true)
 				.defaultValue("0")
 				.indexed(true)
-				.sortOrder(fields.size())
 				.build()
 		);
 		fields.add(
@@ -149,7 +141,6 @@ public abstract class FileAssetContentType extends ContentType implements UrlMap
 				.variable(FILEASSET_DESCRIPTION_FIELD_VAR)
 				.fixed(true)
 				.indexed(true)
-				.sortOrder(fields.size())
 				.build()
 		);
 		return ImmutableList.copyOf(fields);

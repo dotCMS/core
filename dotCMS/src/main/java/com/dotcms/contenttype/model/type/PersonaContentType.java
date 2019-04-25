@@ -45,7 +45,7 @@ public abstract class PersonaContentType extends ContentType implements Expireab
 	
 	
 	
-	public  List<Field> requiredFields(){
+	public  List<Field> getContentTypeRequiredFields(){
 		List<Field> fields = new ArrayList<Field>();
 
 		
@@ -57,7 +57,6 @@ public abstract class PersonaContentType extends ContentType implements Expireab
 				.required(true)
 				.indexed(true)
 				.fixed(true)
-				.sortOrder(1)
 				.build()
 		);
 
@@ -70,7 +69,6 @@ public abstract class PersonaContentType extends ContentType implements Expireab
 				.required(true)
 				.indexed(true)
 				.listed(true)
-				.sortOrder(2)
 				.fixed(true)
 				.searchable(true)
 				.build()
@@ -86,7 +84,6 @@ public abstract class PersonaContentType extends ContentType implements Expireab
 				.listed(true)
 				.values("$velutil.mergeTemplate('/static/personas/keytag_custom_field.vtl')")
 				.regexCheck("[a-zA-Z0-9]+")
-				.sortOrder(3)
 				.fixed(true)
 				.searchable(true)
 				.build()
@@ -96,7 +93,6 @@ public abstract class PersonaContentType extends ContentType implements Expireab
 			ImmutableBinaryField.builder()
 				.name("Photo")
 				.variable(PERSONA_PHOTO_FIELD_VAR)
-				.sortOrder(4)
 				.fixed(true)
 				.build()
 		);
@@ -106,8 +102,6 @@ public abstract class PersonaContentType extends ContentType implements Expireab
 				.name("Other Tags")
 				.variable(PERSONA_OTHER_TAGS_FIELD_VAR)
 				.dataType(DataTypes.SYSTEM)
-
-				.sortOrder(5)
 				.fixed(true)
 				.indexed(true)
 				.searchable(true)
@@ -119,7 +113,6 @@ public abstract class PersonaContentType extends ContentType implements Expireab
 				.name("Description")
 				.variable(PERSONA_DESCRIPTION_FIELD_VAR)
 				.dataType(DataTypes.LONG_TEXT)
-				.sortOrder(6)
 				.fixed(true)
 				.indexed(true)
 				.searchable(true)
