@@ -425,7 +425,7 @@
 		<html:hidden property="content" />
 		<% if(InodeUtils.isSet(structure.getInode())){  %>
 		<html:hidden property="structureType" />
-		<%session.setAttribute("selectedStructure",structure.getInode() ); %>
+
 		<%}%>
 
 		<div class="portlet-main">

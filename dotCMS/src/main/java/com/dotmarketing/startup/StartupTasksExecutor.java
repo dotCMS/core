@@ -186,6 +186,20 @@ public class StartupTasksExecutor {
 			}
 
 		}
+		finally {
+		  if(connection!=null) {
+		    try {
+          connection.close();
+        } catch (SQLException e) {
+          Logger.warn(this.getClass(),
+              "Unable to close connection"
+                  + e.getMessage());
+        }
+		  }
+		}
+		
+		
+		
 		Logger.debug(this.getClass(), "Locking db_version succeeded");
 
 		boolean firstTimeStart = false;
@@ -261,21 +275,14 @@ public class StartupTasksExecutor {
 							HibernateUtil.closeAndCommitTransaction();
 							HibernateUtil.startTransaction();
 							Logger.info(this, "Running: " + name);
-							if(name.equals("Task00250UpdateMysqlTablesToINNODB")){
-								statement = connection.createStatement();
-								statement.execute(commit);
-								task.executeUpgrade();
-								statement = connection.createStatement();
-								statement.execute(lock);
-							}else{
-							  task.executeUpgrade();
-							}
+							task.executeUpgrade();
+
 						} 
 						// Nothing to execute, or the task ran ok so bump
 						// the db version.
 						try {
 //						    conn = DbConnectionFactory.getDataSource().getConnection();
-							if (connection != null && connection.isClosed()) {
+							if (connection == null || connection.isClosed()) {
 								connection = DbConnectionFactory.getDataSource().getConnection();
 							}
 						    connection.setAutoCommit(true);
@@ -286,9 +293,15 @@ public class StartupTasksExecutor {
     						update.execute();
 						}
 						finally {
-//							statement.execute(commit);
-						    update.close();
-//						    conn.close();
+				      if(connection!=null) {
+				        try {
+				          connection.close();
+				        } catch (SQLException e) {
+				          Logger.warn(this.getClass(),
+				              "Unable to close connection"
+				                  + e.getMessage());
+				        }
+				      }
 						}
 
 						Logger.info(this, "Database upgraded to version: "

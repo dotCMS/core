@@ -948,11 +948,6 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 
 		_loadContentletRelationshipsInRequest(contentletFormData, contentlet, st);
 
-		//This parameter is used to determine if the structure was selected from Add/Edit Content link in subnav.jsp, from
-		//the Content Search Manager
-		if(contentletFormData.get("selected") != null){
-			req.getSession().setAttribute("selectedStructure", st.getInode());
-		}
 
 		// Asset Versions to list in the versions tab
 		contentletFormData.put(WebKeys.VERSIONS_INODE_EDIT, contentlet);

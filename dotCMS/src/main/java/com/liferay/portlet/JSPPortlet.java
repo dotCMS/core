@@ -1,29 +1,30 @@
 /**
  * Copyright (c) 2000-2005 Liferay, LLC. All rights reserved.
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+ * associated documentation files (the "Software"), to deal in the Software without restriction,
+ * including without limitation the rights to use, copy, modify, merge, publish, distribute,
+ * sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in all copies or
+ * substantial portions of the Software.
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
+ * NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+ * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 package com.liferay.portlet;
 
 import java.io.IOException;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
 
+import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.GenericPortlet;
@@ -43,96 +44,94 @@ import com.liferay.util.Validator;
 /**
  * <a href="JSPPortlet.java.html"><b><i>View Source</i></b></a>
  *
- * @author  Brian Wing Shun Chan
+ * @author Brian Wing Shun Chan
  * @version $Revision: 1.20 $
  *
  */
 public class JSPPortlet extends GenericPortlet {
 
-	boolean useWEBINFDIR = false;
-	public void init() throws PortletException {
-		_editJSP = getInitParameter("edit-jsp");
-		_helpJSP = getInitParameter("help-jsp");
-		_viewJSP = getInitParameter("view-jsp");
-		useWEBINFDIR = new Boolean(getInitParameter("useWEBINFDIR"));
+  boolean useWEBINFDIR = false;
 
-		_copyRequestParameters = GetterUtil.get(
-			getInitParameter("copy-request-parameters"), true);
-	}
+  public void init() throws PortletException {
 
-	public void doDispatch(RenderRequest req, RenderResponse res)
-		throws IOException, PortletException {
+    Map<String, String> params = new HashMap<>();
+    Enumeration<String> e = this.getInitParameterNames();
+    while (e.hasMoreElements()) {
+      String key = e.nextElement();
+      params.put(key, this.getInitParameter(key));
+    }
+    this.initParams = ImmutableMap.copyOf(params);
 
-		String jspPage = req.getParameter("jsp_page");
+    _editJSP = getInitParameter("edit-jsp");
+    _helpJSP = getInitParameter("help-jsp");
+    _viewJSP = getInitParameter("view-jsp");
+    useWEBINFDIR = new Boolean(getInitParameter("useWEBINFDIR"));
 
-		if (Validator.isNotNull(jspPage)) {
-			include(jspPage, req, res);
-		}
-		else {
-			super.doDispatch(req, res);
-		}
-	}
+    _copyRequestParameters = GetterUtil.get(getInitParameter("copy-request-parameters"), true);
+  }
 
-	public void doEdit(RenderRequest req, RenderResponse res)
-		throws IOException, PortletException {
+  public void doDispatch(RenderRequest req, RenderResponse res) throws IOException, PortletException {
+    req.setAttribute("initParams", initParams);
+    String jspPage = req.getParameter("jsp_page");
 
-		if (req.getPreferences() == null) {
-			super.doEdit(req, res);
-		}
-		else {
-			include(_editJSP, req, res);
-		}
-	}
+    if (Validator.isNotNull(jspPage)) {
+      include(jspPage, req, res);
+    } else {
+      super.doDispatch(req, res);
+    }
+  }
 
-	public void doHelp(RenderRequest req, RenderResponse res)
-		throws IOException, PortletException {
+  public void doEdit(RenderRequest req, RenderResponse res) throws IOException, PortletException {
 
-		include(_helpJSP, req, res);
-	}
+    if (req.getPreferences() == null) {
+      super.doEdit(req, res);
+    } else {
+      include(_editJSP, req, res);
+    }
+  }
 
-	public void doView(RenderRequest req, RenderResponse res)
-		throws IOException, PortletException {
+  public void doHelp(RenderRequest req, RenderResponse res) throws IOException, PortletException {
 
-		include(_viewJSP, req, res);
-	}
+    include(_helpJSP, req, res);
+  }
 
-	public void processAction(ActionRequest req, ActionResponse res)
-		throws IOException, PortletException {
+  public void doView(RenderRequest req, RenderResponse res) throws IOException, PortletException {
 
-		if (_copyRequestParameters) {
-			PortalUtil.copyRequestParameters(req, res);
-		}
-	}
+    include(_viewJSP, req, res);
+  }
 
-	protected void include(String path, RenderRequest req, RenderResponse res)
-		throws IOException, PortletException {
-		
-		PortletRequestDispatcher prd = null;
-		if(useWEBINFDIR){
-			prd =
-				getPortletContext().getRequestDispatcher(
-					"/WEB-INF" + path);
-		}else{
-		prd =
-			getPortletContext().getRequestDispatcher(
-				Constants.TEXT_HTML_DIR + path);
-		}
-		if (prd == null) {
-			_log.error(path + " is not a valid include");
-		}
+  public void processAction(ActionRequest req, ActionResponse res) throws IOException, PortletException {
 
-		prd.include(req, res);
+    if (_copyRequestParameters) {
+      PortalUtil.copyRequestParameters(req, res);
+    }
+  }
 
-		if (_copyRequestParameters) {
-			PortalUtil.clearRequestParameters(req);
-		}
-	}
+  protected void include(String path, RenderRequest req, RenderResponse res) throws IOException, PortletException {
+    req.setAttribute("initParams", initParams);
+    PortletRequestDispatcher prd = null;
+    if (useWEBINFDIR) {
+      prd = getPortletContext().getRequestDispatcher("/WEB-INF" + path);
+    } else {
+      prd = getPortletContext().getRequestDispatcher(Constants.TEXT_HTML_DIR + path);
+    }
+    if (prd == null) {
+      _log.error(path + " is not a valid include");
+    }
 
-	private static final Log _log = LogFactory.getLog(JSPPortlet.class);
+    prd.include(req, res);
 
-	private String _editJSP;
-	private String _helpJSP;
-	private String _viewJSP;
-	private boolean _copyRequestParameters;
+    if (_copyRequestParameters) {
+      PortalUtil.clearRequestParameters(req);
+    }
+  }
+
+  private static final Log _log = LogFactory.getLog(JSPPortlet.class);
+
+  private String _editJSP;
+  private String _helpJSP;
+  private String _viewJSP;
+  private boolean _copyRequestParameters;
+  private Map<String, String> initParams;
 
 }

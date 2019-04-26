@@ -101,6 +101,11 @@
 	var treeRoleOptionTemplate = '${nodeName}';
 	var lastSelectedNode;
 
+
+	
+	
+	
+	
 	function buildRolesTree(tree) {
 		dojo.style(dojo.byId('noRolesFound'), { display: 'none' });
 		dojo.style(dojo.byId('loadingRolesWrapper'), { display: '' });
@@ -1133,23 +1138,83 @@
 
  		var portletsStore = new dojo.data.ItemFileReadStore({data: portletsData });
 
-	    new dijit.form.FilteringSelect({
-            id: "portletList",
-            name: "portletList",
-            searchAttr: "title",
-            store: portletsStore,
-			required: false,
-			style: {
-				width: '241px'
-			}
-        },
-        "portletList");
-
+ 		if(dijit.byId("portletList")!=undefined){
+ 		    dijit.byId("portletList").attr("store", portletsStore);
+ 		}else{
+    	    new dijit.form.FilteringSelect({
+                id: "portletList",
+                name: "portletList",
+                searchAttr: "title",
+                store: portletsStore,
+    			required: false,
+    			style: {
+    				width: '241px'
+    			}
+            },
+            "portletList");
+ 		}
 		if(tempCallback)
 			tempCallback();
 
 	}
 
+	function showCustomContentPortletDia(){
+	    
+	    dijit.byId("customPortletId").setValue("");
+	    dijit.byId("customPortletName").setValue("");
+	    dijit.byId("customPortletBaseTypes").setValue("");
+	    dijit.byId("customPortletContentTypes").setValue("");
+	    dijit.byId("customPortletDialog").show()
+	}
+
+	function cleanUpPortletId(){
+
+	    var str=dijit.byId("customPortletId").getValue();
+	    while(str.indexOf('--') >-1) {
+	        str = (str.substr(0, str.indexOf('--')) + str.substr(str.indexOf('--')+1, str.length));
+	    }
+	    if(str.substr(-1) === '-') {
+	        str = str.substr(0, str.length - 1);   
+	    }
+	    dijit.byId("customPortletId").setValue(str);
+	}
+
+	function setPortletIdValue(val){
+	    val=val.replace(/[^0-9a-z-]/gi, '-')
+	    dijit.byId("customPortletId").setValue(val);    
+	}
+	
+	function createCustomContentType(){
+
+	    var data={};
+	    
+	    data.portletId =dijit.byId("customPortletId").attr('value');
+	    data.portletName =dijit.byId("customPortletName").attr('value');
+	    data.baseTypes =dijit.byId("customPortletBaseTypes").attr('value');
+	    data.contentTypes =dijit.byId("customPortletContentTypes").attr('value');
+
+	      var xhrArgs = {
+	          url : "/api/v1/portlet/custom",
+	          handleAs: "json",
+	          postData : dojo.toJson(data),
+	          headers: {
+	              "Content-Type": "application/json"
+	              },
+	          load : function(data){
+	              initializePortletInfoList();
+	              console.log("custom", data);
+				  dijit.byId('customPortletDialog').hide();
+	          },
+	          error : function(error) {
+	              alert("Error creating new portlet: " + JSON.parse(error.responseText).message);
+	              return false;
+
+	          }
+	      };
+	  
+	      dojo.xhrPost(xhrArgs);
+
+	}
 
 
 	function addPortletToLayoutList() {

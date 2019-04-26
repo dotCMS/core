@@ -108,16 +108,6 @@ public class PortletURLImpl implements PortletURL {
 
 	public void setPortletMode(PortletMode portletMode)
 		throws PortletModeException {
-
-		if (_portletReq != null) {
-			if (!getPortlet().hasPortletMode(
-					_portletReq.getResponseContentType(), portletMode)) {
-
-				throw new PortletModeException(
-					portletMode.toString(), portletMode);
-			}
-		}
-
 		_portletMode = portletMode;
 	}
 
