@@ -95,6 +95,10 @@ describe('DotWorkflowsSelectorFieldComponent', () => {
                 expect(multiselect.defaultLabel).toEqual('Pick it up');
             });
 
+            it('should have append to bobdy', () => {
+                expect(multiselect.appendTo).toEqual('body');
+            });
+
             it('should get workflow list from server', () => {
                 expect(dotWorkflowService.get).toHaveBeenCalledTimes(1);
             });
