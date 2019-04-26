@@ -291,7 +291,7 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
 
             // 1.2) Insert dummy temp row on IDENTIFIER table
 
-            dc.executeStatement("insert into identifier (id, parent_path, asset_name, host_inode, asset_type, syspublish_date, sysexpire_date) values ('TEMP_IDENTIFIER', '/System folder', 'DUMMY_ASSET_NAME', '"
+            dc.executeStatement("insert into identifier (id, parent_path, asset_name, host_inode, asset_type, syspublish_date, sysexpire_date) values ('TEMP_IDENTIFIER', '/', 'DUMMY_ASSET_NAME', '"
                     + hostForDummyFolder + "', " + "'folder', NULL, NULL) ");
 
             // 1.3) Insert dummy temp row on FOLDER table
