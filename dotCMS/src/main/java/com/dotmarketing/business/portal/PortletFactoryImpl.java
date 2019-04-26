@@ -1,6 +1,8 @@
 
 package com.dotmarketing.business.portal;
 
+import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.DbConnectionUtil;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -213,8 +215,10 @@ public class PortletFactoryImpl extends PrincipalBean implements PortletFactory 
 
     final String portletXML = portletToXml(portlet);
     new DotConnect().setSQL(
-        "insert into portlet (portletid, groupid, companyid, defaultpreferences, narrow, roles, active_) values(?,?,?,?,false,null,true)")
-        .addParam(portlet.getPortletId()).addParam(portlet.getGroupId()).addParam(portlet.getCompanyId()).addParam(portletXML).loadResult();
+        "insert into portlet (portletid, groupid, companyid, defaultpreferences, narrow, roles, active_) values(?,?,?,?,?,null,?)")
+        .addParam(portlet.getPortletId()).addParam(portlet.getGroupId()).addParam(portlet.getCompanyId()).addParam(portletXML).addParam(
+            DbConnectionFactory.getDBFalse()).addParam(
+            DbConnectionFactory.getDBTrue()).loadResult();
 
     new PortletCache().clear();
 
