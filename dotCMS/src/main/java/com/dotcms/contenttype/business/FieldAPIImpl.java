@@ -521,7 +521,7 @@ public class FieldAPIImpl implements FieldAPI {
 
       //if RelationshipField, Relationship record must be updated/deleted
       if (field instanceof RelationshipField) {
-          removeRelationshipLink(field, type);
+          removeRelationshipLink(field, type, contentTypeAPI);
       }
 
       // rebuild contentlets indexes
@@ -541,10 +541,12 @@ public class FieldAPIImpl implements FieldAPI {
      * Remove one-sided relationship when the field is deleted
      * @param field
      * @param type
+     * @param contentTypeAPI
      * @throws DotDataException
      */
-    private void removeRelationshipLink(Field field, ContentType type)
-            throws DotDataException {
+    private void removeRelationshipLink(final Field field, final ContentType type,
+            final ContentTypeAPI contentTypeAPI)
+            throws DotDataException, DotSecurityException {
 
         final Optional<Relationship> result = relationshipAPI
                 .byParentChildRelationName(type, field.variable());
@@ -565,6 +567,23 @@ public class FieldAPIImpl implements FieldAPI {
                 }
 
                 relationshipAPI.save(relationship);
+            }
+
+            //If it is not a self-relationship, the other content type must be reindexed
+            //The current content type is reindexed in the delete method
+            if (!relationshipAPI.sameParentAndChild(relationship)) {
+                Structure otherSideStructure;
+                if (relationship.getChildStructureInode().equals(field.contentTypeId())) {
+                    otherSideStructure = new StructureTransformer(
+                            contentTypeAPI.find(relationship.getParentStructureInode()))
+                            .asStructure();
+                } else {
+                    otherSideStructure = new StructureTransformer(
+                            contentTypeAPI.find(relationship.getChildStructureInode()))
+                            .asStructure();
+                }
+
+                contentletAPI.reindex(otherSideStructure);
             }
         }
     }
