@@ -2,7 +2,7 @@
 package com.dotmarketing.business.portal;
 
 import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.DbConnectionUtil;
+import com.dotmarketing.util.UtilMethods;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -215,10 +215,14 @@ public class PortletFactoryImpl extends PrincipalBean implements PortletFactory 
 
     final String portletXML = portletToXml(portlet);
     new DotConnect().setSQL(
-        "insert into portlet (portletid, groupid, companyid, defaultpreferences, narrow, roles, active_) values(?,?,?,?,?,null,?)")
-        .addParam(portlet.getPortletId()).addParam(portlet.getGroupId()).addParam(portlet.getCompanyId()).addParam(portletXML).addParam(
-            DbConnectionFactory.getDBFalse()).addParam(
-            DbConnectionFactory.getDBTrue()).loadResult();
+        "insert into portlet (portletid, groupid, companyid, defaultpreferences, narrow, active_) values(?,?,?,?,?,?)")
+        .addParam(portlet.getPortletId())
+            .addParam(UtilMethods.isSet(portlet.getGroupId())?portlet.getGroupId():"SHARED_KEY")
+            .addParam(portlet.getCompanyId())
+            .addParam(portletXML)
+            .addParam(DbConnectionFactory.isPostgres()?portlet.getNarrow() : DbConnectionFactory.getDBFalse())//this is because the column datatype is bool not boolean
+            .addParam(DbConnectionFactory.isPostgres()?portlet.getActive() : DbConnectionFactory.getDBTrue())//this is because the column datatype is bool not boolean
+            .loadResult();
 
     new PortletCache().clear();
 
