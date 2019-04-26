@@ -36,6 +36,7 @@
               url="jdbc:h2:WEB-INF/H2_DATABASE/h2_dotcms_data;MVCC=TRUE;LOCK_TIMEOUT=15000"
               username="sa" password="sa" maxActive="60" maxIdle="10" maxWait="60000"
               removeAbandoned="true" removeAbandonedTimeout="60" logAbandoned="false"
+              jdbcInterceptors="org.apache.tomcat.jdbc.pool.interceptor.ResetAbandonedTimer" 
               timeBetweenEvictionRunsMillis="30000" validationQuery="SELECT 1" testOnBorrow="true" testWhileIdle="true"
               abandonWhenPercentageFull="50"/>
 
@@ -46,7 +47,8 @@
           driverClassName="org.postgresql.Driver"
           url="jdbc:postgresql://localhost/dotcms"
           username="{your db user}" password="{your db password}" maxActive="60" maxIdle="10" maxWait="60000"
-          removeAbandoned="true" removeAbandonedTimeout="60" logAbandoned="true"
+          removeAbandoned="true" removeAbandonedTimeout="60" logAbandoned="true" 
+          jdbcInterceptors="org.apache.tomcat.jdbc.pool.interceptor.ResetAbandonedTimer" 
           timeBetweenEvictionRunsMillis="30000" validationQuery="SELECT 1" testOnBorrow="true" testWhileIdle="true"
           abandonWhenPercentageFull="50"/>
 -->
@@ -56,7 +58,8 @@
           type="javax.sql.DataSource" driverClassName="com.mysql.jdbc.Driver"
           url="jdbc:mysql://localhost/dotcms?characterEncoding=UTF-8&amp;useLegacyDatetimeCode=false&amp;serverTimezone=UTC"
           username="{your db user}" password="{your db password}" maxActive="60" maxIdle="10" maxWait="60000"
-          removeAbandoned="true" removeAbandonedTimeout="60" logAbandoned="true"
+          removeAbandoned="true" removeAbandonedTimeout="60" logAbandoned="true" 
+          jdbcInterceptors="org.apache.tomcat.jdbc.pool.interceptor.ResetAbandonedTimer" 
           timeBetweenEvictionRunsMillis="30000" validationQuery="SELECT 1" testOnBorrow="true" testWhileIdle="true"
           abandonWhenPercentageFull="50"/>
     -->
@@ -66,7 +69,8 @@
           type="javax.sql.DataSource" driverClassName="oracle.jdbc.OracleDriver"
           url="jdbc:oracle:thin:@localhost:1521:XE"
           username="{your db user}" password="{your db password}" maxActive="60" maxIdle="10" maxWait="60000"
-          removeAbandoned="true" removeAbandonedTimeout="60" logAbandoned="true"
+          removeAbandoned="true" removeAbandonedTimeout="60" logAbandoned="true" 
+          jdbcInterceptors="org.apache.tomcat.jdbc.pool.interceptor.ResetAbandonedTimer" 
           timeBetweenEvictionRunsMillis="30000" testOnBorrow="true" validationQuery="SELECT 1 from DUAL" testWhileIdle="true"
           abandonWhenPercentageFull="50"/>
 -->
@@ -76,7 +80,8 @@
           type="javax.sql.DataSource" driverClassName="com.microsoft.sqlserver.jdbc.SQLServerDriver"
           url="jdbc:sqlserver://{your server}.database.windows.net:1433;databaseName={your DB name}"
           username="{your user}@{your server}" password="{your password}" maxActive="60" maxIdle="10" maxWait="60000"
-          removeAbandoned="true" removeAbandonedTimeout="60" logAbandoned="true"
+          removeAbandoned="true" removeAbandonedTimeout="60" logAbandoned="true" 
+          jdbcInterceptors="org.apache.tomcat.jdbc.pool.interceptor.ResetAbandonedTimer" 
           timeBetweenEvictionRunsMillis="30000" testOnBorrow="true" testWhileIdle="true" validationQuery="SELECT 1" defaultTransactionIsolation="READ_COMMITTED"
           abandonWhenPercentageFull="50"/>
 -->
