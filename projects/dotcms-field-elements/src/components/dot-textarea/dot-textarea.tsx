@@ -1,6 +1,15 @@
-import { Component, Prop, State, Event, EventEmitter, Method } from '@stencil/core';
+import { Component, Prop, State, Method, Element, Event, EventEmitter } from '@stencil/core';
 import Fragment from 'stencil-fragment';
-import { DotFieldStatus } from '../../models/dot-field-status.model';
+import { DotFieldStatus, DotFieldValueEvent, DotFieldStatusEvent } from '../../models';
+import {
+    getClassNames,
+    getOriginalStatus,
+    getTagHint,
+    getTagError,
+    getTagLabel,
+    getErrorClass,
+    updateStatus
+} from '../../utils';
 
 /**
  * Represent a dotcms textarea control.
@@ -13,6 +22,7 @@ import { DotFieldStatus } from '../../models/dot-field-status.model';
     styleUrl: 'dot-textarea.scss'
 })
 export class DotTextareaComponent {
+    @Element() el: HTMLElement;
     @Prop({ mutable: true }) value: string;
     @Prop() name: string;
     @Prop() regexcheck: string;
@@ -23,12 +33,10 @@ export class DotTextareaComponent {
     @Prop() requiredmessage: string;
     @Prop() disabled = false;
 
-    @Event() valueChange: EventEmitter;
-    @Event() statusChange: EventEmitter;
+    @State() status: DotFieldStatus = getOriginalStatus();
 
-    @State() _valid = true;
-    @State() _dotTouched = false;
-    _dotPristine = true;
+    @Event() valueChange: EventEmitter<DotFieldValueEvent>;
+    @Event() statusChange: EventEmitter<DotFieldStatusEvent>;
 
     /**
      * Reset properties of the field, clear value and emit events.
@@ -37,10 +45,8 @@ export class DotTextareaComponent {
      */
     @Method()
     reset(): void {
-        this._dotPristine = true;
-        this._dotTouched = false;
         this.value = '';
-        this._valid = true;
+        this.status = getOriginalStatus(this.isValid());
         this.emitStatusChange();
         this.emitValueChange();
     }
@@ -51,23 +57,16 @@ export class DotTextareaComponent {
 
     hostData() {
         return {
-            class: {
-                'dot-valid': this.isValid(),
-                'dot-invalid': !this.isValid(),
-                'dot-pristine': this._dotPristine,
-                'dot-dirty': !this._dotPristine,
-                'dot-touched': this._dotTouched,
-                'dot-untouched': !this._dotTouched
-            }
+            class: getClassNames(this.status, this.isValid())
         };
     }
 
     render() {
         return (
             <Fragment>
-                <label htmlFor={this.name}>{this.label}</label>
+                {getTagLabel(this.name, this.label)}
                 <textarea
-                    class={this.getInputClassName()}
+                    class={getErrorClass(this.status.dotValid)}
                     id={this.name}
                     name={this.name}
                     value={this.value}
@@ -76,22 +75,14 @@ export class DotTextareaComponent {
                     onBlur={() => this.blurHandler()}
                     disabled={this.getDisabledAtt()}
                 />
-                {this.hint ? <span class='dot-field__hint'>{this.hint}</span> : ''}
-                {this.shouldShowErrorMessage() ? (
-                    <span class='dot-field__error-meessage'>{this.getErrorMessage()}</span>
-                ) : (
-                    ''
-                )}
+                {getTagHint(this.hint)}
+                {getTagError(this.shouldShowErrorMessage(), this.getErrorMessage())}
             </Fragment>
         );
     }
 
-    private getInputClassName(): string {
-        return this._valid ? '' : 'dot-field__input--error';
-    }
-
     private getDisabledAtt(): boolean {
-        return this.disabled ? true : null;
+        return this.disabled || null;
     }
 
     private getRequiredAttr(): boolean {
@@ -115,7 +106,7 @@ export class DotTextareaComponent {
     }
 
     private shouldShowErrorMessage(): boolean {
-        return this.getErrorMessage() && !this._dotPristine;
+        return this.getErrorMessage() && !this.status.dotPristine;
     }
 
     private getErrorMessage(): string {
@@ -125,17 +116,21 @@ export class DotTextareaComponent {
     }
 
     private blurHandler(): void {
-        if (!this._dotTouched) {
-            this._dotTouched = true;
+        if (!this.status.dotTouched) {
+            this.status = updateStatus(this.status, {
+                dotTouched: true
+            });
             this.emitStatusChange();
         }
     }
 
     private setValue(event): void {
-        this._dotPristine = false;
-        this._dotTouched = true;
         this.value = event.target.value.toString();
-        this._valid = this.isValid();
+        this.status = updateStatus(this.status, {
+            dotTouched: true,
+            dotPristine: false,
+            dotValid: this.isValid()
+        });
         this.emitValueChange();
         this.emitStatusChange();
     }
@@ -143,19 +138,15 @@ export class DotTextareaComponent {
     private emitStatusChange(): void {
         this.statusChange.emit({
             name: this.name,
-            status: this.getStatus()
+            status: this.status
         });
     }
 
     private emitValueChange(): void {
-        this.valueChange.emit({ name: this.name, value: this.value });
+        this.valueChange.emit({
+            name: this.name,
+            value: this.value
+        });
     }
 
-    private getStatus(): DotFieldStatus {
-        return {
-            dotTouched: this._dotTouched,
-            dotValid: this.isValid(),
-            dotPristine: this._dotPristine
-        };
-    }
 }

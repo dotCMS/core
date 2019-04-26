@@ -1,4 +1,4 @@
-import { DotCMSContentTypeField } from '../../models/dot-content-type-field';
+import { DotCMSContentTypeField } from '../../models';
 
 export const DotFormFields = {
     Text: (field: DotCMSContentTypeField) => (
@@ -32,8 +32,13 @@ export const DotFormFields = {
 
     Checkbox: (field: DotCMSContentTypeField) => (
         <dot-checkbox
-            label={field.name}
+            disabled={field.disabled}
             hint={field.hint}
+            label={field.name}
+            name={field.variable}
+            options={field.values}
+            required={field.required}
+            requiredmessage={field.requiredMessage}
             value={field.defaultValue}
         />
     ),

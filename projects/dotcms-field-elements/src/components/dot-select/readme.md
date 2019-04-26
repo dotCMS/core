@@ -21,10 +21,10 @@
 
 ## Events
 
-| Event          | Description | Type                |
-| -------------- | ----------- | ------------------- |
-| `statusChange` |             | `CustomEvent<void>` |
-| `valueChange`  |             | `CustomEvent<void>` |
+| Event          | Description | Type                               |
+| -------------- | ----------- | ---------------------------------- |
+| `statusChange` |             | `CustomEvent<DotFieldStatusEvent>` |
+| `valueChange`  |             | `CustomEvent<DotFieldValueEvent>`  |
 
 
 ## Methods
