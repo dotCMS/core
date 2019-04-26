@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.calendar.business;
 
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
@@ -51,7 +52,7 @@ public class EventAPIImpl implements EventAPI {
 	 * @param fromDate
 	 * @param endDate
 	 * @param tags
-	 * @param keyword
+	 * @param keywords
 	 * @param categories
 	 * @param liveOnly
 	 * @param user
@@ -77,7 +78,7 @@ public class EventAPIImpl implements EventAPI {
 	 * @param fromDate
 	 * @param endDate
 	 * @param tags
-	 * @param keyword
+	 * @param keywords
 	 * @param categories
 	 * @param liveOnly
 	 * @param user
@@ -174,7 +175,7 @@ public class EventAPIImpl implements EventAPI {
 	 * This methods removes all the categories the user is able to remove from
 	 * the event and then associates the categories passed as paramater
 	 */
-	@CloseDBIfOpened
+	@WrapInTransaction
 	public void setCategories(Event ev, List<Category> cats, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
 		List<Category> oldcats = new ArrayList<Category>();
@@ -211,7 +212,7 @@ public class EventAPIImpl implements EventAPI {
 		return contentlets;
 	}
 
-	@CloseDBIfOpened
+	@WrapInTransaction
 	public void setRelatedContent(Event ev, Relationship rel, List<Contentlet> related, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
 		Contentlet cont = new Contentlet();
@@ -290,7 +291,7 @@ public class EventAPIImpl implements EventAPI {
 		return result.toString();
 	}
 
-	@CloseDBIfOpened
+	@WrapInTransaction
 	public Event disconnectEvent(Event event, User user, Date startDate, Date endDate) throws DotDataException, DotSecurityException{
 		Event newEvent = null;
 		if(event!=null && event.isRecurrent()){
