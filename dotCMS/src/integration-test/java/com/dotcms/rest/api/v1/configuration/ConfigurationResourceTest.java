@@ -1,8 +1,7 @@
 package com.dotcms.rest.api.v1.configuration;
 
-import static com.dotmarketing.util.WebKeys.DOTCMS_WEBSOCKET_BASEURL;
-import static com.dotmarketing.util.WebKeys.DOTCMS_WEBSOCKET_ENDPOINTS;
-import static com.dotmarketing.util.WebKeys.DOTCMS_WEBSOCKET_PROTOCOL;
+
+import static com.dotmarketing.util.WebKeys.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -53,10 +52,11 @@ public class ConfigurationResourceTest {
 		assertTrue(response.getEntity() instanceof ResponseEntityView);
 		assertTrue(ResponseEntityView.class.cast(response.getEntity()).getErrors().isEmpty());
 		Map<String, Object> responseEntity = (Map<String, Object>) ResponseEntityView.class.cast(response.getEntity()).getEntity();
-		assertNotNull(responseEntity.get(DOTCMS_WEBSOCKET_PROTOCOL));
-		assertNotNull(responseEntity.get(DOTCMS_WEBSOCKET_BASEURL));
-		assertTrue(HOST_NAME.equals(responseEntity.get(DOTCMS_WEBSOCKET_BASEURL)));
-		assertNotNull(responseEntity.get(DOTCMS_WEBSOCKET_ENDPOINTS));
+
+		final Map webSocketConfig = (Map) responseEntity.get(DOTCMS_WEBSOCKET);
+
+		assertEquals(Integer.parseInt(webSocketConfig.get(DOTCMS_WEBSOCKET_TIME_TO_WAIT_TO_RECONNECT).toString()), 15000);
+		assertEquals(Boolean.parseBoolean(webSocketConfig.get(DOTCMS_DISABLE_WEBSOCKET_PROTOCOL).toString()), false);
 	}
 
 }

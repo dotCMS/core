@@ -2216,6 +2216,7 @@ public class ContentletAPITest extends ContentletBaseTest {
           c.setStringProperty("title", c.getStringProperty("title") + " new");
           c.setIndexPolicy(IndexPolicy.FORCE);
           c = contentletAPI.checkin(c,user, respectFrontendRoles);
+          c.setIndexPolicy(IndexPolicy.FORCE);
           contentletAPI.publish(c, user, respectFrontendRoles);
           assertTrue( c.isLive());
         }
