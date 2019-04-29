@@ -54,5 +54,18 @@ export const DotFormFields = {
             requiredmessage={field.requiredMessage}
             value={field.defaultValue}
         />
+    ),
+
+    Radio: (field: DotCMSContentTypeField) => (
+        <dot-radio
+            disabled={field.disabled}
+            hint={field.hint}
+            label={field.name}
+            name={field.variable}
+            options={field.values}
+            required={field.required}
+            requiredmessage={field.requiredMessage}
+            value={field.defaultValue}
+        />
     )
 };
