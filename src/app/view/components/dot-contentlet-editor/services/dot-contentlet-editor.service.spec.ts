@@ -60,8 +60,8 @@ describe('DotContentletEditorService', () => {
 
     it('should set data to edit', () => {
         spyOnProperty(dotRouterService, 'currentPortlet').and.returnValue({
-            url: '/c/c-Test/123',
-            id: 'c-Test'
+            url: '/c/c_Test/123',
+            id: 'c_Test'
         });
         service.editUrl$.subscribe((url: string) => {
             expect(url).toEqual(

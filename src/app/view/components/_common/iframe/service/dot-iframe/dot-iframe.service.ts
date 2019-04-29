@@ -96,8 +96,8 @@ export class DotIframeService {
             'workflow': 'doFilter'
         };
 
-        return this.dotRouterService.isCustomPortlet(portlet) 
-            ? mapOfFunctions['content'] 
+        return this.dotRouterService.isCustomPortlet(portlet)
+            ? mapOfFunctions['content']
             : mapOfFunctions[portlet];
     }
 }
