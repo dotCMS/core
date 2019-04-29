@@ -82,6 +82,7 @@ import java.util.Map;
 import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.collections.CollectionUtils;
+
 /*
  *     //http://jira.dotmarketing.net/browse/DOTCMS-2273
  *     To save content via ajax.
@@ -97,6 +98,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 	private UserAPI userAPI;
 	private FolderAPI folderAPI;
 	private IdentifierAPI identAPI;
+	private EventAPI eventAPI;
 
 	private static DateFormat eventRecurrenceStartDateF = new SimpleDateFormat("yyyy-MM-dd HH:mm");
 	private static DateFormat eventRecurrenceEndDateF = new SimpleDateFormat("yyyy-MM-dd");
@@ -112,7 +114,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		this.userAPI = APILocator.getUserAPI();
 		this.folderAPI = APILocator.getFolderAPI();
 		this.identAPI = APILocator.getIdentifierAPI();
-
+        this.eventAPI = APILocator.getEventAPI();
 		contentletSystemEventUtil = ContentletSystemEventUtil.getInstance();
 	}
 
@@ -137,10 +139,10 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		try {
 
 			Logger.debug(this, () -> "Calling Retrieve method");
-			_retrieveWebAsset(contentletFormData, user);
+			retrieveWebAsset(contentletFormData, user);
 		} catch (Exception ae) {
 
-			_handleException(ae);
+			handleException(ae);
 			throw new Exception(ae.getMessage());
 		}
 
@@ -153,7 +155,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 
 			try {
 
-				_saveWebAsset(contentletFormData, isAutoSave, isCheckin, user, generateSystemEvent);
+				saveWebAsset(contentletFormData, isAutoSave, isCheckin, user, generateSystemEvent);
 			} catch (Exception ce) {
 				if (!isAutoSave)
 					SessionMessages.add(req, "message.contentlet.save.error");
@@ -187,7 +189,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 				this.pushSaveEvent(contentlet, isNew);
 			}
 		} catch (Exception ae) {
-			_handleException(ae);
+			handleException(ae);
 			throw ae;
 		}
 
@@ -330,7 +332,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		}
 	}
 
-	private void _saveWebAsset(Map<String, Object> contentletFormData,
+	private void saveWebAsset(Map<String, Object> contentletFormData,
 			boolean isAutoSave, boolean isCheckin, User user, boolean generateSystemEvent) throws Exception, DotContentletValidationException {
 
 		final HttpServletRequest request = WebContextFactory.get().getHttpServletRequest();
@@ -338,7 +340,8 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 
 		// Getting the contentlets variables to work
 		Contentlet currentContentlet = (Contentlet) contentletFormData.get(WebKeys.CONTENTLET_EDIT);
-		final String currentContentident = currentContentlet.getIdentifier();
+		//Form doesn't always contain this value upfront. And since populateContentlet sets 0 we better set it upfront
+		contentletFormData.put("identifier", currentContentlet.getIdentifier());
 		final boolean isNew = !InodeUtils.isSet(currentContentlet.getInode());
 
 		if (!isNew && Host.HOST_VELOCITY_VAR_NAME.equals(currentContentlet.getStructure().getVelocityVarName())) {
@@ -366,12 +369,11 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 
 		contentletFormData.put(WebKeys.CONTENTLET_FORM_EDIT, currentContentlet);
 		contentletFormData.put(WebKeys.CONTENTLET_EDIT, currentContentlet);
-
 		try{
-			_populateContent(contentletFormData, user, currentContentlet,isAutoSave);
+			populateContent(contentletFormData, user, currentContentlet, isAutoSave);
 			//http://jira.dotmarketing.net/browse/DOTCMS-1450
 			//The form doesn't have the identifier in it. so the populate content was setting it to 0
-			currentContentlet.setIdentifier(currentContentident);
+			//currentContentlet.setIdentifier(currentContentident);
 			if(UtilMethods.isSet(contentletFormData.get("new_owner_permissions"))) {
 				currentContentlet.setOwner((String) contentletFormData.get("new_owner_permissions"));
 			}
@@ -664,8 +666,8 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		return status;
 	}
 
-	private void handleEventRecurrence(Map<String, Object> contentletFormData, Contentlet contentlet) throws DotRuntimeException, ParseException{
-		if(!contentlet.getStructure().getVelocityVarName().equals(EventAPI.EVENT_STRUCTURE_VAR)){
+	private void handleEventRecurrence(final Map<String, Object> contentletFormData, final Contentlet contentlet) throws DotRuntimeException, ParseException, DotDataException, DotSecurityException{
+		if(!contentlet.isCalendarEvent()){
 			return;
 		}
 		if (contentletFormData.get("recurrenceChanged") != null && Boolean.parseBoolean(contentletFormData.get("recurrenceChanged").toString())) {
@@ -719,7 +721,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 						} catch (Exception e) {}
 
 				   } else {
-					   contentlet.setProperty("recurrenceDayOfMonth","0");
+					   contentlet.setProperty("recurrenceDayOfMonth",0);
 				   }
 
 				contentlet.setProperty("recurrenceInterval",Long.valueOf(contentletFormData.get("recurrenceIntervalMonthly").toString()));
@@ -739,10 +741,9 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 				contentlet.setBoolProperty("recurs",false);
 			}
 
-
 	}
 
-	private void _populateContent(Map<String, Object> contentletFormData,
+	private Contentlet populateContent(Map<String, Object> contentletFormData,
 			User user, Contentlet contentlet, boolean isAutoSave)  throws Exception {
 
 		handleEventRecurrence(contentletFormData, contentlet);
@@ -865,9 +866,11 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 			Logger.error(this, "Unable to populate content. ", e);
 			throw new Exception("Unable to populate content");
 		}
+
+		return contentlet;
 	}
 
-	private void _handleException(final Exception ae) {
+	private void handleException(final Exception ae) {
 		
 		if(!(ae instanceof DotContentletValidationException) && !(ae instanceof DotLanguageException)){
 			Logger.warn(this, ae.toString(), ae);
@@ -881,7 +884,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		return (null != contentType)?new StructureTransformer(contentType).asStructure():null;
 	} // transform.
 
-	protected void _retrieveWebAsset(final Map<String,Object> contentletFormData, final User user) throws Exception {
+	private void retrieveWebAsset(final Map<String,Object> contentletFormData, final User user) throws Exception {
 
 		final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
 		HttpServletRequest req =WebContextFactory.get().getHttpServletRequest();
@@ -946,14 +949,14 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 			}
 		}
 
-		_loadContentletRelationshipsInRequest(contentletFormData, contentlet, st);
+		loadContentletRelationshipsInRequest(contentletFormData, contentlet, st);
 
 
 		// Asset Versions to list in the versions tab
 		contentletFormData.put(WebKeys.VERSIONS_INODE_EDIT, contentlet);
 	}
 
-	private void _loadContentletRelationshipsInRequest(Map<String, Object> contentletFormData, Contentlet contentlet, Structure structure) throws DotDataException {
+	private void loadContentletRelationshipsInRequest(Map<String, Object> contentletFormData, Contentlet contentlet, Structure structure) throws DotDataException {
 		ContentletAPI contentletService = APILocator.getContentletAPI();
 		contentlet.setStructureInode(structure.getInode());
 		ContentletRelationships cRelationships = contentletService.getAllRelationships(contentlet);
