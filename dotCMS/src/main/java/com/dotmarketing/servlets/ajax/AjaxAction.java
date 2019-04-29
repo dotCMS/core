@@ -76,13 +76,8 @@ public abstract class AjaxAction {
     }
 
 	public void setUser(HttpServletRequest request){
-		
-	    
-	    final InitDataObject initData = webResource.init(true, request, true);
-	    
-
+		final InitDataObject initData = webResource.init(request.getRequestURI(), true, request, true, null);
 	    this.user = initData.getUser();
-
 	}
 	
 	

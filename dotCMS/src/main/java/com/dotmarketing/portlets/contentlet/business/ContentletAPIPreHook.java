@@ -1782,6 +1782,8 @@ public interface ContentletAPIPreHook {
     public default boolean findContentletByIdentifierOrFallback(String identifier, boolean live, long incomingLangId, User user,   boolean respectFrontendRoles) {
         return true;
     }
-
+    public default boolean findInDb(String inode) {
+        return true;
+    }
 
 }

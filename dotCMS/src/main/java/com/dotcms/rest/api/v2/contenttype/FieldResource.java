@@ -42,6 +42,7 @@ import javax.servlet.http.HttpServletRequest;
 
 
 @Path("/v2/contenttype/{typeIdOrVarName}/fields")
+@Deprecated
 public class FieldResource implements Serializable {
     private final WebResource webResource;
     private final FieldAPI fieldAPI;

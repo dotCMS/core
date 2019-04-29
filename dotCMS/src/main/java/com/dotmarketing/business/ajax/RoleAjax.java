@@ -66,6 +66,7 @@ import com.liferay.portal.model.User;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -572,13 +573,13 @@ public class RoleAjax {
 
 		List<Map<String, Object>> listOfPortletsInfo = new ArrayList<Map<String,Object>>();
 
-		List<Portlet> portlets = portletAPI.findAllPortlets();
-		for(Portlet p: portlets) {
-			if(portletAPI.canAddPortletToLayout(p)) {
+		final Collection<Portlet> portlets = portletAPI.findAllPortlets();
+		for(final Portlet portlet: portlets) {
+			if(portletAPI.canAddPortletToLayout(portlet)) {
 				Map<String, Object> portletMap = new HashMap<String, Object>();
-				String portletTitle = LanguageUtil.get(uWebAPI.getLoggedInUser(request),"com.dotcms.repackage.javax.portlet.title." + p.getPortletId());
+				String portletTitle = LanguageUtil.get(uWebAPI.getLoggedInUser(request),"com.dotcms.repackage.javax.portlet.title." + portlet.getPortletId());
 				portletMap.put("title", portletTitle);
-				portletMap.put("id", p.getPortletId());
+				portletMap.put("id", portlet.getPortletId());
 				listOfPortletsInfo.add(portletMap);
 			}
 		}

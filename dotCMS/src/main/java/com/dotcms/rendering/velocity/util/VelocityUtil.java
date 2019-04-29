@@ -128,18 +128,25 @@ public class VelocityUtil {
 
 	public static String convertToVelocityVariable(final String variable, boolean firstLetterUppercase){
 
-		if(variable.matches("_.*")) {
-			return variable;
+		String variableToReturn = variable;
+
+		// starts with number
+		if(variableToReturn.matches("^\\d.*")) {
+			variableToReturn = replaceStartingNumberWithWrittenNumber(variableToReturn);
 		}
 
-		if(variable.matches("[0-9]*")) {
-			return replaceStartingNumberWithWrittenNumber(variable);
+		// start with char different than "_A-Za-z"
+		if(variableToReturn.matches("[^_A-Za-z].*")) {
+			variableToReturn = variableToReturn.replaceAll("[^_0-9A-Za-z]", "_");
 		}
 
-		return (firstLetterUppercase)
-				? StringUtils.camelCaseUpper(variable)
-				: StringUtils.camelCaseLower(variable);
+		if(variableToReturn.matches(".*[a-zA-Z].*")) {
+			variableToReturn = (firstLetterUppercase)
+					? StringUtils.camelCaseUpper(variableToReturn)
+					: StringUtils.camelCaseLower(variableToReturn);
+		}
 
+		return variableToReturn;
 	}
 
 	@VisibleForTesting

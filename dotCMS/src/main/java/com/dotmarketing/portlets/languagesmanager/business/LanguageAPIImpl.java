@@ -23,6 +23,7 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -211,12 +212,15 @@ public class LanguageAPIImpl implements LanguageAPI {
 
 	@WrapInTransaction
 	@Override
-	public void saveLanguageKeys(final Language lang, final Map<String, String> generalKeys,
+	public void saveLanguageKeys(final Language lang, final Map<String, String> generalKeysIncoming,
                                  final Map<String, String> specificKeys, final Set<String> toDeleteKeys) throws DotDataException {
 
 		final List<LanguageKey> existingGeneralKeys  = getLanguageKeys(lang.getLanguageCode());
         final List<LanguageKey> existingSpecificKeys = getLanguageKeys(lang.getLanguageCode(),lang.getCountryCode());
 
+    final Map<String,String> generalKeys = new HashMap<>();
+    generalKeys.putAll(generalKeysIncoming);
+        
 		for(LanguageKey key:existingGeneralKeys){
 			if(generalKeys.containsKey(key.getKey())){
 				key.setValue(generalKeys.get(key.getKey()));

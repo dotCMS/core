@@ -1,5 +1,6 @@
 package com.dotcms.datagen;
 
+import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
@@ -8,9 +9,10 @@ import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
-
 import java.util.Date;
+import java.util.List;
 
 public class ContentTypeDataGen extends AbstractDataGen<ContentType> {
 
@@ -24,10 +26,17 @@ public class ContentTypeDataGen extends AbstractDataGen<ContentType> {
     private boolean systemField;
     private Inode.Type type = Inode.Type.STRUCTURE;
     private String velocityVarNameField = "test_structure_varname_" + currentTime;
+    private List<Field> fields=ImmutableList.of();
 
     @SuppressWarnings("unused")
     public ContentTypeDataGen baseContentType(final BaseContentType baseContentType) {
         this.baseContentType = baseContentType;
+        return this;
+    }
+
+    @SuppressWarnings("unused")
+    public ContentTypeDataGen fields(List<Field> fields) {
+        this.fields = fields;
         return this;
     }
 
@@ -118,7 +127,7 @@ public class ContentTypeDataGen extends AbstractDataGen<ContentType> {
     @Override
     public ContentType persist(final ContentType contentType) {
         try {
-            return APILocator.getContentTypeAPI(APILocator.systemUser()).save(contentType);
+            return APILocator.getContentTypeAPI(APILocator.systemUser()).save(contentType, fields);
         } catch (Exception e) {
             throw new RuntimeException("Unable to persist ContentType.", e);
         }

@@ -611,6 +611,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 */
 	public void setDateProperty(String fieldVarName, Date dateValue) throws DotRuntimeException {
 		map.put(fieldVarName, dateValue);
+		addRemoveNullProperty(fieldVarName, dateValue);
 	}
 
     /**
@@ -621,6 +622,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
      */
     public void setDateProperty(com.dotcms.contenttype.model.field.Field field, Date dateValue) throws DotRuntimeException {
         map.put(field.variable(), dateValue);
+		addRemoveNullProperty(field.variable(), dateValue);
     }
 
 	/**
@@ -1168,7 +1170,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	}
 
 	/**
-	 *
+	 * It'll tell you if you're dealing with content of type htmlPage
 	 * @return
 	 */
     public Boolean isHTMLPage() {
@@ -1176,7 +1178,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     }
 
     /**
-     *
+     * It'll tell you if you're dealing with content of type FileAsset
      * @return
      */
 	public boolean isFileAsset() {
@@ -1184,7 +1186,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	}
 
 	/**
-	 *
+	 * It'll tell you if you're dealing with content of type Host
 	 * @return
 	 */
     public boolean isHost() {
@@ -1193,6 +1195,14 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
         return getStructure().getInode().equals(hostStructure.getInode());
     }
+
+	/**
+	 * It'll tell you if you're dealing with content of type event
+	 * @return
+	 */
+	public boolean isCalendarEvent() {
+		return getStructure().getStructureType() == BaseContentType.CONTENT.getType() &&  "Event".equals(getStructure().getName()) ;
+	}
 
 	/**
 	 * If the inode is set, means it has at least one version

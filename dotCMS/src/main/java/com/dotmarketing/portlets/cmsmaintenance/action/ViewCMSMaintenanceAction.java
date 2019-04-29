@@ -22,8 +22,8 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
-import com.dotmarketing.common.business.journal.DistributedJournalFactory;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.reindex.ReindexQueueFactory;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -183,7 +183,7 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 					structure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(ccf.getStructure());
 				if(!InodeUtils.isSet(structure.getInode()))
 				{
-					try{
+			
 						int shards = Config.getIntProperty("es.index.number_of_shards", 2);
 						try{
 							shards = Integer.parseInt(req.getParameter("shards"));
@@ -192,18 +192,12 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 						}
 						System.setProperty("es.index.number_of_shards", String.valueOf(shards));
 						Logger.info(this, "Running Contentlet Reindex");
-						HibernateUtil.startTransaction();
-						conAPI.reindex();
-						HibernateUtil.closeAndCommitTransaction();
+
+						conAPI.refreshAllContent();
+			
 						message = "message.cmsmaintenance.cache.indexrebuilt";
 						AdminLogger.log(ViewCMSMaintenanceAction.class, "processAction", "Running Contentlet Reindex");
-					}catch(DotReindexStateException dre){
-						Logger.warn(this, "Content Reindexation Failed caused by: "+ dre.getMessage());
-						errorMessage = "message.cmsmaintenance.cache.failedtorebuild";
-						HibernateUtil.rollbackTransaction();
-					} finally {
-						DbConnectionFactory.closeSilently();
-					}
+					
 				}
 				else
 				{
@@ -968,7 +962,7 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 	 */
 	private void downloadRemainingRecordsAsCsv(HttpServletResponse response) {
 		String fileName = "failed_reindex_records" + new java.util.Date().getTime();
-		String[] fileColumns = new String[] { "ID", "Identifier To Index", "Inode To Index", "Priority" };
+		String[] fileColumns = new String[] { "ID", "Identifier To Index", "Priority", "Cause" };
 		PrintWriter pr = null;
 		try {
 			response.setContentType("application/octet-stream; charset=UTF-8");
@@ -978,9 +972,9 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			pr.print("\r\n");
 			DotConnect dc = new DotConnect();
 			StringBuilder sql = new StringBuilder();
-			sql.append("SELECT drj.id, drj.ident_to_index, drj.inode_to_index, drj.priority ")
+			sql.append("SELECT drj.id, drj.ident_to_index, drj.inode_to_index, drj.priority, drj.index_val ")
 					.append("FROM dist_reindex_journal drj WHERE drj.priority >= ")
-					.append(DistributedJournalFactory.REINDEX_JOURNAL_PRIORITY_FAILED_FIRST_ATTEMPT);
+					.append(ReindexQueueFactory.Priority.REINDEX.dbValue());
 			dc.setSQL(sql.toString());
 			List<Map<String, Object>> failedRecords = dc.loadObjectResults();
 			if (!failedRecords.isEmpty()) {
@@ -1000,8 +994,10 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 					}
 					entry.append(id).append(", ");
 					entry.append(row.get("ident_to_index").toString()).append(", ");
-					entry.append(row.get("inode_to_index").toString()).append(", ");
-					entry.append(priority);
+
+					
+					entry.append(priority).append(",");
+					entry.append(row.get("index_val").toString());
 					pr.print(entry.toString());
 					pr.print("\r\n");
 				}

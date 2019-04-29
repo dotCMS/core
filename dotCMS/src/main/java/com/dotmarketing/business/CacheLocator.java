@@ -22,6 +22,7 @@ import com.dotcms.rendering.velocity.services.DotResourceCache;
 import com.dotcms.rendering.velocity.viewtools.navigation.NavToolCache;
 import com.dotcms.rendering.velocity.viewtools.navigation.NavToolCacheImpl;
 import com.dotmarketing.business.cache.transport.CacheTransport;
+import com.dotmarketing.business.portal.PortletCache;
 import com.dotmarketing.cache.ContentTypeCache;
 import com.dotmarketing.cache.FolderCache;
 import com.dotmarketing.cache.FolderCacheImpl;
@@ -65,6 +66,7 @@ import com.dotmarketing.tag.business.TagInodeCacheImpl;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys;
+
 
 
 /**
@@ -182,7 +184,9 @@ public class CacheLocator extends Locator<CacheIndex>{
 	public static LayoutCache getLayoutCache() {
 		return (LayoutCache)getInstance(CacheIndex.Layout);
 	}
-
+    public static PortletCache getPortletCache() {
+        return (PortletCache)getInstance(CacheIndex.PortletCache);
+    }
 	public static IdentifierCache getIdentifierCache() {
 		return (IdentifierCache)getInstance(CacheIndex.Identifier);
 	}
@@ -384,6 +388,7 @@ enum CacheIndex
 	NavTool2("Navigation Tool2"),
 	MultiTreeCache("MultiTree Cache"),
 	ApiTokenCache("ApiTokenCache"),
+	PortletCache("PortletCache"),
 	KeyValueCache("Key/Value Cache");
 
 	Cachable create() {
@@ -430,6 +435,7 @@ enum CacheIndex
 	      	case KeyValueCache : return new KeyValueCacheImpl();
 	      	case MultiTreeCache : return new MultiTreeCache();
 	      	case ApiTokenCache : return new ApiTokenCache();
+	      	case PortletCache : return new PortletCache();
 	      	
 		}
 		throw new AssertionError("Unknown Cache index: " + this);

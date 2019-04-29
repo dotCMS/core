@@ -3,8 +3,6 @@ package com.dotmarketing.db;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
-
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -16,28 +14,28 @@ public abstract class ReindexRunnable implements Runnable {
 	
 	private final Action action;
 	private final List<Contentlet> contentToIndex;
-	private final BulkRequestBuilder bulk;
-	private boolean reindexOnly;
+
+
 
 	public List<Contentlet> getReindexIds() {
 		return contentToIndex;
 	}
 
-	public ReindexRunnable(List<Contentlet> reindexIds, Action action, BulkRequestBuilder bulk, boolean reindexOnly) {
+	public ReindexRunnable(final List<Contentlet> reindexIds, final Action action) {
 		super();
 		this.contentToIndex = reindexIds;
 		this.action = action;
-		this.bulk = bulk;
-		this.reindexOnly = reindexOnly;
+
+
 	}
 
-	public ReindexRunnable(Contentlet reindexId, Action action, BulkRequestBuilder bulk) {
+	public ReindexRunnable(Contentlet reindexId, Action action) {
 		super();
 
 		contentToIndex = new ArrayList<Contentlet>();
 		contentToIndex.add(reindexId);
 		this.action = action;
-		this.bulk = bulk;
+
 	}
 
 	public Action getAction() {
@@ -48,7 +46,7 @@ public abstract class ReindexRunnable implements Runnable {
 
         try {
         	if(action.equals(Action.ADDING)){
-        		APILocator.getContentletIndexAPI().indexContentList(contentToIndex, bulk, reindexOnly);
+        		APILocator.getContentletIndexAPI().addContentToIndex(contentToIndex);
         	}
         	else{
         		throw new DotStateException("REMOVE ACTION NEEDS TO OVERRIDE THE run() method");

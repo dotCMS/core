@@ -25,6 +25,7 @@ import com.dotcms.uuid.shorty.ShortyIdCache;
 import com.dotmarketing.beans.*;
 import com.dotmarketing.business.*;
 import com.dotmarketing.common.model.ContentletSearch;
+import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
@@ -58,6 +59,7 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.*;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.io.Files;
@@ -2158,10 +2160,9 @@ public class ContentletAPITest extends ContentletBaseTest {
      * @throws DotSecurityException
      */
 
-    @Ignore
     @Test
     public void addRemoveContentFromIndex () throws DotDataException, DotSecurityException {//6 contentlets
-   // respect CMS Anonymous permissions
+      // respect CMS Anonymous permissions
       boolean respectFrontendRoles = false;
       int num = 5;
       Host host = APILocator.getHostAPI().findDefaultHost(user, respectFrontendRoles);
@@ -2202,6 +2203,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
       //commit it index
       HibernateUtil.closeSession();
+      DateUtil.sleep(5000);
       for(Contentlet c : origCons){
         assertTrue(contentletAPI.indexCount("+live:true +identifier:" +c.getIdentifier() + " +inode:" + c.getInode() , user, respectFrontendRoles)>0);
       }
@@ -2212,7 +2214,9 @@ public class ContentletAPITest extends ContentletBaseTest {
         List<Contentlet> checkedOut=contentletAPI.checkout(origCons, user, respectFrontendRoles);
         for(Contentlet c : checkedOut){
           c.setStringProperty("title", c.getStringProperty("title") + " new");
+          c.setIndexPolicy(IndexPolicy.FORCE);
           c = contentletAPI.checkin(c,user, respectFrontendRoles);
+          c.setIndexPolicy(IndexPolicy.FORCE);
           contentletAPI.publish(c, user, respectFrontendRoles);
           assertTrue( c.isLive());
         }
@@ -2231,15 +2235,6 @@ public class ContentletAPITest extends ContentletBaseTest {
 
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
     /**
      * Testing {@link ContentletAPI#delete(com.dotmarketing.portlets.contentlet.model.Contentlet, com.liferay.portal.model.User, boolean)}
      *
@@ -3262,7 +3257,8 @@ public class ContentletAPITest extends ContentletBaseTest {
         w.setLanguageId(def.getId());
         w = contentletAPI.checkin(w, user, false);
         APILocator.getVersionableAPI().setLive(w);
-        APILocator.getContentletIndexAPI().addContentToIndex(w,false,true);
+        w.setIndexPolicy(IndexPolicy.FORCE);
+        APILocator.getContentletIndexAPI().addContentToIndex(w, false);
         contentletAPI.isInodeIndexed(w.getInode(),true);
 
 
@@ -6026,6 +6022,37 @@ public class ContentletAPITest extends ContentletBaseTest {
         } catch (IOException e) {
             fail(e.getMessage());
         }
+    }
+    
+    @Test
+    public void test_findInDb_returns_properly() throws Exception {
+        
+        
+        ContentType type = new ContentTypeDataGen()
+                .fields(ImmutableList
+                        .of(ImmutableTextField.builder().name("Title").variable("title").searchable(true).listed(true).build()))
+                .nextPersisted();
+
+        
+        // test null value
+        Optional<Contentlet> conOpt= contentletAPI.findInDb(null);
+        assert(conOpt.isPresent()==false);
+        
+        
+        // test non-existing
+        conOpt= contentletAPI.findInDb("not-here");
+        assert(conOpt.isPresent()==false);
+        
+        final Contentlet contentlet = new ContentletDataGen(type.id()).setProperty("title", "contentTest " + System.currentTimeMillis()).nextPersisted();
+        contentlet.setStringProperty("title", "nope");
+        
+        conOpt= contentletAPI.findInDb(contentlet.getInode());
+        assert(conOpt.isPresent());
+        
+        assertNotEquals(conOpt.get().getTitle(), contentlet.getTitle());
+        
+    
+    
     }
 
 }
