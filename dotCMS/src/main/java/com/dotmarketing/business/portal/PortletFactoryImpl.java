@@ -1,7 +1,5 @@
 
 package com.dotmarketing.business.portal;
-
-import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.util.UtilMethods;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -220,8 +218,8 @@ public class PortletFactoryImpl extends PrincipalBean implements PortletFactory 
             .addParam(UtilMethods.isSet(portlet.getGroupId())?portlet.getGroupId():"SHARED_KEY")
             .addParam(portlet.getCompanyId())
             .addParam(portletXML)
-            .addParam(DbConnectionFactory.isPostgres()?portlet.getNarrow() : DbConnectionFactory.getDBFalse())//this is because the column datatype is bool not boolean
-            .addParam(DbConnectionFactory.isPostgres()?portlet.getActive() : DbConnectionFactory.getDBTrue())//this is because the column datatype is bool not boolean
+            .addParam(portlet.getNarrow())
+            .addParam(portlet.getActive())
             .loadResult();
 
     new PortletCache().clear();
