@@ -1,36 +1,30 @@
 package com.dotcms.http;
 
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableMap;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URISyntaxException;
 import java.util.Map;
-
 import javax.servlet.http.HttpServletResponse;
-
+import net.jodah.failsafe.CircuitBreaker;
+import net.jodah.failsafe.Failsafe;
+import net.jodah.failsafe.FailsafeException;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
-
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableMap;
-
-import net.jodah.failsafe.CircuitBreaker;
-import net.jodah.failsafe.Failsafe;
-import net.jodah.failsafe.FailsafeException;
 
 /**
  * Defaults to GET requests with 2000 timeout
@@ -124,12 +118,12 @@ public class CircuitBreakerUrl {
             request.addHeader(head, headers.get(head));
         }
         try {
-            URIBuilder uriBuilder = new URIBuilder(this.proxyUrl);
+            final URIBuilder uriBuilder = new URIBuilder(this.proxyUrl);
             if(this.rawData!=null) {
               try {
-                String contentType = this.rawData.trim().startsWith("{") ? "application/json" : this.rawData.trim().startsWith("<") ? "application/xml" : "application/x-www-form-urlencoded";
+                final String contentType = this.rawData.trim().charAt(0)=='{' ? "application/json" : this.rawData.trim().startsWith("<") ? "application/xml" : "application/x-www-form-urlencoded";
                 
-                StringEntity postingString = new StringEntity(rawData, ContentType.create(contentType, "UTF-8"));
+                final StringEntity postingString = new StringEntity(rawData, ContentType.create(contentType, "UTF-8"));
                 if(request instanceof HttpEntityEnclosingRequestBase) {
                   ((HttpEntityEnclosingRequestBase)request).setEntity(postingString);
                 }

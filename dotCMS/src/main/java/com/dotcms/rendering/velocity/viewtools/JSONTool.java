@@ -94,13 +94,19 @@ public class JSONTool extends ImportSupport implements ViewTool {
     return get(url, timeout, headers);
   }
 
-  public Object get(String url, int timeout) {
-    return fetch(url, timeout, new HashMap<String, String>());
+  public Object get(final String url, final int timeout) {
+    return fetch(url, timeout, new HashMap());
   }
 
   public Object get(String url, int timeout, Map<String, String> headers) {
     try {
-      String x = CircuitBreakerUrl.builder().setHeaders(headers).setUrl(url).setTimeout(timeout).build().doString();
+      String x = CircuitBreakerUrl
+              .builder()
+              .setHeaders(headers)
+              .setUrl(url)
+              .setTimeout(timeout)
+              .build()
+              .doString();
       return generate(x);
     } catch (Exception e) {
       Logger.warn(this.getClass(), e.getMessage());
@@ -109,11 +115,19 @@ public class JSONTool extends ImportSupport implements ViewTool {
     return null;
   }
 
-  public Object put(String url, int timeout, Map<String, String> headers, final String rawData) {
+  public Object put(final String url, final int timeout, final Map<String, String> headers,
+          final String rawData) {
     try {
-      String x = CircuitBreakerUrl.builder().setMethod(Method.PUT).setHeaders(headers).setUrl(url).setRawData(rawData).setTimeout(timeout)
-          .build().doString();
-      return generate(x);
+      final String response = CircuitBreakerUrl
+              .builder()
+              .setMethod(Method.PUT)
+              .setHeaders(headers)
+              .setUrl(url)
+              .setRawData(rawData)
+              .setTimeout(timeout)
+              .build()
+              .doString();
+      return generate(response);
     } catch (Exception e) {
       Logger.warn(this.getClass(), e.getMessage());
       Logger.debug(this.getClass(), e.getMessage(), e);
@@ -121,16 +135,24 @@ public class JSONTool extends ImportSupport implements ViewTool {
     return null;
   }
 
-  public Object put(String url, Map<String, String> headers, final String rawData) {
+  public Object put(final String url, final Map<String, String> headers, final String rawData) {
     return put(url, Config.getIntProperty("URL_CONNECTION_TIMEOUT", 2000), headers, rawData);
   }
 
   
-  public Object put(String url, int timeout, Map<String, String> headers, final Map<String, String> params) {
+  public Object put(final String url, final int timeout, final Map<String, String> headers,
+          final Map<String, String> params) {
     try {
-      String x = CircuitBreakerUrl.builder().setMethod(Method.PUT).setHeaders(headers).setUrl(url).setParams(params).setTimeout(timeout)
-          .build().doString();
-      return generate(x);
+      final String response = CircuitBreakerUrl
+              .builder()
+              .setMethod(Method.PUT)
+              .setHeaders(headers)
+              .setUrl(url)
+              .setParams(params)
+              .setTimeout(timeout)
+              .build()
+              .doString();
+      return generate(response);
     } catch (Exception e) {
       Logger.warn(this.getClass(), e.getMessage());
       Logger.debug(this.getClass(), e.getMessage(), e);
@@ -138,15 +160,24 @@ public class JSONTool extends ImportSupport implements ViewTool {
     return null;
   }
 
-  public Object put(String url, Map<String, String> headers, final Map<String, String> params) {
+  public Object put(final String url, final Map<String, String> headers,
+          final Map<String, String> params) {
     return post(url, Config.getIntProperty("URL_CONNECTION_TIMEOUT", 2000), headers, params);
   }
 
-  public Object post(String url, int timeout, Map<String, String> headers, final String rawData) {
+  public Object post(final String url, final int timeout, final Map<String, String> headers,
+          final String rawData) {
     try {
-      String x = CircuitBreakerUrl.builder().setMethod(Method.POST).setHeaders(headers).setUrl(url).setRawData(rawData).setTimeout(timeout)
-          .build().doString();
-      return generate(x);
+      final String response = CircuitBreakerUrl
+              .builder()
+              .setMethod(Method.POST)
+              .setHeaders(headers)
+              .setUrl(url)
+              .setRawData(rawData)
+              .setTimeout(timeout)
+              .build()
+              .doString();
+      return generate(response);
     } catch (Exception e) {
       Logger.warn(this.getClass(), e.getMessage());
       Logger.debug(this.getClass(), e.getMessage(), e);
@@ -154,15 +185,23 @@ public class JSONTool extends ImportSupport implements ViewTool {
     return null;
   }
 
-  public Object post(String url, Map<String, String> headers, final String rawData) {
+  public Object post(final String url, final Map<String, String> headers, final String rawData) {
     return post(url, Config.getIntProperty("URL_CONNECTION_TIMEOUT", 5000), headers, rawData);
   }
 
-  public Object post(String url, int timeout, Map<String, String> headers, final Map<String, String> params) {
+  public Object post(final String url, final int timeout, final Map<String, String> headers,
+          final Map<String, String> params) {
     try {
-      String x = CircuitBreakerUrl.builder().setMethod(Method.POST).setHeaders(headers).setUrl(url).setParams(params).setTimeout(timeout)
-          .build().doString();
-      return generate(x);
+      final String response = CircuitBreakerUrl
+              .builder()
+              .setMethod(Method.POST)
+              .setHeaders(headers)
+              .setUrl(url)
+              .setParams(params)
+              .setTimeout(timeout)
+              .build()
+              .doString();
+      return generate(response);
     } catch (Exception e) {
       Logger.warn(this.getClass(), e.getMessage());
       Logger.debug(this.getClass(), e.getMessage(), e);
@@ -170,7 +209,8 @@ public class JSONTool extends ImportSupport implements ViewTool {
     return null;
   }
 
-  public Object post(String url, Map<String, String> headers, final Map<String, String> params) {
+  public Object post(final String url, final Map<String, String> headers,
+          final Map<String, String> params) {
     return post(url, Config.getIntProperty("URL_CONNECTION_TIMEOUT", 2000), headers, params);
   }
 
