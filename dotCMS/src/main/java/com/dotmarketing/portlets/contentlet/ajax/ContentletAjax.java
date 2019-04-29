@@ -1597,6 +1597,8 @@ public class ContentletAjax {
 						if (UtilMethods.isSet(previousTemplate) && previousTemplate.isAnonymous()) {
 							APILocator.getTemplateAPI().delete(previousTemplate, systemUser, false);
 						}
+
+						CacheLocator.getMultiTreeCache().removePageMultiTrees(contentlet.getIdentifier());
 					}
                 }
 
