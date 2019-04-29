@@ -617,13 +617,8 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                     continue;
                 }
 
-
-                if (!pageContents.contains(container.getIdentifier(), containerUUID.getUUID())) {
-
-                    if (doesPageContentsHaveContainer(pageContents, containerUUID, container)) {
-
-                        pageContents.put(container.getIdentifier(), containerUUID.getUUID(), new LinkedHashSet<>());
-                    }
+                if (!doesPageContentsHaveContainer(pageContents, containerUUID, container)) {
+                    pageContents.put(container.getIdentifier(), containerUUID.getUUID(), new LinkedHashSet<>());
                 }
             }
         } catch (RuntimeException e) {
@@ -645,14 +640,19 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             final ContainerUUID containerUUID,
             final Container container) {
 
-        final boolean isLegacyValue = ContainerUUID.UUID_LEGACY_VALUE.equals(containerUUID.getUUID());
-        boolean pageContenstContains = pageContents.contains(containerUUID.getIdentifier(), ContainerUUID.UUID_START_VALUE);
+        if(pageContents.contains(container.getIdentifier(), containerUUID.getUUID())){
+            return true;
+        } else if (ContainerUUID.UUID_LEGACY_VALUE.equals(containerUUID.getUUID())) {
+            boolean pageContenstContains = pageContents.contains(containerUUID.getIdentifier(), ContainerUUID.UUID_START_VALUE);
 
-        if (!pageContenstContains && container instanceof FileAssetContainer){
-            pageContenstContains = pageContents.contains(container.getIdentifier(), ContainerUUID.UUID_START_VALUE);
+            if (!pageContenstContains && container instanceof FileAssetContainer) {
+                pageContenstContains = pageContents.contains(container.getIdentifier(), ContainerUUID.UUID_START_VALUE);
+            }
+
+            return pageContenstContains;
+        } else {
+            return false;
         }
-
-        return !isLegacyValue || !pageContenstContains;
     }
 
     private Container getLiveContainerById(final String containerIdOrPath, final User user, final Template template) throws NotFoundInDbException {
