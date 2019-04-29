@@ -502,78 +502,17 @@
 	function showEventDetail(jsevent, event) {
 
 		glEvent = event;
-		var doc = Ext.get(document.body);
-		var detailDiv = Ext.get("eventDetail");
 
-		var eventDates = '';
-		if(isSameDate(event.startDate, event.endDate)) {
-			var startTime = event.startDate.format('h:i A');
-			var endTime = event.endDate.format('h:i A');
-			if(startTime != endTime) {
-				eventDates = event.startDate.format('m/d/Y h:i A') + ' - ' + event.endDate.format('h:i A');
-			} else {
-				eventDates = event.startDate.format('m/d/Y h:i A');
-			}
-		} else {
-			eventDates = event.startDate.format('m/d/Y h:i A') + ' - ' + event.endDate.format('m/d/Y h:i A');
-		}
-		Element.update($("eventDetailDate"), "<span class='calLabel'><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "When")) %>:</span>" + eventDates);
+        if(event.writePermission){
+            if(event.recurs){
+                var startDate = event.startDate.format('m/d/Y');
+                var endDate = event.endDate.format('m/d/Y');
+                recurrentEventDetail(event.inode , event.identifier , startDate , endDate, 'edit');
 
-		if (event.description != null) {
-			Element.update($("eventDetailDescription"), event.description);
-		} else {
-			Element.update($("eventDetailDescription"), "");
-		}
-
-		if(event.location != undefined){
-			document.getElementById("showLocation").style.display="block";
-			Element.update($("eventDetailLocation"), (event.location != ""?"<span class='calLabel'>Location:</span> " + event.location + "<br/><hr class=\"blue\"/>":""));
-	    }else{
-			document.getElementById("showLocation").style.display="none";
-		}
-
-		if(event.allowRating == "yes") {
-			Element.update($("eventDetailRating"), "<span class='calLabel'><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Average-Rating")) %>:</span> " + event.rating + " (" + event.votes + " <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "votes")) %>)<br/><br/>");
-		}
-		if(event.allowComments == "yes") {
-			Element.update($("eventDetailComments"), event.commentsCount + " <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Comments")) %><br/><br/>");
-		}
-		if(event.tags != '' || event.tags != null) {
-			Element.update($("eventDetailTags"), "<span class='calLabel'><%= UtilMethods.escapeSingleQuotes( LanguageUtil.get(pageContext, "Tags") )%>:</span> " + ((event.tags == '' || event.tags == null) ?'<%= UtilMethods.escapeSingleQuotes( LanguageUtil.get(pageContext, "No-tags") )%>':event.tags));
-		}
-		if(event.categories != undefined && event.categories.length > 0){
-			var cats = "<span class='calLabel'><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Categories")) %>:</span> ";
-			for(i=0;i<event.categories.length;i++){
-				cats+=event.categories[i].categoryName;
-				if(i+1< event.categories.length)
-					cats+=", "
-			}
-			Element.update($("eventDetailCategories"), cats);
-
-		}
-
-		var eventDetailActions = '<div class=\"buttonRow\">';
-		var startDate = event.startDate.format('m/d/Y');
-		var endDate = event.endDate.format('m/d/Y');
-
-
-		if(event.writePermission){
-			if(event.recurs){
-			  eventDetailActions += '<a class="fakeDojoButton" href="javascript: recurrentEventDetail(\'' + event.inode + '\',\'' + event.identifier + '\',\'' + startDate + '\',\'' + endDate+ '\',\'edit\');">' +
-			  '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "edit")) %></a>';
-			}else{
-				eventDetailActions += '<a class="fakeDojoButton" href="javascript: editEvent(\'' + event.inode + '\',\'<%= referer %>\');">' +
-				  '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "edit")) %></a>';
-			}
-		}
-
-		eventDetailActions += '</div>';
-
-		Element.update($("eventDetailActions"), eventDetailActions);
-
-		var dialog = dijit.byId('eventDetail');
-		dialog.setAttribute('title', event.title);
-		dialog.show();
+            }else{
+                editEvent(event.inode,'<%= referer %>');
+            }
+        }
 	}
 
 	function hideEventDetail () {
@@ -608,15 +547,9 @@
 					'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "All-events-in-the-series")) %></a>';
 		}
 
-		closeEventDetail();
+		//closeEventDetail();
 		Element.update($("recEventDetailActions"), actions);
 		dijit.byId('recEventDetail').show();
-		var dialog = dijit.byId('recEventDetail');
-		dialog.connect(dialog,"hide",function(e){
-			dojo.hitch(this, setTimeout(function(){
-				showEventDetail(e,glEvent);
-            }, 500))
-		});
 
 	}
 
