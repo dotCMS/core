@@ -66,8 +66,7 @@ public class CircuitBreakerUrl {
      * @param timeoutMs
      */
     public CircuitBreakerUrl(final String proxyUrl, final long timeoutMs) {
-        this(proxyUrl, timeoutMs, CurcuitBreakerPool.getBreaker(proxyUrl + timeoutMs), new HttpGet(proxyUrl), ImmutableMap.of(),
-                ImmutableMap.of(), false);
+        this(proxyUrl, timeoutMs, CurcuitBreakerPool.getBreaker(proxyUrl + timeoutMs), false);
     }
     
     /**
@@ -78,21 +77,10 @@ public class CircuitBreakerUrl {
      * @param circuitBreaker
      */
     public CircuitBreakerUrl(final String proxyUrl, final long timeoutMs, final CircuitBreaker circuitBreaker) {
-        this(proxyUrl, timeoutMs, circuitBreaker, new HttpGet(proxyUrl), ImmutableMap.of(), ImmutableMap.of(), false);
+        this(proxyUrl, timeoutMs, circuitBreaker, false);
     }
 
-    /**
-     * Pass in the String "key" for your circuit breaker, e.g. the url or hostname + params
-     * @param proxyUrl
-     * @param timeoutMs
-     * @param circuitBreakerKey
-     */
-    public CircuitBreakerUrl(final String proxyUrl, final long timeoutMs, final String circuitBreakerKey) {
-        this(proxyUrl, timeoutMs, CurcuitBreakerPool.getBreaker(circuitBreakerKey), new HttpGet(proxyUrl), ImmutableMap.of(),
-                ImmutableMap.of(), false);
-    }
-    public CircuitBreakerUrl(String proxyUrl, long timeoutMs, CircuitBreaker circuitBreaker, HttpRequestBase request,
-        Map<String, String> params, Map<String, String> headers, boolean verbose) {
+    public CircuitBreakerUrl(String proxyUrl, long timeoutMs, CircuitBreaker circuitBreaker, boolean verbose) {
       this(proxyUrl, timeoutMs, circuitBreaker, new HttpGet(proxyUrl), ImmutableMap.of(),ImmutableMap.of(), verbose, null);
     }
     /**
