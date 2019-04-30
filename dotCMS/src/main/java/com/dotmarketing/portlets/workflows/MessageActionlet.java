@@ -6,9 +6,13 @@ import com.dotcms.api.system.event.message.builder.SystemMessage;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
-import com.dotcms.mock.response.MockHttpResponse;
-import com.dotcms.repackage.org.directwebremoting.util.FakeHttpServletRequest;
+import com.dotcms.mock.request.MockAttributeRequest;
+import com.dotcms.mock.request.MockHttpRequest;
+import com.dotcms.mock.request.MockSessionRequest;
+import com.dotcms.mock.response.BaseResponse;
 import com.dotcms.util.ConversionUtils;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
 import com.dotmarketing.portlets.workflows.model.MultiUserReferenceParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
@@ -19,6 +23,7 @@ import com.dotmarketing.util.VelocityUtil;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import io.vavr.control.Try;
 import org.apache.velocity.context.Context;
 
 import javax.servlet.http.HttpServletRequest;
@@ -40,7 +45,7 @@ import static com.dotmarketing.portlets.workflows.util.WorkflowActionletUtil.get
  */
 public class MessageActionlet extends WorkFlowActionlet {
 
-    private final SystemMessageEventUtil systemMessageEventUtil =
+    protected final SystemMessageEventUtil systemMessageEventUtil =
             SystemMessageEventUtil.getInstance();
 
     private static final long serialVersionUID = 1177885642438262884L;
@@ -108,28 +113,51 @@ public class MessageActionlet extends WorkFlowActionlet {
         return (shouldStop ? 1 : 0);
     }
 
+    private HttpServletRequest  mockRequest (final User  currentUser) {
+
+        final Host host = Try.of(()->APILocator.getHostAPI()
+                .findDefaultHost(currentUser, false)).getOrElse(APILocator.systemHost());
+        return new MockAttributeRequest(
+                        new MockSessionRequest(
+                                new MockHttpRequest(host.getHostname(), StringPool.FORWARD_SLASH).request()
+                        ).request()
+                ).request();
+    }
+
+    private HttpServletResponse mockResponse () {
+
+        return new BaseResponse().response();
+    }
+
+
     @Override
     public void executeAction(final WorkflowProcessor processor,
             final Map<String, WorkflowActionClassParameter> params) {
 
+        final User  currentUser          = processor.getUser();
         final HttpServletRequest request =
                 null == HttpServletRequestThreadLocal.INSTANCE.getRequest()?
-                        new FakeHttpServletRequest(): HttpServletRequestThreadLocal.INSTANCE.getRequest();
+                        this.mockRequest(currentUser): HttpServletRequestThreadLocal.INSTANCE.getRequest();
         final HttpServletResponse response =
                 null == HttpServletResponseThreadLocal.INSTANCE.getResponse()?
-                        new MockHttpResponse(): HttpServletResponseThreadLocal.INSTANCE.getResponse();
+                        this.mockResponse(): HttpServletResponseThreadLocal.INSTANCE.getResponse();
         final String userIds     = getParameterValue(params.get(PARAM_CONTENT_USER));
         final String message     = getParameterValue(params.get(PARAM_CONTENT_MESSAGE));
         final String severity    = getParameterValue(params.get(PARAM_CONTENT_SEVERITY));
         final String life        = getParameterValue(params.get(PARAM_CONTENT_LIFE));
 
-        final User  currentUser  = processor.getUser();
+
         final List<String> users = this.processUsers (userIds.split(ID_DELIMITER), currentUser);
 
-        this.systemMessageEventUtil.pushMessage
+        this.pushMessage
                     (this.processMessageValue(processor, message,
                             this.getMessageSeverity(severity), this.getLifeSeconds(life),
-                            request, response), users);
+                            params, request, response), users);
+    }
+
+    protected void pushMessage (final SystemMessage systemMessage, final List<String> users) {
+
+        this.systemMessageEventUtil.pushMessage(systemMessage, users);
     }
 
     private MessageSeverity getMessageSeverity(final String severity) {
@@ -167,11 +195,21 @@ public class MessageActionlet extends WorkFlowActionlet {
         return userIdList;
     }
 
-    private SystemMessage processMessageValue(final WorkflowProcessor processor, final String message,
+    protected SystemMessage processMessageValue(final WorkflowProcessor processor, final String message,
                                               final MessageSeverity severity, final long lifeMillis,
+                                              final Map<String, WorkflowActionClassParameter> params,
                                               final HttpServletRequest request, final HttpServletResponse response) {
 
         final SystemMessageBuilder systemMessageBuilder = new SystemMessageBuilder();
+        final String velocityMessage        = this.evalVelocilyMessage(processor, message, request, response);
+        return systemMessageBuilder.setMessage(velocityMessage)
+                .setLife(lifeMillis)
+                .setSeverity(severity).create();
+    }
+
+    protected String evalVelocilyMessage (final WorkflowProcessor processor, final String message,
+                                          final HttpServletRequest request, final HttpServletResponse response) {
+
         final Context velocityContext = VelocityUtil.getInstance().getContext(request, response);
         String velocityMessage        = message;
         velocityContext.put("workflow", processor);
@@ -179,16 +217,13 @@ public class MessageActionlet extends WorkFlowActionlet {
         velocityContext.put("contentlet", processor.getContentlet());
         velocityContext.put("content", processor.getContentlet());
 
-
         try {
             velocityMessage = VelocityUtil.eval(message, velocityContext);
         } catch (Exception e1) {
             Logger.warn(this.getClass(), "unable to parse message, falling back" + e1);
         }
 
-        return systemMessageBuilder.setMessage(velocityMessage)
-                .setLife(lifeMillis)
-                .setSeverity(severity).create();
+        return velocityMessage;
     }
 
 }

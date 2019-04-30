@@ -301,6 +301,17 @@ public class SystemMessageEventUtil {
             }
     } // pushMessage.
 
+    public void pushLargeMessage (final SystemMessage message, final List<String> users) {
+
+        try {
+
+            final SystemEvent systemEvent = new SystemEvent(SystemEventType.LARGE_MESSAGE, this.createPayload(message, users));
+            this.systemEventsAPI.push(systemEvent);
+        } catch (DotDataException e) {
+            throw new CanNotPushSystemEventException(e);
+        }
+    } // pushMessage.
+
     private Payload createPayload (final MessageType messageType,
                                    final Object message,
                                    final List<String> users,
