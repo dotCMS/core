@@ -31,7 +31,6 @@ import java.util.stream.Collectors;
 import static com.dotcms.util.CollectionsUtils.list;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 
 public class FieldResourceTest {
 
@@ -150,50 +149,6 @@ public class FieldResourceTest {
         assertEquals(
                 listExpected.stream().map(field -> field.id()).collect(Collectors.toList()),
                 contentTypeFromDB.fields().stream().map(field -> field.id()).collect(Collectors.toList())
-        );
-    }
-
-    @Test
-    public void shouldCreateField () throws DotSecurityException, DotDataException, JSONException {
-        final String typeName="fieldResourceTest" + System.currentTimeMillis();
-
-        ContentType type = ContentTypeBuilder.builder(SimpleContentType.class).name(typeName).variable(typeName).build();
-        type = APILocator.getContentTypeAPI(APILocator.systemUser()).save(type);
-
-        createFields(type);
-
-        Field newField = FieldBuilder.builder(TextField.class)
-                .name("new field")
-                .sortOrder(4)
-                .contentTypeId(type.id())
-                .build();
-
-        final JsonFieldTransformer jsonFieldTransformer = new JsonFieldTransformer(newField);
-        final Map<String, Object> fieldToUpdatetMap = jsonFieldTransformer.mapObject();
-
-        final UpdateFieldForm form =
-                new UpdateFieldForm.Builder().fields(list(fieldToUpdatetMap))
-                        .build();
-
-        final FieldResource fieldResource = new FieldResource();
-        final Response contentTypeFields = fieldResource.updateFields(type.id(), form, getHttpRequest());
-
-        final List<FieldLayoutRow> rows =
-                (List<FieldLayoutRow>) ((ResponseEntityView) contentTypeFields.getEntity()).getEntity();
-
-        assertEquals(1, rows.size());
-        assertEquals(1, rows.get(0).getColumns().size());
-
-        final List<Field> columnFields = rows.get(0).getColumns().get(0).getFields();
-        assertEquals(3, columnFields.size());
-
-        assertNotNull(columnFields.get(0).id());
-
-        final ContentType contentTypeFromDB = APILocator.getContentTypeAPI(APILocator.systemUser()).find(type.id());
-
-        assertEquals(
-                columnFields.get(2).id(),
-                contentTypeFromDB.fields().get(4).id()
         );
     }
 
