@@ -31,6 +31,7 @@ import org.junit.runner.RunWith;
 @RunWith(DataProviderRunner.class)
 public class PortletAPIImplTest {
 
+    private static final String PORTLET_ID = "testCustomPortlet";
     private static PortletAPI portletApi;
     private static User systemUser;
 
@@ -111,21 +112,21 @@ public class PortletAPIImplTest {
     @DataProvider
     public static Object[] testCasesCreateCustomPortlet() {
         return new Object[]{
-                new testCaseCreateCustomPortlet("testCustomPortlet", "testCustomPortlet", "Persona",
+                new testCaseCreateCustomPortlet(PORTLET_ID, PORTLET_ID, "Persona",
                         "", true),
-                new testCaseCreateCustomPortlet("testCustomPortlet", "testCustomPortlet",
+                new testCaseCreateCustomPortlet(PORTLET_ID, PORTLET_ID,
                         "Content, Persona", "", true),
-                new testCaseCreateCustomPortlet("testCustomPortlet", "testCustomPortlet", "",
+                new testCaseCreateCustomPortlet(PORTLET_ID, PORTLET_ID, "",
                         "news", true),
-                new testCaseCreateCustomPortlet("testCustomPortlet", "testCustomPortlet", "",
+                new testCaseCreateCustomPortlet(PORTLET_ID, PORTLET_ID, "",
                         "news, youtube", true),
-                new testCaseCreateCustomPortlet("", "testCustomPortlet", "Persona", "", false),
-                new testCaseCreateCustomPortlet("testCustomPortlet", "", "Persona", "", false),
-                new testCaseCreateCustomPortlet("testCustomPortlet", "testCustomPortlet", "", "",
+                new testCaseCreateCustomPortlet("", PORTLET_ID, "Persona", "", false),
+                new testCaseCreateCustomPortlet(PORTLET_ID, "", "Persona", "", false),
+                new testCaseCreateCustomPortlet(PORTLET_ID, PORTLET_ID, "", "",
                         false),
-                new testCaseCreateCustomPortlet("testCustomPortlet", "testCustomPortlet", "NoExist",
+                new testCaseCreateCustomPortlet(PORTLET_ID, PORTLET_ID, "NoExist",
                         "", false),
-                new testCaseCreateCustomPortlet("testCustomPortlet", "testCustomPortlet", "",
+                new testCaseCreateCustomPortlet(PORTLET_ID, PORTLET_ID, "",
                         "NoExist", false),
         };
     }
@@ -134,7 +135,7 @@ public class PortletAPIImplTest {
     public void test_findPortlet() throws LanguageException, DotDataException {
         Portlet portlet = null;
         try {
-            portlet = createCustomPortlet("testCustomPortlet", "testCustomPortlet", "Persona", "");
+            portlet = createCustomPortlet(PORTLET_ID, PORTLET_ID, "Persona", "");
             final Portlet findPortlet = portletApi.findPortlet(portlet.getPortletId());
             Assert.assertEquals(portlet.getInitParams(),findPortlet.getInitParams());
             Assert.assertEquals(portlet.getPortletId(),findPortlet.getPortletId());
@@ -150,7 +151,7 @@ public class PortletAPIImplTest {
         Portlet portlet = null;
         try {
             Collection<Portlet> portlets =  portletApi.findAllPortlets();
-            portlet = createCustomPortlet("testCustomPortlet", "testCustomPortlet", "Persona", "");
+            portlet = createCustomPortlet(PORTLET_ID, PORTLET_ID, "Persona", "");
             Assert.assertEquals(portlets.size()+1,portletApi.findAllPortlets().size());
         }finally {
             if(portlet!=null){
