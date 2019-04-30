@@ -25,7 +25,7 @@ import { DotNavigationService } from '@components/dot-navigation/services/dot-na
 const dotEventSocketURLFactory = () => {
     return new DotEventsSocketURL(
         `${window.location.hostname}:${window.location.port}/api/ws/v1/system/events`,
-        window.location.protocol === 'https'
+        window.location.protocol === 'https:'
     );
   };
 
