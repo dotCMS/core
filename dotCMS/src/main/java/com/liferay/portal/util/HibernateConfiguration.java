@@ -78,10 +78,6 @@ public class HibernateConfiguration extends SessionConfiguration {
 				liferayTable.setName("image");
 				liferayTable  = cfg.getClassMapping(com.liferay.portal.ejb.PasswordTrackerHBM.class).getTable();
 				liferayTable.setName("passwordtracker");
-				liferayTable  = cfg.getClassMapping(com.liferay.portal.ejb.PortletPreferencesHBM.class).getTable();
-				liferayTable.setName("portletpreferences");
-				liferayTable  = cfg.getClassMapping(com.liferay.portal.ejb.ReleaseHBM.class).getTable();
-				liferayTable.setName("release_");
 				liferayTable  = cfg.getClassMapping(com.liferay.portal.ejb.UserHBM.class).getTable();
 				liferayTable.setName("user_");
 				liferayTable  = cfg.getClassMapping(com.liferay.portal.ejb.UserTrackerHBM.class).getTable();
