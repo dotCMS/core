@@ -301,7 +301,7 @@ public class SystemMessageEventUtil {
             }
     } // pushMessage.
 
-    public void pushLargeMessage (final SystemMessage message, final List<String> users) {
+    public void pushLargeMessage (final Object message, final List<String> users) {
 
         try {
 
@@ -327,7 +327,7 @@ public class SystemMessageEventUtil {
         return this.createPayload(systemMessage, users);
     }
 
-    private Payload createPayload (final SystemMessage message,
+    private Payload createPayload (final Object message,
                                    final List<String> users) {
 
         final Visibility visibility = (null == users || users.isEmpty())  ? Visibility.GLOBAL : Visibility.USERS;

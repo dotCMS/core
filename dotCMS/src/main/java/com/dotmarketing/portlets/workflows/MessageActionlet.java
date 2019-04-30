@@ -54,11 +54,11 @@ public class MessageActionlet extends WorkFlowActionlet {
     private static final String HOW_TO          =
             "This actionlet allows to send a message to the client as part of the action.";
 
-    private static final String ID_DELIMITER             = ",";
-    private static final String PARAM_CONTENT_USER       = "users";
-    private static final String PARAM_CONTENT_MESSAGE    = "message";
-    private static final String PARAM_CONTENT_SEVERITY   = "severity";
-    private static final String PARAM_CONTENT_LIFE       = "life";
+    protected static final String ID_DELIMITER             = ",";
+    protected static final String PARAM_CONTENT_USER       = "users";
+    protected static final String PARAM_CONTENT_MESSAGE    = "message";
+    protected static final String PARAM_CONTENT_SEVERITY   = "severity";
+    protected static final String PARAM_CONTENT_LIFE       = "life";
     private boolean shouldStop = Boolean.FALSE;
 
     public static final String CURRENT_USER_DEFAULT_VALUE = MultiUserReferenceParameter.CURRENT_USER_VALUE;
@@ -113,7 +113,7 @@ public class MessageActionlet extends WorkFlowActionlet {
         return (shouldStop ? 1 : 0);
     }
 
-    private HttpServletRequest  mockRequest (final User  currentUser) {
+    protected HttpServletRequest  mockRequest (final User  currentUser) {
 
         final Host host = Try.of(()->APILocator.getHostAPI()
                 .findDefaultHost(currentUser, false)).getOrElse(APILocator.systemHost());
@@ -124,7 +124,7 @@ public class MessageActionlet extends WorkFlowActionlet {
                 ).request();
     }
 
-    private HttpServletResponse mockResponse () {
+    protected HttpServletResponse mockResponse () {
 
         return new BaseResponse().response();
     }
@@ -178,7 +178,7 @@ public class MessageActionlet extends WorkFlowActionlet {
         return TimeUnit.MILLISECONDS.convert(second, TimeUnit.SECONDS);
     }
 
-    private List<String> processUsers(final String[] userList, final User currentUser) {
+    protected List<String> processUsers(final String[] userList, final User currentUser) {
 
         final List<String> userIdList = new ArrayList<>();
 

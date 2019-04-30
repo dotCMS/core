@@ -16,6 +16,13 @@ public class LargeMessageMap extends HashMap<String, Object> {
         return this;
     }
 
+    public LargeMessageMap height (final String height) {
+
+        this.put("height", height);
+        return this;
+    }
+
+
     public LargeMessageMap body (final String body) {
 
         this.put("body", body);
