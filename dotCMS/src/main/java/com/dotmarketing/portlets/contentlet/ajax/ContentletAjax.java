@@ -1278,6 +1278,7 @@ public class ContentletAjax {
 				list.add(term);
 				listAddedKeys.add(prop.getKey());
 			}
+		}
 
 		if(list.size() < limit){
 			List<KeyValue> languageVariables = APILocator.getLanguageVariableAPI().getAllLanguageVariablesKeyStartsWith(valueToComplete,languageId,systemUser,limit);
@@ -1292,8 +1293,8 @@ public class ContentletAjax {
 					break;
 				}
 			}
-			}
 		}
+
 		return list;
 	}
 
