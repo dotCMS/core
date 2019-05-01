@@ -22,24 +22,18 @@
 
 package com.liferay.util;
 
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import java.io.UnsupportedEncodingException;
 import java.security.Key;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.security.Provider;
 import java.security.SecureRandom;
-import java.security.Security;
-
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
-
 import javax.crypto.NoSuchPaddingException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 /**
  * <a href="Encryptor.java.html"><b><i>View Source</i></b></a>
