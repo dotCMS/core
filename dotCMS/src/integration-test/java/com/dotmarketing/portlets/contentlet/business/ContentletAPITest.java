@@ -24,6 +24,7 @@ import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotcms.uuid.shorty.ShortyIdCache;
 import com.dotmarketing.beans.*;
 import com.dotmarketing.business.*;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.db.LocalTransaction;
@@ -2161,12 +2162,17 @@ public class ContentletAPITest extends ContentletBaseTest {
 
     @Test
     public void addRemoveContentFromIndex()
-            throws DotDataException, DotSecurityException {//6 contentlets
+            throws DotDataException, DotSecurityException {
         // respect CMS Anonymous permissions
         boolean respectFrontendRoles = false;
         int num = 5;
+
+        //clean up old reindexed records
+        new DotConnect().setSQL("delete from dist_reindex_journal").loadResult();
+
         Host host = APILocator.getHostAPI().findDefaultHost(user, respectFrontendRoles);
         Folder folder = APILocator.getFolderAPI().findSystemFolder();
+
 
         Language lang = APILocator.getLanguageAPI().getDefaultLanguage();
         ContentType type = APILocator.getContentTypeAPI(user).find("webPageContent");
@@ -2186,7 +2192,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
             // create a new piece of content backed by the map created above
             Contentlet content = new Contentlet(map);
-            content.setIndexPolicy(IndexPolicy.FORCE);
+            content.setIndexPolicy(IndexPolicy.WAIT_FOR);
 
             // check in the content
             content = contentletAPI.checkin(content, user, respectFrontendRoles);
@@ -2199,7 +2205,6 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         //commit it index
         HibernateUtil.closeSession();
-        DateUtil.sleep(5000);
         for (Contentlet c : origCons) {
             assertEquals(1, contentletAPI.indexCount(
                     "+live:false +identifier:" + c.getIdentifier() + " +inode:" + c.getInode(),
