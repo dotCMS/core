@@ -1,6 +1,6 @@
 import { Component, Element, Event, EventEmitter, Method, Prop, State } from '@stencil/core';
 import Fragment from 'stencil-fragment';
-import { DotFieldStatus, DotFieldStatusEvent, DotFieldValueEvent, DotOption } from '../../models';
+import { DotFieldStatus, DotFieldStatusEvent, DotFieldValueEvent, DotOption, DotLabel } from '../../models';
 import {
     getClassNames,
     getDotOptionsFromFieldValue,
@@ -53,16 +53,18 @@ export class DotRadioComponent {
 
     hostData() {
         return {
-            class: getClassNames(this.status, this.isValid())
+            class: getClassNames(this.status, this.isValid(), this.required)
         };
     }
 
     render() {
+        let labelTagParams: DotLabel = {name: this.name, label: this.label, required: this.required};
         return (
             <Fragment>
-                {getTagLabel(this.name, this.label)}
+                {getTagLabel(labelTagParams)}
                 <div class="dot-radio__items">
                     {this._options.map((item: DotOption) => {
+                        labelTagParams = {name: 'dot-radio-' + item.label.toLocaleLowerCase(), label: item.label};
                         return (
                             <Fragment>
                                 <div class="dot-radio__item">
@@ -76,10 +78,7 @@ export class DotRadioComponent {
                                         checked={this.value.indexOf(item.value) >= 0 || null}
                                         onInput={(event: Event) => this.setValue(event)}
                                     />
-                                    {getTagLabel(
-                                        'dot-radio-' + item.label.toLocaleLowerCase(),
-                                        item.label
-                                    )}
+                                    {getTagLabel(labelTagParams)}
                                 </div>
                             </Fragment>
                         );

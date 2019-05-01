@@ -43,6 +43,20 @@ export const DotFormFields = {
         />
     ),
 
+    'Multi-Select': (field: DotCMSContentTypeField) => (
+        <dot-multi-select
+            disabled={field.disabled}
+            hint={field.hint}
+            label={field.name}
+            name={field.variable}
+            options={field.values}
+            required={field.required}
+            requiredmessage={field.requiredMessage}
+            size={+field.size}
+            value={field.defaultValue}
+        />
+    ),
+
     Select: (field: DotCMSContentTypeField) => (
         <dot-select
             disabled={field.disabled}

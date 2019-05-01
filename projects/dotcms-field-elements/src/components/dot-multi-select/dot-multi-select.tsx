@@ -13,16 +13,16 @@ import {
 } from '../../utils';
 
 /**
- * Represent a dotcms select control.
+ * Represent a dotcms multi select control.
  *
  * @export
  * @class DotSelectComponent
  */
 @Component({
-    tag: 'dot-select',
-    styleUrl: 'dot-select.scss'
+    tag: 'dot-multi-select',
+    styleUrl: 'dot-multi-select.scss'
 })
-export class DotSelectComponent {
+export class DotMultiSelectComponent {
     @Element() el: HTMLElement;
 
     @Prop() disabled = false;
@@ -32,6 +32,7 @@ export class DotSelectComponent {
     @Prop() options: string;
     @Prop() required: boolean;
     @Prop() requiredmessage: string;
+    @Prop() size: number;
     @Prop({ mutable: true }) value: string;
 
     @State() _options: DotOption[];
@@ -75,10 +76,12 @@ export class DotSelectComponent {
             <Fragment>
                 {getTagLabel(labelTagParams)}
                 <select
+                    multiple
+                    size={+this.size || 0}
                     class={getErrorClass(this.status.dotValid)}
                     id={this.name}
                     disabled={this.shouldBeDisabled()}
-                    onChange={(event: Event) => this.setValue(event)}>
+                    onChange={() => this.setValue()}>
 
                     {this._options.map((item: DotOption) => {
                         return (
@@ -103,8 +106,8 @@ export class DotSelectComponent {
     }
 
      // Todo: find how to set proper TYPE in TS
-    private setValue(event): void {
-        this.value = event.target.value;
+    private setValue(): void {
+        this.value = this.getValueFromMultiSelect();
         this.status = updateStatus(this.status, {
             dotTouched: true,
             dotPristine: false,
@@ -112,6 +115,12 @@ export class DotSelectComponent {
         });
         this.emitValueChange();
         this.emitStatusChange();
+    }
+
+    private getValueFromMultiSelect(): string {
+        const selected = this.el.querySelectorAll('option:checked');
+        const values = Array.from(selected).map((el: any) => el.value);
+        return Array.from(values).join(',');
     }
 
     private emitInitialValue() {

@@ -11,4 +11,5 @@ export interface DotFieldStatusClasses {
     'dot-dirty': boolean;
     'dot-touched': boolean;
     'dot-untouched': boolean;
+    'dot-required'?: boolean;
 }

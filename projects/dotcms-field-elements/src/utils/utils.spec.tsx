@@ -83,11 +83,13 @@ describe('getTagError', () => {
 
 describe('getTagLabel', () => {
     it('should returns Label tag', () => {
-        const name = 'Label';
-        const message = 'Msg';
-        const jsxTag: any = getTagLabel(name, message);
-        expect(jsxTag.vattrs).toEqual({ htmlFor: 'Label' });
-        expect(jsxTag.vchildren).toEqual([{ vtext: message }]);
+        const param = { name: 'Label', label: 'Msg', required: true };
+        const jsxTag: any = getTagLabel(param);
+        expect(jsxTag.vattrs).toEqual({ class: 'dot-field__label' });
+        expect(jsxTag.vchildren[0].vattrs).toEqual({ htmlFor: 'Label' });
+        expect(jsxTag.vchildren[0].vchildren).toEqual([{ vtext: 'Msg' }]);
+        expect(jsxTag.vchildren[1].vattrs).toEqual({'class': 'dot-field__required-mark'});
+        expect(jsxTag.vchildren[1].vchildren).toEqual([{ vtext: '*' }]);
     });
 });
 

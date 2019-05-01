@@ -11,6 +11,7 @@ export interface DotCMSContentTypeField {
     regexCheckMessage?: string;
     required?: boolean;
     requiredMessage?: string;
+    size?: string;
     values?: string;
     variable?: string;
 }

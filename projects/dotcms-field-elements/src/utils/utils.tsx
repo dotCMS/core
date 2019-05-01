@@ -1,4 +1,4 @@
-import { DotOption, DotFieldStatus, DotFieldStatusClasses } from '../models';
+import { DotOption, DotFieldStatus, DotFieldStatusClasses, DotLabel } from '../models';
 
 /**
  * Based on a string formatted with comma separated values, returns a label/value DotOption array
@@ -52,14 +52,15 @@ export function updateStatus(state: DotFieldStatus, change: { [key: string]: boo
  * @param boolean isValid
  * @returns DotFieldClass
  */
-export function getClassNames(status: DotFieldStatus, isValid: boolean): DotFieldStatusClasses {
+export function getClassNames(status: DotFieldStatus, isValid: boolean, required?: boolean): DotFieldStatusClasses {
     return {
         'dot-valid': isValid,
         'dot-invalid': !isValid,
         'dot-pristine': status.dotPristine,
         'dot-dirty': !status.dotPristine,
         'dot-touched': status.dotTouched,
-        'dot-untouched': !status.dotTouched
+        'dot-untouched': !status.dotTouched,
+        'dot-required': required
     };
 }
 
@@ -91,8 +92,11 @@ export function getTagError(show: boolean, message: string): JSX.Element {
  * @param string label
  * @returns JSX.Element
  */
-export function getTagLabel(name: string, label: string): JSX.Element {
-    return <label htmlFor={name}>{label}</label>;
+export function getTagLabel(params: DotLabel): JSX.Element {
+    return <div class='dot-field__label'>
+                <label htmlFor={params.name}>{params.label}</label>
+                { params.required ? <span class='dot-field__required-mark'>*</span> : ''}
+            </div>;
 }
 
 /**
