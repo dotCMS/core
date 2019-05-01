@@ -33,11 +33,13 @@ import java.security.Security;
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 
+import javax.crypto.NoSuchPaddingException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 /**
  * <a href="Encryptor.java.html"><b><i>View Source</i></b></a>
@@ -53,7 +55,7 @@ public class Encryptor {
 	public static final String DIGEST_ALGORITHM = Config.getStringProperty("ENCRYPTION_DIGEST_ALGORITHM","SHA256");
 
 	public static final String KEY_ALGORITHM = Config.getStringProperty("ENCRYPTION_KEY_ALGORITHM","AES");
-    public static final int KEY_LENGTH = Config.getIntProperty("ENCRYPTION_KEY_LENGTH",256);;
+    public static final int KEY_LENGTH = Config.getIntProperty("ENCRYPTION_KEY_LENGTH",256);
 	
 	public static Key generateKey() throws EncryptorException {
 		return generateKey(KEY_ALGORITHM);
@@ -75,7 +77,21 @@ public class Encryptor {
       // already throws IllegalParameterException for wrong key sizes
       kgen.init(KEY_LENGTH, rng);
 
-      return kgen.generateKey();
+      final Key key = kgen.generateKey();
+
+      try {
+		  Cipher cipher = Cipher.getInstance(key.getAlgorithm());
+		  cipher.init(Cipher.ENCRYPT_MODE, key);
+	  } catch(java.security.InvalidKeyException e) {
+		  throw new RuntimeException(" Your java version is out of date and does not support AES-256 encryption."
+				  + " Please do one of the following: upgrade your java version to at least java 1.8.u151 OR download and install the Java Cryptography Extension (JCE) Unlimited Strength Jurisdiction Policy Files OR "
+				  + " set the dotmarketing-config.property ENCRYPTION_KEY_LENGTH=128", e);
+	  } catch (NoSuchPaddingException | NoSuchAlgorithmException e) {
+		  throw new EncryptorException(e);
+	  }
+
+      return key;
+
 	}
 
 	
