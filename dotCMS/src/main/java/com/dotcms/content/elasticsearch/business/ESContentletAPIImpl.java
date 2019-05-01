@@ -166,6 +166,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -5583,6 +5584,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return QueryUtil.DBSearch(query, dbColToObjectAttribute, "structure_inode = '" + fields.get(0).contentTypeId() + "'", user, true,respectFrontendRoles);
     }
 
+    @WrapInTransaction
+    @Override
+    public Contentlet copyContentlet(Contentlet contentletToCopy, Host host, Folder folder, User user, final String copySuffix, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
+
+        return copyContentlet(contentletToCopy, host, folder, user, copySuffix, respectFrontendRoles, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+    }
+
     /**
      * Copies a contentlet, including all its fields including binary files,
      * image and file fields are pointers and the are preserved as the are so if
@@ -5614,7 +5622,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
      */
     @WrapInTransaction
     @Override
-    public Contentlet copyContentlet(Contentlet contentletToCopy, Host host, Folder folder, User user, final String copySuffix, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
+    public Contentlet copyContentlet(Contentlet contentletToCopy, Host host, Folder folder, User user, final String copySuffix, boolean respectFrontendRoles,
+                                     final List<Function<Contentlet, Contentlet>> preCheckinHooks,
+                                     final List<Function<Contentlet, Contentlet>> postCheckinHooks) throws DotDataException, DotSecurityException, DotContentletStateException {
+
         Contentlet resultContentlet = new Contentlet();
         String newIdentifier = StringPool.BLANK;
         ArrayList<Contentlet> versionsToCopy = new ArrayList<>();
@@ -5753,12 +5764,29 @@ public class ESContentletAPIImpl implements ContentletAPI {
             if (UtilMethods.isSet(newIdentifier)) {
                 newContentlet.setIdentifier(newIdentifier);
             }
+
+            if (UtilMethods.isSet(preCheckinHooks)) {
+
+                for (final Function<Contentlet, Contentlet> preCheckinHook : preCheckinHooks) {
+
+                    newContentlet = preCheckinHook.apply(newContentlet);
+                }
+            }
+
             newContentlet = checkin(newContentlet, rels, parentCats, permissionAPI.getPermissions(contentlet), user, respectFrontendRoles);
             if(!UtilMethods.isSet(newIdentifier))
                 newIdentifier = newContentlet.getIdentifier();
 
             permissionAPI.copyPermissions(contentlet, newContentlet);
 
+
+            if (UtilMethods.isSet(postCheckinHooks)) {
+
+                for (final Function<Contentlet, Contentlet> postCheckinHook : postCheckinHooks) {
+
+                    newContentlet = postCheckinHook.apply(newContentlet);
+                }
+            }
 
             //Using a map to make sure one identifier per page.
             //Avoiding multi languages pages.
@@ -5870,6 +5898,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @WrapInTransaction
     @Override
     public Contentlet copyContentlet(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
+
+        return copyContentlet(contentlet, user, respectFrontendRoles, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+    }
+
+    @WrapInTransaction
+    @Override
+    public Contentlet copyContentlet(Contentlet contentlet, User user, boolean respectFrontendRoles,
+                              final List<Function<Contentlet, Contentlet>> preCheckinHooks,
+                              final List<Function<Contentlet, Contentlet>> postCheckinHooks)
+            throws DotDataException, DotSecurityException, DotContentletStateException {
+
         HostAPI hostAPI = APILocator.getHostAPI();
         FolderAPI folderAPI = APILocator.getFolderAPI();
 
@@ -5881,7 +5920,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
             host = new Host();
         Folder folder = folderAPI.findFolderByPath(contIdentifier.getParentPath(), host, user, false);
 
-        return copyContentlet(contentlet, host, folder, user, generateCopySuffix(contentlet, host, folder), respectFrontendRoles);
+        return copyContentlet(contentlet, host, folder, user, generateCopySuffix(contentlet, host, folder),
+                respectFrontendRoles, preCheckinHooks, postCheckinHooks);
     }
 
     @WrapInTransaction

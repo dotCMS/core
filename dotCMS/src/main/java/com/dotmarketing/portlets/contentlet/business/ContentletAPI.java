@@ -1,6 +1,5 @@
 package com.dotmarketing.portlets.contentlet.business;
 
-import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotmarketing.beans.Host;
@@ -25,12 +24,10 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.liferay.portal.model.User;
+
 import java.io.Serializable;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
+import java.util.function.Function;
 
 /**
  * Provides access to a wide range of routines aimed to interact with
@@ -210,6 +207,25 @@ public interface ContentletAPI {
 	 */
 	public Contentlet copyContentlet(Contentlet contentlet, User user, boolean respectFrontendRoles)
 			throws DotDataException, DotSecurityException, DotContentletStateException;
+
+	/**
+	 * Copies a contentlet, including all its fields including binary files, image and file fields are pointers and the are preserved as the are
+	 * so if source contentlet points to image A and resulting new contentlet will point to same image A as well, also copies source permissions.
+	 *
+	 * @param contentlet
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @return Contentlet
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 * @throws DotContentletStateException
+	 *             throws this exception if the new contentlet requires a
+	 *             destination host or folder mandated by its structure
+	 */
+	Contentlet copyContentlet(Contentlet contentlet, User user, boolean respectFrontendRoles,
+									 final List<Function<Contentlet, Contentlet>> preCheckinHooks,
+									 final List<Function<Contentlet, Contentlet>> postCheckinHooks)
+			throws DotDataException, DotSecurityException, DotContentletStateException;
 	
 	/**
 	 * Copies a contentlet, including all its fields including binary files, image and file fields are pointers and the are preserved as the are
@@ -278,6 +294,31 @@ public interface ContentletAPI {
 	 * @throws DotContentletStateException
 	 */
 	Contentlet copyContentlet(Contentlet contentletToCopy, Host host, Folder folder, User user, final String copySuffix, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException;
+
+	/**
+	 * Copies a contentlet, including all its fields including binary files, image and file fields are pointers and the are preserved as the are
+	 * so if source contentlet points to image A and resulting new contentlet will point to same image A as well, also copies source permissions.
+	 * And moves the the new piece of content to the given folder. CopySuffix will be to append suffix to the file name.
+	 *
+	 * May include a pre checkin hooks to perform something before the checkin and post checkin hooks to do something after checkin
+	 *
+	 * @param contentletToCopy
+	 * @param host
+	 * @param folder
+	 * @param user
+	 * @param copySuffix
+	 * @param respectFrontendRoles
+	 * @param preCheckinHooks  List of Functions, the function receives the contentlet and returns a contentlet
+	 * @param postCheckinHooks List of Functions, the function receives the contentlet and returns a contentlet
+	 * @return Contentlet
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 * @throws DotContentletStateException
+	 */
+	Contentlet copyContentlet(Contentlet contentletToCopy, Host host, Folder folder, User user,
+							  final String copySuffix, boolean respectFrontendRoles,
+							  final List<Function<Contentlet, Contentlet>> preCheckinHooks,
+							  final List<Function<Contentlet, Contentlet>> postCheckinHooks) throws DotDataException, DotSecurityException, DotContentletStateException;
 
 	/**
 	 * The search here takes a lucene query and pulls Contentlets for you.  You can pass sortBy as null if you do not 

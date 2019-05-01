@@ -35,6 +35,7 @@ import org.elasticsearch.action.search.SearchResponse;
 import java.io.File;
 import java.io.Serializable;
 import java.util.*;
+import java.util.function.Function;
 
 /**
  * This interceptor class allows developers to execute Java <b>code</b> before
@@ -1889,6 +1890,23 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 	}
 
 	@Override
+	public Contentlet copyContentlet(Contentlet contentlet, User user, boolean respectFrontendRoles, List<Function<Contentlet, Contentlet>> preCheckinHooks,
+									 List<Function<Contentlet, Contentlet>> postCheckinHooks) throws DotDataException, DotSecurityException, DotContentletStateException {
+		for(ContentletAPIPreHook pre : preHooks){
+			boolean preResult = pre.copyContentlet(contentlet, user, respectFrontendRoles, preCheckinHooks, postCheckinHooks);
+			if(!preResult){
+				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+			}
+		}
+		Contentlet c = conAPI.copyContentlet(contentlet, user, respectFrontendRoles, preCheckinHooks, postCheckinHooks);
+		for(ContentletAPIPostHook post : postHooks){
+			post.copyContentlet(contentlet, user, respectFrontendRoles, c, preCheckinHooks, postCheckinHooks);
+		}
+		return c;
+	}
+
+	@Override
 	public Contentlet copyContentlet(Contentlet contentlet, Host host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.copyContentlet(contentlet, host, user, respectFrontendRoles);
@@ -1955,6 +1973,28 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 
 		for(ContentletAPIPostHook post : postHooks) {
 			post.copyContentlet(contentletToCopy, host, folder, user, copySuffix, respectFrontendRoles, copiedContentlet);
+		}
+
+		return copiedContentlet;
+	}
+
+	@Override
+	public Contentlet copyContentlet(Contentlet contentletToCopy, Host host, Folder folder, User user, String copySuffix, boolean respectFrontendRoles,
+									 List<Function<Contentlet, Contentlet>> preCheckinHooks, List<Function<Contentlet, Contentlet>> postCheckinHooks) throws DotDataException, DotSecurityException, DotContentletStateException {
+		for (ContentletAPIPreHook pre : preHooks) {
+
+			final boolean preResult = pre.copyContentlet(contentletToCopy, host, folder, user, copySuffix, respectFrontendRoles, preCheckinHooks, postCheckinHooks);
+			if(!preResult) {
+				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+			}
+		}
+
+		final Contentlet copiedContentlet =
+				this.conAPI.copyContentlet(contentletToCopy, host, folder, user, copySuffix, respectFrontendRoles, preCheckinHooks, postCheckinHooks);
+
+		for(ContentletAPIPostHook post : postHooks) {
+			post.copyContentlet(contentletToCopy, host, folder, user, copySuffix, respectFrontendRoles, copiedContentlet, preCheckinHooks, postCheckinHooks);
 		}
 
 		return copiedContentlet;

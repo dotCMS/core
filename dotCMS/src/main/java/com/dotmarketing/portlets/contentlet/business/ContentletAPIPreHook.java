@@ -25,6 +25,7 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.liferay.portal.model.User;
 import java.util.Set;
+import java.util.function.Function;
 
 /**
  * @author Jason Tesser
@@ -185,6 +186,11 @@ public interface ContentletAPIPreHook {
       return true;
     }
 
+	public default boolean copyContentlet(Contentlet currentContentlet, User user, boolean respectFrontendRoles, List<Function<Contentlet, Contentlet>> preCheckinHooks,
+										  List<Function<Contentlet, Contentlet>> postCheckinHooks){
+		return true;
+	}
+
 	/**
 	 * Makes a copy of a contentlet. 
 	 * @param currentContentlet
@@ -213,7 +219,7 @@ public interface ContentletAPIPreHook {
     }
 
 	/**
-	 * Make a copye of a contentlet which the copySuffix to rename the filename + suffix.
+	 * Make a copy of a contentlet which the copySuffix to rename the filename + suffix.
 	 * @param contentletToCopy
 	 * @param host
 	 * @param folder
@@ -227,6 +233,24 @@ public interface ContentletAPIPreHook {
 				   final boolean respectFrontendRoles) {
 		return true;
 	}
+
+	/**
+	 * Make a copy of a contentlet which the copySuffix to rename the filename + suffix.
+	 * @param contentletToCopy
+	 * @param host
+	 * @param folder
+	 * @param user
+	 * @param copySuffix
+	 * @param respectFrontendRoles
+	 * @return
+	 */
+	public default boolean copyContentlet(final Contentlet contentletToCopy,
+										  final Host host, final Folder folder, final User user, final String copySuffix,
+										  final boolean respectFrontendRoles,
+										  List<Function<Contentlet, Contentlet>> preCheckinHooks, List<Function<Contentlet, Contentlet>> postCheckinHooks) {
+		return true;
+	}
+
 
 
 	/**

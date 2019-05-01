@@ -29,6 +29,7 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import java.util.Set;
+import java.util.function.Function;
 
 /**
  * @author Jason Tesser
@@ -162,6 +163,10 @@ public interface ContentletAPIPostHook {
 	 */
 	public default void copyContentlet(Contentlet currentContentlet, User user, boolean respectFrontendRoles,Contentlet returnValue){}
 
+	public default void copyContentlet(Contentlet currentContentlet, User user, boolean respectFrontendRoles,Contentlet returnValue,
+									   List<Function<Contentlet, Contentlet>> preCheckinHooks,
+									   List<Function<Contentlet, Contentlet>> postCheckinHooks){}
+
 	/**
 	 * Makes a copy of a contentlet. 
 	 * @param currentContentlet
@@ -196,6 +201,24 @@ public interface ContentletAPIPostHook {
 	public default void copyContentlet(final Contentlet contentletToCopy,
 						final Host host, final Folder folder, final User user, final String copySuffix,
 						final boolean respectFrontendRoles, Contentlet returnValue) {}
+
+	/**
+	 * Makes a copy of a content.
+	 * @param contentletToCopy
+	 * @param host
+	 * @param folder
+	 * @param user
+	 * @param copySuffix
+	 * @param respectFrontendRoles
+	 * @param returnValue - value returned by primary API Method
+	 */
+	public default void copyContentlet(final Contentlet contentletToCopy,
+									   final Host host, final Folder folder, final User user, final String copySuffix,
+									   final boolean respectFrontendRoles, Contentlet returnValue,
+									   final List<Function<Contentlet, Contentlet>> preCheckinHooks,
+									   final List<Function<Contentlet, Contentlet>> postCheckinHooks) {}
+
+
 	/**
 	 * The search here takes a lucene query and pulls Contentlets for you.  You can pass sortBy as null if you do not 
 	 * have a field to sort by.  limit should be 0 if no limit and the offset should be -1 is you are not paginating.
