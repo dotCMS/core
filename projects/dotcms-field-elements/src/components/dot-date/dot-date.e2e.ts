@@ -1,7 +1,7 @@
 import { E2EElement, E2EPage, newE2EPage } from '@stencil/core/testing';
 import { EventSpy } from '@stencil/core/dist/declarations';
 
-describe('dot-textfield', () => {
+describe('dot-date', () => {
     let page: E2EPage;
     let element: E2EElement;
     let input: E2EElement;
@@ -11,36 +11,30 @@ describe('dot-textfield', () => {
     beforeEach(async () => {
         page = await newE2EPage({
             html: `
-              <dot-textfield
-                    label='Name:'
-                    name='fullName'
-                    value='John'
-                    hint='this is a hint'
-                    placeholder='Enter Name'
-                    regex-check='^[A-Za-z ]+$'
-                    validation-message="Invalid Name"
+              <dot-date
+                    label="Date:"
+                    name="date01"
+                    value="2019-01-20"
+                    hint="date hint"
                     required
-                    required-message="Required Name"
-                ></dot-textfield>`
+                    required-message="Required Date"
+                    validation-message="Invalid Date Range"
+                    min="2019-01-01"
+                    max="2019-10-30"
+                    step="2"
+                ></dot-date>`
         });
 
         spyStatusChangeEvent = await page.spyOnEvent('statusChange');
         spyValueChange = await page.spyOnEvent('valueChange');
-        element = await page.find('dot-textfield');
+        element = await page.find('dot-date');
         input = await page.find('input');
     });
 
     it('should render', () => {
         // tslint:disable-next-line:max-line-length
-        const tagsRenderExpected = `<div class=\"dot-field__label\"><label for=\"fullName\">Name:</label><span class=\"dot-field__required-mark\">*</span></div><input id=\"fullName\" placeholder=\"Enter Name\" required=\"\" type=\"text\"><span class=\"dot-field__hint\">this is a hint</span>`;
+        const tagsRenderExpected = `<div class=\"dot-field__label\"><label for=\"date01\">Date:</label><span class=\"dot-field__required-mark\">*</span></div><input id=\"date01\" required=\"\" type=\"date\" min=\"2019-01-01\" max=\"2019-10-30\" step=\"2\"><span class=\"dot-field__hint\">date hint</span>`;
         expect(element.innerHTML).toBe(tagsRenderExpected);
-    });
-
-    it('should show Regex validation message', async () => {
-        await input.press('@');
-        await page.waitForChanges();
-        const errorMessage = await page.find('.dot-field__error-meessage');
-        expect(errorMessage.innerHTML).toBe('Invalid Name');
     });
 
     it('should load as pristine and untouched', () => {
@@ -48,36 +42,34 @@ describe('dot-textfield', () => {
         expect(element.classList.contains('dot-untouched')).toBe(true);
     });
 
-    it('should mark as dirty and touched when type', async () => {
-        await input.press('a');
+    it('should be valid, touched & dirty ', async () => {
+        await input.press('2');
         await page.waitForChanges();
-        expect(element).toHaveClasses(['dot-dirty', 'dot-touched']);
+        expect(element.classList.contains('dot-valid')).toBe(true);
+        expect(element.classList.contains('dot-dirty')).toBe(true);
+        expect(element.classList.contains('dot-touched')).toBe(true);
     });
 
-    it('should mark as invalid when value dont match REgex', async () => {
-        await input.press('@');
+    it('it should not render hint', async () => {
+        element.setProperty('hint', '');
         await page.waitForChanges();
-        expect(element).toHaveClasses(['dot-invalid']);
+        const hint = await element.find('.dot-field__hint');
+        expect(hint).toBeNull();
     });
 
-    it('should clear value, set pristine and untouched  when input set reset', async () => {
-        element.callMethod('reset');
+    it('it should have required as false', async () => {
+        element.setProperty('required', 'false');
         await page.waitForChanges();
-
-        expect(element.classList.contains('dot-pristine')).toBe(true);
-        expect(element.classList.contains('dot-untouched')).toBe(true);
-        expect(element.classList.contains('dot-invalid')).toBe(true);
-        expect(await input.getProperty('value')).toBe('');
+        const required = await element.getProperty('required');
+        expect(required).toBeFalsy();
     });
 
-    it('should mark as disabled when prop is present', async () => {
-        element.setProperty('disabled', true);
+    it('should show invalid range validation message', async () => {
+        element.setProperty('value', '2015-10-01');
+        await input.press('2');
         await page.waitForChanges();
-        expect(await input.getProperty('disabled')).toBe(true);
-    });
-
-    it('should mark as required when prop is present', async () => {
-        expect(await input.getProperty('required')).toBe(true);
+        const errorMessage = await page.find('.dot-field__error-meessage');
+        expect(errorMessage.innerHTML).toBe('Invalid Date Range');
     });
 
     describe('emit events', () => {
@@ -86,7 +78,7 @@ describe('dot-textfield', () => {
             await page.waitForChanges();
 
             expect(spyStatusChangeEvent).toHaveReceivedEventDetail({
-                name: 'fullName',
+                name: 'date01',
                 status: {
                     dotPristine: true,
                     dotTouched: true,
@@ -95,13 +87,13 @@ describe('dot-textfield', () => {
             });
         });
 
-        it('should mark as touched when onblur', async() => {
-            await input.press('a');
+        it('should mark as touched when onblur', async () => {
+            await input.press('2');
             await input.triggerEvent('blur');
             await page.waitForChanges();
 
             expect(spyStatusChangeEvent).toHaveReceivedEventDetail({
-                name: 'fullName',
+                name: 'date01',
                 status: {
                     dotPristine: false,
                     dotTouched: true,
@@ -111,10 +103,10 @@ describe('dot-textfield', () => {
         });
 
         it('should send status value change', async () => {
-            await input.press('a');
+            await input.press('2');
             await page.waitForChanges();
             expect(spyStatusChangeEvent).toHaveReceivedEventDetail({
-                name: 'fullName',
+                name: 'date01',
                 status: {
                     dotPristine: false,
                     dotTouched: true,
@@ -127,20 +119,23 @@ describe('dot-textfield', () => {
             element.callMethod('reset');
             await page.waitForChanges();
             expect(spyStatusChangeEvent).toHaveReceivedEventDetail({
-                name: 'fullName',
+                name: 'date01',
                 status: {
                     dotPristine: true,
                     dotTouched: false,
                     dotValid: false
                 }
             });
-            expect(spyValueChange).toHaveReceivedEventDetail({ name: 'fullName', value: '' });
+            expect(spyValueChange).toHaveReceivedEventDetail({ name: 'date01', value: '' });
         });
 
         it('should emit change value', async () => {
-            await input.press('a');
+            await input.press('2');
             await page.waitForChanges();
-            expect(spyValueChange).toHaveReceivedEventDetail({ name: 'fullName', value: 'Johna' });
+            expect(spyValueChange).toHaveReceivedEventDetail({
+                name: 'date01',
+                value: '2019-02-20'
+            });
         });
     });
 });

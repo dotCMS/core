@@ -19,13 +19,13 @@ export class DotTextfieldComponent {
     @Element() el: HTMLElement;
     @Prop({ mutable: true }) value: string;
     @Prop() name: string;
-    @Prop() regexcheck: string;
-    @Prop() regexcheckmessage: string;
+    @Prop() regexCheck: string;
+    @Prop() validationMessage: string;
     @Prop() label: string;
     @Prop() hint: string;
     @Prop() placeholder: string;
     @Prop() required: boolean;
-    @Prop() requiredmessage: string;
+    @Prop() requiredMessage: string;
     @Prop() disabled = false;
 
     @State() status: DotFieldStatus = getOriginalStatus();
@@ -85,8 +85,8 @@ export class DotTextfieldComponent {
     }
 
     private isRegexValid(): boolean {
-        if (this.regexcheck && this.value.length) {
-            const regex = new RegExp(this.regexcheck, 'ig');
+        if (this.regexCheck && this.value.length) {
+            const regex = new RegExp(this.regexCheck, 'ig');
             return regex.test(this.value);
         }
         return true;
@@ -100,8 +100,8 @@ export class DotTextfieldComponent {
         return this.isRegexValid()
             ? this.isValid()
                 ? ''
-                : this.requiredmessage
-            : this.regexcheckmessage;
+                : this.requiredMessage
+            : this.validationMessage;
     }
 
     private blurHandler(): void {

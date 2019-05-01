@@ -31,7 +31,7 @@ export class DotSelectComponent {
     @Prop() hint: string;
     @Prop() options: string;
     @Prop() required: boolean;
-    @Prop() requiredmessage: string;
+    @Prop() requiredMessage: string;
     @Prop({ mutable: true }) value: string;
 
     @State() _options: DotOption[];
@@ -93,7 +93,7 @@ export class DotSelectComponent {
 
                 </select>
                 {getTagHint(this.hint)}
-                {getTagError(!this.isValid(), this.requiredmessage)}
+                {getTagError(!this.isValid(), this.requiredMessage)}
             </Fragment>
         );
     }

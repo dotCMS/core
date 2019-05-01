@@ -9,7 +9,8 @@ const fieldMap = {
     Checkbox: DotFormFields.Checkbox,
     'Multi-Select': DotFormFields['Multi-Select'],
     Select: DotFormFields.Select,
-    Radio: DotFormFields.Radio
+    Radio: DotFormFields.Radio,
+    Date: DotFormFields.Date
 };
 
 @Component({

@@ -25,7 +25,7 @@ export class DotCheckboxComponent {
     @Prop() hint: string;
     @Prop() options: string;
     @Prop() required: boolean;
-    @Prop() requiredmessage: string;
+    @Prop() requiredMessage: string;
     @Prop({ mutable: true }) value: string;
 
     @State() _options: DotOption[];
@@ -83,7 +83,7 @@ export class DotCheckboxComponent {
                     );
                 })}
                 {getTagHint(this.hint)}
-                {getTagError(!this.isValid(), this.requiredmessage)}
+                {getTagError(!this.isValid(), this.requiredMessage)}
             </Fragment>
         );
     }

@@ -1,9 +1,8 @@
 import { Component, Element, Event, EventEmitter, Method, Prop, State } from '@stencil/core';
 import Fragment from 'stencil-fragment';
-import { DotFieldStatus, DotFieldStatusEvent, DotFieldValueEvent, DotOption, DotLabel } from '../../models';
+import {DotFieldStatus, DotFieldStatusEvent, DotFieldValueEvent, DotLabel} from '../../models';
 import {
     getClassNames,
-    getDotOptionsFromFieldValue,
     getErrorClass,
     getOriginalStatus,
     getTagError,
@@ -13,23 +12,23 @@ import {
 } from '../../utils';
 
 @Component({
-    tag: 'dot-radio',
-    styleUrl: 'dot-radio.scss'
+    tag: 'dot-date',
+    styleUrl: 'dot-date.scss'
 })
-export class DotRadioComponent {
+export class DotDateComponent {
     @Element() el: HTMLElement;
-
     @Prop({ mutable: true })
     value: string;
     @Prop() name: string;
     @Prop() label: string;
     @Prop() hint: string;
     @Prop() required: boolean;
-    @Prop() disabled = false;
     @Prop() requiredMessage: string;
-    @Prop() options: string;
-
-    @State() _options: DotOption[];
+    @Prop() validationMessage: string
+    @Prop() disabled = false;
+    @Prop() min: string;
+    @Prop() max: string;
+    @Prop() step: string;
     @State() status: DotFieldStatus = getOriginalStatus();
 
     @Event() valueChange: EventEmitter<DotFieldValueEvent>;
@@ -47,43 +46,33 @@ export class DotRadioComponent {
     }
 
     componentWillLoad(): void {
-        this._options = getDotOptionsFromFieldValue(this.options);
         this.emitStatusChange();
     }
 
     hostData() {
         return {
-            class: getClassNames(this.status, this.isValid(), this.required)
+            class: getClassNames(this.status, this.isValid())
         };
     }
 
     render() {
-        let labelTagParams: DotLabel = {name: this.name, label: this.label, required: this.required};
+        const labelTagParams: DotLabel = {name: this.name, label: this.label, required: this.required};
         return (
             <Fragment>
                 {getTagLabel(labelTagParams)}
-                <div class="dot-radio__items">
-                    {this._options.map((item: DotOption) => {
-                        labelTagParams = {name: 'dot-radio-' + item.label.toLocaleLowerCase(), label: item.label};
-                        return (
-                            <Fragment>
-                                <div class="dot-radio__item">
-                                    <input
-                                        class={getErrorClass(this.isValid())}
-                                        type="radio"
-                                        disabled={this.disabled || null}
-                                        id={'dot-radio-' + item.label.toLocaleLowerCase()}
-                                        name={this.name.toLocaleLowerCase()}
-                                        value={item.value}
-                                        checked={this.value.indexOf(item.value) >= 0 || null}
-                                        onInput={(event: Event) => this.setValue(event)}
-                                    />
-                                    {getTagLabel(labelTagParams)}
-                                </div>
-                            </Fragment>
-                        );
-                    })}
-                </div>
+                <input
+                    class={getErrorClass(this.status.dotValid)}
+                    disabled={this.disabled || null}
+                    id={this.name}
+                    onBlur={() => this.blurHandler()}
+                    onInput={(event: Event) => this.setValue(event)}
+                    required={this.required || null}
+                    type="date"
+                    value={this.value}
+                    min={this.min}
+                    max={this.max}
+                    step={this.step}
+                />
                 {getTagHint(this.hint)}
                 {getTagError(this.showErrorMessage(), this.getErrorMessage())}
             </Fragment>
@@ -91,7 +80,19 @@ export class DotRadioComponent {
     }
 
     private isValid(): boolean {
-        return this.required ? !!this.value : true;
+        return this.required ? !!this.value && this.isDateInRange() : true;
+    }
+
+    private isDateInRange(): boolean {
+        return this.isInMaxRange() && this.isInMinRange();
+    }
+
+    private isInMinRange(): boolean {
+        return !!this.min ? this.value >= this.min : true;
+    }
+
+    private isInMaxRange(): boolean {
+        return !!this.max ? this.value <= this.max : true;
     }
 
     private showErrorMessage(): boolean {
@@ -99,11 +100,20 @@ export class DotRadioComponent {
     }
 
     private getErrorMessage(): string {
-        return this.isValid() ? '' : this.requiredMessage;
+        return this.isDateInRange() ? this.isValid() ? '' : this.requiredMessage :  this.validationMessage;
+    }
+
+    private blurHandler(): void {
+        if (!this.status.dotTouched) {
+            this.status = updateStatus(this.status, {
+                dotTouched: true
+            });
+            this.emitStatusChange();
+        }
     }
 
     private setValue(event): void {
-        this.value = event.target.value.trim();
+        this.value = event.target.value.toString();
         this.status = updateStatus(this.status, {
             dotTouched: true,
             dotPristine: false,

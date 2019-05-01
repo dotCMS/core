@@ -27,8 +27,8 @@ describe('dot-textarea', () => {
     });
 
     it('should show Regex validation message', async () => {
-        element.setProperty('regexcheck', '^[A-Za-z ]+$');
-        element.setProperty('regexcheckmessage', 'Invalid Address');
+        element.setProperty('regexCheck', '^[A-Za-z ]+$');
+        element.setProperty('validationMessage', 'Invalid Address');
 
         await input.press('@');
         await page.waitForChanges();
@@ -49,7 +49,7 @@ describe('dot-textarea', () => {
     });
 
     it('should mark as invalid when value dont match REgex', async () => {
-        element.setProperty('regexcheck', '^[A-Za-z ]+$');
+        element.setProperty('regexCheck', '^[A-Za-z ]+$');
 
         await input.press('@');
         await page.waitForChanges();
@@ -74,7 +74,7 @@ describe('dot-textarea', () => {
 
     it('should mark as required when prop is present', async () => {
         element.setProperty('required', 'true');
-        element.setProperty('requiredmessage', 'Invalid Address');
+        element.setProperty('requiredMessage', 'Invalid Address');
         await page.waitForChanges();
         expect(await input.getProperty('required')).toBe(true);
     });

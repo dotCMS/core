@@ -31,7 +31,7 @@ export class DotMultiSelectComponent {
     @Prop() hint: string;
     @Prop() options: string;
     @Prop() required: boolean;
-    @Prop() requiredmessage: string;
+    @Prop() requiredMessage: string;
     @Prop() size: number;
     @Prop({ mutable: true }) value: string;
 
@@ -96,7 +96,7 @@ export class DotMultiSelectComponent {
 
                 </select>
                 {getTagHint(this.hint)}
-                {getTagError(!this.isValid(), this.requiredmessage)}
+                {getTagError(!this.isValid(), this.requiredMessage)}
             </Fragment>
         );
     }
