@@ -1786,10 +1786,12 @@ public class WorkflowHelper {
 
     /**
      * Used to call and transform a Contentlet
-     * @param con A Contentlet
+     * @param contentlet A Contentlet
      * @return Transformed Map
      */
-    public Map<String, Object> contentletToMap(final Contentlet con) {
-        return new ContentletToMapTransformer(con).toMaps().get(0);
+    public Map<String, Object> contentletToMap(final Contentlet contentlet) {
+
+        final ContentletToMapTransformer transformer = new ContentletToMapTransformer(contentlet);
+        return transformer.toMaps().stream().findFirst().orElse(Collections.EMPTY_MAP);
     }
 } // E:O:F:WorkflowHelper.
