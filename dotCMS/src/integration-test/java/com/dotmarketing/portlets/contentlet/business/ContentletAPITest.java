@@ -24,8 +24,8 @@ import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotcms.uuid.shorty.ShortyIdCache;
 import com.dotmarketing.beans.*;
 import com.dotmarketing.business.*;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.model.ContentletSearch;
-import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
@@ -2161,77 +2161,82 @@ public class ContentletAPITest extends ContentletBaseTest {
      */
 
     @Test
-    public void addRemoveContentFromIndex () throws DotDataException, DotSecurityException {//6 contentlets
-      // respect CMS Anonymous permissions
-      boolean respectFrontendRoles = false;
-      int num = 5;
-      Host host = APILocator.getHostAPI().findDefaultHost(user, respectFrontendRoles);
-      Folder folder = APILocator.getFolderAPI().findSystemFolder();
+    public void addRemoveContentFromIndex()
+            throws DotDataException, DotSecurityException {
+        // respect CMS Anonymous permissions
+        boolean respectFrontendRoles = false;
+        int num = 5;
 
-      Language lang = APILocator.getLanguageAPI().getDefaultLanguage();
-      ContentType type = APILocator.getContentTypeAPI(user).find("webPageContent");
-      List<Contentlet> origCons = new ArrayList<>();
+        //clean up old reindexed records
+        new DotConnect().setSQL("delete from dist_reindex_journal").loadResult();
 
-      Map map = new HashMap<>();
-      map.put("stInode", type.id());
-      map.put("host", host.getIdentifier());
-      map.put("folder", folder.getInode());
-      map.put("languageId", lang.getId());
-      map.put("sortOrder", new Long(0));
-      map.put("body", "body");
+        Host host = APILocator.getHostAPI().findDefaultHost(user, respectFrontendRoles);
+        Folder folder = APILocator.getFolderAPI().findSystemFolder();
 
 
-      //add 5 contentlets
-      for(int i = 0;i<num;i++){
-        map.put("title", i+ "my test title");
+        Language lang = APILocator.getLanguageAPI().getDefaultLanguage();
+        ContentType type = APILocator.getContentTypeAPI(user).find("webPageContent");
+        List<Contentlet> origCons = new ArrayList<>();
 
-        // create a new piece of content backed by the map created above
-        Contentlet content = new Contentlet(map);
+        Map map = new HashMap<>();
+        map.put("stInode", type.id());
+        map.put("host", host.getIdentifier());
+        map.put("folder", folder.getInode());
+        map.put("languageId", lang.getId());
+        map.put("sortOrder", new Long(0));
+        map.put("body", "body");
 
-        // check in the content
-        content= contentletAPI.checkin(content,user, respectFrontendRoles);
+        //add 5 contentlets
+        for (int i = 0; i < num; i++) {
+            map.put("title", i + "my test title");
 
-        assertTrue( content.getIdentifier()!=null );
-        assertTrue( content.isWorking());
-        assertFalse( content.isLive());
-        // publish the content
-        contentletAPI.publish(content, user, respectFrontendRoles);
-        assertTrue( content.isLive());
-        origCons.add(content);
-      }
+            // create a new piece of content backed by the map created above
+            Contentlet content = new Contentlet(map);
+            content.setIndexPolicy(IndexPolicy.WAIT_FOR);
 
+            // check in the content
+            content = contentletAPI.checkin(content, user, respectFrontendRoles);
 
-      //commit it index
-      HibernateUtil.closeSession();
-      DateUtil.sleep(5000);
-      for(Contentlet c : origCons){
-        assertTrue(contentletAPI.indexCount("+live:true +identifier:" +c.getIdentifier() + " +inode:" + c.getInode() , user, respectFrontendRoles)>0);
-      }
-
-
-      HibernateUtil.startTransaction();
-      try{
-        List<Contentlet> checkedOut=contentletAPI.checkout(origCons, user, respectFrontendRoles);
-        for(Contentlet c : checkedOut){
-          c.setStringProperty("title", c.getStringProperty("title") + " new");
-          c.setIndexPolicy(IndexPolicy.FORCE);
-          c = contentletAPI.checkin(c,user, respectFrontendRoles);
-          c.setIndexPolicy(IndexPolicy.FORCE);
-          contentletAPI.publish(c, user, respectFrontendRoles);
-          assertTrue( c.isLive());
+            assertTrue(content.getIdentifier() != null);
+            assertTrue(content.isWorking());
+            assertFalse(content.isLive());
+            origCons.add(content);
         }
-        throw new DotDataException("uh oh, what happened?");
-      }
-      catch(DotDataException e){
-        HibernateUtil.rollbackTransaction();
 
-      }
-      finally{
+        //commit it index
         HibernateUtil.closeSession();
-      }
-      for(Contentlet c : origCons){
-        assertTrue(contentletAPI.indexCount("+live:true +identifier:" +c.getIdentifier() + " +inode:" + c.getInode() , user, respectFrontendRoles)>0);
-      }
+        for (Contentlet c : origCons) {
+            assertEquals(1, contentletAPI.indexCount(
+                    "+live:false +identifier:" + c.getIdentifier() + " +inode:" + c.getInode(),
+                    user, respectFrontendRoles));
+        }
+
+        HibernateUtil.startTransaction();
+        try {
+            for (Contentlet c : origCons) {
+                Contentlet newContentlet = new Contentlet(c);
+                newContentlet.setInode("");
+                newContentlet.setIndexPolicy(IndexPolicy.DEFER);
+                newContentlet.setStringProperty("title", c.getStringProperty("title") + " new");
+                newContentlet = contentletAPI.checkin(newContentlet, user, respectFrontendRoles);
+                contentletAPI.publish(newContentlet, user, respectFrontendRoles);
+                assertTrue(newContentlet.isLive());
+            }
+            throw new DotDataException("uh oh, what happened?");
+        } catch (DotDataException e) {
+            HibernateUtil.rollbackTransaction();
+        } finally {
+            HibernateUtil.closeSession();
+        }
+
+        for (Contentlet c : origCons) {
+            assertEquals(0, contentletAPI
+                    .indexCount("+live:true +identifier:" + c.getIdentifier(), user,
+                            respectFrontendRoles));
+            assertEquals(1, contentletAPI.indexCount(
+                    "+live:false +identifier:" + c.getIdentifier() + " +inode:" + c.getInode(),
+                    user, respectFrontendRoles));
+        }
 
     }
 
