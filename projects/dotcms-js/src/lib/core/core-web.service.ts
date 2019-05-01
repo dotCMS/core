@@ -181,7 +181,10 @@ export class CoreWebService {
         options.headers = headers;
 
         if (options.url.indexOf('://') === -1) {
-            options.url = `${this._apiRoot.baseUrl}api/${options.url}`;
+
+            options.url = options.url.startsWith('/api') ?
+                `${this._apiRoot.baseUrl}${options.url.substr(1)}`
+                : `${this._apiRoot.baseUrl}api/${options.url}`;
         }
 
         if (this.browserUtil.isIE11()) {
