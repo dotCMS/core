@@ -133,7 +133,7 @@ public class PaginationUtil {
 
 		final long totalRecords = items.getTotalResults();
 
-		final String linkHeaderValue = getHeaderValue(req.getRequestURL().toString(), sanitizefilter, pageValue, perPageValue,
+		final String linkHeaderValue = getHeaderValue(req.getRequestURI(), sanitizefilter, pageValue, perPageValue,
 				totalRecords, orderBy, direction, extraParams);
 
 		return Response.
