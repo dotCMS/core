@@ -1,6 +1,6 @@
 
 package com.dotmarketing.business.portal;
-
+import com.dotmarketing.util.UtilMethods;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -213,8 +213,14 @@ public class PortletFactoryImpl extends PrincipalBean implements PortletFactory 
 
     final String portletXML = portletToXml(portlet);
     new DotConnect().setSQL(
-        "insert into portlet (portletid, groupid, companyid, defaultpreferences, narrow, roles, active_) values(?,?,?,?,false,null,true)")
-        .addParam(portlet.getPortletId()).addParam(portlet.getGroupId()).addParam(portlet.getCompanyId()).addParam(portletXML).loadResult();
+        "insert into portlet (portletid, groupid, companyid, defaultpreferences, narrow, active_) values(?,?,?,?,?,?)")
+        .addParam(portlet.getPortletId())
+            .addParam(UtilMethods.isSet(portlet.getGroupId())?portlet.getGroupId():"SHARED_KEY")
+            .addParam(portlet.getCompanyId())
+            .addParam(portletXML)
+            .addParam(portlet.getNarrow())
+            .addParam(portlet.getActive())
+            .loadResult();
 
     new PortletCache().clear();
 

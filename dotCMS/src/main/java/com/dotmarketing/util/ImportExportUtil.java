@@ -65,6 +65,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipFile;
 import org.apache.commons.beanutils.BeanUtils;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.felix.framework.OSGIUtils;
 
 /**
@@ -128,7 +129,7 @@ public class ImportExportUtil {
     
     private static final String CHARSET = UtilMethods.getCharsetConfiguration();
     private static final String SYSTEM_FOLDER_PATH = FolderAPI.SYSTEM_FOLDER_PARENT_PATH;
-
+    private static final String OLD_KEY_MD5="7665cb45cc988f86931bd15c34e0fa93";
     /**
 	 * Default class constructor. Sets the appropriate data structures that will
 	 * be needed to import the Demo data.
@@ -1287,6 +1288,11 @@ public class ImportExportUtil {
             } else if (_importClass.equals(Company.class)) {
                 for (int j = 0; j < l.size(); j++) {
                     Company c = (Company)l.get(j);
+                    // github #16470 with support for custom starter.zips that have updated keys
+
+                    if(c.getKey()!=null && OLD_KEY_MD5.equals(new DigestUtils().md5Hex(c.getKey()))) {
+                      c.setKey(null);
+                    }
                     try {
                         c.setModified(true);
                         CompanyManagerUtil.updateCompany(c);
