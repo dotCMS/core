@@ -96,13 +96,7 @@ public class PortletResource implements Serializable {
     final InitDataObject init = webResource.init(null, true, request, true, "roles");
 
     try {
-      if (portletId == null || !portletId.startsWith(PortletAPI.CONTENT_PORTLET_PREFIX)) {
-        return Response.status(404).build();
-      }
-      final Portlet contentPortlet = portletApi.findPortlet(portletId);
-      if (contentPortlet == null) {
-        return Response.status(404).build();
-      }
+
 
       APILocator.getPortletAPI().deletePortlet(portletId);
 
