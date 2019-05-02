@@ -19,12 +19,12 @@
 
 package com.liferay.portal.ejb;
 
-import java.util.Collection;
-import java.util.Map;
-
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotmarketing.business.portal.PortletFactory;
 import com.liferay.portal.model.Portlet;
+import java.io.InputStream;
+import java.util.Collection;
+import java.util.Map;
 
 /**
  * <a href="PortletManagerUtil.java.html"><b><i>View Source</i></b></a>
@@ -35,7 +35,7 @@ import com.liferay.portal.model.Portlet;
  */
 public class PortletManagerUtil {
 
-    public static Collection addPortlets(final java.lang.String[] xmls) throws com.liferay.portal.SystemException {
+    public static Collection addPortlets(final InputStream[] xmls) throws com.liferay.portal.SystemException {
         try {
             final PortletFactory portletFactory = PortletManagerFactory.getManager();
             

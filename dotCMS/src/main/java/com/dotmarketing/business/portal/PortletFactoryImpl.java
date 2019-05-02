@@ -2,8 +2,11 @@
 package com.dotmarketing.business.portal;
 import com.dotmarketing.util.UtilMethods;
 import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -29,6 +32,7 @@ import com.liferay.portal.model.Portlet;
 import com.liferay.util.FileUtil;
 
 import io.vavr.control.Try;
+import org.xml.sax.InputSource;
 
 public class PortletFactoryImpl extends PrincipalBean implements PortletFactory {
 
@@ -49,10 +53,20 @@ public class PortletFactoryImpl extends PrincipalBean implements PortletFactory 
     if (pathToXmlFile == null) {
       return portlets;
     }
+    InputStream stream = new FileInputStream(new File(pathToXmlFile));
+    return xmlToPortlets(stream);
+  }
+
+  private Map<String, Portlet> xmlToPortlets(InputStream fileStream) throws IOException, JDOMException {
+
+    final Map<String, Portlet> portlets = new HashMap<>();
+
+    if (fileStream == null) {
+      return portlets;
+    }
 
     SAXBuilder builder = new SAXBuilder();
-    // reader.setEntityResolver(resolver);
-    Document doc = (Document) builder.build(pathToXmlFile);
+    Document doc = (Document) builder.build(fileStream);
 
     List<Element> list = doc.getRootElement().getChildren("portlet");
 
@@ -97,6 +111,19 @@ public class PortletFactoryImpl extends PrincipalBean implements PortletFactory 
   public Map<String, Portlet> xmlToPortlets(final String[] xmlFiles) throws com.liferay.portal.SystemException {
     final Map<String, Portlet> portlets = new HashMap<>();
     for (final String xml : xmlFiles) {
+      try {
+        portlets.putAll(xmlToPortlets(xml));
+      } catch (final Exception e) {
+        throw new SystemException(e);
+      }
+    }
+    return portlets;
+  }
+
+  @Override
+  public Map<String, Portlet> xmlToPortlets(final InputStream[] xmlFiles) throws com.liferay.portal.SystemException {
+    final Map<String, Portlet> portlets = new HashMap<>();
+    for (final InputStream xml : xmlFiles) {
       try {
         portlets.putAll(xmlToPortlets(xml));
       } catch (final Exception e) {

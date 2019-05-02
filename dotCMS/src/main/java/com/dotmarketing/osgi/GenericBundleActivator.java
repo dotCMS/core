@@ -11,8 +11,10 @@ import static com.dotmarketing.osgi.ActivatorUtil.unfreeze;
 import static com.dotmarketing.osgi.ActivatorUtil.unregisterAll;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.ArrayList;
@@ -382,8 +384,12 @@ public abstract class GenericBundleActivator implements BundleActivator {
     @SuppressWarnings ("unchecked")
     protected Collection<Portlet> registerPortlets ( BundleContext context, String[] xmls ) throws Exception {
 
-        String[] confFiles = new String[]{Http.URLtoString( context.getBundle().getResource( xmls[0] ) ),
-                Http.URLtoString( context.getBundle().getResource( xmls[1] ) )};
+        InputStream[] confFiles = new InputStream[]{
+                new ByteArrayInputStream(Http.URLtoString(context.getBundle().getResource(xmls[0]))
+                        .getBytes("UTF-8")),
+                new ByteArrayInputStream(Http.URLtoString(context.getBundle().getResource(xmls[1]))
+                        .getBytes("UTF-8"))
+        };
 
         //Read the portlets xml files and create them
         portlets = PortletManagerUtil.addPortlets( confFiles );
@@ -391,6 +397,10 @@ public abstract class GenericBundleActivator implements BundleActivator {
         for ( Portlet portlet : portlets ) {
 
             if ( portlet.getPortletClass().equals( "com.liferay.portlet.JSPPortlet" ) ) {
+
+                if (!portlet.getPortletId().equalsIgnoreCase("EXT_JSP_HELLO_WORLD")) {
+                    continue;
+                }
 
                 Map initParams = portlet.getInitParams();
                 String jspPath = (String) initParams.get( INIT_PARAM_VIEW_JSP );
