@@ -1,23 +1,13 @@
 package com.dotcms.rest.api.v1.contenttype;
 
-import static com.dotcms.util.CollectionsUtils.list;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 import com.dotcms.contenttype.business.ContentTypeFactory;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.PersonaContentType;
 import com.dotcms.contenttype.transform.contenttype.JsonContentTypeTransformer;
+import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequest;
@@ -39,28 +29,28 @@ import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+import java.io.IOException;
+import java.util.*;
+import java.util.stream.Collectors;
+
+import static com.dotcms.util.CollectionsUtils.list;
+import static org.junit.Assert.*;
+import static org.mockito.Matchers.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @RunWith(DataProviderRunner.class)
 public class ContentTypeResourceTest {
@@ -470,7 +460,15 @@ public class ContentTypeResourceTest {
 				.cast(response.getEntity());
 		final List<BaseContentTypesView> types = List.class.cast(responseEntityView.getEntity());
 
-        assertEquals(BaseContentType.values().length-1,types.size());
+		if (isStandardOrEnterprise()) {
+			assertEquals(BaseContentType.values().length - 1, types.size());
+		} else {
+			assertEquals(BaseContentType.values().length - 3, types.size()); // skipping  FORM, PERSONA if not enterprise
+		}
+	}
+
+	boolean isStandardOrEnterprise() {
+		return LicenseUtil.getLevel() > LicenseLevel.COMMUNITY.level;
 	}
 
 
@@ -505,8 +503,12 @@ public class ContentTypeResourceTest {
 				.cast(response.getEntity());
 		final List<BaseContentTypesView> types = List.class
 				.cast(responseEntityView.getEntity());
-		assertEquals(BaseContentType.values().length-1,types.size());
 
+		if (isStandardOrEnterprise()) {
+			assertEquals(BaseContentType.values().length - 1, types.size());
+		} else {
+			assertEquals(BaseContentType.values().length - 3, types.size()); // skipping  FORM, PERSONA if not enterprise
+		}
 	}
 
 
