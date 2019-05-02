@@ -18,6 +18,8 @@ import org.jdom.JDOMException;
 import org.jdom.input.SAXBuilder;
 import org.jdom.output.Format;
 import org.jdom.output.XMLOutputter;
+
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
@@ -112,7 +114,9 @@ public class PortletFactoryImpl extends PrincipalBean implements PortletFactory 
     final DotConnect db = new DotConnect();
     db.setSQL("delete from portletpreferences where portletid=?").addParam(portletId).loadResult();
     db.setSQL("delete from portlet where portletid=?").addParam(portletId).loadResult();
-    new PortletCache().clear();
+    db.setSQL("delete from cms_layouts_portlets where portlet_id=?" ).addParam(portletId).loadResult();
+    CacheLocator.getPortletCache().clearCache();
+    CacheLocator.getLayoutCache().clearCache();
   }
 
   @Override
