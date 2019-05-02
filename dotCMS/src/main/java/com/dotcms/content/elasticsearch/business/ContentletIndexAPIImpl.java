@@ -600,7 +600,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
         for (ContentletVersionInfo cvi : versions) {
             final String workingInode = cvi.getWorkingInode();
-            String liveInode = cvi.getLiveInode();
+            final String liveInode = cvi.getLiveInode();
             inodes.put(workingInode, APILocator.getContentletAPI().findInDb(workingInode).orElse(null));
             if (UtilMethods.isSet(liveInode) && !inodes.containsKey(liveInode)) {
                 inodes.put(liveInode, APILocator.getContentletAPI().findInDb(liveInode).orElse(null));
