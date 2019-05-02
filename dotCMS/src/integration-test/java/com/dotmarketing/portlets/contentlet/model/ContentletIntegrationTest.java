@@ -2,11 +2,7 @@ package com.dotmarketing.portlets.contentlet.model;
 
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
-import com.dotcms.contenttype.model.field.DataTypes;
-import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.FieldBuilder;
-import com.dotcms.contenttype.model.field.ImmutableTextField;
-import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.*;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
@@ -15,13 +11,7 @@ import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.RelationshipAPI;
-import com.dotmarketing.business.Role;
-import com.dotmarketing.business.RoleAPI;
-import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.business.*;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -29,20 +19,25 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.tag.model.TagInode;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.liferay.portal.model.User;
-import static org.junit.Assert.*;
-
 import com.liferay.util.StringPool;
+import com.rainerhahnekamp.sneakythrow.Sneaky;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
-import java.util.Collections;
-import java.util.List;
-import java.util.stream.Collectors;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import static org.junit.Assert.*;
 
 /**
  * @author nollymar
@@ -118,6 +113,54 @@ public class ContentletIntegrationTest {
         relationshipAPI = APILocator.getRelationshipAPI();
         defaultHost     = hostAPI.findDefaultHost(user, false);
         defaultLanguage = languageAPI.getDefaultLanguage();
+    }
+
+
+    @Test
+    public void test_save_content_news_with_tags() throws DotSecurityException, DotDataException {
+
+        final List<Contentlet> news = contentletAPI.
+                findByStructure("News", user, false, 100, 0);
+
+        final Contentlet contentlet = news.stream().filter(Sneaky.sneaked(Contentlet::hasTags)).findFirst().orElse(null);
+        String tagVarName  = null;
+        String currentTags = null;
+        String newTags     = null;
+        if (null != contentlet) {
+
+            final List<TagInode> foundTagInodes = APILocator.getTagAPI().getTagInodesByInode(contentlet.getInode());
+            if (foundTagInodes != null && !foundTagInodes.isEmpty()) {
+
+                for (final TagInode foundTagInode : foundTagInodes) {
+
+                    tagVarName = foundTagInode.getFieldVarName();
+                    final String tags = contentlet.getStringProperty(tagVarName);
+                    if (UtilMethods.isSet(tags)) {
+
+                        currentTags = tags;
+                        newTags     = currentTags + ", test";
+                        contentlet.setStringProperty(tagVarName, newTags);
+                        break;
+                    }
+                }
+            }
+
+            if (null != tagVarName) {
+
+                final Contentlet checkoutContentlet = APILocator.getContentletAPI().checkout(contentlet.getInode(), user, false);
+                APILocator.getContentletAPI().copyProperties(checkoutContentlet, contentlet.map);
+                APILocator.getContentletAPI().checkin(checkoutContentlet, user, false);
+
+                final Contentlet recoveryContentlet = APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(contentlet.getIdentifier());
+                Assert.assertNotNull(recoveryContentlet);
+                final String recoveryTags = recoveryContentlet.getStringProperty(tagVarName);
+                Assert.assertNotNull(recoveryTags);
+                Assert.assertNotNull(currentTags);
+                Assert.assertTrue(currentTags.length() > 0);
+                Assert.assertTrue(recoveryTags.contains(currentTags));
+                Assert.assertEquals(newTags, recoveryTags);
+            }
+        }
     }
 
     @Test
