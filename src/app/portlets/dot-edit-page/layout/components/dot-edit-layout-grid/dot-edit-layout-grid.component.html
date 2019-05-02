@@ -1,7 +1,7 @@
 <div class="grid" [ngGrid]="gridConfig" (onDragStop)="updateModel()" (onResizeStop)="updateModel()">
     <div
         class="box__add-row-class-button"
-        *ngFor="let rowClass of grid.getAllRowClass(); let i = index"
+        *ngFor="let rowClass of rowClass; let i = index"
         [ngStyle]="{ 'top.px': i ? (206 + 8) * i : 0 }"
     >
         <dot-icon-button-tooltip

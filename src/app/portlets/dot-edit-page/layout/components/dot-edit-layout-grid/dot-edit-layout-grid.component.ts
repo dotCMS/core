@@ -75,6 +75,7 @@ export class DotEditLayoutGridComponent implements OnInit, OnDestroy, ControlVal
         limit_to_screen: true
     };
 
+    rowClass: string[] = [];
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
@@ -231,6 +232,7 @@ export class DotEditLayoutGridComponent implements OnInit, OnDestroy, ControlVal
      */
     propagateGridLayoutChange(): void {
         this.propagateChange(this.getModel());
+        this.rowClass = this.grid.getAllRowClass();
     }
 
     /**
@@ -333,6 +335,8 @@ export class DotEditLayoutGridComponent implements OnInit, OnDestroy, ControlVal
         this.grid = this.isHaveRows()
             ? this.dotEditLayoutService.getDotLayoutGridBox(this.value)
             : DotLayoutGrid.getDefaultGrid();
+
+            this.rowClass = this.grid.getAllRowClass();
     }
 
     private removeContainer(index: number): void {

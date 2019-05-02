@@ -175,6 +175,34 @@ describe('DotEditLayoutGridComponent', () => {
         expect(component.grid.boxes[2].config.row).toEqual(1);
     });
 
+    it('should each box has its own payload object', () => {
+        component.addBox();
+        component.addBox();
+
+        const length = component.grid.boxes.length;
+
+        expect(component.grid.boxes[length - 1].config.payload).not.toBe(component.grid.boxes[length - 2].config.payload);
+    });
+
+    it('should add a new add class button', () => {
+        fakeValue.rows[0].columns[0].width = 12;
+        hostComponentfixture.componentInstance.form = new FormGroup({
+            body: new FormControl(fakeValue)
+        });
+
+        hostComponentfixture.detectChanges();
+
+        component.addBox();
+
+        hostComponentfixture.detectChanges();
+
+        const addRowClassButtons = hostComponentfixture.debugElement.queryAll(
+            By.css('.box__add-row-class-button')
+        );
+
+        expect(addRowClassButtons.length).toBe(2);
+    });
+
     it('should add a new Container in a new row, when there is no space in the last row', () => {
         fakeValue.rows[0].columns[0].width = 12;
         hostComponentfixture.componentInstance.form = new FormGroup({

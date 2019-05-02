@@ -12,9 +12,7 @@ const DOT_LAYOUT_GRID_DEFAULT_EMPTY_GRID_ROWS: any = {
     maxRows: 1,
     col: 1,
     row: 1,
-    payload: {
-        styleClass: ''
-    }
+
 };
 const DEFAULT_CONFIG_FOR_NOT_EMPTY_GRID_TEMPLATE: any = {
     fixed: true,
@@ -38,7 +36,14 @@ export class DotLayoutGrid {
     }
 
     static getDefaultConfig(): NgGridItemConfig {
-        return Object.assign({}, DEFAULT_CONFIG_FOR_NOT_EMPTY_GRID_TEMPLATE);
+        return {
+            ...DEFAULT_CONFIG_FOR_NOT_EMPTY_GRID_TEMPLATE,
+            ...{
+                payload: {
+                    styleClass: ''
+                }
+            }
+        };
     }
 
     static getDefaultGrid(): DotLayoutGrid {
