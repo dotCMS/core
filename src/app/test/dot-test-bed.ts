@@ -12,7 +12,8 @@ import {
     DotcmsEventsService,
     LoggerService,
     StringUtils,
-    UserModel
+    UserModel,
+    DotEventsSocketURL
 } from 'dotcms-js';
 import { ConfirmationService } from 'primeng/primeng';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -34,6 +35,13 @@ class MockDotUiColorsService {
     setColors() {}
 }
 
+const dotEventSocketURLFactory = () => {
+    return new DotEventsSocketURL(
+        `${window.location.hostname}:${window.location.port}/api/ws/v1/system/events`,
+        window.location.protocol === 'https:'
+    );
+};
+
 export class DOTTestBed {
     private static DEFAULT_CONFIG = {
         imports: [...NGFACES_MODULES, CommonModule, FormsModule, ReactiveFormsModule],
@@ -54,7 +62,7 @@ export class DOTTestBed {
             DotIframeService,
             DotMessageService,
             DotRouterService,
-
+            { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory},
             DotcmsConfig,
             DotcmsEventsService,
             FormatDateService,
