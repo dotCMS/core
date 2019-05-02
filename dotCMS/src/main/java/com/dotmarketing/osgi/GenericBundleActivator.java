@@ -398,10 +398,6 @@ public abstract class GenericBundleActivator implements BundleActivator {
 
             if ( portlet.getPortletClass().equals( "com.liferay.portlet.JSPPortlet" ) ) {
 
-                if (!portlet.getPortletId().equalsIgnoreCase("EXT_JSP_HELLO_WORLD")) {
-                    continue;
-                }
-
                 Map initParams = portlet.getInitParams();
                 String jspPath = (String) initParams.get( INIT_PARAM_VIEW_JSP );
 
@@ -412,6 +408,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
                 //Copy all the resources inside the folder of the given resource to the corresponding dotCMS folders
                 moveResources( context, jspPath );
                 portlet.getInitParams().put( INIT_PARAM_VIEW_JSP, getBundleFolder( context, File.separator ) + jspPath );
+                APILocator.getPortletAPI().updatePortlet(portlet);
             } else if ( portlet.getPortletClass().equals( "com.liferay.portlet.VelocityPortlet" ) ) {
 
                 Map initParams = portlet.getInitParams();
@@ -424,12 +421,13 @@ public abstract class GenericBundleActivator implements BundleActivator {
                 //Copy all the resources inside the folder of the given resource to the corresponding velocity dotCMS folders
                 moveVelocityResources( context, templatePath );
                 portlet.getInitParams().put( INIT_PARAM_VIEW_TEMPLATE, getBundleFolder( context, File.separator ) + templatePath );
+                APILocator.getPortletAPI().updatePortlet(portlet);
             }
 
             Logger.info( this, "Added Portlet: " + portlet.getPortletId() );
         }
 
-        return portlets;
+        return APILocator.getPortletAPI().findAllPortlets();
     }
 
     /**

@@ -263,4 +263,9 @@ public class PortletAPIImpl implements PortletAPI {
         return contentTypeList;
     }
 
+    @Override
+    public Portlet updatePortlet(final Portlet portlet) throws DotDataException{
+        return portletFac.updatePortlet(portlet);
+    }
+
 }
