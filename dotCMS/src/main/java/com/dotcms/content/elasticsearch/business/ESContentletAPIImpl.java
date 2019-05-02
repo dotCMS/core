@@ -3132,14 +3132,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 contentlet.setOwner(user.getUserId());
             }
 
-            // check contentlet Host
             User sysuser = APILocator.getUserAPI().getSystemUser();
-            if (!UtilMethods.isSet(contentlet.getHost())) {
-                contentlet.setHost(APILocator.getHostAPI().findSystemHost(sysuser, true).getIdentifier());
-            }
-            if (!UtilMethods.isSet(contentlet.getFolder())) {
-                contentlet.setFolder(FolderAPI.SYSTEM_FOLDER);
-            }
 
             Contentlet contentletRaw = populateHost(contentlet);
 
