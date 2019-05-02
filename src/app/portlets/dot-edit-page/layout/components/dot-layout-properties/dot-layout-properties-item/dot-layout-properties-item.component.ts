@@ -5,8 +5,7 @@ import {
     Output,
     EventEmitter,
     forwardRef,
-    HostListener,
-    ChangeDetectionStrategy
+    HostListener
 } from '@angular/core';
 
 @Component({
@@ -20,7 +19,6 @@ import {
             useExisting: forwardRef(() => DotLayoutPropertiesItemComponent)
         }
     ],
-    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotLayoutPropertiesItemComponent implements ControlValueAccessor {
     @Input()
