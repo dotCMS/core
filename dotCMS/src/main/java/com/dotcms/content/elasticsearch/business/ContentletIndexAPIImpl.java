@@ -603,7 +603,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             String liveInode = cvi.getLiveInode();
             inodes.put(workingInode, APILocator.getContentletAPI().findInDb(workingInode).orElse(null));
             if (UtilMethods.isSet(liveInode) && !inodes.containsKey(liveInode)) {
-                inodes.put(liveInode, APILocator.getContentletAPI().findInDb(workingInode).orElse(null));
+                inodes.put(liveInode, APILocator.getContentletAPI().findInDb(liveInode).orElse(null));
             }
         }
         inodes.values().removeIf(Objects::isNull);
