@@ -43,6 +43,7 @@ import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.google.common.collect.Sets;
 import com.liferay.portal.model.User;
@@ -408,9 +409,17 @@ public class ContentResourceTest extends IntegrationTestBase {
             final JSONObject contentlet, final Contentlet parent, final Contentlet child,
             final int depth) throws JSONException {
 
+        final String fieldVariable = parent.getContentType().fields().get(0).variable();
+
+        Logger.info(this, "Field Variable: " + fieldVariable);
+
+        final Object object = contentlet
+                .get(fieldVariable);
+
+        Logger.info(this, "This should be a JSON Object:" + object.toString());
+
         //validates child
-        assertEquals(child.getIdentifier(), ((JSONObject) contentlet
-                .get(parent.getContentType().fields().get(0).variable()))
+        assertEquals(child.getIdentifier(), ((JSONObject) object)
                 .get(IDENTIFIER));
 
         if (depth > 1) {

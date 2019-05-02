@@ -17,6 +17,7 @@ import com.dotcms.publisher.endpoint.bean.factory.PublishingEndPointFactory;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.environment.business.EnvironmentAPI;
+import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.repackage.javax.ws.rs.client.ClientBuilder;
@@ -283,7 +284,7 @@ public class RemotePublishAjaxActionTest {
 
 		Response clientResponse = ClientBuilder.newClient()
             .target(receivingFromEndpoint.toURL() + "/api/bundlePublisher/publish")
-			.queryParam("AUTH_TOKEN", PublicEncryptionFactory.encryptString( (PublicEncryptionFactory.decryptString( receivingFromEndpoint.getAuthKey().toString() )) ))
+			.queryParam("AUTH_TOKEN", PushPublisher.retriveEndpointKeyDigest(receivingFromEndpoint).get())
 			.queryParam("GROUP_ID", UtilMethods.isSet( receivingFromEndpoint.getGroupId() ) ? receivingFromEndpoint.getGroupId() : receivingFromEndpoint.getId())
 			.queryParam("BUNDLE_NAME", bundle.getName())
 			.queryParam("ENDPOINT_ID", receivingFromEndpoint.getId())

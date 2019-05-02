@@ -5,6 +5,7 @@ import static com.dotcms.integrationtestutil.content.ContentUtils.deleteContentl
 
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
+import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -20,6 +21,7 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -169,23 +171,37 @@ public class ContentletAjaxTest {
 			throws Exception {
 		Contentlet languageVariable1 = null;
 		Contentlet languageVariable2 = null;
+		Contentlet languageVariable3 = null;
 		try {
+
+			long time = System.currentTimeMillis();
+
 			final ContentType languageVariableContentType = APILocator.getContentTypeAPI(systemUser)
 					.find(LanguageVariableAPI.LANGUAGEVARIABLE);
 			languageVariable1 = createTestKeyValueContent(
-					"test1", "test1", 1,
+					"brought.you.by.IT"+time, "hello world", 1,
 					languageVariableContentType, systemUser);
 			languageVariable2 = createTestKeyValueContent(
-					"powered.by.IT", "hello world", 1,
+					"brought.you.by.Java"+time, "hello world", 1,
+					languageVariableContentType, systemUser);
+
+			languageVariable3 = createTestKeyValueContent(
+					"brought.you.by.Jay"+time, "hello world", 1,
 					languageVariableContentType, systemUser);
 
 			final ContentletAjax contentletAjax = new ContentletAjax();
-			List<String[]> languageVariablesList = contentletAjax.doSearchGlossaryTerm("test","1");
-			Assert.assertEquals("languageVariablesList: " + languageVariablesList.toString(),1,languageVariablesList.size());
-			languageVariablesList = contentletAjax.doSearchGlossaryTerm("powered.by.dot","1");
-			Assert.assertEquals("languageVariablesList: " + languageVariablesList.toString(),1,languageVariablesList.size());
-			languageVariablesList = contentletAjax.doSearchGlossaryTerm("powered.by","1");
-			Assert.assertEquals("languageVariablesList: " + languageVariablesList.toString(),2,languageVariablesList.size());
+			List<String[]> languageVariablesList =
+					contentletAjax.doSearchGlossaryTerm("brought.you.by.IT","1");
+			Assert.assertEquals("languageVariablesList: "
+					+ languageVariablesList.toString(),1,languageVariablesList.size());
+			languageVariablesList =
+					contentletAjax.doSearchGlossaryTerm("brought.you.by.J","1");
+			Assert.assertEquals("languageVariablesList: "
+					+ languageVariablesList.toString(),2,languageVariablesList.size());
+			languageVariablesList =
+					contentletAjax.doSearchGlossaryTerm("brought.you.by","1");
+			Assert.assertEquals("languageVariablesList: "
+					+ languageVariablesList.toString(),3,languageVariablesList.size());
 
 		}finally {
 			if(languageVariable1 != null){
@@ -193,6 +209,9 @@ public class ContentletAjaxTest {
 			}
 			if(languageVariable2 != null){
 				deleteContentlets(systemUser,languageVariable2);
+			}
+			if(languageVariable3 != null){
+				deleteContentlets(systemUser,languageVariable3);
 			}
 		}
 
