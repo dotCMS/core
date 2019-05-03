@@ -66,7 +66,7 @@ public class PortletFactoryImpl extends PrincipalBean implements PortletFactory 
     }
 
     SAXBuilder builder = new SAXBuilder();
-    Document doc = (Document) builder.build(fileStream);
+    Document doc = builder.build(fileStream);
 
     List<Element> list = doc.getRootElement().getChildren("portlet");
 

@@ -427,7 +427,10 @@ public abstract class GenericBundleActivator implements BundleActivator {
             Logger.info( this, "Added Portlet: " + portlet.getPortletId() );
         }
 
-        return APILocator.getPortletAPI().findAllPortlets();
+        //Forcing a refresh of the portlets cache
+        APILocator.getPortletAPI().findAllPortlets();
+
+        return portlets;
     }
 
     /**
