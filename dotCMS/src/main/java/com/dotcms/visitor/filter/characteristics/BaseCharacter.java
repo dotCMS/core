@@ -18,6 +18,8 @@ import com.dotmarketing.util.WebKeys;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -26,19 +28,13 @@ import javax.servlet.http.HttpServletResponse;
 
 public class BaseCharacter extends AbstractCharacter {
 
-    private final static String CLUSTER_ID;
-    private final static String SERVER_ID;
-    private final ShortyIdAPI shorty = APILocator.getShortyAPI();
-    static {
-        CLUSTER_ID = ClusterFactory.getClusterId();
-        SERVER_ID = APILocator.getServerAPI().readServerId();
-
-    }
 
 
     private BaseCharacter(final HttpServletRequest request, final HttpServletResponse response, final Visitor visitor) {
         super(request, response, visitor);
         clearMap();
+        final String CLUSTER_ID = ClusterFactory.getClusterId();
+        final String SERVER_ID = APILocator.getServerAPI().readServerId();
         final Object asset = (request.getAttribute("idInode") != null) ? request.getAttribute("idInode")
                 : (Identifier) request.getAttribute(Constants.CMS_FILTER_IDENTITY);
 
@@ -60,18 +56,22 @@ public class BaseCharacter extends AbstractCharacter {
         final Language lang = WebAPILocator.getLanguageWebAPI().getLanguage(request);
         IAm iAm = resolveResourceType(uri, getHostNoThrow(request), lang.getId());
         final long pageProcessingTime = (Long) request.getAttribute(VisitorFilter.DOTPAGE_PROCESSING_TIME);
+        final Host host = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
+            
+
+        
         myMap.get().put("id", UUID.randomUUID().toString());
         myMap.get().put("status", response.getStatus());
         myMap.get().put("iAm", iAm);
-        myMap.get().put("uri", uri);
+        myMap.get().put("url", request.getRequestURL() + (request.getQueryString()!=null ? "?" + request.getQueryString() : ""));
         myMap.get().put("ms", pageProcessingTime);
-
-        myMap.get().put("cluster", shorty.shortify(CLUSTER_ID));
-        myMap.get().put("server", shorty.shortify(SERVER_ID));
+        myMap.get().put("hostId", host.getIdentifier());
+        myMap.get().put("cluster", CLUSTER_ID);
+        myMap.get().put("server", SERVER_ID);
         myMap.get().put("session", request.getSession().getId());
-        myMap.get().put("sessionNew", request.getSession().isNew());
-        myMap.get().put("time", System.currentTimeMillis());
-
+        myMap.get().put("sessionNew", (request.getSession(false)!=null) && request.getSession(false).isNew());
+        myMap.get().put("time", Instant.now().getEpochSecond());
+        myMap.get().put("utc_time", Instant.now().atOffset(ZoneOffset.UTC).toInstant().getEpochSecond());
         myMap.get().put("mime", response.getContentType());
         myMap.get().put("vanityUrl", (String) request.getAttribute(VisitorFilter.VANITY_URL_ATTRIBUTE));
         myMap.get().put("referer", request.getHeader("referer"));

@@ -4,7 +4,7 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.cluster.business.HazelcastUtil;
 import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.enterprise.LicenseUtil;
-import com.dotcms.repackage.com.maxmind.geoip2.exception.GeoIp2Exception;
+import com.maxmind.geoip2.exception.GeoIp2Exception;
 import com.dotcms.services.VanityUrlServices;
 import com.dotcms.util.GeoIp2CityDbUtil;
 import com.dotmarketing.beans.Host;

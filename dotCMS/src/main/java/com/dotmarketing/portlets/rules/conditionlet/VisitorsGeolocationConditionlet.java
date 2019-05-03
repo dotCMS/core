@@ -1,7 +1,19 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
+import static com.dotcms.repackage.com.google.common.base.Preconditions.checkState;
+import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.NOT_WITHIN_DISTANCE;
+import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.WITHIN_DISTANCE;
+
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.com.maxmind.geoip2.exception.GeoIp2Exception;
+import com.maxmind.geoip2.exception.GeoIp2Exception;
 import com.dotcms.util.GeoIp2CityDbUtil;
 import com.dotcms.util.HttpRequestDataUtil;
 import com.dotmarketing.portlets.rules.RuleComponentInstance;
@@ -18,16 +30,6 @@ import com.dotmarketing.portlets.rules.parameter.display.TextInput;
 import com.dotmarketing.portlets.rules.parameter.type.NumericType;
 import com.dotmarketing.portlets.rules.parameter.type.TextType;
 import com.dotmarketing.util.Logger;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.Map;
-
-import static com.dotcms.repackage.com.google.common.base.Preconditions.checkState;
-import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.*;
 
 /**
  * Conditionlet expects all input to be in Meters. The unit type exists to inform the UI what should be displayed to the user

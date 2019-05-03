@@ -13,7 +13,7 @@ public class ParamsCharacter extends AbstractCharacter {
 
     private static final Set<String> WHITELISTED_PARAMS =
             new HashSet<>(Arrays.asList(
-                    Config.getStringProperty("WHITELISTED_PARAMS", "").toLowerCase().split(",")));
+                Config.getStringProperty("WHITELISTED_PARAMS", "q,search,language_id,tags,id").toLowerCase().split(",")));
 
     public ParamsCharacter(AbstractCharacter incomingCharacter) {
         super(incomingCharacter);

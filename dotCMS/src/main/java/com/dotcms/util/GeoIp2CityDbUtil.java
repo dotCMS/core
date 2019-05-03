@@ -12,16 +12,18 @@ import java.util.TimeZone;
 
 import javax.servlet.http.HttpServletRequest;
 
-import com.dotcms.repackage.com.maxmind.geoip2.DatabaseReader;
-import com.dotcms.repackage.com.maxmind.geoip2.exception.GeoIp2Exception;
-import com.dotcms.repackage.com.maxmind.geoip2.model.CityResponse;
-import com.dotcms.repackage.com.maxmind.geoip2.record.City;
-import com.dotcms.repackage.com.maxmind.geoip2.record.Country;
-import com.dotcms.repackage.com.maxmind.geoip2.record.Subdivision;
+
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.rules.conditionlet.Location;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.maxmind.db.CHMCache;
+import com.maxmind.geoip2.DatabaseReader;
+import com.maxmind.geoip2.exception.GeoIp2Exception;
+import com.maxmind.geoip2.model.CityResponse;
+import com.maxmind.geoip2.record.City;
+import com.maxmind.geoip2.record.Country;
+import com.maxmind.geoip2.record.Subdivision;
 
 /**
  * Provides utility methods to interact with the GeoIP2 API City Database. This
@@ -113,7 +115,7 @@ public class GeoIp2CityDbUtil {
 			if (databaseReader != null) {
 				databaseReader.close();
 			}
-			databaseReader = new DatabaseReader.Builder(database).build();
+			databaseReader = new DatabaseReader.Builder(database).withCache(new CHMCache()).build();
 			lastModified = database.lastModified();
 		} catch (IOException e) {
 			Logger.error(GeoIp2CityDbUtil.class,
@@ -219,7 +221,7 @@ public class GeoIp2CityDbUtil {
 	}
 
 
-	private com.dotcms.repackage.com.maxmind.geoip2.record.Location getLocation(String ipAddress)
+	private com.maxmind.geoip2.record.Location getLocation(String ipAddress)
 			throws IOException, GeoIp2Exception {
 		InetAddress inetAddress = InetAddress.getByName(ipAddress);
 		CityResponse city = getDatabaseReader().city(inetAddress);
@@ -236,7 +238,7 @@ public class GeoIp2CityDbUtil {
      */
 	public Location getLocationByIp(String ipAddress)
 			throws IOException, GeoIp2Exception {
-		com.dotcms.repackage.com.maxmind.geoip2.record.Location location = getLocation(ipAddress);
+		com.maxmind.geoip2.record.Location location = getLocation(ipAddress);
 		return new Location(location.getLatitude(), location.getLongitude());
 	}
 
@@ -252,7 +254,7 @@ public class GeoIp2CityDbUtil {
 	 */
 	public String getLocationAsString(String ipAddress) throws IOException, GeoIp2Exception {
 
-		com.dotcms.repackage.com.maxmind.geoip2.record.Location location = getLocation(ipAddress);
+		com.maxmind.geoip2.record.Location location = getLocation(ipAddress);
 		if(location==null) return null;
 		StringWriter sw = new StringWriter();
 		try {

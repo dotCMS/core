@@ -10,7 +10,7 @@ public class HeaderCharacter extends AbstractCharacter {
 
     private final Set<String> WHITELISTED_HEADERS = new HashSet<>(
             Arrays.asList(
-                    Config.getStringProperty("WHITELISTED_HEADERS", "").toLowerCase().split(",")));
+                    Config.getStringProperty("WHITELISTED_HEADERS", "User-Agent,Accept-Languag,Host,DNT").toLowerCase().split(",")));
 
 
     public HeaderCharacter(AbstractCharacter incomingCharacter) {

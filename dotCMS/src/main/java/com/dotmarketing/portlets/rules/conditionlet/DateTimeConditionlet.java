@@ -1,7 +1,6 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.com.maxmind.geoip2.exception.GeoIp2Exception;
 import org.apache.logging.log4j.util.Strings;
 import com.dotcms.util.GeoIp2CityDbUtil;
 import com.dotcms.util.HttpRequestDataUtil;
@@ -15,6 +14,7 @@ import com.dotmarketing.portlets.rules.parameter.comparison.Comparison;
 import com.dotmarketing.portlets.rules.parameter.display.*;
 import com.dotmarketing.portlets.rules.parameter.type.*;
 import com.dotmarketing.util.Logger;
+import com.maxmind.geoip2.exception.GeoIp2Exception;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
