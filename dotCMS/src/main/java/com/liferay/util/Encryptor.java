@@ -46,7 +46,7 @@ public class Encryptor {
 
 	public static final String ENCODING = "UTF8";
 
-	public static final String DIGEST_ALGORITHM = Config.getStringProperty("ENCRYPTION_DIGEST_ALGORITHM","SHA256");
+	public static final String DIGEST_ALGORITHM = Config.getStringProperty("ENCRYPTION_DIGEST_ALGORITHM","SHA-256");
 
 	public static final String KEY_ALGORITHM = Config.getStringProperty("ENCRYPTION_KEY_ALGORITHM","AES");
     public static final int KEY_LENGTH = Config.getIntProperty("ENCRYPTION_KEY_LENGTH",256);
