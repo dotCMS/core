@@ -1253,13 +1253,26 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		return this.getStringProperty(Contentlet.WORKFLOW_ACTION_KEY);
 	}
 
+	/**
+	 * If at least one tag is set, returns true, otherwise false
+	 * @return boolean
+	 * @throws DotDataException
+	 */
+	public boolean hasTags () throws DotDataException {
+
+		final List<TagInode> foundTagInodes = APILocator.getTagAPI().getTagInodesByInode(this.getInode());
+		return foundTagInodes != null && !foundTagInodes.isEmpty()?
+				foundTagInodes.stream().anyMatch(foundTagInode -> UtilMethods.isSet(this.getStringProperty(foundTagInode.getFieldVarName()))):
+				false;
+	}
+
     /**
      * Set the tags to the contentlet
      * @throws DotDataException
      */
 	public void setTags() throws DotDataException {
 
-		if (!this.loadedTags) {
+		if (!this.loadedTags && !this.hasTags()) {
 
 			final HashMap<String, StringBuilder> contentletTags = new HashMap<>();
 			final List<TagInode> foundTagInodes = APILocator.getTagAPI().getTagInodesByInode(this.getInode());
