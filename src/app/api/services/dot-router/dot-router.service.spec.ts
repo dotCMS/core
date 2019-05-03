@@ -97,7 +97,7 @@ describe('DotRouterService', () => {
     });
 
     it('should return true if the portletid is a custom portlet', () => {
-        expect(service.isCustomPortlet('c-testing')).toBe(true);
+        expect(service.isCustomPortlet('c_testing')).toBe(true);
     });
 
     it('should return false if the portletid is not a custom portlet', () => {

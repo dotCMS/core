@@ -13,7 +13,8 @@ import {
     LoggerService,
     StringUtils,
     UserModel,
-    DotEventsSocketURL
+    DotEventsSocketURL,
+    DotEventsSocket
 } from 'dotcms-js';
 import { ConfirmationService } from 'primeng/primeng';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -62,6 +63,7 @@ export class DOTTestBed {
             DotIframeService,
             DotMessageService,
             DotRouterService,
+            DotEventsSocket,
             { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory},
             DotcmsConfig,
             DotcmsEventsService,
