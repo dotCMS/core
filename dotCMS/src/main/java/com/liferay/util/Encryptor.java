@@ -78,7 +78,7 @@ public class Encryptor {
 		  cipher.init(Cipher.ENCRYPT_MODE, key);
 	  } catch(java.security.InvalidKeyException e) {
 		  throw new RuntimeException(" Your java version is out of date and does not support AES-256 encryption."
-				  + " Please do one of the following: upgrade your java version to at least java 1.8.u151 OR download and install the Java Cryptography Extension (JCE) Unlimited Strength Jurisdiction Policy Files OR "
+				  + " Please do one of the following: upgrade your java version to at least Java 8 u162 OR download and install the Java Cryptography Extension (JCE) Unlimited Strength Jurisdiction Policy Files OR "
 				  + " set the dotmarketing-config.property ENCRYPTION_KEY_LENGTH=128", e);
 	  } catch (NoSuchPaddingException | NoSuchAlgorithmException e) {
 		  throw new EncryptorException(e);
