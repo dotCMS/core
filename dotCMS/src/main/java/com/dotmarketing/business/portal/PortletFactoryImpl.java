@@ -18,8 +18,15 @@ import org.jdom.JDOMException;
 import org.jdom.input.SAXBuilder;
 import org.jdom.output.Format;
 import org.jdom.output.XMLOutputter;
+
+import com.dotcms.api.system.event.Payload;
+import com.dotcms.api.system.event.SystemEventType;
+import com.dotcms.repackage.javax.ws.rs.core.Response;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
@@ -108,11 +115,17 @@ public class PortletFactoryImpl extends PrincipalBean implements PortletFactory 
 
   @Override
   public void deletePortlet(final String portletId) throws DotDataException {
+    if (portletId == null || !portletId.startsWith(PortletAPI.CONTENT_PORTLET_PREFIX) || this.findById(portletId) ==null) {
+      throw new DotRuntimeException("portlet not found");
+    }
 
     final DotConnect db = new DotConnect();
     db.setSQL("delete from portletpreferences where portletid=?").addParam(portletId).loadResult();
     db.setSQL("delete from portlet where portletid=?").addParam(portletId).loadResult();
-    new PortletCache().clear();
+    db.setSQL("delete from cms_layouts_portlets where portlet_id=?" ).addParam(portletId).loadResult();
+    CacheLocator.getPortletCache().clearCache();
+    CacheLocator.getLayoutCache().clearCache();
+    APILocator.getSystemEventsAPI().pushAsync(SystemEventType.UPDATE_PORTLET_LAYOUTS, new Payload());
   }
 
   @Override
