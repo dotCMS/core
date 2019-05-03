@@ -1,4 +1,4 @@
-# dot-textfield
+# dot-date
 
 
 
@@ -12,11 +12,12 @@
 | `disabled`          | `disabled`           |             | `boolean` | `false`     |
 | `hint`              | `hint`               |             | `string`  | `undefined` |
 | `label`             | `label`              |             | `string`  | `undefined` |
+| `max`               | `max`                |             | `string`  | `undefined` |
+| `min`               | `min`                |             | `string`  | `undefined` |
 | `name`              | `name`               |             | `string`  | `undefined` |
-| `placeholder`       | `placeholder`        |             | `string`  | `undefined` |
-| `regexCheck`        | `regex-check`        |             | `string`  | `undefined` |
 | `required`          | `required`           |             | `boolean` | `undefined` |
 | `requiredMessage`   | `required-message`   |             | `string`  | `undefined` |
+| `step`              | `step`               |             | `string`  | `undefined` |
 | `validationMessage` | `validation-message` |             | `string`  | `undefined` |
 | `value`             | `value`              |             | `string`  | `undefined` |
 

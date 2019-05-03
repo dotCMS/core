@@ -7,17 +7,17 @@
 
 ## Properties
 
-| Property          | Attribute         | Description | Type      | Default     |
-| ----------------- | ----------------- | ----------- | --------- | ----------- |
-| `disabled`        | `disabled`        |             | `boolean` | `false`     |
-| `hint`            | `hint`            |             | `string`  | `undefined` |
-| `label`           | `label`           |             | `string`  | `undefined` |
-| `name`            | `name`            |             | `string`  | `undefined` |
-| `options`         | `options`         |             | `string`  | `undefined` |
-| `required`        | `required`        |             | `boolean` | `undefined` |
-| `requiredmessage` | `requiredmessage` |             | `string`  | `undefined` |
-| `size`            | `size`            |             | `number`  | `undefined` |
-| `value`           | `value`           |             | `string`  | `undefined` |
+| Property          | Attribute          | Description | Type      | Default     |
+| ----------------- | ------------------ | ----------- | --------- | ----------- |
+| `disabled`        | `disabled`         |             | `boolean` | `false`     |
+| `hint`            | `hint`             |             | `string`  | `undefined` |
+| `label`           | `label`            |             | `string`  | `undefined` |
+| `name`            | `name`             |             | `string`  | `undefined` |
+| `options`         | `options`          |             | `string`  | `undefined` |
+| `required`        | `required`         |             | `boolean` | `undefined` |
+| `requiredMessage` | `required-message` |             | `string`  | `undefined` |
+| `size`            | `size`             |             | `number`  | `undefined` |
+| `value`           | `value`            |             | `string`  | `undefined` |
 
 
 ## Events
