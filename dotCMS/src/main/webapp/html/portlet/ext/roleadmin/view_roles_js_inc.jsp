@@ -1047,38 +1047,29 @@
 		registerPortletItemButton(portletId, portletTitle);
 
 	}
+	
     function doPortletDelete(portletId){
-        
-        
-        
-        
-        
         if(portletId.indexOf("c_")!=0 || !confirm("<%= UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "custom.content.portlet.delete.confirm")) %>")){
             return;
         }
-
-
-
-          var xhrArgs = {
-              url : "/api/v1/portlet/custom/" + portletId,
-              handleAs: "json",
-              headers: {
-                  "Content-Type": "application/json"
-                  },
-              load : function(data){
-                  removePortletFromList(portletId);
-                  initializePortletInfoList();
+      var xhrArgs = {
+          url : "/api/v1/portlet/custom/" + portletId,
+          handleAs: "json",
+          headers: {
+              "Content-Type": "application/json"
               },
-              error : function(error) {
-                  alert("Error deleteing portlet: " + JSON.parse(error.responseText).message);
-                  return false;
-
-              }
-          };
-      
-          dojo.xhrDelete(xhrArgs);
-        
+          load : function(data){
+              removePortletFromList(portletId);
+              initializePortletInfoList();
+          },
+          error : function(error) {
+              alert("Error deleteing portlet: " + JSON.parse(error.responseText).message);
+              return false;
+          }
+      };
+      dojo.xhrDelete(xhrArgs);
     }
+    
 	function getPortletItemHTML (portletId, portletTitle) {
 
 		portletId = norm(portletId);
