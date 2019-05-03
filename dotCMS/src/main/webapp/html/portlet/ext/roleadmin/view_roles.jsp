@@ -73,7 +73,7 @@ margin:0px auto;
 
 <%-- New Layout Dialog --%>
 
-<div id="newLayouDialog" title="<%= LanguageUtil.get(pageContext, "edit-tab") %>" dojoType="dijit.Dialog" style="display: none;width:625px;">
+<div id="newLayouDialog" title="<%= LanguageUtil.get(pageContext, "edit-tab") %>" draggable="true" dojoType="dijit.Dialog" style="display: none;width:625px;">
 	<form id="newLayoutForm" dojoType="dijit.form.Form">
 		<ul id="addLayoutErrorMessagesList"></ul>
         <table style="width:80%" class="toolTable">
@@ -112,7 +112,7 @@ margin:0px auto;
             </tr>
         </table>
 
-        <div id="portletsListWrapper" class="view-roles__portlets-list" style="height:300px;"></div>
+        <div id="portletsListWrapper" class="view-roles__portlets-list" style="height:300px;width:95%;margin:0 auto"></div>
 
 		<div class="inputCaption" style="text-align:right">* <%= LanguageUtil.get(pageContext, "drag-a-tool-to-order-it") %></div>
 
