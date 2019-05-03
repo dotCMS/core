@@ -19,16 +19,12 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Relationship;
-import com.dotmarketing.tag.model.TagInode;
-import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import com.rainerhahnekamp.sneakythrow.Sneaky;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -115,53 +111,6 @@ public class ContentletIntegrationTest {
         defaultLanguage = languageAPI.getDefaultLanguage();
     }
 
-
-    @Test
-    public void test_save_content_news_with_tags() throws DotSecurityException, DotDataException {
-
-        final List<Contentlet> news = contentletAPI.
-                findByStructure("News", user, false, 100, 0);
-
-        final Contentlet contentlet = news.stream().filter(Sneaky.sneaked(Contentlet::hasTags)).findFirst().orElse(null);
-        String tagVarName  = null;
-        String currentTags = null;
-        String newTags     = null;
-        if (null != contentlet) {
-
-            final List<TagInode> foundTagInodes = APILocator.getTagAPI().getTagInodesByInode(contentlet.getInode());
-            if (foundTagInodes != null && !foundTagInodes.isEmpty()) {
-
-                for (final TagInode foundTagInode : foundTagInodes) {
-
-                    tagVarName = foundTagInode.getFieldVarName();
-                    final String tags = contentlet.getStringProperty(tagVarName);
-                    if (UtilMethods.isSet(tags)) {
-
-                        currentTags = tags;
-                        newTags     = currentTags + ", test";
-                        contentlet.setStringProperty(tagVarName, newTags);
-                        break;
-                    }
-                }
-            }
-
-            if (null != tagVarName) {
-
-                final Contentlet checkoutContentlet = APILocator.getContentletAPI().checkout(contentlet.getInode(), user, false);
-                APILocator.getContentletAPI().copyProperties(checkoutContentlet, contentlet.map);
-                APILocator.getContentletAPI().checkin(checkoutContentlet, user, false);
-
-                final Contentlet recoveryContentlet = APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(contentlet.getIdentifier());
-                Assert.assertNotNull(recoveryContentlet);
-                final String recoveryTags = recoveryContentlet.getStringProperty(tagVarName);
-                Assert.assertNotNull(recoveryTags);
-                Assert.assertNotNull(currentTags);
-                Assert.assertTrue(currentTags.length() > 0);
-                Assert.assertTrue(recoveryTags.contains(currentTags));
-                Assert.assertEquals(newTags, recoveryTags);
-            }
-        }
-    }
 
     @Test
     public void testGetContentTypeAlwaysReturnsTheLatestCachedVersion()
