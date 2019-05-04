@@ -61,11 +61,8 @@ margin:0px auto;
 .toolTable td{
     padding: 10px 8px;
     vertical-align: middle;
-
+    position: relative;
 }
-
-
-
 </style>
 
 
@@ -90,7 +87,7 @@ margin:0px auto;
                     dojoType="dijit.form.TextBox"
                     onchange="updateIcon(this.value)" /> <i
                     id="tabIcon" class="material-icons"
-                    style="position: absolute; top: 6px; right: 7px; overflow: hidden; width: 34px"
+                    style="position: absolute; top: 16px; right: 7px; overflow: hidden; width: 34px"
                     aria-hidden="true"></i>
                     <div class="hint-text"><%=LanguageUtil.get(pageContext, "Icon-hint")%></div>
                 </td>
