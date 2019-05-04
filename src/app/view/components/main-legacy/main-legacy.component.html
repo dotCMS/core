@@ -1,10 +1,6 @@
-
-<dot-alert-confirm></dot-alert-confirm>
-
 <!-- TODO: Move this to iframe-portlet-legacy -->
 <dot-create-contentlet (close)="onCloseContentletEditor()"></dot-create-contentlet>
 <dot-message-display></dot-message-display>
-<dot-large-message-display></dot-large-message-display>
 
 <div class="layout">
     <header class="layout__header">
@@ -19,3 +15,7 @@
         </main>
     </div>
 </div>
+
+<!-- After the router-outlet to make sure always shows up on top of any other dialog in the system -->
+<dot-large-message-display></dot-large-message-display>
+<dot-alert-confirm></dot-alert-confirm>
