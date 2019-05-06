@@ -86,8 +86,8 @@ compileJava {
         }
     }
 
-    targetCompatibility = 1.8
-    sourceCompatibility = 1.8
+    targetCompatibility = JavaVersion.VERSION_1_8
+    sourceCompatibility = JavaVersion.VERSION_1_8
     options.incremental = true
 
     File generatedSourceDir = project.file("$generatedSourceFolder")

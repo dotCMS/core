@@ -216,6 +216,7 @@ dependencies {
     }
 }
 
+
 // Import and apply the dependencies from the dependencies scripts.
 apply from: "$rootDir/dependencies.gradle"
 
@@ -269,11 +270,15 @@ def tomcatDistBase = "$distLocation/$tomcatDistInstallLocation-$tomcatInstallVer
 def dotcmsDistBase = "../$tomcatDistInstallLocation-$tomcatInstallVersion"
 
 // Compile Java.
+targetCompatibility = JavaVersion.VERSION_1_8
+sourceCompatibility = JavaVersion.VERSION_1_8
+
 compileJava {
-    targetCompatibility = 1.8
-    sourceCompatibility = 1.8
+    targetCompatibility = '1.8'
+    sourceCompatibility = '1.8'
     options.incremental = true
 }
+
 
 jar{
     exclude 'com/dotcms/enterprise/**'
