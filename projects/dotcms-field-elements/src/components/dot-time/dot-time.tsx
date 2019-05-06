@@ -18,10 +18,10 @@ import {
 import { getClassNames, getTagError, getTagHint, getTagLabel } from '../../utils';
 
 @Component({
-    tag: 'dot-date',
-    styleUrl: 'dot-date.scss'
+    tag: 'dot-time',
+    styleUrl: 'dot-time.scss'
 })
-export class DotDateComponent {
+export class DotTimeComponent {
     @Element() el: HTMLElement;
     @Prop({ mutable: true })
     value: string;
@@ -70,7 +70,7 @@ export class DotDateComponent {
     }
 
     @Listen('_errorMessage')
-    showErrorElement(event: CustomEvent) {
+    setErrorElement(event: CustomEvent) {
         event.stopImmediatePropagation();
         this.errorMessageElement = getTagError(event.detail.show, event.detail.message);
     }
@@ -92,7 +92,7 @@ export class DotDateComponent {
                 {getTagLabel(labelTagParams)}
                 <dot-input-calendar
                     disabled={this.disabled}
-                    type="date"
+                    type="time"
                     label={this.label}
                     name={this.name}
                     hint={this.hint}

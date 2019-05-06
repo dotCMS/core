@@ -34,7 +34,8 @@ const fieldMap = {
     'Multi-Select': DotFormFields['Multi-Select'],
     Select: DotFormFields.Select,
     Radio: DotFormFields.Radio,
-    Date: DotFormFields.Date
+    Date: DotFormFields.Date,
+    Time: DotFormFields.Time
 };
 
 @Component({

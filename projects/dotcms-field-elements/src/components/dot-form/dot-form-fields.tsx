@@ -1,4 +1,9 @@
-import { DotCMSContentTypeField, DotCMSKeyValueField, DotCMSMultiSelectField } from '../../models';
+import {
+    DotCMSContentTypeField,
+    DotCMSDateField,
+    DotCMSKeyValueField,
+    DotCMSMultiSelectField
+} from '../../models';
 
 export const DotFormFields = {
     Text: (field: DotCMSContentTypeField) => (
@@ -99,8 +104,24 @@ export const DotFormFields = {
         />
     ),
 
-    Date: (field: DotCMSContentTypeField) => (
+    Date: (field: DotCMSDateField) => (
         <dot-date
+            disabled={field.disabled}
+            label={field.name}
+            name={field.variable}
+            hint={field.hint}
+            value={field.defaultValue}
+            required={field.required}
+            required-message={field.requiredMessage}
+            validation-message={field.validationMessage}
+            min={field.min}
+            max={field.max}
+            step={field.step}
+        />
+    ),
+
+    Time: (field: DotCMSDateField) => (
+        <dot-time
             disabled={field.disabled}
             label={field.name}
             name={field.variable}

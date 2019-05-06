@@ -81,7 +81,7 @@ describe('dot-textfield', () => {
     });
 
     describe('emit events', () => {
-        it('should send status onBlur', async () => {
+        it('should mark as touched when onblur', async () => {
             await input.triggerEvent('blur');
             await page.waitForChanges();
 
@@ -95,11 +95,9 @@ describe('dot-textfield', () => {
             });
         });
 
-        it('should mark as touched when onblur', async() => {
+        it('should send status and value change', async () => {
             await input.press('a');
-            await input.triggerEvent('blur');
             await page.waitForChanges();
-
             expect(spyStatusChangeEvent).toHaveReceivedEventDetail({
                 name: 'fullName',
                 status: {
@@ -108,18 +106,9 @@ describe('dot-textfield', () => {
                     dotValid: true
                 }
             });
-        });
-
-        it('should send status value change', async () => {
-            await input.press('a');
-            await page.waitForChanges();
-            expect(spyStatusChangeEvent).toHaveReceivedEventDetail({
+            expect(spyValueChange).toHaveReceivedEventDetail({
                 name: 'fullName',
-                status: {
-                    dotPristine: false,
-                    dotTouched: true,
-                    dotValid: true
-                }
+                value: 'Johna'
             });
         });
 
@@ -135,12 +124,6 @@ describe('dot-textfield', () => {
                 }
             });
             expect(spyValueChange).toHaveReceivedEventDetail({ name: 'fullName', value: '' });
-        });
-
-        it('should emit change value', async () => {
-            await input.press('a');
-            await page.waitForChanges();
-            expect(spyValueChange).toHaveReceivedEventDetail({ name: 'fullName', value: 'Johna' });
         });
     });
 });
