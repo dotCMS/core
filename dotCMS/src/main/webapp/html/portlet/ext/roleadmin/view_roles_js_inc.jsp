@@ -1258,6 +1258,8 @@
 
 		addPortletToHTMLList(portletId, portletTitle);
 
+		dijit.byId('portletList').reset();
+
 	}
 
 	function removePortletFromList(portletId) {
