@@ -1,14 +1,15 @@
 package com.dotmarketing.config;
 
 import com.dotmarketing.util.Logger;
-import java.io.IOException;
-import java.io.InputStream;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
+
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * Loads up either clickstream.xml or clickstream-default.xml and
@@ -84,7 +85,7 @@ public class ConfigLoader {
      * config objects.
      */
     private class ConfigHandler extends DefaultHandler {
-        public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
+        public void startElement(String uri, String localName, String qName, Attributes attributes)  {
             if (qName.equals("logger")) {
                 config.setLoggerClass(attributes.getValue("class"));
             }

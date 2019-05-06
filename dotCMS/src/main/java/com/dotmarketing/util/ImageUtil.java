@@ -1,25 +1,21 @@
 package com.dotmarketing.util;
 
-import java.awt.Dimension;
+import org.apache.batik.anim.dom.SAXSVGDocumentFactory;
+import org.apache.batik.bridge.*;
+import org.apache.batik.gvt.GraphicsNode;
+import org.apache.batik.util.XMLResourceDescriptor;
+
+import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
+import javax.imageio.stream.FileImageInputStream;
+import javax.imageio.stream.ImageInputStream;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.Iterator;
-import javax.imageio.ImageIO;
-import javax.imageio.ImageReader;
-import javax.imageio.stream.FileImageInputStream;
-import javax.imageio.stream.ImageInputStream;
-import org.apache.batik.anim.dom.SAXSVGDocumentFactory;
-import org.apache.batik.bridge.BridgeContext;
-import org.apache.batik.bridge.DocumentLoader;
-import org.apache.batik.bridge.GVTBuilder;
-import org.apache.batik.bridge.UserAgent;
-import org.apache.batik.bridge.UserAgentAdapter;
-import org.apache.batik.gvt.GraphicsNode;
-import org.apache.batik.util.XMLResourceDescriptor;
-import org.w3c.dom.Document;
 
 public final class ImageUtil {
 
@@ -69,14 +65,13 @@ public final class ImageUtil {
 
 			final InputStream is = Files.newInputStream(imgFile.toPath());
 
-			Document document = factory.createDocument(
-					imgFile.toURI().toURL().toString(), is);
 			UserAgent agent = new UserAgentAdapter();
 			DocumentLoader loader = new DocumentLoader(agent);
 			BridgeContext context = new BridgeContext(agent, loader);
 			context.setDynamic(true);
 			GVTBuilder builder = new GVTBuilder();
-			GraphicsNode root = builder.build(context, document);
+			GraphicsNode root = builder.build(context, factory.createDocument(
+					imgFile.toURI().toURL().toString(), is));
 
 			return new Dimension((int) root.getPrimitiveBounds().getWidth(), (int) root.getPrimitiveBounds().getHeight());
 		}catch(IOException e){
