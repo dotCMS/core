@@ -133,8 +133,8 @@ public abstract class GenericBundleActivator implements BundleActivator {
             this.classReloadingStrategy = ClassReloadingStrategy.fromInstalledAgent();
         } catch (Exception e) {
             //Even if there is not a java agent set we should continue with the plugin processing
-            Logger.error(this,
-                    "Error reading ClassReloadingStrategy from bytebuddy [java agent not set?]", e);
+            Logger.warnAndDebug(this.getClass(),
+                    "Error reading ClassReloadingStrategy from agent [javaagent not set?].  Classpath overrides might not work: " + e.getMessage(), e);
         }
 
         //Override the classes found in the Override-Classes attribute
