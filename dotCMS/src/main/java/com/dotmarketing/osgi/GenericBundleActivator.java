@@ -384,16 +384,12 @@ public abstract class GenericBundleActivator implements BundleActivator {
     @SuppressWarnings ("unchecked")
     protected Collection<Portlet> registerPortlets ( BundleContext context, String[] xmls ) throws Exception {
 
-        InputStream[] confFiles = new InputStream[]{
-                new ByteArrayInputStream(Http.URLtoString(context.getBundle().getResource(xmls[0]))
-                        .getBytes("UTF-8")),
-                new ByteArrayInputStream(Http.URLtoString(context.getBundle().getResource(xmls[1]))
-                        .getBytes("UTF-8"))
-        };
-
-        //Read the portlets xml files and create them
-        portlets = PortletManagerUtil.addPortlets( confFiles );
-
+        this.portlets=(this.portlets==null) ? new ArrayList<>() : portlets;
+        for(String xml :xmls) {
+          try(InputStream input = new ByteArrayInputStream(Http.URLtoString(context.getBundle().getResource(xml)).getBytes("UTF-8"))){
+            portlets.addAll(PortletManagerUtil.addPortlets(new InputStream[]{input})); 
+          }
+        }
         for ( Portlet portlet : portlets ) {
 
             if ( portlet.getPortletClass().equals( "com.liferay.portlet.JSPPortlet" ) ) {
