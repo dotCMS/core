@@ -109,7 +109,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 */
 	public static final String WORKFLOW_IN_PROGRESS = "__workflow_in_progress__";
 	public static final String IS_COPY_CONTENTLET = "_is_copy_contentlet";
-	public static final String SOURCE_CONTENTLET_ASSET_NAME = "_source_contentlet_assetName";
+	public static final String CONTENTLET_ASSET_NAME_COPY = "_contentlet_asset_name_copy";
 
     public static final String WORKFLOW_PUBLISH_DATE = "wfPublishDate";
     public static final String WORKFLOW_PUBLISH_TIME = "wfPublishTime";
@@ -1371,7 +1371,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 */
 	public void cleanup(){
 	    getMap().remove(IS_COPY_CONTENTLET);
-	    getMap().remove(SOURCE_CONTENTLET_ASSET_NAME);
+	    getMap().remove(CONTENTLET_ASSET_NAME_COPY);
 		getWritableNullProperties().clear();
 	}
 
