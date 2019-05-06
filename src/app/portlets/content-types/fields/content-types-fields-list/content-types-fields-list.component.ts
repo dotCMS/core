@@ -2,7 +2,7 @@ import { FieldService } from '../service';
 import { Component, OnInit } from '@angular/core';
 import { filter, flatMap, toArray, take } from 'rxjs/operators';
 
-import { DotContentTypeField, FieldType } from '../';
+import { ContentTypeField, FieldType } from '../';
 
 /**
  * Show all the Field Types
@@ -16,7 +16,7 @@ import { DotContentTypeField, FieldType } from '../';
     templateUrl: './content-types-fields-list.component.html'
 })
 export class ContentTypesFieldsListComponent implements OnInit {
-    fieldTypes: DotContentTypeField[];
+    fieldTypes: ContentTypeField[];
 
     constructor(public fieldService: FieldService) {}
 

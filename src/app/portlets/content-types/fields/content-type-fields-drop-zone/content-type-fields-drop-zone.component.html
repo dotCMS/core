@@ -7,7 +7,7 @@
     >
         <ng-template ngFor let-row [ngForOf]="fieldRows">
             <dot-content-type-fields-row
-                *ngIf="row.columns && row.columns.length;else tab_container"
+                *ngIf="row.columns && row.columns.length"
                 [fieldRow]="row"
                 (editField)="editField($event)"
                 (removeField)="removeField($event)"
@@ -15,16 +15,14 @@
             >
             </dot-content-type-fields-row>
 
-            <ng-template #tab_container>
-                <dot-content-type-fields-tab
-                    class="row-header__drag"
-                    [fieldTab]="row"
-                    (editTab)="saveFieldsHandler($event)"
-                    (removeTab)="removeTab($event)"
-                >
-                </dot-content-type-fields-tab>
-            </ng-template>
-        
+            <dot-content-type-fields-tab
+                *ngIf="isTab(row)"
+                class="row-header__drag"
+                [fieldTab]="row"
+                (editTab)="saveFieldsHandler($event)"
+                (removeTab)="removeTab($event)"
+            >
+            </dot-content-type-fields-tab>
         </ng-template>
         <dot-add-rows (selectColums)="addRow($event)"></dot-add-rows>
     </div>

@@ -23,7 +23,7 @@ import { DotWorkflowService } from '@services/dot-workflow/dot-workflow.service'
 import { DotLicenseService } from '@services/dot-license/dot-license.service';
 
 // TODO: move this to models
-import { DotContentTypeField } from '../fields';
+import { ContentTypeField } from '../fields';
 
 /**
  * Form component to create or edit content types
@@ -46,7 +46,7 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
     data: any;
 
     @Input()
-    fields: DotContentTypeField[];
+    fields: ContentTypeField[];
 
     @Output()
     onSubmit: EventEmitter<any> = new EventEmitter();
@@ -177,7 +177,7 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
         this.valid.next(this.canSave);
     }
 
-    private getDateVarFieldOption(field: DotContentTypeField): SelectItem {
+    private getDateVarFieldOption(field: ContentTypeField): SelectItem {
         return {
             label: field.name,
             value: field.variable
@@ -186,8 +186,8 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
 
     private getDateVarOptions(): SelectItem[] {
         const dateVarOptions = this.fields
-            .filter((field: DotContentTypeField) => this.isDateVarField(field))
-            .map((field: DotContentTypeField) => this.getDateVarFieldOption(field));
+            .filter((field: ContentTypeField) => this.isDateVarField(field))
+            .map((field: ContentTypeField) => this.getDateVarFieldOption(field));
 
         if (dateVarOptions.length) {
             dateVarOptions.unshift({
@@ -244,7 +244,7 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
         return this.data && this.data.baseType === 'CONTENT';
     }
 
-    private isDateVarField(field: DotContentTypeField): boolean {
+    private isDateVarField(field: ContentTypeField): boolean {
         return (
             field.clazz === 'com.dotcms.contenttype.model.field.ImmutableDateTimeField' &&
             field.indexed

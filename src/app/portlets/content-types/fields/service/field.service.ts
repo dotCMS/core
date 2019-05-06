@@ -1,7 +1,7 @@
 import { pluck } from 'rxjs/operators';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { DotContentTypeField, FieldType, DotFieldDivider } from '../shared';
+import { ContentTypeField, FieldType } from '../shared';
 import { CoreWebService } from 'dotcms-js';
 import { RequestMethod } from '@angular/http';
 import { FieldUtil } from '../util/field-util';
@@ -26,11 +26,11 @@ export class FieldService {
     /**
      * Save fields.
      * @param string contentTypeId Content Type'id
-     * @param DotContentTypeField[] fields fields to add
+     * @param ContentTypeField[] fields fields to add
      * @returns Observable<any>
      * @memberof FieldService
      */
-    saveFields(contentTypeId: string, fields: DotContentTypeField[]): Observable<DotFieldDivider[]> {
+    saveFields(contentTypeId: string, fields: ContentTypeField[]): Observable<any> {
         fields.forEach((field, index) => {
             field.contentTypeId = contentTypeId;
 
@@ -45,11 +45,9 @@ export class FieldService {
 
         return this.coreWebService
             .requestView({
-                body: {
-                    fields: fields
-                },
+                body: fields,
                 method: RequestMethod.Put,
-                url: `v3/contenttype/${contentTypeId}/fields`
+                url: `v2/contenttype/${contentTypeId}/fields`
             })
             .pipe(pluck('entity'));
     }
@@ -61,15 +59,13 @@ export class FieldService {
      */
     deleteFields(
         contentTypeId: string,
-        fields: DotContentTypeField[]
-    ): Observable<{ fields: DotFieldDivider[]; deletedIds: string[] }> {
+        fields: ContentTypeField[]
+    ): Observable<{ fields: ContentTypeField[]; deletedIds: string[] }> {
         return this.coreWebService
             .requestView({
-                body: {
-                    fieldsID: fields.map((field) => field.id)
-                },
+                body: fields.map((field) => field.id),
                 method: RequestMethod.Delete,
-                url: `v3/contenttype/${contentTypeId}/fields`
+                url: `v2/contenttype/${contentTypeId}/fields`
             })
             .pipe(pluck('entity'));
     }

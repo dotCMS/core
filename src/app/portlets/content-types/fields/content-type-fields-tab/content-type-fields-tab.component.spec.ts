@@ -3,30 +3,27 @@ import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DebugElement, Component} from '@angular/core';
 import { ContentTypeFieldsTabComponent } from './';
 import { By } from '@angular/platform-browser';
-import { DotContentTypeField } from '../';
+import { ContentTypeField, FieldTab } from '../';
 import { DotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
 import { DotMessageService } from '@services/dot-messages-service';
 import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm';
-import { DotFieldDivider } from '../shared';
 
 
-const tabField: DotContentTypeField = {
+const tabField: ContentTypeField = {
     clazz: 'tab',
     name: 'fieldTab-1'
 };
-const mockFieldTab: DotFieldDivider = {
-    divider: tabField
-};
+const mockFieldTab = new FieldTab(tabField);
 
 @Component({
     selector: 'dot-test-host',
     template: '<dot-content-type-fields-tab [fieldTab]="data"></dot-content-type-fields-tab>'
 })
 class DotTestHostComponent {
-    data: DotFieldDivider;
+    data: FieldTab;
 
-    setData(data: DotFieldDivider): void {
+    setData(data: FieldTab): void {
         this.data = data;
     }
 }

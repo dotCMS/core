@@ -5,7 +5,7 @@ import { Component, ViewChild, OnInit, OnDestroy } from '@angular/core';
 import { ContentType } from '../shared/content-type.model';
 import { ContentTypesFormComponent } from '../form';
 import { CrudService } from '@services/crud';
-import { DotContentTypeField, ContentTypeFieldsDropZoneComponent, DotFieldDivider } from '../fields/index';
+import { ContentTypeField, ContentTypeFieldsDropZoneComponent } from '../fields/index';
 import { FieldService } from '../fields/service';
 import { DotMessageService } from '@services/dot-messages-service';
 import { ContentTypesInfoService } from '@services/content-types-info';
@@ -46,7 +46,7 @@ export class ContentTypesEditComponent implements OnInit, OnDestroy {
     data: ContentType;
     dialogActions: DotDialogActions;
     editButtonLbl: string;
-    fields: DotFieldDivider[];
+    fields: ContentTypeField[];
     messagesKey: { [key: string]: string } = {};
     show: boolean;
     templateInfo = {
@@ -82,8 +82,8 @@ export class ContentTypesEditComponent implements OnInit, OnDestroy {
                 this.data = contentType;
                 this.dotEditContentTypeCacheService.set(contentType);
 
-                if (contentType.layout) {
-                    this.fields = contentType.layout;
+                if (contentType.fields) {
+                    this.fields = contentType.fields;
                 }
             });
 
@@ -220,15 +220,15 @@ export class ContentTypesEditComponent implements OnInit, OnDestroy {
 
     /**
      * Remove fields from the content type
-     * @param DotContentTypeField fieldsToDelete Fields to be removed
+     * @param fieldsToDelete Fields to be removed
      * @memberof ContentTypesEditComponent
      */
-    removeFields(fieldsToDelete: DotContentTypeField[]): void {
+    removeFields(fieldsToDelete: ContentTypeField[]): void {
         this.fieldService
             .deleteFields(this.data.id, fieldsToDelete)
             .pipe(pluck('fields'), take(1))
             .subscribe(
-                (fields: DotFieldDivider[]) => {
+                (fields: ContentTypeField[]) => {
                     this.fields = fields;
                 },
                 (err: ResponseView) => {
@@ -242,10 +242,11 @@ export class ContentTypesEditComponent implements OnInit, OnDestroy {
      * @param fieldsToSave Fields to be save
      * @memberof ContentTypesEditComponent
      */
-    saveFields(fieldsToSave: DotContentTypeField[]): void {
+    saveFields(fieldsToSave: ContentTypeField[]): void {
         this.loadingFields = true;
         this.fieldService.saveFields(this.data.id, fieldsToSave).pipe(take(1)).subscribe(
-            (fields: DotFieldDivider[]) => {
+            (fields: ContentTypeField[]) => {
+
                 if (this.isAnyNewField(fieldsToSave) || this.isUpdatingField(fieldsToSave)) {
                     this.fields = fields;
                 }
@@ -286,11 +287,11 @@ export class ContentTypesEditComponent implements OnInit, OnDestroy {
         };
     }
 
-    private isUpdatingField(fieldsToSave: DotContentTypeField[]): boolean {
+    private isUpdatingField(fieldsToSave: ContentTypeField[]): boolean {
         return fieldsToSave[0].id && fieldsToSave.length === 1;
     }
 
-    private isAnyNewField(fieldsToSave: DotContentTypeField[]): boolean {
+    private isAnyNewField(fieldsToSave: ContentTypeField[]): boolean {
         return fieldsToSave.some(field => !field.id);
     }
 
@@ -304,7 +305,7 @@ export class ContentTypesEditComponent implements OnInit, OnDestroy {
             .subscribe(
                 (contentType: ContentType) => {
                     this.data = contentType;
-                    this.fields = this.data.layout;
+                    this.fields = this.data.fields;
                     this.dotRouterService.goToEditContentType(this.data.id);
                     this.show = false;
                 },

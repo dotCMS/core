@@ -49,16 +49,12 @@ describe('FieldService', () => {
         beforeEach(() => {
             this.mockData = [
                 {
-                    divider: {
-                        clazz: 'com.dotcms.contenttype.model.field.ImmutableRadioField',
-                        name: 'Hello World'
-                    }
+                    clazz: 'com.dotcms.contenttype.model.field.ImmutableRadioField',
+                    name: 'Hello World'
                 },
                 {
-                    divider:                 {
-                        clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField'
-                    }
-                },
+                    clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField'
+                }
             ];
 
             this.fieldService
@@ -78,8 +74,16 @@ describe('FieldService', () => {
 
         it('should save field', () => {
             expect(this.mockData).toEqual(this.response);
-            expect(this.lastConnection.request.url).toContain('v3/contenttype/1/fields');
+            expect(this.lastConnection.request.url).toContain('v2/contenttype/1/fields');
             expect(2).toBe(this.lastConnection.request.method); // 2 is PUT method
+        });
+
+        it('should set name and contentTypeId', () => {
+            const requestBody = this.lastConnection.request._body;
+
+            expect('1').toBe(requestBody[0].contentTypeId);
+            expect('1').toBe(requestBody[1].contentTypeId);
+            expect('fields-1').toBe(requestBody[1].name);
         });
     });
 
@@ -119,7 +123,15 @@ describe('FieldService', () => {
             expect(['1', '2']).toEqual(this.response.deletedIds);
             expect(this.mockData).toEqual(this.response.fields);
             expect(3).toBe(this.lastConnection.request.method); // 3 is DELETE method
-            expect(this.lastConnection.request.url).toContain('v3/contenttype/1/fields');
+            expect(this.lastConnection.request.url).toContain('v2/contenttype/1/fields');
+        });
+
+        it('should set name and contentTypeId', () => {
+            const requestBody = this.lastConnection.request._body;
+
+            expect(2).toBe(requestBody.length);
+            expect('1').toBe(requestBody[0]);
+            expect('2').toBe(requestBody[1]);
         });
     });
 });

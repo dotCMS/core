@@ -1,7 +1,7 @@
-import { DotContentTypeField } from '../../index';
+import { ContentTypeField } from '../../index';
 
 export interface FieldProperty {
     name: string;
     value: any;
-    field: DotContentTypeField;
+    field: ContentTypeField;
 }
