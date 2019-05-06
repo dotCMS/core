@@ -8,3 +8,8 @@ export interface DotLabel {
     name: string;
     required?: boolean;
 }
+
+export interface DotKeyValueField {
+    key: string;
+    value: string;
+}

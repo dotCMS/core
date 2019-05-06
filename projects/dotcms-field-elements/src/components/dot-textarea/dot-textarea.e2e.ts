@@ -32,7 +32,7 @@ describe('dot-textarea', () => {
 
         await input.press('@');
         await page.waitForChanges();
-        const errorMessage = await page.find('.dot-field__error-meessage');
+        const errorMessage = await page.find('.dot-field__error-message');
         expect(errorMessage.innerHTML).toBe('Invalid Address');
     });
 

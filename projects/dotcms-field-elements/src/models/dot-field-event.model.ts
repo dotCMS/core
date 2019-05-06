@@ -9,5 +9,6 @@ export interface DotFieldStatusEvent extends DotFieldEvent {
 }
 
 export interface DotFieldValueEvent extends DotFieldEvent {
+    fieldType?: string;
     value: string;
 }

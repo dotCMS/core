@@ -71,7 +71,7 @@ describe('getTagError', () => {
     it('should returns Error tag', () => {
         const message = 'Error Msg';
         const jsxTag: any = getTagError(true, message);
-        expect(jsxTag.vattrs).toEqual({ class: 'dot-field__error-meessage' });
+        expect(jsxTag.vattrs).toEqual({ class: 'dot-field__error-message' });
         expect(jsxTag.vchildren).toEqual([{ vtext: message }]);
     });
     it('should Not returns Error tag', () => {

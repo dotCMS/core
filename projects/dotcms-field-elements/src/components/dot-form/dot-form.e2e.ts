@@ -35,8 +35,8 @@ describe('dot-form', () => {
         element.setProperty('fields', fields);
         await page.waitForChanges();
         const txtFields = await element.findAll('dot-textfield');
-        txtFields.forEach((field, index) => {
-            field.triggerEvent('valueChange', {
+        txtFields.forEach(async(field, index) => {
+            await field.triggerEvent('valueChange', {
                 bubbles: true,
                 cancelable: false,
                 detail: {

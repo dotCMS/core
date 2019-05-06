@@ -1,4 +1,4 @@
-import { DotCMSContentTypeField } from '../../models';
+import { DotCMSContentTypeField, DotCMSKeyValueField, DotCMSMultiSelectField } from '../../models';
 
 export const DotFormFields = {
     Text: (field: DotCMSContentTypeField) => (
@@ -43,7 +43,7 @@ export const DotFormFields = {
         />
     ),
 
-    'Multi-Select': (field: DotCMSContentTypeField) => (
+    'Multi-Select': (field: DotCMSMultiSelectField) => (
         <dot-multi-select
             disabled={field.disabled}
             hint={field.hint}
@@ -54,6 +54,22 @@ export const DotFormFields = {
             required-message={field.requiredMessage}
             size={+field.size}
             value={field.defaultValue}
+        />
+    ),
+
+    'Key-Value': (field: DotCMSKeyValueField) => (
+        <dot-key-value
+            disabled={field.disabled}
+            label={field.name}
+            field-type={field.fieldType}
+            save-btn-label={field.saveBtnLabel}
+            name={field.variable}
+            key-placeholder={field.keyPlaceholder}
+            value-placeholder={field.valuePlaceholder}
+            hint={field.hint}
+            value={field.defaultValue}
+            required={field.required}
+            required-message={field.requiredMessage}
         />
     ),
 

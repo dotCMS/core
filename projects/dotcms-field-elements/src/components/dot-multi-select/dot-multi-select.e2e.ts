@@ -22,7 +22,7 @@ describe('dot-multi-select', () => {
             required="true"
             size=3
             >
-        </dot-select>`);
+        </dot-multi-select>`);
         element = await page.find('dot-multi-select');
     });
 
@@ -52,7 +52,7 @@ describe('dot-multi-select', () => {
         await page.select('select', '');
         await page.waitForChanges();
         // tslint:disable-next-line:max-line-length
-        expect(element.outerHTML).toBe(`<dot-multi-select name=\"testName\" label=\"testLabel\" hint=\"testHint\" options=\"|,valueA|1,valueB|2\" value=\"2\" required-message=\"testErrorMsg\" required=\"true\" size=\"3\" class=\"dot-required hydrated dot-invalid dot-dirty dot-touched\"><div class=\"dot-field__label\"><label for=\"testName\">testLabel</label><span class=\"dot-field__required-mark\">*</span></div><select multiple=\"\" size=\"3\" class=\"dot-field__error\" id=\"testName\"><option value=\"\"></option><option value=\"1\">valueA</option><option value=\"2\">valueB</option></select><span class=\"dot-field__hint\">testHint</span><span class=\"dot-field__error-meessage\">testErrorMsg</span></dot-multi-select>`);
+        expect(element.outerHTML).toBe(`<dot-multi-select name=\"testName\" label=\"testLabel\" hint=\"testHint\" options=\"|,valueA|1,valueB|2\" value=\"2\" required-message=\"testErrorMsg\" required=\"true\" size=\"3\" class=\"dot-required hydrated dot-invalid dot-dirty dot-touched\"><div class=\"dot-field__label\"><label for=\"testName\">testLabel</label><span class=\"dot-field__required-mark\">*</span></div><select multiple=\"\" size=\"3\" class=\"dot-field__error\" id=\"testName\"><option value=\"\"></option><option value=\"1\">valueA</option><option value=\"2\">valueB</option></select><span class=\"dot-field__hint\">testHint</span><span class=\"dot-field__error-message\">testErrorMsg</span></dot-multi-select>`);
     });
 
     describe('Events', () => {
