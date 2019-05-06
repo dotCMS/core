@@ -61,11 +61,8 @@ margin:0px auto;
 .toolTable td{
     padding: 10px 8px;
     vertical-align: middle;
-
+    position: relative;
 }
-
-
-
 </style>
 
 
@@ -73,7 +70,7 @@ margin:0px auto;
 
 <%-- New Layout Dialog --%>
 
-<div id="newLayouDialog" title="<%= LanguageUtil.get(pageContext, "edit-tab") %>" dojoType="dijit.Dialog" style="display: none;width:625px;">
+<div id="newLayouDialog" title="<%= LanguageUtil.get(pageContext, "edit-tab") %>" draggable="true" dojoType="dijit.Dialog" style="display: none;width:625px;">
 	<form id="newLayoutForm" dojoType="dijit.form.Form">
 		<ul id="addLayoutErrorMessagesList"></ul>
         <table style="width:80%" class="toolTable">
@@ -90,7 +87,7 @@ margin:0px auto;
                     dojoType="dijit.form.TextBox"
                     onchange="updateIcon(this.value)" /> <i
                     id="tabIcon" class="material-icons"
-                    style="position: absolute; top: 6px; right: 7px; overflow: hidden; width: 34px"
+                    style="position: absolute; top: 16px; right: 7px; overflow: hidden; width: 34px"
                     aria-hidden="true"></i>
                     <div class="hint-text"><%=LanguageUtil.get(pageContext, "Icon-hint")%></div>
                 </td>
@@ -112,7 +109,7 @@ margin:0px auto;
             </tr>
         </table>
 
-        <div id="portletsListWrapper" class="view-roles__portlets-list" style="height:300px;"></div>
+        <div id="portletsListWrapper" class="view-roles__portlets-list" style="height:300px;width:95%;margin:0 auto"></div>
 
 		<div class="inputCaption" style="text-align:right">* <%= LanguageUtil.get(pageContext, "drag-a-tool-to-order-it") %></div>
 

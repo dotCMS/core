@@ -145,7 +145,24 @@ public class PortletAPIImplTest {
             }
         }
     }
+    
+    @Test
+    public void test_delete_portlet() throws LanguageException, DotDataException {
+        Portlet portlet = null;
 
+            final String id =PORTLET_ID + System.currentTimeMillis();
+            portlet = createCustomPortlet(id, id, "Persona", "");
+            final Portlet findPortlet = portletApi.findPortlet(portlet.getPortletId());
+            Assert.assertEquals(portlet.getInitParams(),findPortlet.getInitParams());
+            Assert.assertEquals(portlet.getPortletId(),findPortlet.getPortletId());
+            portletApi.deletePortlet(portlet.getPortletId());
+            final Portlet findPortletAgain = portletApi.findPortlet(portlet.getPortletId());
+            Assert.assertNull(findPortletAgain);
+            
+            
+
+    }
+    
     @Test
     public void test_findAllPortlets() throws LanguageException, DotDataException, SystemException {
         Portlet portlet = null;

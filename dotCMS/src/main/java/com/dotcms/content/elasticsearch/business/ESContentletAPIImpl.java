@@ -3132,14 +3132,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 contentlet.setOwner(user.getUserId());
             }
 
-            // check contentlet Host
             User sysuser = APILocator.getUserAPI().getSystemUser();
-            if (!UtilMethods.isSet(contentlet.getHost())) {
-                contentlet.setHost(APILocator.getHostAPI().findSystemHost(sysuser, true).getIdentifier());
-            }
-            if (!UtilMethods.isSet(contentlet.getFolder())) {
-                contentlet.setFolder(FolderAPI.SYSTEM_FOLDER);
-            }
 
             Contentlet contentletRaw = populateHost(contentlet);
 
@@ -5625,11 +5618,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         // we need to save the versions from older-to-newer to make sure the last save
         // is the current version
-        Collections.sort(versionsToCopy, new Comparator<Contentlet>() {
-            public int compare(Contentlet o1, Contentlet o2) {
-                return o1.getModDate().compareTo(o2.getModDate());
-            }
-        });
+        Collections.sort(versionsToCopy, Comparator.comparing(Contentlet::getModDate));
 
         for(Contentlet contentlet : versionsToCopy){
 
@@ -5659,11 +5648,21 @@ public class ESContentletAPIImpl implements ContentletAPI {
             newContentlet.setHost(host != null?host.getIdentifier(): (folder!=null? folder.getHostId() : contentlet.getHost()));
             newContentlet.setFolder(folder != null?folder.getInode(): null);
             newContentlet.setLowIndexPriority(contentlet.isLowIndexPriority());
+            final boolean copyingSite = (!newContentlet.getHost().equals(contentletToCopy.getHost()));
             if(contentlet.isFileAsset()){
                 final String newName = generateCopyName(newContentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD), copySuffix);
                 newContentlet.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, newName);
-                //Used to replicate identifiers
-                newContentlet.setStringProperty(Contentlet.SOURCE_CONTENTLET_ASSET_NAME, sourceContentletIdentifier.getAssetName());
+
+                final String newIdentifierName;
+                if(copyingSite){
+                  //if we're copying a site.. re-using the asset-name is a safe strategy (it's supposed to be unique).
+                  newIdentifierName = sourceContentletIdentifier.getAssetName();
+                } else {
+                  //otherwise we generate a suffixed asset-name out of the original identifier.
+                  final Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
+                  newIdentifierName = generateCopyName(identifier.getAssetName(), copySuffix);
+                }
+                newContentlet.setStringProperty(Contentlet.CONTENTLET_ASSET_NAME_COPY, newIdentifierName);
             }
 
             List <Field> fields = FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode());

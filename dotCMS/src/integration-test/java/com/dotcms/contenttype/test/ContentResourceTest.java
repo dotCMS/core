@@ -411,12 +411,12 @@ public class ContentResourceTest extends IntegrationTestBase {
 
         final String fieldVariable = parent.getContentType().fields().get(0).variable();
 
-        Logger.info(this, "Field Variable: " + fieldVariable);
+        System.out.println("Field Variable: " + fieldVariable);
 
         final Object object = contentlet
                 .get(fieldVariable);
 
-        Logger.info(this, "This should be a JSON Object:" + object.toString());
+        System.out.println("This should be a JSON Object:" + object.toString());
 
         //validates child
         assertEquals(child.getIdentifier(), ((JSONObject) object)

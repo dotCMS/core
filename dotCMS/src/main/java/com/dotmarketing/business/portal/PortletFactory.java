@@ -2,6 +2,7 @@
 package com.dotmarketing.business.portal;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
@@ -27,6 +28,8 @@ public interface PortletFactory {
   String portletToXml(Portlet portlet) throws DotDataException;
 
   Map<String, Portlet> xmlToPortlets(String[] xmlFiles) throws SystemException;
+
+  Map<String, Portlet> xmlToPortlets(InputStream[] xmlFiles) throws SystemException;
 
   Optional<DotPortlet> xmlToPortlet(String xml) throws IOException, JDOMException;
 

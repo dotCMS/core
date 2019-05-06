@@ -519,7 +519,7 @@ public class BrowserAjax {
 			String wfPublishTime, String wfExpireDate, String wfExpireTime, String wfNeverExpire, String whereToSend, String forcePush) throws  DotSecurityException, ServletException{
 		WebContext ctx = WebContextFactory.get();
         User user = getUser(ctx.getHttpServletRequest());
-		Contentlet c = null;
+		Contentlet contentlet = null;
 		Map<String, Object> result = new HashMap<String, Object>();
 		WorkflowAPI wapi = APILocator.getWorkflowAPI();
 		try {
@@ -527,20 +527,21 @@ public class BrowserAjax {
 			if (action == null) {
 				throw new ServletException("No such workflow action");
 			}
-			c = APILocator.getContentletAPI().find(wfConId, user, false);
-			c.setStringProperty("wfActionId", action.getId());
-			c.setStringProperty("wfActionComments", wfActionComments);
-			c.setStringProperty("wfActionAssign", wfActionAssign);
+			contentlet = APILocator.getContentletAPI().find(wfConId, user, false);
+			contentlet.setStringProperty("wfActionId", action.getId());
+			contentlet.setStringProperty("wfActionComments", wfActionComments);
+			contentlet.setStringProperty("wfActionAssign", wfActionAssign);
 
-			c.setStringProperty("wfPublishDate", wfPublishDate);
-			c.setStringProperty("wfPublishTime", wfPublishTime);
-			c.setStringProperty("wfExpireDate", wfExpireDate);
-			c.setStringProperty("wfExpireTime", wfExpireTime);
-			c.setStringProperty("wfNeverExpire", wfNeverExpire);
-			c.setStringProperty("whereToSend", whereToSend);
-			c.setStringProperty("forcePush", forcePush);
+			contentlet.setStringProperty("wfPublishDate", wfPublishDate);
+			contentlet.setStringProperty("wfPublishTime", wfPublishTime);
+			contentlet.setStringProperty("wfExpireDate", wfExpireDate);
+			contentlet.setStringProperty("wfExpireTime", wfExpireTime);
+			contentlet.setStringProperty("wfNeverExpire", wfNeverExpire);
+			contentlet.setStringProperty("whereToSend", whereToSend);
+			contentlet.setStringProperty("forcePush", forcePush);
+			contentlet.setTags();
 
-			wapi.fireWorkflowNoCheckin(c, user);
+			wapi.fireWorkflowNoCheckin(contentlet, user);
 
 			result.put("status", "success");
 			result.put("message", UtilMethods.escapeSingleQuotes(LanguageUtil.get(user, "Workflow-executed")));
