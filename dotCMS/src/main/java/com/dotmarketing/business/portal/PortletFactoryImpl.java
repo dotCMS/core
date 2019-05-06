@@ -24,6 +24,8 @@ import org.jdom.output.XMLOutputter;
 
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -206,7 +208,7 @@ public class PortletFactoryImpl extends PrincipalBean implements PortletFactory 
 
     return getPortletMap().values();
   }
-
+  @CloseDBIfOpened
   public List<Portlet> findAllDb() throws DotDataException {
 
     DotConnect db = new DotConnect();
@@ -231,7 +233,7 @@ public class PortletFactoryImpl extends PrincipalBean implements PortletFactory 
     }
     return portlets;
   }
-
+  
   private Optional<DotPortlet> fromMap(final Map<String, Object> map) {
     final Portlet portlet = new Portlet((String) map.get("portletid"), (String) map.get("groupid"), (String) map.get("companyid"),
         (String) map.get("defaultpreferences"), false, (String) map.get("roles"), true);
@@ -245,6 +247,7 @@ public class PortletFactoryImpl extends PrincipalBean implements PortletFactory 
 
   }
 
+  @WrapInTransaction
   @Override
   public Portlet insertPortlet(final Portlet portlet) throws DotDataException {
     if (doesPortletExistInDb(portlet)) {
@@ -268,7 +271,7 @@ public class PortletFactoryImpl extends PrincipalBean implements PortletFactory 
 
   }
 
-
+  @WrapInTransaction
   @Override
   public Portlet updatePortlet(final Portlet portlet) throws DotDataException {
 
