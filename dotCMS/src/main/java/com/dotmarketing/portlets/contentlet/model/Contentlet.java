@@ -109,7 +109,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 */
 	public static final String WORKFLOW_IN_PROGRESS = "__workflow_in_progress__";
 	public static final String IS_COPY_CONTENTLET = "_is_copy_contentlet";
-	public static final String SOURCE_CONTENTLET_ASSET_NAME = "_source_contentlet_assetName";
+	public static final String CONTENTLET_ASSET_NAME_COPY = "_contentlet_asset_name_copy";
 
     public static final String WORKFLOW_PUBLISH_DATE = "wfPublishDate";
     public static final String WORKFLOW_PUBLISH_TIME = "wfPublishTime";
@@ -611,6 +611,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 */
 	public void setDateProperty(String fieldVarName, Date dateValue) throws DotRuntimeException {
 		map.put(fieldVarName, dateValue);
+		addRemoveNullProperty(fieldVarName, dateValue);
 	}
 
     /**
@@ -621,6 +622,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
      */
     public void setDateProperty(com.dotcms.contenttype.model.field.Field field, Date dateValue) throws DotRuntimeException {
         map.put(field.variable(), dateValue);
+		addRemoveNullProperty(field.variable(), dateValue);
     }
 
 	/**
@@ -1168,7 +1170,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	}
 
 	/**
-	 *
+	 * It'll tell you if you're dealing with content of type htmlPage
 	 * @return
 	 */
     public Boolean isHTMLPage() {
@@ -1176,7 +1178,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     }
 
     /**
-     *
+     * It'll tell you if you're dealing with content of type FileAsset
      * @return
      */
 	public boolean isFileAsset() {
@@ -1184,7 +1186,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	}
 
 	/**
-	 *
+	 * It'll tell you if you're dealing with content of type Host
 	 * @return
 	 */
     public boolean isHost() {
@@ -1193,6 +1195,14 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
         return getStructure().getInode().equals(hostStructure.getInode());
     }
+
+	/**
+	 * It'll tell you if you're dealing with content of type event
+	 * @return
+	 */
+	public boolean isCalendarEvent() {
+		return getStructure().getStructureType() == BaseContentType.CONTENT.getType() &&  "Event".equals(getStructure().getName()) ;
+	}
 
 	/**
 	 * If the inode is set, means it has at least one version
@@ -1243,13 +1253,26 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		return this.getStringProperty(Contentlet.WORKFLOW_ACTION_KEY);
 	}
 
+	/**
+	 * If at least one tag is set, returns true, otherwise false
+	 * @return boolean
+	 * @throws DotDataException
+	 */
+	public boolean hasTags () throws DotDataException {
+
+		final List<TagInode> foundTagInodes = APILocator.getTagAPI().getTagInodesByInode(this.getInode());
+		return foundTagInodes != null && !foundTagInodes.isEmpty()?
+				foundTagInodes.stream().anyMatch(foundTagInode -> UtilMethods.isSet(this.getStringProperty(foundTagInode.getFieldVarName()))):
+				false;
+	}
+
     /**
      * Set the tags to the contentlet
      * @throws DotDataException
      */
 	public void setTags() throws DotDataException {
 
-		if (!this.loadedTags) {
+		if (!this.loadedTags && !this.hasTags()) {
 
 			final HashMap<String, StringBuilder> contentletTags = new HashMap<>();
 			final List<TagInode> foundTagInodes = APILocator.getTagAPI().getTagInodesByInode(this.getInode());
@@ -1348,7 +1371,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 */
 	public void cleanup(){
 	    getMap().remove(IS_COPY_CONTENTLET);
-	    getMap().remove(SOURCE_CONTENTLET_ASSET_NAME);
+	    getMap().remove(CONTENTLET_ASSET_NAME_COPY);
 		getWritableNullProperties().clear();
 	}
 

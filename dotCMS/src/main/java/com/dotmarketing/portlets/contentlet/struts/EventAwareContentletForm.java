@@ -1,6 +1,5 @@
-package com.dotmarketing.portlets.calendar.struts;
+package com.dotmarketing.portlets.contentlet.struts;
 
-import com.dotmarketing.portlets.contentlet.struts.ContentletForm;
 import com.dotmarketing.util.Logger;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -14,7 +13,7 @@ import org.apache.struts.action.ActionMapping;
  * @author david
  *
  */
-public class EventForm extends ContentletForm {
+public class EventAwareContentletForm extends ContentletForm {
 
 	private static final long serialVersionUID = 1L;
 
@@ -60,7 +59,7 @@ public class EventForm extends ContentletForm {
 	
     private boolean isSpecificDate = false;
 	
-	
+	private boolean disconnectEvent = false;
 	
 	public boolean isSpecificDate() {
 		return isSpecificDate;
@@ -86,9 +85,6 @@ public class EventForm extends ContentletForm {
 		this.specificMonthOfYearRecY = specificMonthOfYearRecY;
 	}
 
-	
-	
-	
 	public int getRecurrenceMonthOfYear() {
 		return recurrenceMonthOfYear;
 	}
@@ -272,6 +268,11 @@ public class EventForm extends ContentletForm {
 		this.originalEndDate = originalEndDate;
 	}
 
-	
-	
+	public boolean isDisconnectEvent() {
+		return disconnectEvent;
+	}
+
+	public void setDisconnectEvent(boolean disconnectEvent) {
+		this.disconnectEvent = disconnectEvent;
+	}
 }

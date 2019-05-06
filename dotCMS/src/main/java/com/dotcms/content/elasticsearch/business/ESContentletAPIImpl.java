@@ -294,7 +294,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     .toShortString(contentlet));
         }
     }
-    
+
     @CloseDBIfOpened
     @Override
     public Optional<Contentlet> findInDb(final String inode) {
@@ -302,7 +302,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return contentFactory.findInDb(inode);
 
     }
-    
+
     @CloseDBIfOpened
     @Override
     public List<Contentlet> findByStructure(String structureInode, User user,   boolean respectFrontendRoles, int limit, int offset) throws DotDataException,DotSecurityException {
@@ -564,15 +564,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     publishAssociated(contentlet, false);
 
                     if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
-                        Identifier ident = APILocator.getIdentifierAPI().find(contentlet);
-                        CacheLocator.getCSSCache().remove(ident.getHostId(), ident.getPath(), true);
-                        IFileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet(contentlet);
-
-                        if(fileAsset.isShowOnMenu()){
-                            Folder folder = APILocator.getFolderAPI().findFolderByPath(ident.getParentPath(), ident.getHostId() , user, respectFrontendRoles);
-                            RefreshMenus.deleteMenu(folder);
-                            CacheLocator.getNavToolCache().removeNav(ident.getHostId(), folder.getInode());
-                        }
+                        cleanFileAssetCache(contentlet, user, respectFrontendRoles);
                     }
 
                     //"Enable" and/or create a tag for this Persona key tag
@@ -2391,7 +2383,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         } catch (Exception e) {
             throw new DotReindexStateException(e.getMessage(),e);
-        } 
+        }
 
     }
 
@@ -2446,7 +2438,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
 
-    private void unpublish(Contentlet contentlet, User user, int reindex) throws DotDataException,DotSecurityException, DotContentletStateException {
+    private void unpublish(final Contentlet contentlet, final User user, int reindex) throws DotDataException,DotSecurityException, DotContentletStateException {
 
         if(contentlet == null || !UtilMethods.isSet(contentlet.getInode())) {
 
@@ -2485,16 +2477,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
             indexAPI.removeContentFromLiveIndex(contentlet);
 
             if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
-                Identifier ident = APILocator.getIdentifierAPI().find(contentlet);
-                CacheLocator.getCSSCache().remove(ident.getHostId(), ident.getPath(), true);
-                //remove from navCache
-                IFileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet(contentlet);
-                if(fileAsset.isShowOnMenu()){
-                    Folder folder = APILocator.getFolderAPI().findFolderByPath(ident.getParentPath(), ident.getHostId() , user, false);
-                    RefreshMenus.deleteMenu(folder);
-                    CacheLocator.getNavToolCache().removeNav(ident.getHostId(), folder.getInode());
-                }
+
+                cleanFileAssetCache(contentlet, user, false);
             }
+
             new ContentletLoader().invalidate(contentlet, PageMode.LIVE);
             publishRelatedHtmlPages(contentlet);
 
@@ -2517,8 +2503,20 @@ public class ESContentletAPIImpl implements ContentletAPI {
         ActivityLogger.logInfo(getClass(), "Content Unpublished", "StartDate: " +contentPushPublishDate+ "; "
                 + "EndDate: " +contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown")
                 + "; ContentIdentifier: " + (contentlet != null ? contentlet.getIdentifier() : "Unknown"), contentlet.getHost());
+    }
 
+    private void cleanFileAssetCache(final Contentlet contentlet, final User user,
+                                     final boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
 
+        final Identifier ident = APILocator.getIdentifierAPI().find(contentlet);
+        CacheLocator.getCSSCache().remove(ident.getHostId(), ident.getPath(), true);
+        //remove from navCache
+        final IFileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet(contentlet);
+        if (fileAsset.isShowOnMenu()) {
+            final Folder folder = APILocator.getFolderAPI().findFolderByPath(ident.getParentPath(), ident.getHostId(), user, respectFrontEndPermissions);
+            RefreshMenus.deleteMenu(folder);
+            CacheLocator.getNavToolCache().removeNav(ident.getHostId(), folder.getInode());
+        }
     }
 
     // todo:should be in a transaction?
@@ -3134,14 +3132,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 contentlet.setOwner(user.getUserId());
             }
 
-            // check contentlet Host
             User sysuser = APILocator.getUserAPI().getSystemUser();
-            if (!UtilMethods.isSet(contentlet.getHost())) {
-                contentlet.setHost(APILocator.getHostAPI().findSystemHost(sysuser, true).getIdentifier());
-            }
-            if (!UtilMethods.isSet(contentlet.getFolder())) {
-                contentlet.setFolder(FolderAPI.SYSTEM_FOLDER);
-            }
 
             Contentlet contentletRaw = populateHost(contentlet);
 
@@ -5627,11 +5618,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         // we need to save the versions from older-to-newer to make sure the last save
         // is the current version
-        Collections.sort(versionsToCopy, new Comparator<Contentlet>() {
-            public int compare(Contentlet o1, Contentlet o2) {
-                return o1.getModDate().compareTo(o2.getModDate());
-            }
-        });
+        Collections.sort(versionsToCopy, Comparator.comparing(Contentlet::getModDate));
 
         for(Contentlet contentlet : versionsToCopy){
 
@@ -5661,11 +5648,21 @@ public class ESContentletAPIImpl implements ContentletAPI {
             newContentlet.setHost(host != null?host.getIdentifier(): (folder!=null? folder.getHostId() : contentlet.getHost()));
             newContentlet.setFolder(folder != null?folder.getInode(): null);
             newContentlet.setLowIndexPriority(contentlet.isLowIndexPriority());
+            final boolean copyingSite = (!newContentlet.getHost().equals(contentletToCopy.getHost()));
             if(contentlet.isFileAsset()){
                 final String newName = generateCopyName(newContentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD), copySuffix);
                 newContentlet.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, newName);
-                //Used to replicate identifiers
-                newContentlet.setStringProperty(Contentlet.SOURCE_CONTENTLET_ASSET_NAME, sourceContentletIdentifier.getAssetName());
+
+                final String newIdentifierName;
+                if(copyingSite){
+                  //if we're copying a site.. re-using the asset-name is a safe strategy (it's supposed to be unique).
+                  newIdentifierName = sourceContentletIdentifier.getAssetName();
+                } else {
+                  //otherwise we generate a suffixed asset-name out of the original identifier.
+                  final Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
+                  newIdentifierName = generateCopyName(identifier.getAssetName(), copySuffix);
+                }
+                newContentlet.setStringProperty(Contentlet.CONTENTLET_ASSET_NAME_COPY, newIdentifierName);
             }
 
             List <Field> fields = FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode());
@@ -6637,11 +6634,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 });
             } else {
 
-                HibernateUtil.addCommitListener(()-> {
-                    //Triggering event listener when this commit listener is executed
-                    localSystemEventsAPI
+                HibernateUtil.addCommitListener(new FlushCacheRunnable() {
+                    public void run() {
+                        //Triggering event listener when this commit listener is executed
+                        localSystemEventsAPI
                             .notify(new CommitListenerEvent(contentlet));
-                }, 1001);
+                    }
+                });
             }
 
             HibernateUtil.addCommitListener(()-> {

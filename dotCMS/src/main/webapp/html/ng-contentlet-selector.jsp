@@ -38,7 +38,7 @@
         contentTypes = APILocator.getContainerAPI().getContentTypesInContainer(user, container);
     }
 
-    Layout contentLayout = APILocator.getLayoutAPI().findLayoutByName("Content");
+    Layout contentLayout = APILocator.getLayoutAPI().loadLayoutsForUser(user).get(0);
 
     String containerStructures = "[";
     Integer count = 1;

@@ -520,7 +520,15 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             if (listener != null) {
                 bulk.setTimeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS)).execute(listener);
             } else {
-                bulk.execute().actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
+                BulkResponse response = bulk
+                        .setTimeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS))
+                        .execute().actionGet();
+
+                if (response != null && response.hasFailures()) {
+                    Logger.error(this,
+                            "Error reindexing (" + response.getItems().length + ") content(s) "
+                                    + response.buildFailureMessage());
+                }
             }
 
         }
@@ -592,10 +600,10 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
         for (ContentletVersionInfo cvi : versions) {
             final String workingInode = cvi.getWorkingInode();
-            String liveInode = cvi.getLiveInode();
+            final String liveInode = cvi.getLiveInode();
             inodes.put(workingInode, APILocator.getContentletAPI().findInDb(workingInode).orElse(null));
             if (UtilMethods.isSet(liveInode) && !inodes.containsKey(liveInode)) {
-                inodes.put(liveInode, APILocator.getContentletAPI().findInDb(workingInode).orElse(null));
+                inodes.put(liveInode, APILocator.getContentletAPI().findInDb(liveInode).orElse(null));
             }
         }
         inodes.values().removeIf(Objects::isNull);

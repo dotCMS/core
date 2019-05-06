@@ -34,6 +34,7 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.common.reindex.ReindexEntry;
+import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
@@ -53,6 +54,7 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.ThreadUtils;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
@@ -765,6 +767,63 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
 
     }
 
+  @Test
+  public void test_that_live_and_working_content_makes_it_into_the_index() throws Exception {
+    ContentType type = new ContentTypeDataGen()
+        .fields(ImmutableList.of(ImmutableTextField.builder().name("Title").variable("title").searchable(true).listed(true).build()))
+        .nextPersisted();
+    Contentlet content = new ContentletDataGen(type.id()).setProperty("title", "contentTest " + System.currentTimeMillis()).next();
+
+    String title = "version1";
+    content.setStringProperty("title", title);
+
+    content.setIndexPolicy(IndexPolicy.FORCE);
+
+    // check in the content
+    content = APILocator.getContentletAPI().checkin(content, user, false);
+
+    assertTrue(content.getIdentifier() != null);
+    assertTrue(content.isWorking());
+    assertFalse(content.isLive());
+    assertEquals(content.getTitle(), title);
+    // publish the content
+    content.setIndexPolicy(IndexPolicy.FORCE);
+    
+    APILocator.getContentletAPI().publish(content, user, false);
+    String liveInode = content.getInode();
+    assertTrue(content.isLive());
+    content.setInode(null);
+    title = "version2";
+    content.setStringProperty("title", title);
+    content.setIndexPolicy(IndexPolicy.FORCE);
+    content = APILocator.getContentletAPI().checkin(content, user, false);
+    assertTrue(content.getIdentifier() != null);
+    assertTrue(content.isWorking());
+    assertFalse(content.isLive());
+    assertTrue(content.hasLiveVersion());
+    String workingInode = content.getInode();
+    List<ContentletSearch> liveSearch = APILocator.getContentletAPI().searchIndex("+identifier:" + content.getIdentifier() + " +live:true", 1, 0, "modDate", user, false);
+    List<ContentletSearch> workingSearch = APILocator.getContentletAPI().searchIndex("+identifier:" + content.getIdentifier() + " +live:false", 1, 0, "modDate", user, false);
+    assert(liveSearch.size()>0);
+    assert(workingSearch.size()>0);
+    assert(liveSearch.get(0).getInode().equals(liveInode));
+    assert(workingSearch.get(0).getInode().equals(workingInode));
+    assert(!workingSearch.get(0).getInode().equals(liveInode));
+    
+    APILocator.getContentletIndexAPI().removeContentFromIndex(content);
+    ReindexThread.startThread();
+    APILocator.getReindexQueueAPI().addContentletReindex(content);
+    ThreadUtils.sleep(5000);
+    liveSearch = APILocator.getContentletAPI().searchIndex("+identifier:" + content.getIdentifier() + " +live:true", 1, 0, "modDate", user, false);
+    workingSearch = APILocator.getContentletAPI().searchIndex("+identifier:" + content.getIdentifier() + " +live:false", 1, 0, "modDate", user, false);
+    assert(liveSearch.size()>0);
+    assert(workingSearch.size()>0);
+    assert(liveSearch.get(0).getInode().equals(liveInode));
+    assert(workingSearch.get(0).getInode().equals(workingInode));
+    assert(!workingSearch.get(0).getInode().equals(liveInode));
+    
+  }
+    
     /**
      * Creates and returns a test html page
      *

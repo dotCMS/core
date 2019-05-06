@@ -50,22 +50,22 @@ public class ActionRequestImpl
 	extends RenderRequestImpl implements ActionRequest {
 
 	public ActionRequestImpl(HttpServletRequest req, Portlet portlet,
-							 CachePortlet cachePortlet,
+							 ConcretePortletWrapper concretePortletWrapper,
 							 PortletContext portletCtx, WindowState windowState,
 							 PortletMode portletMode,
 							 PortletPreferences prefs) {
 
-		this(req, portlet, cachePortlet, portletCtx, windowState, portletMode,
+		this(req, portlet, concretePortletWrapper, portletCtx, windowState, portletMode,
 			 prefs, null);
 	}
 
 	public ActionRequestImpl(HttpServletRequest req, Portlet portlet,
-							 CachePortlet cachePortlet,
+							 ConcretePortletWrapper concretePortletWrapper,
 							 PortletContext portletCtx, WindowState windowState,
 							 PortletMode portletMode, PortletPreferences prefs,
 							 String layoutId) {
 
-		super(req, portlet, cachePortlet, portletCtx, windowState, portletMode,
+		super(req, portlet, concretePortletWrapper, portletCtx, windowState, portletMode,
 			  prefs, layoutId);
 	}
 

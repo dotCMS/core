@@ -1093,7 +1093,7 @@
 		    loadingSearchFields = true;
 		    setDotFieldTypeStr = "";
 
-		    StructureAjax.getStructureSearchFields (structureInode,
+		    StructureAjax.getSearchableStructureFields (structureInode,
 		            { callback:fillFields, async: async });
 		    StructureAjax.getStructureCategories (structureInode,
 		            { callback:fillCategories, async: async });
@@ -1339,17 +1339,15 @@
                     	clearAllContentsSelection();
                 }
 
-	            var structureInode = "";
+	            var structureInode;
 
 
 	            if(dijit.byId('structure_inode')) {
 	              structureInode  = dijit.byId('structure_inode').getValue();
 	            }
+                
 
-                if(structureInode ==""){
-                        dijit.byId('structure_inode').focus() ;
-                        return false;
-                }
+
                 cbContentInodeList = new Array();
                 var fieldsValues = new Array ();
                 if(currentStructureFields == undefined){
@@ -1573,6 +1571,12 @@
                                 var dateTosplit = dateTo.split("/");
                                 if(dateTosplit[0]< 10) dateTosplit[0]= "0"+dateTosplit[0]; if(dateTosplit[1]< 10) dateTosplit[1]= "0"+dateTosplit[1];
                                 dateTo= dateTosplit[2]+dateTosplit[0]+dateTosplit[1]+"235959";
+                        }
+                        if("catchall" == structureInode){
+                            <%if(request.getAttribute("contentTypesJs")!=null){ %>
+                               // setting this to an array
+                                structureInode = "<%=request.getAttribute("contentTypesJs") %>";
+                            <%} %>
                         }
 
                         ContentletAjax.searchContentlets (structureInode, fieldsValues, categoriesValues, showDeleted, filterSystemHost, filterUnpublish, filterLocked, currentPage, currentSortBy, dateFrom, dateTo, fillResults);

@@ -101,6 +101,11 @@
 	var treeRoleOptionTemplate = '${nodeName}';
 	var lastSelectedNode;
 
+
+	
+	
+	
+	
 	function buildRolesTree(tree) {
 		dojo.style(dojo.byId('noRolesFound'), { display: 'none' });
 		dojo.style(dojo.byId('loadingRolesWrapper'), { display: '' });
@@ -1026,8 +1031,10 @@
 	var portletListItemTemplate =
 	'<div id="listItem-${portletId}" class="view-roles__portlets-list-item">' +
 	'	${portletTitle}' +
+	'  <div style="text-align:right;white-space:nowrap;">' +
+	'   ${portletDelete}' +
 	'	<button id="removePortletButton${portletId}" dojoType="dijit.form.Button" type="button">' + removeMsg + '</button>' +
-	'</div>';
+	'</div></div>';
 
 	var portletsListSource;
 
@@ -1040,11 +1047,36 @@
 		registerPortletItemButton(portletId, portletTitle);
 
 	}
-
+	
+    function doPortletDelete(portletId){
+        if(portletId.indexOf("c_")!=0 || !confirm("<%= UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "custom.content.portlet.delete.confirm")) %>")){
+            return;
+        }
+      var xhrArgs = {
+          url : "/api/v1/portlet/custom/" + portletId,
+          handleAs: "json",
+          headers: {
+              "Content-Type": "application/json"
+              },
+          load : function(data){
+              removePortletFromList(portletId);
+              initializePortletInfoList();
+          },
+          error : function(error) {
+              alert("Error deleteing portlet: " + JSON.parse(error.responseText).message);
+              return false;
+          }
+      };
+      dojo.xhrDelete(xhrArgs);
+    }
+    
 	function getPortletItemHTML (portletId, portletTitle) {
 
 		portletId = norm(portletId);
-		var html = dojo.string.substitute(portletListItemTemplate, { portletTitle: portletTitle, portletId: portletId })
+
+		const portletDelete = (portletId.indexOf("c_")==0) ? `<div style='float:left;line-height:34px;padding:0px 20px;margin-right:10px;' class='dijitButtonText dijitButton' onclick='doPortletDelete("` + portletId + `")'><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "delete")) %></div>` : "";
+		
+		var html = dojo.string.substitute(portletListItemTemplate, { portletTitle: portletTitle, portletId: portletId, portletDelete: portletDelete })
 		return html;
 	}
 
@@ -1133,23 +1165,83 @@
 
  		var portletsStore = new dojo.data.ItemFileReadStore({data: portletsData });
 
-	    new dijit.form.FilteringSelect({
-            id: "portletList",
-            name: "portletList",
-            searchAttr: "title",
-            store: portletsStore,
-			required: false,
-			style: {
-				width: '241px'
-			}
-        },
-        "portletList");
-
+ 		if(dijit.byId("portletList")!=undefined){
+ 		    dijit.byId("portletList").attr("store", portletsStore);
+ 		}else{
+    	    new dijit.form.FilteringSelect({
+                id: "portletList",
+                name: "portletList",
+                searchAttr: "title",
+                store: portletsStore,
+    			required: false,
+    			style: {
+    				width: '241px'
+    			}
+            },
+            "portletList");
+ 		}
 		if(tempCallback)
 			tempCallback();
 
 	}
 
+	function showCustomContentPortletDia(){
+	    
+	    dijit.byId("customPortletId").setValue("");
+	    dijit.byId("customPortletName").setValue("");
+	    dijit.byId("customPortletBaseTypes").setValue("");
+	    dijit.byId("customPortletContentTypes").setValue("");
+	    dijit.byId("customPortletDialog").show()
+	}
+
+	function cleanUpPortletId(){
+
+	    var str=dijit.byId("customPortletId").getValue();
+	    while(str.indexOf('--') >-1) {
+	        str = (str.substr(0, str.indexOf('--')) + str.substr(str.indexOf('--')+1, str.length));
+	    }
+	    if(str.substr(-1) === '-') {
+	        str = str.substr(0, str.length - 1);   
+	    }
+	    dijit.byId("customPortletId").setValue(str);
+	}
+
+	function setPortletIdValue(val){
+	    val=val.replace(/[^0-9a-z-]/gi, '-')
+	    dijit.byId("customPortletId").setValue(val);    
+	}
+	
+	function createCustomContentType(){
+
+	    var data={};
+	    
+	    data.portletId =dijit.byId("customPortletId").attr('value');
+	    data.portletName =dijit.byId("customPortletName").attr('value');
+	    data.baseTypes =dijit.byId("customPortletBaseTypes").attr('value');
+	    data.contentTypes =dijit.byId("customPortletContentTypes").attr('value');
+
+	      var xhrArgs = {
+	          url : "/api/v1/portlet/custom",
+	          handleAs: "json",
+	          postData : dojo.toJson(data),
+	          headers: {
+	              "Content-Type": "application/json"
+	              },
+	          load : function(data){
+	              initializePortletInfoList();
+	              console.log("custom", data);
+				  dijit.byId('customPortletDialog').hide();
+	          },
+	          error : function(error) {
+	              alert("Error creating new portlet: " + JSON.parse(error.responseText).message);
+	              return false;
+
+	          }
+	      };
+	  
+	      dojo.xhrPost(xhrArgs);
+
+	}
 
 
 	function addPortletToLayoutList() {
@@ -1165,6 +1257,8 @@
 			return;
 
 		addPortletToHTMLList(portletId, portletTitle);
+
+		dijit.byId('portletList').reset();
 
 	}
 

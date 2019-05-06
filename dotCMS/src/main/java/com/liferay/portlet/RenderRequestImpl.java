@@ -68,17 +68,17 @@ import org.apache.struts.Globals;
 public class RenderRequestImpl implements RenderRequest {
 
 	public RenderRequestImpl(HttpServletRequest req, Portlet portlet,
-							 CachePortlet cachePortlet,
+							 ConcretePortletWrapper concretePortletWrapper,
 							 PortletContext portletCtx,
 							 WindowState windowState, PortletMode portletMode,
 							 PortletPreferences prefs) {
 
-		this(req, portlet, cachePortlet, portletCtx, windowState, portletMode,
+		this(req, portlet, concretePortletWrapper, portletCtx, windowState, portletMode,
 			 prefs, null);
 	}
 
 	public RenderRequestImpl(HttpServletRequest req, Portlet portlet,
-							 CachePortlet cachePortlet,
+							 ConcretePortletWrapper concretePortletWrapper,
 							 PortletContext portletCtx,
 							 WindowState windowState, PortletMode portletMode,
 							 PortletPreferences prefs, String layoutId) {
@@ -185,7 +185,7 @@ public class RenderRequestImpl implements RenderRequest {
 
 		_req = dynamicReq;
 		_portlet = portlet;
-		_cachePortlet = cachePortlet;
+		_cachePortlet = concretePortletWrapper;
 		_portalCtx = new PortalContextImpl();
 		_portletCtx = portletCtx;
 		_windowState = WindowState.MAXIMIZED;
@@ -217,13 +217,7 @@ public class RenderRequestImpl implements RenderRequest {
 	}
 
 	public boolean isPortletModeAllowed(PortletMode portletMode) {
-		if (portletMode == null || Validator.isNull(portletMode.toString())) {
-			return true;
-		}
-		else {
-			return _portlet.hasPortletMode(
-				getResponseContentType(), portletMode);
-		}
+		return true;
 	}
 
 	public PortletPreferences getPreferences() {
@@ -308,80 +302,12 @@ public class RenderRequestImpl implements RenderRequest {
 
 				// Liferay user attributes
 
-				try {
-					User user = PortalUtil.getUser(_req);
 
-					UserAttributes userAttributes = new UserAttributes(user);
-
-					Iterator itr = _portlet.getUserAttributes().iterator();
-
-					while (itr.hasNext()) {
-						String attrName = (String)itr.next();
-						String attrValue = userAttributes.getValue(attrName);
-
-						if (attrValue != null) {
-							userInfo.put(attrName, attrValue);
-						}
-					}
-				}
-				catch (Exception e) {
-					Logger.error(this,e.getMessage(),e);
-				}
 
 				Map unmodifiableUserInfo =
 					Collections.unmodifiableMap((Map)userInfo.clone());
 
-				// Custom user attributes
 
-				Map cuaInstances = CollectionFactory.getHashMap();
-
-				Iterator itr =
-					_portlet.getCustomUserAttributes().entrySet().iterator();
-
-				while (itr.hasNext()) {
-					Map.Entry entry = (Map.Entry)itr.next();
-
-					String attrName = (String)entry.getKey();
-					String attrCustomClass = (String)entry.getValue();
-
-					CustomUserAttributes cua =
-						(CustomUserAttributes)cuaInstances.get(attrCustomClass);
-
-					if (cua == null) {
-						if (_portlet.isWARFile()) {
-							PortletContextWrapper pcw =
-								(PortletContextWrapper)PortletContextPool.get(
-									_portlet.getPortletId());
-
-							cua =
-								(CustomUserAttributes)
-									pcw.getCustomUserAttributes().get(
-										attrCustomClass);
-
-							cua = (CustomUserAttributes)cua.clone();
-						}
-						else {
-							try {
-								cua = (CustomUserAttributes)Class.forName(
-									attrCustomClass).newInstance();
-							}
-							catch (Exception e) {
-								Logger.error(this,e.getMessage(),e);
-							}
-						}
-
-						cuaInstances.put(attrCustomClass, cua);
-					}
-
-					if (cua != null) {
-						String attrValue = cua.getValue(
-							attrName, unmodifiableUserInfo);
-
-						if (attrValue != null) {
-							userInfo.put(attrName, attrValue);
-						}
-					}
-				}
 
 				return userInfo;
 			}
@@ -523,7 +449,7 @@ public class RenderRequestImpl implements RenderRequest {
 
 	private DynamicServletRequest _req;
 	private Portlet _portlet;
-	private CachePortlet _cachePortlet;
+	private ConcretePortletWrapper _cachePortlet;
 	private String _portletName;
 	private PortalContext _portalCtx;
 	private PortletContext _portletCtx;
