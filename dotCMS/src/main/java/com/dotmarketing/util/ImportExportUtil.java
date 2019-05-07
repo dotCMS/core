@@ -36,6 +36,8 @@ import com.liferay.portal.model.Company;
 import com.liferay.portal.model.Image;
 import com.liferay.portal.model.PortletPreferences;
 import com.liferay.portal.model.User;
+import com.liferay.util.Base64;
+import com.liferay.util.Encryptor;
 import com.liferay.util.FileUtil;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.DomDriver;
@@ -1291,7 +1293,7 @@ public class ImportExportUtil {
                     // github #16470 with support for custom starter.zips that have updated keys
 
                     if(c.getKey()!=null && OLD_KEY_MD5.equals(new DigestUtils().md5Hex(c.getKey()))) {
-                      c.setKey(null);
+                        c.setKey(Base64.objectToString(Encryptor.generateKey()));
                     }
                     try {
                         c.setModified(true);

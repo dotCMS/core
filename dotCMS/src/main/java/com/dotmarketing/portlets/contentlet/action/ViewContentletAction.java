@@ -132,7 +132,7 @@ public class ViewContentletAction extends DotPortletAction {
       if (UtilMethods.isSet(type) && UtilMethods.isNumeric(type)) {
         baseTypeList.add(BaseContentType.getBaseContentType(Integer.parseInt(type)));
       } else {
-        baseTypeList.add(BaseContentType.getBaseContentType(type));
+        baseTypeList.add(BaseContentType.getBaseContentType(type.trim()));
       }
     }
     return baseTypeList;
@@ -158,7 +158,7 @@ public class ViewContentletAction extends DotPortletAction {
       String[] contentTypes = contentTypesRaw.trim().split(",");
       List<ContentType> contentTypeList = new ArrayList<>();
       for (String type : contentTypes) {
-          ContentType contentType = Try.of(() -> APILocator.getContentTypeAPI(PortalUtil.getUser(request)).find(type)).getOrNull();
+          ContentType contentType = Try.of(() -> APILocator.getContentTypeAPI(PortalUtil.getUser(request)).find(type.trim())).getOrNull();
           if (contentType != null) {
             contentTypeList.add(contentType);
           }
