@@ -39,6 +39,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
@@ -308,6 +309,8 @@ public class ContentResourceTest extends IntegrationTestBase {
             contentlets.put("grandChild2", grandChild2);
 
             //calls endpoint
+            Thread.sleep(10000);
+
             final ContentResource contentResource = new ContentResource();
             final HttpServletRequest request = createHttpRequest(null, testCase.limitedUser?userAPI.getAnonymousUser():null);
             final HttpServletResponse response = mock(HttpServletResponse.class);
