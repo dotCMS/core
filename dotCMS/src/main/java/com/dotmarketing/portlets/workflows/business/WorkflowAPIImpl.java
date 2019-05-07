@@ -2640,6 +2640,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					() -> "Firing the action: " + action + " to the inode: " + contentlet
 							.getInode() +" Executed by Thread: " +Thread.currentThread().getName());
 
+			contentlet.setTags();
 			contentlet.getMap().put(Contentlet.WORKFLOW_BULK_KEY, true);
 			try{
 				final Contentlet afterFireContentlet = fireContentWorkflow(contentlet, dependencies, context);

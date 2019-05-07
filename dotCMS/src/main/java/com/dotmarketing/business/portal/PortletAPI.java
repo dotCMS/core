@@ -39,4 +39,6 @@ public interface PortletAPI {
 
   Portlet savePortlet(final Portlet portlet, final User user) throws DotDataException, LanguageException;
 
+  Portlet updatePortlet(final Portlet portlet) throws DotDataException;
+
 }

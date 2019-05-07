@@ -39,6 +39,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
@@ -283,6 +284,7 @@ public class ContentResourceTest extends IntegrationTestBase {
             final ContentletDataGen childDataGen = new ContentletDataGen(childContentType.id());
             Contentlet child = childDataGen.languageId(language).next();
 
+            child.setIndexPolicy(IndexPolicy.WAIT_FOR);
             child = contentletAPI.checkin(child, CollectionsUtils
                             .map(childRelationship, CollectionsUtils.list(grandChild1, grandChild2)), user,
                     false);
@@ -297,6 +299,7 @@ public class ContentResourceTest extends IntegrationTestBase {
 
             final ContentletDataGen parentDataGen = new ContentletDataGen(parentContentType.id());
             Contentlet parent = parentDataGen.languageId(language).next();
+            parent.setIndexPolicy(IndexPolicy.WAIT_FOR);
             parent = contentletAPI.checkin(parent,
                     CollectionsUtils.map(parentRelationship, CollectionsUtils.list(child)), user,
                     false);
@@ -411,12 +414,12 @@ public class ContentResourceTest extends IntegrationTestBase {
 
         final String fieldVariable = parent.getContentType().fields().get(0).variable();
 
-        Logger.info(this, "Field Variable: " + fieldVariable);
+        System.out.println("Field Variable: " + fieldVariable);
 
         final Object object = contentlet
                 .get(fieldVariable);
 
-        Logger.info(this, "This should be a JSON Object:" + object.toString());
+        System.out.println("This should be a JSON Object:" + object.toString());
 
         //validates child
         assertEquals(child.getIdentifier(), ((JSONObject) object)

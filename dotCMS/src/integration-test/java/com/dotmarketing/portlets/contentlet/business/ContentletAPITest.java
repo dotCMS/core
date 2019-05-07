@@ -6060,4 +6060,28 @@ public class ContentletAPITest extends ContentletBaseTest {
     
     }
 
+    @Test
+    public void testCheckInContentletWithoutHost_shouldUseContentTypeHost()
+            throws DotDataException, DotSecurityException {
+        ContentType contentType = null;
+
+        try {
+            contentType = new ContentTypeDataGen()
+                    .fields(ImmutableList
+                            .of(ImmutableTextField.builder().name("Title").variable("title")
+                                    .build()))
+                    .nextPersisted();
+            Contentlet contentlet = new Contentlet();
+            contentlet.setContentType(contentType);
+            contentlet.setProperty("title", "contentTest " + System.currentTimeMillis());
+            contentlet = contentletAPI.checkin(contentlet, user, false);
+
+            assertEquals(contentType.host(), contentlet.getHost());
+        }finally {
+            if (contentType != null){
+                contentTypeAPI.delete(contentType);
+            }
+        }
+    }
+
 }
