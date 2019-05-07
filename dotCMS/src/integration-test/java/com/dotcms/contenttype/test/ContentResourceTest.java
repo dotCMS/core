@@ -284,7 +284,6 @@ public class ContentResourceTest extends IntegrationTestBase {
             final ContentletDataGen childDataGen = new ContentletDataGen(childContentType.id());
             Contentlet child = childDataGen.languageId(language).next();
 
-            child.setIndexPolicy(IndexPolicy.WAIT_FOR);
             child = contentletAPI.checkin(child, CollectionsUtils
                             .map(childRelationship, CollectionsUtils.list(grandChild1, grandChild2)), user,
                     false);
@@ -299,7 +298,6 @@ public class ContentResourceTest extends IntegrationTestBase {
 
             final ContentletDataGen parentDataGen = new ContentletDataGen(parentContentType.id());
             Contentlet parent = parentDataGen.languageId(language).next();
-            parent.setIndexPolicy(IndexPolicy.WAIT_FOR);
             parent = contentletAPI.checkin(parent,
                     CollectionsUtils.map(parentRelationship, CollectionsUtils.list(child)), user,
                     false);
@@ -311,6 +309,8 @@ public class ContentResourceTest extends IntegrationTestBase {
             contentlets.put("grandChild2", grandChild2);
 
             //calls endpoint
+            Thread.sleep(10000);
+
             final ContentResource contentResource = new ContentResource();
             final HttpServletRequest request = createHttpRequest(null, testCase.limitedUser?userAPI.getAnonymousUser():null);
             final HttpServletResponse response = mock(HttpServletResponse.class);
