@@ -144,9 +144,6 @@ public class PortletFactoryImpl extends PrincipalBean implements PortletFactory 
 
   @Override
   public void deletePortlet(final String portletId) throws DotDataException {
-    if (portletId == null || !portletId.startsWith(PortletAPI.CONTENT_PORTLET_PREFIX) || this.findById(portletId) ==null) {
-      throw new DotRuntimeException("portlet not found");
-    }
 
     final DotConnect db = new DotConnect();
     db.setSQL("delete from portletpreferences where portletid=?").addParam(portletId).loadResult();
