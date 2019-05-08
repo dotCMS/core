@@ -1,6 +1,6 @@
 buildscript {
     repositories {
-        maven { url "http://repo.dotcms.com/artifactory/libs-release" }
+        maven { url "https://repo.dotcms.com/artifactory/libs-release" }
     }
     dependencies {
         classpath 'org.ajoberstar:grgit:1.7.0'
@@ -102,8 +102,8 @@ apply plugin: 'maven'
 import org.gradle.api.internal.artifacts.publish.DefaultPublishArtifact
 
 repositories {
-    maven { url "http://repo.dotcms.com/artifactory/libs-release" }
-    maven { url "http://repo.dotcms.com/artifactory/libs-snapshot-local" }
+    maven { url "https://repo.dotcms.com/artifactory/libs-release" }
+    maven { url "https://repo.dotcms.com/artifactory/libs-snapshot-local" }
 }
 
 ext {
@@ -115,8 +115,8 @@ ext {
 
     git = org.ajoberstar.grgit.Grgit.open(file('..'))
 
-    releaseRepository  = "http://repo.dotcms.com/artifactory/libs-release-local"
-    snapshotRepository = "http://repo.dotcms.com/artifactory/libs-snapshot-local"
+    releaseRepository  = "https://repo.dotcms.com/artifactory/libs-release-local"
+    snapshotRepository = "https://repo.dotcms.com/artifactory/libs-snapshot-local"
     repositoryUrl      = snapshotRepository
 
     if (gradle.startParameter.taskNames.contains("uploadEnterprise")) {
