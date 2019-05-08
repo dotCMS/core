@@ -261,6 +261,32 @@ public class ContainerResource implements Serializable {
         return this.containerContent(req, res, containerId, contentletId);
     }
 
+
+    /**
+     *
+     * @param req
+     * @param res
+     * @param containerId
+     * @param formId
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @GET
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Path("/form/{formId}")
+    public final Response containerFormByQueryParam(@Context final HttpServletRequest req,
+                                                       @Context final HttpServletResponse res,
+                                                       @QueryParam("containerId") final String containerId,
+                                                       @PathParam("formId") final String formId)
+            throws DotDataException, DotSecurityException {
+
+        return this.containerForm(req, res, containerId, formId);
+    }
+
     /**
      * Return a form render into a specific container
      *
