@@ -389,7 +389,7 @@ function indexStructureChanged(){
 
 function cleanReindexStructure(){
 	 if(confirm("<%= LanguageUtil.get(pageContext,"are-you-sure-delete-reindex") %>")){
-		var strInode = dojo.byId('structure').value;
+		var strInode = dijit.byId('structure').item.id;
 		CMSMaintenanceAjax.cleanReindexStructure(strInode,showDotCMSSystemMessage);
 	 }
 }
@@ -470,6 +470,8 @@ function doReindex(){
 		if(shards <1){
 			return;
 		}
+	    dijit.byId('structure').setValue(dijit.byId('structure').item.id);
+		
 		dojo.byId("numberOfShards").value = shards;
 		dijit.byId('idxReindexButton').setDisabled(true);
 		dijit.byId('idxShrinkBtn').setDisabled(true);
@@ -1405,7 +1407,7 @@ dd.leftdl {
                                     <%
 
                                         for(ContentType type : structs){%>
-                                        <option><%=type.name()%></option>
+                                        <option value="<%=type.variable()%>"><%=type.name()%></option>
                                     <%}%>
                                 </select>
 
