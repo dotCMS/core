@@ -46,7 +46,7 @@ export class DotContainerContentletService {
         return this.coreWebService
             .requestView({
                 method: RequestMethod.Get,
-                url: `v1/containers/${container.identifier}/form/${form.id}`
+                url: `v1/containers/form/${form.id}?containerId=${container.identifier}`
             })
             .pipe(pluck('entity'));
     }

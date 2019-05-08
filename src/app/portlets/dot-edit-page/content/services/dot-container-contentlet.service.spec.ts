@@ -4,8 +4,6 @@ import { DotContainerContentletService } from './dot-container-contentlet.servic
 import { ReflectiveInjector } from '@angular/core';
 import { MockConnection } from '@angular/http/testing';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
-import { tick } from '@angular/core/testing';
-import { fakeAsync } from '@angular/core/testing';
 import { DotPageContainer } from '../../../dot-edit-page/shared/models/dot-page-container.model';
 import { DotPageContent } from '../../../dot-edit-page/shared/models/dot-page-content.model';
 import { ContentType } from '../../../content-types/shared/content-type.model';
@@ -27,62 +25,49 @@ describe('DotContainerContentletService', () => {
         );
     });
 
-    it(
-        'should do a request for get the contentlet html code',
-        fakeAsync(() => {
-            const contentletId = '2';
-            const pageContainer: DotPageContainer = {
-                identifier: '1',
-                uuid: '3'
-            };
+    it('should do a request for get the contentlet html code', () => {
+        const pageContainer: DotPageContainer = {
+            identifier: '1',
+            uuid: '3'
+        };
 
-            const pageContent: DotPageContent = {
-                identifier: '2',
-                inode: '4',
-                type: 'content_type'
-            };
+        const pageContent: DotPageContent = {
+            identifier: '2',
+            inode: '4',
+            type: 'content_type'
+        };
 
-            dotContainerContentletService
-                .getContentletToContainer(pageContainer, pageContent)
-                .subscribe(resp => resp);
+        dotContainerContentletService
+            .getContentletToContainer(pageContainer, pageContent)
+            .subscribe((resp) => resp);
 
-            tick();
-            expect(lastConnection.request.url).toContain(
-                `v1/containers/content/${contentletId}?containerId=${pageContainer.identifier}`
-            );
-        })
-    );
+        expect(lastConnection.request.url).toContain(`v1/containers/content/2?containerId=1`);
+    });
 
-    it(
-        'should do a request for get the form html code',
-        fakeAsync(() => {
-            const formId = '2';
-            const pageContainer: DotPageContainer = {
-                identifier: '1',
-                uuid: '3'
-            };
+    it('should do a request for get the form html code', () => {
+        const formId = '2';
+        const pageContainer: DotPageContainer = {
+            identifier: '1',
+            uuid: '3'
+        };
 
-            const form: ContentType = {
-                clazz: 'clazz',
-                defaultType: true,
-                fixed: true,
-                folder: 'folder',
-                host: 'host',
-                name: 'name',
-                owner: 'owner',
-                system: false,
-                baseType: 'form',
-                id: formId
-            };
+        const form: ContentType = {
+            clazz: 'clazz',
+            defaultType: true,
+            fixed: true,
+            folder: 'folder',
+            host: 'host',
+            name: 'name',
+            owner: 'owner',
+            system: false,
+            baseType: 'form',
+            id: formId
+        };
 
-            dotContainerContentletService
-                .getFormToContainer(pageContainer, form)
-                .subscribe(resp => resp);
+        dotContainerContentletService
+            .getFormToContainer(pageContainer, form)
+            .subscribe((resp) => resp);
 
-            tick();
-            expect(lastConnection.request.url).toContain(
-                `v1/containers/${pageContainer.identifier}/form/${formId}`
-            );
-        })
-    );
+        expect(lastConnection.request.url).toContain(`v1/containers/form/2?containerId=1`);
+    });
 });
