@@ -235,9 +235,8 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
                         this.dotGlobalMessageService.display(
                             this.dotMessageService.get('dot.common.message.saved')
                         );
+                        this.reload();
                     });
-
-                this.reload();
             }
         });
 
