@@ -92,8 +92,7 @@ public class Task05040LanguageTableIdentityOff implements StartupTask  {
     @CloseDBIfOpened
     public void executeUpgrade() throws DotDataException, DotRuntimeException {
         Logger.debug(this, "Drop Auto-increment/Identity from `Language` Table definition.");
-        try {
-            final Connection conn = DbConnectionFactory.getDataSource().getConnection();
+        try (final Connection conn = DbConnectionFactory.getDataSource().getConnection()){
             conn.setAutoCommit(true);
             try {
                 final DotConnect dotConnect = new DotConnect();

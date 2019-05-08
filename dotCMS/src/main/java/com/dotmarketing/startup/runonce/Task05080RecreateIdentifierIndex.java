@@ -31,8 +31,7 @@ public class Task05080RecreateIdentifierIndex implements StartupTask {
     @Override
     @CloseDBIfOpened
     public void executeUpgrade() throws DotDataException, DotRuntimeException {
-        try {
-            final Connection conn = DbConnectionFactory.getDataSource().getConnection();
+        try (final Connection conn = DbConnectionFactory.getDataSource().getConnection()){
             conn.setAutoCommit(true);
             try {
                 dropAndRecreateIndex();
