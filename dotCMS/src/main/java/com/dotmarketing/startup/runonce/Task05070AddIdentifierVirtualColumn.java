@@ -34,6 +34,12 @@ public class Task05070AddIdentifierVirtualColumn implements StartupTask {
     @CloseDBIfOpened
     public void executeUpgrade() throws DotDataException, DotRuntimeException {
         try {
+            try {
+                DbConnectionFactory.getConnection().setAutoCommit(true);
+            } catch (SQLException e) {
+                throw new DotDataException(e.getMessage(), e);
+            }
+
             final Connection conn = DbConnectionFactory.getDataSource().getConnection();
             conn.setAutoCommit(true);
             try {
