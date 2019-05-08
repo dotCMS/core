@@ -115,23 +115,26 @@
 
     <script>
         function submitContent(event) {
-            e.preventDefault();
-            console.log('submitContent');
+            event.preventDefault();
+            console.log('submitContent', {
+                 stName: '${structure.name}',
+                 ...event.detail
+             });
 
             fetch('/api/content/save/1', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: {
+                body: JSON.stringify({
                     stName: '${structure.name}',
                     ...event.detail
-                }
+                })
             })
-                .then((response) => response.json())
-                .then((data) => {
-                    console.log(data);
-             });
+            .then((response) => response.json())
+            .then((data) => {
+                console.log(data);
+         });
         }
 
         const fieldsConfig = $UtilMethods.getJsonFieldTransformer($fields).jsonArray().toString();
