@@ -202,5 +202,9 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
     }
   }
 
+  @Override
+  public String toString() {
+    return "DEsde el toString";
+  }
 }
 
