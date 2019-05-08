@@ -263,7 +263,14 @@ public class ContainerResource implements Serializable {
 
 
     /**
+     * This method is pretty much the same of {@link #containerForm(HttpServletRequest, HttpServletResponse, String, String)}
+     * But there is a limitation on the vanity url for the rest call since the container id path parameter is a path itself
+     * (for {@link com.dotmarketing.portlets.containers.model.FileAssetContainer)} so we need to pass it by query string
      *
+     * <i>Example:</i>
+     * <code>
+     *     /api/v1/containers/form/27108d63-969e-4086-a405-86777be16230?containerId=/application/containers/large-column
+     * </code>
      * @param req
      * @param res
      * @param containerId
