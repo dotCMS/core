@@ -134,6 +134,10 @@ public class PortletAPIImpl implements PortletAPI {
         newMap.putAll(portlet.getInitParams());
         newMap.put("portletSource", "db");
 
+        //cleaning up whitespaces from content types and base types
+        newMap.put("contentTypes", String.join(",", contentTypes));
+        newMap.put("baseTypes", String.join(",", baseTypes));
+
         final Portlet newPortlet =  portletFac.insertPortlet(new Portlet(portletId, portlet.getPortletClass(),newMap));
         //Add Languague Variable
         Map<String, String> keys = ImmutableMap
@@ -257,6 +261,11 @@ public class PortletAPIImpl implements PortletAPI {
         }
 
         return contentTypeList;
+    }
+
+    @Override
+    public Portlet updatePortlet(final Portlet portlet) throws DotDataException{
+        return portletFac.updatePortlet(portlet);
     }
 
 }

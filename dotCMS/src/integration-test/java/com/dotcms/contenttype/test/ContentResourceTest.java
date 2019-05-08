@@ -27,10 +27,12 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.google.common.collect.Sets;
 import com.liferay.portal.model.User;
@@ -298,6 +300,8 @@ public class ContentResourceTest extends IntegrationTestBase {
             contentlets.put("grandChild2", grandChild2);
 
             //calls endpoint
+            Thread.sleep(10000);
+
             final ContentResource contentResource = new ContentResource();
             final HttpServletRequest request = createHttpRequest(null, testCase.limitedUser?userAPI.getAnonymousUser():null);
             final HttpServletResponse response = mock(HttpServletResponse.class);
@@ -399,9 +403,17 @@ public class ContentResourceTest extends IntegrationTestBase {
             final JSONObject contentlet, final Contentlet parent, final Contentlet child,
             final int depth) throws JSONException {
 
+        final String fieldVariable = parent.getContentType().fields().get(0).variable();
+
+        System.out.println("Field Variable: " + fieldVariable);
+
+        final Object object = contentlet
+                .get(fieldVariable);
+
+        System.out.println("This should be a JSON Object:" + object.toString());
+
         //validates child
-        assertEquals(child.getIdentifier(), ((JSONObject) contentlet
-                .get(parent.getContentType().fields().get(0).variable()))
+        assertEquals(child.getIdentifier(), ((JSONObject) object)
                 .get(IDENTIFIER));
 
         if (depth > 1) {

@@ -1031,8 +1031,10 @@
 	var portletListItemTemplate =
 	'<div id="listItem-${portletId}" class="view-roles__portlets-list-item">' +
 	'	${portletTitle}' +
+	'  <div style="text-align:right;white-space:nowrap;">' +
+	'   ${portletDelete}' +
 	'	<button id="removePortletButton${portletId}" dojoType="dijit.form.Button" type="button">' + removeMsg + '</button>' +
-	'</div>';
+	'</div></div>';
 
 	var portletsListSource;
 
@@ -1045,11 +1047,37 @@
 		registerPortletItemButton(portletId, portletTitle);
 
 	}
-
+	
+    function doPortletDelete(portletId){
+        if(portletId.indexOf("c_")!=0 || !confirm("<%= UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "custom.content.portlet.delete.confirm")) %>")){
+            return;
+        }
+      var xhrArgs = {
+          url : "/api/v1/portlet/custom/" + portletId,
+          handleAs: "json",
+          headers: {
+              "Content-Type": "application/json"
+              },
+          load : function(data){
+              removePortletFromList(portletId);
+              initializePortletInfoList();
+			  dijit.byId('portletList').reset();
+          },
+          error : function(error) {
+              alert("Error deleteing portlet: " + JSON.parse(error.responseText).message);
+              return false;
+          }
+      };
+      dojo.xhrDelete(xhrArgs);
+    }
+    
 	function getPortletItemHTML (portletId, portletTitle) {
 
 		portletId = norm(portletId);
-		var html = dojo.string.substitute(portletListItemTemplate, { portletTitle: portletTitle, portletId: portletId })
+
+		const portletDelete = (portletId.indexOf("c_")==0) ? `<div style='float:left;line-height:34px;padding:0px 20px;margin-right:10px;' class='dijitButtonText dijitButton' onclick='doPortletDelete("` + portletId + `")'><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "delete")) %></div>` : "";
+		
+		var html = dojo.string.substitute(portletListItemTemplate, { portletTitle: portletTitle, portletId: portletId, portletDelete: portletDelete })
 		return html;
 	}
 
@@ -1230,6 +1258,8 @@
 			return;
 
 		addPortletToHTMLList(portletId, portletTitle);
+
+		dijit.byId('portletList').reset();
 
 	}
 

@@ -11,8 +11,10 @@ import static com.dotmarketing.osgi.ActivatorUtil.unfreeze;
 import static com.dotmarketing.osgi.ActivatorUtil.unregisterAll;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.ArrayList;
@@ -131,8 +133,8 @@ public abstract class GenericBundleActivator implements BundleActivator {
             this.classReloadingStrategy = ClassReloadingStrategy.fromInstalledAgent();
         } catch (Exception e) {
             //Even if there is not a java agent set we should continue with the plugin processing
-            Logger.error(this,
-                    "Error reading ClassReloadingStrategy from bytebuddy [java agent not set?]", e);
+            Logger.warnAndDebug(this.getClass(),
+                    "Error reading ClassReloadingStrategy from agent [javaagent not set?].  Classpath overrides might not work: " + e.getMessage(), e);
         }
 
         //Override the classes found in the Override-Classes attribute
@@ -382,12 +384,12 @@ public abstract class GenericBundleActivator implements BundleActivator {
     @SuppressWarnings ("unchecked")
     protected Collection<Portlet> registerPortlets ( BundleContext context, String[] xmls ) throws Exception {
 
-        String[] confFiles = new String[]{Http.URLtoString( context.getBundle().getResource( xmls[0] ) ),
-                Http.URLtoString( context.getBundle().getResource( xmls[1] ) )};
-
-        //Read the portlets xml files and create them
-        portlets = PortletManagerUtil.addPortlets( confFiles );
-
+        this.portlets=(this.portlets==null) ? new ArrayList<>() : portlets;
+        for(String xml :xmls) {
+          try(InputStream input = new ByteArrayInputStream(Http.URLtoString(context.getBundle().getResource(xml)).getBytes("UTF-8"))){
+            portlets.addAll(PortletManagerUtil.addPortlets(new InputStream[]{input})); 
+          }
+        }
         for ( Portlet portlet : portlets ) {
 
             if ( portlet.getPortletClass().equals( "com.liferay.portlet.JSPPortlet" ) ) {
@@ -402,6 +404,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
                 //Copy all the resources inside the folder of the given resource to the corresponding dotCMS folders
                 moveResources( context, jspPath );
                 portlet.getInitParams().put( INIT_PARAM_VIEW_JSP, getBundleFolder( context, File.separator ) + jspPath );
+                APILocator.getPortletAPI().updatePortlet(portlet);
             } else if ( portlet.getPortletClass().equals( "com.liferay.portlet.VelocityPortlet" ) ) {
 
                 Map initParams = portlet.getInitParams();
@@ -414,10 +417,14 @@ public abstract class GenericBundleActivator implements BundleActivator {
                 //Copy all the resources inside the folder of the given resource to the corresponding velocity dotCMS folders
                 moveVelocityResources( context, templatePath );
                 portlet.getInitParams().put( INIT_PARAM_VIEW_TEMPLATE, getBundleFolder( context, File.separator ) + templatePath );
+                APILocator.getPortletAPI().updatePortlet(portlet);
             }
 
             Logger.info( this, "Added Portlet: " + portlet.getPortletId() );
         }
+
+        //Forcing a refresh of the portlets cache
+        APILocator.getPortletAPI().findAllPortlets();
 
         return portlets;
     }

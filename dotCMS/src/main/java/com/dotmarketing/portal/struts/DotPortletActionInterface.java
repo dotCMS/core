@@ -51,5 +51,5 @@ public interface DotPortletActionInterface {
 
 //	public abstract void _unPublishWebAsset(ActionRequest req, ActionResponse res,PortletConfig config,ActionForm form, User user) throws Exception;
 		
-//  public abstract void _retrieveWebAsset(ActionRequest req, ActionResponse res,PortletConfig config,ActionForm form, User user) throws Exception;
+//  public abstract void retrieveWebAsset(ActionRequest req, ActionResponse res,PortletConfig config,ActionForm form, User user) throws Exception;
 }

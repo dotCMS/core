@@ -84,7 +84,7 @@ public class ContentTypeResource implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 
-	public static final String SELECTED_STRUCTURE_KEY = "selectedStructure";
+	static final String SELECTED_STRUCTURE_KEY = "selectedStructure";
 
 	@POST
 	@JSONP
@@ -259,9 +259,6 @@ public class ContentTypeResource implements Serializable {
 	@JSONP
 	@NoCache
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-	/**
-	 * @deprecated use {@link com.dotcms.rest.api.v2.contenttype.ContentTypeResource#getType(String, HttpServletRequest)}
-	 */
 	public Response getType(@PathParam("idOrVar") final String idOrVar, @Context final HttpServletRequest req)
 			throws DotDataException {
 

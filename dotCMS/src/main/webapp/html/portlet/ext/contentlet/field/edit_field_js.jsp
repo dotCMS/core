@@ -123,6 +123,13 @@ var cmsfile=null;
 		}
 
 		field.value = dateValue;
+
+		if(typeof updateStartRecurrenceDate === 'function' && (varName == 'startDate' || varName == 'endDate')){
+
+
+             updateStartRecurrenceDate(varName);
+
+		}
 	}
 
 	  function removeThumbnail(x, inode) {

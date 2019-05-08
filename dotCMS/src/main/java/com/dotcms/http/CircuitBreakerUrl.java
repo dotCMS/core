@@ -1,31 +1,30 @@
 package com.dotcms.http;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.net.URISyntaxException;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletResponse;
-
-import org.apache.commons.io.IOUtils;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpRequestBase;
-import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
-
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.URISyntaxException;
+import java.util.Map;
+import javax.servlet.http.HttpServletResponse;
 import net.jodah.failsafe.CircuitBreaker;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.FailsafeException;
+import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 
 /**
  * Defaults to GET requests with 2000 timeout
@@ -52,6 +51,7 @@ public class CircuitBreakerUrl {
     private final CircuitBreaker circuitBreaker;
     private final HttpRequestBase request;
     private final boolean verbose;
+    private final String rawData;
     /**
      * 
      * @param proxyUrl
@@ -66,8 +66,7 @@ public class CircuitBreakerUrl {
      * @param timeoutMs
      */
     public CircuitBreakerUrl(final String proxyUrl, final long timeoutMs) {
-        this(proxyUrl, timeoutMs, CurcuitBreakerPool.getBreaker(proxyUrl + timeoutMs), new HttpGet(proxyUrl), ImmutableMap.of(),
-                ImmutableMap.of(), false);
+        this(proxyUrl, timeoutMs, CurcuitBreakerPool.getBreaker(proxyUrl + timeoutMs), false);
     }
     
     /**
@@ -78,20 +77,12 @@ public class CircuitBreakerUrl {
      * @param circuitBreaker
      */
     public CircuitBreakerUrl(final String proxyUrl, final long timeoutMs, final CircuitBreaker circuitBreaker) {
-        this(proxyUrl, timeoutMs, circuitBreaker, new HttpGet(proxyUrl), ImmutableMap.of(), ImmutableMap.of(), false);
+        this(proxyUrl, timeoutMs, circuitBreaker, false);
     }
 
-    /**
-     * Pass in the String "key" for your circuit breaker, e.g. the url or hostname + params
-     * @param proxyUrl
-     * @param timeoutMs
-     * @param circuitBreakerKey
-     */
-    public CircuitBreakerUrl(final String proxyUrl, final long timeoutMs, final String circuitBreakerKey) {
-        this(proxyUrl, timeoutMs, CurcuitBreakerPool.getBreaker(circuitBreakerKey), new HttpGet(proxyUrl), ImmutableMap.of(),
-                ImmutableMap.of(), false);
+    public CircuitBreakerUrl(String proxyUrl, long timeoutMs, CircuitBreaker circuitBreaker, boolean verbose) {
+      this(proxyUrl, timeoutMs, circuitBreaker, new HttpGet(proxyUrl), ImmutableMap.of(),ImmutableMap.of(), verbose, null);
     }
-
     /**
      * Full featured constructor
      * 
@@ -104,17 +95,31 @@ public class CircuitBreakerUrl {
      */
     @VisibleForTesting
     public CircuitBreakerUrl(String proxyUrl, long timeoutMs, CircuitBreaker circuitBreaker, HttpRequestBase request,
-            Map<String, String> params, Map<String, String> headers, boolean verbose) {
+            Map<String, String> params, Map<String, String> headers, boolean verbose, final String rawData) {
         this.proxyUrl = proxyUrl;
         this.timeoutMs = timeoutMs;
         this.circuitBreaker = circuitBreaker;
         this.verbose=verbose;
         this.request = request;
+        this.rawData=rawData;
         for (final String head : headers.keySet()) {
             request.addHeader(head, headers.get(head));
         }
         try {
-            URIBuilder uriBuilder = new URIBuilder(this.proxyUrl);
+            final URIBuilder uriBuilder = new URIBuilder(this.proxyUrl);
+            if(this.rawData!=null) {
+              try {
+                final String contentType = this.rawData.trim().charAt(0)=='{' ? "application/json" : this.rawData.trim().startsWith("<") ? "application/xml" : "application/x-www-form-urlencoded";
+                
+                final StringEntity postingString = new StringEntity(rawData, ContentType.create(contentType, "UTF-8"));
+                if(request instanceof HttpEntityEnclosingRequestBase) {
+                  ((HttpEntityEnclosingRequestBase)request).setEntity(postingString);
+                }
+              }
+              catch(Exception e) {
+                Logger.warnAndDebug(this.getClass(), "unable to set rawData",e);
+              }
+            }
             for (final String param : params.keySet()) {
                 uriBuilder.addParameter(param, params.get(param));
             }
@@ -148,7 +153,8 @@ public class CircuitBreakerUrl {
                     .onSuccess(connection -> { 
                         if(verbose) Logger.info(this, "success to " + this.proxyUrl);
                     })
-                    .onFailure(failure -> Logger.warn(this, "Connection attempts failed " + failure.getMessage())).run(ctx -> {
+                    .onFailure(failure -> Logger.warn(this, "Connection attempts failed " + failure.getMessage()))
+                    .run(ctx -> {
                         RequestConfig config = RequestConfig.custom()
                                 .setConnectTimeout(Math.toIntExact(this.timeoutMs))
                                 .setConnectionRequestTimeout(Math.toIntExact(this.timeoutMs))

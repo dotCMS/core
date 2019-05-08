@@ -1,9 +1,12 @@
 
 package com.dotmarketing.business.portal;
-
+import com.dotmarketing.util.UtilMethods;
 import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -18,8 +21,17 @@ import org.jdom.JDOMException;
 import org.jdom.input.SAXBuilder;
 import org.jdom.output.Format;
 import org.jdom.output.XMLOutputter;
+
+import com.dotcms.api.system.event.Payload;
+import com.dotcms.api.system.event.SystemEventType;
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
+import com.dotcms.repackage.javax.ws.rs.core.Response;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
@@ -29,6 +41,7 @@ import com.liferay.portal.model.Portlet;
 import com.liferay.util.FileUtil;
 
 import io.vavr.control.Try;
+import org.xml.sax.InputSource;
 
 public class PortletFactoryImpl extends PrincipalBean implements PortletFactory {
 
@@ -49,10 +62,20 @@ public class PortletFactoryImpl extends PrincipalBean implements PortletFactory 
     if (pathToXmlFile == null) {
       return portlets;
     }
+    InputStream stream = new FileInputStream(new File(pathToXmlFile));
+    return xmlToPortlets(stream);
+  }
+
+  private Map<String, Portlet> xmlToPortlets(InputStream fileStream) throws IOException, JDOMException {
+
+    final Map<String, Portlet> portlets = new HashMap<>();
+
+    if (fileStream == null) {
+      return portlets;
+    }
 
     SAXBuilder builder = new SAXBuilder();
-    // reader.setEntityResolver(resolver);
-    Document doc = (Document) builder.build(pathToXmlFile);
+    Document doc = builder.build(fileStream);
 
     List<Element> list = doc.getRootElement().getChildren("portlet");
 
@@ -107,12 +130,28 @@ public class PortletFactoryImpl extends PrincipalBean implements PortletFactory 
   }
 
   @Override
+  public Map<String, Portlet> xmlToPortlets(final InputStream[] xmlFiles) throws com.liferay.portal.SystemException {
+    final Map<String, Portlet> portlets = new HashMap<>();
+    for (final InputStream xml : xmlFiles) {
+      try {
+        portlets.putAll(xmlToPortlets(xml));
+      } catch (final Exception e) {
+        throw new SystemException(e);
+      }
+    }
+    return portlets;
+  }
+
+  @Override
   public void deletePortlet(final String portletId) throws DotDataException {
 
     final DotConnect db = new DotConnect();
     db.setSQL("delete from portletpreferences where portletid=?").addParam(portletId).loadResult();
     db.setSQL("delete from portlet where portletid=?").addParam(portletId).loadResult();
-    new PortletCache().clear();
+    db.setSQL("delete from cms_layouts_portlets where portlet_id=?" ).addParam(portletId).loadResult();
+    CacheLocator.getPortletCache().clearCache();
+    CacheLocator.getLayoutCache().clearCache();
+    APILocator.getSystemEventsAPI().pushAsync(SystemEventType.UPDATE_PORTLET_LAYOUTS, new Payload());
   }
 
   @Override
@@ -166,7 +205,7 @@ public class PortletFactoryImpl extends PrincipalBean implements PortletFactory 
 
     return getPortletMap().values();
   }
-
+  @CloseDBIfOpened
   public List<Portlet> findAllDb() throws DotDataException {
 
     DotConnect db = new DotConnect();
@@ -191,7 +230,7 @@ public class PortletFactoryImpl extends PrincipalBean implements PortletFactory 
     }
     return portlets;
   }
-
+  
   private Optional<DotPortlet> fromMap(final Map<String, Object> map) {
     final Portlet portlet = new Portlet((String) map.get("portletid"), (String) map.get("groupid"), (String) map.get("companyid"),
         (String) map.get("defaultpreferences"), false, (String) map.get("roles"), true);
@@ -205,6 +244,7 @@ public class PortletFactoryImpl extends PrincipalBean implements PortletFactory 
 
   }
 
+  @WrapInTransaction
   @Override
   public Portlet insertPortlet(final Portlet portlet) throws DotDataException {
     if (doesPortletExistInDb(portlet)) {
@@ -213,8 +253,14 @@ public class PortletFactoryImpl extends PrincipalBean implements PortletFactory 
 
     final String portletXML = portletToXml(portlet);
     new DotConnect().setSQL(
-        "insert into portlet (portletid, groupid, companyid, defaultpreferences, narrow, roles, active_) values(?,?,?,?,false,null,true)")
-        .addParam(portlet.getPortletId()).addParam(portlet.getGroupId()).addParam(portlet.getCompanyId()).addParam(portletXML).loadResult();
+        "insert into portlet (portletid, groupid, companyid, defaultpreferences, narrow, active_) values(?,?,?,?,?,?)")
+        .addParam(portlet.getPortletId())
+            .addParam(UtilMethods.isSet(portlet.getGroupId())?portlet.getGroupId():"SHARED_KEY")
+            .addParam(portlet.getCompanyId())
+            .addParam(portletXML)
+            .addParam(portlet.getNarrow())
+            .addParam(portlet.getActive())
+            .loadResult();
 
     new PortletCache().clear();
 
@@ -222,7 +268,7 @@ public class PortletFactoryImpl extends PrincipalBean implements PortletFactory 
 
   }
 
-
+  @WrapInTransaction
   @Override
   public Portlet updatePortlet(final Portlet portlet) throws DotDataException {
 

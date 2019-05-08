@@ -27,7 +27,7 @@ public class CircuitBreakerUrlBuilder {
     int failAfter = CurcuitBreakerPool.FAIL_AFTER;
     int tryAgainAttempts = CurcuitBreakerPool.TRY_AGAIN_ATTEMPTS;
     int tryAgainAfterDelay = CurcuitBreakerPool.TRY_AGAIN_DELAY_SEC;
-
+    String rawData = null;
 
     public CircuitBreakerUrlBuilder setUrl(String proxyUrl) {
         this.proxyUrl = proxyUrl;
@@ -49,11 +49,14 @@ public class CircuitBreakerUrlBuilder {
         return this;
     }
 
-
-
-
     public CircuitBreakerUrlBuilder setTryAgainAttempts(int tryAgainAttempts) {
-        this.tryAgainAttempts = tryAgainAttempts;
+      this.tryAgainAttempts = tryAgainAttempts;
+      return this;
+  }
+
+
+    public CircuitBreakerUrlBuilder setRawData(String rawData) {
+        this.rawData = rawData;
         return this;
     }
 
@@ -118,7 +121,7 @@ public class CircuitBreakerUrlBuilder {
                 break;
         }
 
-        return new CircuitBreakerUrl(this.proxyUrl, this.timeout, this.circuitBreaker, request, this.params, this.headers, this.verbose);
+        return new CircuitBreakerUrl(this.proxyUrl, this.timeout, this.circuitBreaker, request, this.params, this.headers, this.verbose, this.rawData);
 
 
     }
