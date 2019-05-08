@@ -15,7 +15,7 @@ import java.util.List;
  */
 public class Task04340TemplateShowOnMenu extends AbstractJDBCStartupTask {
 
-    private static final String UPDATE_TEMPLATE = "UPDATE Template SET show_on_menu = " + DbConnectionFactory.getDBTrue()
+    private static final String UPDATE_TEMPLATE = "UPDATE template SET show_on_menu = " + DbConnectionFactory.getDBTrue()
             + " WHERE TITLE NOT LIKE 'anonymous_layout_%'";
 
     @Override
