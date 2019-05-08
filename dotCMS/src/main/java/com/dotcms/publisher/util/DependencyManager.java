@@ -423,8 +423,13 @@ public class DependencyManager {
 				// Container dependencies
 				final List<Container> containerList = APILocator.getContainerAPI().findContainersUnder(h);
 				for (Container container : containerList) {
-					 containers.addOrClean( container.getIdentifier(), container.getModDate());
-					 containersSet.add(container.getIdentifier());
+
+					if (container instanceof FileAssetContainer) {
+						fileAssetContainersSet.add(container.getIdentifier());
+					} else {
+						containers.addOrClean(container.getIdentifier(), container.getModDate());
+						containersSet.add(container.getIdentifier());
+					}
 				}
 
 				// Content dependencies
