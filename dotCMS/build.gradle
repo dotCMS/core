@@ -181,10 +181,10 @@ dependencies {
     felix (group: 'org.osgi', name: 'org.osgi.compendium', version: '4.3.1') {
         transitive = false
     }
-    felix(group: 'org.apache.tika', name: 'tika-core', version: '1.20') {
+    felix(group: 'org.apache.tika', name: 'tika-core', version: '1.19') {
         transitive = false
     }
-    felix(group: 'org.apache.tika', name: 'tika-bundle', version: '1.20') {
+    felix(group: 'org.apache.tika', name: 'tika-bundle', version: '1.19') {
         transitive = false
     }
     felix group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.25'
@@ -889,8 +889,9 @@ class ClonePullTomcatTask extends DefaultTask{
 
             try {
 
-                println "Cloning the $project.tomcatInstallRepo, branch $project.tomcatInstallBranch on $tomcatLocation";
-                org.ajoberstar.grgit.Grgit.clone(dir: "$tomcatLocation", uri: "$project.tomcatInstallRepo", refToCheckout: "$project.tomcatInstallBranch")
+                def tomcatPath = folder.getPath();
+                println "Cloning the $project.tomcatInstallRepo, branch $project.tomcatInstallBranch on $tomcatPath";
+                org.ajoberstar.grgit.Grgit.clone(dir: "$tomcatPath", uri: "$project.tomcatInstallRepo", refToCheckout: "$project.tomcatInstallBranch")
             } catch (Exception exception) {
                 //Do nothing, this will fail only if git is not installed on this machine
             }
