@@ -12,7 +12,6 @@ export class DotInputCalendarComponent {
     @Prop({ mutable: true })
     value: string;
     @Prop() name: string;
-    @Prop() label: string;
     @Prop() hint: string;
     @Prop() required: boolean;
     @Prop() requiredMessage: string;
@@ -34,8 +33,8 @@ export class DotInputCalendarComponent {
     reset(): void {
         this.value = '';
         this.status = getOriginalStatus(this.isValid());
-        this.emitStatusChange();
         this.emitValueChange();
+        this.emitStatusChange();
     }
 
     componentWillLoad(): void {
@@ -135,7 +134,11 @@ export class DotInputCalendarComponent {
     private emitValueChange(): void {
         this._valueChange.emit({
             name: this.name,
-            value: this.value
+            value: this.formattedValue()
         });
+    }
+
+    private formattedValue(): string {
+        return this.value.length === 5 ? `${this.value}:00` : this.value;
     }
 }

@@ -36,6 +36,7 @@ const fieldMap = {
     Radio: DotFormFields.Radio,
     Date: DotFormFields.Date,
     Time: DotFormFields.Time,
+    'Date-and-Time': DotFormFields['Date-and-Time'],
     'Date-Range': DotFormFields['Date-Range']
 };
 

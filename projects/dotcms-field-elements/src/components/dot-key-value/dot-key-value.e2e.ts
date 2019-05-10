@@ -108,6 +108,7 @@ describe('dot-key-value', () => {
             });
 
             it('should emit status and value on "deleteItemEvt" and remove the row in "Key-Value-Table" event', async () => {
+                const deleteItemEvt = await page.spyOnEvent('deleteItemEvt');
                 await element.triggerEvent('deleteItemEvt', {
                     bubbles: true,
                     cancelable: false,
@@ -130,6 +131,7 @@ describe('dot-key-value', () => {
                     fieldType: 'Key-Value',
                     value: ''
                 });
+                expect(deleteItemEvt.length).toEqual(0);
             });
         });
     });

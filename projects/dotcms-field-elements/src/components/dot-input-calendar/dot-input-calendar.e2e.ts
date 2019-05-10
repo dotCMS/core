@@ -102,5 +102,18 @@ describe('dot-input-calendar', () => {
                 message: ''
             });
         });
+
+        it('should emit time value correctly with 0 seconds', async () => {
+            await input.press('Tab');
+            await input.press('Tab');
+            await input.press('0');
+            await page.waitForChanges();
+
+            expect(spyValueChange).toHaveReceivedEventDetail({
+                name: 'time01',
+                value: '18:30:00'
+            });
+        });
+
     });
 });

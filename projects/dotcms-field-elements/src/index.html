@@ -123,6 +123,19 @@
                 step: '10',
                 min: '08:00:00',
                 max: '22:00:00'
+            },
+            {
+                fieldType: 'Date-and-Time',
+                name: 'Set Date and Time:',
+                defaultValue: '2019-01-20 11:10:00',
+                hint: 'date & time hint',
+                required: true,
+                requiredMessage: 'Required Time',
+                validationMessage: 'Value out of range',
+                variable: 'dt01',
+                step: '2,10',
+                min: '2000-01-01 1:00:00',
+                max: '2020-10-30 23:59:59'
             }];
 
             window.onload = function() {

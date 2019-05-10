@@ -93,7 +93,6 @@ export class DotDateComponent {
                 <dot-input-calendar
                     disabled={this.disabled}
                     type="date"
-                    label={this.label}
                     name={this.name}
                     hint={this.hint}
                     value={this.value}
