@@ -1,5 +1,13 @@
 package com.dotcms.rest;
 
+import com.dotcms.repackage.javax.ws.rs.QueryParam;
+import com.dotcms.repackage.javax.ws.rs.core.Response;
+import com.dotcms.rest.api.v1.authentication.ResponseUtil;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.model.User;
 import java.util.List;
 import java.util.Map;
 
@@ -44,14 +52,52 @@ public class TagResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public Map<String, RestTag> list(@Context HttpServletRequest request) {
-        TagTransform transform = new TagTransform();
-        List<Tag> tags = getTagsInternal();
+    public Map<String, RestTag> list(@Context final HttpServletRequest request,
+            @QueryParam("name") final String  tagName,
+            @QueryParam("siteOrFolder") final String siteOrFolderId) {
+
+        final InitDataObject initDataObject = this.webResource.init
+                (null, true, request, true, null);
+
+        final User user = initDataObject.getUser();
+
+        List<Tag> tags;
+
+        if(UtilMethods.isSet(tagName)) {
+            tags = searchTagsInternal(tagName, siteOrFolderId, user);
+        } else {
+            tags = getTagsInternal();
+        }
+
         Map<String, RestTag> hash = Maps.newHashMapWithExpectedSize(tags.size());
+        TagTransform transform = new TagTransform();
         for (Tag tag : tags) {
             hash.put(tag.getTagName(), transform.appToRest(tag));
         }
         return hash;
+    }
+
+    private List<Tag> searchTagsInternal(
+            @QueryParam("name") String tagName,
+            @QueryParam("siteOrFolder") String siteOrFolderId,
+            User user) {
+        List<Tag> tags;
+
+        try {
+            Host host = APILocator.getHostAPI().find(siteOrFolderId, user, false);
+            String internalSiteOrFolderId = siteOrFolderId;
+
+            if ((!UtilMethods.isSet(host) || !UtilMethods.isSet(host.getInode()))
+                    && UtilMethods.isSet(siteOrFolderId)) {
+                internalSiteOrFolderId = APILocator.getFolderAPI()
+                        .find(siteOrFolderId, user, false).getHostId();
+            }
+
+            tags = APILocator.getTagAPI().getSuggestedTag(tagName, internalSiteOrFolderId);
+        } catch (DotDataException | DotSecurityException e) {
+            throw new BadRequestException(e, e.getMessage());
+        }
+        return tags;
     }
 
     private List<Tag> getTagsInternal() {
