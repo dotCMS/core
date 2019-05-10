@@ -13,11 +13,12 @@
     "scripts": {
         "build": "stencil build --docs",
         "build.watch": "stencil build --watch",
-        "start": "stencil build --dev --watch --serve",
+        "start": "stencil build --dev --docs --watch --serve",
         "test": "stencil test --spec --e2e",
         "test.watch": "stencil test --spec --e2e --watchAll"
     },
     "dependencies": {
+        "flatpickr": "^4.5.7",
         "stencil-fragment": "^1.0.1"
     },
     "devDependencies": {

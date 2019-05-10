@@ -28,13 +28,13 @@ export class DotTextfieldComponent {
     @Prop() requiredMessage: string;
     @Prop() disabled = false;
 
-    @State() status: DotFieldStatus = getOriginalStatus();
+    @State() status: DotFieldStatus;
 
     @Event() valueChange: EventEmitter<DotFieldValueEvent>;
     @Event() statusChange: EventEmitter<DotFieldStatusEvent>;
 
     /**
-     * Reset properties of the filed, clear value and emit events.
+     * Reset properties of the field, clear value and emit events.
      */
     @Method()
     reset(): void {
@@ -45,6 +45,7 @@ export class DotTextfieldComponent {
     }
 
     componentWillLoad(): void {
+        this.status = getOriginalStatus(this.isValid());
         this.emitStatusChange();
     }
 

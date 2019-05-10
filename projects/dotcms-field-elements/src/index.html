@@ -17,6 +17,16 @@
         <script>
             const fieldsConfig = [
             {
+                fieldType: 'Date-Range',
+                name: 'Enter Date:',
+                defaultValue: '2019-11-25,2019-11-27',
+                hint: 'date hint',
+                required: true,
+                requiredMessage: 'Required Date range',
+                variable: 'daterange01',
+                min: '2019-01-01',
+                max: '2019-12-30'
+           }, {
                 fieldType: 'Text',
                 name: 'Name:',
                 defaultValue: 'John',

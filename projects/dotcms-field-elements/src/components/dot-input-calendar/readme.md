@@ -1,4 +1,4 @@
-# dot-date
+# dot-input-calendar
 
 
 
@@ -18,16 +18,18 @@
 | `required`          | `required`           |             | `boolean` | `undefined` |
 | `requiredMessage`   | `required-message`   |             | `string`  | `undefined` |
 | `step`              | `step`               |             | `string`  | `undefined` |
+| `type`              | `type`               |             | `string`  | `undefined` |
 | `validationMessage` | `validation-message` |             | `string`  | `undefined` |
 | `value`             | `value`              |             | `string`  | `undefined` |
 
 
 ## Events
 
-| Event          | Description | Type                               |
-| -------------- | ----------- | ---------------------------------- |
-| `statusChange` |             | `CustomEvent<DotFieldStatusEvent>` |
-| `valueChange`  |             | `CustomEvent<DotFieldValueEvent>`  |
+| Event           | Description | Type                               |
+| --------------- | ----------- | ---------------------------------- |
+| `_errorMessage` |             | `CustomEvent<void>`                |
+| `_statusChange` |             | `CustomEvent<DotFieldStatusEvent>` |
+| `_valueChange`  |             | `CustomEvent<DotFieldValueEvent>`  |
 
 
 ## Methods

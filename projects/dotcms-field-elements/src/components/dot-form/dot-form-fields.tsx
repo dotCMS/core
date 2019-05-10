@@ -134,5 +134,19 @@ export const DotFormFields = {
             max={field.max}
             step={field.step}
         />
+    ),
+
+    'Date-Range': (field: DotCMSDateField) => (
+        <dot-date-range
+            disabled={field.disabled}
+            label={field.name}
+            max={field.max}
+            min={field.min}
+            name={field.variable}
+            hint={field.hint}
+            value={field.defaultValue}
+            required={field.required}
+            required-message={field.requiredMessage}
+        />
     )
 };

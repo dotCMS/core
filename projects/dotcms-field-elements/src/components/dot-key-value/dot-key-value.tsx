@@ -48,7 +48,7 @@ export class DotKeyValueComponent {
     fieldInput: DotKeyValueField = { key: '', value: '' };
 
     /**
-     * Reset properties of the filed, clear value and emit events.
+     * Reset properties of the field, clear value and emit events.
      */
     @Method()
     reset(): void {

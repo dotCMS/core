@@ -1,7 +1,7 @@
 import { Component, Element, Event, EventEmitter, Listen, Prop, State } from '@stencil/core';
 import { DotCMSContentTypeField, DotFieldStatus, DotCMSKeyValueField } from '../../models';
 import { DotFormFields } from './dot-form-fields';
-import { getClassNames, getOriginalStatus, getStringFromDotKeyArray } from '../../utils';
+import { getClassNames, getOriginalStatus, getStringFromDotKeyArray, updateStatus } from '../../utils';
 
 const fieldParamsConversionToBE = {
     'Key-Value': (values: string): { [key: string]: string } => {
@@ -35,7 +35,8 @@ const fieldMap = {
     Select: DotFormFields.Select,
     Radio: DotFormFields.Radio,
     Date: DotFormFields.Date,
-    Time: DotFormFields.Time
+    Time: DotFormFields.Time,
+    'Date-Range': DotFormFields['Date-Range']
 };
 
 @Component({
@@ -78,9 +79,11 @@ export class DotFormComponent {
     @Listen('statusChange')
     onStatusChange(event: CustomEvent): void {
         this.fieldsStatus[event.detail.name] = event.detail.status;
-        this.status.dotPristine = this.getStatusValue('dotPristine');
-        this.status.dotTouched = this.getStatusValue('dotTouched');
-        this.status.dotValid = this.getStatusValue('dotValid');
+        this.status = updateStatus(this.status, {
+            dotTouched: this.getStatusValue('dotTouched'),
+            dotPristine: this.getStatusValue('dotPristine'),
+            dotValid: this.getStatusValue('dotValid')
+        });
     }
 
     hostData() {
