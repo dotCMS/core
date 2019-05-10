@@ -1,0 +1,69 @@
+{
+  "namespace": "dotcmsFields",
+  "fsNamespace": "dotcmsfields",
+  "loader": "../dotcmsfields.js",
+  "core": "dotcmsfields.d5kwydai.js",
+  "corePolyfilled": "dotcmsfields.mlvirq5c.js",
+  "components": {
+    "dot-checkbox": {
+      "bundleIds": {
+        "$": "gkca00av"
+      }
+    },
+    "dot-date": {
+      "bundleIds": {
+        "$": "gkca00av"
+      }
+    },
+    "dot-form": {
+      "bundleIds": {
+        "$": "gkca00av"
+      }
+    },
+    "dot-input-calendar": {
+      "bundleIds": {
+        "$": "cywl4q5t"
+      }
+    },
+    "dot-key-value": {
+      "bundleIds": {
+        "$": "yfo5lmlg"
+      }
+    },
+    "dot-multi-select": {
+      "bundleIds": {
+        "$": "gkca00av"
+      }
+    },
+    "dot-radio": {
+      "bundleIds": {
+        "$": "gkca00av"
+      }
+    },
+    "dot-select": {
+      "bundleIds": {
+        "$": "gkca00av"
+      }
+    },
+    "dot-textarea": {
+      "bundleIds": {
+        "$": "gkca00av"
+      }
+    },
+    "dot-textfield": {
+      "bundleIds": {
+        "$": "gkca00av"
+      }
+    },
+    "dot-time": {
+      "bundleIds": {
+        "$": "gkca00av"
+      }
+    },
+    "key-value-table": {
+      "bundleIds": {
+        "$": "yfo5lmlg"
+      }
+    }
+  }
+}
