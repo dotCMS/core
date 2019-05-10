@@ -12,10 +12,5 @@ export interface DotContentletEventSave extends DotContentletEvent<DotPageConten
 
 export interface DotRelocatePayload {
     container: DotPageContainer;
-    contentlet: DotContentletPayload;
-}
-
-interface DotContentletPayload {
-    identifier: string;
-    inode: string;
+    contentlet: DotPageContent;
 }

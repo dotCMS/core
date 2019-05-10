@@ -33,7 +33,7 @@ describe('dot-time', () => {
 
     it('should render', () => {
         // tslint:disable-next-line:max-line-length
-        const tagsRenderExpected = `<dot-time label=\"Time:\" name=\"time01\" value=\"18:30:30\" hint=\"Time hint\" required=\"\" required-message=\"Required Time\" validation-message=\"Time out of range\" min=\"06:00:00\" max=\"22:00:00\" step=\"10\" class=\"dot-valid dot-pristine dot-untouched dot-required hydrated\"><div class=\"dot-field__label\"><label for=\"time01\">Time:</label><span class=\"dot-field__required-mark\">*</span></div><dot-input-calendar type=\"time\" required-message=\"Required Time\" validation-message=\"Time out of range\" class=\"hydrated\"><input id=\"time01\" required=\"\" type=\"time\" min=\"06:00:00\" max=\"22:00:00\" step=\"10\"></dot-input-calendar><span class=\"dot-field__hint\">Time hint</span></dot-time>`;
+        const tagsRenderExpected = `<dot-time label=\"Time:\" name=\"time01\" value=\"18:30:30\" hint=\"Time hint\" required=\"\" required-message=\"Required Time\" validation-message=\"Time out of range\" min=\"06:00:00\" max=\"22:00:00\" step=\"10\" class=\"dot-valid dot-pristine dot-untouched dot-required hydrated\"><div class=\"dot-field__label\"><label for=\"dot-time01\">Time:</label><span class=\"dot-field__required-mark\">*</span></div><dot-input-calendar type=\"time\" required-message=\"Required Time\" validation-message=\"Time out of range\" class=\"hydrated\"><input id=\"dot-time01\" required=\"\" type=\"time\" min=\"06:00:00\" max=\"22:00:00\" step=\"10\"></dot-input-calendar><span class=\"dot-field__hint\">Time hint</span></dot-time>`;
         expect(element.outerHTML).toBe(tagsRenderExpected);
     });
 

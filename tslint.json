@@ -8,6 +8,7 @@
         "max-classes-per-file": false,
         "use-view-encapsulation": false,
         "whitespace": [true, "check-branch", "check-operator", "check-separator", "check-type"],
+        "quotemark": [true, "single", "jsx-double"],
         "member-ordering": [
             true,
             {

@@ -71,7 +71,7 @@ export function getClassNames(status: DotFieldStatus, isValid: boolean, required
  * @returns JSX.Element
  */
 export function getTagHint(hint: string): JSX.Element {
-    return hint ? <span class='dot-field__hint'>{hint}</span> : '';
+    return hint ? <span class="dot-field__hint">{hint}</span> : '';
 }
 
 /**
@@ -82,7 +82,7 @@ export function getTagHint(hint: string): JSX.Element {
  * @returns JSX.Element
  */
 export function getTagError(show: boolean, message: string): JSX.Element {
-    return show ? <span class='dot-field__error-message'>{message}</span> : '';
+    return show ? <span class="dot-field__error-message">{message}</span> : '';
 }
 
 /**
@@ -93,9 +93,9 @@ export function getTagError(show: boolean, message: string): JSX.Element {
  * @returns JSX.Element
  */
 export function getTagLabel(params: DotLabel): JSX.Element {
-    return <div class='dot-field__label'>
-                <label htmlFor={params.name}>{params.label}</label>
-                { params.required ? <span class='dot-field__required-mark'>*</span> : ''}
+    return <div class="dot-field__label">
+                <label htmlFor={getId(params.name)}>{params.label}</label>
+                { params.required ? <span class="dot-field__required-mark">*</span> : ''}
             </div>;
 }
 
@@ -121,4 +121,8 @@ export function getStringFromDotKeyArray(values: DotKeyValueField[]): string {
             return `${item.key}|${item.value}`;
         })
         .join(',');
+}
+
+export function getId(name: string): string {
+    return `dot-${name}`;
 }

@@ -13,6 +13,7 @@ Build the interal libraries (until we publish it to npm). `dotcms-js` needs to b
 ng build dotcms-js
 ng build dot-layout-grid
 ng build dot-rules
+ng build dotcms
 ```
 
 You should see now the folders:
@@ -21,6 +22,7 @@ You should see now the folders:
 dist-lib/dot-layout-grid
 dist-lib/dot-rules
 dist-lib/dotcms-js
+dist-lib/dotcms
 ```
 
 ## Run for DotCMS
@@ -145,3 +147,33 @@ component-name/
 ├── component-name.component.html
 └── component-name.component.spec.ts
 ```
+
+## Libraries
+
+### Custom Elements for Form Builder
+We create a project to build a [Web Custom Element](https://developer.mozilla.org/en-US/docs/Web/Web_Components) for each DotCMS field in the system. We use [StencilJS](https://stenciljs.com/) to build them.
+
+This project live in the folder: `/projects/dotcms-field-elements` and to build the library into DotCMS:
+
+1. Edit the `projects/dotcms-field-elements/stencil.config.ts`
+
+```diff
+diff --git a/projects/dotcms-field-elements/stencil.config.ts b/projects/dotcms-field-elements/stencil.config.ts
+index c3cba78b..a2476cbc 100644
+--- a/projects/dotcms-field-elements/stencil.config.ts
++++ b/projects/dotcms-field-elements/stencil.config.ts
+@@ -8,6 +8,7 @@ export const config: Config = {
+     { type: 'docs' },
+     {
+       type: 'www',
++      buildDir: '{path-to-dotcms-core}/dotCMS/src/main/webapp/custom-elements',
+       serviceWorker: null // disable service workers
+     }
+   ],
+
+```
+
+2. Go to `/projects/dotcms-field-elements/`
+3. Run `npm run build`
+
+Commit and push the files in DotCMS core repo. **DONT commit the changes in stencil.config.ts**.

@@ -71,7 +71,7 @@ export class DotCheckboxComponent {
                         <Fragment>
                             <input
                                 class={getErrorClass(this.isValid())}
-                                type='checkbox'
+                                type="checkbox"
                                 disabled={this.disabled || null}
                                 id={trimmedValue}
                                 checked={this.value.indexOf(trimmedValue) >= 0 || null}

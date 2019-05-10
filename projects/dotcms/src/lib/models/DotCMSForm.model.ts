@@ -8,6 +8,7 @@ export interface DotCMSFormConfig {
         submit?: string,
         reset?: string
     };
+    win?: Window;
     onSuccess?(data: any): any;
     onError?(error: any): any;
 }

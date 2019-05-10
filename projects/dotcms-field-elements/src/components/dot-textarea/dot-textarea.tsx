@@ -8,7 +8,8 @@ import {
     getTagError,
     getTagLabel,
     getErrorClass,
-    updateStatus
+    updateStatus,
+    getId
 } from '../../utils';
 
 /**
@@ -23,15 +24,15 @@ import {
 })
 export class DotTextareaComponent {
     @Element() el: HTMLElement;
-    @Prop({ mutable: true }) value: string;
+    @Prop() disabled = false;
+    @Prop() hint: string;
+    @Prop() label: string;
     @Prop() name: string;
     @Prop() regexCheck: string;
-    @Prop() validationMessage: string;
-    @Prop() label: string;
-    @Prop() hint: string;
     @Prop() required: boolean;
     @Prop() requiredMessage: string;
-    @Prop() disabled = false;
+    @Prop() validationMessage: string;
+    @Prop({ mutable: true }) value: string;
 
     @State() status: DotFieldStatus = getOriginalStatus();
 
@@ -68,7 +69,7 @@ export class DotTextareaComponent {
                 {getTagLabel(labelTagParams)}
                 <textarea
                     class={getErrorClass(this.status.dotValid)}
-                    id={this.name}
+                    id={getId(this.name)}
                     name={this.name}
                     value={this.value}
                     required={this.getRequiredAttr()}

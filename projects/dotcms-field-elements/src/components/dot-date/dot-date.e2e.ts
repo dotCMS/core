@@ -33,7 +33,7 @@ describe('dot-date', () => {
 
     it('should render', () => {
         // tslint:disable-next-line:max-line-length
-        const tagsRenderExpected = `<dot-date label=\"Date:\" name=\"date01\" value=\"2019-01-20\" hint=\"date hint\" required=\"\" required-message=\"Required Date\" validation-message=\"Invalid Date Range\" min=\"2019-01-01\" max=\"2019-10-30\" step=\"2\" class=\"dot-valid dot-pristine dot-untouched dot-required hydrated\"><div class=\"dot-field__label\"><label for=\"date01\">Date:</label><span class=\"dot-field__required-mark\">*</span></div><dot-input-calendar type=\"date\" required-message=\"Required Date\" validation-message=\"Invalid Date Range\" class=\"hydrated\"><input id=\"date01\" required=\"\" type=\"date\" min=\"2019-01-01\" max=\"2019-10-30\" step=\"2\"></dot-input-calendar><span class=\"dot-field__hint\">date hint</span></dot-date>`;
+        const tagsRenderExpected = `<dot-date label=\"Date:\" name=\"date01\" value=\"2019-01-20\" hint=\"date hint\" required=\"\" required-message=\"Required Date\" validation-message=\"Invalid Date Range\" min=\"2019-01-01\" max=\"2019-10-30\" step=\"2\" class=\"dot-valid dot-pristine dot-untouched dot-required hydrated\"><div class=\"dot-field__label\"><label for=\"dot-date01\">Date:</label><span class=\"dot-field__required-mark\">*</span></div><dot-input-calendar type=\"date\" required-message=\"Required Date\" validation-message=\"Invalid Date Range\" class=\"hydrated\"><input id=\"dot-date01\" required=\"\" type=\"date\" min=\"2019-01-01\" max=\"2019-10-30\" step=\"2\"></dot-input-calendar><span class=\"dot-field__hint\">date hint</span></dot-date>`;
         expect(element.outerHTML).toBe(tagsRenderExpected);
     });
 

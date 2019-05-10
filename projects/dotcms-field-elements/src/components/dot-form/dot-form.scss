@@ -1,0 +1,24 @@
+dot-form form {
+    & > * {
+        display: flex;
+        flex-direction: column;
+        margin: 1rem 0;
+    }
+
+    label {
+        margin: 0;
+    }
+
+    .dot-field__hint {
+        font-size: 0.75rem;
+    }
+
+    .form__buttons {
+        flex-direction: row;
+        justify-content: flex-end;
+
+        button:last-child {
+            margin-left: 1rem;
+        }
+    }
+}

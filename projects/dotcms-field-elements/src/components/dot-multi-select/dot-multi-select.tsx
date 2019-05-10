@@ -3,12 +3,13 @@ import Fragment from 'stencil-fragment';
 import { DotOption, DotFieldStatus, DotFieldValueEvent, DotFieldStatusEvent, DotLabel } from '../../models';
 import {
     getClassNames,
-    getOriginalStatus,
-    getTagHint,
-    getTagError,
-    getTagLabel,
-    getErrorClass,
     getDotOptionsFromFieldValue,
+    getErrorClass,
+    getId,
+    getOriginalStatus,
+    getTagError,
+    getTagHint,
+    getTagLabel,
     updateStatus
 } from '../../utils';
 
@@ -79,7 +80,7 @@ export class DotMultiSelectComponent {
                     multiple
                     size={+this.size || 0}
                     class={getErrorClass(this.status.dotValid)}
-                    id={this.name}
+                    id={getId(this.name)}
                     disabled={this.shouldBeDisabled()}
                     onChange={() => this.setValue()}>
 

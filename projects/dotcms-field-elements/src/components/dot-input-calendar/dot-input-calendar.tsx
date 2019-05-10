@@ -1,7 +1,7 @@
 import { Component, Element, Event, EventEmitter, Method, Prop, State } from '@stencil/core';
 import Fragment from 'stencil-fragment';
 import { DotFieldStatus, DotFieldStatusEvent, DotFieldValueEvent } from '../../models';
-import { getErrorClass, getOriginalStatus, updateStatus } from '../../utils';
+import { getErrorClass, getId, getOriginalStatus, updateStatus } from '../../utils';
 
 @Component({
     tag: 'dot-input-calendar',
@@ -53,7 +53,7 @@ export class DotInputCalendarComponent {
                 <input
                     class={getErrorClass(this.status.dotValid)}
                     disabled={this.disabled || null}
-                    id={this.name}
+                    id={getId(this.name)}
                     onBlur={() => this.blurHandler()}
                     onInput={(event: Event) => this.setValue(event)}
                     required={this.required || null}
