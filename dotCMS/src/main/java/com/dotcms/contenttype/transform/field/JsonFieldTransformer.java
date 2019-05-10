@@ -200,11 +200,6 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
     } catch (Exception e) {
       throw new DotStateException(e);
     }
-  }
-
-  @Override
-  public String toString() {
-    return "DEsde el toString";
-  }
+  } 
 }
 
