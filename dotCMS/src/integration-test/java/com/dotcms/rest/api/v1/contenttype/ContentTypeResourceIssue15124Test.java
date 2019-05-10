@@ -2,7 +2,7 @@ package com.dotcms.rest.api.v1.contenttype;
 
 import static com.dotcms.rest.api.v1.contenttype.ContentTypeResourceTest.getHttpRequest;
 
-import com.dotcms.repackage.javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.RestUtilTest;
 import com.dotcms.util.IntegrationTestInitService;

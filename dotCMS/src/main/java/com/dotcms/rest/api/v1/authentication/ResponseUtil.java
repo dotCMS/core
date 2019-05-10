@@ -2,8 +2,8 @@ package com.dotcms.rest.api.v1.authentication;
 
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
-import com.dotcms.repackage.javax.ws.rs.container.AsyncResponse;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
+import javax.ws.rs.container.AsyncResponse;
+import javax.ws.rs.core.Response;
 import com.dotcms.rest.ErrorResponseHelper;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.exception.SecurityException;

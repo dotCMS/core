@@ -3,7 +3,7 @@ package com.dotmarketing.portlets.htmlpageasset.business.render.page;
 import java.io.Serializable;
 import java.util.Collection;
 
-import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;

@@ -139,7 +139,6 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * @return true if needs reindex
 	 */
 	@JsonIgnore
-	@com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore
 	public boolean needsReindex() {
 		return needsReindex;
 	}
@@ -1355,7 +1354,6 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * This method returns an immutable copy of the null properties set to the properties map
 	 * @return
 	 */
-	@com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore
 	@com.fasterxml.jackson.annotation.JsonIgnore
 	@SuppressWarnings("unchecked")
 	public Set<String> getNullProperties(){

@@ -1,7 +1,7 @@
 package com.dotcms.rest.config;
 
 import com.dotcms.contenttype.model.field.FieldTypeResource;
-import com.dotcms.repackage.org.glassfish.jersey.media.multipart.MultiPartFeature;
+import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import com.dotcms.rest.RulesEnginePortlet;
 import com.dotcms.rest.TagResource;
 import com.dotcms.rest.api.v1.fileasset.FileAssetsResource;
@@ -58,7 +58,7 @@ import java.util.Set;
  * @since Dec 5, 2013
  *
  */
-public class DotRestApplication extends com.dotcms.repackage.javax.ws.rs.core.Application {
+public class DotRestApplication extends javax.ws.rs.core.Application {
 
 	protected volatile static Set<Class<?>> REST_CLASSES = null;
 

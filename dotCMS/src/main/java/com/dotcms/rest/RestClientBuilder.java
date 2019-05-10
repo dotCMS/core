@@ -1,10 +1,15 @@
 package com.dotcms.rest;
 
 import com.dotcms.publisher.util.TrustFactory;
-import com.dotcms.repackage.javax.ws.rs.client.Client;
-import com.dotcms.repackage.javax.ws.rs.client.ClientBuilder;
-import com.dotcms.repackage.org.glassfish.jersey.media.multipart.MultiPartFeature;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.UtilMethods;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLSession;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import org.glassfish.jersey.apache.connector.ApacheConnectorProvider;
+import org.glassfish.jersey.client.ClientConfig;
+import org.glassfish.jersey.media.multipart.MultiPartFeature;
 
 /**
  * This class provides an instance of a Jersey REST Client. This client allows
@@ -28,14 +33,30 @@ public class RestClientBuilder {
     public static Client newClient() {
         TrustFactory tFactory = new TrustFactory();
 
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.connectorProvider(new ApacheConnectorProvider());
+        //  clientConfig = clientConfig.property(ClientProperties.CONNECT_TIMEOUT, 10000);
+        //  clientConfig = clientConfig.property(ClientProperties.READ_TIMEOUT, 1000);
+
+        final HostnameVerifier verifier = new HostnameVerifier(){
+           @Override
+           public boolean verify(String paramString, SSLSession paramSSLSession) {
+             System.out.println(" verify: " + paramString  +  "  "  + paramSSLSession);
+             return true;
+           }
+         };
+
         Client client;
         String truststorePath = Config.getStringProperty("TRUSTSTORE_PATH", "");
-        if (truststorePath != null && !truststorePath.trim().equals("")) {
-            client = ClientBuilder.newBuilder().sslContext(tFactory.getSSLContext())
+        if (UtilMethods.isSet(truststorePath)) {
+           /*
+            client = ClientBuilder.newBuilder().withConfig(clientConfig).sslContext(tFactory.getSSLContext())
                     .hostnameVerifier(tFactory.getHostnameVerifier())
                     .build();
+            */
+            client  = ClientBuilder.newBuilder().sslContext(tFactory.getSSLContext()).hostnameVerifier(verifier).build();
         } else {
-            client = ClientBuilder.newClient();
+            client = ClientBuilder.newBuilder().withConfig(clientConfig).hostnameVerifier(verifier).build();
         }
         client.register(MultiPartFeature.class);
         return client;

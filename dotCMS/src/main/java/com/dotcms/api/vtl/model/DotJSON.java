@@ -1,6 +1,6 @@
 package com.dotcms.api.vtl.model;
 
-import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 

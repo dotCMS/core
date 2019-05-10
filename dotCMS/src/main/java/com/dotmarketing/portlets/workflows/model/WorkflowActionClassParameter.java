@@ -3,7 +3,7 @@ package com.dotmarketing.portlets.workflows.model;
 import java.io.Serializable;
 
 
-import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.dotmarketing.util.UtilMethods;
 
 

@@ -4,12 +4,12 @@ import static com.dotcms.util.CollectionsUtils.map;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.javax.ws.rs.container.ContainerRequestContext;
-import com.dotcms.repackage.javax.ws.rs.container.ContainerRequestFilter;
-import com.dotcms.repackage.javax.ws.rs.container.ResourceInfo;
-import com.dotcms.repackage.javax.ws.rs.ext.Provider;
-import com.dotcms.repackage.org.glassfish.jersey.server.ContainerRequest;
-import com.dotcms.repackage.org.glassfish.jersey.server.internal.routing.UriRoutingContext;
+import javax.ws.rs.container.ContainerRequestContext;
+import javax.ws.rs.container.ContainerRequestFilter;
+import javax.ws.rs.container.ResourceInfo;
+import javax.ws.rs.ext.Provider;
+import org.glassfish.jersey.server.ContainerRequest;
+import org.glassfish.jersey.server.internal.routing.UriRoutingContext;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;

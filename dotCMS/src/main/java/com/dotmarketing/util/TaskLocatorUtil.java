@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableList;
 import com.dotmarketing.fixtask.tasks.FixTask00001CheckAssetsMissingIdentifiers;
 import com.dotmarketing.fixtask.tasks.FixTask00003CheckContainersInconsistencies;
 import com.dotmarketing.fixtask.tasks.FixTask00006CheckLinksInconsistencies;
