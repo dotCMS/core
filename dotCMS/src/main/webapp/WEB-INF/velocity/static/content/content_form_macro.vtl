@@ -111,30 +111,23 @@
 	<dot-form></dot-form>
     <!-- This file will depend of where you build this custom elementa -->
     <script src="/custom-elements/dotcmsfields.js"></script>
-
-
-    <script>
+    <script type="text/javascript">
         function submitContent(event) {
             event.preventDefault();
-            console.log('submitContent', {
-                 stName: '${structure.name}',
-                 ...event.detail
-             });
-
             fetch('/api/content/save/1', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    stName: '${structure.name}',
+                    stName: '${structure.velocityVarName}',
                     ...event.detail
                 })
             })
             .then((response) => response.json())
             .then((data) => {
                 console.log(data);
-         });
+            });
         }
 
         const fieldsConfig = $UtilMethods.getJsonFieldTransformer($fields).jsonArray().toString();
