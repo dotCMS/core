@@ -167,7 +167,7 @@ public class ParameterParser extends ValueParser implements ViewTool
         try
         {
             // use reflection so we can compile against Servlet 2.2
-            Method getmap = ServletRequest.class.getMethod("getParameterMap", (Class<?>[]) null);
+            final Method getmap = ServletRequest.class.getMethod("getParameterMap", (Class<?>[]) null);
             return (Map)getmap.invoke(getRequest(), (Object[]) null);
         }
         catch (NoSuchMethodException nsme)
