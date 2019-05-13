@@ -16,6 +16,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.tag.business.TagAPI;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -24,7 +25,7 @@ import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
@@ -32,7 +33,6 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import java.util.List;
 
 @RunWith(DataProviderRunner.class)
 public class TagResourceIntegrationTest extends IntegrationTestBase {
@@ -97,8 +97,8 @@ public class TagResourceIntegrationTest extends IntegrationTestBase {
         final Host demoHost = APILocator.getHostAPI().findByName("demo.dotcms.com",
                  systemUser, false);
 
-        List<String> tagsKnownNamesSystemHostIds = new ArrayList<>();
-        List<String> tagsKnownNamesDemoHostIds = new ArrayList<>();
+        final List<String> tagsKnownNamesSystemHostIds = new ArrayList<>();
+        final List<String> tagsKnownNamesDemoHostIds = new ArrayList<>();
 
         try {
 
@@ -149,7 +149,7 @@ public class TagResourceIntegrationTest extends IntegrationTestBase {
                 try {
                     tagAPI.deleteTag(tagId);
                 } catch (DotDataException e) {
-                    throw new DotRuntimeException(e);
+                    Logger.error(this, "Error deleting tags in test.", e);
                 }
             }
             );
@@ -158,7 +158,7 @@ public class TagResourceIntegrationTest extends IntegrationTestBase {
                 try {
                     tagAPI.deleteTag(tagId);
                 } catch (DotDataException e) {
-                    throw new DotRuntimeException(e);
+                    Logger.error(this, "Error deleting tags in test.", e);
                 }
             });
         }
