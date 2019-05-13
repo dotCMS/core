@@ -266,7 +266,8 @@ public class TaskLocatorUtil {
 		ret.add(Task05060CreateApiTokensIssuedTable.class);
 		ret.add(Task05070AddIdentifierVirtualColumn.class);
 		ret.add(Task05080RecreateIdentifierIndex.class);
-		
+		ret.add(Task05150CreateIndicesForContentVersionInfoMSSQL.class);
+
 		return ret;
 	}
 

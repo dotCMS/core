@@ -93,89 +93,84 @@ public class Task05040LanguageTableIdentityOff implements StartupTask  {
     public void executeUpgrade() throws DotDataException, DotRuntimeException {
         Logger.debug(this, "Drop Auto-increment/Identity from `Language` Table definition.");
         try {
-            final Connection conn = DbConnectionFactory.getDataSource().getConnection();
-            conn.setAutoCommit(true);
-            try {
-                final DotConnect dotConnect = new DotConnect();
-
-                if (DbConnectionFactory.isMsSql()) {
-                    if (!checkIdentityExistsMSSQL(dotConnect)) {
-                        return;
-                    }
-
-                    dotConnect.setSQL(MS_SQL_ADD_TEMP_NON_IDENTITY_ID_COLUMN);
-                    dotConnect.loadResult();
-
-                    dotConnect.setSQL(MS_SQL_BACKUP_ID_COLUMN);
-                    dotConnect.loadResult();
-
-                    if(checkConstraintExistsMSSQL(dotConnect,LANGUAGE_CONTENTLET_CONSTRAINT_NAME)){
-                        dotConnect.setSQL(MS_SQL_DROP_CONTENTLET_CONSTRAINT);
-                        dotConnect.loadResult();
-                    }
-                    if(checkConstraintExistsMSSQL(dotConnect,LANGUAGE_WORKFLOW_TASK_CONSTRAINT_NAME)){
-                        dotConnect.setSQL(MS_SQL_DROP_WORKFLOW_CONSTRAINT);
-                        dotConnect.loadResult();
-                    }
-                    if(checkConstraintExistsMSSQL(dotConnect,VERSION_INFO_CONSTRAINT_NAME)){
-                        dotConnect.setSQL(MS_SQL_DROP_VERSION_INFO_CONSTRAINT);
-                        dotConnect.loadResult();
-                    }
-
-                    final String constraint = getLanguageTablePKConstraintNameMSSQL(dotConnect);
-
-                    dotConnect.setSQL( String.format(MS_SQL_DROP_LANGUAGE_PK_CONSTRAINT, constraint) );
-                    dotConnect.loadResult();
-
-                    dotConnect.setSQL(MS_SQL_DROP_IDENTITY_ID_COLUMN);
-                    dotConnect.loadResult();
-
-                    dotConnect.setSQL(MS_SQL_RENAME_TEMP_COLUMN_TO_ID_COLUMN);
-                    dotConnect.loadResult();
-
-                    dotConnect.setSQL(MS_SQL_ADD_ID_NOT_NULL_CONSTRAINT);
-                    dotConnect.loadResult();
-
-                    dotConnect.setSQL(MS_SQL_ADD_PK_CONSTRAINT);
-                    dotConnect.loadResult();
-
-                    dotConnect.setSQL(MS_SQL_ADD_CONTENTLET_CONSTRAINT);
-                    dotConnect.loadResult();
-
-                    dotConnect.setSQL(MS_SQL_ADD_WORKFLOW_CONSTRAINT);
-                    dotConnect.loadResult();
-
-                    dotConnect.setSQL(MS_SQL_ADD_VERSION_INFO_CONSTRAINT);
-                    dotConnect.loadResult();
-
-
-                } else if (DbConnectionFactory.isMySql()) {
-                    dotConnect.setSQL(MY_SQL_FOREIGN_CHECKS_OFF);
-                    dotConnect.loadResult();
-                    dotConnect.setSQL(MY_SQL_ALTER_TABLE_LANGUAGE_DROP_AUTO_INCREMENT);
-                    dotConnect.loadResult();
-                    dotConnect.setSQL(MY_SQL_FOREIGN_CHECKS_ON);
-                    dotConnect.loadResult();
-                } else if (DbConnectionFactory.isPostgres()) {
-                    dotConnect.setSQL(POSTGRES_DROP_SEQUENCE_IF_EXISTS);
-                    dotConnect.loadResult();
-                    dotConnect.setSQL(POSTGRES_ALTER_TABLE_LANG);
-                    dotConnect.loadResult();
-                } else if (DbConnectionFactory.isOracle()) {
-                    if (!checkSequenceExistsOracle(dotConnect)) {
-                        return;
-                    }
-                    dotConnect.setSQL(ORACLE_DROP_SEQUENCE);
-                    dotConnect.loadResult();
-                }
-            } finally {
-                conn.setAutoCommit(false);
-            }
-
-
+            DbConnectionFactory.getConnection().setAutoCommit(true);
         } catch (SQLException e) {
             throw new DotDataException(e.getMessage(), e);
         }
+
+        final DotConnect dotConnect = new DotConnect();
+
+        if (DbConnectionFactory.isMsSql()) {
+            if (!checkIdentityExistsMSSQL(dotConnect)) {
+                return;
+            }
+
+            dotConnect.setSQL(MS_SQL_ADD_TEMP_NON_IDENTITY_ID_COLUMN);
+            dotConnect.loadResult();
+
+            dotConnect.setSQL(MS_SQL_BACKUP_ID_COLUMN);
+            dotConnect.loadResult();
+
+            if(checkConstraintExistsMSSQL(dotConnect,LANGUAGE_CONTENTLET_CONSTRAINT_NAME)){
+                dotConnect.setSQL(MS_SQL_DROP_CONTENTLET_CONSTRAINT);
+                dotConnect.loadResult();
+            }
+            if(checkConstraintExistsMSSQL(dotConnect,LANGUAGE_WORKFLOW_TASK_CONSTRAINT_NAME)){
+                dotConnect.setSQL(MS_SQL_DROP_WORKFLOW_CONSTRAINT);
+                dotConnect.loadResult();
+            }
+            if(checkConstraintExistsMSSQL(dotConnect,VERSION_INFO_CONSTRAINT_NAME)){
+                dotConnect.setSQL(MS_SQL_DROP_VERSION_INFO_CONSTRAINT);
+                dotConnect.loadResult();
+            }
+
+            final String constraint = getLanguageTablePKConstraintNameMSSQL(dotConnect);
+
+            dotConnect.setSQL( String.format(MS_SQL_DROP_LANGUAGE_PK_CONSTRAINT, constraint) );
+            dotConnect.loadResult();
+
+            dotConnect.setSQL(MS_SQL_DROP_IDENTITY_ID_COLUMN);
+            dotConnect.loadResult();
+
+            dotConnect.setSQL(MS_SQL_RENAME_TEMP_COLUMN_TO_ID_COLUMN);
+            dotConnect.loadResult();
+
+            dotConnect.setSQL(MS_SQL_ADD_ID_NOT_NULL_CONSTRAINT);
+            dotConnect.loadResult();
+
+            dotConnect.setSQL(MS_SQL_ADD_PK_CONSTRAINT);
+            dotConnect.loadResult();
+
+            dotConnect.setSQL(MS_SQL_ADD_CONTENTLET_CONSTRAINT);
+            dotConnect.loadResult();
+
+            dotConnect.setSQL(MS_SQL_ADD_WORKFLOW_CONSTRAINT);
+            dotConnect.loadResult();
+
+            dotConnect.setSQL(MS_SQL_ADD_VERSION_INFO_CONSTRAINT);
+            dotConnect.loadResult();
+
+
+        } else if (DbConnectionFactory.isMySql()) {
+            dotConnect.setSQL(MY_SQL_FOREIGN_CHECKS_OFF);
+            dotConnect.loadResult();
+            dotConnect.setSQL(MY_SQL_ALTER_TABLE_LANGUAGE_DROP_AUTO_INCREMENT);
+            dotConnect.loadResult();
+            dotConnect.setSQL(MY_SQL_FOREIGN_CHECKS_ON);
+            dotConnect.loadResult();
+        } else if (DbConnectionFactory.isPostgres()) {
+            dotConnect.setSQL(POSTGRES_DROP_SEQUENCE_IF_EXISTS);
+            dotConnect.loadResult();
+            dotConnect.setSQL(POSTGRES_ALTER_TABLE_LANG);
+            dotConnect.loadResult();
+        } else if (DbConnectionFactory.isOracle()) {
+            if (!checkSequenceExistsOracle(dotConnect)) {
+                return;
+            }
+            dotConnect.setSQL(ORACLE_DROP_SEQUENCE);
+            dotConnect.loadResult();
+        }
+
     }
 
 }
