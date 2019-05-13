@@ -10,13 +10,13 @@ describe('key-value-table', () => {
         page = await newE2EPage();
         await page.setContent(`<key-value-table />`);
         element = await page.find('key-value-table');
-        element.setProperty('items', [{ keyA: '1', keyB: '2' }]);
+        element.setProperty('items', [{ key: 'keyA', value: '1' }, { key: 'keyB', value: '2' }]);
         await page.waitForChanges();
     });
 
     it('renders', async () => {
         // tslint:disable-next-line:max-line-length
-        const expectedMarkup = `<key-value-table class=\"hydrated\"><table><tbody><tr><td><button type=\"button\" id=\"undefined_undefined_0\" class=\"dot-key-value__delete__button\"><div class=\"dot-field__label\"><label for=\"dot-undefined_undefined_0\">Delete</label></div></button></td><td></td><td></td></tr></tbody></table></key-value-table>`;
+        const expectedMarkup = `<key-value-table class=\"hydrated\"><table><tbody><tr><td><button type=\"button\" id=\"keyA_1_0\" class=\"dot-key-value__delete__button\"><div class=\"dot-field__label\"><label for=\"dot-keyA_1_0\">Delete</label></div></button></td><td>keyA</td><td>1</td></tr><tr><td><button type=\"button\" id=\"keyB_2_1\" class=\"dot-key-value__delete__button\"><div class=\"dot-field__label\"><label for=\"dot-keyB_2_1\">Delete</label></div></button></td><td>keyB</td><td>2</td></tr></tbody></table></key-value-table>`;
         expect(element.outerHTML).toBe(expectedMarkup);
     });
 

@@ -16,7 +16,7 @@ describe('dot-date-range', () => {
                     min="2019-01-01"
                     max="2019-12-31"
                     name='dateRange'
-                    value='2019-05-01,2019-05-08'
+                    value='2019-5-1,2019-5-8'
                     hint='this is a hint'
                     required=true
                     required-message="Required Name"
@@ -31,21 +31,19 @@ describe('dot-date-range', () => {
 
     it('should render', () => {
         // tslint:disable-next-line:max-line-length
-        const tagsRenderExpected = `<dot-date-range label=\"Name:\" min=\"2019-01-01\" max=\"2019-12-31\" name=\"dateRange\" value=\"2019-05-01,2019-05-08\" hint=\"this is a hint\" required=\"true\" required-message=\"Required Name\" class=\"dot-valid dot-pristine dot-untouched dot-required hydrated\"><div class=\"dot-field__label\"><label for=\"dot-dateRange\">Name:</label><span class=\"dot-field__required-mark\">*</span></div><input class=\"flatpickr-input\" id=\"dateRange\" required=\"\" type=\"text\" readonly=\"readonly\"><select><option value=\"0\">Date Presets</option><option value=\"-7\">Last Week</option><option value=\"7\">Next Week</option><option value=\"-30\">Last Month</option><option value=\"30\">Next Month</option></select><span class=\"dot-field__hint\">this is a hint</span></dot-date-range>`;
+        const tagsRenderExpected = `<dot-date-range label=\"Name:\" min=\"2019-01-01\" max=\"2019-12-31\" name=\"dateRange\" value=\"2019-5-1,2019-5-8\" hint=\"this is a hint\" required=\"true\" required-message=\"Required Name\" class=\"dot-valid dot-required hydrated dot-dirty dot-touched\"><div class=\"dot-field__label\"><label for=\"dot-dateRange\">Name:</label><span class=\"dot-field__required-mark\">*</span></div><input class=\"flatpickr-input\" id=\"dateRange\" required=\"\" type=\"text\" readonly=\"readonly\"><select><option value=\"0\">Date Presets</option><option value=\"-7\">Last Week</option><option value=\"7\">Next Week</option><option value=\"-30\">Last Month</option><option value=\"30\">Next Month</option></select><span class=\"dot-field__hint\">this is a hint</span></dot-date-range>`;
         expect(element.outerHTML).toBe(tagsRenderExpected);
     });
 
     it('should set default value', async() => {
         const dateValue = await input.getProperty('value');
-        expect(dateValue).toBe('2019-05-01 to 2019-05-08');
+        expect(dateValue).toBe('2019-05-01,2019-05-08');
     });
 
-    it('should be invalid and contain "dot-invalid", dot-pristine" and "dot-untouched" css classes', async() => {
+    it('should be invalid and contain "dot-invalid", dot-dirty" and "dot-touched" css classes', async() => {
         element.setProperty('value', '');
         await page.waitForChanges();
-        expect(element.classList.contains('dot-invalid')).toBe(true);
-        expect(element.classList.contains('dot-pristine')).toBe(true);
-        expect(element.classList.contains('dot-untouched')).toBe(true);
+        expect(element).toHaveClasses(['dot-dirty', 'dot-touched', 'dot-invalid', 'dot-required', 'hydrated']);
     });
 
     it('it should not render hint', async () => {
@@ -81,9 +79,7 @@ describe('dot-date-range', () => {
             });
 
             it('should set "dot-valid", dot-touched" and "dot-dirty" Css classes', async() => {
-                expect(element.classList.contains('dot-valid')).toBe(true);
-                expect(element.classList.contains('dot-dirty')).toBe(true);
-                expect(element.classList.contains('dot-touched')).toBe(true);
+                expect(element).toHaveClasses(['dot-touched', 'dot-dirty', 'dot-valid']);
             });
 
             it('should emit "statusChange" and "valueChange"', async() => {
@@ -128,9 +124,7 @@ describe('dot-date-range', () => {
         });
 
         it('should set "dot-invalid", dot-untouched" and "dot-pristine" Css classes', async () => {
-            expect(element.classList.contains('dot-pristine')).toBe(true);
-            expect(element.classList.contains('dot-untouched')).toBe(true);
-            expect(element.classList.contains('dot-invalid')).toBe(true);
+            expect(element).toHaveClasses(['dot-pristine', 'dot-untouched', 'dot-invalid']);
         });
     });
 
@@ -139,7 +133,7 @@ describe('dot-date-range', () => {
             element.setProperty('disabled', true);
             await page.waitForChanges();
             // tslint:disable-next-line:max-line-length
-            const tagsRenderExpected = `<dot-date-range label=\"Name:\" min=\"2019-01-01\" max=\"2019-12-31\" name=\"dateRange\" value=\"2019-05-01,2019-05-08\" hint=\"this is a hint\" required=\"true\" required-message=\"Required Name\" class=\"dot-valid dot-pristine dot-untouched dot-required hydrated\"><div class=\"dot-field__label\"><label for=\"dot-dateRange\">Name:</label><span class=\"dot-field__required-mark\">*</span></div><input class=\"flatpickr-input\" id=\"dateRange\" required=\"\" type=\"text\" readonly=\"readonly\" disabled=\"\"><select disabled=\"\"><option value=\"0\">Date Presets</option><option value=\"-7\">Last Week</option><option value=\"7\">Next Week</option><option value=\"-30\">Last Month</option><option value=\"30\">Next Month</option></select><span class=\"dot-field__hint\">this is a hint</span></dot-date-range>`;
+            const tagsRenderExpected = `<dot-date-range label=\"Name:\" min=\"2019-01-01\" max=\"2019-12-31\" name=\"dateRange\" value=\"2019-5-1,2019-5-8\" hint=\"this is a hint\" required=\"true\" required-message=\"Required Name\" class=\"dot-valid dot-required hydrated dot-dirty dot-touched\"><div class=\"dot-field__label\"><label for=\"dot-dateRange\">Name:</label><span class=\"dot-field__required-mark\">*</span></div><input class=\"flatpickr-input\" id=\"dateRange\" required=\"\" type=\"text\" readonly=\"readonly\" disabled=\"\"><select disabled=\"\"><option value=\"0\">Date Presets</option><option value=\"-7\">Last Week</option><option value=\"7\">Next Week</option><option value=\"-30\">Last Month</option><option value=\"30\">Next Month</option></select><span class=\"dot-field__hint\">this is a hint</span></dot-date-range>`;
             expect(element.outerHTML).toBe(tagsRenderExpected);
         });
     });

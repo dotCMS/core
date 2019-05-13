@@ -100,11 +100,11 @@ export class DotDateRangeComponent {
         this.fp = flatpickr(`#${this.name}`, {
             mode: 'range',
             dateFormat: this.dateFormat,
-            defaultDate: this.value ? this.value.split(',') : '',
             maxDate: this.max,
             minDate: this.min,
             onChange: this.setValue.bind(this)
         });
+        this.setDefaultDate();
     }
 
     hostData() {
@@ -139,6 +139,17 @@ export class DotDateRangeComponent {
                 {getTagError(this.showErrorMessage(), this.getErrorMessage())}
             </Fragment>
         );
+    }
+
+    private setDefaultDate(): void {
+        if (this.value) {
+            try {
+                const dates = this.value.split(',');
+                this.fp.setDate([new Date(dates[0]), new Date(dates[1])], true);
+            } catch(e) {
+                console.error('Bad date format');
+            }
+        }
     }
 
     private isDisabled(): boolean {

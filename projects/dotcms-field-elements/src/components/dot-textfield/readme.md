@@ -17,6 +17,7 @@
 | `regexCheck`        | `regex-check`        |             | `string`  | `undefined` |
 | `required`          | `required`           |             | `boolean` | `undefined` |
 | `requiredMessage`   | `required-message`   |             | `string`  | `undefined` |
+| `type`              | `type`               |             | `string`  | `'text'`    |
 | `validationMessage` | `validation-message` |             | `string`  | `undefined` |
 | `value`             | `value`              |             | `string`  | `undefined` |
 

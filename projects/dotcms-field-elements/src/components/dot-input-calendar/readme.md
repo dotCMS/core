@@ -11,7 +11,6 @@
 | ------------------- | -------------------- | ----------- | --------- | ----------- |
 | `disabled`          | `disabled`           |             | `boolean` | `false`     |
 | `hint`              | `hint`               |             | `string`  | `undefined` |
-| `label`             | `label`              |             | `string`  | `undefined` |
 | `max`               | `max`                |             | `string`  | `undefined` |
 | `min`               | `min`                |             | `string`  | `undefined` |
 | `name`              | `name`               |             | `string`  | `undefined` |
@@ -36,7 +35,7 @@
 
 ### `reset() => void`
 
-Reset properties of the filed, clear value and emit events.
+Reset properties of the field, clear value and emit events.
 
 #### Returns
 
