@@ -77,10 +77,8 @@ public class TagResource {
         return hash;
     }
 
-    private List<Tag> searchTagsInternal(
-            @QueryParam("name") String tagName,
-            @QueryParam("siteOrFolder") String siteOrFolderId,
-            User user) {
+    private List<Tag> searchTagsInternal(final String tagName, final String siteOrFolderId,
+            final User user) {
         List<Tag> tags;
 
         try {
