@@ -49,6 +49,7 @@ public class TagResource {
             @QueryParam("name") final String  tagName,
             @QueryParam("siteId") final String siteOrFolderId) {
 
+
         final InitDataObject initDataObject = this.webResource.init
                 (null, true, request, true, null);
 
