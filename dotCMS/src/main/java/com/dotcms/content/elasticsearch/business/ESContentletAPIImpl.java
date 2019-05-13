@@ -1390,11 +1390,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     private List<Contentlet> getRelatedContentESQuery(Contentlet contentlet, Relationship rel,
-            User user, boolean respectFrontndRoles)
+            User user, boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException {
         return (List<Contentlet>) CollectionsUtils
-                .join(getRelatedChildren(contentlet, rel, user, respectFrontndRoles),
-                        getRelatedParents(contentlet, rel, user, respectFrontndRoles)).stream()
+                .join(getRelatedChildren(contentlet, rel, user, respectFrontendRoles),
+                        getRelatedParents(contentlet, rel, user, respectFrontendRoles)).stream()
                 .collect(CollectionsUtils.toImmutableList());
     }
 
@@ -1484,13 +1484,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             try {
                 Map<String, Object> sourceMap = sh.getSourceAsMap();
                 if (sourceMap.get("identifier") != null) {
-                    ((ArrayList<String>) sourceMap.get(relationshipName)).stream().forEach(child -> {
-                        try {
-                            result.add(findContentletByIdentifierAnyLanguage(child));
-                        } catch (Exception e) {
-                            throw new RuntimeException(e);
-                        }
-                    });
+                    result.add(findContentletByIdentifierAnyLanguage(sourceMap.get("identifier").toString()));
                 }
             } catch (Exception e) {
                 Logger.error(this, e.getMessage(), e);
