@@ -37,6 +37,8 @@ import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotcms.repackage.com.google.common.collect.Sets;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
+import com.dotcms.repackage.org.json.JSONException;
+import com.dotcms.repackage.org.json.JSONObject;
 import com.dotcms.services.VanityUrlServices;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.type.content.CommitListenerEvent;
@@ -1422,35 +1424,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return contentlet;
     }
 
-    @CloseDBIfOpened
-    @Override
-    public List<Contentlet> getRelatedContent(Contentlet contentlet,Relationship rel, User user, boolean respectFrontendRoles)throws DotDataException, DotSecurityException {
-
-        String q = getRelatedContentESQuery(contentlet, rel);
-
-        try{
-            return permissionAPI.filterCollection(searchByIdentifier(q, -1, 0, rel.getRelationTypeValue() + "-" + contentlet.getIdentifier() + "-order" , user, respectFrontendRoles, PermissionAPI.PERMISSION_READ, true), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
-        }catch (Exception e) {
-            final String errorMessage =
-                    "Unable to look up related content for contentlet with identifier "
-                            + contentlet.getIdentifier() + " and title " + contentlet.getTitle()
-                            + ". Relationship Name: " + rel.getRelationTypeValue();
-            if(e.getMessage() != null && e.getMessage().contains("[query_fetch]")){
-                try{
-                    APILocator.getContentletIndexAPI().addContentToIndex(contentlet,false,false);
-                    return permissionAPI.filterCollection(searchByIdentifier(q, 1, 0, rel.getRelationTypeValue() + "" + contentlet.getIdentifier() + "-order" , user, respectFrontendRoles, PermissionAPI.PERMISSION_READ, true), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
-                }catch(Exception ex){
-                    throw new DotDataException(errorMessage, ex);
-                }
-            } else if (e.getCause() instanceof SearchPhaseExecutionException){
-                Logger.warn(this, errorMessage + ". An empty list will be returned");
-                Logger.debug(this, errorMessage + ". An empty list will be returned", e);
-                return Collections.emptyList();
-            }
-            throw new DotDataException(errorMessage, e);
-        }
-    }
-
     private String getRelatedContentESQuery(Contentlet contentlet, Relationship rel) {
         final boolean isSameStructRelationship = FactoryLocator.getRelationshipFactory()
                 .sameParentAndChild(rel);
@@ -1492,24 +1465,110 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return q;
     }
 
+    @CloseDBIfOpened
     @Override
-    public List<Contentlet> getRelatedContent(Contentlet contentlet,Relationship rel, boolean pullByParent, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-
-        String q = getRelatedContentESQuery(contentlet, rel, pullByParent);
+    public List<Contentlet> getRelatedContent(Contentlet contentlet,Relationship rel, User user, boolean respectFrontendRoles)throws DotDataException, DotSecurityException {
 
         try{
-            return permissionAPI.filterCollection(searchByIdentifier(q, -1, 0, rel.getRelationTypeValue() + "-" + contentlet.getIdentifier() + "-order" , user, respectFrontendRoles, PermissionAPI.PERMISSION_READ, true), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
+            return permissionAPI.filterCollection(getRelatedChildren(contentlet, rel, user, respectFrontendRoles), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
         }catch (Exception e) {
-            final String errorMessage = "Unable to look up related content for contentlet with identifier "
-                    + contentlet.getIdentifier();
-            if(e instanceof SearchPhaseExecutionException){
+            final String errorMessage =
+                    "Unable to look up related content for contentlet with identifier "
+                            + contentlet.getIdentifier() + " and title " + contentlet.getTitle()
+                            + ". Relationship Name: " + rel.getRelationTypeValue();
+            if(e.getMessage() != null && e.getMessage().contains("[query_fetch]")){
                 try{
-                    APILocator.getContentletIndexAPI().addContentToIndex(contentlet,false,true);
-                    return permissionAPI.filterCollection(searchByIdentifier(q, -1, 0, rel.getRelationTypeValue() + "-" + contentlet.getIdentifier() + "-order" , user, respectFrontendRoles, PermissionAPI.PERMISSION_READ, true), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
+                    APILocator.getContentletIndexAPI().addContentToIndex(contentlet,false,false);
+                    return permissionAPI.filterCollection(getRelatedChildren(contentlet, rel, user, respectFrontendRoles), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
                 }catch(Exception ex){
                     throw new DotDataException(errorMessage, ex);
                 }
             } else if (e.getCause() instanceof SearchPhaseExecutionException){
+                Logger.warn(this, errorMessage + ". An empty list will be returned");
+                Logger.debug(this, errorMessage + ". An empty list will be returned", e);
+                return Collections.emptyList();
+            }
+            throw new DotDataException(errorMessage, e);
+        }
+    }
+
+    private List<Contentlet> getRelatedChildren(final Contentlet contentlet, final Relationship rel,
+            final User user, final boolean respectFrontendRoles)
+            throws DotSecurityException, DotDataException {
+
+        final List<Contentlet> result = new ArrayList<>();
+        final String relationshipName = rel.getRelationTypeValue().toLowerCase();
+
+        SearchResponse response = APILocator.getEsSearchAPI()
+                .esSearchRelated(contentlet.getIdentifier(), relationshipName, false, user,
+                        respectFrontendRoles);
+
+        if (response.getHits() == null) {
+            return result;
+        }
+
+        for (SearchHit sh : response.getHits()) {
+            try {
+                Map<String, Object> sourceMap = sh.getSourceAsMap();
+                if (sourceMap.get(relationshipName) != null) {
+                    ((ArrayList<Map>) sourceMap.get(relationshipName)).stream().forEach(child -> {
+                        try {
+                            result.add(findContentletByIdentifierAnyLanguage(
+                                    (String) child.get("identifier")));
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+                }
+            } catch (Exception e) {
+                Logger.error(this, e.getMessage(), e);
+            }
+        }
+
+        return result;
+    }
+
+    private String getRelatedParents(Contentlet contentlet,Relationship rel, boolean pullByParent) {
+        final boolean isSameStructureRelationship = FactoryLocator.getRelationshipFactory()
+                .sameParentAndChild(rel);
+        String q;
+
+        if(isSameStructureRelationship) {
+            String disc = pullByParent?"-parent":"-child";
+            q = "+type:content +" + rel.getRelationTypeValue() + disc + ":" + contentlet.getIdentifier();
+            if(!InodeUtils.isSet(contentlet.getIdentifier()))
+                q = "+type:content +" + rel.getRelationTypeValue() + disc + ":" + "0";
+
+        } else {
+            q = "+type:content +" + rel.getRelationTypeValue() + ":" + contentlet.getIdentifier();
+            if(!InodeUtils.isSet(contentlet.getIdentifier()))
+                q = "+type:content +" + rel.getRelationTypeValue() + ":" + "0";
+        }
+
+        return q;
+    }
+
+    @Override
+    public List<Contentlet> getRelatedContent(Contentlet contentlet,Relationship rel, boolean pullByParent, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+
+        try {
+            return permissionAPI.filterCollection(
+                    getRelatedChildren(contentlet, rel, user, respectFrontendRoles),
+                    PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
+        } catch (Exception e) {
+            final String errorMessage =
+                    "Unable to look up related content for contentlet with identifier "
+                            + contentlet.getIdentifier();
+            if (e instanceof SearchPhaseExecutionException) {
+                try {
+                    APILocator.getContentletIndexAPI().addContentToIndex(contentlet, false, true);
+                    return permissionAPI.filterCollection(
+                            getRelatedChildren(contentlet, rel, user, respectFrontendRoles),
+                            PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
+                } catch (Exception ex) {
+                    throw new DotDataException(errorMessage, ex);
+                }
+            } else if (e.getCause() instanceof SearchPhaseExecutionException) {
                 Logger.warn(this, errorMessage + ". An empty list will be returned", e);
                 return Collections.emptyList();
             }

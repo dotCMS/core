@@ -1481,10 +1481,10 @@ public class ESContentFactoryImpl extends ContentletFactory {
                                 Collections.emptyMap(),
                                 ImmutableMap.of("relName", relName, "identifier", identifier));
 
-                            srb.addSort(
+                            /*srb.addSort(
                                 SortBuilders
                                     .scriptSort(script, ScriptSortBuilder.ScriptSortType.NUMBER)
-                                    .order(SortOrder.ASC));
+                                    .order(SortOrder.ASC));*/
                         }
 
             	    }
