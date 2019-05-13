@@ -47,7 +47,8 @@ public class TagResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Map<String, RestTag> list(@Context final HttpServletRequest request,
             @QueryParam("name") final String  tagName,
-            @QueryParam("siteOrFolder") final String siteOrFolderId) {
+            @QueryParam("siteId") final String siteId) {
+
 
         final InitDataObject initDataObject = this.webResource.init
                 (null, true, request, true, null);
@@ -55,7 +56,7 @@ public class TagResource {
         final User user = initDataObject.getUser();
 
         List<Tag> tags = UtilMethods.isSet(tagName)
-                ? searchTagsInternal(tagName, siteOrFolderId, user)
+                ? searchTagsInternal(tagName, siteId, user)
                 : getTagsInternal();
 
         final Map<String, RestTag> hash = Maps.newHashMapWithExpectedSize(tags.size());
