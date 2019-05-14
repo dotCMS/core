@@ -2337,8 +2337,9 @@ public class ContentletAjax {
 			final String binaryFileName = UtilMethods.isSet(fileName) ? ContentletUtil.sanitizeFileName(fileName).trim() : "";
 			//In case the user exits the file asset dialog before Saving, use this as placeholder of the fileName
 			final String userFileName = user.getUserId() + (UtilMethods.isSet(binaryFileName) ? "." + fileName : "");
+			final long defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage().getId();
 
-			newCont.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+			newCont.setLanguageId(defaultLanguage);
 
 			for(Field field : FieldsCache.getFieldsByStructureVariableName(fileAssetStr.getInode())){
 				if(field.getVelocityVarName().equals(FileAssetAPI.TITLE_FIELD))
@@ -2371,7 +2372,7 @@ public class ContentletAjax {
 			//If exists, uses that identifier instead of inserting a new one
 			if (existingId != null && UtilMethods.isSet(existingId.getId())) {
 				newCont.setIdentifier(existingId.getId());
-				Contentlet workingContentlet = conAPI.findContentletByIdentifierAnyLanguage(existingId.getId());
+				Contentlet workingContentlet = conAPI.findContentletByIdentifier(existingId.getId(),false,defaultLanguage,user,false);
 				if (workingContentlet != null) {
 					newCont.setInode(workingContentlet.getInode());
 				}
