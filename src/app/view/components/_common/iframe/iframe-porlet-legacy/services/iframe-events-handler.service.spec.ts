@@ -30,7 +30,6 @@ describe('DotIframeEventsHandler', () => {
 
     it('should show loading indicator and go to edit page when event is emited by iframe', () => {
         spyOn(dotLoadingIndicatorService, 'show');
-        spyOn(dotRouterService, 'goToEditPage');
 
         service.handle(
             new CustomEvent('ng-event', {
@@ -71,8 +70,6 @@ describe('DotIframeEventsHandler', () => {
     });
 
     it('should edit a contentlet', () => {
-        spyOn(dotRouterService, 'goToEditContentlet');
-
         service.handle(
             new CustomEvent('ng-event', {
                 detail: {
@@ -87,8 +84,6 @@ describe('DotIframeEventsHandler', () => {
     });
 
     it('should edit a a workflow task', () => {
-        spyOn(dotRouterService, 'goToEditTask');
-
         service.handle(
             new CustomEvent('ng-event', {
                 detail: {

@@ -146,8 +146,6 @@ describe('DotEditPageMainComponent', () => {
         let editContentlet: MockDotEditContentletComponent;
 
         beforeEach(() => {
-            spyOn(dotRouterService, 'goToEditPage');
-            spyOn(dotRouterService, 'goToSiteBrowser');
             editContentlet = fixture.debugElement.query(By.css('dot-edit-contentlet'))
                 .componentInstance;
         });

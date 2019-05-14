@@ -33,5 +33,6 @@ module.exports = function(config) {
             }
         },
         singleRun: false,
+        browserDisconnectTimeout: 20000
     });
 };

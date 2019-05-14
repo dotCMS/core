@@ -74,7 +74,6 @@ describe('DotHttpErrorManagerService', () => {
 
     it('should handle 401 error when user is logout and redirect to login', () => {
         loginService.auth.user = null;
-        spyOn(dotRouterService, 'goToLogin');
         spyOn(dotDialogService, 'alert');
 
         service.handle(mockResponseView(401)).subscribe((res) => {

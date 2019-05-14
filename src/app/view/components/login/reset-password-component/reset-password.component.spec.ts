@@ -51,7 +51,6 @@ describe('ResetPasswordComponent', () => {
         dotRouterService = de.injector.get(DotRouterService);
         spyOn(activatedRoute.snapshot.paramMap, 'get').and.returnValue('test@test.com');
         spyOn(loginService, 'changePassword').and.callThrough();
-        spyOn(dotRouterService, 'goToLogin');
         fixture.detectChanges();
 
         this.changePasswordButton = de.query(By.css('button[type="submit"]'));

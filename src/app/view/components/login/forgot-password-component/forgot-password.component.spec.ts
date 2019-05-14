@@ -48,7 +48,6 @@ describe('ForgotPasswordComponent', () => {
         loginService = de.injector.get(LoginService);
         dotRouterService = de.injector.get(DotRouterService);
         spyOn(loginService, 'recoverPassword').and.returnValue(of({}));
-        spyOn(dotRouterService, 'goToLogin');
 
         fixture.detectChanges();
         this.requestPasswordButton = de.query(By.css('button[type="submit"]'));

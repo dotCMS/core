@@ -70,7 +70,6 @@ describe('DotWorkflowTaskComponent', () => {
         dotWorkflowTaskDetailService = de.injector.get(DotWorkflowTaskDetailService);
         dotRouterService = de.injector.get(DotRouterService);
         dotIframeService = de.injector.get(DotIframeService);
-        spyOn(dotRouterService, 'gotoPortlet');
         spyOn(dotIframeService, 'reloadData');
         fixture.detectChanges();
         taskDetail = de.query(By.css('dot-workflow-task-detail'));

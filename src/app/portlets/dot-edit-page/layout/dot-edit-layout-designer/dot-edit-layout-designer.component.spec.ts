@@ -106,7 +106,6 @@ const testConfigObject = {
         DotIconButtonModule
     ],
     providers: [
-        DotRouterService,
         DotAlertConfirmService,
         LoginService,
         PageViewService,
@@ -175,7 +174,6 @@ describe('DotEditLayoutDesignerComponent', () => {
         });
 
         it('should redirect to edit page on cancel button click', () => {
-            spyOn(dotRouterService, 'goToEditPage');
             const cancelButton: DebugElement = fixture.debugElement.query(
                 By.css('.dot-edit-layout__toolbar-action-cancel')
             );

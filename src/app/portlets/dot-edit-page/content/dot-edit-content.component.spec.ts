@@ -261,7 +261,6 @@ describe('DotEditContentComponent', () => {
     );
 
     it('should redirect to site browser on toolbar cancel', () => {
-        spyOn(dotRouterService, 'goToSiteBrowser');
         toolbarElement.triggerEventHandler('cancel', {});
 
         expect(dotRouterService.goToSiteBrowser).toHaveBeenCalledTimes(1);
@@ -393,7 +392,6 @@ describe('DotEditContentComponent', () => {
                 observableThrowError(fake500Response)
             );
             spyOn(dotHttpErrorManagerService, 'handle').and.callThrough();
-            spyOn(dotRouterService, 'goToSiteBrowser');
 
             component.reload();
 
@@ -973,7 +971,6 @@ describe('DotEditContentComponent', () => {
                     content: new DotRenderedPageState(mockUser, mockDotRenderedPage)
                 });
 
-                spyOn(dotRouterService, 'goToEditPage');
                 spyOn(dotEditPageDataService, 'set');
                 spyOn(dotEditContentHtmlService, 'renderPage');
             });

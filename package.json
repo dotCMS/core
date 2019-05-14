@@ -15,7 +15,7 @@
         "publish:dev": "rm -rf dist;npm run build:prod;cp package.json ./dist/package.json;npm run createpackagejson;cd dist;npm publish",
         "publish:doc:docms": "typedoc projects/dotcms/src/lib/ --options projects/dotcms/typedoc.json; gh-pages --dist ./dist-docs/dotcms --dest ./docs/dotcms",
         "dot-custom-elements": "cd ./projects/dot-custom-elements && npm run start",
-        "docker:test": "npn run docker:build;docker run --rm core-web npm test -- dotcms-ui --watch=false",
+        "docker:test": "npm run docker:build;docker run --rm core-web npm test -- dotcms-ui --watch=false",
         "docker:build": "docker build -t core-web ."
     },
     "repository": {

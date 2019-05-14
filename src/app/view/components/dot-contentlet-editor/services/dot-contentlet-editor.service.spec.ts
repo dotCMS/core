@@ -66,14 +66,14 @@ describe('DotContentletEditorService', () => {
         service.editUrl$.subscribe((url: string) => {
             expect(url).toEqual(
                 [
-                    `/c/portal/layout`,
-                    `?p_l_id=456`,
-                    `&p_p_id=c-Test`,
-                    `&p_p_action=1`,
-                    `&p_p_state=maximized`,
-                    `&p_p_mode=view`,
-                    `&_c-Test_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet`,
-                    `&_c-Test_cmd=edit&inode=999`
+                    '/c/portal/layout',
+                    '?p_l_id=456',
+                    '&p_p_id=c_Test',
+                    '&p_p_action=1',
+                    '&p_p_state=maximized',
+                    '&p_p_mode=view',
+                    '&_c_Test_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet',
+                    '&_c_Test_cmd=edit&inode=999'
                 ].join('')
             );
         });

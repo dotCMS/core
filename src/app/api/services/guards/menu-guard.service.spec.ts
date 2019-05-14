@@ -1,8 +1,8 @@
+import { DOTTestBed } from './../../../test/dot-test-bed';
 import { of as observableOf } from 'rxjs';
 import { TestBed } from '@angular/core/testing';
 import { Injectable } from '@angular/core';
 import { DotMenuService } from '../dot-menu.service';
-import { DotRouterService } from '../dot-router/dot-router.service';
 import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 
@@ -11,11 +11,6 @@ import { MenuGuardService } from './menu-guard.service';
 @Injectable()
 class MockDotMenuService {
     isPortletInMenu() {}
-}
-
-@Injectable()
-class MockDotRouterService {
-    getPortletId = jasmine.createSpy('getPortletId').and.returnValue('test');
 }
 
 @Injectable()
@@ -31,11 +26,10 @@ describe('ValidMenuGuardService', () => {
     let mockActivatedRouteSnapshot: ActivatedRouteSnapshot;
 
     beforeEach(() => {
-        TestBed.configureTestingModule({
+        DOTTestBed.configureTestingModule({
             providers: [
                 MenuGuardService,
                 { provide: DotMenuService, useClass: MockDotMenuService },
-                { provide: DotRouterService, useClass: MockDotRouterService },
                 {
                     provide: DotNavigationService,
                     useClass: MockDotNavigationService

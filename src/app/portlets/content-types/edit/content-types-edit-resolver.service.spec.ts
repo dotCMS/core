@@ -77,8 +77,6 @@ describe('ContentTypeEditResolver', () => {
             })
         );
 
-        spyOn(dotRouterService, 'gotoPortlet');
-
         spyOn(crudService, 'getDataById').and.returnValue(
             observableThrowError({
                 bodyJsonObject: {
@@ -104,7 +102,7 @@ describe('ContentTypeEditResolver', () => {
                 redirected: false
             })
         );
-        spyOn(dotRouterService, 'gotoPortlet');
+
         spyOn(crudService, 'getDataById').and.returnValue(
             observableThrowError({
                 bodyJsonObject: {
@@ -125,7 +123,6 @@ describe('ContentTypeEditResolver', () => {
         activatedRouteSnapshotMock.paramMap.get = (param) => {
             return param === 'type' ? 'content' : false;
         };
-        spyOn(dotRouterService, 'gotoPortlet');
         spyOn(crudService, 'getDataById').and.returnValue(observableOf(false));
         contentTypeEditResolver.resolve(activatedRouteSnapshotMock).subscribe((res: any) => {
             expect(res).toEqual({

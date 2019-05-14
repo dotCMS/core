@@ -196,7 +196,6 @@ describe('ContentTypesEditComponent', () => {
             dialog = de.query(By.css('dot-dialog'));
 
             spyOn(comp, 'onDialogHide').and.callThrough();
-            spyOn(dotRouterService, 'gotoPortlet');
         }));
 
         it('should have dialog opened by default & has css base-type class', () => {
@@ -267,8 +266,6 @@ describe('ContentTypesEditComponent', () => {
             });
 
             it('should create content type', () => {
-                spyOn(dotRouterService, 'goToEditContentType');
-
                 const responseContentType = Object.assign({}, { id: '123' }, mockContentType, {
                     fields: [{ hello: 'world' }]
                 });
@@ -376,7 +373,6 @@ describe('ContentTypesEditComponent', () => {
             fixture.detectChanges();
 
             spyOn(comp, 'onDialogHide').and.callThrough();
-            spyOn(dotRouterService, 'gotoPortlet');
         }));
 
         const clickEditButton = () => {

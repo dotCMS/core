@@ -1,3 +1,5 @@
+import { MockDotRouterService } from '@tests/dot-router-service.mock';
+import { NotLicensedService } from './../api/services/not-licensed-service';
 import { DotHttpErrorManagerService } from './../api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotIframeService } from './../view/components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { ConnectionBackend, RequestOptions, BaseRequestOptions, Http } from '@angular/http';
@@ -31,7 +33,6 @@ import { DotContentletEditorService } from '@components/dot-contentlet-editor/se
 import { DotUiColorsService } from '../api/services/dot-ui-colors/dot-ui-colors.service';
 import { CoreWebServiceMock } from 'projects/dotcms-js/src/lib/core/core-web.service.mock';
 
-
 class MockDotUiColorsService {
     setColors() {}
 }
@@ -49,9 +50,11 @@ export class DOTTestBed {
         providers: [
             { provide: ConnectionBackend, useClass: MockBackend },
             { provide: RequestOptions, useClass: BaseRequestOptions },
-            { provide: DotUiColorsService, useClass: MockDotUiColorsService},
+            { provide: DotUiColorsService, useClass: MockDotUiColorsService },
             { provide: LOCALE_ID, useValue: {} },
             { provide: CoreWebService, useClass: CoreWebServiceMock },
+            { provide: NotLicensedService, useValue: { init() {} } },
+            { provide: DotRouterService, useClass: MockDotRouterService },
             ApiRoot,
             BrowserUtil,
             ConfirmationService,
@@ -64,7 +67,7 @@ export class DOTTestBed {
             DotMessageService,
             DotRouterService,
             DotEventsSocket,
-            { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory},
+            { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
             DotcmsConfig,
             DotcmsEventsService,
             FormatDateService,

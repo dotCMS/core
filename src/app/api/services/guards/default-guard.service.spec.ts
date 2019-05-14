@@ -1,22 +1,16 @@
+import { DOTTestBed } from '@tests/dot-test-bed';
+import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { TestBed } from '@angular/core/testing';
-import { Injectable } from '@angular/core';
 import { DefaultGuardService } from './default-guard.service';
-import { DotRouterService } from '../dot-router/dot-router.service';
-
-@Injectable()
-class MockDotRouterService {
-    goToMain = jasmine.createSpy('goToMain');
-}
 
 describe('ValidDefaultGuardService', () => {
     let defaultGuardService: DefaultGuardService;
     let dotRouterService: DotRouterService;
 
     beforeEach(() => {
-        TestBed.configureTestingModule({
+        DOTTestBed.configureTestingModule({
             providers: [
-                DefaultGuardService,
-                { provide: DotRouterService, useClass: MockDotRouterService }
+                DefaultGuardService
             ]
         });
 

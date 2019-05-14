@@ -133,8 +133,6 @@ describe('DotEditPageResolver', () => {
                 observableThrowError(fake403Response)
             );
 
-            spyOn(dotRouterService, 'goToSiteBrowser');
-
             resolver.resolve(route).subscribe();
             expect(dotRouterService.goToSiteBrowser).toHaveBeenCalledTimes(1);
             expect(dotPageStateService.get).toHaveBeenCalledWith({
@@ -188,9 +186,6 @@ describe('DotEditPageResolver', () => {
                     redirected: false
                 })
             );
-
-            spyOn(dotRouterService, 'goToSiteBrowser');
-
             resolver.resolve(route).subscribe();
             expect(dotRouterService.goToSiteBrowser).toHaveBeenCalledTimes(1);
         });
@@ -210,8 +205,6 @@ describe('DotEditPageResolver', () => {
                     redirected: false
                 })
             );
-
-            spyOn(dotRouterService, 'goToSiteBrowser');
 
             resolver.resolve(route).subscribe();
             expect(dotRouterService.goToSiteBrowser).toHaveBeenCalledTimes(1);

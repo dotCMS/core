@@ -172,10 +172,6 @@ describe('DotNavigationService', () => {
         dotEventService = testbed.get(DotEventsService);
         router = testbed.get(Router);
 
-        spyOn(dotRouterService, 'gotoPortlet').and.callFake(
-            () => new Promise((resolve) => resolve(true))
-        );
-        spyOn(dotRouterService, 'reloadCurrentPortlet');
         spyOn(dotEventService, 'notify');
         spyOn(dotMenuService, 'reloadMenu').and.callThrough();
     }));
@@ -189,8 +185,8 @@ describe('DotNavigationService', () => {
 
     describe('reloadCurrentPortlet', () => {
         it('should reload current portlet', () => {
-            service.reloadCurrentPortlet('hello');
-            expect(dotRouterService.reloadCurrentPortlet).toHaveBeenCalledWith('hello');
+            service.reloadCurrentPortlet('123-567');
+            expect(dotRouterService.reloadCurrentPortlet).toHaveBeenCalledWith('123-567');
         });
 
         it('should NOT reload current portlet', () => {

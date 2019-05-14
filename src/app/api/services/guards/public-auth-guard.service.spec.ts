@@ -1,10 +1,11 @@
+import { DotRouterService } from '@services/dot-router/dot-router.service';
+import { DOTTestBed } from '@tests/dot-test-bed';
 import { of as observableOf, Observable } from 'rxjs';
 import { TestBed } from '@angular/core/testing';
 import { Injectable } from '@angular/core';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 import { PublicAuthGuardService } from './public-auth-guard.service';
 import { LoginService } from 'dotcms-js';
-import { DotRouterService } from '../dot-router/dot-router.service';
 
 @Injectable()
 class MockLoginService {
@@ -12,11 +13,6 @@ class MockLoginService {
     get isLogin$() {
         return this._isLogin$;
     }
-}
-
-@Injectable()
-class MockDotRouterService {
-    goToMain = jasmine.createSpy('goToMain');
 }
 
 describe('ValidPublicAuthGuardService', () => {
@@ -27,10 +23,9 @@ describe('ValidPublicAuthGuardService', () => {
     let mockActivatedRouteSnapshot: ActivatedRouteSnapshot;
 
     beforeEach(() => {
-        TestBed.configureTestingModule({
+        DOTTestBed.configureTestingModule({
             providers: [
                 PublicAuthGuardService,
-                { provide: DotRouterService, useClass: MockDotRouterService },
                 { provide: LoginService, useClass: MockLoginService }
             ]
         });

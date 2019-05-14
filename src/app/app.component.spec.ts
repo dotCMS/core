@@ -15,18 +15,20 @@ describe('AppComponent', () => {
     let de: DebugElement;
     let dotCmsConfig: DotcmsConfig;
     let dotUiColorsService: DotUiColorsService;
+    let notLicensedService: NotLicensedService;
 
     beforeEach(() => {
         DOTTestBed.configureTestingModule({
             declarations: [AppComponent],
             imports: [RouterTestingModule],
-            providers: [NotLicensedService]
+            providers: []
         });
 
         fixture = DOTTestBed.createComponent(AppComponent);
         de = fixture.debugElement;
         dotCmsConfig = de.injector.get(DotcmsConfig);
         dotUiColorsService = de.injector.get(DotUiColorsService);
+        notLicensedService = de.injector.get(NotLicensedService);
 
         spyOn(dotCmsConfig, 'getConfig').and.returnValue(
             of({
@@ -40,7 +42,13 @@ describe('AppComponent', () => {
 
         spyOn(dotUiColorsService, 'setColors');
 
+        spyOn(notLicensedService, 'init');
+
         fixture.detectChanges();
+    });
+
+    it('should init license service', () => {
+        expect(notLicensedService.init).toHaveBeenCalledTimes(1);
     });
 
     it('should have router-outlet', () => {

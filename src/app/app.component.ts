@@ -11,14 +11,14 @@ import { take, pluck } from 'rxjs/operators';
 })
 export class AppComponent implements OnInit {
     constructor(
-        notLicensedService: NotLicensedService,
+        private notLicensedService: NotLicensedService,
         private dotCmsConfig: DotcmsConfig,
         private dotUiColors: DotUiColorsService
     ) {
-        notLicensedService.init();
     }
 
     ngOnInit() {
+        this.notLicensedService.init();
         this.dotCmsConfig
             .getConfig()
             .pipe(

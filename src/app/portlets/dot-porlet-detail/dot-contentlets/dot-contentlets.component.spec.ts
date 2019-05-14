@@ -60,11 +60,6 @@ describe('DotContentletsComponent', () => {
         dotIframeService = de.injector.get(DotIframeService);
         dotContentletEditorService = de.injector.get(DotContentletEditorService);
 
-        spyOn(dotRouterService, 'gotoPortlet');
-        spyOnProperty(dotRouterService, 'currentPortlet', 'get').and.returnValue({
-            id: 'current-portlet'
-        });
-
         spyOn(dotIframeService, 'reloadData');
         fixture.detectChanges();
     });
@@ -83,7 +78,7 @@ describe('DotContentletsComponent', () => {
     it('should go current portlet and reload data when modal closed', () => {
         const edit = de.query(By.css('dot-edit-contentlet'));
         edit.triggerEventHandler('close', {});
-        expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('/c/current-portlet');
-        expect(dotIframeService.reloadData).toHaveBeenCalledWith('current-portlet');
+        expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('/c/123-567');
+        expect(dotIframeService.reloadData).toHaveBeenCalledWith('123-567');
     });
 });

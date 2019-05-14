@@ -100,7 +100,6 @@ describe('DotLoginComponent', () => {
     });
 
     it('should navigate to the recover password screen', () => {
-        spyOn(dotRouterService, 'goToForgotPassword');
         const forgotPasswordLink: DebugElement = de.query(By.css('a[actionLink]'));
 
         forgotPasswordLink.triggerEventHandler('click', { value: '' });
@@ -120,7 +119,6 @@ describe('DotLoginComponent', () => {
     it('should make a login request correctly and redirect after login', () => {
         component.loginForm.setValue(credentials);
         spyOn(loginService, 'loginUser').and.callThrough();
-        spyOn(dotRouterService, 'goToMain');
         fixture.detectChanges();
 
         expect(signInButton.nativeElement.disabled).toBeFalsy();
