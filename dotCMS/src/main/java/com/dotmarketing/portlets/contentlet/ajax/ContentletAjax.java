@@ -2334,6 +2334,10 @@ public class ContentletAjax {
 
 		try {
 
+			final String binaryFileName = UtilMethods.isSet(fileName) ? ContentletUtil.sanitizeFileName(fileName).trim() : "";
+			//In case the user exits the file asset dialog before Saving, use this as placeholder of the fileName
+			final String userFileName = user.getUserId() + (UtilMethods.isSet(binaryFileName) ? "." + fileName : "");
+
 			newCont.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
 
 			for(Field field : FieldsCache.getFieldsByStructureVariableName(fileAssetStr.getInode())){
@@ -2347,17 +2351,35 @@ public class ContentletAjax {
 
 					File binaryFile = null;
 					if(UtilMethods.isSet(fileName)){
-						fileName = ContentletUtil.sanitizeFileName(fileName);
 						binaryFile = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
 								+ File.separator + user.getUserId() + File.separator + FieldsCache.getField(fieldInode).getFieldContentlet()
-								+ File.separator + fileName.trim());
+								+ File.separator + binaryFileName);
 						}
 
 					conAPI.setContentletProperty(newCont, field, binaryFile);
 				}
+
+				if(field.getVelocityVarName().equals(FileAssetAPI.FILE_NAME_FIELD)) {
+					conAPI.setContentletProperty(newCont, field, userFileName);
+				}
 			}
 
-			newCont = conAPI.checkin(newCont, sysUser, false);
+			//Tries to find the fileName in the Identifier table the file
+			final Identifier existingId = APILocator.getIdentifierAPI().find(
+					APILocator.getHostAPI().findSystemHost(), File.separator + userFileName);
+
+			//If exists, uses that identifier instead of inserting a new one
+			if (existingId != null && UtilMethods.isSet(existingId.getId())) {
+				newCont.setIdentifier(existingId.getId());
+				Contentlet workingContentlet = conAPI.findContentletByIdentifierAnyLanguage(existingId.getId());
+				if (workingContentlet != null) {
+					newCont.setInode(workingContentlet.getInode());
+				}
+				newCont = conAPI.checkinWithoutVersioning(newCont,null, null, null,
+						sysUser, false);
+			} else {//If not exists, checkin the file
+				newCont = conAPI.checkin(newCont, sysUser, false);
+			}
 
 		} catch (Exception e) {
 			Logger.error(this,"Contentlet failed while creating new binary content",e);
