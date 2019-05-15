@@ -86,8 +86,7 @@
                 "textmapping": {
                     "match_mapping_type": "string",
                     "mapping": {
-                        "analyzer": "whitespace",
-                        "search_analyzer": "whitespace",
+                        "analyzer": "standard",
                         "store": "false",
                         "type": "text"
                     }
