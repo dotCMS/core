@@ -389,7 +389,7 @@ function indexStructureChanged(){
 
 function cleanReindexStructure(){
 	 if(confirm("<%= LanguageUtil.get(pageContext,"are-you-sure-delete-reindex") %>")){
-		var strInode = dojo.byId('structure').value;
+		var strInode = dijit.byId('structure').item.id;
 		CMSMaintenanceAjax.cleanReindexStructure(strInode,showDotCMSSystemMessage);
 	 }
 }
@@ -453,7 +453,8 @@ function doSnapshotIndex(indexName){
 
 function doReindex(){
 	var shards;
-    if(dojo.byId('structure').value == "<%= LanguageUtil.get(pageContext,"Rebuild-Whole-Index") %>"){
+
+    if(dijit.byId('structure').value == "<%= LanguageUtil.get(pageContext,"Rebuild-Whole-Index") %>"){
     	//document.getElementById('defaultStructure').value = "Rebuild Whole Index";
     	dojo.byId('defaultStructure').value = "Rebuild Whole Index";
 
@@ -469,6 +470,9 @@ function doReindex(){
      	 }
 		if(shards <1){
 			return;
+		}
+		if(dijit.byId('structure').item && dijit.byId('structure').item.id){
+		    dijit.byId('structure').setValue(dijit.byId('structure').item.id);
 		}
 		dojo.byId("numberOfShards").value = shards;
 		dijit.byId('idxReindexButton').setDisabled(true);
@@ -1399,13 +1403,13 @@ dd.leftdl {
                         <td>
                             <div id="lastIndexationDiv"></div>
 
-                                <%= LanguageUtil.get(pageContext,"Reindex") %>:
+                                <%= LanguageUtil.get(pageContext,"Reindex") %> :
                                 <select id="structure" dojoType="dijit.form.ComboBox" style="width:250px;" autocomplete="true" name="structure" onchange="indexStructureChanged();">
-                                    <option><%= LanguageUtil.get(pageContext,"Rebuild-Whole-Index") %></option>
+                                    <option value="<%= LanguageUtil.get(pageContext,"Rebuild-Whole-Index") %>"><%= LanguageUtil.get(pageContext,"Rebuild-Whole-Index") %></option>
                                     <%
 
                                         for(ContentType type : structs){%>
-                                        <option><%=type.name()%></option>
+                                        <option value="<%=type.variable()%>"><%=type.name()%></option>
                                     <%}%>
                                 </select>
 

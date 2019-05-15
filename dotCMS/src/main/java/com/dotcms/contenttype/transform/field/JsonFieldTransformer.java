@@ -200,7 +200,6 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
     } catch (Exception e) {
       throw new DotStateException(e);
     }
-  }
-
+  } 
 }
 

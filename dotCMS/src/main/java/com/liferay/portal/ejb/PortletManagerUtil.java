@@ -20,6 +20,7 @@
 package com.liferay.portal.ejb;
 
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.business.portal.PortletFactory;
 import com.liferay.portal.model.Portlet;
 import java.io.InputStream;
@@ -36,6 +37,7 @@ import java.util.Map;
  */
 public class PortletManagerUtil {
 
+    @WrapInTransaction
     public static Collection addPortlets(final InputStream[] xmls) throws com.liferay.portal.SystemException {
         try {
             final PortletFactory portletFactory = PortletManagerFactory.getManager();
@@ -52,7 +54,7 @@ public class PortletManagerUtil {
             throw new com.liferay.portal.SystemException(e);
         }
     }
-
+    @CloseDBIfOpened
     public static com.liferay.portal.model.Portlet getPortletById(final java.lang.String companyId, final java.lang.String portletId)
             throws com.liferay.portal.SystemException {
         try {
