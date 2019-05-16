@@ -11,10 +11,13 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
+import com.google.common.collect.ImmutableMap;
+
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -76,26 +79,19 @@ public class GoogleTranslationService extends AbstractTranslationService {
 
         List<String> ret = new ArrayList<>();
 
+        
         StringBuilder restURL = new StringBuilder().append(serviceUrl).append("?key=").append(apiKey);
+        
 
-        for (String trans : toTranslate) {
-
-            if(trans==null) continue;
-
-            restURL.append("&q=");
-            try {
-                restURL.append(URLEncoder.encode(trans, "UTF-8"));
-            } catch (UnsupportedEncodingException e) {
-                Logger.error(this.getClass(), e.getMessage(), e);
-            }
-        }
-
-        restURL.append("&source=").append(from.getLanguageCode());
-        restURL.append("&target=").append(to.getLanguageCode());
+        Map<String, Object> params  =new HashMap<>();
+        params.put("q", toTranslate);
+        params.put("source", from.getLanguageCode());
+        params.put("target", to.getLanguageCode());
+        
 
         try {
             Logger.info(this.getClass(), "translating:" + restURL);
-            JSONObject json = (JSONObject) jsonTool.fetch(restURL.toString());
+            JSONObject json = (JSONObject) jsonTool.post(restURL.toString(), 15000,ImmutableMap.of(), new JSONObject(params).toString());
 
             json = json.getJSONObject("data");
             JSONArray arr = json.getJSONArray("translations");
