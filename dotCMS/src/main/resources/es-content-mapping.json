@@ -86,7 +86,7 @@
                 "textmapping": {
                     "match_mapping_type": "string",
                     "mapping": {
-                        "analyzer": "standard",
+                        "analyzer": "my_analyzer",
                         "store": "false",
                         "type": "text"
                     }
