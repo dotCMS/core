@@ -1,4 +1,4 @@
-import { Component, Prop, State, Element, Event, EventEmitter, Method } from '@stencil/core';
+import { Component, Prop, State, Element, Event, EventEmitter, Method, Watch } from '@stencil/core';
 import Fragment from 'stencil-fragment';
 import { DotFieldStatus, DotFieldValueEvent, DotFieldStatusEvent, DotLabel } from '../../models';
 import {
@@ -8,7 +8,8 @@ import {
     getTagLabel,
     getTagHint,
     getErrorClass,
-    getTagError
+    getTagError,
+    checkProp
 } from '../../utils';
 import flatpickr from 'flatpickr';
 
@@ -23,25 +24,25 @@ export class DotDateRangeComponent {
     @Prop({ mutable: true }) value = '';
 
     /** Name that will be used as ID */
-    @Prop() name: string;
+    @Prop() name = '';
 
     /** (optional) Text to be rendered next to input field */
-    @Prop() label: string;
+    @Prop() label = '';
 
     /** (optional) Hint text that suggest a clue of the field */
-    @Prop() hint: string;
+    @Prop() hint = '';
 
     /** (optional) Max value that the field will allow to set */
-    @Prop() max: string;
+    @Prop() max = '';
 
     /** (optional) Min value that the field will allow to set */
-    @Prop() min: string;
+    @Prop() min = '';
 
     /** (optional) Determine if it is needed */
-    @Prop() required: boolean;
+    @Prop() required = false;
 
     /** (optional) Text that be shown when required is set and condition not met */
-    @Prop() requiredMessage: string;
+    @Prop() requiredMessage = '';
 
     /** (optional) Disables field's interaction */
     @Prop() disabled = false;
@@ -78,7 +79,7 @@ export class DotDateRangeComponent {
     @Event() valueChange: EventEmitter<DotFieldValueEvent>;
     @Event() statusChange: EventEmitter<DotFieldStatusEvent>;
 
-    fp: any;
+    private fp: any;
 
     /**
      * Reset properties of the field, clear value and emit events.
@@ -89,6 +90,19 @@ export class DotDateRangeComponent {
         this.status = getOriginalStatus(this.isValid());
         this.emitStatusChange();
         this.emitValueChange();
+    }
+
+    @Watch('value')
+    valueWatch(): void {
+        if (this.value) {
+            const dates = checkProp<DotDateRangeComponent, string>(
+                this,
+                'value',
+                'string'
+            );
+            const [startDate, endDate] = dates.split(',');
+            this.fp.setDate([new Date(startDate), new Date(endDate)], true);
+        }
     }
 
     componentWillLoad(): void {
@@ -104,7 +118,7 @@ export class DotDateRangeComponent {
             minDate: this.min,
             onChange: this.setValue.bind(this)
         });
-        this.setDefaultDate();
+        this.validateProps();
     }
 
     hostData() {
@@ -141,15 +155,8 @@ export class DotDateRangeComponent {
         );
     }
 
-    private setDefaultDate(): void {
-        if (this.value) {
-            try {
-                const dates = this.value.split(',');
-                this.fp.setDate([new Date(dates[0]), new Date(dates[1])], true);
-            } catch(e) {
-                console.error('Bad date format');
-            }
-        }
+    private validateProps(): void {
+        this.valueWatch();
     }
 
     private isDisabled(): boolean {

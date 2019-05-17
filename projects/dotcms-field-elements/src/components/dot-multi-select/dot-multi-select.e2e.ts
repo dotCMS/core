@@ -55,6 +55,13 @@ describe('dot-multi-select', () => {
         expect(element.outerHTML).toBe(`<dot-multi-select name=\"testName\" label=\"testLabel\" hint=\"testHint\" options=\"|,valueA|1,valueB|2\" value=\"2\" required-message=\"testErrorMsg\" required=\"true\" size=\"3\" class=\"dot-required hydrated dot-invalid dot-dirty dot-touched\"><div class=\"dot-field__label\"><label for=\"dot-testName\">testLabel</label><span class=\"dot-field__required-mark\">*</span></div><select multiple=\"\" size=\"3\" class=\"dot-field__error\" id=\"dot-testName\"><option value=\"\"></option><option value=\"1\">valueA</option><option value=\"2\">valueB</option></select><span class=\"dot-field__hint\">testHint</span><span class=\"dot-field__error-message\">testErrorMsg</span></dot-multi-select>`);
     });
 
+    it('it should set options blank when no valid options passed', async () => {
+        element.setProperty('options', { noValid: true });
+        await page.waitForChanges();
+        // tslint:disable-next-line:max-line-length
+        expect(element.outerHTML).toBe(`<dot-multi-select name=\"testName\" label=\"testLabel\" hint=\"testHint\" options=\"|,valueA|1,valueB|2\" value=\"2\" required-message=\"testErrorMsg\" required=\"true\" size=\"3\" class=\"dot-valid dot-pristine dot-untouched dot-required hydrated\"><div class=\"dot-field__label\"><label for=\"dot-testName\">testLabel</label><span class=\"dot-field__required-mark\">*</span></div><select multiple=\"\" size=\"3\" id=\"dot-testName\"></select><span class=\"dot-field__hint\">testHint</span></dot-multi-select>`);
+    });
+
     describe('Events', () => {
         beforeEach(async () => {
             spyStatusChangeEvent = await page.spyOnEvent('statusChange');
@@ -78,8 +85,7 @@ describe('dot-multi-select', () => {
         });
 
         it('should emit status and value on Reset', async () => {
-            element.callMethod('reset');
-            await page.waitForChanges();
+            await element.callMethod('reset');
             expect(spyStatusChangeEvent).toHaveReceivedEventDetail({
                 name: 'testName',
                 status: {

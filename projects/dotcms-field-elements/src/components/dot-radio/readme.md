@@ -7,16 +7,16 @@
 
 ## Properties
 
-| Property          | Attribute          | Description | Type      | Default     |
-| ----------------- | ------------------ | ----------- | --------- | ----------- |
-| `disabled`        | `disabled`         |             | `boolean` | `false`     |
-| `hint`            | `hint`             |             | `string`  | `undefined` |
-| `label`           | `label`            |             | `string`  | `undefined` |
-| `name`            | `name`             |             | `string`  | `undefined` |
-| `options`         | `options`          |             | `string`  | `undefined` |
-| `required`        | `required`         |             | `boolean` | `undefined` |
-| `requiredMessage` | `required-message` |             | `string`  | `undefined` |
-| `value`           | `value`            |             | `string`  | `undefined` |
+| Property          | Attribute          | Description                                                                      | Type      | Default |
+| ----------------- | ------------------ | -------------------------------------------------------------------------------- | --------- | ------- |
+| `disabled`        | `disabled`         | (optional) Disables field's interaction                                          | `boolean` | `false` |
+| `hint`            | `hint`             | (optional) Hint text that suggest a clue of the field                            | `string`  | `''`    |
+| `label`           | `label`            | (optional) Text to be rendered next to input field                               | `string`  | `''`    |
+| `name`            | `name`             | Name that will be used as ID                                                     | `string`  | `''`    |
+| `options`         | `options`          | Value/Label ratio options separated by comma, to be formatted as: Value\|Label   | `string`  | `''`    |
+| `required`        | `required`         | (optional) Determine if it is mandatory                                          | `boolean` | `false` |
+| `requiredMessage` | `required-message` | (optional) Text that will be shown when required is set and condition is not met | `string`  | `''`    |
+| `value`           | `value`            | Value set from the ratio option                                                  | `string`  | `''`    |
 
 
 ## Events

@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html dir='ltr' lang='en'>
+<html dir="ltr" lang="en">
     <head>
-        <meta charset='utf-8' />
+        <meta charset="utf-8" />
         <meta
-            name='viewport'
-            content='width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=5.0'
+            name="viewport"
+            content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=5.0"
         />
         <title>Dot-Fields</title>
         <style>
@@ -13,7 +13,10 @@
                 margin-bottom: 16px;
             }
         </style>
-        <script src='/build/dotcmsfields.js'></script>
+    </head>
+    <body>
+        <dot-form></dot-form>
+        <script src="/build/dotcmsfields.js"></script>
         <script>
             const fieldsConfig = [
                 {
@@ -26,7 +29,8 @@
                     variable: 'daterange01',
                     min: '2019-01-01',
                     max: '2019-12-30'
-            }, {
+                },
+                {
                     fieldType: 'Text',
                     name: 'Name:',
                     defaultValue: 'John',
@@ -37,7 +41,8 @@
                     required: true,
                     requiredMessage: 'Required Name',
                     variable: 'text1'
-                }, {
+                },
+                {
                     defaultValue: '2',
                     fieldType: 'Select',
                     hint: 'dropdown hint',
@@ -46,7 +51,8 @@
                     requiredMessage: 'this field is required',
                     values: '|,labelA|1,labelB|2,labelC|3',
                     variable: 'dropdown2'
-                }, {
+                },
+                {
                     defaultValue: '2',
                     fieldType: 'Multi-Select',
                     hint: 'multi select hint',
@@ -56,19 +62,21 @@
                     size: 0,
                     values: '|,labelA|1,labelB|2,labelC|3',
                     variable: 'multiSelect5'
-                }, {
+                },
+                {
                     fieldType: 'Key-Value',
                     label: 'Name:',
                     saveBtnLabel: 'Save',
                     name: 'Key Value:',
-                    defaultValue: { a:1, b:2, c:3 },
+                    defaultValue: { a: 1, b: 2, c: 3 },
                     hint: 'this is a hint',
                     keyPlaceholder: 'Enter Key',
                     valuePlaceholder: 'Enter Value',
                     required: true,
                     requiredMessage: 'Required Name',
                     variable: 'keyvalue6'
-                }, {
+                },
+                {
                     fieldType: 'Textarea',
                     name: 'Address:',
                     defaultValue: 'Address',
@@ -79,7 +87,8 @@
                     required: true,
                     requiredMessage: 'Required Address',
                     variable: 'textarea3'
-                }, {
+                },
+                {
                     fieldType: 'Checkbox',
                     defaultValue: '2,1',
                     hint: 'Checkbox hint',
@@ -88,7 +97,8 @@
                     requiredMessage: 'this field is required',
                     values: 'labelA|1 ,labelB|2,labelC|3',
                     variable: 'checkbox4'
-                }, {
+                },
+                {
                     fieldType: 'Radio',
                     defaultValue: '2',
                     hint: 'Radio hint',
@@ -144,24 +154,16 @@
                     defaultValue: 'tag-1,tag-2',
                     hint: 'tag hint',
                     required: true,
-                    requiredMessage: 'Required Tag',
+                    requiredMessage: 'Required Tag'
                 }
             ];
 
-            window.onload = function() {
-                 const dotFormEl = document.createElement('dot-form');
-                dotFormEl.fields = fieldsConfig;
-                dotFormEl.addEventListener('onSubmit', (e) => {
-                     e.preventDefault();
-                     console.log(e)
-                 });
-
-                 let container = document.querySelector('#container');
-                 container.append(dotFormEl);
-            };
+            const dotFormEl = document.querySelector('dot-form');
+            dotFormEl.fields = fieldsConfig;
+            dotFormEl.addEventListener('onSubmit', (e) => {
+                e.preventDefault();
+                console.log(e);
+            });
         </script>
-    </head>
-    <body>
-        <div id="container"></div>
     </body>
 </html>

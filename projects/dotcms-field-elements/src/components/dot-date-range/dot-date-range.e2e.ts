@@ -53,10 +53,17 @@ describe('dot-date-range', () => {
         expect(hint).toBeNull();
     });
 
+    it('it should set value dates in blank, when no valid "value" passed', async () => {
+        element.setProperty('value', { noValid: true });
+        await page.waitForChanges();
+        const dateValue = await element.getProperty('value');
+        expect(dateValue).toBe('');
+    });
+
     describe('flatpickr interaction', () => {
         let calendar: E2EElement;
         beforeEach(async () => {
-            input.click();
+            await input.click();
             await page.waitForChanges();
             calendar = await page.find('.flatpickr-calendar');
         });
@@ -75,7 +82,7 @@ describe('dot-date-range', () => {
 
             it('should set date range value on input', async() => {
                 const dateValue = await input.getProperty('value');
-                expect(dateValue).toBe('2019-05-03,2019-05-06');
+                expect(dateValue).toBe('2019-04-05,2019-04-08');
             });
 
             it('should set "dot-valid", dot-touched" and "dot-dirty" Css classes', async() => {
@@ -93,7 +100,7 @@ describe('dot-date-range', () => {
                 });
                 expect(spyValueChange).toHaveReceivedEventDetail({
                     name: 'dateRange',
-                    value: '2019-05-03,2019-05-06'
+                    value: '2019-04-05,2019-04-08'
                 });
             });
         });

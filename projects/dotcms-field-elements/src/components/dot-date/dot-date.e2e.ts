@@ -67,6 +67,18 @@ describe('dot-date', () => {
         expect(errorMessage.innerHTML).toBe('Invalid Date Range');
     });
 
+    it('should set the default value of "min" when is not valid', async () => {
+        element.setProperty('min', { test: 'min' });
+        await page.waitForChanges();
+        expect(await input.getProperty('min')).toBe('');
+    });
+
+    it('should set the default value of "max" when is not valid', async () => {
+        element.setProperty('max', [1, 6, 7]);
+        await page.waitForChanges();
+       expect(await input.getProperty('max')).toBe('');
+    });
+
     describe('emit events', () => {
         it('should mark as touched when onblur', async () => {
             await input.triggerEvent('blur');
@@ -104,8 +116,7 @@ describe('dot-date', () => {
         });
 
         it('should emit status and value on Reset', async () => {
-            element.callMethod('reset');
-            await page.waitForChanges();
+            await element.callMethod('reset');
             expect(spyStatusChangeEvent).toHaveReceivedEventDetail({
                 name: 'date01',
                 status: {

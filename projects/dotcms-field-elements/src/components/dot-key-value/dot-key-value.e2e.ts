@@ -88,7 +88,7 @@ describe('dot-key-value', () => {
             });
 
             it('should emit status and value on Reset', async () => {
-                element.callMethod('reset');
+                await element.callMethod('reset');
                 await page.waitForChanges();
                 const tableRows = await page.findAll('table tr');
                 expect(tableRows.length).toBeFalsy();

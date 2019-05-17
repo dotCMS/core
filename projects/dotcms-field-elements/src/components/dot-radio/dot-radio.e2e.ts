@@ -52,6 +52,13 @@ describe('dot-radio', () => {
         expect(element.classList.contains('dot-touched')).toBe(true);
     });
 
+    it('it should set options blank when no valid options passed', async () => {
+        element.setProperty('options', { noValid: true });
+        await page.waitForChanges();
+        // tslint:disable-next-line:max-line-length
+        expect(element.outerHTML).toBe(`<dot-radio name=\"testRadio\" label=\"testLabel\" hint=\"testHint\" options=\"valueA|1,valueB|2,valueC|3\" value=\"2\" required=\"true\" required-message=\"testErrorMsg\" class=\"dot-valid dot-pristine dot-untouched dot-required hydrated\"><div class=\"dot-field__label\"><label for=\"dot-testRadio\">testLabel</label><span class=\"dot-field__required-mark\">*</span></div><div class=\"dot-radio__items\"></div><span class=\"dot-field__hint\">testHint</span></dot-radio>`);
+    });
+
     describe('Events', () => {
         beforeEach(async () => {
             spyStatusChangeEvent = await page.spyOnEvent('statusChange');
@@ -77,8 +84,7 @@ describe('dot-radio', () => {
         });
 
         it('should emit status and value on Reset', async () => {
-            element.callMethod('reset');
-            await page.waitForChanges();
+            await element.callMethod('reset');
             expect(spyStatusChangeEvent).toHaveReceivedEventDetail({
                 name: 'testRadio',
                 status: {

@@ -7,17 +7,17 @@
 
 ## Properties
 
-| Property            | Attribute            | Description | Type      | Default     |
-| ------------------- | -------------------- | ----------- | --------- | ----------- |
-| `disabled`          | `disabled`           |             | `boolean` | `false`     |
-| `hint`              | `hint`               |             | `string`  | `undefined` |
-| `label`             | `label`              |             | `string`  | `undefined` |
-| `name`              | `name`               |             | `string`  | `undefined` |
-| `regexCheck`        | `regex-check`        |             | `string`  | `undefined` |
-| `required`          | `required`           |             | `boolean` | `undefined` |
-| `requiredMessage`   | `required-message`   |             | `string`  | `undefined` |
-| `validationMessage` | `validation-message` |             | `string`  | `undefined` |
-| `value`             | `value`              |             | `string`  | `undefined` |
+| Property            | Attribute            | Description                                                                             | Type      | Default |
+| ------------------- | -------------------- | --------------------------------------------------------------------------------------- | --------- | ------- |
+| `disabled`          | `disabled`           | (optional) Disables field's interaction                                                 | `boolean` | `false` |
+| `hint`              | `hint`               | (optional) Hint text that suggest a clue of the field                                   | `string`  | `''`    |
+| `label`             | `label`              | (optional) Text to be rendered next to <textarea> element                               | `string`  | `''`    |
+| `name`              | `name`               | Name that will be used as ID                                                            | `string`  | `''`    |
+| `regexCheck`        | `regex-check`        | (optional) Regular expresion that is checked against the value to determine if is valid | `string`  | `''`    |
+| `required`          | `required`           | (optional) Determine if it is mandatory                                                 | `boolean` | `false` |
+| `requiredMessage`   | `required-message`   | (optional) Text that be shown when required is set and condition not met                | `string`  | `''`    |
+| `validationMessage` | `validation-message` | (optional) Text that be shown when the Regular Expression condition not met             | `string`  | `''`    |
+| `value`             | `value`              | Value specifies the value of the <textarea> element                                     | `string`  | `''`    |
 
 
 ## Events

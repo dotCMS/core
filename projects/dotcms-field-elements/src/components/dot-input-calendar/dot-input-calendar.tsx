@@ -9,18 +9,37 @@ import { getErrorClass, getId, getOriginalStatus, updateStatus } from '../../uti
 })
 export class DotInputCalendarComponent {
     @Element() el: HTMLElement;
+
+    /** Value specifies the value of the <input> element */
     @Prop({ mutable: true })
-    value: string;
-    @Prop() name: string;
-    @Prop() hint: string;
-    @Prop() required: boolean;
-    @Prop() requiredMessage: string;
-    @Prop() validationMessage: string;
+    value = '';
+
+    /** Name that will be used as ID */
+    @Prop() name = '';
+
+    /** (optional) Determine if it is mandatory */
+    @Prop() required = false;
+
+    /** (optional) Text that be shown when required is set and condition not met */
+    @Prop() requiredMessage = '';
+
+    /** (optional) Text that be shown when min or max are set and condition not met */
+    @Prop() validationMessage = '';
+
+    /** (optional) Disables field's interaction */
     @Prop() disabled = false;
-    @Prop() min: string;
-    @Prop() max: string;
-    @Prop() step: string;
-    @Prop() type: string;
+
+    /** (optional) Min, minimum value that the field will allow to set, expect a Date Format. */
+    @Prop() min = '';
+
+    /** (optional) Max, maximum value that the field will allow to set, expect a Date Format */
+    @Prop() max = '';
+
+    /** (optional) Step specifies the legal number intervals for the input field */
+    @Prop() step = '';
+
+    /** type specifies the type of <input> element to display */
+    @Prop() type = '';
 
     @State() status: DotFieldStatus;
     @Event() _valueChange: EventEmitter<DotFieldValueEvent>;

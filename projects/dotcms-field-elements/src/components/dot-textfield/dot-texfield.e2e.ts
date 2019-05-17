@@ -67,7 +67,7 @@ describe('dot-textfield', () => {
     });
 
     it('should clear value, set pristine and untouched  when input set reset', async () => {
-        element.callMethod('reset');
+        await element.callMethod('reset');
         await page.waitForChanges();
 
         expect(element.classList.contains('dot-pristine')).toBe(true);
@@ -84,6 +84,12 @@ describe('dot-textfield', () => {
 
     it('should mark as required when prop is present', async () => {
         expect(await input.getProperty('required')).toBe(true);
+    });
+
+    it('should set the default value of regexCheck when the Regular Expression is not valid', async () => {
+        element.setProperty('regexCheck', '[^(<[.\\n]+>)]*l');
+        await page.waitForChanges();
+        expect(await input.getProperty('regexCheck')).toBeUndefined();
     });
 
     describe('emit events', () => {
@@ -119,8 +125,7 @@ describe('dot-textfield', () => {
         });
 
         it('should emit status and value on Reset', async () => {
-            element.callMethod('reset');
-            await page.waitForChanges();
+            await element.callMethod('reset');
             expect(spyStatusChangeEvent).toHaveReceivedEventDetail({
                 name: 'fullName',
                 status: {

@@ -1,6 +1,12 @@
-import { Component, Prop, State, Element, Method, Event, EventEmitter } from '@stencil/core';
+import { Component, Prop, State, Element, Method, Event, EventEmitter, Watch } from '@stencil/core';
 import Fragment from 'stencil-fragment';
-import { DotOption, DotFieldStatus, DotFieldValueEvent, DotFieldStatusEvent, DotLabel } from '../../models';
+import {
+    DotOption,
+    DotFieldStatus,
+    DotFieldValueEvent,
+    DotFieldStatusEvent,
+    DotLabel
+} from '../../models';
 import {
     getClassNames,
     getDotOptionsFromFieldValue,
@@ -10,7 +16,8 @@ import {
     getTagError,
     getTagHint,
     getTagLabel,
-    updateStatus
+    updateStatus,
+    checkProp
 } from '../../utils';
 
 /**
@@ -26,15 +33,32 @@ import {
 export class DotMultiSelectComponent {
     @Element() el: HTMLElement;
 
+    /** (optional) Disables field's interaction */
     @Prop() disabled = false;
-    @Prop() name: string;
-    @Prop() label: string;
-    @Prop() hint: string;
-    @Prop() options: string;
-    @Prop() required: boolean;
-    @Prop() requiredMessage: string;
-    @Prop() size: number;
-    @Prop({ mutable: true }) value: string;
+
+    /** Name that will be used as ID */
+    @Prop() name = '';
+
+    /** (optional) Text to be rendered next to input field */
+    @Prop() label = '';
+
+    /** (optional) Hint text that suggest a clue of the field */
+    @Prop() hint = '';
+
+    /** Value/Label dropdown options separated by comma, to be formatted as: Value|Label */
+    @Prop() options = '';
+
+    /** (optional) Determine if it is mandatory */
+    @Prop() required = false;
+
+    /** (optional) Text that will be shown when required is set and condition is not met */
+    @Prop() requiredMessage = '';
+
+    /** (optional) Size number of the multi-select dropdown (default=3) */
+    @Prop() size = 3;
+
+    /** Value set from the dropdown option */
+    @Prop({ mutable: true }) value = '';
 
     @State() _options: DotOption[];
     @State() status: DotFieldStatus = getOriginalStatus();
@@ -46,9 +70,18 @@ export class DotMultiSelectComponent {
     _dotPristine = true;
 
     componentWillLoad() {
-        this._options = getDotOptionsFromFieldValue(this.options);
+        this.validateProps();
         this.emitInitialValue();
         this.emitStatusChange();
+    }
+
+    @Watch('options')
+    optionsWatch(): void {
+        const validOptions = checkProp<DotMultiSelectComponent, string>(
+            this,
+            'options'
+        );
+        this._options = getDotOptionsFromFieldValue(validOptions);
     }
 
     hostData() {
@@ -72,18 +105,22 @@ export class DotMultiSelectComponent {
     }
 
     render() {
-        const labelTagParams: DotLabel = {name: this.name, label: this.label, required: this.required};
+        const labelTagParams: DotLabel = {
+            name: this.name,
+            label: this.label,
+            required: this.required
+        };
         return (
             <Fragment>
                 {getTagLabel(labelTagParams)}
                 <select
                     multiple
-                    size={+this.size || 0}
+                    size={+this.size}
                     class={getErrorClass(this.status.dotValid)}
                     id={getId(this.name)}
                     disabled={this.shouldBeDisabled()}
-                    onChange={() => this.setValue()}>
-
+                    onChange={() => this.setValue()}
+                >
                     {this._options.map((item: DotOption) => {
                         return (
                             <option
@@ -94,7 +131,6 @@ export class DotMultiSelectComponent {
                             </option>
                         );
                     })}
-
                 </select>
                 {getTagHint(this.hint)}
                 {getTagError(!this.isValid(), this.requiredMessage)}
@@ -102,11 +138,15 @@ export class DotMultiSelectComponent {
         );
     }
 
+    private validateProps(): void {
+        this.optionsWatch();
+    }
+
     private shouldBeDisabled(): boolean {
         return this.disabled ? true : null;
     }
 
-     // Todo: find how to set proper TYPE in TS
+    // Todo: find how to set proper TYPE in TS
     private setValue(): void {
         this.value = this.getValueFromMultiSelect();
         this.status = updateStatus(this.status, {
@@ -126,7 +166,7 @@ export class DotMultiSelectComponent {
 
     private emitInitialValue() {
         if (!this.value) {
-            this.value = this._options[0].value;
+            this.value = this._options.length ? this._options[0].value : '';
             this.emitValueChange();
         }
     }

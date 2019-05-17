@@ -1,4 +1,4 @@
-import { Component, Prop, State, Method, Element, Event, EventEmitter } from '@stencil/core';
+import { Component, Prop, State, Method, Element, Event, EventEmitter, Watch } from '@stencil/core';
 import Fragment from 'stencil-fragment';
 import { DotFieldStatus, DotFieldValueEvent, DotFieldStatusEvent, DotLabel } from '../../models';
 import {
@@ -9,7 +9,8 @@ import {
     getTagLabel,
     getErrorClass,
     updateStatus,
-    getId
+    getId,
+    checkProp
 } from '../../utils';
 
 /**
@@ -24,15 +25,35 @@ import {
 })
 export class DotTextareaComponent {
     @Element() el: HTMLElement;
+
+    /** Value specifies the value of the <textarea> element */
+    @Prop({ mutable: true })
+    value = '';
+
+    /** Name that will be used as ID */
+    @Prop() name = '';
+
+    /** (optional) Text to be rendered next to <textarea> element */
+    @Prop() label = '';
+
+    /** (optional) Hint text that suggest a clue of the field */
+    @Prop() hint = '';
+
+    /** (optional) Determine if it is mandatory */
+    @Prop() required = false;
+
+    /** (optional) Text that be shown when required is set and condition not met */
+    @Prop() requiredMessage = '';
+
+    /** (optional) Text that be shown when the Regular Expression condition not met */
+    @Prop() validationMessage = '';
+
+    /** (optional) Disables field's interaction */
     @Prop() disabled = false;
-    @Prop() hint: string;
-    @Prop() label: string;
-    @Prop() name: string;
-    @Prop() regexCheck: string;
-    @Prop() required: boolean;
-    @Prop() requiredMessage: string;
-    @Prop() validationMessage: string;
-    @Prop({ mutable: true }) value: string;
+
+    /** (optional) Regular expresion that is checked against the value to determine if is valid  */
+    @Prop({ mutable: true })
+    regexCheck = '';
 
     @State() status: DotFieldStatus = getOriginalStatus();
 
@@ -53,7 +74,13 @@ export class DotTextareaComponent {
     }
 
     componentWillLoad(): void {
+        this.validateProps();
         this.emitStatusChange();
+    }
+
+    @Watch('regexCheck')
+    regexCheckWatch(): void {
+        this.regexCheck = checkProp<DotTextareaComponent, string>(this, 'regexCheck');
     }
 
     hostData() {
@@ -63,7 +90,11 @@ export class DotTextareaComponent {
     }
 
     render() {
-        const labelTagParams: DotLabel = {name: this.name, label: this.label, required: this.required};
+        const labelTagParams: DotLabel = {
+            name: this.name,
+            label: this.label,
+            required: this.required
+        };
         return (
             <Fragment>
                 {getTagLabel(labelTagParams)}
@@ -81,6 +112,10 @@ export class DotTextareaComponent {
                 {getTagError(this.shouldShowErrorMessage(), this.getErrorMessage())}
             </Fragment>
         );
+    }
+
+    private validateProps(): void {
+        this.regexCheckWatch();
     }
 
     private getDisabledAtt(): boolean {
@@ -150,5 +185,4 @@ export class DotTextareaComponent {
             value: this.value
         });
     }
-
 }

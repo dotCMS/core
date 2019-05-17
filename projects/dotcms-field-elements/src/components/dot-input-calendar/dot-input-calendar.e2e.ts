@@ -65,7 +65,7 @@ describe('dot-input-calendar', () => {
         });
 
         it('should emit status and value and errorElement events on Reset', async () => {
-            element.callMethod('reset');
+            await element.callMethod('reset');
             await page.waitForChanges();
             expect(spyStatusChangeEvent).toHaveReceivedEventDetail({
                 name: 'time01',

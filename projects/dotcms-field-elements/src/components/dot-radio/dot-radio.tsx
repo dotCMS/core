@@ -1,4 +1,4 @@
-import { Component, Element, Event, EventEmitter, Method, Prop, State } from '@stencil/core';
+import { Component, Element, Event, EventEmitter, Method, Prop, State, Watch } from '@stencil/core';
 import Fragment from 'stencil-fragment';
 import { DotFieldStatus, DotFieldStatusEvent, DotFieldValueEvent, DotOption, DotLabel } from '../../models';
 import {
@@ -9,9 +9,16 @@ import {
     getTagError,
     getTagHint,
     getTagLabel,
-    updateStatus
+    updateStatus,
+    checkProp
 } from '../../utils';
 
+/**
+ * Represent a dotcms radio control.
+ *
+ * @export
+ * @class DotRadioComponent
+ */
 @Component({
     tag: 'dot-radio',
     styleUrl: 'dot-radio.scss'
@@ -19,15 +26,29 @@ import {
 export class DotRadioComponent {
     @Element() el: HTMLElement;
 
-    @Prop({ mutable: true })
-    value: string;
-    @Prop() name: string;
-    @Prop() label: string;
-    @Prop() hint: string;
-    @Prop() required: boolean;
+    /** Value set from the ratio option */
+    @Prop({ mutable: true }) value = '';
+
+    /** Name that will be used as ID */
+    @Prop() name = '';
+
+    /** (optional) Text to be rendered next to input field */
+    @Prop() label = '';
+
+    /** (optional) Hint text that suggest a clue of the field */
+    @Prop() hint = '';
+
+    /** (optional) Determine if it is mandatory */
+    @Prop() required = false;
+
+    /** (optional) Disables field's interaction */
     @Prop() disabled = false;
-    @Prop() requiredMessage: string;
-    @Prop() options: string;
+
+    /** (optional) Text that will be shown when required is set and condition is not met */
+    @Prop() requiredMessage = '';
+
+    /** Value/Label ratio options separated by comma, to be formatted as: Value|Label */
+    @Prop() options = '';
 
     @State() _options: DotOption[];
     @State() status: DotFieldStatus = getOriginalStatus();
@@ -47,8 +68,14 @@ export class DotRadioComponent {
     }
 
     componentWillLoad(): void {
-        this._options = getDotOptionsFromFieldValue(this.options);
+        this.validateProps();
         this.emitStatusChange();
+    }
+
+    @Watch('options')
+    optionsWatch(): void {
+        const validOptions = checkProp<DotRadioComponent, string>(this, 'options');
+        this._options = getDotOptionsFromFieldValue(validOptions);
     }
 
     hostData() {
@@ -88,6 +115,10 @@ export class DotRadioComponent {
                 {getTagError(this.showErrorMessage(), this.getErrorMessage())}
             </Fragment>
         );
+    }
+
+    private validateProps(): void {
+        this.optionsWatch();
     }
 
     private isValid(): boolean {

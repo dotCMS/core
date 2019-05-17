@@ -7,20 +7,18 @@
 
 ## Properties
 
-| Property            | Attribute            | Description | Type      | Default     |
-| ------------------- | -------------------- | ----------- | --------- | ----------- |
-| `disabled`          | `disabled`           |             | `boolean` | `false`     |
-| `hint`              | `hint`               |             | `string`  | `undefined` |
-| `label`             | `label`              |             | `string`  | `undefined` |
-| `max`               | `max`                |             | `string`  | `undefined` |
-| `min`               | `min`                |             | `string`  | `undefined` |
-| `name`              | `name`               |             | `string`  | `undefined` |
-| `required`          | `required`           |             | `boolean` | `undefined` |
-| `requiredMessage`   | `required-message`   |             | `string`  | `undefined` |
-| `step`              | `step`               |             | `string`  | `undefined` |
-| `type`              | `type`               |             | `string`  | `undefined` |
-| `validationMessage` | `validation-message` |             | `string`  | `undefined` |
-| `value`             | `value`              |             | `string`  | `undefined` |
+| Property            | Attribute            | Description                                                                           | Type      | Default |
+| ------------------- | -------------------- | ------------------------------------------------------------------------------------- | --------- | ------- |
+| `disabled`          | `disabled`           | (optional) Disables field's interaction                                               | `boolean` | `false` |
+| `max`               | `max`                | (optional) Max, maximum value that the field will allow to set, expect a Date Format  | `string`  | `''`    |
+| `min`               | `min`                | (optional) Min, minimum value that the field will allow to set, expect a Date Format. | `string`  | `''`    |
+| `name`              | `name`               | Name that will be used as ID                                                          | `string`  | `''`    |
+| `required`          | `required`           | (optional) Determine if it is mandatory                                               | `boolean` | `false` |
+| `requiredMessage`   | `required-message`   | (optional) Text that be shown when required is set and condition not met              | `string`  | `''`    |
+| `step`              | `step`               | (optional) Step specifies the legal number intervals for the input field              | `string`  | `''`    |
+| `type`              | `type`               | type specifies the type of <input> element to display                                 | `string`  | `''`    |
+| `validationMessage` | `validation-message` | (optional) Text that be shown when min or max are set and condition not met           | `string`  | `''`    |
+| `value`             | `value`              | Value specifies the value of the <input> element                                      | `string`  | `''`    |
 
 
 ## Events
@@ -36,7 +34,7 @@
 
 ### `reset() => void`
 
-Reset properties of the filed, clear value and emit events.
+Reset properties of the field, clear value and emit events.
 
 #### Returns
 

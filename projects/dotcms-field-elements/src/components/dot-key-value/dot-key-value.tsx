@@ -6,10 +6,17 @@ import {
     Event,
     EventEmitter,
     Method,
-    Listen
+    Listen,
+    Watch
 } from '@stencil/core';
 import Fragment from 'stencil-fragment';
-import { DotFieldStatus, DotFieldValueEvent, DotFieldStatusEvent, DotLabel, DotKeyValueField } from '../../models';
+import {
+    DotFieldStatus,
+    DotFieldValueEvent,
+    DotFieldStatusEvent,
+    DotLabel,
+    DotKeyValueField as DotKeyValueItem
+} from '../../models';
 import {
     getClassNames,
     getErrorClass,
@@ -19,7 +26,8 @@ import {
     getTagError,
     getTagHint,
     getTagLabel,
-    updateStatus
+    updateStatus,
+    checkProp
 } from '../../utils';
 
 @Component({
@@ -28,25 +36,52 @@ import {
 })
 export class DotKeyValueComponent {
     @Element() el: HTMLElement;
-    @Prop({ mutable: true }) value: string;
-    @Prop() name: string;
-    @Prop() fieldType: string;
-    @Prop() label: string;
-    @Prop() hint: string;
-    @Prop() keyPlaceholder: string;
-    @Prop() valuePlaceholder: string;
-    @Prop() required: boolean;
-    @Prop() requiredMessage: string;
-    @Prop() saveBtnLabel = 'Add';
+
+    /** (optional) Disables field's interaction */
     @Prop() disabled = false;
 
+    /** (optional) Hint text that suggest a clue of the field */
+    @Prop() hint = '';
+
+    /** (optional) Placeholder for the key input text in the add form */
+    @Prop() keyPlaceholder = '';
+
+    /** (optional) Text to be rendered next to input field */
+    @Prop() label = '';
+
+    /** Name that will be used as ID */
+    @Prop() name = '';
+
+    /** (optional) Determine if it is mandatory */
+    @Prop() required = false;
+
+    /** (optional) Text that will be shown when required is set and condition is not met */
+    @Prop() requiredMessage = '';
+
+    /** (optional) Label for the add item button */
+    @Prop() saveBtnLabel = 'Add';
+
+    /** (optional) Placeholder for the value input text in the add form */
+    @Prop() valuePlaceholder = '';
+
+    /** Value of the field */
+    @Prop({ mutable: true }) value = '';
+
+    @Prop() fieldType = ''; // TODO: remove this prop and fix dot-form to use tagName
+
     @State() status: DotFieldStatus;
-    @State() values: DotKeyValueField[] = [];
+    @State() items: DotKeyValueItem[] = [];
 
     @Event() valueChange: EventEmitter<DotFieldValueEvent>;
     @Event() statusChange: EventEmitter<DotFieldStatusEvent>;
 
-    fieldInput: DotKeyValueField = { key: '', value: '' };
+    fieldInput: DotKeyValueItem = { key: '', value: '' };
+
+    @Watch('value')
+    valueWatch(): void {
+        this.value = checkProp<DotKeyValueComponent, string>(this, 'value', 'string');
+        this.setItems();
+    }
 
     /**
      * Reset properties of the field, clear value and emit events.
@@ -54,7 +89,7 @@ export class DotKeyValueComponent {
     @Method()
     reset(): void {
         this.fieldInput = { key: '', value: '' };
-        this.values = [];
+        this.items = [];
         this.status = getOriginalStatus(this.isValid());
         this.emitStatusChange();
         this.emitValueChange();
@@ -63,7 +98,7 @@ export class DotKeyValueComponent {
     @Listen('deleteItemEvt')
     deleteItemHandler(event: CustomEvent) {
         event.stopImmediatePropagation();
-        this.values = this.values.filter((_item, internalIndex) => {
+        this.items = this.items.filter((_item, internalIndex) => {
             return internalIndex !== event.detail;
         });
         this.refreshStatus();
@@ -72,7 +107,8 @@ export class DotKeyValueComponent {
     }
 
     componentWillLoad(): void {
-        this.setInitialValue();
+        this.validateProps();
+        this.setOriginalStatus();
         this.emitStatusChange();
     }
 
@@ -125,20 +161,22 @@ export class DotKeyValueComponent {
         );
     }
 
+    private validateProps(): void {
+        this.valueWatch();
+    }
+
     private isDisabled(): boolean {
         return this.disabled || null;
     }
 
     private getKeyValueList(): JSX.Element {
-        return this.values.length ? (
-            <key-value-table items={this.values} disabled={this.disabled} />
-        ) : (
-            ''
-        );
+        return this.items.length ? (
+            <key-value-table items={this.items} disabled={this.disabled} />
+        ) : null;
     }
 
-    private setInitialValue(): void {
-        this.values = this.value
+    private setItems(): void {
+        this.items = this.value
             ? this.value
                   .split(',')
                   .filter((item) => item.length > 0)
@@ -147,11 +185,14 @@ export class DotKeyValueComponent {
                       return { key, value };
                   })
             : [];
+    }
+
+    private setOriginalStatus(): void {
         this.status = getOriginalStatus(this.isValid());
     }
 
     private isValid(): boolean {
-        return !(this.required && !this.values.length);
+        return !(this.required && !this.items.length);
     }
 
     private showErrorMessage(): boolean {
@@ -182,7 +223,7 @@ export class DotKeyValueComponent {
     }
 
     private emitValueChange(): void {
-        const returnedValue = getStringFromDotKeyArray(this.values);
+        const returnedValue = getStringFromDotKeyArray(this.items);
         this.valueChange.emit({
             name: this.name,
             value: returnedValue,
@@ -192,8 +233,8 @@ export class DotKeyValueComponent {
 
     private addKey(): void {
         if (this.fieldInput.key && this.fieldInput.value) {
-            this.values = [
-                ...this.values,
+            this.items = [
+                ...this.items,
                 {
                     key: this.fieldInput.key,
                     value: this.fieldInput.value

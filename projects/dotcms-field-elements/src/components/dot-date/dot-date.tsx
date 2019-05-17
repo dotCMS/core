@@ -6,7 +6,8 @@ import {
     Listen,
     Method,
     Prop,
-    State
+    State,
+    Watch
 } from '@stencil/core';
 import Fragment from 'stencil-fragment';
 import {
@@ -15,7 +16,7 @@ import {
     DotFieldValueEvent,
     DotLabel
 } from '../../models';
-import { getClassNames, getTagError, getTagHint, getTagLabel } from '../../utils';
+import { checkProp, getClassNames, getTagError, getTagHint, getTagLabel } from '../../utils';
 
 @Component({
     tag: 'dot-date',
@@ -23,18 +24,42 @@ import { getClassNames, getTagError, getTagHint, getTagLabel } from '../../utils
 })
 export class DotDateComponent {
     @Element() el: HTMLElement;
+
+    /** Value format yyyy-mm-dd  e.g., 2005-12-01 */
     @Prop({ mutable: true })
-    value: string;
-    @Prop() name: string;
-    @Prop() label: string;
-    @Prop() hint: string;
-    @Prop() required: boolean;
-    @Prop() requiredMessage: string;
-    @Prop() validationMessage: string;
+    value = '';
+
+    /** Name that will be used as ID */
+    @Prop() name = '';
+
+    /** (optional) Text to be rendered next to input field */
+    @Prop() label = '';
+
+    /** (optional) Hint text that suggest a clue of the field */
+    @Prop() hint = '';
+
+    /** (optional) Determine if it is mandatory */
+    @Prop() required = false;
+
+    /** (optional) Text that be shown when required is set and condition not met */
+    @Prop() requiredMessage = '';
+
+    /** (optional) Text that be shown when min or max are set and condition not met */
+    @Prop() validationMessage = '';
+
+    /** (optional) Disables field's interaction */
     @Prop() disabled = false;
-    @Prop() min: string;
-    @Prop() max: string;
-    @Prop() step: string;
+
+    /** (optional) Min, minimum value that the field will allow to set. Format should be yyyy-mm-dd */
+    @Prop({ mutable: true })
+    min = '';
+
+    /** (optional) Max, maximum value that the field will allow to set. Format should be yyyy-mm-dd */
+    @Prop({ mutable: true })
+    max = '';
+
+    /** (optional) Step specifies the legal number intervals for the input field */
+    @Prop() step = '1';
 
     @State() classNames: DotFieldStatusClasses;
     @State() errorMessageElement: JSX.Element;
@@ -49,6 +74,20 @@ export class DotDateComponent {
     reset(): void {
         const input = this.el.querySelector('dot-input-calendar');
         input.reset();
+    }
+
+    componentWillLoad(): void {
+        this.validateProps();
+    }
+
+    @Watch('min')
+    minWatch(): void {
+        this.min = checkProp<DotDateComponent, string>(this, 'min', 'date');
+    }
+
+    @Watch('max')
+    maxWatch(): void {
+        this.max = checkProp<DotDateComponent, string>(this, 'max', 'date');
     }
 
     @Listen('_valueChange')
@@ -94,7 +133,6 @@ export class DotDateComponent {
                     disabled={this.disabled}
                     type="date"
                     name={this.name}
-                    hint={this.hint}
                     value={this.value}
                     required={this.required}
                     required-message={this.requiredMessage}
@@ -107,5 +145,10 @@ export class DotDateComponent {
                 {this.errorMessageElement}
             </Fragment>
         );
+    }
+
+    private validateProps(): void {
+        this.minWatch();
+        this.maxWatch();
     }
 }
