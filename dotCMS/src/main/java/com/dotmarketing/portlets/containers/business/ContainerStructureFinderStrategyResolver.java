@@ -16,6 +16,7 @@ import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
+import java.io.InputStream;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -247,8 +248,8 @@ public class ContainerStructureFinderStrategyResolver {
 
         private String toString (final FileAsset fileAsset) {
 
-            try {
-                return IOUtils.toString(fileAsset.getInputStream(),
+            try (InputStream fileAssetStream = fileAsset.getInputStream()) {
+                return IOUtils.toString(fileAssetStream,
                         UtilMethods.getCharsetConfiguration());
             } catch (IOException e) {
                 return StringPool.BLANK;
