@@ -33,7 +33,7 @@ public class ThemePaginator implements Paginator<Map<String, Object>> {
     public static final String SEARCH_PARAMETER = "search-parameter";
 
     @VisibleForTesting
-    static final String BASE_LUCENE_QUERY = "+parentpath:/application/themes/* +title:template.vtl ";
+    static final String BASE_LUCENE_QUERY = "+parentpath:/application/themes/ +title:template.vtl ";
 
     private ContentletAPI contentletAPI;
     private ThemeAPI themeAPI;

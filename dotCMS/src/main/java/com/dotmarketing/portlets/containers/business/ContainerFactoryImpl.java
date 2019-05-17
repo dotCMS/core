@@ -459,8 +459,8 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		try {
 
 			final StringBuilder queryBuilder = builder("+structureType:", Structure.STRUCTURE_TYPE_FILEASSET,
-					" +path:", Constants.CONTAINER_FOLDER_PATH, "/*",
-					" +path:*/container.vtl",
+					" +path:", Constants.CONTAINER_FOLDER_PATH,
+					" +path:/container.vtl",
 					" +working:true",
 			includeArchived? StringPool.BLANK : " +deleted:false");
 
@@ -738,8 +738,8 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		try{
 
 			final String query = builder("+structureType:", Structure.STRUCTURE_TYPE_FILEASSET,
-					" +path:", Constants.CONTAINER_FOLDER_PATH, "/*",
-					" +path:*/" + contentTypeVarNameFileName + ".vtl",
+					" +path:\"", Constants.CONTAINER_FOLDER_PATH, "\"",
+					" +path:\"/" + contentTypeVarNameFileName + ".vtl\"",
 					" +working:true +deleted:false").toString();
 
 			containers = this.contentletAPI.search(query,-1, 0, null , user, false);

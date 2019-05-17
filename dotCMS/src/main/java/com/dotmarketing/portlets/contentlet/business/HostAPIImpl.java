@@ -195,7 +195,7 @@ public class HostAPIImpl implements HostAPI {
         try {
             StringBuilder queryBuffer = new StringBuilder();
             queryBuffer.append(String.format("%s:%s", CONTENT_TYPE_CONDITION, Host.HOST_VELOCITY_VAR_NAME));
-            queryBuffer.append(String.format(" +working:true +%s.hostName:%s", Host.HOST_VELOCITY_VAR_NAME, hostName));
+            queryBuffer.append(String.format(" +working:true +%s.hostName:\"%s\"", Host.HOST_VELOCITY_VAR_NAME, hostName));
 
             final List<Contentlet> list = APILocator.getContentletAPI().search(queryBuffer.toString(), 0, 0, null, user, respectFrontendRoles);
             
@@ -1102,7 +1102,7 @@ public class HostAPIImpl implements HostAPI {
             queryBuffer.append(String.format(" %s:%s", CONTENT_TYPE_CONDITION, Host.HOST_VELOCITY_VAR_NAME));
 
             if(UtilMethods.isSet(filter)){
-                queryBuffer.append( String.format(" +%s.hostName:%s*", Host.HOST_VELOCITY_VAR_NAME, filter.trim() ) );
+                queryBuffer.append( String.format(" +%s.hostName:%s", Host.HOST_VELOCITY_VAR_NAME, filter.trim() ) );
             }
             if(!showSystemHost){
                 queryBuffer.append( String.format(" +%s.isSystemHost:false", Host.HOST_VELOCITY_VAR_NAME));
