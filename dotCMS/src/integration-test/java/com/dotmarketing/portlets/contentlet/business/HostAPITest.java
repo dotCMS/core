@@ -206,14 +206,14 @@ public class HostAPITest {
         APILocator.getHostAPI().publish(host, user, false);
 
         PaginatedArrayList<Host> hosts = APILocator.getHostAPI()
-                .search("demo*", Boolean.FALSE, Boolean.FALSE, 0, 0, user, Boolean.TRUE);
+                .search("demo", Boolean.FALSE, Boolean.FALSE, 0, 0, user, Boolean.TRUE);
         //Validate if the search is bringing the right amount of results
         Assert.assertTrue(hosts.size() >= 2 && hosts.getTotalResults() >= 2);
         Assert.assertTrue(hosts.contains(host));
 
         //Do a more specific search
         hosts = APILocator.getHostAPI()
-                .search("\""+newHostName+"\"", Boolean.FALSE, Boolean.FALSE, 0, 0, user, Boolean.TRUE);
+                .search(newHostName, Boolean.FALSE, Boolean.FALSE, 0, 0, user, Boolean.TRUE);
         //Validate if the search is bringing the right amount of results
         Assert.assertTrue(hosts.size() == 1 && hosts.getTotalResults() == 1);
         Assert.assertEquals(hosts.get(0).getHostname(), newHostName);
