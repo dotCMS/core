@@ -16,138 +16,148 @@
         <script src='/build/dotcmsfields.js'></script>
         <script>
             const fieldsConfig = [
-            {
-                fieldType: 'Date-Range',
-                name: 'Enter Date:',
-                defaultValue: '2019-11-25,2019-11-27',
-                hint: 'date hint',
-                required: true,
-                requiredMessage: 'Required Date range',
-                variable: 'daterange01',
-                min: '2019-01-01',
-                max: '2019-12-30'
-           }, {
-                fieldType: 'Text',
-                name: 'Name:',
-                defaultValue: 'John',
-                hint: 'this is a hint',
-                placeholder: 'Enter Name',
-                regexCheck: '^[A-Za-z ]+$',
-                validationMessage: 'Invalid Name',
-                required: true,
-                requiredMessage: 'Required Name',
-                variable: 'text1'
+                {
+                    fieldType: 'Date-Range',
+                    name: 'Enter Date:',
+                    defaultValue: '2019-11-25,2019-11-27',
+                    hint: 'date hint',
+                    required: true,
+                    requiredMessage: 'Required Date range',
+                    variable: 'daterange01',
+                    min: '2019-01-01',
+                    max: '2019-12-30'
             }, {
-                defaultValue: '2',
-                fieldType: 'Select',
-                hint: 'dropdown hint',
-                name: 'dropdown',
-                required: true,
-                requiredMessage: 'this field is required',
-                values: '|,labelA|1,labelB|2,labelC|3',
-                variable: 'dropdown2'
-            }, {
-                defaultValue: '2',
-                fieldType: 'Multi-Select',
-                hint: 'multi select hint',
-                name: 'multi select',
-                required: true,
-                requiredMessage: 'this field is required',
-                size: 0,
-                values: '|,labelA|1,labelB|2,labelC|3',
-                variable: 'multiSelect5'
-            }, {
-                fieldType: 'Key-Value',
-                label: 'Name:',
-                saveBtnLabel: 'Save',
-                name: 'Key Value:',
-                defaultValue: { a:1, b:2, c:3 },
-                hint: 'this is a hint',
-                keyPlaceholder: 'Enter Key',
-                valuePlaceholder: 'Enter Value',
-                required: true,
-                requiredMessage: 'Required Name',
-                variable: 'keyvalue6'
-            }, {
-                fieldType: 'Textarea',
-                name: 'Address:',
-                defaultValue: 'Address',
-                hint: 'this is a hint',
-                placeholder: 'Enter Name',
-                regexCheck: '^[A-Za-z ]+$',
-                validationMessage: 'Invalid Address',
-                required: true,
-                requiredMessage: 'Required Address',
-                variable: 'textarea3'
-            }, {
-                fieldType: 'Checkbox',
-                defaultValue: '2,1',
-                hint: 'Checkbox hint',
-                name: 'checkbox',
-                required: true,
-                requiredMessage: 'this field is required',
-                values: 'labelA|1 ,labelB|2,labelC|3',
-                variable: 'checkbox4'
-            }, {
-                fieldType: 'Radio',
-                defaultValue: '2',
-                hint: 'Radio hint',
-                name: 'radio',
-                required: true,
-                requiredMessage: 'this radio field is required',
-                values: 'Radio A |1, Radio B|2, Radio C |3',
-                variable: 'radio5'
-            },
-            {
-                fieldType: 'Date',
-                name: 'Set Date:',
-                defaultValue: '2015-10-25',
-                hint: 'date hint',
-                required: true,
-                requiredMessage: 'Required Date',
-                validationMessage: 'Date out of range',
-                variable: 'date01',
-                step: '2',
-                min: '2019-01-01',
-                max: '2019-12-30'
-            },
-            {
-                fieldType: 'Time',
-                name: 'Set Time:',
-                defaultValue: '20:30:30',
-                hint: 'time hint',
-                required: true,
-                requiredMessage: 'Required Time',
-                validationMessage: 'Time out of range',
-                variable: 'time01',
-                step: '10',
-                min: '08:00:00',
-                max: '22:00:00'
-            },
-            {
-                fieldType: 'Date-and-Time',
-                name: 'Set Date and Time:',
-                defaultValue: '2019-01-20 11:10:00',
-                hint: 'date & time hint',
-                required: true,
-                requiredMessage: 'Required Time',
-                validationMessage: 'Value out of range',
-                variable: 'dt01',
-                step: '2,10',
-                min: '2000-01-01 1:00:00',
-                max: '2020-10-30 23:59:59'
-            }];
+                    fieldType: 'Text',
+                    name: 'Name:',
+                    defaultValue: 'John',
+                    hint: 'this is a hint',
+                    placeholder: 'Enter Name',
+                    regexCheck: '^[A-Za-z ]+$',
+                    validationMessage: 'Invalid Name',
+                    required: true,
+                    requiredMessage: 'Required Name',
+                    variable: 'text1'
+                }, {
+                    defaultValue: '2',
+                    fieldType: 'Select',
+                    hint: 'dropdown hint',
+                    name: 'dropdown',
+                    required: true,
+                    requiredMessage: 'this field is required',
+                    values: '|,labelA|1,labelB|2,labelC|3',
+                    variable: 'dropdown2'
+                }, {
+                    defaultValue: '2',
+                    fieldType: 'Multi-Select',
+                    hint: 'multi select hint',
+                    name: 'multi select',
+                    required: true,
+                    requiredMessage: 'this field is required',
+                    size: 0,
+                    values: '|,labelA|1,labelB|2,labelC|3',
+                    variable: 'multiSelect5'
+                }, {
+                    fieldType: 'Key-Value',
+                    label: 'Name:',
+                    saveBtnLabel: 'Save',
+                    name: 'Key Value:',
+                    defaultValue: { a:1, b:2, c:3 },
+                    hint: 'this is a hint',
+                    keyPlaceholder: 'Enter Key',
+                    valuePlaceholder: 'Enter Value',
+                    required: true,
+                    requiredMessage: 'Required Name',
+                    variable: 'keyvalue6'
+                }, {
+                    fieldType: 'Textarea',
+                    name: 'Address:',
+                    defaultValue: 'Address',
+                    hint: 'this is a hint',
+                    placeholder: 'Enter Name',
+                    regexCheck: '^[A-Za-z ]+$',
+                    validationMessage: 'Invalid Address',
+                    required: true,
+                    requiredMessage: 'Required Address',
+                    variable: 'textarea3'
+                }, {
+                    fieldType: 'Checkbox',
+                    defaultValue: '2,1',
+                    hint: 'Checkbox hint',
+                    name: 'checkbox',
+                    required: true,
+                    requiredMessage: 'this field is required',
+                    values: 'labelA|1 ,labelB|2,labelC|3',
+                    variable: 'checkbox4'
+                }, {
+                    fieldType: 'Radio',
+                    defaultValue: '2',
+                    hint: 'Radio hint',
+                    name: 'radio',
+                    required: true,
+                    requiredMessage: 'this radio field is required',
+                    values: 'Radio A |1, Radio B|2, Radio C |3',
+                    variable: 'radio5'
+                },
+                {
+                    fieldType: 'Date',
+                    name: 'Set Date:',
+                    defaultValue: '2015-10-25',
+                    hint: 'date hint',
+                    required: true,
+                    requiredMessage: 'Required Date',
+                    validationMessage: 'Date out of range',
+                    variable: 'date01',
+                    step: '2',
+                    min: '2019-01-01',
+                    max: '2019-12-30'
+                },
+                {
+                    fieldType: 'Time',
+                    name: 'Set Time:',
+                    defaultValue: '20:30:30',
+                    hint: 'time hint',
+                    required: true,
+                    requiredMessage: 'Required Time',
+                    validationMessage: 'Time out of range',
+                    variable: 'time01',
+                    step: '10',
+                    min: '08:00:00',
+                    max: '22:00:00'
+                },
+                {
+                    fieldType: 'Date-and-Time',
+                    name: 'Set Date and Time:',
+                    defaultValue: '2019-01-20 11:10:00',
+                    hint: 'date & time hint',
+                    required: true,
+                    requiredMessage: 'Required Time',
+                    validationMessage: 'Value out of range',
+                    variable: 'dt01',
+                    step: '2,10',
+                    min: '2000-01-01 1:00:00',
+                    max: '2020-10-30 23:59:59'
+                },
+                {
+                    fieldType: 'Tag',
+                    name: 'Tags:',
+                    variable: 'tags',
+                    defaultValue: 'tag-1,tag-2',
+                    hint: 'tag hint',
+                    required: true,
+                    requiredMessage: 'Required Tag',
+                }
+            ];
 
             window.onload = function() {
-                const dotFormEl = document.createElement('dot-form');
+                 const dotFormEl = document.createElement('dot-form');
                 dotFormEl.fields = fieldsConfig;
                 dotFormEl.addEventListener('onSubmit', (e) => {
-                    e.preventDefault();
-                    console.log(e)
-                });
+                     e.preventDefault();
+                     console.log(e)
+                 });
 
-                let container = document.querySelector('#container');
-                container.append(dotFormEl);
+                 let container = document.querySelector('#container');
+                 container.append(dotFormEl);
             };
         </script>
     </head>

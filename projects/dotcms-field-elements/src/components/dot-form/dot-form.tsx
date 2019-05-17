@@ -32,12 +32,13 @@ const fieldMap = {
     'Checkbox': DotFormFields.Checkbox,
     'Key-Value': fieldParamsConversionFromBE['Key-Value'],
     'Multi-Select': DotFormFields['Multi-Select'],
+    'Tag': DotFormFields.Tag,
+    'Time': DotFormFields.Time,
+    'Date-and-Time': DotFormFields['Date-and-Time'],
+    'Date-Range': DotFormFields['Date-Range'],
     'Select': DotFormFields.Select,
     'Radio': DotFormFields.Radio,
     'Date': DotFormFields.Date,
-    'Time': DotFormFields.Time,
-    'Date-and-Time': DotFormFields['Date-and-Time'],
-    'Date-Range': DotFormFields['Date-Range']
 };
 
 @Component({

@@ -164,5 +164,18 @@ export const DotFormFields = {
             required={field.required}
             required-message={field.requiredMessage}
         />
-    )
+    ),
+
+    Tag: (field: DotCMSContentTypeField) => (
+        <dot-tags
+            disabled={field.disabled}
+            label={field.name}
+            name={field.variable}
+            placeholder={field.placeholder}
+            hint={field.hint}
+            value={field.defaultValue}
+            required={field.required}
+            required-message={field.requiredMessage}
+        />
+    ),
 };
