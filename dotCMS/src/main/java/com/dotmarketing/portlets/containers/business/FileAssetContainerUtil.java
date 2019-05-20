@@ -1,5 +1,9 @@
 package com.dotmarketing.portlets.containers.business;
 
+import static com.dotmarketing.portlets.contentlet.business.ContentletCache.EMPTY_FILE_CONTENT;
+import static com.dotmarketing.util.StringUtils.builder;
+import static com.liferay.util.StringPool.FORWARD_SLASH;
+
 import com.dotcms.api.vtl.model.DotJSON;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
@@ -9,30 +13,30 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Source;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.Constants;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDUtil;
+import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.util.StringPool;
-import java.io.InputStream;
-import org.apache.commons.io.IOUtils;
-import org.apache.velocity.VelocityContext;
-import org.apache.velocity.context.Context;
-import org.apache.velocity.exception.ParseErrorException;
-
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.StringWriter;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-
-import static com.dotmarketing.util.StringUtils.builder;
-import static com.liferay.util.StringPool.FORWARD_SLASH;
+import org.apache.commons.io.IOUtils;
+import org.apache.velocity.VelocityContext;
+import org.apache.velocity.context.Context;
+import org.apache.velocity.exception.ParseErrorException;
 
 /**
  * This util is in charge of handling the creation of the FileAsset containers based on the folder and their contains.
@@ -214,7 +218,8 @@ public class FileAssetContainerUtil {
             if (this.isContainerMetaInfo(fileAsset, showLive)) {
 
                 metaInfoFileAsset = fileAsset;
-                containerMetaInfo = Optional.of(this.toString(fileAsset)); continue;
+                containerMetaInfo = Optional.of(readMetaDataFile(fileAsset));
+                continue;
             }
 
             if (this.isValidContentType(showLive, fileAsset)) {
@@ -301,6 +306,25 @@ public class FileAssetContainerUtil {
         return includeHostOnPath?
                 builder(HOST_INDICATOR, host.getHostname(), containerFolder.getPath()).toString():
                 containerFolder.getPath();
+    }
+
+    private String readMetaDataFile(FileAsset fileAsset) {
+
+        String foundContainerMetaInfo = CacheLocator.getContentletCache()
+                .getFileContent(fileAsset.getInode());
+
+        if (null == foundContainerMetaInfo) {
+            foundContainerMetaInfo = this.toString(fileAsset);
+            CacheLocator.getContentletCache()
+                    .addFileContent(fileAsset.getInode(), foundContainerMetaInfo);
+        }
+
+        if (null != foundContainerMetaInfo && foundContainerMetaInfo
+                .equalsIgnoreCase(EMPTY_FILE_CONTENT)) {
+            foundContainerMetaInfo = StringPool.BLANK;
+        }
+
+        return foundContainerMetaInfo;
     }
 
     private boolean isContainerMetaInfo(final FileAsset fileAsset, final boolean showLive) {
