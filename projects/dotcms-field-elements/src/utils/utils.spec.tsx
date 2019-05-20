@@ -5,7 +5,6 @@ import {
     getClassNames,
     getTagHint,
     getTagError,
-    getTagLabel,
     getErrorClass
 } from './utils';
 
@@ -78,18 +77,6 @@ describe('getTagError', () => {
         const message = 'Error Msg';
         const jsxTag: any = getTagError(false, message);
         expect(jsxTag).toEqual('');
-    });
-});
-
-describe('getTagLabel', () => {
-    it('should returns Label tag', () => {
-        const param = { name: 'Label', label: 'Msg', required: true };
-        const jsxTag: any = getTagLabel(param);
-        expect(jsxTag.vattrs).toEqual({ class: 'dot-field__label' });
-        expect(jsxTag.vchildren[0].vattrs).toEqual({ htmlFor: 'dot-Label' });
-        expect(jsxTag.vchildren[0].vchildren).toEqual([{ vtext: 'Msg' }]);
-        expect(jsxTag.vchildren[1].vattrs).toEqual({'class': 'dot-field__required-mark'});
-        expect(jsxTag.vchildren[1].vchildren).toEqual([{ vtext: '*' }]);
     });
 });
 

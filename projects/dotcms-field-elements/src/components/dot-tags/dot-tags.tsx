@@ -1,12 +1,11 @@
 import { Component, Prop, State, Element, Event, EventEmitter, Method, Watch } from '@stencil/core';
 import Fragment from 'stencil-fragment';
-import { DotFieldStatus, DotFieldValueEvent, DotFieldStatusEvent, DotLabel } from '../../models';
+import { DotFieldStatus, DotFieldValueEvent, DotFieldStatusEvent } from '../../models';
 import {
     getClassNames,
     getOriginalStatus,
     getTagHint,
     getTagError,
-    getTagLabel,
     getErrorClass,
     updateStatus
 } from '../../utils';
@@ -18,7 +17,7 @@ import {
 export class DotTagsComponent {
     @Element() el: HTMLElement;
 
-     /** Value formatted splitted with a comma, for example: tag-1,tag-2 */
+    /** Value formatted splitted with a comma, for example: tag-1,tag-2 */
     @Prop({ mutable: true }) value = '';
 
     /** Name that will be used as ID */
@@ -28,13 +27,13 @@ export class DotTagsComponent {
     @Prop() label = '';
 
     /** (optional) Hint text that suggest a clue of the field */
-    @Prop() hint= '';
+    @Prop() hint = '';
 
     /** (optional) text to show when no value is set */
-    @Prop() placeholder= '';
+    @Prop() placeholder = '';
 
-     /** (optional) Determine if it is mandatory */
-    @Prop() required =  false;
+    /** (optional) Determine if it is mandatory */
+    @Prop() required = false;
 
     /** (optional) Text that be shown when required is set and value is not set */
     @Prop() requiredMessage = '';
@@ -77,39 +76,31 @@ export class DotTagsComponent {
     }
 
     render() {
-        const labelTagParams: DotLabel = {
-            name: this.name,
-            label: this.label,
-            required: this.required
-        };
         return (
             <Fragment>
-                {getTagLabel(labelTagParams)}
-                <div class="tag_container">
-                    {this.getValues().map((tagLab: string) =>
+                <dot-label label={this.name} required={this.required} name={this.name}>
+                    <dot-autocomplete
+                        class={getErrorClass(this.status.dotValid)}
+                        data={this.getData.bind(this)}
+                        debounce={this.debounce}
+                        disabled={this.disabled || null}
+                        onLostFocus={() => this.blurHandler()}
+                        onSelection={(event) => this.addTag(event.detail)}
+                        placeholder={this.placeholder || null}
+                        threshold={this.threshold}
+                    />
+                </dot-label>
+                <div class="dot-tags__container">
+                    {this.getValues().map((tagLab: string) => (
                         <dot-chip
-                            label={tagLab}
                             disabled={this.disabled}
+                            label={tagLab}
                             onRemove={this.removeTag.bind(this)}
-                        >
-                        </dot-chip>
-                    )}
+                        />
+                    ))}
                 </div>
 
-                <dot-autocomplete
-                    id={this.name}
-                    class={getErrorClass(this.status.dotValid)}
-                    disabled={this.disabled || null}
-                    placeholder={this.placeholder || null}
-                    threshold={this.threshold}
-                    debounce={this.debounce}
-                    data={this.getData.bind(this)}
-                    onLostFocus={() => this.blurHandler()}
-                    onSelection={(event) => this.addTag(event.detail)}
-                >
-                </dot-autocomplete>
-
-                {getTagHint(this.hint)}
+                {getTagHint(this.hint, this.name)}
                 {getTagError(this.showErrorMessage(), this.getErrorMessage())}
             </Fragment>
         );
@@ -138,7 +129,7 @@ export class DotTagsComponent {
     }
 
     private removeTag(event: CustomEvent): void {
-        const values = this.getValues().filter(item => item !== event.detail);
+        const values = this.getValues().filter((item) => item !== event.detail);
         this.value = values.join(',');
         this.removed.emit(event.detail);
     }
@@ -156,9 +147,7 @@ export class DotTagsComponent {
     }
 
     private getErrorMessage(): string {
-        return this.isValid()
-                ? ''
-                : this.requiredMessage;
+        return this.isValid() ? '' : this.requiredMessage;
     }
 
     private blurHandler(): void {
@@ -188,6 +177,6 @@ export class DotTagsComponent {
         const source = await fetch(
             'https://tarekraafat.github.io/autoComplete.js/demo/db/generic.json'
         );
-        return (await source.json()).map(item => item.food);
+        return (await source.json()).map((item) => item.food);
     }
 }

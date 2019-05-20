@@ -1,4 +1,9 @@
-import { DotOption, DotFieldStatus, DotFieldStatusClasses, DotLabel, DotKeyValueField } from '../models';
+import {
+    DotOption,
+    DotFieldStatus,
+    DotFieldStatusClasses,
+    DotKeyValueField
+} from '../models';
 
 /**
  * Based on a string formatted with comma separated values, returns a label/value DotOption array
@@ -38,7 +43,10 @@ export function getOriginalStatus(isValid?: boolean): DotFieldStatus {
  * @param { [key: string]: boolean } change
  * @returns DotFieldStatus
  */
-export function updateStatus(state: DotFieldStatus, change: { [key: string]: boolean }): DotFieldStatus {
+export function updateStatus(
+    state: DotFieldStatus,
+    change: { [key: string]: boolean }
+): DotFieldStatus {
     return {
         ...state,
         ...change
@@ -52,7 +60,11 @@ export function updateStatus(state: DotFieldStatus, change: { [key: string]: boo
  * @param boolean isValid
  * @returns DotFieldClass
  */
-export function getClassNames(status: DotFieldStatus, isValid: boolean, required?: boolean): DotFieldStatusClasses {
+export function getClassNames(
+    status: DotFieldStatus,
+    isValid: boolean,
+    required?: boolean
+): DotFieldStatusClasses {
     return {
         'dot-valid': isValid,
         'dot-invalid': !isValid,
@@ -65,13 +77,40 @@ export function getClassNames(status: DotFieldStatus, isValid: boolean, required
 }
 
 /**
+ * Prefix the label for the id param
+ *
+ * @export
+ * @param {string} name
+ * @returns {string}
+ */
+export function getLabelId(name: string): string {
+    const value = slugify(name);
+    return value ? `label-${value}` : null;
+}
+
+/**
+ * Prefix the hint for the id param
+ *
+ * @param {string} name
+ * @returns {string}
+ */
+export function getHintId(name: string): string {
+    const value = slugify(name);
+    return value ? `hint-${value}` : null;
+}
+
+/**
  * Returns Hint tag if "hint" value defined
  *
  * @param string hint
  * @returns JSX.Element
  */
-export function getTagHint(hint: string): JSX.Element {
-    return hint ? <span class="dot-field__hint">{hint}</span> : '';
+export function getTagHint(hint: string, name: string): JSX.Element {
+    return hint ? (
+        <span class="dot-field__hint" id={getHintId(name)}>
+            {hint}
+        </span>
+    ) : null;
 }
 
 /**
@@ -82,21 +121,7 @@ export function getTagHint(hint: string): JSX.Element {
  * @returns JSX.Element
  */
 export function getTagError(show: boolean, message: string): JSX.Element {
-    return show ? <span class="dot-field__error-message">{message}</span> : '';
-}
-
-/**
- * Returns Label tag
- *
- * @param string name
- * @param string label
- * @returns JSX.Element
- */
-export function getTagLabel(params: DotLabel): JSX.Element {
-    return <div class="dot-field__label">
-                <label htmlFor={getId(params.name)}>{params.label}</label>
-                { params.required ? <span class="dot-field__required-mark">*</span> : ''}
-            </div>;
+    return show ? <span class="dot-field__error-message">{message}</span> : null;
 }
 
 /**
@@ -124,5 +149,16 @@ export function getStringFromDotKeyArray(values: DotKeyValueField[]): string {
 }
 
 export function getId(name: string): string {
-    return `dot-${name}`;
+    return name ? `dot-${slugify(name)}` : null;
+}
+
+function slugify(text) {
+    return text
+        .toString()
+        .toLowerCase()
+        .replace(/\s+/g, '-') // Replace spaces with -
+        .replace(/[^\w\-]+/g, '') // Remove all non-word chars
+        .replace(/\-\-+/g, '-') // Replace multiple - with single -
+        .replace(/^-+/, '') // Trim - from start of text
+        .replace(/-+$/, ''); // Trim - from end of text
 }

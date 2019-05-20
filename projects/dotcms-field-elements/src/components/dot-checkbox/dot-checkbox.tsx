@@ -1,18 +1,11 @@
 import { Component, Prop, State, Element, Method, Event, EventEmitter, Watch } from '@stencil/core';
 import Fragment from 'stencil-fragment';
-import {
-    DotOption,
-    DotFieldStatus,
-    DotFieldValueEvent,
-    DotFieldStatusEvent,
-    DotLabel
-} from '../../models';
+import { DotOption, DotFieldStatus, DotFieldValueEvent, DotFieldStatusEvent } from '../../models';
 import {
     getClassNames,
     getOriginalStatus,
     getTagHint,
     getTagError,
-    getTagLabel,
     getErrorClass,
     getDotOptionsFromFieldValue,
     updateStatus,
@@ -47,7 +40,7 @@ export class DotCheckboxComponent {
     /** (optional) Text that will be shown when required is set and condition is not met */
     @Prop() requiredMessage = '';
 
-     /** Value set from the checkbox option */
+    /** Value set from the checkbox option */
     @Prop({ mutable: true }) value = '';
 
     @State() _options: DotOption[];
@@ -88,33 +81,29 @@ export class DotCheckboxComponent {
     }
 
     render() {
-        let labelTagParams: DotLabel = {
-            name: this.name,
-            label: this.label,
-            required: this.required
-        };
         return (
             <Fragment>
-                {getTagLabel(labelTagParams)}
-                {this._options.map((item: DotOption) => {
-                    const trimmedValue = item.value.trim();
-                    labelTagParams = { name: trimmedValue, label: item.label };
-                    return (
-                        <Fragment>
-                            <input
-                                class={getErrorClass(this.isValid())}
-                                type="checkbox"
-                                disabled={this.disabled || null}
-                                id={trimmedValue}
-                                checked={this.value.indexOf(trimmedValue) >= 0 || null}
-                                onInput={(event: Event) => this.setValue(event)}
-                                value={trimmedValue}
-                            />
-                            {getTagLabel(labelTagParams)}
-                        </Fragment>
-                    );
-                })}
-                {getTagHint(this.hint)}
+                <dot-label label={this.label} required={this.required} name={this.name}>
+                    <div class="dot-checkbox__items">
+                        {this._options.map((item: DotOption) => {
+                            const trimmedValue = item.value.trim();
+                            return (
+                                <label>
+                                    <input
+                                        class={getErrorClass(this.isValid())}
+                                        type="checkbox"
+                                        disabled={this.disabled || null}
+                                        checked={this.value.indexOf(trimmedValue) >= 0 || null}
+                                        onInput={(event: Event) => this.setValue(event)}
+                                        value={trimmedValue}
+                                    />
+                                    {item.label}
+                                </label>
+                            );
+                        })}
+                    </div>
+                </dot-label>
+                {getTagHint(this.hint, this.name)}
                 {getTagError(!this.isValid(), this.requiredMessage)}
             </Fragment>
         );

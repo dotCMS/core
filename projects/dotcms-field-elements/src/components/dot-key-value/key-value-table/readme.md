@@ -7,10 +7,11 @@
 
 ## Properties
 
-| Property   | Attribute  | Description | Type                 | Default |
-| ---------- | ---------- | ----------- | -------------------- | ------- |
-| `disabled` | `disabled` |             | `boolean`            | `false` |
-| `items`    | --         |             | `DotKeyValueField[]` | `[]`    |
+| Property            | Attribute             | Description | Type                 | Default    |
+| ------------------- | --------------------- | ----------- | -------------------- | ---------- |
+| `buttonDeleteLabel` | `button-delete-label` |             | `string`             | `'Delete'` |
+| `disabled`          | `disabled`            |             | `boolean`            | `false`    |
+| `items`             | --                    |             | `DotKeyValueField[]` | `[]`       |
 
 
 ## Events

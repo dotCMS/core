@@ -1,12 +1,6 @@
 import { Component, Prop, State, Element, Method, Event, EventEmitter, Watch } from '@stencil/core';
 import Fragment from 'stencil-fragment';
-import {
-    DotOption,
-    DotFieldStatus,
-    DotFieldValueEvent,
-    DotFieldStatusEvent,
-    DotLabel
-} from '../../models';
+import { DotOption, DotFieldStatus, DotFieldValueEvent, DotFieldStatusEvent } from '../../models';
 import {
     getClassNames,
     getDotOptionsFromFieldValue,
@@ -15,7 +9,6 @@ import {
     getOriginalStatus,
     getTagError,
     getTagHint,
-    getTagLabel,
     updateStatus,
     checkProp
 } from '../../utils';
@@ -77,10 +70,7 @@ export class DotMultiSelectComponent {
 
     @Watch('options')
     optionsWatch(): void {
-        const validOptions = checkProp<DotMultiSelectComponent, string>(
-            this,
-            'options'
-        );
+        const validOptions = checkProp<DotMultiSelectComponent, string>(this, 'options');
         this._options = getDotOptionsFromFieldValue(validOptions);
     }
 
@@ -105,34 +95,30 @@ export class DotMultiSelectComponent {
     }
 
     render() {
-        const labelTagParams: DotLabel = {
-            name: this.name,
-            label: this.label,
-            required: this.required
-        };
         return (
             <Fragment>
-                {getTagLabel(labelTagParams)}
-                <select
-                    multiple
-                    size={+this.size}
-                    class={getErrorClass(this.status.dotValid)}
-                    id={getId(this.name)}
-                    disabled={this.shouldBeDisabled()}
-                    onChange={() => this.setValue()}
-                >
-                    {this._options.map((item: DotOption) => {
-                        return (
-                            <option
-                                selected={this.value === item.value ? true : null}
-                                value={item.value}
-                            >
-                                {item.label}
-                            </option>
-                        );
-                    })}
-                </select>
-                {getTagHint(this.hint)}
+                <dot-label label={this.label} required={this.required} name={this.name}>
+                    <select
+                        multiple
+                        size={+this.size}
+                        class={getErrorClass(this.status.dotValid)}
+                        id={getId(this.name)}
+                        disabled={this.shouldBeDisabled()}
+                        onChange={() => this.setValue()}
+                    >
+                        {this._options.map((item: DotOption) => {
+                            return (
+                                <option
+                                    selected={this.value === item.value ? true : null}
+                                    value={item.value}
+                                >
+                                    {item.label}
+                                </option>
+                            );
+                        })}
+                    </select>
+                </dot-label>
+                {getTagHint(this.hint, this.name)}
                 {getTagError(!this.isValid(), this.requiredMessage)}
             </Fragment>
         );

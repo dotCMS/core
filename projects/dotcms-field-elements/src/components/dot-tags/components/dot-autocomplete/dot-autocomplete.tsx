@@ -47,7 +47,7 @@ export class DotAutocompleteComponent {
     render() {
         return (
             <input
-                id ={this.id}
+                id={this.id}
                 placeholder={this.placeholder || null}
                 disabled={this.disabled || null}
                 onBlur={(event: FocusEvent) => this.handleBlur(event)}

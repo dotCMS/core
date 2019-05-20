@@ -1,6 +1,6 @@
 import { Component, Prop, State, Element, Event, EventEmitter, Method, Watch } from '@stencil/core';
 import Fragment from 'stencil-fragment';
-import { DotFieldStatus, DotFieldValueEvent, DotFieldStatusEvent, DotLabel } from '../../models';
+import { DotFieldStatus, DotFieldValueEvent, DotFieldStatusEvent } from '../../models';
 import {
     checkProp,
     getClassNames,
@@ -9,7 +9,6 @@ import {
     getOriginalStatus,
     getTagError,
     getTagHint,
-    getTagLabel,
     updateStatus
 } from '../../utils';
 
@@ -95,26 +94,22 @@ export class DotTextfieldComponent {
     }
 
     render() {
-        const labelTagParams: DotLabel = {
-            name: this.name,
-            label: this.label,
-            required: this.required
-        };
         return (
             <Fragment>
-                {getTagLabel(labelTagParams)}
-                <input
-                    class={getErrorClass(this.status.dotValid)}
-                    disabled={this.disabled || null}
-                    id={getId(this.name)}
-                    onBlur={() => this.blurHandler()}
-                    onInput={(event: Event) => this.setValue(event)}
-                    placeholder={this.placeholder}
-                    required={this.required || null}
-                    type={this.type}
-                    value={this.value}
-                />
-                {getTagHint(this.hint)}
+                <dot-label label={this.name} required={this.required} name={this.name}>
+                    <input
+                        class={getErrorClass(this.status.dotValid)}
+                        disabled={this.disabled || null}
+                        id={getId(this.name)}
+                        onBlur={() => this.blurHandler()}
+                        onInput={(event: Event) => this.setValue(event)}
+                        placeholder={this.placeholder}
+                        required={this.required || null}
+                        type={this.type}
+                        value={this.value}
+                    />
+                </dot-label>
+                {getTagHint(this.hint, this.name)}
                 {getTagError(this.shouldShowErrorMessage(), this.getErrorMessage())}
             </Fragment>
         );
@@ -146,7 +141,9 @@ export class DotTextfieldComponent {
 
     private getErrorMessage(): string {
         return this.isRegexValid()
-            ? this.isValid() ? '' : this.requiredMessage
+            ? this.isValid()
+                ? ''
+                : this.requiredMessage
             : this.validationMessage;
     }
 

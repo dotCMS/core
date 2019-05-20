@@ -1,12 +1,11 @@
 import { Component, Prop, State, Method, Element, Event, EventEmitter, Watch } from '@stencil/core';
 import Fragment from 'stencil-fragment';
-import { DotFieldStatus, DotFieldValueEvent, DotFieldStatusEvent, DotLabel } from '../../models';
+import { DotFieldStatus, DotFieldValueEvent, DotFieldStatusEvent } from '../../models';
 import {
     getClassNames,
     getOriginalStatus,
     getTagHint,
     getTagError,
-    getTagLabel,
     getErrorClass,
     updateStatus,
     getId,
@@ -90,25 +89,21 @@ export class DotTextareaComponent {
     }
 
     render() {
-        const labelTagParams: DotLabel = {
-            name: this.name,
-            label: this.label,
-            required: this.required
-        };
         return (
             <Fragment>
-                {getTagLabel(labelTagParams)}
-                <textarea
-                    class={getErrorClass(this.status.dotValid)}
-                    id={getId(this.name)}
-                    name={this.name}
-                    value={this.value}
-                    required={this.getRequiredAttr()}
-                    onInput={(event: Event) => this.setValue(event)}
-                    onBlur={() => this.blurHandler()}
-                    disabled={this.getDisabledAtt()}
-                />
-                {getTagHint(this.hint)}
+                <dot-label label={this.name} required={this.required} name={this.name}>
+                    <textarea
+                        class={getErrorClass(this.status.dotValid)}
+                        id={getId(this.name)}
+                        name={this.name}
+                        value={this.value}
+                        required={this.getRequiredAttr()}
+                        onInput={(event: Event) => this.setValue(event)}
+                        onBlur={() => this.blurHandler()}
+                        disabled={this.getDisabledAtt()}
+                    />
+                </dot-label>
+                {getTagHint(this.hint, this.name)}
                 {getTagError(this.shouldShowErrorMessage(), this.getErrorMessage())}
             </Fragment>
         );
@@ -148,7 +143,9 @@ export class DotTextareaComponent {
 
     private getErrorMessage(): string {
         return this.isRegexValid()
-            ? this.isValid() ? '' : this.requiredMessage
+            ? this.isValid()
+                ? ''
+                : this.requiredMessage
             : this.validationMessage;
     }
 

@@ -1,6 +1,6 @@
 import { Component, Prop, State, Element, Method, Event, EventEmitter, Watch } from '@stencil/core';
 import Fragment from 'stencil-fragment';
-import { DotOption, DotFieldStatus, DotFieldValueEvent, DotFieldStatusEvent, DotLabel } from '../../models';
+import { DotOption, DotFieldStatus, DotFieldValueEvent, DotFieldStatusEvent } from '../../models';
 import {
     checkProp,
     getClassNames,
@@ -10,7 +10,6 @@ import {
     getOriginalStatus,
     getTagError,
     getTagHint,
-    getTagLabel,
     updateStatus
 } from '../../utils';
 
@@ -93,29 +92,28 @@ export class DotSelectComponent {
     }
 
     render() {
-        const labelTagParams: DotLabel = {name: this.name, label: this.label, required: this.required};
         return (
             <Fragment>
-                {getTagLabel(labelTagParams)}
-                <select
-                    class={getErrorClass(this.status.dotValid)}
-                    id={getId(this.name)}
-                    disabled={this.shouldBeDisabled()}
-                    onChange={(event: Event) => this.setValue(event)}>
-
-                    {this._options.map((item: DotOption) => {
-                        return (
-                            <option
-                                selected={this.value === item.value ? true : null}
-                                value={item.value}
-                            >
-                                {item.label}
-                            </option>
-                        );
-                    })}
-
-                </select>
-                {getTagHint(this.hint)}
+                <dot-label label={this.label} required={this.required} name={this.name}>
+                    <select
+                        class={getErrorClass(this.status.dotValid)}
+                        id={getId(this.name)}
+                        disabled={this.shouldBeDisabled()}
+                        onChange={(event: Event) => this.setValue(event)}
+                    >
+                        {this._options.map((item: DotOption) => {
+                            return (
+                                <option
+                                    selected={this.value === item.value ? true : null}
+                                    value={item.value}
+                                >
+                                    {item.label}
+                                </option>
+                            );
+                        })}
+                    </select>
+                </dot-label>
+                {getTagHint(this.hint, this.name)}
                 {getTagError(!this.isValid(), this.requiredMessage)}
             </Fragment>
         );
@@ -129,7 +127,7 @@ export class DotSelectComponent {
         return this.disabled ? true : null;
     }
 
-     // Todo: find how to set proper TYPE in TS
+    // Todo: find how to set proper TYPE in TS
     private setValue(event): void {
         this.value = event.target.value;
         this.status = updateStatus(this.status, {

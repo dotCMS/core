@@ -10,13 +10,8 @@ import {
     Watch
 } from '@stencil/core';
 import Fragment from 'stencil-fragment';
-import {
-    DotFieldStatusClasses,
-    DotFieldStatusEvent,
-    DotFieldValueEvent,
-    DotLabel
-} from '../../models';
-import { checkProp, getClassNames, getTagError, getTagHint, getTagLabel } from '../../utils';
+import { DotFieldStatusClasses, DotFieldStatusEvent, DotFieldValueEvent } from '../../models';
+import { checkProp, getClassNames, getTagError, getTagHint } from '../../utils';
 
 @Component({
     tag: 'dot-date',
@@ -121,27 +116,23 @@ export class DotDateComponent {
     }
 
     render() {
-        const labelTagParams: DotLabel = {
-            name: this.name,
-            label: this.label,
-            required: this.required
-        };
         return (
             <Fragment>
-                {getTagLabel(labelTagParams)}
-                <dot-input-calendar
-                    disabled={this.disabled}
-                    type="date"
-                    name={this.name}
-                    value={this.value}
-                    required={this.required}
-                    required-message={this.requiredMessage}
-                    validation-message={this.validationMessage}
-                    min={this.min}
-                    max={this.max}
-                    step={this.step}
-                />
-                {getTagHint(this.hint)}
+                <dot-label label={this.label} required={this.required} name={this.name}>
+                    <dot-input-calendar
+                        disabled={this.disabled}
+                        type="date"
+                        name={this.name}
+                        value={this.value}
+                        required={this.required}
+                        required-message={this.requiredMessage}
+                        validation-message={this.validationMessage}
+                        min={this.min}
+                        max={this.max}
+                        step={this.step}
+                    />
+                </dot-label>
+                {getTagHint(this.hint, this.name)}
                 {this.errorMessageElement}
             </Fragment>
         );
