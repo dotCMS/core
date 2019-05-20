@@ -30,11 +30,9 @@ public class ContentletCacheImpl extends ContentletCache {
 
 	private String primaryGroup = "ContentletCache";
 	private String metadataGroup = "FileAssetMetadataCache";
-	private String fileContentGroup = "FileAssetContentCache";
 	private String translatedQueryGroup = "TranslatedQueryCache";
 	// region's name for the cache
-	private String[] groupNames = {primaryGroup, HostCache.PRIMARY_GROUP, metadataGroup,
-			fileContentGroup, translatedQueryGroup};
+	private String[] groupNames = {primaryGroup, HostCache.PRIMARY_GROUP, metadataGroup,translatedQueryGroup};
 
 	public ContentletCacheImpl() {
 		cache = CacheLocator.getCacheAdministrator();
@@ -69,15 +67,6 @@ public class ContentletCacheImpl extends ContentletCache {
 	}
 
 	@Override
-	public void addFileContent(String key, String fileContent) {
-		key = fileContentGroup + key;
-		if (!UtilMethods.isSet(fileContent)) {
-			fileContent = EMPTY_FILE_CONTENT;
-		}
-		cache.put(key, fileContent, fileContentGroup);
-	}
-
-	@Override
 	public void addMetadata(String key, com.dotmarketing.portlets.contentlet.model.Contentlet content) {
 		// http://jira.dotmarketing.net/browse/DOTCMS-7335
 		// we need metadata in other cache region
@@ -105,18 +94,6 @@ public class ContentletCacheImpl extends ContentletCache {
 			Logger.debug(this, "Cache Entry not found", e);
 		}
 		return metadata;
-	}
-
-	@Override
-	public String getFileContent(String key) {
-		key = fileContentGroup + key;
-		String fileContent = null;
-		try {
-			fileContent = (String) cache.get(key, fileContentGroup);
-		} catch (DotCacheException e) {
-			Logger.debug(this, "Cache Entry not found", e);
-		}
-		return fileContent;
 	}
 
 	@Override
@@ -180,8 +157,7 @@ public class ContentletCacheImpl extends ContentletCache {
 
 		final String myKey = primaryGroup + key;
 		final String metadataKey = metadataGroup + key;
-		final String fileContentKey = fileContentGroup + key;
-		com.dotmarketing.portlets.contentlet.model.Contentlet content;
+		com.dotmarketing.portlets.contentlet.model.Contentlet content = null;
 
 		try {
 
@@ -200,7 +176,6 @@ public class ContentletCacheImpl extends ContentletCache {
 		try {
 			cache.remove(myKey,primaryGroup);
 			cache.remove(metadataKey,metadataGroup);
-			cache.remove(fileContentKey, fileContentGroup);
 		} catch (Exception e) {
 			Logger.debug(this, "Cache not able to be removed", e);
 		}
