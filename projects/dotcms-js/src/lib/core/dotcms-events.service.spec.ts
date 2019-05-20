@@ -33,6 +33,8 @@ class DotEventsSocketMock {
     isConnected(): boolean {
         return this.connected;
     }
+
+    destroy(): void {}
 }
 
 
@@ -124,5 +126,24 @@ describe('DotcmsEventsService', () => {
         });
 
         expect(count).toBe(2);
+    });
+
+    it('should destroy socket', () => {
+        spyOn(socket, 'destroy').and.callThrough();
+
+        dotcmsEventsService.destroy();
+
+        expect(socket.destroy).toHaveBeenCalled();
+    });
+
+    it('should destroy socket and connect', () => {
+        spyOn(socket, 'destroy').and.callThrough();
+        spyOn(socket, 'connect').and.callThrough();
+
+        dotcmsEventsService.destroy();
+        expect(socket.destroy).toHaveBeenCalled();
+
+        dotcmsEventsService.start();
+        expect(socket.connect).toHaveBeenCalledTimes(1);
     });
 });

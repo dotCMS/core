@@ -20,7 +20,6 @@ export class DotcmsEventsService {
      */
     destroy(): void {
         this.dotEventsSocket.destroy();
-        this.dotEventsSocket = null;
     }
 
     /**
