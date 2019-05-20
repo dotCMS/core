@@ -4581,16 +4581,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if(contentlet == null){
             throw new DotContentletValidationException("The contentlet must not be null.");
         }
-        String stInode = contentlet.getStructureInode();
-        if(!InodeUtils.isSet(stInode)){
+        String contentTypeId = contentlet.getContentTypeId();
+        if(!InodeUtils.isSet(contentTypeId)){
             throw new DotContentletValidationException("Contentlet ["+ (contentlet != null ? contentlet.getIdentifier() : "Unknown/New")
                     + "] is not associated to any Content Type.");
         }
-        Structure st = CacheLocator.getContentTypeCache().getStructureByInode(contentlet.getStructureInode());
-        if(Structure.STRUCTURE_TYPE_FILEASSET == st.getStructureType()){
+        Structure contentType = CacheLocator.getContentTypeCache().getStructureByInode(contentlet.getContentTypeId());
+        if (BaseContentType.FILEASSET.getType() == contentType.getStructureType()) {
             if(contentlet.getHost()!=null && contentlet.getHost().equals(Host.SYSTEM_HOST) && (!UtilMethods.isSet(contentlet.getFolder()) || contentlet.getFolder().equals(FolderAPI.SYSTEM_FOLDER))){
                 DotContentletValidationException cve = new FileAssetValidationException("message.contentlet.fileasset.invalid.hostfolder");
-                cve.addBadTypeField(st.getFieldVar(FileAssetAPI.HOST_FOLDER_FIELD));
+                cve.addBadTypeField(contentType.getFieldVar(FileAssetAPI.HOST_FOLDER_FIELD));
                 throw cve;
             }
 
@@ -4612,7 +4612,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         fileNameExists = APILocator.getFileAssetAPI().fileNameExists(host, folder, fileName, contentlet.getIdentifier());
                         if(!APILocator.getFolderAPI().matchFilter(folder, fileName)) {
                             DotContentletValidationException cve = new FileAssetValidationException("message.file_asset.error.filename.filters");
-                            cve.addBadTypeField(st.getFieldVar(FileAssetAPI.HOST_FOLDER_FIELD));
+                            cve.addBadTypeField(contentType.getFieldVar(FileAssetAPI.HOST_FOLDER_FIELD));
                             throw cve;
                         }
                     }
@@ -4625,16 +4625,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }
                 if(fileNameExists){
                     DotContentletValidationException cve = new FileAssetValidationException("message.contentlet.fileasset.filename.already.exists");
-                    cve.addBadTypeField(st.getFieldVar(FileAssetAPI.HOST_FOLDER_FIELD));
+                    cve.addBadTypeField(contentType.getFieldVar(FileAssetAPI.HOST_FOLDER_FIELD));
                     throw cve;
                 }
             }
         }
 
-        if(Structure.STRUCTURE_TYPE_HTMLPAGE == st.getStructureType()){
+        if (BaseContentType.HTMLPAGE.getType() == contentType.getStructureType()) {
             if(contentlet.getHost()!=null && contentlet.getHost().equals(Host.SYSTEM_HOST) && (!UtilMethods.isSet(contentlet.getFolder()) || contentlet.getFolder().equals(FolderAPI.SYSTEM_FOLDER))){
                 DotContentletValidationException cve = new FileAssetValidationException("message.contentlet.fileasset.invalid.hostfolder");
-                cve.addBadTypeField(st.getFieldVar(FileAssetAPI.HOST_FOLDER_FIELD));
+                cve.addBadTypeField(contentType.getFieldVar(FileAssetAPI.HOST_FOLDER_FIELD));
                 throw cve;
             }
             try{
@@ -4668,7 +4668,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     Identifier htmlpage = APILocator.getIdentifierAPI().find(host, path);
                     if(htmlpage!=null && InodeUtils.isSet(htmlpage.getId()) && !htmlpage.getId().equals(contentlet.getIdentifier()) ){
                         DotContentletValidationException cve = new FileAssetValidationException("Page URL: " + path + " already exists with content id: "  + htmlpage.getId());
-                        cve.addBadTypeField(st.getFieldVar(HTMLPageAssetAPI.URL_FIELD));
+                        cve.addBadTypeField(contentType.getFieldVar(HTMLPageAssetAPI.URL_FIELD));
                         throw cve;
                     }
                     UtilMethods.validateFileName(url);
@@ -4678,7 +4678,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
             catch(DotDataException | DotSecurityException | IllegalArgumentException e){
                 DotContentletValidationException cve = new FileAssetValidationException("URL in contentlet [" + (contentlet != null ? contentlet.getIdentifier() : "Unknown/New") + "] is invalid: " + contentlet.getStringProperty(HTMLPageAssetAPI.URL_FIELD));
-                cve.addBadTypeField(st.getFieldVar(HTMLPageAssetAPI.URL_FIELD));
+                cve.addBadTypeField(contentType.getFieldVar(HTMLPageAssetAPI.URL_FIELD));
                 throw cve;
             }
         }
@@ -4688,8 +4688,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                         + (contentlet != null && UtilMethods.isSet(contentlet.getIdentifier())
                                                         ? contentlet.getIdentifier() : "Unknown/New")
                                         + "] has invalid / missing field(s).");
-        List<Field> fields = FieldsCache.getFieldsByStructureInode(stInode);
-        Structure structure = CacheLocator.getContentTypeCache().getStructureByInode(stInode);
+        List<Field> fields = FieldsCache.getFieldsByStructureInode(contentTypeId);
+        Structure structure = CacheLocator.getContentTypeCache().getStructureByInode(contentTypeId);
         final Map<String, Object> conMap = contentlet.getMap();
         final Set<String> nullValueProperties = contentlet.getNullProperties();
         for (final Field field : fields) {
@@ -4822,8 +4822,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             }
                         }
                     } catch (DotDataException e) {
+                        Logger.warn(this, "Unable to validate a category field [" + field.getVelocityVarName() + "]", e);
                         throw new DotContentletValidationException("Unable to validate a category field: " + field.getVelocityVarName(), e);
                     } catch (DotSecurityException e) {
+                        Logger.warn(this, "Unable to validate a category field [" + field.getVelocityVarName() + "]", e);
                         throw new DotContentletValidationException("Unable to validate a category field: " + field.getVelocityVarName(), e);
                     }
                 } else if (field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())) {
@@ -4949,13 +4951,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 try{
                     s = (String)o;
                 }catch (Exception e) {
-                    Logger.warn(this,"Unable to get string value for text field in contentlet", e);
+                    Logger.warn(this, "Unable to get string value from text field [" + field.getVelocityVarName() +
+                            "] in contentlet", e);
                     continue;
                 }
                 if (s.length() > 255) {
                     hasError = true;
                     cve.addMaxLengthField(field);
-                    Logger.warn(this,"String field value is greater than 255 characters");
+                    Logger.warn(this, "Value of String field [" + field.getVelocityVarName() + "] is greater than 255" +
+                            " characters");
                     continue;
                 }
             }
@@ -5010,74 +5014,81 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @CloseDBIfOpened
     @Override
-    public void validateContentlet(final Contentlet contentlet,
-                                   ContentletRelationships contentRelationships, List<Category> cats)
-            throws DotContentletValidationException {
-        if (contentlet.getMap().get(Contentlet.DONT_VALIDATE_ME) != null) {
+    public void validateContentlet(final Contentlet contentlet, final ContentletRelationships contentRelationships,
+                                   final List<Category> cats) throws DotContentletValidationException {
+        if (null != contentlet.getMap().get(Contentlet.DONT_VALIDATE_ME)) {
             return;
         }
-
-        String stInode = contentlet.getStructureInode();
-        if (!InodeUtils.isSet(stInode)) {
-            throw new DotContentletValidationException(
-                    "The contentlet's structureInode must be set");
+        final String contentTypeId = contentlet.getContentTypeId();
+        if (!InodeUtils.isSet(contentTypeId)) {
+            final String errorMsg = "Contentlet [" + contentlet.getIdentifier() + "] has an empty Content Type ID";
+            Logger.error(this, errorMsg);
+            throw new DotContentletValidationException(errorMsg);
         }
         try {
             validateContentlet(contentlet, cats);
-            if(Structure.STRUCTURE_TYPE_PERSONA == contentlet.getStructure().getStructureType() ){
+            if (BaseContentType.PERSONA.getType() == contentlet.getContentType().baseType().getType()) {
                 APILocator.getPersonaAPI().validatePersona(contentlet);
             }
-            if(contentlet != null && contentlet.isVanityUrl()){
+            if (null != contentlet && contentlet.isVanityUrl()) {
                 APILocator.getVanityUrlAPI().validateVanityUrl(contentlet);
             }
-        } catch (DotContentletValidationException ve) {
+        } catch (final DotContentletValidationException ve) {
             throw ve;
-        } catch (DotSecurityException | DotDataException e) {
-            Logger.error(this, "Error validating contentlet: " + e.getMessage(), e);
+        } catch (final DotSecurityException | DotDataException e) {
+            Logger.error(this, "Error validating contentlet [" + contentlet.getIdentifier() + "]: " + e.getMessage(),
+                    e);
         }
-
         validateRelationships(contentlet, contentRelationships);
-
     }
 
+    /**
+     * Validates that the relationships where the specified {@code contentlet} is involved are correct in terms of
+     * cardinality and Content Type match.
+     *
+     * @param contentlet           The {@link Contentlet} object whose relationships will be validated, if any.
+     * @param contentRelationships The {@link ContentletRelationships} containing the information of the Contentlet's
+     *                             relationships and associated Contentlets.
+     *
+     * @throws DotContentletValidationException An error occurred during the validation. This usually means a problem
+     *                                          with the data being sent by the user.
+     */
     private void validateRelationships(final Contentlet contentlet,
             final ContentletRelationships contentRelationships) throws DotContentletValidationException {
 
         boolean hasError = false;
-
+        final String contentletId = (UtilMethods.isSet(contentlet.getIdentifier()) ? contentlet.getIdentifier() :
+                "Unknown/New");
         final ContentType contentType = contentlet.getContentType();
-        DotContentletValidationException cve = new DotContentletValidationException(
-                "Contentlet's fields are not valid");
+        final DotContentletValidationException cve = new DotContentletValidationException("Contentlet [" +
+                contentletId + "] has invalid/missing relationships");
 
-        if (contentRelationships != null) {
-            List<ContentletRelationshipRecords> records = contentRelationships.getRelationshipsRecords();
+        if (null != contentRelationships) {
+            final List<ContentletRelationshipRecords> records = contentRelationships.getRelationshipsRecords();
 
-            for (ContentletRelationshipRecords cr : records) {
-                Relationship rel = cr.getRelationship();
-                List<Contentlet> cons = cr.getRecords();
-                if (cons == null) {
-                    cons = new ArrayList<>();
+            for (final ContentletRelationshipRecords cr : records) {
+                final Relationship relationship = cr.getRelationship();
+                List<Contentlet> contentsInRelationship = cr.getRecords();
+                if (null == contentsInRelationship) {
+                    contentsInRelationship = new ArrayList<>();
                 }
 
-                if (rel.getCardinality() == RELATIONSHIP_CARDINALITY.ONE_TO_ONE
-                        .ordinal() && cons.size() > 1){
-                    StringBuilder error = new StringBuilder();
-                    error.append("ERROR! Relationship ").append(rel.getRelationTypeValue())
-                            .append(" has been defined as One to One");
-                    Logger.error(this, error.toString());
-                    cve.addBadCardinalityRelationship(rel, cons);
+                if (relationship.getCardinality() == RELATIONSHIP_CARDINALITY.ONE_TO_ONE
+                        .ordinal() && contentsInRelationship.size() > 1){
+                    Logger.error(this, "Error in Contentlet [" + contentletId + "]: Relationship [" + relationship
+                            .getRelationTypeValue() + "] has been defined as One to One");
+                    cve.addBadCardinalityRelationship(relationship, contentsInRelationship);
                     hasError = true;
                     continue;
                 }
                 //There is a case when the Relationship is between same structures
                 //We need to validate that case
                 boolean isRelationshipParent = true;
-
-                if(FactoryLocator.getRelationshipFactory().sameParentAndChild(rel)){
-                    if (cons.stream().anyMatch(con -> contentlet.getIdentifier().equals(con.getIdentifier()))) {
-                        Logger.error(this, "Can not relate content to itself");
+                if(FactoryLocator.getRelationshipFactory().sameParentAndChild(relationship)){
+                    if (contentsInRelationship.stream().anyMatch(con -> contentlet.getIdentifier().equals(con.getIdentifier()))) {
+                        Logger.error(this, "Cannot relate content [" + contentletId + "] to itself");
                         hasError = true;
-                        cve.addInvalidContentRelationship(rel, cons);
+                        cve.addInvalidContentRelationship(relationship, contentsInRelationship);
                     }
                     if(!cr.isHasParent()){
                         isRelationshipParent = false;
@@ -5085,85 +5096,100 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }
 
                 // if i am the parent
-                if (FactoryLocator.getRelationshipFactory().isParent(rel,contentType) && isRelationshipParent) {
-                    if (rel.isChildRequired() && cons.isEmpty()) {
+                if (FactoryLocator.getRelationshipFactory().isParent(relationship,contentType) && isRelationshipParent) {
+                    if (relationship.isChildRequired() && contentsInRelationship.isEmpty()) {
                         hasError = true;
-                        cve.addRequiredRelationship(rel, cons);
+                        Logger.error(this, "Error in Contentlet [" + contentletId + "]: Child relationship [" + relationship
+                                .getRelationTypeValue() + "] is required.");
+                        cve.addRequiredRelationship(relationship, contentsInRelationship);
                     }
-                    for (Contentlet con : cons) {
+                    for (final Contentlet contentInRelationship : contentsInRelationship) {
                         try {
                             // In order to get the related content we should use method getRelatedContent
                             // that has -boolean pullByParent- as parameter so we can pass -false-
                             // to get related content where we are parents.
-                            List<Contentlet> relatedCon = getRelatedContentFromIndex(
-                                    con, rel, false, APILocator.getUserAPI()
+                            final List<Contentlet> relatedContents = getRelatedContentFromIndex(
+                                    contentInRelationship, relationship, false, APILocator.getUserAPI()
                                             .getSystemUser(), true);
                             // If there's a 1-N relationship and the parent
                             // content is relating to a child that already has
                             // a parent...
-                            if (rel.getCardinality() == RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal()
-                                    && relatedCon.size() > 0
-                                    && !relatedCon.get(0).getIdentifier()
+                            if (relationship.getCardinality() == RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal()
+                                    && relatedContents.size() > 0
+                                    && !relatedContents.get(0).getIdentifier()
                                     .equals(contentlet.getIdentifier())) {
-                                StringBuilder error = new StringBuilder();
-                                error.append("ERROR! Parent content [").append(contentlet.getIdentifier())
-                                        .append("] cannot be related to child content [").append(con.getIdentifier())
+                                final StringBuilder error = new StringBuilder();
+                                error.append("ERROR! Parent content [").append(contentletId)
+                                        .append("] cannot be related to child content [").append(contentInRelationship.getIdentifier())
                                         .append("] because it is already related to parent content [")
-                                        .append(relatedCon.get(0).getIdentifier()).append("]");
+                                        .append(relatedContents.get(0).getIdentifier()).append("]");
                                 Logger.error(this, error.toString());
                                 hasError = true;
-                                cve.addBadCardinalityRelationship(rel, cons);
-                            } else if (rel.getCardinality() == RELATIONSHIP_CARDINALITY.ONE_TO_ONE
-                                    .ordinal() && relatedCon.size() > 0 && !relatedCon.get(0).getIdentifier()
+                                cve.addBadCardinalityRelationship(relationship, contentsInRelationship);
+                            } else if (relationship.getCardinality() == RELATIONSHIP_CARDINALITY.ONE_TO_ONE
+                                    .ordinal() && relatedContents.size() > 0 && !relatedContents.get(0).getIdentifier()
                                     .equals(contentlet.getIdentifier())){
-                                StringBuilder error = new StringBuilder();
-                                error.append("ERROR! Relationship ").append(rel.getRelationTypeValue())
-                                        .append(" has been defined as One to One");
-                                Logger.error(this, error.toString());
-                                cve.addBadCardinalityRelationship(rel, cons);
+                                Logger.error(this, "Error in related Contentlet [" + relatedContents.get(0).getIdentifier
+                                        () + "]: Relationship [" + relationship.getRelationTypeValue() + "] has been defined " +
+                                        "as One to One");
+                                cve.addBadCardinalityRelationship(relationship, contentsInRelationship);
                                 hasError = true;
                             }
 
-                            if (!con.getStructureInode().equalsIgnoreCase(rel.getChildStructureInode())) {
+                            if (!contentInRelationship.getContentTypeId().equalsIgnoreCase(relationship.getChildStructureInode())) {
                                 hasError = true;
-                                cve.addInvalidContentRelationship(rel, cons);
+                                Logger.error(this, "Content Type of Contentlet [" + contentletId + "] does not match " +
+                                        "the Content Type in child relationship [" + relationship.getRelationTypeValue() + "]");
+                                cve.addInvalidContentRelationship(relationship, contentsInRelationship);
                             }
-                        } catch (DotSecurityException e) {
-                            Logger.error(this, "Unable to get system user", e);
-                        } catch (DotDataException e) {
-                            Logger.error(this, "Unable to get system user", e);
+                        } catch (final DotSecurityException | DotDataException e) {
+                            Logger.error(this, "An error occurred when retrieving information from related Contentlet" +
+                                    " [" + contentInRelationship.getIdentifier() + "]", e);
                         }
                     }
-                } else if (FactoryLocator.getRelationshipFactory().isChild(rel, contentType)) {
-                    if (rel.isParentRequired() && cons.isEmpty()) {
+                } else if (FactoryLocator.getRelationshipFactory().isChild(relationship, contentType)) {
+                    if (relationship.isParentRequired() && contentsInRelationship.isEmpty()) {
                         hasError = true;
-                        cve.addRequiredRelationship(rel, cons);
+                        Logger.error(this, "Error in Contentlet [" + contentletId + "]: Parent relationship [" + relationship
+                                .getRelationTypeValue() + "] is required.");
+                        cve.addRequiredRelationship(relationship, contentsInRelationship);
                     }
                     // If there's a 1-N relationship and the child content is
                     // trying to relate to one more parent...
-                    if (rel.getCardinality() == RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal() && cons.size() > 1) {
-                        StringBuilder error = new StringBuilder();
-                        error.append("ERROR! Child content [").append(contentlet.getIdentifier())
+                    if (relationship.getCardinality() == RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal() && contentsInRelationship.size() > 1) {
+                        final StringBuilder error = new StringBuilder();
+                        error.append("ERROR! Child content [").append(contentletId)
                                 .append("] is already related to another parent content [");
-                        for (Contentlet con : cons) {
+                        for (final Contentlet con : contentsInRelationship) {
                             error.append(con.getIdentifier()).append(", ");
                         }
                         error.append("]");
                         Logger.error(this, error.toString());
                         hasError = true;
-                        cve.addBadCardinalityRelationship(rel, cons);
+                        cve.addBadCardinalityRelationship(relationship, contentsInRelationship);
                     }
 
-                    for (Contentlet con : cons) {
-                        if (null != rel.getParentStructureInode() && !con.getStructureInode().equalsIgnoreCase(
-                                rel.getParentStructureInode())) {
+                    for (final Contentlet contentInRelationship : contentsInRelationship) {
+                        if (!UtilMethods.isSet(contentInRelationship.getContentTypeId())) {
                             hasError = true;
-                            cve.addInvalidContentRelationship(rel, cons);
+                            Logger.error(this, "Contentlet with Identifier [" + contentletId + "] has an empty " +
+                                    "Content Type Inode");
+                            cve.addInvalidContentRelationship(relationship, contentsInRelationship);
+                            continue;
+                        }
+                        if (null != relationship.getParentStructureInode() && !contentInRelationship.getContentTypeId().equalsIgnoreCase(
+                                relationship.getParentStructureInode())) {
+                            hasError = true;
+                            Logger.error(this, "Content Type of Contentlet [" + contentletId + "] does not match the " +
+                                    "Content Type in relationship [" + relationship.getRelationTypeValue() + "]");
+                            cve.addInvalidContentRelationship(relationship, contentsInRelationship);
                         }
                     }
                 } else {
                     hasError = true;
-                    cve.addBadRelationship(rel, cons);
+                    Logger.error(this, "Relationship [" + relationship.getRelationTypeValue() + "] is neither parent nor child" +
+                            " of Contentlet [" + contentletId + "]");
+                    cve.addBadRelationship(relationship, contentsInRelationship);
                 }
             }
         }
