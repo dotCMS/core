@@ -246,16 +246,6 @@ public class ContainerStructureFinderStrategyResolver {
             return FileAssetContainerUtil.getInstance().wrapIntoDotParseDirective(fileAsset);
         }
 
-        private String toString (final FileAsset fileAsset) {
-
-            try (InputStream fileAssetStream = fileAsset.getInputStream()) {
-                return IOUtils.toString(fileAssetStream,
-                        UtilMethods.getCharsetConfiguration());
-            } catch (IOException e) {
-                return StringPool.BLANK;
-            }
-        }
-
         private Optional<ContentType> findContentTypeByVelocityVarName (final String velocityVarName) {
 
             ContentType contentType = null;
