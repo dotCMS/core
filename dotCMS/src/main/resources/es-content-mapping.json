@@ -59,7 +59,7 @@
             {
                 "keywordmapping" : {
                     "match_pattern": "regex",
-                    "match": "tags|conhostname|wfstep|structurename|contenttype|conhostname|parentpath|path|urlmap",
+                    "match": "tags|conhost|conhostname|wfstep|structurename|contenttype|conhostname|parentpath|path|urlmap|.*urltitle",
                     "mapping": {
                         "type": "keyword",
                         "doc_values": true
