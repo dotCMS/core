@@ -5138,8 +5138,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                             if (!contentInRelationship.getContentTypeId().equalsIgnoreCase(relationship.getChildStructureInode())) {
                                 hasError = true;
-                                Logger.error(this, "Content Type of Contentlet [" + contentletId + "] does not match " +
-                                        "the Content Type in child relationship [" + relationship.getRelationTypeValue() + "]");
+                                Logger.error(this, "Content Type of Contentlet [" + contentInRelationship
+                                        .getIdentifier() + "] does not match the Content Type in child relationship [" +
+                                        relationship.getRelationTypeValue() + "]");
                                 cve.addInvalidContentRelationship(relationship, contentsInRelationship);
                             }
                         } catch (final DotSecurityException | DotDataException e) {
