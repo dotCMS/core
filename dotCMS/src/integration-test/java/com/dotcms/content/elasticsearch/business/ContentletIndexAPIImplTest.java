@@ -516,7 +516,7 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
 
             //Validations
             assertNotNull( result );
-            assertTrue( !result.isEmpty() );
+            assertFalse( result.isEmpty() );
 
             //Remove the contentlet from the index
             indexAPI.removeContentFromIndexByStructureInode( testStructure.getInode() );
@@ -527,7 +527,11 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
                 //Verify if it was removed to the index
                 result = contentletAPI.search( query, 0, -1, "modDate desc", user, true );
                 x++;
-            } while((result == null || result.isEmpty()) && x<100);
+            } while(!result.isEmpty() && x<100);
+
+            //Validations after removing content from index, the result must be empty
+            assertNotNull(result);
+            assertTrue(result.isEmpty());
 
         } finally {
             APILocator.getContentletAPI().archive( testContentlet, user, false );
