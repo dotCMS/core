@@ -259,13 +259,11 @@ public class LanguageAPIImpl implements LanguageAPI {
     public String getStringKey ( final Language lang, final String key ) {
 
         final User user = getUser();
-        // First, retrieve value from legacy Language Variables or the appropriate
-        // Language.properties file
-        final String value = this.getStringFromPropertiesFile(lang, key);
-        // If not found, look it up using the new Language Variable API
-        return (null == value || StringPool.BLANK.equals(value.trim()) || key.equals(value) )?
-                getLanguageVariableAPI().getLanguageVariableRespectingFrontEndRoles(key, lang.getId(), user):
-                value;
+        // First, look it up using the new Language Variable API
+        final String value = getLanguageVariableAPI().getLanguageVariableRespectingFrontEndRoles(key, lang.getId(), user);
+        // If not found, retrieve value from legacy Language Variables or the appropriate
+		// Language.properties file
+        return (UtilMethods.isNotSet(value) || value.equals(key)) ? this.getStringFromPropertiesFile(lang, key) : value;
     }
 
     private String getStringFromPropertiesFile (final Language lang, final String key) {
