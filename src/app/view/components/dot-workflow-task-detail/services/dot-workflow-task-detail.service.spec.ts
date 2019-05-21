@@ -18,7 +18,7 @@ describe('DotWorkflowTaskDetailService', () => {
         spyOn(dotMenuService, 'getDotMenuId').and.returnValue(observableOf('456'));
     });
 
-    it('should set data to view', () => {
+    it('should set data to view', (done) => {
         service.viewUrl$.subscribe((url: string) => {
             expect(url).toEqual(
                 [
@@ -33,6 +33,9 @@ describe('DotWorkflowTaskDetailService', () => {
                     `&_workflow_taskId=999`
                 ].join('')
             );
+
+            expect(dotMenuService.getDotMenuId).toHaveBeenCalledWith('workflow');
+            done();
         });
 
         service.header$.subscribe((header: string) => {

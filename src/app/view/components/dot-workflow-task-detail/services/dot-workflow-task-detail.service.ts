@@ -51,7 +51,7 @@ export class DotWorkflowTaskDetailService {
     private getViewUrl(action: DotTaskAction): Observable<string> {
         return action === null
             ? of('')
-            : this.dotMenuService.getDotMenuId('content').pipe(
+            : this.dotMenuService.getDotMenuId('workflow').pipe(
                   map((portletId: string) => {
                       return [
                           `/c/portal/layout`,
