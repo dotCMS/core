@@ -85,6 +85,7 @@ import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 
 import io.vavr.control.Try;
+import org.elasticsearch.index.reindex.DeleteByQueryRequestBuilder;
 
 public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
@@ -930,12 +931,12 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         removeContentFromIndex(content, true);
     }
 
-    public void removeContentFromIndexByStructureInode(String structureInode) throws DotDataException {
-        String structureName = CacheLocator.getContentTypeCache().getStructureByInode(structureInode).getVelocityVarName();
-        IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
+    public void removeContentFromIndexByStructureInode(final String structureInode) throws DotDataException {
+        final String structureName = CacheLocator.getContentTypeCache().getStructureByInode(structureInode).getVelocityVarName();
+        final IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
 
         // collecting indexes
-        List<String> idxs = new ArrayList<String>();
+        final List<String> idxs = new ArrayList<String>();
         idxs.add(info.working);
         idxs.add(info.live);
         if (info.reindex_working != null)
@@ -945,10 +946,10 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         String[] idxsArr = new String[idxs.size()];
         idxsArr = idxs.toArray(idxsArr);
 
-        BulkByScrollResponse response = DeleteByQueryAction.INSTANCE.newRequestBuilder(new ESClient().getClient())
-                .filter(QueryBuilders.queryStringQuery("+structurename:" + structureName)).source(idxsArr).get();
+        final BulkByScrollResponse response = DeleteByQueryAction.INSTANCE.newRequestBuilder(new ESClient().getClient())
+                .filter(QueryBuilders.matchQuery("contenttype",structureName.toLowerCase())).source(idxsArr).get();
 
-        Logger.debug(this, "Records deleted: " + response.getDeleted());
+        Logger.info(this, "Records deleted: " + response.getDeleted() + " from contentType: " + structureName);
     }
 
     public void fullReindexAbort() {
