@@ -813,7 +813,7 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
     APILocator.getContentletIndexAPI().removeContentFromIndex(content);
     ReindexThread.startThread();
     APILocator.getReindexQueueAPI().addContentletReindex(content);
-    ThreadUtils.sleep(5000);
+    ThreadUtils.sleep(10000);
     liveSearch = APILocator.getContentletAPI().searchIndex("+identifier:" + content.getIdentifier() + " +live:true", 1, 0, "modDate", user, false);
     workingSearch = APILocator.getContentletAPI().searchIndex("+identifier:" + content.getIdentifier() + " +live:false", 1, 0, "modDate", user, false);
     assert(liveSearch.size()>0);
