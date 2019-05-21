@@ -1,6 +1,5 @@
 package com.dotcms.content.elasticsearch.business;
 
-import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.model.field.Field;
@@ -27,7 +26,7 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import java.util.Collections;
+import java.io.StringWriter;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -105,9 +104,7 @@ public class ESMappingAPITest {
 
             assertNotNull(esMap);
             assertEquals(commentsContentlet.getIdentifier(),
-                    List.class.cast(esMap.get("News-Comments")).get(0));
-            assertEquals(commentsContentlet.getIdentifier() + "_1",
-                    List.class.cast(esMap.get("News-Comments" + ESMappingConstants.SUFFIX_ORDER)).get(0));
+                    ((Map)((List)esMap.get("News-Comments")).get(0)).get("identifier"));
 
         } finally {
             if (newsContentlet != null && newsContentlet.getIdentifier() != null) {
@@ -159,9 +156,7 @@ public class ESMappingAPITest {
 
             assertNotNull(esMap);
             assertEquals(childContentlet.getIdentifier(),
-                    ((List)esMap.get("Comments-Comments" + ESMappingConstants.SUFFIX_CHILD)).get(0));
-            assertEquals(childContentlet.getIdentifier() + "_1",
-                    ((List)esMap.get("Comments-Comments" + ESMappingConstants.SUFFIX_ORDER)).get(0));
+                    ((Map)((List)esMap.get("Comments-Comments")).get(0)).get("identifier"));
 
         } finally {
             if (parentContentlet != null && parentContentlet.getIdentifier() != null) {
@@ -211,7 +206,7 @@ public class ESMappingAPITest {
                     CollectionsUtils.map(relationship, CollectionsUtils.list(childContentlet1, childContentlet2)),
                     null, user, false);
 
-            esMappingAPI.loadRelationshipFields(parentContentlet, esMap);
+            esMappingAPI.loadRelationshipFields(parentContentlet, esMap, new StringWriter());
 
             assertNotNull(esMap);
 
@@ -219,12 +214,6 @@ public class ESMappingAPITest {
                     .list(childContentlet1.getIdentifier(), childContentlet2.getIdentifier());
 
             validateRelationshipIndex(esMap, relationship.getRelationTypeValue(), expectedResults);
-
-            assertTrue(((List) esMap
-                    .get(relationship.getRelationTypeValue() + ESMappingConstants.SUFFIX_ORDER))
-                    .stream().allMatch(
-                            child -> child.equals(childContentlet1.getIdentifier() + "_1") || child
-                                    .equals(childContentlet2.getIdentifier() + "_2")));
 
         } finally {
             if (parentContentType != null && parentContentType.id() != null) {
@@ -274,38 +263,23 @@ public class ESMappingAPITest {
 
             //creates parent contentlet
             final ContentletDataGen parentDataGen = new ContentletDataGen(parentContentType.id());
-            final Contentlet parentContentlet1 = contentletAPI
+            final Contentlet parentContentlet = contentletAPI
                     .checkin(parentDataGen.languageId(language.getId()).next(),
                             CollectionsUtils
                                     .map(relationship, CollectionsUtils.list(childContentlet)),
                             null, user, false);
 
-            final Contentlet parentContentlet2 = contentletAPI
-                    .checkin(parentDataGen.languageId(language.getId()).next(),
-                            CollectionsUtils
-                                    .map(relationship, CollectionsUtils.list(childContentlet)),
-                            null, user, false);
-
-            esMappingAPI.loadRelationshipFields(childContentlet, esMap);
+            esMappingAPI.loadRelationshipFields(childContentlet, esMap, new StringWriter());
 
             assertNotNull(esMap);
 
-            final List<String> expectedResults = CollectionsUtils
-                    .list(parentContentlet1.getIdentifier(), parentContentlet2.getIdentifier());
+            assertTrue(esMap.isEmpty());
+
+            esMappingAPI.loadRelationshipFields(parentContentlet, esMap, new StringWriter());
+
+            final List<String> expectedResults = CollectionsUtils.list(childContentlet.getIdentifier());
 
             validateRelationshipIndex(esMap, relationship.getRelationTypeValue(), expectedResults);
-
-            validateRelationshipIndex(esMap, childContentType.variable() + StringPool.PERIOD
-                    + childTypeRelationshipField.variable(), expectedResults);
-
-            //parents cannot be ordered
-            assertTrue(((List) esMap
-                    .get(relationship.getRelationTypeValue() + ESMappingConstants.SUFFIX_ORDER))
-                    .stream().allMatch(
-                            parent -> parent.equals(parentContentlet1.getIdentifier() + "_1")
-                                    || parent
-                                    .equals(parentContentlet2.getIdentifier() + "_1")));
-
 
         } finally {
             if (parentContentType != null && parentContentType.id() != null) {
@@ -325,7 +299,8 @@ public class ESMappingAPITest {
         final List results = List.class.cast(esMap.get(keyName));
         assertEquals(identifiers.size(), results.size());
 
-        assertFalse(Collections.disjoint(results, identifiers));
+        assertTrue(results.stream()
+                .allMatch(result -> identifiers.contains(((Map) result).get("identifier"))));
     }
 
     private ContentType createAndSaveSimpleContentType(final String name)

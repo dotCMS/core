@@ -1392,10 +1392,51 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private List<Contentlet> getRelatedContentESQuery(Contentlet contentlet, Relationship rel,
             User user, boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException {
+
+        if (!UtilMethods.isSet(contentlet.getIdentifier())){
+            return Collections.emptyList();
+        }
+
+        if (rel.getChildStructureInode().equals(rel.getParentStructureInode())) {
         return (List<Contentlet>) CollectionsUtils
                 .join(getRelatedChildren(contentlet, rel, user, respectFrontendRoles),
                         getRelatedParents(contentlet, rel, user, respectFrontendRoles)).stream()
                 .collect(CollectionsUtils.toImmutableList());
+        }else{
+            if (rel.getChildStructureInode().equals(contentlet.getContentTypeId())){
+                return getRelatedParents(contentlet, rel, user, respectFrontendRoles);
+            } else{
+                return getRelatedChildren(contentlet, rel, user, respectFrontendRoles);
+            }
+        }
+    }
+
+    private List<Contentlet> getRelatedContentESQuery(Contentlet contentlet, Relationship rel,
+            User user, boolean respectFrontendRoles, boolean pullByParent)
+            throws DotDataException, DotSecurityException {
+
+        if (!UtilMethods.isSet(contentlet.getIdentifier())){
+            return Collections.emptyList();
+        }
+
+        final boolean isSameStructureRelationship = FactoryLocator.getRelationshipFactory()
+                .sameParentAndChild(rel);
+
+        if (isSameStructureRelationship){
+            if (pullByParent){
+                return getRelatedChildren(contentlet, rel, user, respectFrontendRoles).stream()
+                        .collect(CollectionsUtils.toImmutableList());
+            } else{
+                return getRelatedParents(contentlet, rel, user, respectFrontendRoles).stream()
+                        .collect(CollectionsUtils.toImmutableList());
+            }
+        } else {
+            if (rel.getChildStructureInode().equals(contentlet.getContentTypeId())){
+                return getRelatedParents(contentlet, rel, user, respectFrontendRoles);
+            } else{
+                return getRelatedChildren(contentlet, rel, user, respectFrontendRoles);
+            }
+        }
     }
 
     @CloseDBIfOpened
@@ -1421,9 +1462,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 } catch (Exception ex) {
                     throw new DotDataException(errorMessage, ex);
                 }
-            } else if (e.getCause() instanceof SearchPhaseExecutionException) {
-                Logger.warn(this, errorMessage + ". An empty list will be returned");
-                Logger.debug(this, errorMessage + ". An empty list will be returned", e);
+            } else if (e instanceof SearchPhaseExecutionException || e
+                    .getCause() instanceof SearchPhaseExecutionException) {
+                Logger.warnAndDebug(ESContentletAPIImpl.class,
+                        errorMessage + ". An empty list will be returned", e);
                 return Collections.emptyList();
             }
             throw new DotDataException(errorMessage, e);
@@ -1502,28 +1544,20 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throws DotDataException, DotSecurityException {
         try {
             return permissionAPI.filterCollection(
-                    getRelatedContentESQuery(contentlet, rel, user, respectFrontendRoles),
+                    getRelatedContentESQuery(contentlet, rel, user, respectFrontendRoles, pullByParent),
                     PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
         } catch (Exception e) {
             final String errorMessage =
                     "Unable to look up related content for contentlet with identifier "
                             + contentlet.getIdentifier();
-            if (e instanceof SearchPhaseExecutionException) {
-                try {
-                    APILocator.getContentletIndexAPI().addContentToIndex(contentlet, false, true);
-                    return permissionAPI.filterCollection(
-                            getRelatedContentESQuery(contentlet, rel, user, respectFrontendRoles),
-                            PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
-                } catch (Exception ex) {
-                    throw new DotDataException(errorMessage, ex);
-                }
-            } else if (e.getCause() instanceof SearchPhaseExecutionException) {
-                Logger.warn(this, errorMessage + ". An empty list will be returned", e);
+            if (e instanceof SearchPhaseExecutionException || e
+                    .getCause() instanceof SearchPhaseExecutionException) {
+                Logger.warnAndDebug(ESContentletAPIImpl.class,
+                        errorMessage + ". An empty list will be returned", e);
                 return Collections.emptyList();
             }
             throw new DotDataException(errorMessage, e);
         }
-
     }
 
     /**
@@ -1543,12 +1577,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throws DotDataException, DotSecurityException {
 
         try {
-            return getRelatedContentESQuery(contentlet, rel, user, respectFrontendRoles);
+            return getRelatedContentESQuery(contentlet, rel, user, respectFrontendRoles, pullByParent);
         } catch (Exception e){
             final String errorMessage = "Unable to look up related content for contentlet with identifier "
                     + contentlet.getIdentifier();
-            if (e.getCause() instanceof SearchPhaseExecutionException){
-                Logger.warn(this, errorMessage + ". An empty list will be returned", e);
+            if (e instanceof SearchPhaseExecutionException || e
+                    .getCause() instanceof SearchPhaseExecutionException) {
+                Logger.warnAndDebug(ESContentletAPIImpl.class, errorMessage + ". An empty list will be returned", e);
                 return Collections.emptyList();
             }
             throw new DotDataException(errorMessage, e);

@@ -27,6 +27,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * The purpose of this class is to abstract the methods called from the ContentTool Viewtool
@@ -475,53 +476,50 @@ public class ContentUtils {
 		public static List<Contentlet> pullRelated(String relationshipName, String contentletIdentifier, String condition, boolean pullParents, int limit, String sort, User user, String tmDate) {
 			final Relationship relationship = FactoryLocator.getRelationshipFactory()
 					.byTypeValue(relationshipName);
-			String relNameForQuery = "";
-			if(relationship.getParentStructureInode().equals(relationship.getChildStructureInode())){
-				if(pullParents){
-					relNameForQuery = relationshipName.trim() + "-child";
-				}else{
-					relNameForQuery = relationshipName.trim() + "-parent";
-				}
-			}
 
 			return getPullResults(relationship, contentletIdentifier, condition, limit, -1, sort,
-					user, tmDate, relNameForQuery);
+					user, tmDate, pullParents);
 		}
 
-	/**
-	 * Logic used for `pullRelated` and `pullRelatedField` methods
-	 * @param relationship
-	 * @param contentletIdentifier
-	 * @param condition
-	 * @param limit
-	 * @param offset
-	 * @param sort
-	 * @param user
-	 * @param tmDate
-	 * @param relNameForQuery
-	 * @return
-	 */
-	private static List<Contentlet> getPullResults(final Relationship relationship,
-			String contentletIdentifier, final String condition, final int limit, final int offset, String sort, final User user,
-			final String tmDate, String relNameForQuery) {
-		if(!UtilMethods.isSet(relNameForQuery))//DOTCMS-5328
-			relNameForQuery = relationship.getRelationTypeValue();
+    /**
+     * Logic used for `pullRelated` and `pullRelatedField` methods
+     */
+    private static List<Contentlet> getPullResults(final Relationship relationship,
+            String contentletIdentifier, final String condition, final int limit, final int offset,
+            String sort, final User user,
+            final String tmDate, final boolean pullByParent) {
 
-		contentletIdentifier = RecurrenceUtil.getBaseEventIdentifier(contentletIdentifier);
+        contentletIdentifier = RecurrenceUtil.getBaseEventIdentifier(contentletIdentifier);
 
-		String pullquery = "+type:content +" + relNameForQuery + ":" + contentletIdentifier;
+        StringBuilder pullQuery = new StringBuilder();
+        try {
+            final Contentlet contentlet = conAPI
+                    .findContentletByIdentifierAnyLanguage(contentletIdentifier);
 
-		if(UtilMethods.isSet(condition)){
-			   pullquery += " " + condition;
-		}
+            final List<Contentlet> relatedContent = conAPI.getRelatedContent(contentlet, relationship, pullByParent, user, false);
 
-		if(!UtilMethods.isSet(sort)){
-			sort = relationship.getRelationTypeValue() + "-" + contentletIdentifier + "-order";
-		}
-		return pull(pullquery, offset, limit, sort, user, tmDate);
-	}
+            if (relatedContent.isEmpty()){
+                return Collections.emptyList();
+            }
 
-	/**
+            pullQuery.append("+identifier:(").append(String.join(" OR ", relatedContent
+                    .stream().map(cont -> cont.getIdentifier()).collect(
+                            Collectors.toList()))).append(")");
+
+
+            if (UtilMethods.isSet(condition)) {
+                pullQuery.append(" AND ").append(condition);
+            }
+
+            return pull(pullQuery.toString(), offset, limit, sort, user, tmDate);
+        } catch (Exception e) {
+            Logger.error(ContentUtils.class, "Error pulling related content", e);
+        }
+
+        return Collections.emptyList();
+    }
+
+    /**
 	 * Returns a list of related content given a Relationship and additional filtering criteria
 	 * @param relationship
 	 * @param contentletIdentifier - Identifier of the contentlet
@@ -537,7 +535,14 @@ public class ContentUtils {
 			final String contentletIdentifier, final String condition, final int limit,
 			final int offset, final String sort, final User user, final String tmDate) {
 		return getPullResults(relationship, contentletIdentifier, condition, limit, offset, sort,
-				user, tmDate, null);
+				user, tmDate, true);
 	}
+
+    public static List<Contentlet> pullRelatedField(final Relationship relationship,
+            final String contentletIdentifier, final String condition, final int limit,
+            final int offset, final String sort, final User user, final String tmDate, final boolean pullByParent) {
+        return getPullResults(relationship, contentletIdentifier, condition, limit, offset, sort,
+                user, tmDate, pullByParent);
+    }
 		
 }
