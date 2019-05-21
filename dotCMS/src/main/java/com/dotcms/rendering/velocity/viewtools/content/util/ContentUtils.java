@@ -51,6 +51,7 @@ public class ContentUtils {
 	        return INSTANCE;
 	    }
 
+
 		/**
 		 * Will pull a single piece of content for you based on the inode or identifier. It will always
 		 * try to retrieve the live content unless in EDIT_MODE in the backend of dotCMS when passing in an
@@ -513,7 +514,9 @@ public class ContentUtils {
 
             return pull(pullQuery.toString(), offset, limit, sort, user, tmDate);
         } catch (Exception e) {
-            Logger.error(ContentUtils.class, "Error pulling related content", e);
+            Logger.error(ContentUtils.class,
+                    "Error pulling related content with identifier " + contentletIdentifier
+                            + ". Relationship Name: " + relationship.getRelationTypeValue(), e);
         }
 
         return Collections.emptyList();
