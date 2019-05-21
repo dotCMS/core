@@ -806,19 +806,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
             final String relType = relatedEntry.get(ESMappingConstants.RELATION_TYPE).toString();
 
             if (!relationTypeSet.contains(relType)){
-                final Map<String, Object> jsonMap = new HashMap<>();
-
-                final Map<String, Object> properties = new HashMap<>();
-                final Map<String, Object> relMap = new HashMap<>();
-                relMap.put("type", "nested");
-                properties.put(relType.toLowerCase(), relMap);
-                jsonMap.put("properties",  properties);
-
-                putMapping(APILocator.getContentletIndexAPI().getActiveIndexName(ES_WORKING_INDEX_NAME),
-                        "content", jsonMap);
-                putMapping(APILocator.getContentletIndexAPI().getActiveIndexName(ES_LIVE_INDEX_NAME),
-                        "content", jsonMap);
-
+                putNestedMapping(relType);
                 relationTypeSet.add(relType);
             }
 
@@ -829,17 +817,12 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                 //Support for legacy relationships
                 if (relType.equals(relationship.getRelationTypeValue())) {
                     List.class.cast(esMap
-                            .computeIfAbsent(relationship.getRelationTypeValue().toLowerCase(),
+                            .computeIfAbsent(relationship.getRelationTypeValue(),
                                     k -> new ArrayList<>()))
                             .add(CollectionsUtils.map("identifier", childId));
 
                     //add related content to catchall
                     catchallWriter.append(childId).append(' ');
-
-                    if (relationship.isRelationshipField()) {
-                        addRelationshipRecords(contentlet, relationship.getChildRelationName(),
-                                childId, relationshipsRecords, esMap, catchallWriter);
-                    }
                 }
             }
         }
@@ -848,44 +831,18 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
         esMap.putAll(relationshipsRecords);
     }
 
-	/**
-	 * Groups all relationships records by relationship field
-	 */
-	private void addRelationshipRecords(final Contentlet contentlet, final String relationName,
-			final String related, final Map<String, List> relationshipsRecords,
-            final Map<String, Object> mapping, final StringWriter catchallWriter) {
+    private void putNestedMapping(String relType) throws DotDataException {
+        final Map<String, Object> jsonMap = new HashMap<>();
 
-		final ContentType contentType = contentlet.getContentType();
-		if (relationName != null) {
-			final String key = (contentType.variable() + StringPool.PERIOD + relationName).toLowerCase();
+        final Map<String, Object> properties = new HashMap<>();
+        final Map<String, Object> relMap = new HashMap<>();
+        relMap.put("type", "nested");
+        properties.put(relType.toLowerCase(), relMap);
+        jsonMap.put("properties",  properties);
 
-			//this relationship has been already added
-			if (mapping.containsKey(key)) {
-				return;
-			}
-			if (!relationshipsRecords.containsKey(key)) {
-				try {
-					//Search for a relationship field
-					final com.dotcms.contenttype.model.field.Field field = APILocator
-							.getContentTypeFieldAPI()
-							.byContentTypeAndVar(contentType, relationName);
-					if (field != null) {
-						relationshipsRecords.put(key, new ArrayList());
-						relationshipsRecords.get(key).add(CollectionsUtils.map("identifier",related));
-                        catchallWriter.append(related).append(' ');
-					}
-				} catch (NotFoundInDbException e) {
-					//Do nothing and continue searching for others relationships fields
-				} catch (DotDataException e) {
-					Logger.warn(this, "Error getting field for relation type " + key, e);
-				}
-
-			} else{
-				relationshipsRecords.get(key).add(CollectionsUtils.map("identifier",related));
-
-				//add related content to catchall
-                catchallWriter.append(related).append(' ');
-			}
-		}
-	}
+        putMapping(APILocator.getContentletIndexAPI().getActiveIndexName(ES_WORKING_INDEX_NAME),
+                "content", jsonMap);
+        putMapping(APILocator.getContentletIndexAPI().getActiveIndexName(ES_LIVE_INDEX_NAME),
+                "content", jsonMap);
+    }
 }
