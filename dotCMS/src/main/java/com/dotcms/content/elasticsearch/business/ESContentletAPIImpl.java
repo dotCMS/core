@@ -1488,20 +1488,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         for (SearchHit sh : response.getHits()) {
-            try {
-                Map<String, Object> sourceMap = sh.getSourceAsMap();
-                if (sourceMap.get(relationshipName) != null) {
-                    ((ArrayList<Map>) sourceMap.get(relationshipName)).stream().forEach(child -> {
-                        try {
-                            result.add(findContentletByIdentifierAnyLanguage(
-                                    (String) child.get("identifier")));
-                        } catch (Exception e) {
-                            throw new RuntimeException(e);
-                        }
-                    });
-                }
-            } catch (Exception e) {
-                Logger.error(this, e.getMessage(), e);
+            Map<String, Object> sourceMap = sh.getSourceAsMap();
+            if (sourceMap.get(relationshipName) != null) {
+                ((ArrayList<Map>) sourceMap.get(relationshipName)).stream().forEach(child -> {
+                    try {
+                        result.add(findContentletByIdentifierAnyLanguage(
+                                (String) child.get("identifier")));
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                });
             }
         }
 
@@ -1523,13 +1519,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         for (SearchHit sh : response.getHits()) {
-            try {
-                Map<String, Object> sourceMap = sh.getSourceAsMap();
-                if (sourceMap.get("identifier") != null) {
-                    result.add(findContentletByIdentifierAnyLanguage(sourceMap.get("identifier").toString()));
-                }
-            } catch (Exception e) {
-                Logger.error(this, e.getMessage(), e);
+            Map<String, Object> sourceMap = sh.getSourceAsMap();
+            if (sourceMap.get("identifier") != null) {
+                result.add(findContentletByIdentifierAnyLanguage(sourceMap.get("identifier").toString()));
             }
         }
 
@@ -1549,7 +1541,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         } catch (Exception e) {
             final String errorMessage =
                     "Unable to look up related content for contentlet with identifier "
-                            + contentlet.getIdentifier();
+                            + contentlet.getIdentifier() + ". Relationship name: " + rel.getRelationTypeValue();
             if (e instanceof SearchPhaseExecutionException || e
                     .getCause() instanceof SearchPhaseExecutionException) {
                 Logger.warnAndDebug(ESContentletAPIImpl.class,
@@ -1580,7 +1572,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             return getRelatedContentESQuery(contentlet, rel, user, respectFrontendRoles, pullByParent);
         } catch (Exception e){
             final String errorMessage = "Unable to look up related content for contentlet with identifier "
-                    + contentlet.getIdentifier();
+                    + contentlet.getIdentifier() + ". Relationship Name: " + rel.getRelationTypeValue();
             if (e instanceof SearchPhaseExecutionException || e
                     .getCause() instanceof SearchPhaseExecutionException) {
                 Logger.warnAndDebug(ESContentletAPIImpl.class, errorMessage + ". An empty list will be returned", e);
