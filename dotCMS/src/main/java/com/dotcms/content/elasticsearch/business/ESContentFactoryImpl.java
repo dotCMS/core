@@ -3,7 +3,6 @@ package com.dotcms.content.elasticsearch.business;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
-import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
@@ -26,7 +25,6 @@ import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.InodeFactory;
@@ -43,10 +41,8 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.util.*;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.primitives.Ints;
 import com.liferay.portal.model.User;
-import com.liferay.util.StringPool;
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.ActionListener;
@@ -60,11 +56,9 @@ import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.QueryStringQueryBuilder;
 import org.elasticsearch.index.query.functionscore.RandomScoreFunctionBuilder;
-import org.elasticsearch.script.Script;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
-import org.elasticsearch.search.sort.ScriptSortBuilder;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 import org.springframework.util.NumberUtils;
@@ -1453,43 +1447,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
             if(UtilMethods.isSet(sortBy) ) {
             	sortBy = sortBy.toLowerCase();
-            	if(sortBy.endsWith(ESMappingConstants.SUFFIX_ORDER)) {
-            	    // related content ordering
-            	    // relationships typically have a format stname1-stname2(legacy relationships) or relationType (one-sided relationships)
-            	    if(sortBy.indexOf('-')>0) {
-
-                        String identifier = sortBy
-                                .substring(sortBy.indexOf(StringPool.DASH) + 1,
-                                        sortBy.lastIndexOf(StringPool.DASH));
-
-                        if (UtilMethods.isSet(identifier)) {
-
-                            //Support for one-sided relationships
-                            String relName = sortBy.substring(0, sortBy.indexOf(StringPool.DASH));
-                            if (UtilMethods.isSet(identifier) && !relName.contains(StringPool.PERIOD)) {
-                                //Support for legacy relationships
-                                relName += StringPool.DASH + identifier
-                                        .substring(0, identifier.indexOf(StringPool.DASH));
-                                identifier = identifier
-                                        .substring(identifier.indexOf(StringPool.DASH) + 1);
-                            }
-
-                            final Script script = new Script(
-                                Script.DEFAULT_SCRIPT_TYPE,
-                                "expert_scripts",
-                                "related",
-                                Collections.emptyMap(),
-                                ImmutableMap.of("relName", relName, "identifier", identifier));
-
-                            /*srb.addSort(
-                                SortBuilders
-                                    .scriptSort(script, ScriptSortBuilder.ScriptSortType.NUMBER)
-                                    .order(SortOrder.ASC));*/
-                        }
-
-            	    }
-            	}
-            	else if(sortBy.startsWith("score")){
+                if(sortBy.startsWith("score")){
             		String[] test = sortBy.split("\\s+");
             		String defaultSecondarySort = "moddate";
             		SortOrder defaultSecondardOrder = SortOrder.DESC;
