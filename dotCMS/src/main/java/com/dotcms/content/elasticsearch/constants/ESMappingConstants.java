@@ -91,6 +91,8 @@ public final class ESMappingConstants {
 
     public static final String SUFFIX_CHILD = "-child";
     public static final String SUFFIX_PARENT = "-parent";
+
+    @Deprecated
     public static final String SUFFIX_ORDER = "-order";
 
 
