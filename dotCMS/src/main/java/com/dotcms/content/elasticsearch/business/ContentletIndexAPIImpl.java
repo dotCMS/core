@@ -4,6 +4,7 @@ import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATI
 import static com.dotmarketing.common.reindex.ReindexThread.ELASTICSEARCH_CONCURRENT_REQUESTS;
 import static com.dotmarketing.util.StringUtils.builder;
 
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.common.reindex.BulkProcessorListener;
 import com.dotmarketing.util.DateUtil;
 import java.io.File;
@@ -931,8 +932,13 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         removeContentFromIndex(content, true);
     }
 
-    public void removeContentFromIndexByStructureInode(final String structureInode) throws DotDataException {
-        final String structureName = CacheLocator.getContentTypeCache().getStructureByInode(structureInode).getVelocityVarName();
+    public void removeContentFromIndexByStructureInode(final String structureInode)
+            throws DotDataException, DotSecurityException {
+        final ContentType contentType = APILocator.getContentTypeAPI(APILocator.getUserAPI().getSystemUser()).find(structureInode);
+        if(contentType==null){
+            throw new DotDataException("ContentType with Inode or VarName: " + structureInode + "not found");
+        }
+        final String structureName = contentType.variable();
         final IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
 
         // collecting indexes
