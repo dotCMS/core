@@ -4648,6 +4648,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if (BaseContentType.HTMLPAGE.getType() == contentType.baseType().getType()) {
             if(contentlet.getHost()!=null && contentlet.getHost().equals(Host.SYSTEM_HOST) && (!UtilMethods.isSet(contentlet.getFolder()) || contentlet.getFolder().equals(FolderAPI.SYSTEM_FOLDER))){
                 final DotContentletValidationException cve = new FileAssetValidationException("message.contentlet.fileasset.invalid.hostfolder");
+                Logger.warn(this, "HTML Page [" + contentIdentifier + "] cannot be created directly under System " +
+                        "Host");
                 cve.addBadTypeField(new LegacyFieldTransformer(contentType.fieldMap().get(FileAssetAPI
                         .HOST_FOLDER_FIELD)).asOldField());
                 throw cve;
