@@ -13,7 +13,6 @@ import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.content.elasticsearch.util.ESUtils;
-import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.LicenseUtil;
@@ -80,6 +79,7 @@ import org.elasticsearch.common.xcontent.XContentType;
 
 public class ESMappingAPIImpl implements ContentMappingAPI {
 
+    private static Map<String, List> relationTypeMap = new HashMap();
 	private static final int UUID_LENGTH = 36;
 	public static final String TEXT = "_text";
 	static ObjectMapper mapper = null;
@@ -96,6 +96,9 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 		}
 	}
 
+	public void resetRelationTypeMap(){
+	    relationTypeMap = new HashMap<>();
+    }
 
     /**
      * This method takes a mapping string, a type and puts it as the mapping
@@ -573,7 +576,10 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 					}
 				} else if (f.getFieldType().equals(ESMappingConstants.FIELD_TYPE_CATEGORY)) {
 					// moved the logic to loadCategories
-				} else if (f.getFieldType().equals(ESMappingConstants.FIELD_TYPE_CHECKBOX) || f
+				} else if (f.getFieldType().equals(ESMappingConstants.FIELD_TYPE_RELATIONSHIP)) {
+                    // loadRelationshipFields processes relationship fields
+                    continue;
+                } else if (f.getFieldType().equals(ESMappingConstants.FIELD_TYPE_CHECKBOX) || f
 						.getFieldType().equals(ESMappingConstants.FIELD_TYPE_MULTI_SELECT)) {
 					if (f.getFieldContentlet().startsWith(ESMappingConstants.FIELD_ELASTIC_TYPE_BOOLEAN)) {
 						m.put(keyName, valueObj);
@@ -685,10 +691,9 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 		final ContentletAPI conAPI=APILocator.getContentletAPI();
 
-		final String relatedSQL = "select tree.* from tree where parent = ? or child = ? order by tree_order";
+		final String relatedSQL = "select tree.* from tree where child = ? order by tree_order";
 		final DotConnect db = new DotConnect();
 		db.setSQL(relatedSQL);
-		db.addParam(contentlet.getIdentifier());
 		db.addParam(contentlet.getIdentifier());
 
 		final List<HashMap<String, String>> relatedContentlets = db.loadResults();
@@ -703,28 +708,11 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 				final List<Contentlet> oldDocs;
 				final List<String> oldRelatedIds = new ArrayList<>();
 				final List<String> newRelatedIds = new ArrayList<>();
-				final StringBuilder q = new StringBuilder();
 
-				boolean isSameStructRelationship = FactoryLocator.getRelationshipFactory()
-						.sameParentAndChild(relationship);
+                oldDocs = conAPI.getRelatedContent(contentlet, relationship,
+                        APILocator.getUserAPI().getSystemUser(), false);
 
-				if(isSameStructRelationship) {
-					q.append("+type:content +(").append(relationship.getRelationTypeValue())
-							.append(ESMappingConstants.SUFFIX_PARENT).append(":")
-							.append(contentlet.getIdentifier())
-							.append(" ").append(relationship.getRelationTypeValue())
-							.append(ESMappingConstants.SUFFIX_CHILD).append(":")
-							.append(contentlet.getIdentifier()).append(") ");
-				}else {
-					q.append("+type:content +").append(relationship.getRelationTypeValue()).append(":")
-							.append(contentlet.getIdentifier());
-				}
-
-				oldDocs = conAPI
-						.search(q.toString(), -1, 0, null, APILocator.getUserAPI().getSystemUser(),
-								false);
-
-				if(oldDocs.size() > 0) {
+                if(oldDocs.size() > 0) {
 					for(Contentlet oldDoc : oldDocs) {
 						oldRelatedIds.add(oldDoc.getIdentifier());
 					}
@@ -792,8 +780,6 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
             throws DotStateException, DotDataException {
 
         final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
-        final Map<String, List> relationshipsRecords = new HashMap<>();
-        final Set<String> relationTypeSet = new HashSet<>();
 
         final DotConnect db = new DotConnect();
         db.setSQL(
@@ -804,45 +790,51 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
             final String childId = relatedEntry.get(ESMappingConstants.CHILD).toString();
             final String relType = relatedEntry.get(ESMappingConstants.RELATION_TYPE).toString();
-
-            if (!relationTypeSet.contains(relType)){
-                putNestedMapping(relType);
-                relationTypeSet.add(relType);
-            }
-
             final Relationship relationship = relationshipAPI.byTypeValue(relType);
 
             if (relationship != null && InodeUtils.isSet(relationship.getInode())) {
+                putNestedRelationshipsMapping(APILocator.getContentletIndexAPI()
+                                .getActiveIndexName(ES_WORKING_INDEX_NAME),
+                        CollectionsUtils.list(relationship));
+                putNestedRelationshipsMapping(
+                        APILocator.getContentletIndexAPI().getActiveIndexName(ES_LIVE_INDEX_NAME),
+                        CollectionsUtils.list(relationship));
 
-                //Support for legacy relationships
-                if (relType.equals(relationship.getRelationTypeValue())) {
-                    List.class.cast(esMap
-                            .computeIfAbsent(relationship.getRelationTypeValue(),
-                                    k -> new ArrayList<>()))
-                            .add(CollectionsUtils.map("identifier", childId));
+                List.class.cast(esMap
+                        .computeIfAbsent(relType,
+                                k -> new ArrayList<>()))
+                        .add(CollectionsUtils.map("identifier", childId));
 
-                    //add related content to catchall
-                    catchallWriter.append(childId).append(' ');
-                }
+                //add related content to catchall
+                catchallWriter.append(childId).append(' ');
+            }
+        }
+    }
+
+    public void putNestedRelationshipsMapping(final String indexName, final List<Relationship> relTypes) {
+
+        final Map<String, Object> jsonMap = new HashMap<>();
+
+        relationTypeMap.computeIfAbsent(indexName, k-> new ArrayList());
+
+        for(Relationship relationship: relTypes) {
+
+            if (relationTypeMap.get(indexName).add(relationship.getRelationTypeValue())) {
+
+                final Map<String, Object> properties = new HashMap<>();
+                final Map<String, Object> relMap = new HashMap<>();
+                relMap.put("type", "nested");
+                properties.put(relationship.getRelationTypeValue().toLowerCase(), relMap);
+                jsonMap.put("properties", properties);
+
+                Logger.info(ESMappingAPIImpl.class,
+                        "Adding nested mapping for relationship " + relationship
+                                .getRelationTypeValue());
             }
         }
 
-        //Adding new relationships fields to the index map
-        esMap.putAll(relationshipsRecords);
-    }
-
-    private void putNestedMapping(String relType) throws DotDataException {
-        final Map<String, Object> jsonMap = new HashMap<>();
-
-        final Map<String, Object> properties = new HashMap<>();
-        final Map<String, Object> relMap = new HashMap<>();
-        relMap.put("type", "nested");
-        properties.put(relType.toLowerCase(), relMap);
-        jsonMap.put("properties",  properties);
-
-        putMapping(APILocator.getContentletIndexAPI().getActiveIndexName(ES_WORKING_INDEX_NAME),
-                "content", jsonMap);
-        putMapping(APILocator.getContentletIndexAPI().getActiveIndexName(ES_LIVE_INDEX_NAME),
-                "content", jsonMap);
+        if (!jsonMap.isEmpty()) {
+           putMapping(indexName,"content", jsonMap);
+        }
     }
 }
