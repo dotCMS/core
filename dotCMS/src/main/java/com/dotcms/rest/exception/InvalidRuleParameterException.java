@@ -1,6 +1,6 @@
 package com.dotcms.rest.exception;
 
-import com.dotcms.repackage.javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response;
 
 public class InvalidRuleParameterException extends HttpStatusCodeException {
 

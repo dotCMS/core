@@ -1,6 +1,6 @@
 package com.dotcms.rest.api.v1.system.websocket;
 
-import com.dotcms.repackage.javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response;
 
 import javax.websocket.CloseReason;
 

@@ -1,7 +1,7 @@
 package com.dotcms.contenttype.util;
 
-//import com.dotcms.repackage.com.fasterxml.jackson.core.JsonFactory;
-//import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
+//import com.fasterxml.jackson.core.JsonFactory;
+//import com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.util.marshal.DotTypeToken;
 import com.dotcms.util.marshal.MarshalFactory;
 import com.dotmarketing.portlets.contentlet.business.ContentletCache;

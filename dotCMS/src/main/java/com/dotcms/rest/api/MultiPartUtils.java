@@ -1,12 +1,12 @@
 package com.dotcms.rest.api;
 
-import com.dotcms.repackage.javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
-import com.dotcms.repackage.org.glassfish.jersey.media.multipart.BodyPart;
-import com.dotcms.repackage.org.glassfish.jersey.media.multipart.ContentDisposition;
-import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataBodyPart;
-import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataMultiPart;
+import org.glassfish.jersey.media.multipart.BodyPart;
+import org.glassfish.jersey.media.multipart.ContentDisposition;
+import org.glassfish.jersey.media.multipart.FormDataBodyPart;
+import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import com.dotcms.rest.WebResource;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;

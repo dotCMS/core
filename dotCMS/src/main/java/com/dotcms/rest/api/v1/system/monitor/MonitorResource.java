@@ -1,25 +1,18 @@
 package com.dotcms.rest.api.v1.system.monitor;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
-import javax.servlet.http.HttpServletRequest;
-
 import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.util.HttpRequestDataUtil;
-import com.dotcms.util.network.IPUtils;
-import com.dotmarketing.util.*;
-import com.liferay.util.StringPool;
-import com.dotcms.repackage.javax.ws.rs.*;
-import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
-import com.dotcms.repackage.javax.ws.rs.core.Context;
-import com.dotcms.repackage.javax.ws.rs.core.MediaType;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.repackage.javax.ws.rs.core.Response.ResponseBuilder;
-import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.ResponseBuilder;
 import com.dotcms.rest.annotation.NoCache;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.json.JSONObject;
+import com.liferay.util.StringPool;
+import javax.servlet.http.HttpServletRequest;
+import org.glassfish.jersey.server.JSONP;
 
 
 @Path("/v1/system-status")

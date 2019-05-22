@@ -2,9 +2,9 @@
 
 package com.dotmarketing.startup.runonce;
 
+import static com.dotcms.util.CollectionsUtils.map;
+
 import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.repackage.com.fasterxml.jackson.databind.DeserializationFeature;
-import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -13,16 +13,15 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.startup.StartupTask;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import org.apache.velocity.util.ClassUtils;
-
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
-import static com.dotcms.util.CollectionsUtils.map;
+import org.apache.velocity.util.ClassUtils;
 
 /**
  * This upgrade task will creates the system workflow

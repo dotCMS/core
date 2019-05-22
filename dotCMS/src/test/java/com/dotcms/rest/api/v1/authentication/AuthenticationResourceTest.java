@@ -3,7 +3,7 @@ package com.dotcms.rest.api.v1.authentication;
 import com.dotcms.UnitTestBase;
 import com.dotcms.api.web.WebSessionContext;
 import com.dotcms.cms.login.LoginServiceAPI;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.RestUtilTest;
 import com.dotcms.util.UserUtilTest;
