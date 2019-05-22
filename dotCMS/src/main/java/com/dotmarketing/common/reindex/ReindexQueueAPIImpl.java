@@ -157,7 +157,7 @@ public class ReindexQueueAPIImpl implements ReindexQueueAPI {
         
     }
 
-    @WrapInTransaction
+    @CloseDBIfOpened /*This is a highly concurrent method, in order to avoid table locks we won't use here WrapInTransaction*/
     @Override
     public int addIdentifierDelete(final String id) throws DotDataException {
 
@@ -199,12 +199,12 @@ public class ReindexQueueAPIImpl implements ReindexQueueAPI {
         this.reindexQueueFactory.addIdentifierReindex(identifier.getId());
     }
 
-    @WrapInTransaction
+    @CloseDBIfOpened /*This is a highly concurrent method, in order to avoid table locks we won't use here WrapInTransaction*/
     @Override
     public void deleteReindexEntry(List<ReindexEntry> recordsToDelete) throws DotDataException {
         reindexQueueFactory.deleteReindexEntry(recordsToDelete);
     }
-    
+
     @Override
     @WrapInTransaction
     public void deleteReindexEntry(String identiferToDelete) throws DotDataException {
