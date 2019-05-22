@@ -2,6 +2,7 @@ package com.dotmarketing.common.db;
 
 import static com.dotcms.util.CollectionsUtils.map;
 
+import com.dotcms.util.CloseUtils;
 import java.math.BigDecimal;
 import java.sql.CallableStatement;
 import java.sql.Connection;
@@ -1081,6 +1082,8 @@ public class DotConnect {
 
             throw new DotDataException("SQL Error doing a batch and couldn't rollback", e);
 
+        } finally {
+            CloseUtils.closeQuietly(preparedStatement);
         }
 
         return results;

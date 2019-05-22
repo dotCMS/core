@@ -174,7 +174,6 @@ public class ReindexQueueFactory {
         dc.loadResult();
     }
 
-    @CloseDBIfOpened
     protected void deleteReindexEntry(final List<ReindexEntry> recordsToDelete) throws DotDataException {
         final DotConnect dotConnect = new DotConnect();
 
