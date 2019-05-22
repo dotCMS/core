@@ -83,6 +83,7 @@ public class ReindexQueueAPIImpl implements ReindexQueueAPI {
         return recordsInQueue(DbConnectionFactory.getConnection());
     }
 
+    @CloseDBIfOpened
     @Override
     public long recordsInQueue(Connection conn) throws DotDataException {
         return reindexQueueFactory.recordsInQueue(conn);
@@ -155,8 +156,8 @@ public class ReindexQueueAPIImpl implements ReindexQueueAPI {
         return this.reindexQueueFactory.addIdentifierDelete(ids,Priority.NORMAL.dbValue());
         
     }
-    
 
+    @WrapInTransaction
     @Override
     public int addIdentifierDelete(final String id) throws DotDataException {
 
@@ -198,6 +199,7 @@ public class ReindexQueueAPIImpl implements ReindexQueueAPI {
         this.reindexQueueFactory.addIdentifierReindex(identifier.getId());
     }
 
+    @WrapInTransaction
     @Override
     public void deleteReindexEntry(List<ReindexEntry> recordsToDelete) throws DotDataException {
         reindexQueueFactory.deleteReindexEntry(recordsToDelete);

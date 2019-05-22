@@ -153,7 +153,7 @@ public class CMSMaintenanceAjax {
 		return ESReindexationProcessStatus.getProcessIndexationMap();
 	}
 
-    public String cleanReindexStructure(String inode) throws DotDataException {
+    public String cleanReindexStructure(String inode) throws DotDataException, DotSecurityException {
     	validateUser();
     	Structure structure = CacheLocator.getContentTypeCache().getStructureByInode(inode);
     	APILocator.getContentletIndexAPI().removeContentFromIndexByStructureInode(inode);

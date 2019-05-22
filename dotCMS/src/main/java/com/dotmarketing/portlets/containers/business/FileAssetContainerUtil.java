@@ -18,6 +18,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.*;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.util.StringPool;
+import java.io.InputStream;
 import org.apache.commons.io.IOUtils;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.context.Context;
@@ -381,8 +382,8 @@ public class FileAssetContainerUtil {
 
     private String toString (final FileAsset fileAsset) {
 
-        try {
-            return IOUtils.toString(fileAsset.getInputStream(),
+        try (InputStream fileAssetStream = fileAsset.getInputStream()) {
+            return IOUtils.toString(fileAssetStream,
                     UtilMethods.getCharsetConfiguration());
         } catch (IOException e) {
             return StringPool.BLANK;
