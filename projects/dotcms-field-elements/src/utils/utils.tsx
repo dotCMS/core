@@ -133,7 +133,7 @@ export function updateStatus(
  * @returns {JSX.Element}
  */
 export function getTagError(show: boolean, message: string): JSX.Element {
-    return show ? <span class="dot-field__error-message">{message}</span> : null;
+    return show && typeof message === 'string' ? <span class="dot-field__error-message">{message}</span> : null;
 }
 
 /**
@@ -144,7 +144,7 @@ export function getTagError(show: boolean, message: string): JSX.Element {
  * @returns {JSX.Element}
  */
 export function getTagHint(hint: string, name: string): JSX.Element {
-    return hint ? (
+    return hint && typeof hint === 'string' ? (
         <span class="dot-field__hint" id={getHintId(name)}>
             {hint}
         </span>
