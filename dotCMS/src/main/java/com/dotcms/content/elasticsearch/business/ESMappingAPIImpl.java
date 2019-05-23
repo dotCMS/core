@@ -80,8 +80,7 @@ import org.elasticsearch.common.xcontent.XContentType;
 
 public class ESMappingAPIImpl implements ContentMappingAPI {
 
-    private static Map<String, HashSet<String>> relationTypeMap = new HashMap();
-	private static final int UUID_LENGTH = 36;
+    private static final int UUID_LENGTH = 36;
 	public static final String TEXT = "_text";
 	static ObjectMapper mapper = null;
 
@@ -96,10 +95,6 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			}
 		}
 	}
-
-	public void resetRelationTypeMap(){
-	    relationTypeMap = new HashMap<>();
-    }
 
     /**
      * This method takes a mapping string, a type and puts it as the mapping
@@ -801,46 +796,13 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
             final Relationship relationship = relationshipAPI.byTypeValue(relType);
 
             if (relationship != null && InodeUtils.isSet(relationship.getInode())) {
-
-                if(relationTypeMap.containsKey(workingIndex)){
-                    putNestedRelationshipsMapping(workingIndex, CollectionsUtils.list(relationship));
-                }
-
-                if(relationTypeMap.containsKey(liveIndex)){
-                    putNestedRelationshipsMapping(liveIndex, CollectionsUtils.list(relationship));
-                }
-
                 List.class.cast(esMap
                         .computeIfAbsent(relType,
                                 k -> new ArrayList<>()))
-                        .add(CollectionsUtils.map("identifier", childId));
+                        .add(childId);
 
                 //add related content to catchall
                 catchallWriter.append(childId).append(' ');
-            }
-        }
-    }
-
-    public void putNestedRelationshipsMapping(final String indexName, final List<Relationship> relTypes) {
-        relationTypeMap.computeIfAbsent(indexName, k-> new HashSet<>());
-
-        for(Relationship relationship: relTypes) {
-
-            if (relationTypeMap.get(indexName).add(relationship.getRelationTypeValue())) {
-                final Map<String, Object> jsonMap = new HashMap<>();
-                final Map<String, Object> properties = new HashMap<>();
-                final Map<String, Object> nestedProperties = new HashMap<>();
-                final Map<String, Object> relMap = new HashMap<>();
-                relMap.put("type", "nested");
-                nestedProperties.put("identifier", CollectionsUtils.map("type", "text", "analyzer", "my_analyzer"));
-                relMap.put("properties", nestedProperties);
-                properties.put(relationship.getRelationTypeValue().toLowerCase(), relMap);
-                jsonMap.put("properties", properties);
-                putMapping(indexName,"content", jsonMap);
-
-                Logger.info(ESMappingAPIImpl.class,
-                        "Adding nested mapping for relationship " + relationship
-                                .getRelationTypeValue() + " on index " + indexName);
             }
         }
     }
