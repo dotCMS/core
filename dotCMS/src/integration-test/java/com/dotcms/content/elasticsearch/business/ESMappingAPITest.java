@@ -25,6 +25,7 @@ import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -35,6 +36,7 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -357,36 +359,62 @@ public class ESMappingAPITest {
         final ESMappingAPIImpl esMappingAPI = new ESMappingAPIImpl();
         Map<String, Object> esMap = new HashMap<>();
         ContentType contentType = null;
+        List<Category> categoriesToDelete = new ArrayList<>();
+        final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
 
         try {
             contentType = createAndSaveSimpleContentType("testContentType");
 
-            final String topicCategoryInode = "3d5d641b-e5fd-409e-a283-b6fe7ab780d1";
+            //Create Parent Category.
+            Category parentCategory = new Category();
+            parentCategory.setCategoryName("CT-Category-Parent");
+            parentCategory.setKey("parent");
+            parentCategory.setCategoryVelocityVarName("parent");
+            parentCategory.setSortOrder((String) null);
+            parentCategory.setKeywords(null);
+
+            categoryAPI.save(null, parentCategory, user, false);
+            categoriesToDelete.add(parentCategory);
+
+            //Create First Child Category.
+            Category childCategoryA = new Category();
+            childCategoryA.setCategoryName("CT-Category-A");
+            childCategoryA.setKey("categoryA");
+            childCategoryA.setCategoryVelocityVarName("categoryA");
+            childCategoryA.setSortOrder(1);
+            childCategoryA.setKeywords(null);
+
+            categoryAPI.save(parentCategory, childCategoryA, user, false);
+            categoriesToDelete.add(childCategoryA);
+
+            //Create Second Child Category.
+            Category childCategoryB = new Category();
+            childCategoryB.setCategoryName("CT-Category-B");
+            childCategoryB.setKey("categoryB");
+            childCategoryB.setCategoryVelocityVarName("categoryB");
+            childCategoryB.setSortOrder(2);
+            childCategoryB.setKeywords(null);
+
+            categoryAPI.save(parentCategory, childCategoryB, user, false);
+            categoriesToDelete.add(childCategoryB);
 
             com.dotcms.contenttype.model.field.Field catField = FieldBuilder.builder(CategoryField.class)
                     .name("myCategoryField")
                     .variable("myCategoryField")
-                    .values(topicCategoryInode)
+                    .values(parentCategory.getInode())
                     .contentTypeId(contentType.id())
                     .build();
 
             APILocator.getContentTypeFieldAPI().save(catField, user);
 
-            final Category firstTimeInvestor = APILocator.getCategoryAPI()
-                    .findByKey("firstTimeInvestor", user, false);
-
-            final Category research = APILocator.getCategoryAPI()
-                    .findByKey("research", user, false);
-
             Contentlet content = new ContentletDataGen(contentType.id()).next();
 
             content = APILocator.getContentletAPI().checkin(content, user, false,
-                    list(firstTimeInvestor, research));
-
+                    list(childCategoryA, childCategoryB));
 
             esMappingAPI.loadCategories(content, esMap);
 
-            final List<String> expectedCatList = list("firstTimeInvestor", "research");
+            final List<String> expectedCatList = list("categoryA", "categoryB");
 
             Assert.assertEquals("All cats present as List of varnames in ES mapping under variable of cat field",
                     expectedCatList, esMap.get(contentType.variable() + "." + catField.variable()));
@@ -396,6 +424,10 @@ public class ESMappingAPITest {
 
 
         } finally {
+            for(final Category category:categoriesToDelete){
+                categoryAPI.delete(category, user, false);
+            }
+
             if (contentType != null && contentType.id() != null) {
                 contentTypeAPI.delete(contentType);
             }
