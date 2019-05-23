@@ -162,7 +162,7 @@ public class URLMapAPIImpl implements URLMapAPI {
                 value = value.substring(0, value.length() - 1);
             }
             query.append('+').append(structure.getVelocityVarName()).append('.')
-                    .append(fieldMatches.get(counter)).append(':')
+                    .append(fieldMatches.get(counter)).append("_dotRaw").append(':')
                     .append(QueryParser.escape(value)).append(' ');
             counter++;
         }
