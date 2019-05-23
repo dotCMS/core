@@ -398,7 +398,7 @@ public class ESMappingAPITest {
             categoryAPI.save(parentCategory, childCategoryB, user, false);
             categoriesToDelete.add(childCategoryB);
 
-            com.dotcms.contenttype.model.field.Field catField = FieldBuilder.builder(CategoryField.class)
+            final Field catField = FieldBuilder.builder(CategoryField.class)
                     .name("myCategoryField")
                     .variable("myCategoryField")
                     .values(parentCategory.getInode())
@@ -416,10 +416,10 @@ public class ESMappingAPITest {
 
             final List<String> expectedCatList = list("categoryA", "categoryB");
 
-            Assert.assertEquals("All cats present as List of varnames in ES mapping under variable of cat field",
+            assertEquals("All cats present as List of varnames in ES mapping under variable of cat field",
                     expectedCatList, esMap.get(contentType.variable() + "." + catField.variable()));
 
-            Assert.assertEquals("All cats present as List of varnames is ES mapping under 'categories'",
+            assertEquals("All cats present as List of varnames is ES mapping under 'categories'",
                     expectedCatList, esMap.get(ESMappingConstants.CATEGORIES));
 
 
