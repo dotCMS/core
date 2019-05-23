@@ -1453,16 +1453,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     "Unable to look up related content for contentlet with identifier "
                             + contentlet.getIdentifier() + " and title " + contentlet.getTitle()
                             + ". Relationship Name: " + rel.getRelationTypeValue();
-            if (e.getMessage() != null && e.getMessage().contains("[query_fetch]")) {
-                try {
-                    APILocator.getContentletIndexAPI().addContentToIndex(contentlet, false, false);
-                    return permissionAPI.filterCollection(
-                            getRelatedContentESQuery(contentlet, rel, user, respectFrontendRoles),
-                            PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
-                } catch (Exception ex) {
-                    throw new DotDataException(errorMessage, ex);
-                }
-            } else if (e instanceof SearchPhaseExecutionException || e
+            if (e instanceof SearchPhaseExecutionException || e
                     .getCause() instanceof SearchPhaseExecutionException) {
                 Logger.warnAndDebug(ESContentletAPIImpl.class,
                         errorMessage + ". An empty list will be returned", e);
@@ -2677,19 +2668,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     "Error deleting existing relationships in contentlet: " + (contentlet != null
                             ? contentlet.getInode() : "Unknown"));
         }
+
         List<Contentlet> cons = relationshipAPI.dbRelatedContent(relationship, contentlet, hasParent);
         cons = permissionAPI.filterCollection(cons, PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
         FactoryLocator.getRelationshipFactory().deleteByContent(contentlet, relationship, cons);
-
-        // We need to refresh all related contentlets, because currently the system does not
-        // update the contentlets that lost the relationship (when the user remove a relationship).
-        if(cons != null) {
-            for (final Contentlet relatedContentlet : cons) {
-                relatedContentlet.setIndexPolicy(contentlet.getIndexPolicyDependencies());
-                relatedContentlet.setIndexPolicyDependencies(contentlet.getIndexPolicyDependencies());
-                refreshNoDeps(relatedContentlet);
-            }
-        }
 
         // Refresh the parent only if the contentlet is not already in the checkin
         if (!contentlet.getBoolProperty(CHECKIN_IN_PROGRESS)) {
@@ -2791,13 +2773,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     TreeFactory.saveTree(treeToUpdate != null && UtilMethods.isSet(treeToUpdate.getRelationType())?treeToUpdate:newTree);
 
                     treePosition++;
-                }
-
-                if(!child){// when we change the order we need to index all the sibling content
-                    for(final Contentlet contentletSibling : getSiblings(c.getIdentifier())){
-                        contentletSibling.setIndexPolicy(contentlet.getIndexPolicyDependencies());
-                        refreshNoDeps(contentletSibling);
-                    }
                 }
             }
 

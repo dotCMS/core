@@ -4,6 +4,7 @@ import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATI
 import static com.dotmarketing.common.reindex.ReindexThread.ELASTICSEARCH_CONCURRENT_REQUESTS;
 import static com.dotmarketing.util.StringUtils.builder;
 
+import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.common.reindex.BulkProcessorListener;
 import com.dotmarketing.util.DateUtil;
 import java.io.File;
@@ -96,6 +97,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     private static final String SELECT_CONTENTLET_VERSION_INFO =
             "select working_inode,live_inode from contentlet_version_info where identifier=?";
     private static ReindexQueueAPI queueApi = null;
+    private static RelationshipAPI relationshipAPI = null;
     private static final ESIndexAPI esIndexApi = new ESIndexAPI();
     private static final ESMappingAPIImpl mappingAPI = new ESMappingAPIImpl();
 
@@ -103,6 +105,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
     public ContentletIndexAPIImpl() {
         queueApi = APILocator.getReindexQueueAPI();
+        relationshipAPI = APILocator.getRelationshipAPI();
     }
 
     public synchronized void getRidOfOldIndex() throws DotDataException {
@@ -174,6 +177,8 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             }
         }
 
+        //Set mapping for nested objects (relationships)
+        mappingAPI.putNestedRelationshipsMapping(indexName, relationshipAPI.dbAll());
         mappingAPI.putMapping(indexName, "content", mapping);
 
         return true;
@@ -195,6 +200,10 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
             final String workingIndex = ES_WORKING_INDEX_NAME + "_" + timeStamp;
             final String liveIndex = ES_LIVE_INDEX_NAME + "_" + timeStamp;
+
+            //Resets collection that keeps relationships names mapped as nested.
+            //As it is a full reindex, relationships fields mapping must be run again
+            mappingAPI.resetRelationTypeMap();
 
             createContentIndex(workingIndex, 0);
             createContentIndex(liveIndex, 0);
@@ -286,6 +295,8 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
                 createContentIndex(workingIndex);
                 createContentIndex(liveIndex);
+
+                mappingAPI.resetRelationTypeMap();
 
                 IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
                 IndiciesInfo newinfo = new IndiciesInfo();
@@ -557,6 +568,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         builder.setBulkActions(ReindexThread.ELASTICSEARCH_BULK_ACTIONS)
                 .setBulkSize(new ByteSizeValue(ReindexThread.ELASTICSEARCH_BULK_SIZE, ByteSizeUnit.MB))
                 .setConcurrentRequests(ELASTICSEARCH_CONCURRENT_REQUESTS);
+
         return builder.build();
     }
 

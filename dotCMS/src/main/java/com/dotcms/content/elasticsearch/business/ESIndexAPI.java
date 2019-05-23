@@ -619,7 +619,12 @@ public class ESIndexAPI {
 		map.put("index.mapping.total_fields.limit",
 			Config.getIntProperty("ES_INDEX_MAPPING_TOTAL_FIELD_LIMITS", 5000));
         map.put("index.mapping.nested_fields.limit",
-                Config.getIntProperty("ES_INDEX_MAPPING_NESTED_FIELD_LIMITS", 5000));
+                Config.getIntProperty("ES_INDEX_MAPPING_NESTED_FIELDS_LIMITS", 5000));
+
+        //TODO: Uncomment when ES version used is at least 7.0
+        /*map.put("index.mapping.nested_objects.limit",
+                Config.getIntProperty("ES_INDEX_MAPPING_NESTED_OBJECTS_LIMITS", 25000));*/
+
 
 		if(replicasMode.getNumberOfReplicas()>-1) {
 			map.put("number_of_replicas", replicasMode.getNumberOfReplicas());

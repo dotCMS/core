@@ -80,7 +80,7 @@ import org.elasticsearch.common.xcontent.XContentType;
 
 public class ESMappingAPIImpl implements ContentMappingAPI {
 
-    private static Map<String, List> relationTypeMap = new HashMap();
+    private static Map<String, HashSet<String>> relationTypeMap = new HashMap();
 	private static final int UUID_LENGTH = 36;
 	public static final String TEXT = "_text";
 	static ObjectMapper mapper = null;
@@ -783,6 +783,11 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
             throws DotStateException, DotDataException {
 
         final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
+        final String workingIndex = APILocator.getContentletIndexAPI()
+                .getActiveIndexName(ES_WORKING_INDEX_NAME);
+
+        final String liveIndex = APILocator.getContentletIndexAPI()
+                .getActiveIndexName(ES_LIVE_INDEX_NAME);
 
         final DotConnect db = new DotConnect();
         db.setSQL(
@@ -796,12 +801,14 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
             final Relationship relationship = relationshipAPI.byTypeValue(relType);
 
             if (relationship != null && InodeUtils.isSet(relationship.getInode())) {
-                putNestedRelationshipsMapping(APILocator.getContentletIndexAPI()
-                                .getActiveIndexName(ES_WORKING_INDEX_NAME),
-                        CollectionsUtils.list(relationship));
-                putNestedRelationshipsMapping(
-                        APILocator.getContentletIndexAPI().getActiveIndexName(ES_LIVE_INDEX_NAME),
-                        CollectionsUtils.list(relationship));
+
+                if(relationTypeMap.containsKey(workingIndex)){
+                    putNestedRelationshipsMapping(workingIndex, CollectionsUtils.list(relationship));
+                }
+
+                if(relationTypeMap.containsKey(liveIndex)){
+                    putNestedRelationshipsMapping(liveIndex, CollectionsUtils.list(relationship));
+                }
 
                 List.class.cast(esMap
                         .computeIfAbsent(relType,
@@ -815,29 +822,26 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
     }
 
     public void putNestedRelationshipsMapping(final String indexName, final List<Relationship> relTypes) {
-
-        final Map<String, Object> jsonMap = new HashMap<>();
-
-        relationTypeMap.computeIfAbsent(indexName, k-> new ArrayList());
+        relationTypeMap.computeIfAbsent(indexName, k-> new HashSet<>());
 
         for(Relationship relationship: relTypes) {
 
             if (relationTypeMap.get(indexName).add(relationship.getRelationTypeValue())) {
-
+                final Map<String, Object> jsonMap = new HashMap<>();
                 final Map<String, Object> properties = new HashMap<>();
+                final Map<String, Object> nestedProperties = new HashMap<>();
                 final Map<String, Object> relMap = new HashMap<>();
                 relMap.put("type", "nested");
+                nestedProperties.put("identifier", CollectionsUtils.map("type", "text", "analyzer", "my_analyzer"));
+                relMap.put("properties", nestedProperties);
                 properties.put(relationship.getRelationTypeValue().toLowerCase(), relMap);
                 jsonMap.put("properties", properties);
+                putMapping(indexName,"content", jsonMap);
 
                 Logger.info(ESMappingAPIImpl.class,
                         "Adding nested mapping for relationship " + relationship
-                                .getRelationTypeValue());
+                                .getRelationTypeValue() + " on index " + indexName);
             }
-        }
-
-        if (!jsonMap.isEmpty()) {
-           putMapping(indexName,"content", jsonMap);
         }
     }
 }
