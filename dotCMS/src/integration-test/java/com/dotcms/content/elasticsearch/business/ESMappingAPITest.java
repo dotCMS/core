@@ -27,6 +27,7 @@ import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import java.io.StringWriter;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -104,7 +105,7 @@ public class ESMappingAPITest {
 
             assertNotNull(esMap);
             assertEquals(commentsContentlet.getIdentifier(),
-                    ((Map)((List)esMap.get("News-Comments")).get(0)).get("identifier"));
+                    ((List)esMap.get("News-Comments")).get(0));
 
         } finally {
             if (newsContentlet != null && newsContentlet.getIdentifier() != null) {
@@ -155,8 +156,7 @@ public class ESMappingAPITest {
             esMappingAPI.loadRelationshipFields(parentContentlet, esMap);
 
             assertNotNull(esMap);
-            assertEquals(childContentlet.getIdentifier(),
-                    ((Map)((List)esMap.get("Comments-Comments")).get(0)).get("identifier"));
+            assertEquals(childContentlet.getIdentifier(), ((List)esMap.get("Comments-Comments")).get(0));
 
         } finally {
             if (parentContentlet != null && parentContentlet.getIdentifier() != null) {
@@ -299,8 +299,7 @@ public class ESMappingAPITest {
         final List results = List.class.cast(esMap.get(keyName));
         assertEquals(identifiers.size(), results.size());
 
-        assertTrue(results.stream()
-                .allMatch(result -> identifiers.contains(((Map) result).get("identifier"))));
+        assertFalse(Collections.disjoint(results, identifiers));
     }
 
     private ContentType createAndSaveSimpleContentType(final String name)

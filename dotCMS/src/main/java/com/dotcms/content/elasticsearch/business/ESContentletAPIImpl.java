@@ -1481,10 +1481,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
         for (SearchHit sh : response.getHits()) {
             Map<String, Object> sourceMap = sh.getSourceAsMap();
             if (sourceMap.get(relationshipName) != null) {
-                ((ArrayList<Map>) sourceMap.get(relationshipName)).stream().forEach(child -> {
+                ((ArrayList<String>) sourceMap.get(relationshipName)).stream().forEach(child -> {
                     try {
                         result.add(findContentletByIdentifierAnyLanguage(
-                                (String) child.get("identifier")));
+                                child));
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }
@@ -2673,6 +2673,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
         cons = permissionAPI.filterCollection(cons, PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
         FactoryLocator.getRelationshipFactory().deleteByContent(contentlet, relationship, cons);
 
+
+        // We need to refresh all related contentlets, because currently the system does not
+        // update the contentlets that lost the relationship (when the user remove a relationship).
+        if(cons != null) {
+            for (final Contentlet relatedContentlet : cons) {
+                relatedContentlet.setIndexPolicy(contentlet.getIndexPolicyDependencies());
+                relatedContentlet.setIndexPolicyDependencies(contentlet.getIndexPolicyDependencies());
+                refreshNoDeps(relatedContentlet);
+            }
+        }
+
         // Refresh the parent only if the contentlet is not already in the checkin
         if (!contentlet.getBoolProperty(CHECKIN_IN_PROGRESS)) {
             refreshNoDeps(contentlet);
@@ -3024,8 +3035,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if(contentRelationships == null) {
 
             //Obtain all relationships
-            contentRelationships = getAllRelationships(contentlet,
-                    getContentletRelationships(contentlet, user));
+            contentRelationships =  getContentletRelationships(contentlet, user);
+
+            if (contentRelationships!=null) {
+                getAllRelationships(contentlet, contentRelationships);
+            }
         }
 
         if(cats == null) {
@@ -3096,9 +3110,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     this.throwSecurityException(contentlet, user);
                 }
             }
-            if (createNewVersion && (contentRelationships == null || cats == null))
+            if (createNewVersion && cats == null)
                 throw new IllegalArgumentException(
-                        "The categories, and content relationships cannot be null when trying to checkin. The method was called improperly");
+                        "The categories cannot be null when trying to checkin. The method was called improperly");
             try {
                 validateContentlet(contentlet, contentRelationships, cats);
 
@@ -3734,12 +3748,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    @NotNull
     private ContentletRelationships getContentletRelationships(final Contentlet contentlet,
             final User user)
             throws DotDataException, DotSecurityException {
-        final ContentletRelationships contentRelationships = new ContentletRelationships(
-                contentlet);
+        ContentletRelationships contentRelationships = null;
 
         //Get all relationship fields
         final List<com.dotcms.contenttype.model.field.Field> relationshipFields = contentlet
@@ -3761,6 +3773,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     } else {
                         hasParent = relationshipAPI
                                 .isParent(relationship, contentlet.getContentType());
+                    }
+
+                    if (contentRelationships == null){
+                        contentRelationships = new ContentletRelationships(contentlet);
                     }
                     final ContentletRelationshipRecords relationshipRecords = contentRelationships.new ContentletRelationshipRecords(
                             relationship, hasParent);
