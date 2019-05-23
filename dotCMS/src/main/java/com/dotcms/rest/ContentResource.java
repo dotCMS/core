@@ -1128,10 +1128,20 @@ public class ContentResource {
                     responseBuilder.entity(e.getMessage());
                     return responseBuilder.build();
                 }
-            } else if (part.getContentDisposition() != null) {
+            } else if(part.getMediaType().equals(MediaType.TEXT_PLAIN_TYPE)) {
+                try {
+                    map.put(name, part.getEntityAs(String.class));
+                    processMap( contentlet, map );
+                } catch (Exception e) {
+                    Logger.error( this.getClass(), "Error processing Plain Tex", e );
+
+                    Response.ResponseBuilder responseBuilder = Response.status( HttpStatus.SC_INTERNAL_SERVER_ERROR );
+                    responseBuilder.entity( e.getMessage() );
+                    return responseBuilder.build();
+                }
+            }else if (part.getContentDisposition() != null) {
 
                 try {
-
                     this.processFile(contentlet, usedBinaryFields, binaryFields, part);
                 } catch (IOException e) {
 
