@@ -1,7 +1,7 @@
 package com.dotcms.rest.api.v1.languages;
 
-import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
-import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.dotcms.repackage.org.hibernate.validator.constraints.Length;
 import com.dotcms.rest.api.Validated;
 

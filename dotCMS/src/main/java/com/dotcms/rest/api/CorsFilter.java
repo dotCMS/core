@@ -8,10 +8,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.dotcms.repackage.javax.ws.rs.container.ContainerRequestContext;
-import com.dotcms.repackage.javax.ws.rs.container.ContainerResponseContext;
-import com.dotcms.repackage.javax.ws.rs.container.ContainerResponseFilter;
-import com.dotcms.repackage.javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.container.ContainerRequestContext;
+import javax.ws.rs.container.ContainerResponseContext;
+import javax.ws.rs.container.ContainerResponseFilter;
+import javax.ws.rs.core.MultivaluedMap;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableList;

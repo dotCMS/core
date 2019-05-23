@@ -4,6 +4,7 @@ import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.ImageField;
 import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
@@ -109,7 +110,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 */
 	public static final String WORKFLOW_IN_PROGRESS = "__workflow_in_progress__";
 	public static final String IS_COPY_CONTENTLET = "_is_copy_contentlet";
-	public static final String SOURCE_CONTENTLET_ASSET_NAME = "_source_contentlet_assetName";
+	public static final String CONTENTLET_ASSET_NAME_COPY = "_contentlet_asset_name_copy";
 
     public static final String WORKFLOW_PUBLISH_DATE = "wfPublishDate";
     public static final String WORKFLOW_PUBLISH_TIME = "wfPublishTime";
@@ -139,7 +140,6 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * @return true if needs reindex
 	 */
 	@JsonIgnore
-	@com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore
 	public boolean needsReindex() {
 		return needsReindex;
 	}
@@ -1272,49 +1272,59 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
      */
 	public void setTags() throws DotDataException {
 
-		if (!this.loadedTags && !this.hasTags()) {
+		if (!this.loadedTags) {
 
-			final HashMap<String, StringBuilder> contentletTags = new HashMap<>();
-			final List<TagInode> foundTagInodes = APILocator.getTagAPI().getTagInodesByInode(this.getInode());
-			if (foundTagInodes != null && !foundTagInodes.isEmpty()) {
+			final boolean hasTagFields = this.getContentType().fields().stream().anyMatch(TagField.class::isInstance);
 
-				for (final TagInode foundTagInode : foundTagInodes) {
+			if (hasTagFields) {
 
-					StringBuilder contentletTagsBuilder = new StringBuilder();
-					final String fieldVarName = foundTagInode.getFieldVarName();
+				final HashMap<String, StringBuilder> contentletTagsMap = new HashMap<>();
+				final List<TagInode> foundTagInodes = APILocator.getTagAPI().getTagInodesByInode(this.getInode());
+				if (UtilMethods.isSet(foundTagInodes)) {
 
-					if (UtilMethods.isSet(fieldVarName)) {
-						//Getting the related tag object
-						Tag relatedTag = APILocator.getTagAPI().getTagByTagId(foundTagInode.getTagId());
+					for (final TagInode foundTagInode : foundTagInodes) {
 
-						if (contentletTags.containsKey(fieldVarName)) {
-							contentletTagsBuilder = contentletTags.get(fieldVarName);
+						final String fieldVarName = foundTagInode.getFieldVarName();
+
+						// if the map does not have already this field on the map so populate it. we do not want to override the eventual user values.
+						if (!this.getMap().containsKey(fieldVarName)) {
+							StringBuilder contentletTagsBuilder = new StringBuilder();
+
+							if (UtilMethods.isSet(fieldVarName)) {
+								//Getting the related tag object
+								Tag relatedTag = APILocator.getTagAPI().getTagByTagId(foundTagInode.getTagId());
+
+								if (contentletTagsMap.containsKey(fieldVarName)) {
+									contentletTagsBuilder = contentletTagsMap.get(fieldVarName);
+								}
+								if (contentletTagsBuilder.length() > 0) {
+									contentletTagsBuilder.append(",");
+								}
+								if (relatedTag.isPersona()) {
+									contentletTagsBuilder.append(relatedTag.getTagName() + ":persona");
+								} else {
+									contentletTagsBuilder.append(relatedTag.getTagName());
+								}
+
+								contentletTagsMap.put(fieldVarName, contentletTagsBuilder);
+							} else {
+
+								Logger.error(this, "Found Tag with id [" + foundTagInode.getTagId() + "] related with Contentlet " +
+										"[" + foundTagInode.getInode() + "] without an associated Field var name.");
+							}
 						}
-						if (contentletTagsBuilder.length() > 0) {
-							contentletTagsBuilder.append(",");
-						}
-						if (relatedTag.isPersona()) {
-							contentletTagsBuilder.append(relatedTag.getTagName() + ":persona");
-						} else {
-							contentletTagsBuilder.append(relatedTag.getTagName());
-						}
-
-						contentletTags.put(fieldVarName, contentletTagsBuilder);
-					} else {
-						Logger.error(this, "Found Tag with id [" + foundTagInode.getTagId() + "] related with Contentlet " +
-								"[" + foundTagInode.getInode() + "] without an associated Field var name.");
 					}
 				}
-			}
 
-		/*
-			Now we need to populate the contentlet tag fields with the related tags info for the edit mode,
-			this is done only for display purposes.
-			 */
-			if (!contentletTags.isEmpty()) {
-				for (final Map.Entry<String, StringBuilder> tagsList : contentletTags.entrySet()) {
-					//We should not store the tags inside the field, the relation must only exist on the tag_inode table
-					this.setStringProperty(tagsList.getKey(), tagsList.getValue().toString());
+				/*
+				Now we need to populate the contentlet tag fields with the related tags info for the edit mode,
+				this is done only for display purposes.
+				 */
+				if (!contentletTagsMap.isEmpty()) {
+					for (final Map.Entry<String, StringBuilder> tagsList : contentletTagsMap.entrySet()) {
+						//We should not store the tags inside the field, the relation must only exist on the tag_inode table
+						this.setStringProperty(tagsList.getKey(), tagsList.getValue().toString());
+					}
 				}
 			}
 
@@ -1355,7 +1365,6 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * This method returns an immutable copy of the null properties set to the properties map
 	 * @return
 	 */
-	@com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore
 	@com.fasterxml.jackson.annotation.JsonIgnore
 	@SuppressWarnings("unchecked")
 	public Set<String> getNullProperties(){
@@ -1371,7 +1380,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 */
 	public void cleanup(){
 	    getMap().remove(IS_COPY_CONTENTLET);
-	    getMap().remove(SOURCE_CONTENTLET_ASSET_NAME);
+	    getMap().remove(CONTENTLET_ASSET_NAME_COPY);
 		getWritableNullProperties().clear();
 	}
 

@@ -1,8 +1,8 @@
 package com.dotcms.rest.api;
 
-import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
-import com.dotcms.repackage.javax.ws.rs.ext.ContextResolver;
-import com.dotcms.repackage.javax.ws.rs.ext.Provider;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import javax.ws.rs.ext.ContextResolver;
+import javax.ws.rs.ext.Provider;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 
 @Provider

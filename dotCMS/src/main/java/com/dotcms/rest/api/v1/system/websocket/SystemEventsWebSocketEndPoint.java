@@ -3,7 +3,7 @@ package com.dotcms.rest.api.v1.system.websocket;
 import com.dotcms.api.system.event.*;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.javax.ws.rs.ForbiddenException;
+import javax.ws.rs.ForbiddenException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.init.DotInitScheduler;
 import com.dotmarketing.util.Config;

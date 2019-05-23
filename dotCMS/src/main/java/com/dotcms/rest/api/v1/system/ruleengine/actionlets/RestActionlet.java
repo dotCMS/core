@@ -4,8 +4,8 @@ import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
 import com.dotmarketing.portlets.rules.parameter.ParameterDefinition;
 import java.util.Map;
 
-import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
-import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.dotcms.rest.api.Validated;
 
 @JsonDeserialize(builder = RestActionlet.Builder.class)

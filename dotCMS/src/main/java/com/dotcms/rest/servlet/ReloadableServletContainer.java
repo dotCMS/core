@@ -40,12 +40,12 @@
 
 package com.dotcms.rest.servlet;
 
-import com.dotcms.repackage.com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
-import com.dotcms.repackage.com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
-import com.dotcms.repackage.com.google.common.base.Throwables;
-import com.dotcms.repackage.javax.ws.rs.core.Application;
-import com.dotcms.repackage.org.glassfish.jersey.server.ResourceConfig;
-import com.dotcms.repackage.org.glassfish.jersey.servlet.ServletContainer;
+import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
+import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
+import com.google.common.base.Throwables;
+import javax.ws.rs.core.Application;
+import org.glassfish.jersey.server.ResourceConfig;
+import org.glassfish.jersey.servlet.ServletContainer;
 import com.dotcms.rest.annotation.HeaderFilter;
 import com.dotcms.rest.annotation.RequestFilter;
 import com.dotcms.rest.api.CorsFilter;

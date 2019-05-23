@@ -1,6 +1,6 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render.page;
 
-import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.portlets.containers.model.Container;

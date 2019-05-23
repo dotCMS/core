@@ -28,7 +28,7 @@ public class SwitchSiteListener implements HttpSessionAttributeListener {
     public void attributeAdded(final HttpSessionBindingEvent httpSessionBindingEvent) {
         if (WebKeys.CMS_SELECTED_HOST_ID.equals(httpSessionBindingEvent.getName())) {
             final String currentValue = (String) httpSessionBindingEvent.getValue();
-            this.triggerSwitchSiteEvent(currentValue, null, httpSessionBindingEvent.getSession());
+            this.triggerSwitchSiteEventIfNecessary(currentValue, null, httpSessionBindingEvent.getSession());
         }
     }
 
@@ -42,11 +42,11 @@ public class SwitchSiteListener implements HttpSessionAttributeListener {
         if (WebKeys.CMS_SELECTED_HOST_ID.equals(httpSessionBindingEvent.getName())) {
             final String currentValue = (String) httpSessionBindingEvent.getSession().getAttribute(WebKeys.CMS_SELECTED_HOST_ID);
             final String oldValue = (String) httpSessionBindingEvent.getValue();
-            this.triggerSwitchSiteEvent(currentValue, oldValue, httpSessionBindingEvent.getSession());
+            this.triggerSwitchSiteEventIfNecessary(currentValue, oldValue, httpSessionBindingEvent.getSession());
         }
     }
 
-    private void triggerSwitchSiteEvent(
+    private void triggerSwitchSiteEventIfNecessary(
             final String currentHostNewValue,
             final String currentHostOldValue,
             final HttpSession session) {
@@ -54,18 +54,21 @@ public class SwitchSiteListener implements HttpSessionAttributeListener {
         if (!Objects.equals(currentHostNewValue, currentHostOldValue)) {
             try {
                 final User loggedInUser = APILocator.getLoginServiceAPI().getLoggedInUser();
-                final Host host = APILocator.getHostAPI().find(currentHostNewValue, loggedInUser, false);
 
-                APILocator.getSystemEventsAPI().push(SystemEventType.SWITCH_SITE,
-                        new Payload(
-                                host,
-                                Visibility.USER_SESSION,
-                                new UserSessionBean(
-                                        loggedInUser.getUserId(),
-                                        session.getId()
-                                )
-                        )
-                );
+                if (loggedInUser != null) {
+                    final Host host = APILocator.getHostAPI().find(currentHostNewValue, loggedInUser, false);
+
+                    APILocator.getSystemEventsAPI().push(SystemEventType.SWITCH_SITE,
+                            new Payload(
+                                    host,
+                                    Visibility.USER_SESSION,
+                                    new UserSessionBean(
+                                            loggedInUser.getUserId(),
+                                            session.getId()
+                                    )
+                            )
+                    );
+                }
             } catch (DotSecurityException | DotDataException e) {
                 Logger.error(this, e.getMessage(), e);
                 throw new DotRuntimeException(e);

@@ -9,11 +9,11 @@ import javax.servlet.http.HttpServletRequest;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.dotcms.repackage.javax.ws.rs.NotAuthorizedException;
-import com.dotcms.repackage.javax.ws.rs.client.Client;
-import com.dotcms.repackage.javax.ws.rs.client.WebTarget;
+import javax.ws.rs.NotAuthorizedException;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.WebTarget;
 import com.dotcms.repackage.org.codehaus.cargo.util.Base64;
-import com.dotcms.repackage.org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
+import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 import com.dotcms.rest.config.RestServiceUtil;
 import com.dotcms.rest.exception.SecurityException;
 import com.dotmarketing.business.APILocator;

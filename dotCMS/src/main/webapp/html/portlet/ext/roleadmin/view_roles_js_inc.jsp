@@ -1061,6 +1061,7 @@
           load : function(data){
               removePortletFromList(portletId);
               initializePortletInfoList();
+			  dijit.byId('portletList').reset();
           },
           error : function(error) {
               alert("Error deleteing portlet: " + JSON.parse(error.responseText).message);
@@ -1257,6 +1258,8 @@
 			return;
 
 		addPortletToHTMLList(portletId, portletTitle);
+
+		dijit.byId('portletList').reset();
 
 	}
 

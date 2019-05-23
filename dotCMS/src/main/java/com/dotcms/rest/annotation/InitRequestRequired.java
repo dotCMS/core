@@ -1,7 +1,7 @@
 package com.dotcms.rest.annotation;
 
 
-import com.dotcms.repackage.javax.ws.rs.NameBinding;
+import javax.ws.rs.NameBinding;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

@@ -1,7 +1,7 @@
 package com.dotcms.workflow.form;
 
-import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
-import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 @JsonDeserialize(builder = FireActionByNameForm.Builder.class)
 public class FireActionByNameForm extends FireActionForm {

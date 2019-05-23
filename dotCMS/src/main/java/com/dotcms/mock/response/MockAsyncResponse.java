@@ -1,7 +1,7 @@
 package com.dotcms.mock.response;
 
-import com.dotcms.repackage.javax.ws.rs.container.AsyncResponse;
-import com.dotcms.repackage.javax.ws.rs.container.TimeoutHandler;
+import javax.ws.rs.container.AsyncResponse;
+import javax.ws.rs.container.TimeoutHandler;
 
 import java.util.Collection;
 import java.util.Date;

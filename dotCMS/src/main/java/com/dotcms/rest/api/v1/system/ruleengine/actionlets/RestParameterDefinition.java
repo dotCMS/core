@@ -1,6 +1,6 @@
 package com.dotcms.rest.api.v1.system.ruleengine.actionlets;
 
-import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 @JsonDeserialize(builder = RestParameterDefinition.Builder.class)
 public final class RestParameterDefinition {

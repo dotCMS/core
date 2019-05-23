@@ -1,15 +1,19 @@
 package com.dotcms.rest.exception.mapper;
 
-import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.repackage.javax.ws.rs.ext.Provider;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.ext.Provider;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.SecurityLogger;
 
 /**
 * End point Mapping exception for {@link com.dotmarketing.exception.DotSecurityException}
  */
-@Provider
-public class DotSecurityExceptionMapper extends DotForbiddenExceptionMapper<DotSecurityException> {
+/*@Provider
+<<<<<<< HEAD
+public class DotSecurityExceptionMapper extends DotForbiddenExcep\tionMapper<DotSecurityException> {
+=======*/
+public class DotSecurityExceptionMapper implements javax.ws.rs.ext.ExceptionMapper<DotSecurityException>{
+//>>>>>>> origin/master
 
     private static final String ERROR_KEY = "dotcms.api.error.forbidden";
 
