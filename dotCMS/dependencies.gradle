@@ -88,10 +88,10 @@ dependencies {
         transitive = false
     }
 
-    compile ('com.fasterxml.jackson.datatype:jackson-datatype-guava:2.4.0'){
+    compile ('com.fasterxml.jackson.datatype:jackson-datatype-guava:2.7.9'){
         transitive = false
     }
-    compile ('com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.6.3'){
+    compile ('com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.7.9'){
         transitive = false
     }
 
@@ -101,7 +101,8 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.jaxb-core', version:'2.2.7_4'
     compile group: 'com.dotcms.lib', name: 'dot.jaxb-impl', version:'2.2.7_4'
     compile group: 'com.dotcms.lib', name: 'dot.jaxws-api', version:'2.2.9_2'
-    compile group: 'com.dotcms.lib', name: 'dot.jaxws-rt', version:'2.2.8_2'
+    compile group: 'com.dotcms.lib', name: 'dot.jaxws-rt', version:'2.2.8_2'ls
+
     compile group: 'com.dotcms.lib', name: 'dot.jazzy-core', version:'ukv_2'
     compile group: 'com.dotcms.lib', name: 'dot.jempbox', version:'1.6.0_2'
     compile group: 'com.dotcms.lib', name: 'dot.jep', version:'2.4.1_2'
