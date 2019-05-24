@@ -1,20 +1,13 @@
 package com.dotcms.rest.annotation;
 
+import static com.dotcms.util.CollectionsUtils.map;
+
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
-import com.dotcms.repackage.javax.annotation.Priority;
-import com.dotcms.repackage.javax.ws.rs.Priorities;
-import com.dotcms.repackage.javax.ws.rs.container.ContainerRequestContext;
-import com.dotcms.repackage.javax.ws.rs.container.ContainerResponseContext;
-import com.dotcms.repackage.javax.ws.rs.container.ContainerResponseFilter;
-import com.dotcms.repackage.javax.ws.rs.core.MultivaluedMap;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
-
-import javax.inject.Singleton;
-import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Proxy;
@@ -22,8 +15,14 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
-
-import static com.dotcms.util.CollectionsUtils.map;
+import javax.annotation.Priority;
+import javax.inject.Singleton;
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.Priorities;
+import javax.ws.rs.container.ContainerRequestContext;
+import javax.ws.rs.container.ContainerResponseContext;
+import javax.ws.rs.container.ContainerResponseFilter;
+import javax.ws.rs.core.MultivaluedMap;
 
 /**
  * This decorator reads the annotations on the resources and includes header based on it based on them.

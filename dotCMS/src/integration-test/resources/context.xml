@@ -17,7 +17,7 @@
         driverClassName="{driver}"
         url="{url}"
         username="{username}" password="{password}" maxActive="60" maxIdle="10" maxWait="60000"
-        removeAbandoned="true" removeAbandonedTimeout="60" logAbandoned="true" timeBetweenEvictionRunsMillis="30000"
+        logAbandoned="true" timeBetweenEvictionRunsMillis="30000"
         validationQuery="{valquery}" testOnBorrow="true" testWhileIdle="true" abandonWhenPercentageFull="50" {transaction} />
 
 

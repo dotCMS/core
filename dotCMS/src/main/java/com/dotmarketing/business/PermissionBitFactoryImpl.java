@@ -84,6 +84,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 	private final IdentifierStripedLock lockManager = DotConcurrentFactory.getInstance().getIdentifierStripedLock();
 
+	private static final String LOCK_PREFIX = "PermissionID:";
+
 	private AssetPermissionReferencesSQLProvider assetPermissionReferencesSQLProvider =
 		  DbConnectionFactory.isH2() ? new H2AssetPermissionReferencesSQLProvider()
 		: DbConnectionFactory.isMsSql() ? new MsSqlAssetPermissionReferencesSQLProvider()
@@ -1022,7 +1024,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		//No permissions in cache have to look for individual permissions or inherited permissions
 		if (bitPermissionsList == null) {
 			try {
-				bitPermissionsList = lockManager.tryLock(permissionable.getPermissionId(),
+				bitPermissionsList = lockManager
+						.tryLock(LOCK_PREFIX + permissionable.getPermissionId(),
 						() -> {
 							List<Permission> permissionsList = null;
 							if (!forceLoadFromDB) {
@@ -2178,7 +2181,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		if(bitPermissionsList.isEmpty()) {
 
 				try {
-					bitPermissionsList = lockManager.tryLock( "PermissionID:" +permissionable.getPermissionId(), ()-> {
+					bitPermissionsList = lockManager
+							.tryLock(LOCK_PREFIX + permissionable.getPermissionId(), () -> {
 
 							//Need to determine who this asset should inherit from
 							String type = permissionable.getPermissionType();

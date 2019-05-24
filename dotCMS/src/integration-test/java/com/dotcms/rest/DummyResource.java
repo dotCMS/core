@@ -1,9 +1,9 @@
 package com.dotcms.rest;
 
-import com.dotcms.repackage.javax.ws.rs.FormParam;
-import com.dotcms.repackage.javax.ws.rs.POST;
-import com.dotcms.repackage.javax.ws.rs.Path;
-import com.dotcms.repackage.javax.ws.rs.core.Context;
+import javax.ws.rs.FormParam;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.core.Context;
 import javax.servlet.http.HttpServletRequest;
 
 @Path("/dummy")

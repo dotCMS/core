@@ -7,17 +7,16 @@ import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotcms.publisher.business.PublisherQueueJob;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
-import com.dotcms.repackage.javax.ws.rs.Consumes;
-import com.dotcms.repackage.javax.ws.rs.POST;
-import com.dotcms.repackage.javax.ws.rs.Path;
-import com.dotcms.repackage.javax.ws.rs.QueryParam;
-import com.dotcms.repackage.javax.ws.rs.core.Context;
-import com.dotcms.repackage.javax.ws.rs.core.MediaType;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
+import com.dotcms.publisher.pusher.PushPublisher;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
-import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.util.ConfigUtils;
@@ -30,6 +29,8 @@ import java.io.InputStream;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
+
 import javax.servlet.http.HttpServletRequest;
 
 @Path("/bundlePublisher")
@@ -61,7 +62,7 @@ public class BundlePublisherResource {
     @Consumes(MediaType.APPLICATION_OCTET_STREAM)
 	public Response publish(
 			@QueryParam("FILE_NAME") String fileName,
-			@QueryParam("AUTH_TOKEN") String auth_token_enc,
+			@QueryParam("AUTH_TOKEN") String auth_token_digest,
 			@QueryParam("GROUP_ID") String groupId,
 			@QueryParam("ENDPOINT_ID") String endpointId,
 			@QueryParam("type") String type,
@@ -80,7 +81,7 @@ public class BundlePublisherResource {
 
 				String remoteIP = "";
 				try {
-					String auth_token = PublicEncryptionFactory.decryptString(auth_token_enc);
+
 					remoteIP = req.getRemoteHost();
 					if(!UtilMethods.isSet(remoteIP))
 						remoteIP = req.getRemoteAddr();
@@ -89,10 +90,12 @@ public class BundlePublisherResource {
 
 					PublishingEndPoint mySelf = endpointAPI.findEnabledSendingEndPointByAddress(remoteIP);
 
-					if(!isValidToken(auth_token, remoteIP, mySelf)) {
+					if(mySelf==null || !isValidToken(auth_token_digest, remoteIP, mySelf)) {
 						bundleStream.close();
-		                return responseResource.responseError( HttpStatus.SC_UNAUTHORIZED );
-		            }
+						Logger.error(this.getClass(), "Push Publishing failed from " + remoteIP + " invalid endpoint or token");
+						
+		        return responseResource.responseError( HttpStatus.SC_UNAUTHORIZED );
+		       }
 
 					String bundlePath = ConfigUtils.getBundlePath()+File.separator+MY_TEMP;
 					String bundleFolder = fileName.substring(0, fileName.indexOf(".tar.gz"));
@@ -167,29 +170,15 @@ public class BundlePublisherResource {
     public static boolean isValidToken ( String token, String remoteIP, PublishingEndPoint mySelf ) throws IOException {
 
         //My key
-        String myKey;
-        if ( mySelf != null ) {
-            myKey = retrieveKeyString( PublicEncryptionFactory.decryptString( mySelf.getAuthKey().toString() ) );
-        } else {
-            return false;
+        Optional<String> myKey=PushPublisher.retriveEndpointKeyDigest(mySelf);
+        if(!myKey.isPresent()) {
+          return false;
         }
 
-        return token.equals( myKey );
+
+        return token.equals( myKey.get() );
     }
 
-    public static String retrieveKeyString ( String token ) throws IOException {
 
-        String key = null;
-        if ( token.contains( File.separator ) ) {
-            File tokenFile = new File( token );
-            if ( tokenFile != null && tokenFile.exists() ) {
-                key = FileUtils.readFileToString( tokenFile, "UTF-8" ).trim();
-            }
-        } else {
-            key = token;
-        }
-
-        return key;
-    }
 
 }

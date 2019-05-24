@@ -7,11 +7,11 @@ import com.dotcms.rendering.velocity.services.ContainerLoader;
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.javax.ws.rs.*;
-import com.dotcms.repackage.javax.ws.rs.core.Context;
-import com.dotcms.repackage.javax.ws.rs.core.MediaType;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
+import javax.ws.rs.*;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -259,6 +259,39 @@ public class ContainerResource implements Serializable {
             throws DotDataException, DotSecurityException {
 
         return this.containerContent(req, res, containerId, contentletId);
+    }
+
+
+    /**
+     * This method is pretty much the same of {@link #containerForm(HttpServletRequest, HttpServletResponse, String, String)}
+     * But there is a limitation on the vanity url for the rest call since the container id path parameter is a path itself
+     * (for {@link com.dotmarketing.portlets.containers.model.FileAssetContainer)} so we need to pass it by query string
+     *
+     * <i>Example:</i>
+     * <code>
+     *     /api/v1/containers/form/27108d63-969e-4086-a405-86777be16230?containerId=/application/containers/large-column
+     * </code>
+     * @param req
+     * @param res
+     * @param containerId
+     * @param formId
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @GET
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Path("/form/{formId}")
+    public final Response containerFormByQueryParam(@Context final HttpServletRequest req,
+                                                       @Context final HttpServletResponse res,
+                                                       @QueryParam("containerId") final String containerId,
+                                                       @PathParam("formId") final String formId)
+            throws DotDataException, DotSecurityException {
+
+        return this.containerForm(req, res, containerId, formId);
     }
 
     /**

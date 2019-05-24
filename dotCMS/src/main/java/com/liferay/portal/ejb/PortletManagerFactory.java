@@ -22,6 +22,8 @@
 
 package com.liferay.portal.ejb;
 
+import com.dotmarketing.business.portal.PortletFactory;
+import com.dotmarketing.business.portal.PortletFactoryImpl;
 
 /**
  * <a href="PortletManagerFactory.java.html"><b><i>View Source</i></b></a>
@@ -32,13 +34,13 @@ package com.liferay.portal.ejb;
  */
 public class PortletManagerFactory {
 
-	public static PortletManager getManager() {
-		return new com.liferay.portal.ejb.PortletManagerImpl();
+	public static PortletFactory getManager() {
+		return new PortletFactoryImpl();
 	}
 
-	public void setManager(PortletManager manager) {
+	public void setManager(PortletFactory manager) {
 		_manager = manager;
 	}
 
-	private PortletManager _manager;
+	private PortletFactory _manager;
 }

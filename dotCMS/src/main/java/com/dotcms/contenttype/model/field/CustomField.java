@@ -1,16 +1,14 @@
 package com.dotcms.contenttype.model.field;
 
-import java.util.Collection;
-import java.util.List;
+import static com.dotcms.util.CollectionsUtils.list;
 
-import org.immutables.value.Value;
-
-import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-
-import static com.dotcms.util.CollectionsUtils.list;
+import com.google.common.collect.ImmutableList;
+import java.util.Collection;
+import java.util.List;
+import org.immutables.value.Value;
 
 @JsonSerialize(as = ImmutableCustomField.class)
 @JsonDeserialize(as = ImmutableCustomField.class)

@@ -1,7 +1,7 @@
 package com.dotcms.rest.api.v2.user;
 
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.RestUtilTest;

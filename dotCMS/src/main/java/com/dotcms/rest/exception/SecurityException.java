@@ -1,7 +1,7 @@
 package com.dotcms.rest.exception;
 
-import com.dotcms.repackage.javax.ws.rs.WebApplicationException;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Response;
 
 
 public class SecurityException extends WebApplicationException {

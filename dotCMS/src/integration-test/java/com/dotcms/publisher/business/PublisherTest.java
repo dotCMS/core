@@ -34,10 +34,13 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.liferay.portal.struts.MultiMessageResources;
+import com.liferay.portal.struts.MultiMessageResourcesFactory;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import java.io.IOException;
 import java.util.Map;
 import org.apache.felix.framework.OSGIUtil;
+import org.apache.struts.Globals;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -53,6 +56,7 @@ import java.util.concurrent.ExecutionException;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.when;
 
 /**
  * Test the PushedAssetsAPI
@@ -70,6 +74,10 @@ public class PublisherTest extends IntegrationTestBase {
         IntegrationTestInitService.getInstance().init();
         LicenseTestUtil.getLicense();
         OSGIUtil.getInstance().initializeFramework(Config.CONTEXT);
+
+        when(Config.CONTEXT.getAttribute(Globals.MESSAGES_KEY))
+                .thenReturn(new MultiMessageResources( MultiMessageResourcesFactory.createFactory(),""));
+
     }
 
     /**

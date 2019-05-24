@@ -2,7 +2,7 @@ package com.dotmarketing.portlets.htmlpageasset.business.render.page;
 
 
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
-import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import java.util.Date;
 

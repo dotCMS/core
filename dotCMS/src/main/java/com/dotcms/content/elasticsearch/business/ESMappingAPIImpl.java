@@ -16,7 +16,7 @@ import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
-import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.tika.TikaUtils;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.Host;
@@ -67,6 +67,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.time.FastDateFormat;
 import org.elasticsearch.ElasticsearchException;
@@ -433,18 +434,17 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
         	return;
 		}
 
-	    List<Category> myCats = APILocator.getCategoryAPI().getParents(con, APILocator.systemUser(), false);
-	    final StringWriter myCatsString=new StringWriter();
-	    for(final Category me : myCats){
-	        myCatsString.append(me.getCategoryVelocityVarName()).append(" ");
-	    }
+	    List<Category> cats = APILocator.getCategoryAPI().getParents(con, APILocator.systemUser(), false);
 
-        m.put(ESMappingConstants.CATEGORIES, myCatsString.toString());
+        List<String> catsVarNames = cats.stream().map(Category::getCategoryVelocityVarName).collect(
+				Collectors.toList());
+
+        m.put(ESMappingConstants.CATEGORIES, catsVarNames);
         
 
 	    for(final com.dotcms.contenttype.model.field.Field f : catFields){
 	        // I don't think we care if we put all the categories in each field
-            m.put(type.variable() + "." + f.variable(), myCatsString.toString());
+            m.put(type.variable() + "." + f.variable(), catsVarNames);
 	    
 	    }
 	}
@@ -616,7 +616,6 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 				} else if(f.getFieldType().equals(Field.FieldType.TAG.toString())) {
 
 					StringBuilder personaTags = new StringBuilder();
-					List<String> tagg = new ArrayList<>();
 					List<Tag> tagList = APILocator.getTagAPI().getTagsByInode(con.getInode());
 					if(tagList ==null || tagList.size()==0) continue;
 
@@ -626,22 +625,26 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 					for ( Tag t : tagList ) {
 						if(t.getTagName() ==null) continue;
 						String myTag = t.getTagName().trim();
-						tagg.add(myTag);
 						if ( t.isPersona() ) {
 							personaTags.append(myTag).append(' ');
 						}
 					}
 
-					m.put(keyName, tagg);
-					m.put(ESMappingConstants.TAGS, tagg);
+					final List<String> tagsNames = tagList.stream().map(Tag::getTagName).collect(
+							Collectors.toList());
+
+					m.put(keyName, tagsNames);
+					m.put(ESMappingConstants.TAGS, tagsNames);
 
 					if ( Structure.STRUCTURE_TYPE_PERSONA != con.getStructure().getStructureType() ) {
-						if ( personaTags.length() > tagDelimit.length() ) {
-							String personaStr = personaTags.substring(0, personaTags.length()-tagDelimit.length());
-							m.put(new StringBuilder(st.getVelocityVarName()).append(".")
-									.append(ESMappingConstants.PERSONAS).toString(), personaStr);
-							m.put(ESMappingConstants.PERSONAS, personaStr);
-						}
+						final List<String> personaTagsNames = tagList.stream()
+								.filter(Tag::isPersona)
+								.map(Tag::getTagName)
+								.collect(Collectors.toList());
+
+						m.put(st.getVelocityVarName() + "."
+								+ ESMappingConstants.PERSONAS, personaTagsNames);
+						m.put(ESMappingConstants.PERSONAS, personaTagsNames);
 					}
 
 				} else {

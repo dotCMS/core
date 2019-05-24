@@ -1,8 +1,8 @@
 package com.dotcms.rest.exception.mapper;
 
-import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.repackage.javax.ws.rs.ext.ExceptionMapper;
-import com.dotcms.repackage.javax.ws.rs.ext.Provider;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.ext.ExceptionMapper;
+import javax.ws.rs.ext.Provider;
 import com.dotmarketing.util.Logger;
 import org.apache.velocity.exception.ResourceNotFoundException;
 

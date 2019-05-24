@@ -1,7 +1,7 @@
 package com.dotcms.rest;
 
-import com.dotcms.repackage.javax.ws.rs.WebApplicationException;
-import com.dotcms.repackage.javax.ws.rs.core.StreamingOutput;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.StreamingOutput;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;

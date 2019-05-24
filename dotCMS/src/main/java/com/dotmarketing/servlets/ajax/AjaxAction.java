@@ -76,8 +76,7 @@ public abstract class AjaxAction {
     }
 
 	public void setUser(HttpServletRequest request){
-		String val = request.getRequestURI().substring(request.getRequestURI().indexOf("/cmd"));
-		final InitDataObject initData = webResource.init(val, true, request, true, null);
+		final InitDataObject initData = webResource.init(request.getRequestURI(), true, request, true, null);
 	    this.user = initData.getUser();
 	}
 	

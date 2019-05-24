@@ -1,10 +1,10 @@
 package com.dotcms.rest;
 
 import com.dotcms.publisher.util.TrustFactory;
-import com.dotcms.repackage.javax.ws.rs.client.Client;
-import com.dotcms.repackage.javax.ws.rs.client.ClientBuilder;
-import com.dotcms.repackage.org.glassfish.jersey.media.multipart.MultiPartFeature;
 import com.dotmarketing.util.Config;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import org.glassfish.jersey.media.multipart.MultiPartFeature;
 
 /**
  * This class provides an instance of a Jersey REST Client. This client allows
@@ -28,7 +28,7 @@ public class RestClientBuilder {
     public static Client newClient() {
         TrustFactory tFactory = new TrustFactory();
 
-        Client client;
+        final Client client;
         String truststorePath = Config.getStringProperty("TRUSTSTORE_PATH", "");
         if (truststorePath != null && !truststorePath.trim().equals("")) {
             client = ClientBuilder.newBuilder().sslContext(tFactory.getSSLContext())

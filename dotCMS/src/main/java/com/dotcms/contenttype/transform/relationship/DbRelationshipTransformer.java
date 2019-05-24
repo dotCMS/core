@@ -1,6 +1,6 @@
 package com.dotcms.contenttype.transform.relationship;
 
-import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableList;
 import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.portlets.structure.model.Relationship;

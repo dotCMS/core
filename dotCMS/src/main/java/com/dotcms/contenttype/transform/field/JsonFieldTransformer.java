@@ -16,7 +16,7 @@ import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.field.ImmutableCategoryField;
 import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
 import com.dotcms.contenttype.transform.JsonTransformer;
-import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableList;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -200,7 +200,6 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
     } catch (Exception e) {
       throw new DotStateException(e);
     }
-  }
-
+  } 
 }
 
