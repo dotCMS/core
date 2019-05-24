@@ -78,7 +78,7 @@ export class DotTagsComponent {
     render() {
         return (
             <Fragment>
-                <dot-label label={this.name} required={this.required} name={this.name}>
+                <dot-label label={this.label} required={this.required} name={this.name}>
                     <dot-autocomplete
                         class={getErrorClass(this.status.dotValid)}
                         data={this.getData.bind(this)}

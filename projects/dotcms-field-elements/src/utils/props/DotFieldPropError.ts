@@ -4,7 +4,6 @@ export default class DotFieldPropError<T> extends Error {
     private readonly propInfo: PropValidationInfo<T>;
 
     constructor(propInfo: PropValidationInfo<T>, expectedType: string) {
-        console.log(propInfo);
         super(
             `Warning: Invalid prop "${
                 propInfo.name

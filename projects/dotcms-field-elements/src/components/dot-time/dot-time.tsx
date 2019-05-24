@@ -118,7 +118,7 @@ export class DotTimeComponent {
     render() {
         return (
             <Fragment>
-                <dot-label label={this.name} required={this.required} name={this.name}>
+                <dot-label label={this.label} required={this.required} name={this.name}>
                     <dot-input-calendar
                         disabled={this.disabled}
                         type="time"

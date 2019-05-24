@@ -91,7 +91,7 @@ export class DotTextareaComponent {
     render() {
         return (
             <Fragment>
-                <dot-label label={this.name} required={this.required} name={this.name}>
+                <dot-label label={this.label} required={this.required} name={this.name}>
                     <textarea
                         class={getErrorClass(this.status.dotValid)}
                         id={getId(this.name)}

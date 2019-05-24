@@ -96,7 +96,7 @@ export class DotTextfieldComponent {
     render() {
         return (
             <Fragment>
-                <dot-label label={this.name} required={this.required} name={this.name}>
+                <dot-label label={this.label} required={this.required} name={this.name}>
                     <input
                         class={getErrorClass(this.status.dotValid)}
                         disabled={this.disabled || null}
