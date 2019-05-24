@@ -2,7 +2,6 @@ package com.dotcms.contenttype.model.type;
 
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.fasterxml.jackson.annotation.JsonValue;
 
 /**
  * Provides the different Content Types that can be used inside dotCMS. A
@@ -54,7 +53,7 @@ public enum BaseContentType {
 	 * 
 	 * @return the integer representation
 	 */
-	@JsonValue
+
 	public int getType() {
 		return type;
 	}
