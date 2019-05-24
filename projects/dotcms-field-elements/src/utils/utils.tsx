@@ -31,13 +31,13 @@ export function getClassNames(
  * @returns {DotOption[]}
  */
 export function getDotOptionsFromFieldValue(rawString: string): DotOption[] {
-    const items = rawString
+    const items = isKeyPipeValueFormatValid(rawString) ? rawString
         .split(',')
         .filter((item) => !!item.length)
         .map((item) => {
             const [label, value] = item.split('|');
             return { label, value };
-        });
+        }) : [];
     return items;
 }
 
@@ -162,4 +162,18 @@ function slugify(text: string): string {
               .replace(/^-+/, '') // Trim - from start of text
               .replace(/-+$/, '') // Trim - from end of text
         : null;
+}
+
+function isKeyPipeValueFormatValid(rawString: string): boolean {
+    const regex = /([^|,]*)\|([^|,]*)/;
+    const items = rawString.split(',');
+    let valid = true;
+
+    for (let i = 0, total = items.length; i < total; i++) {
+        if (!regex.test(items[i])) {
+            valid = false;
+            break;
+        }
+    }
+    return valid;
 }

@@ -43,6 +43,11 @@ describe('getDotOptionsFromFieldValue', () => {
         expect(items.length).toBe(2);
         expect(items).toEqual([{ label: 'key1', value: 'A' }, { label: 'key2', value: 'B' }]);
     });
+
+    it('should empty array when invalid format', () => {
+        const items = getDotOptionsFromFieldValue('key1A, key2/B, @');
+        expect(items.length).toBe(0);
+    });
 });
 
 describe('getErrorClass', () => {

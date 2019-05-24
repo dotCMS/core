@@ -16,31 +16,35 @@ describe('dot-select', () => {
             page = await newE2EPage();
         });
 
-        describe('with data', () => {
-            it('should be invalid, touched & dirty when no option set', async () => {
-                await page.setContent(`
+        it('should be valid, touched & dirty when picked an option', async () => {
+            await page.setContent(`
                 <dot-select
-                    name="testName"
-                    label="testLabel"
-                    hint="testHint"
                     options="|,valueA|1,valueB|2"
-                    value="2"
-                    required-message="testErrorMsg"
-                    required="true">
+                    value="2">
                 </dot-select>`);
-                element = await page.find('dot-select');
-                await page.select('select', '');
-                await page.waitForChanges();
-                expect(element).toHaveClasses(dotTestUtil.class.emptyRequired);
-            });
+            await page.select('select', '1');
+            await page.waitForChanges();
+            element = await page.find('dot-select');
+            expect(element).toHaveClasses(dotTestUtil.class.filled);
         });
 
-        describe('without data', () => {
-            it('should be pristine, untouched & valid', async () => {
-                await page.setContent(`<dot-select></dot-select>`);
-                element = await page.find('dot-select');
-                expect(element).toHaveClasses(dotTestUtil.class.empty);
-            });
+        it('should be invalid, touched & dirty when no option set', async () => {
+            await page.setContent(`
+            <dot-select
+                options="|,valueA|1,valueB|2"
+                value="2"
+                required="true">
+            </dot-select>`);
+            element = await page.find('dot-select');
+            await page.select('select', '');
+            await page.waitForChanges();
+            expect(element).toHaveClasses([...dotTestUtil.class.emptyRequired, 'dot-required']);
+        });
+
+        it('should be pristine, untouched & valid', async () => {
+            await page.setContent(`<dot-select></dot-select>`);
+            element = await page.find('dot-select');
+            expect(element).toHaveClasses(dotTestUtil.class.empty);
         });
     });
 
@@ -68,7 +72,7 @@ describe('dot-select', () => {
                 element.setProperty('disabled', ['a', 'b']);
                 await page.waitForChanges();
                 const htmlElement = await getSelect(page);
-                expect(htmlElement.getAttribute('disabled')).toBe('');
+                expect(htmlElement.getAttribute('disabled')).toBeDefined();
             });
 
             it('should not break with invalid data --> falsy', async () => {
@@ -88,10 +92,10 @@ describe('dot-select', () => {
 
                 const selectElement = await getSelect(page);
                 const idValue = selectElement.getAttribute('id');
-                expect(idValue.indexOf(value)).toBeGreaterThan(-1);
+                expect(idValue).toBe('dot-test');
 
                 const labelElement = await dotTestUtil.getDotLabel(page);
-                expect(await labelElement.getProperty('name')).toBe(value);
+                expect(labelElement.getAttribute('name')).toBe(value);
             });
 
             it('should not render attribute in label and select', async () => {
@@ -100,7 +104,7 @@ describe('dot-select', () => {
                 expect(idValue).toBeNull();
 
                 const labelElement = await dotTestUtil.getDotLabel(page);
-                expect(await labelElement.getProperty('name')).toBe('');
+                expect(labelElement.getAttribute('name')).toBe('');
             });
 
             it('should not break with invalid data', async () => {
@@ -110,7 +114,7 @@ describe('dot-select', () => {
 
                 const selectElement = await getSelect(page);
                 const idValue = selectElement.getAttribute('id');
-                expect(idValue.indexOf(wrongValue.toString())).toBe(-1);
+                expect(idValue).toBe('dot-123');
             });
         });
 
@@ -119,18 +123,16 @@ describe('dot-select', () => {
                 const value = 'test';
                 element.setProperty('label', value);
                 await page.waitForChanges();
-
                 const labelElement = await dotTestUtil.getDotLabel(page);
-                expect(await labelElement.getProperty('label')).toBe(value);
+                expect(labelElement.getAttribute('label')).toBe(value);
             });
 
             it('should not break with invalid data', async () => {
                 const wrongValue = [1, 2, '3'];
                 element.setProperty('label', wrongValue);
                 await page.waitForChanges();
-
                 const labelElement = await dotTestUtil.getDotLabel(page);
-                expect(await labelElement.getProperty('label')).toEqual([1, 2, '3']);
+                expect(labelElement.getAttribute('label')).toEqual('1,2,3');
             });
         });
 
@@ -139,9 +141,8 @@ describe('dot-select', () => {
                 const value = 'test';
                 element.setProperty('hint', value);
                 await page.waitForChanges();
-
                 const hintElement = await dotTestUtil.getHint(page);
-                expect(hintElement.innerHTML).toBe(value);
+                expect(hintElement.innerText).toBe(value);
             });
 
             it('should not render hint', async () => {
@@ -150,12 +151,11 @@ describe('dot-select', () => {
             });
 
             it('should not break and not render with invalid data', async () => {
-                const wrongValue = [{ a: 1 }];
+                const wrongValue = [1, 2, '3'];
                 element.setProperty('hint', wrongValue);
                 await page.waitForChanges();
-
                 const hintElement = await dotTestUtil.getHint(page);
-                expect(hintElement).toBeFalsy();
+                expect(hintElement.innerText).toBe('1,2,3');
             });
         });
 
@@ -164,40 +164,31 @@ describe('dot-select', () => {
                 const value = 'a|1,b|2,c|3';
                 element.setProperty('options', value);
                 await page.waitForChanges();
-
                 const optionElements = await getOptions(page);
                 expect(optionElements.length).toBe(3);
             });
 
             it('should not render options', async () => {
                 const optionElements = await getOptions(page);
-                expect(optionElements).toEqual([]);
+                expect(optionElements.length).toBe(0);
             });
 
             it('should not break with invalid data', async () => {
-                const wrongValue = [{ a: 1 }];
+                const wrongValue = { a: 1 };
                 element.setProperty('options', wrongValue);
                 await page.waitForChanges();
-
                 const optionElements = await getOptions(page);
-                expect(optionElements).toEqual([]);
+                expect(optionElements.length).toBe(0);
             });
         });
 
-        describe('required & requiredMessage', () => {
-            it('should render required attribute in label', async () => {
+        describe('required', () => {
+            it('should render required attribute in label and dot-required css class', async () => {
                 element.setProperty('required', true);
                 await page.waitForChanges();
                 const labelElement = await dotTestUtil.getDotLabel(page);
-                expect(await labelElement.getProperty('required')).toBe(true);
-            });
-
-            it('should render required error msg', async () => {
-                element.setProperty('required', true);
-                element.setProperty('requiredMessage', 'test');
-                await page.waitForChanges();
-                const errorElement = await dotTestUtil.getErrorMessage(page);
-                expect(errorElement.innerHTML).toBe('test');
+                expect(element).toHaveClasses(['dot-required']);
+                expect(labelElement.getAttribute('required')).toBeDefined();
             });
 
             it('should not render required error msg', async () => {
@@ -206,14 +197,40 @@ describe('dot-select', () => {
             });
 
             it('should not break and not render with invalid data', async () => {
+                const wrongValue = [1, 2, '3'];
+                element.setProperty('required', wrongValue);
+                await page.waitForChanges();
+                const errorElement = await dotTestUtil.getErrorMessage(page);
+                expect(errorElement.innerText).toBe('This field is required');
+            });
+        });
+
+        describe('requiredMessage', () => {
+            it('should not break and not render with invalid data', async () => {
+                const wrongValue = [1, 2, '3'];
+                element.setProperty('requiredMessage', wrongValue);
+                await page.waitForChanges();
+                const errorElement = await dotTestUtil.getErrorMessage(page);
+                expect(errorElement).toBeNull();
+            });
+        });
+
+        describe('required & requiredMessage', () => {
+            it('should render required error msg', async () => {
+                element.setProperty('required', true);
+                element.setProperty('requiredMessage', 'test');
+                await page.waitForChanges();
+                const errorElement = await dotTestUtil.getErrorMessage(page);
+                expect(errorElement.innerText).toBe('test');
+            });
+
+            it('should not break and not render with invalid data', async () => {
                 const wrongValue = [{ a: 1 }];
                 element.setProperty('required', wrongValue);
                 element.setProperty('requiredMessage', wrongValue);
-
                 await page.waitForChanges();
-
                 const errorElement = await dotTestUtil.getErrorMessage(page);
-                expect(errorElement).toBeFalsy();
+                expect(errorElement).toBeNull();
             });
         });
 
@@ -222,7 +239,6 @@ describe('dot-select', () => {
                 element.setProperty('options', 'a|1,b|2');
                 element.setProperty('value', '2');
                 await page.waitForChanges();
-
                 const optionElements = await getOptions(page);
                 expect(await optionElements[1].getProperty('selected')).toBe(true);
             });
@@ -230,19 +246,24 @@ describe('dot-select', () => {
             it('should render options with the first option selected (component\'s default behaviour)', async () => {
                 element.setProperty('options', 'a|1,b|2,c|3');
                 await page.waitForChanges();
-
                 const optionElements = await getOptions(page);
                 expect(await optionElements[0].getProperty('selected')).toBe(true);
                 expect(await optionElements[1].getProperty('selected')).toBe(false);
                 expect(await optionElements[2].getProperty('selected')).toBe(false);
             });
 
-            it('should not break with invalid data', async () => {
+            it('should not break with wrong data format', async () => {
+                element.setProperty('options', 'a1,2,c|3');
+                await page.waitForChanges();
+                const optionElements = await getOptions(page);
+                expect(optionElements.length).toBe(0);
+            });
+
+            it('should not break with wrong data type', async () => {
                 const wrongValue = [{ a: 1 }];
                 element.setProperty('options', 'a|1,b|2,c|3');
                 element.setProperty('value', wrongValue);
                 await page.waitForChanges();
-
                 const optionElements = await getOptions(page);
                 expect(await optionElements[0].getProperty('selected')).toBe(true);
                 expect(await optionElements[1].getProperty('selected')).toBe(false);
@@ -257,12 +278,8 @@ describe('dot-select', () => {
             await page.setContent(`
             <dot-select
                 name="testName"
-                label="testLabel"
-                hint="testHint"
                 options="|,valueA|1,valueB|2"
-                value="2"
-                required-message="testErrorMsg"
-                required="true">
+                value="2">
             </dot-select>`);
             spyStatusChangeEvent = await page.spyOnEvent('statusChange');
             spyValueChangeEvent = await page.spyOnEvent('valueChange');
@@ -286,21 +303,47 @@ describe('dot-select', () => {
                     value: '1'
                 });
             });
+        });
+    });
 
-            it('should emit on Reset', async () => {
+    describe('@Methods', () => {
+        beforeEach(async () => {
+            page = await newE2EPage();
+            await page.setContent(`
+            <dot-select
+                name="testName"
+                options="|,valueA|1,valueB|2"
+                value="2">
+            </dot-select>`);
+            spyStatusChangeEvent = await page.spyOnEvent('statusChange');
+            spyValueChangeEvent = await page.spyOnEvent('valueChange');
+
+            element = await page.find('dot-select');
+        });
+
+        describe('Reset', () => {
+            it('should emit StatusChange & ValueChange Events', async () => {
                 await element.callMethod('reset');
                 expect(spyStatusChangeEvent).toHaveReceivedEventDetail({
                     name: 'testName',
                     status: {
                         dotPristine: true,
                         dotTouched: false,
-                        dotValid: false
+                        dotValid: true
                     }
                 });
                 expect(spyValueChangeEvent).toHaveReceivedEventDetail({
                     name: 'testName',
                     value: ''
                 });
+            });
+
+            it('should set first select value', async () => {
+                await element.callMethod('reset');
+                const optionElements = await getOptions(page);
+                expect(await optionElements[0].getProperty('selected')).toBe(true);
+                expect(await optionElements[1].getProperty('selected')).toBe(false);
+                expect(await optionElements[2].getProperty('selected')).toBe(false);
             });
         });
     });
