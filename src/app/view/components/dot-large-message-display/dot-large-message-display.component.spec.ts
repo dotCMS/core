@@ -1,7 +1,7 @@
 import { async, ComponentFixture, TestBed } from '@angular/core/testing';
 import { DotLargeMessageDisplayComponent } from './dot-large-message-display.component';
-import { Injectable, DebugElement } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { Injectable, DebugElement, Component } from '@angular/core';
+import { Observable, Subject } from 'rxjs';
 import {
     DotLargeMessageDisplayParams,
     DotLargeMessageDisplayService
@@ -12,7 +12,7 @@ import { By } from '@angular/platform-browser';
 
 @Injectable()
 export class DotLargeMessageDisplayServiceMock {
-    _messages: BehaviorSubject<DotLargeMessageDisplayParams> = new BehaviorSubject(null);
+    _messages: Subject<DotLargeMessageDisplayParams> = new Subject();
 
     sub(): Observable<DotLargeMessageDisplayParams> {
         return this._messages.asObservable();
@@ -27,28 +27,40 @@ export class DotLargeMessageDisplayServiceMock {
     }
 }
 
+@Component({
+    selector: 'dot-test-host-component',
+    template: `
+        <dot-large-message-display></dot-large-message-display>
+    `
+})
+class TestHostComponent {
+
+}
+
 describe('DotLargeMessageDisplayComponent', () => {
-    let fixture: ComponentFixture<DotLargeMessageDisplayComponent>;
+    let fixture: ComponentFixture<TestHostComponent>;
     let dialog: DebugElement;
     const dotLargeMessageDisplayServiceMock: DotLargeMessageDisplayServiceMock = new DotLargeMessageDisplayServiceMock();
 
-    beforeEach(async(() => {
+    beforeEach(async (() =>
         DOTTestBed.configureTestingModule({
             imports: [DotDialogModule],
-            declarations: [DotLargeMessageDisplayComponent],
+            declarations: [DotLargeMessageDisplayComponent, TestHostComponent],
             providers: [
                 {
                     provide: DotLargeMessageDisplayService,
                     useValue: dotLargeMessageDisplayServiceMock
                 }
             ]
-        }).compileComponents();
-    }));
+        }).compileComponents()
+    ));
 
     beforeEach(() => {
-        fixture = TestBed.createComponent(DotLargeMessageDisplayComponent);
+        fixture = TestBed.createComponent(TestHostComponent);
         spyOn(dotLargeMessageDisplayServiceMock, 'sub').and.callThrough();
         spyOn(dotLargeMessageDisplayServiceMock, 'clear').and.callThrough();
+
+        fixture.detectChanges();
     });
 
     it('should create DotLargeMessageDisplayComponent', (done) => {
@@ -59,6 +71,7 @@ describe('DotLargeMessageDisplayComponent', () => {
             body: '<h1>Hello World</h1>',
             code: { lang: 'eng', content: 'codeTest' }
         });
+
         fixture.detectChanges();
         dialog = fixture.debugElement.query(By.css('dot-dialog'));
 
@@ -117,9 +130,19 @@ describe('DotLargeMessageDisplayComponent', () => {
         }, 0);
     });
 
-    it('should clear the DotLargeMessageDisplayService on dialog hide', () => {
+    it('should remove dialog when it is close', () => {
+        dotLargeMessageDisplayServiceMock.push({
+            title: 'title Test',
+            body: '<h1>Hello World</h1><script>console.log("abc")</script>',
+            script: 'console.log("script from prop")'
+        });
+        fixture.detectChanges();
+
+        dialog = fixture.debugElement.query(By.css('dot-dialog'));
         dialog.triggerEventHandler('hide', {});
-        expect(dotLargeMessageDisplayServiceMock.clear).toHaveBeenCalled();
+
+        fixture.detectChanges();
+        expect(fixture.debugElement.query(By.css('dot-dialog'))).toBeNull();
     });
 
     it('should set default height and width', () => {
@@ -133,5 +156,25 @@ describe('DotLargeMessageDisplayComponent', () => {
 
         expect(dialog.componentInstance.width).toBe('500px');
         expect(dialog.componentInstance.height).toBe('400px');
+    });
+
+    it('should show two dialogs', () => {
+        dotLargeMessageDisplayServiceMock.push({
+            title: 'title Test',
+            body: 'bodyTest',
+            code: { lang: 'eng', content: 'codeTest' }
+        });
+        fixture.detectChanges();
+
+        expect(fixture.debugElement.queryAll(By.css('dot-dialog')).length).toBe(1);
+
+        dotLargeMessageDisplayServiceMock.push({
+            title: 'title Test 2',
+            body: 'bodyTest 2',
+            code: { lang: 'eng', content: 'codeTest 2' }
+        });
+        fixture.detectChanges();
+
+        expect(fixture.debugElement.queryAll(By.css('dot-dialog')).length).toBe(2);
     });
 });
