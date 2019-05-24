@@ -101,7 +101,7 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.jaxb-core', version:'2.2.7_4'
     compile group: 'com.dotcms.lib', name: 'dot.jaxb-impl', version:'2.2.7_4'
     compile group: 'com.dotcms.lib', name: 'dot.jaxws-api', version:'2.2.9_2'
-    compile group: 'com.dotcms.lib', name: 'dot.jaxws-rt', version:'2.2.8_2'ls
+    compile group: 'com.dotcms.lib', name: 'dot.jaxws-rt', version:'2.2.8_2'
 
     compile group: 'com.dotcms.lib', name: 'dot.jazzy-core', version:'ukv_2'
     compile group: 'com.dotcms.lib', name: 'dot.jempbox', version:'1.6.0_2'
