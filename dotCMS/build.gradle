@@ -72,7 +72,6 @@ configurations.all({
 
 // Apply the java plugin to add support for Java.
 apply plugin: 'java'
-//apply plugin: "aspectj.gradle"
 apply plugin: 'gradle.aspectjfork'
 apply plugin: 'war'
 apply plugin: 'project-report' /*For gradle dependencies: ./gradlew htmlDependencyReport*/
@@ -88,7 +87,7 @@ eclipse {
 repositories {
 
     // todo: remove these repos, check artifactory
-    maven { url "https://repo.maven.apache.org/maven2" }
+    /*maven { url "https://repo.maven.apache.org/maven2" }
     maven { url "http://central.maven.org/maven2"
         content {
             includeGroup "org.aspectj"
@@ -114,7 +113,9 @@ repositories {
 
             excludeGroup "org.aspectj"
         }
-    }
+    }*/
+    maven { url "http://repo.dotcms.com/artifactory/libs-release" }
+    maven { url "http://repo.dotcms.com/artifactory/libs-snapshot-local" }
 
 }
 
@@ -181,15 +182,18 @@ dependencies {
     felix (group: 'org.osgi', name: 'org.osgi.compendium', version: '4.3.1') {
         transitive = false
     }
-    felix(group: 'org.apache.tika', name: 'tika-core', version: '1.19') {
+    felix(group: 'org.apache.tika', name: 'tika-core', version: '1.20') {
         transitive = false
     }
-    felix(group: 'org.apache.tika', name: 'tika-bundle', version: '1.19') {
+    felix(group: 'org.apache.tika', name: 'tika-bundle', version: '1.20') {
         transitive = false
     }
+
+    //felix group: 'com.dotcms.tika', name: 'com.dotcms.tika', version: '0.2'
+    felix fileTree("../libs/tika").include('**/*.jar')
     felix group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.25'
     felix group: 'org.slf4j', name: 'jcl-over-slf4j', version: '1.7.25'
-    felix group: 'com.dotcms.tika', name: 'com.dotcms.tika', version: '0.2'
+
 
     /**** And now the libs we pull in from internal company sources - libs stored in ./plugins, ./bin, ./libs, the starter site, etc. ****/
     compile fileTree("src/main/plugins/com.dotcms.config/build/jar").include('plugin-com.dotcms.config.jar')

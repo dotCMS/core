@@ -22,22 +22,13 @@ package com.dotcms.rendering.velocity.viewtools;
 import com.dotcms.rendering.velocity.viewtools.bean.XmlToolDoc;
 import com.dotcms.rendering.velocity.viewtools.cache.XmlToolCache;
 import com.dotcms.rendering.velocity.viewtools.util.ConversionUtils;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
 import org.apache.velocity.tools.generic.ValueParser;
 import org.apache.velocity.tools.view.tools.ViewTool;
-import org.dom4j.Attribute;
-import org.dom4j.Document;
-import org.dom4j.DocumentHelper;
-import org.dom4j.Element;
-import org.dom4j.Node;
+import org.dom4j.*;
 import org.dom4j.io.SAXReader;
+
+import java.net.URL;
+import java.util.*;
 
 
 /**
@@ -488,7 +479,7 @@ public class XmlTool implements ViewTool {
 		List<Node> kids = new ArrayList<Node>();
 		for (Node n : nodes) {
 			if (n instanceof Element) {
-				kids.addAll((List<Node>) ((Element) n).elements());
+				kids.addAll(Element.class.cast(n).elements());
 			}
 		}
 		return new XmlTool(kids);
