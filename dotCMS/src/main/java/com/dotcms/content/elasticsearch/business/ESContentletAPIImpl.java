@@ -174,7 +174,6 @@ import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.BeanUtils;
 
 /**
@@ -207,6 +206,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private static final int MAX_LIMIT = 10000;
 
     private static final String backupPath = ConfigUtils.getBackupPath() + File.separator + "contentlets";
+
+    private static final boolean getRelatedContentFromDB = Config
+            .getBooleanProperty("GET_RELATED_CONTENT_FROM_DB", true);
 
     private final ContentletSystemEventUtil contentletSystemEventUtil;
     private final LocalSystemEventsAPI      localSystemEventsAPI;
@@ -1467,57 +1469,66 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final User user, final boolean respectFrontendRoles)
             throws DotSecurityException, DotDataException {
 
-        final List<Contentlet> result = new ArrayList<>();
-        final String relationshipName = rel.getRelationTypeValue().toLowerCase();
+        if (getRelatedContentFromDB){
+            return FactoryLocator.getRelationshipFactory().dbRelatedContent(rel, contentlet, true);
+        } else{
 
-        SearchResponse response = APILocator.getEsSearchAPI()
-                .esSearchRelated(contentlet.getIdentifier(), relationshipName, false,false, user,
-                        respectFrontendRoles);
+            final List<Contentlet> result = new ArrayList<>();
+            final String relationshipName = rel.getRelationTypeValue().toLowerCase();
 
-        if (response.getHits() == null) {
+            SearchResponse response = APILocator.getEsSearchAPI()
+                    .esSearchRelated(contentlet.getIdentifier(), relationshipName, false,false, user,
+                            respectFrontendRoles);
+
+            if (response.getHits() == null) {
+                return result;
+            }
+
+            for (SearchHit sh : response.getHits()) {
+                Map<String, Object> sourceMap = sh.getSourceAsMap();
+                if (sourceMap.get(relationshipName) != null) {
+                    ((ArrayList<String>) sourceMap.get(relationshipName)).stream().forEach(child -> {
+                        try {
+                            result.add(findContentletByIdentifierAnyLanguage(
+                                    child));
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+                }
+            }
             return result;
         }
 
-        for (SearchHit sh : response.getHits()) {
-            Map<String, Object> sourceMap = sh.getSourceAsMap();
-            if (sourceMap.get(relationshipName) != null) {
-                ((ArrayList<String>) sourceMap.get(relationshipName)).stream().forEach(child -> {
-                    try {
-                        result.add(findContentletByIdentifierAnyLanguage(
-                                child));
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                });
-            }
-        }
-
-        return result;
     }
 
     private List<Contentlet> getRelatedParents(final Contentlet contentlet, final Relationship rel,
             final User user, final boolean respectFrontendRoles)
             throws DotSecurityException, DotDataException {
-        final List<Contentlet> result = new ArrayList<>();
-        final String relationshipName = rel.getRelationTypeValue().toLowerCase();
 
-        SearchResponse response = APILocator.getEsSearchAPI()
-                .esSearchRelated(contentlet.getIdentifier(), relationshipName, true,false, user,
-                        respectFrontendRoles);
+        if (getRelatedContentFromDB){
+            return FactoryLocator.getRelationshipFactory().dbRelatedContent(rel, contentlet, false);
+        } else{
+            final List<Contentlet> result = new ArrayList<>();
+            final String relationshipName = rel.getRelationTypeValue().toLowerCase();
 
-        if (response.getHits() == null) {
+            SearchResponse response = APILocator.getEsSearchAPI()
+                    .esSearchRelated(contentlet.getIdentifier(), relationshipName, true,false, user,
+                            respectFrontendRoles);
+
+            if (response.getHits() == null) {
+                return result;
+            }
+
+            for (SearchHit sh : response.getHits()) {
+                Map<String, Object> sourceMap = sh.getSourceAsMap();
+                if (sourceMap.get("identifier") != null) {
+                    result.add(findContentletByIdentifierAnyLanguage(sourceMap.get("identifier").toString()));
+                }
+            }
+
             return result;
         }
-
-        for (SearchHit sh : response.getHits()) {
-            Map<String, Object> sourceMap = sh.getSourceAsMap();
-            if (sourceMap.get("identifier") != null) {
-                result.add(findContentletByIdentifierAnyLanguage(sourceMap.get("identifier").toString()));
-            }
-        }
-
-        return result;
-
     }
 
     @CloseDBIfOpened

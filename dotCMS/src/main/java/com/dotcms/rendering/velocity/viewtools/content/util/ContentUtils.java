@@ -3,6 +3,7 @@ package com.dotcms.rendering.velocity.viewtools.content.util;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.rendering.velocity.viewtools.content.PaginatedContentList;
 
+import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
@@ -20,6 +21,7 @@ import com.dotmarketing.util.UtilMethods;
 
 import com.liferay.portal.model.User;
 
+import com.liferay.util.StringPool;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -490,33 +492,69 @@ public class ContentUtils {
             String sort, final User user,
             final String tmDate, final boolean pullByParent) {
 
+
+        final boolean selfRelated = APILocator.getRelationshipAPI().sameParentAndChild(relationship);
+        final String relationshipName = relationship.getRelationTypeValue();
         contentletIdentifier = RecurrenceUtil.getBaseEventIdentifier(contentletIdentifier);
 
-        StringBuilder pullQuery = new StringBuilder();
         try {
             final Contentlet contentlet = conAPI
-                    .findContentletByIdentifierAnyLanguage(contentletIdentifier);
+                .findContentletByIdentifierAnyLanguage(contentletIdentifier);
 
-            final List<Contentlet> relatedContent = conAPI.getRelatedContent(contentlet, relationship, pullByParent, user, false);
+            final StringBuilder pullQuery = new StringBuilder();
 
-            if (relatedContent.isEmpty()){
-                return Collections.emptyList();
+            if (UtilMethods.isSet(condition)){
+
+                if ((selfRelated && pullByParent) || (!selfRelated && relationship
+                        .getParentStructureInode().equals(contentlet.getContentTypeId()))) {
+                    //pulling children
+                    final List<Contentlet> relatedContent = conAPI
+                            .getRelatedContent(contentlet, relationship, pullByParent, user,
+                                    false);
+
+                    if (relatedContent.isEmpty()) {
+                        return Collections.emptyList();
+                    }
+
+                    pullQuery.append("+identifier:(").append(String.join(" OR ", relatedContent
+                            .stream().map(cont -> cont.getIdentifier()).collect(
+                                    Collectors.toList()))).append(")");
+
+                    if (UtilMethods.isSet(condition)) {
+                        pullQuery.append(" AND ").append(condition);
+                    }
+                } else {
+                    //pulling parents
+                    pullQuery.append("+" + relationshipName + ":"
+                            + contentletIdentifier);
+                }
+                pullQuery.append(" ").append(condition);
+                return pull(pullQuery.toString(), offset, limit, sort, user, tmDate);
+            } else {
+                String fieldVariable;
+                if ((selfRelated && pullByParent) || (!selfRelated && relationship
+                        .getParentStructureInode().equals(contentlet.getContentTypeId()))) {
+                    fieldVariable = relationship.getChildRelationName();
+                } else{
+                    fieldVariable = relationship.getChildRelationName();
+                }
+
+                //If no condition, get related content from cache (only if a relationship field exists).
+                if (relationshipName.contains(StringPool.PERIOD) && contentlet.getContentType()
+                        .fieldMap().containsKey(fieldVariable)) {
+                    return contentlet.getRelated(fieldVariable, user, false);
+                }
+
+                //Otherwise, it will go to the database or ES index
+                //(depending on the value set for GET_RELATED_CONTENT_FROM_DB)
+                return conAPI
+                        .getRelatedContent(contentlet, relationship, pullByParent, user, false);
             }
 
-            pullQuery.append("+identifier:(").append(String.join(" OR ", relatedContent
-                    .stream().map(cont -> cont.getIdentifier()).collect(
-                            Collectors.toList()))).append(")");
-
-
-            if (UtilMethods.isSet(condition)) {
-                pullQuery.append(" AND ").append(condition);
-            }
-
-            return pull(pullQuery.toString(), offset, limit, sort, user, tmDate);
         } catch (Exception e) {
             Logger.error(ContentUtils.class,
                     "Error pulling related content with identifier " + contentletIdentifier
-                            + ". Relationship Name: " + relationship.getRelationTypeValue(), e);
+                            + ". Relationship Name: " + relationshipName, e);
         }
 
         return Collections.emptyList();
