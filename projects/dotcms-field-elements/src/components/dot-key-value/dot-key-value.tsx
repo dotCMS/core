@@ -14,19 +14,26 @@ import {
     DotFieldStatus,
     DotFieldValueEvent,
     DotFieldStatusEvent,
-    DotKeyValueField as DotKeyValueItem
+    DotKeyValueField,
+    DotOption
 } from '../../models';
 import {
+    checkProp,
     getClassNames,
-    getErrorClass,
-    getId,
+    getDotOptionsFromFieldValue,
     getOriginalStatus,
     getStringFromDotKeyArray,
     getTagError,
     getTagHint,
-    updateStatus,
-    checkProp
+    updateStatus
 } from '../../utils';
+
+const mapToKeyValue = ({ label, value }: DotOption) => {
+    return {
+        key: label,
+        value
+    };
+};
 
 @Component({
     tag: 'dot-key-value',
@@ -35,59 +42,96 @@ import {
 export class DotKeyValueComponent {
     @Element() el: HTMLElement;
 
+    /** (optional) Placeholder for the key input text in the <key-value-form> */
+    @Prop({
+        reflectToAttr: true
+    })
+    formKeyPlaceholder: string;
+
+    /** (optional) Placeholder for the value input text in the <key-value-form> */
+    @Prop({
+        reflectToAttr: true
+    })
+    formValuePlaceholder: string;
+
+    /** (optional) The string to use in the key label in the <key-value-form> */
+    @Prop({
+        reflectToAttr: true
+    })
+    formKeyLabel: string;
+
+    /** (optional) The string to use in the value label in the <key-value-form> */
+    @Prop({
+        reflectToAttr: true
+    })
+    formValueLabel: string;
+
+    /** (optional) Label for the add button in the <key-value-form> */
+    @Prop({
+        reflectToAttr: true
+    })
+    formAddButtonLabel: string;
+
+    /** (optional) The string to use in the delete button of a key/value item */
+    @Prop({
+        reflectToAttr: true
+    })
+    listDeleteLabel: string;
+
     /** (optional) Disables field's interaction */
-    @Prop() disabled = false;
+    @Prop({
+        reflectToAttr: true
+    })
+    disabled = false;
 
     /** (optional) Hint text that suggest a clue of the field */
-    @Prop() hint = '';
-
-    /** (optional) Placeholder for the key input text in the add form */
-    @Prop() keyPlaceholder = '';
+    @Prop({
+        reflectToAttr: true
+    })
+    hint = '';
 
     /** (optional) Text to be rendered next to input field */
-    @Prop() label = '';
+    @Prop({
+        reflectToAttr: true
+    })
+    label = '';
 
     /** Name that will be used as ID */
-    @Prop() name = '';
+    @Prop({
+        reflectToAttr: true
+    })
+    name = '';
 
     /** (optional) Determine if it is mandatory */
-    @Prop() required = false;
+    @Prop({
+        reflectToAttr: true
+    })
+    required = false;
 
     /** (optional) Text that will be shown when required is set and condition is not met */
-    @Prop() requiredMessage = '';
-
-    /** (optional) Label for the add item button */
-    @Prop() saveBtnLabel = 'Add';
-
-    /** (optional) Placeholder for the value input text in the add form */
-    @Prop() valuePlaceholder = '';
+    @Prop({
+        reflectToAttr: true
+    })
+    requiredMessage = 'This field is required';
 
     /** Value of the field */
     @Prop({ mutable: true }) value = '';
 
-    @Prop() fieldType = ''; // TODO: remove this prop and fix dot-form to use tagName
-
-    /** (optional) The string to use in the key label of the add form */
-    @Prop() fieldKeyLabel = 'Key';
-
-    /** (optional) The string to use in the value label of the add form */
-    @Prop() fieldValueLabel = 'Value';
-
-    /** (optional) The string to use in the delete button of a key/value item */
-    @Prop() buttonDeleteLabel = 'Delete';
+    @Prop({
+        reflectToAttr: true
+    })
+    fieldType = ''; // TODO: remove this prop and fix dot-form to use tagName
 
     @State() status: DotFieldStatus;
-    @State() items: DotKeyValueItem[] = [];
+    @State() items: DotKeyValueField[] = [];
 
     @Event() valueChange: EventEmitter<DotFieldValueEvent>;
     @Event() statusChange: EventEmitter<DotFieldStatusEvent>;
 
-    fieldInput: DotKeyValueItem = { key: '', value: '' };
-
     @Watch('value')
     valueWatch(): void {
         this.value = checkProp<DotKeyValueComponent, string>(this, 'value', 'string');
-        this.setItems();
+        this.items = getDotOptionsFromFieldValue(this.value).map(mapToKeyValue);
     }
 
     /**
@@ -95,22 +139,25 @@ export class DotKeyValueComponent {
      */
     @Method()
     reset(): void {
-        this.fieldInput = { key: '', value: '' };
         this.items = [];
         this.status = getOriginalStatus(this.isValid());
-        this.emitStatusChange();
-        this.emitValueChange();
+        this.emitChanges();
     }
 
-    @Listen('deleteItemEvt')
-    deleteItemHandler(event: CustomEvent) {
+    @Listen('delete')
+    deleteItemHandler(event: CustomEvent<number>) {
         event.stopImmediatePropagation();
-        this.items = this.items.filter((_item, internalIndex) => {
-            return internalIndex !== event.detail;
-        });
-        this.refreshStatus();
-        this.emitStatusChange();
-        this.emitValueChange();
+
+        this.items = this.items.filter(
+            (_item: DotKeyValueField, index: number) => index !== event.detail
+        );
+        this.emitChanges();
+    }
+
+    @Listen('add')
+    addItemHandler({ detail }: CustomEvent<DotKeyValueField>): void {
+        this.items = [...this.items, detail];
+        this.emitChanges();
     }
 
     componentWillLoad(): void {
@@ -129,42 +176,24 @@ export class DotKeyValueComponent {
         return (
             <Fragment>
                 <dot-label label={this.label} required={this.required} name={this.name}>
-                    <label>
-                        {this.fieldKeyLabel}
-                        <input
-                            class={getErrorClass(this.status.dotValid)}
-                            disabled={this.isDisabled()}
-                            id={getId(this.name)}
-                            name="key"
-                            onInput={(event: Event) => this.setValue(event)}
-                            placeholder={this.keyPlaceholder}
-                            type="text"
-                            value={this.fieldInput.key}
-                        />
-                    </label>
-                    <label>
-                        {this.fieldValueLabel}
-                        <input
-                            class={getErrorClass(this.status.dotValid)}
-                            disabled={this.isDisabled()}
-                            name="value"
-                            onInput={(event: Event) => this.setValue(event)}
-                            placeholder={this.valuePlaceholder}
-                            type="text"
-                            value={this.fieldInput.value}
-                        />
-                    </label>
-                    <button
-                        class="dot-key-value__save__button"
-                        type="button"
+                    <key-value-form
+                        add-button-label={this.formAddButtonLabel}
                         disabled={this.disabled || null}
-                        onClick={() => this.addKey()}
-                    >
-                        {this.saveBtnLabel}
-                    </button>
-                    {this.getKeyValueList()}
+                        key-label={this.formKeyLabel}
+                        key-placeholder={this.formKeyPlaceholder}
+                        value-label={this.formValueLabel}
+                        value-placeholder={this.formValuePlaceholder}
+                    />
+                    <key-value-table
+                        onClick={(e: MouseEvent) => {
+                            e.preventDefault();
+                        }}
+                        button-label={this.listDeleteLabel}
+                        disabled={this.disabled || null}
+                        items={this.items}
+                    />
                 </dot-label>
-                {getTagHint(this.hint, this.name)}
+                {getTagHint(this.hint)}
                 {getTagError(this.showErrorMessage(), this.getErrorMessage())}
             </Fragment>
         );
@@ -172,32 +201,6 @@ export class DotKeyValueComponent {
 
     private validateProps(): void {
         this.valueWatch();
-    }
-
-    private isDisabled(): boolean {
-        return this.disabled || null;
-    }
-
-    private getKeyValueList(): JSX.Element {
-        return this.items.length ? (
-            <key-value-table
-                items={this.items}
-                disabled={this.disabled}
-                buttonDeleteLabel={this.buttonDeleteLabel}
-            />
-        ) : null;
-    }
-
-    private setItems(): void {
-        this.items = this.value
-            ? this.value
-                  .split(',')
-                  .filter((item) => item.length > 0)
-                  .map((item) => {
-                      const [key, value] = item.split('|');
-                      return { key, value };
-                  })
-            : [];
     }
 
     private setOriginalStatus(): void {
@@ -214,10 +217,6 @@ export class DotKeyValueComponent {
 
     private getErrorMessage(): string {
         return this.isValid() ? '' : this.requiredMessage;
-    }
-
-    private setValue(event): void {
-        this.fieldInput[event.target.name] = event.target.value.toString();
     }
 
     private refreshStatus(): void {
@@ -244,18 +243,9 @@ export class DotKeyValueComponent {
         });
     }
 
-    private addKey(): void {
-        if (this.fieldInput.key && this.fieldInput.value) {
-            this.items = [
-                ...this.items,
-                {
-                    key: this.fieldInput.key,
-                    value: this.fieldInput.value
-                }
-            ];
-            this.refreshStatus();
-            this.emitStatusChange();
-            this.emitValueChange();
-        }
+    private emitChanges(): void {
+        this.refreshStatus();
+        this.emitStatusChange();
+        this.emitValueChange();
     }
 }

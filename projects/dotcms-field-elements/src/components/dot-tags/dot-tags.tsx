@@ -100,7 +100,7 @@ export class DotTagsComponent {
                     ))}
                 </div>
 
-                {getTagHint(this.hint, this.name)}
+                {getTagHint(this.hint)}
                 {getTagError(this.showErrorMessage(), this.getErrorMessage())}
             </Fragment>
         );

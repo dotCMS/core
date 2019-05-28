@@ -1,15 +1,23 @@
 import { Component, Element, Event, EventEmitter, Listen, Prop, State } from '@stencil/core';
 import { DotCMSContentTypeField, DotFieldStatus, DotCMSKeyValueField } from '../../models';
 import { DotFormFields } from './dot-form-fields';
-import { getClassNames, getOriginalStatus, getStringFromDotKeyArray, updateStatus } from '../../utils';
+import {
+    getClassNames,
+    getOriginalStatus,
+    getStringFromDotKeyArray,
+    updateStatus
+} from '../../utils';
 
 const fieldParamsConversionToBE = {
     'Key-Value': (values: string): { [key: string]: string } => {
         const returnValue = {};
-        values.split(',').forEach((item: string) => {
-            const [key, value] = item.split('|');
-            returnValue[key] = value;
-        });
+
+        if (typeof values === 'string' && values) {
+            values.split(',').forEach((item: string) => {
+                const [key, value] = item.split('|');
+                returnValue[key] = value;
+            });
+        }
         return returnValue;
     }
 };
@@ -18,7 +26,7 @@ const fieldParamsConversionFromBE = {
     'Key-Value': (field: DotCMSKeyValueField) => {
         if (field.defaultValue && typeof field.defaultValue !== 'string') {
             const valuesArray = Object.keys(field.defaultValue).map((key: string) => {
-                return {key: key, value: field.defaultValue[key]};
+                return { key: key, value: field.defaultValue[key] };
             });
             field.defaultValue = getStringFromDotKeyArray(valuesArray);
         }
@@ -27,18 +35,18 @@ const fieldParamsConversionFromBE = {
 };
 
 const fieldMap = {
-    'Text': DotFormFields.Text,
-    'Textarea': DotFormFields.Textarea,
     'Checkbox': DotFormFields.Checkbox,
+    'Date': DotFormFields.Date,
+    'Date-Range': DotFormFields['Date-Range'],
+    'Date-and-Time': DotFormFields['Date-and-Time'],
     'Key-Value': fieldParamsConversionFromBE['Key-Value'],
     'Multi-Select': DotFormFields['Multi-Select'],
-    'Tag': DotFormFields.Tag,
-    'Time': DotFormFields.Time,
-    'Date-and-Time': DotFormFields['Date-and-Time'],
-    'Date-Range': DotFormFields['Date-Range'],
-    'Select': DotFormFields.Select,
     'Radio': DotFormFields.Radio,
-    'Date': DotFormFields.Date,
+    'Select': DotFormFields.Select,
+    'Tag': DotFormFields.Tag,
+    'Text': DotFormFields.Text,
+    'Textarea': DotFormFields.Textarea,
+    'Time': DotFormFields.Time
 };
 
 @Component({

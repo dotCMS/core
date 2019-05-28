@@ -143,9 +143,9 @@ export function getTagError(show: boolean, message: string): JSX.Element {
  * @param {string} name
  * @returns {JSX.Element}
  */
-export function getTagHint(hint: string, name: string): JSX.Element {
+export function getTagHint(hint: string): JSX.Element {
     return hint && typeof hint === 'string' ? (
-        <span class="dot-field__hint" id={getHintId(name)}>
+        <span class="dot-field__hint" id={getHintId(hint)}>
             {hint}
         </span>
     ) : null;

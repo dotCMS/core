@@ -103,7 +103,7 @@ export class DotTextareaComponent {
                         disabled={this.getDisabledAtt()}
                     />
                 </dot-label>
-                {getTagHint(this.hint, this.name)}
+                {getTagHint(this.hint)}
                 {getTagError(this.shouldShowErrorMessage(), this.getErrorMessage())}
             </Fragment>
         );

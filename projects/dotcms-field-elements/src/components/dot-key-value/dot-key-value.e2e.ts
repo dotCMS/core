@@ -1,5 +1,6 @@
-import { newE2EPage, E2EElement, E2EPage } from '@stencil/core/testing';
 import { EventSpy } from '@stencil/core/dist/declarations';
+import { E2EPage, E2EElement, newE2EPage } from '@stencil/core/testing';
+import { dotTestUtil } from '../../utils';
 
 describe('dot-key-value', () => {
     let page: E2EPage;
@@ -7,162 +8,410 @@ describe('dot-key-value', () => {
     let spyStatusChangeEvent: EventSpy;
     let spyValueChangeEvent: EventSpy;
 
-    describe('With data', () => {
-        beforeEach(async () => {
-            page = await newE2EPage();
+    const getForm = () => page.find('key-value-form');
+    const getList = () => page.find('key-value-table');
 
-            await page.setContent(`
-            <dot-key-value
-                name="testName"
-                label="testLabel"
-                field-type="Key-Value"
-                hint="testHint"
-                key-placeholder="Enter Key"
-                value-placeholder="Enter Value"
-                value="valueA|1"
-                required-message="testErrorMsg"
-                required="true"
-                save-btn-label="Save"
-                >
-            </dot-key-value>`);
-            element = await page.find('dot-key-value');
+    beforeEach(async () => {
+        page = await newE2EPage();
+        await page.setContent(`<dot-key-value></dot-key-value>`);
+        element = await page.find('dot-key-value');
+        await page.waitForChanges();
+    });
+
+    describe('css classes', () => {
+        it('should have empty', () => {
+            expect(element).toHaveClasses(dotTestUtil.class.empty);
         });
 
-        it('renders', async () => {
-            // tslint:disable-next-line:max-line-length
-            const expectedMarkup = `<dot-key-value name=\"testName\" label=\"testLabel\" field-type=\"Key-Value\" hint=\"testHint\" key-placeholder=\"Enter Key\" value-placeholder=\"Enter Value\" value=\"valueA|1\" required-message=\"testErrorMsg\" required=\"true\" save-btn-label=\"Save\" class=\"dot-valid dot-pristine dot-untouched dot-required hydrated\"><div class=\"dot-field__label\"><label for=\"dot-testName\">testLabel</label><span class=\"dot-field__required-mark\">*</span></div><input id=\"dot-testName\" name=\"key\" placeholder=\"Enter Key\" type=\"text\"><input name=\"value\" placeholder=\"Enter Value\" type=\"text\"><button class=\"dot-key-value__save__button\" type=\"button\">Save</button><key-value-table class=\"hydrated\"><table><tbody><tr><td><button type=\"button\" id=\"valueA_1_0\" class=\"dot-key-value__delete__button\"><div class=\"dot-field__label\"><label for=\"dot-valueA_1_0\">Delete</label></div></button></td><td>valueA</td><td>1</td></tr></tbody></table></key-value-table><span class=\"dot-field__hint\">testHint</span></dot-key-value>`;
-            const hint = await element.find('.dot-field__hint');
-            const table = await element.find('table');
-            expect(element.outerHTML).toBe(expectedMarkup);
-            expect(hint).toBeTruthy();
-            expect(table).toBeTruthy();
-            expect(element.classList.contains('dot-valid')).toBe(true);
-            expect(element.classList.contains('dot-pristine')).toBe(true);
-            expect(element.classList.contains('dot-untouched')).toBe(true);
-            expect(element.classList.contains('dot-required')).toBe(true);
-        });
-
-        it('should not render hint', async () => {
-            element.setProperty('hint', '');
+        it('should have empty required pristine', async () => {
+            element.setProperty('required', true);
             await page.waitForChanges();
-            const hint = await element.find('.dot-field__hint');
-            expect(hint).toBeNull();
+            expect(element).toHaveClasses(dotTestUtil.class.emptyRequiredPristine);
         });
 
-        it('should not render "*" on label when required is false', async () => {
-            element.setProperty('required', 'false');
+        it('should have empty required touched when all items is removed', async () => {
+            element.setProperty('value', 'key|value,llave|valor');
+            element.setProperty('required', true);
+            const list = await getList();
+            list.triggerEvent('delete', { detail: 0 });
+            list.triggerEvent('delete', { detail: 0 });
             await page.waitForChanges();
-            const label = await element.find('.dot-field__label label');
-            expect(label.innerHTML.indexOf('*')).toBe(-1);
+            expect(element).toHaveClasses(dotTestUtil.class.emptyRequired);
         });
 
-        describe('Events', () => {
-            beforeEach(async () => {
-                spyStatusChangeEvent = await page.spyOnEvent('statusChange');
-                spyValueChangeEvent = await page.spyOnEvent('valueChange');
+        it('should have filled', async () => {
+            const form = await getForm();
+            form.triggerEvent('add', {
+                detail: {
+                    key: 'some',
+                    value: 'test'
+                }
             });
 
-            it('should emit "statusChange" & "valueChange" and add the new row in "Key-Value-Table" when saving an item', async () => {
-                const inputs = await page.findAll('input');
-                const saveBtn = await page.find('.dot-key-value__save__button');
-                await inputs[0].press('k');
-                await inputs[1].press('2');
-                saveBtn.click();
-                await page.waitForChanges();
+            await page.waitForChanges();
+            expect(element).toHaveClasses(dotTestUtil.class.filled);
+        });
 
-                const tableRows = await page.findAll('table tr');
-                expect(tableRows.length).toBe(2);
-                expect(spyStatusChangeEvent).toHaveReceivedEventDetail({
-                    name: 'testName',
-                    status: {
-                        dotPristine: false,
-                        dotTouched: true,
-                        dotValid: true
-                    }
-                });
-                expect(spyValueChangeEvent).toHaveReceivedEventDetail({
-                    name: 'testName',
-                    fieldType: 'Key-Value',
-                    value: 'valueA|1,k|2'
-                });
+        it('should have filled required', async () => {
+            element.setProperty('required', true);
+            const form = await getForm();
+            form.triggerEvent('add', {
+                detail: {
+                    key: 'some',
+                    value: 'test'
+                }
             });
 
-            it('should emit status and value on Reset', async () => {
-                await element.callMethod('reset');
+            await page.waitForChanges();
+            expect(element).toHaveClasses(dotTestUtil.class.filledRequired);
+        });
+
+        it('should have filled required pristine', async () => {
+            element.setProperty('required', true);
+            element.setProperty('value', 'key|value,key2|value2');
+
+            await page.waitForChanges();
+            expect(element).toHaveClasses(dotTestUtil.class.filledRequiredPristine);
+        });
+
+        it('should have filled required touched when item is added', async () => {
+            element.setProperty('required', true);
+            const form = await getForm();
+            form.triggerEvent('add', {
+                detail: {
+                    key: 'some',
+                    value: 'test'
+                }
+            });
+            await page.waitForChanges();
+            expect(element).toHaveClasses(dotTestUtil.class.filledRequired);
+        });
+
+        it('should have filled required touched when one item is removed', async () => {
+            element.setProperty('value', 'key|value,llave|valor');
+            element.setProperty('required', true);
+            const list = await getList();
+            list.triggerEvent('delete', { detail: 0 });
+            await page.waitForChanges();
+            expect(element).toHaveClasses(dotTestUtil.class.filledRequired);
+        });
+    });
+
+    describe('@Props', () => {
+        describe('key-value-form attrs', () => {
+            it('should pass down valid props', async () => {
+                element.setAttribute('form-add-button-label', 'Button to the label');
+                element.setAttribute('form-key-placeholder', 'Key Placeholder');
+                element.setAttribute('form-value-placeholder', 'Value Placeholder');
+                element.setAttribute('form-key-label', 'Key Label');
+                element.setAttribute('form-value-label', 'Value Label');
+
                 await page.waitForChanges();
-                const tableRows = await page.findAll('table tr');
-                expect(tableRows.length).toBeFalsy();
-                expect(spyStatusChangeEvent).toHaveReceivedEventDetail({
-                    name: 'testName',
-                    status: {
-                        dotPristine: true,
-                        dotTouched: false,
-                        dotValid: false
-                    }
-                });
-                expect(spyValueChangeEvent).toHaveReceivedEventDetail({
-                    name: 'testName',
-                    fieldType: 'Key-Value',
-                    value: ''
-                });
+
+                const form = await getForm();
+                expect(form.getAttribute('add-button-label')).toBe('Button to the label');
+                expect(form.getAttribute('key-placeholder')).toBe('Key Placeholder');
+                expect(form.getAttribute('value-placeholder')).toBe('Value Placeholder');
+                expect(form.getAttribute('key-label')).toBe('Key Label');
+                expect(form.getAttribute('value-label')).toBe('Value Label');
             });
 
-            it('should emit status and value on "deleteItemEvt" and remove the row in "Key-Value-Table" event', async () => {
-                const deleteItemEvt = await page.spyOnEvent('deleteItemEvt');
-                await element.triggerEvent('deleteItemEvt', {
-                    bubbles: true,
-                    cancelable: false,
-                    detail: 0
+            it('should pass down empty props', async () => {
+                await page.waitForChanges();
+                const form = await getForm();
+                // internal default
+                expect(form.getAttribute('add-button-label')).toBe('Add');
+                expect(form.getAttribute('key-placeholder')).toBe('');
+                expect(form.getAttribute('value-placeholder')).toBe('');
+                expect(form.getAttribute('key-label')).toBe('Key');
+                expect(form.getAttribute('value-label')).toBe('Value');
+            });
+        });
+
+        describe('key-value-table attr', () => {
+            describe('button-label', () => {
+                it('should pass down valid', async () => {
+                    element.setAttribute('list-delete-label', 'Delete this item');
+                    await page.waitForChanges();
+
+                    const list = await getList();
+                    expect(list.getAttribute('button-label')).toBe('Delete this item');
                 });
+
+                it('should pass down empty', async () => {
+                    await page.waitForChanges();
+
+                    const list = await getList();
+                    expect(list.getAttribute('button-label')).toBe('Delete'); // internal default
+                });
+            });
+        });
+
+        describe('disabled', () => {
+            it('should set disabled to child', async () => {
+                element.setProperty('disabled', true);
                 await page.waitForChanges();
 
-                const tableRows = await page.findAll('table tr');
-                expect(tableRows.length).toBeFalsy();
-                expect(spyStatusChangeEvent).toHaveReceivedEventDetail({
-                    name: 'testName',
-                    status: {
-                        dotPristine: false,
-                        dotTouched: true,
-                        dotValid: false
-                    }
-                });
-                expect(spyValueChangeEvent).toHaveReceivedEventDetail({
-                    name: 'testName',
-                    fieldType: 'Key-Value',
-                    value: ''
-                });
-                expect(deleteItemEvt.length).toEqual(0);
+                const form = await getForm();
+                const list = await getList();
+
+                expect(form.getAttribute('disabled')).toBeDefined();
+                expect(list.getAttribute('disabled')).toBeDefined();
+            });
+
+            it('should not set disabled to child', async () => {
+                const form = await getForm();
+                const list = await getList();
+
+                expect(form.getAttribute('disabled')).toBeNull();
+                expect(list.getAttribute('disabled')).toBeNull();
+            });
+        });
+
+        describe('hint', () => {
+            it('should render', async () => {
+                element.setProperty('hint', 'Some hint');
+                await page.waitForChanges();
+
+                const hint = await dotTestUtil.getHint(page);
+                expect(hint.innerText).toBe('Some hint');
+                expect(hint.getAttribute('id')).toBe('hint-some-hint');
+            });
+
+            it('should not render', async () => {
+                const hint = await dotTestUtil.getHint(page);
+                expect(hint).toBeNull();
+            });
+
+            it('should handle invalid', async () => {
+                element.setProperty('hint', { a: 'object' });
+                await page.waitForChanges();
+
+                const hint = await dotTestUtil.getHint(page);
+                expect(hint.innerText).toBe('[object Object]');
+            });
+        });
+
+        describe('label', () => {
+            it('should render', async () => {
+                element.setProperty('label', 'Some label');
+                await page.waitForChanges();
+
+                const dotLabel = await dotTestUtil.getDotLabel(page);
+                expect(dotLabel.getAttribute('label')).toBe('Some label');
+            });
+
+            it('should not render', async () => {
+                const dotLabel = await dotTestUtil.getDotLabel(page);
+                expect(dotLabel.getAttribute('label')).toBe('');
+            });
+
+            it('should handle invalid', async () => {
+                element.setProperty('label', ['some', 'array']);
+                await page.waitForChanges();
+
+                const dotLabel = await dotTestUtil.getDotLabel(page);
+                expect(dotLabel.getAttribute('label')).toBe('some,array');
+            });
+        });
+
+        describe('name', () => {
+            it('should render', async () => {
+                element.setProperty('name', 'Some name');
+                await page.waitForChanges();
+
+                const dotLabel = await dotTestUtil.getDotLabel(page);
+                expect(dotLabel.getAttribute('name')).toBe('Some name');
+            });
+
+            it('should not render', async () => {
+                const dotLabel = await dotTestUtil.getDotLabel(page);
+                expect(await dotLabel.getAttribute('name')).toBe('');
+            });
+
+            it('should handle invalid', async () => {
+                element.setProperty('name', NaN);
+                await page.waitForChanges();
+
+                const dotLabel = await dotTestUtil.getDotLabel(page);
+                expect(dotLabel.getAttribute('name')).toBeNull();
+            });
+        });
+
+        describe('required', () => {
+            it('should render', async () => {
+                element.setProperty('required', true);
+                await page.waitForChanges();
+
+                const dotLabel = await dotTestUtil.getDotLabel(page);
+                expect(dotLabel.getAttribute('required')).toBe('');
+            });
+
+            it('should not render', async () => {
+                const dotLabel = await dotTestUtil.getDotLabel(page);
+                expect(dotLabel.getAttribute('required')).toBeNull();
+            });
+
+            it('should handle invalid value --> truthy', async () => {
+                element.setProperty('required', 1);
+                await page.waitForChanges();
+
+                const dotLabel = await dotTestUtil.getDotLabel(page);
+                expect(dotLabel.getAttribute('required')).toBe('');
+            });
+
+            it('should handle invalid value --> falsy', async () => {
+                element.setProperty('required', NaN);
+                await page.waitForChanges();
+
+                const dotLabel = await dotTestUtil.getDotLabel(page);
+                expect(dotLabel.getAttribute('required')).toBeNull();
+            });
+        });
+
+        describe('requiredMessage', () => {
+            it('should show default', async () => {
+                element.setProperty('required', true);
+                element.setProperty('value', 'key|value');
+                const list = await getList();
+                list.triggerEvent('delete', { detail: 0 });
+                await page.waitForChanges();
+
+                const error = await dotTestUtil.getErrorMessage(page);
+                expect(error.textContent).toBe('This field is required');
+            });
+
+            it('should render custom', async () => {
+                element.setProperty('required', true);
+                element.setProperty('requiredMessage', 'This is a custom message');
+                element.setProperty('value', 'key|value');
+                const list = await getList();
+                list.triggerEvent('delete', { detail: 0 });
+                await page.waitForChanges();
+
+                const error = await dotTestUtil.getErrorMessage(page);
+                expect(error.textContent).toBe('This is a custom message');
+            });
+
+            it('should not show', async () => {
+                element.setProperty('requiredMessage', 'This is a custom message');
+                element.setProperty('value', 'key|value');
+                const list = await getList();
+                list.triggerEvent('delete', { detail: 0 });
+                await page.waitForChanges();
+
+                const error = await dotTestUtil.getErrorMessage(page);
+                expect(error).toBeNull();
+            });
+        });
+
+        describe('value', () => {
+            it('should set items', async () => {
+                element.setProperty('value', 'hello|world,hola|mundo');
+                await page.waitForChanges();
+                const list = await getList();
+                expect(await list.getProperty('items')).toEqual([
+                    { key: 'hello', value: 'world' },
+                    { key: 'hola', value: 'mundo' }
+                ]);
+            });
+
+            it('should handle invalid format', async () => {
+                element.setProperty('value', 'hello/world*hola,mundo');
+                await page.waitForChanges();
+                const list = await getList();
+                expect(await list.getProperty('items')).toEqual([]);
+            });
+
+            it('should handle invalid type', async () => {
+                element.setProperty('value', { hello: 'world' });
+                await page.waitForChanges();
+                const list = await getList();
+                expect(await list.getProperty('items')).toEqual([]);
+            });
+
+            it('should handle undefined', async () => {
+                const list = await getList();
+                expect(await list.getProperty('items')).toEqual([]);
             });
         });
     });
 
-    describe('Without data', () => {
+    describe('@Events', () => {
         beforeEach(async () => {
-            page = await newE2EPage();
-
-            await page.setContent(`
-            <dot-key-value
-                name="testName"
-                label="testLabel"
-                fieldType="Key-Value"
-                hint="testHint"
-                keyPlaceholder="Enter Key"
-                valuePlaceholder="Enter Value"
-                required-message="testErrorMsg"
-                required="true"
-                saveBtnLabel="Save"
-                >
-            </dot-key-value>`);
-            element = await page.find('dot-key-value');
+            element.setAttribute('name', 'fieldName');
+            spyValueChangeEvent = await page.spyOnEvent('valueChange');
+            spyStatusChangeEvent = await page.spyOnEvent('statusChange');
         });
 
-        it('should not render table and be Invalid', async () => {
-            const table = await element.find('table');
-            expect(element.classList.contains('dot-invalid')).toBe(true);
-            expect(element.classList.contains('dot-pristine')).toBe(true);
-            expect(element.classList.contains('dot-untouched')).toBe(true);
-            expect(element.classList.contains('dot-required')).toBe(true);
-            expect(table).toBeNull();
+        describe('valueChange and statusChange', () => {
+            it('shoult emit on add', async () => {
+                const form = await getForm();
+                form.triggerEvent('add', {
+                    detail: {
+                        key: 'some key',
+                        value: 'hello world'
+                    }
+                });
+                await page.waitForChanges();
+                expect(spyValueChangeEvent).toHaveReceivedEventDetail({
+                    fieldType: '',
+                    name: 'fieldName',
+                    value: 'some key|hello world'
+                });
+                expect(spyStatusChangeEvent).toHaveReceivedEventDetail({
+                    name: 'fieldName',
+                    status: { dotPristine: false, dotTouched: true, dotValid: true }
+                });
+            });
+
+            it('shoult emit on remove', async () => {
+                element.setAttribute('value', 'first key|first value,second key|second value');
+                const list = await getList();
+                list.triggerEvent('delete', {
+                    detail: 1
+                });
+                await page.waitForChanges();
+
+                expect(spyValueChangeEvent).toHaveReceivedEventDetail({
+                    fieldType: '',
+                    name: 'fieldName',
+                    value: 'first key|first value'
+                });
+                expect(spyStatusChangeEvent).toHaveReceivedEventDetail({
+                    name: 'fieldName',
+                    status: { dotPristine: false, dotTouched: true, dotValid: true }
+                });
+            });
+        });
+    });
+
+    describe('@Methods', () => {
+        beforeEach(async () => {
+            element.setAttribute('name', 'fieldName');
+            element.setAttribute('required', true);
+            spyValueChangeEvent = await page.spyOnEvent('valueChange');
+            spyStatusChangeEvent = await page.spyOnEvent('statusChange');
+        });
+
+        describe('reset', () => {
+            it('should clear the field and emit', async () => {
+                element.setAttribute('value', 'first key|first value,second key|second value');
+                await page.waitForChanges();
+
+                element.callMethod('reset');
+                await page.waitForChanges();
+
+                expect(spyValueChangeEvent).toHaveReceivedEventDetail({
+                    fieldType: '',
+                    name: 'fieldName',
+                    value: ''
+                });
+                expect(spyStatusChangeEvent).toHaveReceivedEventDetail({
+                    name: 'fieldName',
+                    status: { dotPristine: false, dotTouched: true, dotValid: false }
+                });
+            });
         });
     });
 });

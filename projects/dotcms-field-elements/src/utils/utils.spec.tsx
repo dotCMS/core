@@ -133,12 +133,12 @@ describe('getTagError', () => {
 
 describe('getTagHint', () => {
     it('should return Hint tag', () => {
-        const jsxTag: any = getTagHint('Hint', '@@some***Name##123');
-        expect(jsxTag.vattrs).toEqual({ class: 'dot-field__hint', id: 'hint-somename123' });
-        expect(jsxTag.vchildren).toEqual([{ vtext: 'Hint' }]);
+        const jsxTag: any = getTagHint('this is a hint');
+        expect(jsxTag.vattrs).toEqual({ class: 'dot-field__hint', id: 'hint-this-is-a-hint' });
+        expect(jsxTag.vchildren).toEqual([{ vtext: 'this is a hint' }]);
     });
     it('should not return Hint tag', () => {
-        expect(getTagHint('', 'someName')).toBeNull();
+        expect(getTagHint('')).toBeNull();
     });
 });
 

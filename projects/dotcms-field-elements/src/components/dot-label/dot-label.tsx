@@ -13,13 +13,22 @@ import { getLabelId } from '../../utils';
 })
 export class DotLabelComponent {
     /** (optional) Field name */
-    @Prop({ reflectToAttr: true }) name = '';
+    @Prop({
+        reflectToAttr: true
+    })
+    name = '';
 
     /** (optional) Text to be rendered */
-    @Prop({ reflectToAttr: true }) label = '';
+    @Prop({
+        reflectToAttr: true
+    })
+    label = '';
 
     /** (optional) Determine if it is mandatory */
-    @Prop({ reflectToAttr: true }) required = false;
+    @Prop({
+        reflectToAttr: true
+    })
+    required = false;
 
     render() {
         return (

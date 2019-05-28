@@ -132,7 +132,7 @@ export class DotTimeComponent {
                         step={this.step}
                     />
                 </dot-label>
-                {getTagHint(this.hint, this.name)}
+                {getTagHint(this.hint)}
                 {this.errorMessageElement}
             </Fragment>
         );

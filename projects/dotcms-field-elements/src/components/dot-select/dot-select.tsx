@@ -113,7 +113,7 @@ export class DotSelectComponent {
                         })}
                     </select>
                 </dot-label>
-                {getTagHint(this.hint, this.name)}
+                {getTagHint(this.hint)}
                 {getTagError(!this.isValid(), this.requiredMessage)}
             </Fragment>
         );
