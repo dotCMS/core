@@ -114,8 +114,8 @@ repositories {
             excludeGroup "org.aspectj"
         }
     }*/
-    maven { url "http://repo.dotcms.com/artifactory/libs-release" }
-    maven { url "http://repo.dotcms.com/artifactory/libs-snapshot-local" }
+    maven { url "https://repo.dotcms.com/artifactory/libs-release" }
+    maven { url "https://repo.dotcms.com/artifactory/libs-snapshot-local" }
 
 }
 
