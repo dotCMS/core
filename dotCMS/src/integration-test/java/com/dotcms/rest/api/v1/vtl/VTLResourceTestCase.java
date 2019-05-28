@@ -1,6 +1,6 @@
 package com.dotcms.rest.api.v1.vtl;
 
-import com.dotcms.repackage.javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.MultivaluedMap;
 import com.dotcms.rest.api.v1.vtl.VTLResourceIntegrationTest.ResourceMethod;
 
 import java.io.File;

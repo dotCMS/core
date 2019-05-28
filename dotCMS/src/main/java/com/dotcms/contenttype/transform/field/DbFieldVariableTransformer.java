@@ -7,7 +7,7 @@ import java.util.Map;
 
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
-import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableList;
 import com.dotmarketing.business.DotStateException;
 
 public class DbFieldVariableTransformer {

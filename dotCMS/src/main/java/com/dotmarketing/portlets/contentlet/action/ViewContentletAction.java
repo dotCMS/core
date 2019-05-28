@@ -17,7 +17,7 @@ import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
-import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableList;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
 import com.dotcms.repackage.javax.portlet.RenderRequest;
 import com.dotcms.repackage.javax.portlet.RenderResponse;
@@ -142,10 +142,10 @@ public class ViewContentletAction extends DotPortletAction {
     Map<String, String> initParams = (Map<String, String>) request.getAttribute("initParams");
 
     ContentTypeAPI contentTypeApi = APILocator.getContentTypeAPI(PortalUtil.getUser(request));
-    final List<ContentType> contentTypesList = new ArrayList<>();
     List<BaseContentType> baseTypes = resolveBaseTypes(request);
 
     if (baseTypes.size() > 0) {
+      final List<ContentType> contentTypesList = new ArrayList<>();
       for (BaseContentType type : baseTypes) {
         contentTypesList.addAll(contentTypeApi.findByType(type));
       }
@@ -163,7 +163,7 @@ public class ViewContentletAction extends DotPortletAction {
             contentTypeList.add(contentType);
           }
       }
-      request.setAttribute("contentTypesJs", buildJsArray(contentTypesList));
+      request.setAttribute("contentTypesJs", buildJsArray(contentTypeList));
       return contentTypeList;
     }
 

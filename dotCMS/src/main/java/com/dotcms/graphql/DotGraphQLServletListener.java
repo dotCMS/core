@@ -1,6 +1,6 @@
 package com.dotcms.graphql;
 
-import com.dotcms.repackage.javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotmarketing.util.Logger;
 

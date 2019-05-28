@@ -1,6 +1,6 @@
 package com.dotmarketing.servlets.ajax;
 
-import com.dotcms.repackage.javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response;
 import com.dotcms.rest.WebResource;
 import java.io.BufferedReader;
 import java.io.IOException;

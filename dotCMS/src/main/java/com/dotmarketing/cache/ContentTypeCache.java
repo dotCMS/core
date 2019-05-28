@@ -19,10 +19,10 @@ public abstract class ContentTypeCache extends ContentTypeCache2Impl {
 
     public abstract void add(Structure st);
 
+    @Deprecated
     public abstract Structure getStructureByInode(String inode);
 
-
-
+    @Deprecated
     public abstract Structure getStructureByVelocityVarName(String variableName);
 
     @Deprecated
@@ -39,8 +39,6 @@ public abstract class ContentTypeCache extends ContentTypeCache2Impl {
     public abstract boolean hasStructureByInode(String inode);
 
     public abstract void remove(Structure st);
-
-
 
     public abstract void addRecents(Structure.Type type, User user, int nRecents, Collection<Map<String, Object>> recents);
 

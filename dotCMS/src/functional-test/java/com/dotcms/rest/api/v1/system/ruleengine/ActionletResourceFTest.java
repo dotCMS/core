@@ -1,17 +1,16 @@
 package com.dotcms.rest.api.v1.system.ruleengine;
 
+import static org.junit.Assert.assertTrue;
+
 import com.dotcms.LicenseTestUtil;
-import com.dotcms.repackage.javax.ws.rs.client.WebTarget;
-import com.dotcms.repackage.javax.ws.rs.core.MediaType;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
-import org.junit.BeforeClass;
-import org.junit.Test;
 import com.dotcms.rest.api.FunctionalTestConfig;
 import com.dotmarketing.util.json.JSONException;
-
-
-import static org.junit.Assert.assertTrue;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 /**
  * Created by Oscar Arrieta on 9/21/15.

@@ -1,10 +1,10 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render.page;
 
-import com.dotcms.repackage.com.fasterxml.jackson.core.JsonGenerator;
-import com.dotcms.repackage.com.fasterxml.jackson.core.JsonProcessingException;
-import com.dotcms.repackage.com.fasterxml.jackson.databind.JsonSerializer;
-import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectWriter;
-import com.dotcms.repackage.com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.databind.SerializerProvider;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
