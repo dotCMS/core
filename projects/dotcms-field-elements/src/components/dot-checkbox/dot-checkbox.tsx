@@ -9,7 +9,8 @@ import {
     getErrorClass,
     getDotOptionsFromFieldValue,
     updateStatus,
-    checkProp
+    checkProp,
+    getId
 } from '../../utils';
 
 @Component({
@@ -38,7 +39,7 @@ export class DotCheckboxComponent {
     @Prop() required = false;
 
     /** (optional) Text that will be shown when required is set and condition is not met */
-    @Prop() requiredMessage = '';
+    @Prop() requiredMessage = `This field is required`;
 
     /** Value set from the checkbox option */
     @Prop({ mutable: true }) value = '';
@@ -91,6 +92,7 @@ export class DotCheckboxComponent {
                                 <label>
                                     <input
                                         class={getErrorClass(this.isValid())}
+                                        id={getId(this.name)}
                                         type="checkbox"
                                         disabled={this.disabled || null}
                                         checked={this.value.indexOf(trimmedValue) >= 0 || null}

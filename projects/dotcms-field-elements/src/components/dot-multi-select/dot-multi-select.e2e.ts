@@ -29,7 +29,32 @@ describe('dot-multi-select', () => {
                 expect(element).toHaveClasses(dotTestUtil.class.filled);
             });
 
-            it('should be invalid, touched & dirty when no option set', async () => {
+            it('should be valid, touched, dirty & required when picked an option', async () => {
+                await page.setContent(`
+                    <dot-multi-select
+                        options="|,valueA|1,valueB|2"
+                        required
+                        value="2">
+                    </dot-multi-select>`);
+                const options = await getOptions(page);
+                await options[1].click();
+                await page.waitForChanges();
+                element = await page.find('dot-multi-select');
+                expect(element).toHaveClasses(dotTestUtil.class.filledRequired);
+            });
+
+            it('should be valid, untouched, pristine & required when loaded', async () => {
+                await page.setContent(`
+                    <dot-multi-select
+                        options="|,valueA|1,valueB|2"
+                        required
+                        value="2">
+                    </dot-multi-select>`);
+                element = await page.find('dot-multi-select');
+                expect(element).toHaveClasses(dotTestUtil.class.filledRequiredPristine);
+            });
+
+            it('should be required, invalid, touched & dirty when no option set', async () => {
                 await page.setContent(`
                     <dot-multi-select
                         options="|,valueA|1,valueB|2"
@@ -39,7 +64,18 @@ describe('dot-multi-select', () => {
                 element = await page.find('dot-multi-select');
                 await page.select('select', '');
                 await page.waitForChanges();
-                expect(element).toHaveClasses([...dotTestUtil.class.emptyRequired, 'dot-required']);
+                expect(element).toHaveClasses(dotTestUtil.class.emptyRequired);
+            });
+
+            it('should be invalid, untouched, pristine & required when no option set on load', async () => {
+                await page.setContent(`
+                    <dot-multi-select
+                        options="|,valueA|1,valueB|2"
+                        required="true">
+                    </dot-multi-select>`);
+                element = await page.find('dot-multi-select');
+                await page.waitForChanges();
+                expect(element).toHaveClasses(dotTestUtil.class.emptyRequiredPristine);
             });
 
             it('should be pristine, untouched & valid when loaded with no options', async () => {
@@ -373,6 +409,7 @@ describe('dot-multi-select', () => {
 
             it('should set first select value', async () => {
                 await element.callMethod('reset');
+                await page.waitForChanges();
                 const optionElements = await getOptions(page);
                 expect(await optionElements[0].getProperty('selected')).toBe(true);
                 expect(await optionElements[1].getProperty('selected')).toBe(false);

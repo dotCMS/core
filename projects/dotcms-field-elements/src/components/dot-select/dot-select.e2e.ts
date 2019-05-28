@@ -28,6 +28,31 @@ describe('dot-select', () => {
             expect(element).toHaveClasses(dotTestUtil.class.filled);
         });
 
+        it('should be required, valid, touched & dirty when picked an option', async () => {
+            await page.setContent(`
+                <dot-select
+                    options="|,valueA|1,valueB|2"
+                    value="2"
+                    required="true">
+                </dot-select>`);
+            await page.select('select', '1');
+            await page.waitForChanges();
+            element = await page.find('dot-select');
+            expect(element).toHaveClasses(dotTestUtil.class.filledRequired);
+        });
+
+        it('should be required, valid, untouched & pristine when picked an option', async () => {
+            await page.setContent(`
+                <dot-select
+                    options="|,valueA|1,valueB|2"
+                    value="2"
+                    required="true">
+                </dot-select>`);
+            await page.waitForChanges();
+            element = await page.find('dot-select');
+            expect(element).toHaveClasses(dotTestUtil.class.filledRequiredPristine);
+        });
+
         it('should be invalid, touched & dirty when no option set', async () => {
             await page.setContent(`
             <dot-select
@@ -38,7 +63,18 @@ describe('dot-select', () => {
             element = await page.find('dot-select');
             await page.select('select', '');
             await page.waitForChanges();
-            expect(element).toHaveClasses([...dotTestUtil.class.emptyRequired, 'dot-required']);
+            expect(element).toHaveClasses(dotTestUtil.class.emptyRequired);
+        });
+
+        it('should be invalid, untouched & pristine when loaded and no option set', async () => {
+            await page.setContent(`
+            <dot-select
+                options="|,valueA|1,valueB|2"
+                required="true">
+            </dot-select>`);
+            element = await page.find('dot-select');
+            await page.waitForChanges();
+            expect(element).toHaveClasses(dotTestUtil.class.emptyRequiredPristine);
         });
 
         it('should be pristine, untouched & valid', async () => {
