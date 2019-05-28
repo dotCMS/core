@@ -16,7 +16,8 @@ const PROP_VALIDATION_HANDLING = {
     regexCheck: regexValidator,
     step: stringValidator,
     string: stringValidator,
-    time: timeValidator
+    time: timeValidator,
+    type: stringValidator
 };
 
 const FIELDS_DEFAULT_VALUE = {
@@ -25,7 +26,8 @@ const FIELDS_DEFAULT_VALUE = {
     value: '',
     min: '',
     max: '',
-    step: ''
+    step: '',
+    type: 'text'
 };
 
 function validateProp<PropType>(

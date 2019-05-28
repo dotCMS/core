@@ -30,3 +30,7 @@ export interface DotCMSKeyValueField extends DotCMSContentTypeField {
     valuePlaceholder?: string;
     saveBtnLabel?: string;
 }
+
+export interface DotCMSTextFieldField extends DotCMSContentTypeField {
+    type?: string;
+}

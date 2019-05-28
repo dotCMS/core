@@ -2,11 +2,12 @@ import {
     DotCMSContentTypeField,
     DotCMSDateField,
     DotCMSKeyValueField,
-    DotCMSMultiSelectField
+    DotCMSMultiSelectField,
+    DotCMSTextFieldField
 } from '../../models';
 
 export const DotFormFields = {
-    Text: (field: DotCMSContentTypeField) => (
+    Text: (field: DotCMSTextFieldField) => (
         <dot-textfield
             disabled={field.disabled}
             label={field.name}
@@ -18,6 +19,7 @@ export const DotFormFields = {
             value={field.defaultValue}
             required={field.required}
             required-message={field.requiredMessage}
+            type={field.type}
         />
     ),
 
@@ -177,5 +179,5 @@ export const DotFormFields = {
             required={field.required}
             required-message={field.requiredMessage}
         />
-    ),
+    )
 };
