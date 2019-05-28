@@ -271,9 +271,12 @@ public class RelationshipAPITest extends IntegrationTestBase {
         //Check old relationship does not exists
         assertNull(relationshipAPI.byInode(relationship.getInode()));
 
+        final Relationship newRelationship = relationshipAPI
+                .byContentType(contentletParent.getContentType()).get(0);
+
         //Check Content is still related
         relatedContent = APILocator.getContentletAPI()
-                .getRelatedContent(contentletParent, relationship, user, false);
+                .getRelatedContent(contentletParent, newRelationship, user, false);
         assertNotNull(relatedContent);
         assertEquals(relationshipList.size(), relatedContent.size());
 
