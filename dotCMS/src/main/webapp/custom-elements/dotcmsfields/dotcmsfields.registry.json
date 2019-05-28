@@ -2,67 +2,97 @@
   "namespace": "dotcmsFields",
   "fsNamespace": "dotcmsfields",
   "loader": "../dotcmsfields.js",
-  "core": "dotcmsfields.d5kwydai.js",
-  "corePolyfilled": "dotcmsfields.mlvirq5c.js",
+  "core": "dotcmsfields.6kizh6ff.js",
+  "corePolyfilled": "dotcmsfields.1jwalvwy.js",
   "components": {
+    "dot-autocomplete": {
+      "bundleIds": {
+        "$": "akcehuoc"
+      }
+    },
     "dot-checkbox": {
       "bundleIds": {
-        "$": "gkca00av"
+        "$": "hvthoely"
+      }
+    },
+    "dot-chip": {
+      "bundleIds": {
+        "$": "akcehuoc"
       }
     },
     "dot-date": {
       "bundleIds": {
-        "$": "gkca00av"
+        "$": "hvthoely"
+      }
+    },
+    "dot-date-range": {
+      "bundleIds": {
+        "$": "hvthoely"
+      }
+    },
+    "dot-date-time": {
+      "bundleIds": {
+        "$": "hvthoely"
       }
     },
     "dot-form": {
       "bundleIds": {
-        "$": "gkca00av"
+        "$": "hvthoely"
       }
     },
     "dot-input-calendar": {
       "bundleIds": {
-        "$": "cywl4q5t"
+        "$": "vv1fstd3"
       }
     },
     "dot-key-value": {
       "bundleIds": {
-        "$": "yfo5lmlg"
+        "$": "y5eglwug"
+      }
+    },
+    "dot-label": {
+      "bundleIds": {
+        "$": "vv1fstd3"
       }
     },
     "dot-multi-select": {
       "bundleIds": {
-        "$": "gkca00av"
+        "$": "hvthoely"
       }
     },
     "dot-radio": {
       "bundleIds": {
-        "$": "gkca00av"
+        "$": "hvthoely"
       }
     },
     "dot-select": {
       "bundleIds": {
-        "$": "gkca00av"
+        "$": "hvthoely"
+      }
+    },
+    "dot-tags": {
+      "bundleIds": {
+        "$": "akcehuoc"
       }
     },
     "dot-textarea": {
       "bundleIds": {
-        "$": "gkca00av"
+        "$": "hvthoely"
       }
     },
     "dot-textfield": {
       "bundleIds": {
-        "$": "gkca00av"
+        "$": "hvthoely"
       }
     },
     "dot-time": {
       "bundleIds": {
-        "$": "gkca00av"
+        "$": "hvthoely"
       }
     },
     "key-value-table": {
       "bundleIds": {
-        "$": "yfo5lmlg"
+        "$": "y5eglwug"
       }
     }
   }

@@ -1,22 +1,17 @@
 package com.dotmarketing.cms.urlmap;
 
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static org.jgroups.util.Util.assertEquals;
 import static org.jgroups.util.Util.assertFalse;
-import static org.mockito.Mockito.mock;
 
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.PageMode;
 import com.liferay.portal.model.User;
-
 import java.util.List;
 import java.util.Optional;
-
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;

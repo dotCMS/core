@@ -1043,33 +1043,32 @@ public class ContentResource {
         return multipartPUTandPOST(request, response, multipart, params, "POST");
     }
 
-    private Response multipartPUTandPOST(HttpServletRequest request, HttpServletResponse response,
-            FormDataMultiPart multipart, String params, String method)
+    private Response multipartPUTandPOST(final HttpServletRequest request,final HttpServletResponse response,
+            final FormDataMultiPart multipart, final String params, final String method)
             throws URISyntaxException, DotDataException {
 
-        InitDataObject init = webResource.init(params, true, request, false, null);
-        Contentlet contentlet = new Contentlet();
+        final InitDataObject init = webResource.init(params, true, request, false, null);
+        final Contentlet contentlet = new Contentlet();
         setRequestMetadata(contentlet, request);
 
-        Map<String, Object> map = new HashMap<String, Object>();
-        List<String> usedBinaryFields = new ArrayList<String>();
+        final Map<String, Object> map = new HashMap<>();
+        final List<String> usedBinaryFields = new ArrayList<>();
+        final List<String> binaryFields = new ArrayList<>();
         String binaryFieldsInput = null;
-        List<String> binaryFields = new ArrayList<>();
 
-        for (BodyPart part : multipart.getBodyParts()) {
-            ContentDisposition cd = part.getContentDisposition();
-            String name = cd != null && cd.getParameters().containsKey("name") ? cd.getParameters()
-                    .get("name") : "";
+        for (final BodyPart part : multipart.getBodyParts()) {
 
-            if (part.getMediaType().equals(MediaType.APPLICATION_JSON_TYPE) || name
-                    .equals("json")) {
+            final ContentDisposition contentDisposition = part.getContentDisposition();
+            final String name = contentDisposition != null && contentDisposition.getParameters().containsKey("name") ? contentDisposition.getParameters().get("name") : "";
+            final MediaType mediaType = part.getMediaType();
+
+            if (mediaType.equals(MediaType.APPLICATION_JSON_TYPE) || name.equals("json")) {
                 try {
                     processJSON(contentlet, part.getEntityAs(InputStream.class));
                     try {
-                        binaryFieldsInput =
-                            webResource.processJSON(part.getEntityAs(InputStream.class)).get("binary_fields")
-                                .toString();
+                        binaryFieldsInput = WebResource.processJSON(part.getEntityAs(InputStream.class)).get("binary_fields").toString();
                     } catch (NullPointerException npe) {
+                      //empty on purpose
                     }
                     if (UtilMethods.isSet(binaryFieldsInput)) {
                         if (!binaryFieldsInput.contains(",")) {
@@ -1084,23 +1083,20 @@ public class ContentResource {
 
                     Logger.error(this.getClass(), "Error processing JSON for Stream", e);
 
-                    Response.ResponseBuilder responseBuilder = Response
-                            .status(HttpStatus.SC_BAD_REQUEST);
+                    Response.ResponseBuilder responseBuilder = Response.status(HttpStatus.SC_BAD_REQUEST);
                     responseBuilder.entity(e.getMessage());
                     return responseBuilder.build();
                 } catch (IOException e) {
 
                     Logger.error(this.getClass(), "Error processing Stream", e);
 
-                    Response.ResponseBuilder responseBuilder = Response
-                            .status(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                    Response.ResponseBuilder responseBuilder = Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR);
                     responseBuilder.entity(e.getMessage());
                     return responseBuilder.build();
                 } catch (DotSecurityException e) {
                     throw new ForbiddenException(e);
                 }
-            } else if (part.getMediaType().equals(MediaType.APPLICATION_XML_TYPE) || name
-                    .equals("xml")) {
+            } else if (mediaType.equals(MediaType.APPLICATION_XML_TYPE) || name.equals("xml")) {
                 try {
                     processXML(contentlet, part.getEntityAs(InputStream.class));
                 } catch (Exception e) {
@@ -1111,34 +1107,44 @@ public class ContentResource {
                     }
                     Logger.error(this.getClass(), "Error processing Stream", e);
 
-                    Response.ResponseBuilder responseBuilder = Response
-                            .status(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                    Response.ResponseBuilder responseBuilder = Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR);
                     responseBuilder.entity(e.getMessage());
                     return responseBuilder.build();
                 }
-            } else if (part.getMediaType().equals(MediaType.APPLICATION_FORM_URLENCODED_TYPE)
-                    || name.equals("urlencoded")) {
+            } else if (mediaType.equals(MediaType.APPLICATION_FORM_URLENCODED_TYPE) || name.equals("urlencoded")) {
                 try {
                     processForm(contentlet, part.getEntityAs(InputStream.class));
                 } catch (Exception e) {
                     Logger.error(this.getClass(), "Error processing Stream", e);
 
-                    Response.ResponseBuilder responseBuilder = Response
-                            .status(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                    Response.ResponseBuilder responseBuilder = Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR);
                     responseBuilder.entity(e.getMessage());
                     return responseBuilder.build();
                 }
-            } else if (part.getContentDisposition() != null) {
-
+            } else if(mediaType.equals(MediaType.TEXT_PLAIN_TYPE)) {
                 try {
+                    map.put(name, part.getEntityAs(String.class));
+                    processMap( contentlet, map );
 
+                    if(null != contentDisposition && UtilMethods.isSet(contentDisposition.getFileName())){
+                        processFile(contentlet, usedBinaryFields, binaryFields, part);
+                    }
+
+                } catch (Exception e) {
+                    Logger.error( this.getClass(), "Error processing Plain Tex", e );
+
+                    Response.ResponseBuilder responseBuilder = Response.status( HttpStatus.SC_INTERNAL_SERVER_ERROR );
+                    responseBuilder.entity( e.getMessage() );
+                    return responseBuilder.build();
+                }
+            } else if (null != contentDisposition) {
+                try {
                     this.processFile(contentlet, usedBinaryFields, binaryFields, part);
                 } catch (IOException e) {
 
                     Logger.error(this.getClass(), "Error processing Stream", e);
 
-                    Response.ResponseBuilder responseBuilder = Response
-                            .status(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                    Response.ResponseBuilder responseBuilder = Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR);
                     responseBuilder.entity(e.getMessage());
                     return responseBuilder.build();
                 } catch (DotSecurityException e) {
@@ -1172,13 +1178,12 @@ public class ContentResource {
                 APILocator.getContentTypeAPI(APILocator.systemUser()).
                         find(contentlet.getContentType().inode()).fields())
                 .asOldFieldList();
-        for (final Field ff : fields) {
+        for (final Field field : fields) {
             // filling binaries in order. as they come / as field order says
-            final String fieldName = ff.getFieldContentlet();
-            if (fieldName.startsWith("binary")
-                    && !usedBinaryFields.contains(fieldName)) {
+            final String fieldName = field.getFieldContentlet();
+            if (fieldName.startsWith("binary") && !usedBinaryFields.contains(fieldName)) {
 
-                String fieldVarName = ff.getVelocityVarName();
+                String fieldVarName = field.getVelocityVarName();
                 if (binaryFields.size() > 0) {
                     fieldVarName = binaryFields.remove(0);
                 }
