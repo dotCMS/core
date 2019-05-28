@@ -1,6 +1,6 @@
 package com.dotcms.rest.exception.mapper;
 
-import com.dotcms.repackage.javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response;
 import com.dotmarketing.util.SecurityLogger;
 
 /**
@@ -9,7 +9,7 @@ import com.dotmarketing.util.SecurityLogger;
  * @param <T>  <T> Exception class to mapper
  */
 public abstract class DotExceptionMapper<T extends Throwable>
-        implements com.dotcms.repackage.javax.ws.rs.ext.ExceptionMapper<T> {
+        implements javax.ws.rs.ext.ExceptionMapper<T> {
 
     @Override
     public Response toResponse(final T exception) {

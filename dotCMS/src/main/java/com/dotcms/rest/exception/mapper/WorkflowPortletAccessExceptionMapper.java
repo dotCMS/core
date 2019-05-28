@@ -1,6 +1,6 @@
 package com.dotcms.rest.exception.mapper;
 
-import com.dotcms.repackage.javax.ws.rs.ext.Provider;
+import javax.ws.rs.ext.Provider;
 import com.dotmarketing.portlets.workflows.business.WorkflowPortletAccessException;
 
 /**

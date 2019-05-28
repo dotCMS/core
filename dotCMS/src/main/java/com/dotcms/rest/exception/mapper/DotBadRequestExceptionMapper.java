@@ -1,6 +1,6 @@
 package com.dotcms.rest.exception.mapper;
 
-import com.dotcms.repackage.javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response;
 
 /**
  * Mapper for all the exceptions that represent a BadRequest
