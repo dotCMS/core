@@ -110,14 +110,13 @@ public abstract class AbstractIntegrityChecker implements IntegrityChecker {
      */
     private void discardConflicts(final String endpointId, IntegrityType type)
             throws DotDataException {
-        DotConnect dc = new DotConnect();
+
         final String resultsTableName = type.getResultsTableName();
-        try {
-            dc.executeStatement("delete from " + resultsTableName + " where endpoint_id = '"
-                    + endpointId + "'");
-        } catch (SQLException e) {
-            throw new DotDataException(e.getMessage(), e);
-        }
+        DotConnect dc = new DotConnect();
+        dc.setSQL("delete from " + resultsTableName + " where endpoint_id = ?")
+        .addParam(endpointId)
+        .loadResult();
+
     }
 
     /**
