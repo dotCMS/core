@@ -44,6 +44,22 @@ describe('getDotOptionsFromFieldValue', () => {
         expect(items).toEqual([{ label: 'key1', value: 'A' }, { label: 'key2', value: 'B' }]);
     });
 
+    it('should support \r\n as option splitter', () => {
+        const items = getDotOptionsFromFieldValue('key1|A\r\nkey2|B');
+        expect(items.length).toBe(2);
+        expect(items).toEqual([{ label: 'key1', value: 'A' }, { label: 'key2', value: 'B' }]);
+    });
+
+    it('should support \r\n and semicolon as option splitter', () => {
+        const items = getDotOptionsFromFieldValue('key1|A\r\nkey2|B,key3|C');
+        expect(items.length).toBe(3);
+        expect(items).toEqual([
+            { label: 'key1', value: 'A' },
+            { label: 'key2', value: 'B' },
+            { label: 'key3', value: 'C' }
+        ]);
+    });
+
     it('should empty array when invalid format', () => {
         const items = getDotOptionsFromFieldValue('key1A, key2/B, @');
         expect(items.length).toBe(0);

@@ -59,7 +59,7 @@ export const DotFormFields = {
             options={field.values}
             required={field.required}
             required-message={field.requiredMessage}
-            size={+field.size}
+            size={field.size}
             value={field.defaultValue}
         />
     ),

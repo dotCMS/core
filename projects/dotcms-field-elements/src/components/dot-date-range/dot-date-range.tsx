@@ -129,22 +129,24 @@ export class DotDateRangeComponent {
         return (
             <Fragment>
                 <dot-label label={this.label} required={this.required} name={this.name}>
-                    <input
-                        class={getErrorClass(this.status.dotValid)}
-                        disabled={this.isDisabled()}
-                        id={getId(this.name)}
-                        required={this.required || null}
-                        type="text"
-                        value={this.value}
-                    />
-                    <label>
-                        {this.presetLabel}
-                        <select disabled={this.isDisabled()} onChange={this.setPreset.bind(this)}>
-                            {this.presets.map((item) => {
-                                return <option value={item.days}>{item.label}</option>;
-                            })}
-                        </select>
-                    </label>
+                    <div class="dot-range__body">
+                        <input
+                            class={getErrorClass(this.status.dotValid)}
+                            disabled={this.isDisabled()}
+                            id={getId(this.name)}
+                            required={this.required || null}
+                            type="text"
+                            value={this.value}
+                        />
+                        <label>
+                            {this.presetLabel}
+                            <select disabled={this.isDisabled()} onChange={this.setPreset.bind(this)}>
+                                {this.presets.map((item) => {
+                                    return <option value={item.days}>{item.label}</option>;
+                                })}
+                            </select>
+                        </label>
+                    </div>
                 </dot-label>
                 {getTagHint(this.hint)}
                 {getTagError(this.showErrorMessage(), this.getErrorMessage())}

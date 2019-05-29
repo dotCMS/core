@@ -31,6 +31,8 @@ export function getClassNames(
  * @returns {DotOption[]}
  */
 export function getDotOptionsFromFieldValue(rawString: string): DotOption[] {
+    rawString = rawString.replace(/(?:\\[rn]|[\r\n]+)+/g, ',');
+
     const items = isKeyPipeValueFormatValid(rawString) ? rawString
         .split(',')
         .filter((item) => !!item.length)

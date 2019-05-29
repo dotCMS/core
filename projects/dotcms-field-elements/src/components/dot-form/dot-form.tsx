@@ -58,10 +58,10 @@ export class DotFormComponent {
 
     @Event() onSubmit: EventEmitter;
 
-    @Prop({ mutable: true }) fields: DotCMSContentTypeField[] = [];
     @Prop() fieldsToShow: string[] = [];
     @Prop() resetLabel = 'Reset';
     @Prop() submitLabel = 'Submit';
+    @Prop({ mutable: true }) fields: DotCMSContentTypeField[] = [];
     @Prop({ mutable: true }) value = {};
 
     @State() status: DotFieldStatus = getOriginalStatus();

@@ -16,7 +16,7 @@
 | `options`         | `options`          | Value/Label dropdown options separated by comma, to be formatted as: Value\|Label | `string`  | `''`                       |
 | `required`        | `required`         | (optional) Determine if it is mandatory                                           | `boolean` | `false`                    |
 | `requiredMessage` | `required-message` | (optional) Text that will be shown when required is set and condition is not met  | `string`  | ``This field is required`` |
-| `size`            | `size`             | (optional) Size number of the multi-select dropdown (default=3)                   | `number`  | `3`                        |
+| `size`            | `size`             | (optional) Size number of the multi-select dropdown (default=3)                   | `string`  | `'3'`                      |
 | `value`           | `value`            | Value set from the dropdown option                                                | `string`  | `''`                       |
 
 

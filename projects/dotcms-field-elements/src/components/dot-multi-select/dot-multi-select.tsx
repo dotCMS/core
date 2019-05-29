@@ -48,7 +48,7 @@ export class DotMultiSelectComponent {
     @Prop() requiredMessage = `This field is required`;
 
     /** (optional) Size number of the multi-select dropdown (default=3) */
-    @Prop({ reflectToAttr: true }) size = 3;
+    @Prop({ reflectToAttr: true }) size = '3';
 
     /** Value set from the dropdown option */
     @Prop({ mutable: true, reflectToAttr: true }) value = '';
