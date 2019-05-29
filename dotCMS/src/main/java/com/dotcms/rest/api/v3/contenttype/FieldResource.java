@@ -3,6 +3,7 @@ package com.dotcms.rest.api.v3.contenttype;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.layout.FieldLayout;
+import com.dotcms.contenttype.model.field.layout.FieldLayoutRow;
 import com.dotcms.contenttype.model.type.ContentType;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
@@ -26,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.map;
@@ -189,26 +191,29 @@ public class FieldResource {
     @Path("/move")
     public Response moveFields(
             @PathParam("typeIdOrVarName") final String typeIdOrVarName,
-            final UpdateFieldsForm updateFieldsForm,
+            final MoveFieldsForm moveFieldsForm,
             @Context final HttpServletRequest req)
             throws DotDataException, DotSecurityException {
 
         final InitDataObject initData =
                 this.webResource.init(null, true, req, true, null);
         final User user = initData.getUser();
+        final ContentType contentType = APILocator.getContentTypeAPI(user).find(typeIdOrVarName);
 
-        APILocator.getContentTypeAPI(user).find(typeIdOrVarName);
+        final List<Field> fieldsToUpdate = calculateSortOrder(moveFieldsForm.getRows());
 
-        final List<Field> fieldsToUpdate = calculateSortOrder(updateFieldsForm.getFields());
-        final FieldLayout fieldLayout = new FieldLayout(fieldsToUpdate);
-
-        fieldLayout.validate();
         fieldAPI.saveFields(fieldsToUpdate, user);
 
-        return Response.ok(new ResponseEntityView(fieldLayout.getRows())).build();
+        final List<Field> contentTypeFields = fieldAPI.byContentTypeId(contentType.id());
+        final FieldLayout fieldLayoutFromDB = new FieldLayout(contentTypeFields);
+        return Response.ok(new ResponseEntityView(fieldLayoutFromDB.getRows())).build();
     }
 
-    private List<Field> calculateSortOrder(final List<Field> fields) {
+    private List<Field> calculateSortOrder(final List<FieldLayoutRow> rows) {
+        final List<Field> fields = rows.stream()
+                .flatMap(row -> row.getAllFields().stream())
+                .collect(Collectors.toList());
+
         final List<Field> sortOrderFixFields = new ArrayList<>();
 
         for (int i = 0; i < fields.size(); i++) {

@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v3.contenttype;
 
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.*;
+import com.dotcms.contenttype.model.field.layout.FieldLayoutColumn;
 import com.dotcms.contenttype.model.field.layout.FieldLayoutRow;
 import com.dotcms.contenttype.model.field.layout.FieldLayoutValidationException;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -15,6 +16,7 @@ import com.dotcms.mock.request.MockSessionRequest;
 import javax.ws.rs.core.Response;
 
 import com.dotcms.rest.exception.NotFoundException;
+import com.dotcms.util.JsonArrayToLinkedSetConverter;
 import com.dotmarketing.util.json.JSONArray;
 import org.glassfish.jersey.internal.util.Base64;
 import com.dotcms.rest.ResponseEntityView;
@@ -28,13 +30,11 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotcms.util.CollectionsUtils.map;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -503,24 +503,23 @@ public class FieldResourceTest {
         type = APILocator.getContentTypeAPI(APILocator.systemUser()).save(type);
 
         final List<Field> fields = createFields(type);
-        final List<Field> fieldsMoved = list(fields.get(0), fields.get(1), fields.get(3), fields.get(2));
+        final List<FieldLayoutRow> rows =  this.getFieldLayoutRow(fields.get(0), fields.get(1),
+            new Field[]{fields.get(3), fields.get(2)});
 
-        final JsonFieldTransformer jsonFieldTransformer = new JsonFieldTransformer(fieldsMoved);
-
-        final UpdateFieldsForm form =
-                new UpdateFieldsForm.Builder().fields(jsonFieldTransformer.mapList())
+        final MoveFieldsForm form =
+                new MoveFieldsForm.Builder().layout(rows)
                         .build();
 
         final FieldResource fieldResource = new FieldResource();
         final Response contentTypeFields = fieldResource.moveFields(type.id(), form, getHttpRequest());
 
-        final List<FieldLayoutRow> rows =
+        final List<FieldLayoutRow> responseRows =
                 (List<FieldLayoutRow>) ((ResponseEntityView) contentTypeFields.getEntity()).getEntity();
 
-        assertEquals(1, rows.size());
-        assertEquals(1, rows.get(0).getColumns().size());
+        assertEquals(1, responseRows.size());
+        assertEquals(1, responseRows.get(0).getColumns().size());
 
-        final List<Field> columnFields = rows.get(0).getColumns().get(0).getFields();
+        final List<Field> columnFields = responseRows.get(0).getColumns().get(0).getFields();
         assertEquals(2, columnFields.size());
         assertEquals(fields.get(3).id(), columnFields.get(0).id());
         assertEquals(fields.get(2).id(), columnFields.get(1).id());
@@ -528,31 +527,16 @@ public class FieldResourceTest {
         final ContentType contentTypeFromDB = APILocator.getContentTypeAPI(APILocator.systemUser()).find(type.id());
         List<Field> fieldsFromDB = contentTypeFromDB.fields();
 
-        assertEquals(fieldsMoved.size(), fieldsFromDB.size());
-        for (int i = 0; i < fieldsFromDB.size(); i++) {
-            assertEquals(fieldsMoved.get(i).id(), fieldsFromDB.get(i).id());
-        }
-
+        assertEquals(fieldsFromDB.size(), 4);
+        assertEquals(((Field) rows.get(0).getDivider()).id(), fieldsFromDB.get(0).id());
+        assertEquals(rows.get(0).getColumns().get(0).getColumn().id(), fieldsFromDB.get(1).id());
+        assertEquals(rows.get(0).getColumns().get(0).getFields().get(0).id(), fieldsFromDB.get(2).id());
+        assertEquals(rows.get(0).getColumns().get(0).getFields().get(1).id(), fieldsFromDB.get(3).id());
     }
 
-    @Test(expected = FieldLayoutValidationException.class)
-    public void shouldThrowExceptionWhenMoveFieldsTurnIntoWronhLayout () throws DotSecurityException, DotDataException {
-        final String typeName="fieldResourceTest" + UUIDUtil.uuid();
-
-        ContentType type = ContentTypeBuilder.builder(SimpleContentType.class).name(typeName).build();
-        type = APILocator.getContentTypeAPI(APILocator.systemUser()).save(type);
-
-        final List<Field> fields = createFields(type);
-        final List<Field> fieldsMoved = list(fields.get(3), fields.get(0), fields.get(1), fields.get(2));
-
-        final JsonFieldTransformer jsonFieldTransformer = new JsonFieldTransformer(fieldsMoved);
-
-        final UpdateFieldsForm form =
-                new UpdateFieldsForm.Builder().fields(jsonFieldTransformer.mapList())
-                        .build();
-
-        final FieldResource fieldResource = new FieldResource();
-        fieldResource.moveFields(type.id(), form, getHttpRequest());
+    private List<FieldLayoutRow>  getFieldLayoutRow(final Field row, final Field column, final Field[] fields)  {
+        final FieldLayoutColumn fieldLayoutColumn = new FieldLayoutColumn((ColumnField) column, Arrays.asList(fields));
+        return list(new FieldLayoutRow((FieldDivider) row, list(fieldLayoutColumn)));
     }
 
     @Test(expected = NotFoundInDbException.class)
@@ -563,12 +547,11 @@ public class FieldResourceTest {
         type = APILocator.getContentTypeAPI(APILocator.systemUser()).save(type);
 
         final List<Field> fields = createFields(type);
-        final List<Field> fieldsMoved = list(fields.get(3), fields.get(0), fields.get(1), fields.get(2));
+        final List<FieldLayoutRow> rows =  this.getFieldLayoutRow(fields.get(0), fields.get(1),
+                new Field[]{fields.get(3), fields.get(2)});
 
-        final JsonFieldTransformer jsonFieldTransformer = new JsonFieldTransformer(fieldsMoved);
-
-        final UpdateFieldsForm form =
-                new UpdateFieldsForm.Builder().fields(jsonFieldTransformer.mapList())
+        final MoveFieldsForm form =
+                new MoveFieldsForm.Builder().layout(rows)
                         .build();
 
         final FieldResource fieldResource = new FieldResource();
