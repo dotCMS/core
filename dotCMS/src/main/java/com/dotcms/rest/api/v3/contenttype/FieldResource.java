@@ -1,15 +1,17 @@
 package com.dotcms.rest.api.v3.contenttype;
 
 import com.dotcms.contenttype.business.FieldAPI;
-import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.layout.FieldLayout;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.repackage.javax.ws.rs.*;
-import com.dotcms.repackage.javax.ws.rs.core.Context;
-import com.dotcms.repackage.javax.ws.rs.core.MediaType;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
+import javax.ws.rs.*;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+
+import com.dotcms.contenttype.model.field.layout.FieldUtil;
+import com.dotcms.rest.exception.NotFoundException;
+import org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -20,9 +22,12 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.model.User;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
+import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.map;
 
 /**
@@ -41,10 +46,107 @@ public class FieldResource {
     }
 
     /**
-     * Update a set of fields and return the new {@link ContentType}'s layout in the response
+     * Update a set of field and return the new {@link ContentType}'s layout in the response
+     *
+     * @param typeIdOrVarName
+     * @param fieldId
+     * @param updateFieldForm
+     * @param req
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @PUT
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
+    @Path("/{id}")
+    public Response updateField(
+            @PathParam("typeIdOrVarName") final String typeIdOrVarName,
+            @PathParam("id") final String fieldId,
+            final UpdateFieldForm updateFieldForm,
+            @Context final HttpServletRequest req)
+            throws DotDataException, DotSecurityException {
+
+        final InitDataObject initData =
+                this.webResource.init(null, true, req, true, null);
+        final User user = initData.getUser();
+
+        final Field fieldToUpdate = updateFieldForm.getField();
+        final ContentType contentType = APILocator.getContentTypeAPI(user).find(typeIdOrVarName);
+
+        checkFieldExists(fieldToUpdate, contentType);
+
+        final FieldLayout fieldLayout = new FieldLayout(contentType.fields());
+        final FieldLayout fieldLayoutUpdated = fieldLayout.update(list(fieldToUpdate));
+
+        fieldLayoutUpdated.validate();
+        fieldAPI.save(fieldToUpdate, user);
+
+        final List<Field> contentTypeFields = fieldAPI.byContentTypeId(contentType.id());
+        final FieldLayout fieldLayoutFromDB = new FieldLayout(contentTypeFields);
+
+        return Response.ok(new ResponseEntityView(fieldLayoutFromDB.getRows())).build();
+    }
+
+
+    /**
+     * Create a new field and return the new {@link ContentType}'s layout in the response
      *
      * @param typeIdOrVarName
      * @param updateFieldForm
+     * @param req
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @POST
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
+    public Response createField(
+            @PathParam("typeIdOrVarName") final String typeIdOrVarName,
+            final UpdateFieldForm updateFieldForm,
+            @Context final HttpServletRequest req)
+            throws DotDataException, DotSecurityException {
+
+        final InitDataObject initData =
+                this.webResource.init(null, true, req, true, null);
+        final User user = initData.getUser();
+
+        final Field fieldToUpdate = updateFieldForm.getField();
+        final ContentType contentType = APILocator.getContentTypeAPI(user).find(typeIdOrVarName);
+
+        final FieldLayout fieldLayout = new FieldLayout(contentType.fields());
+        final FieldLayout fieldLayoutUpdated = fieldLayout.update(list(fieldToUpdate));
+
+        fieldLayoutUpdated.validate();
+        fieldAPI.save(fieldToUpdate, user);
+
+        final List<Field> contentTypeFields = fieldAPI.byContentTypeId(contentType.id());
+        final FieldLayout fieldLayoutFromDB = new FieldLayout(contentTypeFields);
+
+        return Response.ok(new ResponseEntityView(fieldLayoutFromDB.getRows())).build();
+    }
+
+    private void checkFieldExists(Field fieldToUpdate, ContentType contentType) {
+        Optional<Field> optionalField = contentType.fields()
+                .stream()
+                .filter(field -> field.id().equals(fieldToUpdate.id()))
+                .findFirst();
+
+        if (!optionalField.isPresent()) {
+            throw new NotFoundException("Field does not exists");
+        }
+    }
+
+    /**
+     * Update a set of fields and return the new {@link ContentType}'s layout in the response
+     *
+     * @param typeIdOrVarName
+     * @param updateFieldsForm
      * @param req
      * @return
      * @throws DotDataException
@@ -57,7 +159,7 @@ public class FieldResource {
     @Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
     public Response updateFields(
             @PathParam("typeIdOrVarName") final String typeIdOrVarName,
-            final UpdateFieldForm updateFieldForm,
+            final UpdateFieldsForm updateFieldsForm,
             @Context final HttpServletRequest req)
                 throws DotDataException, DotSecurityException {
 
@@ -65,7 +167,7 @@ public class FieldResource {
                 this.webResource.init(null, true, req, true, null);
         final User user = initData.getUser();
 
-        final List<Field> fieldsToUpdate = updateFieldForm.getFields();
+        final List<Field> fieldsToUpdate = updateFieldsForm.getFields();
         final ContentType contentType = APILocator.getContentTypeAPI(user).find(typeIdOrVarName);
         final FieldLayout fieldLayout = new FieldLayout(contentType.fields());
         final FieldLayout fieldLayoutUpdated = fieldLayout.update(fieldsToUpdate);
@@ -77,6 +179,44 @@ public class FieldResource {
         final FieldLayout fieldLayoutFromDB = new FieldLayout(contentTypeFields);
 
         return Response.ok(new ResponseEntityView(fieldLayoutFromDB.getRows())).build();
+    }
+
+    @PUT
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
+    @Path("/move")
+    public Response moveFields(
+            @PathParam("typeIdOrVarName") final String typeIdOrVarName,
+            final UpdateFieldsForm updateFieldsForm,
+            @Context final HttpServletRequest req)
+            throws DotDataException, DotSecurityException {
+
+        final InitDataObject initData =
+                this.webResource.init(null, true, req, true, null);
+        final User user = initData.getUser();
+
+        APILocator.getContentTypeAPI(user).find(typeIdOrVarName);
+
+        final List<Field> fieldsToUpdate = calculateSortOrder(updateFieldsForm.getFields());
+        final FieldLayout fieldLayout = new FieldLayout(fieldsToUpdate);
+
+        fieldLayout.validate();
+        fieldAPI.saveFields(fieldsToUpdate, user);
+
+        return Response.ok(new ResponseEntityView(fieldLayout.getRows())).build();
+    }
+
+    private List<Field> calculateSortOrder(final List<Field> fields) {
+        final List<Field> sortOrderFixFields = new ArrayList<>();
+
+        for (int i = 0; i < fields.size(); i++) {
+            final Field field = fields.get(i);
+            sortOrderFixFields.add(FieldUtil.copyField(field, i));
+        }
+
+        return sortOrderFixFields;
     }
 
     /**

@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 /**
  * Util class that provide method to handle {@link Field}
  */
-class FieldUtil {
+public class FieldUtil {
 
     private FieldUtil() {}
 
@@ -188,7 +188,7 @@ class FieldUtil {
         return newFieldsWithSorOrder;
     }
 
-    private static Field copyField(final Field field, final int newSortOrder) {
+    public static Field copyField(final Field field, final int newSortOrder) {
         JsonFieldTransformer jsonFieldTransformer = new JsonFieldTransformer(field);
         final JSONObject jsonObject = jsonFieldTransformer.jsonObject();
 

@@ -6,41 +6,42 @@ import com.dotcms.contenttype.transform.field.JsonFieldTransformer;
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.dotmarketing.util.json.JSONArray;
+import com.dotmarketing.util.json.JSONObject;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Form to {@link FieldResource#updateFields(String, UpdateFieldForm, HttpServletRequest)}
+ * Form to {@link FieldResource#updateField(String, String, UpdateFieldForm, HttpServletRequest)}
  */
 @JsonDeserialize(builder = UpdateFieldForm.Builder.class)
 class UpdateFieldForm {
 
-    private final List<Field> fields;
+    private final Field field;
 
-    public UpdateFieldForm(final List<Field> fields) {
-        this.fields = fields;
+    public UpdateFieldForm(final Field field) {
+        this.field = field;
     }
 
-    public List<Field> getFields() {
-        return fields;
+    public Field getField() {
+        return field;
     }
 
     public static final class Builder {
         @JsonProperty
-        private List<Map<String, Object>> fields;
+        private Map<String, Object> field;
 
 
-        public Builder fields(final List<Map<String, Object>> fields) {
-            this.fields = fields;
+        public Builder field(final Map<String, Object> field) {
+            this.field = field;
             return this;
         }
 
         public UpdateFieldForm build(){
             final JsonFieldTransformer jsonFieldTransformer =
-                    new JsonFieldTransformer(new JSONArray(fields).toString());
-            return new UpdateFieldForm(jsonFieldTransformer.asList());
+                    new JsonFieldTransformer(new JSONObject(field).toString());
+            return new UpdateFieldForm(jsonFieldTransformer.from());
         }
     }
 }
