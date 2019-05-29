@@ -953,7 +953,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         idxsArr = idxs.toArray(idxsArr);
 
         final BulkByScrollResponse response = DeleteByQueryAction.INSTANCE.newRequestBuilder(new ESClient().getClient())
-                .filter(QueryBuilders.matchQuery("contenttype",structureName.toLowerCase())).source(idxsArr).get();
+                .filter(QueryBuilders.matchQuery("contenttype",structureName.toLowerCase())).source(idxsArr).get(new TimeValue(INDEX_OPERATIONS_TIMEOUT_IN_MS));
 
         Logger.info(this, "Records deleted: " + response.getDeleted() + " from contentType: " + structureName);
     }
