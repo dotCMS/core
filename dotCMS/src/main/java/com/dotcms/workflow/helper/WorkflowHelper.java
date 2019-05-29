@@ -21,6 +21,7 @@ import com.dotmarketing.exception.*;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.transform.ContentletToMapTransformer;
 import com.dotmarketing.portlets.workflows.actionlet.NotifyAssigneeActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
 import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
@@ -1781,5 +1782,16 @@ public class WorkflowHelper {
             Logger.error(this, e.getMessage(), e);
             return null;
         }
+    }
+
+    /**
+     * Used to call and transform a Contentlet
+     * @param contentlet A Contentlet
+     * @return Transformed Map
+     */
+    public Map<String, Object> contentletToMap(final Contentlet contentlet) {
+
+        final ContentletToMapTransformer transformer = new ContentletToMapTransformer(contentlet);
+        return transformer.toMaps().stream().findFirst().orElse(Collections.EMPTY_MAP);
     }
 } // E:O:F:WorkflowHelper.

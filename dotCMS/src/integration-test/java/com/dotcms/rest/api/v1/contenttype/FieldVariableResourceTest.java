@@ -4,12 +4,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.FieldVariable;
@@ -21,17 +15,20 @@ import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.request.MockSessionRequest;
-import javax.ws.rs.core.Response;
-import org.glassfish.jersey.internal.util.Base64;
+import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.util.UUIDUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
-
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.core.Response;
+import org.glassfish.jersey.internal.util.Base64;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -74,7 +71,7 @@ public class FieldVariableResourceTest {
         // Ensure no field variables are present
 		assertResponse_OK(
 			response = resource.getFieldVariablesByFieldId(
-				contentType.id(), field.id(), getHttpRequest()
+				contentType.id(), field.id(), getHttpRequest(),  new EmptyHttpResponse()
 			)
 		);
 
@@ -84,7 +81,7 @@ public class FieldVariableResourceTest {
 		// Test Field Variable Creation
 		assertResponse_OK(
 			response = resource.createFieldVariableByFieldId(
-				contentType.id(), field.id(), JSON_FIELD_VARIABLE_CREATE.replace("CONTENT_TYPE_FIELD_ID", field.id()), getHttpRequest()
+				contentType.id(), field.id(), JSON_FIELD_VARIABLE_CREATE.replace("CONTENT_TYPE_FIELD_ID", field.id()), getHttpRequest(),  new EmptyHttpResponse()
 			)
 		);
 
@@ -100,7 +97,7 @@ public class FieldVariableResourceTest {
 			// Test Field Variable List Retrieval
 			assertResponse_OK(
 				response = resource.getFieldVariablesByFieldId(
-					contentType.id(), field.id(), getHttpRequest()
+					contentType.id(), field.id(), getHttpRequest(),  new EmptyHttpResponse()
 				)
 			);
 
@@ -120,7 +117,7 @@ public class FieldVariableResourceTest {
 			// Test Field Variable Retrieval
 			assertResponse_OK(
 				response = resource.getFieldVariableByFieldId(
-					contentType.id(), field.id(), (String) fieldMap.get("id"), getHttpRequest()
+					contentType.id(), field.id(), (String) fieldMap.get("id"), getHttpRequest(),  new EmptyHttpResponse()
 				)
 			);
 
@@ -137,7 +134,7 @@ public class FieldVariableResourceTest {
 				response = resource.updateFieldVariableByFieldId(
 					contentType.id(), field.id(), (String) fieldMap.get("id"),
 					JSON_FIELD_VARIABLE_UPDATE.replace("CONTENT_TYPE_FIELD_ID", field.id()).replace("FIELD_VARIABLE_ID", (String) fieldMap.get("id")),
-					getHttpRequest()
+					getHttpRequest(),  new EmptyHttpResponse()
 				)
 			);
 
@@ -152,7 +149,7 @@ public class FieldVariableResourceTest {
 			// Test Field Variable Retrieval Again
 			assertResponse_OK(
 				response = resource.getFieldVariableByFieldId(
-					contentType.id(), field.id(), (String) fieldMap.get("id"), getHttpRequest()
+					contentType.id(), field.id(), (String) fieldMap.get("id"), getHttpRequest(),  new EmptyHttpResponse()
 				)
 			);
 
@@ -166,13 +163,13 @@ public class FieldVariableResourceTest {
 			// Test Field Variable Deletion
 			assertResponse_OK(
 				response = resource.deleteFieldVariableByFieldId(
-					contentType.id(), field.id(), (String) fieldMap.get("id"), getHttpRequest()
+					contentType.id(), field.id(), (String) fieldMap.get("id"), getHttpRequest(),  new EmptyHttpResponse()
 				)
 			);
 
 			assertResponse_NOT_FOUND(
 				response = resource.getFieldVariableByFieldId(
-					contentType.id(), field.id(), (String) fieldMap.get("id"), getHttpRequest()
+					contentType.id(), field.id(), (String) fieldMap.get("id"), getHttpRequest(),  new EmptyHttpResponse()
 				)
 			);
 		}
@@ -180,7 +177,7 @@ public class FieldVariableResourceTest {
 		// Ensure field variables do not exist as it was before the test
 		assertResponse_OK(
 			response = resource.getFieldVariablesByFieldId(
-				contentType.id(), field.id(), getHttpRequest()
+				contentType.id(), field.id(), getHttpRequest(),  new EmptyHttpResponse()
 			)
 		);
 
@@ -202,7 +199,7 @@ public class FieldVariableResourceTest {
         // Ensure no field variables are present
 		assertResponse_OK(
 			response = resource.getFieldVariablesByFieldVar(
-				contentType.id(), field.variable(), getHttpRequest()
+				contentType.id(), field.variable(), getHttpRequest(),  new EmptyHttpResponse()
 			)
 		);
 
@@ -212,7 +209,7 @@ public class FieldVariableResourceTest {
 		// Test Field Variable Creation
 		assertResponse_OK(
 			response = resource.createFieldVariableByFieldVar(
-				contentType.id(), field.variable(), JSON_FIELD_VARIABLE_CREATE.replace("CONTENT_TYPE_FIELD_ID", field.id()), getHttpRequest()
+				contentType.id(), field.variable(), JSON_FIELD_VARIABLE_CREATE.replace("CONTENT_TYPE_FIELD_ID", field.id()), getHttpRequest(),  new EmptyHttpResponse()
 			)
 		);
 
@@ -228,7 +225,7 @@ public class FieldVariableResourceTest {
 			// Test Field Variable List Retrieval
 			assertResponse_OK(
 				response = resource.getFieldVariablesByFieldVar(
-					contentType.id(), field.variable(), getHttpRequest()
+					contentType.id(), field.variable(), getHttpRequest(),  new EmptyHttpResponse()
 				)
 			);
 
@@ -248,7 +245,7 @@ public class FieldVariableResourceTest {
 			// Test Field Variable Retrieval
 			assertResponse_OK(
 				response = resource.getFieldVariableByFieldVar(
-					contentType.id(), field.variable(), (String) fieldMap.get("id"), getHttpRequest()
+					contentType.id(), field.variable(), (String) fieldMap.get("id"), getHttpRequest(),  new EmptyHttpResponse()
 				)
 			);
 
@@ -265,7 +262,7 @@ public class FieldVariableResourceTest {
 				response = resource.updateFieldVariableByFieldVar(
 					contentType.id(), field.variable(), (String) fieldMap.get("id"),
 					JSON_FIELD_VARIABLE_UPDATE.replace("CONTENT_TYPE_FIELD_ID", field.id()).replace("FIELD_VARIABLE_ID", (String) fieldMap.get("id")),
-					getHttpRequest()
+					getHttpRequest(),  new EmptyHttpResponse()
 				)
 			);
 
@@ -280,7 +277,7 @@ public class FieldVariableResourceTest {
 			// Test Field Variable Retrieval Again
 			assertResponse_OK(
 				response = resource.getFieldVariableByFieldVar(
-					contentType.id(), field.variable(), (String) fieldMap.get("id"), getHttpRequest()
+					contentType.id(), field.variable(), (String) fieldMap.get("id"), getHttpRequest(),  new EmptyHttpResponse()
 				)
 			);
 
@@ -294,13 +291,13 @@ public class FieldVariableResourceTest {
 			// Test Field Variable Deletion
 			assertResponse_OK(
 				response = resource.deleteFieldVariableByFieldVar(
-					contentType.id(), field.variable(), (String) fieldMap.get("id"), getHttpRequest()
+					contentType.id(), field.variable(), (String) fieldMap.get("id"), getHttpRequest(),  new EmptyHttpResponse()
 				)
 			);
 
 			assertResponse_NOT_FOUND(
 				response = resource.getFieldVariableByFieldVar(
-					contentType.id(), field.variable(), (String) fieldMap.get("id"), getHttpRequest()
+					contentType.id(), field.variable(), (String) fieldMap.get("id"), getHttpRequest(),  new EmptyHttpResponse()
 				)
 			);
 		}
@@ -308,7 +305,7 @@ public class FieldVariableResourceTest {
 		// Ensure field variables do not exist as it was before the test
 		assertResponse_OK(
 			response = resource.getFieldVariablesByFieldVar(
-				contentType.id(), field.variable(), getHttpRequest()
+				contentType.id(), field.variable(), getHttpRequest(),  new EmptyHttpResponse()
 			)
 		);
 

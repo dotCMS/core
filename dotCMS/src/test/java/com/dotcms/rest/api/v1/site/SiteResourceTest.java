@@ -13,7 +13,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.UnitTestBase;
-import javax.ws.rs.core.Response;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.RestUtilTest;
@@ -37,7 +36,9 @@ import java.util.Locale;
 import java.util.Map;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import javax.ws.rs.core.Response;
 import org.apache.commons.lang.StringUtils;
 import org.apache.struts.Globals;
 import org.junit.Test;
@@ -65,6 +66,7 @@ public class SiteResourceTest extends UnitTestBase {
     @Test
     public void testNullAndEmptyFilter() throws JSONException, DotSecurityException, DotDataException {
         final HttpServletRequest request  = mock(HttpServletRequest.class);
+        final HttpServletResponse httpServletResponse = mock(HttpServletResponse.class);
         final HttpSession session  = mock(HttpSession.class);
         final HostAPI hostAPI     = mock(HostAPI.class);
         final UserAPI userAPI = mock(UserAPI.class);
@@ -91,7 +93,8 @@ public class SiteResourceTest extends UnitTestBase {
         SiteResource siteResource =
                 new SiteResource(webResource, new SiteHelper( hostAPI ), I18NUtil.INSTANCE, userAPI, paginationUtil);
 
-        final Response response = siteResource.sites(request, "filter", false, false,false, page, count);
+        final Response response = siteResource
+                .sites(request, httpServletResponse, "filter", false, false, false, page, count);
 
         RestUtilTest.verifySuccessResponse(response);
 
@@ -102,6 +105,7 @@ public class SiteResourceTest extends UnitTestBase {
     @Test
     public void testSwitchNullEmptyAndInvalidFilter() throws JSONException, DotSecurityException, DotDataException {
         final HttpServletRequest request  = mock(HttpServletRequest.class);
+        final HttpServletResponse httpServletResponse = mock(HttpServletResponse.class);
         final HttpSession session  = mock(HttpSession.class);
         final HostAPI hostAPI     = mock(HostAPI.class);
         final UserAPI userAPI = mock(UserAPI.class);
@@ -131,21 +135,23 @@ public class SiteResourceTest extends UnitTestBase {
         assertNotNull(response1);
         assertEquals(response1.getStatus(), 404);
 
-        response1 = siteResource.switchSite(request, StringUtils.EMPTY);
+        response1 = siteResource.switchSite(request, httpServletResponse, StringUtils.EMPTY);
         System.out.println(response1);
         System.out.println(response1.getEntity());
 
         assertNotNull(response1);
         assertEquals(response1.getStatus(), 404);
 
-        response1 = siteResource.switchSite(request, "48190c8c-not-found-8d1a-0cd5db894797");
+        response1 = siteResource
+                .switchSite(request, httpServletResponse, "48190c8c-not-found-8d1a-0cd5db894797");
         System.out.println(response1);
         System.out.println(response1.getEntity());
 
         assertNotNull(response1);
         assertEquals(response1.getStatus(), 404);
 
-        response1 = siteResource.switchSite(request, "48190c8c-42c4-46af-8d1a-0cd5db894797"); // system, should be not allowed to switch
+        response1 = siteResource.switchSite(request, httpServletResponse,
+                "48190c8c-42c4-46af-8d1a-0cd5db894797"); // system, should be not allowed to switch
         System.out.println(response1);
         System.out.println(response1.getEntity());
 
@@ -157,6 +163,7 @@ public class SiteResourceTest extends UnitTestBase {
     @Test
     public void testSwitchExistingHost() throws JSONException, DotSecurityException, DotDataException {
         final HttpServletRequest request  = mock(HttpServletRequest.class);
+        final HttpServletResponse httpServletResponse = mock(HttpServletResponse.class);
         final HttpSession session  = mock(HttpSession.class);
         final HostAPI hostAPI     = mock(HostAPI.class);
         final UserAPI userAPI = mock(UserAPI.class);
@@ -207,7 +214,8 @@ public class SiteResourceTest extends UnitTestBase {
         SiteResource siteResource =
                 new SiteResource(webResource, new SiteHelper( hostAPI ), I18NUtil.INSTANCE, userAPI, paginationUtil);
 
-        Response response1 = siteResource.switchSite(request, "48190c8c-42c4-46af-8d1a-0cd5db894798");
+        Response response1 = siteResource
+                .switchSite(request, httpServletResponse, "48190c8c-42c4-46af-8d1a-0cd5db894798");
         System.out.println(response1);
         System.out.println(response1.getEntity());
         System.out.println(sessionAttributes);
@@ -229,6 +237,7 @@ public class SiteResourceTest extends UnitTestBase {
     @Test
     public void testCurrentSites() throws DotSecurityException, DotDataException {
         final HttpServletRequest request = RestUtilTest.getMockHttpRequest();
+        final HttpServletResponse httpServletResponse = mock(HttpServletResponse.class);
         final HttpSession session = request.getSession();
         RestUtilTest.initMockContext();
         final User user = new User();
@@ -248,7 +257,7 @@ public class SiteResourceTest extends UnitTestBase {
 
         final SiteResource siteResource =
                 new SiteResource(webResource, new SiteHelper( hostAPI ), I18NUtil.INSTANCE, userAPI, paginationUtil);
-        final Response response = siteResource.currentSite(request);
+        final Response response = siteResource.currentSite(request, httpServletResponse);
 
         RestUtilTest.verifySuccessResponse(response);
         Object entity = ((ResponseEntityView) response.getEntity()).getEntity();
