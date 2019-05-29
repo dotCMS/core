@@ -568,6 +568,21 @@ public interface ContentletAPIPostHook {
 	 * @param respectFrontendRoles
 	 */
 	public default void deleteRelatedContent(Contentlet contentlet, Relationship relationship, boolean hasParent, User user, boolean respectFrontendRoles){}
+
+    /**
+     * Deletes all related content from passed in contentlet and relationship
+     * @param contentlet
+     * @param relationship
+     * @param hasParent
+     * @param user
+     * @param respectFrontendRoles
+     * @param contentletsToBeRelated if the delete operation is being used to update related content later,
+     * the list of related content should be sent to perform an optimal reindex
+     */
+    public default void deleteRelatedContent(final Contentlet contentlet, final Relationship relationship,
+            final boolean hasParent, final User user, final boolean respectFrontendRoles,
+            final List<Contentlet> contentletsToBeRelated) {
+    }
 	
 	/**
 	 * Associates the given list of contentlets using the relationship this

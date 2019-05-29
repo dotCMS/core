@@ -2663,35 +2663,57 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     @Override
-    public void deleteRelatedContent(Contentlet contentlet,Relationship relationship, User user, boolean respectFrontendRoles)throws DotDataException, DotSecurityException,DotContentletStateException {
-        deleteRelatedContent(contentlet, relationship, FactoryLocator.getRelationshipFactory().isParent(relationship, contentlet.getStructure()), user, respectFrontendRoles);
+    public void deleteRelatedContent(Contentlet contentlet, Relationship relationship, User user,
+            boolean respectFrontendRoles)
+            throws DotDataException, DotSecurityException, DotContentletStateException {
+        deleteRelatedContent(contentlet, relationship, FactoryLocator.getRelationshipFactory()
+                .isParent(relationship, contentlet.getStructure()), user, respectFrontendRoles);
+    }
+
+    @Override
+    public void deleteRelatedContent(final Contentlet contentlet, final Relationship relationship,
+            final boolean hasParent, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
+        deleteRelatedContent(contentlet, relationship, hasParent, user, respectFrontendRoles, Collections.emptyList());
     }
 
     @WrapInTransaction
     @Override
-    public void deleteRelatedContent(final Contentlet contentlet, final Relationship relationship, final boolean hasParent, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException,DotContentletStateException {
-        if(!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT, user, respectFrontendRoles)){
-            throw new DotSecurityException("User: " + (user != null ? user.getUserId() : "Unknown") + " cannot edit Contentlet");
+    public void deleteRelatedContent(final Contentlet contentlet, final Relationship relationship,
+            final boolean hasParent, final User user, final boolean respectFrontendRoles, final List<Contentlet> contentletsToBeRelated)
+            throws DotDataException, DotSecurityException, DotContentletStateException {
+        if (!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT, user,
+                respectFrontendRoles)) {
+            throw new DotSecurityException("User: " + (user != null ? user.getUserId() : "Unknown")
+                    + " cannot edit Contentlet");
         }
-        List<Relationship> rels = FactoryLocator.getRelationshipFactory().byContentType(contentlet.getContentType());
-        if(!rels.contains(relationship)){
+        List<Relationship> rels = FactoryLocator.getRelationshipFactory()
+                .byContentType(contentlet.getContentType());
+        if (!rels.contains(relationship)) {
             throw new DotContentletStateException(
                     "Error deleting existing relationships in contentlet: " + (contentlet != null
                             ? contentlet.getInode() : "Unknown"));
         }
 
-        List<Contentlet> cons = relationshipAPI.dbRelatedContent(relationship, contentlet, hasParent);
-        cons = permissionAPI.filterCollection(cons, PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
+        List<Contentlet> cons = relationshipAPI
+                .dbRelatedContent(relationship, contentlet, hasParent);
+        cons = permissionAPI
+                .filterCollection(cons, PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
         FactoryLocator.getRelationshipFactory().deleteByContent(contentlet, relationship, cons);
 
+        final List<String> identifiersToBeRelated = contentletsToBeRelated.stream().map(
+                Contentlet::getIdentifier).collect(Collectors.toList());
 
-        // We need to refresh all related contentlets, because currently the system does not
+        // We need to refresh related parents, because currently the system does not
         // update the contentlets that lost the relationship (when the user remove a relationship).
-        if(cons != null) {
+        if (cons != null && !hasParent) {
             for (final Contentlet relatedContentlet : cons) {
-                relatedContentlet.setIndexPolicy(contentlet.getIndexPolicyDependencies());
-                relatedContentlet.setIndexPolicyDependencies(contentlet.getIndexPolicyDependencies());
-                refreshNoDeps(relatedContentlet);
+                //Only deleted parents will be reindexed
+                if (!identifiersToBeRelated.contains(relatedContentlet.getIdentifier())) {
+                    relatedContentlet.setIndexPolicy(contentlet.getIndexPolicyDependencies());
+                    relatedContentlet
+                            .setIndexPolicyDependencies(contentlet.getIndexPolicyDependencies());
+                    refreshNoDeps(relatedContentlet);
+                }
             }
         }
 
@@ -2762,7 +2784,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
 
             deleteRelatedContent(contentlet, relationship, related.isHasParent(), user,
-                    respectFrontendRoles);
+                    respectFrontendRoles, related.getRecords());
 
             Tree newTree;
             Set<Tree> uniqueRelationshipSet = new HashSet<>();
@@ -2788,9 +2810,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 positionInParent=positionInParent+1;
 
                 if( uniqueRelationshipSet.add(newTree) ) {
-                    int newTreePosistion = newTree.getTreeOrder();
-                    Tree treeToUpdate = TreeFactory.getTree(newTree);
-                    treeToUpdate.setTreeOrder(newTreePosistion);
+                    final int newTreePosition = newTree.getTreeOrder();
+                    final Tree treeToUpdate = TreeFactory.getTree(newTree);
+                    treeToUpdate.setTreeOrder(newTreePosition);
 
                     TreeFactory.saveTree(treeToUpdate != null && UtilMethods.isSet(treeToUpdate.getRelationType())?treeToUpdate:newTree);
 
@@ -3686,7 +3708,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                 }
 
-                indexAPI.addContentToIndex(contentlet);
+                indexAPI.addContentToIndex(contentlet, false);
             }
 
             if(contentlet != null && contentlet.isVanityUrl()){

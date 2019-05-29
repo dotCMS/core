@@ -778,11 +778,6 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
             throws DotStateException, DotDataException {
 
         final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
-        final String workingIndex = APILocator.getContentletIndexAPI()
-                .getActiveIndexName(ES_WORKING_INDEX_NAME);
-
-        final String liveIndex = APILocator.getContentletIndexAPI()
-                .getActiveIndexName(ES_LIVE_INDEX_NAME);
 
         final DotConnect db = new DotConnect();
         db.setSQL(
