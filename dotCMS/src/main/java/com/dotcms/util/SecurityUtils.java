@@ -171,20 +171,24 @@ public class SecurityUtils {
     }
     
     // good: uri is on the ignore list
-    for (String path : this.loadIgnorePaths()) {
-      if (path.endsWith("*") && uri.startsWith(path.substring(0, path.lastIndexOf('*')))) {
-          return true;
-      }
-      else if (uri.equals(path)) {
-          return true;
-      }
+    if(this.loadIgnorePaths()
+        .stream()
+        .anyMatch(
+            path->(path.endsWith("*") && uri.startsWith(path.substring(0, path.lastIndexOf('*'))) || 
+            uri.equals(path)))) {
+      return true;
     }
+
     
     // good: the referer is a host that is being served from dotCMS
     if(isRefererOneOfOurHosts(refererHost)) {
       return true;
     }
 
+    // good: if the urlHost should be ignored (this should almost never happen)
+    if(this.loadIgnoreHosts().contains(urlHost)) {
+      return true;
+    }
 
     Try.run(()-> SecurityLogger.logInfo(SecurityUtils.class, "InvalidReferer, ip:" + request.getRemoteAddr() +", url:" + request.getRequestURL() + ", referer:" + incomingReferer));
     return false;
@@ -213,11 +217,11 @@ public class SecurityUtils {
    */
   private boolean isRefererOneOfOurHosts(final String refererHost) {
     // disallow links from our open demo
-    if(refererHost==null || "demo.dotcms.com".equals(refererHost)) {
+    if(refererHost==null) {
       return false;
     }
-    final String portalHost = hostFromUrl(getPortalHost());
-    if (portalHost!=null && portalHost.equalsIgnoreCase(refererHost)) {
+    // allow referers 
+    if (refererHost.equalsIgnoreCase(hostFromUrl(getPortalHost()))) {
       return true;
     }
 
@@ -249,7 +253,7 @@ public class SecurityUtils {
   protected List<String> loadIgnorePaths() {
     if (IGNORE_REFERER_FOR_PATHS == null) {
       List<String> ignorePathsStartingWith = new ArrayList<>();
-      String[] paths = Config.getStringArrayProperty("IGNORE_ORIGIN_REFERER_FOR_PATHS", new String[0] );
+      String[] paths = Config.getStringArrayProperty("IGNORE_REFERER_FOR_PATHS", new String[0] );
       for (String path : paths) {
         if (UtilMethods.isSet(path)) {
           ignorePathsStartingWith.add(path.toLowerCase().trim());
