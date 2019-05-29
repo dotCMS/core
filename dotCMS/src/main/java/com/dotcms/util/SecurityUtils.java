@@ -191,6 +191,7 @@ public class SecurityUtils {
     }
 
     Try.run(()-> SecurityLogger.logInfo(SecurityUtils.class, "InvalidReferer, ip:" + request.getRemoteAddr() +", url:" + request.getRequestURL() + ", referer:" + incomingReferer));
+    Try.run(()-> Logger.info(SecurityUtils.class, "InvalidReferer, ip:" + request.getRemoteAddr() +", url:" + request.getRequestURL() + ", referer:" + incomingReferer));
     return false;
   }
   
