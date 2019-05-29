@@ -1,16 +1,20 @@
 package com.dotcms.rest.api.v1.authentication;
 
-import com.dotcms.auth.providers.jwt.beans.JWTBean;
+import java.util.Locale;
+
+import javax.servlet.http.HttpServletRequest;
+
+import com.dotcms.auth.providers.jwt.beans.JWToken;
 import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenService;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.javax.ws.rs.POST;
-import com.dotcms.repackage.javax.ws.rs.Path;
-import com.dotcms.repackage.javax.ws.rs.Produces;
-import com.dotcms.repackage.javax.ws.rs.core.Context;
-import com.dotcms.repackage.javax.ws.rs.core.MediaType;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.annotation.InitRequestRequired;
 import com.dotcms.rest.annotation.NoCache;
@@ -23,8 +27,6 @@ import com.dotmarketing.util.SecurityLogger;
 import com.liferay.portal.ejb.UserManager;
 import com.liferay.portal.ejb.UserManagerFactory;
 import com.liferay.util.LocaleUtil;
-import java.util.Locale;
-import javax.servlet.http.HttpServletRequest;
 
 /**
  * This resource change the user password.
@@ -70,7 +72,7 @@ public class ResetPasswordResource {
         final Locale locale   = LocaleUtil.getLocale(request);
         final String changePasswordToken;
         final String userId;
-        final JWTBean jwtBean;
+        final JWToken jwtBean;
 
         try {
 

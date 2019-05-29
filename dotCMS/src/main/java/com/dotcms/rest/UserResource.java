@@ -1,11 +1,11 @@
 package com.dotcms.rest;
 
-import com.dotcms.repackage.javax.ws.rs.GET;
-import com.dotcms.repackage.javax.ws.rs.Path;
-import com.dotcms.repackage.javax.ws.rs.PathParam;
-import com.dotcms.repackage.javax.ws.rs.Produces;
-import com.dotcms.repackage.javax.ws.rs.core.Context;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Response;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.web.WebAPILocator;

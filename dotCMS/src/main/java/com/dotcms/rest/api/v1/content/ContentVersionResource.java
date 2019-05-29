@@ -1,10 +1,7 @@
 package com.dotcms.rest.api.v1.content;
 
-import com.dotcms.repackage.javax.ws.rs.*;
-import com.dotcms.repackage.javax.ws.rs.core.Context;
-import com.dotcms.repackage.javax.ws.rs.core.MediaType;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
+import static com.dotcms.rest.api.v1.authentication.ResponseUtil.getFormattedMessage;
+
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -30,15 +27,28 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
-import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
-
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.util.*;
-import java.util.stream.Collectors;
-
-import static com.dotcms.rest.api.v1.authentication.ResponseUtil.getFormattedMessage;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.glassfish.jersey.server.JSONP;
 
 @Path("/v1/content/versions")
 public class ContentVersionResource {

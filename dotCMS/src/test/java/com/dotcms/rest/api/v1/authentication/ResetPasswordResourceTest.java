@@ -7,9 +7,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.UnitTestBase;
-import com.dotcms.auth.providers.jwt.beans.JWTBean;
+import com.dotcms.auth.providers.jwt.beans.UserToken;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenService;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response;
 import com.dotcms.rest.RestUtilTest;
 import com.dotmarketing.business.DotInvalidPasswordException;
 import com.dotmarketing.business.NoSuchUserException;
@@ -75,7 +75,7 @@ public class ResetPasswordResourceTest extends UnitTestBase {
         final JsonWebTokenService jsonWebTokenService = mock(JsonWebTokenService.class);
         final ResponseUtil mResponseUtil = mock(ResponseUtil.class);
 
-        final JWTBean jwtBean = new JWTBean(UUID.randomUUID().toString(), "dotcms.org.1",
+        final UserToken jwtBean = new UserToken(UUID.randomUUID().toString(), "dotcms.org.1",
                 new Date(), 100000);
         when(jsonWebTokenService.parseToken(eq("token1"))).thenReturn(jwtBean);
 
@@ -96,7 +96,7 @@ public class ResetPasswordResourceTest extends UnitTestBase {
         UserManager userManager = mock( UserManager.class );
         final JsonWebTokenService jsonWebTokenService = mock(JsonWebTokenService.class);
         ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, responseUtil, jsonWebTokenService);
-        final JWTBean jwtBean = new JWTBean(UUID.randomUUID().toString(), "dotcms.org.1",
+        final UserToken jwtBean = new UserToken(UUID.randomUUID().toString(), "dotcms.org.1",
                 new Date(), 100000);
         when(jsonWebTokenService.parseToken(eq("token1"))).thenReturn(jwtBean);
         Response response = resetPasswordResource.resetPassword(request, resetPasswordForm);

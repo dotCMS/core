@@ -6,9 +6,6 @@ package com.dotmarketing.business.web;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.RenderRequest;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
@@ -23,6 +20,9 @@ import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 import com.liferay.portlet.ActionRequestImpl;
 import com.liferay.portlet.RenderRequestImpl;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 
 /**
  * 
@@ -49,20 +49,28 @@ public class HostWebAPIImpl extends HostAPIImpl implements HostWebAPI {
 	  
 	  
 	}
-	
-	
+
     @CloseDBIfOpened
-    public Host getCurrentHost(HttpServletRequest request)
+    public Host getCurrentHost(final HttpServletRequest request)
             throws DotDataException, DotSecurityException, PortalException, SystemException {
+
+        final PageMode mode = PageMode.get(request);
+
+        return this.getCurrentHost(request, mode);
+    }
+
+    @Override
+    @CloseDBIfOpened
+    public Host getCurrentHost(final HttpServletRequest request, final PageMode mode)
+            throws DotDataException, DotSecurityException, PortalException, SystemException {
+
         Host host = null;
-        HttpSession session = request.getSession(false);
-        UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
-        User systemUser = userWebAPI.getSystemUser();
-        boolean respectFrontendRoles = !userWebAPI.isLoggedToBackend(request);
+        final HttpSession session   = request.getSession(false);
+        final UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
+        final User systemUser       = userWebAPI.getSystemUser();
+        final boolean respectFrontendRoles = !userWebAPI.isLoggedToBackend(request);
+        final String pageHostId = request.getParameter("host_id");
 
-        PageMode mode = PageMode.get(request);
-
-        String pageHostId = request.getParameter("host_id");
         if (pageHostId != null && mode.isAdmin) {
             host = find(pageHostId, systemUser, respectFrontendRoles);
         } else {
@@ -71,7 +79,8 @@ public class HostWebAPIImpl extends HostAPIImpl implements HostWebAPI {
             } else if (request.getAttribute(WebKeys.CURRENT_HOST) != null) {
                 host = (Host) request.getAttribute(WebKeys.CURRENT_HOST);
             } else {
-                String serverName = request.getServerName();
+
+                final String serverName = request.getServerName();
                 if (UtilMethods.isSet(serverName)) {
                     host = resolveHostName(serverName, systemUser, respectFrontendRoles);
                 }
@@ -80,8 +89,10 @@ public class HostWebAPIImpl extends HostAPIImpl implements HostWebAPI {
 
         request.setAttribute(WebKeys.CURRENT_HOST, host);
         if (session != null && mode.isAdmin) {
+
             session.setAttribute(WebKeys.CURRENT_HOST, host);
         }
+
         return host;
     }
 

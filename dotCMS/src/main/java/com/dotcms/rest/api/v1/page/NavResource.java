@@ -4,10 +4,6 @@ package com.dotcms.rest.api.v1.page;
 import com.dotcms.rendering.velocity.viewtools.navigation.NavResult;
 import com.dotcms.rendering.velocity.viewtools.navigation.NavTool;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.javax.ws.rs.*;
-import com.dotcms.repackage.javax.ws.rs.core.Context;
-import com.dotcms.repackage.javax.ws.rs.core.MediaType;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -23,15 +19,22 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.liferay.portal.model.User;
-import org.apache.velocity.tools.view.context.ChainedContext;
-import org.apache.velocity.tools.view.context.ViewContext;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import org.apache.velocity.tools.view.context.ChainedContext;
+import org.apache.velocity.tools.view.context.ViewContext;
 
 @Path("/v1/nav")
 public class NavResource {

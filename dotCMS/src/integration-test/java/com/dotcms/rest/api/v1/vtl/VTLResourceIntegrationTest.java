@@ -1,12 +1,14 @@
 package com.dotcms.rest.api.v1.vtl;
 
+import static com.dotcms.rest.api.v1.vtl.RequestBodyVelocityReader.EMBEDDED_VELOCITY_KEY_NAME;
+import static com.dotcms.rest.api.v1.vtl.VTLResource.VTL_PATH;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
+
 import com.dotcms.datagen.FileAssetDataGen;
-import com.dotcms.repackage.com.fasterxml.jackson.core.JsonProcessingException;
-import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
-import com.dotcms.repackage.javax.ws.rs.core.MultivaluedHashMap;
-import com.dotcms.repackage.javax.ws.rs.core.MultivaluedMap;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.repackage.javax.ws.rs.core.UriInfo;
 import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.WebResource;
 import com.dotcms.util.ConfigTestHelper;
@@ -19,20 +21,14 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.UtilMethods;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.Files;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
-import org.jetbrains.annotations.NotNull;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -40,11 +36,17 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-
-import static com.dotcms.rest.api.v1.vtl.RequestBodyVelocityReader.EMBEDDED_VELOCITY_KEY_NAME;
-import static com.dotcms.rest.api.v1.vtl.VTLResource.VTL_PATH;
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.*;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import javax.ws.rs.core.MultivaluedHashMap;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
+import org.jetbrains.annotations.NotNull;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 @RunWith(DataProviderRunner.class)
 public class VTLResourceIntegrationTest {
@@ -268,7 +270,7 @@ public class VTLResourceIntegrationTest {
         private final UriInfo uriInfo;
         private final String folderName;
         private final String pathParam;
-        private final Map<String, String> bodyMap;
+        private final Map<String, Object> bodyMap;
         private final WebResource webResource;
         private final String bodyMapString;
 
@@ -292,7 +294,7 @@ public class VTLResourceIntegrationTest {
             return pathParam;
         }
 
-        Map<String, String> getBodyMap() {
+        Map<String, Object> getBodyMap() {
             return bodyMap;
         }
 
@@ -305,7 +307,7 @@ public class VTLResourceIntegrationTest {
         }
 
         HTTPMethodParams(final HttpServletRequest request, final HttpServletResponse servletResponse, final UriInfo uriInfo,
-                         final String folderName, final String pathParam, final Map<String, String> bodyMap,
+                         final String folderName, final String pathParam, final Map<String, Object> bodyMap,
                          final WebResource webResource, final String bodyMapString) {
             this.request = request;
             this.servletResponse = servletResponse;

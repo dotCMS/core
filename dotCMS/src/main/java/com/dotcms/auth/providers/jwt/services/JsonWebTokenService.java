@@ -1,8 +1,10 @@
 package com.dotcms.auth.providers.jwt.services;
 
-import java.io.Serializable;
+import com.dotcms.auth.providers.jwt.beans.ApiToken;
+import com.dotcms.auth.providers.jwt.beans.JWToken;
+import com.dotcms.auth.providers.jwt.beans.UserToken;
 
-import com.dotcms.auth.providers.jwt.beans.JWTBean;
+import java.io.Serializable;
 
 /**
  * Encapsulates the logic that generates and reads the JSON Web Token (JWT).
@@ -17,20 +19,40 @@ public interface JsonWebTokenService extends Serializable {
 	/**
 	 * Generates the json token based on an id, subject and issuer. The
 	 * ttlMillis determines how long will be valid the token
+	 * This token is mostly to encapsulate a login user into a JWT and it is associated to an specific user.
 	 *
-	 * @param jwtBean - 
-	 *            {@link JWTBean}
+	 * @param JWToken -
+	 *            {@link UserToken}
 	 * @return String the actual encrypted token
 	 */
-    public String generateToken(JWTBean jwtBean);
+    public String generateUserToken(UserToken JWToken);
 
 	/**
-	 * Based on a json token return the JWTBean
+	 * Generates the json token based
+	 * ttlMillis determines how long will be valid the token
+	 * This token is mostly to access to the API, it is not associated to any user itself.
+	 *
+	 * @param apiToken {@link ApiToken}
+	 * @return String the actual encrypted token
+	 */
+	public String generateApiToken(ApiToken apiToken);
+    
+    
+	/**
+	 * Based on a json token returns the User JWToken
 	 * 
 	 * @param jsonWebToken
 	 *            - {@link String}
-	 * @return JWTBean
+	 * @return JWToken
 	 */
-    public JWTBean parseToken(String jsonWebToken);
+    public JWToken parseToken(String jsonWebToken);
+
+	/**
+	 * Based on a json token returns the API JWToken
+	 * @param jsonWebToken String encrypted token
+	 * @param requestingIp String ip that is requesting the api token
+	 * @return JWToken
+	 */
+    public JWToken parseToken(String jsonWebToken, String requestingIp);
 
 } // E:O:F:JsonWebTokenService.

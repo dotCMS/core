@@ -1,7 +1,5 @@
 package com.dotmarketing.business;
 
-import static com.dotcms.util.CollectionsUtils.set;
-
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -18,11 +16,14 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import org.apache.commons.beanutils.BeanUtils;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
-import org.apache.commons.beanutils.BeanUtils;
+
+import static com.dotcms.util.CollectionsUtils.set;
 
 /**
  * Implementation class for the {@link VersionableFactory} class.
@@ -102,7 +103,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
 			ver =(Versionable) dh.load();
 		}
 
-		if(ver.getVersionId() ==null){
+			if(ver.getVersionId() ==null){
 			throw new DotStateException("Invalid working version for identifier : " +id + " / working inode : " + vinfo.getWorkingInode());
 		}
 		return ver;
@@ -264,6 +265,9 @@ public class VersionableFactoryImpl extends VersionableFactory {
 
     @Override
     protected ContentletVersionInfo getContentletVersionInfo(String identifier, long lang) throws DotDataException, DotStateException {
+        if (DbConnectionFactory.inTransaction()) {
+            return findContentletVersionInfoInDB(identifier, lang);
+        }
         ContentletVersionInfo contv = this.icache.getContentVersionInfo(identifier, lang);
         if(contv!=null && fourOhFour.equals(contv.getWorkingInode())) {
         	return null;
@@ -344,7 +348,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
         cVer.setWorkingInode(workingInode);
         cVer.setVersionTs(new Date());
 
-        HibernateUtil.save(cVer);
+        HibernateUtil.save(cVer); 
         return cVer;
     }
 

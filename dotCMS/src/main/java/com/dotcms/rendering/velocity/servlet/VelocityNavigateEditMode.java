@@ -1,13 +1,14 @@
 package com.dotcms.rendering.velocity.servlet;
 
-import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
-import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPI;
+import com.dotmarketing.portlets.htmlpageasset.business.render.PageContextBuilder;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.PageView;
 import com.dotmarketing.util.PageMode;
 import com.liferay.portal.model.User;
@@ -68,8 +69,15 @@ public class VelocityNavigateEditMode  extends VelocityModeHandler {
 
         final PageMode mode = this.getMode();
 
-        final PageView htmlPageAssetRendered = htmlPageAssetRenderedAPI.getPageRendered(this.request,
-                this.response, user, this.uri, mode);
+        final PageView htmlPageAssetRendered = htmlPageAssetRenderedAPI.getPageRendered(
+                PageContextBuilder.builder()
+                    .setUser(user)
+                    .setPageUri(uri)
+                    .setPageMode(mode)
+                    .build(),
+                request,
+                response
+        );
         final ObjectWriter objectWriter = new ObjectMapper().writer().withDefaultPrettyPrinter();
         final String renderedPageString = objectWriter.writeValueAsString(htmlPageAssetRendered)
                 .replace("</script>", "\\</script\\>");

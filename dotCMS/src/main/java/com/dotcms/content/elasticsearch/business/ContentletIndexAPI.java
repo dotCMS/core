@@ -1,155 +1,146 @@
 package com.dotcms.content.elasticsearch.business;
 
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotmarketing.common.reindex.BulkProcessorListener;
+import com.dotmarketing.common.reindex.ReindexEntry;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
-import org.elasticsearch.action.bulk.BulkResponse;
-
 import java.io.IOException;
 import java.sql.Connection;
 import java.text.SimpleDateFormat;
+import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
+import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.action.bulk.BulkProcessor;
+import org.elasticsearch.action.bulk.BulkRequestBuilder;
+import org.elasticsearch.action.bulk.BulkResponse;
 
 public interface ContentletIndexAPI {
-    public static final SimpleDateFormat timestampFormatter=new SimpleDateFormat("yyyyMMddHHmmss");
+    public static final SimpleDateFormat timestampFormatter = new SimpleDateFormat("yyyyMMddHHmmss");
     public static final String ES_WORKING_INDEX_NAME = "working";
     public static final String ES_LIVE_INDEX_NAME = "live";
-	public void getRidOfOldIndex() throws DotDataException;
 
-	/**
-	 * Inits the indexs
-	 */
-	public void checkAndInitialiazeIndex();
+    public void getRidOfOldIndex() throws DotDataException;
 
-	public boolean createContentIndex(String indexName)throws DotIndexException, IOException;
-	public boolean createContentIndex(String indexName, int shards) throws DotIndexException, IOException;
+    /**
+     * Inits the indexs
+     */
+    public void checkAndInitialiazeIndex();
 
-	/**
-	 * creates new working and live indexes with reading aliases pointing to old
-	 * index and write aliases pointing to both old and new indexes
-	 *
-	 * @return the timestamp string used as suffix for indices
-	 * @throws DotDataException
-	 * @throws DotIndexException
-	 */
-	public String setUpFullReindex() throws DotIndexException, DotDataException;
+    public boolean createContentIndex(String indexName) throws DotIndexException, IOException;
 
-	public boolean isInFullReindex() throws DotDataException;
+    public boolean createContentIndex(String indexName, int shards) throws DotIndexException, IOException;
 
-	/**
-	 * This will drop old index and will point read aliases to new index. This
-	 * method should be called after call to {@link #setUpFullReindex()}
-	 *
-	 * @return
-	 */
-	public void fullReindexSwitchover();
-	public void fullReindexSwitchover(Connection conn);
+    /**
+     * creates new working and live indexes with reading aliases pointing to old index and write aliases
+     * pointing to both old and new indexes
+     *
+     * @return the timestamp string used as suffix for indices
+     * @throws DotDataException
+     * @throws DotIndexException
+     */
+    public String fullReindexStart() throws DotIndexException, DotDataException;
 
-	public boolean delete(String indexName);
+    /**
+     * returns if the system is in a full reindex
+     * 
+     * @return
+     * @throws DotDataException
+     */
+    public boolean isInFullReindex() throws DotDataException;
 
-	public boolean optimize(List<String> indexNames);
+    /**
+     * This will drop old index and will point read aliases to new index. If you pass forceSwitch=true
+     * then this method will force a switch, otherwise, it will check to make sure that we are in a 
+     * reindex and that it is the lucky server in the cluster to switch
+     * after call to {@link #setUpFullReindex()}
+     *
+     * @return
+     */
+    public boolean fullReindexSwitchover(final boolean forceSwitch);
 
-	public void addContentToIndex(final Contentlet content) throws DotHibernateException;
+    public boolean fullReindexSwitchover(Connection conn, final boolean forceSwitch);
 
-	public void addContentToIndex(final Contentlet content, final boolean deps) throws DotHibernateException;
+    /**
+     * deletes an elasticsearch index by name
+     * 
+     * @param indexName
+     * @return
+     */
+    boolean delete(String indexName);
 
-	public void addContentToIndex(final Contentlet content, final boolean deps, boolean indexBeforeCommit) throws DotHibernateException;
+    /**
+     * optimizes shards for a list of elasticsearch indicies
+     * 
+     * @param indexNames
+     * @return
+     */
+    boolean optimize(List<String> indexNames);
 
-	public void addContentToIndex(final Contentlet content, final boolean deps, boolean indexBeforeCommit, final boolean reindexOnly)
-			throws DotHibernateException;
+    public void removeContentFromIndex(final Contentlet content) throws DotDataException;
 
-	public void addContentToIndex(final Contentlet content, final boolean deps, boolean indexBeforeCommit, final boolean reindexOnly,
-			final BulkRequestBuilder bulk) throws DotHibernateException;
+    public void removeContentFromIndex(final Contentlet content, final boolean onlyLive) throws DotDataException;
 
-	public void removeContentFromIndex(final Contentlet content) throws DotHibernateException;
+    public void removeContentFromLiveIndex(final Contentlet content) throws DotDataException;
 
-	public void removeContentFromIndex(final Contentlet content, final boolean onlyLive) throws DotHibernateException;
+    public void removeContentFromIndexByStructureInode(String structureInode)
+            throws DotDataException, DotSecurityException;
 
-	public void removeContentFromLiveIndex(final Contentlet content) throws DotHibernateException;
+    void fullReindexAbort();
 
-	public void removeContentFromIndexByStructureInode(String structureInode) throws DotDataException;
+    public boolean isDotCMSIndexName(String indexName);
 
-	public void fullReindexAbort();
+    /**
+     * Returns a list of dotcms working and live indices.
+     *
+     * @return
+     */
+    public List<String> listDotCMSIndices();
 
-	public boolean isDotCMSIndexName(String indexName);
+    void activateIndex(String indexName) throws DotDataException;
 
-	/**
-	 * Returns a list of dotcms working and live indices.
-	 *
-	 * @return
-	 */
-	public List<String> listDotCMSIndices();
+    void deactivateIndex(String indexName) throws DotDataException, IOException;
 
-	public void activateIndex(String indexName) throws DotDataException;
+    public List<String> getCurrentIndex() throws DotDataException;
 
-	public void deactivateIndex(String indexName) throws DotDataException, IOException;
+    public List<String> getNewIndex() throws DotDataException;
 
+    public List<String> listDotCMSClosedIndices();
 
+    public String getActiveIndexName(String type) throws DotDataException;
 
-	public List<String> getCurrentIndex() throws DotDataException;
+    void putToIndex(BulkRequestBuilder bulk, ActionListener<BulkResponse> listener);
 
-	public List<String> getNewIndex() throws DotDataException;
+    void putToIndex(BulkRequestBuilder bulk);
 
-	public List<String> listDotCMSClosedIndices();
+    void addContentToIndex(List<Contentlet> contentToIndex) throws DotDataException;
 
-	public String getActiveIndexName(String type) throws DotDataException;
+    void addContentToIndex(Contentlet content) throws DotDataException;
 
-	void indexContentList(List<Contentlet> contentToIndex, BulkRequestBuilder bulk, boolean reindexOnly) throws DotDataException;
+    void addContentToIndex(Contentlet content, boolean deps) throws DotDataException;
 
-	/**
-	 * This method is similar to the indexContentList, but it make searchable the content immediate
-	 * Important node: this is only for testing
-	 * @param contentToIndex
-	 * @param bulk
-	 * @param reindexOnly
-	 * @throws DotDataException
-	 */
-	@VisibleForTesting
-	void indexContentListNow(List<Contentlet> contentToIndex, BulkRequestBuilder bulk, boolean reindexOnly) throws DotDataException;
+    void addContentToIndex(Contentlet parentContenlet, boolean includeDependencies, boolean indexBeforeCommit) throws DotDataException;
 
-	/**
-	 * This method is similar to the indexContentList, but it will wait until the contentlets are indexed to continue
-	 *
-	 * @param contentToIndex
-	 * @param bulk
-	 * @param reindexOnly
-	 * @throws DotDataException
-	 */
-	void indexContentListWaitFor(List<Contentlet> contentToIndex, BulkRequestBuilder bulk, boolean reindexOnly) throws DotDataException;
+    BulkRequestBuilder createBulkRequest(List<Contentlet> contentToIndex) throws DotDataException;
 
+    BulkRequestBuilder createBulkRequest();
 
-	/**
-	 * This method stores the contentlets in a queue in order to be process (indexed) in a separated and deferred mechanism
-	 * (see: {@link com.dotmarketing.common.business.journal.DistributedJournalAPI} and {@link com.dotmarketing.common.reindex.ReindexThread})
-	 * When you use this method you do not really care about when the content is gonna be index.
-	 *
-	 * If you need to index a collection of contentlets and wait until they are done, use
-	 *
-	 * {@link #indexContentListWaitFor(List, BulkRequestBuilder, boolean)}
-	 *
-	 * If you need to index a collection of contentlets and be notified (listen until) when the indexing is done use
-	 *
-	 * {@link #indexContentList(List, BulkRequestBuilder, boolean, ActionListener)}
-	 *
-	 * @param contentToIndex {@link List}
-	 * @throws DotHibernateException
-	 */
-	public void indexContentListDeferred(final List<Contentlet> contentToIndex) throws DotHibernateException;
+    BulkRequestBuilder appendBulkRequest(BulkRequestBuilder bulk, Collection<ReindexEntry> idxs) throws DotDataException;
 
-	/**
-	 * Same of indexContentList, just including a listener that will be call when the indexing is done.
-	 * @param contentToIndex
-	 * @param bulk
-	 * @param reindexOnly
-	 * @param listener    {@link ActionListener} implement it in order to be notified in async mode when the content indexing is done
-	 * @throws DotDataException
-	 */
-	void indexContentList(final List<Contentlet> contentToIndex,
-								 final BulkRequestBuilder bulk,
-								 final boolean reindexOnly,
-								 ActionListener<BulkResponse> listener) throws  DotDataException;
+    BulkRequestBuilder appendBulkRequest(BulkRequestBuilder bulk, ReindexEntry idx) throws DotDataException;
 
+    Optional<String> reindexTimeElapsed();
+
+    void stopFullReindexationAndSwitchover() throws DotDataException;
+
+    void reindexSwitchover(boolean forceSwitch) throws DotDataException;
+
+    void stopFullReindexation() throws DotDataException;
+
+    BulkRequestBuilder appendBulkRemoveRequest(BulkRequestBuilder bulk, final ReindexEntry entry) throws DotDataException;
+
+    BulkProcessor createBulkProcessor(BulkProcessorListener bulkListener);
+
+    void appendToBulkProcessor(final BulkProcessor bulk, final Collection<ReindexEntry> idxs) throws DotDataException;
 }

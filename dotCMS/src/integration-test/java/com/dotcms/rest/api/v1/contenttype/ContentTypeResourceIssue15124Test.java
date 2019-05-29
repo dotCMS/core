@@ -1,18 +1,17 @@
 package com.dotcms.rest.api.v1.contenttype;
 
-import com.dotcms.repackage.javax.ws.rs.core.Response;
+import static com.dotcms.rest.api.v1.contenttype.ContentTypeResourceTest.getHttpRequest;
+
 import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.RestUtilTest;
 import com.dotcms.util.IntegrationTestInitService;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Map;
-
-import static com.dotcms.rest.api.v1.contenttype.ContentTypeResourceTest.getHttpRequest;
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.core.Response;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 public class ContentTypeResourceIssue15124Test {
 

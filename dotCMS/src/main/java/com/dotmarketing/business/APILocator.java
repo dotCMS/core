@@ -1,21 +1,28 @@
 package com.dotmarketing.business;
 
+import java.io.Closeable;
+import java.io.IOException;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+
 import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.SystemEventsFactory;
+import com.dotcms.api.tree.TreeableAPI;
+import com.dotcms.auth.providers.jwt.factories.ApiTokenAPI;
 import com.dotcms.cluster.business.ClusterAPI;
 import com.dotcms.cluster.business.ClusterAPIImpl;
-import com.dotcms.graphql.business.GraphqlAPI;
-import com.dotcms.graphql.business.GraphqlAPIImpl;
-import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
-import com.dotcms.system.event.local.business.LocalSystemEventsAPIFactory;
-import com.dotcms.api.tree.TreeableAPI;
 import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.cluster.business.ServerAPIImpl;
 import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.cms.login.LoginServiceAPIFactory;
 import com.dotcms.company.CompanyAPI;
 import com.dotcms.company.CompanyAPIFactory;
-import com.dotcms.content.elasticsearch.business.*;
+import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
+import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
+import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImpl;
+import com.dotcms.content.elasticsearch.business.ESIndexAPI;
+import com.dotcms.content.elasticsearch.business.IndiciesAPI;
+import com.dotcms.content.elasticsearch.business.IndiciesAPIImpl;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.business.FieldAPI;
@@ -30,6 +37,8 @@ import com.dotcms.enterprise.linkchecker.LinkCheckerAPIImpl;
 import com.dotcms.enterprise.priv.ESSearchProxy;
 import com.dotcms.enterprise.publishing.sitesearch.ESSiteSearchAPI;
 import com.dotcms.enterprise.rules.RulesAPI;
+import com.dotcms.graphql.business.GraphqlAPI;
+import com.dotcms.graphql.business.GraphqlAPIImpl;
 import com.dotcms.keyvalue.business.KeyValueAPI;
 import com.dotcms.keyvalue.business.KeyValueAPIImpl;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
@@ -49,9 +58,15 @@ import com.dotcms.publishing.PublisherAPIImpl;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.api.v1.system.websocket.WebSocketContainerAPI;
 import com.dotcms.rest.api.v1.system.websocket.WebSocketContainerAPIFactory;
+import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
+import com.dotcms.system.event.local.business.LocalSystemEventsAPIFactory;
 import com.dotcms.timemachine.business.TimeMachineAPI;
 import com.dotcms.timemachine.business.TimeMachineAPIImpl;
-import com.dotcms.util.*;
+import com.dotcms.util.FileWatcherAPI;
+import com.dotcms.util.FileWatcherAPIImpl;
+import com.dotcms.util.ReflectionUtils;
+import com.dotcms.util.SecurityLoggerServiceAPI;
+import com.dotcms.util.SecurityLoggerServiceAPIFactory;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotcms.uuid.shorty.ShortyIdAPIImpl;
 import com.dotcms.vanityurl.business.VanityUrlAPI;
@@ -61,8 +76,9 @@ import com.dotcms.visitor.business.VisitorAPIImpl;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.portal.PortletAPI;
 import com.dotmarketing.business.portal.PortletAPIImpl;
-import com.dotmarketing.common.business.journal.DistributedJournalAPI;
-import com.dotmarketing.common.business.journal.DistributedJournalAPIImpl;
+import com.dotmarketing.cms.urlmap.URLMapAPIImpl;
+import com.dotmarketing.common.reindex.ReindexQueueAPI;
+import com.dotmarketing.common.reindex.ReindexQueueAPIImpl;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.factories.MultiTreeAPI;
@@ -118,11 +134,6 @@ import com.dotmarketing.tag.business.TagAPIImpl;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
-
-import java.io.Closeable;
-import java.io.IOException;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * APILocator is a factory method (pattern) to get single(ton) service objects.
@@ -410,13 +421,13 @@ public class APILocator extends Locator<APIIndex>{
 	}
 
 	/**
-	 * Creates a single instance of the {@link DistributedJournalAPI} class.
+	 * Creates a single instance of the {@link ReindexQueueAPI} class.
 	 *
-	 * @return The {@link DistributedJournalAPI} class.
+	 * @return The {@link ReindexQueueAPI} class.
 	 */
 	@SuppressWarnings("unchecked")
-	public static DistributedJournalAPI<String> getDistributedJournalAPI(){
-		return (DistributedJournalAPI<String>) getInstance(APIIndex.DISTRIBUTED_JOURNAL_API);
+	public static ReindexQueueAPI getReindexQueueAPI(){
+		return (ReindexQueueAPI) getInstance(APIIndex.REINDEX_QUEUE_API);
 	}
 
 	/**
@@ -906,6 +917,24 @@ public class APILocator extends Locator<APIIndex>{
 	public static ThemeAPI getThemeAPI() {
 		return (ThemeAPI) getInstance(APIIndex.THEME_API);
 	}
+	
+    /**
+     * Creates a single instance of the {@link JWTTokenAPI} class.
+     *
+     * @return The {@link JWTTokenAPI} class.
+     */
+    public static ApiTokenAPI getApiTokenAPI() {
+        return (ApiTokenAPI) getInstance(APIIndex.API_TOKEN_API);
+    }
+
+	/**
+	 * Creates a single instance of the {@link ThemeAPI} class.
+	 *
+	 * @return The {@link ThemeAPI} class.
+	 */
+	public static URLMapAPIImpl getURLMapAPI() {
+		return (URLMapAPIImpl) getInstance(APIIndex.URLMAP_API);
+	}
 
 	/**
 	 * Generates a unique instance of the specified dotCMS API.
@@ -972,7 +1001,7 @@ enum APIIndex
 	CATEGORY_API,
 	CONTENTLET_API,
 	CONTENTLET_API_INTERCEPTER,
-	DISTRIBUTED_JOURNAL_API,
+	REINDEX_QUEUE_API,
 	EVENT_API,
 	EVENT_RECURRENCE_API,
 	PERMISSION_API,
@@ -1042,7 +1071,10 @@ enum APIIndex
 	HTMLPAGE_ASSET_RENDERED_API,
 	CLUSTER_API,
 	THEME_API,
-	GRAPHQL_API;
+	API_TOKEN_API,
+	GRAPHQL_API,
+	URLMAP_API;
+
 
 
 	Object create() {
@@ -1064,7 +1096,7 @@ enum APIIndex
     		case CALENDAR_REMINDER_API: return new CalendarReminderAPIImpl();
     		case PLUGIN_API: return new PluginAPIImpl();
     		case LANGUAGE_API: return new LanguageAPIImpl();
-    		case DISTRIBUTED_JOURNAL_API : return new DistributedJournalAPIImpl<String>();
+    		case REINDEX_QUEUE_API : return new ReindexQueueAPIImpl();
     		case TEMPLATE_API : return new TemplateAPIImpl();
     		case FOLDER_API: return new FolderAPIImpl();
     		case CONTAINER_API: return new ContainerAPIImpl();
@@ -1082,7 +1114,7 @@ enum APIIndex
     		case CACHE_PROVIDER_API : return new CacheProviderAPIImpl();
     		case TAG_API: return new TagAPIImpl();
     		case INDICIES_API: return new IndiciesAPIImpl();
-    		case CONTENLET_INDEX_API: return new ESContentletIndexAPI();
+    		case CONTENLET_INDEX_API: return new ContentletIndexAPIImpl();
     		case ES_INDEX_API: return new ESIndexAPI();
     		case PUBLISHER_API: return new PublisherAPIImpl();
     		case TIME_MACHINE_API: return new TimeMachineAPIImpl();
@@ -1116,6 +1148,8 @@ enum APIIndex
 			case CLUSTER_API: return new ClusterAPIImpl();
 			case THEME_API: return new ThemeAPIImpl();
 			case GRAPHQL_API: return  new GraphqlAPIImpl();
+	        case API_TOKEN_API: return new ApiTokenAPI();
+			case URLMAP_API: return new URLMapAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}

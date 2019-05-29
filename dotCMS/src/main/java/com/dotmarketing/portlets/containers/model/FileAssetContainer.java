@@ -23,14 +23,14 @@ import java.util.Map;
 public class FileAssetContainer extends Container {
 
     @JsonIgnore
-    @com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore
     private transient final Map<String, Object> metaDataMap;
 
     @JsonIgnore
-    @com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore
     private transient final Contentlet contentlet = new Contentlet();
 
     private long languageId;
+
+    private String path;
 
     public FileAssetContainer() {
 
@@ -39,11 +39,34 @@ public class FileAssetContainer extends Container {
     }
 
     @JsonIgnore
-    @com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore
+    private transient FileAsset postLoopAsset = null;
+
+    @JsonIgnore
+    public FileAsset getPostLoopAsset() {
+        return postLoopAsset;
+    }
+
+    public void setPostLoopAsset(final FileAsset postLoopAsset) {
+        this.postLoopAsset = postLoopAsset;
+    }
+
+    @JsonIgnore
+    private transient FileAsset preLoopAsset = null;
+
+    @JsonIgnore
+    public FileAsset getPreLoopAsset() {
+        return preLoopAsset;
+    }
+
+    public void setPreLoopAsset(final FileAsset preLoopAsset) {
+        this.preLoopAsset = preLoopAsset;
+    }
+
+    /////
+    @JsonIgnore
     private transient List<FileAsset> containerStructuresAssets = Collections.emptyList();
 
     @JsonIgnore
-    @com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore
     public List<FileAsset> getContainerStructuresAssets() {
         return containerStructuresAssets;
     }
@@ -58,7 +81,6 @@ public class FileAssetContainer extends Container {
     }
 
     @JsonIgnore
-    @com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore
     public Map<String, Object> getMetaDataMap() {
         return metaDataMap;
     }
@@ -86,6 +108,14 @@ public class FileAssetContainer extends Container {
     @Override
     public boolean hasLiveVersion() throws DotStateException, DotDataException {
         return APILocator.getVersionableAPI().hasLiveVersion(toContentlet());
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+    public void setPath(final String path) {
+        this.path = path;
     }
 
     private Versionable toContentlet() {

@@ -26,6 +26,7 @@ import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -43,6 +44,7 @@ import javax.servlet.ServletContextListener;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.ejb.PortletManagerUtil;
 import com.liferay.portal.job.Scheduler;
@@ -93,13 +95,9 @@ public class PortletContextListener implements ServletContextListener {
 
 			// Initialize portlets
 
-			String[] xmls = new String[] {
-				Http.URLtoString(ctx.getResource("/WEB-INF/portlet.xml")),
-				Http.URLtoString(ctx.getResource(
-					"/WEB-INF/liferay-portlet.xml"))
-			};
 
-			_portlets = PortletManagerUtil.initWAR(_servletContextName, xmls);
+			_portlets = APILocator.getPortletAPI().findAllPortlets();
+			      
 
 			// Portlet context wrapper
 
@@ -114,82 +112,16 @@ public class PortletContextListener implements ServletContextListener {
 
 
 
-				Scheduler schedulerInstance = null;
-				if (Validator.isNotNull(portlet.getSchedulerClass())) {
-					schedulerInstance = (Scheduler)contextClassLoader.loadClass(
-						portlet.getSchedulerClass()).newInstance();
-				}
 
-				PreferencesValidator prefsValidator = null;
-				if (Validator.isNotNull(portlet.getPreferencesValidator())) {
-					prefsValidator =
-						(PreferencesValidator)contextClassLoader.loadClass(
-							portlet.getPreferencesValidator()).newInstance();
-
-					try {
-						if (GetterUtil.getBoolean(PropsUtil.get(
-								PropsUtil.PREFERENCE_VALIDATE_ON_STARTUP))) {
-
-							prefsValidator.validate(
-								PortletPreferencesSerializer.fromDefaultXML(
-									portlet.getDefaultPreferences()));
-						}
-					}
-					catch (Exception e1) {
-						_log.warn(
-							"Portlet with the name " + portlet.getPortletId() +
-								" does not have valid default preferences");
-					}
-				}
-
-				Map resourceBundles = null;
-
-				if (Validator.isNotNull(portlet.getResourceBundle())) {
-					resourceBundles = CollectionFactory.getHashMap();
-
-					Iterator itr2 = portlet.getSupportedLocales().iterator();
-
-					while (itr2.hasNext()) {
-						String supportedLocale = (String)itr2.next();
-
-						Locale locale = new Locale(supportedLocale);
-
-						try {
-							ResourceBundle resourceBundle =
-								ResourceBundle.getBundle(
-									portlet.getResourceBundle(), locale,
-									contextClassLoader);
-
-							resourceBundles.put(
-								locale.getLanguage(), resourceBundle);
-						}
-						catch (MissingResourceException mre) {
-							_log.warn(mre.getMessage());
-						}
-					}
-				}
 
 				Map customUserAttributes = CollectionFactory.getHashMap();
 
-				Iterator itr2 =
-					portlet.getCustomUserAttributes().entrySet().iterator();
 
-				while (itr2.hasNext()) {
-					Map.Entry entry = (Map.Entry)itr2.next();
-
-					String attrName = (String)entry.getKey();
-					String attrCustomClass = (String)entry.getValue();
-
-					customUserAttributes.put(
-						attrCustomClass,
-						contextClassLoader.loadClass(
-							attrCustomClass).newInstance());
-				}
 
 				PortletContextWrapper pcw = new PortletContextWrapper(
 					portlet.getPortletId(), ctx, portletInstance,
-					schedulerInstance, prefsValidator,
-					resourceBundles, customUserAttributes);
+					null, null,
+					null, customUserAttributes);
 
 				PortletContextPool.put(portlet.getPortletId(), pcw);
 			}
@@ -225,24 +157,6 @@ public class PortletContextListener implements ServletContextListener {
 
 			// Portlet display
 
-			String xml = Http.URLtoString(ctx.getResource(
-				"/WEB-INF/liferay-display.xml"));
-
-			Map newCategories = PortletManagerUtil.getWARDisplay(
-				_servletContextName, xml);
-
-			for (int i = 0; i < _companyIds.length; i++) {
-				String companyId = _companyIds[i];
-
-				Map oldCategories = (Map)WebAppPool.get(
-					companyId, WebKeys.PORTLET_DISPLAY);
-
-				Map mergedCategories =
-					PortalUtil.mergeCategories(oldCategories, newCategories);
-
-				WebAppPool.put(
-					companyId, WebKeys.PORTLET_DISPLAY, mergedCategories);
-			}
 
 			// Reinitialize portal properties
 
@@ -306,6 +220,6 @@ public class PortletContextListener implements ServletContextListener {
 
 	private String _servletContextName;
 	private String[] _companyIds;
-	private List _portlets;
+	private Collection<Portlet> _portlets;
 
 }

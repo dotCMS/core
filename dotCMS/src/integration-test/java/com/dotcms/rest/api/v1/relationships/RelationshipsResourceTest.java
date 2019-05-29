@@ -1,5 +1,8 @@
 package com.dotcms.rest.api.v1.relationships;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -8,9 +11,6 @@ import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.request.MockSessionRequest;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.repackage.javax.ws.rs.core.Response.Status;
-import com.dotcms.repackage.org.glassfish.jersey.internal.util.Base64;
 import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.util.CollectionsUtils;
@@ -22,16 +22,15 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import javax.servlet.http.HttpServletRequest;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import org.glassfish.jersey.internal.util.Base64;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 /**
  * @author nollymar

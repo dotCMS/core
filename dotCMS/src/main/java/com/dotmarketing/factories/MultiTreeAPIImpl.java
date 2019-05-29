@@ -7,6 +7,7 @@ import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.rendering.velocity.services.PageLoader;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotcms.util.transform.TransformerLocator;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
@@ -18,7 +19,11 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
+import com.dotmarketing.portlets.containers.business.ContainerFinderByIdOrPathStrategy;
+import com.dotmarketing.portlets.containers.business.LiveContainerFinderByIdOrPathStrategyResolver;
+import com.dotmarketing.portlets.containers.business.WorkingContainerFinderByIdOrPathStrategyResolver;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -35,10 +40,12 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Table;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import com.rainerhahnekamp.sneakythrow.Sneaky;
 import org.apache.commons.lang.StringUtils;
 
 import java.sql.SQLException;
 import java.util.*;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 
@@ -135,10 +142,9 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
      */
     private void _dbDelete(final MultiTree multiTree) throws DotDataException {
 
-        final DotConnect db = new DotConnect().setSQL(DELETE_SQL).addParam(multiTree.getHtmlPage()).addParam(multiTree.getContainer())
-                .addParam(multiTree.getContentlet()).addParam(multiTree.getRelationType());
-        db.loadResult();
-
+        new DotConnect().setSQL(DELETE_SQL).addParam(multiTree.getHtmlPage()).addParam(multiTree.getContainerAsID())
+                .addParam(multiTree.getContentlet()).addParam(multiTree.getRelationType())
+                .loadResult();
     }
 
 
@@ -334,8 +340,10 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     @Override
     @WrapInTransaction
     public void saveMultiTrees(final List<MultiTree> mTrees) throws DotDataException {
-        if (mTrees == null || mTrees.isEmpty())
+        if (mTrees == null || mTrees.isEmpty()) {
             throw new DotDataException("empty list passed in");
+        }
+
         int i = 0;
         for (final MultiTree tree : mTrees) {
             _dbUpsert(tree.setTreeOrder(i++));
@@ -344,7 +352,6 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         final MultiTree mTree = mTrees.get(0);
         updateHTMLPageVersionTS(mTree.getHtmlPage());
         refreshPageInCache(mTree.getHtmlPage());
-
     }
 
     /**
@@ -363,10 +370,9 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             throw new DotDataException("empty list passed in");
         }
 
-        Logger.debug(MultiTreeAPIImpl.class, String.format("Saving page's content: %s", mTrees));
+        Logger.debug(MultiTreeAPIImpl.class, ()->String.format("Saving page's content: %s", mTrees));
 
         final DotConnect db = new DotConnect();
-
         db.setSQL(DELETE_ALL_MULTI_TREE_SQL).addParam(pageId).addParam(ContainerUUID.UUID_DEFAULT_VALUE).loadResult();
 
         if (!mTrees.isEmpty()) {
@@ -375,7 +381,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
             for (final MultiTree tree : mTrees) {
                 insertParams
-                        .add(new Params(pageId, tree.getContainer(), tree.getContentlet(), tree.getRelationType(), tree.getTreeOrder()));
+                        .add(new Params(pageId, tree.getContainerAsID(), tree.getContentlet(), tree.getRelationType(), tree.getTreeOrder()));
                 newContainers.add(tree.getContainer());
             }
 
@@ -402,7 +408,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
     private void _reorder(final MultiTree tree) throws DotDataException {
 
-        List<MultiTree> trees = getMultiTrees(tree.getHtmlPage(), tree.getContainer(), tree.getRelationType());
+        List<MultiTree> trees = getMultiTrees(tree.getHtmlPage(), tree.getContainerAsID(), tree.getRelationType());
         trees = trees.stream().filter(rowTree -> !rowTree.equals(tree)).collect(Collectors.toList());
         int maxOrder = (tree.getTreeOrder() > trees.size()) ? trees.size() : tree.getTreeOrder();
         trees.add(maxOrder, tree);
@@ -412,9 +418,9 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     }
 
 
-    private void _dbInsert(final MultiTree o) throws DotDataException {
-        new DotConnect().setSQL(INSERT_SQL).addParam(o.getHtmlPage()).addParam(o.getContainer()).addParam(o.getContentlet())
-                .addParam(o.getRelationType()).addParam(o.getTreeOrder()).loadResult();
+    private void _dbInsert(final MultiTree multiTree) throws DotDataException {
+        new DotConnect().setSQL(INSERT_SQL).addParam(multiTree.getHtmlPage()).addParam(multiTree.getContainerAsID()).addParam(multiTree.getContentlet())
+                .addParam(multiTree.getRelationType()).addParam(multiTree.getTreeOrder()).loadResult();
     }
 
 
@@ -423,14 +429,14 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
      * has been added or deleted from this page, its version_ts value needs to be updated so it can be
      * included in future Push Publishing tasks
      * 
-     * @param id The HTMLPage Identifier to pass in
+     * @param pageId The HTMLPage Identifier to pass in
      * @throws DotContentletStateException
      * @throws DotDataException
      * @throws DotSecurityException
      * 
      */
-    private void updateHTMLPageVersionTS(final String id) throws DotDataException {
-        final List<ContentletVersionInfo> infos = APILocator.getVersionableAPI().findContentletVersionInfos(id);
+    private void updateHTMLPageVersionTS(final String pageId) throws DotDataException {
+        final List<ContentletVersionInfo> infos = APILocator.getVersionableAPI().findContentletVersionInfos(pageId);
         for (ContentletVersionInfo versionInfo : infos) {
             if (versionInfo != null) {
                 versionInfo.setVersionTs(new Date());
@@ -516,45 +522,51 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         }
 
         final Table<String, String, Set<String>> pageContents = HashBasedTable.create();
-        final List<MultiTree> multiTrees = this.getMultiTrees(page.getIdentifier());
+        final List<MultiTree> multiTrees  = this.getMultiTrees(page.getIdentifier());
+        final ContainerAPI  containerAPI  = APILocator.getContainerAPI();
+        final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+        final User systemUser = APILocator.systemUser();
 
         for (final MultiTree multiTree : multiTrees) {
-            final ContainerAPI containerAPI = APILocator.getContainerAPI();
-            final ContentletAPI contentletAPI = APILocator.getContentletAPI();
-            final User systemUser = APILocator.systemUser();
-            Container container = null;
+
+            Container container   = null;
+            final String    containerId = multiTree.getContainerAsID();
 
             try {
 
-                //container = containerAPI.getWorkingContainerById(multiTree.getContainer(), systemUser, false);
-                container = liveMode? containerAPI.getLiveContainerById(multiTree.getContainer(), systemUser, false)
-                        : containerAPI.getWorkingContainerById(multiTree.getContainer(), systemUser, false);
+                container = liveMode?
+                        containerAPI.getLiveContainerById(containerId, systemUser, false):
+                        containerAPI.getWorkingContainerById(containerId, systemUser, false);
 
                 if (container == null && !liveMode) {
                     continue;
                 }
             } catch (NotFoundInDbException e) {
+
                 Logger.debug(this, e.getMessage(), e);
                 continue;
             }
 
             Contentlet contentlet = null;
             try {
-                contentlet = contentletAPI.findContentletByIdentifierAnyLanguage(multiTree.getContentlet());;
+                contentlet = contentletAPI.findContentletByIdentifierAnyLanguage(multiTree.getContentlet());
             } catch (DotDataException | DotSecurityException | DotContentletStateException e) {
                 Logger.warn(this.getClass(), "invalid contentlet on multitree:" + multiTree);
             }
+
             if (contentlet != null) {
-                final Set<String> myContents = pageContents.contains(multiTree.getContainer(), multiTree.getRelationType())
-                        ? pageContents.get(multiTree.getContainer(), multiTree.getRelationType())
+
+                final Set<String> myContents = pageContents.contains(containerId, multiTree.getRelationType())
+                        ? pageContents.get(containerId, multiTree.getRelationType())
                         : new LinkedHashSet<>();
+
                 if (container != null && myContents.size() < container.getMaxContentlets()) {
+
                     myContents.add(multiTree.getContentlet());
                 }
 
-                pageContents.put(multiTree.getContainer(), multiTree.getRelationType(), myContents);
-            } ;
-
+                pageContents.put(containerId, multiTree.getRelationType(), myContents);
+            }
         }
 
         this.addEmptyContainers(page, pageContents, liveMode);
@@ -563,44 +575,50 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         return pageContents;
     }
 
+    private List<ContainerUUID> getDrawedLayoutContainerUUIDs (final IHTMLPage page) throws DotSecurityException, DotDataException {
 
-    private void addEmptyContainers(final IHTMLPage page, Table<String, String, Set<String>> pageContents, final boolean liveMode)
+        final TemplateLayout layout =
+                DotTemplateTool.themeLayout(page.getTemplateId(), APILocator.systemUser(), false);
+        return APILocator.getTemplateAPI().getContainersUUID(layout);
+    }
+
+    private void addEmptyContainers(final IHTMLPage page,
+                                    final Table<String, String, Set<String>> pageContents,
+                                    final boolean liveMode)
             throws DotDataException, DotSecurityException {
 
         try {
-            
-            
+
+            final List<ContainerUUID> containersUUID;
             final Template template =
                     APILocator.getTemplateAPI().findWorkingTemplate(page.getTemplateId(), APILocator.getUserAPI().getSystemUser(), false);
-            if (!template.isDrawed()) {
+            try {
+                containersUUID = template.isDrawed()?
+                        this.getDrawedLayoutContainerUUIDs(page):
+                        APILocator.getTemplateAPI().getContainersUUIDFromDrawTemplateBody(template.getBody());
+            } catch (Exception e) {
+                Logger.error(this, e.getMessage(), e);
                 return;
             }
-
-            final TemplateLayout layout = DotTemplateTool.themeLayout(page.getTemplateId(), APILocator.getUserAPI().getSystemUser(), false);
-            final List<ContainerUUID> containersUUID = APILocator.getTemplateAPI().getContainersUUID(layout);
 
             for (final ContainerUUID containerUUID : containersUUID) {
 
                 Container container = null;
                 try {
-                    container = (liveMode) ? APILocator.getContainerAPI().getLiveContainerById(containerUUID.getIdentifier(), APILocator.systemUser(), false)
-                            : APILocator.getContainerAPI().getWorkingContainerById(containerUUID.getIdentifier(), APILocator.systemUser(), false);
+                    // this read path or id.
+                    container = liveMode ? this.getLiveContainerById(containerUUID.getIdentifier(), APILocator.systemUser(), template):
+                            this.getWorkingContainerById(containerUUID.getIdentifier(), APILocator.systemUser(), template);
 
                     if (container == null && !liveMode) {
                         continue;
                     }
-                } catch (NotFoundInDbException e) {
+                } catch (NotFoundInDbException| DotRuntimeException e) {
                     Logger.debug(this, e.getMessage(), e);
                     continue;
                 }
 
-
-                if (!pageContents.contains(containerUUID.getIdentifier(), containerUUID.getUUID())) {
-                    final boolean isLegacyValue = ContainerUUID.UUID_LEGACY_VALUE.equals(containerUUID.getUUID());
-
-                    if (!isLegacyValue || !pageContents.contains(containerUUID.getIdentifier(), ContainerUUID.UUID_START_VALUE)) {
-                        pageContents.put(containerUUID.getIdentifier(), containerUUID.getUUID(), new LinkedHashSet<>());
-                    }
+                if (!doesPageContentsHaveContainer(pageContents, containerUUID, container)) {
+                    pageContents.put(container.getIdentifier(), containerUUID.getUUID(), new LinkedHashSet<>());
                 }
             }
         } catch (RuntimeException e) {
@@ -608,5 +626,61 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         }
     }
 
+    /**
+     * Check if a container with the same id or path (in case of {@link FileAssetContainer}), exist into pageContents.
+     * Also support legacy 'LEGACY_RELATION_TYPE' uuid value
+     *
+     * @param pageContents Table of the {@link MultiTree} into the page
+     * @param containerUUID container's UUID link with the page
+     * @param container container
+     * @return true in case of the containerUUId is contains in pageContents
+     */
+    private boolean doesPageContentsHaveContainer(
+            final Table<String, String, Set<String>> pageContents,
+            final ContainerUUID containerUUID,
+            final Container container) {
 
+        if(pageContents.contains(container.getIdentifier(), containerUUID.getUUID())){
+            return true;
+        } else if (ContainerUUID.UUID_LEGACY_VALUE.equals(containerUUID.getUUID())) {
+            boolean pageContenstContains = pageContents.contains(containerUUID.getIdentifier(), ContainerUUID.UUID_START_VALUE);
+
+            if (!pageContenstContains && container instanceof FileAssetContainer) {
+                pageContenstContains = pageContents.contains(container.getIdentifier(), ContainerUUID.UUID_START_VALUE);
+            }
+
+            return pageContenstContains;
+        } else {
+            return false;
+        }
+    }
+
+    private Container getLiveContainerById(final String containerIdOrPath, final User user, final Template template) throws NotFoundInDbException {
+
+        final LiveContainerFinderByIdOrPathStrategyResolver strategyResolver =
+                LiveContainerFinderByIdOrPathStrategyResolver.getInstance();
+        final Optional<ContainerFinderByIdOrPathStrategy> strategy           = strategyResolver.get(containerIdOrPath);
+
+        return this.geContainerById(containerIdOrPath, user, template, strategy, strategyResolver.getDefaultStrategy());
+    }
+
+    private Container getWorkingContainerById(final String containerIdOrPath, final User user, final Template template) throws NotFoundInDbException {
+
+        final WorkingContainerFinderByIdOrPathStrategyResolver strategyResolver =
+                WorkingContainerFinderByIdOrPathStrategyResolver.getInstance();
+        final Optional<ContainerFinderByIdOrPathStrategy> strategy           = strategyResolver.get(containerIdOrPath);
+
+        return this.geContainerById(containerIdOrPath, user, template, strategy, strategyResolver.getDefaultStrategy());
+    }
+
+    private Container geContainerById(final String containerIdOrPath, final User user, final Template template,
+                                      final Optional<ContainerFinderByIdOrPathStrategy> strategy,
+                                      final ContainerFinderByIdOrPathStrategy defaultContainerFinderByIdOrPathStrategy) throws NotFoundInDbException  {
+
+        final Supplier<Host> resourceHostSupplier = Sneaky.sneaked(()->APILocator.getTemplateAPI().getTemplateHost(template));
+
+        return strategy.isPresent()?
+                strategy.get().apply(containerIdOrPath, user, false, resourceHostSupplier):
+                defaultContainerFinderByIdOrPathStrategy.apply(containerIdOrPath, user, false, resourceHostSupplier);
+    }
 }

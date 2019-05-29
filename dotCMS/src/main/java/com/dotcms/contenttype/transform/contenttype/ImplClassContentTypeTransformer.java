@@ -12,7 +12,7 @@ import com.dotcms.contenttype.model.type.ImmutablePersonaContentType;
 import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
 import com.dotcms.contenttype.model.type.ImmutableVanityUrlContentType;
 import com.dotcms.contenttype.model.type.ImmutableWidgetContentType;
-import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableList;
 import com.dotmarketing.business.DotStateException;
 
 /**

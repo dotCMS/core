@@ -124,7 +124,6 @@ public class IdentifierAPIImpl implements IdentifierAPI {
 	@WrapInTransaction
 	public Identifier save(final Identifier id) throws DotDataException, DotStateException {
 		final Identifier ident = identifierFactory.saveIdentifier(id);
-		CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(ident.getId());
 		return ident;
 	}
 

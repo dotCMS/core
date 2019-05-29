@@ -2,7 +2,7 @@ package com.dotcms.contenttype.model.field;
 
 import static com.dotcms.util.CollectionsUtils.list;
 
-import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableList;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;

@@ -1,24 +1,28 @@
 package com.dotcms.auth.providers.jwt.factories;
 
-import static com.dotcms.auth.providers.jwt.JsonWebTokenUtils.CLAIM_UPDATED_AT;
-
-import com.dotcms.auth.providers.jwt.beans.JWTBean;
+import com.dotcms.auth.providers.jwt.beans.ApiToken;
+import com.dotcms.auth.providers.jwt.beans.JWToken;
+import com.dotcms.auth.providers.jwt.beans.TokenType;
+import com.dotcms.auth.providers.jwt.beans.UserToken;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenService;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.util.ReflectionUtils;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.ExpiredJwtException;
-import io.jsonwebtoken.IncorrectClaimException;
-import io.jsonwebtoken.Jws;
-import io.jsonwebtoken.JwtBuilder;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
+import com.liferay.portal.model.User;
+import io.jsonwebtoken.*;
+
 import java.io.Serializable;
 import java.security.Key;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
+import static com.dotcms.auth.providers.jwt.JsonWebTokenUtils.CLAIM_ALLOWED_NETWORK;
+import static com.dotcms.auth.providers.jwt.JsonWebTokenUtils.CLAIM_UPDATED_AT;
 
 /**
  * This class in is charge of create the Token Factory. It use the
@@ -65,9 +69,10 @@ public class JsonWebTokenFactory implements Serializable {
 
     /**
      * Creates the Json Web Token Service based on the configuration on dotmarketing-config.properties
+     * 
      * @return JsonWebTokenService
      */
-    public JsonWebTokenService getJsonWebTokenService () {
+    public JsonWebTokenService getJsonWebTokenService() {
 
         if (null == this.jsonWebTokenService) {
 
@@ -81,14 +86,13 @@ public class JsonWebTokenFactory implements Serializable {
 
                 } catch (Exception e) {
 
-                    if (Logger.isErrorEnabled(JsonWebTokenService.class)) {
-                        Logger.error(JsonWebTokenService.class, e.getMessage(), e);
-                    }
 
-                    if (Logger.isDebugEnabled(JsonWebTokenService.class)) {
-                        Logger.debug(JsonWebTokenService.class,
-                                "There is an error trying to create the Json Web Token Service, going with the default implementation...");
-                    }
+                    Logger.error(JsonWebTokenService.class, e.getMessage(), e);
+
+
+                    Logger.debug(JsonWebTokenService.class,
+                            "There is an error trying to create the Json Web Token Service, going with the default implementation...");
+
                 }
             }
         }
@@ -102,8 +106,8 @@ public class JsonWebTokenFactory implements Serializable {
      */
     private class JsonWebTokenServiceImpl implements JsonWebTokenService {
 
-        private Key signingKey;
-        private String issuerId;
+        private volatile Key signingKey;  // it is volatile since it is lazy loading, to avoid cache issues
+        private volatile String issuerId; // it is volatile since it is lazy loading, to avoid cache issues
 
         private Key getSigningKey() {
 
@@ -113,14 +117,9 @@ public class JsonWebTokenFactory implements Serializable {
                                 DEFAULT_JSON_WEB_TOKEN_SIGNING_KEY_FACTORY_CLASS);
 
                 if (UtilMethods.isSet(signingKeyFactoryClass)) {
+                    Logger.debug(JsonWebTokenService.class, "Using the signing key factory class: " + signingKeyFactoryClass);
 
-                    if (Logger.isDebugEnabled(JsonWebTokenService.class)) {
-                        Logger.debug(JsonWebTokenService.class,
-                                "Using the signing key factory class: " + signingKeyFactoryClass);
-                    }
-
-                    SigningKeyFactory signingKeyFactory =
-                            (SigningKeyFactory) ReflectionUtils.newInstance(signingKeyFactoryClass);
+                    SigningKeyFactory signingKeyFactory =   (SigningKeyFactory) ReflectionUtils.newInstance(signingKeyFactoryClass);
                     if (null != signingKeyFactory) {
 
                         signingKey = signingKeyFactory.getKey();
@@ -140,91 +139,164 @@ public class JsonWebTokenFactory implements Serializable {
             return issuerId;
         }
 
+        
         @Override
-        public String generateToken(final JWTBean jwtBean) {
+        public String generateApiToken(final ApiToken apiToken) {
 
+            final Map<String,Object> claims = new HashMap<>();
+
+            apiToken.getClaims().forEach((key,value)->{
+                if(value!=null) {
+
+                    claims.put(key,value);
+                }
+            });
+            
+            claims.put(CLAIM_UPDATED_AT, apiToken.modificationDate);
+            if(apiToken.allowNetwork!=null) {
+
+                claims.put(CLAIM_ALLOWED_NETWORK, apiToken.allowNetwork);
+            }
+
+            //Let's set the JWT Claims
+            final JwtBuilder builder = Jwts.builder()
+                    .setClaims(claims)
+                    .setId(UUID.randomUUID().toString())
+                    .setSubject(apiToken.id)
+                    .setExpiration(apiToken.expiresDate)
+                    .setIssuedAt(apiToken.issueDate)
+                    .setIssuer(this.getIssuer())
+                    .setNotBefore(apiToken.issueDate);
+                    
+            return signToken(builder);
+            
+        }
+
+
+        private String signToken(final JwtBuilder jwtBuilder) {
             //The JWT signature algorithm we will be using to sign the token
-            final SignatureAlgorithm signatureAlgorithm =
-                    SignatureAlgorithm.HS256;
-
-            final long nowMillis = System.currentTimeMillis();
-            final Date now = new Date(nowMillis);
+            jwtBuilder.signWith(SignatureAlgorithm.HS256, this.getSigningKey());
+            
+            return jwtBuilder.compact();
+        }
+        
+        
+        
+        @Override
+        public String generateUserToken(final UserToken jwtBean) {
 
             //Let's set the JWT Claims
             final JwtBuilder builder = Jwts.builder()
                     .setId(jwtBean.getId())
-                    .setIssuedAt(now)
-                    .claim(CLAIM_UPDATED_AT, jwtBean.getModificationDate())
+                    .claim(CLAIM_UPDATED_AT, jwtBean.getActiveUser().get().getModificationDate().getTime())
+                    .claim(CLAIM_ALLOWED_NETWORK, jwtBean.getClaims().get(CLAIM_ALLOWED_NETWORK))
                     .setSubject(jwtBean.getSubject())
+                    .setIssuedAt(new Date())
                     .setIssuer(this.getIssuer())
-                    .signWith(signatureAlgorithm, this.getSigningKey());
-
-            //if it has been specified, let's add the expiration
-            if ( jwtBean.getTtlMillis() >= 0 ) {
-
-                final long expMillis = nowMillis + jwtBean.getTtlMillis();
-                final Date exp = new Date(expMillis);
-                builder.setExpiration(exp);
-            }
+                    .setExpiration(jwtBean.getExpiresDate());
 
             //Builds the JWT and serializes it to a compact, URL-safe string
-            return builder.compact();
+            return signToken(builder);
         } // generateToken.
 
+        
         @Override
-        public JWTBean parseToken(final String jsonWebToken) {
-
-            JWTBean jwtBean = null;
-
-            if ( !UtilMethods.isSet(jsonWebToken) ) {
-
-                throw new IllegalArgumentException("Security Token not found");
-            }
-
-            try {
-                //This line will throw an exception if it is not a signed JWS (as expected)
-                final Jws<Claims> jws = Jwts.parser()
-                        .setSigningKey(this.getSigningKey())
-                        .parseClaimsJws(jsonWebToken);
-
-                if (null != jws) {
-
-                    final Claims body = jws.getBody();
-                    if (null != body) {
-
-                        // Validate the issuer is correct, meaning the same cluster id
-                        if (!this.getIssuer().equals(body.getIssuer())) {
-                            IncorrectClaimException claimException = new IncorrectClaimException(
-                                    jws.getHeader(), jws.getBody(), "Invalid issuer");
-                            claimException.setClaimName(Claims.ISSUER);
-                            claimException.setClaimValue(body.getIssuer());
-
-                            throw claimException;
-                        }
-
-                        jwtBean =
-                                new JWTBean(body.getId(),
-                                        body.getSubject(),
-                                        body.getIssuer(),
-                                        body.get(CLAIM_UPDATED_AT, Date.class),
-                                        (null != body.getExpiration()) ?
-                                                body.getExpiration().getTime() :
-                                                0);
-                    }
-                }
-            } catch (ExpiredJwtException e) {
-
-                if (Logger.isDebugEnabled(this.getClass())) {
-
-                    Logger.debug(this.getClass(),
-                            e.getMessage(), e);
-                }
-
-                jwtBean = null;
-            }
-
-            return jwtBean;
+        public JWToken parseToken(final String jsonWebToken) {
+            return parseToken(jsonWebToken, null);
         } // parseToken.
+        
+        @Override
+        public JWToken parseToken(final String jsonWebToken, final String requestingIp) {
+
+            final Jws<Claims> jws = Jwts.parser().setSigningKey(this.getSigningKey()).parseClaimsJws(jsonWebToken);
+
+            return validateToken(jws, resolveJWTokenType(jws), requestingIp);
+
+        } // parseToken.
+
+        private JWToken validateToken(final Jws<Claims> jws, final JWToken jwtToken, final String requestingIp) {
+
+            final Claims body = jws.getBody();
+            if(jwtToken==null) {
+                IncorrectClaimException claimException = new IncorrectClaimException( jws.getHeader(), body, "No Valid Token Found for:" + body);
+                claimException.setClaimName(Claims.SUBJECT);
+                claimException.setClaimValue(body.getSubject());
+                throw claimException;
+            }
+
+            // Validate the issuer is correct, meaning the same cluster id
+            if (!this.getIssuer().equals(body.getIssuer())) {
+                IncorrectClaimException claimException = new IncorrectClaimException( jws.getHeader(), body, "Invalid JWT issuer. Expected:"  + this.getIssuer() + " and got:" + body.getIssuer());
+                claimException.setClaimName(Claims.ISSUER);
+                claimException.setClaimValue(body.getIssuer());
+                throw claimException;
+            }
+            if(jwtToken.isExpired()) {
+                IncorrectClaimException claimException = new IncorrectClaimException( jws.getHeader(), body, "Token Expired:" + jwtToken.getExpiresDate());
+                claimException.setClaimName(Claims.EXPIRATION);
+                claimException.setClaimValue(jwtToken.getExpiresDate());
+                throw claimException;
+            }
+            
+            // get the user tied to the token
+            final User user = jwtToken.getActiveUser().orElse(null);
+            if(user==null || !user.isActive()) {
+                IncorrectClaimException claimException = new IncorrectClaimException( jws.getHeader(), body, "JWT Token user: " + jwtToken.getUserId() + " is not found or is not active");
+                claimException.setClaimName(Claims.SUBJECT);
+                claimException.setClaimValue(body.getSubject());
+                throw claimException;
+            }
+            
+            if(jwtToken.getTokenType() == TokenType.USER_TOKEN) {
+                if(jwtToken.getModificationDate().before(user.getModificationDate())) {
+                    IncorrectClaimException claimException = new IncorrectClaimException( jws.getHeader(), body, "JWT Token user: " + jwtToken.getUserId() + " has been modified, old tokens are invalid");
+                    claimException.setClaimName(Claims.SUBJECT);
+                    claimException.setClaimValue(body.getSubject());
+                    throw claimException;
+                }
+                return jwtToken;    
+            }
+
+            ApiToken apiToken = (ApiToken) jwtToken;
+
+            if(apiToken.isRevoked()) {
+                IncorrectClaimException claimException = new IncorrectClaimException( jws.getHeader(), body, "API Token Revoked:" + apiToken.revoked);
+                claimException.setClaimName(Claims.EXPIRATION);
+                claimException.setClaimValue(apiToken.revoked);
+                throw claimException;
+                
+            }
+            if(apiToken.isNotBeforeDate()) {
+                IncorrectClaimException claimException = new IncorrectClaimException( jws.getHeader(), body, "API Token Not Before:" + apiToken.issueDate);
+                claimException.setClaimName(Claims.NOT_BEFORE);
+                claimException.setClaimValue(apiToken.issueDate);
+                throw claimException;
+                
+            }
+            if(!apiToken.isInIpRange(requestingIp)) {
+                IncorrectClaimException claimException = new IncorrectClaimException( jws.getHeader(), body, "API Token not allowed for ip:" + requestingIp + ". Accepted range:" + apiToken.allowNetwork);
+                claimException.setClaimName(Claims.AUDIENCE);
+                claimException.setClaimValue(apiToken.allowNetwork);
+                throw claimException;
+            }
+
+            return apiToken;
+        }
+
+        private JWToken resolveJWTokenType(final Jws<Claims> jws) {
+
+           final Claims body = jws.getBody();
+           return TokenType.getTokenType(body.getSubject()) == TokenType.USER_TOKEN ? 
+                    new UserToken(body.getId(),
+                            body.getSubject(),
+                            body.getIssuer(),
+                            body.get(CLAIM_UPDATED_AT, Date.class),
+                            (null != body.getExpiration()) ? body.getExpiration().getTime() : 0, 
+                            body
+                            )
+                   : APILocator.getApiTokenAPI().findApiToken(body.getSubject()).orElseGet(()->null);
+        }
+
     } // JsonWebTokenServiceImpl.
 
 } // E:O:F:JsonWebTokenFactory.

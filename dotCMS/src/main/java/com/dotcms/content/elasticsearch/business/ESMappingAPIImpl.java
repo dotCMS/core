@@ -10,12 +10,13 @@ import com.dotcms.content.business.ContentMappingAPI;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.content.elasticsearch.util.ESClient;
+import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
-import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.tika.TikaUtils;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.Host;
@@ -26,6 +27,7 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
@@ -65,6 +67,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.time.FastDateFormat;
 import org.elasticsearch.ElasticsearchException;
@@ -268,33 +271,69 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 			final StringWriter sw = new StringWriter();
 			for(final Entry<String,Object> entry : contentletMap.entrySet()){
-				final String lcasek=entry.getKey().toLowerCase();
-				Object lcasev = entry.getValue();
+				final String lowerCaseKey = entry.getKey().toLowerCase();
+				Object lowerCaseValue = entry.getValue();
 
-				if (UtilMethods.isSet(lcasev) && lcasev instanceof String){
-					lcasev = ((String) lcasev).toLowerCase();
+				if (UtilMethods.isSet(lowerCaseValue) && (lowerCaseValue instanceof String || (
+						//filters relationships
+						 !lowerCaseKey
+								.endsWith(ESMappingConstants.TAGS) && !lowerCaseKey
+								.endsWith(ESMappingConstants.SUFFIX_ORDER)))) {
 
-					if (!lcasek.endsWith(TEXT)){
-						//for example: when lcasev=moddate, moddate_dotraw must be created from its moddate_text if exists
+					if (lowerCaseValue instanceof String){
+						lowerCaseValue = ((String) lowerCaseValue).toLowerCase();
+					}
+					// add relationships to catchall
+                    if (lowerCaseValue instanceof List){
+                        List<Object> valList = (List<Object>) lowerCaseValue;
+                        for(Object listVal : valList) {
+                            if (listVal!=null && listVal instanceof String){
+                                sw.append(((String) listVal).toLowerCase().toString()).append(' ');
+                            }
+                        }
+                    }
+					
+					
+					
+					
+					if (!lowerCaseKey.endsWith(TEXT)){
+						//for example: when lowerCaseValue=moddate, moddate_dotraw must be created from its moddate_text if exists
 						//when the moddate_text is evaluated.
 						if (!contentletMap.containsKey(entry.getKey() + TEXT)){
-							mlowered.put(lcasek + "_dotraw", lcasev);
+							mlowered.put(lowerCaseKey + "_dotraw", lowerCaseValue);
 						}
 					}else{
-						mlowered.put(lcasek.replace(TEXT, "_dotraw"), lcasev);
+						mlowered.put(lowerCaseKey.replace(TEXT, "_dotraw"), lowerCaseValue);
 					}
 				}
 
-				mlowered.put(lcasek, lcasev);
+				mlowered.put(lowerCaseKey, lowerCaseValue);
 
-				if(lcasev!=null) {
-					sw.append(lcasev.toString()).append(' ');
+				if(lowerCaseValue!=null) {
+					sw.append(lowerCaseValue.toString()).append(' ');
 				}
 			}
 
-
-
 			if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
+			    
+                //Verify if it is enabled the option to regenerate missing metadata files on reindex
+                boolean regenerateMissingMetadata = Config
+                        .getBooleanProperty("regenerate.missing.metadata.on.reindex", true);
+                /*
+                Verify if it is enabled the option to always regenerate metadata files on reindex,
+                enabling this could affect greatly the performance of a reindex process.
+                 */
+                boolean alwaysRegenerateMetadata = Config
+                        .getBooleanProperty("always.regenerate.metadata.on.reindex", false);
+                if (contentlet.isLive() || contentlet.isWorking()) {
+                    if (alwaysRegenerateMetadata) {
+                        new TikaUtils().generateMetaData(contentlet, true);
+                    } else if (regenerateMissingMetadata) {
+                        new TikaUtils().generateMetaData(contentlet);
+                    }
+                }
+			    
+			    
 				// see if we have content metadata
 				File contentMeta=APILocator.getFileAssetAPI().getContentMetadataFile(contentlet.getInode());
 				if(contentMeta.exists() && contentMeta.length()>0) {
@@ -360,10 +399,10 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                 final Set<String> schemeWriter = new HashSet<>();
                 final List<WorkflowScheme> schemes = workflowAPI.findSchemesForContentType(contentlet.getContentType());
                 for (final WorkflowScheme scheme : schemes) {
-                    final List<WorkflowStep> steps = workflowAPI.findSteps(scheme);
-                    if (steps != null && !steps.isEmpty()) {
+                    final String entryStep = scheme.entryStep();
+                    if (entryStep != null) {
                         schemeWriter.add(scheme.getId());
-                        stepIds.add(steps.get(0).getId());
+                        stepIds.add(entryStep);
                     }
                 }
     
@@ -395,18 +434,17 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
         	return;
 		}
 
-	    List<Category> myCats = APILocator.getCategoryAPI().getParents(con, APILocator.systemUser(), false);
-	    final StringWriter myCatsString=new StringWriter();
-	    for(final Category me : myCats){
-	        myCatsString.append(me.getCategoryVelocityVarName()).append(" ");
-	    }
+	    List<Category> cats = APILocator.getCategoryAPI().getParents(con, APILocator.systemUser(), false);
 
-        m.put(ESMappingConstants.CATEGORIES, myCatsString.toString());
+        List<String> catsVarNames = cats.stream().map(Category::getCategoryVelocityVarName).collect(
+				Collectors.toList());
+
+        m.put(ESMappingConstants.CATEGORIES, catsVarNames);
         
 
 	    for(final com.dotcms.contenttype.model.field.Field f : catFields){
 	        // I don't think we care if we put all the categories in each field
-            m.put(type.variable() + "." + f.variable(), myCatsString.toString());
+            m.put(type.variable() + "." + f.variable(), catsVarNames);
 	    
 	    }
 	}
@@ -578,7 +616,6 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 				} else if(f.getFieldType().equals(Field.FieldType.TAG.toString())) {
 
 					StringBuilder personaTags = new StringBuilder();
-					List<String> tagg = new ArrayList<>();
 					List<Tag> tagList = APILocator.getTagAPI().getTagsByInode(con.getInode());
 					if(tagList ==null || tagList.size()==0) continue;
 
@@ -588,22 +625,26 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 					for ( Tag t : tagList ) {
 						if(t.getTagName() ==null) continue;
 						String myTag = t.getTagName().trim();
-						tagg.add(myTag);
 						if ( t.isPersona() ) {
 							personaTags.append(myTag).append(' ');
 						}
 					}
 
-					m.put(keyName, tagg);
-					m.put(ESMappingConstants.TAGS, tagg);
+					final List<String> tagsNames = tagList.stream().map(Tag::getTagName).collect(
+							Collectors.toList());
+
+					m.put(keyName, tagsNames);
+					m.put(ESMappingConstants.TAGS, tagsNames);
 
 					if ( Structure.STRUCTURE_TYPE_PERSONA != con.getStructure().getStructureType() ) {
-						if ( personaTags.length() > tagDelimit.length() ) {
-							String personaStr = personaTags.substring(0, personaTags.length()-tagDelimit.length());
-							m.put(new StringBuilder(st.getVelocityVarName()).append(".")
-									.append(ESMappingConstants.PERSONAS).toString(), personaStr);
-							m.put(ESMappingConstants.PERSONAS, personaStr);
-						}
+						final List<String> personaTagsNames = tagList.stream()
+								.filter(Tag::isPersona)
+								.map(Tag::getTagName)
+								.collect(Collectors.toList());
+
+						m.put(st.getVelocityVarName() + "."
+								+ ESMappingConstants.PERSONAS, personaTagsNames);
+						m.put(ESMappingConstants.PERSONAS, personaTagsNames);
 					}
 
 				} else {
@@ -622,6 +663,14 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 						m.put(keyNameText, valueObj.toString());
 					}
 				}
+
+				// Store sha256 hash for unique fields in the index
+				if (f.isUnique() && m.containsKey(keyName)) {
+					final Object uniqueValue = m.get(keyName);
+					m.put(keyName + ESUtils.SHA_256,
+							ESUtils.sha256(keyName, uniqueValue, con.getLanguageId()));
+				}
+
 			} catch (Exception e) {
 				Logger.warn(ESMappingAPIImpl.class, "Error indexing field: " + f.getFieldName()
 						+ " of contentlet: " + con.getInode(), e);
@@ -634,65 +683,60 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	}
 
 	@CloseDBIfOpened
-	public List<String> dependenciesLeftToReindex(Contentlet con) throws DotStateException, DotDataException, DotSecurityException {
-		List<String> dependenciesToReindex = new ArrayList<String>();
+	public List<String> dependenciesLeftToReindex(final Contentlet contentlet) throws DotStateException, DotDataException, DotSecurityException {
+		final List<String> dependenciesToReindex = new ArrayList<>();
 
-		ContentletAPI conAPI=APILocator.getContentletAPI();
+		final ContentletAPI conAPI=APILocator.getContentletAPI();
 
-		String relatedSQL = "select tree.* from tree where parent = ? or child = ? order by tree_order";
-		DotConnect db = new DotConnect();
+		final String relatedSQL = "select tree.* from tree where parent = ? or child = ? order by tree_order";
+		final DotConnect db = new DotConnect();
 		db.setSQL(relatedSQL);
-		db.addParam(con.getIdentifier());
-		db.addParam(con.getIdentifier());
-		ArrayList<HashMap<String, String>> relatedContentlets = db.loadResults();
+		db.addParam(contentlet.getIdentifier());
+		db.addParam(contentlet.getIdentifier());
+
+		final List<HashMap<String, String>> relatedContentlets = db.loadResults();
 
 		if(relatedContentlets.size()>0) {
 
-			List<Relationship> relationships = FactoryLocator.getRelationshipFactory().byContentType(con.getStructure());
+			final List<Relationship> relationships = FactoryLocator.getRelationshipFactory()
+					.byContentType(contentlet.getContentType());
 
-			for(Relationship rel : relationships) {
+			for(Relationship relationship : relationships) {
 
-				List<Contentlet> oldDocs;
+				final List<Contentlet> oldDocs;
+				final List<String> oldRelatedIds = new ArrayList<>();
+				final List<String> newRelatedIds = new ArrayList<>();
+				final StringBuilder q = new StringBuilder();
 
-				StringBuilder q = new StringBuilder();
-				boolean isSameStructRelationship = FactoryLocator.getRelationshipFactory().sameParentAndChild(rel);
+				boolean isSameStructRelationship = FactoryLocator.getRelationshipFactory()
+						.sameParentAndChild(relationship);
 
 				if(isSameStructRelationship) {
-					q.append("+type:content +(").append(rel.getRelationTypeValue())
+					q.append("+type:content +(").append(relationship.getRelationTypeValue())
 							.append(ESMappingConstants.SUFFIX_PARENT).append(":")
-							.append(con.getIdentifier())
-							.append(" ").append(rel.getRelationTypeValue())
+							.append(contentlet.getIdentifier())
+							.append(" ").append(relationship.getRelationTypeValue())
 							.append(ESMappingConstants.SUFFIX_CHILD).append(":")
-							.append(con.getIdentifier()).append(") ");
+							.append(contentlet.getIdentifier()).append(") ");
 				}else {
-					q.append("+type:content +").append(rel.getRelationTypeValue()).append(":")
-							.append(con.getIdentifier());
+					q.append("+type:content +").append(relationship.getRelationTypeValue()).append(":")
+							.append(contentlet.getIdentifier());
 				}
+
 				oldDocs = conAPI
 						.search(q.toString(), -1, 0, null, APILocator.getUserAPI().getSystemUser(),
 								false);
 
-				List<String> oldRelatedIds = new ArrayList<String>();
 				if(oldDocs.size() > 0) {
 					for(Contentlet oldDoc : oldDocs) {
 						oldRelatedIds.add(oldDoc.getIdentifier());
 					}
 				}
 
-				List<String> newRelatedIds = new ArrayList<String>();
-				for(HashMap<String, String> relatedEntry : relatedContentlets) {
-					String childId = relatedEntry.get(ESMappingConstants.CHILD);
-					String parentId = relatedEntry.get(ESMappingConstants.PARENT);
-					if(relatedEntry.get(ESMappingConstants.RELATION_TYPE).equals(rel.getRelationTypeValue())) {
-						if(con.getIdentifier().equalsIgnoreCase(childId)) {
-							newRelatedIds.add(parentId);
-							oldRelatedIds.remove(parentId);
-						} else {
-							newRelatedIds.add(childId);
-							oldRelatedIds.remove(childId);
-						}
-					}
-				}
+				relatedContentlets.stream().filter(map -> map.get(ESMappingConstants.RELATION_TYPE)
+						.equals(relationship.getRelationTypeValue())).forEach(
+						entry -> replaceExistingRelatedContent(entry, contentlet,
+								oldRelatedIds, newRelatedIds));
 
 				//Taking the disjunction of both collections will give the old list of dependencies that need to be removed from the
 				//re-indexation and the list of new dependencies no re-indexed yet
@@ -703,81 +747,89 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 		return dependenciesToReindex;
 	}
 
-	protected void loadRelationshipFields(final Contentlet con, final Map<String, Object> m)
-			throws DotStateException, DotDataException {
-		String propName;
-		final Map<String, List> relationshipsRecords = new HashMap<>();
-		String orderKey;
+	/**
+	 *
+	 * @param relatedEntry
+	 * @param con
+	 * @param oldRelatedIds
+	 * @param newRelatedIds
+	 */
+	private void replaceExistingRelatedContent(final Map<String, String> relatedEntry,
+			final Contentlet con, final List<String> oldRelatedIds,
+			final List<String> newRelatedIds) {
 
-		DotConnect db = new DotConnect();
+		final String childId = relatedEntry.get(ESMappingConstants.CHILD);
+		final String parentId = relatedEntry.get(ESMappingConstants.PARENT);
+		if (con.getIdentifier().equalsIgnoreCase(childId)) {
+			newRelatedIds.add(parentId);
+			oldRelatedIds.remove(parentId);
+		} else {
+			newRelatedIds.add(childId);
+			oldRelatedIds.remove(childId);
+		}
+	}
+
+	protected void loadRelationshipFields(final Contentlet contentlet, final Map<String, Object> esMap)
+			throws DotStateException, DotDataException {
+
+		String orderKey;
+		String propName;
+
+		final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
+		final Map<String, List> relationshipsRecords = new HashMap<>();
+
+		final DotConnect db = new DotConnect();
 		db.setSQL("select * from tree where parent = ? or child = ? order by tree_order asc");
-		db.addParam(con.getIdentifier());
-		db.addParam(con.getIdentifier());
+		db.addParam(contentlet.getIdentifier());
+		db.addParam(contentlet.getIdentifier());
 
 		for (Map<String, Object> relatedEntry : db.loadObjectResults()) {
 
-			String childId = relatedEntry.get(ESMappingConstants.CHILD).toString();
-			String parentId = relatedEntry.get(ESMappingConstants.PARENT).toString();
-			String relType = relatedEntry.get(ESMappingConstants.RELATION_TYPE).toString();
-			String order = relatedEntry.get(ESMappingConstants.TREE_ORDER).toString();
+			final String childId = relatedEntry.get(ESMappingConstants.CHILD).toString();
+			final String parentId = relatedEntry.get(ESMappingConstants.PARENT).toString();
+			final String relType = relatedEntry.get(ESMappingConstants.RELATION_TYPE).toString();
+			final String order = relatedEntry.get(ESMappingConstants.TREE_ORDER).toString();
 
 			if ("child".equals(relType)) {
 				continue;
 			}
 
-			Relationship rel = FactoryLocator.getRelationshipFactory().byTypeValue(relType);
+			final Relationship relationship = relationshipAPI.byTypeValue(relType);
 
-			if (rel != null && InodeUtils.isSet(rel.getInode())) {
+			if (relationship != null && InodeUtils.isSet(relationship.getInode())) {
 
-				boolean isSameStructRelationship = FactoryLocator.getRelationshipFactory()
-						.sameParentAndChild(rel);
+				final boolean isSameStructRelationship = relationshipAPI.sameParentAndChild(relationship);
 
 				//Support for legacy relationships
 				propName = isSameStructRelationship ?
-						(con.getIdentifier().equals(parentId) ? rel.getRelationTypeValue()
+						(contentlet.getIdentifier().equals(parentId) ? relationship.getRelationTypeValue()
 								+ ESMappingConstants.SUFFIX_CHILD
-								: rel.getRelationTypeValue() + ESMappingConstants.SUFFIX_PARENT)
-						: rel.getRelationTypeValue();
+								: relationship.getRelationTypeValue() + ESMappingConstants.SUFFIX_PARENT)
+						: relationship.getRelationTypeValue();
 
-				orderKey = rel.getRelationTypeValue() + ESMappingConstants.SUFFIX_ORDER;
+				orderKey = relationship.getRelationTypeValue() + ESMappingConstants.SUFFIX_ORDER;
 
-				if (relType.equals(rel.getRelationTypeValue())) {
-					String me = con.getIdentifier();
-					String related = me.equals(childId) ? parentId : childId;
+				if (relType.equals(relationship.getRelationTypeValue())) {
+					final String me = contentlet.getIdentifier();
+					final String related = me.equals(childId) ? parentId : childId;
 
-					String previousPropNameValue = (String) m.get(propName);
-					int previousPropNameValueLength =
-							previousPropNameValue != null ? previousPropNameValue.length() : 0;
+					List.class.cast(esMap.computeIfAbsent(propName, k -> new ArrayList<>())).add(related);
 
-					StringBuilder propNameValue = new StringBuilder(
-							previousPropNameValueLength + UUID_LENGTH + 1);
+					//adding sort elements as a list
+					List.class.cast(esMap.computeIfAbsent(orderKey, k -> new ArrayList<>()))
+							.add(related + "_" + order);
 
-					// put a pointer to the related content
-					m.put(propName, propNameValue
-							.append(previousPropNameValue != null ? previousPropNameValue : "")
-							.append(related).append(" ").toString());
+					if (relationship.isRelationshipField()){
+						addRelationshipRecords(contentlet, me.equals(childId) ? relationship.getParentRelationName()
+								: relationship.getChildRelationName(), related, relationshipsRecords, esMap);
+					}
 
-					String previousOrderKeyValue = (String) m.get(orderKey);
-					int previousOrderKeyValueLength =
-							previousOrderKeyValue != null ? previousOrderKeyValue.length() : 0;
-					int orderLength = order != null ? order.length() : 0;
-
-					StringBuilder orderKeyValue = new StringBuilder(
-							previousOrderKeyValueLength + UUID_LENGTH + 1 + orderLength + 1);
-
-					// make a way to sort
-					m.put(orderKey, orderKeyValue
-							.append(previousOrderKeyValue != null ? previousOrderKeyValue : "")
-							.append(related).append("_").append(order).append(" ").toString());
-
-					addRelationshipRecords(con, me.equals(childId) ? rel.getParentRelationName()
-							: rel.getChildRelationName(), related, relationshipsRecords, m);
 				}
 			}
 		}
 
 		//Adding new relationships fields to the index map
-		m.putAll(relationshipsRecords);
+		esMap.putAll(relationshipsRecords);
 
 	}
 
@@ -812,6 +864,8 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 					Logger.warn(this, "Error getting field for relation type " + key, e);
 				}
 
+			} else{
+				relationshipsRecords.get(key).add(related);
 			}
 		}
 	}

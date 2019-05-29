@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.calendar.business;
 
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
@@ -51,7 +52,7 @@ public class EventAPIImpl implements EventAPI {
 	 * @param fromDate
 	 * @param endDate
 	 * @param tags
-	 * @param keyword
+	 * @param keywords
 	 * @param categories
 	 * @param liveOnly
 	 * @param user
@@ -59,6 +60,7 @@ public class EventAPIImpl implements EventAPI {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
+	@CloseDBIfOpened
 	public List<Event> find(Date fromDate, Date endDate, String[] tags, String[] keywords, List<Category> categories, boolean liveOnly, boolean includeArchived, int offset,
 			int limit, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		List<Event> events = eventFactory.find(fromDate, endDate, tags, keywords, categories, liveOnly, includeArchived, offset, limit, user, respectFrontendRoles);
@@ -76,7 +78,7 @@ public class EventAPIImpl implements EventAPI {
 	 * @param fromDate
 	 * @param endDate
 	 * @param tags
-	 * @param keyword
+	 * @param keywords
 	 * @param categories
 	 * @param liveOnly
 	 * @param user
@@ -84,6 +86,7 @@ public class EventAPIImpl implements EventAPI {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
+	@CloseDBIfOpened
 	public List<Event> find(String hostId, Date fromDate, Date endDate, String[] tags, String[] keywords, List<Category> categories, boolean liveOnly, boolean includeArchived, int offset,
 			int limit, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		List<Event> events = eventFactory.find(hostId, fromDate, endDate, tags, keywords, categories, liveOnly, includeArchived, offset, limit, user, respectFrontendRoles);
@@ -104,6 +107,8 @@ public class EventAPIImpl implements EventAPI {
 	 * @throws DotSecurityException
 	 *             If the user doesn't have permissions to see this event
 	 */
+
+    @CloseDBIfOpened
 	public Event find(String id, boolean live, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		Event ev = eventFactory.find(RecurrenceUtil.getBaseEventIdentifier(id), live, user, respectFrontendRoles);
 		Contentlet cont = new Contentlet();
@@ -125,15 +130,16 @@ public class EventAPIImpl implements EventAPI {
 		return ev;
 	}
 
+	@CloseDBIfOpened
 	public Event findbyInode(String inode, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-		Event ev = eventFactory.findbyInode(inode, user, respectFrontendRoles); // todo: this method should be here, since it is an API call and convert.
-		Contentlet cont = new Contentlet();
-		cont = contentletAPI.find(ev.getInode(), user, respectFrontendRoles);
+		final Event ev = eventFactory.findbyInode(inode, user, respectFrontendRoles); // todo: this method should be here, since it is an API call and convert.
+		final Contentlet cont = contentletAPI.find(ev.getInode(), user, respectFrontendRoles);
 		if (!permissionAPI.doesUserHavePermission(cont, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles))
 			throw new DotSecurityException("User doesn't have permissions to access this event");
 		return ev;
 	}
 
+	@CloseDBIfOpened
 	public List<Event> findRelatedEvents(Event baseEvent, Date fromDate, Date toDate, boolean live, User user, boolean respectFrontendRoles) throws DotDataException,
 			DotSecurityException {
 		List<Category> categories = this.getCategories(baseEvent, user, respectFrontendRoles);
@@ -147,6 +153,7 @@ public class EventAPIImpl implements EventAPI {
 		return events;
 	}
 
+	@CloseDBIfOpened
 	public List<Category> getCategories(Event ev, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
 
 		List<Category> cats = new ArrayList<Category>();
@@ -168,6 +175,7 @@ public class EventAPIImpl implements EventAPI {
 	 * This methods removes all the categories the user is able to remove from
 	 * the event and then associates the categories passed as paramater
 	 */
+	@WrapInTransaction
 	public void setCategories(Event ev, List<Category> cats, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
 		List<Category> oldcats = new ArrayList<Category>();
@@ -195,6 +203,7 @@ public class EventAPIImpl implements EventAPI {
 
 	}
 
+	@CloseDBIfOpened
 	public List<Contentlet> getRelatedContent(Event ev, Relationship rel, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		Contentlet cont = new Contentlet();
 		cont = contentletAPI.find(ev.getInode(), user, respectFrontendRoles);
@@ -203,6 +212,7 @@ public class EventAPIImpl implements EventAPI {
 		return contentlets;
 	}
 
+	@WrapInTransaction
 	public void setRelatedContent(Event ev, Relationship rel, List<Contentlet> related, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
 		Contentlet cont = new Contentlet();
@@ -281,10 +291,11 @@ public class EventAPIImpl implements EventAPI {
 		return result.toString();
 	}
 
+	@WrapInTransaction
 	public Event disconnectEvent(Event event, User user, Date startDate, Date endDate) throws DotDataException, DotSecurityException{
 		Event newEvent = null;
 		if(event!=null && event.isRecurrent()){
-			Contentlet newCont = contentletAPI.copyContentlet(event,user, true);
+			Contentlet newCont = contentletAPI.copyContentlet(event, user, true);
 			newEvent = eventFactory.convertToEvent(newCont);
 			newEvent.setDisconnectedFrom(event.getIdentifier());
 			newEvent.setRecurrenceDatesToIgnore("");

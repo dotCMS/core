@@ -1,42 +1,34 @@
 package com.dotcms.rest.api.v1.authentication;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
-import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
-import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.repackage.org.hibernate.validator.constraints.Length;
 import com.dotcms.rest.api.Validated;
 import com.dotcms.rest.exception.ValidationException;
 import com.dotmarketing.util.SecurityLogger;
+import com.dotmarketing.util.UtilMethods;
 
 @JsonDeserialize(builder = CreateTokenForm.Builder.class)
 public class CreateTokenForm extends Validated {
 
     @NotNull
     @Length(min = 2, max = 100)
-    private final String user;
+    public final String user;
 
     @NotNull
-    private final String password;
+    public final String password;
 
-    private final int expirationDays;
-
-    public String getUser() {
-        return user;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public int getExpirationDays() {
-        return expirationDays;
-    }
+    public final int expirationDays;
+    
+    public final String label;
 
     private CreateTokenForm(Builder builder) {
         user = builder.user;
         password = builder.password;
         expirationDays = builder.expirationDays;
+        label=builder.label;
         try {
         	checkValid();
         }catch(ValidationException ve){
@@ -51,7 +43,7 @@ public class CreateTokenForm extends Validated {
         @JsonProperty(required = true) private String user; // not present on create
         @JsonProperty(required = true) private String password;
         @JsonProperty private int expirationDays = -1;
-
+        @JsonProperty private String label=null;
         public Builder user(String user) {
             this.user = user;
             return this;
@@ -66,6 +58,12 @@ public class CreateTokenForm extends Validated {
             this.expirationDays = expirationDays;
             return this;
         }
+        public Builder label(String label) {
+            this.label = UtilMethods.isSet(label) ? label : null;
+            return this;
+        }
+        
+        
 
         public CreateTokenForm build() {
             return new CreateTokenForm(this);

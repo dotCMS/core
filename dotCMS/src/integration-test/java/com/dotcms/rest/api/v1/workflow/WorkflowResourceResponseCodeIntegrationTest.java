@@ -1,13 +1,14 @@
 package com.dotcms.rest.api.v1.workflow;
 
 import com.dotcms.mock.response.MockAsyncResponse;
-import com.dotcms.repackage.javax.ws.rs.container.AsyncResponse;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.repackage.javax.ws.rs.core.Response.Status;
+import javax.ws.rs.container.AsyncResponse;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 import com.dotcms.rest.ContentHelper;
 import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource;
+import com.dotcms.rest.api.MultiPartUtils;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.workflow.form.*;
@@ -70,7 +71,7 @@ public class WorkflowResourceResponseCodeIntegrationTest {
                         anyString())).thenReturn(dataObject);
 
         workflowResource = new WorkflowResource(workflowHelper, contentHelper, workflowAPI,
-                contentletAPI, responseUtil, permissionAPI, workflowImportExportUtil, webResource);
+                contentletAPI, responseUtil, permissionAPI, workflowImportExportUtil,new MultiPartUtils(), webResource);
     }
 
     //@AfterClass

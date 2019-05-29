@@ -3,9 +3,10 @@ package com.dotcms.rendering.velocity.util;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 
-import com.dotcms.rendering.velocity.viewtools.RequestWrapper;
+import com.dotcms.rendering.velocity.viewtools.VelocityRequestWrapper;
 import com.dotcms.rendering.velocity.viewtools.content.ContentMap;
 import com.dotcms.rendering.velocity.viewtools.content.ContentTool;
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.api.v1.container.ContainerResource;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.beans.Host;
@@ -23,6 +24,8 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.*;
 import com.liferay.portal.model.User;
 import com.liferay.util.SystemProperties;
+import java.util.HashMap;
+import java.util.Map;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
@@ -46,6 +49,20 @@ public class VelocityUtil {
     public final static String NO="no";
     public final static String DOTCACHE="dotcache";
 	private static VelocityEngine ve = null;
+	private static Map<String, String> digitToLetter = new HashMap<>();
+
+	static {
+		digitToLetter.put("0", "zero");
+		digitToLetter.put("1", "one");
+		digitToLetter.put("2", "two");
+		digitToLetter.put("3", "three");
+		digitToLetter.put("4", "four");
+		digitToLetter.put("5", "five");
+		digitToLetter.put("6", "six");
+		digitToLetter.put("7", "seven");
+		digitToLetter.put("8", "eight");
+		digitToLetter.put("9", "nine");
+	}
 
 	private static class Holder {
 		private static final VelocityUtil INSTANCE = new VelocityUtil();
@@ -110,12 +127,39 @@ public class VelocityUtil {
 
 
 	public static String convertToVelocityVariable(final String variable, boolean firstLetterUppercase){
-		
 
-	      return (firstLetterUppercase) 
-	              ? StringUtils.camelCaseUpper(variable)
-	              : StringUtils.camelCaseLower(variable);
-		
+		String variableToReturn = variable;
+
+		// starts with number
+		if(variableToReturn.matches("^\\d.*")) {
+			variableToReturn = replaceStartingNumberWithWrittenNumber(variableToReturn);
+		}
+
+		// start with char different than "_A-Za-z"
+		if(variableToReturn.matches("[^_A-Za-z].*")) {
+			variableToReturn = variableToReturn.replaceAll("[^_0-9A-Za-z]", "_");
+		}
+
+		if(variableToReturn.matches(".*[a-zA-Z].*")) {
+			variableToReturn = (firstLetterUppercase)
+					? StringUtils.camelCaseUpper(variableToReturn)
+					: StringUtils.camelCaseLower(variableToReturn);
+		}
+
+		return variableToReturn;
+	}
+
+	@VisibleForTesting
+	static String replaceStartingNumberWithWrittenNumber(final String string) {
+
+		final String subString = string.substring(0, 1);
+
+		if(!subString.matches("[0-9]")) {
+			return string;
+		}
+
+		return digitToLetter.get(subString) + string.substring(1);
+
 	}
 	
 	
@@ -184,9 +228,9 @@ public class VelocityUtil {
 		//get the context from the request if possible
         ChainedContext context;
         if ( request.getAttribute( com.dotcms.rendering.velocity.Constants.VELOCITY_CONTEXT ) != null && request.getAttribute( com.dotcms.rendering.velocity.Constants.VELOCITY_CONTEXT ) instanceof ChainedContext ) {
-            return (ChainedContext) request.getAttribute( "velocityContext" );
+            return (ChainedContext) request.getAttribute( com.dotcms.rendering.velocity.Constants.VELOCITY_CONTEXT  );
         } else {
-            RequestWrapper rw = new RequestWrapper( request );
+            VelocityRequestWrapper rw = new VelocityRequestWrapper( request );
             if ( request.getAttribute( "User-Agent" ) != null && request.getAttribute( "User-Agent" ).equals( Constants.USER_AGENT_DOTCMS_BROWSER ) ) {
                 rw.setCustomUserAgentHeader( Constants.USER_AGENT_DOTCMS_BROWSER );
             }
@@ -199,6 +243,7 @@ public class VelocityUtil {
 		 * if we have a toolbox manager, get a toolbox from it See
 		 * /WEB-INF/toolbox.xml
 		 */
+		
 		context.setToolbox(getToolboxManager().getToolboxContext(context));
 
         HttpSession session = request.getSession(false);

@@ -1,17 +1,52 @@
 package com.dotcms.rest.api.v1.workflow;
 
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.CURRENT_STEP;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.actionName;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.addSteps;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.createImportExportObjectForm;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.createScheme;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.createWorkflowActions;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.doCleanUp;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.findSchemes;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.findSteps;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.schemeName;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.stepName;
+import static com.dotcms.rest.exception.mapper.ExceptionMapperUtil.ACCESS_CONTROL_HEADER_INVALID_LICENSE;
+import static com.dotcms.rest.exception.mapper.ExceptionMapperUtil.ACCESS_CONTROL_HEADER_PERMISSION_VIOLATION;
+import static com.dotmarketing.business.Role.ADMINISTRATOR;
+import static com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest.createContentTypeAndAssignPermissions;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.mock.response.MockAsyncResponse;
-import com.dotcms.repackage.javax.ws.rs.container.AsyncResponse;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.repackage.javax.ws.rs.core.Response.Status;
-import com.dotcms.rest.*;
+import com.dotcms.rest.ContentHelper;
+import com.dotcms.rest.EmptyHttpResponse;
+import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.WebResource;
+import com.dotcms.rest.api.MultiPartUtils;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.LicenseValiditySupplier;
-import com.dotcms.workflow.form.*;
+import com.dotcms.workflow.form.WorkflowActionForm;
+import com.dotcms.workflow.form.WorkflowActionStepForm;
+import com.dotcms.workflow.form.WorkflowReorderWorkflowActionStepForm;
+import com.dotcms.workflow.form.WorkflowSchemeForm;
+import com.dotcms.workflow.form.WorkflowSchemeImportObjectForm;
+import com.dotcms.workflow.form.WorkflowStepAddForm;
+import com.dotcms.workflow.form.WorkflowStepUpdateForm;
 import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -29,24 +64,17 @@ import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-
-import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.*;
-import static com.dotcms.rest.exception.mapper.ExceptionMapperUtil.ACCESS_CONTROL_HEADER_INVALID_LICENSE;
-import static com.dotcms.rest.exception.mapper.ExceptionMapperUtil.ACCESS_CONTROL_HEADER_PERMISSION_VIOLATION;
-import static com.dotmarketing.business.Role.ADMINISTRATOR;
-import static com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest.createContentTypeAndAssignPermissions;
-import static org.junit.Assert.*;
-import static org.mockito.Matchers.*;
-import static org.mockito.Mockito.*;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.container.AsyncResponse;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 public class WorkflowResourceLicenseIntegrationTest {
 
@@ -115,12 +143,13 @@ public class WorkflowResourceLicenseIntegrationTest {
 
         licenseWorkflowResource = new WorkflowResource(licensedWorkflowHelper, contentHelper,
                 licensedWorkflowAPI,
-                contentletAPI, responseUtil, permissionAPI, workflowImportExportUtil,
+                contentletAPI, responseUtil, permissionAPI, workflowImportExportUtil, new MultiPartUtils(),
                 webResourceThatReturnsAdminUser);
 
         nonLicenseWorkflowResource = new WorkflowResource(nonLicensedWorkflowHelper, contentHelper,
                 nonLicensedWorkflowAPI,
                 contentletAPI, responseUtil, permissionAPI, workflowImportExportUtil,
+                new MultiPartUtils(),
                 webResourceThatReturnsARandomUser); //Returns Bill
     }
 

@@ -3,11 +3,7 @@ package com.dotcms.contenttype.test;
 import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.DM_WORKFLOW;
 import static com.dotmarketing.business.Role.ADMINISTRATOR;
 import static com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest.createContentTypeAndAssignPermissions;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -27,31 +23,32 @@ import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.request.MockSessionRequest;
-import com.dotcms.repackage.javax.ws.rs.core.MediaType;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.repackage.javax.ws.rs.core.Response.Status;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONArray;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
-import com.dotcms.repackage.org.glassfish.jersey.internal.util.Base64;
+import org.glassfish.jersey.internal.util.Base64;
 import com.dotcms.rest.ContentResource;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.RelationshipAPI;
-import com.dotmarketing.business.Role;
+import com.dotmarketing.beans.Permission;
+import com.dotmarketing.business.*;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.google.common.collect.Sets;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
@@ -64,6 +61,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -79,7 +77,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.w3c.dom.Document;
-import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
@@ -99,52 +97,65 @@ public class ContentResourceTest extends IntegrationTestBase {
     private static LanguageAPI languageAPI;
     private static ContentletAPI contentletAPI;
     private static ContentTypeAPI contentTypeAPI;
+    private static PermissionAPI permissionAPI;
     private static RelationshipAPI relationshipAPI;
+    private static RoleAPI roleAPI;
     private static User user;
+    private static UserAPI userAPI;
 
     @BeforeClass
     public static void prepare() throws Exception {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
 
+        roleAPI   = APILocator.getRoleAPI();
         user      = APILocator.getUserAPI().getSystemUser();
+        userAPI   = APILocator.getUserAPI();
         fieldAPI  = APILocator.getContentTypeFieldAPI();
 
         contentTypeAPI  = APILocator.getContentTypeAPI(user);
         contentletAPI   = APILocator.getContentletAPI();
         languageAPI     = APILocator.getLanguageAPI();
+        permissionAPI   = APILocator.getPermissionAPI();
         relationshipAPI = APILocator.getRelationshipAPI();
     }
 
     public static class TestCase {
         String depth;
         String responseType;
+        boolean limitedUser;
         int statusCode;
 
-        public TestCase(final String depth, final String responseType, final int statusCode) {
+        public TestCase(final String depth, final String responseType, final int statusCode, final boolean limitedUser) {
             this.depth        = depth;
             this.responseType = responseType;
             this.statusCode   = statusCode;
+            this.limitedUser  = limitedUser;
         }
     }
 
     @DataProvider
     public static Object[] testCases(){
         return new TestCase[]{
-                new TestCase(null, JSON_RESPONSE, Status.OK.getStatusCode()),
-                new TestCase("0", JSON_RESPONSE, Status.OK.getStatusCode()),
-                new TestCase("1", JSON_RESPONSE, Status.OK.getStatusCode()),
-                new TestCase("2", JSON_RESPONSE, Status.OK.getStatusCode()),
-                new TestCase(null, XML_RESPONSE, Status.OK.getStatusCode()),
-                new TestCase("0", XML_RESPONSE, Status.OK.getStatusCode()),
-                new TestCase("1", XML_RESPONSE, Status.OK.getStatusCode()),
-                new TestCase("2", XML_RESPONSE, Status.OK.getStatusCode()),
-                new TestCase(null, null, Status.OK.getStatusCode()),
+                new TestCase(null, JSON_RESPONSE, Status.OK.getStatusCode(), false),
+                new TestCase("0", JSON_RESPONSE, Status.OK.getStatusCode(), false),
+                new TestCase("1", JSON_RESPONSE, Status.OK.getStatusCode(), false),
+                new TestCase("2", JSON_RESPONSE, Status.OK.getStatusCode(), false),
+                new TestCase("3", JSON_RESPONSE, Status.OK.getStatusCode(), false),
+                new TestCase(null, XML_RESPONSE, Status.OK.getStatusCode(), false),
+                new TestCase("0", XML_RESPONSE, Status.OK.getStatusCode(), false),
+                new TestCase("1", XML_RESPONSE, Status.OK.getStatusCode(), false),
+                new TestCase("2", XML_RESPONSE, Status.OK.getStatusCode(), false),
+                new TestCase("3", XML_RESPONSE, Status.OK.getStatusCode(), false),
+                new TestCase(null, null, Status.OK.getStatusCode(), false),
                 //Bad depth cases
-                new TestCase("5", JSON_RESPONSE, Status.BAD_REQUEST.getStatusCode()),
-                new TestCase("5", XML_RESPONSE, Status.BAD_REQUEST.getStatusCode()),
-                new TestCase("no_depth", JSON_RESPONSE, Status.BAD_REQUEST.getStatusCode()),
-                new TestCase("no_depth", XML_RESPONSE, Status.BAD_REQUEST.getStatusCode()),
+                new TestCase("5", JSON_RESPONSE, Status.BAD_REQUEST.getStatusCode(), false),
+                new TestCase("5", XML_RESPONSE, Status.BAD_REQUEST.getStatusCode(), false),
+                new TestCase("no_depth", JSON_RESPONSE, Status.BAD_REQUEST.getStatusCode(), false),
+                new TestCase("no_depth", XML_RESPONSE, Status.BAD_REQUEST.getStatusCode(), false),
+
+                new TestCase("0", JSON_RESPONSE, Status.OK.getStatusCode(), true),
+                new TestCase("0", XML_RESPONSE, Status.OK.getStatusCode(), true)
         };
     }
 
@@ -202,18 +213,18 @@ public class ContentResourceTest extends IntegrationTestBase {
      * Creates relationship fields
      * @param relationName
      * @param parentContentType
-     * @param childContentType
+     * @param childContentTypeVar
      * @return
      * @throws DotSecurityException
      * @throws DotDataException
      */
     private Field createRelationshipField(final String relationName,
-            final ContentType parentContentType, final ContentType childContentType,
+            final ContentType parentContentType, final String childContentTypeVar,
             final int cardinality) throws DotSecurityException, DotDataException {
 
         final Field newField = FieldBuilder.builder(RelationshipField.class).name(relationName)
                 .contentTypeId(parentContentType.id()).values(String.valueOf(cardinality))
-                .relationType(childContentType.id()).build();
+                .relationType(childContentTypeVar).build();
 
         return fieldAPI.save(newField, user);
     }
@@ -229,6 +240,8 @@ public class ContentResourceTest extends IntegrationTestBase {
         ContentType childContentType  = null;
         ContentType grandChildContentType = null;
 
+        Role newRole = null;
+
         try {
 
             //creates content types
@@ -237,10 +250,24 @@ public class ContentResourceTest extends IntegrationTestBase {
             grandChildContentType = createSampleContentType(false);
 
             //creates relationship fields
-            final Field parentField = createRelationshipField("myChild", parentContentType,
-                    childContentType, RELATIONSHIP_CARDINALITY.ONE_TO_ONE.ordinal());
-            final Field childField = createRelationshipField("myChild", childContentType,
-                    grandChildContentType, RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal());
+            final Field parentField = createRelationshipField("children", parentContentType,
+                    childContentType.variable(), RELATIONSHIP_CARDINALITY.ONE_TO_ONE.ordinal());
+
+            final Field childField = createRelationshipField("grandChildren", childContentType,
+                    grandChildContentType.variable(),
+                    RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal());
+
+            //creates the other side of the parent relationship
+            createRelationshipField("parent",
+                    childContentType,
+                    parentContentType.variable() + StringPool.PERIOD + parentField.variable(),
+                    RELATIONSHIP_CARDINALITY.ONE_TO_ONE.ordinal());
+
+            //creates the other side of the child relationship
+            createRelationshipField("parents",
+                    grandChildContentType,
+                    childContentType.variable() + StringPool.PERIOD + childField.variable(),
+                    RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal());
 
             //gets relationships
             final Relationship childRelationship = relationshipAPI
@@ -256,9 +283,18 @@ public class ContentResourceTest extends IntegrationTestBase {
 
             final ContentletDataGen childDataGen = new ContentletDataGen(childContentType.id());
             Contentlet child = childDataGen.languageId(language).next();
+
             child = contentletAPI.checkin(child, CollectionsUtils
                             .map(childRelationship, CollectionsUtils.list(grandChild1, grandChild2)), user,
                     false);
+            if (testCase.limitedUser){
+                newRole = createRole();
+
+                //set individual permissions to the child
+                permissionAPI.save(new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                        child.getPermissionId(), newRole.getId(), PermissionAPI.PERMISSION_READ, true), child, user, false);
+            }
+
 
             final ContentletDataGen parentDataGen = new ContentletDataGen(parentContentType.id());
             Contentlet parent = parentDataGen.languageId(language).next();
@@ -273,8 +309,10 @@ public class ContentResourceTest extends IntegrationTestBase {
             contentlets.put("grandChild2", grandChild2);
 
             //calls endpoint
+            Thread.sleep(10000);
+
             final ContentResource contentResource = new ContentResource();
-            final HttpServletRequest request = createHttpRequest();
+            final HttpServletRequest request = createHttpRequest(null, testCase.limitedUser?userAPI.getAnonymousUser():null);
             final HttpServletResponse response = mock(HttpServletResponse.class);
             final Response endpointResponse = contentResource.getContent(request, response,
                     "/id/" + parent.getIdentifier() + "/live/false/type/" + testCase.responseType
@@ -295,8 +333,28 @@ public class ContentResourceTest extends IntegrationTestBase {
         }finally{
             deleteContentTypes(CollectionsUtils
                     .list(parentContentType, childContentType, grandChildContentType));
+
+            if (newRole != null){
+                roleAPI.delete(newRole);
+            }
         }
 
+    }
+
+    private Role createRole() throws DotDataException {
+        final long millis =  System.currentTimeMillis();
+
+        // Create Role.
+        Role newRole = new Role();
+        newRole.setName("Role" +  millis);
+        newRole.setEditUsers(true);
+        newRole.setEditPermissions(true);
+        newRole.setSystem(false);
+        newRole.setEditLayouts(true);
+        newRole.setParent(newRole.getId());
+        newRole = roleAPI.save(newRole);
+
+        return newRole;
     }
 
     private void deleteContentTypes(final List<ContentType> contentTypes) throws DotSecurityException, DotDataException {
@@ -327,46 +385,72 @@ public class ContentResourceTest extends IntegrationTestBase {
         final Contentlet parent = contentletMap.get("parent");
         final Contentlet child = contentletMap.get("child");
 
+        final String childVariable = parent.getContentType().fields().get(0).variable();
+
         assertEquals(parent.getIdentifier(), contentlet.get(IDENTIFIER));
 
         if (testCase.depth == null) {
-            assertEquals(child.getIdentifier(),
-                    contentlet.get(parent.getContentType().fields().get(0).variable()));
+            assertFalse(contentlet.has(childVariable));
         } else {
-            switch (Integer.parseInt(testCase.depth)) {
-                case 0:
-                    assertEquals(child.getIdentifier(),
-                            contentlet.get(parent.getContentType().fields().get(0).variable()));
-                    break;
+            final int depth = Integer.parseInt(testCase.depth);
 
-                case 1:
-                    assertEquals(child.getIdentifier(), ((JSONObject) contentlet
-                            .get(parent.getContentType().fields().get(0).variable()))
-                            .get(IDENTIFIER));
-                    break;
-
-                case 2:
-
-                    //validates child
-                    assertEquals(child.getIdentifier(), ((JSONObject) contentlet
-                            .get(parent.getContentType().fields().get(0).variable()))
-                            .get(IDENTIFIER));
-
-
-                    //validates grandchildren
-                    final String[] items = ((JSONObject) contentlet
-                            .get(parent.getContentType().fields().get(0).variable()))
-                            .get(child.getContentType().fields().get(0).variable()).toString().split(", ");
-
-                    assertEquals(2, items.length);
-
-                    Arrays.stream(items).allMatch(grandChildIdentifier -> grandChildIdentifier
-                            .equals(contentletMap.get("grandChild1").getIdentifier())
-                            || grandChildIdentifier
-                            .equals(contentletMap.get("grandChild2").getIdentifier()));
-
-                    break;
+            if (testCase.limitedUser){
+                //it shouldn't return any children
+                assertFalse(contentlet.has(childVariable));
+            }else{
+                if (depth == 0){
+                    assertEquals(child.getIdentifier(), contentlet.get(childVariable));
+                } else{
+                    validateChildrenJSON(contentletMap, contentlet, parent, child, depth);
+                }
             }
+
+        }
+    }
+
+    private void validateChildrenJSON(final Map<String, Contentlet> contentletMap,
+            final JSONObject contentlet, final Contentlet parent, final Contentlet child,
+            final int depth) throws JSONException {
+
+        final String fieldVariable = parent.getContentType().fields().get(0).variable();
+
+        System.out.println("Field Variable: " + fieldVariable);
+
+        final Object object = contentlet
+                .get(fieldVariable);
+
+        System.out.println("This should be a JSON Object:" + object.toString());
+
+        //validates child
+        assertEquals(child.getIdentifier(), ((JSONObject) object)
+                .get(IDENTIFIER));
+
+        if (depth > 1) {
+            //validates grandchildren
+            final JSONArray jsonArray = (JSONArray) ((JSONObject) contentlet
+                    .get(parent.getContentType().fields().get(0).variable()))
+                    .get(child.getContentType().fields().get(0).variable());
+
+            assertEquals(2, jsonArray.length());
+
+            assertTrue(CollectionsUtils.list(jsonArray.get(0), jsonArray.get(1)).stream().map(
+                    elem -> {
+                        try {
+                            return depth == 2 ? elem : JSONObject.class.cast(elem).get(IDENTIFIER);
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                            return Optional.empty();
+                        }
+                    })
+                    .allMatch(grandChild -> grandChild
+                            .equals(contentletMap.get("grandChild1").getIdentifier())
+                            || grandChild
+                            .equals(contentletMap.get("grandChild2").getIdentifier())));
+
+            //parent relationship was not added back again
+            assertFalse(((JSONObject) contentlet
+                    .get(parent.getContentType().fields().get(0).variable()))
+                    .has(child.getContentType().fields().get(1).variable()));
         }
     }
 
@@ -390,59 +474,69 @@ public class ContentResourceTest extends IntegrationTestBase {
         final Document doc = dBuilder.parse(inputSource);
         doc.getDocumentElement().normalize();
 
-        final Node contentlet = doc.getFirstChild().getFirstChild();
+        final DeferredElementImpl contentlet = (DeferredElementImpl) doc.getFirstChild().getFirstChild();
 
         final Contentlet parent = contentletMap.get("parent");
         final Contentlet child = contentletMap.get("child");
 
-        assertEquals(parent.getIdentifier(), ((DeferredElementImpl) contentlet).getElementsByTagName(
+        assertEquals(parent.getIdentifier(), contentlet.getElementsByTagName(
                 IDENTIFIER).item(0).getTextContent());
 
         if (testCase.depth == null) {
-            assertEquals(child.getIdentifier(), ((DeferredElementImpl) contentlet)
-                    .getElementsByTagName(parent.getContentType().fields().get(0).variable())
-                    .item(0).getTextContent());
+            assertEquals(0, contentlet
+                    .getElementsByTagName(parent.getContentType().fields().get(0).variable()).getLength());
             return;
         }
 
-        switch (Integer.parseInt(testCase.depth)){
-                case 0:
-                    assertEquals(child.getIdentifier(), ((DeferredElementImpl) contentlet)
-                            .getElementsByTagName(parent.getContentType().fields().get(0).variable())
-                            .item(0).getTextContent());
-                    break;
+        if (testCase.limitedUser){
+            //it shouldn't return any children
+            assertEquals(0, contentlet
+                    .getElementsByTagName(parent.getContentType().fields().get(0).variable()).getLength());
+        }else {
+            final int depth = Integer.parseInt(testCase.depth);
+            if (depth == 0) {
+                assertEquals(child.getIdentifier(), contentlet
+                        .getElementsByTagName(parent.getContentType().fields().get(0).variable())
+                        .item(0).getTextContent());
+            } else {
+                validateChildrenXML(contentletMap, contentlet, parent, child, depth);
+            }
+        }
+    }
 
-                case 1:
-                    assertEquals(child.getIdentifier(),
-                            ((DeferredElementImpl) ((DeferredElementImpl) contentlet)
-                                    .getElementsByTagName(
-                                            parent.getContentType().fields().get(0).variable())
-                                    .item(0)).getElementsByTagName(IDENTIFIER).item(0)
-                                    .getTextContent());
-                    break;
+    private void validateChildrenXML(final Map<String, Contentlet> contentletMap,
+            final DeferredElementImpl contentlet, final Contentlet parent,
+            final Contentlet child, final int depth) {
 
-                case 2:
-                    //validates child
-                    assertEquals(child.getIdentifier(),
-                            ((DeferredElementImpl) ((DeferredElementImpl) contentlet)
-                                    .getElementsByTagName(
-                                            parent.getContentType().fields().get(0).variable())
-                                    .item(0)).getElementsByTagName(IDENTIFIER).item(0)
-                                    .getTextContent());
+        assertEquals(child.getIdentifier(),
+                ((DeferredElementImpl) contentlet
+                        .getElementsByTagName(
+                                parent.getContentType().fields().get(0).variable())
+                        .item(0)).getElementsByTagName(IDENTIFIER).item(0)
+                        .getTextContent());
 
-                    //validates grandchildren
-                    final String[] items = ((DeferredElementImpl) contentlet).getElementsByTagName(
-                            parent.getContentType().fields().get(0).variable()).item(1)
-                            .getTextContent().split(", ");
+        if (depth > 1) {
+            //validates grandchildren
+            final NodeList items = ((DeferredElementImpl) (contentlet)
+                    .getElementsByTagName(child.getContentType().fields().get(0).variable())
+                    .item(0)).getElementsByTagName("item");
 
-                    assertEquals(2, items.length);
+            assertEquals(2, items.getLength());
 
-                    Arrays.stream(items).allMatch(grandChildIdentifier -> grandChildIdentifier
+            CollectionsUtils.list(items.item(0), items.item(1)).stream()
+                    .map(elem -> depth == 2 ? elem: DeferredElementImpl.class.cast(elem)
+                            .getElementsByTagName(IDENTIFIER).item(0).getTextContent())
+                    .allMatch(grandChild -> grandChild
                             .equals(contentletMap.get("grandChild1").getIdentifier())
-                            || grandChildIdentifier
+                            || grandChild
                             .equals(contentletMap.get("grandChild2").getIdentifier()));
 
-                    break;
+            //parent relationship was not added back again
+            assertEquals(0,
+                    ((DeferredElementImpl) contentlet
+                            .getElementsByTagName(
+                                    parent.getContentType().fields().get(0).variable())
+                            .item(0)).getElementsByTagName(child.getContentType().fields().get(1).variable()).getLength());
         }
     }
 
@@ -627,7 +721,8 @@ public class ContentResourceTest extends IntegrationTestBase {
 
     }
 
-    private HttpServletRequest createHttpRequest(final String jsonPayload) throws Exception{
+    private HttpServletRequest createHttpRequest(final String jsonPayload, final User user) throws Exception{
+
         MockHeaderRequest request = new MockHeaderRequest(
 
                 (
@@ -635,30 +730,59 @@ public class ContentResourceTest extends IntegrationTestBase {
                 ).request()
         );
 
-        request.setHeader("Authorization", "Basic " + new String(Base64.encode("admin@dotcms.com:admin".getBytes())));
+        if (user == null){
+            request.setHeader("Authorization", "Basic " + new String(Base64.encode(("admin@dotcms.com:admin").getBytes())));
+
+        } else if (!user.equals(userAPI.getAnonymousUser())){
+            request.setHeader("Authorization", "Basic " + new String(Base64.encode((user.getEmailAddress() + ":" + user.getPassword()).getBytes())));
+        }
+
+        if (jsonPayload != null) {
+            final MockServletInputStream stream = new MockServletInputStream(new ByteArrayInputStream(jsonPayload.getBytes(StandardCharsets.UTF_8)));
+
+            when(request.getInputStream()).thenReturn(stream);
+        }
 
         when(request.getContentType()).thenReturn(MediaType.APPLICATION_JSON);
 
-        final MockServletInputStream stream = new MockServletInputStream(new ByteArrayInputStream(jsonPayload.getBytes(StandardCharsets.UTF_8)));
-
-        when(request.getInputStream()).thenReturn(stream);
-
         return request;
+
     }
 
-    private  HttpServletRequest createHttpRequest() throws Exception{
-        MockHeaderRequest request = new MockHeaderRequest(
+    private HttpServletRequest createHttpRequest(final String jsonPayload) throws Exception {
+        return createHttpRequest(jsonPayload, null);
+    }
 
-                (
-                        new MockSessionRequest(new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
-                ).request()
-        );
 
-        request.setHeader("Authorization", "Basic " + new String(Base64.encode("admin@dotcms.com:admin".getBytes())));
+    private HttpServletRequest createHttpRequest() throws Exception {
+        return createHttpRequest(null, null);
+    }
 
-        when(request.getContentType()).thenReturn(MediaType.APPLICATION_JSON);
+    private User createUser() throws DotSecurityException, DotDataException {
 
-        return request;
+        final long millis =  System.currentTimeMillis();
+
+        // Create Role.
+        Role newRole = new Role();
+        newRole.setName("Role" +  millis);
+        newRole.setEditUsers(true);
+        newRole.setEditPermissions(true);
+        newRole.setSystem(false);
+        newRole.setEditLayouts(true);
+        newRole.setParent(newRole.getId());
+        newRole = roleAPI.save(newRole);
+
+        final String userName = "user" + millis;
+        // Now lets create a user, assign the role and test basic permissions.
+        final User newUser = userAPI.createUser(userName + "@test.com", userName +  "@test.com");
+        newUser.setFirstName(userName);
+        newUser.setLastName(userName);
+        newUser.setPassword("mypass");
+        userAPI.save(newUser, user, false);
+
+        roleAPI.addRoleToUser(newRole, newUser);
+
+        return newUser;
     }
 
     static class MockServletInputStream extends ServletInputStream {

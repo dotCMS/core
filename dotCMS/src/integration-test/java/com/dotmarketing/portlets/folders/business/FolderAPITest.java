@@ -9,11 +9,14 @@ import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.IdentifierAPI;
+import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.cache.FolderCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
@@ -39,15 +42,14 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
 
 public class FolderAPITest {//24 contentlets
 
@@ -126,10 +128,99 @@ public class FolderAPITest {//24 contentlets
         final Identifier ident2 = identifierAPI.loadFromDb(ftest2.getVersionId());
         final Identifier ident3 = identifierAPI.loadFromDb(ftest3.getVersionId());
 
-		Assert.assertTrue(ident.getAssetName().startsWith("foldertestxx"));//After 4.1 the asset_name is saved lowercase
+		Assert.assertTrue(ident.getAssetName().startsWith("folderTestXX"));
 		Assert.assertEquals(ident.getPath(),ident1.getParentPath());
 		Assert.assertEquals(ident1.getPath(),ident2.getParentPath());
 		Assert.assertEquals(ident2.getPath(),ident3.getParentPath());
+	}
+
+	/**
+	 * Test move folders with subfolders
+	 * @throws Exception
+	 */
+	@Test
+	public void move_to_existing_destination() throws Exception {
+
+		//create folders and assets
+		final Folder baseFolder = folderAPI
+				.createFolders("/folderMoveSourceTest"+System.currentTimeMillis(), host, user, false);
+		String postfixName = String.valueOf(System.currentTimeMillis()).substring(0, 8);
+		Folder folderTest1 = folderAPI
+				.createFolders(baseFolder.getPath()+"/ff1"+postfixName, host, user, false);
+
+		//adding page
+		final String page0Name ="page0";
+		final List<Template> templates = templateAPI.findTemplatesAssignedTo(host);
+		final Template template = templates.stream().filter(template1 -> template1.getTitle().equals("Quest - 1 Column")).findFirst().get();
+
+		Contentlet contentAsset1 = new Contentlet();
+		contentAsset1.setStructureInode(HTMLPageAssetAPIImpl.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE);
+		contentAsset1.setHost(host.getIdentifier());
+		contentAsset1.setProperty(HTMLPageAssetAPIImpl.FRIENDLY_NAME_FIELD, page0Name);
+		contentAsset1.setProperty(HTMLPageAssetAPIImpl.URL_FIELD, page0Name);
+		contentAsset1.setProperty(HTMLPageAssetAPIImpl.TITLE_FIELD, page0Name);
+		contentAsset1.setProperty(HTMLPageAssetAPIImpl.CACHE_TTL_FIELD, "0");
+		contentAsset1.setProperty(HTMLPageAssetAPIImpl.TEMPLATE_FIELD, template.getIdentifier());
+		contentAsset1.setLanguageId(langId);
+		contentAsset1.setFolder(folderTest1.getInode());
+		contentAsset1.setIndexPolicy(IndexPolicy.FORCE);
+		contentAsset1 = contentletAPI.checkin(contentAsset1, user, false);
+		contentletAPI.publish(contentAsset1, user, false);
+
+		//adding page
+		final String page1Name="page1";
+		Contentlet contentAsset2=new Contentlet();
+		contentAsset2.setStructureInode(HTMLPageAssetAPIImpl.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE);
+		contentAsset2.setHost(host.getIdentifier());
+		contentAsset2.setProperty(HTMLPageAssetAPIImpl.FRIENDLY_NAME_FIELD, page1Name);
+		contentAsset2.setProperty(HTMLPageAssetAPIImpl.URL_FIELD, page1Name);
+		contentAsset2.setProperty(HTMLPageAssetAPIImpl.TITLE_FIELD, page1Name);
+		contentAsset2.setProperty(HTMLPageAssetAPIImpl.CACHE_TTL_FIELD, "0");
+		contentAsset2.setProperty(HTMLPageAssetAPIImpl.TEMPLATE_FIELD, template.getIdentifier());
+		contentAsset2.setLanguageId(langId);
+		contentAsset2.setFolder(folderTest1.getInode());
+		contentAsset2.setIndexPolicy(IndexPolicy.FORCE);
+		contentAsset2 = contentletAPI.checkin(contentAsset2, user, false);
+		contentletAPI.publish(contentAsset2, user, false);
+
+		//adding page
+		final String page2Str ="page2";
+		Contentlet contentAsset4=new Contentlet();
+		contentAsset4.setStructureInode(HTMLPageAssetAPIImpl.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE);
+		contentAsset4.setHost(host.getIdentifier());
+		contentAsset4.setProperty(HTMLPageAssetAPIImpl.FRIENDLY_NAME_FIELD, page2Str);
+		contentAsset4.setProperty(HTMLPageAssetAPIImpl.URL_FIELD, page2Str);
+		contentAsset4.setProperty(HTMLPageAssetAPIImpl.TITLE_FIELD, page2Str);
+		contentAsset4.setProperty(HTMLPageAssetAPIImpl.CACHE_TTL_FIELD, "0");
+		contentAsset4.setProperty(HTMLPageAssetAPIImpl.TEMPLATE_FIELD, template.getIdentifier());
+		contentAsset4.setLanguageId(langId);
+		contentAsset4.setFolder(folderTest1.getInode());
+		contentAsset4.setIndexPolicy(IndexPolicy.FORCE);
+		contentAsset4 = contentletAPI.checkin(contentAsset4, user, false);
+		contentletAPI.publish(contentAsset4, user, false);
+
+		final Folder destinationftest = folderAPI
+				.createFolders("/application", host, user, false);
+
+		//moving folder and assets
+		Thread.sleep(2000);
+		folderAPI.move(folderTest1.getIdentifier(), destinationftest.getInode(), user, false);
+
+		//validate that the folder and assets were moved
+		final Folder  newftest1 = folderAPI
+				.findFolderByPath(destinationftest.getPath()+folderTest1.getName(), host, user, false);
+		Assert.assertTrue("Folder ("+folderTest1.getName()+") wasn't moved", newftest1 != null);
+
+		final List<IHTMLPage> pages = htmlPageAssetAPI.getLiveHTMLPages(newftest1,user, false);
+		Assert.assertEquals(3, pages.size());
+		Assert.assertTrue(pages.stream().anyMatch(page -> page.getName().equals(page0Name)));
+
+		contentletAPI.archive(contentAsset1,user,false);
+		contentletAPI.archive(contentAsset2,user,false);
+		contentletAPI.archive(contentAsset4,user,false);
+		contentletAPI.delete(contentAsset1,user,false);
+		contentletAPI.delete(contentAsset2,user,false);
+		contentletAPI.delete(contentAsset4,user,false);
 	}
 
 	/**

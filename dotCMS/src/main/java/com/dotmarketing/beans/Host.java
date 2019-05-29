@@ -1,8 +1,7 @@
 package com.dotmarketing.beans;
 
 import com.dotcms.api.tree.Parentable;
-import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
-import com.dotcms.api.tree.TreeableAPI;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.dotmarketing.business.*;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -188,4 +187,9 @@ public class Host extends Contentlet implements Permissionable,Treeable,Parentab
 		map.put(TAG_STORAGE, tagStorageId);
 	}
 
+
+	@Override
+	public String toString() {
+		return this.getHostname();
+	}
 }

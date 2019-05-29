@@ -225,13 +225,6 @@ public class PortletPreferencesImpl
 			Portlet portlet =
 				PortletManagerUtil.getPortletById(_companyId, _pk.portletId);
 
-			PreferencesValidator prefsValidator =
-				PortalUtil.getPreferencesValidator(portlet);
-
-			if (prefsValidator != null) {
-				prefsValidator.validate(this);
-			}
-
 			PortletPreferencesManagerUtil.updatePreferences(_pk, this);
 		}
 		catch (PortalException pe) {

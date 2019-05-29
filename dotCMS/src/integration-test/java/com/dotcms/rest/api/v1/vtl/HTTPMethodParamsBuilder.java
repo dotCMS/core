@@ -1,6 +1,6 @@
 package com.dotcms.rest.api.v1.vtl;
 
-import com.dotcms.repackage.javax.ws.rs.core.UriInfo;
+import javax.ws.rs.core.UriInfo;
 import com.dotcms.rest.WebResource;
 
 import javax.servlet.http.HttpServletRequest;
@@ -13,7 +13,7 @@ public class HTTPMethodParamsBuilder {
     private UriInfo uriInfo;
     private String folderName;
     private String pathParam;
-    private Map<String, String> bodyMap;
+    private Map<String, Object> bodyMap;
     private WebResource webResource;
     private String bodyMapString;
 
@@ -42,7 +42,7 @@ public class HTTPMethodParamsBuilder {
         return this;
     }
 
-    HTTPMethodParamsBuilder setBodyMap(final Map<String, String> bodyMap) {
+    HTTPMethodParamsBuilder setBodyMap(final Map<String, Object> bodyMap) {
         this.bodyMap = bodyMap;
         return this;
     }

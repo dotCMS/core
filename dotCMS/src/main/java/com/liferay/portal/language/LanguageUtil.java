@@ -188,7 +188,7 @@ public class LanguageUtil {
     }
 
 	public static String get(PageContext pageContext, String key) throws LanguageException {
-    	return get(pageContext, key, null);
+    	return get(pageContext, key, (Object[])null);
 	}
 	public static String get(PageContext pageContext, String key, Object... args)
 		throws LanguageException {

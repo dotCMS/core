@@ -1,6 +1,7 @@
 package com.dotcms.contenttype.model.type;
 
-import com.fasterxml.jackson.annotation.JsonValue;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 
 /**
  * Provides the different Content Types that can be used inside dotCMS. A
@@ -18,14 +19,15 @@ public enum BaseContentType {
 	CONTENT(1, SimpleContentType.class),
 	WIDGET(2, WidgetContentType.class),
 	FORM(3, FormContentType.class),
-	FILEASSET(4, FileAssetContentType.class),
-	HTMLPAGE(5, PageContentType.class),
+	FILEASSET(4, FileAssetContentType.class, "File"),
+	HTMLPAGE(5, PageContentType.class, "Page"),
 	PERSONA(6, PersonaContentType.class),
-	VANITY_URL(7, VanityUrlContentType.class),
-	KEY_VALUE(8, KeyValueContentType.class);
+	VANITY_URL(7, VanityUrlContentType.class, "VanityURL"),
+	KEY_VALUE(8, KeyValueContentType.class, "KeyValue");
 
 
 	final int type;
+	final String alternateName;
 	Class<? extends ContentType> immutableClass;
 
 	/**
@@ -37,8 +39,13 @@ public enum BaseContentType {
 	 *            - The class of the specific Content Type.
 	 */
 	BaseContentType(int type, Class<? extends ContentType> clazz) {
+		this(type, clazz, null);
+	}
+
+	BaseContentType(final int type, final Class<? extends ContentType> clazz, final String alternateName) {
 		this.type = type;
 		this.immutableClass=clazz;
+		this.alternateName = alternateName;
 	}
 
 	/**
@@ -46,7 +53,7 @@ public enum BaseContentType {
 	 * 
 	 * @return the integer representation
 	 */
-	@JsonValue
+
 	public int getType() {
 		return type;
 	}
@@ -81,6 +88,22 @@ public enum BaseContentType {
 		}
 		return ANY;
 	}
+	
+    public static BaseContentType getBaseContentType (final String name) {
+        BaseContentType[] types = BaseContentType.values();
+        for (BaseContentType type : types) {
+            if (type.name().equalsIgnoreCase(name) || isAnAlternateName(type, name)){
+                return type;
+            }
+        }
+        final String errorMsg = "BaseContentType " + name + " does not Exist";
+		Logger.info(BaseContentType.class, errorMsg);
+        throw new IllegalArgumentException(errorMsg);
+    }
+
+    private static boolean isAnAlternateName(final BaseContentType type, final String name) {
+	return UtilMethods.isSet(type.alternateName) && type.alternateName.equalsIgnoreCase(name);
+    }
 
 	/**
 	 * Returns the appropriate immutable Content Type based on its integer

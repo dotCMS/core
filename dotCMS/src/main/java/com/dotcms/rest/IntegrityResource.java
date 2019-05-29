@@ -10,19 +10,9 @@ import com.dotcms.publisher.integrity.IntegrityDataGeneratorThread;
 import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotcms.repackage.com.google.common.cache.Cache;
 import com.dotcms.repackage.com.google.common.cache.CacheBuilder;
-import com.dotcms.repackage.javax.ws.rs.*;
-import com.dotcms.repackage.javax.ws.rs.client.Client;
-import com.dotcms.repackage.javax.ws.rs.client.Entity;
-import com.dotcms.repackage.javax.ws.rs.client.Invocation.Builder;
-import com.dotcms.repackage.javax.ws.rs.client.WebTarget;
-import com.dotcms.repackage.javax.ws.rs.core.*;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
-import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataMultiPart;
-import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataParam;
-import com.dotcms.repackage.org.glassfish.jersey.media.multipart.file.FileDataBodyPart;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -37,11 +27,6 @@ import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-
-import javax.servlet.ServletContext;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -50,8 +35,33 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.Invocation.Builder;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Cookie;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.NewCookie;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.StreamingOutput;
+import org.glassfish.jersey.media.multipart.FormDataMultiPart;
+import org.glassfish.jersey.media.multipart.FormDataParam;
+import org.glassfish.jersey.media.multipart.file.FileDataBodyPart;
 
 /**
  * This REST end-point provides all the required mechanisms for the execution of
@@ -155,17 +165,17 @@ public class IntegrityResource {
     @Path("/generateintegritydata/{params:.*}")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces("text/plain")
-    public Response generateIntegrityData(@Context HttpServletRequest request, @FormDataParam("AUTH_TOKEN") String auth_token_enc)  {
+    public Response generateIntegrityData(@Context HttpServletRequest request, @FormDataParam("AUTH_TOKEN") String auth_token_digest)  {
 
         String remoteIP = null;
         try {
 
-            if ( !UtilMethods.isSet( auth_token_enc ) ) {
+            if ( !UtilMethods.isSet( auth_token_digest ) ) {
                 return Response.status( HttpStatus.SC_BAD_REQUEST ).entity( "Error: 'endpoint' is a required param." ).build();
             }
 
 
-            String auth_token = PublicEncryptionFactory.decryptString(auth_token_enc);
+
             remoteIP = request.getRemoteHost();
             if(!UtilMethods.isSet(remoteIP))
                 remoteIP = request.getRemoteAddr();
@@ -173,7 +183,7 @@ public class IntegrityResource {
             PublishingEndPointAPI endpointAPI = APILocator.getPublisherEndPointAPI();
             final PublishingEndPoint requesterEndPoint = endpointAPI.findEnabledSendingEndPointByAddress(remoteIP);
 
-            if(!BundlePublisherResource.isValidToken(auth_token, remoteIP, requesterEndPoint)) {
+            if(!BundlePublisherResource.isValidToken(auth_token_digest, remoteIP, requesterEndPoint)) {
                 return Response.status(HttpStatus.SC_UNAUTHORIZED).build();
             }
 
@@ -220,12 +230,12 @@ public class IntegrityResource {
     @Path("/getintegritydata/{params:.*}")
     @Produces("application/zip")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
-    public Response getIntegrityData(@Context HttpServletRequest request, @FormDataParam("AUTH_TOKEN") String auth_token_enc, @FormDataParam("REQUEST_ID") String requestId)  {
+    public Response getIntegrityData(@Context HttpServletRequest request, @FormDataParam("AUTH_TOKEN") String auth_token_digest, @FormDataParam("REQUEST_ID") String requestId)  {
         String remoteIP = null;
 
         try {
 
-            String auth_token = PublicEncryptionFactory.decryptString(auth_token_enc);
+
             remoteIP = request.getRemoteHost();
             if(!UtilMethods.isSet(remoteIP))
                 remoteIP = request.getRemoteAddr();
@@ -233,7 +243,7 @@ public class IntegrityResource {
             PublishingEndPointAPI endpointAPI = APILocator.getPublisherEndPointAPI();
             final PublishingEndPoint requesterEndPoint = endpointAPI.findEnabledSendingEndPointByAddress(remoteIP);
 
-            if(!BundlePublisherResource.isValidToken(auth_token, remoteIP, requesterEndPoint) || !UtilMethods.isSet(requestId)) {
+            if(!BundlePublisherResource.isValidToken(auth_token_digest, remoteIP, requesterEndPoint) || !UtilMethods.isSet(requestId)) {
                 return Response.status(HttpStatus.SC_UNAUTHORIZED).build();
             }
 
@@ -369,10 +379,13 @@ public class IntegrityResource {
             setStatus( httpServletRequest, endpointId, ProcessStatus.PROCESSING );
 
             final PublishingEndPoint endpoint = APILocator.getPublisherEndPointAPI().findEndPointById(endpointId);
-            final String authToken = PushPublisher.retriveKeyString(PublicEncryptionFactory.decryptString(endpoint.getAuthKey().toString()));
-
+            final Optional<String> authToken = PushPublisher.retriveEndpointKeyDigest(endpoint);
+            if(!authToken.isPresent()) {
+              Logger.warn(IntegrityResource.class, "No Auth Token set for endpoint:" + endpointId);
+              return response("No Auth Token set for endpoint", true);
+            }
             FormDataMultiPart form = new FormDataMultiPart();
-            form.field("AUTH_TOKEN",authToken);
+            form.field("AUTH_TOKEN",authToken.get());
 
             //Sending bundle to endpoint
             String url = endpoint.toURL()+"/api/integrity/generateintegritydata/";
@@ -390,7 +403,7 @@ public class IntegrityResource {
                     public void run(){
 
                         FormDataMultiPart form = new FormDataMultiPart();
-                        form.field("AUTH_TOKEN",authToken);
+                        form.field("AUTH_TOKEN",authToken.get());
                         form.field("REQUEST_ID",integrityDataRequestID);
 
                         String url = endpoint.toURL()+"/api/integrity/getintegritydata/";
@@ -601,10 +614,14 @@ public class IntegrityResource {
 
                     //Find the registered auth token in order to connect to the end point server
                     PublishingEndPoint endpoint = APILocator.getPublisherEndPointAPI().findEndPointById( endpointId );
-                    String authToken = PushPublisher.retriveKeyString( PublicEncryptionFactory.decryptString( endpoint.getAuthKey().toString() ) );
+                    Optional<String> authToken = PushPublisher.retriveEndpointKeyDigest(endpoint);
+                    if(!authToken.isPresent()) {
+                      return Response.status( HttpStatus.SC_BAD_REQUEST )
+                          .entity( responseMessage.append( "Error: endpoint requires an authorization key" ) ).build();
 
+                    }
                     FormDataMultiPart form = new FormDataMultiPart();
-                    form.field( "AUTH_TOKEN", authToken );
+                    form.field( "AUTH_TOKEN", authToken.get() );
                     form.field( "REQUEST_ID", integrityDataRequestId );
 
                     //Prepare the connection
@@ -662,7 +679,7 @@ public class IntegrityResource {
     @Path("/cancelIntegrityProcessOnEndpoint/{params:.*}")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces (MediaType.APPLICATION_JSON)
-    public Response cancelIntegrityProcessOnEndpoint ( @Context HttpServletRequest request,  @FormDataParam ("AUTH_TOKEN") String auth_token_enc, @FormDataParam ("REQUEST_ID") String requestId ) {
+    public Response cancelIntegrityProcessOnEndpoint ( @Context HttpServletRequest request,  @FormDataParam ("AUTH_TOKEN") String auth_token_digest, @FormDataParam ("REQUEST_ID") String requestId ) {
 
         String remoteIP = null;
 
@@ -678,8 +695,7 @@ public class IntegrityResource {
             PublishingEndPoint requesterEndPoint = endpointAPI.findEnabledSendingEndPointByAddress( remoteIP );
 
             //Verify the authentication token
-            String auth_token = PublicEncryptionFactory.decryptString( auth_token_enc );
-            if ( !BundlePublisherResource.isValidToken( auth_token, remoteIP, requesterEndPoint ) || !UtilMethods.isSet( requestId ) ) {
+            if ( !BundlePublisherResource.isValidToken( auth_token_digest, remoteIP, requesterEndPoint ) || !UtilMethods.isSet( requestId ) ) {
                 return Response.status( HttpStatus.SC_UNAUTHORIZED ).build();
             }
 
@@ -995,7 +1011,7 @@ public class IntegrityResource {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces("text/plain")
     public Response fixConflictsFromRemote ( @Context final HttpServletRequest request,
-                                             @FormDataParam("DATA_TO_FIX") InputStream dataToFix, @FormDataParam("AUTH_TOKEN") String auth_token_enc,
+                                             @FormDataParam("DATA_TO_FIX") InputStream dataToFix, @FormDataParam("AUTH_TOKEN") String auth_token_digest,
                                              @FormDataParam("TYPE") String type ) throws JSONException {
 
         String remoteIP = null;
@@ -1004,14 +1020,14 @@ public class IntegrityResource {
         PublishingEndPointAPI endpointAPI = APILocator.getPublisherEndPointAPI();
         PublishingEndPoint requesterEndPoint = null;
         try {
-            String auth_token = PublicEncryptionFactory.decryptString(auth_token_enc);
+
             remoteIP = request.getRemoteHost();
             if (!UtilMethods.isSet(remoteIP))
                 remoteIP = request.getRemoteAddr();
 
             requesterEndPoint = endpointAPI.findEnabledSendingEndPointByAddress(remoteIP);
 
-            if (!BundlePublisherResource.isValidToken(auth_token, remoteIP, requesterEndPoint)) {
+            if (!BundlePublisherResource.isValidToken(auth_token_digest, remoteIP, requesterEndPoint)) {
                 return Response.status(HttpStatus.SC_UNAUTHORIZED).build();
             }
 
@@ -1070,11 +1086,11 @@ public class IntegrityResource {
     @GET
     @Path ("/fixconflicts/{params:.*}")
     @Produces (MediaType.APPLICATION_JSON)
-    public Response fixConflicts ( @Context final HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, @PathParam ("params") String params ) throws JSONException {
+    public Response fixConflicts ( @Context final HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, @PathParam ("params") final String params ) throws JSONException {
 
-        InitDataObject initData = webResource.init(params, httpServletRequest, httpServletResponse, true, null);
-        Map<String, String> paramsMap = initData.getParamsMap();
-        JSONObject jsonResponse = new JSONObject();
+        final InitDataObject initData = webResource.init(params, httpServletRequest, httpServletResponse, true, null);
+        final Map<String, String> paramsMap = initData.getParamsMap();
+        final JSONObject jsonResponse = new JSONObject();
 
         //Validate the parameters
         String endpointId = paramsMap.get( "endpoint" );
@@ -1118,6 +1134,8 @@ public class IntegrityResource {
                     }
                 }
 
+                integrityUtil.flushAllCache();
+
                 if (!isThereAnyConflict)
                     clearStatus(httpServletRequest, endpointId);
 
@@ -1133,10 +1151,12 @@ public class IntegrityResource {
                         outputPath + File.separator + INTEGRITY_DATA_TO_FIX_ZIP_FILE_NAME);
 
                 FormDataMultiPart form = new FormDataMultiPart();
-                form.field("AUTH_TOKEN",
-                        PushPublisher.retriveKeyString(
-                                PublicEncryptionFactory
-                                        .decryptString(endpoint.getAuthKey().toString())));
+                Optional<String> authToken = PushPublisher.retriveEndpointKeyDigest(endpoint);
+                if ( !authToken.isPresent() ) {
+                  return Response.status( HttpStatus.SC_BAD_REQUEST ).entity( "Error: 'auth key' is a required param." ).build();
+                }
+
+                form.field("AUTH_TOKEN",authToken.get());
 
                 form.field("TYPE", type);
                 form.bodyPart(new FileDataBodyPart("DATA_TO_FIX", bundle,

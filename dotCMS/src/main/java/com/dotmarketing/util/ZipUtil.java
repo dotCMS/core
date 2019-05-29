@@ -23,14 +23,14 @@ import java.util.zip.ZipOutputStream;
 public class ZipUtil {
 
 	  private static void zipDirectory(String dir2zip, ZipOutputStream zos, String zipPath)throws IOException, IllegalArgumentException { 
-		File zipDir = new File(dir2zip);
+		final File zipDir = new File(dir2zip);
 		//create a new File object based on the directory we  have to zip get a listing of the directory content 
-		String[] dirList = zipDir.list(); 
-		byte[] readBuffer = new byte[2156]; 
-		int bytesIn = 0; 
+		final String[] dirList = zipDir.list();
+		final byte[] readBuffer = new byte[2156];
+		int bytesIn = 0;
 		//loop through dirList, and zip the files 
 		for(int i=0; i<dirList.length; i++){
-		    File f = new File(zipDir, dirList[i]); 
+		    final File f = new File(zipDir, dirList[i]);
 		    if(f.isDirectory()){ 
 		    	//if the File object is a directory, call this function again to add its content recursively 
 			    String filePath = f.getPath(); 
@@ -40,8 +40,8 @@ public class ZipUtil {
 			//if we reached here, the File object f was not a directory create a InputStream on top of f
 			final InputStream fis = Files.newInputStream(f.toPath());
 			//create a new zip entry 
-			String path = f.getPath().substring(zipPath.length()+1);
-			ZipEntry anEntry = new ZipEntry(path); 
+			final String path = f.getPath().substring(zipPath.length()+1);
+			final ZipEntry anEntry = new ZipEntry(path);
 			//place the zip entry in the ZipOutputStream object 
 			zos.putNextEntry(anEntry); 
 			//now write the content of the file to the ZipOutputStream 
@@ -55,9 +55,9 @@ public class ZipUtil {
 	  /**
 	   * Zip the contents of the directory, and save it in the zipfile
 	   * @param dir2zip
-	   * @param ZipOutputStream zos
-	 * @throws IOException 
-	 * @throws IllegalArgumentException 
+	   * @param zos
+	   * @throws IOException
+	   * @throws IllegalArgumentException
 	   * @throws IOException
 	   * @throws IllegalArgumentException
 	   */
@@ -76,16 +76,16 @@ public class ZipUtil {
 	   * @param toDir the target directory
 	   * @throws java.io.IOException
 	   */
-	   public static void extract(ZipFile zipFile, File toDir) throws IOException{
-		   if (! toDir.exists()){
+	   public static void extract(final ZipFile zipFile, final File toDir) throws IOException{
+		   if (!toDir.exists()){
 		   		toDir.mkdirs();
 		   }
-		   Enumeration entries = zipFile.entries();
+		   final Enumeration entries = zipFile.entries();
 		   while (entries.hasMoreElements()) {
-			   ZipEntry zipEntry = (ZipEntry) entries.nextElement();
+			   final ZipEntry zipEntry = (ZipEntry) entries.nextElement();
 			   if (zipEntry.isDirectory()) {
-				   File dir = new File(toDir, zipEntry.getName());
-				   if (! dir.exists()){ // make sure also empty directories get created!
+				   final File dir = new File(toDir, zipEntry.getName());
+				   if (checkSecurity(toDir,dir) && !dir.exists()){ // make sure also empty directories get created!
 					   dir.mkdirs();
 				   }
 			   } else {
@@ -101,9 +101,12 @@ public class ZipUtil {
 	     * @param toDir the target directory
 	     * @throws java.io.IOException
 	     */
-	    public static void extract(ZipFile zipFile, ZipEntry zipEntry, File toDir) throws IOException {
-	        File file = new File(toDir, zipEntry.getName());
-	        File parentDir = file.getParentFile();
+	    private static void extract(final ZipFile zipFile, final ZipEntry zipEntry, final File toDir) throws IOException {
+	        final File file = new File(toDir, zipEntry.getName());
+
+            checkSecurity(toDir,file);
+
+	        final File parentDir = file.getParentFile();
 	        if (! parentDir.exists()){
 	            parentDir.mkdirs();
 	        }
@@ -111,7 +114,7 @@ public class ZipUtil {
 	        BufferedInputStream bis = null;
 	        BufferedOutputStream bos = null;
 	        try{
-	            InputStream istr = zipFile.getInputStream(zipEntry);
+	            final InputStream istr = zipFile.getInputStream(zipEntry);
 	            bis = new BufferedInputStream(istr);
 	            final OutputStream os = Files.newOutputStream(file.toPath());
 	            bos  = new BufferedOutputStream(os);
@@ -125,4 +128,41 @@ public class ZipUtil {
 	            }
 	        }
 	    }
+
+
+	/**
+	 * Check paths to determine if we're being attacked.
+	 * @param parentDir
+	 * @param newFile
+	 * @return
+	 * @throws IOException
+	 */
+	static boolean isNewFileDestinationSafe(final File parentDir, final File newFile)
+			throws IOException {
+		final String dirCanonicalPath = parentDir.getCanonicalPath();
+		final String newFileCanonicalPath = newFile.getCanonicalPath();
+		return newFileCanonicalPath.startsWith(dirCanonicalPath);
 	}
+
+	/**
+	 * call to revise file destination is safe.
+	 * If it isn't an exception is thrown
+	 * @param parentDir
+	 * @param newFile
+	 * @return
+	 * @throws IOException
+	 */
+	static boolean checkSecurity(final File parentDir, final File newFile) throws IOException {
+		if (!isNewFileDestinationSafe(parentDir, newFile)) {
+			//Log detailed info into the security logger
+			parentDir.delete();
+			SecurityLogger.logInfo(ZipUtil.class, String.format(
+					"An attempt to unzip entry '%s' under an illegal destination has been made.",
+					newFile.getCanonicalPath()));
+			// and expose the minimum to the user
+			throw new SecurityException("Illegal unzip attempt");
+		}
+		return true;
+	}
+
+}

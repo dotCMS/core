@@ -1,5 +1,7 @@
 package com.dotcms.util.transform;
 
+import com.dotcms.contenttype.transform.relationship.DbRelationshipTransformer;
+import com.dotcms.contenttype.transform.relationship.RelationshipTransformer;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Tree;
@@ -12,8 +14,11 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.transform.ContentletTransformer;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.folders.transform.TemplateTransformer;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.languagesmanager.transform.LanguageTransformer;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.links.transform.LinkTransformer;
+import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.templates.transform.FolderTransformer;
 
@@ -50,6 +55,8 @@ public class TransformerLocator {
         transformerMapping.put (Identifier.class, TransformerLocator::createIdentifierTransformer);
         transformerMapping.put (Tree.class, TransformerLocator::createTreeTransformer);
         transformerMapping.put (Contentlet.class, TransformerLocator::createContentletTransformer);
+        transformerMapping.put (Language.class, TransformerLocator::createLanguageTransformer);
+        transformerMapping.put (Relationship.class, TransformerLocator::createRelationshipTransformer);
     }
 
     public static DBTransformer createDBTransformer(List<Map<String, Object>> list, Class clazz) {
@@ -153,6 +160,17 @@ public class TransformerLocator {
     }
 
     /**
+     * Creates a DBTransformer for Language objects
+     *
+     * @param initList List of DB results to be transformed
+     */
+    public static LanguageTransformer createLanguageTransformer(
+            List<Map<String, Object>> initList) {
+
+        return new LanguageTransformer(initList);
+    }
+
+    /**
      * Creates a DBTransformer for Tree objects
      * @param initList List of DB results to be transformed
      * @return
@@ -161,5 +179,16 @@ public class TransformerLocator {
         List<Map<String, Object>> initList) {
 
         return new TreeTransformer(initList);
+    }
+
+    /**
+     * Creates a DBTransformer for Relationship objects
+     *
+     * @param initList List of DB results to be transformed
+     */
+    public static RelationshipTransformer createRelationshipTransformer(
+            List<Map<String, Object>> initList) {
+
+        return new DbRelationshipTransformer(initList);
     }
 }

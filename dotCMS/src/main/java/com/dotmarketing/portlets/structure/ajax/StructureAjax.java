@@ -4,8 +4,11 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.portlets.contentlet.util.ContentletUtil.isFieldTypeAllowedOnImportExport;
 
 import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.RelationshipsTabField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotmarketing.business.APILocator;
@@ -71,13 +74,9 @@ public class StructureAjax {
 		User user = null;
 		List<Map<String,Object>> wids = new ArrayList<Map<String,Object>>();
 		List<Structure> wstructures = new ArrayList<Structure>();
-		try {
+
 			user = com.liferay.portal.util.PortalUtil.getUser(req);
-		} catch (PortalException e) {
-			Logger.error(this,e.getMessage(),e);
-		} catch (SystemException e) {
-			Logger.error(this,e.getMessage(),e);
-		}
+
 		try {
 			wstructures = wAPI.findAll(user, false);
 		} catch (DotDataException e) {
@@ -131,54 +130,41 @@ public class StructureAjax {
 		return searchableFields;
 	}
 
-	public List<Map> getStructureSearchFields (String structureInode) {
-		Structure st = StructureFactory.getStructureByInode(structureInode);
-		List<Field> fields = st.getFields();
-		ArrayList<Map> searchableFields = new ArrayList<Map> ();
-		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
-		for (Field field : fields) {
-		  if (!field.getFieldType().equals(Field.FieldType.LINE_DIVIDER.toString()) &&
-					  !field.getFieldType().equals(Field.FieldType.TAB_DIVIDER.toString())) {
-			  if (field.isSearchable() && field.isIndexed()) {
 
-					  try {
-						  Map fieldMap = field.getMap();
-						  searchableFields.add(fieldMap);
-					  } catch (Exception e) {
-						  Logger.error(this, "Error getting the map of properties of a field: " + field.getInode());
-					  }
+	public Map<String,Object> getKeyStructureFields (final String contentTypeInode) throws SystemException, PortalException, DotDataException, DotSecurityException {
+		final Map<String,Object> result = new HashMap<String, Object>();
+		final boolean allowImport = true;
 
-			  }
-		  }
-		}
-		Structure structure = StructureFactory.getStructureByInode(structureInode);
-		req.getSession().setAttribute("selectedStructure", structureInode);
+		//Retrieving the current user
+		final WebContext ctx = WebContextFactory.get();
+		final HttpServletRequest request = ctx.getHttpServletRequest();
+		final User user = PortalUtil.getUser(request);
 
-		return searchableFields;
-	}
+		final ContentType contentTypeToImport = APILocator.getContentTypeAPI(user).find(contentTypeInode);
+		final List<com.dotcms.contenttype.model.field.Field> fields = contentTypeToImport.fields();
+		final ArrayList<Map> searchableFields = new ArrayList<Map> ();
 
-	public Map<String,Object> getKeyStructureFields (String structureInode) {
-		Map<String,Object> result = new HashMap<String, Object>();
-		boolean allowImport = true;
-		
-		Structure struct = CacheLocator.getContentTypeCache().getStructureByInode(structureInode);
-		List<Field> fields = struct.getFields();
-		ArrayList<Map> searchableFields = new ArrayList<Map> ();
-		for (Field field : fields) {
-			if (isFieldTypeAllowedOnImportExport(field)) {
-				try {
-					Map fieldMap = field.getMap();
-					searchableFields.add(fieldMap);
-				} catch (Exception e) {
-					Logger.error(this, "Error getting the map of properties of a field: " + field.getInode());
-				}
-			}
-		}
+		fields.stream().filter(field -> !(field instanceof RelationshipField))
+				.filter(field -> !(field instanceof RelationshipsTabField))
+				.map(field -> new LegacyFieldTransformer(field).asOldField())
+				.filter(field -> isFieldTypeAllowedOnImportExport(field))
+				.forEach(field -> addKeyFieldsToImport(field,searchableFields));
 
 		result.put("keyStructureFields",searchableFields);
 		result.put("allowImport", allowImport);
 
 		return result;
+	}
+
+	private ArrayList<Map> addKeyFieldsToImport(final Field field, final ArrayList<Map> searchableFields){
+		try {
+			Map fieldMap = field.getMap();
+			searchableFields.add(fieldMap);
+		} catch (Exception e) {
+			Logger.error(this, "Error getting the map of properties of a field: " + field.getInode());
+		}
+
+		return searchableFields;
 	}
 
 	public List<Map> getStructureCategories (String structureInode) throws DotDataException, DotSecurityException, PortalException, SystemException {
@@ -580,10 +566,7 @@ public class StructureAjax {
 	public void setSelectedStructure(String StructureVelocityVarName){
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest request = ctx.getHttpServletRequest();
-		
-		if(CacheLocator.getContentTypeCache().getStructureByVelocityVarName(StructureVelocityVarName) != null){
-			request.getSession().setAttribute("selectedStructure", CacheLocator.getContentTypeCache().getStructureByVelocityVarName(StructureVelocityVarName).getInode());	
-		}
+
 	}
 
 }

@@ -1,6 +1,6 @@
 package com.dotmarketing.startup.runonce;
 
-import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableList;
 
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.common.db.DotConnect;

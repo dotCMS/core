@@ -3,11 +3,11 @@ package com.dotcms.rest.api.v1.page;
 
 
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
-import com.dotcms.repackage.javax.ws.rs.*;
-import com.dotcms.repackage.javax.ws.rs.core.Context;
-import com.dotcms.repackage.javax.ws.rs.core.MediaType;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
+import javax.ws.rs.*;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -26,6 +26,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetNotFoundException;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPI;
+import com.dotmarketing.portlets.htmlpageasset.business.render.PageContextBuilder;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.PageView;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
@@ -98,8 +99,10 @@ public class PageResource {
      * @param request The {@link HttpServletRequest} object.
      * @param response The {@link HttpServletResponse} object.
      * @param uri The path to the HTML Page whose information will be retrieved.
-     * @param live If it is false look for live and working page version, otherwise just look for live
-     *        version, true is the default value
+     * @param modeParam {@link PageMode}
+     * @param personaId {@link com.dotmarketing.portlets.personas.model.Persona}'s identifier to render the page
+     * @param languageId {@link com.dotmarketing.portlets.languagesmanager.model.Language}'s Id to render the page
+     * @param deviceInode {@link org.apache.batik.svggen.font.table.Device}'s inode to render the page
      * @return All the objects on an associated HTML Page.
      */
     @NoCache
@@ -122,7 +125,8 @@ public class PageResource {
         final User user = auth.getUser();
         Response res;
 
-        final PageMode mode = modeParam != null ? PageMode.get(modeParam) : this.htmlPageAssetRenderedAPI.getDefaultEditPageMode(user, request, uri);
+        final PageMode mode = modeParam != null ? PageMode.get(modeParam) :
+                this.htmlPageAssetRenderedAPI.getDefaultEditPageMode(user, request, uri);
         PageMode.setPageMode(request, mode);
 
         try {
@@ -131,7 +135,15 @@ public class PageResource {
                 request.getSession().setAttribute(WebKeys.CURRENT_DEVICE, deviceInode);
             }
 
-            final PageView pageRendered = this.htmlPageAssetRenderedAPI.getPageMetadata(request, response, user, uri, mode);
+            final PageView pageRendered = this.htmlPageAssetRenderedAPI.getPageMetadata(
+                      PageContextBuilder.builder()
+                            .setUser(user)
+                            .setPageUri(uri)
+                            .setPageMode(mode)
+                            .build(),
+                    request,
+                    response
+            );
             final Response.ResponseBuilder responseBuilder = Response.ok(new ResponseEntityView(pageRendered));
 
 
@@ -172,10 +184,10 @@ public class PageResource {
      * @param request The {@link HttpServletRequest} object.
      * @param response The {@link HttpServletResponse} object.
      * @param uri The path to the HTML Page whose information will be retrieved.
-     * @param mode {@link PageMode} to render the page
-     * @param personaId persona identifier if it is null take the current persona to render
-     * @param languageId language identifier if it is null take the current language to render
-     * @param deviceInode device identifier if it is null take the current device to render
+     * @param modeParam {@link PageMode}
+     * @param personaId {@link com.dotmarketing.portlets.personas.model.Persona}'s identifier to render the page
+     * @param languageId {@link com.dotmarketing.portlets.languagesmanager.model.Language}'s Id to render the page
+     * @param deviceInode {@link org.apache.batik.svggen.font.table.Device}'s inode to render the page
      * @return
      */
     @NoCache
@@ -190,7 +202,7 @@ public class PageResource {
                                    @QueryParam("language_id") final String languageId,
                                    @QueryParam("device_inode") final String deviceInode) throws DotSecurityException, DotDataException {
 
-        Logger.debug(this, String.format(
+        Logger.debug(this, ()->String.format(
                 "Rendering page: uri -> %s mode-> %s language -> persona -> %s device_inode -> %s live -> %b",
                 uri, modeParam, languageId, personaId, deviceInode));
 
@@ -199,24 +211,34 @@ public class PageResource {
         final User user = auth.getUser();
         Response res;
 
-        final PageMode mode = modeParam != null ? PageMode.get(modeParam) : this.htmlPageAssetRenderedAPI.getDefaultEditPageMode(user, request,uri);
-        PageMode.setPageMode(request, mode);
         try {
+
+            final PageMode mode = modeParam != null
+                    ? PageMode.get(modeParam)
+                    : this.htmlPageAssetRenderedAPI.getDefaultEditPageMode(user, request,uri);
+
+            PageMode.setPageMode(request, mode);
 
             if (deviceInode != null) {
                 request.getSession().setAttribute(WebKeys.CURRENT_DEVICE, deviceInode);
             }
 
-            final PageView pageRendered = this.htmlPageAssetRenderedAPI.getPageRendered(request, response, user, uri, mode);
-            final Response.ResponseBuilder responseBuilder = Response.ok(new ResponseEntityView(pageRendered));
-
+            final PageView pageRendered = this.htmlPageAssetRenderedAPI.getPageRendered(
+                    PageContextBuilder.builder()
+                            .setUser(user)
+                            .setPageUri(uri)
+                            .setPageMode(mode)
+                            .build(),
+                    request,
+                    response
+            );
 
             final Host host = APILocator.getHostAPI().find(pageRendered.getPageInfo().getPage().getHost(), user,
                     PageMode.get(request.getSession()).respectAnonPerms);
             request.setAttribute(WebKeys.CURRENT_HOST, host);
             request.getSession().setAttribute(WebKeys.CURRENT_HOST, host);
 
-            res = responseBuilder.build();
+            res = Response.ok(new ResponseEntityView(pageRendered)).build();
         } catch (HTMLPageAssetNotFoundException e) {
             final String errorMsg = String.format("HTMLPageAssetNotFoundException on PageResource.render, parameters:  %s, %s %s: ",
                     request, uri, modeParam);
@@ -229,6 +251,7 @@ public class PageResource {
             Logger.error(this, errorMsg, e);
             res = ResponseUtil.mapExceptionResponse(e);
         }
+
         return res;
     }
 
@@ -268,8 +291,15 @@ public class PageResource {
             HTMLPageAsset page = (HTMLPageAsset) this.pageResourceHelper.getPage(user, pageId, request);
             page = this.pageResourceHelper.saveTemplate(user, page, form);
 
-            final PageView renderedPage = this.htmlPageAssetRenderedAPI.getPageRendered(request, response, user,
-                    page, PageMode.PREVIEW_MODE);
+            final PageView renderedPage = this.htmlPageAssetRenderedAPI.getPageRendered(
+                    PageContextBuilder.builder()
+                            .setUser(user)
+                            .setPage(page)
+                            .setPageMode(PageMode.PREVIEW_MODE)
+                            .build(),
+                    request,
+                    response
+            );
 
             res = Response.ok(new ResponseEntityView(renderedPage)).build();
 
@@ -365,7 +395,7 @@ public class PageResource {
                                      final PageContainerForm pageContainerForm)
             throws DotSecurityException, DotDataException {
 
-        Logger.debug(this, String.format("Saving page's content: %s",
+        Logger.debug(this, ()->String.format("Saving page's content: %s",
                 pageContainerForm != null ? pageContainerForm.getRequestJson() : null));
 
         if (pageContainerForm == null) {
@@ -420,7 +450,15 @@ public class PageResource {
         PageMode.setPageMode(request, mode);
         try {
 
-            final String html = this.htmlPageAssetRenderedAPI.getPageHtml(request, response, user, uri, mode);
+            final String html = this.htmlPageAssetRenderedAPI.getPageHtml(
+                    PageContextBuilder.builder()
+                            .setUser(user)
+                            .setPageUri(uri)
+                            .setPageMode(mode)
+                            .build(),
+                    request,
+                    response
+            );
             final Response.ResponseBuilder responseBuilder = Response.ok(html);
 
             res = responseBuilder.build();

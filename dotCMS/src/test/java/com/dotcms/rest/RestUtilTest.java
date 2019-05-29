@@ -9,7 +9,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.UnitTestBase;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response;
 import com.dotmarketing.logConsole.model.LogMapper;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.model.Company;
@@ -57,7 +57,7 @@ public abstract class RestUtilTest extends UnitTestBase {
 
     public static void verifySuccessResponse(final Response response) {
         assertNotNull(response);
-        assertEquals(response.getStatus(), 200);
+        assertEquals(200,response.getStatus() );
         assertNotNull(response.getEntity());
         assertTrue(response.getEntity() instanceof ResponseEntityView);
 

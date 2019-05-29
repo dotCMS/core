@@ -1,6 +1,6 @@
 package com.dotcms.rest.api.v1.authentication.url;
 
-import com.dotcms.auth.providers.jwt.beans.JWTBean;
+import com.dotcms.auth.providers.jwt.beans.UserToken;
 import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenService;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
@@ -41,8 +41,8 @@ public class AngularResetPasswordUrlStrategy implements UrlStrategy {
         final User user = (User) params.get(USER);
         final String token = (String) params.get(TOKEN);
 
-        final String jwt = this.jsonWebTokenService.generateToken(
-                new JWTBean(UUID.randomUUID().toString(), user.getUserId(),
+        final String jwt = this.jsonWebTokenService.generateUserToken(
+                new UserToken(UUID.randomUUID().toString(), user.getUserId(),
                         user.getModificationDate(),
                         this.jwtMillis
                 ));

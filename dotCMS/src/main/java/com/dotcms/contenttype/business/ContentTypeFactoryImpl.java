@@ -1,5 +1,7 @@
 package com.dotcms.contenttype.business;
 
+import static com.dotcms.contenttype.business.ContentTypeAPIImpl.TYPES_AND_FIELDS_VALID_VARIABLE_REGEX;
+
 import com.dotcms.contenttype.business.sql.ContentTypeSql;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.Field;
@@ -9,6 +11,7 @@ import com.dotcms.contenttype.model.type.*;
 import com.dotcms.contenttype.transform.contenttype.DbContentTypeTransformer;
 import com.dotcms.contenttype.transform.contenttype.ImplClassContentTypeTransformer;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
+import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.business.*;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
@@ -243,7 +246,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
       if (dc.getInt("test") == 0) {
         return var;
       }
-      var = tryVar + String.valueOf(i);
+      var = var + i;
     }
     throw new DotDataException("Unable to suggest a variable name.  Got to:" + var);
 
@@ -299,7 +302,13 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     	if (UtilMethods.isSet(saveType.variable())) {
     		builder.variable(saveType.variable());
     	} else {
-    		builder.variable(suggestVelocityVar(VelocityUtil.convertToVelocityVariable(saveType.name(), true)));
+    		final String generatedVar = suggestVelocityVar(saveType.name());
+
+    		if(!generatedVar.matches(
+                  TYPES_AND_FIELDS_VALID_VARIABLE_REGEX)) {
+              throw new IllegalArgumentException("Invalid content type variable: " + generatedVar);
+            }
+    		builder.variable(generatedVar);
     	}
     } else {
     	builder.variable(oldContentType.variable());
@@ -476,7 +485,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     dc.setMaxRows(limit);
     dc.setStartRow(offset);
     dc.addParam( searchCondition.search );
-    dc.addParam( searchCondition.search );
+    dc.addParam(searchCondition.search.toLowerCase());
     dc.addParam( searchCondition.search );
     dc.addParam(bottom);
     dc.addParam(top);
@@ -496,7 +505,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     DotConnect dc = new DotConnect();
     dc.setSQL( String.format( this.contentTypeSql.SELECT_COUNT_CONDITION, SQLUtil.sanitizeCondition( searchCondition.condition ) ) );
     dc.addParam( searchCondition.search );
-    dc.addParam( searchCondition.search );
+    dc.addParam( searchCondition.search.toLowerCase());
     dc.addParam( searchCondition.search );
     dc.addParam(bottom);
     dc.addParam(top);
@@ -542,7 +551,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     //Deletes the child relationship field (if exists) if the parent is deleted.
     relationships = FactoryLocator.getRelationshipFactory().byParent(type);
     for (final Relationship rel : relationships) {
-      if(UtilMethods.isSet(rel.getParentRelationName()) && APILocator.getRelationshipAPI().isRelationshipField(rel)) {
+      if(UtilMethods.isSet(rel.getParentRelationName()) && rel.isRelationshipField()) {
         final Field fieldToDelete = APILocator.getContentTypeFieldAPI().byContentTypeIdAndVar(rel.getChildStructureInode(), rel.getParentRelationName());
         APILocator.getContentTypeFieldAPI().delete(fieldToDelete);
       }
@@ -552,7 +561,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     //Deletes the parent relationship field if the child is deleted.
     relationships = FactoryLocator.getRelationshipFactory().byChild(type);
     for (final Relationship rel : relationships) {
-      if(UtilMethods.isSet(rel.getChildRelationName()) && APILocator.getRelationshipAPI().isRelationshipField(rel)) {
+      if(UtilMethods.isSet(rel.getChildRelationName()) && rel.isRelationshipField()) {
         final Field fieldToDelete = APILocator.getContentTypeFieldAPI().byContentTypeIdAndVar(rel.getParentStructureInode(), rel.getChildRelationName());
         APILocator.getContentTypeFieldAPI().delete(fieldToDelete);
       }

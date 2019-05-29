@@ -398,6 +398,51 @@ public class ContentletCheckInTest extends ContentletBaseTest{
         }
     }
 
+    /**
+     * This test is meant to test that you can not relate the contentlet to itself
+     *
+     * It creates a content type and create a relationship, then create a child contentlet
+     * and try to relate to itself the contentlet, it throws a DotContentletValidationException.
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test(expected = DotContentletValidationException.class)
+    public void test_checkinContentlet_RelationshipToItself_throwsDotContentletValidationException() throws DotSecurityException, DotDataException{
+        ContentType parentContentType = null;
+        try{
+            //Create content type
+            parentContentType = createContentType("parentContentType");
+
+            //Create Text and Relationship Fields
+            final String textFieldString = "title";
+            final String relationshipFieldString = "relationship";
+            createTextField(textFieldString,parentContentType.id());
+            createRelationshipField(relationshipFieldString,parentContentType.id(),parentContentType.variable(), String.valueOf(WebKeys.Relationship.RELATIONSHIP_CARDINALITY.ONE_TO_ONE.ordinal()));
+
+            //Create Contentlets
+            Contentlet contentlet = new ContentletDataGen(parentContentType.id()).setProperty(textFieldString,"parent Contentlet").nextPersisted();
+
+            //Find Contentlet
+            contentlet = contentletAPI.checkout(contentlet.getInode(),user,false);
+
+            //Find Relationship
+            final Relationship relationship = relationshipAPI.byParent(parentContentType).get(0);
+
+            //Relate contentlets
+            Map<Relationship, List<Contentlet>> relationshipListMap = Maps.newHashMap();
+            relationshipListMap.put(relationship,CollectionsUtils.list(contentlet));
+
+            //Checkin again the contentlet with the relationship to itself
+            contentletAPI.checkin(contentlet,relationshipListMap,user,false);
+
+        }finally {
+            if(parentContentType != null){
+                contentTypeAPI.delete(parentContentType);
+            }
+        }
+    }
+
     private ContentType createContentType(final String name) throws DotSecurityException, DotDataException {
         return contentTypeAPI.save(ContentTypeBuilder.builder(SimpleContentType.class).folder(
                 FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name(name)

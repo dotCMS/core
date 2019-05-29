@@ -1,12 +1,12 @@
 package com.dotcms.rest.api.v1.content;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.javax.ws.rs.GET;
-import com.dotcms.repackage.javax.ws.rs.Path;
-import com.dotcms.repackage.javax.ws.rs.PathParam;
-import com.dotcms.repackage.javax.ws.rs.core.Context;
-import com.dotcms.repackage.javax.ws.rs.core.MediaType;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
@@ -30,6 +30,14 @@ import java.util.Map;
  * @author Jose Castro
  * @version 4.2
  * @since Oct 11, 2017
+ * @deprecated This endpoint should be used only when legacy relationships need to be returned.
+ * Otherwise use {@link com.dotcms.rest.ContentResource#getContent(HttpServletRequest, HttpServletResponse, String)},
+ * which returns all relationships fields in a contentlet when the `depth` param is sent. Possible values for depth:
+ *      0 --> The contentlet object will contain the identifiers of the related contentlets
+ *      1 --> The contentlet object will contain the related contentlets
+ *      2 --> The contentlet object will contain the related contentlets, which in turn will contain the identifiers of their related contentlets
+ *      3 --> The contentlet object will contain the related contentlets, which in turn will contain a list of their related contentlets
+ *      null --> Relationships will not be sent in the response
  */
 @Path("/v1/contentrelationships")
 @Deprecated

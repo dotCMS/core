@@ -7,6 +7,8 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.liferay.util.StringUtil;
+import org.apache.commons.lang.StringUtils;
 
 import java.io.Serializable;
 import java.util.List;
@@ -21,6 +23,7 @@ public class TemplateLayoutColumn extends ContainerHolder implements Serializabl
 
     private Integer widthPercent;
     private Integer width;
+    private String styleClass;
     private int leftOffset = -1;
 
     private static final Map<Integer, Integer> mapWithWidthPercent = ImmutableMap.<Integer, Integer>builder().put(12,100).put(11,91).put(10,83).put(9,75).put(8,66).put(7,58).put(6,50).put(5,41).put(4,33).put(3,25).put(2,16).put(1,8).build();
@@ -29,11 +32,19 @@ public class TemplateLayoutColumn extends ContainerHolder implements Serializabl
     @JsonCreator
     public TemplateLayoutColumn(@JsonProperty("containers") List<ContainerUUID> containers,
                                 @JsonProperty("widthPercent") final int widthPercent,
-                                @JsonProperty("leftOffset") final int leftIndex) {
+                                @JsonProperty("leftOffset") final int leftIndex,
+                                @JsonProperty("styleClass") final String styleClass) {
         super(containers);
 
         this.widthPercent = widthPercent;
         this.leftOffset = leftIndex;
+        this.styleClass = styleClass;
+    }
+
+    public TemplateLayoutColumn(final List<ContainerUUID> containers,
+                                final int widthPercent,
+                                final int leftIndex) {
+        this(containers, widthPercent, leftIndex, null);
     }
 
     public Integer getWidthPercent () {
@@ -67,5 +78,9 @@ public class TemplateLayoutColumn extends ContainerHolder implements Serializabl
         } catch (JsonProcessingException e) {
             return super.toString();
         }
+    }
+
+    public String getStyleClass() {
+        return styleClass;
     }
 }

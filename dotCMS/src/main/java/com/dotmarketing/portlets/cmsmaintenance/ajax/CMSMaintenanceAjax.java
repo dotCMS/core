@@ -129,7 +129,7 @@ public class CMSMaintenanceAjax {
 
     public Map stopReindexation() throws DotDataException {
     	validateUser();
-    	ReindexThread.getInstance().stopFullReindexation();
+    	APILocator.getContentletIndexAPI().stopFullReindexation();
         return ESReindexationProcessStatus.getProcessIndexationMap();
     }
 
@@ -149,11 +149,11 @@ public class CMSMaintenanceAjax {
 	 */
 	public Map stopReindexationAndSwitchover() throws DotDataException, SQLException, InterruptedException {
 		validateUser();
-		ReindexThread.getInstance().stopFullReindexationAndSwitchover();
+		APILocator.getContentletIndexAPI().stopFullReindexationAndSwitchover();
 		return ESReindexationProcessStatus.getProcessIndexationMap();
 	}
 
-    public String cleanReindexStructure(String inode) throws DotDataException {
+    public String cleanReindexStructure(String inode) throws DotDataException, DotSecurityException {
     	validateUser();
     	Structure structure = CacheLocator.getContentTypeCache().getStructureByInode(inode);
     	APILocator.getContentletIndexAPI().removeContentFromIndexByStructureInode(inode);

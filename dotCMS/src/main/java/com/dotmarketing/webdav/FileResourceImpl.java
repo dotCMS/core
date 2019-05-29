@@ -114,12 +114,11 @@ public class FileResourceImpl implements FileResource, LockableResource {
 		java.io.File workingFile;
 		try {
 			workingFile = ((Contentlet)file).getBinary(FileAssetAPI.BINARY_FIELD);
-
-		} catch (IOException e) {
-			Logger.error(this, e.getMessage(), e);
+			return workingFile.length();
+		} catch (Exception e) {
+			Logger.warnAndDebug(this.getClass(), "Webdav unable to read file length for " + this.path,e);
 			return new Long(0);
 		}
-		return workingFile.length();
 	}
 
 	public String getContentType(String accepts) {
@@ -142,15 +141,15 @@ public class FileResourceImpl implements FileResource, LockableResource {
 		return  file.getInode();
 	}
 
-	public void delete() throws DotRuntimeException {
-	    User user=(User)HttpManager.request().getAuthorization().getTag();
-	    try {
-			dotDavHelper.removeObject(path, user);
-		} catch (Exception e) {
-			Logger.error(this, e.getMessage(), e);
-			throw new DotRuntimeException(e.getMessage(), e);
-		}
-	}
+  public void delete() throws DotRuntimeException {
+    User user = (User) HttpManager.request().getAuthorization().getTag();
+    try {
+      dotDavHelper.removeObject(path, user);
+    } catch (Exception e) {
+      Logger.error(this, e.getMessage(), e);
+      throw new DotRuntimeException(e.getMessage(), e);
+    }
+  }
 
 	public Long getMaxAgeSeconds() {
 		return new Long(0);
@@ -160,17 +159,20 @@ public class FileResourceImpl implements FileResource, LockableResource {
 		java.io.File f;
 		try {
 			f = ((Contentlet)file).getBinary(FileAssetAPI.BINARY_FIELD);
+		   try(InputStream fis = Files.newInputStream(f.toPath())){
+         BufferedInputStream bin = new BufferedInputStream(fis);
+         final byte[] buffer = new byte[ 1024 ];
+         int n = 0;
+         while( -1 != (n = bin.read( buffer )) ) {
+             out.write( buffer, 0, n );
+         }
+		   }
+			
 		} catch (IOException e) {
 			Logger.error(this, e.getMessage(), e);
 			return;
 		}
-		InputStream fis = Files.newInputStream(f.toPath());
-        BufferedInputStream bin = new BufferedInputStream(fis);
-        final byte[] buffer = new byte[ 1024 ];
-        int n = 0;
-        while( -1 != (n = bin.read( buffer )) ) {
-            out.write( buffer, 0, n );
-        }
+
 	}
 
 	public void moveTo(CollectionResource collRes, String name) throws RuntimeException {

@@ -23,7 +23,7 @@
 %><%@ page import="com.liferay.portal.util.Resolution"%><%@ page
 	import="com.liferay.portal.util.ShutdownUtil"
 %><%@ page import="com.liferay.portal.util.WebAppPool"%><%@ page
-	import="com.liferay.portlet.CachePortlet"
+	import="com.liferay.portlet.ConcretePortletWrapper"
 %><%@ page import="com.liferay.portlet.LiferayWindowState"%><%@ page
 	import="com.liferay.portlet.PortletURLImpl"
 %><%@ page import="com.liferay.portlet.RenderParametersPool"%><%@ page
@@ -139,11 +139,7 @@
 
 	Company company = PortalUtil.getCompany(request);
 
-	User user = null;
-	try {
-		user = PortalUtil.getUser(request);
-	} catch (NoSuchUserException nsue) {
-	}
+	User user = PortalUtil.getUser(request);
 
 	boolean signedIn = false;
 

@@ -1,13 +1,9 @@
 package com.dotcms.rest.exception.mapper;
 
-import static com.dotcms.exception.ExceptionUtil.ValidationError;
-import static com.dotcms.exception.ExceptionUtil.getRootCause;
-import static com.dotcms.exception.ExceptionUtil.mapValidationException;
-import static com.dotcms.util.CollectionsUtils.map;
-
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
-import com.dotcms.repackage.javax.ws.rs.core.MediaType;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotmarketing.business.APILocator;
@@ -22,12 +18,16 @@ import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+
+import javax.servlet.http.HttpServletRequest;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import javax.servlet.http.HttpServletRequest;
+
+import static com.dotcms.exception.ExceptionUtil.*;
+import static com.dotcms.util.CollectionsUtils.map;
 
 /**
  * Created by Oscar Arrieta on 8/27/15.
@@ -161,7 +161,13 @@ public final class ExceptionMapperUtil {
      */
     public static Response  createResponse(final Throwable exception, final String key, final Response.Status status){
         //Create the message.
-        final String message = getI18NMessage(exception.getMessage());
+
+        if (exception instanceof WebApplicationException) {
+
+            return WebApplicationException.class.cast(exception).getResponse();
+        }
+
+        final String message = getI18NMessage(exception.getMessage()); // todo: this must be switchable by osgi plugin, also the  error must be returned as ResponseEntityView
 
         //Creating the message in JSON format.
         if (ConfigUtils.isDevMode()) {

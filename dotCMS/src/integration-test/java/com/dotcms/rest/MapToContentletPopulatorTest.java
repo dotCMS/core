@@ -5,6 +5,7 @@ import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
@@ -21,6 +22,9 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,10 +33,13 @@ import static org.junit.Assert.*;
 import java.util.Map.Entry;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 /**
  * @author nollymar
  */
+
+@RunWith(DataProviderRunner.class)
 public class MapToContentletPopulatorTest {
 
     private static ContentTypeAPI contentTypeAPI;
@@ -46,7 +53,30 @@ public class MapToContentletPopulatorTest {
         user = APILocator.getUserAPI().getSystemUser();
         contentTypeAPI = APILocator.getContentTypeAPI(user);
         fieldAPI = APILocator.getContentTypeFieldAPI();
-}
+    }
+
+    public static class TestCase {
+        String query;
+        int relationshipsCount;
+        int relatedContentCount;
+
+        public TestCase(final String query, final int relationshipsCount, final int relatedContentCount) {
+            this.query = query;
+
+            this.relationshipsCount  = relationshipsCount;
+            this.relatedContentCount = relatedContentCount;
+        }
+    }
+
+    @DataProvider
+    public static Object[] testCases() {
+        return new TestCase[]{
+                new TestCase("identifier", 1,1),
+                new TestCase("", 1,0),
+                new TestCase("null", 0,0),
+                new TestCase(null, 0,0),
+        };
+    }
 
     @Test
     public void testPopulateLegacyRelationshipWithLuceneQueryAndIdentifier() throws DotDataException, DotSecurityException {
@@ -84,8 +114,9 @@ public class MapToContentletPopulatorTest {
         }
     }
 
+    @UseDataProvider("testCases")
     @Test
-    public void testPopulateOneSidedRelationshipWithIdentifier() throws DotDataException, DotSecurityException {
+    public void testPopulateOneSidedRelationship(final TestCase testCase) throws DotDataException, DotSecurityException {
         final MapToContentletPopulator populator = new MapToContentletPopulator();
 
         ContentType parentContentType = null;
@@ -98,25 +129,39 @@ public class MapToContentletPopulatorTest {
             Field field = createAndSaveRelationshipField("newRel", parentContentType.id(), childContentType.variable());
             final Map<String, Object> properties = new HashMap<>();
             properties.put(Contentlet.STRUCTURE_INODE_KEY, parentContentType.id());
-            properties.put(field.variable(), contentlet.getIdentifier());
+
+            if (testCase.query != null && testCase.query.equals("identifier")){
+                properties.put(field.variable(), contentlet.getIdentifier());
+            }else{
+                properties.put(field.variable(), testCase.query);
+            }
+
 
             contentlet = populator.populate(contentlet, properties);
 
-            assertNotNull(contentlet.get(Contentlet.RELATIONSHIP_KEY));
+            if(testCase.relationshipsCount > 0) {
 
-            Map<Relationship, List<Contentlet>>  resultMap = (Map<Relationship, List<Contentlet>> ) contentlet
-                    .get(Contentlet.RELATIONSHIP_KEY);
+                assertNotNull(contentlet.get(Contentlet.RELATIONSHIP_KEY));
 
-            assertEquals(1, resultMap.size());
+                final Map<Relationship, List<Contentlet>> resultMap = (Map<Relationship, List<Contentlet>>) contentlet
+                        .get(Contentlet.RELATIONSHIP_KEY);
 
-            Entry<Relationship, List<Contentlet>> result = resultMap.entrySet().iterator().next();
+                assertEquals(testCase.relationshipsCount, resultMap.size());
+                final Entry<Relationship, List<Contentlet>> result = resultMap.entrySet().iterator()
+                        .next();
 
-            //validates the relationship
-            assertEquals(parentContentType.inode(), result.getKey().getParentStructureInode());
+                //validates the relationship
+                assertEquals(parentContentType.inode(), result.getKey().getParentStructureInode());
 
-            //validates the contentlet
-            assertEquals(1, result.getValue().size());
-            assertEquals(contentlet.getInode(), result.getValue().get(0).getInode());
+                //validates the contentlet
+                assertEquals(testCase.relatedContentCount, result.getValue().size());
+
+                if(testCase.relatedContentCount > 0){
+                    assertEquals(contentlet.getInode(), result.getValue().get(0).getInode());
+                }
+            }else{
+                assertNull(contentlet.get(Contentlet.RELATIONSHIP_KEY));
+            }
         } finally {
             if (UtilMethods.isSet(parentContentType) && UtilMethods.isSet(parentContentType.id())) {
                 contentTypeAPI.delete(parentContentType);
@@ -170,6 +215,56 @@ public class MapToContentletPopulatorTest {
             //validates the contentlet
             assertEquals(1, result.getValue().size());
             assertEquals(contentlet.getInode(), result.getValue().get(0).getInode());
+        } finally {
+            if (UtilMethods.isSet(parentContentType) && UtilMethods.isSet(parentContentType.id())) {
+                contentTypeAPI.delete(parentContentType);
+            }
+
+            if (UtilMethods.isSet(childContentType) && UtilMethods.isSet(childContentType.id())) {
+                contentTypeAPI.delete(childContentType);
+            }
+        }
+    }
+
+    @Test
+    public void testPopulateContentletWithTwoSidedRelationshipAndParentRelationNameEqualsToAnotherFieldVarInChild()
+            throws DotDataException, DotSecurityException {
+        final MapToContentletPopulator populator = new MapToContentletPopulator();
+
+        ContentType parentContentType = null;
+        ContentType childContentType = null;
+        try {
+            parentContentType = createAndSaveSimpleContentType("parentContentType");
+            childContentType = createAndSaveSimpleContentType("childContentType");
+            Contentlet contentlet = createContentlet(childContentType);
+
+            //Adding a RelationshipField to the parent
+            final Field parentTypeRelationshipField = createAndSaveRelationshipField("newRel",
+                    parentContentType.id(), childContentType.variable());
+
+            final String fullFieldVar =
+                    parentContentType.variable() + StringPool.PERIOD + parentTypeRelationshipField
+                            .variable();
+
+            //Adding a RelationshipField to the child
+            createAndSaveRelationshipField("otherSideRel",
+                    childContentType.id(), fullFieldVar);
+
+            //Creating text field in the child with relationship field variable set in the parent
+            Field textField = FieldBuilder.builder(TextField.class)
+                    .name(parentTypeRelationshipField.variable())
+                    .variable(parentTypeRelationshipField.variable())
+                    .contentTypeId(childContentType.id()).build();
+
+            textField = fieldAPI.save(textField, user);
+
+            final Map<String, Object> properties = new HashMap<>();
+            properties.put(Contentlet.STRUCTURE_INODE_KEY, childContentType.id());
+            properties.put(textField.variable(), contentlet.getIdentifier());
+
+            contentlet = populator.populate(contentlet, properties);
+
+            assertNull(contentlet.get(Contentlet.RELATIONSHIP_KEY));
         } finally {
             if (UtilMethods.isSet(parentContentType) && UtilMethods.isSet(parentContentType.id())) {
                 contentTypeAPI.delete(parentContentType);

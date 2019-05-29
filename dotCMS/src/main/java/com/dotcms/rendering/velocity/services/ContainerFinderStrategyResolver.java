@@ -1,17 +1,17 @@
 package com.dotcms.rendering.velocity.services;
 
-import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableList;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
+import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 
 import java.util.List;
@@ -115,7 +115,7 @@ public class ContainerFinderStrategyResolver {
         @Override
         public boolean test(final VelocityResourceKey key) {
 
-            return UtilMethods.isSet(key.id1);
+            return FileAssetContainerUtil.getInstance().isDataBaseContainerId(key.id1);
         }
 
         @Override
@@ -129,7 +129,7 @@ public class ContainerFinderStrategyResolver {
                     this.containerAPI.getLiveContainerById   (key.id1, APILocator.systemUser(), true):
                     this.containerAPI.getWorkingContainerById(key.id1, APILocator.systemUser(), true);
             } catch (DotDataException | DotSecurityException e) {
-                throw new DotStateException("cannot find container for : " +  key);
+                throw new DotStateException("cannot find container for : " +  key, e);
             }
 
             return container;
@@ -146,7 +146,7 @@ public class ContainerFinderStrategyResolver {
         @Override
         public boolean test(final VelocityResourceKey key) {
 
-            return !UtilMethods.isSet(key.id1);
+            return FileAssetContainerUtil.getInstance().isFolderAssetContainerId(key.id1);
         }
 
         @Override
@@ -161,8 +161,7 @@ public class ContainerFinderStrategyResolver {
                 final Folder folder            = this.folderAPI.findFolderByPath(baseContainerPath, site, APILocator.systemUser(), false);
                 container                      = containerAPI.getContainerByFolder(folder, site, APILocator.systemUser(), key.mode.showLive);
             } catch (DotDataException | DotSecurityException e) {
-
-                throw new DotStateException("cannot find container for : " +  key);
+                throw new DotStateException("cannot find container for : " +  key, e);
             }
 
             return container;
@@ -172,7 +171,7 @@ public class ContainerFinderStrategyResolver {
 
             int hostIndexOf     = path.indexOf(hostName);
             final int lastSlash = path.lastIndexOf(StringPool.FORWARD_SLASH);
-            hostIndexOf         = hostIndexOf > 0? hostIndexOf: path.indexOf(this.getHostName(hostName));
+            hostIndexOf         = hostIndexOf > 0? hostIndexOf: path.indexOf(FileAssetContainerUtil.getInstance().getHostName(hostName));
 
             return path.substring(hostIndexOf + hostName.length(), lastSlash);
         }
@@ -184,19 +183,12 @@ public class ContainerFinderStrategyResolver {
 
             try {
 
-                return this.hostAPI.resolveHostName
-                        (this.getHostName(path), APILocator.systemUser(), false);
+                return FileAssetContainerUtil.getInstance().getHost(path);
             } catch (Exception e) {
 
                 return APILocator.systemHost();
             }
         }
 
-        private String getHostName (final String path) {
-
-            final int startsHost = path.indexOf(HOST_INDICATOR);
-            final int endsHost   = path.indexOf(StringPool.FORWARD_SLASH, startsHost);
-            return path.substring(startsHost, endsHost);
-        }
     } // PathContainerFinderStrategyImpl.
 }

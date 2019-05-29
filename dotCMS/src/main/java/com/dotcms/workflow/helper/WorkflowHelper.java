@@ -1,57 +1,36 @@
 package com.dotcms.workflow.helper;
 
-import static com.dotcms.rest.api.v1.authentication.ResponseUtil.getFormattedMessage;
-import static com.dotmarketing.db.HibernateUtil.addSyncCommitListener;
-
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
-import com.dotcms.rest.api.v1.workflow.BulkActionView;
-import com.dotcms.rest.api.v1.workflow.BulkActionsResultView;
-import com.dotcms.rest.api.v1.workflow.CountWorkflowAction;
-import com.dotcms.rest.api.v1.workflow.CountWorkflowStep;
-import com.dotcms.rest.api.v1.workflow.WorkflowDefaultActionView;
+import com.dotcms.rest.api.v1.workflow.*;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.util.CollectionsUtils;
-import com.dotcms.workflow.form.BulkActionForm;
-import com.dotcms.workflow.form.FireBulkActionsForm;
-import com.dotcms.workflow.form.IWorkflowStepForm;
-import com.dotcms.workflow.form.WorkflowActionForm;
-import com.dotcms.workflow.form.WorkflowActionStepBean;
-import com.dotcms.workflow.form.WorkflowReorderBean;
-import com.dotcms.workflow.form.WorkflowSchemeForm;
-import com.dotcms.workflow.form.WorkflowStepAddForm;
-import com.dotcms.workflow.form.WorkflowStepUpdateForm;
+import com.dotcms.uuid.shorty.ShortyId;
+import com.dotcms.workflow.form.*;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
-import com.dotmarketing.exception.AlreadyExistException;
-import com.dotmarketing.exception.DoesNotExistException;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.exception.InvalidLicenseException;
+import com.dotmarketing.exception.*;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.transform.ContentletToMapTransformer;
 import com.dotmarketing.portlets.workflows.actionlet.NotifyAssigneeActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
 import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
+import com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
-import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
-import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
-import com.dotmarketing.portlets.workflows.model.WorkflowStep;
+import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
 import com.dotmarketing.portlets.workflows.util.WorkflowSchemeImportExportObject;
-import com.dotmarketing.util.DateUtil;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.LuceneQueryUtils;
-import com.dotmarketing.util.StringUtils;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.VelocityUtil;
+import com.dotmarketing.util.*;
 import com.dotmarketing.util.web.VelocityWebUtil;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -59,21 +38,6 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import java.io.IOException;
-import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.Future;
-import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang.time.StopWatch;
 import org.apache.velocity.context.Context;
@@ -81,6 +45,19 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.aggregations.Aggregation;
 import org.elasticsearch.search.aggregations.Aggregations;
 import org.elasticsearch.search.aggregations.bucket.terms.StringTerms;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.util.*;
+import java.util.concurrent.Future;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static com.dotcms.rest.api.v1.authentication.ResponseUtil.getFormattedMessage;
+import static com.dotmarketing.db.HibernateUtil.addSyncCommitListener;
 
 
 /**
@@ -125,10 +102,6 @@ public class WorkflowHelper {
     public BulkActionView findBulkActions(final User user,
                                           final BulkActionForm bulkActionForm) throws DotSecurityException, DotDataException {
 
-        if (!workflowAPI.hasValidLicense()) {
-            throw new InvalidLicenseException("Workflow-Schemes-License-required");
-        }
-
         return (UtilMethods.isSet(bulkActionForm.getContentletIds()))?
                     // 1) case with contentlet ids
                     this.findBulkActionByContentlets(bulkActionForm.getContentletIds(), user):
@@ -154,8 +127,11 @@ public class WorkflowHelper {
 
             final String query = String.format(ES_WFSTEP_AGGREGATES_QUERY, sanitizedQuery);
             //We should only be considering Working content.
-            final SearchResponse response = this.contentletAPI
-                    .esSearchRaw(query.toLowerCase(), false, user, false);
+            final SearchResponse response = LicenseManager.getInstance().isCommunity()?
+                    this.contentletAPI
+                            .esSearch(query.toLowerCase(), false, user, false).getResponse():
+                    this.contentletAPI
+                            .esSearchRaw(query.toLowerCase(), false, user, false);
             //Query must be sent lowercase. It's a must.
 
             Logger.debug(getClass(), () -> "luceneQuery: " + sanitizedQuery);
@@ -316,6 +292,33 @@ public class WorkflowHelper {
     }
 
     /**
+     * Try to find an action by name
+     * @param actionName {@link String}
+     * @param contentlet {@link Contentlet}
+     * @param user       {@link User}
+     * @return String
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @CloseDBIfOpened
+    public String getActionIdByName(final String actionName,
+                                    final Contentlet contentlet,
+                                    final User user) throws DotSecurityException, DotDataException {
+
+        final List<WorkflowAction> availableActionsOnListing =
+                APILocator.getWorkflowAPI().findAvailableActionsListing(contentlet, user);
+
+        final List<WorkflowAction> availableActionsOnEditing =
+                APILocator.getWorkflowAPI().findAvailableActionsEditing(contentlet, user);
+
+        final Optional<WorkflowAction> foundAction =
+                Stream.concat(availableActionsOnListing.stream(), availableActionsOnEditing.stream())
+                        .filter(action -> action.getName().equalsIgnoreCase(actionName)).findFirst();
+
+        return foundAction.isPresent()?foundAction.get().getId():null;
+    }
+
+    /**
      *
      * @param form
      * @param user
@@ -327,18 +330,27 @@ public class WorkflowHelper {
     public BulkActionsResultView fireBulkActions(final FireBulkActionsForm form,
             final User user) throws DotSecurityException, DotDataException {
 
-        if (!workflowAPI.hasValidLicense()) {
-            throw new InvalidLicenseException("Workflow-Schemes-License-required");
-        }
-
         final WorkflowAction action = this.workflowAPI.findAction(form.getWorkflowActionId(), user);
         if(null != action) {
+
+            this.checkActionLicense(action);
+
             if(UtilMethods.isSet(form.getQuery())){
                 return this.workflowAPI.fireBulkActions(action, user, form.getQuery(), form.getPopupParamsBean());
             }
             return this.workflowAPI.fireBulkActions(action, user, form.getContentletIds(), form.getPopupParamsBean());
         } else {
             throw new DoesNotExistException("Workflow-does-not-exists-action");
+        }
+    }
+
+
+    private void checkActionLicense(final WorkflowAction action) {
+
+        // if does not have license and the action is not system workflow action
+        if (!workflowAPI.hasValidLicense() && !action.getSchemeId().equals(SystemWorkflowConstants.SYSTEM_WORKFLOW_ID)) {
+
+            throw new InvalidLicenseException("Workflow-Schemes-License-required");
         }
     }
 
@@ -363,6 +375,8 @@ public class WorkflowHelper {
             throw new BadRequestException(message);
         }
     }
+
+
 
     private static class SingletonHolder {
         private static final WorkflowHelper INSTANCE = new WorkflowHelper();
@@ -1381,10 +1395,91 @@ public class WorkflowHelper {
     }
 
     @WrapInTransaction
-    public void saveActionToStep(final WorkflowActionStepBean workflowActionStepForm, final User user) throws DotDataException, DotSecurityException {
+    public void saveActionletToAction(final WorkflowActionletActionBean workflowActionletActionBean, final User user)
+            throws DotDataException, AlreadyExistException {
 
-        final String actionId = workflowActionStepForm.getActionId();
-        final String stepId = workflowActionStepForm.getStepId();
+        final String actionId       = workflowActionletActionBean.getActionId();
+        final String actionletClass = workflowActionletActionBean.getActionletClass();
+
+        if (!UtilMethods.isSet(actionId) || !UtilMethods.isSet(actionletClass)) {
+            throw new IllegalArgumentException("Missing required parameter actionId or actionletClass.");
+        }
+
+        final int    order          = workflowActionletActionBean.getOrder();
+        final WorkflowActionClass workflowActionClass = new WorkflowActionClass();
+
+        if (order > 0) {
+
+            workflowActionClass.setOrder(order);
+        } else {
+
+            final WorkflowAction action = new WorkflowAction();
+            action.setId(actionId);
+            final List<WorkflowActionClass> classes = this.workflowAPI.findActionClasses(action);
+            if (classes != null) {
+                workflowActionClass.setOrder(classes.size());
+            }
+        }
+
+        final WorkFlowActionlet actionlet = this.workflowAPI.findActionlet(actionletClass);
+
+        if (null == actionlet) {
+
+            throw new DoesNotExistException("The actionlet: " + actionletClass + ", does not exists");
+        }
+
+        final Map<String, String> userActionClassParametersMap =
+                workflowActionletActionBean.getParameters();
+
+        workflowActionClass.setClazz(actionletClass);
+        workflowActionClass.setName(actionlet.getName());
+        workflowActionClass.setActionId(actionId);
+        this.workflowAPI.saveActionClass(workflowActionClass, user);
+
+        // if parameters, so save them
+        final List<WorkflowActionClassParameter> parameters = null;
+        this.workflowAPI.saveWorkflowActionClassParameters(parameters, user);
+        if (UtilMethods.isSet(userActionClassParametersMap)) {
+            this.saveWorkflowActionClassParameters(workflowActionClass, actionlet,
+                    userActionClassParametersMap, user);
+        }
+    }
+
+    private void saveWorkflowActionClassParameters (final WorkflowActionClass workflowActionClass,
+                                                   final WorkFlowActionlet actionlet,
+                                                   final Map<String, String> userActionClassParametersMap,
+                                                   final User user) throws DotDataException {
+
+        final List<WorkflowActionletParameter> actionletParameters	  = actionlet.getParameters();
+        final Map<String, WorkflowActionClassParameter> enteredParams = this.workflowAPI.findParamsForActionClass(workflowActionClass);
+        final List<WorkflowActionClassParameter>        newParams 	  = new ArrayList<>();
+        String userIds = null;
+
+        for (final WorkflowActionletParameter expectedParam : actionletParameters) {
+
+            final WorkflowActionClassParameter enteredParam =
+                    enteredParams.computeIfAbsent(expectedParam.getKey(), key -> new WorkflowActionClassParameter());
+            enteredParam.setActionClassId(workflowActionClass.getId());
+            enteredParam.setKey(expectedParam.getKey());
+            enteredParam.setValue(userActionClassParametersMap.getOrDefault(expectedParam.getKey(), StringPool.BLANK));
+            newParams.add(enteredParam);
+            userIds = enteredParam.getValue();
+            //Validate userIds or emails
+            final String errors = expectedParam.hasError(userIds);
+            if(errors != null) {
+
+                throw new IllegalArgumentException("The userIds, emails or roles are invalid: " + userIds);
+            }
+        }
+
+        this.workflowAPI.saveWorkflowActionClassParameters(newParams, user);
+    }
+
+    @WrapInTransaction
+    public void saveActionToStep(final WorkflowActionStepBean workflowActionStepBean, final User user) throws DotDataException, DotSecurityException {
+
+        final String actionId = workflowActionStepBean.getActionId();
+        final String stepId = workflowActionStepBean.getStepId();
 
         if (!UtilMethods.isSet(actionId) || !UtilMethods.isSet(stepId)) {
             throw new IllegalArgumentException("Missing required parameter actionId or stepId.");
@@ -1394,14 +1489,14 @@ public class WorkflowHelper {
         if(action != null) {
             WorkflowReorderBean bean = new WorkflowReorderBean.Builder()
             .actionId(actionId).stepId(stepId)
-            .order(workflowActionStepForm.getOrder()).build();
+            .order(workflowActionStepBean.getOrder()).build();
 
             this.reorderAction(bean, user);
             
         } else {
 
             this.workflowAPI.saveAction(actionId,
-                stepId, user, workflowActionStepForm.getOrder());
+                stepId, user, workflowActionStepBean.getOrder());
         }
     } // addActionToStep.
 
@@ -1630,5 +1725,73 @@ public class WorkflowHelper {
         }
     } // delete.
 
+    /**
+     * Figure out the contentlet by identifier (when not language) depending on the following rules:
+     * If there is a contentlet associated to the current session language tries the id+session lang combination
+     * If there is not a contentlet associated and the default language is diff to the session lang will tries this combination.
+     * Otherwise will try to get the content on some language
+     * @param identifier {@link String} shorty or long identifier
+     * @param mode {@link PageMode} page mode
+     * @param user {@link User} user
+     * @param sessionLanguageSupplier {@link Supplier} supplier to get the session language in case needed
+     * @return Optional contentlet
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @CloseDBIfOpened
+    public Optional<Contentlet> getContentletByIdentifier(final String identifier,
+                                                           final PageMode mode,
+                                                           final User     user,
+                                                           final Supplier<Long> sessionLanguageSupplier) throws DotSecurityException, DotDataException {
 
+        Contentlet contentlet = null;
+        final Optional<ShortyId> shortyIdOptional = APILocator.getShortyAPI().getShorty(identifier);
+        final String longIdentifier = shortyIdOptional.isPresent()? shortyIdOptional.get().longId:identifier;
+        final long sessionLanguage  = sessionLanguageSupplier.get();
+
+        if(sessionLanguage > 0) {
+
+            contentlet = this.getContentletByIdentifier
+                    (longIdentifier, mode.showLive, sessionLanguage, user, mode.respectAnonPerms);
+        }
+
+        if (null == contentlet) {
+
+            final long defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+            if (defaultLanguage != sessionLanguage) {
+
+
+                contentlet = this.getContentletByIdentifier
+                        (longIdentifier, mode.showLive, defaultLanguage, user, mode.respectAnonPerms);
+            }
+        }
+
+        return null == contentlet?
+                Optional.ofNullable(this.contentletAPI.findContentletByIdentifierAnyLanguage(longIdentifier)):
+                Optional.ofNullable(contentlet);
+    }
+
+    public Contentlet getContentletByIdentifier(final String longIdentifier, final boolean showLive,
+                                                final long languageId, final User user, final boolean respectAnonPerms) {
+
+        try {
+            return this.contentletAPI.findContentletByIdentifier
+                    (longIdentifier, showLive, languageId, user, respectAnonPerms);
+        } catch (DotContentletStateException | DotSecurityException | DotDataException e) {
+
+            Logger.error(this, e.getMessage(), e);
+            return null;
+        }
+    }
+
+    /**
+     * Used to call and transform a Contentlet
+     * @param contentlet A Contentlet
+     * @return Transformed Map
+     */
+    public Map<String, Object> contentletToMap(final Contentlet contentlet) {
+
+        final ContentletToMapTransformer transformer = new ContentletToMapTransformer(contentlet);
+        return transformer.toMaps().stream().findFirst().orElse(Collections.EMPTY_MAP);
+    }
 } // E:O:F:WorkflowHelper.

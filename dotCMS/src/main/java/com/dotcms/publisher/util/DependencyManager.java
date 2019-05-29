@@ -22,13 +22,14 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
@@ -48,11 +49,16 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import org.apache.commons.lang.StringUtils;
 
 /**
@@ -98,6 +104,7 @@ public class DependencyManager {
 	private Set<String> templatesSet;
 	private Set<String> structuresSet;
 	private Set<String> containersSet;
+	private Set<String> fileAssetContainersSet;
 	private Set<String> contentsSet;
 	private Set<String> linksSet;
 	private Set<String> ruleSet;
@@ -106,7 +113,6 @@ public class DependencyManager {
 	private User user;
 
 	private PushPublisherConfig config;
-
 
 	/**
 	 * Initializes the list of dependencies that this manager needs to satisfy,
@@ -137,16 +143,17 @@ public class DependencyManager {
 		categories = new DependencySet(config.getId(), AssetTypes.CATEGORIES.toString(), config.isDownloading(), isPublish, config.isStatic());
 
 		// these ones are for being iterated over to solve the asset's dependencies
-		hostsSet = new HashSet<String>();
-		foldersSet = new HashSet<String>();
-		htmlPagesSet = new HashSet<String>();
-		templatesSet = new HashSet<String>();
-		structuresSet = new HashSet<String>();
-		containersSet = new HashSet<String>();
-		contentsSet = new HashSet<String>();
-		linksSet = new HashSet<String>();
-		this.ruleSet = new HashSet<String>();
-		solvedStructures = new HashSet<String>();
+		hostsSet = new HashSet<>();
+		foldersSet = new HashSet<>();
+		htmlPagesSet = new HashSet<>();
+		templatesSet = new HashSet<>();
+		structuresSet = new HashSet<>();
+		containersSet = new HashSet<>();
+		contentsSet = new HashSet<>();
+		fileAssetContainersSet = new HashSet<>();
+		linksSet = new HashSet<>();
+		this.ruleSet = new HashSet<>();
+		solvedStructures = new HashSet<>();
 
 		this.user = user;
 
@@ -209,6 +216,12 @@ public class DependencyManager {
 					if(c == null) {
 						c = APILocator.getContainerAPI().getWorkingContainerById(asset.getAsset(), user, false);
 					}
+
+                    if(c instanceof FileAssetContainer){
+					   Logger.debug(getClass(), "FileAssetContainer id: "+ (asset.getAsset() != null ? asset.getAsset() : "N/A") +" will be ignored");
+					   fileAssetContainersSet.add(asset.getAsset());
+                       continue;
+                    }
 
 					if(c == null) {
 						Logger.warn(getClass(), "Container id: "+ (asset.getAsset() != null ? asset.getAsset() : "N/A") +" does NOT have working or live version, not Pushed");
@@ -410,8 +423,13 @@ public class DependencyManager {
 				// Container dependencies
 				final List<Container> containerList = APILocator.getContainerAPI().findContainersUnder(h);
 				for (Container container : containerList) {
-					containers.addOrClean( container.getIdentifier(), container.getModDate());
-					containersSet.add(container.getIdentifier());
+
+					if (container instanceof FileAssetContainer) {
+						fileAssetContainersSet.add(container.getIdentifier());
+					} else {
+						containers.addOrClean(container.getIdentifier(), container.getModDate());
+						containersSet.add(container.getIdentifier());
+					}
 				}
 
 				// Content dependencies
@@ -597,7 +615,7 @@ public class DependencyManager {
 
 			IdentifierAPI idenAPI = APILocator.getIdentifierAPI();
 			FolderAPI folderAPI = APILocator.getFolderAPI();
-			List<Container> containerList = new ArrayList<Container>();
+			Set<Container> containerList = new HashSet<>();
 
 			for (String pageId : idsToWork) {
 				Identifier iden = idenAPI.find(pageId);
@@ -669,16 +687,25 @@ public class DependencyManager {
 				// Containers dependencies
 				containerList.clear();
 
-				if(workingTemplateWP!=null && InodeUtils.isSet(workingTemplateWP.getInode()))
+				if(workingTemplateWP!=null && InodeUtils.isSet(workingTemplateWP.getInode())){
 					containerList.addAll(APILocator.getTemplateAPI().getContainersInTemplate(workingTemplateWP, user, false));
-				if(liveTemplateWP!=null && InodeUtils.isSet(liveTemplateWP.getInode()))
+				}
+				if(liveTemplateWP!=null && InodeUtils.isSet(liveTemplateWP.getInode())){
 					containerList.addAll(APILocator.getTemplateAPI().getContainersInTemplate(liveTemplateWP, user, false));
-				if(liveTemplateLP!=null && InodeUtils.isSet(liveTemplateLP.getInode()))
+				}
+				if(liveTemplateLP!=null && InodeUtils.isSet(liveTemplateLP.getInode())){
 					containerList.addAll(APILocator.getTemplateAPI().getContainersInTemplate(liveTemplateLP, user, false));
+				}
 
 				for (Container container : containerList) {
-					containers.addOrClean( container.getIdentifier(), container.getModDate());
-					containersSet.add(container.getIdentifier());
+
+					if (container instanceof FileAssetContainer) {
+						fileAssetContainersSet.add(container.getIdentifier());
+					} else {
+						containers.addOrClean(container.getIdentifier(), container.getModDate());
+						containersSet.add(container.getIdentifier());
+					}
+
 					// Structure dependencies
 					List<ContainerStructure> csList = APILocator.getContainerAPI().getContainerStructures(container);
 
@@ -725,7 +752,7 @@ public class DependencyManager {
 	 */
 	private void setTemplateDependencies() {
 		try {
-			List<Container> containerList = new ArrayList<Container>();
+			List<Container> containerList = new ArrayList<>();
 			FolderAPI folderAPI = APILocator.getFolderAPI();
 
 			for (String id : templatesSet) {
@@ -744,6 +771,12 @@ public class DependencyManager {
 				}
 
 				for (Container container : containerList) {
+
+					if(container instanceof FileAssetContainer){
+						fileAssetContainersSet.add(container.getIdentifier());
+						continue;
+					}
+
 					// Container dependencies
 					containers.addOrClean( container.getIdentifier(), container.getModDate());
 					containersSet.add(container.getIdentifier());
@@ -790,7 +823,7 @@ public class DependencyManager {
 
 		try {
 
-			List<Container> containerList = new ArrayList<Container>();
+			List<Container> containerList = new ArrayList<>();
 
 			for (String id : containersSet) {
 				Container c = APILocator.getContainerAPI().getWorkingContainerById(id, user, false);
@@ -801,28 +834,38 @@ public class DependencyManager {
 
 				containerList.clear();
 
-				Container workingContainer = (Container) APILocator.getVersionableAPI().findWorkingVersion(id, user, false);
+				Container workingContainer = APILocator.getContainerAPI().getWorkingContainerById(id, user, false);
 				if ( workingContainer != null ) {
 					containerList.add( workingContainer );
 				}
 
-				Container liveContainer = (Container) APILocator.getVersionableAPI().findLiveVersion(id, user, false);
+				Container liveContainer = APILocator.getContainerAPI().getLiveContainerById(id, user, false);
 				if ( liveContainer != null ) {
 					containerList.add( liveContainer );
 				}
 
 				for (Container container : containerList) {
-					// Structure dependencies
-					List<ContainerStructure> csList = APILocator.getContainerAPI().getContainerStructures(container);
+						// Structure dependencies
+						List<ContainerStructure> csList = APILocator.getContainerAPI()
+								.getContainerStructures(container);
 
-					for (ContainerStructure containerStructure : csList) {
-						Structure st = CacheLocator.getContentTypeCache().getStructureByInode(containerStructure.getStructureId());
-						structures.addOrClean(containerStructure.getStructureId(), st.getModDate());
-						structuresSet.add(containerStructure.getStructureId());
-					}
+						for (ContainerStructure containerStructure : csList) {
+							Structure st = CacheLocator.getContentTypeCache()
+									.getStructureByInode(containerStructure.getStructureId());
+							structures.addOrClean(containerStructure.getStructureId(),
+									st.getModDate());
+							structuresSet.add(containerStructure.getStructureId());
+						}
 				}
 
 			}
+
+            // Process FileAssetContainer
+			 final List<Folder> folders = collectFileAssetContainer().stream()
+			        .map(this::collectFileAssetContainerDependencies).flatMap(Collection::stream)
+					.collect(Collectors.toList());
+
+             setFolderListDependencies(folders);
 
 		} catch (DotSecurityException e) {
 
@@ -832,6 +875,54 @@ public class DependencyManager {
 		}
 
 	}
+
+	/**
+	 * Function that wraps calling getWorkingContainerById
+	 */
+	private Function<String, Container> workingContainerById = id -> {
+		try {
+			return APILocator.getContainerAPI().getWorkingContainerById(id, user, false);
+		} catch (DotDataException | DotSecurityException e) {
+			Logger.error(this, e.getMessage(),e);
+		}
+		return null;
+	};
+
+	/**
+	 * Aux Predicate to simplify filtering FileAssetContainer
+	 */
+	private Predicate<Container> fileAssetContainer = container -> container instanceof FileAssetContainer;
+
+	/**
+	 * Utility method that takes a Container source function as param and returns FileAssetContainer
+	 * @return
+	 */
+	private Set<FileAssetContainer> collectFileAssetContainer() {
+		return fileAssetContainersSet.stream().map(workingContainerById).filter(Objects::nonNull)
+				.filter(fileAssetContainer).map(FileAssetContainer.class::cast)
+				.collect(Collectors.toSet());
+	}
+
+	/**
+	 * Given that a FileAssetContainer is defined by a bunch of vtl files we need to collect the folder that enclose'em
+ 	 * @param fileAssetContainer
+	 * @return
+	 */
+	private Set<Folder> collectFileAssetContainerDependencies(final FileAssetContainer fileAssetContainer){
+       final Set<Folder> collectedFolders = new HashSet<>();
+       final List<FileAsset> fileAssets = fileAssetContainer.getContainerStructuresAssets();
+       for(final FileAsset fileAsset:fileAssets){
+		   try {
+			   final Folder folder = APILocator.getFolderAPI().findFolderByPath(fileAsset.getPath(), fileAsset.getHost(),user, false);
+			   if(UtilMethods.isSet(folder)) {
+				  collectedFolders.add(folder);
+			   }
+		   } catch (DotSecurityException | DotDataException e) {
+			   Logger.error(this, "Error collecting folders for FileAssetContainer " + fileAsset.getFileName() ,e);
+		   }
+       }
+       return collectedFolders;
+    }
 
 	/**
 	 * For given Structures adds its dependencies:

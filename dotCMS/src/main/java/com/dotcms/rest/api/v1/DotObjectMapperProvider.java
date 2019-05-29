@@ -1,7 +1,7 @@
 package com.dotcms.rest.api.v1;
 
-import com.dotcms.repackage.com.fasterxml.jackson.databind.DeserializationFeature;
-import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 
 /**

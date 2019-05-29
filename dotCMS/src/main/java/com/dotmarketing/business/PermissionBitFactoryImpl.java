@@ -7,7 +7,7 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.lock.IdentifierStripedLock;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
-import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;
+import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImpl;
 import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -42,6 +42,7 @@ import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
@@ -82,6 +83,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	private static final Map<String, Integer> PERMISION_TYPES = new HashMap<String, Integer>();
 
 	private final IdentifierStripedLock lockManager = DotConcurrentFactory.getInstance().getIdentifierStripedLock();
+
+	private static final String LOCK_PREFIX = "PermissionID:";
 
 	private AssetPermissionReferencesSQLProvider assetPermissionReferencesSQLProvider =
 		  DbConnectionFactory.isH2() ? new H2AssetPermissionReferencesSQLProvider()
@@ -1021,7 +1024,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		//No permissions in cache have to look for individual permissions or inherited permissions
 		if (bitPermissionsList == null) {
 			try {
-				bitPermissionsList = lockManager.tryLock(permissionable.getPermissionId(),
+				bitPermissionsList = lockManager
+						.tryLock(LOCK_PREFIX + permissionable.getPermissionId(),
 						() -> {
 							List<Permission> permissionsList = null;
 							if (!forceLoadFromDB) {
@@ -2177,7 +2181,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		if(bitPermissionsList.isEmpty()) {
 
 				try {
-					bitPermissionsList = lockManager.tryLock( "PermissionID:" +permissionable.getPermissionId(), ()-> {
+					bitPermissionsList = lockManager
+							.tryLock(LOCK_PREFIX + permissionable.getPermissionId(), () -> {
 
 							//Need to determine who this asset should inherit from
 							String type = permissionable.getPermissionType();
@@ -3001,7 +3006,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	@Override
 	void resetChildrenPermissionReferences(Structure structure) throws DotDataException {
 	    ContentletAPI contAPI = APILocator.getContentletAPI();
-	    ContentletIndexAPI indexAPI=new ESContentletIndexAPI();
+	    ContentletIndexAPI indexAPI=new ContentletIndexAPIImpl();
 
 	    DotConnect dc = new DotConnect();
 		dc.setSQL(DELETE_CONTENT_REFERENCES_BY_CONTENTTYPE_SQL);
@@ -3022,7 +3027,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			BulkRequestBuilder bulk=new ESClient().getClient().prepareBulk();
 			for(Contentlet cont : contentlets) {
 			    permissionCache.remove(cont.getPermissionId());
-			    indexAPI.addContentToIndex(cont, false, true, true, bulk);
+			    cont.setIndexPolicy(IndexPolicy.DEFER);
+			    indexAPI.addContentToIndex(cont, false);
 			}
 			if(bulk.numberOfActions()>0)
 			    bulk.execute().actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);

@@ -22,15 +22,22 @@ public interface DelegateMethodInvocation<T> extends Serializable {
     Object[] getArguments();
 
     /**
-     * Proceeds to the next interceptor in the chain
+     * Proceeds to call the method
      * @return Object usually the method
      */
     Object proceed() throws Throwable;
 
+
+    /**
+     * Proceeds to call the method with arguments
+     * @return Object usually the method
+     */
+    Object proceed(Object[] arguments) throws Throwable;
     /**
      * Returns the instance that holds the method.
      * @return T
      */
     T getTarget();
+
 
 } // E:O:F:DelegateMethodInvocation.

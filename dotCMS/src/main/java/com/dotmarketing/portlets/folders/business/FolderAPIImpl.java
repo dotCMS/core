@@ -1,9 +1,19 @@
 package com.dotmarketing.portlets.folders.business;
 
-import com.dotcms.api.system.event.*;
+import static com.dotmarketing.business.APILocator.getPermissionAPI;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
+import static com.dotmarketing.db.HibernateUtil.addCommitListener;
+import static com.liferay.util.StringPool.BLANK;
+
+import com.dotcms.api.system.event.Payload;
+import com.dotcms.api.system.event.SystemEventType;
+import com.dotcms.api.system.event.SystemEventsAPI;
+import com.dotcms.api.system.event.Visibility;
+import com.dotcms.api.system.event.VisibilityRoles;
 import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.content.elasticsearch.business.event.ContentletArchiveEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletCheckinEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletDeletedEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletPublishEvent;
@@ -15,13 +25,24 @@ import com.dotcms.system.event.local.model.EventSubscriber;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotIdentifierStateException;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionAPI.PermissionableType;
+import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.QueryUtil;
 import com.dotmarketing.business.query.ValidationException;
+import com.dotmarketing.db.FlushCacheRunnable;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -31,20 +52,28 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.AdminLogger;
+import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDUtil;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import org.apache.commons.lang.StringUtils;
-
+import com.rainerhahnekamp.sneakythrow.Sneaky;
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.StringTokenizer;
+import java.util.TimeZone;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-
-import static com.dotmarketing.business.APILocator.getPermissionAPI;
-import static com.liferay.util.StringPool.BLANK;
 
 public class FolderAPIImpl implements FolderAPI  {
 
@@ -108,9 +137,10 @@ public class FolderAPIImpl implements FolderAPI  {
 		}
 
 		try {
-
 			renamed = folderFactory.renameFolder(folder, newName, user, respectFrontEndPermissions);
-
+			CacheLocator.getNavToolCache().removeNav(folder.getHostId(), folder.getInode());
+			Identifier folderId = APILocator.getIdentifierAPI().find(folder);
+			CacheLocator.getNavToolCache().removeNavByPath(folderId.getHostId(), folderId.getParentPath());
 			return renamed;
 		} catch (Exception e) {
 
@@ -123,7 +153,7 @@ public class FolderAPIImpl implements FolderAPI  {
 			DotDataException, DotSecurityException {
 		Identifier id = APILocator.getIdentifierAPI().find(asset.getIdentifier());
 		if(id==null) return null;
-		if(id.getParentPath()==null || id.getParentPath().equals("/") || id.getParentPath().equals("/System folder"))
+		if(id.getParentPath()==null || id.getParentPath().equals("/") || id.getParentPath().equals(SYSTEM_FOLDER_PARENT_PATH))
 			return null;
 		Host host = APILocator.getHostAPI().find(id.getHostId(), user, respectFrontEndPermissions);
 		Folder f = folderFactory.findFolderByPath(id.getParentPath(), host);
@@ -322,11 +352,9 @@ public class FolderAPIImpl implements FolderAPI  {
 	 * @throws DotSecurityException
 	 */
 	@WrapInTransaction
-	public void delete(Folder folder, User user, boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
+	public void delete(final Folder folder, final User user, final boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
 
-		String path = StringUtils.EMPTY;
-
-		ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user, respectFrontEndPermissions);
+		final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user, respectFrontEndPermissions);
 
 		if(folder==null || !UtilMethods.isSet(folder.getInode()) ){
 			Logger.debug(getClass(), "Cannot delete null folder");
@@ -378,7 +406,7 @@ public class FolderAPIImpl implements FolderAPI  {
 			}
 
 			// delete assets in this folder
-			path = folder.getPath();
+			final String path = folder.getPath();
 			if (Logger.isDebugEnabled(getClass())) {
 				Logger.debug(getClass(), "Deleting the folder assets " + path);
 			}
@@ -550,10 +578,14 @@ public class FolderAPIImpl implements FolderAPI  {
 
 		boolean isNew = folder.getInode() == null;
 		folder.setModDate(new Date());
-		folder.setName(folder.getName().toLowerCase());
+		folder.setName(folder.getName());
 		folderFactory.save(folder, existingId);
 
-		SystemEventType systemEventType = isNew ? SystemEventType.SAVE_FOLDER : SystemEventType.UPDATE_FOLDER;
+        // remove folder and parent from navigation cache
+        CacheLocator.getNavToolCache().removeNav(folder.getHostId(), folder.getInode());
+        CacheLocator.getNavToolCache().removeNavByPath(id.getHostId(), id.getParentPath());
+
+        SystemEventType systemEventType = isNew ? SystemEventType.SAVE_FOLDER : SystemEventType.UPDATE_FOLDER;
 		systemEventsAPI.pushAsync(systemEventType, new Payload(folder, Visibility.EXCLUDE_OWNER,
 				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 	}
@@ -751,21 +783,127 @@ public class FolderAPIImpl implements FolderAPI  {
 	}
 
 	@WrapInTransaction
-	public boolean move(Folder folderToMove, Host newParentHost,User user,boolean respectFrontEndPermissions)throws DotDataException, DotSecurityException {
+	public boolean move(final Folder folderToMove,
+						final Host newParentHost,
+						final User user,
+						final boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
+
 		if (!permissionAPI.doesUserHavePermission(folderToMove, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)) {
+
 			throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId():BLANK) + " does not have permission to read Folder " + folderToMove.getPath());
 		}
 
 		if (!permissionAPI.doesUserHavePermission(newParentHost, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, respectFrontEndPermissions)) {
+
 			throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId():BLANK) + " does not have permission to add to Folder " + newParentHost.getHostname());
 		}
-		boolean move = folderFactory.move(folderToMove, newParentHost);
 
-		this.systemEventsAPI.pushAsync(SystemEventType.MOVE_FOLDER, new Payload(folderToMove, Visibility.EXCLUDE_OWNER,
-				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
+		final boolean move = folderFactory.move(folderToMove, newParentHost);
+
+		addCommitListener(Sneaky.sneaked(()->sendMoveFolderSystemEvent(folderToMove, user)),1000);
 
 		return move;
 	}
+
+	@Override
+	@WrapInTransaction
+    public boolean move (final String folderId, final String newFolderId,
+							  final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+
+
+		//Searching for the folder to move
+		final Folder folder = this.find( folderId, user, false );
+
+		return
+				!this.exists(newFolderId)?
+						this.moveWhenDestinationDoesNotExists
+							(newFolderId, folder, user, respectFrontendRoles):
+						this.moveToExistingDestination
+							(newFolderId, folder, user, respectFrontendRoles);
+
+    }
+
+	private boolean moveWhenDestinationDoesNotExists(final String newFolder,
+											 final Folder currentFolder,
+											 final User user,
+											 final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+
+		final Host parentHost = APILocator.getHostAPI().find(newFolder, user, respectFrontendRoles);
+
+		if (!permissionAPI.doesUserHavePermission(currentFolder, PERMISSION_WRITE, user)
+				|| !permissionAPI.doesUserHavePermission(parentHost, PERMISSION_WRITE, user)) {
+
+			throw new DotRuntimeException( "The user doesn't have the required permissions." );
+		}
+
+		if (!this.move(currentFolder, parentHost, user, respectFrontendRoles)) {
+			//A folder with the same name already exists on the destination
+			return false;
+		}
+
+		this.addRefreshIndexCommitListener(null, parentHost, currentFolder);
+		return true;
+	}
+
+	private boolean moveToExistingDestination(final String newFolder,
+											 final Folder currentFolder,
+											 final User user,
+											 final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+
+		final Folder parentFolder = this.find(newFolder, user, false);
+
+		if (!permissionAPI.doesUserHavePermission( currentFolder, PERMISSION_WRITE, user )
+				|| !permissionAPI.doesUserHavePermission( parentFolder, PERMISSION_WRITE, user )) {
+
+			throw new DotRuntimeException( "The user doesn't have the required permissions.");
+		}
+
+		if (parentFolder.getInode().equalsIgnoreCase(currentFolder.getInode()) || //Trying to move a folder over itself
+				this.isChildFolder(parentFolder, currentFolder)) {    //Trying to move a folder over one of its children
+
+			return false;
+		}
+
+		if (!this.move(currentFolder, parentFolder, user, respectFrontendRoles)) { //A folder with the same name already exists on the destination
+
+			return false;
+		}
+
+		this.addRefreshIndexCommitListener(parentFolder,null, currentFolder );
+		APILocator.getPermissionAPI().resetPermissionReferences(currentFolder);
+		return true;
+	}
+
+	private void addRefreshIndexCommitListener(final Folder parent,
+											   final Host host,
+											   final Folder folder ) throws DotDataException {
+		HibernateUtil.addCommitListener(new FlushCacheRunnable() {
+			@Override
+			public void run() {
+				try {
+					if (folder!=null) {
+
+						FolderAPIImpl.this.contentletAPI.refreshContentUnderFolderPath(folder.getHostId(), folder.getPath());
+					}
+
+					if ( parent != null ) {
+						FolderAPIImpl.this.contentletAPI.refreshContentUnderFolderPath(parent.getHostId(), parent.getPath());
+					} else {
+						FolderAPIImpl.this.contentletAPI.refreshContentUnderHost(host);
+					}
+				} catch (Exception e) {
+					Logger.error(this, e.getMessage(), e);
+				}
+			}
+		});
+	}
+
+	private void sendMoveFolderSystemEvent (final Folder folderToMove, final User user) throws DotDataException {
+
+		this.systemEventsAPI.pushAsync(SystemEventType.MOVE_FOLDER, new Payload(folderToMove, Visibility.EXCLUDE_OWNER,
+				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
+	}
+
 
 	@CloseDBIfOpened
 	public List<Folder> findSubFolders(Host host, boolean showOnMenu) throws DotHibernateException{
@@ -879,6 +1017,22 @@ public class FolderAPIImpl implements FolderAPI  {
 			Logger.info(this, () -> "Subscribing the folder listener: " + folderListener.getId() +
 					", to the folder: " + folder);
 
+			// handle archive and unarchive
+			this.localSystemEventsAPI.subscribe(ContentletArchiveEvent.class, new EventSubscriber<ContentletArchiveEvent>() {
+
+				@Override
+				public String getId() {
+
+					return folderListener.getId() + StringPool.FORWARD_SLASH + ContentletArchiveEvent.class.getName();
+				}
+
+				@Override
+				public void notify(final ContentletArchiveEvent event) {
+
+					FolderAPIImpl.this.triggerChildModifiedEvent(event, folder, folderListener, childNameFilter);
+				}
+			});
+
 			// handle publish and unpublish
 			this.localSystemEventsAPI.subscribe(ContentletPublishEvent.class, new EventSubscriber<ContentletPublishEvent>() {
 
@@ -927,6 +1081,16 @@ public class FolderAPIImpl implements FolderAPI  {
 				}
 			});
 		}
+	}
+
+	private void triggerChildModifiedEvent(final ContentletArchiveEvent event,
+										   final Folder parentFolder,
+										   final FolderListener folderListener,
+										   final Predicate<String> childNameFilter) {
+
+		final Contentlet contentlet = event.getContentlet();
+		this.triggerChildEvent(contentlet, event.getUser(), event.getDate(), parentFolder, childNameFilter,
+				folderEvent-> folderListener.folderChildModified(folderEvent));
 	}
 
 	private void triggerChildModifiedEvent(final ContentletPublishEvent event,
@@ -988,4 +1152,5 @@ public class FolderAPIImpl implements FolderAPI  {
 			}
 		}
 	}
+
 }

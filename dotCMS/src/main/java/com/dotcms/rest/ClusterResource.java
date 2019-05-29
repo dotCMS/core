@@ -9,9 +9,6 @@ import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.enterprise.cluster.action.NodeStatusServerAction;
 import com.dotcms.enterprise.cluster.action.ServerAction;
 import com.dotcms.enterprise.cluster.action.model.ServerActionBean;
-import com.dotcms.repackage.javax.ws.rs.*;
-import com.dotcms.repackage.javax.ws.rs.core.Context;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.db.HibernateUtil;
@@ -24,13 +21,19 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Response;
 
 
 @Path("/cluster")
@@ -144,9 +147,9 @@ public class ClusterResource {
 			
 			//If the result is failed we need to gather the info available.
 			if(resultActionBean.isFailed()){
-				Logger.error(ClusterResource.class, 
-						"Error trying to get Node Status for server " + resultActionBean.getServerId());
-				
+				Logger.error(ClusterResource.class, String.format("Error trying to get Node Status for server '%s' " +
+						"(actionId='%s'): %s", resultActionBean.getServerId(), resultActionBean.getServerActionId(),
+						resultActionBean.getResponse()));
 				jsonNodeStatusObject = 
 						ClusterUtilProxy.createFailedJson(APILocator.getServerAPI().getServer(resultActionBean.getServerId()));
 			

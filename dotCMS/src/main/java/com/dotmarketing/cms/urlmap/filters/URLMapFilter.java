@@ -95,7 +95,7 @@ public class URLMapFilter implements Filter {
         final HttpSession optSession       = request.getSession(false);
         final String previewPage           = request.getParameter(PREVIEW_PAGE);
         final long languageId              = this.languageWebAPI.getLanguage(request).getId();
-        String uri                         = this.cmsUrlUtil.getURIFromRequest(request);
+        String uri                         = request.getRequestURI();
         final Host host                    = getHost(request, uri);
         final User user                    = getUser(request);
 
@@ -304,7 +304,7 @@ public class URLMapFilter implements Filter {
                 value = value.substring(0, value.length() - 1);
             }
             query.append("+").append(structure.getVelocityVarName()).append(".")
-                    .append(fieldMatches.get(counter)).append(":")
+                    .append(fieldMatches.get(counter)).append("_dotraw").append(":")
                     .append(QueryParser.escape(value)).append(" ");
             counter++;
         }

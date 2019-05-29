@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.contentlet.business;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotmarketing.beans.Host;
@@ -401,14 +402,25 @@ public interface ContentletAPI {
 	 */
 	public List<Map<String, Object>> getContentletReferences(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException, DotContentletStateException;
 
-	/**
+    /**
+     * Gets the value of a field with a given contentlet
+     * @param contentlet
+     * @param theField
+     * @param user
+     * @return Object from DB with field's value
+     */
+    Object getFieldValue(Contentlet contentlet, com.dotcms.contenttype.model.field.Field theField, User user);
+
+    /**
 	 * Gets the value of a field with a given contentlet
 	 * @param contentlet
 	 * @param theField a legacy field from the contentlet's parent Content Type
 	 * @return Object from DB with field's value
 	 * @see ContentletAPI#getFieldValue(Contentlet, com.dotcms.contenttype.model.field.Field)
+	 * @deprecated use {@link ContentletAPI#getFieldValue(Contentlet, com.dotcms.contenttype.model.field.Field)} instead
 	 */
-	public Object getFieldValue(Contentlet contentlet, Field theField);
+    @Deprecated
+    Object getFieldValue(Contentlet contentlet, Field theField);
 
 	/**
 	 * Gets the value of a field with a given contentlet
@@ -416,7 +428,7 @@ public interface ContentletAPI {
 	 * @param theField
 	 * @return Object from DB with field's value
 	 */
-	public Object getFieldValue(Contentlet contentlet, com.dotcms.contenttype.model.field.Field theField);
+	Object getFieldValue(Contentlet contentlet, com.dotcms.contenttype.model.field.Field theField);
 
 
 	/**
@@ -958,7 +970,26 @@ public interface ContentletAPI {
 	
 	/** 
 	 * Will check in a new version of you contentlet. The inode of your contentlet must be null or empty.
-	 * Note that the contentlet argument must be obtained using checkout methods.  
+	 * Note that the contentlet argument must be obtained using checkout methods.
+     *
+     * Important note to be considered: Related content can also be set using any of these methods:
+     * 1. {@link Contentlet#setProperty(String, Object)} where the Object is a list of contentlets
+     * 2. {@link Contentlet#setRelated(com.dotcms.contenttype.model.field.Field, List)}
+     * 3. {@link Contentlet#setRelated(String, List)}
+     * 4. {@link Contentlet#setRelatedById(com.dotcms.contenttype.model.field.Field, List, User, boolean)}
+     * 5. {@link Contentlet#setRelatedById(String, List, User, boolean)}
+     * 6. {@link Contentlet#setRelatedByQuery(com.dotcms.contenttype.model.field.Field, String, String, User, boolean)}
+     * 7. {@link Contentlet#setRelatedByQuery(String, String, String, User, boolean)}
+     *
+     * When related content is sent as a parameter of a checkin call, any related content set
+     * through any of the setters above will be ignored.
+     * So, the ContentletRelationships in the check in call must be sent as null if the related
+     * content is going to be saved through the setter methods
+     *
+     * When a relationship field value is set to null, related content for this relationship won't be modified
+     *
+     * When a relationship field value is set to empty list, related content for this relationship will be wiped out
+     *
 	 * @param contentlet - The inode of your contentlet must be null or empty.
 	 * @param contentRelationships - throws IllegalArgumentException if null. Used to set relationships to new contentlet version 
 	 * @param cats - throws IllegalArgumentException if null. Used to set categories to new contentlet version
@@ -980,6 +1011,25 @@ public interface ContentletAPI {
 	 * to handle a same structures (where the parent and child structures are the same) kind of relationships
 	 * in that case you have to specify if the role of the content is the parent of the child of the relationship.
 	 * Note that the contentlet argument must be obtained using checkout methods.
+     *
+     * Important note to be considered: Related content can also be set using any of these methods:
+     * 1. {@link Contentlet#setProperty(String, Object)} where the Object is a list of contentlets
+     * 2. {@link Contentlet#setRelated(com.dotcms.contenttype.model.field.Field, List)}
+     * 3. {@link Contentlet#setRelated(String, List)}
+     * 4. {@link Contentlet#setRelatedById(com.dotcms.contenttype.model.field.Field, List, User, boolean)}
+     * 5. {@link Contentlet#setRelatedById(String, List, User, boolean)}
+     * 6. {@link Contentlet#setRelatedByQuery(com.dotcms.contenttype.model.field.Field, String, String, User, boolean)}
+     * 7. {@link Contentlet#setRelatedByQuery(String, String, String, User, boolean)}
+     *
+     * When related content is sent as a parameter of a checkin call, any related content set
+     * through any of the setters above will be ignored.
+     * So, the ContentletRelationships in the check in call must be sent as null if the related
+     * content is going to be saved through the setter methods
+     *
+     * When a relationship field value is set to null, related content for this relationship won't be modified
+     *
+     * When a relationship field value is set to empty list, related content for this relationship will be wiped out
+     *
 	 * @param currentContentlet - The inode of your contentlet must be null or empty.
 	 * @param relationshipsData - 
 	 * @param cats
@@ -996,6 +1046,24 @@ public interface ContentletAPI {
 	 * to handle a same structures (where the parent and child structures are the same) kind of relationships
 	 * in that case you have to specify if the role of the content is the parent of the child of the relationship.
 	 * Note that the contentlet argument must be obtained using checkout methods.
+     *
+     * Important note to be considered: Related content can also be set using any of these methods:
+     * 1. {@link Contentlet#setProperty(String, Object)} where the Object is a list of contentlets
+     * 2. {@link Contentlet#setRelated(com.dotcms.contenttype.model.field.Field, List)}
+     * 3. {@link Contentlet#setRelated(String, List)}
+     * 4. {@link Contentlet#setRelatedById(com.dotcms.contenttype.model.field.Field, List, User, boolean)}
+     * 5. {@link Contentlet#setRelatedById(String, List, User, boolean)}
+     * 6. {@link Contentlet#setRelatedByQuery(com.dotcms.contenttype.model.field.Field, String, String, User, boolean)}
+     * 7. {@link Contentlet#setRelatedByQuery(String, String, String, User, boolean)}
+     *
+     * When related content is sent as a parameter of a checkin call, any related content set
+     * through any of the setters above will be ignored.
+     * So, the ContentletRelationships in the check in call must be sent as null if the related
+     * content is going to be saved through the setter methods
+     *
+     * When a relationship field value is set to null, related content for this relationship won't be modified
+     *
+     * When a relationship field value is set to empty list, related content for this relationship will be wiped out
 	 *
 	 * @param currentContentlet    - The inode of your contentlet must be null or empty.
 	 * @param relationshipsData    -
@@ -1016,6 +1084,24 @@ public interface ContentletAPI {
 	 * to handle a same structures (where the parent and child structures are the same) kind of relationships
 	 * in that case you have to specify if the role of the content is the parent of the child of the relationship.
 	 * Note that the contentlet argument must be obtained using checkout methods.
+     *
+     * Important note to be considered: Related content can also be set using any of these methods:
+     * 1. {@link Contentlet#setProperty(String, Object)} where the Object is a list of contentlets
+     * 2. {@link Contentlet#setRelated(com.dotcms.contenttype.model.field.Field, List)}
+     * 3. {@link Contentlet#setRelated(String, List)}
+     * 4. {@link Contentlet#setRelatedById(com.dotcms.contenttype.model.field.Field, List, User, boolean)}
+     * 5. {@link Contentlet#setRelatedById(String, List, User, boolean)}
+     * 6. {@link Contentlet#setRelatedByQuery(com.dotcms.contenttype.model.field.Field, String, String, User, boolean)}
+     * 7. {@link Contentlet#setRelatedByQuery(String, String, String, User, boolean)}
+     *
+     * When related content is sent as a parameter of a checkin call, any related content set
+     * through any of the setters above will be ignored.
+     * So, the ContentletRelationships in the check in call must be sent as null if the related
+     * content is going to be saved through the setter methods
+     *
+     * When a relationship field value is set to null, related content for this relationship won't be modified
+     *
+     * When a relationship field value is set to empty list, related content for this relationship will be wiped out
 	 *
 	 * @param contentlet    - The inode of your contentlet must be null or empty.
 	 * @param contentletDependencies {@link ContentletDependencies}
@@ -1075,7 +1161,26 @@ public interface ContentletAPI {
 	
 	/**
 	 * Will check in a new version of you contentlet. The inode of your contentlet must be null or empty.
-	 * Note that the contentlet argument must be obtained using checkout methods.  
+	 * Note that the contentlet argument must be obtained using checkout methods.
+     *
+     * Important note to be considered: Related content can also be set using any of these methods:
+     * 1. {@link Contentlet#setProperty(String, Object)} where the Object is a list of contentlets
+     * 2. {@link Contentlet#setRelated(com.dotcms.contenttype.model.field.Field, List)}
+     * 3. {@link Contentlet#setRelated(String, List)}
+     * 4. {@link Contentlet#setRelatedById(com.dotcms.contenttype.model.field.Field, List, User, boolean)}
+     * 5. {@link Contentlet#setRelatedById(String, List, User, boolean)}
+     * 6. {@link Contentlet#setRelatedByQuery(com.dotcms.contenttype.model.field.Field, String, String, User, boolean)}
+     * 7. {@link Contentlet#setRelatedByQuery(String, String, String, User, boolean)}
+     *
+     * When related content is sent as a parameter of a checkin call, any related content set
+     * through any of the setters above will be ignored.
+     * So, the ContentletRelationships in the check in call must be sent as null if the related
+     * content is going to be saved through the setter methods
+     *
+     * When a relationship field value is set to null, related content for this relationship won't be modified
+     *
+     * When a relationship field value is set to empty list, related content for this relationship will be wiped out
+     *
 	 * @param contentlet - The inode of your contentlet must be null or empty.
 	 * @param contentRelationships - throws IllegalArgumentException if null. Used to set relationships to new contentlet version 
 	 * @param cats - throws IllegalArgumentException if null. Used to set categories to new contentlet version
@@ -1107,7 +1212,26 @@ public interface ContentletAPI {
 
 	/**
 	 * Will check in a new version of you contentlet. The inode of your contentlet must be null or empty.
-	 * Note that the contentlet argument must be obtained using checkout methods.  
+	 * Note that the contentlet argument must be obtained using checkout methods.
+     *
+     * Important note to be considered: Related content can also be set using any of these methods:
+     * 1. {@link Contentlet#setProperty(String, Object)} where the Object is a list of contentlets
+     * 2. {@link Contentlet#setRelated(com.dotcms.contenttype.model.field.Field, List)}
+     * 3. {@link Contentlet#setRelated(String, List)}
+     * 4. {@link Contentlet#setRelatedById(com.dotcms.contenttype.model.field.Field, List, User, boolean)}
+     * 5. {@link Contentlet#setRelatedById(String, List, User, boolean)}
+     * 6. {@link Contentlet#setRelatedByQuery(com.dotcms.contenttype.model.field.Field, String, String, User, boolean)}
+     * 7. {@link Contentlet#setRelatedByQuery(String, String, String, User, boolean)}
+     *
+     * When related content is sent as a parameter of a checkin call, any related content set
+     * through any of the setters above will be ignored.
+     * So, the ContentletRelationships in the check in call must be sent as null if the related
+     * content is going to be saved through the setter methods
+     *
+     * When a relationship field value is set to null, related content for this relationship won't be modified
+     *
+     * When a relationship field value is set to empty list, related content for this relationship will be wiped out
+     *
 	 * @param contentlet - The inode of your contentlet must be null or empty.
 	 * @param contentRelationships - throws IllegalArgumentException if null. Used to set relationships to new contentlet version 
 	 * @param user
@@ -1124,7 +1248,26 @@ public interface ContentletAPI {
 	/**
 	 * Will check in a update of your contentlet without generating a new version. The inode of your contentlet must be different from null/empty.
 	 * Note this method will also attempt to publish the contentlet and related assets (when checking in) without altering the mod date or mod user.
-	 * Note that the contentlet argument must be obtained using checkout methods.   
+	 * Note that the contentlet argument must be obtained using checkout methods.
+     *
+     * Important note to be considered: Related content can also be set using any of these methods:
+     * 1. {@link Contentlet#setProperty(String, Object)} where the Object is a list of contentlets
+     * 2. {@link Contentlet#setRelated(com.dotcms.contenttype.model.field.Field, List)}
+     * 3. {@link Contentlet#setRelated(String, List)}
+     * 4. {@link Contentlet#setRelatedById(com.dotcms.contenttype.model.field.Field, List, User, boolean)}
+     * 5. {@link Contentlet#setRelatedById(String, List, User, boolean)}
+     * 6. {@link Contentlet#setRelatedByQuery(com.dotcms.contenttype.model.field.Field, String, String, User, boolean)}
+     * 7. {@link Contentlet#setRelatedByQuery(String, String, String, User, boolean)}
+     *
+     * When related content is sent as a parameter of a checkin call, any related content set
+     * through any of the setters above will be ignored.
+     * So, the ContentletRelationships in the check in call must be sent as null if the related
+     * content is going to be saved through the setter methods
+     *
+     * When a relationship field value is set to null, related content for this relationship won't be modified
+     *
+     * When a relationship field value is set to empty list, related content for this relationship will be wiped out
+     *
 	 * @param contentlet - The inode of your contentlet must be different from null/empty.
 	 * @param contentRelationships - Used to set relationships to updated contentlet version 
 	 * @param user
@@ -1752,5 +1895,12 @@ public interface ContentletAPI {
 	 */
     Optional<Contentlet> findContentletByIdentifierOrFallback(String identifier, boolean live, long incomingLangId, User user,
             boolean respectFrontendRoles);
+
+    /**
+     * System function for finding a contentlet by inode via the database
+     * @param inode
+     * @return
+     */
+    Optional<Contentlet> findInDb(String inode);
 
 }

@@ -4,7 +4,7 @@
 <%@page import="com.dotcms.listeners.SessionMonitor"%>
 <%@page import="com.dotcms.content.elasticsearch.business.ContentletIndexAPI"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
-<%@page import="com.dotcms.content.elasticsearch.business.ESContentletIndexAPI"%>
+<%@page import="com.dotcms.content.elasticsearch.business.ContentletIndexAPIImpl"%>
 <%@page import="com.dotmarketing.portlets.structure.factories.StructureFactory"%>
 <%@page import="com.dotmarketing.util.Config"%>
 <%@page import="com.dotcms.content.elasticsearch.business.ESIndexAPI"%>
@@ -77,8 +77,8 @@ function checkReindexationCallback (response) {
 	var lastIndexationProgress = response['lastIndexationProgress'];
 	var currentIndexPath = response['currentIndexPath'];
 	var newIndexPath = response['newIndexPath'];
-	var lastIndexationStartTime = ' ';
-	var lastIndexationEndTime = ' ';
+	var reindexTimeElapsed = response['reindexTimeElapsed'];
+
 
 	var reindexationInProgressDiv = document.getElementById("reindexationInProgressDiv");
 	if (inFullReindexation) {
@@ -91,17 +91,17 @@ function checkReindexationCallback (response) {
 
 		reindexationInProgressDiv.style.display = "";
 
-
 		var bar = dijit.byId("reindexProgressBar");
 		if(bar != undefined){
-		    dijit.byId("reindexProgressBar").update({
+		    bar.update({
 		      maximum: contentCountToIndex,
 		      progress: lastIndexationProgress
 		    });
+		    bar.attr("style", "width:500px;margin:10px;");
 		}
 		stillInReindexation = true;
 		var indexationProgressDiv = document.getElementById("indexationProgressDiv");
-		indexationProgressDiv.innerHTML = "<%= LanguageUtil.get(pageContext,"Reindex-Progress") %>: " + lastIndexationProgress + " / " + contentCountToIndex + " ";
+		indexationProgressDiv.innerHTML = "<div style='text-align:center;'><%= LanguageUtil.get(pageContext,"Reindex-Progress") %> : " + lastIndexationProgress + " / " + contentCountToIndex + "<br><%= LanguageUtil.get(pageContext,"Time") %> : "  + reindexTimeElapsed ;
 	} else {
 		dojo.query(".indexActionsDiv").style("display","");
 		reindexationInProgressDiv.style.display = "none";
@@ -389,7 +389,7 @@ function indexStructureChanged(){
 
 function cleanReindexStructure(){
 	 if(confirm("<%= LanguageUtil.get(pageContext,"are-you-sure-delete-reindex") %>")){
-		var strInode = dojo.byId('structure').value;
+		var strInode = dijit.byId('structure').item.id;
 		CMSMaintenanceAjax.cleanReindexStructure(strInode,showDotCMSSystemMessage);
 	 }
 }
@@ -453,7 +453,8 @@ function doSnapshotIndex(indexName){
 
 function doReindex(){
 	var shards;
-    if(dojo.byId('structure').value == "<%= LanguageUtil.get(pageContext,"Rebuild-Whole-Index") %>"){
+
+    if(dijit.byId('structure').value == "<%= LanguageUtil.get(pageContext,"Rebuild-Whole-Index") %>"){
     	//document.getElementById('defaultStructure').value = "Rebuild Whole Index";
     	dojo.byId('defaultStructure').value = "Rebuild Whole Index";
 
@@ -469,6 +470,9 @@ function doReindex(){
      	 }
 		if(shards <1){
 			return;
+		}
+		if(dijit.byId('structure').item && dijit.byId('structure').item.id){
+		    dijit.byId('structure').setValue(dijit.byId('structure').item.id);
 		}
 		dojo.byId("numberOfShards").value = shards;
 		dijit.byId('idxReindexButton').setDisabled(true);
@@ -659,10 +663,10 @@ function doRestoreIndexSnapshot(evt){
 		oReq.onreadystatechange = function(){
 			if (oReq.readyState === 4) {
 		     var msgJson = JSON.parse(oReq.response)
-				 if (oReq.status === 200) {
+			 if (oReq.status === 200) {
 		      	 showDotCMSErrorMessage(msgJson.message,true);
 		     } else {
-		     	 showDotCMSErrorMessage(msgJson.errors[0].message);
+		     	 showDotCMSErrorMessage(msgJson.message);
 		     }
 		     restoreSnapshotUploadCompleted();
 		  }
@@ -1399,13 +1403,13 @@ dd.leftdl {
                         <td>
                             <div id="lastIndexationDiv"></div>
 
-                                <%= LanguageUtil.get(pageContext,"Reindex") %>:
+                                <%= LanguageUtil.get(pageContext,"Reindex") %> :
                                 <select id="structure" dojoType="dijit.form.ComboBox" style="width:250px;" autocomplete="true" name="structure" onchange="indexStructureChanged();">
-                                    <option><%= LanguageUtil.get(pageContext,"Rebuild-Whole-Index") %></option>
+                                    <option value="<%= LanguageUtil.get(pageContext,"Rebuild-Whole-Index") %>"><%= LanguageUtil.get(pageContext,"Rebuild-Whole-Index") %></option>
                                     <%
 
                                         for(ContentType type : structs){%>
-                                        <option><%=type.name()%></option>
+                                        <option value="<%=type.variable()%>"><%=type.name()%></option>
                                     <%}%>
                                 </select>
 
@@ -1843,8 +1847,8 @@ dd.leftdl {
   		<input type="text" id="shards" name="shards" value="<%=Config.getIntProperty("es.index.number_of_shards", 2)%>">
   	</div><br />
   	<div class="buttonRow" align="center">
-	           <button id="addButton" dojoType="dijit.form.Button" iconClass="addIcon" onClick="shardCreating()"><%= LanguageUtil.get(pageContext, "Add") %></button>&nbsp; &nbsp; 
-	           <button dojoType="dijit.form.Button" iconClass="cancelIcon" onClick="javascript:dijit.byId('addIndex').hide();"><%= LanguageUtil.get(pageContext, "Cancel") %></button>&nbsp; &nbsp; 
+		<button dojoType="dijit.form.Button" iconClass="cancelIcon" onClick="javascript:dijit.byId('addIndex').hide();"><%= LanguageUtil.get(pageContext, "Cancel") %></button>&nbsp; &nbsp;
+		<button id="addButton" dojoType="dijit.form.Button" iconClass="addIcon" onClick="shardCreating()"><%= LanguageUtil.get(pageContext, "Add") %></button>&nbsp; &nbsp;
 	</div>
 	
 </div>

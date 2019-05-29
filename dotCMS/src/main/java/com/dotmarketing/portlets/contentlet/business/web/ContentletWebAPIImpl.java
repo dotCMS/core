@@ -16,12 +16,8 @@ import com.dotmarketing.business.*;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
-import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.*;
-import com.dotmarketing.factories.EmailFactory;
-import com.dotmarketing.factories.InodeFactory;
-import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.portlets.calendar.business.EventAPI;
 import com.dotmarketing.portlets.calendar.model.Event;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
@@ -48,7 +44,6 @@ import com.dotmarketing.util.*;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageUtil;
-import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import com.liferay.util.servlet.SessionMessages;
@@ -64,6 +59,7 @@ import java.util.*;
 import static com.dotmarketing.portlets.contentlet.util.ActionletUtil.hasPushPublishActionlet;
 import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.WHERE_TO_SEND;
 import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.getEnvironmentsToSendTo;
+
 /*
  *     //http://jira.dotmarketing.net/browse/DOTCMS-2273
  *     To save content via ajax.
@@ -79,6 +75,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 	private UserAPI userAPI;
 	private FolderAPI folderAPI;
 	private IdentifierAPI identAPI;
+	private EventAPI eventAPI;
 
 	private static DateFormat eventRecurrenceStartDateF = new SimpleDateFormat("yyyy-MM-dd HH:mm");
 	private static DateFormat eventRecurrenceEndDateF = new SimpleDateFormat("yyyy-MM-dd");
@@ -94,7 +91,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		this.userAPI = APILocator.getUserAPI();
 		this.folderAPI = APILocator.getFolderAPI();
 		this.identAPI = APILocator.getIdentifierAPI();
-
+        this.eventAPI = APILocator.getEventAPI();
 		contentletSystemEventUtil = ContentletSystemEventUtil.getInstance();
 	}
 
@@ -119,10 +116,10 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		try {
 
 			Logger.debug(this, () -> "Calling Retrieve method");
-			_retrieveWebAsset(contentletFormData, user);
+			retrieveWebAsset(contentletFormData, user);
 		} catch (Exception ae) {
 
-			_handleException(ae);
+			handleException(ae);
 			throw new Exception(ae.getMessage());
 		}
 
@@ -135,7 +132,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 
 			try {
 
-				_saveWebAsset(contentletFormData, isAutoSave, isCheckin, user, generateSystemEvent);
+				saveWebAsset(contentletFormData, isAutoSave, isCheckin, user, generateSystemEvent);
 			} catch (Exception ce) {
 				if (!isAutoSave)
 					SessionMessages.add(req, "message.contentlet.save.error");
@@ -169,7 +166,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 				this.pushSaveEvent(contentlet, isNew);
 			}
 		} catch (Exception ae) {
-			_handleException(ae);
+			handleException(ae);
 			throw ae;
 		}
 
@@ -312,7 +309,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		}
 	}
 
-	private void _saveWebAsset(Map<String, Object> contentletFormData,
+	private void saveWebAsset(Map<String, Object> contentletFormData,
 			boolean isAutoSave, boolean isCheckin, User user, boolean generateSystemEvent) throws Exception, DotContentletValidationException {
 
 		final HttpServletRequest request = WebContextFactory.get().getHttpServletRequest();
@@ -320,7 +317,8 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 
 		// Getting the contentlets variables to work
 		Contentlet currentContentlet = (Contentlet) contentletFormData.get(WebKeys.CONTENTLET_EDIT);
-		final String currentContentident = currentContentlet.getIdentifier();
+		//Form doesn't always contain this value upfront. And since populateContentlet sets 0 we better set it upfront
+		contentletFormData.put("identifier", currentContentlet.getIdentifier());
 		final boolean isNew = !InodeUtils.isSet(currentContentlet.getInode());
 
 		if (!isNew && Host.HOST_VELOCITY_VAR_NAME.equals(currentContentlet.getStructure().getVelocityVarName())) {
@@ -348,12 +346,11 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 
 		contentletFormData.put(WebKeys.CONTENTLET_FORM_EDIT, currentContentlet);
 		contentletFormData.put(WebKeys.CONTENTLET_EDIT, currentContentlet);
-
 		try{
-			_populateContent(contentletFormData, user, currentContentlet,isAutoSave);
+			populateContent(contentletFormData, user, currentContentlet, isAutoSave);
 			//http://jira.dotmarketing.net/browse/DOTCMS-1450
 			//The form doesn't have the identifier in it. so the populate content was setting it to 0
-			currentContentlet.setIdentifier(currentContentident);
+			//currentContentlet.setIdentifier(currentContentident);
 			if(UtilMethods.isSet(contentletFormData.get("new_owner_permissions"))) {
 				currentContentlet.setOwner((String) contentletFormData.get("new_owner_permissions"));
 			}
@@ -607,13 +604,15 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 												true,
 												contentPage.getLanguageId(),
 												systemUser, false);
-								if (existingContent.getStructure()
-										.getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET && !existingContent.getIdentifier().equals(contentPage.getIdentifier())) {
-									// Found a file asset with same path
-									status = "message.htmlpage.error.htmlpage.exists.file";
-								} else if(!existingContent.getIdentifier().equals(contentPage.getIdentifier())){
-									// Found page with same path and language
-									status = "message.htmlpage.error.htmlpage.exists";
+								if (null != existingContent) {
+									if (existingContent.getStructure()
+											.getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET && !existingContent.getIdentifier().equals(contentPage.getIdentifier())) {
+										// Found a file asset with same path
+										status = "message.htmlpage.error.htmlpage.exists.file";
+									} else if (!existingContent.getIdentifier().equals(contentPage.getIdentifier())) {
+										// Found page with same path and language
+										status = "message.htmlpage.error.htmlpage.exists";
+									}
 								}
 							} catch (DotContentletStateException e) {
 								// If it's a brand new page...
@@ -646,8 +645,8 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		return status;
 	}
 
-	private void handleEventRecurrence(Map<String, Object> contentletFormData, Contentlet contentlet) throws DotRuntimeException, ParseException{
-		if(!contentlet.getStructure().getVelocityVarName().equals(EventAPI.EVENT_STRUCTURE_VAR)){
+	private void handleEventRecurrence(final Map<String, Object> contentletFormData, final Contentlet contentlet) throws DotRuntimeException, ParseException, DotDataException, DotSecurityException{
+		if(!contentlet.isCalendarEvent()){
 			return;
 		}
 		if (contentletFormData.get("recurrenceChanged") != null && Boolean.parseBoolean(contentletFormData.get("recurrenceChanged").toString())) {
@@ -701,7 +700,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 						} catch (Exception e) {}
 
 				   } else {
-					   contentlet.setProperty("recurrenceDayOfMonth","0");
+					   contentlet.setProperty("recurrenceDayOfMonth",0);
 				   }
 
 				contentlet.setProperty("recurrenceInterval",Long.valueOf(contentletFormData.get("recurrenceIntervalMonthly").toString()));
@@ -721,10 +720,9 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 				contentlet.setBoolProperty("recurs",false);
 			}
 
-
 	}
 
-	private void _populateContent(Map<String, Object> contentletFormData,
+	private Contentlet populateContent(Map<String, Object> contentletFormData,
 			User user, Contentlet contentlet, boolean isAutoSave)  throws Exception {
 
 		handleEventRecurrence(contentletFormData, contentlet);
@@ -847,9 +845,11 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 			Logger.error(this, "Unable to populate content. ", e);
 			throw new Exception("Unable to populate content");
 		}
+
+		return contentlet;
 	}
 
-	private void _handleException(final Exception ae) {
+	private void handleException(final Exception ae) {
 		
 		if(!(ae instanceof DotContentletValidationException) && !(ae instanceof DotLanguageException)){
 			Logger.warn(this, ae.toString(), ae);
@@ -863,7 +863,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		return (null != contentType)?new StructureTransformer(contentType).asStructure():null;
 	} // transform.
 
-	protected void _retrieveWebAsset(final Map<String,Object> contentletFormData, final User user) throws Exception {
+	private void retrieveWebAsset(final Map<String,Object> contentletFormData, final User user) throws Exception {
 
 		final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
 		HttpServletRequest req =WebContextFactory.get().getHttpServletRequest();
@@ -928,19 +928,14 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 			}
 		}
 
-		_loadContentletRelationshipsInRequest(contentletFormData, contentlet, st);
+		loadContentletRelationshipsInRequest(contentletFormData, contentlet, st);
 
-		//This parameter is used to determine if the structure was selected from Add/Edit Content link in subnav.jsp, from
-		//the Content Search Manager
-		if(contentletFormData.get("selected") != null){
-			req.getSession().setAttribute("selectedStructure", st.getInode());
-		}
 
 		// Asset Versions to list in the versions tab
 		contentletFormData.put(WebKeys.VERSIONS_INODE_EDIT, contentlet);
 	}
 
-	private void _loadContentletRelationshipsInRequest(Map<String, Object> contentletFormData, Contentlet contentlet, Structure structure) throws DotDataException {
+	private void loadContentletRelationshipsInRequest(Map<String, Object> contentletFormData, Contentlet contentlet, Structure structure) throws DotDataException {
 		ContentletAPI contentletService = APILocator.getContentletAPI();
 		contentlet.setStructureInode(structure.getInode());
 		ContentletRelationships cRelationships = contentletService.getAllRelationships(contentlet);
@@ -1038,31 +1033,31 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 
 	private ContentletRelationships retrieveRelationshipsData(Contentlet currentContentlet, User user, Map<String, Object> contentletFormData ){
 
-		Set<String> keys = contentletFormData.keySet();
+		final Set<String> keys = contentletFormData.keySet();
 
-		ContentletRelationships relationshipsData = new ContentletRelationships(currentContentlet);
-		List<ContentletRelationshipRecords> relationshipsRecords = new ArrayList<ContentletRelationshipRecords> ();
-		relationshipsData.setRelationshipsRecords(relationshipsRecords);
+		ContentletRelationships relationshipsData = null;
+		List<ContentletRelationshipRecords> relationshipsRecords = null;
 
 		for (String key : keys) {
 			if (key.startsWith("rel_") && key.endsWith("_inodes")) {
-				boolean hasParent = key.contains("_P_");
-				String inodesSt = (String) contentletFormData.get(key);
+				final boolean hasParent = key.contains("_P_");
+				final String inodesSt = (String) contentletFormData.get(key);
 				if(!UtilMethods.isSet(inodesSt)){
 					continue;
 				}
-				String[] inodes = inodesSt.split(",");
+				final String[] inodes = inodesSt.split(",");
 
-				Relationship relationship = APILocator.getRelationshipAPI().byInode(inodes[0]);
-				ContentletRelationshipRecords records = relationshipsData.new ContentletRelationshipRecords(relationship, hasParent);
-				ArrayList<Contentlet> cons = new ArrayList<Contentlet>();
+				final Relationship relationship = APILocator.getRelationshipAPI().byInode(inodes[0]);
+
+				if (relationshipsData == null){
+					relationshipsData = new ContentletRelationships(currentContentlet);
+					relationshipsRecords = new ArrayList<> ();
+					relationshipsData.setRelationshipsRecords(relationshipsRecords);
+				}
+				final ContentletRelationshipRecords records = relationshipsData.new ContentletRelationshipRecords(
+						relationship, hasParent);
+				final ArrayList<Contentlet> cons = new ArrayList<>();
 				for (String inode : inodes) {
-					/*long i = 0;
-					try{
-						i = Long.valueOf(inode);
-					}catch (Exception e) {
-						Logger.error(this, "Relationship not a number value : ",e);
-					}*/
 					if(relationship.getInode().equalsIgnoreCase(inode)){
 						continue;
 					}

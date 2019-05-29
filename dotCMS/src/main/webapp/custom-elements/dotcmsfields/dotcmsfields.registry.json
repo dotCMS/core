@@ -1,0 +1,99 @@
+{
+  "namespace": "dotcmsFields",
+  "fsNamespace": "dotcmsfields",
+  "loader": "../dotcmsfields.js",
+  "core": "dotcmsfields.6kizh6ff.js",
+  "corePolyfilled": "dotcmsfields.1jwalvwy.js",
+  "components": {
+    "dot-autocomplete": {
+      "bundleIds": {
+        "$": "akcehuoc"
+      }
+    },
+    "dot-checkbox": {
+      "bundleIds": {
+        "$": "hvthoely"
+      }
+    },
+    "dot-chip": {
+      "bundleIds": {
+        "$": "akcehuoc"
+      }
+    },
+    "dot-date": {
+      "bundleIds": {
+        "$": "hvthoely"
+      }
+    },
+    "dot-date-range": {
+      "bundleIds": {
+        "$": "hvthoely"
+      }
+    },
+    "dot-date-time": {
+      "bundleIds": {
+        "$": "hvthoely"
+      }
+    },
+    "dot-form": {
+      "bundleIds": {
+        "$": "hvthoely"
+      }
+    },
+    "dot-input-calendar": {
+      "bundleIds": {
+        "$": "vv1fstd3"
+      }
+    },
+    "dot-key-value": {
+      "bundleIds": {
+        "$": "y5eglwug"
+      }
+    },
+    "dot-label": {
+      "bundleIds": {
+        "$": "vv1fstd3"
+      }
+    },
+    "dot-multi-select": {
+      "bundleIds": {
+        "$": "hvthoely"
+      }
+    },
+    "dot-radio": {
+      "bundleIds": {
+        "$": "hvthoely"
+      }
+    },
+    "dot-select": {
+      "bundleIds": {
+        "$": "hvthoely"
+      }
+    },
+    "dot-tags": {
+      "bundleIds": {
+        "$": "akcehuoc"
+      }
+    },
+    "dot-textarea": {
+      "bundleIds": {
+        "$": "hvthoely"
+      }
+    },
+    "dot-textfield": {
+      "bundleIds": {
+        "$": "hvthoely"
+      }
+    },
+    "dot-time": {
+      "bundleIds": {
+        "$": "hvthoely"
+      }
+    },
+    "key-value-table": {
+      "bundleIds": {
+        "$": "y5eglwug"
+      }
+    }
+  }
+}

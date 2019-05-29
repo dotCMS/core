@@ -96,7 +96,7 @@
 			String parentInode="";
 			String isParent="";
 			String relationTypeValue = rel.getRelationTypeValue();
-			String relationJsName = "rel_" + UtilMethods.javaScriptifyVariable(relationTypeValue) + "_" + (records.isHasParent()?"P":"C");
+			String relationJsName = "rel_tab_" + UtilMethods.javaScriptifyVariable(relationTypeValue) + "_" + (records.isHasParent()?"P":"C");
 			relationType= rel.getRelationTypeValue();
 			if (records.isHasParent()) {
 				targetStructure = rel.getChildStructure();
@@ -449,12 +449,19 @@
 					if (f.isListed()) {
 					    fieldsCount++;
 					    String fieldName = f.getFieldName();
+					    String varName   = f.getVelocityVarName();
 					    String functionName = relationJsName + "_" + UtilMethods.javaScriptifyVariable(fieldName) + "_func";
 		 %>
 	 		function <%= functionName %> (o) {
 				var value = "";
+				var innerValue = "";
 				if (o != null){
-					value = "<a class=\"beta\" href=\"javascript:<%= relationJsName %>editRelatedContent('" + o['inode'] + "', '"+ o['siblingInode'] +"', '"+ o['langId'] +"');\"" + ">" + o['<%=UtilMethods.escapeSingleQuotes(fieldName)%>'] + "</a>";
+				    if (o['<%=UtilMethods.escapeSingleQuotes(fieldName)%>']!=null){
+				        innerValue = o['<%=UtilMethods.escapeSingleQuotes(fieldName)%>'];
+				    }else{
+				        innerValue = o[('<%=varName%>')];
+				    }
+					value = "<a class=\"beta\" href=\"javascript:<%= relationJsName %>editRelatedContent('" + o['inode'] + "', '"+ o['siblingInode'] +"', '"+ o['langId'] +"');\"" + ">" + innerValue + "</a>";
 	 			}
 	 			return value;
 			}

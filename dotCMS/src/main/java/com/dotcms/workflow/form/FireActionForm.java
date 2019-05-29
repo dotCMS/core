@@ -1,7 +1,7 @@
 package com.dotcms.workflow.form;
 
-import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
-import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.dotcms.rest.api.Validated;
 
 import java.util.Map;
@@ -72,10 +72,10 @@ public class FireActionForm extends Validated {
         this.whereToSend = builder.whereToSend;
         this.forcePush   = builder.forcePush;
         this.contentletFormData =
-                builder.contentletFormData;
+                builder.contentlet;
     }
 
-    public static final class Builder {
+    public static class Builder {
 
         @JsonProperty()
         private String comments;
@@ -95,8 +95,8 @@ public class FireActionForm extends Validated {
         private String whereToSend;
         @JsonProperty()
         private String forcePush;
-        @JsonProperty()
-        private Map<String, Object> contentletFormData;
+        @JsonProperty("contentlet")
+        private Map<String, Object> contentlet;
 
         public Builder comments(final String comments) {
             this.comments = comments;
@@ -143,8 +143,9 @@ public class FireActionForm extends Validated {
             return this;
         }
 
-        public Builder contentletFormData(final  Map<String, Object> contentletFormData) {
-            this.contentletFormData = contentletFormData;
+        @JsonProperty("contentlet")
+        public Builder contentlet(final  Map<String, Object> contentletFormData) {
+            this.contentlet = contentletFormData;
             return this;
         }
 

@@ -22,6 +22,7 @@ import com.liferay.portal.model.User;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import io.vavr.Tuple2;
 import org.apache.commons.lang.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -37,6 +38,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
+import static com.dotcms.contenttype.business.ContentTypeAPIImpl.TYPES_AND_FIELDS_VALID_VARIABLE_REGEX;
 import static junit.framework.Assert.assertTrue;
 import static junit.framework.TestCase.assertEquals;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -608,6 +610,143 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		assertTrue(testCase.shouldExecuteAction);
 	}
 
+	@DataProvider
+	public static Object[] dataProviderSaveInvalidVariable() {
+		return new Tuple2[] {
+				// actual, should fail
+				new Tuple2<>("123", true),
+				new Tuple2<>("123aaa", true),
+				new Tuple2<>("55_", true),
+				new Tuple2<>("_123", false),
+				new Tuple2<>("_123a", false),
+				new Tuple2<>("asd123asd", false),
+				new Tuple2<>("Asfsdf", false),
+				new Tuple2<>("aa123", false)
+		};
+	}
+
+	@Test
+	@UseDataProvider("dataProviderSaveInvalidVariable")
+	public void testSave_InvalidVariable_ShouldThrowException(final Tuple2<String, Boolean> testCase)
+			throws DotSecurityException, DotDataException {
+
+		final String variableTestCase = testCase._1;
+		final boolean shouldFail = testCase._2;
+
+		final long time = System.currentTimeMillis();
+		ContentType type = null;
+		try {
+			type = APILocator.getContentTypeAPI(APILocator.systemUser())
+					.save(ContentTypeBuilder
+							.builder(SimpleContentType.class)
+							.folder(FolderAPI.SYSTEM_FOLDER)
+							.host(Host.SYSTEM_HOST)
+							.name("typeName"+time)
+							.owner(user.getUserId())
+							.variable(variableTestCase)
+							.build());
+
+				assertFalse(shouldFail);
+		} catch (IllegalArgumentException e) {
+			Assert.assertTrue(shouldFail);
+		} finally {
+			if(type!=null) {
+				APILocator.getContentTypeAPI(APILocator.systemUser()).delete(type);
+			}
+		}
+	}
+
+
+	@DataProvider
+	public static Object[] dataProviderTypeNames() {
+		return new String[] {
+				"123",
+				"123abc",
+				"123___",
+				"123*",
+				"123*=+$%",
+				"abc123",
+				"_123a",
+				"*123",
+				"****123**",
+				"?123",
+				"=$123",
+				"asd123asd",
+				"Asfsdf",
+				"aa123",
+				"This is a field",
+				"Field && ,,,..**==} name~~~__"
+		};
+	}
+
+	@Test
+	@UseDataProvider("dataProviderTypeNames")
+	public void testSave_GivenTypeNamesWithNumbers_ExpectedValidVariableName(final String typeName)
+			throws DotSecurityException, DotDataException {
+
+		ContentType type = null;
+		try {
+			type = APILocator.getContentTypeAPI(APILocator.systemUser())
+					.save(ContentTypeBuilder
+							.builder(SimpleContentType.class)
+							.folder(FolderAPI.SYSTEM_FOLDER)
+							.host(Host.SYSTEM_HOST)
+							.name(typeName)
+							.owner(user.getUserId())
+							.build());
+
+			Assert.assertTrue(type.variable().matches(TYPES_AND_FIELDS_VALID_VARIABLE_REGEX));
+		} finally {
+			if(type!=null) {
+				APILocator.getContentTypeAPI(APILocator.systemUser()).delete(type);
+			}
+		}
+	}
+
+	/*
+		This test is for the case of two or more consecutives saves of names with the same length
+		and only differing in the same character, which needs to be a special one different from
+		"_". The two saves should be successful and a valid variable name should be created for the
+		types.
+	 */
+	@Test
+	public void testSave_GivenConsecutiveSavesNameWithSpecialChar_ShouldSaveTheTwoTimes()
+			throws DotSecurityException, DotDataException {
+
+		ContentType type1 = null;
+		ContentType type2 = null;
+		try {
+			type1 = APILocator.getContentTypeAPI(APILocator.systemUser())
+					.save(ContentTypeBuilder
+							.builder(SimpleContentType.class)
+							.folder(FolderAPI.SYSTEM_FOLDER)
+							.host(Host.SYSTEM_HOST)
+							.name("*123")
+							.owner(user.getUserId())
+							.build());
+
+			Assert.assertTrue(type1.variable().matches(TYPES_AND_FIELDS_VALID_VARIABLE_REGEX));
+
+			type2 = APILocator.getContentTypeAPI(APILocator.systemUser())
+					.save(ContentTypeBuilder
+							.builder(SimpleContentType.class)
+							.folder(FolderAPI.SYSTEM_FOLDER)
+							.host(Host.SYSTEM_HOST)
+							.name("?123")
+							.owner(user.getUserId())
+							.build());
+
+			Assert.assertTrue(type2.variable().matches(TYPES_AND_FIELDS_VALID_VARIABLE_REGEX));
+		} finally {
+			if(type1!=null) {
+				APILocator.getContentTypeAPI(APILocator.systemUser()).delete(type1);
+			}
+			if(type2!=null) {
+				APILocator.getContentTypeAPI(APILocator.systemUser()).delete(type2);
+			}
+		}
+	}
+
 	@Test
 	@UseDataProvider("testCasesUpdateTypePermissions")
 	public void testDeleteLimitedUserPermissions(final TestCaseUpdateContentTypePermissions testCase)
@@ -723,7 +862,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		APILocator.getPermissionAPI().save( editPermissionsPermission, newType, user, false );
 
 		Field newField = FieldBuilder.builder(WysiwygField.class).name("my test field")
-				.variable(now + "textField").contentTypeId(newType.id()).dataType(DataTypes.LONG_TEXT).build();
+				.variable("textField"+now).contentTypeId(newType.id()).dataType(DataTypes.LONG_TEXT).build();
 		newField = APILocator.getContentTypeFieldAPI().save(newField, APILocator.systemUser());
 		final String newFieldId = newField.id();
 

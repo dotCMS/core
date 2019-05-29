@@ -59,7 +59,7 @@ import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.portal.util.WebAppPool;
 import com.liferay.portal.util.WebKeys;
-import com.liferay.portlet.CachePortlet;
+import com.liferay.portlet.ConcretePortletWrapper;
 import com.liferay.portlet.RenderRequestImpl;
 import com.liferay.portlet.RenderResponseImpl;
 import com.liferay.util.CollectionFactory;
@@ -395,26 +395,7 @@ public class PortalRequestProcessor extends StxxTilesRequestProcessor {
 			}
 		}
 
-		// Authenticated users must have proper roles
 
-		if (isPortletPath(path)) {
-			try {
-				String strutsPath = path.substring(
-					1, path.lastIndexOf(StringPool.SLASH));
-
-				Portlet portlet = PortletManagerUtil.getPortletByStrutsPath(
-					companyId, strutsPath);
-
-				if (portlet != null && portlet.isActive()) {
-					defineObjects(req, res, portlet);
-				}
-			}
-			catch (Exception e) {
-				req.setAttribute(PageContext.EXCEPTION, e);
-
-				path = _PATH_COMMON_ERROR;
-			}
-		}
 
 
 		/**
@@ -601,8 +582,7 @@ public class PortalRequestProcessor extends StxxTilesRequestProcessor {
 				String strutsPath = path.substring(
 					1, path.lastIndexOf(StringPool.SLASH));
 
-				Portlet portlet = PortletManagerUtil.getPortletByStrutsPath(
-					user.getCompanyId(), strutsPath);
+				Portlet portlet = null;
 
 				if (portlet != null && portlet.isActive()) {
 //					if (!RoleLocalManagerUtil.hasRoles(user.getUserId(), portlet.getRolesArray())) {
@@ -731,23 +711,17 @@ public class PortalRequestProcessor extends StxxTilesRequestProcessor {
 
 		String portletId = portlet.getPortletId();
 
-		ServletContext ctx =
-			(ServletContext)req.getAttribute(WebKeys.CTX);
+		ConcretePortletWrapper concretePortletWrapper = (ConcretePortletWrapper)  APILocator.getPortletAPI().getImplementingInstance(portlet);
 
-		CachePortlet cachePortlet = PortalUtil.getPortletInstance(portlet, ctx);
+    PortletPreferences portletPrefs =
+        PortletPreferencesManagerUtil.getPreferences(portlet.getCompanyId(), PortalUtil.getPortletPreferencesPK(req, portletId));
 
-		PortletPreferences portletPrefs =
-			PortletPreferencesManagerUtil.getPreferences(
-				portlet.getCompanyId(),
-				PortalUtil.getPortletPreferencesPK(req, portletId));
-
-		PortletConfig portletConfig =
-			PortalUtil.getPortletConfig(portlet, ctx);
+		PortletConfig portletConfig = APILocator.getPortletAPI().getPortletConfig(portlet);
 		PortletContext portletCtx =
 			portletConfig.getPortletContext();
 
 		RenderRequestImpl renderRequest = new RenderRequestImpl(
-			req, portlet, cachePortlet, portletCtx, WindowState.MAXIMIZED,
+			req, portlet, concretePortletWrapper, portletCtx, WindowState.MAXIMIZED,
 			PortletMode.VIEW, portletPrefs);
 
 		RenderResponseImpl renderResponse = new RenderResponseImpl(

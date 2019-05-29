@@ -23,24 +23,20 @@
 
         dojo.byId('bulkActionsContainer').innerHTML = '';
 
-        <% if(enterprise){ %>
-               // if there are selected items and we're running an enterprise verision the we can bother retriving the available actions
-                var selectedInodes = getSelectedInodes();
-                if (!selectedInodes) {
-                    return;
-                }
+       // if there are selected items and we're running an enterprise verision the we can bother retriving the available actions
+        var selectedInodes = getSelectedInodes();
+        if (!selectedInodes) {
+            return;
+        }
 
-                var data;
-                if (Array.isArray(selectedInodes) && selectedInodes.length > 0) {
-                    data = {"contentletIds": selectedInodes};
-                } else {
-                    data = {"query": selectedInodes}; //No. it's not a bug. This variable sometimes holds a query.
-                }
-                getAvailableBulkActions(data);
+        var data;
+        if (Array.isArray(selectedInodes) && selectedInodes.length > 0) {
+            data = {"contentletIds": selectedInodes};
+        } else {
+            data = {"query": selectedInodes}; //No. it's not a bug. This variable sometimes holds a query.
+        }
+        getAvailableBulkActions(data);
 
-        <%}else{%>
-                dojo.style(dijit.byId('workflowActionsDia').domNode, {height:'141px'});
-            <%}%>
     }
 
     /**

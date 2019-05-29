@@ -17,9 +17,10 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.UrlMapable;
 import com.dotcms.exception.BaseRuntimeInternationalizationException;
-import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableList;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.util.ContentTypeUtil;
+import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.*;
 import com.dotmarketing.db.HibernateUtil;
@@ -47,6 +48,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   private final FieldAPI fieldAPI;
   private final LocalSystemEventsAPI localSystemEventsAPI;
 
+  public static final String TYPES_AND_FIELDS_VALID_VARIABLE_REGEX = "[_A-Za-z][_0-9A-Za-z]*";
 
 
   public ContentTypeAPIImpl(User user, boolean respectFrontendRoles, ContentTypeFactory fac, FieldFactory ffac,
@@ -167,7 +169,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   public int count(String condition, BaseContentType base) throws DotDataException {
     try {
       return perms.filterCollection(this.contentTypeFactory.search(condition, base, "mod_date", -1, 0), PermissionAPI.PERMISSION_READ,
-          true, user).size();
+          respectFrontendRoles, user).size();
     } catch (DotSecurityException e) {
       throw new DotStateException(e);
     }
@@ -345,29 +347,36 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   @CloseDBIfOpened
   @Override
   public List<ContentType> search(String condition, String orderBy, int limit, int offset) throws DotDataException {
-    try {
-      return perms.filterCollection(this.contentTypeFactory.search(condition, orderBy, limit, offset), PermissionAPI.PERMISSION_READ,
-          respectFrontendRoles, user);
-
-    } catch (DotSecurityException e) {
-      throw new DotStateException(e);
-    }
-
+      return this.search( condition, BaseContentType.ANY, orderBy,  limit,  offset);
   }
 
-  @CloseDBIfOpened
-  @Override
-  public List<ContentType> search(String condition, BaseContentType base, String orderBy, int limit, int offset)
-      throws DotDataException {
+    @CloseDBIfOpened
+    @Override
+    public List<ContentType> search(String condition, BaseContentType base, final String orderBy, final int limit, final int offset)
+            throws DotDataException {
 
-    try {
-      return perms.filterCollection(this.contentTypeFactory.search(condition, base, orderBy, limit, offset),
-          PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
-    } catch (DotSecurityException e) {
-      throw new DotStateException(e);
+        final List<ContentType> returnTypes = new ArrayList<>();
+        int rollingOffset = offset;
+        try {
+            while ((limit<0)||(returnTypes.size() < limit)) {
+                final List<ContentType> rawContentTypes = this.contentTypeFactory.search(condition, base, orderBy, limit, rollingOffset);
+                if (rawContentTypes.isEmpty()) {
+                    break;
+                }
+                returnTypes.addAll(perms.filterCollection(rawContentTypes, PermissionAPI.PERMISSION_READ, respectFrontendRoles, user));
+                if(returnTypes.size() >= limit || rawContentTypes.size()<limit) {
+                    break;
+                }
+                rollingOffset += limit;
+            }
+
+            final int maxAmount = (limit<0)?returnTypes.size():Math.min(limit, returnTypes.size());
+            return returnTypes.subList(0, maxAmount);
+        } catch (DotSecurityException e) {
+            throw new DotStateException(e);
+        }
+
     }
-
-  }
 
   @CloseDBIfOpened
   @Override
@@ -384,6 +393,13 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   @Override
   public ContentType save(ContentType contentType, List<Field> newFields, List<FieldVariable> newFieldVariables)
       throws DotDataException, DotSecurityException {
+
+    if(UtilMethods.isSet(contentType.variable())) {
+      DotPreconditions.checkArgument(contentType.variable().matches(
+              TYPES_AND_FIELDS_VALID_VARIABLE_REGEX),
+              "Invalid content type variable: " + contentType.variable(),
+              IllegalArgumentException.class);
+    }
     // Sets the host:
     try {
       if (contentType.host() == null || contentType.fixed()) {

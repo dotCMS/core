@@ -46,7 +46,7 @@ import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.rendering.velocity.services.ContentTypeLoader;
 import com.dotcms.rendering.velocity.services.ContentletLoader;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableList;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -136,6 +136,11 @@ public class FieldAPIImpl implements FieldAPI {
                     throw new DotDataValidationException("Field variable can not be modified, please use the following: " + oldField.variable());
                 }
 
+                if(!oldField.contentTypeId().equals(field.contentTypeId()) ){
+                  throw new DotDataValidationException("Field content type can not be modified, "
+                      + "please use the following: " + oldField.contentTypeId());
+                }
+
                 if (oldField.sortOrder() != field.sortOrder()){
 	    		    if (oldField.sortOrder() > field.sortOrder()) {
                         fieldFactory.moveSortOrderForward(type.id(), field.sortOrder(), oldField.sortOrder());
@@ -158,7 +163,7 @@ public class FieldAPIImpl implements FieldAPI {
 	    	}
 	    }else {
 	        //This validation should only be for new fields, since the field velocity var name(variable) can not be modified
-            if(UtilMethods.isSet(field.variable()) && !field.variable().matches("^[a-zA-Z0-9]+")) {
+            if(UtilMethods.isSet(field.variable()) && !field.variable().matches("^[A-Za-z][0-9A-Za-z]*")) {
                 final String errorMessage = "Field velocity var name "+ field.variable() +" contains characters not allowed, here is a suggestion of the variable: " + com.dotmarketing.util.StringUtils.camelCaseLower(field.variable());
                 Logger.error(this, errorMessage);
                 throw new DotDataValidationException(errorMessage);
@@ -182,6 +187,9 @@ public class FieldAPIImpl implements FieldAPI {
               Logger.info(this,
                       "The relationship has been saved successfully for field " + field.name());
             }
+
+            //update field reference (in case it might have been modified)
+            result = fieldFactory.byId(result.id());
        }
       //update Content Type mod_date to detect the changes done on the field
 		contentTypeAPI.updateModDate(type);
@@ -210,8 +218,9 @@ public class FieldAPIImpl implements FieldAPI {
                           structure.getName()));
       }
 
+      Field finalResult = result;
       HibernateUtil.addCommitListener(()-> {
-          localSystemEventsAPI.notify(new FieldSavedEvent(result));
+          localSystemEventsAPI.notify(new FieldSavedEvent(finalResult));
       });
 
       return result;
@@ -325,9 +334,23 @@ public class FieldAPIImpl implements FieldAPI {
     private void updateRelationshipObject(final Field field, final ContentType type, final ContentType relatedContentType,
             final Relationship relationship, final int cardinality, final User user)
             throws DotDataException {
+
+        final boolean isChildField;
         final String relationName = field.variable();
+        FieldBuilder builder;
+
+        if (relationshipAPI.sameParentAndChild(relationship)){
+            isChildField = relationship.getParentRelationName() != null && relationship
+                    .getParentRelationName().equals(field.variable()) || (
+                    relationship.getParentRelationName() == null && !relationship
+                            .getChildRelationName().equals(field.variable()));
+
+        } else{
+            isChildField = relationship.getChildStructureInode().equals(type.id());
+        }
+
         //check which side of the relationship is being updated (parent or child)
-        if (relationship.getChildStructureInode().equals(type.id())) {
+        if (isChildField) {
             //parent is updated
             relationship.setParentRelationName(relationName);
             relationship.setParentRequired(field.required());
@@ -335,17 +358,26 @@ public class FieldAPIImpl implements FieldAPI {
 
             //only one side of the relationship can be required
             if (relationship.getChildRelationName() != null && field.required() && relationship.isChildRequired()) {
-                //setting as not required the other side of the relationship
-                relationship.setChildRequired(false);
+                //setting as not required this side of the relationship
+                relationship.setParentRequired(false);
 
                 sendRelationshipErrorMessage(relationship.getParentRelationName(), user);
-                final FieldBuilder builder = FieldBuilder.builder(byContentTypeAndVar(relatedContentType, relationship.getChildRelationName()));
-                if(field.required()){
-                    builder.required(false);
-                }
 
-                //update cardinality in case it is changed
-                fieldFactory.save(builder.values(field.values()).build());
+                builder = FieldBuilder.builder(field);
+                builder.required(false);
+                fieldFactory.save(builder.build());
+            }
+
+            if (relationship.getChildRelationName() != null) {
+                //verify if the cardinality was changed to update it on the other side of the relationship
+                final Field otherSideField = byContentTypeAndVar(relatedContentType,
+                        relationship.getChildRelationName());
+
+                if (!otherSideField.values().equals(field.values())) {
+                    //if cardinality changes, the other side field will be updated with the new cardinality
+                    builder = FieldBuilder.builder(otherSideField);
+                    fieldFactory.save(builder.values(field.values()).build());
+                }
             }
         } else {
             //child is updated
@@ -354,17 +386,25 @@ public class FieldAPIImpl implements FieldAPI {
 
             //only one side of the relationship can be required
             if (field.required() && relationship.getParentRelationName() != null && relationship.isParentRequired()) {
-                //setting as not required the other side of the relationship
-                relationship.setParentRequired(false);
+                //setting this side of the relationship as not required
+                relationship.setChildRequired(false);
                 sendRelationshipErrorMessage(relationship.getChildRelationName(), user);
 
-                final FieldBuilder builder = FieldBuilder.builder(byContentTypeAndVar(relatedContentType, relationship.getParentRelationName()));
-                if(field.required()){
-                    builder.required(false);
-                }
-
-                //update cardinality in case it is changed
+                builder = FieldBuilder.builder(field);
+                builder.required(false);
                 fieldFactory.save(builder.values(field.values()).build());
+            }
+
+            //verify if the cardinality was changed to update it on the other side of the relationship
+            if (relationship.getParentRelationName() != null) {
+                final Field otherSideField = byContentTypeAndVar(relatedContentType,
+                        relationship.getParentRelationName());
+
+                if (!otherSideField.values().equals(field.values())) {
+                    //if cardinality changes, the other side field will be updated with the new cardinality
+                    builder = FieldBuilder.builder(otherSideField);
+                    fieldFactory.save(builder.values(field.values()).build());
+                }
             }
         }
         relationship.setCardinality(cardinality);
@@ -478,7 +518,7 @@ public class FieldAPIImpl implements FieldAPI {
 
       //if RelationshipField, Relationship record must be updated/deleted
       if (field instanceof RelationshipField) {
-          removeRelationshipLink(field, type);
+          removeRelationshipLink(field, type, contentTypeAPI);
       }
 
       // rebuild contentlets indexes
@@ -498,10 +538,12 @@ public class FieldAPIImpl implements FieldAPI {
      * Remove one-sided relationship when the field is deleted
      * @param field
      * @param type
+     * @param contentTypeAPI
      * @throws DotDataException
      */
-    private void removeRelationshipLink(Field field, ContentType type)
-            throws DotDataException {
+    private void removeRelationshipLink(final Field field, final ContentType type,
+            final ContentTypeAPI contentTypeAPI)
+            throws DotDataException, DotSecurityException {
 
         final Optional<Relationship> result = relationshipAPI
                 .byParentChildRelationName(type, field.variable());
@@ -522,6 +564,23 @@ public class FieldAPIImpl implements FieldAPI {
                 }
 
                 relationshipAPI.save(relationship);
+            }
+
+            //If it is not a self-relationship, the other content type must be reindexed
+            //The current content type is reindexed in the delete method
+            if (!relationshipAPI.sameParentAndChild(relationship)) {
+                Structure otherSideStructure;
+                if (relationship.getChildStructureInode().equals(field.contentTypeId())) {
+                    otherSideStructure = new StructureTransformer(
+                            contentTypeAPI.find(relationship.getParentStructureInode()))
+                            .asStructure();
+                } else {
+                    otherSideStructure = new StructureTransformer(
+                            contentTypeAPI.find(relationship.getChildStructureInode()))
+                            .asStructure();
+                }
+
+                contentletAPI.reindex(otherSideStructure);
             }
         }
     }

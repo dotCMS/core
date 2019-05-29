@@ -16,7 +16,7 @@ import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.field.ImmutableCategoryField;
 import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
 import com.dotcms.contenttype.transform.JsonTransformer;
-import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableList;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -27,6 +27,7 @@ import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
+import com.liferay.portal.language.LanguageUtil;
 
 public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
 
@@ -158,43 +159,47 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
 
   public Map<String, Object> mapObject() {
     try {
-      final Field f = from();
-      final Map<String, Object> field = mapper.convertValue(f, HashMap.class);
-      field.put("fieldVariables", new JsonFieldVariableTransformer(f.fieldVariables()).mapList());
-      field.remove("acceptedDataTypes");
-      field.remove("dbColumn");
+      final Field field = from();
+      final Map<String, Object> fieldMap = mapper.convertValue(field, HashMap.class);
+      fieldMap.put("fieldVariables", new JsonFieldVariableTransformer(field.fieldVariables()).mapList());
+      fieldMap.remove("acceptedDataTypes");
+      fieldMap.remove("dbColumn");
 
-      if (ImmutableCategoryField.class.getName().equals(field.get("clazz"))) {
+      if (ImmutableCategoryField.class.getName().equals(fieldMap.get("clazz"))) {
         try {
-          final Object values = field.get(VALUES);
+          final Object values = fieldMap.get(VALUES);
           if (UtilMethods.isSet(values)) {
             final Category category = APILocator.getCategoryAPI()
                     .find(values.toString(), APILocator.getLoginServiceAPI().getLoggedInUser(),
                             false);
             if (null == category) {
               Logger.warn(JsonFieldTransformer.class, () -> String
-                      .format("Unable to find category with id '%s' for field named %s. ", values.toString(), f.name()));
+                      .format("Unable to find category with id '%s' for field named %s. ", values.toString(), field.name()));
             } else {
-              field.put(CATEGORIES_PROPERTY_NAME, category.getMap());
+              fieldMap.put(CATEGORIES_PROPERTY_NAME, category.getMap());
             }
           }
         } catch (final DotSecurityException e) {
           Logger.error(JsonFieldTransformer.class, e.getMessage());
         }
-      } else if (ImmutableRelationshipField.class.getName().equals(field.get("clazz"))) {
-        final String cardinality = field.remove(VALUES).toString();
-        final String relationType = field.remove("relationType").toString();
+      } else if (ImmutableRelationshipField.class.getName().equals(fieldMap.get("clazz"))) {
+        final String cardinality = fieldMap.remove(VALUES).toString();
+        final String relationType = fieldMap.remove("relationType").toString();
 
-        field.put(ContentTypeFieldProperties.RELATIONSHIPS.getName(), map(
+        fieldMap.put(ContentTypeFieldProperties.RELATIONSHIPS.getName(), map(
             "cardinality", Integer.parseInt(cardinality), "velocityVar", relationType
         ));
       }
 
-      return field;
+
+      fieldMap.put("fieldTypeLabel",
+              LanguageUtil.get( APILocator.getLoginServiceAPI().getLoggedInUser(), field.getContentTypeFieldLabelKey() ));
+      fieldMap.put("fieldType", field.getContentTypeFieldLabelKey());
+
+      return fieldMap;
     } catch (Exception e) {
       throw new DotStateException(e);
     }
-  }
-
+  } 
 }
 

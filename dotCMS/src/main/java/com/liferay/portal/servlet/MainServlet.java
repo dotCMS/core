@@ -22,6 +22,7 @@
 
 package com.liferay.portal.servlet;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.config.DotInitializationService;
 import com.dotcms.repackage.com.httpbridge.webproxy.http.TaskController;
 import com.dotmarketing.business.APILocator;
@@ -33,6 +34,7 @@ import com.dotmarketing.startup.StartupTasksExecutor;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
+import com.liferay.portal.SystemException;
 import com.liferay.portal.auth.PrincipalThreadLocal;
 import com.liferay.portal.ejb.CompanyLocalManagerUtil;
 import com.liferay.portal.ejb.PortletManagerUtil;
@@ -58,6 +60,9 @@ import com.liferay.util.ParamUtil;
 import com.liferay.util.StringUtil;
 import com.liferay.util.servlet.EncryptedServletRequest;
 import com.liferay.util.servlet.UploadServletRequest;
+
+import io.vavr.API;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
@@ -98,6 +103,7 @@ import org.dom4j.io.SAXReader;
  */
 public class MainServlet extends ActionServlet {
 
+    @CloseDBIfOpened
 	public void init(ServletConfig config) throws ServletException {
 		synchronized (MainServlet.class) {
 			super.init(config);
@@ -149,50 +155,19 @@ public class MainServlet extends ActionServlet {
 			ctx.setAttribute(WebKeys.COMPANY_ID, _companyId);
 
 			// Initialize portlets
-
 			try {
-				String[] xmls = new String[] { Http.URLtoString(ctx.getResource("/WEB-INF/portlet.xml")),
-						Http.URLtoString(ctx.getResource("/WEB-INF/portlet-ext.xml")), Http.URLtoString(ctx.getResource("/WEB-INF/liferay-portlet.xml")),
-						Http.URLtoString(ctx.getResource("/WEB-INF/liferay-portlet-ext.xml")) };
+                APILocator.getPortletAPI().findAllPortlets();
+            } catch (SystemException e1) {
+                throw new DotRuntimeException(e1);
+            }
 
-				PortletManagerUtil.initEAR(xmls);
-			} catch (Exception e) {
-				Logger.error(this, e.getMessage(), e);
-			}
-
-			// Initialize portlets display
-
-			try {
-				String xml = Http.URLtoString(ctx.getResource("/WEB-INF/liferay-display.xml"));
-
-				Map oldCategories = (Map) WebAppPool.get(_companyId, WebKeys.PORTLET_DISPLAY);
-
-				Map newCategories = PortletManagerUtil.getEARDisplay(xml);
-
-				Map mergedCategories = PortalUtil.mergeCategories(oldCategories, newCategories);
-
-				WebAppPool.put(_companyId, WebKeys.PORTLET_DISPLAY, mergedCategories);
-			} catch (Exception e) {
-				Logger.error(this, e.getMessage(), e);
-			}
-
-			// Initialize skins
-//
-//			try {
-//				String[] xmls = new String[] { Http.URLtoString(ctx.getResource("/WEB-INF/liferay-skin.xml")),
-//						Http.URLtoString(ctx.getResource("/WEB-INF/liferay-skin-ext.xml")) };
-//
-//				SkinManagerUtil.init(xmls);
-//			} catch (Exception e) {
-//				Logger.error(this, e.getMessage(), e);
-//			}
 
 			// Check company
 
 			try {
 				CompanyLocalManagerUtil.checkCompany(_companyId);
 			} catch (Exception e) {
-				Logger.error(this, e.getMessage(), e);
+			    throw new DotRuntimeException(e);
 			}
 
 			// Check web settings

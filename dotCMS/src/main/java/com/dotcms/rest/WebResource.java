@@ -3,14 +3,9 @@ package com.dotcms.rest;
 import com.dotcms.auth.providers.jwt.JsonWebTokenAuthCredentialProcessor;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenAuthCredentialProcessorImpl;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.com.google.common.base.Optional;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
-import com.dotcms.repackage.org.glassfish.jersey.internal.util.Base64;
-import com.dotcms.repackage.org.glassfish.jersey.server.ContainerRequest;
-import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.SecurityException;
 import com.dotcms.rest.validation.ServletPreconditions;
 import com.dotcms.util.CollectionsUtils;
@@ -20,22 +15,32 @@ import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.CompanyUtils;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityLogger;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.auth.PrincipalThreadLocal;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
+import com.liferay.portal.util.CookieKeys;
+import com.liferay.portal.util.PortalUtil;
+import com.liferay.util.CookieUtil;
 import com.liferay.util.StringPool;
-import org.apache.commons.lang.StringUtils;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
+import io.vavr.control.Try;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Optional;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import javax.ws.rs.core.Response;
+import org.apache.commons.lang.StringUtils;
+import org.glassfish.jersey.internal.util.Base64;
+import org.glassfish.jersey.server.ContainerRequest;
 
 /**
  * The Web Resource is a helper for all authentication and get the current user logged in
@@ -75,7 +80,6 @@ public  class WebResource {
      * @param request  {@link HttpServletRequest}
      */
     public void init(final HttpServletRequest request) {
-
         checkForceSSL(request);
     }
 
@@ -317,19 +321,12 @@ public  class WebResource {
         User user = null;
         final HttpSession session = request.getSession();
 
-        if (this.isLoggedAsUser(session)){
-            try {
-                user = this.userAPI.loadUserById(
-                        (String) session.getAttribute(com.liferay.portal.util.WebKeys.USER_ID));
-            } catch (DotSecurityException e) {
-                throw new ForbiddenException(e);
-            } catch (DotDataException e) {
-                throw new RuntimeException(e);
-            }
-        } else {
+        if (session!=null && this.isLoggedAsUser(session)){
+            user = Try.of(()->PortalUtil.getUser(request)).getOrNull();
+        }
+        if(user==null) {
             user = authenticate(request, response, paramsMap, rejectWhenNoUser);
         }
-
         return user;
     }
 
@@ -417,8 +414,13 @@ public  class WebResource {
         }
 
         if(null == user) {
-            user = processAuthCredentialsFromJWT(request, this.jsonWebTokenAuthCredentialProcessor);
+            user = this.jsonWebTokenAuthCredentialProcessor.processAuthHeaderFromJWT(request);
         }
+
+        if(null == user) {
+           // user = this.processCookieJWT(request);
+        }
+
 
         if(user == null && !forceFrontendAuth) {
             user = getBackUserFromRequest(request, userWebAPI);
@@ -432,10 +434,11 @@ public  class WebResource {
 
             throw new SecurityException("Invalid User", Response.Status.UNAUTHORIZED);
         } else if(user == null) {
-
             user = this.getAnonymousUser();
         }
 
+        request.setAttribute(com.liferay.portal.util.WebKeys.USER_ID, user.getUserId());
+        request.setAttribute(com.liferay.portal.util.WebKeys.USER, user);
         PrincipalThreadLocal.setName(user.getUserId());
 
         return user;
@@ -457,15 +460,10 @@ public  class WebResource {
         return user;
     } // getAnonymousUser.
 
-    private static User processAuthCredentialsFromJWT(final HttpServletRequest request, final JsonWebTokenAuthCredentialProcessor authCredentialProcessor) {
-
-        return authCredentialProcessor.processAuthCredentialsFromJWT(request);
-    } // getAuthCredentialsFromJWT.
-
 
     private static Optional<UsernamePassword> getAuthCredentialsFromMap(final Map<String, String> map) {
 
-        Optional<UsernamePassword> result = Optional.absent();
+        Optional<UsernamePassword> result = Optional.empty();
 
         String username = map.get(RESTParams.USER.getValue());
         String password = map.get(RESTParams.PASSWORD.getValue());
@@ -480,7 +478,7 @@ public  class WebResource {
     @VisibleForTesting
     static Optional<UsernamePassword> getAuthCredentialsFromBasicAuth(final HttpServletRequest request) throws SecurityException {
 
-        Optional<UsernamePassword> result = Optional.absent();
+        Optional<UsernamePassword> result =  Optional.empty();
         // Extract authentication credentials
         String authentication = request.getHeader(ContainerRequest.AUTHORIZATION);
 
@@ -501,7 +499,7 @@ public  class WebResource {
 
     @VisibleForTesting
     static Optional<UsernamePassword> getAuthCredentialsFromHeaderAuth(HttpServletRequest request) throws SecurityException {
-        Optional<UsernamePassword> result = Optional.absent();
+        Optional<UsernamePassword> result =  Optional.empty();
 
         String authentication = request.getHeader("DOTAUTH");
         if(StringUtils.isNotEmpty(authentication)) {
@@ -599,6 +597,22 @@ public  class WebResource {
         return user;
     }
 
+    private User processCookieJWT(final HttpServletRequest request) {
+        User user = null;
+
+        if(request != null) {
+            final String jwt=Try.of(()->CookieUtil.get(request.getCookies(), CookieKeys.JWT_ACCESS_TOKEN)).getOrNull();
+            user = APILocator.getApiTokenAPI().userFromJwt(jwt, request.getRemoteAddr()).orElse(null);
+        }
+
+        return user;
+    }
+
+
+
+
+
+
     /**
      * This method returns a <code>Map</code> with the keys and values extracted from <code>params</code>
      *
@@ -642,12 +656,11 @@ public  class WebResource {
         final HashMap<String,Object> map = new HashMap<>();
         final JSONObject obj        = new JSONObject(IOUtils.toString(input));
         final Iterator<String> keys = obj.keys();
-
         while(keys.hasNext()) {
 
             final String key   = keys.next();
             final Object value = obj.get(key);
-            map.put(key, value.toString());
+            map.put(key, value);
         }
 
         return map;

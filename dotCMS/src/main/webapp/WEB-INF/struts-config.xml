@@ -12,7 +12,7 @@
       <form-bean name="Inode" type="com.dotmarketing.portlets.inodes.model.Inode"></form-bean>
       <form-bean name="FileForm" type="com.dotmarketing.portlets.files.struts.FileForm"></form-bean>
 
-      <form-bean name="ContentletForm" type="com.dotmarketing.portlets.contentlet.struts.ContentletForm"></form-bean>
+      <form-bean name="ContentletForm" type="com.dotmarketing.portlets.contentlet.struts.EventAwareContentletForm"></form-bean>
       <form-bean name="ImportContentletsForm" type="com.dotmarketing.portlets.contentlet.struts.ImportContentletsForm"></form-bean>
       <form-bean name="LinkForm" type="com.dotmarketing.portlets.links.struts.LinkForm"></form-bean>
 
@@ -22,7 +22,7 @@
       <form-bean name="ContainerForm" type="com.dotmarketing.portlets.containers.struts.ContainerForm"></form-bean>
       <form-bean name="TemplateForm" type="com.dotmarketing.portlets.templates.struts.TemplateForm"></form-bean>
       <form-bean name="WorkflowTaskForm" type="com.dotmarketing.portlets.workflows.struts.WorkflowTaskForm"></form-bean>
-	  <form-bean name="VirtualLinkForm" type="com.dotmarketing.portlets.virtuallinks.struts.VirtualLinkForm"></form-bean>
+	    <form-bean name="VirtualLinkForm" type="com.dotmarketing.portlets.virtuallinks.struts.VirtualLinkForm"></form-bean>
       <form-bean name="LanguageForm" type="com.dotmarketing.portlets.languagesmanager.struts.LanguageForm"></form-bean>
       <form-bean name="EventForm" type="com.dotmarketing.portlets.events.struts.EventForm"></form-bean>
       <form-bean name="RecuranceForm" type="com.dotmarketing.portlets.events.struts.RecuranceForm"></form-bean>
@@ -40,8 +40,9 @@
 		 <form-bean name="SchedulerForm" type="com.dotmarketing.portlets.scheduler.struts.SchedulerForm"></form-bean>
       <form-bean name="ReportForm" type="com.dotmarketing.portlets.report.struts.ReportForm"></form-bean>
 
-      <!-- Events Calendar -->
-      <form-bean name="CalendarEventForm" type="com.dotmarketing.portlets.calendar.struts.EventForm"></form-bean>
+      <!-- Events Calendar
+      <form-bean name="CalendarEventForm" type="com.dotmarketing.portlets.contentlet.struts.EventForm"></form-bean>
+      -->
 
       <!-- Product -->
       <form-bean name="ProductForm" type="com.dotmarketing.portlets.merchant.product.struts.ProductForm"></form-bean>
@@ -108,7 +109,7 @@
       <!-- Category Admin -->
 
       <!-- Contentlet Management -->
-      <action path="/ext/contentlet/view_contentlets" type="com.dotmarketing.portlets.contentlet.action.ViewContentletAction">
+       <action path="/ext/contentlet/view_contentlets" type="com.dotmarketing.portlets.contentlet.action.ViewContentletAction">
          <forward name="portlet.ext.contentlet.view_contentlets" path="portlet.ext.contentlet.view_contentlets" />
          <forward name="portlet.ext.contentlet.view" path="portlet.ext.contentlet.view" />
          <forward name="portlet.ext.contentlet.error" path="portlet.ext.contentlet.error" />
@@ -117,18 +118,12 @@
          <forward name="portlet.ext.contentlet.edit_contentlet" path="portlet.ext.contentlet.edit_contentlet"></forward>
       </action>
 
-      <action path="/ext/contentlet/view_contentlets_popup" type="com.dotmarketing.portlets.contentlet.action.ViewContentletAction">
-         <forward name="portlet.ext.contentlet.view_contentlets" path="portlet.ext.contentlet.view_contentlets_popup" />
-         <forward name="portlet.ext.contentlet.view" path="portlet.ext.contentlet.view_contentlets_popup" />
-      </action>
       <action path="/ext/contentlet/import_contentlets" type="com.dotmarketing.portlets.contentlet.action.ImportContentletsAction" name="ImportContentletsForm" scope="request" validate="false">
          <forward name="portlet.ext.contentlet.import_contentlets" path="portlet.ext.contentlet.import_contentlets" />
          <forward name="portlet.ext.contentlet.import_contentlets_preview" path="portlet.ext.contentlet.import_contentlets_preview" />
          <forward name="portlet.ext.contentlet.import_contentlets_results" path="portlet.ext.contentlet.import_contentlets_results" />
       </action>
-      <action path="/ext/contentlet/order_contentlets" type="com.dotmarketing.portlets.contentlet.action.OrderContentletAction">
-         <forward name="portlet.ext.contentlet.order_contentlets" path="portlet.ext.contentlet.order_contentlets" />
-      </action>
+
       <!-- Contentlet  Management -->
 
 
@@ -231,14 +226,6 @@
       </action>
       <!-- Template  Management -->
 
-
-
-      <!-- Vanity URL Link Management -->      
-      <action path="/ext/virtuallinks/view_virtuallinks" type="com.dotcms.vanityurl.action.ViewVanityURLAction">
-         <forward name="portlet.ext.virtuallinks.view_virtuallinks" path="portlet.ext.virtuallinks.view_virtuallinks" />
-         <forward name="portlet.ext.virtuallinks.view" path="portlet.ext.virtuallinks.view" />
-      </action>
-      <!-- Vanity Link  Management -->
 
 
 
@@ -367,6 +354,15 @@
 
 
       <!-- END STRUCTURE & FIELD-->
+      
+      
+    <!-- FORM HANDLER -->
+      <action path="/ext/formhandler/view_form" type="com.dotmarketing.portlets.form.action.ViewFormHandlerAction" name="" input="portlet.ext.formhandler.view" validate="false" scope="request">
+         <forward name="portlet.ext.formhandler.view" path="portlet.ext.formhandler.view" />
+         <forward name="portlet.ext.formhandler.view_form" path="portlet.ext.formhandler.view_form" />
+      </action>
+    <!-- END FORM HANDLER -->
+
       <!-- User Admin -->
       <action path="/ext/useradmin/view_users" type="com.dotmarketing.portlets.useradmin.action.ViewUsersAction" name="" validate="false" scope="request">
          <forward name="portlet.ext.useradmin.view_users" path="portlet.ext.useradmin.view_users" />
@@ -382,15 +378,24 @@
          <forward name="portlet.ext.userfilter.edit_userfilter" path="portlet.ext.userfilter.edit_userfilter"></forward>
       </action>
 
-
+      <!-- Schedulers Management -->
+      <action path="/ext/scheduler/view_schedulers" type="com.dotmarketing.portlets.scheduler.action.ViewSchedulersAction">
+         <forward name="portlet.ext.scheduler.view_schedulers" path="portlet.ext.scheduler.view_schedulers" />
+         <forward name="portlet.ext.scheduler.view" path="portlet.ext.scheduler.view" />
+      </action>
+      <action path="/ext/scheduler/edit_scheduler" type="com.dotmarketing.portlets.scheduler.action.EditSchedulerAction" name="SchedulerForm" scope="request" input="portlet.ext.scheduler.edit_scheduler" validate="false">
+         <forward name="portlet.ext.scheduler.edit_scheduler" path="portlet.ext.scheduler.edit_scheduler"></forward>
+      </action>
+      <!-- Schedulers Management -->
+      
       <!-- Events Calendar Manager -->
       <action path="/ext/calendar/view_calendar" type="com.dotmarketing.portlets.calendar.action.ViewCalendarAction">
          <forward name="portlet.ext.calendar.view" path="portlet.ext.calendar.view" />
          <forward name="portlet.ext.calendar.view_calendar" path="portlet.ext.calendar.view_calendar" />
       </action>
 
-      <action path="/ext/calendar/edit_event" type="com.dotmarketing.portlets.calendar.action.EditEventAction" name="CalendarEventForm" input="portlet.ext.calendar.edit_event" validate="false" scope="request">
-         <forward name="portlet.ext.contentlet.edit_contentlet" path="portlet.ext.calendar.edit_event"></forward>
+      <action path="/ext/calendar/edit_event" type="com.dotmarketing.portlets.contentlet.action.EditContentletAction" name="ContentletForm" input="portlet.ext.contentlet.edit_contentlet" validate="false" scope="request">
+         <forward name="portlet.ext.contentlet.edit_contentlet" path="portlet.ext.contentlet.edit_contentlet"></forward>
       </action>
 
       <!-- Events Calendar Manager   -->

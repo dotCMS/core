@@ -62,10 +62,8 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
-import java.util.Map;
 import java.util.Timer;
 import org.apache.commons.lang.StringUtils;
 import org.apache.oro.text.regex.MalformedPatternException;
@@ -1182,44 +1180,51 @@ public class DotWebdavHelper {
 
 
 	}
-	private static Map<String, LockToken> locks = new HashMap<String, LockToken>();
+
+//  Previously this was was used to store a reference to the Lock token.
+//  Though the wrong inode was sent  cause the number of entries on this map to grow indefinitely. The token clean up method was broken.
+//	private static Map<String, LockToken> locks = new HashMap<String, LockToken>();
 //	private static LockToken currentLock;
 
 	public final LockResult lock(LockTimeout lockTimeout, LockInfo lockInfo, String uid)
 	  {
-//	    Logger.debug("Lock : " + lockTimeout + " info : " + lockInfo + " on resource : " + getName() + " in : " + parent);
+        //Logger.debug("Lock : " + lockTimeout + " info : " + lockInfo + " on resource : " + getName() + " in : " + parent);
 	    LockToken token = new LockToken();
 	    token.info = lockInfo;
 	    token.timeout = LockTimeout.parseTimeout("30");
 	    token.tokenId = uid;
-	    locks.put(uid, token);
-//	    LockToken currentLock = token;
+	    // no need to save a reference
+	    //locks.put(uid, token);
+	    // But we need to return a LockResult different from null. Or it'll break.
 	    return LockResult.success(token);
 	  }
 
 	  public final LockResult refreshLock(String uid)
 	  {
-//	    log.trace("RefreshLock : " + tokenId + " on resource : " + getName() + " in : " + parent);
-	    //throw new UnsupportedOperationException("Not supported yet.");
+        // log.trace("RefreshLock : " + tokenId + " on resource : " + getName() + " in : " + parent);
 	    LockToken token = new LockToken();
 	    token.info = null;
 	    token.timeout = LockTimeout.parseTimeout("30");
 	    token.tokenId = uid;
-	    locks.put(uid, token);
+	    // locks.put(uid, token);
+		// Again we need to return a LockResult different from null. Or it'll break.
 	    return LockResult.success(token);
 	  }
 
 	  public void unlock(String uid)
 	  {
-//	    log.trace("UnLock : " + arg0 + " on resource : " + getName() + " in : " + parent);
-		 locks.remove(uid);
-	    //throw new UnsupportedOperationException("Not supported yet.");
+        // log.trace("UnLock : " + arg0 + " on resource : " + getName() + " in : " + parent);
+        // No need to perform any clean up since we're not saving anything.
+		// locks.remove(uid);
 	  }
 
 	  public final LockToken getCurrentLock(String uid)
 	  {
-//	    log.trace("GetCurrentLock");
-	    return locks.get(uid);
+       // log.trace("GetCurrentLock");
+	   // return locks.get(uid);
+	   // In order to disable the lock-unlock mechanism. all we need to do is return a null instead of an existing token
+	   // That should trick the upper HandlerHelper.isLockedOut to believe there is no lock already installed. Therefore nothing will ever be considered to be locked again.
+	   return null;
 	  }
 
 	private String getFileName(String uri) {

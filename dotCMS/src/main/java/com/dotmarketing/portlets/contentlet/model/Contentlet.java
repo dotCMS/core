@@ -3,6 +3,8 @@ package com.dotmarketing.portlets.contentlet.model;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.ImageField;
+import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
@@ -11,19 +13,9 @@ import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.ConversionUtils;
+import com.dotcms.util.RelationshipUtil;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.PermissionSummary;
-import com.dotmarketing.business.Permissionable;
-import com.dotmarketing.business.RelatedPermissionableGroup;
-import com.dotmarketing.business.RelationshipAPI;
-import com.dotmarketing.business.Ruleable;
-import com.dotmarketing.business.Treeable;
-import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.business.Versionable;
+import com.dotmarketing.business.*;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -44,22 +36,18 @@ import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
-import org.apache.commons.lang.builder.ToStringBuilder;
 
 /**
  * Represents a content unit in the system. Ideally, every single domain object
@@ -107,6 +95,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
     public static final String TITLE_IMAGE_KEY="titleImage";
 
+    public static final String URL_MAP_FOR_CONTENT_KEY = "URL_MAP_FOR_CONTENT";
+
 
 
     public static final String DONT_VALIDATE_ME = "_dont_validate_me";
@@ -119,6 +109,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * Flag to avoid to trigger the workflow again on the checkin when it is already in progress.
 	 */
 	public static final String WORKFLOW_IN_PROGRESS = "__workflow_in_progress__";
+	public static final String IS_COPY_CONTENTLET = "_is_copy_contentlet";
+	public static final String CONTENTLET_ASSET_NAME_COPY = "_contentlet_asset_name_copy";
 
     public static final String WORKFLOW_PUBLISH_DATE = "wfPublishDate";
     public static final String WORKFLOW_PUBLISH_TIME = "wfPublishTime";
@@ -141,13 +133,13 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	private transient boolean needsReindex = false;
 
 	private transient Map<String, List<String>> relatedIds;
+	private transient boolean loadedTags = false;
 
 	/**
 	 * Returns true if this contentlet needs reindex
 	 * @return true if needs reindex
 	 */
 	@JsonIgnore
-	@com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore
 	public boolean needsReindex() {
 		return needsReindex;
 	}
@@ -541,16 +533,15 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 */
 	public void setStringProperty(String fieldVarName,String stringValue) throws DotRuntimeException {
 		map.put(fieldVarName, stringValue);
+		addRemoveNullProperty(fieldVarName, stringValue);
 	}
 
     /**
-     *
-     * @param fieldVarName
      * @param stringValue
      * @throws DotRuntimeException
      */
     public void setStringProperty(com.dotcms.contenttype.model.field.Field field,String stringValue) throws DotRuntimeException {
-        map.put(field.variable(), stringValue);
+        setStringProperty(field.variable(), stringValue);
     }
 	/**
 	 *
@@ -560,9 +551,11 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 */
 	public void setLongProperty(String fieldVarName, long longValue) throws DotRuntimeException {
 		map.put(fieldVarName, longValue);
+		addRemoveNullProperty(fieldVarName, longValue);
 	}
-    public void setLongProperty(com.dotcms.contenttype.model.field.Field field,long stringValue) throws DotRuntimeException {
-        map.put(field.variable(), stringValue);
+    public void setLongProperty(com.dotcms.contenttype.model.field.Field field,long longValue) throws DotRuntimeException {
+        setLongProperty(field.variable(), longValue);
+
     }
 	/**
 	 *
@@ -586,15 +579,14 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 */
 	public void setBoolProperty(String fieldVarName, boolean boolValue) throws DotRuntimeException {
 		map.put(fieldVarName, boolValue);
+		addRemoveNullProperty(fieldVarName, boolValue);
 	}
     /**
-     *
-     * @param fieldVarName
      * @param boolValue
      * @throws DotRuntimeException
      */
     public void setBoolProperty(com.dotcms.contenttype.model.field.Field field, boolean boolValue) throws DotRuntimeException {
-        map.put(field.variable(), boolValue);
+        setBoolProperty(field.variable(), boolValue);
     }
 
 	/**
@@ -619,6 +611,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 */
 	public void setDateProperty(String fieldVarName, Date dateValue) throws DotRuntimeException {
 		map.put(fieldVarName, dateValue);
+		addRemoveNullProperty(fieldVarName, dateValue);
 	}
 
     /**
@@ -629,6 +622,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
      */
     public void setDateProperty(com.dotcms.contenttype.model.field.Field field, Date dateValue) throws DotRuntimeException {
         map.put(field.variable(), dateValue);
+		addRemoveNullProperty(field.variable(), dateValue);
     }
 
 	/**
@@ -653,16 +647,15 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 */
 	public void setFloatProperty(String fieldVarName, float floatValue) throws DotRuntimeException {
 		map.put(fieldVarName, floatValue);
+		addRemoveNullProperty(fieldVarName, floatValue);
 	}
 
     /**
-     *
-     * @param fieldVarName
      * @param floatValue
      * @throws DotRuntimeException
      */
     public void setFloatProperty(com.dotcms.contenttype.model.field.Field field, float floatValue) throws DotRuntimeException {
-        map.put(field.variable(), floatValue);
+		setFloatProperty(field.variable(), floatValue);
     }
 
 	/**
@@ -686,7 +679,15 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * @throws DotRuntimeException
 	 */
 	public void setProperty( String fieldVarName, Object objValue) throws DotRuntimeException {
-		map.put(fieldVarName, objValue);
+	    if (fieldVarName!= null && isRelationshipField(fieldVarName)){
+	        setRelated(fieldVarName, (List<Contentlet>) objValue);
+        } else{
+            map.put(fieldVarName, objValue);
+			addRemoveNullProperty(fieldVarName, objValue);
+		}
+	}
+
+	private void addRemoveNullProperty(String fieldVarName, Object objValue) {
 		if (!NULL_PROPERTIES.equals(fieldVarName)) { // No need to keep track of the null property it self.
 			if (null == objValue) {
 				addNullProperty(fieldVarName);
@@ -697,6 +698,16 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	}
 
 	/**
+     * @param fieldVarName
+     * @return
+     */
+	private boolean isRelationshipField(String fieldVarName) {
+		return this.getContentType().fieldMap() != null && this.getContentType().fieldMap()
+				.containsKey(fieldVarName) && this.getContentType()
+				.fieldMap().get(fieldVarName) instanceof RelationshipField;
+	}
+
+    /**
 	 * Returns a map of the contentlet properties based on the fields of the structure
 	 * The keys used in the map will be the velocity variables names
 	 */
@@ -1159,7 +1170,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	}
 
 	/**
-	 *
+	 * It'll tell you if you're dealing with content of type htmlPage
 	 * @return
 	 */
     public Boolean isHTMLPage() {
@@ -1167,7 +1178,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     }
 
     /**
-     *
+     * It'll tell you if you're dealing with content of type FileAsset
      * @return
      */
 	public boolean isFileAsset() {
@@ -1175,7 +1186,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	}
 
 	/**
-	 *
+	 * It'll tell you if you're dealing with content of type Host
 	 * @return
 	 */
     public boolean isHost() {
@@ -1184,6 +1195,14 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
         return getStructure().getInode().equals(hostStructure.getInode());
     }
+
+	/**
+	 * It'll tell you if you're dealing with content of type event
+	 * @return
+	 */
+	public boolean isCalendarEvent() {
+		return getStructure().getStructureType() == BaseContentType.CONTENT.getType() &&  "Event".equals(getStructure().getName()) ;
+	}
 
 	/**
 	 * If the inode is set, means it has at least one version
@@ -1234,53 +1253,82 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		return this.getStringProperty(Contentlet.WORKFLOW_ACTION_KEY);
 	}
 
+	/**
+	 * If at least one tag is set, returns true, otherwise false
+	 * @return boolean
+	 * @throws DotDataException
+	 */
+	public boolean hasTags () throws DotDataException {
+
+		final List<TagInode> foundTagInodes = APILocator.getTagAPI().getTagInodesByInode(this.getInode());
+		return foundTagInodes != null && !foundTagInodes.isEmpty()?
+				foundTagInodes.stream().anyMatch(foundTagInode -> UtilMethods.isSet(this.getStringProperty(foundTagInode.getFieldVarName()))):
+				false;
+	}
+
     /**
-     *
+     * Set the tags to the contentlet
      * @throws DotDataException
      */
 	public void setTags() throws DotDataException {
-		HashMap<String, StringBuilder> contentletTags = new HashMap<>();
-		List<TagInode> foundTagInodes = APILocator.getTagAPI().getTagInodesByInode(this.getInode());
-		if ( foundTagInodes != null && !foundTagInodes.isEmpty() ) {
 
-			for ( TagInode foundTagInode : foundTagInodes ) {
+		if (!this.loadedTags) {
 
-				StringBuilder contentletTagsBuilder = new StringBuilder();
-				String fieldVarName = foundTagInode.getFieldVarName();
+			final boolean hasTagFields = this.getContentType().fields().stream().anyMatch(TagField.class::isInstance);
 
-				if ( UtilMethods.isSet(fieldVarName) ) {
-					//Getting the related tag object
-					Tag relatedTag = APILocator.getTagAPI().getTagByTagId(foundTagInode.getTagId());
+			if (hasTagFields) {
 
-					if ( contentletTags.containsKey(fieldVarName) ) {
-						contentletTagsBuilder = contentletTags.get(fieldVarName);
+				final HashMap<String, StringBuilder> contentletTagsMap = new HashMap<>();
+				final List<TagInode> foundTagInodes = APILocator.getTagAPI().getTagInodesByInode(this.getInode());
+				if (UtilMethods.isSet(foundTagInodes)) {
+
+					for (final TagInode foundTagInode : foundTagInodes) {
+
+						final String fieldVarName = foundTagInode.getFieldVarName();
+
+						// if the map does not have already this field on the map so populate it. we do not want to override the eventual user values.
+						if (!this.getMap().containsKey(fieldVarName)) {
+							StringBuilder contentletTagsBuilder = new StringBuilder();
+
+							if (UtilMethods.isSet(fieldVarName)) {
+								//Getting the related tag object
+								Tag relatedTag = APILocator.getTagAPI().getTagByTagId(foundTagInode.getTagId());
+
+								if (contentletTagsMap.containsKey(fieldVarName)) {
+									contentletTagsBuilder = contentletTagsMap.get(fieldVarName);
+								}
+								if (contentletTagsBuilder.length() > 0) {
+									contentletTagsBuilder.append(",");
+								}
+								if (relatedTag.isPersona()) {
+									contentletTagsBuilder.append(relatedTag.getTagName() + ":persona");
+								} else {
+									contentletTagsBuilder.append(relatedTag.getTagName());
+								}
+
+								contentletTagsMap.put(fieldVarName, contentletTagsBuilder);
+							} else {
+
+								Logger.error(this, "Found Tag with id [" + foundTagInode.getTagId() + "] related with Contentlet " +
+										"[" + foundTagInode.getInode() + "] without an associated Field var name.");
+							}
+						}
 					}
-					if ( contentletTagsBuilder.length() > 0 ) {
-						contentletTagsBuilder.append(",");
-					}
-					if ( relatedTag.isPersona() ) {
-						contentletTagsBuilder.append(relatedTag.getTagName() + ":persona");
-					} else {
-						contentletTagsBuilder.append(relatedTag.getTagName());
-					}
+				}
 
-					contentletTags.put(fieldVarName, contentletTagsBuilder);
-				} else {
-					Logger.error(this, "Found Tag with id [" + foundTagInode.getTagId() + "] related with Contentlet " +
-							"[" + foundTagInode.getInode() + "] without an associated Field var name.");
+				/*
+				Now we need to populate the contentlet tag fields with the related tags info for the edit mode,
+				this is done only for display purposes.
+				 */
+				if (!contentletTagsMap.isEmpty()) {
+					for (final Map.Entry<String, StringBuilder> tagsList : contentletTagsMap.entrySet()) {
+						//We should not store the tags inside the field, the relation must only exist on the tag_inode table
+						this.setStringProperty(tagsList.getKey(), tagsList.getValue().toString());
+					}
 				}
 			}
-		}
 
-		/*
-			Now we need to populate the contentlet tag fields with the related tags info for the edit mode,
-			this is done only for display purposes.
-			 */
-		if ( !contentletTags.isEmpty() ) {
-			for ( Map.Entry<String, StringBuilder> tagsList : contentletTags.entrySet() ) {
-				//We should not store the tags inside the field, the relation must only exist on the tag_inode table
-				this.setStringProperty(tagsList.getKey(), tagsList.getValue().toString());
-			}
+			this.loadedTags = true;
 		}
 	}
 
@@ -1317,7 +1365,6 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * This method returns an immutable copy of the null properties set to the properties map
 	 * @return
 	 */
-	@com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore
 	@com.fasterxml.jackson.annotation.JsonIgnore
 	@SuppressWarnings("unchecked")
 	public Set<String> getNullProperties(){
@@ -1332,6 +1379,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * Since the Contentlet is kept in cache it makes sense removing certain values from the map
 	 */
 	public void cleanup(){
+	    getMap().remove(IS_COPY_CONTENTLET);
+	    getMap().remove(CONTENTLET_ASSET_NAME_COPY);
 		getWritableNullProperties().clear();
 	}
 
@@ -1453,51 +1502,201 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	/**
 	 * Returns a list of all contentlets related to this instance given a RelationshipField variable
 	 * @param variableName
+	 * @param user
 	 * @return
 	 */
-	public List<Contentlet> getRelated(final String variableName) {
+	public List<Contentlet> getRelated(final String variableName, final User user){
+		return getRelated(variableName, user, true);
+	}
+
+	/**
+	 * Returns a list of all contentlets related to this instance given a RelationshipField variable
+	 * @param variableName
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @return
+	 */
+	public List<Contentlet> getRelated(final String variableName, final User user,
+			final boolean respectFrontendRoles) {
 
 		if (!UtilMethods.isSet(this.relatedIds)){
 			relatedIds = Maps.newConcurrentMap();
 		}
 
-		final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
+		try {
+			User currentUser;
 
-		if (this.relatedIds.containsKey(variableName)) {
-			return this.relatedIds.get(variableName).stream().map(identifier -> {
+			if (user != null){
+				currentUser = user;
+			} else{
+				currentUser = APILocator.getUserAPI().getAnonymousUser();
+			}
+
+			final List<Contentlet> relatedContentlet;
+
+			if (this.relatedIds.containsKey(variableName)) {
+				relatedContentlet = getCachedRelatedContentlets(variableName);
+			} else {
+
+				relatedContentlet = getNonCachedRelatedContentlets(variableName);
+			}
+
+			//Restricts contentlet according to user permissions
+			return relatedContentlet.stream().filter(contentlet -> {
 				try {
-					return APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(identifier);
-				} catch (DotDataException | DotSecurityException e) {
-					Logger.warn(this, "No field found with this variable name " + variableName, e);
-					throw new DotStateException(e);
+					return APILocator.getPermissionAPI()
+							.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ,
+									currentUser,
+									currentUser.equals(APILocator.getUserAPI().getAnonymousUser())
+											? true : respectFrontendRoles);
+				} catch (DotDataException e) {
+					return false;
 				}
 			}).collect(Collectors.toList());
-		} else {
-			try {
-				final User user = APILocator.getUserAPI().getSystemUser();
-				com.dotcms.contenttype.model.field.Field field = APILocator.getContentTypeFieldAPI()
-						.byContentTypeIdAndVar(getContentTypeId(), variableName);
 
-				final List<Contentlet> relatedList = APILocator.getContentletAPI()
-						.getRelatedContent(this, relationshipAPI
-										.getRelationshipFromField(field, user),
-						user, false);
-
-				if (UtilMethods.isSet(relatedList)) {
-					this.relatedIds.put(variableName,
-							relatedList.stream().map(contentlet -> contentlet.getIdentifier())
-									.collect(
-											CollectionsUtils.toImmutableList()));
-
-				}else{
-					this.relatedIds.put(variableName, Collections.emptyList());
-				}
-
-				return relatedList;
-			} catch (DotDataException | DotSecurityException e) {
-				Logger.warn(this, "No field found with this variable name " + variableName, e);
-				throw new DotStateException(e);
-			}
+		} catch (DotDataException | DotSecurityException e) {
+			Logger.warn(this, "Error getting related content for field " + variableName, e);
+			throw new DotStateException(e);
 		}
 	}
+
+	/**
+	 *
+	 * @param variableName
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	@Nullable
+	private List<Contentlet> getNonCachedRelatedContentlets(final String variableName)
+			throws DotDataException, DotSecurityException {
+
+		final User systemUser = APILocator.getUserAPI().getSystemUser();
+		final com.dotcms.contenttype.model.field.Field field = APILocator.getContentTypeFieldAPI()
+				.byContentTypeIdAndVar(getContentTypeId(), variableName);
+
+		final List<Contentlet> relatedList = APILocator.getContentletAPI()
+				.getRelatedContent(this, APILocator.getRelationshipAPI()
+								.getRelationshipFromField(field, systemUser),
+						systemUser, false);
+
+		if (UtilMethods.isSet(relatedList)) {
+			this.relatedIds.put(variableName,
+					relatedList.stream().map(contentlet -> contentlet.getIdentifier())
+							.collect(
+									CollectionsUtils.toImmutableList()));
+		}else{
+			this.relatedIds.put(variableName, Collections.emptyList());
+		}
+
+		return relatedList;
+	}
+
+	/**
+	 *
+	 * @param variableName
+	 * @return
+	 */
+	@NotNull
+	private List<Contentlet> getCachedRelatedContentlets(final String variableName) {
+		final List<Contentlet> relatedList = this.relatedIds.get(variableName).stream()
+				.map(identifier -> {
+					try {
+						return APILocator.getContentletAPI()
+								.findContentletByIdentifierAnyLanguage(identifier);
+					} catch (DotDataException | DotSecurityException e) {
+						Logger.warn(this, "No content found with id " + identifier,
+								e);
+						throw new DotStateException(e);
+					}
+				}).collect(Collectors.toList());
+
+		return relatedList;
+	}
+
+    /**
+     * Set related content for a content given a relationship field
+     * @param field Relationship {@link com.dotcms.contenttype.model.field.Field}
+     * @param contentlets {@link List} of contentlets to be related
+     */
+    public void setRelated(final com.dotcms.contenttype.model.field.Field field,
+            final List<Contentlet> contentlets) {
+        setRelated(field.variable(), contentlets);
+    }
+
+    /**
+     * Set related content for a content given a relationship field variable
+     * @param fieldVarName Relationship field variable
+     * @param contentlets {@link List} of contentlets to be related
+     */
+    public void setRelated(final String fieldVarName, final List<Contentlet> contentlets) {
+        map.put(fieldVarName, contentlets);
+
+        if (UtilMethods.isSet(this.relatedIds)) {
+            //clean up cache
+            relatedIds.remove(fieldVarName);
+        }
+    }
+
+    /**
+     * Set related content for a content given their IDs and a relationship field
+     * @param field Relationship {@link com.dotcms.contenttype.model.field.Field}
+     * @param ids {@link List} of contentlets identifiers to be related
+     * @param user User to execute search (respect permissions)
+     * @param respectFrontendRoles
+     */
+    public void setRelatedById(final com.dotcms.contenttype.model.field.Field field,
+            final List<String> ids, final User user, final boolean respectFrontendRoles) {
+        setRelatedById(field.variable(), ids, user, respectFrontendRoles);
+    }
+
+    /**
+     * Set related content for a content given their IDs and a relationship field variable
+     * @param fieldVarName Relationship field variable
+     * @param ids {@link List} of contentlets identifiers to be related
+     * @param user User to execute search (respect permissions)
+     * @param respectFrontendRoles
+     */
+    public void setRelatedById(String fieldVarName, List<String> ids, final User user,
+            final boolean respectFrontendRoles) {
+
+        setRelatedByQuery(fieldVarName, ids != null ? String.join(",", ids) : null, null, user,
+                respectFrontendRoles);
+    }
+
+    /**
+     * Set related content for a content given a relationship field filtering by lucene query
+     * @param field Relationship {@link com.dotcms.contenttype.model.field.Field}
+     * @param luceneQuery Query to filter related content
+     * @param sortBy Field to sort by query results
+     * @param user User to execute search (respect permissions)
+     * @param respectFrontendRoles
+     */
+    public void setRelatedByQuery(final com.dotcms.contenttype.model.field.Field field,
+            final String luceneQuery, final String sortBy, final User user,
+            final boolean respectFrontendRoles) {
+
+        setRelatedByQuery(field.variable(), luceneQuery, sortBy, user, respectFrontendRoles);
+    }
+
+    /**
+     * Set related content for a content given a relationship field variable filtering by lucene query
+     * @param fieldVarName Relationship field variable
+     * @param luceneQuery Query to filter related content
+     * @param sortBy Field to sort by query results
+     * @param user User to execute search (respect permissions)
+     * @param respectFrontendRoles
+     */
+    public void setRelatedByQuery(final String fieldVarName, final String luceneQuery,
+            final String sortBy, final User user, final boolean respectFrontendRoles) {
+        try {
+            setRelated(fieldVarName, luceneQuery != null ? RelationshipUtil
+                    .filterContentlet(this.getLanguageId(), luceneQuery, sortBy, user,
+                            respectFrontendRoles, false): null);
+        } catch (DotDataException | DotSecurityException e) {
+            Logger.error(this, "Error setting related content for field " + fieldVarName
+                    + ". Content identifier: " + this.getIdentifier(), e);
+            throw new DotStateException(e);
+        }
+    }
 }

@@ -1,7 +1,11 @@
 package com.dotmarketing.business;
 
+import com.dotcms.auth.providers.jwt.factories.ApiTokenCache;
 import com.dotcms.business.SystemCache;
-import com.dotcms.cache.*;
+import com.dotcms.cache.KeyValueCache;
+import com.dotcms.cache.KeyValueCacheImpl;
+import com.dotcms.cache.VanityUrlCache;
+import com.dotcms.cache.VanityUrlCacheImpl;
 import com.dotcms.content.elasticsearch.business.IndiciesCache;
 import com.dotcms.content.elasticsearch.business.IndiciesCacheImpl;
 import com.dotcms.contenttype.business.ContentTypeCache2;
@@ -17,17 +21,13 @@ import com.dotcms.publisher.endpoint.business.PublishingEndPointCacheImpl;
 import com.dotcms.rendering.velocity.services.DotResourceCache;
 import com.dotcms.rendering.velocity.viewtools.navigation.NavToolCache;
 import com.dotcms.rendering.velocity.viewtools.navigation.NavToolCacheImpl;
-
-import com.dotmarketing.business.cache.provider.CacheProviderStats;
 import com.dotmarketing.business.cache.transport.CacheTransport;
+import com.dotmarketing.business.portal.PortletCache;
 import com.dotmarketing.cache.ContentTypeCache;
 import com.dotmarketing.cache.FolderCache;
 import com.dotmarketing.cache.FolderCacheImpl;
 import com.dotmarketing.cache.LegacyContentTypeCacheImpl;
 import com.dotmarketing.cache.MultiTreeCache;
-import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.FlushCacheRunnable;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.logConsole.model.LogMapperCache;
 import com.dotmarketing.logConsole.model.LogMapperCacheImpl;
@@ -68,9 +68,6 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys;
 
 
-import java.util.List;
-import java.util.Set;
-
 
 /**
  * FactoryLocator is a factory method to get single(ton) service objects.
@@ -83,44 +80,7 @@ import java.util.Set;
  */
 public class CacheLocator extends Locator<CacheIndex>{
 
-    private static class CommitListenerCacheWrapper implements DotCacheAdministrator {
 
-        DotCacheAdministrator dotcache;
-        public CommitListenerCacheWrapper(DotCacheAdministrator dotcache) { this.dotcache=dotcache; }
-
-		public void initProviders () {dotcache.initProviders();}
-		public Set<String> getGroups () {return dotcache.getGroups();}
-		public void flushAll() { dotcache.flushAll(); }
-        public void flushGroup(String group) { dotcache.flushGroup(group); }
-        public void flushAlLocalOnly(boolean ignoreDistributed) { dotcache.flushAlLocalOnly(ignoreDistributed); }
-        public void flushGroupLocalOnly(String group, boolean ignoreDistributed) { dotcache.flushGroupLocalOnly(group, ignoreDistributed); }
-        public Object get(String key, String group) throws DotCacheException { return dotcache.get(key, group); }
-        public void remove(String key, String group) { dotcache.remove(key,group); }
-        public void removeLocalOnly(String key, String group, boolean ignoreDistributed) { dotcache.removeLocalOnly(key, group, ignoreDistributed); }
-        public void shutdown() { dotcache.shutdown(); }
-        public List<CacheProviderStats> getCacheStatsList() { return dotcache.getCacheStatsList(); }
-		public CacheTransport getTransport () {return dotcache.getTransport();}
-		public void setTransport ( CacheTransport transport ) {dotcache.setTransport(transport);}
-		public void invalidateCacheMesageFromCluster ( String message ) {dotcache.invalidateCacheMesageFromCluster(message);}
-        public Class<?> getImplementationClass() { return dotcache.getClass(); }
-        public void put(final String key, final Object content, final String group) {
-            dotcache.put(key, content, group);
-            try {
-                if(DbConnectionFactory.inTransaction()) {
-                    HibernateUtil.addRollbackListener(new FlushCacheRunnable() {
-                       public void run() {
-                           dotcache.remove(key, group);
-                       }
-                    });
-                }
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
-        public DotCacheAdministrator getImplementationObject() {
-            return dotcache;
-        }
-	}
 
 	private static CacheLocator instance;
 	private static DotCacheAdministrator adminCache;
@@ -224,7 +184,9 @@ public class CacheLocator extends Locator<CacheIndex>{
 	public static LayoutCache getLayoutCache() {
 		return (LayoutCache)getInstance(CacheIndex.Layout);
 	}
-
+    public static PortletCache getPortletCache() {
+        return (PortletCache)getInstance(CacheIndex.PortletCache);
+    }
 	public static IdentifierCache getIdentifierCache() {
 		return (IdentifierCache)getInstance(CacheIndex.Identifier);
 	}
@@ -326,7 +288,9 @@ public class CacheLocator extends Locator<CacheIndex>{
     public static KeyValueCache getKeyValueCache() {
     	return (KeyValueCache) getInstance(CacheIndex.KeyValueCache);
     }
-
+    public static ApiTokenCache getApiTokenCache() {
+        return (ApiTokenCache) getInstance(CacheIndex.ApiTokenCache);
+    }
 	/**
 	 * The legacy cache administrator will invalidate cache entries within a cluster
 	 * on a put where the non legacy one will not.
@@ -390,17 +354,14 @@ enum CacheIndex
 	Tag("Tag"),
 	TagInode("TagInode"),
 	Contentlet("Contentlet"),
-	Chain("Chain"),
 	LogMapper("LogMapper"),
 	Relationship("Relationship"),
 	Plugin("Plugin"),
 	Language("Language"),
 	User("User"),
-	Velocity("Velocity"),
 	Layout("Layout"),
 	Userproxy("User Proxy"),
 	Host("Host"),
-	File("File"),
 	HTMLPage("Page"),
 	Menulink("Menu Link"),
 	Container("Container"),
@@ -426,6 +387,8 @@ enum CacheIndex
 	Velocity2("Velocity2"),
 	NavTool2("Navigation Tool2"),
 	MultiTreeCache("MultiTree Cache"),
+	ApiTokenCache("ApiTokenCache"),
+	PortletCache("PortletCache"),
 	KeyValueCache("Key/Value Cache");
 
 	Cachable create() {
@@ -471,6 +434,9 @@ enum CacheIndex
 	      	case VanityURLCache : return new VanityUrlCacheImpl();
 	      	case KeyValueCache : return new KeyValueCacheImpl();
 	      	case MultiTreeCache : return new MultiTreeCache();
+	      	case ApiTokenCache : return new ApiTokenCache();
+	      	case PortletCache : return new PortletCache();
+	      	
 		}
 		throw new AssertionError("Unknown Cache index: " + this);
 	}

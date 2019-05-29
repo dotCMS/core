@@ -12,8 +12,6 @@ import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
@@ -24,7 +22,6 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.BinaryContentExporter;
 import com.dotmarketing.portlets.contentlet.business.BinaryContentExporterException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ResourceLink;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
@@ -64,7 +61,6 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import org.apache.commons.collections.LRUMap;
 
 /**
  * This servlet allows you invoke content exporters over binary fields. With the following URL syntax you are able to
@@ -176,62 +172,63 @@ public class BinaryExporterServlet extends HttpServlet {
 		}
 		params = sortByKey(params);
 		boolean byInode = params.containsKey("byInode");
-		// Default to a no-shortyId value
-		ShortyId shorty = shortyIdApi.noShorty(uuid);
-		try {
-			// Try to get the ShortyId from a valid expected UUID value
-			final Optional<ShortyId> shortOpt = shortyIdApi.getShorty(uuid);
-			if (shortOpt.isPresent()) {
-				shorty = shortOpt.get();
-				// Double-check if the passed-in value is an Inode or not
-				byInode = byInode || shorty.type == ShortType.INODE;
-			} else {
-				// If the value is not a valid UUID, it probably is a legacy Identifier/Inode
-				shortyIdApi.validShorty(uuid);
-			}
-		} catch (final ShortyException e) {
-			// The Inode/Identifier length and/or format is not valid for a UUID, probably belonged
-			// to a Legacy File which is just a consecutive number. This old format needs to be supported
-			final ShortType shortType = (byInode ? ShortType.INODE : ShortType.IDENTIFIER);
-			shorty = new ShortyId(uuid, uuid, shortType, ShortType.CONTENTLET);
-		}
-		uuid = shorty.longId;
-		final boolean isContent= (shorty.subType == ShortType.CONTENTLET);
-		String assetInode = null;
-		String assetIdentifier = null;
-		if (byInode){
-			assetInode = uuid;
-		}
-		else{
-			assetIdentifier = uuid;
-		}
 
-		String fieldVarName = uriPieces.length > 3?uriPieces[3]:"fileAsset";
-		BinaryContentExporter exporter = exportersByPathMapping.get(exporterPath);
-		if(exporter == null) {
-			Logger.warn(this, "No exporter for path " + exporterPath + " is registered. Requested url = " + uri);
-			resp.sendError(HttpServletResponse.SC_NOT_FOUND);
-			return;
-		}
-
-		UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
-		BinaryContentExporter.BinaryContentExporterData data = null;
-		File inputFile = null;
-		HttpSession session = req.getSession(false);
-		List<String> tempBinaryImageInodes = null;
-        if ( session != null && session.getAttribute( Contentlet.TEMP_BINARY_IMAGE_INODES_LIST ) != null ) {
-            tempBinaryImageInodes = (List<String>) session.getAttribute( Contentlet.TEMP_BINARY_IMAGE_INODES_LIST );
-        } else {
-            tempBinaryImageInodes = new ArrayList<>();
-        }
-
-        boolean isTempBinaryImage = tempBinaryImageInodes.contains(assetInode);
-        
 		ServletOutputStream out = null;
 		RandomAccessFile input = null;
 		InputStream is = null;
-        
+		// Default to a no-shortyId value
 		try {
+			ShortyId shorty = shortyIdApi.noShorty(uuid);
+			try {
+				// Try to get the ShortyId from a valid expected UUID value
+				final Optional<ShortyId> shortOpt = shortyIdApi.getShorty(uuid);
+				if (shortOpt.isPresent()) {
+					shorty = shortOpt.get();
+					// Double-check if the passed-in value is an Inode or not
+					byInode = byInode || shorty.type == ShortType.INODE;
+				} else {
+					// If the value is not a valid UUID, it probably is a legacy Identifier/Inode
+					shortyIdApi.validShorty(uuid);
+				}
+			} catch (final ShortyException e) {
+				// The Inode/Identifier length and/or format is not valid for a UUID, probably belonged
+				// to a Legacy File which is just a consecutive number. This old format needs to be supported
+				final ShortType shortType = (byInode ? ShortType.INODE : ShortType.IDENTIFIER);
+				shorty = new ShortyId(uuid, uuid, shortType, ShortType.CONTENTLET);
+			}
+			uuid = shorty.longId;
+			final boolean isContent= (shorty.subType == ShortType.CONTENTLET);
+			String assetInode = null;
+			String assetIdentifier = null;
+			if (byInode){
+				assetInode = uuid;
+			}
+			else{
+				assetIdentifier = uuid;
+			}
+
+			String fieldVarName = uriPieces.length > 3?uriPieces[3]:"fileAsset";
+			BinaryContentExporter exporter = exportersByPathMapping.get(exporterPath);
+			if(exporter == null) {
+				Logger.warn(this, "No exporter for path " + exporterPath + " is registered. Requested url = " + uri);
+				resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+				return;
+			}
+
+			UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
+			BinaryContentExporter.BinaryContentExporterData data = null;
+			File inputFile = null;
+			HttpSession session = req.getSession(false);
+			List<String> tempBinaryImageInodes = null;
+			if ( session != null && session.getAttribute( Contentlet.TEMP_BINARY_IMAGE_INODES_LIST ) != null ) {
+				tempBinaryImageInodes = (List<String>) session.getAttribute( Contentlet.TEMP_BINARY_IMAGE_INODES_LIST );
+			} else {
+				tempBinaryImageInodes = new ArrayList<>();
+			}
+
+			boolean isTempBinaryImage = tempBinaryImageInodes.contains(assetInode);
+
+
 			User user = userWebAPI.getLoggedInUser(req);
 
 			PageMode mode = PageMode.get(req);
@@ -570,11 +567,6 @@ public class BinaryExporterServlet extends HttpServlet {
 	            
 			}
             
-		} catch (DotContentletStateException e) {
-			Logger.debug(BinaryExporterServlet.class, e.getMessage(),e);
-            if(!resp.isCommitted()){
-              resp.sendError(HttpServletResponse.SC_NOT_FOUND);
-            }
 		} catch (DotRuntimeException e) {
 			Logger.debug(BinaryExporterServlet.class, e.getMessage(),e);
             if(!resp.isCommitted()){
@@ -657,8 +649,7 @@ public class BinaryExporterServlet extends HttpServlet {
 					Logger.debug(BinaryExporterServlet.class, e.getMessage());
 				}
 			}
-			
-			
+
 		}
 		
 	}

@@ -1,5 +1,16 @@
 package com.dotcms.rest.api.v1.contenttype;
 
+import static com.dotcms.util.CollectionsUtils.list;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.dotcms.contenttype.business.ContentTypeFactory;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -10,9 +21,11 @@ import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.request.MockSessionRequest;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.repackage.org.glassfish.jersey.internal.util.Base64;
-import com.dotcms.rest.*;
+import com.dotcms.rest.EmptyHttpResponse;
+import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.RestUtilTest;
+import com.dotcms.rest.WebResource;
 import com.dotcms.util.ContentTypeUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.PaginationUtil;
@@ -30,22 +43,22 @@ import com.liferay.portal.util.WebKeys;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import javax.ws.rs.core.Response;
+import org.glassfish.jersey.internal.util.Base64;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import java.io.IOException;
-import java.util.*;
-import java.util.stream.Collectors;
-
-import static com.dotcms.util.CollectionsUtils.list;
-import static org.junit.Assert.*;
-import static org.mockito.Matchers.*;
-import static org.mockito.Mockito.*;
 
 @RunWith(DataProviderRunner.class)
 public class ContentTypeResourceTest {
@@ -200,7 +213,9 @@ public class ContentTypeResourceTest {
 
 	@Test
 	public void getContentTypes() throws DotDataException {
-		final HttpServletRequest request  = mock(HttpServletRequest.class);
+		final HttpServletRequest request  = new MockHeaderRequest(
+				new MockSessionRequest(new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
+						.request());
 		final WebResource webResource = mock(WebResource.class);
 		final InitDataObject initDataObject = mock(InitDataObject.class);
 		final User user = new User();
@@ -208,21 +223,15 @@ public class ContentTypeResourceTest {
 		when(webResource.init(anyString(), any(HttpServletRequest.class),  any(HttpServletResponse.class),  anyBoolean(), anyString())).thenReturn(initDataObject);
 
 		String filter = "filter";
-		boolean showArchived = true;
 		int page = 3;
 		int perPage = 4;
 		String orderBy = "name";
 		OrderDirection direction = OrderDirection.ASC;
 
-		List<ContentType> contentTypes = new ArrayList<>();
-		Response responseExpected = Response.ok(new ResponseEntityView(contentTypes)).build();
-
 		final PaginationUtil paginationUtil = mock(PaginationUtil.class);
 		final Map<String, Object> extraParams = new TestHashMap<>();
 
 		extraParams.put(ContentTypesPaginator.TYPE_PARAMETER_NAME, list("FORM"));
-
-		when(paginationUtil.getPage(request,  user, filter, page, perPage, orderBy, direction, extraParams)).thenReturn(responseExpected);
 
 		final PermissionAPI permissionAPI = mock(PermissionAPI.class);
 
@@ -230,14 +239,13 @@ public class ContentTypeResourceTest {
 				(new ContentTypeHelper(), webResource, paginationUtil, WorkflowHelper.getInstance(), permissionAPI);
 		final Response response = resource.getContentTypes(request,  new EmptyHttpResponse(),  filter, page, perPage, orderBy, direction.toString(), "FORM");
 		RestUtilTest.verifySuccessResponse(response);
-
-		assertEquals(responseExpected.getEntity(), response.getEntity());
-		verify(paginationUtil).getPage(request, user, filter, page, perPage, orderBy, direction, extraParams);
 	}
 
 	@Test(expected = DotDataException.class)
 	public void getContentTypes_GivenNotExistingTypeName_ShouldThrowError() throws DotDataException {
-		final HttpServletRequest request  = mock(HttpServletRequest.class);
+		final HttpServletRequest request  = new MockHeaderRequest(
+				new MockSessionRequest(new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
+						.request());
 		final WebResource webResource = mock(WebResource.class);
 		final InitDataObject initDataObject = mock(InitDataObject.class);
 		final User user = new User();
@@ -261,7 +269,9 @@ public class ContentTypeResourceTest {
 
 	@Test
 	public void getContentTypesWithoutType() throws DotDataException {
-		final HttpServletRequest request  = mock(HttpServletRequest.class);
+		final HttpServletRequest request  = new MockHeaderRequest(
+				new MockSessionRequest(new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
+						.request());
 		final WebResource webResource = mock(WebResource.class);
 		final InitDataObject initDataObject = mock(InitDataObject.class);
 		final User user = new User();
@@ -274,9 +284,6 @@ public class ContentTypeResourceTest {
 		String orderBy = "name";
 		OrderDirection direction = OrderDirection.ASC;
 
-		List<ContentType> contentTypes = new ArrayList<>();
-		Response responseExpected = Response.ok(new ResponseEntityView(contentTypes)).build();
-
 		final PaginationUtil paginationUtil = mock(PaginationUtil.class);
 		final Map<String, Object> extraParams = new HashMap<String, Object>() {
 			@Override
@@ -287,18 +294,12 @@ public class ContentTypeResourceTest {
 			}
 		};
 
-
-		when(paginationUtil.getPage(request, user, filter, page, perPage, orderBy, direction, extraParams)).thenReturn(responseExpected);
-
 		final PermissionAPI permissionAPI = mock(PermissionAPI.class);
 
 		final ContentTypeResource resource = new ContentTypeResource
 				(new ContentTypeHelper(), webResource, paginationUtil, WorkflowHelper.getInstance(), permissionAPI);
 		final Response response = resource.getContentTypes(request,  new EmptyHttpResponse(), filter, page, perPage, orderBy, direction.toString(), null);
 		RestUtilTest.verifySuccessResponse(response);
-
-		assertEquals(responseExpected.getEntity(), response.getEntity());
-		verify(paginationUtil).getPage(request, user, filter, page, perPage, orderBy, direction, extraParams);
 	}
 
 	private static String JSON_CONTENT_TYPE_CREATE =
@@ -504,82 +505,6 @@ public class ContentTypeResourceTest {
 				.cast(responseEntityView.getEntity());
 		assertEquals(BaseContentType.values().length-1,types.size());
 
-	}
-
-	private static final String SELECTED_STRUCTURE_KEY = ContentTypeResource.SELECTED_STRUCTURE_KEY;
-
-	@Test
-	public void testCreateType_whenSuccessfulCreation_shouldPutCreatedStructureInSession() throws Exception{
-		Object value = null;
-
-			final ContentTypeResource resource = new ContentTypeResource();
-			final ContentTypeForm.ContentTypeFormDeserialize contentTypeFormDeserialize = new ContentTypeForm.ContentTypeFormDeserialize();
-			final HttpServletRequest request = getHttpRequest();
-		try {
-			final Response response = resource.createType(request,  new EmptyHttpResponse(),
-					contentTypeFormDeserialize.buildForm(JSON_CONTENT_TYPE_CREATE));
-			RestUtilTest.verifySuccessResponse(response);
-			final HttpSession session = request.getSession();
-			assertNotNull(session);
-			final List<String> attributes = Collections.list(session.getAttributeNames());
-			assertFalse(attributes.isEmpty());
-			final Map<String, Object> sessionMap = attributes.stream()
-					.collect(Collectors.toMap(o -> o, session::getAttribute));
-			assertTrue(sessionMap.containsKey(SELECTED_STRUCTURE_KEY));
-			value = sessionMap.get(SELECTED_STRUCTURE_KEY);
-			assertNotNull(value);
-
-		}finally{
-			if(null != value){
-				resource.deleteType(
-						value.toString(), getHttpRequest(),  new EmptyHttpResponse()
-				);
-			}
-		}
-	}
-
-
-	@Test
-	public void testCreateType_then_call_getType_ThenVerifyStructureInSession() throws Exception{
-		String identifier = null;
-
-		final ContentTypeResource resource = new ContentTypeResource();
-		final ContentTypeForm.ContentTypeFormDeserialize contentTypeFormDeserialize = new ContentTypeForm.ContentTypeFormDeserialize();
-
-		try {
-			final HttpServletRequest request1 = getHttpRequest();
-			final Response createTypeResponse = resource.createType(request1,  new EmptyHttpResponse(),
-					contentTypeFormDeserialize.buildForm(JSON_CONTENT_TYPE_CREATE));
-			RestUtilTest.verifySuccessResponse(createTypeResponse);
-
-			final ResponseEntityView entityView = ResponseEntityView.class.cast(createTypeResponse.getEntity());
-			final List list = (List)entityView.getEntity();
-			final Map<String, Object> resultMap = (Map<String, Object>)list.get(0);
-
-			identifier = (String)resultMap.get("id");
-			final HttpServletRequest request2 = getHttpRequest();
-			final Response getTypeResponse = resource.getType(identifier, request2,  new EmptyHttpResponse());
-			RestUtilTest.verifySuccessResponse(getTypeResponse);
-
-			final HttpSession session = request2.getSession();
-			assertNotNull(session);
-
-			final List<String> attributes = Collections.list(session.getAttributeNames());
-			assertFalse(attributes.isEmpty());
-			final Map<String, Object> sessionMap = attributes.stream()
-					.collect(Collectors.toMap(o -> o, session::getAttribute));
-			assertTrue(sessionMap.containsKey(SELECTED_STRUCTURE_KEY));
-			Object value = sessionMap.get(SELECTED_STRUCTURE_KEY);
-			assertNotNull(value);
-			assertEquals(identifier,value);
-
-		}finally{
-			if(null != identifier){
-				resource.deleteType(
-						identifier, getHttpRequest(),  new EmptyHttpResponse()
-				);
-			}
-		}
 	}
 
 

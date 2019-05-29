@@ -2,23 +2,45 @@ package com.dotcms.publisher.pusher;
 
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
-import com.dotcms.enterprise.publishing.remote.bundler.*;
+import com.dotcms.enterprise.publishing.remote.bundler.BundleXMLAsc;
+import com.dotcms.enterprise.publishing.remote.bundler.CategoryBundler;
+import com.dotcms.enterprise.publishing.remote.bundler.CategoryFullBundler;
+import com.dotcms.enterprise.publishing.remote.bundler.ContainerBundler;
+import com.dotcms.enterprise.publishing.remote.bundler.ContentBundler;
+import com.dotcms.enterprise.publishing.remote.bundler.ContentTypeBundler;
+import com.dotcms.enterprise.publishing.remote.bundler.DependencyBundler;
+import com.dotcms.enterprise.publishing.remote.bundler.FolderBundler;
+import com.dotcms.enterprise.publishing.remote.bundler.HostBundler;
+import com.dotcms.enterprise.publishing.remote.bundler.LanguageBundler;
+import com.dotcms.enterprise.publishing.remote.bundler.LanguageVariablesBundler;
+import com.dotcms.enterprise.publishing.remote.bundler.LinkBundler;
+import com.dotcms.enterprise.publishing.remote.bundler.OSGIBundler;
+import com.dotcms.enterprise.publishing.remote.bundler.RelationshipBundler;
+import com.dotcms.enterprise.publishing.remote.bundler.RuleBundler;
+import com.dotcms.enterprise.publishing.remote.bundler.TemplateBundler;
+import com.dotcms.enterprise.publishing.remote.bundler.UserBundler;
+import com.dotcms.enterprise.publishing.remote.bundler.WorkflowBundler;
 import com.dotcms.publisher.bundle.bean.Bundle;
-import com.dotcms.publisher.business.*;
+import com.dotcms.publisher.business.DotPublisherException;
+import com.dotcms.publisher.business.EndpointDetail;
+import com.dotcms.publisher.business.PublishAuditAPI;
+import com.dotcms.publisher.business.PublishAuditHistory;
+import com.dotcms.publisher.business.PublishAuditStatus;
+import com.dotcms.publisher.business.PublishQueueElement;
+import com.dotcms.publisher.business.PublisherQueueJob;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.util.PusheableAsset;
-import com.dotcms.publishing.*;
+import com.dotcms.publishing.BundlerUtil;
+import com.dotcms.publishing.DotPublishingException;
+import com.dotcms.publishing.IBundler;
+import com.dotcms.publishing.PublishStatus;
+import com.dotcms.publishing.Publisher;
+import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.publishing.PublisherConfig.DeliveryStrategy;
-import com.dotcms.repackage.javax.ws.rs.client.Client;
-import com.dotcms.repackage.javax.ws.rs.client.Entity;
-import com.dotcms.repackage.javax.ws.rs.client.WebTarget;
-import com.dotcms.repackage.javax.ws.rs.core.MediaType;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
-import com.dotcms.repackage.org.glassfish.jersey.client.ClientProperties;
 import com.dotcms.rest.RestClientBuilder;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.type.pushpublish.AllPushPublishEndpointsFailureEvent;
@@ -32,17 +54,29 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PushPublishLogger;
 import com.dotmarketing.util.UtilMethods;
-import org.apache.logging.log4j.ThreadContext;
-import org.quartz.JobDetail;
-import org.quartz.ObjectAlreadyExistsException;
-import org.quartz.Scheduler;
-
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import org.apache.logging.log4j.ThreadContext;
+import org.glassfish.jersey.client.ClientProperties;
+import org.quartz.JobDetail;
+import org.quartz.ObjectAlreadyExistsException;
+import org.quartz.Scheduler;
 
 /**
  * This is the main content publishing class in the Push Publishing process.
@@ -194,7 +228,7 @@ public class PushPublisher extends Publisher {
 						ThreadContext.put(BUNDLE_ID, BUNDLE_ID + "=" + b.getName());
 						PushPublishLogger.log(this.getClass(), "Status Update: Sending Bundle");
 	        			WebTarget webTarget = client.target(endpoint.toURL()+"/api/bundlePublisher/publish")
-	        					.queryParam("AUTH_TOKEN", retriveKeyString(PublicEncryptionFactory.decryptString(endpoint.getAuthKey().toString())))
+	        					.queryParam("AUTH_TOKEN", PushPublisher.retriveEndpointKeyDigest(endpoint).get())
 	        					.queryParam("GROUP_ID", UtilMethods.isSet(endpoint.getGroupId()) ? endpoint.getGroupId() : endpoint.getId())
 	        					.queryParam("BUNDLE_NAME", b.getName())
 	        					.queryParam("ENDPOINT_ID", endpoint.getId())
@@ -316,7 +350,14 @@ public class PushPublisher extends Publisher {
      * @return
      * @throws IOException
      */
-	public static String retriveKeyString(String token) throws IOException {
+	public static Optional<String> retriveEndpointKeyDigest(final PublishingEndPoint endpoint) throws IOException {
+	  
+	  if(endpoint==null || endpoint.getAuthKey() ==null) {
+	    Logger.warn(PushPublisher.class,"Endpoint or endpoint key is null:" + endpoint);
+	    return Optional.empty();
+	  }
+	  
+	  String token = PublicEncryptionFactory.decryptString(endpoint.getAuthKey().toString());
 		String key = null;
 		if(token.contains(File.separator)) {
 			File tokenFile = new File(token);
@@ -325,8 +366,7 @@ public class PushPublisher extends Publisher {
 		} else {
 			key = token;
 		}
-
-		return PublicEncryptionFactory.encryptString(key);
+		return key==null ? Optional.empty() : Optional.of(PublicEncryptionFactory.digestString(key));
 	}
 
     @Override

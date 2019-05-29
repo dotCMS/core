@@ -1,36 +1,23 @@
 package com.dotcms.concurrent;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
 import com.dotcms.concurrent.lock.DotKeyLockManagerBuilder;
 import com.dotcms.concurrent.lock.IdentifierStripedLock;
 import com.dotcms.util.ReflectionUtils;
+import com.dotmarketing.init.DotInitScheduler;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.DelayQueue;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.RejectedExecutionHandler;
-import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import static com.dotcms.util.CollectionsUtils.map;
 
 /**
  * Factory for concurrent {@link Executor} & {@link DotSubmitter}
@@ -174,7 +161,8 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
     private DotConcurrentFactory () {
         // singleton
         this.delayQueueConsumer = new DelayQueueConsumer();
-        this.delayQueueConsumer.start();
+        DotInitScheduler.getScheduledThreadPoolExecutor().scheduleWithFixedDelay(this.delayQueueConsumer, 0,
+                Config.getLongProperty("dotcms.concurrent.delayqueue.waitmillis", 100), TimeUnit.MILLISECONDS);
     }
 
     private void subscribeDelayQueue(final BlockingQueue<DelayedDelegate> delayedQueue) {
@@ -359,7 +347,7 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
     /**
      * This class is in charge of process all the delay queues
      */
-    public class DelayQueueConsumer extends Thread {
+    public class DelayQueueConsumer implements Runnable {
 
         private AtomicBoolean stop = new AtomicBoolean(false);
 
@@ -375,22 +363,22 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
         @Override
         public void run() {
 
-            while (!this.stop.get()) {
-
-                final Collection<BlockingQueue<DelayedDelegate>> delayedQueues =
-                        DotConcurrentFactory.this.delayQueueMap.values();
+            if (!this.stop.get()) {
 
                 try {
+
+                    final Collection<BlockingQueue<DelayedDelegate>> delayedQueues =
+                            DotConcurrentFactory.this.delayQueueMap.values();
+
                     for (final BlockingQueue<DelayedDelegate> queue: delayedQueues) {
 
-                        final DelayedDelegate delayedDelegate = queue.take(); // keep in mind if a loop or pull could be better
+                        final long timeout = Config.getLongProperty("dotcms.concurrent.delayqueue.timeoutpollmillis", 3000);
+                        final DelayedDelegate delayedDelegate = queue.poll(timeout, TimeUnit.MILLISECONDS); // keep in mind if a loop or pull could be better
                         if (null != delayedDelegate) {
 
                             delayedDelegate.executeDelegate();
                         }
                     }
-
-                    DateUtil.sleep(Config.getLongProperty("dotcms.concurrent.delayqueue.waitmillis", 100));
                 } catch (InterruptedException e) {
                     Logger.error(DotConcurrentFactory.class, e.getMessage(), e);
                     Thread.currentThread().interrupt();
@@ -399,7 +387,6 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
                 }
             }
         }
-
     } // DelayQueueConsumer.
 
     /// DotSubmitter
@@ -496,7 +483,7 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
             try {
                 this.delayedQueue.put(new DelayedDelegate(()-> {
 
-                    this.submit(task);
+                    task.run();
                 }, delay, unit));
             } catch (InterruptedException e) {
                 throw new DotConcurrentException(e.getMessage(), e);

@@ -1,6 +1,37 @@
 package com.dotcms.rest.api.v1.contenttype;
 
-import com.dotcms.contenttype.model.field.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
+import com.dotcms.contenttype.model.field.BinaryField;
+import com.dotcms.contenttype.model.field.CategoryField;
+import com.dotcms.contenttype.model.field.CheckboxField;
+import com.dotcms.contenttype.model.field.ConstantField;
+import com.dotcms.contenttype.model.field.CustomField;
+import com.dotcms.contenttype.model.field.DataTypes;
+import com.dotcms.contenttype.model.field.DateField;
+import com.dotcms.contenttype.model.field.DateTimeField;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.FileField;
+import com.dotcms.contenttype.model.field.HiddenField;
+import com.dotcms.contenttype.model.field.HostFolderField;
+import com.dotcms.contenttype.model.field.ImageField;
+import com.dotcms.contenttype.model.field.KeyValueField;
+import com.dotcms.contenttype.model.field.LineDividerField;
+import com.dotcms.contenttype.model.field.MultiSelectField;
+import com.dotcms.contenttype.model.field.PermissionTabField;
+import com.dotcms.contenttype.model.field.RadioField;
+import com.dotcms.contenttype.model.field.RelationshipsTabField;
+import com.dotcms.contenttype.model.field.SelectField;
+import com.dotcms.contenttype.model.field.TabDividerField;
+import com.dotcms.contenttype.model.field.TagField;
+import com.dotcms.contenttype.model.field.TextAreaField;
+import com.dotcms.contenttype.model.field.TextField;
+import com.dotcms.contenttype.model.field.TimeField;
+import com.dotcms.contenttype.model.field.WysiwygField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
@@ -8,33 +39,29 @@ import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.request.MockSessionRequest;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.repackage.org.glassfish.jersey.internal.util.Base64;
 import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.util.UUIDUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-
-import static org.junit.Assert.*;
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.core.Response;
+import org.glassfish.jersey.internal.util.Base64;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 public class FieldResourceTest {
 
 	private static final ObjectMapper mapper = new ObjectMapper();
 
-	private static final String typeName="fieldResourceTest" + UUIDUtil.uuid();
+	private static final String typeName="fieldResourceTest" + + System.currentTimeMillis();
 
 	@BeforeClass
 	public static void prepare() throws Exception{
@@ -2342,6 +2369,8 @@ public class FieldResourceTest {
 	private static Field convertMapToField(Map<String, Object> fieldMap) {
 		try {
 			fieldMap.remove("fieldVariables");
+			fieldMap.remove("fieldTypeLabel");
+			fieldMap.remove("fieldType");
 
 			return mapper.readValue(
 				mapper.writeValueAsString(fieldMap),

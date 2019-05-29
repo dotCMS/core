@@ -1,23 +1,8 @@
 package com.dotcms.rendering.velocity.services;
 
-import com.dotcms.contenttype.model.field.BinaryField;
-import com.dotcms.contenttype.model.field.CategoryField;
-import com.dotcms.contenttype.model.field.CheckboxField;
-import com.dotcms.contenttype.model.field.ConstantField;
-import com.dotcms.contenttype.model.field.DateField;
-import com.dotcms.contenttype.model.field.DateTimeField;
-import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.FileField;
-import com.dotcms.contenttype.model.field.HiddenField;
-import com.dotcms.contenttype.model.field.HostFolderField;
-import com.dotcms.contenttype.model.field.ImageField;
-import com.dotcms.contenttype.model.field.RadioField;
-import com.dotcms.contenttype.model.field.SelectField;
-import com.dotcms.contenttype.model.field.TagField;
-import com.dotcms.contenttype.model.field.TimeField;
+import com.dotcms.contenttype.model.field.*;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
-
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
@@ -36,22 +21,13 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
-
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-
-import org.apache.velocity.exception.ResourceNotFoundException;
-
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+import org.apache.velocity.exception.ResourceNotFoundException;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.*;
 
 /**
  * @author will
@@ -128,6 +104,24 @@ public class ContentletLoader implements DotLoader {
 
         ContentType type = content.getContentType();
         sb.append("#set($structureName='").append(type.name()).append("' )");
+
+        /*
+        It is better if we calculate if it is a Widget before to try to evaluate
+        the Widget code, if the code evaluation fails the $isWidget could be false.
+         */
+        if (type.baseType() == BaseContentType.WIDGET) {
+            sb.append("#set( $isWidget= \"").append(true).append("\")");
+            if (type.name().equals(FormAPI.FORM_WIDGET_STRUCTURE_NAME_FIELD_NAME)) {
+                sb.append("#set($isFormWidget= \"").append(true).append("\")");
+            } else {
+                sb.append("#set($isFormWidget= \"").append(false).append("\")");
+            }
+
+            //Cleaning up already loaded Widgets code
+            sb.append("#set($widgetCode= \"\")");
+        } else {
+            sb.append("#set($isWidget= \"").append(false).append("\")");
+        }
 
         if (type.baseType() != BaseContentType.FORM) {
             List<Field> fields = type.fields();
@@ -515,16 +509,6 @@ public class ContentletLoader implements DotLoader {
             .append("\" )");
         sb.append("#set( $ContentletStructure=\"").append(content.getContentTypeId()).append("\" )");
         sb.append("#set( $ContentletContentType=\"").append(content.getContentTypeId()).append("\" )");
-        if (type.baseType() == BaseContentType.WIDGET) {
-            sb.append("#set( $isWidget= \"").append(true).append("\")");
-            if (type.name().equals(FormAPI.FORM_WIDGET_STRUCTURE_NAME_FIELD_NAME)) {
-                sb.append("#set($isFormWidget= \"").append(true).append("\")");
-            } else {
-                sb.append("#set($isFormWidget= \"").append(false).append("\")");
-            }
-        } else {
-            sb.append("#set($isWidget= \"").append(false).append("\")");
-        }
 
         return writeOutVelocity(filePath, sb.toString());
     }
@@ -548,7 +532,7 @@ public class ContentletLoader implements DotLoader {
      * Will remove all contentlet files within a structure for both live and working. Uses the
      * system user.
      * 
-     * @param contentlets
+     * @param structure
      * @throws DotSecurityException
      * @throws DotDataException
      */

@@ -1,22 +1,22 @@
 package com.dotcms.rest.api.v1.page;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
-import com.dotcms.business.CloseDB;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.rest.exception.BadRequestException;
-import com.dotcms.rest.exception.NotFoundException;
-import com.dotcms.uuid.shorty.ShortyId;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PermissionLevel;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeAPI;
-import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
@@ -25,27 +25,25 @@ import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetNotFoundException;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.portlets.htmlpageasset.business.render.page.PageView;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.util.*;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.Table;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
-
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.*;
-
-import org.apache.velocity.exception.ResourceNotFoundException;
-import org.jetbrains.annotations.NotNull;
-
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Provides the utility methods that interact with HTML Pages in dotCMS. These methods are used by
@@ -88,7 +86,7 @@ public class PageResourceHelper implements Serializable {
             for (final String contentletId : contentIds) {
                 final MultiTree multiTree = new MultiTree().setContainer(containerEntry.getContainerId())
                         .setContentlet(contentletId)
-                        .setRelationType(containerEntry.getContainerUUID())
+                        .setInstanceId(containerEntry.getContainerUUID())
                         .setTreeOrder(i++)
                         .setHtmlPage(pageId);
 
@@ -241,12 +239,30 @@ public class PageResourceHelper implements Serializable {
         multiTreeAPI.saveMultiTrees(pageIdentifier, multiTrees);
     }
 
-    private String getNewUUID(final PageForm pageForm, final String containerId, final String uniqueId) {
+    private String getNewUUID(final PageForm pageForm, final String containerId,
+            final String uniqueId)
+            throws DotDataException, DotSecurityException {
+
+        //If we have a FileAssetContainer we may need to search also by path
+        String containerPath = null;
+        final Container foundContainer = APILocator.getContainerAPI()
+                .getWorkingContainerById(containerId, userAPI.getSystemUser(), false);
+        if (foundContainer instanceof FileAssetContainer) {
+            containerPath = FileAssetContainer.class.cast(foundContainer).getPath();
+        }
+
         if (ContainerUUID.UUID_DEFAULT_VALUE.equals(uniqueId)) {
             String newlyContainerUUID = pageForm.getNewlyContainerUUID(containerId);
-            return newlyContainerUUID != null ? newlyContainerUUID : ContainerUUID.UUID_DEFAULT_VALUE;
+            if (newlyContainerUUID == null && containerPath != null) {//Searching also by path if nothing found
+                newlyContainerUUID = pageForm.getNewlyContainerUUID(containerPath);
+            }
+            return newlyContainerUUID != null ? newlyContainerUUID
+                    : ContainerUUID.UUID_DEFAULT_VALUE;
         } else {
             ContainerUUIDChanged change = pageForm.getChange(containerId, uniqueId);
+            if (change == null && containerPath != null) {//Searching also by path if nothing found
+                change = pageForm.getChange(containerPath, uniqueId);
+            }
             return change != null ? change.getNew().getUUID() : ContainerUUID.UUID_DEFAULT_VALUE;
         }
     }

@@ -1,15 +1,16 @@
 package com.dotmarketing.beans;
 
 
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
-
-import java.io.Serializable;
-
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.lang.builder.ToStringBuilder;
+
+import java.io.Serializable;
 
 /**
  *
@@ -49,10 +50,30 @@ public class MultiTree implements Serializable {
     public MultiTree() {
         this(null, null, null, LEGACY_INSTANCE_ID, 0);
     }
-    
+
 
     private MultiTree(MultiTree tree) {
         this(tree.parent1, tree.parent2, tree.child, tree.relationType, tree.treeOrder);
+    }
+
+    /**
+     * The {@link #getContainer()} could be a path or uuid, this method will get always the id no matter what is in {@link #getContainer()}
+     * @return String
+     */
+    public String getContainerAsID () {
+
+        final String containerId = this.getContainer();
+
+        if (FileAssetContainerUtil.getInstance().isFolderAssetContainerId(containerId)) {
+
+            try {
+                return FileAssetContainerUtil.getInstance().getContainerIdFromPath(containerId);
+            } catch (DotDataException e) {
+                /** quiet */
+            }
+        }
+
+        return containerId;
     }
     
     /** minimal constructor */

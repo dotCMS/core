@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.templates.action;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.rendering.velocity.services.TemplateLoader;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
@@ -28,14 +29,7 @@ import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.design.util.DesignTemplateUtil;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.templates.struts.TemplateForm;
-import com.dotmarketing.util.ActivityLogger;
-import com.dotmarketing.util.HostUtil;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PortletURLUtil;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.Validator;
-import com.dotmarketing.util.WebKeys;
+import com.dotmarketing.util.*;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
@@ -44,14 +38,15 @@ import com.liferay.portal.util.Constants;
 import com.liferay.portlet.ActionRequestImpl;
 import com.liferay.util.servlet.SessionDialogMessage;
 import com.liferay.util.servlet.SessionMessages;
-import java.net.URLDecoder;
-import java.net.URLEncoder;
-import java.util.List;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.util.List;
 
 /**
  * @author Maria
@@ -84,6 +79,7 @@ public class EditTemplateAction extends DotPortletAction implements
 //		}
 //	}
 
+	@WrapInTransaction
 	public void processAction(ActionMapping mapping, ActionForm form,
 			PortletConfig config, ActionRequest req, ActionResponse res)
 	throws Exception {

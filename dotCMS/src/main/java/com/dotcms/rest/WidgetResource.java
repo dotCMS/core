@@ -1,11 +1,5 @@
 package com.dotcms.rest;
 
-import com.dotcms.repackage.javax.ws.rs.GET;
-import com.dotcms.repackage.javax.ws.rs.Path;
-import com.dotcms.repackage.javax.ws.rs.PathParam;
-import com.dotcms.repackage.javax.ws.rs.Produces;
-import com.dotcms.repackage.javax.ws.rs.core.Context;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -16,15 +10,20 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.liferay.portal.model.User;
-import org.apache.velocity.exception.ParseErrorException;
-import org.apache.velocity.exception.ResourceNotFoundException;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.List;
 import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Response;
+import org.apache.velocity.exception.ParseErrorException;
+import org.apache.velocity.exception.ResourceNotFoundException;
 
 @Path("/widget")
 public class WidgetResource {
@@ -92,24 +91,24 @@ public class WidgetResource {
 			StringWriter secondEval = new StringWriter();
 			StringBuilder widgetExecuteCode = new StringBuilder();
 
+			org.apache.velocity.context.Context context = VelocityUtil.getBasicContext();
+            for (String key : widget.getMap().keySet()) {
+                context.put(key, widget.getMap().get(key).toString());
+                context.put("widget" + key, widget.getMap().get(key).toString());
+            }
+            List<Field> fields = FieldsCache.getFieldsByStructureInode(contStructure.getInode());
 
-			org.apache.velocity.context.Context context = VelocityUtil.getWebContext(request, response);
-
-			for(String key : widget.getMap().keySet()){
-				context.put(key, widget.getMap().get(key).toString());
-			}
-			
-			List<Field> fields = FieldsCache.getFieldsByStructureInode(contStructure.getInode());
-			
-			for (Field field : fields) {
-				if (field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())) {
-					String host = widget.getHost();
-					String folder = widget.getFolder();
-					String fieldValue = UtilMethods.isSet(folder) && !folder.equals(FolderAPI.SYSTEM_FOLDER)?folder:host;
-					context.put(field.getVelocityVarName(), fieldValue);
-				}
-			}
-			
+            for (Field field : fields) {
+                if (field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())) {
+                    String host = widget.getHost();
+                    String folder = widget.getFolder();
+                    String fieldValue = UtilMethods.isSet(folder) && !folder.equals(FolderAPI.SYSTEM_FOLDER)?folder:host;
+                    context.put(field.getVelocityVarName(), fieldValue);
+                    context.put("widget" +field.getVelocityVarName(), fieldValue);
+                }
+            }
+            // web context should overwrite everything
+			context = VelocityUtil.getWebContext(context, request, response);
 
   			Field field = contStructure.getFieldVar("widgetPreexecute");
   			String fval = field.getValues()!=null ? field.getValues().trim() : "";

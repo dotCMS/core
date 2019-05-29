@@ -1,6 +1,11 @@
 package com.dotmarketing.portlets.folders.business;
 // 1212
 
+import static com.dotmarketing.portlets.folders.business.FolderAPI.SYSTEM_FOLDER;
+import static com.dotmarketing.portlets.folders.business.FolderAPI.SYSTEM_FOLDER_ASSET_NAME;
+import static com.dotmarketing.portlets.folders.business.FolderAPI.SYSTEM_FOLDER_ID;
+import static com.dotmarketing.portlets.folders.business.FolderAPI.SYSTEM_FOLDER_PARENT_PATH;
+
 import com.dotcms.util.transform.DBTransformer;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.beans.Host;
@@ -18,9 +23,10 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.MultiTreeFactory;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
@@ -32,7 +38,9 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import org.apache.commons.beanutils.BeanUtils;
+import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.oro.text.regex.Pattern;
 import org.apache.oro.text.regex.Perl5Compiler;
 import org.apache.oro.text.regex.Perl5Matcher;
@@ -46,7 +54,7 @@ import java.util.*;
  */
 public class FolderFactoryImpl extends FolderFactory {
 
-	private FolderCache fc = CacheLocator.getFolderCache();
+	private final FolderCache folderCache = CacheLocator.getFolderCache();
 
 	@Override
 	protected boolean exists(String folderInode) throws DotDataException {
@@ -68,7 +76,7 @@ public class FolderFactoryImpl extends FolderFactory {
            new DotConnect()
             .setSQL("delete from inode where inode = ? ")
             .addParam(f.getInode()).loadResult();
-           fc.removeFolder(f, id);
+           folderCache.removeFolder(f, id);
 
         
 	   CacheLocator.getIdentifierCache().removeFromCacheByVersionable(f);
@@ -77,7 +85,7 @@ public class FolderFactoryImpl extends FolderFactory {
 
 	@Override
 	protected Folder find(String folderInode) throws DotDataException {
-		Folder folder = fc.getFolder(folderInode);
+		Folder folder = folderCache.getFolder(folderInode);
 		if (folder == null) {
 			try{
 			     DotConnect dc    = new DotConnect()
@@ -94,7 +102,7 @@ public class FolderFactoryImpl extends FolderFactory {
 
 				folder = folders.get(0);
 				Identifier id = APILocator.getIdentifierAPI().find(folder.getIdentifier());
-				fc.addFolder(folder, id);
+				folderCache.addFolder(folder, id);
 			}
 			catch(Exception e){
 				throw new DotDataException(e.getMessage(),e);
@@ -141,7 +149,7 @@ public class FolderFactoryImpl extends FolderFactory {
 	protected List<Folder> findSubFolders(final Host host, Boolean showOnMenu)
 			throws DotHibernateException {
 
-		return getSubFolders(showOnMenu, "/", host.getIdentifier(), null);
+ 		return getSubFolders(showOnMenu, "/", host.getIdentifier(), null);
 	}
 
 	private List<Folder> getSubFolders(Boolean showOnMenu, String path, final String hostId, String order) {
@@ -194,10 +202,10 @@ public class FolderFactoryImpl extends FolderFactory {
 			return null;
 		}
 
-		if(path.equals("/") || path.equals("/System folder")) {
-			folder = fc.getFolderByPathAndHost(path, APILocator.getHostAPI().findSystemHost());
+		if(path.equals("/") || path.equals(SYSTEM_FOLDER_PARENT_PATH)) {
+			folder = folderCache.getFolderByPathAndHost(path, APILocator.getHostAPI().findSystemHost());
 		} else{
-			folder = fc.getFolderByPathAndHost(path, host);
+			folder = folderCache.getFolderByPathAndHost(path, host);
 		}
 
 		if(folder == null){
@@ -206,9 +214,9 @@ public class FolderFactoryImpl extends FolderFactory {
 			String hostId;
 
 			try{
-				if(path.equals("/") || path.equals("/System folder")) {
-					parentPath = "/System folder";
-					assetName = "system folder";
+				if(path.equals("/") || path.equals(SYSTEM_FOLDER_PARENT_PATH)) {
+					parentPath = SYSTEM_FOLDER_PARENT_PATH;
+					assetName = SYSTEM_FOLDER_ASSET_NAME;
 					hostId = "SYSTEM_HOST";
 				}
 				else {
@@ -224,10 +232,11 @@ public class FolderFactoryImpl extends FolderFactory {
 				}
 
 				DotConnect dc = new DotConnect();
-				dc.setSQL("select folder.*, folder_1_.* from " + Type.FOLDER.getTableName() + " folder, inode folder_1_, identifier  where asset_name = ? and parent_path = ? and "
-						+ "folder_1_.type = 'folder' and folder.inode = folder_1_.inode and folder.identifier = identifier.id and host_inode = ?");
-				dc.addParam(assetName.toLowerCase());
-				dc.addParam(parentPath.toLowerCase());
+				dc.setSQL("select folder.*, folder_1_.* from " + Type.FOLDER.getTableName() + " folder, inode folder_1_, identifier i where i.full_path_lc = ? and "
+						+ "folder_1_.type = 'folder' and folder.inode = folder_1_.inode and folder.identifier = i.id and i.host_inode = ?");
+
+				dc.addParam((parentPath + assetName).toLowerCase());
+
 				dc.addParam(hostId);
 
 
@@ -243,7 +252,7 @@ public class FolderFactoryImpl extends FolderFactory {
 				// if it is found add it to folder cache
 				if(UtilMethods.isSet(folder) && UtilMethods.isSet(folder.getInode())) {
 					Identifier id = APILocator.getIdentifierAPI().find(folder.getIdentifier());
-					fc.addFolder(folder, id);
+					folderCache.addFolder(folder, id);
 				} else {
 					String parentFolder = originalPath;
 
@@ -270,15 +279,13 @@ public class FolderFactoryImpl extends FolderFactory {
 					}
 
 					dc = new DotConnect();
-					dc.setSQL("select folder.*, folder_1_.* from " + Type.FOLDER.getTableName() + " folder, inode folder_1_, identifier"
-							+ " where asset_name = ?"
-							+ " and parent_path = ?"
+					dc.setSQL("select folder.*, folder_1_.* from " + Type.FOLDER.getTableName() + " folder, inode folder_1_, identifier i"
+							+ " where i.full_path_lc = ?"
 							+ " and folder_1_.type = 'folder'"
 							+ " and folder.inode = folder_1_.inode"
-							+ " and folder.identifier = identifier.id"
-							+ " and host_inode = ?");
-					dc.addParam(parentFolder.toLowerCase());
-					dc.addParam(parentPath.toLowerCase());
+							+ " and folder.identifier = i.id"
+							+ " and i.host_inode = ?");
+					dc.addParam((parentPath + parentFolder).toLowerCase());
 					dc.addParam(hostId);
 
 
@@ -293,7 +300,7 @@ public class FolderFactoryImpl extends FolderFactory {
 					// if it is found add it to folder cache
 					if(UtilMethods.isSet(folder) && UtilMethods.isSet(folder.getInode())) {
 						Identifier id = APILocator.getIdentifierAPI().find(folder.getIdentifier());
-						fc.addFolder(folder, id);
+						folderCache.addFolder(folder, id);
 					}
 				}
 			}
@@ -597,82 +604,127 @@ public class FolderFactoryImpl extends FolderFactory {
 	}
 
 	@SuppressWarnings("unchecked")
-	private boolean move(Folder folder, Object destination) throws DotDataException, DotStateException, DotSecurityException {
+	private boolean move(final Folder folder, final Object destination) throws DotDataException, DotStateException, DotSecurityException {
 
-		IdentifierAPI identAPI = APILocator.getIdentifierAPI();
-		Identifier folderId = identAPI.find(folder.getIdentifier());
+		final MutableBoolean successOperation = new MutableBoolean(true);
+		final IdentifierAPI  identifierAPI    = APILocator.getIdentifierAPI();
+		final ContentletAPI  contentletAPI    = APILocator.getContentletAPI();
+		final Identifier     folderId         = identifierAPI.find(folder.getIdentifier());
 
         //Clean up the cache
-        if ( folder.isShowOnMenu() ) {
-            CacheLocator.getNavToolCache().removeNav( folder.getHostId(), folder.getInode() );
-        }
-        CacheLocator.getNavToolCache().removeNavByPath( folderId.getHostId(), folderId.getParentPath() );
-        fc.removeFolder( folder, folderId );
-		CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(folderId.getId());
+		this.cleanUpTheFolderCache(folder, folderId);
 
-		User systemUser = APILocator.getUserAPI().getSystemUser();
+		final User systemUser = APILocator.systemUser();
 		boolean contains = false;
 		String newParentPath;
 		String newParentHostId;
+
 		if (destination instanceof Folder) {
-			contains = folderContains(folder.getName(), (Folder) destination);
-			Identifier destinationId = identAPI.find(((Folder) destination).getIdentifier());
-			newParentPath = destinationId.getPath();
+
+			contains = this.folderContains(folder.getName(), (Folder) destination);
+			final Identifier destinationId = identifierAPI.find(((Folder) destination).getIdentifier());
+			newParentPath   = destinationId.getPath();
 			newParentHostId = destinationId.getHostId();
-			if(!contains)
-			    CacheLocator.getNavToolCache().removeNavByPath(destinationId.getHostId(), destinationId.getPath());
+			if(!contains) {
+				CacheLocator.getNavToolCache().removeNavByPath(destinationId.getHostId(), destinationId.getPath());
+			}
 		} else {
+
 			contains = APILocator.getHostAPI().doesHostContainsFolder((Host) destination, folder.getName());
-			newParentPath = "/";
+			newParentPath   = StringPool.FORWARD_SLASH;
 			newParentHostId = ((Host)destination).getIdentifier();
-			if(!contains)
-			    CacheLocator.getNavToolCache().removeNav(newParentHostId, FolderAPI.SYSTEM_FOLDER);
-		}
-		if (contains)
-			return false;
-
-		List<Folder> subFolders = getSubFoldersTitleSort(folder);
-		List links = getChildrenClass(folder, Link.class);
-		List<Contentlet> contentlets = APILocator.getContentletAPI().findContentletsByFolder(folder, systemUser, false);
-
-
-		folderId.setParentPath(newParentPath);
-		folderId.setHostId(newParentHostId);
-		identAPI.save(folderId);
-
-		for (Object link : links) {
-			if (((Link) link).isWorking()) {
-				LinkFactory.moveLink((Link) link, folder);
+			if(!contains) {
+				CacheLocator.getNavToolCache().removeNav(newParentHostId, SYSTEM_FOLDER);
 			}
 		}
 
-		for(Contentlet cont : contentlets){
-		    if(cont.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
-		        APILocator.getFileAssetAPI().moveFile(cont, folder, systemUser, false);
-		    }
-		    else {
-    			boolean isLive = cont.isLive();
-    			cont.setFolder(folder.getInode());
-    			cont.setInode(null);
-    			Contentlet newCont = APILocator.getContentletAPI().checkin(cont, systemUser, false);
-    			if(isLive){
-    				APILocator.getContentletAPI().publish(newCont, systemUser, false);
-    			}
-		    }
+		if (contains) {
+
+			return false;
 		}
 
-		for(Folder subFolder : subFolders){
-			move(subFolder, (Object)folder);
-		}
+		final List<Folder> subFolders = this.getSubFoldersTitleSort(folder);
+		final List links 			  = this.getChildrenClass(folder, Link.class);
+		final List<Contentlet> contentlets = contentletAPI.
+								findContentletsByFolder(folder, systemUser, false);
+
+
+		folderId.setParentPath(newParentPath);
+		folderId.setHostId    (newParentHostId);
+		identifierAPI.save    (folderId);
+
+		this.moveLinks(folder, links);
+		this.moveChildContentlets(folder, systemUser, contentlets);
+		successOperation.setValue(this.moveChildFolders(folder, subFolders));
 
 		CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(folderId.getId());
 
-
-		
 		folder.setModDate(new Date());
 		save(folder);
 
-		return true;
+		return successOperation.getValue();
+	}
+
+	private boolean moveChildFolders(final Object folder, final List<Folder> subFolders) throws DotDataException, DotSecurityException {
+
+		boolean moved = true;
+
+		for(final Folder subFolder : subFolders) {
+
+			moved &= move(subFolder, folder);
+		}
+
+		return moved;
+	}
+
+	private void moveChildContentlets(final Folder folder,
+									  final User systemUser,
+									  final List<Contentlet> contentlets) throws DotDataException, DotSecurityException {
+
+		final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+		final FileAssetAPI  fileAssetAPI  = APILocator.getFileAssetAPI();
+
+		for(final Contentlet contentlet : contentlets) {
+
+		    if(contentlet.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET) {
+
+				fileAssetAPI.moveFile(contentlet, folder, systemUser, false);
+		    } else {
+
+    			final boolean isLive = contentlet.isLive();
+    			contentlet.setFolder(folder.getInode());
+    			contentlet.setInode (null);
+    			final Contentlet newContentlet = contentletAPI.checkin(contentlet, systemUser, false);
+    			if(isLive) {
+
+					contentletAPI.publish(newContentlet, systemUser, false);
+    			}
+		    }
+		}
+	}
+
+	private void moveLinks(final Folder folder, final List links) throws DotDataException, DotSecurityException {
+
+		for (final Object linkObject : links) {
+
+			final Link link = (Link)linkObject;
+			if (link.isWorking()) {
+
+				LinkFactory.moveLink(link, folder);
+			}
+		}
+	}
+
+	private void cleanUpTheFolderCache(final Folder folder, final Identifier folderId) {
+
+		if (folder.isShowOnMenu()) {
+
+			CacheLocator.getNavToolCache().removeNav( folder.getHostId(), folder.getInode() );
+		}
+
+		CacheLocator.getNavToolCache().removeNavByPath( folderId.getHostId(), folderId.getParentPath() );
+		this.folderCache.removeFolder( folder, folderId );
+		CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(folderId.getId());
 	}
 
 	/***
@@ -804,7 +856,7 @@ public class FolderFactoryImpl extends FolderFactory {
 		return move(folder, (Object) destination);
 	}
 
-	protected boolean move(Folder folder, Host destination) throws DotDataException, DotSecurityException {
+	protected boolean move(final Folder folder, final Host destination) throws DotDataException, DotSecurityException {
 		return move(folder, (Object) destination);
 	}
 
@@ -866,7 +918,7 @@ public class FolderFactoryImpl extends FolderFactory {
 		});
 
         Folder ff=(Folder) HibernateUtil.load(Folder.class, folder.getInode());
-		ff.setName(newName.toLowerCase());
+		ff.setName(newName);
 		ff.setTitle(newName);
 		ff.setModDate(new Date());
 
@@ -932,21 +984,21 @@ public class FolderFactoryImpl extends FolderFactory {
 	// http://jira.dotmarketing.net/browse/DOTCMS-3232
 	protected Folder findSystemFolder() throws DotDataException {
 		Folder folder = new Folder();
-		folder = fc.getFolder(FolderAPI.SYSTEM_FOLDER);
-		if (folder!=null && folder.getInode().equalsIgnoreCase(FolderAPI.SYSTEM_FOLDER)) {
+		folder = folderCache.getFolder(SYSTEM_FOLDER);
+		if (folder!=null && folder.getInode().equalsIgnoreCase(SYSTEM_FOLDER)) {
 			return folder;
 		} else {
-			folder = find(FolderAPI.SYSTEM_FOLDER);
+			folder = find(SYSTEM_FOLDER);
 		}
-		if (UtilMethods.isSet(folder.getInode()) && folder.getInode().equalsIgnoreCase(FolderAPI.SYSTEM_FOLDER)) {
-			fc.addFolder(folder,APILocator.getIdentifierAPI().find(folder.getIdentifier()));
+		if (UtilMethods.isSet(folder.getInode()) && folder.getInode().equalsIgnoreCase(SYSTEM_FOLDER)) {
+			folderCache.addFolder(folder,APILocator.getIdentifierAPI().find(folder.getIdentifier()));
 			return folder;
 		} else {
 			DotConnect dc = new DotConnect();
 			Folder folder1 = new Folder();
 			String hostInode = "";
-			folder1.setInode(FolderAPI.SYSTEM_FOLDER);
-			folder1.setName("system folder");
+			folder1.setInode(SYSTEM_FOLDER);
+			folder1.setName(SYSTEM_FOLDER_ASSET_NAME);
 			folder1.setTitle("System folder");
 			try {
 				hostInode = APILocator.getHostAPI().findSystemHost(APILocator.getUserAPI().getSystemUser(), true).getIdentifier();
@@ -959,10 +1011,10 @@ public class FolderFactoryImpl extends FolderFactory {
 			folder1.setShowOnMenu(false);
 
 			String IdentifierQuery = "INSERT INTO IDENTIFIER(ID,PARENT_PATH,ASSET_NAME,HOST_INODE,ASSET_TYPE) VALUES(?,?,?,?,?)";
-			String uuid = FolderAPI.SYSTEM_FOLDER_ID;
+			String uuid = SYSTEM_FOLDER_ID;
 			dc.setSQL(IdentifierQuery);
 			dc.addParam(uuid);
-			dc.addParam("/System folder");
+			dc.addParam(SYSTEM_FOLDER_PARENT_PATH);
 			dc.addParam(folder1.getName());
 			dc.addParam(hostInode);
 			dc.addParam(folder1.getType());
@@ -984,7 +1036,7 @@ public class FolderFactoryImpl extends FolderFactory {
 			dc.addParam(folder1.getFilesMasks());
 			dc.addParam(uuid);
 			dc.loadResult();
-			fc.addFolder(folder1,APILocator.getIdentifierAPI().find(folder1.getIdentifier()));
+			folderCache.addFolder(folder1,APILocator.getIdentifierAPI().find(folder1.getIdentifier()));
 			return folder1;
 		}
 	}
@@ -1171,7 +1223,7 @@ public class FolderFactoryImpl extends FolderFactory {
 				}
 			}
 			HibernateUtil.saveOrUpdate(folderToSave);
-			fc.removeFolder(folderToSave, APILocator.getIdentifierAPI().find(folderToSave.getIdentifier()));
+			folderCache.removeFolder(folderToSave, APILocator.getIdentifierAPI().find(folderToSave.getIdentifier()));
 		}else{
 			folderInode.setInode(existingId);
 			HibernateUtil.saveWithPrimaryKey(folderInode, existingId);

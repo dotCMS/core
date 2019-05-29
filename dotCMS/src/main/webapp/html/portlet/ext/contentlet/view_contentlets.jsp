@@ -1,3 +1,5 @@
+<%@page import="com.dotcms.contenttype.transform.contenttype.StructureTransformer"%>
+<%@page import="com.dotcms.contenttype.model.type.ContentType"%>
 <%@page import="com.dotcms.content.elasticsearch.constants.ESMappingConstants"%>
 <%@page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint"%>
 <%@page import="com.dotcms.publisher.endpoint.business.PublishingEndPointAPI"%>
@@ -16,10 +18,19 @@
 
 <iframe id="AjaxActionJackson" name="AjaxActionJackson" style="border:0; width:0; height:0;"></iframe>
 <%
-    List<Structure> structures = (List<Structure>)request.getAttribute (com.dotmarketing.util.WebKeys.Structure.STRUCTURES);
+
+
+
+
+
+
+
+
+    List<ContentType> contentTypes = (List<ContentType>)request.getAttribute ("contentSearchContentTypes");
+
+    List<Structure> structures = new StructureTransformer(contentTypes).asStructureList();
+
     List<Language> languages = (List<Language>)request.getAttribute (com.dotmarketing.util.WebKeys.LANGUAGES);
-
-
 
     java.util.Map params = new java.util.HashMap();
     params.put("struts_action",new String[] {"/ext/contentlet/view_contentlets"});
@@ -44,14 +55,9 @@
         languageId = (String)session.getAttribute(com.dotmarketing.util.WebKeys.LANGUAGE_SEARCHED);
     }
 
+    String structureSelected = (String) request.getAttribute("selectedStructure");
 
 
-    String structureSelected = "";
-    if(UtilMethods.isSet(request.getParameter("structure_id"))){
-        structureSelected=request.getParameter("structure_id");
-    } else if(UtilMethods.isSet(request.getParameter("baseType"))){
-        structureSelected = structures.get(0).getInode();
-    }
 
     String schemeSelected = "catchall";
     if(UtilMethods.isSet(session.getAttribute(ESMappingConstants.WORKFLOW_SCHEME))){
@@ -65,17 +71,6 @@
 
 
     if (lastSearch != null && !UtilMethods.isSet(structureSelected)) {
-        String ssstruc = (String)session.getAttribute("selectedStructure");
-        if(session.getAttribute("selectedStructure") != null && CacheLocator.getContentTypeCache().getStructureByInode((String)session.getAttribute("selectedStructure")) !=null){
-            structure = CacheLocator.getContentTypeCache().getStructureByInode((String)session.getAttribute("selectedStructure"));
-            if( !structure.isHost() && structures.contains(structure)){
-                structureSelected = structure.getInode();
-            }else{
-                session.removeAttribute("selectedStructure");
-
-                structureSelected = null;;
-            }
-        }
         if(lastSearch.get("fieldsSearch") != null){
             fieldsSearch = (Map<String, String>) lastSearch.get("fieldsSearch");
         }
@@ -102,16 +97,8 @@
 
     }
 
-    if(!InodeUtils.isSet(structureSelected)){
-        if(session.getAttribute("selectedStructure") != null){
-            String longSelectedStructure = (String) session.getAttribute("selectedStructure");
-            if(InodeUtils.isSet(longSelectedStructure)){
-                structureSelected = longSelectedStructure.toString();
-            }
-        }
-    }
 
-    if (!InodeUtils.isSet(structureSelected) || !structures.contains(CacheLocator.getContentTypeCache().getStructureByInode(structureSelected))) {
+    if (!InodeUtils.isSet(structureSelected)) {
 
         structureSelected = "catchall";
 
@@ -278,7 +265,8 @@
     function reloadRelationshipBox(box, relatedType){
     	var search = box.attr("displayedValue");
 
-        var boxValue = search == "" ? "*" : "*" +search + "*";
+        //whitespaces are escaped
+        var boxValue = search == "" ? "*" : "*" +search.trim().replace(/\s/g, "\\\\\\\\ ") + "*";
         var limit=box.pageSize;
         if (relatedType.indexOf(".") != -1){
             relatedType = relatedType.split('.')[0];

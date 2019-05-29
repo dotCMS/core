@@ -1,19 +1,8 @@
 package com.dotcms.integritycheckers;
 
-import java.io.File;
-import java.io.IOException;
-import java.math.BigDecimal;
-import java.nio.charset.Charset;
-import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.repackage.com.csvreader.CsvReader;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
@@ -24,10 +13,19 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.ConfigUtils;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+
+import java.io.File;
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.nio.charset.Charset;
+import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Contentlet page integrity checker implementation.
@@ -196,7 +194,7 @@ public class ContentPageIntegrityChecker extends AbstractIntegrityChecker {
 
         DotConnect dc = new DotConnect();
         String tempTableName = getTempTableName(endpointId);
-        final String INSERT_TEMP_TABLE = "insert into " + tempTableName + " (working_inode, live_inode, identifier, parent_path, asset_name, host_identifier, language_id) values(?,?,?,?,?,?,?)";
+        final String INSERT_TEMP_TABLE = "insert into " + tempTableName + " (working_inode, live_inode, identifier, full_path_lc, host_identifier, language_id) values(?,?,?,?,?,?)";
         boolean hasResultsToCheck = false;
         while (htmlpages.readRecord()) {
         	hasResultsToCheck = true;
@@ -211,7 +209,7 @@ public class ContentPageIntegrityChecker extends AbstractIntegrityChecker {
 				final String htmlPageParentPath = getStringIfNotBlank(
 						"parent_path", htmlpages.get(3));
 				final String htmlPageAssetName = getStringIfNotBlank(
-						"asset_name", htmlpages.get(4).toLowerCase());
+						"asset_name", htmlpages.get(4));
 				final String htmlPageHostIdentifier = getStringIfNotBlank(
 						"host_identifier", htmlpages.get(5));
 				final String htmlPageLanguage = getStringIfNotBlank(
@@ -220,8 +218,7 @@ public class ContentPageIntegrityChecker extends AbstractIntegrityChecker {
 				dc.addParam(workingInode);
 				dc.addParam(liveInode);
 				dc.addParam(htmlPageIdentifier);
-				dc.addParam(htmlPageParentPath);
-				dc.addParam(htmlPageAssetName);
+				dc.addParam((htmlPageParentPath + htmlPageAssetName).toLowerCase());
 				dc.addParam(htmlPageHostIdentifier);
 				dc.addParam(new Long(htmlPageLanguage));
 				dc.loadResult();
@@ -254,7 +251,7 @@ public class ContentPageIntegrityChecker extends AbstractIntegrityChecker {
                     + "INNER JOIN contentlet_version_info lcvi ON (lc.identifier = lcvi.identifier) "
                     + "INNER JOIN structure ls ON (lc.structure_inode = ls.inode and ls.structuretype = 5) "
                     + "INNER JOIN " + tempTableName
-                    + " t ON (LOWER(li.asset_name) = t.asset_name AND li.parent_path = t.parent_path "
+                    + " t ON (li.full_path_lc = t.full_path_lc "
                     + "AND li.host_inode = host_identifier AND lc.identifier <> t.identifier "
                     + "AND lc.language_id = t.language_id)";
         
@@ -298,7 +295,7 @@ public class ContentPageIntegrityChecker extends AbstractIntegrityChecker {
                         + "INNER JOIN contentlet_version_info lcvi ON (lc.identifier = lcvi.identifier and lc.language_id = lcvi.lang) "
                         + "INNER JOIN structure ls ON (lc.structure_inode = ls.inode and ls.structuretype = 5) "
                         + "INNER JOIN " + tempTableName
-                        + " t ON (LOWER(li.asset_name) = t.asset_name AND li.parent_path = t.parent_path "
+						+ " t ON (li.full_path_lc = t.full_path_lc "
                         + "AND li.host_inode = host_identifier AND lc.identifier <> t.identifier "
                         + "AND lc.language_id = t.language_id)";
             
@@ -955,16 +952,10 @@ public class ContentPageIntegrityChecker extends AbstractIntegrityChecker {
 		String identifier = updatedWorkingPage.getIdentifier();
 		// If page was removed before in the end point, remove the NOTFOUND flag
 		// for that page from the cache
-		CacheLocator.getIdentifierCache().removeContentletVersionInfoToCache(
-				identifier, updatedWorkingPage.getLanguageId());
-		CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(
-				identifier);
 		indexAPI.addContentToIndex(updatedWorkingPage);
 		// If working and live pages are different...
 		if (updatedLivePage != null) {
-			CacheLocator.getIdentifierCache()
-					.removeContentletVersionInfoToCache(identifier,
-							updatedLivePage.getLanguageId());
+
 			indexAPI.addContentToIndex(updatedLivePage);
 		}
 		// Remove the Lucene index for the old page
@@ -972,32 +963,6 @@ public class ContentPageIntegrityChecker extends AbstractIntegrityChecker {
 		if (oldLivePage != null
 				&& !oldWorkingPage.getInode().equals(oldLivePage.getInode())) {
 			indexAPI.removeContentFromIndex(oldLivePage);
-		}
-		// Clear cache entries of ALL versions of the Contentlet too
-		CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(identifier);
-		CacheLocator.getContentletCache().remove(localWorkingInode);
-		CacheLocator.getIdentifierCache().removeFromCacheByInode(
-				localWorkingInode);
-		if (UtilMethods.isSet(localLiveInode)
-				&& !localWorkingInode.equals(localLiveInode)) {
-			CacheLocator.getContentletCache().remove(localLiveInode);
-			CacheLocator.getIdentifierCache().removeFromCacheByInode(
-					localLiveInode);
-		}
-		// Refresh either all or only language-specific versions of the page
-		DotConnect dc = new DotConnect();
-		if (fixAllVersions) {
-			dc.setSQL("SELECT inode FROM contentlet c WHERE c.identifier = ?");
-			dc.addParam(identifier);
-		} else {
-			dc.setSQL("SELECT inode FROM contentlet c WHERE c.identifier = ? AND c.language_id = ?");
-			dc.addParam(identifier);
-			dc.addParam(languageId);
-		}
-		List<Map<String, Object>> versions = dc.loadObjectResults();
-		for (Map<String, Object> result : versions) {
-			String historyInode = (String) result.get("inode");
-			CacheLocator.getContentletCache().remove(historyInode);
 		}
 	}
 

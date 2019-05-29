@@ -1,15 +1,18 @@
 package com.dotcms.rest.api.v1.theme;
 
 
+import static com.dotmarketing.business.ThemeAPI.THEME_PNG;
+import static com.dotmarketing.business.ThemeAPI.THEME_THUMBNAIL_KEY;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.request.MockSessionRequest;
-import com.dotcms.repackage.com.fasterxml.jackson.databind.JsonNode;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.repackage.javax.ws.rs.core.Response.Status;
-import com.dotcms.repackage.org.glassfish.jersey.internal.util.Base64;
 import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.util.CollectionsUtils;
@@ -25,22 +28,21 @@ import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.UtilMethods;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import static com.dotmarketing.business.ThemeAPI.THEME_PNG;
-import static com.dotmarketing.business.ThemeAPI.THEME_THUMBNAIL_KEY;
-import static org.junit.Assert.*;
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import org.glassfish.jersey.internal.util.Base64;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 public class ThemeResourceIntegrationTest {
 

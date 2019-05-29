@@ -6,11 +6,6 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.JsonContentTypeTransformer;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.javax.ws.rs.*;
-import com.dotcms.repackage.javax.ws.rs.core.Context;
-import com.dotcms.repackage.javax.ws.rs.core.MediaType;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -35,12 +30,32 @@ import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
-
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import java.io.Serializable;
-import java.util.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import org.glassfish.jersey.server.JSONP;
 
 @Path("/v1/contenttype")
 public class ContentTypeResource implements Serializable {
@@ -110,14 +125,18 @@ public class ContentTypeResource implements Serializable {
 				retTypes.add(responseMap);
 				// save the last one to the session to be compliant with #13719
 				if(null != session){
-                    session.setAttribute(SELECTED_STRUCTURE_KEY, contentTypeSaved.inode());
+                  session.removeAttribute(SELECTED_STRUCTURE_KEY);
 				}
 			}
 
 
 			response = Response.ok(new ResponseEntityView(retTypes)).build();
 
-		} catch (DotStateException | DotDataException e) {
+		} catch (IllegalArgumentException e) {
+			Logger.error(this, e.getMessage());
+			response = ExceptionMapperUtil
+					.createResponse(null, "Content-type is not valid (" + e.getMessage() + ")");
+		}catch (DotStateException | DotDataException e) {
 			Logger.error(this, e.getMessage(), e);
 			response = ExceptionMapperUtil
 					.createResponse(null, "Content-type is not valid (" + e.getMessage() + ")");
@@ -354,7 +373,11 @@ public class ContentTypeResource implements Serializable {
 							.put(ContentTypesPaginator.TYPE_PARAMETER_NAME, Arrays.asList(types.split(",")))
 							.build();
 
-			response = this.paginationUtil.getPage(httpRequest, user, filter, page, perPage, orderBy,
+
+			final PaginationUtil paginationUtil = new PaginationUtil(new ContentTypesPaginator(APILocator.getContentTypeAPI(user)));
+
+
+			response = paginationUtil.getPage(httpRequest, user, filter, page, perPage, orderBy,
 					OrderDirection.valueOf(direction), extraParams);
 		} catch (IllegalArgumentException e) {
 			throw new DotDataException(e.getMessage());

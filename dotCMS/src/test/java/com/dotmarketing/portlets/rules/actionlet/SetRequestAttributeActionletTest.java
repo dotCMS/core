@@ -1,7 +1,7 @@
 package com.dotmarketing.portlets.rules.actionlet;
 
 import com.dotcms.UnitTestBase;
-import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableList;
 import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.model.RuleAction;

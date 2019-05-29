@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.sql.Connection;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -50,17 +51,11 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		DotConnect dc = new DotConnect();
 		StringBuilder bob = new StringBuilder("select distinct i.* from identifier i ");
 
-		if(DbConnectionFactory.isMySql()){
-			bob.append("where concat(parent_path, asset_name) ");
-		}else if (DbConnectionFactory.isMsSql()) {
-			bob.append("where (parent_path + asset_name) ");
-		}else {
-			bob.append("where (parent_path || asset_name) ");
-		}
+		bob.append("where i.full_path_lc ");
 		bob.append((include ? "":"NOT ") + "LIKE ? and host_inode = ? and asset_type = ? ");
 
 		dc.setSQL(bob.toString());
-		dc.addParam(uri.replace("*", "%"));
+		dc.addParam(uri.replace("*", "%").toLowerCase());
 		dc.addParam(host.getIdentifier());
 		dc.addParam(assetType);
 
@@ -141,18 +136,17 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 	}
 
 	@Override
-	protected Identifier findByURI(final String siteId, String uri) throws DotDataException {
+	protected Identifier findByURI(final String siteId, final String uri) throws DotDataException {
 		Identifier identifier = ic.getIdentifier(siteId, uri);
 		if (identifier != null) {
 			return check404(identifier);
 		}
 
-		DotConnect dc = new DotConnect();
-		String parentPath = uri.substring(0, uri.lastIndexOf("/") + 1).toLowerCase();
-		String assetName = uri.substring(uri.lastIndexOf("/") + 1).toLowerCase();
-		dc.setSQL("select * from identifier where parent_path = ? and asset_name = ? and host_inode = ?");
-		dc.addParam(parentPath);
-		dc.addParam(assetName);
+		final DotConnect dc = new DotConnect();
+		final String parentPath = uri.substring(0, uri.lastIndexOf("/") + 1).toLowerCase();
+		final String assetName = uri.substring(uri.lastIndexOf("/") + 1).toLowerCase();
+		dc.setSQL("select * from identifier i where i.full_path_lc = ? and host_inode = ?");
+		dc.addParam((parentPath + assetName).toLowerCase());
 		dc.addParam(siteId);
 
 		List<Identifier> results = null;
@@ -176,17 +170,22 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 	}
 
 	@Override
-	protected List<Identifier> findByParentPath(final String siteId, String parent_path) throws DotDataException {
-	    if(!parent_path.endsWith("/")) {
-	        parent_path=parent_path+"/";
+	protected List<Identifier> findByParentPath(final String siteId, String parentPath) throws DotDataException {
+
+	    final Identifier identifier = findByURI(siteId, parentPath);
+        if(!UtilMethods.isSet(identifier) || !UtilMethods.isSet(identifier.getId()) ){
+           return Collections.emptyList();
+        }
+        parentPath = identifier.getURI();
+
+	    if(!parentPath.endsWith("/")) {
+	        parentPath=parentPath+"/";
 	    }
-	    parent_path = parent_path.toLowerCase();
 
 		DotConnect dc = new DotConnect();
 		dc.setSQL("select * from identifier where parent_path = ? and host_inode = ?");
-		dc.addParam(parent_path);
+		dc.addParam(parentPath);
 		dc.addParam(siteId);
-
 
 		return TransformerLocator.createIdentifierTransformer(dc.loadObjectResults()).asList();
 
@@ -269,35 +268,46 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 	}
 
 	@Override
-	protected Identifier createNewIdentifier(Versionable versionable, Folder folder, String existingId) throws DotDataException {
-		User systemUser = APILocator.getUserAPI().getSystemUser();
-		Identifier identifier = new Identifier();
+	protected Identifier createNewIdentifier(final Versionable versionable, final Folder folder, final String existingId) throws DotDataException {
+		final User systemUser = APILocator.getUserAPI().getSystemUser();
+		final Identifier identifier = new Identifier();
 
 		identifier.setId(existingId!=null?existingId:UUIDGenerator.generateUuid());
 
-		Identifier parentId = APILocator.getIdentifierAPI().find(folder);
+		final Identifier parentId = APILocator.getIdentifierAPI().find(folder);
 		if(versionable instanceof Folder) {
 			identifier.setAssetType(Identifier.ASSET_TYPE_FOLDER);
-			identifier.setAssetName(((Folder) versionable).getName().toLowerCase());
+			identifier.setAssetName(((Folder) versionable).getName());
 		} else {
 			String uri = versionable.getVersionType() + "." + versionable.getInode();
 			if(versionable instanceof Contentlet){
-				Contentlet cont = (Contentlet)versionable;
-				if (cont.getStructure().getStructureType() == BaseContentType.FILEASSET.getType()) {
-					try {
-						uri = cont.getBinary(FileAssetAPI.BINARY_FIELD)!=null?cont.getBinary(FileAssetAPI.BINARY_FIELD).getName():"";
-						if(UtilMethods.isSet(cont.getStringProperty(FileAssetAPI.FILE_NAME_FIELD))) {
-							uri = cont.getStringProperty(FileAssetAPI.FILE_NAME_FIELD);
+				final Contentlet contentlet = (Contentlet)versionable;
+				final boolean isCopyContentlet = contentlet.getBoolProperty(Contentlet.IS_COPY_CONTENTLET);
+				if (contentlet.isFileAsset()) {
+					final String contentletAssetNameCopy = contentlet.getStringProperty(Contentlet.CONTENTLET_ASSET_NAME_COPY);
+					if (isCopyContentlet && UtilMethods.isSet(contentletAssetNameCopy)) {
+						uri = contentletAssetNameCopy;
+					} else {
+						try {
+							uri = contentlet.getBinary(FileAssetAPI.BINARY_FIELD) != null
+									? contentlet.getBinary(FileAssetAPI.BINARY_FIELD).getName()
+									: StringPool.BLANK;
+							if (UtilMethods.isSet(contentlet
+									.getStringProperty(FileAssetAPI.FILE_NAME_FIELD))) {
+								uri = contentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD);
+							}
+						} catch (IOException e) {
+							Logger.debug(this,
+									"An error occurred while assigning Binary Field: " + e
+											.getMessage());
 						}
-					} catch (IOException e) {
-						Logger.debug(this, "An error occurred while assigning Binary Field: " + e.getMessage());
 					}
-				} else if (cont.getStructure().getStructureType() == BaseContentType.HTMLPAGE.getType()) {
-				    uri = cont.getStringProperty(HTMLPageAssetAPI.URL_FIELD) ;
+				} else if (contentlet.isHTMLPage()) {
+				    uri = contentlet.getStringProperty(HTMLPageAssetAPI.URL_FIELD) ;
 				}
 				identifier.setAssetType(Identifier.ASSET_TYPE_CONTENTLET);
 				identifier.setParentPath(parentId.getPath());
-				identifier.setAssetName(uri.toLowerCase());
+				identifier.setAssetName(uri);
 			} else if (versionable instanceof WebAsset) {
 				identifier.setURI(((WebAsset) versionable).getURI(folder));
 				identifier.setAssetType(versionable.getVersionType());
@@ -344,7 +354,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 
         if ( versionable instanceof Folder ) {
             identifier.setAssetType(Identifier.ASSET_TYPE_FOLDER);
-			identifier.setAssetName(((Folder) versionable).getName().toLowerCase());
+			identifier.setAssetName(((Folder) versionable).getName());
             identifier.setParentPath( "/" );
         } else {
             String uri = versionable.getVersionType() + "." + versionable.getInode();
@@ -367,7 +377,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
                 }
                 identifier.setAssetType(Identifier.ASSET_TYPE_CONTENTLET);
                 identifier.setParentPath( "/" );
-                identifier.setAssetName( uri.toLowerCase() );
+                identifier.setAssetName( uri );
             } else if ( versionable instanceof Link ) {
                 identifier.setAssetName( versionable.getInode() );
                 identifier.setParentPath("/");
@@ -417,6 +427,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 
 	@Override
 	protected Identifier find(final String identifier) throws DotStateException, DotDataException {
+
 		Identifier id = ic.getIdentifier(identifier);
 		if (id != null && UtilMethods.isSet(id.getId())) {
 			return check404(id);

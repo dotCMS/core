@@ -12,16 +12,19 @@ import java.util.Date;
  */
 public class ContentletPublishEvent implements Serializable {
 
+    // true if it is a publish, false if it is unpublish
+    private final boolean publish;
     private final Contentlet contentlet;
     private final User user;
     private final Date date;
 
     public ContentletPublishEvent(final Contentlet contentlet,
-                                  final User user) {
+                                  final User user, final boolean publish) {
 
         this.contentlet = contentlet;
-        this.user = user;
-        this.date = new Date();
+        this.publish    = publish;
+        this.user       = user;
+        this.date        = new Date();
     }
 
     public Contentlet getContentlet() {
@@ -34,5 +37,9 @@ public class ContentletPublishEvent implements Serializable {
 
     public Date getDate() {
         return date;
+    }
+
+    public boolean isPublish() {
+        return publish;
     }
 }

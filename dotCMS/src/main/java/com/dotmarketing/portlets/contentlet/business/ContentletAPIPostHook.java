@@ -296,21 +296,27 @@ public interface ContentletAPIPostHook {
 	 * Gets the value of a field with a given contentlet 
 	 * @param contentlet
 	 * @param theField
-	 * @param user
-	 * @param respectFrontendRoles
 	 * @param returnValue - value returned by primary API Method 
 	 */
-	public default void getFieldValue(Contentlet contentlet, Field theField,Object returnValue){}
+	default void getFieldValue(Contentlet contentlet, Field theField,Object returnValue){}
 	
     /**
      * Gets the value of a field with a given contentlet 
      * @param contentlet
      * @param theField
-     * @param user
-     * @param respectFrontendRoles
      * @param returnValue - value returned by primary API Method 
      */
-    public default void getFieldValue(Contentlet contentlet, com.dotcms.contenttype.model.field.Field theField,Object returnValue){}
+    default void getFieldValue(Contentlet contentlet, com.dotcms.contenttype.model.field.Field theField,Object returnValue){}
+
+
+	/**
+	 * Gets the value of a field with a given contentlet
+	 * @param contentlet
+	 * @param theField
+	 * @param returnValue - value returned by primary API Method
+	 * @param user
+	 */
+	default void getFieldValue(Contentlet contentlet, com.dotcms.contenttype.model.field.Field theField,Object returnValue, User user){}
 
 	/**
 	 * Adds a relationship to a contentlet
@@ -1493,7 +1499,9 @@ public interface ContentletAPIPostHook {
 	 */
 	public default void updateModDate(final Set<String> inodes, final User user) throws DotDataException {}
 
-    public default void findContentletByIdentifierOrFallback(String identifier, boolean live, long incomingLangId, User user, boolean respectFrontendRoles) {};
+    public default void findContentletByIdentifierOrFallback(String identifier, boolean live, long incomingLangId, User user, boolean respectFrontendRoles) {}
+
+    public default void findInDb(String inode) {};
 
 
 }

@@ -21,9 +21,9 @@ import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.logConsole.model.LogMapperRow;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.rules.util.RulesImportExportUtil;
@@ -36,6 +36,8 @@ import com.liferay.portal.model.Company;
 import com.liferay.portal.model.Image;
 import com.liferay.portal.model.PortletPreferences;
 import com.liferay.portal.model.User;
+import com.liferay.util.Base64;
+import com.liferay.util.Encryptor;
 import com.liferay.util.FileUtil;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.DomDriver;
@@ -65,6 +67,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipFile;
 import org.apache.commons.beanutils.BeanUtils;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.felix.framework.OSGIUtils;
 
 /**
@@ -127,8 +130,8 @@ public class ImportExportUtil {
     private List<File> relationshipXML = new ArrayList<File>();
     
     private static final String CHARSET = UtilMethods.getCharsetConfiguration();
-    private static final String SYSTEM_FOLDER_PATH = "/System folder";
-
+    private static final String SYSTEM_FOLDER_PATH = FolderAPI.SYSTEM_FOLDER_PARENT_PATH;
+    private static final String OLD_KEY_MD5="7665cb45cc988f86931bd15c34e0fa93";
     /**
 	 * Default class constructor. Sets the appropriate data structures that will
 	 * be needed to import the Demo data.
@@ -488,9 +491,8 @@ public class ImportExportUtil {
             // saving folder identifiers
             for(Identifier ident : folderIdents) {
             	if (!SYSTEM_FOLDER_PATH.equals(ident.getParentPath())) {
-            		// Lower-case all folder URLs
-            		ident.setParentPath(ident.getParentPath().toLowerCase());
-                	ident.setAssetName(ident.getAssetName().toLowerCase());
+            		ident.setParentPath(ident.getParentPath());
+                	ident.setAssetName(ident.getAssetName());
             	}
              Logger.info(this, "Importing folder path "+ident.getParentPath()+ident.getAssetName());
              APILocator.getIdentifierAPI().save(ident);
@@ -855,7 +857,7 @@ public class ImportExportUtil {
         }
 
         MaintenanceUtil.flushCache();
-        ReindexThread.startThread(Config.getIntProperty("REINDEX_THREAD_SLEEP", 500), Config.getIntProperty("REINDEX_THREAD_INIT_DELAY", 5000));
+        ReindexThread.startThread();
 
         ContentletAPI conAPI = APILocator.getContentletAPI();
         Logger.info(this, "Building Initial Index");
@@ -872,7 +874,7 @@ public class ImportExportUtil {
         conAPI.refreshAllContent();
         long recordsToIndex = 0;
         try {
-            recordsToIndex = APILocator.getDistributedJournalAPI().recordsLeftToIndexForServer();
+            recordsToIndex = APILocator.getReindexQueueAPI().recordsInQueue();
             Logger.info(this, "Records left to index : " + recordsToIndex);
         } catch (DotDataException e) {
             Logger.error(ImportExportUtil.class,e.getMessage() + " while trying to get the number of records left to index",e);
@@ -882,7 +884,7 @@ public class ImportExportUtil {
         while(recordsToIndex > 0){
             if(counter > 600){
                 try {
-                    Logger.info(this, "Records left to index : " + APILocator.getDistributedJournalAPI().recordsLeftToIndexForServer());
+                    Logger.info(this, "Records left to index : " + APILocator.getReindexQueueAPI().recordsInQueue());
                 } catch (DotDataException e) {
                     Logger.error(ImportExportUtil.class,e.getMessage() + " while trying to get the number of records left to index",e);
                 }
@@ -890,7 +892,7 @@ public class ImportExportUtil {
             }
             if(counter % 100 == 0){
                 try{
-                    recordsToIndex = APILocator.getDistributedJournalAPI().recordsLeftToIndexForServer();
+                    recordsToIndex = APILocator.getReindexQueueAPI().recordsInQueue();
                 } catch (DotDataException e) {
                     Logger.error(ImportExportUtil.class,e.getMessage() + " while trying to get the number of records left to index",e);
                 }
@@ -903,7 +905,6 @@ public class ImportExportUtil {
             counter++;
         }
         Logger.info(this, "Finished Building Initial Index");
-        ReindexThread.stopThread();
 
         CacheLocator.getCacheAdministrator().flushAll();
         MaintenanceUtil.deleteStaticFileStore();
@@ -1289,6 +1290,11 @@ public class ImportExportUtil {
             } else if (_importClass.equals(Company.class)) {
                 for (int j = 0; j < l.size(); j++) {
                     Company c = (Company)l.get(j);
+                    // github #16470 with support for custom starter.zips that have updated keys
+
+                    if(c.getKey()!=null && OLD_KEY_MD5.equals(new DigestUtils().md5Hex(c.getKey()))) {
+                        c.setKey(Base64.objectToString(Encryptor.generateKey()));
+                    }
                     try {
                         c.setModified(true);
                         CompanyManagerUtil.updateCompany(c);
@@ -1345,10 +1351,9 @@ public class ImportExportUtil {
                             if(id.substring(id.length()-2,id.length()).equalsIgnoreCase("id")){
                                 if(obj instanceof Identifier){
                                 	Identifier identifier = Identifier.class.cast(obj);
-                                	// Lower-case all URLs and asset names
                                 	if (!SYSTEM_FOLDER_PATH.equals(identifier.getParentPath())) {
-	                                	identifier.setParentPath(identifier.getParentPath().toLowerCase());
-	                                	identifier.setAssetName(identifier.getAssetName().toLowerCase());
+	                                	identifier.setParentPath(identifier.getParentPath());
+	                                	identifier.setAssetName(identifier.getAssetName());
                                 	}
                                     LocalTransaction.wrap(() -> APILocator.getIdentifierAPI().save(identifier));
                                 }else{

@@ -38,7 +38,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
-import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableList;
 import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -485,7 +485,7 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
 				.put("TeST", "test3")
 				.put("TeSt", "test4")
 				.put("Test", "test5")
-				.put("1 x 2/5", "1X25")
+				.put("1 x 2/5", "x25")
 				.put("Test5", "test51")
 				.put("SKU", "sku")
 				.put("Camel Case DOne Wrong", "camelCaseDoneWrong")

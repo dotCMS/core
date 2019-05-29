@@ -17,12 +17,15 @@
 <%@ page import="com.dotcms.contenttype.transform.contenttype.StructureTransformer" %>
 <%@ page import="com.dotmarketing.business.Layout" %>
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
+<%@ page import="com.dotmarketing.portlets.containers.business.FileAssetContainerUtil" %>
+<%@ page import="com.dotmarketing.business.web.WebAPILocator" %>
 
 <%
     String containerIdentifier = request.getParameter("container_id");
     User user = PortalUtil.getUser(request);
-    Container container = APILocator.getContainerAPI().getWorkingContainerById(containerIdentifier,
-            APILocator.getUserAPI().getSystemUser(), false);
+    Container container = FileAssetContainerUtil.getInstance().isFolderAssetContainerId(containerIdentifier)?
+            APILocator.getContainerAPI().getWorkingContainerByFolderPath(containerIdentifier, WebAPILocator.getHostWebAPI().getHost(request), APILocator.getUserAPI().getSystemUser(), false):
+            APILocator.getContainerAPI().getWorkingContainerById(containerIdentifier, APILocator.getUserAPI().getSystemUser(), false);
 
     List<ContentType> contentTypes = null;
     String baseTypeToAdd = request.getParameter("add");
@@ -35,7 +38,7 @@
         contentTypes = APILocator.getContainerAPI().getContentTypesInContainer(user, container);
     }
 
-    Layout contentLayout = APILocator.getLayoutAPI().findLayoutByName("Content");
+    Layout contentLayout = APILocator.getLayoutAPI().loadLayoutsForUser(user).get(0);
 
     String containerStructures = "[";
     Integer count = 1;

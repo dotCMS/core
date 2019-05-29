@@ -1,7 +1,17 @@
 package com.dotcms.rest.api.v1.content;
 
-import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.repackage.javax.ws.rs.core.Response.Status;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
@@ -15,22 +25,17 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest;
 import com.liferay.portal.model.User;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import static org.junit.Assert.*;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 public class ContentVersionResourceIntegrationTest extends BaseWorkflowIntegrationTest {
 
@@ -155,10 +160,43 @@ public class ContentVersionResourceIntegrationTest extends BaseWorkflowIntegrati
     @SuppressWarnings("unchecked")
     @Test
     public void test_find_multiple_inodes() throws DotDataException, DotSecurityException {
+
+        //Creating test data
+        final Contentlet testContentlet1 = createTestContentlet();
+        final Contentlet testContentlet2 = createTestContentlet();
+
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final Response response = versionResource.findVersions(request,  new EmptyHttpResponse(), "4e5acb67-3743-40f5-a207-8b8e6b63fa7b,a8fc0128-e25e-435b-95f1-364687e9665e", null, null, 10);
-        assertEquals(Status.OK.getStatusCode(), response.getStatus());
+        try {
+            final Response response = versionResource.findVersions(request,
+                    new EmptyHttpResponse(),
+                    String.format("%s,%s", testContentlet1.getInode(), testContentlet2.getInode()),
+                    null, null, 10);
+            assertEquals(Status.OK.getStatusCode(), response.getStatus());
+        } finally {
+            ContentletDataGen.remove(testContentlet1);
+            ContentletDataGen.remove(testContentlet2);
+        }
     }
 
+    /**
+     * Creates test Contentlets
+     */
+    private Contentlet createTestContentlet() throws DotDataException, DotSecurityException {
+
+        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+        final ContentType contentGenericType = contentTypeAPI.find("webPageContent");
+
+        final ContentletDataGen contentletDataGen = new ContentletDataGen(contentGenericType.id());
+        final Contentlet testContentlet = contentletDataGen
+                .setProperty("title", "TestContent_" + System.currentTimeMillis())
+                .setProperty("body", "TestBody_" + System.currentTimeMillis()).languageId(1)
+                .nextPersisted();
+
+        assertNotNull(testContentlet);
+        assertNotNull(testContentlet.getIdentifier());
+        assertNotNull(testContentlet.getInode());
+
+        return testContentlet;
+    }
 
 }

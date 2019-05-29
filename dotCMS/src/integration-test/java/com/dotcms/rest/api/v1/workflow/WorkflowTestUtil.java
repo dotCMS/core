@@ -1,8 +1,13 @@
 package com.dotcms.rest.api.v1.workflow;
 
 
+import static com.dotmarketing.business.Role.ADMINISTRATOR;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.workflow.form.WorkflowActionForm;
@@ -22,15 +27,19 @@ import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
 import com.dotmarketing.portlets.workflows.util.WorkflowSchemeImportExportObject;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
-import org.apache.commons.lang.RandomStringUtils;
-
-import javax.servlet.http.HttpServletRequest;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
-
-import static com.dotmarketing.business.Role.ADMINISTRATOR;
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.mock;
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.core.Response;
+import org.apache.commons.lang.RandomStringUtils;
 
 public abstract class WorkflowTestUtil {
 

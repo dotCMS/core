@@ -1,5 +1,9 @@
 package com.dotcms.rest.api.v1.contenttype;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.FieldVariable;
@@ -11,33 +15,29 @@ import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.request.MockSessionRequest;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.repackage.org.glassfish.jersey.internal.util.Base64;
 import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.util.UUIDUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-
-import static org.junit.Assert.*;
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.core.Response;
+import org.glassfish.jersey.internal.util.Base64;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 public class FieldVariableResourceTest {
 
 	private static final ObjectMapper mapper = new ObjectMapper();
 
-	private static final String typeName="fieldVariableResourceTest" + UUIDUtil.uuid();
+	private static final String typeName="fieldVariableResourceTest" + System.currentTimeMillis();
 	private static final String fieldName="name";
 
 	@BeforeClass

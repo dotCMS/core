@@ -248,7 +248,7 @@ public class LoginFactory {
                 //set personalization stuff on session
 				// ....
 
-        		SecurityLogger.logInfo(LoginFactory.class,"User " + userName + " has sucessfully login from IP: " + request.getRemoteAddr());
+        		SecurityLogger.logInfo(LoginFactory.class,"User " + userName + " has sucessfully logged in from IP: " + request.getRemoteAddr());
 
                 return true;
             }

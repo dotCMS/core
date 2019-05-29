@@ -1,5 +1,7 @@
 package com.liferay.portal.ejb;
 
+import static org.junit.Assert.assertTrue;
+
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -7,6 +9,7 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.UUIDUtil;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.UserFirstNameException;
@@ -93,4 +96,26 @@ public class UserLocalManagerTest {
             userManager.deleteUser(user.getUserId());
         }
     }
+    
+    @Test
+    public void test_user_id_is_UUID() throws DotDataException, SystemException, PortalException, DotSecurityException {
+
+        String email;
+
+        email = "user" + System.currentTimeMillis() + "@dotcms.com";
+
+
+        User user = APILocator.getUserAPI().createUser(null, email);
+        String userId = user.getUserId();
+
+        
+        assertTrue(userId.startsWith("user-"));
+        String uuidPart = userId.replaceAll("user-", "");
+        assertTrue(UUIDUtil.isUUID(uuidPart));
+
+    }
+    
+    
+    
+    
 }

@@ -4,10 +4,14 @@ import com.dotcms.api.system.event.*;
 import com.dotcms.api.system.event.message.builder.SystemConfirmationMessage;
 import com.dotcms.api.system.event.message.builder.SystemMessage;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
+import com.dotcms.business.expiring.ExpiringMap;
+import com.dotcms.business.expiring.ExpiringMapBuilder;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.ErrorEntity;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 
 import java.util.*;
 
@@ -18,6 +22,11 @@ import java.util.*;
 public class SystemMessageEventUtil {
 
     private final SystemEventsAPI systemEventsAPI;
+    private final ExpiringMap<Object, Object> systemMessagesExpiringMap =
+                    new ExpiringMapBuilder<>().build();
+
+
+    ///////////////////////
 
     @VisibleForTesting
     protected SystemMessageEventUtil(final SystemEventsAPI systemEventsAPI){
@@ -60,13 +69,13 @@ public class SystemMessageEventUtil {
 
     /**
      * Sends a Simple text event (RAW MESSAGE) based on the parameters
-     * @param message String a simple message string
+     * @param message Object the message
      * @param users   user or list of user you want to send the message (null or empty means, send the message to all users)
      * @param portletIds String array of portlet id that the message applies, could be null (null means all of them)
      *                   the concept of portlet basically means, if the user is working on a specific portlet when the message is delivered, the message will be showed to the user,
      *                   otherwise even if the message is for that particular user, if it is not in the portlet will be skipped. (note: this validation will happens on the client, Angular or whatever is the consumer)
      */
-    public void pushSimpleTextEvent (final String message, final List<String> users, final String... portletIds) {
+    public void pushSimpleTextEvent (final Object message, final List<String> users, final String... portletIds) {
 
         this.pushSimpleEvent (MessageType.SIMPLE_MESSAGE, message, users, portletIds);
     } // pushSimpleTextEvent.
@@ -246,15 +255,62 @@ public class SystemMessageEventUtil {
 
     ///**************
 
+    /**
+     * Similar to {@link #pushMessage(SystemMessage, List)} but if the resourceId is not null will avoid duplicates messages
+     * on Config.getLongProperty("dotcms.systemmessage.noduplicates.ttl", 3000) milliseconds (3 seconds by default)
+     * The "dotcms.systemmessage.noduplicates" property on the config will be true by default, that means duplicated messages will be discarted.
+     * @param resourceId {@link Object}
+     * @param message    {@link SystemMessage}
+     * @param users      {@link List}
+     */
+    public void pushMessage (final Object resourceId, final SystemMessage message, final List<String> users) {
+
+        if (Config.getBooleanProperty("dotcms.systemmessage.noduplicates", true) && null != resourceId) {
+
+            // if the message hasn't been sent in the last seconds.
+            if (!this.systemMessagesExpiringMap.containsKey(resourceId)) {
+
+                try {
+                    final SystemEvent systemEvent = new SystemEvent(SystemEventType.MESSAGE, this.createPayload(message, users));
+                    this.systemMessagesExpiringMap.put(resourceId, resourceId);
+                    this.systemEventsAPI.push(systemEvent);
+                } catch (DotDataException e) {
+
+                    this.systemMessagesExpiringMap.remove(resourceId);
+                    throw new CanNotPushSystemEventException(e);
+                }
+            } else {
+
+                Logger.debug(this, ()-> "We already sent a message in the last previous second, discarting a message for the resource id: " +
+                        resourceId + ", message: " + message);
+            }
+        } else {
+
+            this.pushMessage(message, users);
+        }
+    } // pushMessage.
+
     public void pushMessage (final SystemMessage message, final List<String> users) {
+
+            try {
+
+                final SystemEvent systemEvent = new SystemEvent(SystemEventType.MESSAGE, this.createPayload(message, users));
+                this.systemEventsAPI.push(systemEvent);
+            } catch (DotDataException e) {
+                throw new CanNotPushSystemEventException(e);
+            }
+    } // pushMessage.
+
+    public void pushLargeMessage (final Object message, final List<String> users) {
 
         try {
 
-            this.systemEventsAPI.push(new SystemEvent(SystemEventType.MESSAGE, this.createPayload(message, users)));
+            final SystemEvent systemEvent = new SystemEvent(SystemEventType.LARGE_MESSAGE, this.createPayload(message, users));
+            this.systemEventsAPI.push(systemEvent);
         } catch (DotDataException e) {
             throw new CanNotPushSystemEventException(e);
         }
-    } // pushSimpleTextEvent.
+    } // pushMessage.
 
     private Payload createPayload (final MessageType messageType,
                                    final Object message,
@@ -271,7 +327,7 @@ public class SystemMessageEventUtil {
         return this.createPayload(systemMessage, users);
     }
 
-    private Payload createPayload (final SystemMessage message,
+    private Payload createPayload (final Object message,
                                    final List<String> users) {
 
         final Visibility visibility = (null == users || users.isEmpty())  ? Visibility.GLOBAL : Visibility.USERS;

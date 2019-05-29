@@ -1,33 +1,29 @@
 package com.dotcms.content.elasticsearch.util;
 
 import com.google.common.base.CharMatcher;
-
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-
-import org.apache.commons.lang.StringUtils;
-
+import com.google.common.hash.Hashing;
+import java.nio.charset.Charset;
+import org.apache.lucene.queryparser.classic.QueryParser;
 
 public class ESUtils {
 
-	// Query util methods
-	@VisibleForTesting
-	static final String[] SPECIAL_CHARS = new String[] { "+", "-", "&&", "||", "!", "(", ")", "{", "}", "[", "]", "^", "\"", "?",
-			":", "\\" };
-
+	public final static String SHA_256 = "_sha256";
 
 	public static String escape(final String text) {
 
-		String escapedText;
+		final StringBuilder escapedText = new StringBuilder(QueryParser.escape(text));
 
-		if(CharMatcher.WHITESPACE.matchesAnyOf(text)) {
-			escapedText = "\"" +text + "\"";
-		} else {
-			escapedText = text;
-			for (int i = SPECIAL_CHARS.length - 1; i >= 0; i--) {
-				escapedText = StringUtils.replace(escapedText, SPECIAL_CHARS[i], "\\" + SPECIAL_CHARS[i]);
-			}
+		if(CharMatcher.whitespace().matchesAnyOf(text)) {
+			escapedText.insert(0,"\"").append("\"");
 		}
 
-		return escapedText;
+		return escapedText.toString();
+	}
+
+	public static String sha256(final String fieldName, final Object fieldValue,
+			final long languageId) {
+		return Hashing.sha256().hashString(fieldName + "_"
+				+ (fieldValue == null ? "" : fieldValue.toString()) + "_"
+				+ languageId, Charset.forName("UTF-8")).toString();
 	}
 }

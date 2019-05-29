@@ -1,5 +1,7 @@
 package com.dotcms.contenttype.test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -8,8 +10,6 @@ import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.request.MockSessionRequest;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.repackage.org.glassfish.jersey.internal.util.Base64;
 import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.api.v1.contenttype.ContentTypeForm;
 import com.dotcms.rest.api.v1.contenttype.ContentTypeResource;
@@ -19,19 +19,18 @@ import com.dotmarketing.util.UtilMethods;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
-import org.apache.commons.io.IOUtils;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
-import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-
-import static org.hamcrest.MatcherAssert.assertThat;
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.core.Response;
+import org.apache.commons.io.IOUtils;
+import org.glassfish.jersey.internal.util.Base64;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 @RunWith(DataProviderRunner.class)
 public class ContentTypeResourceTest extends ContentTypeBaseTest {

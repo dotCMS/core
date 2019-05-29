@@ -1,6 +1,5 @@
 package com.dotmarketing.portlets.structure.model;
 
-import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.util.CollectionsUtils;
@@ -118,10 +117,10 @@ public class ContentletRelationships
 			//Self-related case
 			//Evaluates if the field is used to list children or parents
 			//In case children are listed, parent records will be discarded and vice versa
-			if (relationship.getChildRelationName() != null && relationship.getChildRelationName()
-					.equals(fieldVar) && records.isHasParent()
-					|| relationship.getParentRelationName() != null && relationship.getParentRelationName()
-					.equals(fieldVar) && !records.isHasParent()) {
+			if ((relationship.getChildRelationName() != null && relationship.getChildRelationName()
+					.equals(fieldVar) && records.isHasParent())
+					|| (relationship.getParentRelationName() != null && relationship.getParentRelationName()
+					.equals(fieldVar) && !records.isHasParent())) {
 				return true;
 			}
 		}
@@ -133,17 +132,9 @@ public class ContentletRelationships
 	 */
 	public List<ContentletRelationshipRecords> getLegacyRelationshipsRecords() {
 
-		final ContentType contentType = contentlet.getContentType();
-
-		//Obtain field relationships
-		final List<ContentletRelationshipRecords> fieldRelationships = contentType.fields().stream()
-				.filter(field -> field instanceof RelationshipField)
-				.map(field -> getRelationshipsRecordsByField(field).get(0))
-				.collect(CollectionsUtils.toImmutableList());
-
 		//Filter legacy relationship records, which do not have a relationship field
 		return relationshipsRecords.stream()
-				.filter(record -> !fieldRelationships.contains(record))
+				.filter(record -> !record.getRelationship().isRelationshipField())
 				.collect(CollectionsUtils.toImmutableList());
 	}
 
@@ -179,7 +170,7 @@ public class ContentletRelationships
 		public ContentletRelationshipRecords(Relationship relationship, boolean hasParent) {
 			super();
 			this.relationship = relationship;
-			this.records = new ArrayList<Contentlet>();
+			this.records = new ArrayList<>();
 			this.hasParent = hasParent;
 		}
 

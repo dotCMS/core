@@ -1033,6 +1033,7 @@ create table identifier (
    asset_type varchar2(64),
    syspublish_date date,
    sysexpire_date date,
+   full_path_lc as ( CASE WHEN parent_path = 'System folder' THEN '/' ELSE  lower(concat(parent_path, asset_name)) END),
    primary key (id),
    unique (parent_path, asset_name, host_inode)
 );
@@ -2510,3 +2511,24 @@ CREATE INDEX idx_system_event ON system_event (created);
 
 --Content Types improvement
 CREATE INDEX idx_lower_structure_name ON structure (LOWER(velocity_var_name));
+
+
+CREATE TABLE api_token_issued(
+    token_id varchar(255) NOT NULL, 
+    token_userid varchar(255) NOT NULL, 
+    issue_date TIMESTAMP NOT NULL, 
+    expire_date TIMESTAMP NOT NULL, 
+    requested_by_userid  varchar(255) NOT NULL, 
+    requested_by_ip  varchar(255) NOT NULL, 
+    revoke_date TIMESTAMP DEFAULT NULL, 
+    allowed_from  varchar(255) , 
+    issuer  varchar(255) , 
+    claims  NCLOB , 
+    mod_date  TIMESTAMP NOT NULL, 
+    PRIMARY KEY (token_id)
+ );
+
+create index idx_api_token_issued_user ON api_token_issued (token_userid);
+
+-- Case sensitive unique asset-name,parent_path for a given host
+CREATE UNIQUE INDEX idx_ident_uniq_asset_name on identifier (full_path_lc,host_inode);

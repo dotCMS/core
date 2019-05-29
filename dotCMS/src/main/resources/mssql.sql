@@ -1265,6 +1265,7 @@ create table identifier (
    asset_type NVARCHAR(64) null,
    syspublish_date datetime null,
    sysexpire_date datetime null,
+   full_path_lc  as CASE WHEN parent_path = 'System folder' THEN '/' ELSE LOWER(CONCAT(parent_path, asset_name)) END,
    primary key (id),
    unique (parent_path, asset_name, host_inode)
 );
@@ -2311,21 +2312,25 @@ BEGIN
 END;
 
 alter table contentlet_version_info add constraint fk_contentlet_version_info_identifier foreign key (identifier) references identifier(id) on delete cascade;
+create index cvi_identifier_index on contentlet_version_info (identifier);
 alter table container_version_info  add constraint fk_container_version_info_identifier  foreign key (identifier) references identifier(id);
 alter table template_version_info   add constraint fk_template_version_info_identifier   foreign key (identifier) references identifier(id);
 alter table link_version_info       add constraint fk_link_version_info_identifier       foreign key (identifier) references identifier(id);
 
 alter table contentlet_version_info add constraint fk_contentlet_version_info_working foreign key (working_inode) references contentlet(inode);
+create index cvi_working_inode_index on contentlet_version_info (working_inode);
 alter table container_version_info  add constraint fk_container_version_info_working  foreign key (working_inode) references dot_containers(inode);
 alter table template_version_info   add constraint fk_template_version_info_working   foreign key (working_inode) references template(inode);
 alter table link_version_info       add constraint fk_link_version_info_working       foreign key (working_inode) references links(inode);
 
 alter table contentlet_version_info add constraint fk_contentlet_version_info_live foreign key (live_inode) references contentlet(inode);
+create index cvi_live_inode_index on contentlet_version_info (live_inode);
 alter table container_version_info  add constraint fk_container_version_info_live  foreign key (live_inode) references dot_containers(inode);
 alter table template_version_info   add constraint fk_template_version_info_live   foreign key (live_inode) references template(inode);
 alter table link_version_info       add constraint fk_link_version_info_live       foreign key (live_inode) references links(inode);
 
 alter table contentlet_version_info add constraint fk_contentlet_version_info_lang foreign key (lang) references language(id);
+create index cvi_lang_index on contentlet_version_info (lang);
 
 alter table folder add constraint fk_folder_file_structure_type foreign key(default_file_type) references structure(inode);
 
@@ -2422,6 +2427,7 @@ ALTER TABLE workflow_task ADD CONSTRAINT FK_workflow_step FOREIGN KEY (status) R
 alter table workflow_step add constraint fk_escalation_action foreign key (escalation_action) references workflow_action(id);
 
 alter table contentlet_version_info add constraint FK_con_ver_lockedby foreign key (locked_by) references user_(userid);
+create index cvi_locked_by_index on contentlet_version_info (locked_by);
 alter table container_version_info  add constraint FK_tainer_ver_info_lockedby  foreign key (locked_by) references user_(userid);
 alter table template_version_info   add constraint FK_temp_ver_info_lockedby   foreign key (locked_by) references user_(userid);
 alter table link_version_info       add constraint FK_link_ver_info_lockedby       foreign key (locked_by) references user_(userid);
@@ -2650,3 +2656,22 @@ CREATE TABLE system_event (
 ALTER TABLE system_event ADD CONSTRAINT pk_system_event PRIMARY KEY (identifier);
 CREATE INDEX idx_system_event ON system_event (created);
 
+
+CREATE TABLE api_token_issued(
+    token_id NVARCHAR(255) NOT NULL, 
+    token_userid NVARCHAR(255) NOT NULL, 
+    issue_date datetime NOT NULL, 
+    expire_date datetime NOT NULL, 
+    requested_by_userid  NVARCHAR(255) NOT NULL, 
+    requested_by_ip  NVARCHAR(255) NOT NULL, 
+    revoke_date datetime DEFAULT NULL, 
+    allowed_from  NVARCHAR(255) , 
+    issuer  NVARCHAR(255) , 
+    claims  NVARCHAR(MAX) , 
+    mod_date  datetime NOT NULL, 
+    PRIMARY KEY (token_id)
+ );
+
+create index idx_api_token_issued_user ON api_token_issued (token_userid);
+
+CREATE UNIQUE INDEX idx_ident_uniq_asset_name on identifier (full_path_lc,host_inode);

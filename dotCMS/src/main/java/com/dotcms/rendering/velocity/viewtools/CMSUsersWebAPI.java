@@ -1,6 +1,6 @@
 package com.dotcms.rendering.velocity.viewtools;
 
-import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableList;
 import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.beans.ChallengeQuestion;
 import com.dotmarketing.beans.UserProxy;
@@ -203,14 +203,8 @@ public class CMSUsersWebAPI implements ViewTool {
 	 * @return
 	 */
 	public User getLoggedInUser(HttpServletRequest request) {
-		User loggedInUser = null;
-		try {
-			loggedInUser = PortalUtil.getUser(request);//back-end user
-		} catch (PortalException e) {
-			Logger.error(CMSUsersWebAPI.class,e.getMessage(), e);
-		} catch (SystemException e) {
-			Logger.error(CMSUsersWebAPI.class,e.getMessage(), e);
-		}
+		User loggedInUser = PortalUtil.getUser(request);//back-end user
+
 		if(!UtilMethods.isSet(loggedInUser)){
 			HttpSession session = request.getSession(false);
 			if (session != null) {
