@@ -2,23 +2,26 @@ buildscript {
     repositories {
         
         maven { url "http://repo.dotcms.com/artifactory/libs-release" }
+        maven { url "https://s3-eu-west-1.amazonaws.com/gskillz-maven-repo" }  // replace this when the official pluig gets fixed for gradle5
         jcenter()
     }
     dependencies {
         classpath 'org.ajoberstar:grgit:1.7.0'
         classpath 'org.unbroken-dome.gradle-plugins:gradle-testsets-plugin:1.4.3'
         classpath 'com.dotcms.lib:dot.commons-io:2.0.1_2'
-        classpath 'nl.eveoh:gradle-aspectj:1.6'
+        //classpath "gradle.plugin.aspectj:gradle-aspectj:0.1.6" // todo: as soon as the official plugins gets fix replace this
+        classpath "aspectjfork:gradle:1.1-SNAPSHOT"
     }
 }
 
 plugins {
     id "com.moowork.node" version "1.2.0"
     id "com.palantir.docker" version "0.17.2"  // reference:  https://github.com/palantir/gradle-docker
+    id 'org.unbroken-dome.test-sets' version '2.1.1'
 }
 
 project.ext {
-    aspectjVersion = '1.8.10'
+    aspectjVersion = '1.9.3'
 }
 
 
@@ -61,7 +64,7 @@ configurations.all({
 
 // Apply the java plugin to add support for Java.
 apply plugin: 'java'
-apply plugin: 'aspectj'
+apply plugin: 'gradle.aspectjfork'
 apply plugin: 'war'
 apply plugin: 'org.unbroken-dome.test-sets'
 apply plugin: 'project-report' /*For gradle dependencies: ./gradlew htmlDependencyReport*/
@@ -230,9 +233,12 @@ def tomcatDistBase = "$distLocation/$tomcatDistInstallLocation-$tomcatInstallVer
 def dotcmsDistBase = "../$tomcatDistInstallLocation-$tomcatInstallVersion"
 
 // Compile Java.
+targetCompatibility = JavaVersion.VERSION_1_8
+sourceCompatibility = JavaVersion.VERSION_1_8
+
 compileJava {
-    targetCompatibility = 1.8
-    sourceCompatibility = 1.8
+    targetCompatibility = '1.8'
+    sourceCompatibility = '1.8'
     options.incremental = true
 }
 
@@ -281,7 +287,7 @@ war {
 
     }
 
-    classpath = classpath - sourceSets.main.output.classesDir
+    classpath = classpath - sourceSets.main.output.classesDirs
 
     if (gradle.startParameter.taskNames.contains("deployWarTomcatTests")) {
         classpath = configurations.testRuntime
@@ -558,7 +564,7 @@ task immutables() {
             def artefactBuild = project.tasks.create([name: "artefactBuild_$gradleTask", type: GradleBuild])
             artefactBuild.buildFile = project.file("immutables.gradle")
             artefactBuild.tasks = [gradleTask]
-            artefactBuild.execute()
+            artefactBuild.build()
         } else {
             println "Immutables already generated, skipping generation... (Delete $generatedSourceFolder folder in order to regenerate them)\n"
         }
