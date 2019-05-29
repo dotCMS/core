@@ -14,6 +14,7 @@ import javax.servlet.ServletException;
 import com.dotcms.filters.interceptor.AbstractWebInterceptorSupportFilter;
 import com.dotcms.filters.interceptor.WebInterceptorDelegate;
 import com.dotcms.filters.interceptor.dotcms.DefaultBackEndLoginRequiredWebInterceptor;
+import com.dotcms.filters.interceptor.dotcms.XSSPreventionWebInterceptor;
 
 /**
  * This Filter is in charge if checking if the user is logged in or not.
@@ -39,6 +40,8 @@ public class LoginRequiredFilter extends AbstractWebInterceptorSupportFilter {
 
 
         delegate.add(new DefaultBackEndLoginRequiredWebInterceptor());
+        
+        delegate.add(new XSSPreventionWebInterceptor());
 
     } // addDefaultInterceptors.
 
