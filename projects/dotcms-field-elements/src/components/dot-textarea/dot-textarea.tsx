@@ -26,32 +26,39 @@ export class DotTextareaComponent {
     @Element() el: HTMLElement;
 
     /** Value specifies the value of the <textarea> element */
-    @Prop({ mutable: true })
+    @Prop({ mutable: true, reflectToAttr: true })
     value = '';
 
     /** Name that will be used as ID */
-    @Prop() name = '';
+    @Prop({ reflectToAttr: true })
+    name = '';
 
     /** (optional) Text to be rendered next to <textarea> element */
-    @Prop() label = '';
+    @Prop({ reflectToAttr: true })
+    label = '';
 
     /** (optional) Hint text that suggest a clue of the field */
-    @Prop() hint = '';
+    @Prop({ reflectToAttr: true })
+    hint = '';
 
     /** (optional) Determine if it is mandatory */
-    @Prop() required = false;
+    @Prop({ reflectToAttr: true })
+    required = false;
 
     /** (optional) Text that be shown when required is set and condition not met */
-    @Prop() requiredMessage = '';
+    @Prop({ reflectToAttr: true })
+    requiredMessage = 'This field is required';
 
     /** (optional) Text that be shown when the Regular Expression condition not met */
-    @Prop() validationMessage = '';
+    @Prop({ reflectToAttr: true })
+    validationMessage = "The field doesn't comply with the specified format";
 
     /** (optional) Disables field's interaction */
-    @Prop() disabled = false;
+    @Prop({ reflectToAttr: true })
+    disabled = false;
 
     /** (optional) Regular expresion that is checked against the value to determine if is valid  */
-    @Prop({ mutable: true })
+    @Prop({ mutable: true, reflectToAttr: true })
     regexCheck = '';
 
     @State() status: DotFieldStatus = getOriginalStatus();
@@ -143,9 +150,7 @@ export class DotTextareaComponent {
 
     private getErrorMessage(): string {
         return this.isRegexValid()
-            ? this.isValid()
-                ? ''
-                : this.requiredMessage
+            ? this.isValid() ? '' : this.requiredMessage
             : this.validationMessage;
     }
 

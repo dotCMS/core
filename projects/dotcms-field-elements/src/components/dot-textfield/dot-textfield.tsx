@@ -59,7 +59,7 @@ export class DotTextfieldComponent {
     disabled = false;
 
     /** (optional) Regular expresion that is checked against the value to determine if is valid  */
-    @Prop({ mutable: true })
+    @Prop({ mutable: true, reflectToAttr: true })
     regexCheck = '';
 
     /** type specifies the type of <input> element to display */
