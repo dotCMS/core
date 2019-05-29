@@ -45,7 +45,7 @@ export class DotSelectComponent {
     @Prop({ reflectToAttr: true }) required = false;
 
     /** (optional) Text that will be shown when required is set and condition is not met */
-    @Prop() requiredMessage = `This field is required`;
+    @Prop({ reflectToAttr: true }) requiredMessage = `This field is required`;
 
     /** Value set from the dropdown option */
     @Prop({ mutable: true, reflectToAttr: true }) value = '';
