@@ -2,13 +2,14 @@ package com.dotcms.rest.api.v1.contenttype;
 
 import static com.dotcms.rest.api.v1.contenttype.ContentTypeResourceTest.getHttpRequest;
 
-import javax.ws.rs.core.Response;
+import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.RestUtilTest;
 import com.dotcms.util.IntegrationTestInitService;
 import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.core.Response;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -535,7 +536,7 @@ public class ContentTypeResourceIssue15124Test {
         String identifier = null;
 
         try {
-            final Response createTypeResponse = resource.createType(request,
+            final Response createTypeResponse = resource.createType(request,  new EmptyHttpResponse(),
                     contentTypeFormDeserialize.buildForm(JSON_OFFENDING_CONTENT_TYPE_CREATE));
             RestUtilTest.verifySuccessResponse(createTypeResponse);
 
@@ -545,13 +546,13 @@ public class ContentTypeResourceIssue15124Test {
 
             identifier = (String)resultMap.get("id");
             final HttpServletRequest request2 = getHttpRequest();
-            final Response getTypeResponse = resource.getType(identifier, request2);
+            final Response getTypeResponse = resource.getType(identifier, request2,  new EmptyHttpResponse());
             RestUtilTest.verifySuccessResponse(getTypeResponse);
 
         }finally{
             if(null != identifier){
                 resource.deleteType(
-                        identifier, getHttpRequest()
+                        identifier, getHttpRequest(),  new EmptyHttpResponse()
                 );
             }
         }
