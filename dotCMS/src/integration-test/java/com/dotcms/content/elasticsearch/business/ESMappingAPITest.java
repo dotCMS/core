@@ -206,14 +206,17 @@ public class ESMappingAPITest {
                     CollectionsUtils.map(relationship, CollectionsUtils.list(childContentlet1, childContentlet2)),
                     null, user, false);
 
-            esMappingAPI.loadRelationshipFields(parentContentlet, esMap, new StringWriter());
+            final StringWriter catchAllWriter = new StringWriter();
+            esMappingAPI.loadRelationshipFields(parentContentlet, esMap, catchAllWriter);
 
             assertNotNull(esMap);
+            assertNotNull(catchAllWriter);
 
             final List<String> expectedResults = CollectionsUtils
                     .list(childContentlet1.getIdentifier(), childContentlet2.getIdentifier());
 
-            validateRelationshipIndex(esMap, relationship.getRelationTypeValue(), expectedResults);
+            validateRelationshipIndex(esMap, relationship.getRelationTypeValue(), expectedResults,
+                    catchAllWriter.toString());
 
         } finally {
             if (parentContentType != null && parentContentType.id() != null) {
@@ -275,11 +278,13 @@ public class ESMappingAPITest {
 
             assertTrue(esMap.isEmpty());
 
-            esMappingAPI.loadRelationshipFields(parentContentlet, esMap, new StringWriter());
+            final StringWriter catchAll = new StringWriter();
+            esMappingAPI.loadRelationshipFields(parentContentlet, esMap, catchAll);
 
             final List<String> expectedResults = CollectionsUtils.list(childContentlet.getIdentifier());
 
-            validateRelationshipIndex(esMap, relationship.getRelationTypeValue(), expectedResults);
+            validateRelationshipIndex(esMap, relationship.getRelationTypeValue(), expectedResults,
+                    catchAll.toString());
 
         } finally {
             if (parentContentType != null && parentContentType.id() != null) {
@@ -294,12 +299,14 @@ public class ESMappingAPITest {
     }
 
     private void validateRelationshipIndex(final Map<String, Object> esMap, final String keyName,
-            final List<String> identifiers) {
+            final List<String> identifiers, final String catchAll) {
 
         final List results = List.class.cast(esMap.get(keyName));
         assertEquals(identifiers.size(), results.size());
 
         assertFalse(Collections.disjoint(results, identifiers));
+
+        assertTrue(identifiers.stream().allMatch(identifier -> catchAll.contains(identifier)));
     }
 
     private ContentType createAndSaveSimpleContentType(final String name)
