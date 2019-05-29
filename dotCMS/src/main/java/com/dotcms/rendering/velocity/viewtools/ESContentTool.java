@@ -46,12 +46,7 @@ public class ESContentTool implements ViewTool {
 		this.req = ((ViewContext) initData).getRequest();
 
 		mode = PageMode.get(this.req);
-		try {
-			user = userAPI.getLoggedInFrontendUser(req);
-		} catch (Exception e) {
-			Logger.error(this, "Error finding the logged in user", e);
-		}
-
+		user = getUser(req);
 
 		try{
 			this.currentHost = WebAPILocator.getHostWebAPI().getCurrentHost(req);

@@ -69,13 +69,13 @@ public class SystemMessageEventUtil {
 
     /**
      * Sends a Simple text event (RAW MESSAGE) based on the parameters
-     * @param message String a simple message string
+     * @param message Object the message
      * @param users   user or list of user you want to send the message (null or empty means, send the message to all users)
      * @param portletIds String array of portlet id that the message applies, could be null (null means all of them)
      *                   the concept of portlet basically means, if the user is working on a specific portlet when the message is delivered, the message will be showed to the user,
      *                   otherwise even if the message is for that particular user, if it is not in the portlet will be skipped. (note: this validation will happens on the client, Angular or whatever is the consumer)
      */
-    public void pushSimpleTextEvent (final String message, final List<String> users, final String... portletIds) {
+    public void pushSimpleTextEvent (final Object message, final List<String> users, final String... portletIds) {
 
         this.pushSimpleEvent (MessageType.SIMPLE_MESSAGE, message, users, portletIds);
     } // pushSimpleTextEvent.
@@ -301,6 +301,17 @@ public class SystemMessageEventUtil {
             }
     } // pushMessage.
 
+    public void pushLargeMessage (final Object message, final List<String> users) {
+
+        try {
+
+            final SystemEvent systemEvent = new SystemEvent(SystemEventType.LARGE_MESSAGE, this.createPayload(message, users));
+            this.systemEventsAPI.push(systemEvent);
+        } catch (DotDataException e) {
+            throw new CanNotPushSystemEventException(e);
+        }
+    } // pushMessage.
+
     private Payload createPayload (final MessageType messageType,
                                    final Object message,
                                    final List<String> users,
@@ -316,7 +327,7 @@ public class SystemMessageEventUtil {
         return this.createPayload(systemMessage, users);
     }
 
-    private Payload createPayload (final SystemMessage message,
+    private Payload createPayload (final Object message,
                                    final List<String> users) {
 
         final Visibility visibility = (null == users || users.isEmpty())  ? Visibility.GLOBAL : Visibility.USERS;

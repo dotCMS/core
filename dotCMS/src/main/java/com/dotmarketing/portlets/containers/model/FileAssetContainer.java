@@ -23,11 +23,9 @@ import java.util.Map;
 public class FileAssetContainer extends Container {
 
     @JsonIgnore
-    @com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore
     private transient final Map<String, Object> metaDataMap;
 
     @JsonIgnore
-    @com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore
     private transient final Contentlet contentlet = new Contentlet();
 
     private long languageId;
@@ -41,11 +39,9 @@ public class FileAssetContainer extends Container {
     }
 
     @JsonIgnore
-    @com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore
     private transient FileAsset postLoopAsset = null;
 
     @JsonIgnore
-    @com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore
     public FileAsset getPostLoopAsset() {
         return postLoopAsset;
     }
@@ -55,11 +51,9 @@ public class FileAssetContainer extends Container {
     }
 
     @JsonIgnore
-    @com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore
     private transient FileAsset preLoopAsset = null;
 
     @JsonIgnore
-    @com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore
     public FileAsset getPreLoopAsset() {
         return preLoopAsset;
     }
@@ -70,11 +64,9 @@ public class FileAssetContainer extends Container {
 
     /////
     @JsonIgnore
-    @com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore
     private transient List<FileAsset> containerStructuresAssets = Collections.emptyList();
 
     @JsonIgnore
-    @com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore
     public List<FileAsset> getContainerStructuresAssets() {
         return containerStructuresAssets;
     }
@@ -89,7 +81,6 @@ public class FileAssetContainer extends Container {
     }
 
     @JsonIgnore
-    @com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore
     public Map<String, Object> getMetaDataMap() {
         return metaDataMap;
     }

@@ -11,8 +11,8 @@ import java.util.List;
 
 
 import com.dotcms.enterprise.rules.RulesAPI;
-import com.dotcms.repackage.com.fasterxml.jackson.databind.DeserializationFeature;
-import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Ruleable;
 import com.dotmarketing.exception.DotDataException;

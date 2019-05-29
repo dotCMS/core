@@ -1,17 +1,17 @@
 package com.dotcms.rest;
 
-import com.dotcms.repackage.com.fasterxml.jackson.core.JsonProcessingException;
-import com.dotcms.repackage.com.fasterxml.jackson.databind.JsonNode;
-import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
-import com.dotcms.repackage.com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.dotcms.repackage.com.fasterxml.jackson.databind.node.ObjectNode;
-import com.dotcms.repackage.javax.ws.rs.Consumes;
-import com.dotcms.repackage.javax.ws.rs.PUT;
-import com.dotcms.repackage.javax.ws.rs.Path;
-import com.dotcms.repackage.javax.ws.rs.Produces;
-import com.dotcms.repackage.javax.ws.rs.core.Context;
-import com.dotcms.repackage.javax.ws.rs.core.MediaType;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotmarketing.business.APILocator;
@@ -29,6 +29,7 @@ import com.liferay.portal.model.User;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 /**
@@ -52,7 +53,7 @@ public class WorkflowResource {
 	@Path("/fire/{params:.*}")
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
-	public Response fireWorkflow(@Context HttpServletRequest request,
+	public Response fireWorkflow(@Context HttpServletRequest request, @Context final HttpServletResponse response,
 			String json) throws JsonProcessingException, IOException, DotDataException {
 		ObjectMapper mapper = new ObjectMapper();
 		JsonNode jsonParams = mapper.readTree(json);
@@ -71,7 +72,7 @@ public class WorkflowResource {
                 whereToSend = null,
                 forcePush = null;
 
-        InitDataObject initData = webResource.init(null, true, request, false, null);
+        InitDataObject initData = webResource.init(null, request, response, false, null);
 
 		if (jsonParams.has(RESTParams.CALLBACK.getValue())) {
 			callback = jsonParams.get(RESTParams.CALLBACK.getValue()).asText();

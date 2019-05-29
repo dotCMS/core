@@ -1,7 +1,7 @@
 package com.dotmarketing.servlets;
 
-import com.dotcms.repackage.com.fasterxml.jackson.databind.DeserializationFeature;
-import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;

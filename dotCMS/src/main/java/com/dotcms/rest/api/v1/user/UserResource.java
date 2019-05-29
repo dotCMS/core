@@ -1,24 +1,11 @@
 package com.dotcms.rest.api.v1.user;
 
-import static com.dotcms.util.CollectionsUtils.getMapValue;
-import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
-
-import java.io.Serializable;
-import java.util.Collections;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.javax.ws.rs.*;
-import com.dotcms.repackage.javax.ws.rs.core.Context;
-import com.dotcms.repackage.javax.ws.rs.core.MediaType;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
+import javax.ws.rs.*;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.*;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.authentication.IncorrectPasswordException;
@@ -37,6 +24,17 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.LocaleUtil;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import java.io.Serializable;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+
+import static com.dotcms.util.CollectionsUtils.*;
 
 /**
  * This end-point provides access to information associated to dotCMS users.
@@ -82,9 +80,9 @@ public class UserResource implements Serializable {
     @Path("/current")
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public RestUser self(@Context HttpServletRequest request) {
+    public RestUser self(@Context HttpServletRequest request, final @Context HttpServletResponse response) {
 
-        final User user = webResource.init(true, request, true).getUser();
+        final User user = webResource.init(request, response, true).getUser();
         final RestUser.Builder currentUser = new RestUser.Builder();
 
         if(user != null) {
@@ -108,7 +106,7 @@ public class UserResource implements Serializable {
 
     /**
      * 
-     * @param request
+     * @param httpServletRequest
      * @param updateUserForm
      * @return
      * @throws Exception
@@ -118,14 +116,14 @@ public class UserResource implements Serializable {
     @Path("/current")
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response update(@Context final HttpServletRequest request,
+    public final Response update(@Context final HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse,
                                  final UpdateUserForm updateUserForm) throws Exception {
 
-        final User modUser = webResource.init(true, request, true).getUser();
+        final User modUser = webResource.init(httpServletRequest, httpServletResponse,true).getUser();
         Response response = null;
         final String date = DateUtil.getCurrentDate();
         final User userToUpdated;
-        Locale locale = LocaleUtil.getLocale(request);
+        Locale locale = LocaleUtil.getLocale(httpServletRequest);
         Locale systemLocale = this.userAPI.getSystemUser().getLocale();
         Map<String, Object> userMap = Collections.EMPTY_MAP;
 
@@ -138,7 +136,7 @@ public class UserResource implements Serializable {
                 locale = modUser.getLocale();
             }
 
-			userToUpdated = this.helper.updateUser(updateUserForm, modUser, request, locale);
+			userToUpdated = this.helper.updateUser(updateUserForm, modUser, httpServletRequest, locale);
             this.helper.log("User Updated", "Date: " + date + "; "+ "User:" + modUser.getUserId());
 
 			boolean reAuthenticationRequired =  null != updateUserForm.getNewPassword();
@@ -232,8 +230,8 @@ public class UserResource implements Serializable {
 	@Path("/filter/{params:.*}")
 	@NoCache
 	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
-	public Response filter(@Context final HttpServletRequest request, @PathParam("params") final String params) {
-		final InitDataObject initData = webResource.init(params, true, request, true, null);
+	public Response filter(@Context final HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("params") final String params) {
+		final InitDataObject initData = webResource.init(params, request, response, true, null);
 		final Map<String, String> urlParams = initData.getParamsMap();
 		Map<String, Object> userList = null;
 		try {
@@ -286,11 +284,11 @@ public class UserResource implements Serializable {
 	@JSONP
 	@NoCache
 	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
-	public final Response loginAs(@Context final HttpServletRequest request, final LoginAsForm loginAsForm) throws Exception {
+	public final Response loginAs(@Context final HttpServletRequest request, @Context final HttpServletResponse httpResponse, final LoginAsForm loginAsForm) throws Exception {
 		final String loginAsUserId = loginAsForm.getUserId();
 		final String loginAsUserPwd = loginAsForm.getPassword();
 
-		InitDataObject initData = webResource.init(loginAsUserId, loginAsUserPwd,true, request,
+		final InitDataObject initData = webResource.init(loginAsUserId, loginAsUserPwd, request, httpResponse,
 				true, null);
 		final String serverName = request.getServerName();
 		final User currentUser = initData.getUser();
@@ -370,7 +368,7 @@ public class UserResource implements Serializable {
 	 * http://localhost:8080/api/v1/users/logoutas
 	 * </pre>
 	 * 
-	 * @param request
+	 * @param httpServletRequest
 	 *            - The {@link HttpServletRequest} object.
 	 * @return A {@link Response} containing the status of the operation. This
 	 *         will probably require a page refresh.
@@ -380,18 +378,18 @@ public class UserResource implements Serializable {
 	@JSONP
 	@NoCache
 	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
-	public final Response logoutAs(@Context final HttpServletRequest request) {
-		webResource.init(null, true, request, true, null);
-		final String serverName = request.getServerName();
+	public final Response logoutAs(@Context final HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse) {
+		webResource.init(null, httpServletRequest, httpServletResponse, true, null);
+		final String serverName = httpServletRequest.getServerName();
 		String principalUserId = null;
-		HttpSession session = request.getSession();
+		HttpSession session = httpServletRequest.getSession();
 		if (session.getAttribute(WebKeys.PRINCIPAL_USER_ID) != null) {
-			principalUserId = request.getSession().getAttribute(WebKeys.PRINCIPAL_USER_ID).toString();
+			principalUserId = httpServletRequest.getSession().getAttribute(WebKeys.PRINCIPAL_USER_ID).toString();
 		}
 		User currentLoginAsUser = new User();
 		Response response = null;
 		try {
-			currentLoginAsUser = PortalUtil.getUser(request);
+			currentLoginAsUser = PortalUtil.getUser(httpServletRequest);
 			Map<String, Object> sessionData = this.helper.doLogoutAs(principalUserId, currentLoginAsUser, serverName);
 			session.setAttribute(WebKeys.USER_ID, principalUserId);
 			session.removeAttribute(WebKeys.PRINCIPAL_USER_ID);
@@ -402,12 +400,12 @@ public class UserResource implements Serializable {
 		} catch (DotSecurityException e) {
 			SecurityLogger.logInfo(UserResource.class,
 					"An attempt to logout as a different user was made by user ID ("
-							+ currentLoginAsUser.getUserId() + "). Remote IP: " + request.getRemoteAddr());
+							+ currentLoginAsUser.getUserId() + "). Remote IP: " + httpServletRequest.getRemoteAddr());
 			return ExceptionMapperUtil.createResponse(e, Response.Status.BAD_REQUEST);
 		} catch (DotDataException e) {
 			SecurityLogger.logInfo(UserResource.class,
 					"An attempt to logout as a different user was made by user ID ("
-							+ currentLoginAsUser.getUserId() + "). Remote IP: " + request.getRemoteAddr());
+							+ currentLoginAsUser.getUserId() + "). Remote IP: " + httpServletRequest.getRemoteAddr());
 			return ExceptionMapperUtil.createResponse(e, Response.Status.BAD_REQUEST);
 		} catch (Exception e) {
 			// In case of unknown error, so we report it as a 500
@@ -417,7 +415,7 @@ public class UserResource implements Serializable {
 		}
 		SecurityLogger.logInfo(UserResource.class,
 				"User (" + principalUserId + ") has sucessfully logged out as (" 
-		        + currentLoginAsUser.getUserId() + "). Remote IP: " + request.getRemoteAddr());
+		        + currentLoginAsUser.getUserId() + "). Remote IP: " + httpServletRequest.getRemoteAddr());
 		return response;
 	}
 
@@ -448,11 +446,11 @@ public class UserResource implements Serializable {
 	@NoCache
 	@Deprecated
 	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
-	public final Response loginAsData(@Context final HttpServletRequest request, @QueryParam("filter") String filter,
+	public final Response loginAsData(@Context final HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, @QueryParam("filter") String filter,
 			@QueryParam("includeUsersCount") boolean includeUsersCount) {
 		Response response = null;
 		try {
-			InitDataObject initData = webResource.init(null, true, request, true, null);
+			InitDataObject initData = webResource.init(null, httpServletRequest, httpServletResponse, true, null);
 			User currentUser = initData.getUser();
 
 			response = Response.ok(this.helper.getLoginAsUsers(currentUser, filter, includeUsersCount)).build();

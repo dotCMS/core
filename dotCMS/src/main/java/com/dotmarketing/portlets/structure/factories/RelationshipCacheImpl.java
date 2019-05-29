@@ -5,7 +5,7 @@ import java.util.Collections;
 import java.util.List;
 
 import com.dotcms.contenttype.model.type.ContentTypeIf;
-import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableList;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;

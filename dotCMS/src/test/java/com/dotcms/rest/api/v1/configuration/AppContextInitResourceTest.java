@@ -8,7 +8,8 @@ import javax.servlet.http.HttpServletRequest;
 
 import com.dotcms.UnitTestBase;
 import com.dotcms.cms.login.LoginServiceAPI;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.core.Response;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.RestUtilTest;
 import com.dotcms.rest.api.v1.menu.Menu;
@@ -47,12 +48,13 @@ public class AppContextInitResourceTest extends UnitTestBase {
 		Map<String, Object> configData = mock(Map.class);
 
 		HttpServletRequest mockHttpRequest = RestUtilTest.getMockHttpRequest();
+		final HttpServletResponse httpServletResponse  = mock(HttpServletResponse.class);
 		LoginAsAPI loginAsAPI = mock( LoginAsAPI.class );
 
 		MenuResource menuResource = mock(MenuResource.class);
 		ConfigurationHelper configurationHelper = mock(ConfigurationHelper.class);
 
-		when(menuResource.getMenus( mockHttpRequest )).thenReturn(
+		when(menuResource.getMenus( mockHttpRequest, httpServletResponse )).thenReturn(
 				Response.ok(new ResponseEntityView(menuData)).build() );
 
 		when(configurationHelper.getConfigProperties( mockHttpRequest )).thenReturn(configData);

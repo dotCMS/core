@@ -5,7 +5,7 @@ import java.util.Date;
 import java.util.Objects;
 
 
-import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.dotmarketing.util.UtilMethods;
 
 public class WorkflowStep implements Serializable {

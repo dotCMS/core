@@ -1,6 +1,6 @@
 package com.dotcms.rest.api.v1.vtl;
 
-import com.dotcms.repackage.javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response;
 import com.dotcms.rest.api.MultiPartUtils;
 
 public class GetMethod implements MethodToTest {

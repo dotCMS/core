@@ -1,8 +1,8 @@
 package com.dotcms.rest;
 
-import com.dotcms.repackage.javax.ws.rs.core.CacheControl;
-import com.dotcms.repackage.javax.ws.rs.core.MediaType;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
+import javax.ws.rs.core.CacheControl;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONException;

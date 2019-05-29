@@ -22,7 +22,6 @@ import java.util.Map;
 import javax.servlet.ServletRequest;
 import org.apache.velocity.tools.generic.ValueParser;
 import org.apache.velocity.tools.view.context.ViewContext;
-import org.apache.velocity.tools.view.tools.ViewTool;
 
 /**
  * <p>Utility class for easy parsing of {@link ServletRequest} parameters.</p>
@@ -168,8 +167,8 @@ public class ParameterParser extends ValueParser implements ViewTool
         try
         {
             // use reflection so we can compile against Servlet 2.2
-            Method getmap = ServletRequest.class.getMethod("getParameterMap", null);
-            return (Map)getmap.invoke(getRequest(), null);
+            final Method getmap = ServletRequest.class.getMethod("getParameterMap", (Class<?>[]) null);
+            return (Map)getmap.invoke(getRequest(), (Object[]) null);
         }
         catch (NoSuchMethodException nsme)
         {

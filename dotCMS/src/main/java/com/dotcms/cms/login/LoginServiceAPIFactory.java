@@ -43,8 +43,6 @@ import com.liferay.portal.util.WebKeys;
 import com.liferay.util.InstancePool;
 import java.io.Serializable;
 import java.util.Date;
-import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
@@ -226,13 +224,13 @@ public class LoginServiceAPIFactory implements Serializable {
         public boolean doActionLogin(String userId,
                                      final String password,
                                      final boolean rememberMe,
-                                     final HttpServletRequest req,
-                                     final HttpServletResponse res) throws Exception {
+                                     final HttpServletRequest request,
+                                     final HttpServletResponse response) throws Exception {
 
             boolean authenticated = false;
             int authResult = Authenticator.FAILURE;
 
-            final Company company = PortalUtil.getCompany(req);
+            final Company company = PortalUtil.getCompany(request);
 
             //Search for the system user
             final User systemUser = APILocator.getUserAPI().getSystemUser();
@@ -260,7 +258,7 @@ public class LoginServiceAPIFactory implements Serializable {
 
             try {
 
-                PrincipalFinder principalFinder =
+                final PrincipalFinder principalFinder =
                         (PrincipalFinder) InstancePool.get(
                                 PropsUtil.get(PropsUtil.PRINCIPAL_FINDER));
 
@@ -273,32 +271,34 @@ public class LoginServiceAPIFactory implements Serializable {
 
             if (authResult == Authenticator.SUCCESS) {
 
-                this.doAuthentication(userId, rememberMe, req, res);
+                this.doAuthentication(userId, rememberMe, request, response);
                 authenticated = true;
                 LicenseUtil.licenseExpiresMessage(APILocator.getUserAPI().loadUserById(userId));
             }
 
             if (authResult != Authenticator.SUCCESS) {
 
-                SecurityLogger.logInfo(this.getClass(), "An invalid attempt to login as " + userId + " has been made from IP: " + req.getRemoteAddr());
+                SecurityLogger.logInfo(this.getClass(), "An invalid attempt to login as " + userId + " has been made from IP: " + request.getRemoteAddr());
                 throw new AuthException();
             }
 
-            SecurityLogger.logInfo(this.getClass(), "User " + userId + " has successfully login from IP: " + req.getRemoteAddr());
+            SecurityLogger.logInfo(this.getClass(), "User " + userId + " has successfully login from IP: " + request.getRemoteAddr());
 
             return authenticated;
         }
 
         @WrapInTransaction
-        private void doAuthentication(final String userId, final boolean rememberMe, final HttpServletRequest req, final HttpServletResponse res) throws PortalException, SystemException, DotDataException, DotSecurityException {
+        private void doAuthentication(final String userId, final boolean rememberMe,
+                                      final HttpServletRequest  request,
+                                      final HttpServletResponse response) throws PortalException, SystemException, DotDataException, DotSecurityException {
 
-            final HttpSession ses = req.getSession();
+            final HttpSession session = request.getSession();
             final User user = UserLocalManagerUtil.getUserById(userId);
 
             //DOTCMS-4943
             final UserAPI userAPI = APILocator.getUserAPI();
 
-            final Locale userSelectedLocale = LanguageUtil.getDefaultLocale(req);
+            final Locale userSelectedLocale = LanguageUtil.getDefaultLocale(request);
             if (null != userSelectedLocale) {
 
                 user.setLanguageId(userSelectedLocale.toString());
@@ -306,71 +306,59 @@ public class LoginServiceAPIFactory implements Serializable {
 
             user.setLastLoginDate(new Date());
             user.setFailedLoginAttempts(0);
-            user.setLastLoginIP(req.getRemoteAddr());
-
-
-
+            user.setLastLoginIP(request.getRemoteAddr());
             userAPI.save(user, userAPI.getSystemUser(), true);
 
-            ses.setAttribute(WebKeys.USER_ID, userId);
+            session.setAttribute(WebKeys.USER_ID, userId);
 
 
             //set the host to the domain of the URL if possible if not use the default host
             //http://jira.dotmarketing.net/browse/DOTCMS-4475
             try{
 
-                String domainName = req.getServerName();
-                Host h = APILocator.getHostAPI().resolveHostName(domainName, user, false);
+                String domainName = request.getServerName();
+                Host host = APILocator.getHostAPI().resolveHostName(domainName, user, false);
 
-                if (null == h || !UtilMethods.isSet(h.getInode())) {
-                    h = APILocator.getHostAPI().findByName(domainName, user, false);
+                if (null == host || !UtilMethods.isSet(host.getInode())) {
+                    host = APILocator.getHostAPI().findByName(domainName, user, false);
                 }
 
-                if(h == null || !UtilMethods.isSet(h.getInode())){
-                    h = APILocator.getHostAPI().findByAlias(domainName, user, false);
+                if(host == null || !UtilMethods.isSet(host.getInode())){
+                    host = APILocator.getHostAPI().findByAlias(domainName, user, false);
                 }
 
-                if(h != null && UtilMethods.isSet(h.getInode())) {
-                    req.getSession().setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, h.getIdentifier());
+                if(host != null && UtilMethods.isSet(host.getInode())) {
+                    request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, host.getIdentifier());
                 } else {
-                    req.getSession().setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, APILocator.getHostAPI().findDefaultHost(APILocator.getUserAPI().getSystemUser(), true).getIdentifier());
+                    request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, APILocator.getHostAPI().findDefaultHost(APILocator.getUserAPI().getSystemUser(), true).getIdentifier());
                 }
             } catch (DotSecurityException se) {
 
-                req.getSession().setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, APILocator.getHostAPI().findDefaultHost(APILocator.getUserAPI().getSystemUser(), true).getIdentifier());
+                request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, APILocator.getHostAPI().findDefaultHost(APILocator.getUserAPI().getSystemUser(), true).getIdentifier());
             }
 
-            ses.removeAttribute("_failedLoginName");
+            session.removeAttribute("_failedLoginName");
 
-            
-            
+            this.preventSessionFixation(request);
 
-            
-            if(Config.getBooleanProperty("PREVENT_SESSION_FIXATION_ON_LOGIN", true)) {
-                final Map<String, Object> sessionMap  = new HashMap<String, Object>();
-                final HttpSession oldSession = req.getSession();
-                final Enumeration<String> keys = oldSession.getAttributeNames();
-                while(keys.hasMoreElements()) {
-                    String key = keys.nextElement();
-                    Object value = oldSession.getAttribute(key);
-                    sessionMap.put(key, value);
-                }
-                oldSession.invalidate();
-                final HttpSession newSession = req.getSession();
-                for(String key : sessionMap.keySet()) {
-                    newSession.setAttribute(key, sessionMap.get(key));
-                }
-            }
-            
-
-
-            
             //JWT we crT always b/c in the future we want to use it not only for the remember me, but also for restful authentication.
-            this.doRememberMe(req, res, user, rememberMe);
+            this.doRememberMe(request, response, user, rememberMe);
 
-            EventsProcessor.process(PropsUtil.getArray(PropsUtil.LOGIN_EVENTS_PRE), req, res);
-            EventsProcessor.process(PropsUtil.getArray(PropsUtil.LOGIN_EVENTS_POST), req, res);
+            EventsProcessor.process(PropsUtil.getArray(PropsUtil.LOGIN_EVENTS_PRE), request, response);
+            EventsProcessor.process(PropsUtil.getArray(PropsUtil.LOGIN_EVENTS_POST), request, response);
         }
+
+        /**
+         * When an user is being logged in, the previous session must be invalidated and created a new one.
+         * The default behavior does this, however it is able to turn off by using PREVENT_SESSION_FIXATION_ON_LOGIN on the dotmarketing config.
+                * @param request HttpServletRequest
+         * @return HttpSession return the new session in case it is created, otherwise returns the same one
+         */
+        @Override
+        public HttpSession preventSessionFixation(final HttpServletRequest request) {
+
+           return PreventSessionFixationUtil.getInstance().preventSessionFixation(request, false);
+        } // preventSessionFixation.
 
         /**
          * Generates the JWT and its respective cookie based on the following

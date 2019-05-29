@@ -134,7 +134,11 @@ public class ApiTokenAPITest {
 
         ApiToken issued = apiTokenAPI.persistApiToken(fatToken, APILocator.systemUser());
 
-        ApiToken testToken = ApiToken.from(fatToken).withId(issued.id).build();
+        ApiToken testToken = ApiToken.from(fatToken)
+                .withId(issued.id)
+                .withIssueDate(issued.issueDate)
+                .withModDate(issued.modificationDate)
+                .build();
 
         // testing equals method
         assertEquals(issued, testToken);

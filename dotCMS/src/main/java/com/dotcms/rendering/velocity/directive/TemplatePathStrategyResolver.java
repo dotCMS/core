@@ -1,7 +1,10 @@
 package com.dotcms.rendering.velocity.directive;
 
+import static com.dotmarketing.util.StringUtils.builder;
+import static com.liferay.util.StringPool.FORWARD_SLASH;
+import static com.liferay.util.StringPool.PERIOD;
+
 import com.dotcms.rendering.velocity.services.VelocityType;
-import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
@@ -12,15 +15,11 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableList;
 import com.liferay.util.StringPool;
-import org.apache.velocity.context.Context;
-
 import java.util.List;
 import java.util.Optional;
-
-import static com.dotmarketing.util.StringUtils.builder;
-import static com.liferay.util.StringPool.FORWARD_SLASH;
-import static com.liferay.util.StringPool.PERIOD;
+import org.apache.velocity.context.Context;
 
 /**
  * Subscribe Strategies and get the strategy for a set of arguments if applies
