@@ -56,7 +56,7 @@ table {font-size:inherit;font-family:Roboto,sans-serif;}
 
 #imageViewPort{
     overflow: auto;
-    margin-top: 5px;
+    margin-top: 0px;
     position: relative;
 }
 
