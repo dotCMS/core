@@ -88,7 +88,6 @@ public class SecurityUtilsTest {
       HttpServletRequest request = mockRequest(url.getHost(), url.getPath() , urlReferer[1]);
       System.out.println("testing bad  url" + urlReferer[0] + " with referer: " + urlReferer[1]);
       assert(!spyUtils.validateReferer(request));
-      
     }
     
   }
