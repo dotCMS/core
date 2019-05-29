@@ -9,7 +9,8 @@ import {
     getTagError,
     getTagHint,
     updateStatus,
-    checkProp
+    checkProp,
+    getId
 } from '../../utils';
 
 /**
@@ -26,28 +27,28 @@ export class DotRadioComponent {
     @Element() el: HTMLElement;
 
     /** Value set from the ratio option */
-    @Prop({ mutable: true }) value = '';
+    @Prop({ mutable: true, reflectToAttr: true }) value = '';
 
     /** Name that will be used as ID */
-    @Prop() name = '';
+    @Prop({ reflectToAttr: true }) name = '';
 
     /** (optional) Text to be rendered next to input field */
-    @Prop() label = '';
+    @Prop({ reflectToAttr: true }) label = '';
 
     /** (optional) Hint text that suggest a clue of the field */
-    @Prop() hint = '';
+    @Prop({ reflectToAttr: true }) hint = '';
 
     /** (optional) Determine if it is mandatory */
-    @Prop() required = false;
+    @Prop({ reflectToAttr: true }) required = false;
 
     /** (optional) Disables field's interaction */
-    @Prop() disabled = false;
+    @Prop({ reflectToAttr: true }) disabled = false;
 
     /** (optional) Text that will be shown when required is set and condition is not met */
-    @Prop() requiredMessage = '';
+    @Prop({ reflectToAttr: true }) requiredMessage = '';
 
     /** Value/Label ratio options separated by comma, to be formatted as: Value|Label */
-    @Prop() options = '';
+    @Prop({ reflectToAttr: true }) options = '';
 
     @State() _options: DotOption[];
     @State() status: DotFieldStatus = getOriginalStatus();
@@ -94,8 +95,8 @@ export class DotRadioComponent {
                                     <input
                                         checked={this.value.indexOf(item.value) >= 0 || null}
                                         class={getErrorClass(this.isValid())}
+                                        id={getId(this.name)}
                                         disabled={this.disabled || null}
-                                        name={this.name.toLocaleLowerCase()}
                                         onInput={(event: Event) => this.setValue(event)}
                                         type="radio"
                                         value={item.value}
