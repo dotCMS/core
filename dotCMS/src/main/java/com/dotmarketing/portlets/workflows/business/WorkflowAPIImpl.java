@@ -36,6 +36,7 @@ import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.contentlet.util.ActionletUtil;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.workflows.LargeMessageActionlet;
 import com.dotmarketing.portlets.workflows.MessageActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.*;
 import com.dotmarketing.portlets.workflows.model.*;
@@ -157,7 +158,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				SaveContentActionlet.class,
 				SaveContentAsDraftActionlet.class,
 				CopyActionlet.class,
-				MessageActionlet.class
+				MessageActionlet.class,
+				VelocityScriptActionlet.class,
+				LargeMessageActionlet.class
 		));
 
 		refreshWorkFlowActionletMap();

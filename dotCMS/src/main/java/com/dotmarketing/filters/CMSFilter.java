@@ -1,6 +1,7 @@
 package com.dotmarketing.filters;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.api.web.HttpServletResponseThreadLocal;
 import com.dotcms.visitor.business.VisitorAPI;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.beans.Host;
@@ -11,30 +12,20 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.rules.business.RulesEngine;
 import com.dotmarketing.portlets.rules.model.Rule;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.NumberOfTimeVisitedCounter;
-import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.*;
+import org.apache.commons.logging.LogFactory;
 
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
+import javax.servlet.*;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.Optional;
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.FilterConfig;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.apache.commons.logging.LogFactory;
 
 public class CMSFilter implements Filter {
 
-    private final HttpServletRequestThreadLocal requestThreadLocal = HttpServletRequestThreadLocal.INSTANCE;
+    private final HttpServletRequestThreadLocal  requestThreadLocal  = HttpServletRequestThreadLocal.INSTANCE;
+    private final HttpServletResponseThreadLocal responseThreadLocal = HttpServletResponseThreadLocal.INSTANCE;
     private CMSUrlUtil urlUtil = CMSUrlUtil.getInstance();
     private static VisitorAPI visitorAPI = APILocator.getVisitorAPI();
     private final String RELATIVE_ASSET_PATH = APILocator.getFileAssetAPI().getRelativeAssetsRootPath();
@@ -63,13 +54,14 @@ public class CMSFilter implements Filter {
 
     private void doFilterInternal(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException, ServletException {
 
-        HttpServletRequest request = (HttpServletRequest) req;
-        HttpServletResponse response = (HttpServletResponse) res;
+        final HttpServletRequest request = (HttpServletRequest) req;
+        final HttpServletResponse response = (HttpServletResponse) res;
 
         IAm iAm = IAm.NOTHING_IN_THE_CMS;
 
         // Set the request in the thread local.
         this.requestThreadLocal.setRequest(request);
+        this.responseThreadLocal.setResponse(response);
 
         // Get the URI and query string from the request
         String uri = urlUtil.getURIFromRequest(request);
