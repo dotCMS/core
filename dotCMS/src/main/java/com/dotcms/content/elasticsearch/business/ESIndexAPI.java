@@ -5,6 +5,7 @@ import com.dotcms.cluster.ClusterUtils;
 import com.dotcms.cluster.business.ClusterAPI;
 import com.dotcms.cluster.business.ReplicasMode;
 import com.dotcms.cluster.business.ServerAPI;
+import com.dotcms.content.elasticsearch.util.DotRestHighLevelClient;
 import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
@@ -41,6 +42,7 @@ import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest;
 import org.elasticsearch.action.admin.indices.cache.clear.ClearIndicesCacheRequestBuilder;
 import org.elasticsearch.action.admin.indices.cache.clear.ClearIndicesCacheResponse;
 import org.elasticsearch.action.admin.indices.close.CloseIndexRequest;
+import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
@@ -59,7 +61,9 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.AdminClient;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.IndicesAdminClient;
+import org.elasticsearch.client.IndicesClient;
 import org.elasticsearch.client.Requests;
+import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.cluster.health.ClusterIndexHealth;
 import org.elasticsearch.cluster.metadata.AliasMetaData;
 import org.elasticsearch.cluster.metadata.IndexMetaData;
@@ -593,8 +597,6 @@ public class ESIndexAPI {
 		AdminLogger.log(this.getClass(), "createIndex",
 			"Trying to create index: " + indexName + " with shards: " + shards);
 
-		IndicesAdminClient iac = new ESClient().getClient().admin().indices();
-
 		if(shards <1){
 			try{
 				shards = Integer.parseInt(System.getProperty("es.index.number_of_shards"));
@@ -624,9 +626,17 @@ public class ESIndexAPI {
 		}
 		map.put("auto_expand_replicas",replicasMode.getAutoExpandReplicas());
 
+		// create index rest client
+		final CreateIndexRequest request = new CreateIndexRequest(indexName);
+		request.settings(map);
+		request.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
+		final CreateIndexResponse createIndexResponse = DotRestHighLevelClient
+				.getClient().indices().create(request);
+
 		// create actual index
-		CreateIndexRequestBuilder cirb = iac.prepareCreate(indexName).setSettings(map);
-		CreateIndexResponse createIndexResponse = cirb.execute().actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
+//		IndicesAdminClient iac = new ESClient().getClient().admin().indices();
+//		CreateIndexRequestBuilder cirb = iac.prepareCreate(indexName).setSettings(map);
+//		CreateIndexResponse createIndexResponse = cirb.execute().actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
 
 		AdminLogger.log(this.getClass(), "createIndex",
 			"Index created: " + indexName + " with shards: " + shards);

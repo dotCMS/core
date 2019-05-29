@@ -1,6 +1,8 @@
 package com.dotcms.content.elasticsearch.util;
 
-import com.google.common.annotations.VisibleForTesting;
+import static com.dotcms.cluster.bean.ServerPort.ES_TRANSPORT_TCP_PORT;
+import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
+import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.bean.ServerPort;
@@ -17,10 +19,20 @@ import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
+import com.google.common.annotations.VisibleForTesting;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
-
+import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.settings.Settings;
@@ -31,21 +43,6 @@ import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.node.NodeValidationException;
 import org.jetbrains.annotations.Nullable;
-
-import java.io.File;
-import java.io.IOException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
-import static com.dotcms.cluster.bean.ServerPort.ES_TRANSPORT_TCP_PORT;
-import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
-import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
 public class ESClient {
 
@@ -72,7 +69,7 @@ public class ESClient {
         this.clusterAPI = clusterAPI;
     }
 
-    public Client getClient() {
+    private Client getClient() {
 
         try{
             initNode(null);
