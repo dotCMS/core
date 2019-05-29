@@ -1,13 +1,5 @@
 package com.dotmarketing.portlets.workflows.actionlet;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.response.BaseResponse;
 import com.dotmarketing.beans.Host;
@@ -20,6 +12,13 @@ import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 public class SetValueActionlet extends WorkFlowActionlet {
 
@@ -45,15 +44,21 @@ public class SetValueActionlet extends WorkFlowActionlet {
         return "This actionlet will set the value of a field.  The value param can be a string, or it can be velocity, where whatever is set as $value will be applied";
     }
 
-    public void executePreAction(WorkflowProcessor processor, Map<String, WorkflowActionClassParameter> params)
+    public void executePreAction(final WorkflowProcessor processor, final Map<String, WorkflowActionClassParameter> params)
             throws WorkflowActionFailureException {
 
-        Contentlet con = processor.getContentlet();
-
-        String field = params.get("field").getValue();
-        String value = params.get("value").getValue();
+        final Contentlet contentlet = processor.getContentlet();
+        final String field = params.get("field").getValue();
+        final String value = params.get("value").getValue();
+        final Field finalField = contentlet.getStructure().getFieldVar(field);
         Object finalValue = value;
-        Field finalField = con.getStructure().getFieldVar(field);
+
+        if (null == finalField) {
+
+            throw new WorkflowActionFailureException("Set Value ActionLet: The field: " + field
+                    + " does not exists on: " + contentlet.getContentType().variable());
+        }
+
         if (UtilMethods.isSet(value) && (value.contains("$"))) {
 
             try {
@@ -96,8 +101,8 @@ public class SetValueActionlet extends WorkFlowActionlet {
                 ctx.put("modDate", modDate);
                 ctx.put("structureName", processor.getContentlet().getStructure().getName());
 
-                ctx.put("contentlet", con);
-                ctx.put("content", con);
+                ctx.put("contentlet", contentlet);
+                ctx.put("content", contentlet);
 
                 VelocityUtil.eval(value, ctx);
                 finalValue = ctx.get("value");
@@ -108,8 +113,7 @@ public class SetValueActionlet extends WorkFlowActionlet {
 
         }
 
-        APILocator.getContentletAPI().setContentletProperty(con, finalField, finalValue);
-
+        APILocator.getContentletAPI().setContentletProperty(contentlet, finalField, finalValue);
     }
 
     @Override
