@@ -2,17 +2,21 @@ package com.dotcms.auth.providers.jwt.services;
 
 import com.dotcms.auth.providers.jwt.JsonWebTokenAuthCredentialProcessor;
 import com.dotcms.auth.providers.jwt.JsonWebTokenUtils;
+import com.dotcms.auth.providers.jwt.beans.ApiToken;
+import com.dotcms.auth.providers.jwt.beans.JWToken;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.exception.SecurityException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
+import org.apache.commons.lang.StringUtils;
+import org.glassfish.jersey.server.ContainerRequest;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import javax.ws.rs.core.Response;
-import org.apache.commons.lang.StringUtils;
-import org.glassfish.jersey.server.ContainerRequest;
+import java.util.Optional;
 
 /**
  * Default implementation
@@ -44,8 +48,8 @@ public class JsonWebTokenAuthCredentialProcessorImpl implements JsonWebTokenAuth
         this.jsonWebTokenUtils = jsonWebTokenUtils;
     }
 
-    protected User processAuthHeaderFromJWT(final String authorizationHeader,
-            final String ipAddress) {
+    protected User internalProcessAuthHeaderFromJWT(final String authorizationHeader,
+            final String ipAddress, final boolean rejectIfNotApiToken) {
 
         if (StringUtils.isNotEmpty(authorizationHeader) && authorizationHeader.trim()
                 .startsWith(BEARER)) {
@@ -58,7 +62,19 @@ public class JsonWebTokenAuthCredentialProcessorImpl implements JsonWebTokenAuth
             }
 
             try {
-                return jsonWebTokenUtils.getUser(jsonWebToken.trim(), ipAddress);
+
+                final Optional<JWToken> token = APILocator.getApiTokenAPI().fromJwt(jsonWebToken.trim(), ipAddress);
+
+                if (rejectIfNotApiToken && token.isPresent() && !(token.get() instanceof ApiToken)) {
+
+                    throw new SecurityException("The Api token sent on the request header must be api token", Response.Status.BAD_REQUEST);
+                }
+
+                return token.isPresent() ? token.get().getActiveUser().get() : null;
+            } catch(SecurityException se) {
+
+                this.jsonWebTokenUtils.handleInvalidTokenExceptions(this.getClass(), se, null, null);
+                throw se;
             } catch (Exception e) {
 
                 this.jsonWebTokenUtils.handleInvalidTokenExceptions(this.getClass(), e, null, null);
@@ -73,7 +89,7 @@ public class JsonWebTokenAuthCredentialProcessorImpl implements JsonWebTokenAuth
     public User processAuthHeaderFromJWT(final String authorizationHeader,
             final HttpSession session, final String ipAddress) {
 
-        final User user = processAuthHeaderFromJWT(authorizationHeader, ipAddress);
+        final User user = internalProcessAuthHeaderFromJWT(authorizationHeader, ipAddress, false);
         if (user != null && null != session) {
             session.setAttribute(WebKeys.CMS_USER, user);
             session.setAttribute(com.liferay.portal.util.WebKeys.USER_ID, user.getUserId());
@@ -85,21 +101,14 @@ public class JsonWebTokenAuthCredentialProcessorImpl implements JsonWebTokenAuth
     @Override
     public User processAuthHeaderFromJWT(final HttpServletRequest request) {
 
-        final HttpSession newSession = APILocator.getLoginServiceAPI()
-                .preventSessionFixation(request);
-
         // Extract authentication credentials
         final String authentication = request.getHeader(ContainerRequest.AUTHORIZATION);
+        final User user =  internalProcessAuthHeaderFromJWT(authentication, request.getRemoteAddr(), true);
 
-        User user = processAuthHeaderFromJWT(authentication, request.getRemoteAddr());
-        if (user != null) {
+        if(user != null) {
+
             request.setAttribute(com.liferay.portal.util.WebKeys.USER_ID, user.getUserId());
             request.setAttribute(com.liferay.portal.util.WebKeys.USER, user);
-
-            if (null != newSession) {
-                newSession.setAttribute(WebKeys.CMS_USER, user);
-                newSession.setAttribute(com.liferay.portal.util.WebKeys.USER_ID, user.getUserId());
-            }
         }
 
         return user;
