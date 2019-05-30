@@ -9,6 +9,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.contenttype.business.ContentTypeFactory;
@@ -21,7 +22,8 @@ import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.request.MockSessionRequest;
-import com.dotcms.rest.EmptyHttpResponse;
+import javax.ws.rs.core.Response;
+import org.glassfish.jersey.internal.util.Base64;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.RestUtilTest;
@@ -37,6 +39,7 @@ import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
@@ -44,17 +47,16 @@ import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import javax.ws.rs.core.Response;
-import org.glassfish.jersey.internal.util.Base64;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -82,12 +84,12 @@ public class ContentTypeResourceTest {
 
 		// Test INVALID Content Type Creation
 		assertResponse_BAD_REQUEST(
-				response = resource.createType(getHttpRequest(),  new EmptyHttpResponse(), contentTypeFormDeserialize.buildForm(JSON_CONTENT_TYPE_UPDATE.replace("CONTENT_TYPE_ID", "INVALID_CONTENT_TYPE_ID")))
+				response = resource.createType(getHttpRequest(), contentTypeFormDeserialize.buildForm(JSON_CONTENT_TYPE_UPDATE.replace("CONTENT_TYPE_ID", "INVALID_CONTENT_TYPE_ID")))
 		);
 
 		// Test Content Type Creation
 		RestUtilTest.verifySuccessResponse(
-				response = resource.createType(getHttpRequest(),  new EmptyHttpResponse(), contentTypeFormDeserialize.buildForm(JSON_CONTENT_TYPE_CREATE))
+				response = resource.createType(getHttpRequest(), contentTypeFormDeserialize.buildForm(JSON_CONTENT_TYPE_CREATE))
 		);
 
 		try {
@@ -99,12 +101,12 @@ public class ContentTypeResourceTest {
 
 			// Test Content Type Retrieval by ID
 			RestUtilTest.verifySuccessResponse(
-					response = resource.getType((String) fieldMap.get("id"), getHttpRequest(),  new EmptyHttpResponse())
+					response = resource.getType((String) fieldMap.get("id"), getHttpRequest())
 			);
 
 			// Test Content Type Retrieval by Var
 			RestUtilTest.verifySuccessResponse(
-				response = resource.getType((String) fieldMap.get("variable"), getHttpRequest(),  new EmptyHttpResponse())
+				response = resource.getType((String) fieldMap.get("variable"), getHttpRequest())
 			);
 
 			assertContentTypeCreate(
@@ -118,7 +120,7 @@ public class ContentTypeResourceTest {
 					response = resource.updateType(
 							(String) fieldMap.get("id"),
 							contentTypeFormDeserialize.buildForm(JSON_CONTENT_TYPE_UPDATE.replace("CONTENT_TYPE_ID", "INVALID_CONTENT_TYPE_ID")),
-							getHttpRequest(),  new EmptyHttpResponse()
+							getHttpRequest()
 					)
 			);
 
@@ -127,7 +129,7 @@ public class ContentTypeResourceTest {
 					response = resource.updateType(
 							(String) fieldMap.get("id"),
 							contentTypeFormDeserialize.buildForm(JSON_CONTENT_TYPE_UPDATE.replace("CONTENT_TYPE_ID", (String) fieldMap.get("id"))),
-							getHttpRequest(),  new EmptyHttpResponse()
+							getHttpRequest()
 					)
 			);
 
@@ -139,7 +141,7 @@ public class ContentTypeResourceTest {
 
 			// Test Content Type Retrieval
 			RestUtilTest.verifySuccessResponse(
-					response = resource.getType((String) fieldMap.get("id"), getHttpRequest(),  new EmptyHttpResponse())
+					response = resource.getType((String) fieldMap.get("id"), getHttpRequest())
 			);
 
 			assertContentTypeUpdate(
@@ -152,13 +154,13 @@ public class ContentTypeResourceTest {
 			// Test Content Type Deletion
 			RestUtilTest.verifySuccessResponse(
 					response = resource.deleteType(
-							(String) fieldMap.get("id"), getHttpRequest(),  new EmptyHttpResponse()
+							(String) fieldMap.get("id"), getHttpRequest()
 					)
 			);
 
 			assertResponse_NOT_FOUND(
 					response = resource.getType(
-							(String) fieldMap.get("id"), getHttpRequest(),  new EmptyHttpResponse()
+							(String) fieldMap.get("id"), getHttpRequest()
 					)
 			);
 		}
@@ -172,7 +174,7 @@ public class ContentTypeResourceTest {
 		Map<String, Object> fieldMap = null;
 		// Test Content Type Creation
 		RestUtilTest.verifySuccessResponse(
-				response = resource.createType(getHttpRequest(),  new EmptyHttpResponse(),  contentTypeFormDeserialize.buildForm(JSON_CONTENT_TYPE_CREATE))
+				response = resource.createType(getHttpRequest(), contentTypeFormDeserialize.buildForm(JSON_CONTENT_TYPE_CREATE))
 		);
 		try{
 
@@ -180,7 +182,7 @@ public class ContentTypeResourceTest {
 
             // Test Content Type Retrieval by Var
 			RestUtilTest.verifySuccessResponse(
-					resource.getType((String) fieldMap.get("variable"), getHttpRequest(),  new EmptyHttpResponse())
+					resource.getType((String) fieldMap.get("variable"), getHttpRequest())
 			);
 
             // Test Content Type Update
@@ -188,7 +190,7 @@ public class ContentTypeResourceTest {
 					resource.updateType(
 							(String) fieldMap.get("variable"),
 							contentTypeFormDeserialize.buildForm(JSON_CONTENT_TYPE_UPDATE.replace("CONTENT_TYPE_ID", (String) fieldMap.get("id"))),
-							getHttpRequest(),  new EmptyHttpResponse()
+							getHttpRequest()
 					)
 			);
 
@@ -197,13 +199,13 @@ public class ContentTypeResourceTest {
             // Test Content Type Deletion
 			RestUtilTest.verifySuccessResponse(
 					resource.deleteType(
-							(String) fieldMap.get("variable"), getHttpRequest(),  new EmptyHttpResponse()
+							(String) fieldMap.get("variable"), getHttpRequest()
 					)
 			);
 
 			assertResponse_NOT_FOUND(
 					resource.getType(
-							(String) fieldMap.get("variable"), getHttpRequest(),  new EmptyHttpResponse()
+							(String) fieldMap.get("variable"), getHttpRequest()
 					)
 			);
 		}
@@ -220,7 +222,7 @@ public class ContentTypeResourceTest {
 		final InitDataObject initDataObject = mock(InitDataObject.class);
 		final User user = new User();
 		when(initDataObject.getUser()).thenReturn(user);
-		when(webResource.init(anyString(), any(HttpServletRequest.class),  any(HttpServletResponse.class),  anyBoolean(), anyString())).thenReturn(initDataObject);
+		when(webResource.init(null, true, request, true, null)).thenReturn(initDataObject);
 
 		String filter = "filter";
 		int page = 3;
@@ -237,7 +239,7 @@ public class ContentTypeResourceTest {
 
 		final ContentTypeResource resource = new ContentTypeResource
 				(new ContentTypeHelper(), webResource, paginationUtil, WorkflowHelper.getInstance(), permissionAPI);
-		final Response response = resource.getContentTypes(request,  new EmptyHttpResponse(),  filter, page, perPage, orderBy, direction.toString(), "FORM");
+		final Response response = resource.getContentTypes(request, filter, page, perPage, orderBy, direction.toString(), "FORM");
 		RestUtilTest.verifySuccessResponse(response);
 	}
 
@@ -250,7 +252,7 @@ public class ContentTypeResourceTest {
 		final InitDataObject initDataObject = mock(InitDataObject.class);
 		final User user = new User();
 		when(initDataObject.getUser()).thenReturn(user);
-		when(webResource.init(anyString(), any(HttpServletRequest.class),  any(HttpServletResponse.class), anyBoolean(), anyString())).thenReturn(initDataObject);
+		when(webResource.init(null, true, request, true, null)).thenReturn(initDataObject);
 
 		String filter = "filter";
 		int page = 3;
@@ -263,7 +265,7 @@ public class ContentTypeResourceTest {
 		final ContentTypeResource resource = new ContentTypeResource
 				(new ContentTypeHelper(), webResource,new PaginationUtil(new ContentTypesPaginator()) , WorkflowHelper.getInstance(), permissionAPI);
 
-		resource.getContentTypes(request,  new EmptyHttpResponse(), filter, page, perPage, orderBy, direction.toString(), "FORM2");
+		resource.getContentTypes(request, filter, page, perPage, orderBy, direction.toString(), "FORM2");
 
 	}
 
@@ -276,7 +278,7 @@ public class ContentTypeResourceTest {
 		final InitDataObject initDataObject = mock(InitDataObject.class);
 		final User user = new User();
 		when(initDataObject.getUser()).thenReturn(user);
-        when(webResource.init(anyString(), any(HttpServletRequest.class),  any(HttpServletResponse.class), anyBoolean(), anyString())).thenReturn(initDataObject);
+		when(webResource.init(null, true, request, true, null)).thenReturn(initDataObject);
 
 		String filter = "filter";
 		int page = 3;
@@ -298,7 +300,7 @@ public class ContentTypeResourceTest {
 
 		final ContentTypeResource resource = new ContentTypeResource
 				(new ContentTypeHelper(), webResource, paginationUtil, WorkflowHelper.getInstance(), permissionAPI);
-		final Response response = resource.getContentTypes(request,  new EmptyHttpResponse(), filter, page, perPage, orderBy, direction.toString(), null);
+		final Response response = resource.getContentTypes(request, filter, page, perPage, orderBy, direction.toString(), null);
 		RestUtilTest.verifySuccessResponse(response);
 	}
 

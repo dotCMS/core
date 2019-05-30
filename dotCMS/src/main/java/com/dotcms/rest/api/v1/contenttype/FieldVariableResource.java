@@ -1,27 +1,18 @@
 package com.dotcms.rest.api.v1.contenttype;
 
+import com.dotcms.rest.exception.ForbiddenException;
+import java.io.Serializable;
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+
+import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.transform.field.JsonFieldVariableTransformer;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.rest.InitDataObject;
-import com.dotcms.rest.ResponseEntityView;
-import com.dotcms.rest.WebResource;
-import com.dotcms.rest.annotation.NoCache;
-import com.dotcms.rest.exception.ForbiddenException;
-import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.model.User;
-import java.io.Serializable;
-import java.util.List;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -34,6 +25,17 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.glassfish.jersey.server.JSONP;
+import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.WebResource;
+import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.model.User;
 
 @Path("/v1/contenttype/{typeId}/fields")
 public class FieldVariableResource implements Serializable {
@@ -58,9 +60,9 @@ public class FieldVariableResource implements Serializable {
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
 	public Response createFieldVariableByFieldId(@PathParam("typeId") final String typeId, @PathParam("fieldId") final String fieldId,
-												 final String fieldVariableJson, @Context final HttpServletRequest req, @Context final HttpServletResponse res) throws DotDataException {
+			final String fieldVariableJson, @Context final HttpServletRequest req) throws DotDataException {
 
-		final InitDataObject initData = this.webResource.init(null, req, res, false, null);
+		final InitDataObject initData = this.webResource.init(null, false, req, false, null);
 		final User user = initData.getUser();
 		final FieldAPI fapi = APILocator.getContentTypeFieldAPI();
 		
@@ -111,9 +113,9 @@ public class FieldVariableResource implements Serializable {
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
 	public Response createFieldVariableByFieldVar(@PathParam("typeId") final String typeId, @PathParam("fieldVar") final String fieldVar,
-			final String fieldVariableJson, @Context final HttpServletRequest req, @Context final HttpServletResponse res) throws DotDataException {
+			final String fieldVariableJson, @Context final HttpServletRequest req) throws DotDataException {
 
-		final InitDataObject initData = this.webResource.init(null, req, res, false, null);
+		final InitDataObject initData = this.webResource.init(null, false, req, false, null);
 		final User user = initData.getUser();
 		final FieldAPI fapi = APILocator.getContentTypeFieldAPI();
 		
@@ -163,18 +165,20 @@ public class FieldVariableResource implements Serializable {
 	@JSONP
 	@NoCache
 	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
-	public final Response getFieldVariablesByFieldId(@PathParam("typeId") final String typeId, // todo: this is not being used
-			@PathParam("fieldId") final String fieldId, @Context final HttpServletRequest req, @Context final HttpServletResponse res) {
+	public final Response getFieldVariablesByFieldId(@PathParam("typeId") final String typeId,
+			@PathParam("fieldId") final String fieldId, @Context final HttpServletRequest req) {
 
-		this.webResource.init(null, req, res, true, null);
-		final FieldAPI typeFieldAPI = APILocator.getContentTypeFieldAPI();
+		final InitDataObject initData = this.webResource.init(null, true, req, true, null);
+		final User user = initData.getUser();
+		final ContentTypeAPI tapi = APILocator.getContentTypeAPI(user, true);
+		final FieldAPI fapi = APILocator.getContentTypeFieldAPI();
 
 		Response response = null;
 
 		try {
-			final Field field = typeFieldAPI.find(fieldId);
+			Field field = fapi.find(fieldId);
 
-			final List<FieldVariable> fieldVariables = field.fieldVariables();
+			List<FieldVariable> fieldVariables = field.fieldVariables();
 
 			response = Response.ok(new ResponseEntityView(new JsonFieldVariableTransformer(fieldVariables).mapList())).build();
 
@@ -191,22 +195,24 @@ public class FieldVariableResource implements Serializable {
 	}
 
 	@GET
-	@Path("/var/{fieldVar}/variables") // todo: this url seems to be wrong
+	@Path("/var/{fieldVar}/variables")
 	@JSONP
 	@NoCache
 	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
 	public final Response getFieldVariablesByFieldVar(@PathParam("typeId") final String typeId,
-			@PathParam("fieldVar") final String fieldVar, @Context final HttpServletRequest req, @Context final HttpServletResponse res) {
+			@PathParam("fieldVar") final String fieldVar, @Context final HttpServletRequest req) {
 
-		this.webResource.init(null, req, res, true, null);
-		final FieldAPI typeFieldAPI = APILocator.getContentTypeFieldAPI();
+		final InitDataObject initData = this.webResource.init(null, true, req, true, null);
+		final User user = initData.getUser();
+		final ContentTypeAPI tapi = APILocator.getContentTypeAPI(user, true);
+		final FieldAPI fapi = APILocator.getContentTypeFieldAPI();
 
 		Response response = null;
 
 		try {
-			final Field field = typeFieldAPI.byContentTypeIdAndVar(typeId, fieldVar);
+			Field field = fapi.byContentTypeIdAndVar(typeId, fieldVar);
 
-			final List<FieldVariable> fieldVariables = field.fieldVariables();
+			List<FieldVariable> fieldVariables = field.fieldVariables();
 
 			response = Response.ok(new ResponseEntityView(new JsonFieldVariableTransformer(fieldVariables).mapList())).build();
 
@@ -228,20 +234,19 @@ public class FieldVariableResource implements Serializable {
 	@JSONP
 	@NoCache
 	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
-	public Response getFieldVariableByFieldId(@PathParam("typeId") final String typeId, // todo: parameter not used
+	public Response getFieldVariableByFieldId(@PathParam("typeId") final String typeId,
 			@PathParam("fieldId") final String fieldId, @PathParam("fieldVarId") final String fieldVarId,
-			@Context final HttpServletRequest  req,
-			@Context final HttpServletResponse res) throws DotDataException {
+			@Context final HttpServletRequest req) throws DotDataException {
 
-		this.webResource.init(null, req, res,false, null);
-		final FieldAPI typeFieldAPI = APILocator.getContentTypeFieldAPI();
+		final InitDataObject initData = this.webResource.init(null, false, req, false, null);
+		final FieldAPI fapi = APILocator.getContentTypeFieldAPI();
 
 		Response response = null;
 		try {
 
-			final Field field = typeFieldAPI.find(fieldId);
+			Field field = fapi.find(fieldId);
 
-			final FieldVariable fieldVariable = getFieldVariable(field, fieldVarId);
+			FieldVariable fieldVariable = getFieldVariable(field, fieldVarId);
 
 			if (!field.id().equals(fieldVariable.fieldId())) {
 
@@ -265,23 +270,23 @@ public class FieldVariableResource implements Serializable {
 	}
 
 	@GET
-	@Path("/var/{fieldVar}/variables/id/{fieldVarId}") // todo: there three arguments and just two on the url something might be wrong
+	@Path("/var/{fieldVar}/variables/id/{fieldVarId}")
 	@JSONP
 	@NoCache
 	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
 	public Response getFieldVariableByFieldVar(@PathParam("typeId") final String typeId,
 			@PathParam("fieldVar") final String fieldVar, @PathParam("fieldVarId") final String fieldVarId,
-			@Context final HttpServletRequest req, @Context final HttpServletResponse res) throws DotDataException {
+			@Context final HttpServletRequest req) throws DotDataException {
 
-		this.webResource.init(null, req, res, false, null);
-		final FieldAPI typeFieldAPI = APILocator.getContentTypeFieldAPI();
+		final InitDataObject initData = this.webResource.init(null, false, req, false, null);
+		final FieldAPI fapi = APILocator.getContentTypeFieldAPI();
 
 		Response response = null;
 		try {
 
-			final Field field = typeFieldAPI.byContentTypeIdAndVar(typeId, fieldVar);
+			Field field = fapi.byContentTypeIdAndVar(typeId, fieldVar);
 
-			final FieldVariable fieldVariable = getFieldVariable(field, fieldVarId);
+			FieldVariable fieldVariable = getFieldVariable(field, fieldVarId);
 
 			if (!field.id().equals(fieldVariable.fieldId())) {
 
@@ -312,17 +317,17 @@ public class FieldVariableResource implements Serializable {
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
 	public Response updateFieldVariableByFieldId(@PathParam("typeId") final String typeId, @PathParam("fieldId") final String fieldId,
-			@PathParam("fieldVarId") final String fieldVarId, final String fieldVariableJson, @Context final HttpServletRequest req, @Context final HttpServletResponse res
+			@PathParam("fieldVarId") final String fieldVarId, final String fieldVariableJson, @Context final HttpServletRequest req
 	) throws DotDataException {
 
-		final InitDataObject initData = this.webResource.init(null, req, res, false, null);
+		final InitDataObject initData = this.webResource.init(null, false, req, false, null);
 		final User user = initData.getUser();
-		final FieldAPI contentTypeFieldAPI = APILocator.getContentTypeFieldAPI();
+		final FieldAPI fapi = APILocator.getContentTypeFieldAPI();
 
 		Response response = null;
 
 		try {
-			Field field = contentTypeFieldAPI.find(fieldId);
+			Field field = fapi.find(fieldId);
 
 			FieldVariable fieldVariable = new JsonFieldVariableTransformer(fieldVariableJson).from();
 
@@ -344,7 +349,7 @@ public class FieldVariableResource implements Serializable {
 
 				} else {
 
-					fieldVariable = contentTypeFieldAPI.save(fieldVariable, user);
+					fieldVariable = fapi.save(fieldVariable, user);
 
 					response = Response.ok(new ResponseEntityView(new JsonFieldVariableTransformer(fieldVariable).mapObject())).build();
 				}
@@ -375,10 +380,10 @@ public class FieldVariableResource implements Serializable {
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
 	public Response updateFieldVariableByFieldVar(@PathParam("typeId") final String typeId, @PathParam("fieldVar") final String fieldVar,
-			@PathParam("fieldVarId") final String fieldVarId, final String fieldVariableJson, @Context final HttpServletRequest req, @Context final HttpServletResponse res
+			@PathParam("fieldVarId") final String fieldVarId, final String fieldVariableJson, @Context final HttpServletRequest req
 	) throws DotDataException {
 
-		final InitDataObject initData = this.webResource.init(null, req, res, false, null);
+		final InitDataObject initData = this.webResource.init(null, false, req, false, null);
 		final User user = initData.getUser();
 		final FieldAPI fapi = APILocator.getContentTypeFieldAPI();
 
@@ -439,15 +444,16 @@ public class FieldVariableResource implements Serializable {
 	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
 	public Response deleteFieldVariableByFieldId(@PathParam("typeId") final String typeId,
 			@PathParam("fieldId") final String fieldId, @PathParam("fieldVarId") final String fieldVarId,
-			@Context final HttpServletRequest req, @Context final HttpServletResponse res) throws DotDataException {
+			@Context final HttpServletRequest req) throws DotDataException {
 
-		this.webResource.init(null, req, res, false, null);
-		final FieldAPI typeFieldAPI = APILocator.getContentTypeFieldAPI();
+		final InitDataObject initData = this.webResource.init(null, false, req, false, null);
+		final User user = initData.getUser();
+		final FieldAPI fapi = APILocator.getContentTypeFieldAPI();
 
 		Response response = null;
 		try {
 
-			Field field = typeFieldAPI.find(fieldId);
+			Field field = fapi.find(fieldId);
 
 			FieldVariable fieldVariable = getFieldVariable(field, fieldVarId);
 
@@ -457,7 +463,7 @@ public class FieldVariableResource implements Serializable {
 
 			} else {
 
-				typeFieldAPI.delete(fieldVariable);
+				fapi.delete(fieldVariable);
 
 				response = Response.ok(new ResponseEntityView(null)).build();
 			}
@@ -481,15 +487,16 @@ public class FieldVariableResource implements Serializable {
 	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
 	public Response deleteFieldVariableByFieldVar(@PathParam("typeId") final String typeId,
 			@PathParam("fieldVar") final String fieldVar, @PathParam("fieldVarId") final String fieldVarId,
-			@Context final HttpServletRequest req, @Context final HttpServletResponse res) throws DotDataException {
+			@Context final HttpServletRequest req) throws DotDataException {
 
-		this.webResource.init(null, req, res, false, null);
-		final FieldAPI typeFieldAPI = APILocator.getContentTypeFieldAPI();
+		final InitDataObject initData = this.webResource.init(null, false, req, false, null);
+		final User user = initData.getUser();
+		final FieldAPI fapi = APILocator.getContentTypeFieldAPI();
 
 		Response response = null;
 		try {
 
-			Field field = typeFieldAPI.byContentTypeIdAndVar(typeId, fieldVar);
+			Field field = fapi.byContentTypeIdAndVar(typeId, fieldVar);
 
 			FieldVariable fieldVariable = getFieldVariable(field, fieldVarId);
 
@@ -499,7 +506,7 @@ public class FieldVariableResource implements Serializable {
 
 			} else {
 
-				typeFieldAPI.delete(fieldVariable);
+				fapi.delete(fieldVariable);
 
 				response = Response.ok(new ResponseEntityView(null)).build();
 			}
@@ -516,7 +523,7 @@ public class FieldVariableResource implements Serializable {
 		return response;
 	}
 
-	private FieldVariable getFieldVariable(final Field field, final String fieldVarId) throws NotFoundInDbException {
+	private FieldVariable getFieldVariable(Field field, String fieldVarId) throws NotFoundInDbException {
 		FieldVariable result = field.fieldVariablesMap().get(fieldVarId);
 		if (result == null) {
 			throw new NotFoundInDbException("Field variable with id:" + fieldVarId + " not found");

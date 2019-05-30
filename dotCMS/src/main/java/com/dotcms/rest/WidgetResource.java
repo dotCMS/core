@@ -1,5 +1,22 @@
 package com.dotcms.rest;
 
+import java.io.IOException;
+import java.io.StringWriter;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.velocity.exception.ParseErrorException;
+import org.apache.velocity.exception.ResourceNotFoundException;
+
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Response;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -10,20 +27,6 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.liferay.portal.model.User;
-import java.io.IOException;
-import java.io.StringWriter;
-import java.util.List;
-import java.util.Map;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.Response;
-import org.apache.velocity.exception.ParseErrorException;
-import org.apache.velocity.exception.ResourceNotFoundException;
 
 @Path("/widget")
 public class WidgetResource {
@@ -36,7 +39,7 @@ public class WidgetResource {
 	public Response getWidget(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("params") String params) throws ResourceNotFoundException, ParseErrorException, Exception {
 
 
-        InitDataObject initData = webResource.init(params, request, response, false, null);
+        InitDataObject initData = webResource.init(params, true, request, false, null);
 
         //Creating an utility response object
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
@@ -90,14 +93,14 @@ public class WidgetResource {
 			StringWriter firstEval = new StringWriter();
 			StringWriter secondEval = new StringWriter();
 			StringBuilder widgetExecuteCode = new StringBuilder();
-
+			
 			org.apache.velocity.context.Context context = VelocityUtil.getBasicContext();
             for (String key : widget.getMap().keySet()) {
                 context.put(key, widget.getMap().get(key).toString());
                 context.put("widget" + key, widget.getMap().get(key).toString());
             }
             List<Field> fields = FieldsCache.getFieldsByStructureInode(contStructure.getInode());
-
+            
             for (Field field : fields) {
                 if (field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())) {
                     String host = widget.getHost();

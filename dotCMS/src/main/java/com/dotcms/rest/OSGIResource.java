@@ -8,23 +8,30 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import com.dotcms.rest.exception.ForbiddenException;
+
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
+import org.apache.felix.framework.OSGIUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.osgi.framework.Bundle;
+
 import com.liferay.portal.model.User;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.DomDriver;
-import org.apache.felix.framework.OSGIUtil;
-import org.osgi.framework.Bundle;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.File;
-import java.util.*;
 
 /**
  * @author Jonathan Gamba
@@ -66,9 +73,9 @@ public class OSGIResource  {
     @GET
     @Path ("/getInstalledBundles/{params:.*}")
     @Produces (MediaType.APPLICATION_JSON)
-    public Response getInstalledBundles (@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam ("params") String params ) throws JSONException {
+    public Response getInstalledBundles ( @Context HttpServletRequest request, @PathParam ("params") String params ) throws JSONException {
 
-        InitDataObject initData = webResource.init(params, request, response, true, null);
+        InitDataObject initData = webResource.init(params, true, request, true, null);
 
         //Creating an utility response object
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );

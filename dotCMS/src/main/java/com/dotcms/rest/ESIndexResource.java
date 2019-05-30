@@ -1,33 +1,15 @@
 package com.dotcms.rest;
 
-import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
-
 import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImpl;
+import com.google.gson.Gson;
+import com.dotcms.rest.exception.ForbiddenException;
+
 import com.dotcms.content.elasticsearch.business.DotIndexException;
+import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImpl;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
 import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
-import com.dotcms.repackage.org.dts.spell.utils.FileUtils;
-import com.dotcms.rest.exception.BadRequestException;
-import com.dotcms.rest.exception.ForbiddenException;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.sitesearch.business.SiteSearchAPI;
-import com.dotmarketing.util.AdminLogger;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.SecurityLogger;
-import com.dotmarketing.util.UtilMethods;
-import com.google.gson.Gson;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Date;
-import java.util.Map;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -39,11 +21,32 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+import com.dotcms.repackage.org.dts.spell.utils.FileUtils;
+import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
+import org.glassfish.jersey.media.multipart.FormDataParam;
+import com.dotcms.rest.exception.BadRequestException;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.sitesearch.business.SiteSearchAPI;
+import com.dotmarketing.util.AdminLogger;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityLogger;
+import com.dotmarketing.util.UtilMethods;
+
 import org.elasticsearch.action.admin.indices.stats.IndexStats;
 import org.elasticsearch.action.admin.indices.stats.IndicesStatsResponse;
 import org.elasticsearch.client.Client;
-import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
-import org.glassfish.jersey.media.multipart.FormDataParam;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Date;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+
+import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
 
 /**
  * @deprecated As of 2016-10-12, replaced by {@link com.dotcms.rest.api.v1.index.ESIndexResource}
@@ -54,8 +57,8 @@ public class ESIndexResource {
 
     private final WebResource webResource = new WebResource();
 
-    protected InitDataObject auth(String params, HttpServletRequest request, final HttpServletResponse response) throws DotDataException, DotSecurityException {
-        InitDataObject init= webResource.init(params, request, response, true, null);
+    protected InitDataObject auth(String params,HttpServletRequest request) throws DotDataException, DotSecurityException {
+        InitDataObject init= webResource.init(params, true, request, true, null);
         if(!APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("maintenance", init.getUser()))
             throw new DotSecurityException("unauthorized");
         return init;
@@ -170,10 +173,10 @@ public class ESIndexResource {
     @PUT
     @Path("/restore/{params:.*}")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
-    public Response restoreIndex(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("params") String params,
+    public Response restoreIndex(@Context HttpServletRequest request, @PathParam("params") String params, 
             @FormDataParam("file") InputStream inputFile, @FormDataParam("file") FormDataContentDisposition inputFileDetail) {
         try {
-            InitDataObject init=auth(params,request,response);
+            InitDataObject init=auth(params,request);
             
             String index=init.getParamsMap().get("index");
             String alias=init.getParamsMap().get("alias");
@@ -198,10 +201,10 @@ public class ESIndexResource {
     @GET
     @Path("/download/{params:.*}")
     @Produces("application/zip")
-    public Response downloadIndex(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("params") String params) {
+    public Response downloadIndex(@Context HttpServletRequest request, @PathParam("params") String params) {
         
         try {
-            InitDataObject init=auth(params,request, response);
+            InitDataObject init=auth(params,request);
             String indexName = getIndexNameOrAlias(init.getParamsMap(),"index","alias");
             if(!UtilMethods.isSet(indexName)) return Response.status(Status.BAD_REQUEST).build();
             
@@ -223,9 +226,9 @@ public class ESIndexResource {
     @PUT
     @Path("/create/{params:.*}")
     @Produces("text/plain")
-    public Response createIndex(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("params") String params) {
+    public Response createIndex(@Context HttpServletRequest request, @PathParam("params") String params) {
         try {
-            InitDataObject init=auth(params,request, response);
+            InitDataObject init=auth(params,request);
             
             int shards=Integer.parseInt(init.getParamsMap().get("shards"));
             boolean live = init.getParamsMap().containsKey("live") ? Boolean.parseBoolean(init.getParamsMap().get("live")) : false;
@@ -245,9 +248,9 @@ public class ESIndexResource {
     
     @PUT
     @Path("/clear/{params:.*}")
-    public Response clearIndex(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("params") String params) {
+    public Response clearIndex(@Context HttpServletRequest request, @PathParam("params") String params) {
         try {
-            InitDataObject init=auth(params,request,response);
+            InitDataObject init=auth(params,request);
             String indexName = getIndexNameOrAlias(init.getParamsMap(),"index","alias");
             if(UtilMethods.isSet(indexName)) {
                 APILocator.getESIndexAPI().clearIndex(indexName);
@@ -264,9 +267,9 @@ public class ESIndexResource {
     
     @DELETE
     @Path("/{params:.*}")
-    public Response deleteIndex(@Context HttpServletRequest request,@Context final HttpServletResponse response, @PathParam("params") String params) {
+    public Response deleteIndex(@Context HttpServletRequest request, @PathParam("params") String params) {
         try {
-            InitDataObject init=auth(params,request,response);
+            InitDataObject init=auth(params,request);
             String indexName = getIndexNameOrAlias(init.getParamsMap(),"index","alias");
             if(UtilMethods.isSet(indexName)) {
                 APILocator.getESIndexAPI().delete(indexName);
@@ -283,9 +286,9 @@ public class ESIndexResource {
     
     @PUT
     @Path("/activate/{params:.*}")
-    public Response activateIndex(@Context HttpServletRequest request,@Context final HttpServletResponse response, @PathParam("params") String params) {
+    public Response activateIndex(@Context HttpServletRequest request, @PathParam("params") String params) {
         try {
-            InitDataObject init=auth(params,request,response);
+            InitDataObject init=auth(params,request);
             String indexName = getIndexNameOrAlias(init.getParamsMap(),"index","alias");
             
             activateIndex(indexName);
@@ -302,9 +305,9 @@ public class ESIndexResource {
     
     @PUT
     @Path("/deactivate/{params:.*}")
-    public Response deactivateIndex(@Context HttpServletRequest request,@Context final HttpServletResponse response, @PathParam("params") String params) {
+    public Response deactivateIndex(@Context HttpServletRequest request, @PathParam("params") String params) {
         try {
-            InitDataObject init=auth(params,request,response);
+            InitDataObject init=auth(params,request);
             String indexName = getIndexNameOrAlias(init.getParamsMap(),"index","alias");
             
             deactivateIndex(indexName);
@@ -321,9 +324,9 @@ public class ESIndexResource {
     
     @PUT
     @Path("/updatereplica/{params:.*}")
-    public Response updateReplica(@Context HttpServletRequest request,@Context final HttpServletResponse response, @PathParam("params") String params) {
+    public Response updateReplica(@Context HttpServletRequest request, @PathParam("params") String params) {
         try {
-            InitDataObject init=auth(params,request,response);
+            InitDataObject init=auth(params,request);
             String indexName = getIndexNameOrAlias(init.getParamsMap(),"index","alias");
             int replicas = Integer.parseInt(init.getParamsMap().get("replicas"));
             APILocator.getESIndexAPI().updateReplicas(indexName, replicas);
@@ -343,9 +346,9 @@ public class ESIndexResource {
     
     @PUT
     @Path("/close/{params:.*}")
-    public Response closeIndex(@Context HttpServletRequest request,@Context final HttpServletResponse response, @PathParam("params") String params) {
+    public Response closeIndex(@Context HttpServletRequest request, @PathParam("params") String params) {
         try {
-            InitDataObject init=auth(params,request,response);
+            InitDataObject init=auth(params,request);
             String indexName = getIndexNameOrAlias(init.getParamsMap(),"index","alias");
             APILocator.getESIndexAPI().closeIndex(indexName);
             
@@ -361,9 +364,9 @@ public class ESIndexResource {
     
     @PUT
     @Path("/open/{params:.*}")
-    public Response openIndex(@Context HttpServletRequest request,@Context final HttpServletResponse response, @PathParam("params") String params) {
+    public Response openIndex(@Context HttpServletRequest request, @PathParam("params") String params) {
         try {
-            InitDataObject init=auth(params,request,response);
+            InitDataObject init=auth(params,request);
             String indexName = getIndexNameOrAlias(init.getParamsMap(),"index","alias");
             APILocator.getESIndexAPI().openIndex(indexName);
             
@@ -380,9 +383,9 @@ public class ESIndexResource {
     @GET
     @Path("/active/{params:.*}")
     @Produces("text/plain")
-    public Response getActive(@Context HttpServletRequest request,@Context final HttpServletResponse response, @PathParam("params") String params) {
+    public Response getActive(@Context HttpServletRequest request, @PathParam("params") String params) {
         try {
-            InitDataObject init=auth(params,request,response);
+            InitDataObject init=auth(params,request);
 
             //Creating an utility response object
             ResourceResponse responseResource = new ResourceResponse( init.getParamsMap() );
@@ -400,9 +403,9 @@ public class ESIndexResource {
     @GET
     @Path("/docscount/{params:.*}")
     @Produces("text/plain")
-    public Response getDocumentCount(@Context HttpServletRequest request,@Context final HttpServletResponse response, @PathParam("params") String params) {
+    public Response getDocumentCount(@Context HttpServletRequest request, @PathParam("params") String params) {
         try {
-            InitDataObject init=auth(params,request,response);
+            InitDataObject init=auth(params,request);
 
             //Creating an utility response object
             ResourceResponse responseResource = new ResourceResponse( init.getParamsMap() );
@@ -421,9 +424,9 @@ public class ESIndexResource {
     @GET
     @Path("/indexlist/{params:.*}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response indexList(@Context HttpServletRequest request,@Context final HttpServletResponse response, @PathParam("params") String params) {
+    public Response indexList(@Context HttpServletRequest request, @PathParam("params") String params) {
         try {
-            InitDataObject init = auth(params,request,response);
+            InitDataObject init = auth(params,request);
 
             //Creating an utility response object
             ResourceResponse responseResource = new ResourceResponse( init.getParamsMap() );

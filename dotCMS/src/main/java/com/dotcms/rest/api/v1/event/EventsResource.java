@@ -20,6 +20,7 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.system.AppContext;
+import com.dotcms.system.SimpleMapAppContext;
 import com.dotcms.util.LongPollingService;
 import com.dotcms.util.marshal.MarshalFactory;
 import com.dotcms.util.marshal.MarshalUtils;
@@ -29,7 +30,6 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.List;
@@ -87,14 +87,13 @@ public class EventsResource implements Serializable {
     @Path("/syncevents")
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response getSyncEvents(@Context final HttpServletRequest httpServletRequest,
-                                        @Context final HttpServletResponse httpServletResponse,
+    public final Response getSyncEvents(@Context final HttpServletRequest request,
                                         @QueryParam("lastcallback") Long lastCallback) {
 
 
         Response response              = null;
-        final InitDataObject initData  = this.webResource.init(null, httpServletRequest, httpServletResponse, true, null);
-        final AppContext appContext    =  WebSessionContext.getInstance(httpServletRequest);
+        final InitDataObject initData  = this.webResource.init(null, true, request, true, null);
+        final AppContext appContext    =  WebSessionContext.getInstance(request);
         List<SystemEvent> systemEvents = null;
 
         try {
@@ -124,16 +123,15 @@ public class EventsResource implements Serializable {
     @Path("/events")
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final void getEvents(@Context final HttpServletRequest httpServletRequest,
-                                @Context final HttpServletResponse httpServletResponse,
+    public final void getEvents(@Context final HttpServletRequest request,
                                 @Suspended final AsyncResponse asyncResponse,
                                 @QueryParam("lastcallback") Long lastCallback) {
 
 
         Response response             = null;
-        final InitDataObject initData = this.webResource.init(null, httpServletRequest, httpServletResponse, true, null);
+        final InitDataObject initData = this.webResource.init(null, true, request, true, null);
         //final AppContext appContext =  new SimpleMapAppContext();
-        final AppContext appContext   =  WebSessionContext.getInstance(httpServletRequest);
+        final AppContext appContext   =  WebSessionContext.getInstance(request);
 
         try {
 
