@@ -1,5 +1,12 @@
 package com.dotcms.rest.api.v1.system.role;
 
+import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotcms.util.CollectionsUtils.map;
+
+import java.io.Serializable;
+
+import javax.servlet.http.HttpServletRequest;
+
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -14,13 +21,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.util.Logger;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.Serializable;
-
-import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
 
 /**
  * This end-point provides access to information associated to dotCMS roles that
@@ -78,11 +78,9 @@ public class RoleResource implements Serializable {
 	@GET
 	@Path("/checkuserroles/userid/{userId}/roleids/{roleIds}")
 	@Produces("application/json")
-	public Response checkRoles(final @Context HttpServletRequest request,
-							   final @Context HttpServletResponse response,
-							   final @PathParam("userId") String userId,
-							   final @PathParam("roleIds") String roleIds) {
-		webResource.init(request, response, true);
+	public Response checkRoles(final @Context HttpServletRequest request, final @PathParam("userId") String userId,
+			final @PathParam("roleIds") String roleIds) {
+		webResource.init(true, request, true);
 		boolean hasUserRole = false;
 		try {
 			String[] roles = roleIds.split(ROLE_ID_SEPARATOR);

@@ -10,7 +10,16 @@ import com.dotcms.publisher.integrity.IntegrityDataGeneratorThread;
 import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotcms.repackage.com.google.common.cache.Cache;
 import com.dotcms.repackage.com.google.common.cache.CacheBuilder;
+import javax.ws.rs.*;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.Invocation.Builder;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.*;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
+import org.glassfish.jersey.media.multipart.FormDataMultiPart;
+import org.glassfish.jersey.media.multipart.FormDataParam;
+import org.glassfish.jersey.media.multipart.file.FileDataBodyPart;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.HibernateUtil;
@@ -27,6 +36,10 @@ import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -38,30 +51,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-import javax.servlet.ServletContext;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.client.Invocation.Builder;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.Cookie;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.NewCookie;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.StreamingOutput;
-import org.glassfish.jersey.media.multipart.FormDataMultiPart;
-import org.glassfish.jersey.media.multipart.FormDataParam;
-import org.glassfish.jersey.media.multipart.file.FileDataBodyPart;
 
 /**
  * This REST end-point provides all the required mechanisms for the execution of
@@ -322,7 +311,7 @@ public class IntegrityResource {
 	 * server or in the remote end-point.</li>
 	 * </ol>
 	 * 
-	 * @param httpServletRequest
+	 * @param request
 	 *            - The {@link HttpServletRequest} that started the process.
 	 * @param params
 	 *            - The execution parameters for running the process: The
@@ -332,12 +321,12 @@ public class IntegrityResource {
     @GET
     @Path("/checkintegrity/{params:.*}")
     @Produces (MediaType.APPLICATION_JSON)
-    public Response checkIntegrity(@Context HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, @PathParam("params") String params)  {
-        InitDataObject initData = webResource.init(params, httpServletRequest, httpServletResponse, true, null);
+    public Response checkIntegrity(@Context HttpServletRequest request, @PathParam("params") String params)  {
+        InitDataObject initData = webResource.init(params, true, request, true, null);
 
         Map<String, String> paramsMap = initData.getParamsMap();
 
-        final HttpSession session = httpServletRequest.getSession();
+        final HttpSession session = request.getSession();
         final User loggedUser = initData.getUser();
 
         JSONObject jsonResponse = new JSONObject();
@@ -358,7 +347,7 @@ public class IntegrityResource {
                 jsonResponse.put( "message", "Integrity Checking Initialized..." );
 
                 //Setting the process status
-                setStatus( httpServletRequest, endpointId, ProcessStatus.FINISHED );
+                setStatus( request, endpointId, ProcessStatus.FINISHED );
 
                 return response( jsonResponse.toString(), false );
             }
@@ -376,7 +365,7 @@ public class IntegrityResource {
         try {
 
             //Setting the process status
-            setStatus( httpServletRequest, endpointId, ProcessStatus.PROCESSING );
+            setStatus( request, endpointId, ProcessStatus.PROCESSING );
 
             final PublishingEndPoint endpoint = APILocator.getPublisherEndPointAPI().findEndPointById(endpointId);
             final Optional<String> authToken = PushPublisher.retriveEndpointKeyDigest(endpoint);
@@ -562,7 +551,7 @@ public class IntegrityResource {
     /**
      * Method that will interrupt the integrity checking running processes locally and in the end point server
      *
-     * @param httpServletRequest
+     * @param request
      * @param params
      * @return
      * @throws JSONException
@@ -570,11 +559,11 @@ public class IntegrityResource {
     @GET
     @Path ("/cancelIntegrityProcess/{params:.*}")
     @Produces (MediaType.APPLICATION_JSON)
-    public Response cancelIntegrityProcess ( @Context HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, @PathParam ("params") String params ) throws JSONException {
+    public Response cancelIntegrityProcess ( @Context HttpServletRequest request, @PathParam ("params") String params ) throws JSONException {
 
         StringBuilder responseMessage = new StringBuilder();
 
-        InitDataObject initData = webResource.init(params, httpServletRequest, httpServletResponse, true, null);
+        InitDataObject initData = webResource.init(params, true, request, true, null);
         Map<String, String> paramsMap = initData.getParamsMap();
 
         //Validate the parameters
@@ -589,7 +578,7 @@ public class IntegrityResource {
         try {
             JSONObject jsonResponse = new JSONObject();
 
-            HttpSession session = httpServletRequest.getSession();
+            HttpSession session = request.getSession();
             //Verify if we have something set on the session
             if ( session.getAttribute( "integrityCheck_" + endpointId ) == null ) {
                 //And prepare the response
@@ -644,7 +633,7 @@ public class IntegrityResource {
                     runningThread.interrupt();
 
                     //Remove the thread from the session
-                    clearThreadInSession( httpServletRequest, endpointId );
+                    clearThreadInSession( request, endpointId );
 
                     jsonResponse.put( "success", true );
                     jsonResponse.put( "message", LanguageUtil.get( initData.getUser().getLocale(), "IntegrityCheckingCanceled" ) );
@@ -679,7 +668,7 @@ public class IntegrityResource {
     @Path("/cancelIntegrityProcessOnEndpoint/{params:.*}")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces (MediaType.APPLICATION_JSON)
-    public Response cancelIntegrityProcessOnEndpoint ( @Context HttpServletRequest request,  @FormDataParam ("AUTH_TOKEN") String auth_token_digest, @FormDataParam ("REQUEST_ID") String requestId ) {
+    public Response cancelIntegrityProcessOnEndpoint ( @Context HttpServletRequest request, @FormDataParam ("AUTH_TOKEN") String auth_token_digest, @FormDataParam ("REQUEST_ID") String requestId ) {
 
         String remoteIP = null;
 
@@ -747,11 +736,11 @@ public class IntegrityResource {
     @GET
     @Path ("/checkIntegrityProcessStatus/{params:.*}")
     @Produces (MediaType.APPLICATION_JSON)
-    public Response checkIntegrityProcessStatus ( @Context final HttpServletRequest request, @Context final HttpServletResponse response, @PathParam ("params") String params ) throws JSONException {
+    public Response checkIntegrityProcessStatus ( @Context final HttpServletRequest request, @PathParam ("params") String params ) throws JSONException {
 
         StringBuilder responseMessage = new StringBuilder();
 
-        InitDataObject initData = webResource.init(params, request, response, true, null);
+        InitDataObject initData = webResource.init(params, true, request, true, null);
         Map<String, String> paramsMap = initData.getParamsMap();
 
         //Validate the parameters
@@ -826,11 +815,11 @@ public class IntegrityResource {
     @GET
     @Path ("/getIntegrityResult/{params:.*}")
     @Produces (MediaType.APPLICATION_JSON)
-    public Response getIntegrityResult ( @Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam ("params") String params ) throws JSONException {
+    public Response getIntegrityResult ( @Context HttpServletRequest request, @PathParam ("params") String params ) throws JSONException {
 
         StringBuilder responseMessage = new StringBuilder();
 
-        InitDataObject initData = webResource.init(params, request, response, true, null);
+        InitDataObject initData = webResource.init(params, true, request, true, null);
         Map<String, String> paramsMap = initData.getParamsMap();
 
         //Validate the parameters
@@ -953,11 +942,11 @@ public class IntegrityResource {
     @GET
     @Path ("/discardconflicts/{params:.*}")
     @Produces (MediaType.APPLICATION_JSON)
-    public Response discardConflicts ( @Context final HttpServletRequest request, @Context final HttpServletResponse response, @PathParam ("params") String params ) throws JSONException {
+    public Response discardConflicts ( @Context final HttpServletRequest request, @PathParam ("params") String params ) throws JSONException {
 
         StringBuilder responseMessage = new StringBuilder();
 
-        InitDataObject initData = webResource.init(params, request, response, true, null);
+        InitDataObject initData = webResource.init(params, true, request, true, null);
         Map<String, String> paramsMap = initData.getParamsMap();
 
         //Validate the parameters
@@ -1074,7 +1063,7 @@ public class IntegrityResource {
 	 * server. If the parameter equals <code>"remote"</code>, the fix will take
 	 * place in remote server.
 	 *
-	 * @param httpServletRequest
+	 * @param request
 	 *            - The {@link HttpServletRequest} that started the process.
 	 * @param params
 	 *            - The execution parameters for running the process: The
@@ -1086,9 +1075,9 @@ public class IntegrityResource {
     @GET
     @Path ("/fixconflicts/{params:.*}")
     @Produces (MediaType.APPLICATION_JSON)
-    public Response fixConflicts ( @Context final HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, @PathParam ("params") final String params ) throws JSONException {
+    public Response fixConflicts ( @Context final HttpServletRequest request, @PathParam ("params") final String params ) throws JSONException {
 
-        final InitDataObject initData = webResource.init(params, httpServletRequest, httpServletResponse, true, null);
+        final InitDataObject initData = webResource.init(params, true, request, true, null);
         final Map<String, String> paramsMap = initData.getParamsMap();
         final JSONObject jsonResponse = new JSONObject();
 
@@ -1137,7 +1126,7 @@ public class IntegrityResource {
                 integrityUtil.flushAllCache();
 
                 if (!isThereAnyConflict)
-                    clearStatus(httpServletRequest, endpointId);
+                    clearStatus(request, endpointId);
 
             } else if (whereToFix.equals("remote")) {
                 integrityUtil.generateDataToFixZip(endpointId, integrityTypeToFix);
@@ -1170,7 +1159,7 @@ public class IntegrityResource {
                     jsonResponse.put("success", true);
                     jsonResponse.put("message",
                             "Fix Conflicts Process successfully started at Remote.");
-                    clearStatus(httpServletRequest, endpointId);
+                    clearStatus(request, endpointId);
                 } else {
                     Logger.error(this.getClass(),
                             "Response indicating a " + response.getStatusInfo().getReasonPhrase()

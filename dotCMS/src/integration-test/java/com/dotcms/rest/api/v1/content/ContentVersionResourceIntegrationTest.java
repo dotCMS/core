@@ -12,7 +12,8 @@ import static org.mockito.Mockito.when;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentletDataGen;
-import com.dotcms.rest.EmptyHttpResponse;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -31,9 +32,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -59,7 +57,7 @@ public class ContentVersionResourceIntegrationTest extends BaseWorkflowIntegrati
         final InitDataObject dataObject = mock(InitDataObject.class);
         when(dataObject.getUser()).thenReturn(user);
         when(webResource
-                .init(any(HttpServletRequest.class), any(HttpServletResponse.class), anyBoolean())).thenReturn(dataObject);
+                .init(anyBoolean(), any(HttpServletRequest.class), anyBoolean())).thenReturn(dataObject);
 
         versionResource = new ContentVersionResource(APILocator.getContentletAPI(),
                 APILocator.getLanguageAPI(), webResource);
@@ -71,7 +69,7 @@ public class ContentVersionResourceIntegrationTest extends BaseWorkflowIntegrati
     public void test_Find_All_Expect_OK() throws DotDataException, DotSecurityException {
         final String identifier = "f4a02846-7ca4-4e08-bf07-a61366bbacbb";
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final Response response = versionResource.findVersions(request,  new EmptyHttpResponse(), null, identifier, "0",2);
+        final Response response = versionResource.findVersions(request, null, identifier, "0",2);
 
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
 
@@ -93,7 +91,7 @@ public class ContentVersionResourceIntegrationTest extends BaseWorkflowIntegrati
     @Test
     public void test_Find_All_Expect_404() throws DotDataException, DotSecurityException {
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final Response response = versionResource.findVersions(request,  new EmptyHttpResponse(), null,"nonsense", "", 2);
+        final Response response = versionResource.findVersions(request, null,"nonsense", "", 2);
         assertEquals(Status.NOT_FOUND.getStatusCode(), response.getStatus());
     }
 
@@ -103,7 +101,7 @@ public class ContentVersionResourceIntegrationTest extends BaseWorkflowIntegrati
         final String identifier = "a9f30020-54ef-494e-92ed-645e757171c2";
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final Response response = versionResource
-                .findVersions(request,  new EmptyHttpResponse(), null, identifier, "1",2);
+                .findVersions(request, null, identifier, "1",2);
 
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
 
@@ -144,7 +142,7 @@ public class ContentVersionResourceIntegrationTest extends BaseWorkflowIntegrati
     @Test
     public void test_Find_All_By_Lang_Expect_404()  throws DotDataException, DotSecurityException{
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final Response response = versionResource.findVersions(request,  new EmptyHttpResponse(), null,"nonsense", "1",2);
+        final Response response = versionResource.findVersions(request, null,"nonsense", "1",2);
         assertEquals(Status.NOT_FOUND.getStatusCode(), response.getStatus());
     }
 
@@ -152,7 +150,7 @@ public class ContentVersionResourceIntegrationTest extends BaseWorkflowIntegrati
     @Test
     public void test_Bad_Request_404()  throws DotDataException, DotSecurityException{
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final Response response = versionResource.findVersions(request,  new EmptyHttpResponse(), null,null, "1",2);
+        final Response response = versionResource.findVersions(request, null,null, "1",2);
         assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
     }
 
@@ -168,7 +166,6 @@ public class ContentVersionResourceIntegrationTest extends BaseWorkflowIntegrati
         final HttpServletRequest request = mock(HttpServletRequest.class);
         try {
             final Response response = versionResource.findVersions(request,
-                    new EmptyHttpResponse(),
                     String.format("%s,%s", testContentlet1.getInode(), testContentlet2.getInode()),
                     null, null, 10);
             assertEquals(Status.OK.getStatusCode(), response.getStatus());

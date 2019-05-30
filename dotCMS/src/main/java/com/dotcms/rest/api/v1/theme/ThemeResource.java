@@ -3,6 +3,16 @@ package com.dotcms.rest.api.v1.theme;
 import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotmarketing.business.ThemeAPI.THEME_THUMBNAIL_KEY;
 
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -28,17 +38,6 @@ import com.liferay.portal.model.User;
 import java.util.HashMap;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
 import org.glassfish.jersey.server.JSONP;
 
 /**
@@ -89,7 +88,6 @@ public class ThemeResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response findThemes(@Context final HttpServletRequest request,
-                                     final @Context HttpServletResponse response,
                                      @QueryParam("hostId") final String hostId,
                                      @QueryParam(PaginationUtil.PAGE) final int page,
                                      @QueryParam(PaginationUtil.PER_PAGE) @DefaultValue("-1") final int perPage,
@@ -100,7 +98,7 @@ public class ThemeResource {
         Logger.debug(this,
                 "Getting the themes for the hostId: " + hostId);
 
-        final InitDataObject initData = this.webResource.init(null, request, response, true, null);
+        final InitDataObject initData = this.webResource.init(null, true, request, true, null);
         final User user = initData.getUser();
         Host host = null;
 
@@ -152,12 +150,11 @@ public class ThemeResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response findThemeById(@Context final HttpServletRequest request,
-            final @Context HttpServletResponse response,
             @PathParam("id") final String themeId) throws DotDataException, DotSecurityException {
 
         Logger.debug(this, "Getting the theme by identifier: " + themeId);
 
-        final InitDataObject initData = this.webResource.init(null, request, response, true, null);
+        final InitDataObject initData = this.webResource.init(null, true, request, true, null);
         final User user = initData.getUser();
 
         final Folder folder = folderAPI.find(themeId, user, false);

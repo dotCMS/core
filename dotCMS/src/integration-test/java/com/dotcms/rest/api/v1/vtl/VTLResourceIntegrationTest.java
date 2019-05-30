@@ -1,15 +1,12 @@
 package com.dotcms.rest.api.v1.vtl;
 
-import static com.dotcms.rest.api.v1.vtl.RequestBodyVelocityReader.EMBEDDED_VELOCITY_KEY_NAME;
-import static com.dotcms.rest.api.v1.vtl.VTLResource.VTL_PATH;
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
-
 import com.dotcms.datagen.FileAssetDataGen;
-import com.dotcms.rest.EmptyHttpResponse;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import javax.ws.rs.core.MultivaluedHashMap;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
 import com.dotcms.rest.WebResource;
 import com.dotcms.util.ConfigTestHelper;
 import com.dotcms.util.IntegrationTestInitService;
@@ -21,14 +18,20 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.UtilMethods;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.Files;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import org.jetbrains.annotations.NotNull;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -36,17 +39,11 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import javax.ws.rs.core.MultivaluedHashMap;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
-import org.jetbrains.annotations.NotNull;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+
+import static com.dotcms.rest.api.v1.vtl.RequestBodyVelocityReader.EMBEDDED_VELOCITY_KEY_NAME;
+import static com.dotcms.rest.api.v1.vtl.VTLResource.VTL_PATH;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.*;
 
 @RunWith(DataProviderRunner.class)
 public class VTLResourceIntegrationTest {
@@ -167,18 +164,19 @@ public class VTLResourceIntegrationTest {
             throws IOException, DotSecurityException, DotDataException {
         createVTLFile(testCase.getVtlFile(), vtlFolder);
 
-        final HttpServletRequest  request  = getMockedRequest();
-        final HttpServletResponse response = getMockedResponse();
+        final HttpServletRequest request = getMockedRequest();
+
+        final HttpServletResponse servletResponse = mock(HttpServletResponse.class);
 
         final UriInfo uriInfo = mock(UriInfo.class);
         when(uriInfo.getQueryParameters()).thenReturn(testCase.getQueryParameters());
 
-        final WebResource webResource = getSpiedWebResource(testCase, request, response);
+        final WebResource webResource = getSpiedWebResource(testCase, request);
 
 
         final HTTPMethodParams params = new HTTPMethodParamsBuilder()
                 .setRequest(request)
-                .setServletResponse(response)
+                .setServletResponse(servletResponse)
                 .setUriInfo(uriInfo)
                 .setPathParam(testCase.getPathParameter())
                 .setBodyMap(testCase.getBodyMap())
@@ -221,12 +219,12 @@ public class VTLResourceIntegrationTest {
         return  output;
     }
 
-    private WebResource getSpiedWebResource(final VTLResourceTestCase testCase, final HttpServletRequest request, final HttpServletResponse response) throws DotDataException, DotSecurityException {
+    private WebResource getSpiedWebResource(final VTLResourceTestCase testCase, final HttpServletRequest request) throws DotDataException, DotSecurityException {
         final User requestingUser = APILocator.getUserAPI().loadUserById(testCase.getUserId(),
                 APILocator.systemUser(), false);
 
         final WebResource webResource = spy(WebResource.class);
-        doReturn(requestingUser).when(webResource).getCurrentUser(request, response,
+        doReturn(requestingUser).when(webResource).getCurrentUser(request,
                 WebResource.buildParamsMap(testCase.getPathParameter()), false);
         return webResource;
     }
@@ -237,12 +235,6 @@ public class VTLResourceIntegrationTest {
         when(request.getSession(false)).thenReturn(mock(HttpSession.class));
         when(request.getSession()).thenReturn(mock(HttpSession.class));
         return request;
-    }
-
-    private static final EmptyHttpResponse EMPTY_HTTP_RESPONSE = new EmptyHttpResponse();
-    @NotNull
-    private HttpServletResponse getMockedResponse() {
-        return EMPTY_HTTP_RESPONSE;
     }
 
     private void createVTLFile(final File vtlFile, final Folder vtlFolder) throws IOException, DotSecurityException, DotDataException {

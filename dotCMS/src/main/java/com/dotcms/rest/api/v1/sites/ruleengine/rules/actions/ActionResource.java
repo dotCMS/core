@@ -4,6 +4,17 @@ import static com.dotcms.util.DotPreconditions.checkNotEmpty;
 
 import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
 import com.dotcms.rest.WebResource;
@@ -24,18 +35,6 @@ import com.liferay.portal.model.User;
 import java.net.URI;
 import java.net.URISyntaxException;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 import org.glassfish.jersey.server.JSONP;
 
 @Path("/v1/sites/{siteId}/ruleengine")
@@ -72,12 +71,10 @@ public class ActionResource {
     @Path("/actions/{actionId}")
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public RestRuleAction self(@Context HttpServletRequest request,
-                         @Context final HttpServletResponse response,
                          @PathParam("siteId") String siteId,
                          @PathParam("actionId") String actionId) {
-
         siteId = checkNotEmpty(siteId, BadRequestException.class, "Site Id is required.");
-        User user = getUser(request, response);
+        User user = getUser(request);
         getHost(siteId, user);
         return getActionInternal(actionId, user);
     }
@@ -95,11 +92,10 @@ public class ActionResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public Response add(@Context HttpServletRequest request,
-                        @Context final HttpServletResponse response,
                                    @PathParam("siteId") String siteId,
                                    RestRuleAction ruleAction) throws JSONException {
         siteId = checkNotEmpty(siteId, BadRequestException.class, "Site id is required.");
-        User user = getUser(request, response);
+        User user = getUser(request);
         getHost(siteId, user);
         String newId = createRuleActionInternal(ruleAction, user);
         try {
@@ -122,11 +118,10 @@ public class ActionResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public RestRuleAction update(@Context HttpServletRequest request,
-                                 @Context final HttpServletResponse response,
                                            @PathParam("siteId") String siteId,
                                            @PathParam("actionId") String actionId,
                                            RestRuleAction ruleAction) throws JSONException {
-        User user = getUser(request, response);
+        User user = getUser(request);
         getHost(siteId, user); // forces check that host exists. This should be handled by rulesAPI?
 
         updateRuleActionInternal(user, actionId, ruleAction);
@@ -145,10 +140,9 @@ public class ActionResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public Response remove(@Context HttpServletRequest request,
-                           @Context final HttpServletResponse response,
                                      @PathParam("siteId") String siteId,
                                      @PathParam("actionId") String actionId) throws JSONException {
-        User user = getUser(request, response);
+        User user = getUser(request);
 
         try {
             getHost(siteId, user);
@@ -163,8 +157,8 @@ public class ActionResource {
         } 
     }
 
-    private User getUser(final HttpServletRequest request, final HttpServletResponse response) {
-        return webResource.init(request, response, true).getUser();
+    private User getUser(@Context HttpServletRequest request) {
+        return webResource.init(true, request, true).getUser();
     }
 
     @VisibleForTesting

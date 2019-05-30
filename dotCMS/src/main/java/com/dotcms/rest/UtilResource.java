@@ -17,9 +17,7 @@ import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
-
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 
 @Path("/util")
@@ -39,10 +37,10 @@ public class UtilResource {
 	@GET
 	@Path("/encodeQueryParamValue/{params:.*}")
 	@Produces("application/json")
-	public Response getLoggedInUser(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("params") String params) throws DotDataException,
+	public Response getLoggedInUser(@Context HttpServletRequest request, @PathParam("params") String params) throws DotDataException,
 			DotRuntimeException, PortalException, SystemException, JSONException {
 
-        InitDataObject initData = webResource.init(params, request, response, true, null);
+        InitDataObject initData = webResource.init(params, true, request, true, null);
 
         //Creating an utility response object
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );

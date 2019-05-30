@@ -1,5 +1,21 @@
 package com.dotcms.publishing.remote;
 
+import static com.dotcms.publisher.business.PublisherTestUtil.cleanBundleEndpointEnv;
+import static com.dotcms.publisher.business.PublisherTestUtil.createEndpoint;
+import static com.dotcms.publisher.business.PublisherTestUtil.createEnvironment;
+import static com.dotcms.publisher.business.PublisherTestUtil.generateBundle;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.DM_WORKFLOW;
+import static com.dotmarketing.business.Role.ADMINISTRATOR;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.contenttype.business.ContentTypeAPI;
@@ -44,27 +60,25 @@ import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import com.liferay.portal.struts.MultiMessageResources;
 import com.liferay.portal.struts.MultiMessageResourcesFactory;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import javax.servlet.http.HttpServletRequest;
 import org.apache.felix.framework.OSGIUtil;
 import org.apache.struts.Globals;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.File;
-import java.util.*;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static com.dotcms.publisher.business.PublisherTestUtil.*;
-import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.DM_WORKFLOW;
-import static com.dotmarketing.business.Role.ADMINISTRATOR;
-import static org.junit.Assert.*;
-import static org.mockito.Matchers.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
 
@@ -114,7 +128,7 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
         final InitDataObject dataObject = mock(InitDataObject.class);
         when(dataObject.getUser()).thenReturn(user);
         when(webResource
-                .init(anyString(), any(HttpServletRequest.class),  any(HttpServletResponse.class), anyBoolean(),
+                .init(anyString(), anyBoolean(), any(HttpServletRequest.class), anyBoolean(),
                         anyString())).thenReturn(dataObject);
 
         contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
