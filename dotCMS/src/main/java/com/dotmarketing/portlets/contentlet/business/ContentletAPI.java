@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.contentlet.business;
 
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotmarketing.beans.Host;
@@ -730,8 +731,23 @@ public interface ContentletAPI {
 	 * @throws DotContentletStateException if contentlet doesn't have passed in relationship
 	 */
 	public void deleteRelatedContent(Contentlet contentlet, Relationship relationship, boolean hasParent, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException;
-	
-	/**
+
+    /**
+     * Deletes all related content from passed in contentlet and relationship
+     * @param contentlet
+     * @param relationship
+     * @param hasParent
+     * @param user
+     * @param respectFrontendRoles
+     * @param contentletsToBeRelated if the delete operation is being used to update related content later,
+     * the list of related content should be sent to perform an optimal reindex
+     */
+    void deleteRelatedContent(Contentlet contentlet, Relationship relationship,
+            boolean hasParent, User user, boolean respectFrontendRoles,
+            List<Contentlet> contentletsToBeRelated)
+            throws DotDataException, DotSecurityException, DotContentletStateException;
+
+    /**
 	 * Associates the given list of contentlets using the relationship this
 	 * methods removes old associated content and reset the relationships based
 	 * on the list of content passed as parameter

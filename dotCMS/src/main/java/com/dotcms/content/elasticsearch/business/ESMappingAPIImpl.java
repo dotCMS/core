@@ -1,5 +1,7 @@
 package com.dotcms.content.elasticsearch.business;
 
+import static com.dotcms.content.elasticsearch.business.ContentletIndexAPI.ES_LIVE_INDEX_NAME;
+import static com.dotcms.content.elasticsearch.business.ContentletIndexAPI.ES_WORKING_INDEX_NAME;
 import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
@@ -11,7 +13,6 @@ import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.content.elasticsearch.util.ESUtils;
-import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.LicenseUtil;
@@ -79,7 +80,7 @@ import org.elasticsearch.common.xcontent.XContentType;
 
 public class ESMappingAPIImpl implements ContentMappingAPI {
 
-	private static final int UUID_LENGTH = 36;
+    private static final int UUID_LENGTH = 36;
 	public static final String TEXT = "_text";
 	static ObjectMapper mapper = null;
 
@@ -95,40 +96,44 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 		}
 	}
 
-	
-	
-	/**
-	 * This method takes a mapping string, a type and puts it as the mapping
-	 * @param indexName
-	 * @param type
-	 * @param mapping
-	 * @return
-	 * @throws ElasticsearchException
-	 * @throws IOException
-	 */
-	public  boolean putMapping(String indexName, String type, String mapping) throws ElasticsearchException, IOException{
+    /**
+     * This method takes a mapping string, a type and puts it as the mapping
+     */
+    public boolean putMapping(final String indexName, final String type, final String mapping)
+            throws ElasticsearchException, IOException {
 
-		final ActionFuture<PutMappingResponse> lis = new ESClient().getClient().admin().indices()
-				.preparePutMapping().setIndices(indexName).setType(type)
-				.setSource(mapping, XContentType.JSON).execute();
-		return lis.actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS).isAcknowledged();
-	}
+        final ActionFuture<PutMappingResponse> lis = new ESClient().getClient().admin().indices()
+                .preparePutMapping().setIndices(indexName).setType(type)
+                .setSource(mapping, XContentType.JSON).execute();
+        return lis.actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS).isAcknowledged();
+    }
 
-	/**
-	 * This method takes a mapping string, a type and puts it as the mapping
-	 * @param indexName
-	 * @param type
-	 * @param mapping
-	 * @return
-	 * @throws ElasticsearchException
-	 * @throws IOException
-	 */
-	public  boolean putMapping(String indexName, String type, String mapping, String settings) throws ElasticsearchException, IOException{
-		final ActionFuture<PutMappingResponse> lis = new ESClient().getClient().admin().indices()
-				.preparePutMapping().setIndices(indexName).setType(type)
-				.setSource(mapping, XContentType.JSON).execute();
-		return lis.actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS).isAcknowledged();
-	}
+    /**
+     * This method takes a mapping map, a type and puts it as the mapping
+     */
+    public boolean putMapping(final String indexName, final String type, final Map mapping)
+            throws ElasticsearchException {
+
+        final ActionFuture<PutMappingResponse> lis = new ESClient().getClient().admin().indices()
+                .preparePutMapping().setIndices(indexName).setType(type)
+                .setSource(mapping).execute();
+        return lis.actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS).isAcknowledged();
+    }
+
+    /**
+     * This method takes a mapping string, a type and puts it as the mapping
+     *
+     * @deprecated Use {@link ESMappingAPIImpl#putMapping(String, String, String)} or {@link
+     * ESMappingAPIImpl#putMapping(String, String, Map)} )}instead
+     */
+    @Deprecated
+    public boolean putMapping(final String indexName, final String type, final String mapping,
+            final String settings) throws ElasticsearchException, IOException {
+        final ActionFuture<PutMappingResponse> lis = new ESClient().getClient().admin().indices()
+                .preparePutMapping().setIndices(indexName).setType(type)
+                .setSource(mapping, XContentType.JSON).execute();
+        return lis.actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS).isAcknowledged();
+    }
 
 	/**
 	 * Gets the mapping params for an index and type
@@ -181,13 +186,14 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	public Map<String,Object> toMap(final Contentlet contentlet) throws DotMappingException {
 
 		try {
-
+            final StringWriter sw = new StringWriter();
 			final Map<String,Object> contentletMap = new HashMap();
 			final Map<String,Object> mlowered	   = new HashMap();
 			loadCategories(contentlet, contentletMap);
 			loadFields(contentlet, contentletMap);
 			loadPermissions(contentlet, contentletMap);
-			loadRelationshipFields(contentlet, contentletMap);
+            loadRelationshipFields(contentlet, contentletMap, sw);
+
 
 			Identifier ident = APILocator.getIdentifierAPI().find(contentlet);
 			ContentletVersionInfo cvi = APILocator.getVersionableAPI().getContentletVersionInfo(ident.getId(), contentlet.getLanguageId());
@@ -269,34 +275,21 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 				
 			}
 
-			final StringWriter sw = new StringWriter();
 			for(final Entry<String,Object> entry : contentletMap.entrySet()){
 				final String lowerCaseKey = entry.getKey().toLowerCase();
 				Object lowerCaseValue = entry.getValue();
 
 				if (UtilMethods.isSet(lowerCaseValue) && (lowerCaseValue instanceof String || (
 						//filters relationships
+                        !(lowerCaseValue instanceof List) &&
 						 !lowerCaseKey
-								.endsWith(ESMappingConstants.TAGS) && !lowerCaseKey
-								.endsWith(ESMappingConstants.SUFFIX_ORDER)))) {
+								.endsWith(ESMappingConstants.TAGS)))) {
 
 					if (lowerCaseValue instanceof String){
 						lowerCaseValue = ((String) lowerCaseValue).toLowerCase();
 					}
-					// add relationships to catchall
-                    if (lowerCaseValue instanceof List){
-                        List<Object> valList = (List<Object>) lowerCaseValue;
-                        for(Object listVal : valList) {
-                            if (listVal!=null && listVal instanceof String){
-                                sw.append(((String) listVal).toLowerCase().toString()).append(' ');
-                            }
-                        }
-                    }
-					
-					
-					
-					
-					if (!lowerCaseKey.endsWith(TEXT)){
+
+                    if (!lowerCaseKey.endsWith(TEXT)){
 						//for example: when lowerCaseValue=moddate, moddate_dotraw must be created from its moddate_text if exists
 						//when the moddate_text is evaluated.
 						if (!contentletMap.containsKey(entry.getKey() + TEXT)){
@@ -309,7 +302,8 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 				mlowered.put(lowerCaseKey, lowerCaseValue);
 
-				if(lowerCaseValue!=null) {
+				//exclude null values and relationships because they where appended on the loadRelationships method
+				if(lowerCaseValue!=null && !(lowerCaseValue instanceof List)) {
 					sw.append(lowerCaseValue.toString()).append(' ');
 				}
 			}
@@ -573,7 +567,10 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 					}
 				} else if (f.getFieldType().equals(ESMappingConstants.FIELD_TYPE_CATEGORY)) {
 					// moved the logic to loadCategories
-				} else if (f.getFieldType().equals(ESMappingConstants.FIELD_TYPE_CHECKBOX) || f
+				} else if (f.getFieldType().equals(ESMappingConstants.FIELD_TYPE_RELATIONSHIP)) {
+                    // loadRelationshipFields processes relationship fields
+                    continue;
+                } else if (f.getFieldType().equals(ESMappingConstants.FIELD_TYPE_CHECKBOX) || f
 						.getFieldType().equals(ESMappingConstants.FIELD_TYPE_MULTI_SELECT)) {
 					if (f.getFieldContentlet().startsWith(ESMappingConstants.FIELD_ELASTIC_TYPE_BOOLEAN)) {
 						m.put(keyName, valueObj);
@@ -688,10 +685,9 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 		final ContentletAPI conAPI=APILocator.getContentletAPI();
 
-		final String relatedSQL = "select tree.* from tree where parent = ? or child = ? order by tree_order";
+		final String relatedSQL = "select tree.* from tree where child = ? order by tree_order";
 		final DotConnect db = new DotConnect();
 		db.setSQL(relatedSQL);
-		db.addParam(contentlet.getIdentifier());
 		db.addParam(contentlet.getIdentifier());
 
 		final List<HashMap<String, String>> relatedContentlets = db.loadResults();
@@ -706,28 +702,11 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 				final List<Contentlet> oldDocs;
 				final List<String> oldRelatedIds = new ArrayList<>();
 				final List<String> newRelatedIds = new ArrayList<>();
-				final StringBuilder q = new StringBuilder();
 
-				boolean isSameStructRelationship = FactoryLocator.getRelationshipFactory()
-						.sameParentAndChild(relationship);
+                oldDocs = conAPI.getRelatedContent(contentlet, relationship,
+                        APILocator.getUserAPI().getSystemUser(), false);
 
-				if(isSameStructRelationship) {
-					q.append("+type:content +(").append(relationship.getRelationTypeValue())
-							.append(ESMappingConstants.SUFFIX_PARENT).append(":")
-							.append(contentlet.getIdentifier())
-							.append(" ").append(relationship.getRelationTypeValue())
-							.append(ESMappingConstants.SUFFIX_CHILD).append(":")
-							.append(contentlet.getIdentifier()).append(") ");
-				}else {
-					q.append("+type:content +").append(relationship.getRelationTypeValue()).append(":")
-							.append(contentlet.getIdentifier());
-				}
-
-				oldDocs = conAPI
-						.search(q.toString(), -1, 0, null, APILocator.getUserAPI().getSystemUser(),
-								false);
-
-				if(oldDocs.size() > 0) {
+                if(oldDocs.size() > 0) {
 					for(Contentlet oldDoc : oldDocs) {
 						oldRelatedIds.add(oldDoc.getIdentifier());
 					}
@@ -769,104 +748,53 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 		}
 	}
 
-	protected void loadRelationshipFields(final Contentlet contentlet, final Map<String, Object> esMap)
-			throws DotStateException, DotDataException {
+    /**
+     * @deprecated Use {@link ESMappingAPIImpl#loadRelationshipFields(Contentlet, Map, StringWriter)} instead
+     * @param contentlet
+     * @param esMap
+     * @throws DotStateException
+     * @throws DotDataException
+     */
+	@Deprecated
+    protected void loadRelationshipFields(final Contentlet contentlet,
+            final Map<String, Object> esMap) throws DotStateException, DotDataException {
+        loadRelationshipFields(contentlet, esMap, new StringWriter());
+    }
 
-		String orderKey;
-		String propName;
+    /**
+     *
+     * @param contentlet Contentlet to be mapped
+     * @param esMap Map with fields to be indexed
+     * @param catchallWriter StringWriter to save related content identifiers in the catchall field
+     * @throws DotStateException
+     * @throws DotDataException
+     */
+    protected void loadRelationshipFields(final Contentlet contentlet,
+            final Map<String, Object> esMap, final StringWriter catchallWriter)
+            throws DotStateException, DotDataException {
 
-		final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
-		final Map<String, List> relationshipsRecords = new HashMap<>();
+        final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
 
-		final DotConnect db = new DotConnect();
-		db.setSQL("select * from tree where parent = ? or child = ? order by tree_order asc");
-		db.addParam(contentlet.getIdentifier());
-		db.addParam(contentlet.getIdentifier());
+        final DotConnect db = new DotConnect();
+        db.setSQL(
+                "select child, relation_type from tree where parent = ? and relation_type !='child' order by tree_order asc");
+        db.addParam(contentlet.getIdentifier());
 
-		for (Map<String, Object> relatedEntry : db.loadObjectResults()) {
+        for (Map<String, Object> relatedEntry : db.loadObjectResults()) {
 
-			final String childId = relatedEntry.get(ESMappingConstants.CHILD).toString();
-			final String parentId = relatedEntry.get(ESMappingConstants.PARENT).toString();
-			final String relType = relatedEntry.get(ESMappingConstants.RELATION_TYPE).toString();
-			final String order = relatedEntry.get(ESMappingConstants.TREE_ORDER).toString();
+            final String childId = relatedEntry.get(ESMappingConstants.CHILD).toString();
+            final String relType = relatedEntry.get(ESMappingConstants.RELATION_TYPE).toString();
+            final Relationship relationship = relationshipAPI.byTypeValue(relType);
 
-			if ("child".equals(relType)) {
-				continue;
-			}
+            if (relationship != null && InodeUtils.isSet(relationship.getInode())) {
+                List.class.cast(esMap
+                        .computeIfAbsent(relType,
+                                k -> new ArrayList<>()))
+                        .add(childId);
 
-			final Relationship relationship = relationshipAPI.byTypeValue(relType);
-
-			if (relationship != null && InodeUtils.isSet(relationship.getInode())) {
-
-				final boolean isSameStructRelationship = relationshipAPI.sameParentAndChild(relationship);
-
-				//Support for legacy relationships
-				propName = isSameStructRelationship ?
-						(contentlet.getIdentifier().equals(parentId) ? relationship.getRelationTypeValue()
-								+ ESMappingConstants.SUFFIX_CHILD
-								: relationship.getRelationTypeValue() + ESMappingConstants.SUFFIX_PARENT)
-						: relationship.getRelationTypeValue();
-
-				orderKey = relationship.getRelationTypeValue() + ESMappingConstants.SUFFIX_ORDER;
-
-				if (relType.equals(relationship.getRelationTypeValue())) {
-					final String me = contentlet.getIdentifier();
-					final String related = me.equals(childId) ? parentId : childId;
-
-					List.class.cast(esMap.computeIfAbsent(propName, k -> new ArrayList<>())).add(related);
-
-					//adding sort elements as a list
-					List.class.cast(esMap.computeIfAbsent(orderKey, k -> new ArrayList<>()))
-							.add(related + "_" + order);
-
-					if (relationship.isRelationshipField()){
-						addRelationshipRecords(contentlet, me.equals(childId) ? relationship.getParentRelationName()
-								: relationship.getChildRelationName(), related, relationshipsRecords, esMap);
-					}
-
-				}
-			}
-		}
-
-		//Adding new relationships fields to the index map
-		esMap.putAll(relationshipsRecords);
-
-	}
-
-	/**
-	 * Groups all relationships records by relationship field
-	 */
-	private void addRelationshipRecords(final Contentlet contentlet, final String relationName,
-			final String related,
-			final Map<String, List> relationshipsRecords, final Map<String, Object> mapping) {
-
-		final ContentType contentType = contentlet.getContentType();
-		if (relationName != null) {
-			final String key = contentType.variable() + StringPool.PERIOD + relationName;
-
-			//this relationship has been already added
-			if (mapping.containsKey(key)) {
-				return;
-			}
-			if (!relationshipsRecords.containsKey(key)) {
-				try {
-					//Search for a relationship field
-					final com.dotcms.contenttype.model.field.Field field = APILocator
-							.getContentTypeFieldAPI()
-							.byContentTypeAndVar(contentType, relationName);
-					if (field != null) {
-						relationshipsRecords.put(key, new ArrayList());
-						relationshipsRecords.get(key).add(related);
-					}
-				} catch (NotFoundInDbException e) {
-					//Do nothing and continue searching for others relationships fields
-				} catch (DotDataException e) {
-					Logger.warn(this, "Error getting field for relation type " + key, e);
-				}
-
-			} else{
-				relationshipsRecords.get(key).add(related);
-			}
-		}
-	}
+                //add related content to catchall
+                catchallWriter.append(childId).append(' ');
+            }
+        }
+    }
 }

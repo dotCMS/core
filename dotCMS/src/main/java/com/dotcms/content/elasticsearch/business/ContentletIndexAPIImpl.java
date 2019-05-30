@@ -140,7 +140,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             if (!indexReady())
                 initIndex();
         } catch (Exception e) {
-            Logger.fatal("ESUil.checkAndInitialiazeIndex", e.getMessage());
+            Logger.fatal("ESUil.checkAndInitializeIndex", e.getMessage());
 
         }
     }
@@ -559,6 +559,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         builder.setBulkActions(ReindexThread.ELASTICSEARCH_BULK_ACTIONS)
                 .setBulkSize(new ByteSizeValue(ReindexThread.ELASTICSEARCH_BULK_SIZE, ByteSizeUnit.MB))
                 .setConcurrentRequests(ELASTICSEARCH_CONCURRENT_REQUESTS);
+
         return builder.build();
     }
 
