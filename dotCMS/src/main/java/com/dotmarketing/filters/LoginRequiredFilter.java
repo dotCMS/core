@@ -15,6 +15,7 @@ import com.dotcms.filters.interceptor.AbstractWebInterceptorSupportFilter;
 import com.dotcms.filters.interceptor.WebInterceptorDelegate;
 import com.dotcms.filters.interceptor.dotcms.DefaultBackEndLoginRequiredWebInterceptor;
 import com.dotcms.filters.interceptor.dotcms.XSSPreventionWebInterceptor;
+import com.dotmarketing.util.Config;
 
 /**
  * This Filter is in charge if checking if the user is logged in or not.
@@ -40,8 +41,9 @@ public class LoginRequiredFilter extends AbstractWebInterceptorSupportFilter {
 
 
         delegate.add(new DefaultBackEndLoginRequiredWebInterceptor());
-        
-        delegate.add(new XSSPreventionWebInterceptor());
+        if(Config.getBooleanProperty("XSS_PROTECTION_ENABLED", false));{
+          delegate.add(new XSSPreventionWebInterceptor());
+        }
 
     } // addDefaultInterceptors.
 
