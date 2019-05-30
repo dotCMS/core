@@ -1,15 +1,6 @@
 package com.dotcms.rest.api.v1.languages;
 
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.com.google.common.collect.Maps;
-import com.dotcms.repackage.javax.ws.rs.GET;
-import com.dotcms.repackage.javax.ws.rs.POST;
-import com.dotcms.repackage.javax.ws.rs.Path;
-import com.dotcms.repackage.javax.ws.rs.Produces;
-import com.dotcms.repackage.javax.ws.rs.core.Context;
-import com.dotcms.repackage.javax.ws.rs.core.MediaType;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.InitRequestRequired;
@@ -21,11 +12,19 @@ import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.liferay.util.LocaleUtil;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
 import java.util.List;
 import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import org.glassfish.jersey.server.JSONP;
 
 @Path("/v1/languages")
 public class LanguagesResource {
@@ -58,9 +57,9 @@ public class LanguagesResource {
     /**
      * @deprecated use {@link LanguagesResource#getMessages(HttpServletRequest, I18NForm)} instead
      */
-    public Map<String, RestLanguage> list(@Context HttpServletRequest request) {
+    public Map<String, RestLanguage> list(@Context HttpServletRequest request, @Context final HttpServletResponse response) {
 
-        webResource.init(true, request, true);
+        webResource.init(request, response, true);
         List<Language> languages = languageAPI.getLanguages();
         Map<String, RestLanguage> hash = Maps.newHashMapWithExpectedSize(languages.size());
         for (Language language : languages) {

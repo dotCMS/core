@@ -4,6 +4,7 @@ import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATI
 import static com.dotmarketing.common.reindex.ReindexThread.ELASTICSEARCH_CONCURRENT_REQUESTS;
 import static com.dotmarketing.util.StringUtils.builder;
 
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.common.reindex.BulkProcessorListener;
 import com.dotmarketing.util.DateUtil;
 import java.io.File;
@@ -85,6 +86,7 @@ import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 
 import io.vavr.control.Try;
+import org.elasticsearch.index.reindex.DeleteByQueryRequestBuilder;
 
 public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
@@ -931,12 +933,17 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         removeContentFromIndex(content, true);
     }
 
-    public void removeContentFromIndexByStructureInode(String structureInode) throws DotDataException {
-        String structureName = CacheLocator.getContentTypeCache().getStructureByInode(structureInode).getVelocityVarName();
-        IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
+    public void removeContentFromIndexByStructureInode(final String structureInode)
+            throws DotDataException, DotSecurityException {
+        final ContentType contentType = APILocator.getContentTypeAPI(APILocator.getUserAPI().getSystemUser()).find(structureInode);
+        if(contentType==null){
+            throw new DotDataException("ContentType with Inode or VarName: " + structureInode + "not found");
+        }
+        final String structureName = contentType.variable();
+        final IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
 
         // collecting indexes
-        List<String> idxs = new ArrayList<String>();
+        final List<String> idxs = new ArrayList<String>();
         idxs.add(info.working);
         idxs.add(info.live);
         if (info.reindex_working != null)
@@ -946,10 +953,10 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         String[] idxsArr = new String[idxs.size()];
         idxsArr = idxs.toArray(idxsArr);
 
-        BulkByScrollResponse response = DeleteByQueryAction.INSTANCE.newRequestBuilder(new ESClient().getClient())
-                .filter(QueryBuilders.queryStringQuery("+structurename:" + structureName)).source(idxsArr).get();
+        final BulkByScrollResponse response = DeleteByQueryAction.INSTANCE.newRequestBuilder(new ESClient().getClient())
+                .filter(QueryBuilders.matchQuery("contenttype",structureName.toLowerCase())).source(idxsArr).get(new TimeValue(INDEX_OPERATIONS_TIMEOUT_IN_MS));
 
-        Logger.debug(this, "Records deleted: " + response.getDeleted());
+        Logger.info(this, "Records deleted: " + response.getDeleted() + " from contentType: " + structureName);
     }
 
     public void fullReindexAbort() {

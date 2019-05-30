@@ -1,12 +1,12 @@
 package com.dotcms.rest.api.v1.content;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.javax.ws.rs.GET;
-import com.dotcms.repackage.javax.ws.rs.Path;
-import com.dotcms.repackage.javax.ws.rs.PathParam;
-import com.dotcms.repackage.javax.ws.rs.core.Context;
-import com.dotcms.repackage.javax.ws.rs.core.MediaType;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
@@ -88,9 +88,10 @@ public class ContentRelationshipsResource {
     @NoCache
     @GET
     @Path("/{params: .*}")
-    public Response getContent(@Context final HttpServletRequest request, @Context final
-    HttpServletResponse response, @PathParam("params") final String params) {
-        final InitDataObject initData = this.webResource.init(params, false, request, false, null);
+    public Response getContent(@Context final HttpServletRequest request,
+                               @Context final HttpServletResponse response,
+                               @PathParam("params") final String params) {
+        final InitDataObject initData = this.webResource.init(params, request, response, false, null);
         final Map<String, String> paramsMap = initData.getParamsMap();
         final User user = initData.getUser();
         Response res = null;

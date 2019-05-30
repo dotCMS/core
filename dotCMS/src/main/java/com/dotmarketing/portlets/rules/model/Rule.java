@@ -1,7 +1,7 @@
 package com.dotmarketing.portlets.rules.model;
 
 import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotmarketing.business.*;
 import com.dotmarketing.exception.DotDataException;

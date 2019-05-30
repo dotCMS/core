@@ -1,6 +1,6 @@
 package com.dotcms.rendering.velocity.viewtools;
 
-import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableList;
 import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.beans.ChallengeQuestion;
 import com.dotmarketing.beans.UserProxy;

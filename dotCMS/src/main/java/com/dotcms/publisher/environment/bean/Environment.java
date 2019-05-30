@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionSummary;
 import com.dotmarketing.business.Permissionable;

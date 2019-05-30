@@ -9,9 +9,9 @@ import org.junit.Test;
 
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.datagen.FileAssetDataGen;
-import com.dotcms.repackage.javax.ws.rs.client.Client;
-import com.dotcms.repackage.javax.ws.rs.client.WebTarget;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.rest.RestClientBuilder;
 import com.dotmarketing.business.APILocator;

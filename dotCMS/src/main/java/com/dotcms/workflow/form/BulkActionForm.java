@@ -1,7 +1,7 @@
 package com.dotcms.workflow.form;
 
-import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonCreator;
-import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.dotcms.rest.api.Validated;
 
 import java.util.List;

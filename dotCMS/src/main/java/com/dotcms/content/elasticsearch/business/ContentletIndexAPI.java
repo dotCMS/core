@@ -3,6 +3,7 @@ package com.dotcms.content.elasticsearch.business;
 import com.dotmarketing.common.reindex.BulkProcessorListener;
 import com.dotmarketing.common.reindex.ReindexEntry;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import java.io.IOException;
 import java.sql.Connection;
@@ -83,7 +84,8 @@ public interface ContentletIndexAPI {
 
     public void removeContentFromLiveIndex(final Contentlet content) throws DotDataException;
 
-    public void removeContentFromIndexByStructureInode(String structureInode) throws DotDataException;
+    public void removeContentFromIndexByStructureInode(String structureInode)
+            throws DotDataException, DotSecurityException;
 
     void fullReindexAbort();
 

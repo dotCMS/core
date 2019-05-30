@@ -3,16 +3,16 @@ package com.dotcms.rest.api.v1.event;
 import com.dotcms.api.system.event.SystemEvent;
 import com.dotcms.api.web.WebSessionContext;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.javax.ws.rs.GET;
-import com.dotcms.repackage.javax.ws.rs.Path;
-import com.dotcms.repackage.javax.ws.rs.Produces;
-import com.dotcms.repackage.javax.ws.rs.QueryParam;
-import com.dotcms.repackage.javax.ws.rs.container.AsyncResponse;
-import com.dotcms.repackage.javax.ws.rs.container.Suspended;
-import com.dotcms.repackage.javax.ws.rs.container.TimeoutHandler;
-import com.dotcms.repackage.javax.ws.rs.core.Context;
-import com.dotcms.repackage.javax.ws.rs.core.MediaType;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.container.AsyncResponse;
+import javax.ws.rs.container.Suspended;
+import javax.ws.rs.container.TimeoutHandler;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
@@ -20,7 +20,6 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.system.AppContext;
-import com.dotcms.system.SimpleMapAppContext;
 import com.dotcms.util.LongPollingService;
 import com.dotcms.util.marshal.MarshalFactory;
 import com.dotcms.util.marshal.MarshalUtils;
@@ -30,6 +29,7 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.List;
@@ -87,13 +87,14 @@ public class EventsResource implements Serializable {
     @Path("/syncevents")
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response getSyncEvents(@Context final HttpServletRequest request,
+    public final Response getSyncEvents(@Context final HttpServletRequest httpServletRequest,
+                                        @Context final HttpServletResponse httpServletResponse,
                                         @QueryParam("lastcallback") Long lastCallback) {
 
 
         Response response              = null;
-        final InitDataObject initData  = this.webResource.init(null, true, request, true, null);
-        final AppContext appContext    =  WebSessionContext.getInstance(request);
+        final InitDataObject initData  = this.webResource.init(null, httpServletRequest, httpServletResponse, true, null);
+        final AppContext appContext    =  WebSessionContext.getInstance(httpServletRequest);
         List<SystemEvent> systemEvents = null;
 
         try {
@@ -123,15 +124,16 @@ public class EventsResource implements Serializable {
     @Path("/events")
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final void getEvents(@Context final HttpServletRequest request,
+    public final void getEvents(@Context final HttpServletRequest httpServletRequest,
+                                @Context final HttpServletResponse httpServletResponse,
                                 @Suspended final AsyncResponse asyncResponse,
                                 @QueryParam("lastcallback") Long lastCallback) {
 
 
         Response response             = null;
-        final InitDataObject initData = this.webResource.init(null, true, request, true, null);
+        final InitDataObject initData = this.webResource.init(null, httpServletRequest, httpServletResponse, true, null);
         //final AppContext appContext =  new SimpleMapAppContext();
-        final AppContext appContext   =  WebSessionContext.getInstance(request);
+        final AppContext appContext   =  WebSessionContext.getInstance(httpServletRequest);
 
         try {
 

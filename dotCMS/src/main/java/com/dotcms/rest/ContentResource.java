@@ -1,24 +1,19 @@
 package com.dotcms.rest;
 
+import static com.dotmarketing.util.NumberUtil.toInt;
+import static com.dotmarketing.util.NumberUtil.toLong;
+
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
-import com.dotcms.repackage.javax.ws.rs.*;
-import com.dotcms.repackage.javax.ws.rs.core.Context;
-import com.dotcms.repackage.javax.ws.rs.core.MediaType;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.repackage.javax.ws.rs.core.Response.Status;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONArray;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
-import com.dotcms.repackage.org.glassfish.jersey.media.multipart.BodyPart;
-import com.dotcms.repackage.org.glassfish.jersey.media.multipart.ContentDisposition;
-import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.uuid.shorty.ShortyId;
@@ -43,7 +38,12 @@ import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityLogger;
+import com.dotmarketing.util.UUIDUtil;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.converters.Converter;
@@ -52,10 +52,6 @@ import com.thoughtworks.xstream.converters.UnmarshallingContext;
 import com.thoughtworks.xstream.io.HierarchicalStreamReader;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import com.thoughtworks.xstream.io.xml.DomDriver;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.Part;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -63,13 +59,37 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.nio.file.Files;
-import java.util.*;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static com.dotmarketing.util.NumberUtil.toInt;
-import static com.dotmarketing.util.NumberUtil.toLong;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.Part;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import org.glassfish.jersey.media.multipart.BodyPart;
+import org.glassfish.jersey.media.multipart.ContentDisposition;
+import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 
 @Path("/content")
 public class ContentResource {
@@ -103,6 +123,7 @@ public class ContentResource {
     @Path("/indexsearch/{query}/sortby/{sortby}/limit/{limit}/offset/{offset}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response indexSearch(@Context HttpServletRequest request,
+            @Context final HttpServletResponse response,
             @PathParam("query") String query,
             @PathParam("sortby") String sortBy, @PathParam("limit") int limit,
             @PathParam("offset") int offset,
@@ -110,7 +131,7 @@ public class ContentResource {
             @PathParam("callback") String callback)
             throws DotDataException, JSONException {
 
-        InitDataObject initData = webResource.init(null, true, request, false, null);
+        InitDataObject initData = webResource.init(null, request, response, false, null);
 
         Map<String, String> paramsMap = new HashMap<String, String>();
         paramsMap.put("type", type);
@@ -149,11 +170,12 @@ public class ContentResource {
     @Path("/indexcount/{query}")
     @Produces(MediaType.TEXT_PLAIN)
     public Response indexCount(@Context HttpServletRequest request,
+            @Context final HttpServletResponse response,
             @PathParam("query") String query,
             @PathParam("type") String type,
             @PathParam("callback") String callback) throws DotDataException {
 
-        InitDataObject initData = webResource.init(null, true, request, false, null);
+        InitDataObject initData = webResource.init(null, request, response, false, null);
 
         Map<String, String> paramsMap = new HashMap<String, String>();
         paramsMap.put("type", type);
@@ -178,7 +200,7 @@ public class ContentResource {
             @Context HttpServletResponse response, @PathParam("params") String params)
             throws DotDataException, JSONException {
 
-        InitDataObject initData = webResource.init(params, true, request, false, null);
+        InitDataObject initData = webResource.init(params, request, response, false, null);
         Map<String, String> paramsMap = initData.getParamsMap();
         String callback = paramsMap.get(RESTParams.CALLBACK.getValue());
         String language = paramsMap.get(RESTParams.LANGUAGE.getValue());
@@ -245,11 +267,11 @@ public class ContentResource {
     @PUT
     @Path("/canLock/{params:.*}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response canLockContent(@Context HttpServletRequest request,
+    public Response canLockContent(@Context HttpServletRequest request, @Context final HttpServletResponse response,
             @PathParam("params") String params)
             throws DotDataException, JSONException {
 
-        InitDataObject initData = webResource.init(params, true, request, false, null);
+        InitDataObject initData = webResource.init(params, request, response, false, null);
         Map<String, String> paramsMap = initData.getParamsMap();
         String callback = paramsMap.get(RESTParams.CALLBACK.getValue());
         String language = paramsMap.get(RESTParams.LANGUAGE.getValue());
@@ -335,7 +357,7 @@ public class ContentResource {
             @Context HttpServletResponse response, @PathParam("params") String params)
             throws DotDataException, JSONException {
 
-        InitDataObject initData = webResource.init(params, true, request, false, null);
+        InitDataObject initData = webResource.init(params, request, response, false, null);
 
         Map<String, String> paramsMap = initData.getParamsMap();
         String callback = paramsMap.get(RESTParams.CALLBACK.getValue());
@@ -413,11 +435,11 @@ public class ContentResource {
     @GET
     @Path("/{params:.*}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getContent(@Context HttpServletRequest request,
-            @Context HttpServletResponse response, @PathParam("params") String params) {
+    public Response getContent(@Context HttpServletRequest request, @Context final HttpServletResponse response,
+            @PathParam("params") String params) {
 
         final InitDataObject initData = this.webResource.init
-                (params, true, request, false, null);
+                (params, request, response, false, null);
         //Creating an utility response object
         final ResourceResponse responseResource = new ResourceResponse(initData.getParamsMap());
         final Map<String, String> paramsMap = initData.getParamsMap();
@@ -1043,33 +1065,32 @@ public class ContentResource {
         return multipartPUTandPOST(request, response, multipart, params, "POST");
     }
 
-    private Response multipartPUTandPOST(HttpServletRequest request, HttpServletResponse response,
-            FormDataMultiPart multipart, String params, String method)
+    private Response multipartPUTandPOST(final HttpServletRequest request,final HttpServletResponse response,
+            final FormDataMultiPart multipart, final String params, final String method)
             throws URISyntaxException, DotDataException {
 
-        InitDataObject init = webResource.init(params, true, request, false, null);
-        Contentlet contentlet = new Contentlet();
+        final InitDataObject init = webResource.init(params, request, response, false, null);
+        final Contentlet contentlet = new Contentlet();
         setRequestMetadata(contentlet, request);
 
-        Map<String, Object> map = new HashMap<String, Object>();
-        List<String> usedBinaryFields = new ArrayList<String>();
+        final Map<String, Object> map = new HashMap<>();
+        final List<String> usedBinaryFields = new ArrayList<>();
+        final List<String> binaryFields = new ArrayList<>();
         String binaryFieldsInput = null;
-        List<String> binaryFields = new ArrayList<>();
 
-        for (BodyPart part : multipart.getBodyParts()) {
-            ContentDisposition cd = part.getContentDisposition();
-            String name = cd != null && cd.getParameters().containsKey("name") ? cd.getParameters()
-                    .get("name") : "";
+        for (final BodyPart part : multipart.getBodyParts()) {
 
-            if (part.getMediaType().equals(MediaType.APPLICATION_JSON_TYPE) || name
-                    .equals("json")) {
+            final ContentDisposition contentDisposition = part.getContentDisposition();
+            final String name = contentDisposition != null && contentDisposition.getParameters().containsKey("name") ? contentDisposition.getParameters().get("name") : "";
+            final MediaType mediaType = part.getMediaType();
+
+            if (mediaType.equals(MediaType.APPLICATION_JSON_TYPE) || name.equals("json")) {
                 try {
                     processJSON(contentlet, part.getEntityAs(InputStream.class));
                     try {
-                        binaryFieldsInput =
-                            webResource.processJSON(part.getEntityAs(InputStream.class)).get("binary_fields")
-                                .toString();
+                        binaryFieldsInput = WebResource.processJSON(part.getEntityAs(InputStream.class)).get("binary_fields").toString();
                     } catch (NullPointerException npe) {
+                      //empty on purpose
                     }
                     if (UtilMethods.isSet(binaryFieldsInput)) {
                         if (!binaryFieldsInput.contains(",")) {
@@ -1084,23 +1105,20 @@ public class ContentResource {
 
                     Logger.error(this.getClass(), "Error processing JSON for Stream", e);
 
-                    Response.ResponseBuilder responseBuilder = Response
-                            .status(HttpStatus.SC_BAD_REQUEST);
+                    Response.ResponseBuilder responseBuilder = Response.status(HttpStatus.SC_BAD_REQUEST);
                     responseBuilder.entity(e.getMessage());
                     return responseBuilder.build();
                 } catch (IOException e) {
 
                     Logger.error(this.getClass(), "Error processing Stream", e);
 
-                    Response.ResponseBuilder responseBuilder = Response
-                            .status(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                    Response.ResponseBuilder responseBuilder = Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR);
                     responseBuilder.entity(e.getMessage());
                     return responseBuilder.build();
                 } catch (DotSecurityException e) {
                     throw new ForbiddenException(e);
                 }
-            } else if (part.getMediaType().equals(MediaType.APPLICATION_XML_TYPE) || name
-                    .equals("xml")) {
+            } else if (mediaType.equals(MediaType.APPLICATION_XML_TYPE) || name.equals("xml")) {
                 try {
                     processXML(contentlet, part.getEntityAs(InputStream.class));
                 } catch (Exception e) {
@@ -1111,34 +1129,44 @@ public class ContentResource {
                     }
                     Logger.error(this.getClass(), "Error processing Stream", e);
 
-                    Response.ResponseBuilder responseBuilder = Response
-                            .status(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                    Response.ResponseBuilder responseBuilder = Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR);
                     responseBuilder.entity(e.getMessage());
                     return responseBuilder.build();
                 }
-            } else if (part.getMediaType().equals(MediaType.APPLICATION_FORM_URLENCODED_TYPE)
-                    || name.equals("urlencoded")) {
+            } else if (mediaType.equals(MediaType.APPLICATION_FORM_URLENCODED_TYPE) || name.equals("urlencoded")) {
                 try {
                     processForm(contentlet, part.getEntityAs(InputStream.class));
                 } catch (Exception e) {
                     Logger.error(this.getClass(), "Error processing Stream", e);
 
-                    Response.ResponseBuilder responseBuilder = Response
-                            .status(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                    Response.ResponseBuilder responseBuilder = Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR);
                     responseBuilder.entity(e.getMessage());
                     return responseBuilder.build();
                 }
-            } else if (part.getContentDisposition() != null) {
-
+            } else if(mediaType.equals(MediaType.TEXT_PLAIN_TYPE)) {
                 try {
+                    map.put(name, part.getEntityAs(String.class));
+                    processMap( contentlet, map );
 
+                    if(null != contentDisposition && UtilMethods.isSet(contentDisposition.getFileName())){
+                        processFile(contentlet, usedBinaryFields, binaryFields, part);
+                    }
+
+                } catch (Exception e) {
+                    Logger.error( this.getClass(), "Error processing Plain Tex", e );
+
+                    Response.ResponseBuilder responseBuilder = Response.status( HttpStatus.SC_INTERNAL_SERVER_ERROR );
+                    responseBuilder.entity( e.getMessage() );
+                    return responseBuilder.build();
+                }
+            } else if (null != contentDisposition) {
+                try {
                     this.processFile(contentlet, usedBinaryFields, binaryFields, part);
                 } catch (IOException e) {
 
                     Logger.error(this.getClass(), "Error processing Stream", e);
 
-                    Response.ResponseBuilder responseBuilder = Response
-                            .status(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                    Response.ResponseBuilder responseBuilder = Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR);
                     responseBuilder.entity(e.getMessage());
                     return responseBuilder.build();
                 } catch (DotSecurityException e) {
@@ -1172,13 +1200,12 @@ public class ContentResource {
                 APILocator.getContentTypeAPI(APILocator.systemUser()).
                         find(contentlet.getContentType().inode()).fields())
                 .asOldFieldList();
-        for (final Field ff : fields) {
+        for (final Field field : fields) {
             // filling binaries in order. as they come / as field order says
-            final String fieldName = ff.getFieldContentlet();
-            if (fieldName.startsWith("binary")
-                    && !usedBinaryFields.contains(fieldName)) {
+            final String fieldName = field.getFieldContentlet();
+            if (fieldName.startsWith("binary") && !usedBinaryFields.contains(fieldName)) {
 
-                String fieldVarName = ff.getVelocityVarName();
+                String fieldVarName = field.getVelocityVarName();
                 if (binaryFields.size() > 0) {
                     fieldVarName = binaryFields.remove(0);
                 }
@@ -1214,7 +1241,7 @@ public class ContentResource {
     private Response singlePUTandPOST(HttpServletRequest request, HttpServletResponse response,
             String params, String method)
             throws URISyntaxException {
-        InitDataObject init = webResource.init(params, true, request, false, null);
+        InitDataObject init = webResource.init(params, request, response,false, null);
 
         Contentlet contentlet = new Contentlet();
         setRequestMetadata(contentlet, request);

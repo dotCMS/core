@@ -3,7 +3,7 @@ package com.dotmarketing.portlets.containers.business;
 import com.dotcms.api.vtl.model.DotJSON;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
-import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableList;
 import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;

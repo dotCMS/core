@@ -1,11 +1,11 @@
 package com.dotcms.rest.api.v1.page;
 
-import com.dotcms.repackage.com.fasterxml.jackson.core.JsonParser;
-import com.dotcms.repackage.com.fasterxml.jackson.databind.DeserializationContext;
-import com.dotcms.repackage.com.fasterxml.jackson.databind.JsonDeserializer;
-import com.dotcms.repackage.com.fasterxml.jackson.databind.JsonNode;
-import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.dotcms.repackage.jersey.repackaged.com.google.common.collect.ImmutableList;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.google.common.collect.ImmutableList;
 import com.dotcms.rest.exception.BadRequestException;
 
 import javax.servlet.http.HttpServletRequest;

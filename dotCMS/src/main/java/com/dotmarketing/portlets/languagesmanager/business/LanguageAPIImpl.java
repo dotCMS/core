@@ -4,7 +4,7 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
-import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableList;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -259,13 +259,11 @@ public class LanguageAPIImpl implements LanguageAPI {
     public String getStringKey ( final Language lang, final String key ) {
 
         final User user = getUser();
-        // First, retrieve value from legacy Language Variables or the appropriate
-        // Language.properties file
-        final String value = this.getStringFromPropertiesFile(lang, key);
-        // If not found, look it up using the new Language Variable API
-        return (null == value || StringPool.BLANK.equals(value.trim()) || key.equals(value) )?
-                getLanguageVariableAPI().getLanguageVariableRespectingFrontEndRoles(key, lang.getId(), user):
-                value;
+        // First, look it up using the new Language Variable API
+        final String value = getLanguageVariableAPI().getLanguageVariableRespectingFrontEndRoles(key, lang.getId(), user);
+        // If not found, retrieve value from legacy Language Variables or the appropriate
+		// Language.properties file
+        return (UtilMethods.isNotSet(value) || value.equals(key)) ? this.getStringFromPropertiesFile(lang, key) : value;
     }
 
     private String getStringFromPropertiesFile (final Language lang, final String key) {

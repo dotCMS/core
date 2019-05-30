@@ -1,6 +1,6 @@
 package com.dotmarketing.filters;
 
-import com.dotcms.repackage.javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;

@@ -1,7 +1,7 @@
 package com.dotcms.rest.api.v1.workflow;
 
-import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonCreator;
-import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.portlets.workflows.util.WorkflowSchemeImportExportObject;
 
