@@ -11,35 +11,44 @@ export class DotInputCalendarComponent {
     @Element() el: HTMLElement;
 
     /** Value specifies the value of the <input> element */
-    @Prop({ mutable: true })
+    @Prop({ mutable: true, reflectToAttr: true })
     value = '';
 
     /** Name that will be used as ID */
-    @Prop() name = '';
+    @Prop({ reflectToAttr: true })
+    name = '';
 
     /** (optional) Determine if it is mandatory */
-    @Prop() required = false;
+    @Prop({ reflectToAttr: true })
+    required = false;
 
     /** (optional) Text that be shown when required is set and condition not met */
-    @Prop() requiredMessage = '';
+    @Prop({ reflectToAttr: true })
+    requiredMessage = 'This field is required';
 
     /** (optional) Text that be shown when min or max are set and condition not met */
-    @Prop() validationMessage = '';
+    @Prop({ reflectToAttr: true })
+    validationMessage = "The field doesn't comply with the specified format";
 
     /** (optional) Disables field's interaction */
-    @Prop() disabled = false;
+    @Prop({ reflectToAttr: true })
+    disabled = false;
 
     /** (optional) Min, minimum value that the field will allow to set, expect a Date Format. */
-    @Prop() min = '';
+    @Prop({ reflectToAttr: true })
+    min = '';
 
     /** (optional) Max, maximum value that the field will allow to set, expect a Date Format */
-    @Prop() max = '';
+    @Prop({ reflectToAttr: true })
+    max = '';
 
     /** (optional) Step specifies the legal number intervals for the input field */
-    @Prop() step = '';
+    @Prop({ reflectToAttr: true })
+    step = '1';
 
     /** type specifies the type of <input> element to display */
-    @Prop() type = '';
+    @Prop({ reflectToAttr: true })
+    type = '';
 
     @State() status: DotFieldStatus;
     @Event() _valueChange: EventEmitter<DotFieldValueEvent>;
