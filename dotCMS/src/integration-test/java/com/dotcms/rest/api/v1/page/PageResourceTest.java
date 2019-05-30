@@ -3,12 +3,14 @@ package com.dotcms.rest.api.v1.page;
 import static com.dotcms.util.CollectionsUtils.list;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.verify;
 
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
-import javax.ws.rs.core.Response;
+import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.RestUtilTest;
@@ -16,8 +18,6 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.ApiProvider;
-import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -28,24 +28,21 @@ import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRend
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPIImpl;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.PageView;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
-import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.util.PageMode;
-import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.json.JSONException;
 import com.liferay.portal.model.User;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-
+import javax.ws.rs.core.Response;
 import org.elasticsearch.action.search.SearchResponse;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * {@link PageResource} test
@@ -78,10 +75,9 @@ public class PageResourceTest {
         final HTMLPageAssetRenderedAPI htmlPageAssetRenderedAPI = new HTMLPageAssetRenderedAPIImpl();
         esapi = mock(ContentletAPI.class);
 
-        when(webResource.init(null, true, request, true, null)).thenReturn(initDataObject);
+        when(webResource.init(anyString(), any(HttpServletRequest.class), any(HttpServletResponse.class), anyBoolean(), anyString())).thenReturn(initDataObject);
         when(webResource.init(false, request, true))
                 .thenReturn(initDataObject);
-
         when(initDataObject.getUser()).thenReturn(user);
         pageResource = new PageResource(pageResourceHelper, webResource, htmlPageAssetRenderedAPI, esapi);
 
@@ -118,7 +114,7 @@ public class PageResourceTest {
 
         when(esapi.esSearch(query, false, user, false)).thenReturn(results);
 
-        final Response response = pageResource.searchPage(request, path, false, true);
+        final Response response = pageResource.searchPage(request,  new EmptyHttpResponse(), path, false, true);
         RestUtilTest.verifySuccessResponse(response);
 
         final Collection contentLetsResponse = (Collection) ((ResponseEntityView) response.getEntity()).getEntity();
@@ -159,7 +155,7 @@ public class PageResourceTest {
 
         when(esapi.esSearch(query, false, user, false)).thenReturn(results);
 
-        final Response response = pageResource.searchPage(request, path, false, true);
+        final Response response = pageResource.searchPage(request,  new EmptyHttpResponse(), path, false, true);
         RestUtilTest.verifySuccessResponse(response);
 
         final Collection contentLetsResponse = (Collection) ((ResponseEntityView) response.getEntity()).getEntity();

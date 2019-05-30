@@ -16,11 +16,13 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
+import org.apache.commons.lang.StringEscapeUtils;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URLDecoder;
 import java.util.List;
-import javax.servlet.http.HttpServletRequest;
-import org.apache.commons.lang.StringEscapeUtils;
 
 
 @Path("/bundle")
@@ -41,11 +43,11 @@ public class BundleResource {
     @GET
     @Path ("/getunsendbundles/{params:.*}")
     @Produces ("application/json")
-    public Response getUnsendBundles ( @Context HttpServletRequest request, @PathParam ("params") String params )
+    public Response getUnsendBundles (@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam ("params") String params )
             throws DotDataException, JSONException {
 
 
-        InitDataObject initData = webResource.init(params, true, request, true, null);
+        InitDataObject initData = webResource.init(params, request, response, true, null);
         //Creating an utility response object
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
 
@@ -108,9 +110,9 @@ public class BundleResource {
 	@GET
 	@Path("/updatebundle/{params:.*}")
 	@Produces("application/json")
-	public Response updateBundle(@Context HttpServletRequest request, @PathParam("params") String params) throws IOException {
+	public Response updateBundle(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("params") String params) throws IOException {
 
-        InitDataObject initData = webResource.init(params, true, request, true, null);
+        InitDataObject initData = webResource.init(params, request, response, true, null);
 	    //Creating an utility response object
 	    ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
 	
@@ -137,9 +139,9 @@ public class BundleResource {
 	@GET
 	@Path("/deletepushhistory/{params:.*}")
 	@Produces("application/json")
-	public Response deletePushHistory(@Context HttpServletRequest request, @PathParam("params") String params) {
+	public Response deletePushHistory(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("params") String params) {
 
-        InitDataObject initData = webResource.init(params, true, request, true, null);
+        InitDataObject initData = webResource.init(params, request, response, true, null);
         //Creating an utility response object
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
 
@@ -164,9 +166,9 @@ public class BundleResource {
 	@GET
 	@Path("/deleteenvironmentpushhistory/{params:.*}")
 	@Produces("application/json")
-	public Response deleteEnvironmentPushHistory(@Context HttpServletRequest request, @PathParam("params") String params) {
+	public Response deleteEnvironmentPushHistory(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("params") String params) {
 
-        InitDataObject initData = webResource.init(params, true, request, true, null);
+        InitDataObject initData = webResource.init(params, request, response, true, null);
         //Creating an utility response object
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
 
