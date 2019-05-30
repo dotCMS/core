@@ -207,8 +207,8 @@ public class ContentToolTest extends IntegrationTestBase {
             assertNotNull(result);
             assertEquals(2, result.size());
             assertTrue(result.stream().map(elem -> elem.getContentObject().getIdentifier())
-                    .allMatch(identifier -> (identifier.equals(childContentlet1.getIdentifier())
-                            || identifier.equals(childContentlet2.getIdentifier()))));
+                    .allMatch(identifier -> identifier.equals(childContentlet1.getIdentifier())
+                            || identifier.equals(childContentlet2.getIdentifier())));
 
         } finally {
 

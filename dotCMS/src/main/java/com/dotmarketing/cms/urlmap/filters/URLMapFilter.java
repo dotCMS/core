@@ -304,7 +304,7 @@ public class URLMapFilter implements Filter {
                 value = value.substring(0, value.length() - 1);
             }
             query.append("+").append(structure.getVelocityVarName()).append(".")
-                    .append(fieldMatches.get(counter)+"_dotraw").append(":")
+                    .append(fieldMatches.get(counter)).append("_dotraw").append(":")
                     .append(QueryParser.escape(value)).append(" ");
             counter++;
         }

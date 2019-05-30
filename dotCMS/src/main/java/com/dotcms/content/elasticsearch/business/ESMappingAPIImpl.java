@@ -99,7 +99,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
     /**
      * This method takes a mapping string, a type and puts it as the mapping
      */
-    public boolean putMapping(String indexName, String type, String mapping)
+    public boolean putMapping(final String indexName, final String type, final String mapping)
             throws ElasticsearchException, IOException {
 
         final ActionFuture<PutMappingResponse> lis = new ESClient().getClient().admin().indices()
@@ -111,7 +111,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
     /**
      * This method takes a mapping map, a type and puts it as the mapping
      */
-    public boolean putMapping(String indexName, String type, Map mapping)
+    public boolean putMapping(final String indexName, final String type, final Map mapping)
             throws ElasticsearchException {
 
         final ActionFuture<PutMappingResponse> lis = new ESClient().getClient().admin().indices()
@@ -120,24 +120,20 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
         return lis.actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS).isAcknowledged();
     }
 
-	/**
-	 * This method takes a mapping string, a type and puts it as the mapping
-     * @deprecated Use {@link ESMappingAPIImpl#putMapping(String, String, String)} or
-     * {@link ESMappingAPIImpl#putMapping(String, String, Map)} )}instead
-	 * @param indexName
-	 * @param type
-	 * @param mapping
-	 * @return
-	 * @throws ElasticsearchException
-	 * @throws IOException
-	 */
-	@Deprecated
-	public  boolean putMapping(String indexName, String type, String mapping, String settings) throws ElasticsearchException, IOException{
-		final ActionFuture<PutMappingResponse> lis = new ESClient().getClient().admin().indices()
-				.preparePutMapping().setIndices(indexName).setType(type)
-				.setSource(mapping, XContentType.JSON).execute();
-		return lis.actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS).isAcknowledged();
-	}
+    /**
+     * This method takes a mapping string, a type and puts it as the mapping
+     *
+     * @deprecated Use {@link ESMappingAPIImpl#putMapping(String, String, String)} or {@link
+     * ESMappingAPIImpl#putMapping(String, String, Map)} )}instead
+     */
+    @Deprecated
+    public boolean putMapping(final String indexName, final String type, final String mapping,
+            final String settings) throws ElasticsearchException, IOException {
+        final ActionFuture<PutMappingResponse> lis = new ESClient().getClient().admin().indices()
+                .preparePutMapping().setIndices(indexName).setType(type)
+                .setSource(mapping, XContentType.JSON).execute();
+        return lis.actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS).isAcknowledged();
+    }
 
 	/**
 	 * Gets the mapping params for an index and type

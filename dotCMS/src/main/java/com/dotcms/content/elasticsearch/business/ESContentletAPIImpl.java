@@ -2684,7 +2684,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if (!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT, user,
                 respectFrontendRoles)) {
             throw new DotSecurityException("User: " + (user != null ? user.getUserId() : "Unknown")
-                    + " cannot edit Contentlet");
+                    + " cannot edit Contentlet with identifier " + contentlet.getIdentifier());
         }
         List<Relationship> rels = FactoryLocator.getRelationshipFactory()
                 .byContentType(contentlet.getContentType());
