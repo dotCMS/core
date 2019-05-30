@@ -5,6 +5,14 @@ import static com.dotcms.util.CollectionsUtils.toImmutableList;
 
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -21,15 +29,6 @@ import com.liferay.portal.model.User;
 import java.util.Arrays;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 import org.glassfish.jersey.server.JSONP;
 
 /**
@@ -101,12 +100,11 @@ public class RelationshipsResource {
             @QueryParam("contentTypeId") final String contentTypeId,
             @QueryParam(PaginationUtil.PAGE) final int page,
             @QueryParam(PaginationUtil.PER_PAGE) @DefaultValue("0") final int perPage,
-            @Context final HttpServletRequest request,
-            @Context final HttpServletResponse response) throws Throwable {
+            @Context final HttpServletRequest request) throws Throwable {
         Logger.debug(this,
                 "Getting the possible relationships for content type " + contentTypeId);
 
-        final InitDataObject initData = this.webResource.init(null, request, response, true, null);
+        final InitDataObject initData = this.webResource.init(null, true, request, true, null);
         final User user = initData.getUser();
         final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
 

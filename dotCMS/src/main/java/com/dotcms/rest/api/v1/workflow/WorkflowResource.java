@@ -10,11 +10,25 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.container.AsyncResponse;
+import javax.ws.rs.container.Suspended;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONArray;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
 import com.dotcms.rest.ContentHelper;
-import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.MapToContentletPopulator;
 import com.dotcms.rest.ResponseEntityView;
@@ -93,21 +107,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.container.AsyncResponse;
-import javax.ws.rs.container.Suspended;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.server.JSONP;
 
@@ -209,12 +208,11 @@ public class WorkflowResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response findSchemes(@Context final HttpServletRequest request,
-                                      @Context final HttpServletResponse response,
                                       @QueryParam("contentTypeId") final String  contentTypeId,
                                       @DefaultValue("true") @QueryParam("showArchive")  final boolean showArchived) {
 
         final InitDataObject initDataObject = this.webResource.init
-                (null, request, response, true, null);
+                (null, true, request, true, null);
         try {
             Logger.debug(this,
                     "Getting the workflow schemes for the contentTypeId: " + contentTypeId);
@@ -304,11 +302,10 @@ public class WorkflowResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response findAllSchemesAndSchemesByContentType(
             @Context final HttpServletRequest request,
-            @Context final HttpServletResponse response,
             @PathParam("contentTypeId") final String contentTypeId) {
 
         final InitDataObject initDataObject = this.webResource.init
-                (null, request, response, true, null);
+                (null, true, request, true, null);
 
         try {
 
@@ -343,11 +340,10 @@ public class WorkflowResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response findStepsByScheme(@Context final HttpServletRequest request,
-                                            @Context final HttpServletResponse response,
                                             @PathParam("schemeId") final String schemeId) {
 
         this.webResource.init
-                (null, request, response, true, null);
+                (null, true, request, true, null);
 
         try {
             Logger.debug(this, "Getting the workflow steps for the scheme: " + schemeId);
@@ -377,12 +373,11 @@ public class WorkflowResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response findAvailableActions(@Context final HttpServletRequest request,
-                                               @Context final HttpServletResponse response,
                                                @PathParam("inode")  final String inode,
                                                @QueryParam("renderMode") final String renderMode) {
 
         final InitDataObject initDataObject = this.webResource.init
-                (null, request, response, true, null);
+                (null, true, request, true, null);
         try {
             Logger.debug(this, ()->"Getting the available actions for the contentlet inode: " + inode);
 
@@ -413,11 +408,10 @@ public class WorkflowResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response getBulkActions(@Context final HttpServletRequest request,
-                                         @Context final HttpServletResponse response,
                                          final BulkActionForm bulkActionForm) {
 
         final InitDataObject initDataObject = this.webResource.init
-                (null, request, response, true, null);
+                (null, true, request, true, null);
         try {
 
             DotPreconditions.notNull(bulkActionForm,"Expected Request body was empty.");
@@ -442,7 +436,7 @@ public class WorkflowResource {
                                       @Suspended final AsyncResponse asyncResponse,
                                       final FireBulkActionsForm fireBulkActionsForm) {
 
-        final InitDataObject initDataObject = this.webResource.init(null, request, new EmptyHttpResponse(), true, null);
+        final InitDataObject initDataObject = this.webResource.init(null, true, request, true, null);
         Logger.debug(this, ()-> "Fire bulk actions: " + fireBulkActionsForm);
         try {
             // check the form
@@ -478,11 +472,10 @@ public class WorkflowResource {
     @IncludePermissions
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response findAction(@Context final HttpServletRequest request,
-                                     @Context final HttpServletResponse response,
                                      @PathParam("actionId") final String actionId) {
 
         final InitDataObject initDataObject = this.webResource.init
-                (null, request, response, true, null);
+                (null, true, request, true, null);
         try {
             Logger.debug(this, ()->"Finding the workflow action " + actionId);
             final WorkflowAction action = this.workflowHelper.findAction(actionId, initDataObject.getUser());
@@ -514,7 +507,7 @@ public class WorkflowResource {
             @PathParam("actionId") final String actionId) {
 
         final InitDataObject initDataObject = this.webResource.init
-                (null, request, response, true, null);
+                (null, true, request, true, null);
         try {
             Logger.debug(this, ()->"Finding the workflow action " + actionId);
 
@@ -526,6 +519,7 @@ public class WorkflowResource {
                             ", exception message: " + e.getMessage(), e);
             return ResponseUtil.mapExceptionResponse(e);
         }
+
     } // findAction.
 
     /**
@@ -541,12 +535,11 @@ public class WorkflowResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response findActionByStep(@Context final HttpServletRequest request,
-                                           @Context final HttpServletResponse response,
                                            @PathParam("stepId")   final String stepId,
                                            @PathParam("actionId") final String actionId) {
 
         final InitDataObject initDataObject = this.webResource.init
-                (null, request, response, true, null);
+                (null, true, request, true, null);
         try {
             Logger.debug(this, "Getting the workflow action " + actionId + " for the step: " + stepId);
             final WorkflowAction action = this.workflowHelper.findAction(actionId, stepId, initDataObject.getUser());
@@ -573,11 +566,10 @@ public class WorkflowResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response findActionsByStep(@Context final HttpServletRequest request,
-                                            @Context final HttpServletResponse response,
                                             @PathParam("stepId")   final String stepId) {
 
         final InitDataObject initDataObject = this.webResource.init
-                (null, request, response, true, null);
+                (null, true, request, true, null);
         final User user = initDataObject.getUser();
         try {
             Logger.debug(this, "Getting the workflow actions for the step: " + stepId);
@@ -603,11 +595,10 @@ public class WorkflowResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response findActionsByScheme(@Context final HttpServletRequest request,
-                                              @Context final HttpServletResponse response,
                                               @PathParam("schemeId") final String schemeId) {
 
         final InitDataObject initDataObject = this.webResource.init
-                (null, request, response, true, null);
+                (null, true, request, true, null);
         try {
             Logger.debug(this, "Getting the workflow actions: " + schemeId);
             final List<WorkflowAction> actions = this.workflowHelper.findActionsByScheme(schemeId, initDataObject.getUser());
@@ -632,11 +623,10 @@ public class WorkflowResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response saveAction(@Context final HttpServletRequest request,
-                                     @Context final HttpServletResponse response,
-                               final WorkflowActionForm workflowActionForm) {
+                                     final WorkflowActionForm workflowActionForm) {
 
         final InitDataObject initDataObject = this.webResource.init
-                (null, request, response, true, null);
+                (null, true, request, true, null);
         WorkflowAction newAction;
 
         try {
@@ -668,11 +658,10 @@ public class WorkflowResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response updateAction(@Context final HttpServletRequest request,
-                                       @Context final HttpServletResponse response,
                                        @PathParam("actionId") final String actionId,
                                        final WorkflowActionForm workflowActionForm) {
 
-        final InitDataObject initDataObject = this.webResource.init(null, request, response, true, null);
+        final InitDataObject initDataObject = this.webResource.init(null, true, request, true, null);
         try {
             DotPreconditions.notNull(workflowActionForm,"Expected Request body was empty.");
             Logger.debug(this, "Updating action with id: " + actionId);
@@ -699,12 +688,11 @@ public class WorkflowResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response saveActionToStep(@Context final HttpServletRequest request,
-                                           @Context final HttpServletResponse response,
                                            @PathParam("stepId")   final String stepId,
                                            final WorkflowActionStepForm workflowActionStepForm) {
 
         final InitDataObject initDataObject = this.webResource.init
-                (null, request, response, true, null);
+                (null, true, request, true, null);
         try {
             DotPreconditions.notNull(workflowActionStepForm,"Expected Request body was empty.");
             Logger.debug(this, "Saving a workflow action " + workflowActionStepForm.getActionId()
@@ -774,7 +762,7 @@ public class WorkflowResource {
                                  @PathParam("stepId") final String stepId) {
 
         final InitDataObject initDataObject = this.webResource.init
-                (null, request, new EmptyHttpResponse(), true, null);
+                (null, true, request, true, null);
 
         try {
             Logger.debug(this, "Deleting the step: " + stepId);
@@ -799,12 +787,11 @@ public class WorkflowResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response deleteAction(@Context final HttpServletRequest request,
-                                       @Context final HttpServletResponse response,
                                        @PathParam("actionId") final String actionId,
                                        @PathParam("stepId")   final String stepId) {
 
         final InitDataObject initDataObject = this.webResource.init
-                (null, request, response, true, null);
+                (null, true, request, true, null);
 
         try {
 
@@ -832,11 +819,10 @@ public class WorkflowResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response deleteAction(@Context final HttpServletRequest request,
-                                       @Context final HttpServletResponse response,
                                        @PathParam("actionId") final String actionId) {
 
         final InitDataObject initDataObject = this.webResource.init
-                (null, request, response, true, null);
+                (null, true, request, true, null);
 
         try {
 
@@ -907,11 +893,10 @@ public class WorkflowResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response reorderStep(@Context final HttpServletRequest request,
-                                      @Context final HttpServletResponse response,
-                                        @PathParam("stepId")   final String stepId,
+                                      @PathParam("stepId")   final String stepId,
                                       @PathParam("order")    final int order) {
         final InitDataObject initDataObject = this.webResource.init
-                (null, request, response, true, null);
+                (null, true, request, true, null);
 
         try {
 
@@ -940,10 +925,9 @@ public class WorkflowResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response updateStep(@Context final HttpServletRequest request,
-                                     @Context final HttpServletResponse response,
                                      @NotNull @PathParam("stepId") final String stepId,
                                      final WorkflowStepUpdateForm stepForm) {
-        final InitDataObject initDataObject = this.webResource.init(null, request, response, true, null);
+        final InitDataObject initDataObject = this.webResource.init(null, true, request, true, null);
         Logger.debug(this, "updating step for scheme with stepId: " + stepId);
         try {
             DotPreconditions.notNull(stepForm,"Expected Request body was empty.");
@@ -969,13 +953,12 @@ public class WorkflowResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response addStep(@Context final HttpServletRequest request,
-                                  @Context final HttpServletResponse response,
                                   final WorkflowStepAddForm newStepForm) {
         String schemeId = null;
         try {
             DotPreconditions.notNull(newStepForm,"Expected Request body was empty.");
             schemeId = newStepForm.getSchemeId();
-            final InitDataObject initDataObject = this.webResource.init(null, request, response, true, null);
+            final InitDataObject initDataObject = this.webResource.init(null, true, request, true, null);
             Logger.debug(this, "updating step for scheme with schemeId: " + schemeId);
             final WorkflowStep step = this.workflowHelper.addStep(newStepForm, initDataObject.getUser());
             return Response.ok(new ResponseEntityView(step)).build();
@@ -1000,9 +983,8 @@ public class WorkflowResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response findStepById(@Context final HttpServletRequest request,
-                                       @Context final HttpServletResponse response,
                                        @NotNull @PathParam("stepId") final String stepId) {
-        this.webResource.init(null, request, response, true, null);
+        this.webResource.init(null, true, request, true, null);
         Logger.debug(this, "finding step by id stepId: " + stepId);
         try {
             final WorkflowStep step = this.workflowHelper.findStepById(stepId);
@@ -1032,14 +1014,13 @@ public class WorkflowResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     public final Response fireActionByNameMultipart(@Context final HttpServletRequest request,
-                                              @Context final HttpServletResponse response,
                                               @QueryParam("inode")            final String inode,
                                               @QueryParam("identifier")       final String identifier,
                                               @DefaultValue("-1") @QueryParam("language")         final long   language,
                                               final FormDataMultiPart multipart) {
 
         final InitDataObject initDataObject = this.webResource.init
-                (null, request, response, true, null);
+                (null, true, request, true, null);
         String actionId = null;
 
         try {
@@ -1194,7 +1175,6 @@ public class WorkflowResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response fireAction(@Context final HttpServletRequest request,
-                                     @Context final HttpServletResponse response,
                                      @PathParam ("actionId")         final String actionId,
                                      @QueryParam("inode")            final String inode,
                                      @QueryParam("identifier")       final String identifier,
@@ -1202,7 +1182,7 @@ public class WorkflowResource {
                                      final FireActionForm fireActionForm) {
 
         final InitDataObject initDataObject = this.webResource.init
-                (null, request, response, true, null);
+                (null, true, request, true, null);
 
         try {
 
@@ -1245,7 +1225,6 @@ public class WorkflowResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     public final Response fireActionMultipart(@Context               final HttpServletRequest request,
-                                              @Context final HttpServletResponse response,
                                               @PathParam ("actionId")         final String actionId,
                                               @QueryParam("inode")            final String inode,
                                               @QueryParam("identifier")       final String identifier,
@@ -1253,7 +1232,7 @@ public class WorkflowResource {
                                               final FormDataMultiPart multipart) {
 
         final InitDataObject initDataObject = this.webResource.init
-                (null, request, response, true, null);
+                (null, true, request, true, null);
 
         try {
 
@@ -1575,13 +1554,12 @@ public class WorkflowResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response reorderAction(@Context final HttpServletRequest request,
-                                        @Context final HttpServletResponse response,
                                         @PathParam("stepId")   final String stepId,
                                         @PathParam("actionId") final String actionId,
                                         final WorkflowReorderWorkflowActionStepForm workflowReorderActionStepForm) {
 
         final InitDataObject initDataObject = this.webResource.init
-                (null, request, response, true, null);
+                (null, true, request, true, null);
 
         try {
             DotPreconditions.notNull(workflowReorderActionStepForm,"Expected Request body was empty.");
@@ -1603,7 +1581,7 @@ public class WorkflowResource {
     /**
      * Do an export of the scheme with all dependencies to rebuild it (such as steps and actions)
      * in addition the permission (who can use) will be also returned.
-     * @param httpServletRequest HttpServletRequest
+     * @param request HttpServletRequest
      * @param workflowSchemeImportForm WorkflowSchemeImportObjectForm
      * @return Response
      */
@@ -1612,12 +1590,11 @@ public class WorkflowResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response importScheme(@Context final HttpServletRequest  httpServletRequest,
-                                       @Context final HttpServletResponse httpServletResponse,
+    public final Response importScheme(@Context final HttpServletRequest request,
                                        final WorkflowSchemeImportObjectForm workflowSchemeImportForm) {
 
         final InitDataObject initDataObject = this.webResource.init
-                (null, httpServletRequest, httpServletResponse, true, null);
+                (null, true, request, true, null);
         Response response;
 
         try {
@@ -1652,7 +1629,7 @@ public class WorkflowResource {
     /**
      * Do an export of the scheme with all dependencies to rebuild it (such as steps and actions)
      * in addition the permission (who can use) will be also returned.
-     * @param httpServletRequest  HttpServletRequest
+     * @param request  HttpServletRequest
      * @param schemeId String
      * @return Response
      */
@@ -1661,12 +1638,11 @@ public class WorkflowResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response exportScheme(@Context final HttpServletRequest  httpServletRequest,
-                                       @Context final HttpServletResponse httpServletResponse,
+    public final Response exportScheme(@Context final HttpServletRequest request,
                                        @PathParam("schemeId") final String schemeId) {
 
         final InitDataObject initDataObject = this.webResource.init
-                (null, httpServletRequest, httpServletResponse,true, null);
+                (null, true, request, true, null);
         Response response;
         WorkflowSchemeImportExportObject exportObject;
         List<Permission>                 permissions;
@@ -1695,7 +1671,7 @@ public class WorkflowResource {
     /**
      * Do a deep copy of the scheme including steps, action, permissions and so on.
      * You can include a query string name, to include the scheme name
-     * @param httpServletRequest  HttpServletRequest
+     * @param request  HttpServletRequest
      * @param schemeId String
      * @param name String
      * @param workflowCopyForm (Optional param. use it to set any specifics on the new scheme)
@@ -1706,14 +1682,13 @@ public class WorkflowResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response copyScheme(@Context final HttpServletRequest httpServletRequest,
-                                     @Context final HttpServletResponse httpServletResponse,
+    public final Response copyScheme(@Context final HttpServletRequest request,
                                      @PathParam("schemeId") final String schemeId,
                                      @QueryParam("name") final String name,
                                      final WorkflowCopyForm workflowCopyForm) {
 
         final InitDataObject initDataObject = this.webResource.init
-                (null, httpServletRequest, httpServletResponse,true, null);
+                (null, true, request, true, null);
         Response response;
 
         try {
@@ -1753,10 +1728,9 @@ public class WorkflowResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response findAvailableDefaultActionsByContentType(@Context final HttpServletRequest request,
-                                                                   @Context final HttpServletResponse response,
-            @PathParam("contentTypeId")      final String contentTypeId) {
+                                                                   @PathParam("contentTypeId")      final String contentTypeId) {
         final InitDataObject initDataObject = this.webResource.init
-                (null, request, response, true, null);
+                (null, true, request, true, null);
         try {
             Logger.debug(this,
                     () -> "Getting the available workflow schemes default action for the ContentType: "
@@ -1785,15 +1759,14 @@ public class WorkflowResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response findAvailableDefaultActionsBySchemes(
             @Context final HttpServletRequest request,
-            @Context final HttpServletResponse response,
             @QueryParam("ids") final String schemeIds) {
 
         final InitDataObject initDataObject = this.webResource.init
-                (null, request, response, true, null);
+                (null, true, request, true, null);
         try {
 
             Logger.debug(this,
-                    ()->"Getting the available workflow schemes default action for the schemes: "
+                    "Getting the available workflow schemes default action for the schemes: "
                             + schemeIds);
             final List<WorkflowDefaultActionView> actions = this.workflowHelper
                     .findAvailableDefaultActionsBySchemes(schemeIds, initDataObject.getUser());
@@ -1821,14 +1794,13 @@ public class WorkflowResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response findInitialAvailableActionsByContentType(
             @Context final HttpServletRequest request,
-            @Context final HttpServletResponse response,
             @PathParam("contentTypeId") final String contentTypeId) {
 
         final InitDataObject initDataObject = this.webResource.init
-                (null, request, response, true, null);
+                (null, true, request, true, null);
         try {
             Logger.debug(this,
-                    ()->"Getting the available actions for the contentlet inode: " + contentTypeId);
+                    "Getting the available actions for the contentlet inode: " + contentTypeId);
             final List<WorkflowDefaultActionView> actions = this.workflowHelper
                     .findInitialAvailableActionsByContentType(contentTypeId,
                             initDataObject.getUser());
@@ -1855,12 +1827,11 @@ public class WorkflowResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response saveScheme(@Context final HttpServletRequest request,
-                                     @Context final HttpServletResponse response,
-                               final WorkflowSchemeForm workflowSchemeForm) {
-        final InitDataObject initDataObject = this.webResource.init(null, request, response, true, null);
+                                     final WorkflowSchemeForm workflowSchemeForm) {
+        final InitDataObject initDataObject = this.webResource.init(null, true, request, true, null);
         try {
             DotPreconditions.notNull(workflowSchemeForm,"Expected Request body was empty.");
-            Logger.debug(this, ()->"Saving scheme named: " + workflowSchemeForm.getSchemeName());
+            Logger.debug(this, "Saving scheme named: " + workflowSchemeForm.getSchemeName());
             final WorkflowScheme scheme = this.workflowHelper.saveOrUpdate(null, workflowSchemeForm, initDataObject.getUser());
             return Response.ok(new ResponseEntityView(scheme)).build(); // 200
         } catch (Exception e) {
@@ -1883,10 +1854,9 @@ public class WorkflowResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response updateScheme(@Context final HttpServletRequest request,
-                                       @Context final HttpServletResponse response,
-                                 @PathParam("schemeId") final String schemeId,
+                                       @PathParam("schemeId") final String schemeId,
                                        final WorkflowSchemeForm workflowSchemeForm) {
-        final InitDataObject initDataObject = this.webResource.init(null, request, response, true, null);
+        final InitDataObject initDataObject = this.webResource.init(null, true, request, true, null);
         Logger.debug(this, "Updating scheme with id: " + schemeId);
         try {
             DotPreconditions.notNull(workflowSchemeForm,"Expected Request body was empty.");
@@ -1913,7 +1883,7 @@ public class WorkflowResource {
                                    @Suspended final AsyncResponse asyncResponse,
                                    @PathParam("schemeId") final String schemeId) {
 
-        final InitDataObject initDataObject = this.webResource.init(null, request,new EmptyHttpResponse(), true, null);
+        final InitDataObject initDataObject = this.webResource.init(null, true, request, true, null);
         Logger.debug(this, ()-> "Deleting scheme with id: " + schemeId);
         try {
 

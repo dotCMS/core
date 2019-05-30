@@ -15,22 +15,25 @@ import com.dotcms.rest.annotation.InitRequestRequired;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.ApiProvider;
+import com.dotmarketing.business.Layout;
+import com.dotmarketing.business.LayoutAPI;
+import com.dotmarketing.business.NoSuchUserException;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
-import org.apache.commons.lang.StringEscapeUtils;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+import org.apache.commons.lang.StringEscapeUtils;
 
 /**
  * Encapsulates the Menu Resource
@@ -80,10 +83,10 @@ public class MenuResource implements Serializable {
 	@AccessControlAllowOrigin
 	@InitRequestRequired
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-	public Response getMenus(@Context final HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse) throws LanguageException, ClassNotFoundException
+	public Response getMenus(@Context final HttpServletRequest httpServletRequest) throws LanguageException, ClassNotFoundException
 	{
 
-		this.webResource.init(httpServletRequest, httpServletResponse, true);
+		this.webResource.init(true, httpServletRequest, true);
 
 		Response res;
 		final Collection<Menu> menus = new ArrayList<Menu>();

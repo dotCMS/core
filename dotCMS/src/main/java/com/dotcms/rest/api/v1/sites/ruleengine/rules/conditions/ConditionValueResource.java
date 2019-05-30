@@ -1,6 +1,5 @@
 package com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions;
 
-import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.com.google.common.collect.Lists;
 import javax.ws.rs.*;
@@ -19,21 +18,23 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotmarketing.portlets.rules.model.Condition;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.liferay.portal.model.User;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+
+import static com.dotcms.util.DotPreconditions.checkNotEmpty;
+import static com.dotcms.util.DotPreconditions.checkNotNull;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
-import static com.dotcms.util.DotPreconditions.checkNotEmpty;
-import static com.dotcms.util.DotPreconditions.checkNotNull;
 
 @Path("/v1/sites/{siteId}/ruleengine")
 public class ConditionValueResource {
@@ -63,12 +64,12 @@ public class ConditionValueResource {
     @NoCache
     @Path("/conditions/{conditionId}/conditionValues")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response list(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("siteId") String siteId, @PathParam("conditionId") String conditionId)
+    public Response list(@Context HttpServletRequest request, @PathParam("siteId") String siteId, @PathParam("conditionId") String conditionId)
             throws JSONException {
 
         siteId = checkNotEmpty(siteId, BadRequestException.class, "Site Id is required.");
         conditionId = checkNotEmpty(conditionId, BadRequestException.class, "Condition Id is required.");
-        User user = getUser(request, response);
+        User user = getUser(request);
         getHost(siteId, user);
         Condition condition = getCondition(conditionId, user);
         List<RestConditionValue> restConditionValues = getValuesInternal(user, condition);
@@ -91,12 +92,11 @@ public class ConditionValueResource {
     @Path("/conditions/{conditionId}/conditionValues/{valueId}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response self(@Context HttpServletRequest request,
-                         @Context final HttpServletResponse response,
                          @PathParam("siteId") String siteId,
                          @PathParam("conditionId") String conditionId,
                          @PathParam("valueId") String valueId)
             throws JSONException {
-        User user = getUser(request, response);
+        User user = getUser(request);
 
         try {
             getHost(siteId, user);
@@ -121,14 +121,13 @@ public class ConditionValueResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public Response add(@Context HttpServletRequest request,
-                        @Context final HttpServletResponse response,
                         @PathParam("siteId") String siteId,
                         @PathParam("conditionId") String conditionId,
                         RestConditionValue conditionValue) {
         siteId = checkNotEmpty(siteId, BadRequestException.class, "Site id is required.");
         conditionId = checkNotNull(conditionId, BadRequestException.class, "Condition id is required.");
         conditionValue = checkNotNull(conditionValue, BadRequestException.class, "Condition Value is required.");
-        User user = getUser(request, response);
+        User user = getUser(request);
         getHost(siteId, user);
         getCondition(conditionId, user);
         String conditionValueId = createConditionValueInternal(conditionId, conditionValue, user);
@@ -152,7 +151,6 @@ public class ConditionValueResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public RestConditionValue update(@Context HttpServletRequest request,
-                                     @Context final HttpServletResponse response,
                                 @PathParam("siteId") String siteId,
                                 @PathParam("conditionId") String conditionId,
                                 @PathParam("valueId") String valueId,
@@ -160,7 +158,7 @@ public class ConditionValueResource {
 
         siteId = checkNotEmpty(siteId, BadRequestException.class, "Site Id is required.");
         conditionId = checkNotEmpty(conditionId, BadRequestException.class, "Condition Id is required.");
-        User user = getUser(request, response);
+        User user = getUser(request);
         getHost(siteId, user); // forces check that host exists. This should be handled by rulesAPI?
         getCondition(conditionId, user); // forces check that condition exists. This should be handled by rulesAPI?
 
@@ -178,12 +176,11 @@ public class ConditionValueResource {
     @DELETE
     @Path("/conditions/{conditionId}/conditionValues/{valueId}")
     public Response remove(@Context HttpServletRequest request,
-                           @Context final HttpServletResponse response,
                            @PathParam("siteId") String siteId,
                            @PathParam("conditionId") String conditionId,
                            @PathParam("valueId") String valueId)
             throws JSONException {
-        User user = getUser(request, response);
+        User user = getUser(request);
 
         try {
             siteId = checkNotEmpty(siteId, BadRequestException.class, "Site Id is required.");
@@ -202,8 +199,8 @@ public class ConditionValueResource {
     }
 
     @VisibleForTesting
-    User getUser(final HttpServletRequest request, final HttpServletResponse response) {
-        return webResource.init(request, response, true).getUser();
+    User getUser(@Context HttpServletRequest request) {
+        return webResource.init(true, request, true).getUser();
     }
 
     @VisibleForTesting

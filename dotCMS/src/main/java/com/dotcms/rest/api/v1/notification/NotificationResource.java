@@ -92,7 +92,7 @@ public class NotificationResource {
                                       @HeaderParam("Range") final String range ) throws DotStateException, DotDataException, DotSecurityException, JSONException {
 
 
-        final InitDataObject initData = webResource.init(params, request, response, true, null);
+        final InitDataObject initData = webResource.init(params, true, request, true, null);
 
         try {
 
@@ -156,7 +156,7 @@ public class NotificationResource {
     /**
      * Returns whether there are new Notifications or not for the given User
      *
-     * @param httpServletRequest
+     * @param request
      * @param params
      * @return
      * @throws DotStateException
@@ -167,11 +167,10 @@ public class NotificationResource {
     @GET
     @Path ("/getNewNotificationsCount")
     @Produces ("application/json")
-    public Response getNewNotificationsCount ( @Context final HttpServletRequest httpServletRequest,
-                                               @Context final HttpServletResponse httpServletResponse,
+    public Response getNewNotificationsCount ( @Context final HttpServletRequest request,
                                                @PathParam ("params") final String params ) throws DotStateException, DotDataException, DotSecurityException, JSONException {
 
-        InitDataObject initData = webResource.init(params, httpServletRequest, httpServletResponse, true, null);
+        InitDataObject initData = webResource.init(params, true, request, true, null);
         Long newNotificationsCount = 0l;
         User user;
         Response response;
@@ -206,15 +205,15 @@ public class NotificationResource {
     /**
      * Update the user list of notifications marking them as read
      *
-     * @param httpServletRequest
+     * @param request
      * @return Response
      */
     @PUT
     @Path ("/markAsRead")
     @Produces ("application/json")
-    public Response markAsRead ( @Context final HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse )  {
+    public Response markAsRead ( @Context final HttpServletRequest request )  {
 
-        InitDataObject initData = webResource.init(null, httpServletRequest, httpServletResponse, true, null);
+        InitDataObject initData = webResource.init(null, true, request, true, null);
         Response response;
         User user;
 
@@ -240,16 +239,16 @@ public class NotificationResource {
 
     /**
      * Delete one notification
-     * @param httpServletRequest
+     * @param request
      * @param groupId
      * @return Response
      */
     @DELETE
     @Path("/id/{id}")
     @Produces ("application/json")
-    public Response delete(@Context HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, @PathParam("id") String groupId) {
+    public Response delete(@Context HttpServletRequest request, @PathParam("id") String groupId) {
 
-        InitDataObject initData = webResource.init(null, httpServletRequest, httpServletResponse, true, null);
+        InitDataObject initData = webResource.init(null, true, request, true, null);
         Response response;
         User user;
 
@@ -280,16 +279,16 @@ public class NotificationResource {
      * Delete one or more notifications
      *
      * Note: we have use PUT instead of DELETE, just because the ability to have a body/json
-     * @param httpServletRequest
+     * @param request
      * @param deleteForm
      * @return Response
      */
     @PUT
     @Path("/delete")
     @Produces ("application/json")
-    public Response delete ( @Context HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, final DeleteForm deleteForm )  {
+    public Response delete ( @Context HttpServletRequest request, final DeleteForm deleteForm )  {
 
-        InitDataObject initData = webResource.init(null, httpServletRequest, httpServletResponse, true, null);
+        InitDataObject initData = webResource.init(null, true, request, true, null);
         Response response;
         User user;
 

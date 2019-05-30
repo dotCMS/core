@@ -8,7 +8,6 @@ import com.liferay.portal.util.PortalUtil;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 import java.io.Serializable;
 
 import static com.dotcms.util.FunctionUtils.ifTrue;
@@ -57,28 +56,21 @@ public interface LoginServiceAPI extends Serializable {
 
     /**
      * Do the action login based on an userId, pass and rememberMe
-     * If the user can be authenticate, will returns true and create all the var's in session (including the prevention of the session fixation)
+     * This is basically a refactor from {@link com.liferay.portal.action.LoginAction} to encapsulate the login action into a
+     * method that can be use by {@link com.liferay.portal.action.LoginAction} and the {@link com.dotcms.rest.api.v1.authentication.AuthenticationResource}
+     * (web and rest json services)
+     * If the user can be authenticate, will return true and create all the var's in session
      * In addition a JWT cookie will be created.
      *
      * @param userId
      * @param password
-     * @param rememberMe boolean if true will create the JWT access token cookie in order to remember the user
-     * @param request
-     * @param response
+     * @param rememberMe
+     * @param req
+     * @param res
      * @return boolean
      */
     boolean doActionLogin(final String userId, final String password, final boolean rememberMe,
-                             final HttpServletRequest request, final HttpServletResponse response) throws Exception ;
-
-    /**
-     * When an user is being logged in, the previous session must be invalidated and created a new one.
-     * The default behavior does this, however it is able to turn off by using PREVENT_SESSION_FIXATION_ON_LOGIN on the dotmarketing config.
-     * Note: if does not exists a current session the preventSessionFixation won't do anything and will return a null session, so that you can make the decision
-     * to create a new one or no. If exists will invalidate it and create a new one.
-     * @param request HttpServletRequest
-     * @return HttpSession return the new session in case it is created, otherwise returns the same one
-     */
-    HttpSession preventSessionFixation(final HttpServletRequest request);
+                             final HttpServletRequest req, final HttpServletResponse res) throws Exception ;
 
 	/**
 	 * Basically a call of a {@link LoginFactory#doLogin(LoginForm, HttpServletRequest, HttpServletResponse)}

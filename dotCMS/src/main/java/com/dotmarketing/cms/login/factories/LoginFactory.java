@@ -1,6 +1,10 @@
 package com.dotmarketing.cms.login.factories;
 
-import com.dotcms.cms.login.PreventSessionFixationUtil;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
 import com.dotcms.enterprise.BaseAuthenticator;
 import com.dotcms.enterprise.LDAPImpl;
 import com.dotcms.enterprise.PasswordFactoryProxy;
@@ -13,7 +17,11 @@ import com.dotmarketing.cms.login.struts.LoginForm;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portal.struts.DotCustomLoginPostAction;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityLogger;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.auth.AuthException;
 import com.liferay.portal.auth.Authenticator;
@@ -21,10 +29,6 @@ import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.util.Validator;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 
 /**
  * @author will
@@ -239,11 +243,10 @@ public class LoginFactory {
 
             // if passwords match
             if (match) {
-
-            	final HttpSession session = PreventSessionFixationUtil.getInstance().preventSessionFixation(request, true);
-            	session.removeAttribute(com.dotmarketing.util.WebKeys.VISITOR);
+            	HttpSession ses = request.getSession();
+            	ses.removeAttribute(com.dotmarketing.util.WebKeys.VISITOR);
                 // session stuff
-                session.setAttribute(WebKeys.CMS_USER, user);
+                ses.setAttribute(WebKeys.CMS_USER, user);
 
                 //set personalization stuff on session
 				// ....

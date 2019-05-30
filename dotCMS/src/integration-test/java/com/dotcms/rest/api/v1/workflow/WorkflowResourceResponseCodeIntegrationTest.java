@@ -5,7 +5,6 @@ import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import com.dotcms.rest.ContentHelper;
-import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.api.MultiPartUtils;
@@ -29,7 +28,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -67,7 +65,7 @@ public class WorkflowResourceResponseCodeIntegrationTest {
         final InitDataObject dataObject = mock(InitDataObject.class);
         when(dataObject.getUser()).thenReturn(admin);
         when(webResource
-                .init(anyString(), any(HttpServletRequest.class), any(HttpServletResponse.class), anyBoolean(),
+                .init(anyString(), anyBoolean(), any(HttpServletRequest.class), anyBoolean(),
                         anyString())).thenReturn(dataObject);
 
         workflowResource = new WorkflowResource(workflowHelper, contentHelper, workflowAPI,
@@ -82,49 +80,49 @@ public class WorkflowResourceResponseCodeIntegrationTest {
     @Test
     public void Find_Scheme_Null_Content_Type(){
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final Response findResponse = workflowResource.findSchemes(request, new EmptyHttpResponse(), null, true);
+        final Response findResponse = workflowResource.findSchemes(request, null, true);
         assertEquals(Response.Status.OK.getStatusCode(), findResponse.getStatus());
     }
 
     @Test
     public void Find_Scheme_Invalid_Content_Type(){
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final Response findResponse = workflowResource.findSchemes(request, new EmptyHttpResponse(), "LOL", true);
+        final Response findResponse = workflowResource.findSchemes(request, "LOL", true);
         assertEquals(Status.NOT_FOUND.getStatusCode(), findResponse.getStatus());
     }
 
     @Test
     public void Find_All_Schemes_Null_Content_Type(){
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final Response findResponse = workflowResource.findAllSchemesAndSchemesByContentType(request, new EmptyHttpResponse(), null);
+        final Response findResponse = workflowResource.findAllSchemesAndSchemesByContentType(request, null);
         assertEquals(Status.OK.getStatusCode(), findResponse.getStatus());
     }
 
     @Test
     public void Find_All_Schemes_Invalid_Content_Type(){
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final Response findResponse = workflowResource.findAllSchemesAndSchemesByContentType(request, new EmptyHttpResponse(), "LOL");
+        final Response findResponse = workflowResource.findAllSchemesAndSchemesByContentType(request, "LOL");
         assertEquals(Status.NOT_FOUND.getStatusCode(), findResponse.getStatus());
     }
 
     @Test
     public void Find_Steps_Null_Content_Type(){
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final Response findResponse = workflowResource.findStepsByScheme(request,  new EmptyHttpResponse(),null);
+        final Response findResponse = workflowResource.findStepsByScheme(request,null);
         assertEquals(Status.BAD_REQUEST.getStatusCode(), findResponse.getStatus());
     }
 
     @Test
     public void Find_Steps_By_Scheme(){
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final Response findResponse = workflowResource.findStepsByScheme(request,  new EmptyHttpResponse(),"LOL");
+        final Response findResponse = workflowResource.findStepsByScheme(request,"LOL");
         assertEquals(Status.NOT_FOUND.getStatusCode(), findResponse.getStatus());
     }
 
     @Test
     public void Find_Steps_By_Scheme_Null(){
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final Response findResponse = workflowResource.findStepsByScheme(request,  new EmptyHttpResponse(),null);
+        final Response findResponse = workflowResource.findStepsByScheme(request,null);
         assertEquals(Status.BAD_REQUEST.getStatusCode(), findResponse.getStatus());
     }
 
@@ -150,7 +148,7 @@ public class WorkflowResourceResponseCodeIntegrationTest {
                 actionCondition("").
                 build();
 
-        final Response findResponse = workflowResource.saveAction(request,  new EmptyHttpResponse(), form);
+        final Response findResponse = workflowResource.saveAction(request, form);
         assertEquals(Status.NOT_FOUND.getStatusCode(), findResponse.getStatus());
     }
 
@@ -162,7 +160,7 @@ public class WorkflowResourceResponseCodeIntegrationTest {
         final List<WorkflowAction> actions = createWorkflowActions(workflowResource, savedScheme, adminRole.getId(), workflowSteps);
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final Response findResponse = workflowResource.findActionByStep(request,  new EmptyHttpResponse(), workflowSteps.get(0).getId(), actions.get(0).getId());
+        final Response findResponse = workflowResource.findActionByStep(request, workflowSteps.get(0).getId(), actions.get(0).getId());
         assertEquals(Status.OK.getStatusCode(), findResponse.getStatus());
     }
 
@@ -174,7 +172,7 @@ public class WorkflowResourceResponseCodeIntegrationTest {
         final List<WorkflowAction> actions = createWorkflowActions(workflowResource, savedScheme, adminRole.getId(), workflowSteps);
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final Response findResponse = workflowResource.findActionByStep(request,  new EmptyHttpResponse(),"LOL",actions.get(0).getId());
+        final Response findResponse = workflowResource.findActionByStep(request,"LOL",actions.get(0).getId());
         assertEquals(Status.NOT_FOUND.getStatusCode(), findResponse.getStatus());
     }
 
@@ -183,14 +181,14 @@ public class WorkflowResourceResponseCodeIntegrationTest {
         final WorkflowScheme savedScheme = createScheme(workflowResource);
         final List<WorkflowStep> workflowSteps = addSteps(workflowResource, savedScheme,1);
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final Response findResponse = workflowResource.findActionByStep(request, new EmptyHttpResponse(), workflowSteps.get(0).getId(), "LOL");
+        final Response findResponse = workflowResource.findActionByStep(request, workflowSteps.get(0).getId(), "LOL");
         assertEquals(Status.NOT_FOUND.getStatusCode(), findResponse.getStatus());
     }
 
     @Test
     public void Find_Actions_By_Step_NonExisting_Step_Nor_Action() throws Exception{
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final Response findResponse = workflowResource.findActionByStep(request,  new EmptyHttpResponse(),"LOL", "LOL");
+        final Response findResponse = workflowResource.findActionByStep(request, "LOL", "LOL");
         assertEquals(Status.NOT_FOUND.getStatusCode(), findResponse.getStatus());
     }
 
@@ -198,7 +196,7 @@ public class WorkflowResourceResponseCodeIntegrationTest {
     @Test
     public void Find_Actions_By_Step_Invalid_Input_Expect_BadRequest() throws Exception{
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final Response findResponse = workflowResource.findActionByStep(request, new EmptyHttpResponse(),null, null);
+        final Response findResponse = workflowResource.findActionByStep(request,null, null);
         assertEquals(Status.BAD_REQUEST.getStatusCode(), findResponse.getStatus());
     }
 
@@ -209,14 +207,14 @@ public class WorkflowResourceResponseCodeIntegrationTest {
         final WorkflowScheme savedScheme = createScheme(workflowResource);
         final List<WorkflowStep> workflowSteps = addSteps(workflowResource, savedScheme,1);
         final List<WorkflowAction> actions = createWorkflowActions(workflowResource, savedScheme, adminRole.getId(), workflowSteps);
-        final Response findResponse = workflowResource.findAction(request,  new EmptyHttpResponse(), actions.get(0).getId());
+        final Response findResponse = workflowResource.findAction(request, actions.get(0).getId());
         assertEquals(Status.OK.getStatusCode(), findResponse.getStatus());
     }
 
     @Test
     public void Find_Actions_By_Scheme_Invalid_Scheme() throws Exception{
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final Response findResponse = workflowResource.findActionsByScheme(request, new EmptyHttpResponse(), "LOL");
+        final Response findResponse = workflowResource.findActionsByScheme(request, "LOL");
         assertEquals(Status.NOT_FOUND.getStatusCode(), findResponse.getStatus());
     }
 
@@ -238,7 +236,7 @@ public class WorkflowResourceResponseCodeIntegrationTest {
                 actionCondition("").
                 build();
         final String actionId = "-1";
-        final Response updateResponse = workflowResource.updateAction(request,  new EmptyHttpResponse(), actionId, form);
+        final Response updateResponse = workflowResource.updateAction(request, actionId, form);
         assertEquals(Status.NOT_FOUND.getStatusCode(), updateResponse.getStatus());
     }
 
@@ -248,7 +246,7 @@ public class WorkflowResourceResponseCodeIntegrationTest {
         final WorkflowStepUpdateForm form = new WorkflowStepUpdateForm.Builder()
                 .enableEscalation(false).escalationAction("000").escalationTime("").stepName("LOL")
                 .stepOrder(1).stepResolved(false).build();
-        final Response updateStepResponse = workflowResource.updateStep(request,  new EmptyHttpResponse(),"00", form);
+        final Response updateStepResponse = workflowResource.updateStep(request, "00", form);
         assertEquals(Status.NOT_FOUND.getStatusCode(), updateStepResponse.getStatus());
     }
 
@@ -262,42 +260,42 @@ public class WorkflowResourceResponseCodeIntegrationTest {
                 escalationTime("").
                 stepName("LOL").
                 stepResolved(false).build();
-        final Response updateStepResponse = workflowResource.addStep(request,  new EmptyHttpResponse(),form);
+        final Response updateStepResponse = workflowResource.addStep(request, form);
         assertEquals(Status.NOT_FOUND.getStatusCode(), updateStepResponse.getStatus());
     }
 
     @Test
     public void Find_Actions_Null_Input() {
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final Response findResponse = workflowResource.findAction(request,  new EmptyHttpResponse(),null);
+        final Response findResponse = workflowResource.findAction(request,null);
         assertEquals(Status.BAD_REQUEST.getStatusCode(), findResponse.getStatus());
     }
 
     @Test
     public void Find_Actions_NonExisting(){
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final Response findResponse = workflowResource.findAction(request,  new EmptyHttpResponse(),"LOL");
+        final Response findResponse = workflowResource.findAction(request,"LOL");
         assertEquals(Status.NOT_FOUND.getStatusCode(), findResponse.getStatus());
     }
 
     @Test
     public void Find_Available_Actions(){
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final Response findResponse = workflowResource.findAvailableActions(request,  new EmptyHttpResponse(),"LOL", null);
+        final Response findResponse = workflowResource.findAvailableActions(request,"LOL", null);
         assertEquals(Status.NOT_FOUND.getStatusCode(), findResponse.getStatus());
     }
 
     @Test
     public void Find_Available_Actions_Invalid_Input(){
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final Response findResponse = workflowResource.findAvailableActions(request, new EmptyHttpResponse(),null, null);
+        final Response findResponse = workflowResource.findAvailableActions(request,null, null);
         assertEquals(Status.BAD_REQUEST.getStatusCode(), findResponse.getStatus());
     }
 
     @Test
     public void Find_Available_Default_Actions_Invalid_Input(){
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final Response findResponse = workflowResource.findAvailableDefaultActionsBySchemes(request,  new EmptyHttpResponse(),null);
+        final Response findResponse = workflowResource.findAvailableDefaultActionsBySchemes(request,null);
         assertEquals(Status.BAD_REQUEST.getStatusCode(), findResponse.getStatus());
     }
 
@@ -305,7 +303,7 @@ public class WorkflowResourceResponseCodeIntegrationTest {
     public void Save_Actions_to_Step_Invalid_Scheme(){
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final Response saveActionToStepResponse = workflowResource.saveActionToStep(
-                request,  new EmptyHttpResponse(),"0",
+                request, "0",
                 new WorkflowActionStepForm.Builder().actionId("0").build()
         );
 
@@ -330,7 +328,7 @@ public class WorkflowResourceResponseCodeIntegrationTest {
                 actionCondition("").
                 build();
         final Response saveActionToStepResponse = workflowResource.saveAction(
-                request,  new EmptyHttpResponse(), form
+                request, form
         );
         assertEquals(Status.NOT_FOUND.getStatusCode(), saveActionToStepResponse.getStatus());
     }
@@ -353,7 +351,7 @@ public class WorkflowResourceResponseCodeIntegrationTest {
                 actionCondition("").
                 build();
         final Response saveActionToStepResponse = workflowResource.updateAction(
-                request,  new EmptyHttpResponse(),"000", form
+                request,"000", form
         );
         assertEquals(Status.NOT_FOUND.getStatusCode(), saveActionToStepResponse.getStatus());
     }
@@ -361,7 +359,7 @@ public class WorkflowResourceResponseCodeIntegrationTest {
     @Test
     public void Save_Action_to_Step_Invalid_Id() {
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final Response saveActionToStepResponse = workflowResource.saveActionToStep(request, new EmptyHttpResponse(),"00",new WorkflowActionStepForm.Builder().actionId("000").build());
+        final Response saveActionToStepResponse = workflowResource.saveActionToStep(request,"00",new WorkflowActionStepForm.Builder().actionId("000").build());
         assertEquals(Status.NOT_FOUND.getStatusCode(), saveActionToStepResponse.getStatus());
     }
 
@@ -384,7 +382,7 @@ public class WorkflowResourceResponseCodeIntegrationTest {
     @Test
     public void Delete_Action_Null_Id()  {
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final Response saveActionToStepResponse = workflowResource.deleteAction(request,  new EmptyHttpResponse(),null);
+        final Response saveActionToStepResponse = workflowResource.deleteAction(request,null);
         assertEquals(Status.BAD_REQUEST.getStatusCode(), saveActionToStepResponse.getStatus());
     }
 
@@ -392,28 +390,28 @@ public class WorkflowResourceResponseCodeIntegrationTest {
     public void Reorder_Action_Invalid_Id()  {
         final HttpServletRequest request = mock(HttpServletRequest.class);
         WorkflowReorderWorkflowActionStepForm form = new WorkflowReorderWorkflowActionStepForm.Builder().order(-1).build();
-        final Response reorderActionResponse = workflowResource.reorderAction(request, new EmptyHttpResponse(),"00","00", form );
+        final Response reorderActionResponse = workflowResource.reorderAction(request,"00","00", form );
         assertEquals(Status.NOT_FOUND.getStatusCode(), reorderActionResponse.getStatus());
     }
 
     @Test
     public void Reorder_Step_Invalid_Id()  {
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final Response reorderStepResponse = workflowResource.reorderStep(request, new EmptyHttpResponse(),"LOL",0 );
+        final Response reorderStepResponse = workflowResource.reorderStep(request,"LOL",0 );
         assertEquals(Status.NOT_FOUND.getStatusCode(), reorderStepResponse.getStatus());
     }
 
     @Test
     public void Delete_Action_Invalid_Step_Id()  {
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final Response reorderStepResponse = workflowResource.deleteAction(request, new EmptyHttpResponse(),"LOL","LOL");
+        final Response reorderStepResponse = workflowResource.deleteAction(request,"LOL","LOL");
         assertEquals(Status.NOT_FOUND.getStatusCode(), reorderStepResponse.getStatus());
     }
 
     @Test
     public void Find_Actions_By_Scheme_Invalid_SchemeId()  {
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final Response findSchemeByActionResponse = workflowResource.findActionsByScheme(request, new EmptyHttpResponse(),"LOL");
+        final Response findSchemeByActionResponse = workflowResource.findActionsByScheme(request,"LOL");
         assertEquals(Status.NOT_FOUND.getStatusCode(), findSchemeByActionResponse.getStatus());
     }
 

@@ -5,7 +5,14 @@ import com.dotcms.cache.DotJSONCache;
 import com.dotcms.cache.DotJSONCacheFactory;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.rendering.velocity.viewtools.exception.DotToolException;
+import javax.ws.rs.*;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
+import org.glassfish.jersey.media.multipart.FormDataMultiPart;
+import org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.PATCH;
 import com.dotcms.rest.WebResource;
@@ -26,33 +33,16 @@ import com.dotmarketing.util.WebKeys;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
+import org.apache.velocity.exception.MethodInvocationException;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringWriter;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
-import org.apache.velocity.exception.MethodInvocationException;
-import org.glassfish.jersey.media.multipart.FormDataMultiPart;
-import org.glassfish.jersey.server.JSONP;
+import java.util.*;
 
 
 @Path("/vtl")
@@ -505,7 +495,7 @@ public class VTLResource {
             this.validateBodyMap(bodyMap, httpMethod);
 
             final InitDataObject initDataObject = this.webResource.init
-                    (null, request, response, false, null);
+                    (null, false, request, false, null);
 
             final User user = initDataObject.getUser();
             setUserInSession(request.getSession(false), user);
