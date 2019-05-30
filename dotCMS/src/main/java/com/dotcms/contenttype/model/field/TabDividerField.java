@@ -5,7 +5,7 @@ import java.util.List;
 
 import org.immutables.value.Value;
 
-import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableList;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -15,7 +15,7 @@ import static com.dotcms.util.CollectionsUtils.list;
 @JsonSerialize(as = ImmutableTabDividerField.class)
 @JsonDeserialize(as = ImmutableTabDividerField.class)
 @Value.Immutable
-public abstract class TabDividerField extends Field implements FieldDivider {
+public abstract class TabDividerField extends Field {
 
 	/**
 	 * 

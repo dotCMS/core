@@ -1,5 +1,9 @@
 package com.dotmarketing.portlets.contentlet.action;
 
+import static com.dotmarketing.portlets.calendar.action.EventFormUtils.editEvent;
+import static com.dotmarketing.portlets.calendar.action.EventFormUtils.setEventDefaults;
+import static com.dotmarketing.portlets.contentlet.util.ContentletUtil.isFieldTypeAllowedOnImportExport;
+
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.business.ContentTypeAPI;
@@ -17,7 +21,16 @@ import com.dotcms.util.I18NMessage;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.Layout;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PublishStateException;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
@@ -32,14 +45,22 @@ import com.dotmarketing.factories.EmailFactory;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portal.struts.DotPortletActionInterface;
+import com.dotmarketing.portlets.calendar.business.EventAPI;
+import com.dotmarketing.portlets.calendar.model.Event;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.ajax.ContentletAjax;
-import com.dotmarketing.portlets.contentlet.business.*;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.ContentletCache;
+import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
+import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
+import com.dotmarketing.portlets.contentlet.business.DotLockException;
+import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.struts.ContentletForm;
+import com.dotmarketing.portlets.contentlet.struts.EventAwareContentletForm;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.business.FieldAPI;
@@ -53,7 +74,15 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
 import com.dotmarketing.tag.business.TagAPI;
 import com.dotmarketing.tag.model.Tag;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.ActivityLogger;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.HostUtil;
+import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PortletURLUtil;
+import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageException;
@@ -67,18 +96,6 @@ import com.liferay.util.FileUtil;
 import com.liferay.util.LocaleUtil;
 import com.liferay.util.StringPool;
 import com.liferay.util.servlet.SessionMessages;
-import java.util.stream.Collectors;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.struts.Globals;
-import org.apache.struts.action.ActionErrors;
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionMapping;
-import org.apache.struts.action.ActionMessage;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
@@ -87,12 +104,29 @@ import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import static com.dotmarketing.portlets.contentlet.util.ContentletUtil.isFieldTypeAllowedOnImportExport;
+import java.util.stream.Collectors;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.struts.Globals;
+import org.apache.struts.action.ActionErrors;
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionMapping;
+import org.apache.struts.action.ActionMessage;
 
 /**
  * This class processes all the interactions with contentlets that are
@@ -117,6 +151,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 	private NotificationAPI notificationAPI;
 	private UserAPI userAPI;
 	private RoleAPI roleAPI;
+	private EventAPI eventAPI;
 
 	/**
 	 * Default constructor that initializes all the required dotCMS APIs.
@@ -130,7 +165,8 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		APILocator.getTagAPI(),
 		APILocator.getNotificationAPI(),
 		APILocator.getUserAPI(),
-		APILocator.getRoleAPI());
+		APILocator.getRoleAPI(),
+		APILocator.getEventAPI());
 	}
 	
 	@VisibleForTesting
@@ -142,7 +178,8 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 						 final TagAPI tagAPI,
 						 final NotificationAPI notificationAPI,
                          final UserAPI userAPI,
-						 final RoleAPI roleAPI) {
+						 final RoleAPI roleAPI,
+						 final EventAPI eventAPI) {
 		this.catAPI = catAPI;
 		this.perAPI = perAPI;
 		this.conAPI = conAPI;
@@ -152,6 +189,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		this.notificationAPI = notificationAPI;
         this.userAPI = userAPI;
 		this.roleAPI = roleAPI;
+		this.eventAPI = eventAPI;
 	}
 
 	/**
@@ -239,7 +277,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		
 		User user = _getUser(req);
 
-		if(user ==null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("content", user)){
+		if(user ==null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(reqImpl.getPortletName(), user)){
 		  _sendToReferral(req, res, "/api/v1/logout");
 		  return;
 		}
@@ -804,7 +842,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 					req.setAttribute(com.dotmarketing.util.WebKeys.CONTENTLET_EDIT, contentlet);
 					req.setAttribute("inode", sibblingInode);
 				} else {
-					Logger.debug(EditContentletAction.class, ()->"_retrieveWebAsset :: Sibbling Contentlet = " + sibblingContentlet.getInode());
+					Logger.debug(EditContentletAction.class, ()->"retrieveWebAsset :: Sibbling Contentlet = " + sibblingContentlet.getInode());
 					Identifier identifier = APILocator.getIdentifierAPI().find(sibblingContentlet);
 					contentlet.setIdentifier(identifier.getInode());
 					contentlet.setStructureInode(sibblingContentlet.getStructureInode());
@@ -843,12 +881,6 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		ActionRequestImpl reqImpl = (ActionRequestImpl) req;
 		HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
 
-		//This parameter is used to determine if the structure was selected from Add/Edit Content link in subnav.jsp, from
-		//the Content Search Manager
-		if(httpReq.getParameter("selected") != null){
-			httpReq.getSession().setAttribute("selectedStructure", contentType.getInode());
-		}
-
 		if(contentlet.getLanguageId() != 0){
 			httpReq.getSession().setAttribute(WebKeys.CONTENT_SELECTED_LANGUAGE, String.valueOf(contentlet.getLanguageId()));
 		} else {
@@ -859,6 +891,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		req.setAttribute("identifier", contentlet.getIdentifier());
 		// Asset Versions to list in the versions tab
 		req.setAttribute(WebKeys.VERSIONS_INODE_EDIT, contentlet);
+
 	}
 
 	/**
@@ -1132,14 +1165,14 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 
 		//Setting review intervals form properties
 		if (contentType.getReviewInterval() != null) {
-			String interval = contentType.getReviewInterval();
-			Pattern p = Pattern.compile("(\\d+)([dmy])");
-			Matcher m = p.matcher(interval);
-			boolean b = m.matches();
+			final String interval = contentType.getReviewInterval();
+			final Pattern pattern = Pattern.compile("(\\d+)([dmy])");
+			final Matcher matcher = pattern.matcher(interval);
+			final boolean b = matcher.matches();
 			if (b) {
 				cf.setReviewContent(true);
-				String g1 = m.group(1);
-				String g2 = m.group(2);
+				String g1 = matcher.group(1);
+				String g2 = matcher.group(2);
 				cf.setReviewIntervalNum(g1);
 				cf.setReviewIntervalSelect(g2);
 			}
@@ -1190,8 +1223,8 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 	public void _editWebAsset(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form, User user)
 	throws Exception {
 
-		ContentletForm cf = (ContentletForm) form;
-		ContentletAPI contAPI = APILocator.getContentletAPI();
+		final ContentletForm contentletForm = (ContentletForm) form;
+		final ContentletAPI contAPI = APILocator.getContentletAPI();
 
 		Contentlet contentlet = (Contentlet) req.getAttribute(WebKeys.CONTENTLET_EDIT);
 		Contentlet workingContentlet = null;
@@ -1282,28 +1315,39 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			String message = LanguageUtil.get(comp.getCompanyId(), user.getLocale(), "message.contentlet.edit.deleted");
 			SessionMessages.add(req, "custommessage", message);
 		}
-		cf.setMap(new HashMap<String, Object>(contentlet.getMap()));
+		contentletForm.setMap(new HashMap<>(contentlet.getMap()));
 
 		Logger.debug(this, "EditContentletAction: contentletInode=" + contentlet.getInode());
 
 		req.setAttribute(WebKeys.CONTENTLET_EDIT, contentlet);
 
 		if (contentlet.getReviewInterval() != null) {
-			String interval = contentlet.getReviewInterval();
-			Pattern p = Pattern.compile("(\\d+)([dmy])");
-			Matcher m = p.matcher(interval);
-			boolean b = m.matches();
-			if (b) {
-				cf.setReviewContent(true);
-				String g1 = m.group(1);
-				String g2 = m.group(2);
-				cf.setReviewIntervalNum(g1);
-				cf.setReviewIntervalSelect(g2);
+			final String interval = contentlet.getReviewInterval();
+			final Pattern pattern = Pattern.compile("(\\d+)([dmy])");
+			final Matcher matcher = pattern.matcher(interval);
+			final boolean matches = matcher.matches();
+			if (matches) {
+				contentletForm.setReviewContent(true);
+				final String g1 = matcher.group(1);
+				final String g2 = matcher.group(2);
+				contentletForm.setReviewIntervalNum(g1);
+				contentletForm.setReviewIntervalSelect(g2);
 			}
 		}
 		if(UtilMethods.isSet(req.getParameter("is_rel_tab"))) {
 			req.setAttribute("is_rel_tab", req.getParameter("is_rel_tab"));
 		}
+
+		if(contentlet.isCalendarEvent() && form instanceof EventAwareContentletForm){
+			final EventAwareContentletForm eventForm = (EventAwareContentletForm) form;
+			if(UtilMethods.isSet(contentlet.getInode())){
+				final Event ev = eventAPI.findbyInode(contentlet.getInode(), user, false);
+				editEvent(ev, eventForm);
+			} else {
+				setEventDefaults(eventForm);
+			}
+		}
+
 	}
 
 	private void unLockIfNecessary(final Contentlet content, final User user) {

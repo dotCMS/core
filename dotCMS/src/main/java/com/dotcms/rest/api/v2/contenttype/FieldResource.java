@@ -10,18 +10,18 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.JsonFieldTransformer;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.javax.ws.rs.Consumes;
-import com.dotcms.repackage.javax.ws.rs.DELETE;
-import com.dotcms.repackage.javax.ws.rs.GET;
-import com.dotcms.repackage.javax.ws.rs.POST;
-import com.dotcms.repackage.javax.ws.rs.PUT;
-import com.dotcms.repackage.javax.ws.rs.Path;
-import com.dotcms.repackage.javax.ws.rs.PathParam;
-import com.dotcms.repackage.javax.ws.rs.Produces;
-import com.dotcms.repackage.javax.ws.rs.core.Context;
-import com.dotcms.repackage.javax.ws.rs.core.MediaType;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -42,7 +42,6 @@ import javax.servlet.http.HttpServletRequest;
 
 
 @Path("/v2/contenttype/{typeIdOrVarName}/fields")
-@Deprecated
 public class FieldResource implements Serializable {
     private final WebResource webResource;
     private final FieldAPI fieldAPI;
@@ -65,9 +64,6 @@ public class FieldResource implements Serializable {
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
-    /**
-     * @deprecated {@link FieldResource#updateFields(String, String, HttpServletRequest)}
-     */
     public Response updateFields(@PathParam("typeIdOrVarName") final String typeIdOrVarName, final String fieldsJson,
             @Context final HttpServletRequest req) throws DotDataException, DotSecurityException {
 
@@ -129,9 +125,6 @@ public class FieldResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
-    /**
-     * @deprecated {@link FieldResource#getContentTypeFields(String, String, HttpServletRequest)}
-     */
     public final Response getContentTypeFields(@PathParam("typeIdOrVarName") final String typeIdOrVarName,
             @Context final HttpServletRequest req) {
 
@@ -305,9 +298,6 @@ public class FieldResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
-    /**
-     * @deprecated {@link FieldResource#deleteFields(String, String[], HttpServletRequest)}
-     */
     public Response deleteFields(@PathParam("typeIdOrVarName") final String typeIdOrVarName, final String[] fieldsID, @Context final HttpServletRequest req)
             throws DotDataException, DotSecurityException {
 

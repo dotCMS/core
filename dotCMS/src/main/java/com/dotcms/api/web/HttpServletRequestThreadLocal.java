@@ -2,7 +2,6 @@ package com.dotcms.api.web;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;
-import java.lang.annotation.Annotation;
 
 /**
  * This thread local service is useful get the {@link javax.servlet.http.HttpServletRequest} set in the current thread execution
@@ -20,7 +19,7 @@ public class HttpServletRequestThreadLocal implements Serializable {
     public static final HttpServletRequestThreadLocal INSTANCE =
             new HttpServletRequestThreadLocal();
     /**
-     * Get the annotations for the method resources added in the current thread
+     * Get the request from the current thread
      * @return {@link HttpServletRequest}
      */
     public HttpServletRequest getRequest () {

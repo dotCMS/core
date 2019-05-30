@@ -1,6 +1,6 @@
 package com.dotcms.rest.api.v1;
 
-import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -12,7 +12,7 @@ import java.io.StringReader;
 
 /**
  * Just a wrapper for the object mapper to do marshalling stuff from json to object and viceversa.
- * Note: this class has been made to be used only on Resources, since it is the same mechanism that resources use for marshall {@link com.dotcms.repackage.javax.ws.rs.core.Response}
+ * Note: this class has been made to be used only on Resources, since it is the same mechanism that resources use for marshall {@link javax.ws.rs.core.Response}
  * however if you need to convert from Json or vicerversa on the app, please see {@link com.dotcms.util.marshal.MarshalUtils}
  * @author jsanca
  */

@@ -1,8 +1,13 @@
 package com.dotcms.rest.api.v1.authentication;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.dotcms.auth.providers.jwt.JsonWebTokenUtils;
 import com.dotcms.cms.login.LoginServiceAPI;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.RestUtilTest;
 import com.dotcms.util.IntegrationTestInitService;
@@ -13,18 +18,14 @@ import com.liferay.portal.ejb.UserLocalManager;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.LocaleUtil;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
+import java.util.Locale;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import java.util.Locale;
-
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import javax.ws.rs.core.Response;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 public class CreateJsonWebTokenResourceIntegrationTest {
 

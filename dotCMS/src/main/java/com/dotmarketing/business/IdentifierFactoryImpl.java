@@ -284,11 +284,9 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 				final Contentlet contentlet = (Contentlet)versionable;
 				final boolean isCopyContentlet = contentlet.getBoolProperty(Contentlet.IS_COPY_CONTENTLET);
 				if (contentlet.isFileAsset()) {
-					final String sourceContentletAssetName = contentlet.getStringProperty(Contentlet.SOURCE_CONTENTLET_ASSET_NAME);
-					if (isCopyContentlet && UtilMethods.isSet(sourceContentletAssetName)) {
-					    // if this is being called from ContentlAPI.copyContentlet then we must re-use the original assetName which is guaranteed to be unique
-					    //Other wise we might get into trouble since binary assets are now allowed to be assigned into multiple assetNames
-						uri = sourceContentletAssetName;
+					final String contentletAssetNameCopy = contentlet.getStringProperty(Contentlet.CONTENTLET_ASSET_NAME_COPY);
+					if (isCopyContentlet && UtilMethods.isSet(contentletAssetNameCopy)) {
+						uri = contentletAssetNameCopy;
 					} else {
 						try {
 							uri = contentlet.getBinary(FileAssetAPI.BINARY_FIELD) != null

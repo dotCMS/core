@@ -17,12 +17,9 @@ import com.dotcms.publisher.endpoint.bean.factory.PublishingEndPointFactory;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.environment.business.EnvironmentAPI;
+import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.PublisherConfig;
-import com.dotcms.repackage.javax.ws.rs.client.ClientBuilder;
-import com.dotcms.repackage.javax.ws.rs.client.Entity;
-import com.dotcms.repackage.javax.ws.rs.core.MediaType;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.util.CloseUtils;
@@ -38,7 +35,6 @@ import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -67,6 +63,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import junit.framework.Assert;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -283,7 +283,7 @@ public class RemotePublishAjaxActionTest {
 
 		Response clientResponse = ClientBuilder.newClient()
             .target(receivingFromEndpoint.toURL() + "/api/bundlePublisher/publish")
-			.queryParam("AUTH_TOKEN", PublicEncryptionFactory.encryptString( (PublicEncryptionFactory.decryptString( receivingFromEndpoint.getAuthKey().toString() )) ))
+			.queryParam("AUTH_TOKEN", PushPublisher.retriveEndpointKeyDigest(receivingFromEndpoint).get())
 			.queryParam("GROUP_ID", UtilMethods.isSet( receivingFromEndpoint.getGroupId() ) ? receivingFromEndpoint.getGroupId() : receivingFromEndpoint.getId())
 			.queryParam("BUNDLE_NAME", bundle.getName())
 			.queryParam("ENDPOINT_ID", receivingFromEndpoint.getId())

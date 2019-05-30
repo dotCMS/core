@@ -1,6 +1,6 @@
 package org.apache.felix.framework;
 
-import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableList;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.osgi.HostActivator;

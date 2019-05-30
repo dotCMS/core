@@ -1,0 +1,104 @@
+{
+  "namespace": "dotcmsFields",
+  "fsNamespace": "dotcmsfields",
+  "loader": "../dotcmsfields.js",
+  "core": "dotcmsfields.7ddqhji1.js",
+  "corePolyfilled": "dotcmsfields.aqv1omuo.js",
+  "components": {
+    "dot-autocomplete": {
+      "bundleIds": {
+        "$": "7d4zwhvd"
+      }
+    },
+    "dot-checkbox": {
+      "bundleIds": {
+        "$": "tcln5kix"
+      }
+    },
+    "dot-chip": {
+      "bundleIds": {
+        "$": "7d4zwhvd"
+      }
+    },
+    "dot-date": {
+      "bundleIds": {
+        "$": "tcln5kix"
+      }
+    },
+    "dot-date-range": {
+      "bundleIds": {
+        "$": "tcln5kix"
+      }
+    },
+    "dot-date-time": {
+      "bundleIds": {
+        "$": "tcln5kix"
+      }
+    },
+    "dot-form": {
+      "bundleIds": {
+        "$": "tcln5kix"
+      }
+    },
+    "dot-input-calendar": {
+      "bundleIds": {
+        "$": "cg9cw0ai"
+      }
+    },
+    "dot-key-value": {
+      "bundleIds": {
+        "$": "uxhw6wjo"
+      }
+    },
+    "dot-label": {
+      "bundleIds": {
+        "$": "cg9cw0ai"
+      }
+    },
+    "dot-multi-select": {
+      "bundleIds": {
+        "$": "tcln5kix"
+      }
+    },
+    "dot-radio": {
+      "bundleIds": {
+        "$": "tcln5kix"
+      }
+    },
+    "dot-select": {
+      "bundleIds": {
+        "$": "tcln5kix"
+      }
+    },
+    "dot-tags": {
+      "bundleIds": {
+        "$": "7d4zwhvd"
+      }
+    },
+    "dot-textarea": {
+      "bundleIds": {
+        "$": "tcln5kix"
+      }
+    },
+    "dot-textfield": {
+      "bundleIds": {
+        "$": "tcln5kix"
+      }
+    },
+    "dot-time": {
+      "bundleIds": {
+        "$": "tcln5kix"
+      }
+    },
+    "key-value-form": {
+      "bundleIds": {
+        "$": "uxhw6wjo"
+      }
+    },
+    "key-value-table": {
+      "bundleIds": {
+        "$": "uxhw6wjo"
+      }
+    }
+  }
+}

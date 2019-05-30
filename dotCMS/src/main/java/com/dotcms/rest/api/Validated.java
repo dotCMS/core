@@ -1,7 +1,7 @@
 package com.dotcms.rest.api;
 
 
-import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.dotcms.repackage.javax.validation.ConstraintViolation;
 import com.dotcms.repackage.javax.validation.Validation;
 import com.dotcms.repackage.javax.validation.Validator;

@@ -1,41 +1,50 @@
 package com.dotmarketing.portlets.contentlet.action;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+import javax.servlet.jsp.PageContext;
+
+import org.apache.struts.action.ActionForm;
+import org.apache.struts.action.ActionForward;
+import org.apache.struts.action.ActionMapping;
+
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.google.common.collect.ImmutableList;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
 import com.dotcms.repackage.javax.portlet.RenderRequest;
 import com.dotcms.repackage.javax.portlet.RenderResponse;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.factories.InodeFactory;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portal.struts.DotPortletAction;
-import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.business.StructureAPI;
-import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
+import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.Constants;
+import com.liferay.portal.util.PortalUtil;
 import com.liferay.portlet.RenderRequestImpl;
-import java.util.List;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-import javax.servlet.jsp.PageContext;
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionForward;
-import org.apache.struts.action.ActionMapping;
+
+import io.vavr.control.Try;
 
 /**
- * Struts action that retrieves the required information to display the
- * "Content Search" portlet.
- * 
+ * Struts action that retrieves the required information to display the "Content Search" portlet.
+ *
  * @author root
  * @version 1.1
  * @since Mar 22, 2012
@@ -43,123 +52,148 @@ import org.apache.struts.action.ActionMapping;
  */
 public class ViewContentletAction extends DotPortletAction {
 
-	private LanguageAPI langAPI = APILocator.getLanguageAPI();
-	private StructureAPI structureAPI = APILocator.getStructureAPI();
+  private final LanguageAPI langAPI = APILocator.getLanguageAPI();
+  private final StructureAPI structureAPI = APILocator.getStructureAPI();
 
-	/**
-	 * 
-	 */
-	public ActionForward render(ActionMapping mapping, ActionForm form, PortletConfig config, RenderRequest req,
-			RenderResponse res) throws Exception {
+  /**
+   * Retrieves a list of {@link Structure} objects based on specific filtering parameters coming in
+   * the {@link RenderRequest} object. The resulting collection will be added as a request attribute
+   * that will be processed by the JSP associated to this action.
+   *
+   * @param req - Portlet wrapper class for the HTTP request.
+   * @param user - The {@link User} loading the portlet.
+   * @throws Exception An error occurred when processing this request.
+   */
+  @SuppressWarnings("unchecked")
+  protected void _viewContentlets(final RenderRequest req, final User user) throws Exception {
+    // GIT-2816
+    final RenderRequestImpl reqImpl = (RenderRequestImpl) req;
+    final HttpServletRequest request = reqImpl.getHttpServletRequest();
 
-		Logger.debug(ViewContentletAction.class, "Running ViewContentletsAction!!!!");
+    final ContentletAPI conAPI = APILocator.getContentletAPI();
 
-		try {
-			// gets the user
-			User user = _getUser(req);
-			_viewContentlets(req, user);
-			return mapping.findForward("portlet.ext.contentlet.view_contentlets");
+    final List<String> tempBinaryImageInodes = (List<String>) request.getSession().getAttribute(Contentlet.TEMP_BINARY_IMAGE_INODES_LIST);
+    if (UtilMethods.isSet(tempBinaryImageInodes) && tempBinaryImageInodes.size() > 0) {
+      for (final String inode : tempBinaryImageInodes) {
+        conAPI.delete(conAPI.find(inode, APILocator.getUserAPI().getSystemUser(), false), APILocator.getUserAPI().getSystemUser(), false,
+            true);
+      }
+      tempBinaryImageInodes.clear();
+    }
 
-		} catch (Exception e) {
-			req.setAttribute(PageContext.EXCEPTION, e);
-			return mapping.findForward(Constants.COMMON_ERROR);
-		}
-	}
+    List<ContentType> contentTypes = resolveContentTypes(request);
+    if (contentTypes.size() == 1) {
+      req.setAttribute("DONT_SHOW_ALL", true);
+    }
 
-	/**
-	 * Retrieves a list of {@link Structure} objects based on specific filtering
-	 * parameters coming in the {@link RenderRequest} object. The resulting
-	 * collection will be added as a request attribute that will be processed by
-	 * the JSP associated to this action.
-	 * 
-	 * @param req
-	 *            - Portlet wrapper class for the HTTP request.
-	 * @param user
-	 *            - The {@link User} loading the portlet.
-	 * @throws Exception
-	 *             An error occurred when processing this request.
-	 */
-	@SuppressWarnings("unchecked")
-	protected void _viewContentlets(RenderRequest req, User user) throws Exception {
-		
-		//GIT-2816
-		RenderRequestImpl reqImpl = (RenderRequestImpl) req;
-		HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
-		HttpSession ses = httpReq.getSession();
-		ContentletAPI conAPI = APILocator.getContentletAPI();
-		ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
+    req.setAttribute("contentSearchContentTypes", contentTypes);
+    req.setAttribute("selectedStructure", resolveStructureSelected(request, contentTypes));
 
-		List<String> tempBinaryImageInodes = (List<String>) ses.getAttribute(Contentlet.TEMP_BINARY_IMAGE_INODES_LIST);		
-		if(UtilMethods.isSet(tempBinaryImageInodes) && tempBinaryImageInodes.size() > 0){
-			for(String inode : tempBinaryImageInodes){
-				conAPI.delete(conAPI.find(inode, APILocator.getUserAPI().getSystemUser(), false), APILocator.getUserAPI().getSystemUser(), false, true);
-			}
-			tempBinaryImageInodes.clear();
-		}
-		
-		if (req.getParameter("popup") != null)
-		{
-			if (req.getParameter("container_inode") != null)
-			{
-				Container cont = (Container) InodeFactory.getInode(req.getParameter("container_inode"), Container.class);
+    if (req.getParameter("selected_lang") != null) {
+      ((RenderRequestImpl) req).getHttpServletRequest().getSession().setAttribute(WebKeys.LANGUAGE_SEARCHED,
+          req.getParameter("selected_lang"));
+    }
+    final List<Language> languages = this.langAPI.getLanguages();
+    req.setAttribute(WebKeys.LANGUAGES, languages);
 
-				List<Structure> structures = APILocator.getContainerAPI().getStructuresInContainer(cont);
-				req.setAttribute(WebKeys.Structure.STRUCTURES, structures);
-			}
-			else if (req.getParameter("structure_id") != null)
-			{
-				Structure st = null;
+  }
 
-				//Search for the given ContentType inode
-				ContentType foundContentType = contentTypeAPI.find(req.getParameter("structure_id"));
-				if ( null != foundContentType ) {
-					//Transform the found content type to a Structure
-					st = new StructureTransformer(foundContentType).asStructure();
-				}
+  /**
+   *
+   */
+  @Override
+  public ActionForward render(final ActionMapping mapping, final ActionForm form, final PortletConfig config, final RenderRequest req,
+      final RenderResponse res) throws Exception {
 
-				req.setAttribute(WebKeys.Structure.STRUCTURE, st);
-			}
-		}
-		else
-		{
-			if(req.getParameter("baseType") != null){
-				BaseContentType baseContentType = BaseContentType.getBaseContentType(Integer.parseInt(req.getParameter("baseType")));
-				List<ContentType> contentTypes = contentTypeAPI.findByType(baseContentType);
-				List<Structure> structures = new StructureTransformer(contentTypes).asStructureList();
-				req.setAttribute(WebKeys.Structure.STRUCTURES, structures);
-				req.setAttribute("DONT_SHOW_ALL", true);
-			} else if(req.getParameter("structure_id") != null){
+    Logger.debug(ViewContentletAction.class, "Running ViewContentletsAction!!!!");
 
-				Structure st = null;
+    try {
+      // gets the user
+      final User user = _getUser(req);
+      _viewContentlets(req, user);
+      return mapping.findForward("portlet.ext.contentlet.view_contentlets");
 
-				//Search for the given ContentType inode
-				ContentType foundContentType = contentTypeAPI.find(req.getParameter("structure_id"));
-				if ( null != foundContentType ) {
-					//Transform the found content type to a Structure
-					st = new StructureTransformer(foundContentType).asStructure();
-				}
+    } catch (final Exception e) {
+      Logger.debug(this,e.getMessage());
+      req.setAttribute(PageContext.EXCEPTION, e);
+      return mapping.findForward(Constants.COMMON_ERROR);
+    }
+  }
 
-				if(st.getStructureType()==Structure.STRUCTURE_TYPE_FORM){
-					List<Structure> structures =StructureFactory.getStructuresByUser(user,"structuretype="+st.getStructureType(), "upper(name)", -1, 0, "asc");
-					req.setAttribute(WebKeys.Structure.STRUCTURES, structures);
-					req.setAttribute("DONT_SHOW_ALL", true);
-				}else{
-					List<Structure> structures = this.structureAPI.find(user, false, true);
-					req.setAttribute(WebKeys.Structure.STRUCTURES, structures);
-				}
+  private List<BaseContentType> resolveBaseTypes(HttpServletRequest request) {
+    Map<String, String> initParams = (Map<String, String>) request.getAttribute("initParams");
+    String baseTypesRaw = (initParams.get("baseTypes") != null) ? initParams.get("baseTypes") : request.getParameter("baseType");
+    if (!UtilMethods.isSet(baseTypesRaw)) {
+      return ImmutableList.of();
+    }
+    String[] baseTypes = baseTypesRaw.trim().split(",");
+    List<BaseContentType> baseTypeList = new ArrayList<>();
+    for (String type : baseTypes) {
+      if (UtilMethods.isSet(type) && UtilMethods.isNumeric(type)) {
+        baseTypeList.add(BaseContentType.getBaseContentType(Integer.parseInt(type)));
+      } else {
+        baseTypeList.add(BaseContentType.getBaseContentType(type.trim()));
+      }
+    }
+    return baseTypeList;
+  }
 
-			}else{
-				List<Structure> structures = this.structureAPI.find(user, false, true);
-				req.setAttribute(WebKeys.Structure.STRUCTURES, structures);
-			}
-		}
+  List<ContentType> resolveContentTypes(HttpServletRequest request) throws DotDataException, DotSecurityException {
+    Map<String, String> initParams = (Map<String, String>) request.getAttribute("initParams");
 
-		if(req.getParameter("selected_lang") != null){
-			((RenderRequestImpl)req).getHttpServletRequest().getSession().setAttribute(WebKeys.LANGUAGE_SEARCHED, req.getParameter("selected_lang"));
-		}
-		List<Language> languages = langAPI.getLanguages();
-		req.setAttribute(WebKeys.LANGUAGES, languages);
+    ContentTypeAPI contentTypeApi = APILocator.getContentTypeAPI(PortalUtil.getUser(request));
+    List<BaseContentType> baseTypes = resolveBaseTypes(request);
 
-	}
+    if (baseTypes.size() > 0) {
+      final List<ContentType> contentTypesList = new ArrayList<>();
+      for (BaseContentType type : baseTypes) {
+        contentTypesList.addAll(contentTypeApi.findByType(type));
+      }
+      request.setAttribute("contentTypesJs", buildJsArray(contentTypesList));
+      return contentTypesList;
+    }
+
+    String contentTypesRaw = initParams.getOrDefault("contentTypes", request.getParameter("structure_id"));
+    if (UtilMethods.isSet(contentTypesRaw)) {
+      String[] contentTypes = contentTypesRaw.trim().split(",");
+      List<ContentType> contentTypeList = new ArrayList<>();
+      for (String type : contentTypes) {
+          ContentType contentType = Try.of(() -> APILocator.getContentTypeAPI(PortalUtil.getUser(request)).find(type.trim())).getOrNull();
+          if (contentType != null) {
+            contentTypeList.add(contentType);
+          }
+      }
+      request.setAttribute("contentTypesJs", buildJsArray(contentTypeList));
+      return contentTypeList;
+    }
+
+    return contentTypeApi.findAll();
+
+  }
+
+  private String buildJsArray(List<ContentType> types) {
+    return String.join(",", types.stream().map(t ->  t.id() ).collect(Collectors.toList()));
+
+  }
+
+  private String resolveStructureSelected(final HttpServletRequest request, final List<ContentType> types) {
+    Portlet portlet = APILocator.getPortletAPI().findPortlet(request.getParameter("p_p_id"));
+    String prefix = (portlet != null) ? portlet.getPortletId() : "";
+
+    String selectedStructure = types.size() == 1 ? types.get(0).id()
+        : UtilMethods.isSet(request.getParameter("structure_id")) ? request.getParameter("structure_id")
+            : request.getSession().getAttribute(prefix + "selectedStructure") != null
+                ? (String) request.getSession().getAttribute(prefix + "selectedStructure")
+                : null;
+    if (selectedStructure != null) {
+      for (ContentType s : types) {
+        if (s.id().equals(selectedStructure)) {
+          return selectedStructure;
+        }
+      }
+    }
+    return "catchall";
+
+  }
 
 }

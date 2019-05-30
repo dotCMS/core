@@ -22,6 +22,7 @@
 
 package com.liferay.portal.util;
 
+import com.dotcms.repackage.net.sf.hibernate.mapping.RootClass;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.LowercaseNamingStrategy;
 import com.dotmarketing.util.Logger;
@@ -31,6 +32,7 @@ import com.liferay.util.dao.hibernate.SessionConfiguration;
 import java.io.InputStream;
 import com.dotcms.repackage.net.sf.hibernate.cfg.Configuration;
 import com.dotcms.repackage.net.sf.hibernate.mapping.Table;
+import java.util.Iterator;
 
 /**
  * <a href="HibernateConfiguration.java.html"><b><i>View Source</i></b></a>
@@ -70,30 +72,13 @@ public class HibernateConfiguration extends SessionConfiguration {
 			//http://jira.dotmarketing.net/browse/DOTCMS-4937
 			if (DbConnectionFactory.isMySql()) {
 				cfg.setNamingStrategy(new LowercaseNamingStrategy());
-				Table liferayTable  = cfg.getClassMapping(com.liferay.portal.ejb.CompanyHBM.class).getTable();
-				liferayTable.setName("company");
-				liferayTable  = cfg.getClassMapping(com.liferay.portal.ejb.AddressHBM.class).getTable();
-				liferayTable.setName("address");
-				liferayTable  = cfg.getClassMapping(com.liferay.portal.ejb.ImageHBM.class).getTable();
-				liferayTable.setName("image");
-				liferayTable  = cfg.getClassMapping(com.liferay.portal.ejb.PasswordTrackerHBM.class).getTable();
-				liferayTable.setName("passwordtracker");
-				liferayTable  = cfg.getClassMapping(com.liferay.portal.ejb.PortletHBM.class).getTable();
-				liferayTable.setName("portlet");
-				liferayTable  = cfg.getClassMapping(com.liferay.portal.ejb.PortletPreferencesHBM.class).getTable();
-				liferayTable.setName("portletpreferences");
-				liferayTable  = cfg.getClassMapping(com.liferay.portal.ejb.ReleaseHBM.class).getTable();
-				liferayTable.setName("release_");
-				liferayTable  = cfg.getClassMapping(com.liferay.portal.ejb.UserHBM.class).getTable();
-				liferayTable.setName("user_");
-				liferayTable  = cfg.getClassMapping(com.liferay.portal.ejb.UserTrackerHBM.class).getTable();
-				liferayTable.setName("usertracker");
-				liferayTable  = cfg.getClassMapping(com.liferay.portal.ejb.UserTrackerPathHBM.class).getTable();
-				liferayTable.setName("usertrackerpath");
-				liferayTable  = cfg.getClassMapping(com.liferay.portlet.admin.ejb.AdminConfigHBM.class).getTable();
-				liferayTable.setName("adminconfig");
-				liferayTable  = cfg.getClassMapping(com.dotcms.repackage.com.liferay.counter.ejb.CounterHBM.class).getTable();
-				liferayTable.setName("counter");
+				Iterator it = cfg.getClassMappings();
+				while (it.hasNext()) {
+					RootClass c = (RootClass) it.next();
+					Table liferayTable = c.getRootTable();
+					liferayTable.setName(liferayTable.getName().toLowerCase());
+
+				}
 			}
 
 			setSessionFactory(cfg.buildSessionFactory());

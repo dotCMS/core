@@ -23,6 +23,7 @@ import com.dotmarketing.portlets.containers.business.ContainerFinderByIdOrPathSt
 import com.dotmarketing.portlets.containers.business.LiveContainerFinderByIdOrPathStrategyResolver;
 import com.dotmarketing.portlets.containers.business.WorkingContainerFinderByIdOrPathStrategyResolver;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -616,18 +617,41 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                     continue;
                 }
 
-
-                if (!pageContents.contains(container.getIdentifier(), containerUUID.getUUID())) {
-                    final boolean isLegacyValue = ContainerUUID.UUID_LEGACY_VALUE.equals(containerUUID.getUUID());
-
-                    if (!isLegacyValue || !pageContents.contains(containerUUID.getIdentifier(), ContainerUUID.UUID_START_VALUE)) {
-
-                        pageContents.put(container.getIdentifier(), containerUUID.getUUID(), new LinkedHashSet<>());
-                    }
+                if (!doesPageContentsHaveContainer(pageContents, containerUUID, container)) {
+                    pageContents.put(container.getIdentifier(), containerUUID.getUUID(), new LinkedHashSet<>());
                 }
             }
         } catch (RuntimeException e) {
             Logger.error(this, e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Check if a container with the same id or path (in case of {@link FileAssetContainer}), exist into pageContents.
+     * Also support legacy 'LEGACY_RELATION_TYPE' uuid value
+     *
+     * @param pageContents Table of the {@link MultiTree} into the page
+     * @param containerUUID container's UUID link with the page
+     * @param container container
+     * @return true in case of the containerUUId is contains in pageContents
+     */
+    private boolean doesPageContentsHaveContainer(
+            final Table<String, String, Set<String>> pageContents,
+            final ContainerUUID containerUUID,
+            final Container container) {
+
+        if(pageContents.contains(container.getIdentifier(), containerUUID.getUUID())){
+            return true;
+        } else if (ContainerUUID.UUID_LEGACY_VALUE.equals(containerUUID.getUUID())) {
+            boolean pageContenstContains = pageContents.contains(containerUUID.getIdentifier(), ContainerUUID.UUID_START_VALUE);
+
+            if (!pageContenstContains && container instanceof FileAssetContainer) {
+                pageContenstContains = pageContents.contains(container.getIdentifier(), ContainerUUID.UUID_START_VALUE);
+            }
+
+            return pageContenstContains;
+        } else {
+            return false;
         }
     }
 

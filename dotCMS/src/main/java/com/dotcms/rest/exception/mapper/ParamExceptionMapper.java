@@ -1,10 +1,10 @@
 package com.dotcms.rest.exception.mapper;
 
 import com.dotcms.exception.ExceptionUtil;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.repackage.javax.ws.rs.ext.ExceptionMapper;
-import com.dotcms.repackage.javax.ws.rs.ext.Provider;
-import com.dotcms.repackage.org.glassfish.jersey.server.ParamException;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.ext.ExceptionMapper;
+import javax.ws.rs.ext.Provider;
+import org.glassfish.jersey.server.ParamException;
 import com.dotmarketing.util.Logger;
 
 /**

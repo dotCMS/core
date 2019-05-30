@@ -4,10 +4,10 @@ import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotmarketing.util.WebKeys.DOTCMS_PAGINATION_LINKS;
 import static com.dotmarketing.util.WebKeys.DOTCMS_PAGINATION_ROWS;
 
-import com.dotcms.repackage.com.fasterxml.jackson.core.JsonProcessingException;
-import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
-import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectWriter;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import javax.ws.rs.core.Response;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.pagination.OrderDirection;
@@ -133,7 +133,7 @@ public class PaginationUtil {
 
 		final long totalRecords = items.getTotalResults();
 
-		final String linkHeaderValue = getHeaderValue(req.getRequestURL().toString(), sanitizefilter, pageValue, perPageValue,
+		final String linkHeaderValue = getHeaderValue(req.getRequestURI(), sanitizefilter, pageValue, perPageValue,
 				totalRecords, orderBy, direction, extraParams);
 
 		return Response.

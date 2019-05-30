@@ -11,7 +11,7 @@ import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.transform.field.FieldVariableTransformer;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
-import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableList;
 import static com.dotcms.util.CollectionsUtils.set;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;

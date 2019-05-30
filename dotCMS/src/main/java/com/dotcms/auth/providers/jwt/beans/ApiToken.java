@@ -358,7 +358,6 @@ public class ApiToken implements JWToken {
 
 
     @JsonIgnore
-    @com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore
     public Optional<ApiToken> getApiToken() {
         return APILocator.getApiTokenAPI().findApiToken(this.id);
     }

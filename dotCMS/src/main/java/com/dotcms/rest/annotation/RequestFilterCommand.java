@@ -1,6 +1,6 @@
 package com.dotcms.rest.annotation;
 
-import com.dotcms.repackage.javax.ws.rs.container.ContainerRequestContext;
+import javax.ws.rs.container.ContainerRequestContext;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;

@@ -4,7 +4,7 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
-import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableList;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -23,6 +23,7 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -211,12 +212,15 @@ public class LanguageAPIImpl implements LanguageAPI {
 
 	@WrapInTransaction
 	@Override
-	public void saveLanguageKeys(final Language lang, final Map<String, String> generalKeys,
+	public void saveLanguageKeys(final Language lang, final Map<String, String> generalKeysIncoming,
                                  final Map<String, String> specificKeys, final Set<String> toDeleteKeys) throws DotDataException {
 
 		final List<LanguageKey> existingGeneralKeys  = getLanguageKeys(lang.getLanguageCode());
         final List<LanguageKey> existingSpecificKeys = getLanguageKeys(lang.getLanguageCode(),lang.getCountryCode());
 
+    final Map<String,String> generalKeys = new HashMap<>();
+    generalKeys.putAll(generalKeysIncoming);
+        
 		for(LanguageKey key:existingGeneralKeys){
 			if(generalKeys.containsKey(key.getKey())){
 				key.setValue(generalKeys.get(key.getKey()));
@@ -255,13 +259,11 @@ public class LanguageAPIImpl implements LanguageAPI {
     public String getStringKey ( final Language lang, final String key ) {
 
         final User user = getUser();
-        // First, retrieve value from legacy Language Variables or the appropriate
-        // Language.properties file
-        final String value = this.getStringFromPropertiesFile(lang, key);
-        // If not found, look it up using the new Language Variable API
-        return (null == value || StringPool.BLANK.equals(value.trim()) || key.equals(value) )?
-                getLanguageVariableAPI().getLanguageVariableRespectingFrontEndRoles(key, lang.getId(), user):
-                value;
+        // First, look it up using the new Language Variable API
+        final String value = getLanguageVariableAPI().getLanguageVariableRespectingFrontEndRoles(key, lang.getId(), user);
+        // If not found, retrieve value from legacy Language Variables or the appropriate
+		// Language.properties file
+        return (UtilMethods.isNotSet(value) || value.equals(key)) ? this.getStringFromPropertiesFile(lang, key) : value;
     }
 
     private String getStringFromPropertiesFile (final Language lang, final String key) {

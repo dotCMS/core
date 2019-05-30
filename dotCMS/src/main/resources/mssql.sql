@@ -2312,21 +2312,25 @@ BEGIN
 END;
 
 alter table contentlet_version_info add constraint fk_contentlet_version_info_identifier foreign key (identifier) references identifier(id) on delete cascade;
+create index cvi_identifier_index on contentlet_version_info (identifier);
 alter table container_version_info  add constraint fk_container_version_info_identifier  foreign key (identifier) references identifier(id);
 alter table template_version_info   add constraint fk_template_version_info_identifier   foreign key (identifier) references identifier(id);
 alter table link_version_info       add constraint fk_link_version_info_identifier       foreign key (identifier) references identifier(id);
 
 alter table contentlet_version_info add constraint fk_contentlet_version_info_working foreign key (working_inode) references contentlet(inode);
+create index cvi_working_inode_index on contentlet_version_info (working_inode);
 alter table container_version_info  add constraint fk_container_version_info_working  foreign key (working_inode) references dot_containers(inode);
 alter table template_version_info   add constraint fk_template_version_info_working   foreign key (working_inode) references template(inode);
 alter table link_version_info       add constraint fk_link_version_info_working       foreign key (working_inode) references links(inode);
 
 alter table contentlet_version_info add constraint fk_contentlet_version_info_live foreign key (live_inode) references contentlet(inode);
+create index cvi_live_inode_index on contentlet_version_info (live_inode);
 alter table container_version_info  add constraint fk_container_version_info_live  foreign key (live_inode) references dot_containers(inode);
 alter table template_version_info   add constraint fk_template_version_info_live   foreign key (live_inode) references template(inode);
 alter table link_version_info       add constraint fk_link_version_info_live       foreign key (live_inode) references links(inode);
 
 alter table contentlet_version_info add constraint fk_contentlet_version_info_lang foreign key (lang) references language(id);
+create index cvi_lang_index on contentlet_version_info (lang);
 
 alter table folder add constraint fk_folder_file_structure_type foreign key(default_file_type) references structure(inode);
 
@@ -2423,6 +2427,7 @@ ALTER TABLE workflow_task ADD CONSTRAINT FK_workflow_step FOREIGN KEY (status) R
 alter table workflow_step add constraint fk_escalation_action foreign key (escalation_action) references workflow_action(id);
 
 alter table contentlet_version_info add constraint FK_con_ver_lockedby foreign key (locked_by) references user_(userid);
+create index cvi_locked_by_index on contentlet_version_info (locked_by);
 alter table container_version_info  add constraint FK_tainer_ver_info_lockedby  foreign key (locked_by) references user_(userid);
 alter table template_version_info   add constraint FK_temp_ver_info_lockedby   foreign key (locked_by) references user_(userid);
 alter table link_version_info       add constraint FK_link_ver_info_lockedby       foreign key (locked_by) references user_(userid);

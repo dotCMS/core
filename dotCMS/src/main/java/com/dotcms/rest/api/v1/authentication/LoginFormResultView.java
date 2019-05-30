@@ -1,6 +1,6 @@
 package com.dotcms.rest.api.v1.authentication;
 
-import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.dotcms.rest.api.LanguageView;
 
 import java.io.Serializable;

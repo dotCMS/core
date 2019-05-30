@@ -8,7 +8,7 @@ import org.elasticsearch.common.Nullable;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.LegacyFieldTypes;
-import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableList;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.portlets.structure.struts.FieldForm;
 import com.dotmarketing.util.StringUtils;
