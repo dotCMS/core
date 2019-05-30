@@ -1,6 +1,7 @@
 package com.dotcms.content.elasticsearch.business;
 
 import org.elasticsearch.action.bulk.BulkProcessor;
+import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
@@ -13,11 +14,11 @@ import org.elasticsearch.action.index.IndexRequest;
  */
 public class BulkIndexWrapper {
 
-    private BulkRequestBuilder requestBuilder;
+    private BulkRequest bulkRequest;
     private BulkProcessor bulkProcessor;
 
-    public BulkIndexWrapper(final BulkRequestBuilder requestBuilder){
-        this.requestBuilder = requestBuilder;
+    public BulkIndexWrapper(final BulkRequest bulkRequest){
+        this.bulkRequest = bulkRequest;
     }
 
     public BulkIndexWrapper(final BulkProcessor bulkProcessor){
@@ -25,23 +26,23 @@ public class BulkIndexWrapper {
     }
 
     public void add(final IndexRequest request) {
-        if (this.requestBuilder != null) {
-            this.requestBuilder.add(request);
+        if (this.bulkRequest != null) {
+            this.bulkRequest.add(request);
         } else if (this.bulkProcessor != null) {
             this.bulkProcessor.add(request);
         }
     }
 
     public void add(final DeleteRequest request){
-        if(this.requestBuilder != null){
-            this.requestBuilder.add(request);
+        if(this.bulkRequest != null){
+            this.bulkRequest.add(request);
         } else if(this.bulkProcessor != null){
             this.bulkProcessor.add(request);
         }
     }
 
-    public BulkRequestBuilder getRequestBuilder(){
-        return this.requestBuilder;
+    public BulkRequest getRequestBuilder(){
+        return this.bulkRequest;
     }
 
     public BulkProcessor getBulkProcessor(){

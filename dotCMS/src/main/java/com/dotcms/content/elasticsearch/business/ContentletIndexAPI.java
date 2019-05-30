@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Optional;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.bulk.BulkProcessor;
+import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 
@@ -110,9 +111,9 @@ public interface ContentletIndexAPI {
 
     public String getActiveIndexName(String type) throws DotDataException;
 
-    void putToIndex(BulkRequestBuilder bulk, ActionListener<BulkResponse> listener);
+    void putToIndex(BulkRequest bulkRequest, ActionListener<BulkResponse> listener);
 
-    void putToIndex(BulkRequestBuilder bulk);
+    void putToIndex(BulkRequest bulkRequest);
 
     void addContentToIndex(List<Contentlet> contentToIndex) throws DotDataException;
 
@@ -122,13 +123,13 @@ public interface ContentletIndexAPI {
 
     void addContentToIndex(Contentlet parentContenlet, boolean includeDependencies, boolean indexBeforeCommit) throws DotDataException;
 
-    BulkRequestBuilder createBulkRequest(List<Contentlet> contentToIndex) throws DotDataException;
+    BulkRequest createBulkRequest(List<Contentlet> contentToIndex) throws DotDataException;
 
-    BulkRequestBuilder createBulkRequest();
+    BulkRequest createBulkRequest();
 
-    BulkRequestBuilder appendBulkRequest(BulkRequestBuilder bulk, Collection<ReindexEntry> idxs) throws DotDataException;
+    BulkRequest appendBulkRequest(BulkRequest bulkRequest, Collection<ReindexEntry> idxs) throws DotDataException;
 
-    BulkRequestBuilder appendBulkRequest(BulkRequestBuilder bulk, ReindexEntry idx) throws DotDataException;
+    BulkRequest appendBulkRequest(BulkRequest bulkRequest, ReindexEntry idx) throws DotDataException;
 
     Optional<String> reindexTimeElapsed();
 
@@ -138,7 +139,7 @@ public interface ContentletIndexAPI {
 
     void stopFullReindexation() throws DotDataException;
 
-    BulkRequestBuilder appendBulkRemoveRequest(BulkRequestBuilder bulk, final ReindexEntry entry) throws DotDataException;
+    BulkRequest appendBulkRemoveRequest(BulkRequest bulkRequest, final ReindexEntry entry) throws DotDataException;
 
     BulkProcessor createBulkProcessor(BulkProcessorListener bulkListener);
 
