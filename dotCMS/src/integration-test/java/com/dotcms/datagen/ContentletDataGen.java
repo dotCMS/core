@@ -7,14 +7,18 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -31,6 +35,7 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
     protected Map<String, Object> properties = new HashMap<>();
     protected long languageId;
     protected String modUser = UserAPI.SYSTEM_USER_ID;
+    protected List<Category> categories;
 
     public ContentletDataGen(String contentTypeId) {
         this.contentTypeId = contentTypeId;
@@ -79,6 +84,19 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
      */
     public ContentletDataGen folder(Folder folder) {
         this.folder = folder;
+        return this;
+    }
+
+    /**
+     * Set category to the ContentletDataGen instance.
+     * @param category
+     * @return
+     */
+    public ContentletDataGen addCategory(Category category) {
+        if(!UtilMethods.isSet(this.categories)){
+          this.categories = new ArrayList<>();
+        }
+        this.categories.add(category);
         return this;
     }
 
@@ -134,6 +152,9 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
     @Override
     public Contentlet nextPersisted() {
         try{
+            if(UtilMethods.isSet(this.categories) && !this.categories.isEmpty()){
+               return persist(next(), this.categories);
+            }
             return persist(next());
         } catch (DotContentletStateException | IllegalArgumentException e) {
             throw new RuntimeException(e);
@@ -149,6 +170,16 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
     @Override
     public Contentlet persist(Contentlet contentlet) {
         return checkin(contentlet);
+    }
+
+    /**
+     * Persists in DB a given {@link Contentlet} instance
+     * @param contentlet to be persisted
+     * @param categories  The persisted Contentlet instance
+     * @return
+     */
+    public Contentlet persist(final Contentlet contentlet, final List<Category> categories) {
+        return checkin(contentlet, categories);
     }
 
     /**
@@ -208,6 +239,14 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
     public static Contentlet checkin(Contentlet contentlet) {
         try{
             return contentletAPI.checkin(contentlet, user, false);
+        } catch (DotContentletStateException | IllegalArgumentException | DotDataException | DotSecurityException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static Contentlet checkin(final Contentlet contentlet, final List<Category> categories) {
+        try{
+            return contentletAPI.checkin(contentlet, user, false, categories);
         } catch (DotContentletStateException | IllegalArgumentException | DotDataException | DotSecurityException e) {
             throw new RuntimeException(e);
         }
