@@ -2,6 +2,7 @@ package com.dotcms.util;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.util.LocaleUtil;
 
 import java.io.Serializable;
@@ -84,11 +85,16 @@ public class I18NUtil implements Serializable {
             final Language lang = APILocator.getLanguageAPI().getLanguage(locale.getLanguage(), locale.getCountry());
             messagesKey.forEach(
                     messageKey -> {
-
+                      
                         try {
-                            
-                            messagesMap.put(messageKey,
-                                    APILocator.getLanguageAPI().getStringKey(lang, messageKey));
+                          String message = (lang!=null) ? 
+                              APILocator.getLanguageAPI().getStringKey(lang, messageKey) : 
+                                LanguageUtil.get( locale, messageKey )!=null 
+                                ? LanguageUtil.get( locale, messageKey ) 
+                                    : messageKey;
+                                message = (message==null)    ? messageKey : message;
+                            messagesMap.put(messageKey,message);
+
                         } catch (Exception e) {
 
                             messagesMap.put(messageKey,
