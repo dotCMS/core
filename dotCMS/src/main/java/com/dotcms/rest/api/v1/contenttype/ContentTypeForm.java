@@ -2,10 +2,10 @@ package com.dotcms.rest.api.v1.contenttype;
 
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.JsonContentTypeTransformer;
-import com.dotcms.repackage.com.fasterxml.jackson.core.JsonParser;
-import com.dotcms.repackage.com.fasterxml.jackson.databind.DeserializationContext;
-import com.dotcms.repackage.com.fasterxml.jackson.databind.JsonDeserializer;
-import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.json.JSONArray;

@@ -6,7 +6,7 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.immutables.value.Value;
 
-import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableList;
 
 import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;

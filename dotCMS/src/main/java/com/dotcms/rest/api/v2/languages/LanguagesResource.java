@@ -1,12 +1,12 @@
 package com.dotcms.rest.api.v2.languages;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.com.google.common.collect.ImmutableList;
-import com.dotcms.repackage.javax.ws.rs.*;
-import com.dotcms.repackage.javax.ws.rs.core.Context;
-import com.dotcms.repackage.javax.ws.rs.core.MediaType;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
+import com.google.common.collect.ImmutableList;
+import javax.ws.rs.*;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -24,6 +24,7 @@ import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.util.List;
 
 /**
@@ -57,12 +58,12 @@ public class LanguagesResource {
     /**
      * return a array with all the languages
      */
-    public Response  list(@Context final HttpServletRequest request, @QueryParam("contentInode") final String contentInode)
+    public Response  list(@Context final HttpServletRequest request, @Context final HttpServletResponse response, @QueryParam("contentInode") final String contentInode)
             throws DotDataException, DotSecurityException {
 
         Logger.debug(this, () -> String.format("listing languages %s", request.getRequestURI()));
 
-        final InitDataObject init = webResource.init(true, request, true);
+        final InitDataObject init = webResource.init(request, response, true);
         final User user = init.getUser();
 
         final List<Language> languages = contentInode != null ?

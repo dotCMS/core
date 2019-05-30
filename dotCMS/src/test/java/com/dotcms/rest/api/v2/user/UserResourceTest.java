@@ -1,26 +1,21 @@
 package com.dotcms.rest.api.v2.user;
 
-import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.RestUtilTest;
 import com.dotcms.rest.WebResource;
-import com.dotcms.rest.api.v1.contenttype.ContentTypeHelper;
-import com.dotcms.rest.api.v1.contenttype.ContentTypeResource;
 import com.dotcms.util.PaginationUtil;
-import com.dotcms.util.pagination.OrderDirection;
-import com.dotcms.util.pagination.UserPaginator;
 import com.liferay.portal.model.User;
-import org.junit.Test;
-
-import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.List;
-
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.core.Response;
+import org.junit.Test;
 
 /**
  * test {@link UserResource}
@@ -51,7 +46,7 @@ public class UserResourceTest {
         Response response = null;
 
         RestUtilTest.verifySuccessResponse(
-                response = resource.loginAsData(request, filter, page, perPage)
+                response = resource.loginAsData(request, new EmptyHttpResponse(), filter, page, perPage)
         );
 
         assertEquals(responseExpected.getEntity(), response.getEntity());

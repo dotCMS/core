@@ -2,8 +2,8 @@ package com.dotcms.rest.api.v1.authentication;
 
 import java.util.Map;
 
-import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
-import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.google.common.collect.ImmutableMap;
 
 @JsonDeserialize(builder = ApiTokenForm.Builder.class)

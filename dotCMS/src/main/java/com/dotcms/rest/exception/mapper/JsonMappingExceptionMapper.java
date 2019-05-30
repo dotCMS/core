@@ -1,11 +1,11 @@
 package com.dotcms.rest.exception.mapper;
 
 import com.dotcms.exception.ExceptionUtil;
-import com.dotcms.repackage.com.fasterxml.jackson.databind.JsonMappingException;
-import com.dotcms.repackage.javax.ws.rs.WebApplicationException;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.repackage.javax.ws.rs.ext.ExceptionMapper;
-import com.dotcms.repackage.javax.ws.rs.ext.Provider;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.ext.ExceptionMapper;
+import javax.ws.rs.ext.Provider;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.HttpStatusCodeException;
 import com.dotcms.rest.exception.ValidationException;

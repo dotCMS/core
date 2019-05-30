@@ -7,11 +7,11 @@ import com.dotcms.rendering.velocity.services.ContainerLoader;
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.javax.ws.rs.*;
-import com.dotcms.repackage.javax.ws.rs.core.Context;
-import com.dotcms.repackage.javax.ws.rs.core.MediaType;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
+import javax.ws.rs.*;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -132,7 +132,7 @@ public class ContainerResource implements Serializable {
      *
      * Url example: v1/container?filter=test&page=2&orderby=title
      *
-     * @param request
+     * @param httpRequest
      * @return
      */
     @GET
@@ -140,7 +140,8 @@ public class ContainerResource implements Serializable {
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response getContainers(@Context final HttpServletRequest request,
+    public final Response getContainers(@Context final HttpServletRequest httpRequest,
+            @Context final HttpServletResponse  httpResponse,
             @QueryParam(PaginationUtil.FILTER)   final String filter,
             @QueryParam(PaginationUtil.PAGE)     final int page,
             @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
@@ -148,10 +149,10 @@ public class ContainerResource implements Serializable {
             @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION)  final String direction,
             @QueryParam(ContainerPaginator.HOST_PARAMETER_ID)           final String hostId) {
 
-        final InitDataObject initData = webResource.init(null, true, request, true, null);
+        final InitDataObject initData = webResource.init(null, httpRequest, httpResponse, true, null);
         final User user = initData.getUser();
 
-        final Optional<String> checkedHostId = this.checkHost(request, hostId, user);
+        final Optional<String> checkedHostId = this.checkHost(httpRequest, hostId, user);
 
         try {
 
@@ -159,7 +160,7 @@ public class ContainerResource implements Serializable {
             if (checkedHostId.isPresent()) {
                 extraParams.put(ContainerPaginator.HOST_PARAMETER_ID, checkedHostId.get());
             }
-            return this.paginationUtil.getPage(request, user, filter, page, perPage, orderBy, OrderDirection.valueOf(direction),
+            return this.paginationUtil.getPage(httpRequest, user, filter, page, perPage, orderBy, OrderDirection.valueOf(direction),
                     extraParams);
         } catch (Exception e) {
             Logger.error(this, e.getMessage(), e);
@@ -200,7 +201,7 @@ public class ContainerResource implements Serializable {
                                            @PathParam("contentletId") final String contentletId)
             throws DotDataException, DotSecurityException {
 
-        final InitDataObject initData = this.webResource.init(true, req, true);
+        final InitDataObject initData = this.webResource.init(req, res, true);
         final User user               = initData.getUser();
         final PageMode mode           = PageMode.EDIT_MODE;
 
@@ -311,12 +312,13 @@ public class ContainerResource implements Serializable {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/{containerId}/form/{formId}")
-    public final Response containerForm(@Context final HttpServletRequest req, @Context final HttpServletResponse res,
-                                           @PathParam("containerId") final String containerId,
-                                           @PathParam("formId") final String formId)
+    public final Response containerForm(@Context final HttpServletRequest req,
+                                        @Context final HttpServletResponse res,
+                                        @PathParam("containerId") final String containerId,
+                                        @PathParam("formId") final String formId)
             throws DotDataException, DotSecurityException {
 
-        final InitDataObject initData = webResource.init(true, req, true);
+        final InitDataObject initData = webResource.init(req, res, true);
         final User user = initData.getUser();
 
         PageMode.setPageMode(req, PageMode.EDIT_MODE);
@@ -398,7 +400,7 @@ public class ContainerResource implements Serializable {
             MethodInvocationException, ResourceNotFoundException, IOException, IllegalAccessException, InstantiationException,
             InvocationTargetException, NoSuchMethodException {
 
-        final InitDataObject initData = webResource.init(true, req, true);
+        final InitDataObject initData = webResource.init(req, res, true);
         final User user = initData.getUser();
         final PageMode mode = PageMode.get(req);
         try {
@@ -464,7 +466,7 @@ public class ContainerResource implements Serializable {
             @QueryParam("containerId") final String containerId, @QueryParam("contentInode") final String contentInode)
             throws DotDataException, IOException {
 
-        final InitDataObject initData = webResource.init(true, req, true);
+        final InitDataObject initData = webResource.init(req, res, true);
         final User user = initData.getUser();
 
         try {

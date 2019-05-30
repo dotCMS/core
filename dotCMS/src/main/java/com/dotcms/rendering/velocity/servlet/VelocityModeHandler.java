@@ -2,7 +2,7 @@ package com.dotcms.rendering.velocity.servlet;
 
 import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
-import com.dotcms.repackage.jersey.repackaged.com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMap;
 import com.dotcms.visitor.business.VisitorAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;

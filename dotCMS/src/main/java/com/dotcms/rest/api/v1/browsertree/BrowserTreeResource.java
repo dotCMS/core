@@ -1,14 +1,8 @@
 package com.dotcms.rest.api.v1.browsertree;
 
+import static com.dotcms.util.CollectionsUtils.map;
+
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.javax.ws.rs.GET;
-import com.dotcms.repackage.javax.ws.rs.Path;
-import com.dotcms.repackage.javax.ws.rs.PathParam;
-import com.dotcms.repackage.javax.ws.rs.Produces;
-import com.dotcms.repackage.javax.ws.rs.core.Context;
-import com.dotcms.repackage.javax.ws.rs.core.MediaType;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -16,21 +10,26 @@ import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.I18NUtil;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import com.liferay.util.LocaleUtil;
-import static com.dotcms.util.CollectionsUtils.map;
-
-import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import org.glassfish.jersey.server.JSONP;
 
 /**
  * Created by jasontesser on 9/28/16.
@@ -39,25 +38,21 @@ import java.util.stream.Collectors;
 public class BrowserTreeResource implements Serializable {
     private final WebResource webResource;
     private final BrowserTreeHelper browserTreeHelper;
-    private final LayoutAPI layoutAPI;
     private final I18NUtil i18NUtil;
 
     public BrowserTreeResource() {
         this(new WebResource(),
                 BrowserTreeHelper.getInstance(),
-                APILocator.getLayoutAPI(),
                 I18NUtil.INSTANCE);
     }
 
     @VisibleForTesting
     public BrowserTreeResource(final WebResource webResource,
                                final BrowserTreeHelper browserTreeHelper,
-                               final LayoutAPI layoutAPI,
                                final I18NUtil i18NUtil) {
 
         this.webResource = webResource;
         this.browserTreeHelper  = browserTreeHelper;
-        this.layoutAPI   = layoutAPI;
         this.i18NUtil    = i18NUtil;
     }
 
@@ -67,16 +62,17 @@ public class BrowserTreeResource implements Serializable {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response loadAssetsUnder(
-            @Context final HttpServletRequest req,
-            @PathParam("sitename")   final String sitename
-    ) {
+            @Context final HttpServletRequest  httpRequest,
+            @Context final HttpServletResponse httpResponse,
+            @PathParam("sitename")   final String sitename) {
+
         Response response = null;
-        final InitDataObject initData = this.webResource.init(null, true, req, true, null);
+        final InitDataObject initData = this.webResource.init(null, httpRequest, httpResponse, true, null);
         final User user = initData.getUser();
         final List<Map<String, Object>> assetResults;
 
         try {
-            Locale locale = LocaleUtil.getLocale(user, req);
+            Locale locale = LocaleUtil.getLocale(user, httpRequest);
 
             assetResults = browserTreeHelper.getTreeablesUnder(sitename,user,"/")
                     .stream()
@@ -111,18 +107,19 @@ public class BrowserTreeResource implements Serializable {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response loadAssetsUnder(
-            @Context final HttpServletRequest req,
+            @Context final HttpServletRequest httpRequest,
+            @Context final HttpServletResponse httpResponse,
             @PathParam("sitename")   final String sitename,
             @PathParam("uri") final String uri
     ) {
 
         Response response = null;
-        final InitDataObject initData = this.webResource.init(null, true, req, true, null);
+        final InitDataObject initData = this.webResource.init(null, httpRequest, httpResponse, true, null);
         final User user = initData.getUser();
         final List<Map<String, Object>> assetResults;
 
         try {
-            Locale locale = LocaleUtil.getLocale(user, req);
+            final Locale locale = LocaleUtil.getLocale(user, httpRequest);
 
             assetResults = browserTreeHelper.getTreeablesUnder(sitename,user,uri)
                     .stream()
@@ -134,7 +131,7 @@ public class BrowserTreeResource implements Serializable {
                             throw new DotRuntimeException("Data Exception while converting to map",e);
                         }
                     })
-                    .collect(Collectors.toList());;
+                    .collect(Collectors.toList());
 
             response = Response.ok(new ResponseEntityView
                     (map(   "result",         assetResults

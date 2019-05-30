@@ -1,14 +1,14 @@
 package com.dotcms.rest.api.v1.fileasset;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.javax.ws.rs.GET;
-import com.dotcms.repackage.javax.ws.rs.Path;
-import com.dotcms.repackage.javax.ws.rs.PathParam;
-import com.dotcms.repackage.javax.ws.rs.Produces;
-import com.dotcms.repackage.javax.ws.rs.core.Context;
-import com.dotcms.repackage.javax.ws.rs.core.MediaType;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -26,7 +26,9 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
+
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 @Path("/v1/content/fileassets")
 public class FileAssetsResource {
@@ -47,7 +49,7 @@ public class FileAssetsResource {
     /**
      * Given an inode this will build get you a Resource Link
      * The inode is expected to be File Asset other wise you'll get exception
-     * @param request http request
+     * @param httpServletRequest http request
      * @param inode file asset inode
      * @return
      * @throws DotDataException
@@ -59,16 +61,17 @@ public class FileAssetsResource {
     @NoCache
     @Path("/{inode}/resourcelink")
     @Produces(MediaType.APPLICATION_JSON + ";charset=UTF-8")
-    public Response findResourceLink(@Context final HttpServletRequest request,
+    public Response findResourceLink(@Context final HttpServletRequest httpServletRequest,
+            @Context final HttpServletResponse httpServletResponse,
             @PathParam("inode") final String inode) throws DotStateException {
         try {
             if (!UtilMethods.isSet(inode)) {
                 throw new IllegalArgumentException("Missing required inode param");
             }
-            final InitDataObject auth = webResource.init(true, request, true);
+            final InitDataObject auth = webResource.init(httpServletRequest, httpServletResponse, true);
             final User user = auth.getUser();
             final Contentlet contentlet = contentletAPI.find(inode, user, false);
-            final ResourceLink link = new ResourceLinkBuilder().build(request, user, contentlet);
+            final ResourceLink link = new ResourceLinkBuilder().build(httpServletRequest, user, contentlet);
             if(link.isDownloadRestricted()){
                throw new DotSecurityException("The Resource link to the contentlet is restricted.");
             }

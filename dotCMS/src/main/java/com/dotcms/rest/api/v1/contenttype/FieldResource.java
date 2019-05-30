@@ -1,11 +1,6 @@
 package com.dotcms.rest.api.v1.contenttype;
 
-import com.dotcms.rest.exception.ForbiddenException;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.servlet.http.HttpServletRequest;
+import static com.dotcms.util.CollectionsUtils.imap;
 
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
@@ -13,15 +8,11 @@ import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.transform.field.JsonFieldTransformer;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.javax.ws.rs.*;
-import com.dotcms.repackage.javax.ws.rs.core.Context;
-import com.dotcms.repackage.javax.ws.rs.core.MediaType;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -29,8 +20,23 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-
-import static com.dotcms.util.CollectionsUtils.imap;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import org.glassfish.jersey.server.JSONP;
 
 /**
  * @deprecated {@link com.dotcms.rest.api.v2.contenttype.FieldResource} should be used instead. Path:/v2/contenttype/{typeId}/fields
@@ -211,16 +217,16 @@ public class FieldResource implements Serializable {
 	@NoCache
 	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
 	public Response getContentTypeFieldByVar(@PathParam("typeId") final String typeId,
-			@PathParam("fieldVar") final String fieldVar, @Context final HttpServletRequest req)
+											 @PathParam("fieldVar") final String fieldVar, @Context final HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse)
 			throws DotDataException, DotSecurityException {
 
-		final InitDataObject initData = this.webResource.init(null, false, req, false, null);
-		final FieldAPI fapi = APILocator.getContentTypeFieldAPI();
+		this.webResource.init(null, httpServletRequest, httpServletResponse, false, null);
+		final FieldAPI typeFieldAPI = APILocator.getContentTypeFieldAPI();
 
 		Response response = null;
 		try {
 
-			Field field = fapi.byContentTypeIdAndVar(typeId, fieldVar);
+			Field field = typeFieldAPI.byContentTypeIdAndVar(typeId, fieldVar);
 
 			response = Response.ok(new ResponseEntityView(new JsonFieldTransformer(field).mapObject())).build();
 

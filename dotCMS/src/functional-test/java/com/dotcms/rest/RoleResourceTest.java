@@ -6,8 +6,8 @@ import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 
-import com.dotcms.repackage.javax.ws.rs.client.Client;
-import com.dotcms.repackage.javax.ws.rs.client.WebTarget;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.WebTarget;
 import org.junit.Before;
 import org.junit.Test;
 

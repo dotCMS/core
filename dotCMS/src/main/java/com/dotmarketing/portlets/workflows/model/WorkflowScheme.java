@@ -1,18 +1,14 @@
 package com.dotmarketing.portlets.workflows.model;
 
-import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
-import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
 import com.dotmarketing.util.UtilMethods;
-import com.google.common.collect.ImmutableList;
-
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.vavr.control.Try;
-
 import java.io.Serializable;
 import java.util.Date;
-import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class WorkflowScheme implements Serializable {

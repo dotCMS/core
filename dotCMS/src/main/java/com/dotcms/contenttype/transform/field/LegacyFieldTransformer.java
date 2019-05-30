@@ -1,7 +1,7 @@
 package com.dotcms.contenttype.transform.field;
 
 import com.dotcms.contenttype.model.field.*;
-import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableList;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;

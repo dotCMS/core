@@ -1,8 +1,8 @@
 package com.dotcms.rest.exception.mapper;
 
-import com.dotcms.repackage.javax.ws.rs.core.MediaType;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.repackage.javax.ws.rs.ext.Provider;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.ext.Provider;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 
@@ -16,7 +16,7 @@ import static com.dotcms.util.CollectionsUtils.map;
  * @author jsanca
  */
 @Provider
-public class ExceptionMapper implements com.dotcms.repackage.javax.ws.rs.ext.ExceptionMapper<Exception> {
+public class ExceptionMapper implements javax.ws.rs.ext.ExceptionMapper<Exception> {
 
     @Override
     public Response toResponse(Exception exception) {

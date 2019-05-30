@@ -2,9 +2,9 @@ package com.dotcms.mock.response;
 
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
-import com.dotcms.repackage.javax.ws.rs.container.AsyncResponse;
-import com.dotcms.repackage.javax.ws.rs.container.Suspended;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
+import javax.ws.rs.container.AsyncResponse;
+import javax.ws.rs.container.Suspended;
+import javax.ws.rs.core.Response;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotmarketing.util.DateUtil;

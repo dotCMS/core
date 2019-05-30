@@ -1,17 +1,10 @@
 package com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions;
 
+import static com.dotcms.util.DotPreconditions.checkNotEmpty;
+import static com.dotcms.util.DotPreconditions.checkNotNull;
+
+import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.javax.ws.rs.Consumes;
-import com.dotcms.repackage.javax.ws.rs.DELETE;
-import com.dotcms.repackage.javax.ws.rs.GET;
-import com.dotcms.repackage.javax.ws.rs.POST;
-import com.dotcms.repackage.javax.ws.rs.PUT;
-import com.dotcms.repackage.javax.ws.rs.Path;
-import com.dotcms.repackage.javax.ws.rs.PathParam;
-import com.dotcms.repackage.javax.ws.rs.Produces;
-import com.dotcms.repackage.javax.ws.rs.core.Context;
-import com.dotcms.repackage.javax.ws.rs.core.MediaType;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
 import com.dotcms.rest.WebResource;
@@ -25,20 +18,25 @@ import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotmarketing.portlets.rules.exception.RuleConstructionFailedException;
 import com.dotmarketing.portlets.rules.model.Condition;
 import com.liferay.portal.model.User;
-
-import static com.dotcms.util.DotPreconditions.checkNotEmpty;
-import static com.dotcms.util.DotPreconditions.checkNotNull;
-
 import java.net.URI;
 import java.net.URISyntaxException;
-
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
 @Path("/v1/sites/{siteId}/ruleengine")
 public class ConditionResource {
@@ -76,9 +74,9 @@ public class ConditionResource {
     @NoCache
     @Path("/conditions/{conditionId}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response self(@Context HttpServletRequest request, @PathParam("siteId") String siteId, @PathParam("conditionId") String conditionId)
+    public Response self(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("siteId") String siteId, @PathParam("conditionId") String conditionId)
             throws JSONException {
-        User user = getUser(request);
+        User user = getUser(request, response);
 
         try {
             getHost(siteId, user);
@@ -103,10 +101,10 @@ public class ConditionResource {
     @Path("/conditions")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response add(@Context HttpServletRequest request, @PathParam("siteId") String siteId, RestCondition condition) {
+    public Response add(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("siteId") String siteId, RestCondition condition) {
         siteId = checkNotEmpty(siteId, BadRequestException.class, "Site id is required.");
         condition = checkNotNull(condition, BadRequestException.class, "Condition is required.");
-        User user = getUser(request);
+        User user = getUser(request, response);
         Host host = getHost(siteId, user);
         String conditionId = createConditionInternal(condition, user);
 
@@ -129,13 +127,14 @@ public class ConditionResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public RestCondition update(@Context HttpServletRequest request,
+                                @Context final HttpServletResponse response,
                                 @PathParam("siteId") String siteId,
                                 @PathParam("conditionId") String conditionId,
                                 RestCondition restCondition) throws DotDataException, DotSecurityException, JSONException {
 
         siteId = checkNotEmpty(siteId, BadRequestException.class, "Site Id is required.");
         conditionId = checkNotEmpty(conditionId, BadRequestException.class, "Condition Id is required.");
-        User user = getUser(request);
+        User user = getUser(request, response);
         Host host = getHost(siteId, user); // forces check that host exists. This should be handled by rulesAPI?
 
         updateConditionInternal(user, conditionId, restCondition);
@@ -151,9 +150,9 @@ public class ConditionResource {
      */
     @DELETE
     @Path("/conditions/{conditionId}")
-    public Response remove(@Context HttpServletRequest request, @PathParam("siteId") String siteId, @PathParam("conditionId") String conditionId)
+    public Response remove(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("siteId") String siteId, @PathParam("conditionId") String conditionId)
             throws JSONException {
-        User user = getUser(request);
+        User user = getUser(request, response);
 
         try {
             getHost(siteId, user);
@@ -169,8 +168,8 @@ public class ConditionResource {
     }
 
     @VisibleForTesting
-    User getUser(@Context HttpServletRequest request) {
-        return webResource.init(true, request, true).getUser();
+    User getUser(final HttpServletRequest request, final HttpServletResponse response) {
+        return webResource.init(request, response, true).getUser();
     }
 
     @VisibleForTesting
