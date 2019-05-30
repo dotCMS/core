@@ -107,7 +107,6 @@ export class DotDialogComponent implements OnChanges {
      * @memberof DotDialogComponent
      */
     close($event?: MouseEvent): void {
-
         if (this.beforeClose.observers.length) {
             this.beforeClose.emit({
                 close: () => {
@@ -150,7 +149,7 @@ export class DotDialogComponent implements OnChanges {
                 .pipe(
                     filter((event: MouseEvent) => {
                         const el = <HTMLElement>event.target;
-                        return el.localName === 'dot-dialog' && el.classList.contains('active');
+                        return el.localName !== 'dot-dialog' && el.classList.contains('active');
                     })
                 )
                 .subscribe(this.close.bind(this))

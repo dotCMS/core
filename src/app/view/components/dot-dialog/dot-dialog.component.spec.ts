@@ -211,12 +211,12 @@ describe('DotDialogComponent', () => {
                     });
                 });
 
-                it('should close the dialog on overlay click', () => {
+                it('should not close the dialog on overlay click', () => {
                     hostFixture.whenStable().then(() => {
                         de.nativeElement.click();
                         hostFixture.detectChanges();
 
-                        expect(component.visible).toBe(false);
+                        expect(component.visible).toBe(true);
                     });
                 });
 
