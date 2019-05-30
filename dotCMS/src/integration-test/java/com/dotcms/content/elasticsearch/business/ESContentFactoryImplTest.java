@@ -1,24 +1,39 @@
 package com.dotcms.content.elasticsearch.business;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import java.util.*;
-import java.util.stream.Collectors;
-
-import static org.junit.Assert.*;
 
 public class ESContentFactoryImplTest extends IntegrationTestBase {
 	
@@ -124,7 +139,18 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
     }
 
     @Test
-    public void testScore () {
+    public void testScore () throws DotDataException, DotSecurityException {
+
+        final ContentType blogContentType = TestDataUtils.getBlogLikeContentType("blog");
+        final Host host = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
+        final long languageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+        new ContentletDataGen(blogContentType.id())
+                .languageId(languageId)
+                .host(host)
+                .setProperty("title", "Bullish On America? Get On Board With Southwest Air")
+                .setProperty("urlTitle", "title")
+                .setProperty("body", "During the 1980s and 1990s Southwest Air (LUV) ")
+                .setProperty("sysPublishDate", new Date()).nextPersisted();
 
         //+++++++++++++++++++++++++++
         //Executing a simple query filtering by score
