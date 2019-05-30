@@ -1,10 +1,5 @@
 package com.dotcms.util;
 
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.liferay.portal.language.LanguageUtil;
-import com.liferay.util.LocaleUtil;
-
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collection;
@@ -13,7 +8,8 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
-import static com.dotcms.util.CollectionsUtils.map;
+import com.dotmarketing.business.APILocator;
+import com.liferay.util.LocaleUtil;
 
 /**
  * Encapsulates i18n stuff
@@ -77,34 +73,11 @@ public class I18NUtil implements Serializable {
      *
      * @return Map
      */
-    public Map<String, String> getMessagesMap (final Locale locale, final Collection<String> messagesKey) {
+    public Map<String, String> getMessagesMap (final Locale locale, final Collection<String> keys) {
 
-        final Map<String, String> messagesMap = map();
 
-        if (null != messagesKey) {
-            final Language lang = APILocator.getLanguageAPI().getLanguage(locale.getLanguage(), locale.getCountry());
-            messagesKey.forEach(
-                    messageKey -> {
-                      
-                        try {
-                          String message = (lang!=null) ? 
-                              APILocator.getLanguageAPI().getStringKey(lang, messageKey) : 
-                                LanguageUtil.get( locale, messageKey )!=null 
-                                ? LanguageUtil.get( locale, messageKey ) 
-                                    : messageKey;
-                                message = (message==null)    ? messageKey : message;
-                            messagesMap.put(messageKey,message);
+          return APILocator.getLanguageAPI().getStringsAsMap(locale, keys); 
 
-                        } catch (Exception e) {
-
-                            messagesMap.put(messageKey,
-                                    messageKey);
-                        }
-                    }
-            );
-        }
-
-        return messagesMap;
     } // getMessagesMap.
 
     /**

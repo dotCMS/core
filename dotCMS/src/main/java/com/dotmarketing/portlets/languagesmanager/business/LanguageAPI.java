@@ -1,6 +1,8 @@
 package com.dotmarketing.portlets.languagesmanager.business;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -278,5 +280,15 @@ public interface LanguageAPI {
 	 * @return boolean
 	 */
     boolean canDefaultFileToDefaultLanguage();
+
+    /**
+     * Given a collection of Keys, return
+     * a Map of translated values and if those are not found
+     * then return the sent key as the value
+     * @param locale
+     * @param keys
+     * @return
+     */
+    Map<String, String> getStringsAsMap(Locale locale, Collection<String> keys);
 
 }

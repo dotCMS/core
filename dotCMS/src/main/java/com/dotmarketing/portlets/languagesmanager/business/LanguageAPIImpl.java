@@ -22,6 +22,10 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+
+import static com.dotcms.util.CollectionsUtils.map;
+
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -247,13 +251,33 @@ public class LanguageAPIImpl implements LanguageAPI {
             factory.saveLanguageKeys(lang, generalKeys, specificKeys, toDeleteKeys);
             Logger.debug(this, "Created language file for lang: " + lang);
         } catch (DotDataException e) {
-
-            if ( Logger.isErrorEnabled(LanguageAPIImpl.class) ) {
-                Logger.error(LanguageAPIImpl.class, e.getMessage(), e);
-            }
+          Logger.error(LanguageAPIImpl.class, e.getMessage(), e);
         }
 	}
+	
+  @CloseDBIfOpened
+  @Override
+  public Map<String, String> getStringsAsMap(final Locale locale, final Collection<String> keys) {
+    final Map<String, String> messagesMap = new HashMap<>();
 
+    if (null != keys) {
+      final Language lang = APILocator.getLanguageAPI().getLanguage(locale.getLanguage(), locale.getCountry());
+      keys.forEach(messageKey -> {
+
+          String message = (lang != null) 
+              ? getStringKey(lang, messageKey)
+              : getStringFromPropertiesFile(locale, messageKey) != null 
+              ? getStringFromPropertiesFile(locale, messageKey) 
+                  : messageKey;
+          message = (message == null) ? messageKey : message;
+          messagesMap.put(messageKey, message);
+
+      });
+    }
+
+    return messagesMap;
+  }
+	
 	@CloseDBIfOpened
 	@Override
     public String getStringKey ( final Language lang, final String key ) {
@@ -262,21 +286,17 @@ public class LanguageAPIImpl implements LanguageAPI {
         // First, look it up using the new Language Variable API
         final String value = getLanguageVariableAPI().getLanguageVariableRespectingFrontEndRoles(key, lang.getId(), user);
         // If not found, retrieve value from legacy Language Variables or the appropriate
-		// Language.properties file
-        return (UtilMethods.isNotSet(value) || value.equals(key)) ? this.getStringFromPropertiesFile(lang, key) : value;
+        final String countryCode = null == lang.getCountryCode()?"":lang.getCountryCode();
+        return (UtilMethods.isNotSet(value) || value.equals(key)) ? this.getStringFromPropertiesFile(new Locale( lang.getLanguageCode(), countryCode ), key) : value;
     }
 
-    private String getStringFromPropertiesFile (final Language lang, final String key) {
-
+    private String getStringFromPropertiesFile (final Locale locale, final String key) {
         String value = null;
-
         try {
-        	final String countryCode = null == lang.getCountryCode()?"":lang.getCountryCode();
-            value = LanguageUtil.get( new Locale( lang.getLanguageCode(), countryCode ), key );
+            value = LanguageUtil.get( locale, key );
         } catch ( LanguageException e ) {
             Logger.error( this, e.getMessage(), e );
         }
-
         return value;
     }
 

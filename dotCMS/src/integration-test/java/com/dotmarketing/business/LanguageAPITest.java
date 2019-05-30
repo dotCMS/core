@@ -138,4 +138,15 @@ public class LanguageAPITest {
 		final String value = APILocator.getLanguageAPI().getStringKey(APILocator.getLanguageAPI().getDefaultLanguage(),KEY_1);
 		Assert.assertEquals(KEY_1,value);
 	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 }
