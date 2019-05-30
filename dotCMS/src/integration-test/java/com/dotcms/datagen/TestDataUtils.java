@@ -4,6 +4,7 @@ import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.DateField;
 import com.dotcms.contenttype.model.field.TagField;
+import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.util.ConfigTestHelper;
@@ -70,6 +71,7 @@ public class TestDataUtils {
                         new FieldDataGen()
                                 .name("body")
                                 .velocityVarName("body")
+                                .searchable(true).indexed(true)
                                 .next()
                 );
                 fields.add(
@@ -186,7 +188,7 @@ public class TestDataUtils {
     }
 
     public static ContentType getNewsLikeContentType(final String contentTypeName) {
-
+        System.out.println(":::getNewsLikeContentType");
         ContentType newsType = null;
         try {
             try {
@@ -236,6 +238,22 @@ public class TestDataUtils {
                                 .velocityVarName("tags")
                                 .defaultValue(null)
                                 .type(TagField.class)
+                                .next()
+                );
+
+                fields.add(
+                        new FieldDataGen()
+                                .name("Geolocation")
+                                .velocityVarName("latlong")
+                                .type(TextField.class)
+                                .indexed(true)
+                                .next()
+                );
+                fields.add(
+                        new FieldDataGen()
+                                .name("Categories")
+                                .velocityVarName("categories")
+                                .type(CategoryField.class)
                                 .next()
                 );
 
