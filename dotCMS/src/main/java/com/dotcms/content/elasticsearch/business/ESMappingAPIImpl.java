@@ -1,12 +1,5 @@
 package com.dotcms.content.elasticsearch.business;
 
-import static com.dotcms.content.elasticsearch.business.ContentletIndexAPI.ES_LIVE_INDEX_NAME;
-import static com.dotcms.content.elasticsearch.business.ContentletIndexAPI.ES_WORKING_INDEX_NAME;
-import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
-
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.business.ContentMappingAPI;
 import com.dotcms.content.business.DotMappingException;
@@ -14,10 +7,10 @@ import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.contenttype.model.field.CategoryField;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.tika.TikaUtils;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.Host;
@@ -55,7 +48,17 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.ThreadSafeSimpleDateFormat;
 import com.dotmarketing.util.UtilMethods;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.time.FastDateFormat;
+import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.action.ActionFuture;
+import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
+import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
+import org.elasticsearch.common.xcontent.XContentType;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
@@ -69,18 +72,23 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.time.FastDateFormat;
-import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.action.ActionFuture;
-import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
-import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
-import org.elasticsearch.common.xcontent.XContentType;
 
+import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
+/**
+ * Implementation class for the {@link ContentMappingAPI}.
+ * <p>
+ * This class provides useful methods and mechanisms to map properties that are present in a {@link Contentlet} object,
+ * specially for ES indexation purposes.
+ *
+ * @author root
+ * @since Mar 22nd, 2012
+ */
 public class ESMappingAPIImpl implements ContentMappingAPI {
 
-    private static final int UUID_LENGTH = 36;
 	public static final String TEXT = "_text";
 	static ObjectMapper mapper = null;
 
@@ -151,16 +159,6 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 	}
 
-	private Map<String, Object> getDefaultFieldMap() {
-
-		Map<String, Object> fieldProps = new HashMap<String, Object>();
-		fieldProps.put("store", "no");
-		fieldProps.put("include_in_all", false);
-		return fieldProps;
-
-	}
-
-
 	@SuppressWarnings("unchecked")
 	public String toJson(Contentlet con) throws DotMappingException {
 
@@ -184,9 +182,9 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	 */
 	@CloseDBIfOpened
 	public Map<String,Object> toMap(final Contentlet contentlet) throws DotMappingException {
-
 		try {
-            final StringWriter sw = new StringWriter();
+			final StringWriter sw = new StringWriter();
+			final User systemUser = APILocator.getUserAPI().getSystemUser();
 			final Map<String,Object> contentletMap = new HashMap();
 			final Map<String,Object> mlowered	   = new HashMap();
 			loadCategories(contentlet, contentletMap);
@@ -194,21 +192,19 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			loadPermissions(contentlet, contentletMap);
             loadRelationshipFields(contentlet, contentletMap, sw);
 
+			final Identifier contentIdentifier = APILocator.getIdentifierAPI().find(contentlet);
+			final ContentletVersionInfo versionInfo = APILocator.getVersionableAPI().getContentletVersionInfo(contentIdentifier.getId(), contentlet.getLanguageId());
+			final ContentType contentType = CacheLocator.getContentTypeCache2().byVarOrInode(contentlet.getContentTypeId());
+			final Folder contentFolder = APILocator.getFolderAPI().findFolderByPath(contentIdentifier.getParentPath(), contentIdentifier.getHostId(), systemUser, false);
+			final Host contentSite = APILocator.getHostAPI().find(contentIdentifier.getHostId(), systemUser, false);
 
-			Identifier ident = APILocator.getIdentifierAPI().find(contentlet);
-			ContentletVersionInfo cvi = APILocator.getVersionableAPI().getContentletVersionInfo(ident.getId(), contentlet.getLanguageId());
-			Structure st=CacheLocator.getContentTypeCache().getStructureByInode(contentlet.getStructureInode());
-
-			Folder conFolder=APILocator.getFolderAPI().findFolderByPath(ident.getParentPath(), ident.getHostId(), APILocator.getUserAPI().getSystemUser(), false);
-			Host conHost = APILocator.getHostAPI().find(ident.getHostId(), APILocator.getUserAPI().getSystemUser(), false);
-			
 			contentletMap.put(ESMappingConstants.TITLE, contentlet.getTitle());
-			contentletMap.put(ESMappingConstants.STRUCTURE_NAME, st.getVelocityVarName()); // marked for DEPRECATION
-			contentletMap.put(ESMappingConstants.CONTENT_TYPE, st.getVelocityVarName());
-			contentletMap.put(ESMappingConstants.STRUCTURE_TYPE, st.getStructureType()); // marked for DEPRECATION
-			contentletMap.put(ESMappingConstants.STRUCTURE_TYPE  + TEXT, Integer.toString(st.getStructureType())); // marked for DEPRECATION
-			contentletMap.put(ESMappingConstants.BASE_TYPE, st.getStructureType());
-			contentletMap.put(ESMappingConstants.BASE_TYPE + TEXT, Integer.toString(st.getStructureType()));
+			contentletMap.put(ESMappingConstants.STRUCTURE_NAME, contentType.variable()); // marked for DEPRECATION
+			contentletMap.put(ESMappingConstants.CONTENT_TYPE, contentType.variable());
+			contentletMap.put(ESMappingConstants.STRUCTURE_TYPE, contentType.baseType().getType()); // marked for DEPRECATION
+			contentletMap.put(ESMappingConstants.STRUCTURE_TYPE + TEXT, Integer.toString(contentType.baseType().getType())); // marked for DEPRECATION
+			contentletMap.put(ESMappingConstants.BASE_TYPE, contentType.baseType().getType());
+			contentletMap.put(ESMappingConstants.BASE_TYPE + TEXT, Integer.toString(contentType.baseType().getType()));
 			contentletMap.put(ESMappingConstants.TYPE, ESMappingConstants.CONTENT);
 			contentletMap.put(ESMappingConstants.INODE, contentlet.getInode());
 			contentletMap.put(ESMappingConstants.MOD_DATE, elasticSearchDateTimeFormat.format(contentlet.getModDate()));
@@ -225,43 +221,39 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			contentletMap.put(ESMappingConstants.DELETED + TEXT, Boolean.toString(contentlet.isArchived()));
 			contentletMap.put(ESMappingConstants.LANGUAGE_ID, contentlet.getLanguageId());
 			contentletMap.put(ESMappingConstants.LANGUAGE_ID + TEXT, Long.toString(contentlet.getLanguageId()));
-			contentletMap.put(ESMappingConstants.IDENTIFIER, ident.getId());
-			contentletMap.put(ESMappingConstants.CONTENTLET_HOST, ident.getHostId());
-	        contentletMap.put(ESMappingConstants.CONTENTLET_HOSTNAME, conHost.getHostname());
-			
-			
-			
-			contentletMap.put(ESMappingConstants.CONTENTLET_FOLER, conFolder!=null && InodeUtils.isSet(conFolder.getInode()) ? conFolder.getInode() : contentlet.getFolder());
-			contentletMap.put(ESMappingConstants.PARENT_PATH, ident.getParentPath());
-			contentletMap.put(ESMappingConstants.PATH, ident.getPath());
+			contentletMap.put(ESMappingConstants.IDENTIFIER, contentIdentifier.getId());
+			contentletMap.put(ESMappingConstants.CONTENTLET_HOST, contentIdentifier.getHostId());
+			contentletMap.put(ESMappingConstants.CONTENTLET_HOSTNAME, contentSite.getHostname());
+			contentletMap.put(ESMappingConstants.CONTENTLET_FOLER, contentFolder!=null && InodeUtils.isSet(contentFolder.getInode()) ? contentFolder.getInode() : contentlet.getFolder());
+			contentletMap.put(ESMappingConstants.PARENT_PATH, contentIdentifier.getParentPath());
+			contentletMap.put(ESMappingConstants.PATH, contentIdentifier.getPath());
 			// makes shorties searchable regardless of length
-			contentletMap.put(ESMappingConstants.SHORT_ID, ident.getId().replace("-", ""));
+			contentletMap.put(ESMappingConstants.SHORT_ID, contentIdentifier.getId().replace("-", ""));
 			contentletMap.put(ESMappingConstants.SHORT_INODE, contentlet.getInode().replace("-", ""));
-			
 			//add workflow to map
 			contentletMap.putAll(getWorkflowInfoForContentlet(contentlet));
 
-			if(UtilMethods.isSet(ident.getSysPublishDate())) {
-				contentletMap.put(ESMappingConstants.PUBLISH_DATE, elasticSearchDateTimeFormat.format(ident.getSysPublishDate()));
+			if(UtilMethods.isSet(contentIdentifier.getSysPublishDate())) {
+				contentletMap.put(ESMappingConstants.PUBLISH_DATE, elasticSearchDateTimeFormat.format(contentIdentifier.getSysPublishDate()));
 				contentletMap.put(ESMappingConstants.PUBLISH_DATE + TEXT,
-						datetimeFormat.format(ident.getSysPublishDate()));
+						datetimeFormat.format(contentIdentifier.getSysPublishDate()));
 			}else {
-				contentletMap.put(ESMappingConstants.PUBLISH_DATE, elasticSearchDateTimeFormat.format(cvi.getVersionTs()));
+				contentletMap.put(ESMappingConstants.PUBLISH_DATE, elasticSearchDateTimeFormat.format(versionInfo.getVersionTs()));
 				contentletMap.put(ESMappingConstants.PUBLISH_DATE + TEXT,
-						datetimeFormat.format(cvi.getVersionTs()));
+						datetimeFormat.format(versionInfo.getVersionTs()));
 			}
 
-			if(UtilMethods.isSet(ident.getSysExpireDate())) {
-				contentletMap.put(ESMappingConstants.EXPIRE_DATE, elasticSearchDateTimeFormat.format(ident.getSysExpireDate()));
+			if(UtilMethods.isSet(contentIdentifier.getSysExpireDate())) {
+				contentletMap.put(ESMappingConstants.EXPIRE_DATE, elasticSearchDateTimeFormat.format(contentIdentifier.getSysExpireDate()));
 				contentletMap.put(ESMappingConstants.EXPIRE_DATE + TEXT,
-						datetimeFormat.format(ident.getSysExpireDate()));
+						datetimeFormat.format(contentIdentifier.getSysExpireDate()));
 			}else {
 				contentletMap.put(ESMappingConstants.EXPIRE_DATE, elasticSearchDateTimeFormat.format(29990101000000L));
 				contentletMap.put(ESMappingConstants.EXPIRE_DATE + TEXT, "29990101000000");
 			}
 
-			contentletMap.put(ESMappingConstants.VERSION_TS, elasticSearchDateTimeFormat.format(cvi.getVersionTs()));
-			contentletMap.put(ESMappingConstants.VERSION_TS + TEXT, datetimeFormat.format(cvi.getVersionTs()));
+			contentletMap.put(ESMappingConstants.VERSION_TS, elasticSearchDateTimeFormat.format(versionInfo.getVersionTs()));
+			contentletMap.put(ESMappingConstants.VERSION_TS + TEXT, datetimeFormat.format(versionInfo.getVersionTs()));
 
 			String urlMap = null;
 			try{
@@ -269,10 +261,10 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 				if(urlMap != null){
 					contentletMap.put(ESMappingConstants.URL_MAP,urlMap );
 				}
-			}
-			catch(Exception e){
-				Logger.warn(this.getClass(), "Cannot get URLMap for structure : "+ st.getName() + " and contentlet.id : " + ((ident != null) ? ident.getId() : contentlet) + " , reason: "+e.getMessage());
-				
+			} catch (final Exception e) {
+				Logger.warn(this.getClass(), "Cannot get URLMap for Content Type: " + contentType.name() + " and " +
+						"contentlet.id : " + ((contentIdentifier != null) ? contentIdentifier.getId() : contentlet) +
+						" , reason: " + e.getMessage());
 			}
 
 			for(final Entry<String,Object> entry : contentletMap.entrySet()){
@@ -308,8 +300,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 				}
 			}
 
-			if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
-			    
+			if (contentlet.getContentType().baseType().getType() == BaseContentType.FILEASSET.getType()) {
                 //Verify if it is enabled the option to regenerate missing metadata files on reindex
                 boolean regenerateMissingMetadata = Config
                         .getBooleanProperty("regenerate.missing.metadata.on.reindex", true);
@@ -317,7 +308,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                 Verify if it is enabled the option to always regenerate metadata files on reindex,
                 enabling this could affect greatly the performance of a reindex process.
                  */
-                boolean alwaysRegenerateMetadata = Config
+                final boolean alwaysRegenerateMetadata = Config
                         .getBooleanProperty("always.regenerate.metadata.on.reindex", false);
                 if (contentlet.isLive() || contentlet.isWorking()) {
                     if (alwaysRegenerateMetadata) {
@@ -326,30 +317,26 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                         new TikaUtils().generateMetaData(contentlet);
                     }
                 }
-			    
-			    
 				// see if we have content metadata
 				File contentMeta=APILocator.getFileAssetAPI().getContentMetadataFile(contentlet.getInode());
 				if(contentMeta.exists() && contentMeta.length()>0) {
-
-					String contentData=APILocator.getFileAssetAPI().getContentMetadataAsString(contentMeta);
-
+					final String contentData=APILocator.getFileAssetAPI().getContentMetadataAsString(contentMeta);
 					mlowered.put(FileAssetAPI.META_DATA_FIELD.toLowerCase() + StringPool.PERIOD + "content", contentData);
 					sw.append(contentData).append(' ');
 				}
 			}
-
 			//The url is now stored under the identifier for html pages, so we need to index that also.
-			if(contentlet.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE){
-				mlowered.put(contentlet.getStructure().getVelocityVarName().toLowerCase() + ".url", ident.getAssetName());
-				mlowered.put(contentlet.getStructure().getVelocityVarName().toLowerCase() + ".url_dotraw", ident.getAssetName());
-				sw.append(ident.getAssetName());
+			if (contentlet.getContentType().baseType().getType() == BaseContentType.HTMLPAGE.getType()) {
+				mlowered.put(contentlet.getContentType().variable().toLowerCase() + ".url", contentIdentifier.getAssetName());
+				mlowered.put(contentlet.getContentType().variable().toLowerCase() + ".url_dotraw", contentIdentifier.getAssetName());
+				sw.append(contentIdentifier.getAssetName());
 			}
-
 			mlowered.put("catchall", sw.toString());
 
 			return mlowered;
-		} catch (Exception e) {
+		} catch (final Exception e) {
+			Logger.error(this, "An error occurred when mapping properties of Contentlet '" + contentlet.getIdentifier
+					() + "' : " + e.getMessage(), e);
 			throw new DotMappingException(e.getMessage(), e);
 		}
 	}
@@ -675,6 +662,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			}
 		}
 	}
+
 	public String toJsonString(Map<String, Object> map) throws IOException{
 		return mapper.writeValueAsString(map);
 	}
@@ -797,4 +785,5 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
             }
         }
     }
+
 }
