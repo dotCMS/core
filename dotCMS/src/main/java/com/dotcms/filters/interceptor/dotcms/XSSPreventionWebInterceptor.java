@@ -1,6 +1,7 @@
 package com.dotcms.filters.interceptor.dotcms;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -9,6 +10,7 @@ import com.dotcms.filters.interceptor.Result;
 import com.dotcms.filters.interceptor.WebInterceptor;
 import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.util.Config;
+import com.liferay.portal.util.PortalUtil;
 
 /**
  * Interceptor created to validate referers for incoming requests. This will reject any calls to
@@ -25,6 +27,7 @@ public class XSSPreventionWebInterceptor implements WebInterceptor {
   // All paths needs to be in lower case as the URI is lowercase before to be evaluated
   private static final String[] XSS_PROTECTED_PATHS_DEFAULT ={
           "\\A/html/", 
+          "\\A/c/", 
           "\\A/servlets", 
           "\\A/servlet/",
           "\\A/dottaillogservlet", 
@@ -61,10 +64,24 @@ public class XSSPreventionWebInterceptor implements WebInterceptor {
 
     Result result = Result.NEXT;
     if(!securityUtils.validateReferer(request)) {
-      response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-      response.setContentType("text/html");
-      response.getWriter().print(unauthorizedHtmlResponse());
-      response.getWriter().close();
+      
+      if(PortalUtil.getUser(request)!=null && request.getRequestURI().startsWith("/c/")) {
+        try(PrintWriter writer = response.getWriter()){
+          response.setContentType("text/html");
+          writer.append("<html><head>");
+          writer.append("<script>");
+          writer.append("top.location='/dotAdmin/';");
+          writer.append("</script>");
+          writer.append("</head></html>");
+        }
+      }else {
+
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.setContentType("text/html");
+        try(PrintWriter writer = response.getWriter()){
+          writer.print(unauthorizedHtmlResponse());
+        }
+      }
       result = Result.SKIP_NO_CHAIN;
     }
    
