@@ -132,7 +132,7 @@ public class PortalRequestProcessor extends StxxTilesRequestProcessor {
 
 
 			if(PortalUtil.getUserId(req) == null){
-				res.sendRedirect("/html/portal/login.jsp?r=" + System.currentTimeMillis());
+				res.sendRedirect("/dotAdmin/?r=" + System.currentTimeMillis());
 			}else{
 
 				if(lastPath != null){
