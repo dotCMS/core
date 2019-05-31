@@ -10,12 +10,14 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.util.ConfigTestHelper;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.google.common.io.Files;
 import com.liferay.portal.model.User;
@@ -188,7 +190,6 @@ public class TestDataUtils {
     }
 
     public static ContentType getNewsLikeContentType(final String contentTypeName) {
-        System.out.println(":::getNewsLikeContentType");
         ContentType newsType = null;
         try {
             try {
@@ -495,6 +496,35 @@ public class TestDataUtils {
         } catch (Exception e) {
             throw new DotRuntimeException(e);
         }
+    }
+
+    public static Relationship relateContentTypes(final ContentType parentContentType,
+            final ContentType childContentType) {
+        final String relationTypeValue = parentContentType.name() + "-" + childContentType.name();
+        RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
+        Relationship relationship;
+        relationship = relationshipAPI.byTypeValue(relationTypeValue);
+        if (null != relationship) {
+            return relationship;
+        } else {
+            relationship = new Relationship();
+            if ((parentContentType == childContentType) || (parentContentType.id().equals(childContentType.id()))) {
+                relationship.setParentRelationName("Child " + parentContentType.name());
+                relationship.setChildRelationName("Parent " + childContentType.name());
+            } else {
+                relationship.setParentRelationName(parentContentType.name());
+                relationship.setChildRelationName(childContentType.name());
+            }
+            relationship.setRelationTypeValue(relationTypeValue);
+            relationship.setParentStructureInode(parentContentType.inode());
+            relationship.setChildStructureInode(childContentType.id());
+            try {
+                APILocator.getRelationshipAPI().create(relationship);
+            } catch (Exception e) {
+                throw new DotRuntimeException(e);
+            }
+        }
+        return relationship;
     }
 
     public static Contentlet getFileAssetContent(Boolean persist, long languageId) {

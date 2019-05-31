@@ -1,5 +1,8 @@
 package com.dotcms.content.elasticsearch.business;
 
+import static com.dotcms.datagen.TestDataUtils.getCommentsLikeContentType;
+import static com.dotcms.datagen.TestDataUtils.getNewsLikeContentType;
+import static com.dotcms.datagen.TestDataUtils.relateContentTypes;
 import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.map;
 import static org.junit.Assert.assertEquals;
@@ -33,6 +36,7 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
@@ -42,7 +46,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -78,6 +81,11 @@ public class ESMappingAPITest {
     @Test
     public void testLoadRelationshipFields_whenUsingLegacyRelationships_shouldSuccess()
             throws DotDataException, DotSecurityException {
+
+        final ContentType news = getNewsLikeContentType("News");
+        final ContentType comments = getCommentsLikeContentType("Comments");
+        relateContentTypes(news, comments);
+
 
         final ESMappingAPIImpl esMappingAPI = new ESMappingAPIImpl();
         final Map<String, Object> esMap = new HashMap<>();
@@ -118,11 +126,11 @@ public class ESMappingAPITest {
                     List.class.cast(esMap.get("News-Comments" + ESMappingConstants.SUFFIX_ORDER)).get(0));
 
         } finally {
-            if (newsContentlet != null && newsContentlet.getIdentifier() != null) {
+            if (newsContentlet != null && UtilMethods.isSet(newsContentlet.getIdentifier())) {
                 ContentletDataGen.remove(newsContentlet);
             }
 
-            if (commentsContentlet != null && commentsContentlet.getIdentifier() != null) {
+            if (commentsContentlet != null && UtilMethods.isSet(commentsContentlet.getIdentifier())) {
                 ContentletDataGen.remove(commentsContentlet);
             }
 
@@ -132,6 +140,9 @@ public class ESMappingAPITest {
     @Test
     public void testLoadRelationshipFields_whenUsingSelfRelationships_shouldSuccess()
             throws DotDataException, DotSecurityException {
+
+        final ContentType comments = getCommentsLikeContentType("Comments");
+        relateContentTypes(comments, comments);
 
         final ESMappingAPIImpl esMappingAPI = new ESMappingAPIImpl();
         final Map<String, Object> esMap = new HashMap<>();
@@ -172,11 +183,11 @@ public class ESMappingAPITest {
                     ((List)esMap.get("Comments-Comments" + ESMappingConstants.SUFFIX_ORDER)).get(0));
 
         } finally {
-            if (parentContentlet != null && parentContentlet.getIdentifier() != null) {
+            if (parentContentlet != null && UtilMethods.isSet(parentContentlet.getIdentifier())) {
                 ContentletDataGen.remove(parentContentlet);
             }
 
-            if (childContentlet != null && childContentlet.getIdentifier() != null) {
+            if (childContentlet != null && UtilMethods.isSet(childContentlet.getIdentifier())) {
                 ContentletDataGen.remove(childContentlet);
             }
 
