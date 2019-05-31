@@ -96,7 +96,7 @@ public class LoginEditModeServlet extends HttpServlet {
 		} catch (DotSecurityException e) {
 			Logger.error(LoginEditModeServlet.class,e.getMessage(),e);
 		}
-		request.getRequestDispatcher("/c").forward(request,response);
+		response.sendRedirect("/dotAdmin/?r=" + System.currentTimeMillis());
 	}
 
     private String findAssetURI(Contentlet cont) throws DotDataException {
