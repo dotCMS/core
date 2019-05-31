@@ -2157,6 +2157,10 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 query = query.replaceAll( " to ", " TO " );
             }
 
+            if (query.contains( " or " )) {
+                query = query.replaceAll( " or ", " OR " );
+            }
+
             return query;
         }
 
