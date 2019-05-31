@@ -70,7 +70,7 @@ public class XSSPreventionWebInterceptor implements WebInterceptor {
           response.setContentType("text/html");
           writer.append("<html><head>");
           writer.append("<script>");
-          writer.append("top.location='/dotAdmin/';");
+          writer.append("top.location.href='/dotAdmin/';");
           writer.append("</script>");
           writer.append("</head></html>");
         }
