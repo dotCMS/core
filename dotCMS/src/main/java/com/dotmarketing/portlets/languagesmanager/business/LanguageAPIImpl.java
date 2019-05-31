@@ -4,6 +4,7 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
@@ -266,9 +267,7 @@ public class LanguageAPIImpl implements LanguageAPI {
 
           String message = (lang != null) 
               ? getStringKey(lang, messageKey)
-              : getStringFromPropertiesFile(locale, messageKey) != null 
-              ? getStringFromPropertiesFile(locale, messageKey) 
-                  : messageKey;
+              : getStringFromPropertiesFile(locale, messageKey) ;
           message = (message == null) ? messageKey : message;
           messagesMap.put(messageKey, message);
 
@@ -300,7 +299,8 @@ public class LanguageAPIImpl implements LanguageAPI {
         return value;
     }
 
-	private User getUser() {
+    @VisibleForTesting
+	protected User getUser() {
 
 		User user = null;
 

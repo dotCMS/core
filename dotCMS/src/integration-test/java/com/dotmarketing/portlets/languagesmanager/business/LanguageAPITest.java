@@ -1,4 +1,4 @@
-package com.dotmarketing.business;
+package com.dotmarketing.portlets.languagesmanager.business;
 
 import static com.dotcms.integrationtestutil.content.ContentUtils.createTestKeyValueContent;
 import static com.dotcms.integrationtestutil.content.ContentUtils.deleteContentlets;
@@ -9,6 +9,8 @@ import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.StructureDataGen;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -23,12 +25,15 @@ import org.junit.Assert;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
+import com.dotmarketing.portlets.languagesmanager.business.LanguageAPIImpl;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDGenerator;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -164,33 +169,48 @@ public class LanguageAPITest {
    */
   @Test
   public void getStringsAsMap_returnMap() throws Exception {
+    
+    final String uniq = UUIDGenerator.shorty();
     final String BAD_KEY = "KEY-DOES-NOT-EXIST";
-    final String CONTENTLET_KEY = "key-exists-as-contentlet";
-    final String PROPERTYFILE_KEY = "key-exists-in-properties";
+    final String CONTENTLET_KEY = "key-exists-as-contentlet" + uniq;
+    final String PROPERTYFILE_KEY = "key-exists-in-properties" + uniq;
     final String SYSTEM_PROPERTYFILE_KEY = "contenttypes.action.cancel";
-    final LanguageAPI lapi = APILocator.getLanguageAPI();
+    final LanguageAPIImpl languageAPi = new LanguageAPIImpl();
+    
+    Language language  = new LanguageDataGen().nextPersisted();
+    LanguageAPIImpl lapi = Mockito.spy(languageAPi);
+    Mockito.doReturn(APILocator.systemUser()).when(lapi).getUser();
     ContentType langKeyType = APILocator.getContentTypeAPI(APILocator.systemUser()).find("Languagevariable");
 
-    Contentlet con = new ContentletDataGen(langKeyType.id()).setProperty("key", CONTENTLET_KEY).setProperty("value", CONTENTLET_KEY + "works")
+    Contentlet con = new ContentletDataGen(langKeyType.id())
+        .setProperty("key", CONTENTLET_KEY)
+        .setProperty("value", CONTENTLET_KEY + "works")
+        .languageId(language.getId())
         .nextPersisted();
-
+    APILocator.getContentletAPI().publish(con, APILocator.systemUser(), false);
+    
+    
     // Add Languague Variable to local properties
-    Map<String, String> propertyKeys = ImmutableMap.of(PROPERTYFILE_KEY, PROPERTYFILE_KEY + "works");
-
-    for (Language lang : APILocator.getLanguageAPI().getLanguages()) {
-      lapi.saveLanguageKeys(lang, propertyKeys, ImmutableMap.of(), ImmutableSet.of());
-    }
+    lapi.saveLanguageKeys(language, ImmutableMap.of(PROPERTYFILE_KEY, PROPERTYFILE_KEY + "works"), ImmutableMap.of(), ImmutableSet.of());
+    
 
     
     List<String> keys = ImmutableList.of(BAD_KEY, CONTENTLET_KEY,PROPERTYFILE_KEY,SYSTEM_PROPERTYFILE_KEY );
-    
-    Locale locale = new Locale("en");
+    Locale locale = language.asLocale();
     
     Map<String, String> translatedMap = lapi.getStringsAsMap(locale, keys);
+    
+    // If key does not exist, we just return the key as the value
     assertEquals(translatedMap.get(BAD_KEY), BAD_KEY);
-    assertEquals(translatedMap.get(CONTENTLET_KEY), CONTENTLET_KEY+"works");
-    assertEquals(translatedMap.get(PROPERTYFILE_KEY), PROPERTYFILE_KEY+"works");
-    assertEquals(translatedMap.get(SYSTEM_PROPERTYFILE_KEY), LanguageUtil.get( locale, SYSTEM_PROPERTYFILE_KEY ));
+    
+    // We should check content based keys - languagevariables - before .properties files
+    assertEquals(CONTENTLET_KEY+"works", translatedMap.get(CONTENTLET_KEY));
+    
+    // then we should check properties files based on the locale
+    assertEquals(PROPERTYFILE_KEY+"works",translatedMap.get(PROPERTYFILE_KEY));
+    
+    
+    assertEquals(LanguageUtil.get( new Locale("en", "us"), SYSTEM_PROPERTYFILE_KEY ), translatedMap.get(SYSTEM_PROPERTYFILE_KEY) );
   }
   
 	
