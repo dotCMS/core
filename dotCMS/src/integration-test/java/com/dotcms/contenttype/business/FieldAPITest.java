@@ -20,6 +20,7 @@ import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
+import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -569,7 +570,7 @@ public class FieldAPITest extends IntegrationTestBase {
             throws DotSecurityException, DotDataException {
         final long time = System.currentTimeMillis();
         ContentType parentContentType = null;
-        final ContentType existingContentType = contentTypeAPI.find("Youtube");
+        final ContentType existingContentType = TestDataUtils.getBlogLikeContentType(); // Any CT would do.
         try {
             parentContentType = createAndSaveSimpleContentType("parentContentType" + time);
 
