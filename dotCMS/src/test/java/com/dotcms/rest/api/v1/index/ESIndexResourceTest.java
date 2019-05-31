@@ -14,6 +14,7 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.RestUtilTest;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
+import com.dotcms.rest.exception.SecurityException;
 import com.dotmarketing.business.LayoutAPI;
 import com.liferay.portal.model.User;
 import java.io.File;
@@ -63,7 +64,7 @@ public class ESIndexResourceTest extends UnitTestBase {
         Map<String,String> paramsMap = new HashMap<String,String>();
         paramsMap.put("index", liveIndex);
 
-        when(webResource.init(requestParams, true, request, true, null)).thenReturn(initDataObject);
+        when(webResource.init(requestParams, request, httpServletResponse, true, null)).thenReturn(initDataObject);
         when(initDataObject.getUser()).thenReturn(user);
         when(initDataObject.getParamsMap()).thenReturn(paramsMap);
         when(layoutAPI.doesUserHaveAccessToPortlet("maintenance", initDataObject.getUser())).thenReturn(true);
@@ -85,7 +86,7 @@ public class ESIndexResourceTest extends UnitTestBase {
 	 * @throws Exception
 	 */
     @Test
-    public void testDownloadSnapshot_liveDefaultIndex() throws Exception {
+    public void testDownloadSnapshot_liveDefaultIndex() throws Exception, SecurityException {
 
     	final String liveIndex = "live_20161004130547";
     	final String workingIndex = "work_20161004130447";
@@ -110,7 +111,8 @@ public class ESIndexResourceTest extends UnitTestBase {
         Map<String,String> paramsMap = new HashMap<String,String>();
         paramsMap.put("index", "live");
 
-        when(webResource.init(requestParams, true, request, true, null)).thenReturn(initDataObject);
+        // webResource.init(params, httpServletRequest, httpServletResponse, true, null)
+        when(webResource.init(requestParams, request, httpServletResponse, true, null)).thenReturn(initDataObject);
         when(initDataObject.getUser()).thenReturn(user);
         when(initDataObject.getParamsMap()).thenReturn(paramsMap);
         when(layoutAPI.doesUserHaveAccessToPortlet("maintenance", initDataObject.getUser())).thenReturn(true);
@@ -157,7 +159,7 @@ public class ESIndexResourceTest extends UnitTestBase {
         Map<String,String> paramsMap = new HashMap<String,String>();
         paramsMap.put("index", workingIndex);
 
-        when(webResource.init(requestParams, true, request, true, null)).thenReturn(initDataObject);
+        when(webResource.init(requestParams, request, httpServletResponse, true, null)).thenReturn(initDataObject);
         when(initDataObject.getUser()).thenReturn(user);
         when(initDataObject.getParamsMap()).thenReturn(paramsMap);
         when(layoutAPI.doesUserHaveAccessToPortlet("maintenance", initDataObject.getUser())).thenReturn(true);
@@ -204,7 +206,7 @@ public class ESIndexResourceTest extends UnitTestBase {
         Map<String,String> paramsMap = new HashMap<String,String>();
         paramsMap.put("index", "working");
 
-        when(webResource.init(requestParams, true, request, true, null)).thenReturn(initDataObject);
+        when(webResource.init(requestParams, request, httpServletResponse, true, null)).thenReturn(initDataObject);
         when(initDataObject.getUser()).thenReturn(user);
         when(initDataObject.getParamsMap()).thenReturn(paramsMap);
         when(layoutAPI.doesUserHaveAccessToPortlet("maintenance", initDataObject.getUser())).thenReturn(true);
@@ -243,7 +245,7 @@ public class ESIndexResourceTest extends UnitTestBase {
         final User user = mock(User.class);
         Map<String,String> paramsMap = new HashMap<String,String>();
 
-        when(webResource.init(requestParams, true, request, true, null)).thenReturn(initDataObject);
+        when(webResource.init(requestParams, request, httpServletResponse, true, null)).thenReturn(initDataObject);
         when(initDataObject.getUser()).thenReturn(user);
         when(user.getLocale()).thenReturn(Locale.getDefault());
         when(initDataObject.getParamsMap()).thenReturn(paramsMap);
