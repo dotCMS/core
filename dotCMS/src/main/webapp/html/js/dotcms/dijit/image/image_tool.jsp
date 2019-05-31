@@ -46,12 +46,11 @@
 	
 	<title>dotCMS Image Tool</title>
 
-	<style type="text/css">
-		@import "/html/common/css.jsp";
-        @import "<%=dojoPath%>/dijit/themes/dmundra/dmundra.css";
-        @import "<%=dojoPath%>/dijit/themes/dmundra/Grid.css";
-        @import "/html/js/dotcms/dijit/image/image_tools.css";
-    </style>
+    <link rel="stylesheet" type="text/css" href="/html/css/dot_admin.css">
+    <link rel="stylesheet" type="text/css" href="<%=dojoPath%>/dijit/themes/dmundra/dmundra.css">
+    <link rel="stylesheet" type="text/css" href="<%=dojoPath%>/dijit/themes/dmundra/Grid.css">
+    <link rel="stylesheet" type="text/css" href="/html/js/dotcms/dijit/image/image_tools.css">
+
 	
 	<!--[if gte IE 7]><link href="/html/css/iehacks.css" rel="stylesheet" type="text/css" /><![endif]-->
 	

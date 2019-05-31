@@ -1,4 +1,21 @@
-
+body{outline:none !important;font:13px/1.22 Roboto, sans-serif;*font-size:small;*font:x-small;color:#555;line-height:138.5%;background-color:#f3f3f3;margin:0;padding:0px;}/* 13pt */
+h1{font-size:174%;}/* 23pt */
+h2{font-size:138.5%;line-height:115%;margin:0 0 .2em 0;font-weight:normal;}/* 18pt */
+h3{font-size:100%;margin:0 0 .2em 0;font-weight:bold;}/* 18pt */
+h4{font-weight:bold;}/* 13pt */
+h5{font-size:77%;}/* 10pt */
+h6{font-size:77%;font-style: italic;}/* 10pt */
+p,fieldset{margin:0 0 1.5em 0;}
+a{color: #2C548D;}
+a:hover{}
+em {font-style:italic;}
+strong,b{font-weight:bold;}
+blockquote{margin:1em;}
+ol{margin-left:3em;}
+ul{margin-left:2.5em;}
+ol li {list-style: none outside;}
+ul li {list-style: none outside;}
+table {font-size:inherit;font-family:Roboto,sans-serif;}
 
 
 
@@ -39,7 +56,7 @@
 
 #imageViewPort{
     overflow: auto;
-    margin-top: 5px;
+    margin-top: 0px;
     position: relative;
 }
 

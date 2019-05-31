@@ -438,7 +438,18 @@ public class Config {
 	    _refreshProperties ();
 	    return props.getStringArray(name);
 	}
-
+	
+	/**
+	 * If config value == null, returns the default
+	 * @param name
+	 * @param defaultValue
+	 * @return
+	 */
+  public static String[] getStringArrayProperty (String name, String[] defaultValue) {
+      _refreshProperties ();
+      
+      return props.containsKey(name) ? props.getStringArray(name) : defaultValue;
+  }
 	/**
 	 * @deprecated  Use getIntProperty(String name, int default) and
 	 * set an intelligent default
