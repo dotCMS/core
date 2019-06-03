@@ -14,7 +14,7 @@ public class LanguageDataGen extends AbstractDataGen<Language> {
   @Override
   public Language next() {
     Tuple2<String, String> langCountry =  uniqueLangAndCountry();
-    Language lan = new Language();
+    final Language lan = new Language();
     lan.setCountry(langCountry._2);
     lan.setCountryCode(langCountry._2.substring(0, 2));
     lan.setLanguageCode(langCountry._1.substring(0, 2));
@@ -23,7 +23,7 @@ public class LanguageDataGen extends AbstractDataGen<Language> {
   }
 
   @Override
-  public Language persist(Language language) {
+  public Language persist(final Language language) {
     APILocator.getLanguageAPI().saveLanguage(language);
     return APILocator.getLanguageAPI().getLanguage(language.getLanguageCode(), language.getCountryCode());
   }

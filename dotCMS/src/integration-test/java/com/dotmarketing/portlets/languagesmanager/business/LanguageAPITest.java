@@ -4,39 +4,29 @@ import static com.dotcms.integrationtestutil.content.ContentUtils.createTestKeyV
 import static com.dotcms.integrationtestutil.content.ContentUtils.deleteContentlets;
 import static org.junit.Assert.assertEquals;
 
-import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.datagen.ContainerDataGen;
-import com.dotcms.datagen.ContentletDataGen;
-import com.dotcms.datagen.StructureDataGen;
-import com.dotcms.languagevariable.business.LanguageVariableAPI;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.liferay.portal.language.LanguageUtil;
-import com.liferay.portal.model.User;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
 import org.junit.Assert;
-
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.util.IntegrationTestInitService;
-import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
-import com.dotmarketing.portlets.languagesmanager.business.LanguageAPIImpl;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.liferay.portal.language.LanguageUtil;
+import com.liferay.portal.model.User;
 
 public class LanguageAPITest {
 	private static User systemUser;
@@ -177,10 +167,10 @@ public class LanguageAPITest {
     final String SYSTEM_PROPERTYFILE_KEY = "contenttypes.action.cancel";
     final LanguageAPIImpl languageAPi = new LanguageAPIImpl();
     
-    Language language  = new LanguageDataGen().nextPersisted();
-    LanguageAPIImpl lapi = Mockito.spy(languageAPi);
+    final Language language  = new LanguageDataGen().nextPersisted();
+    final LanguageAPIImpl lapi = Mockito.spy(languageAPi);
     Mockito.doReturn(APILocator.systemUser()).when(lapi).getUser();
-    ContentType langKeyType = APILocator.getContentTypeAPI(APILocator.systemUser()).find("Languagevariable");
+    final ContentType langKeyType = APILocator.getContentTypeAPI(APILocator.systemUser()).find("Languagevariable");
 
     Contentlet con = new ContentletDataGen(langKeyType.id())
         .setProperty("key", CONTENTLET_KEY)
@@ -195,10 +185,10 @@ public class LanguageAPITest {
     
 
     
-    List<String> keys = ImmutableList.of(BAD_KEY, CONTENTLET_KEY,PROPERTYFILE_KEY,SYSTEM_PROPERTYFILE_KEY );
-    Locale locale = language.asLocale();
+    final List<String> keys = ImmutableList.of(BAD_KEY, CONTENTLET_KEY,PROPERTYFILE_KEY,SYSTEM_PROPERTYFILE_KEY );
+    final Locale locale = language.asLocale();
     
-    Map<String, String> translatedMap = lapi.getStringsAsMap(locale, keys);
+    final Map<String, String> translatedMap = lapi.getStringsAsMap(locale, keys);
     
     // If key does not exist, we just return the key as the value
     assertEquals(translatedMap.get(BAD_KEY), BAD_KEY);
