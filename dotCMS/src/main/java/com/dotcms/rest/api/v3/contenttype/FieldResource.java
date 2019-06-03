@@ -144,6 +144,32 @@ public class FieldResource {
         }
     }
 
+    @PUT
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
+    @Path("/move")
+    public Response moveFields(
+            @PathParam("typeIdOrVarName") final String typeIdOrVarName,
+            final MoveFieldsForm moveFieldsForm,
+            @Context final HttpServletRequest req)
+            throws DotDataException, DotSecurityException {
+
+        final InitDataObject initData =
+                this.webResource.init(null, true, req, true, null);
+        final User user = initData.getUser();
+        final ContentType contentType = APILocator.getContentTypeAPI(user).find(typeIdOrVarName);
+
+        final FieldLayout layout = moveFieldsForm.getRows(contentType.id());
+
+        fieldAPI.saveFields(layout.getFields(), user);
+
+        final List<Field> contentTypeFields = fieldAPI.byContentTypeId(contentType.id());
+        final FieldLayout fieldLayoutFromDB = new FieldLayout(contentTypeFields);
+        return Response.ok(new ResponseEntityView(fieldLayoutFromDB.getRows())).build();
+    }
+
     /**
      * Update a set of fields and return the new {@link ContentType}'s layout in the response
      *
@@ -183,46 +209,6 @@ public class FieldResource {
         return Response.ok(new ResponseEntityView(fieldLayoutFromDB.getRows())).build();
     }
 
-    @PUT
-    @JSONP
-    @NoCache
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
-    @Path("/move")
-    public Response moveFields(
-            @PathParam("typeIdOrVarName") final String typeIdOrVarName,
-            final MoveFieldsForm moveFieldsForm,
-            @Context final HttpServletRequest req)
-            throws DotDataException, DotSecurityException {
-
-        final InitDataObject initData =
-                this.webResource.init(null, true, req, true, null);
-        final User user = initData.getUser();
-        final ContentType contentType = APILocator.getContentTypeAPI(user).find(typeIdOrVarName);
-
-        final List<Field> fieldsToUpdate = calculateSortOrder(moveFieldsForm.getRows());
-
-        fieldAPI.saveFields(fieldsToUpdate, user);
-
-        final List<Field> contentTypeFields = fieldAPI.byContentTypeId(contentType.id());
-        final FieldLayout fieldLayoutFromDB = new FieldLayout(contentTypeFields);
-        return Response.ok(new ResponseEntityView(fieldLayoutFromDB.getRows())).build();
-    }
-
-    private List<Field> calculateSortOrder(final List<FieldLayoutRow> rows) {
-        final List<Field> fields = rows.stream()
-                .flatMap(row -> row.getAllFields().stream())
-                .collect(Collectors.toList());
-
-        final List<Field> sortOrderFixFields = new ArrayList<>();
-
-        for (int i = 0; i < fields.size(); i++) {
-            final Field field = fields.get(i);
-            sortOrderFixFields.add(FieldUtil.copyField(field, i));
-        }
-
-        return sortOrderFixFields;
-    }
 
     /**
      * Return the {@link ContentType}'s layout

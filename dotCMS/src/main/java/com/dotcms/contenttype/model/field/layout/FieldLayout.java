@@ -68,7 +68,7 @@ public class FieldLayout {
             .stream()
             .map((final FieldUtil.FieldsFragment fragment) ->
                 new FieldLayoutRow (
-                    (FieldDivider) fragment.getFieldDivider(),
+                    fragment.getFieldDivider(),
                     FieldUtil.splitByColumnField(fragment.getOthersFields())
                             .stream()
                             .map((final List<Field> rowFields) ->

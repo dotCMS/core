@@ -2,8 +2,9 @@ package com.dotcms.contenttype.model.field.layout;
 
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldDivider;
-import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.dotcms.util.CollectionsUtils;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.ImmutableList;
 
 import java.util.List;
@@ -15,12 +16,11 @@ import java.util.stream.Collectors;
  *
  * @see FieldLayout
  */
-@JsonSerialize(using = FieldLayoutRowSerializer.class)
 public class FieldLayoutRow {
-    private final FieldDivider divider;
+    private final Field divider;
     private final List<FieldLayoutColumn> columns;
 
-    public FieldLayoutRow(final FieldDivider fieldDivider, final List<FieldLayoutColumn> columns) {
+    public FieldLayoutRow(final Field fieldDivider, final List<FieldLayoutColumn> columns) {
         this.divider = fieldDivider;
         this.columns = columns;
     }
@@ -30,7 +30,7 @@ public class FieldLayoutRow {
      *
      * @return
      */
-    public FieldDivider getDivider() {
+    public Field getDivider() {
         return divider;
     }
 
@@ -47,6 +47,7 @@ public class FieldLayoutRow {
      * Return the fields into the column plus the {@link com.dotcms.contenttype.model.field.RowField} in the first position
      * @return
      */
+    @JsonIgnore
     public List<Field> getAllFields() {
 
         return new ImmutableList.Builder<Field>()
