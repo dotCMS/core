@@ -55,7 +55,6 @@ import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.languagesmanager.model.LanguageKey;
 import com.dotmarketing.portlets.structure.StructureUtil;
-import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
@@ -643,6 +642,24 @@ public class ContentletAjax {
 				//http://jira.dotmarketing.net/browse/DOTCMS-2656 add the try catch here in case the value is null.
 			}catch (Exception e) {}
 			if (UtilMethods.isSet(fieldValue)) {
+                Optional<Relationship> childRelationship = getRelationshipFromChildField(st, fieldName);
+                if (childRelationship.isPresent()) {
+                    //Getting related identifiers from index when filtering by parent
+                    final Contentlet relatedParent = conAPI
+                            .findContentletByIdentifierAnyLanguage(fieldValue);
+                    final List<Contentlet> relatedContent = conAPI
+                            .getRelatedContent(relatedParent, childRelationship.get(), true,
+                                    currentUser, false);
+                    if (!relatedContent.isEmpty()) {
+                        luceneQuery.append("+identifier:(")
+                                .append(String.join(" OR ", relatedContent
+                                        .stream().map(cont -> cont.getIdentifier()).collect(
+                                                Collectors.toList()))).append(") ");
+                        continue;
+                    }
+
+                }
+
 				if(fieldsSearch.containsKey(fieldName)){//DOTCMS-5987, To handle lastSearch for multi-select fields.
 					fieldsSearch.put(fieldName, fieldsSearch.get(fieldName)+","+fieldValue);
 				}else{
@@ -1181,7 +1198,29 @@ public class ContentletAjax {
 		return results;
 	}
 
-	private void setCurrentStep(final User currentUser,
+    /**
+     * Returns a relationship field from the child side
+     * @param st
+     * @param fieldName
+     * @return
+     */
+    private Optional<Relationship> getRelationshipFromChildField(final Structure st,
+            final String fieldName) {
+
+        if (st != null) {
+            final Field field = st.getFieldVar(
+                    fieldName.split("\\.").length > 1 ? fieldName.split("\\.")[1] : fieldName);
+
+            if (field != null && field.getFieldType().equals(FieldType.RELATIONSHIP.toString())) {
+                Relationship relationship = APILocator.getRelationshipAPI()
+                        .byTypeValue(field.getFieldRelationType());
+                return relationship != null?Optional.of(relationship):Optional.empty();
+            }
+        }
+        return Optional.empty();
+    }
+
+    private void setCurrentStep(final User currentUser,
 								final Map<String, String> searchResult,
 								final Contentlet contentlet) throws DotDataException, LanguageException {
 		try {
