@@ -75,6 +75,7 @@ import java.util.function.Consumer;
 
 import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
 import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.datetimeFormat;
+import static com.dotcms.util.CollectionsUtils.list;
 
 /**
  * Implementation class for the {@link ContentletFactory} interface. This class
@@ -95,6 +96,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
 	private static final Contentlet cache404Content= new Contentlet();
 	public static final String CACHE_404_CONTENTLET="CACHE_404_CONTENTLET";
+
+	private static final String LUCENE_RESERVED_KEYWORDS_REGEX = "OR|AND|NOT|TO";
 
     /**
 	 * Default factory constructor that initializes the connection with the
@@ -1785,7 +1788,15 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	 */
 	    public static TranslatedQuery translateQuery(String query, String sortBy) {
 
-	        TranslatedQuery result = CacheLocator.getContentletCache().getTranslatedQuery(query + " --- " + sortBy);
+
+	        // TODO not working: 
+	        final String queryWithOperatorWithRightCase =
+                    com.dotmarketing.util.StringUtils.lowercaseStringExceptMatchingTokens(query,
+                    LUCENE_RESERVED_KEYWORDS_REGEX);
+
+	        TranslatedQuery result = CacheLocator.getContentletCache()
+                    .getTranslatedQuery(queryWithOperatorWithRightCase + " --- " + sortBy);
+
 	        if(result != null)
 	            return result;
 
@@ -1909,8 +1920,12 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	        if (UtilMethods.isSet(sortBy))
 	            result.setSortBy(translateQuerySortBy(sortBy, query));
 
+
 	        // DOTCMS-6247
-	        query = query.toLowerCase();
+            // leave reserved operators with original case
+	        query = com.dotmarketing.util.StringUtils.lowercaseStringExceptMatchingTokens(query,
+                    LUCENE_RESERVED_KEYWORDS_REGEX);
+
 	        //Pad NumericalRange Numbers
 	        List<RegExMatch> numberRangeMatches = RegEX.find(query, "(\\w+)\\.(\\w+):\\[(([0-9]+\\.?[0-9]+ |\\.?[0-9]+ |[0-9]+\\.?[0-9]+|\\.?[0-9]+) to ([0-9]+\\.?[0-9]+ |\\.?[0-9]+ |[0-9]+\\.?[0-9]+|\\.?[0-9]+))\\]");
 	        if(numberRangeMatches != null && numberRangeMatches.size() > 0){
@@ -1931,12 +1946,13 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	        }
 	        result.setQuery(query.trim());
 
-	        CacheLocator.getContentletCache().addTranslatedQuery(originalQuery + " --- " + sortBy, result);
+	        CacheLocator.getContentletCache().addTranslatedQuery(
+	                queryWithOperatorWithRightCase + " --- " + sortBy, result);
 
 	        return result;
 	    }
 
-	    /**
+    /**
 	     *
 	     * @param sortBy
 	     * @param originalQuery
@@ -2151,14 +2167,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
             //https://github.com/elasticsearch/elasticsearch/issues/2980
             if (query.contains( "/" )) {
                 query = query.replaceAll( "/", "\\\\/" );
-            }
-
-            if (query.contains( " to " )) {
-                query = query.replaceAll( " to ", " TO " );
-            }
-
-            if (query.contains( " or " )) {
-                query = query.replaceAll( " or ", " OR " );
             }
 
             return query;
