@@ -611,7 +611,9 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         }
         inodes.values().removeIf(Objects::isNull);
         if (inodes.isEmpty()) {
-            APILocator.getReindexQueueAPI().markAsFailed(idx, "unable to find versions for content id:" + idx.getIdentToIndex());
+            //If there is no content for this entry, it should be deleted to avoid future attempts that will fail also
+            APILocator.getReindexQueueAPI().deleteReindexEntry(idx);
+            Logger.debug(this, "unable to find versions for content id:" + idx.getIdentToIndex());
         }
         for (Contentlet contentlet : inodes.values()) {
             Logger.debug(this, "indexing: id:" + contentlet.getInode() + " priority: " + idx.getPriority());
