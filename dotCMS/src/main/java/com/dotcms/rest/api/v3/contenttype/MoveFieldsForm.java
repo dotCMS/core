@@ -3,6 +3,7 @@ package com.dotcms.rest.api.v3.contenttype;
 import com.dotcms.contenttype.model.field.*;
 import com.dotcms.contenttype.model.field.layout.FieldLayout;
 import com.dotcms.contenttype.model.field.layout.FieldLayoutRow;
+import com.dotcms.contenttype.transform.field.JsonFieldTransformer;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -28,11 +29,7 @@ public class MoveFieldsForm {
         try {
             fixFields(fields, contentTypeId);
             final String rowsString = MAPPER.writeValueAsString(fields);
-            final List<Field> fields=  MAPPER.readValue(rowsString,
-                    MAPPER.getTypeFactory().constructCollectionType(List.class, Field.class)
-            );
-
-            return new FieldLayout(fields);
+            return new FieldLayout(new JsonFieldTransformer(rowsString).asList());
         } catch (IOException e) {
             throw new DotRuntimeException(e);
         }

@@ -497,17 +497,20 @@ public class FieldResourceTest {
 
     @Test
     public void shouldMoveFields () throws DotSecurityException, DotDataException {
-        /*final String typeName="fieldResourceTest" + UUIDUtil.uuid();
+        final String typeName="fieldResourceTest" + UUIDUtil.uuid();
 
         ContentType type = ContentTypeBuilder.builder(SimpleContentType.class).name(typeName).build();
         type = APILocator.getContentTypeAPI(APILocator.systemUser()).save(type);
 
         final List<Field> fields = createFields(type);
-        final List<FieldLayoutRow> rows =  this.getFieldLayoutRow(fields.get(0), fields.get(1),
-            new Field[]{fields.get(3), fields.get(2)});
+        final List<Map<String, Object>> layout = list(
+                map("divider", getMap(fields.get(0)), "columns", list(
+                        map("columnDivider", getMap(fields.get(1)), "fields", list(getMap(fields.get(3)), getMap(fields.get(2))))
+                ))
+        );
 
         final MoveFieldsForm form =
-                new MoveFieldsForm.Builder().layout(rows)
+                new MoveFieldsForm.Builder().layout(layout)
                         .build();
 
         final FieldResource fieldResource = new FieldResource();
@@ -528,34 +531,28 @@ public class FieldResourceTest {
         List<Field> fieldsFromDB = contentTypeFromDB.fields();
 
         assertEquals(fieldsFromDB.size(), 4);
-        assertEquals(((Field) rows.get(0).getDivider()).id(), fieldsFromDB.get(0).id());
-        assertEquals(rows.get(0).getColumns().get(0).getColumn().id(), fieldsFromDB.get(1).id());
-        assertEquals(rows.get(0).getColumns().get(0).getFields().get(0).id(), fieldsFromDB.get(2).id());
-        assertEquals(rows.get(0).getColumns().get(0).getFields().get(1).id(), fieldsFromDB.get(3).id());*/
+        assertEquals(fields.get(0).id(), fieldsFromDB.get(0).id());
+        assertEquals(fields.get(1).id(), fieldsFromDB.get(1).id());
+        assertEquals(fields.get(3).id(), fieldsFromDB.get(2).id());
+        assertEquals(fields.get(2).id(), fieldsFromDB.get(3).id());
     }
 
-    private List<FieldLayoutRow>  getFieldLayoutRow(final Field row, final Field column, final Field[] fields)  {
-        final FieldLayoutColumn fieldLayoutColumn = new FieldLayoutColumn((ColumnField) column, Arrays.asList(fields));
-        return list(new FieldLayoutRow((FieldDivider) row, list(fieldLayoutColumn)));
+    private Map getMap(final Field field) {
+        final JsonFieldTransformer jsonFieldTransformer = new JsonFieldTransformer(field);
+        return jsonFieldTransformer.mapObject();
     }
 
     @Test(expected = NotFoundInDbException.class)
     public void shouldThrowExceptionWhenContentTypeDoesNotExists () throws DotSecurityException, DotDataException {
-        /*final String typeName="fieldResourceTest" + UUIDUtil.uuid();
 
-        ContentType type = ContentTypeBuilder.builder(SimpleContentType.class).name(typeName).build();
-        type = APILocator.getContentTypeAPI(APILocator.systemUser()).save(type);
-
-        final List<Field> fields = createFields(type);
-        final List<FieldLayoutRow> rows =  this.getFieldLayoutRow(fields.get(0), fields.get(1),
-                new Field[]{fields.get(3), fields.get(2)});
+        final List<Map<String, Object>> layoput =  new ArrayList<>();
 
         final MoveFieldsForm form =
-                new MoveFieldsForm.Builder().layout(rows)
+                new MoveFieldsForm.Builder().layout(layoput)
                         .build();
 
         final FieldResource fieldResource = new FieldResource();
-        fieldResource.moveFields("NotExists", form, getHttpRequest());*/
+        fieldResource.moveFields("NotExists", form, getHttpRequest());
     }
 
     private List<Field> createFields(final ContentType type) throws DotDataException, DotSecurityException {
