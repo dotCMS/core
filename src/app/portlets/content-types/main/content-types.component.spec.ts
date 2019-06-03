@@ -99,6 +99,7 @@ describe('ContentTypesPortletComponent', () => {
     beforeEach(() => {
         const messageServiceMock = new MockDotMessageService({
             'contenttypes.form.label.description': 'Description',
+            'contenttypes.fieldname.last_edit_date': 'Last',
             'contenttypes.fieldname.entries': 'Entries',
             'contenttypes.fieldname.structure.name': 'Content Type Name',
             'contenttypes.content.variable': 'Variable Name',
@@ -179,7 +180,7 @@ describe('ContentTypesPortletComponent', () => {
         expect('7%').toEqual(columns[3].width);
 
         expect('modDate').toEqual(columns[4].fieldName);
-        expect('Last Edit Date').toEqual(columns[4].header);
+        expect('Last').toEqual(columns[4].header);
         expect('13%').toEqual(columns[4].width);
     });
 

@@ -44,26 +44,27 @@ export class ContentTypesPortletComponent implements OnInit {
     public addToBundleIdentifier: string;
 
     private i18nKeys = [
-        'contenttypes.fieldname.structure.name',
-        'contenttypes.content.variable',
-        'contenttypes.form.label.description',
-        'contenttypes.fieldname.entries',
-        'message.structure.delete.structure.and.content',
-        'message.structure.cantdelete',
-        'contenttypes.content.fileasset',
+        'Content-Type',
+        'contenttypes.action.cancel',
+        'contenttypes.action.delete',
+        'contenttypes.confirm.message.delete.type',
+        'contenttypes.content.add_to_bundle',
         'contenttypes.content.content',
-        'contenttypes.content.persona',
-        'contenttypes.content.widget',
+        'contenttypes.content.fileasset',
+        'contenttypes.content.form',
         'contenttypes.content.htmlpage',
         'contenttypes.content.key_value',
-        'contenttypes.content.vanity_url',
-        'contenttypes.content.form',
-        'contenttypes.confirm.message.delete.type',
-        'contenttypes.action.delete',
-        'contenttypes.action.cancel',
+        'contenttypes.content.persona',
         'contenttypes.content.push_publish',
-        'contenttypes.content.add_to_bundle',
-        'Content-Type'
+        'contenttypes.content.vanity_url',
+        'contenttypes.content.variable',
+        'contenttypes.content.widget',
+        'contenttypes.fieldname.entries',
+        'contenttypes.fieldname.last_edit_date',
+        'contenttypes.fieldname.structure.name',
+        'contenttypes.form.label.description',
+        'message.structure.cantdelete',
+        'message.structure.delete.structure.and.content'
     ];
 
     constructor(
@@ -220,7 +221,7 @@ export class ContentTypesPortletComponent implements OnInit {
             {
                 fieldName: 'modDate',
                 format: 'date',
-                header: 'Last Edit Date',
+                header: this.dotMessageService.get('contenttypes.fieldname.last_edit_date'),
                 sortable: true,
                 width: '13%'
             }
