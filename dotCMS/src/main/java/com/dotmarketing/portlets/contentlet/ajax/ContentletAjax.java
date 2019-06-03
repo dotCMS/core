@@ -644,6 +644,7 @@ public class ContentletAjax {
 			if (UtilMethods.isSet(fieldValue)) {
                 Optional<Relationship> childRelationship = getRelationshipFromChildField(st, fieldName);
                 if (childRelationship.isPresent()) {
+                    //Getting related identifiers from index when filtering by parent
                     final Contentlet relatedParent = conAPI
                             .findContentletByIdentifierAnyLanguage(fieldValue);
                     final List<Contentlet> relatedContent = conAPI
