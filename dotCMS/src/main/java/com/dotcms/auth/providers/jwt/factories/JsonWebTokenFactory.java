@@ -189,10 +189,10 @@ public class JsonWebTokenFactory implements Serializable {
         private SignatureAlgorithm signatureAlgorithm() {
           final String algoFromKey  = this.getSigningKey().getAlgorithm();
           return Arrays.asList(SignatureAlgorithm.values())
-          .stream()
-          .filter(algo -> algoFromKey.equals(algo.getJcaName()))
-          .findFirst()
-          .get();
+            .stream()
+            .filter(algo -> algoFromKey.equals(algo.getJcaName()))
+            .findFirst()
+            .get();
         }
         
         
@@ -242,15 +242,9 @@ public class JsonWebTokenFactory implements Serializable {
             
             
             // Insure that we do not accept null or NONE algo and that it matches the
-            String algo = jws.getHeader().getAlgorithm();
+            final String algo = jws.getHeader().getAlgorithm();
             if(algo==null || algo.equalsIgnoreCase("none") || ! algo.equalsIgnoreCase(signatureAlgorithm().getValue())) {
-              String x = this.getSigningKey().getAlgorithm();
-              String y = jws.getHeader().getAlgorithm();
-              SignatureException signatureException = new SignatureException( "Invalid JWT Signature Algorithm");
-
-              throw signatureException;
-              
-              
+              throw new SignatureException( "Invalid JWT Signature Algorithm");
             }
             
             
