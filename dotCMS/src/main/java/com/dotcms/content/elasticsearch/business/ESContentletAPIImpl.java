@@ -208,6 +208,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     private static final String backupPath = ConfigUtils.getBackupPath() + File.separator + "contentlets";
 
+    /**
+     * Property to fetch related content from database (only applies for relationship fields)
+     * Related content for legacy relationship will always be pulled from the index
+     */
     private static final boolean getRelatedContentFromDB = Config
             .getBooleanProperty("GET_RELATED_CONTENT_FROM_DB", true);
 
@@ -1470,7 +1474,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final User user, final boolean respectFrontendRoles)
             throws DotSecurityException, DotDataException {
 
-        if (getRelatedContentFromDB){
+        if (rel.isRelationshipField() && getRelatedContentFromDB){
             return FactoryLocator.getRelationshipFactory().dbRelatedContent(rel, contentlet, true);
         } else{
 
@@ -1507,7 +1511,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final User user, final boolean respectFrontendRoles)
             throws DotSecurityException, DotDataException {
 
-        if (getRelatedContentFromDB){
+        if (rel.isRelationshipField() && getRelatedContentFromDB){
             return FactoryLocator.getRelationshipFactory().dbRelatedContent(rel, contentlet, false);
         } else{
             final List<Contentlet> result = new ArrayList<>();
