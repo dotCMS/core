@@ -10,11 +10,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.google.common.collect.ImmutableList;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.util.*;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
+/**
+ * Form to {@link FieldResource#moveFields(String, MoveFieldsForm, HttpServletRequest)}
+ */
 @JsonDeserialize(builder = MoveFieldsForm.Builder.class)
 public class MoveFieldsForm {
     private static final ObjectMapper MAPPER = new ObjectMapper();

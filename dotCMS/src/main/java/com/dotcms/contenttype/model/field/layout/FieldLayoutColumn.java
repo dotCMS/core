@@ -3,7 +3,6 @@ package com.dotcms.contenttype.model.field.layout;
 import com.dotcms.contenttype.model.field.ColumnField;
 import com.dotcms.contenttype.model.field.Field;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.dotcms.util.CollectionsUtils;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.ImmutableList;
@@ -16,7 +15,6 @@ import java.util.List;
  *
  * @see FieldLayout
  */
-// @JsonSerialize(using = FieldLayoutColumnSerializer.class)
 public class FieldLayoutColumn {
     @JsonProperty("columnDivider")
     private final ColumnField column;

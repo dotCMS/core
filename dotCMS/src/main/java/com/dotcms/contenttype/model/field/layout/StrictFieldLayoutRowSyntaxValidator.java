@@ -5,6 +5,11 @@ import com.dotcms.contenttype.model.field.TabDividerField;
 
 import java.util.List;
 
+/**
+ *  Strict Field Layout Validator, throw a {@link FieldLayoutValidationException} when a {@link FieldLayout} is not valid
+ *
+ * @see FieldLayoutRowSyntaxValidator#validate()
+ */
 public class StrictFieldLayoutRowSyntaxValidator extends FieldLayoutRowSyntaxValidator {
 
     StrictFieldLayoutRowSyntaxValidator(List<Field> fields) {

@@ -259,9 +259,6 @@ public class ContentTypeResource implements Serializable {
 	@JSONP
 	@NoCache
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-	/**
-	 * @deprecated use {@link com.dotcms.rest.api.v2.contenttype.ContentTypeResource#getType(String, HttpServletRequest)}
-	 */
 	public Response getType(@PathParam("idOrVar") final String idOrVar, @Context final HttpServletRequest req)
 			throws DotDataException {
 

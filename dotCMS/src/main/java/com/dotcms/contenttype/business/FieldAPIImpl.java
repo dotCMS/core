@@ -689,6 +689,15 @@ public class FieldAPIImpl implements FieldAPI {
 	}
   }
 
+    /**
+     * Delete a bunch of fields, if a Exception is throw deleting any field then no field is delete
+     *
+     * @param fieldsID fields's id to delete
+     * @param user user who delete the fields
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
   @WrapInTransaction
   public Collection<String> deleteFields(final List<String> fieldsID, final User user) throws DotDataException, DotSecurityException {
 
@@ -707,6 +716,14 @@ public class FieldAPIImpl implements FieldAPI {
     return deleteIds;
   }
 
+    /**
+     * Save a bunch of fields, , if a Exception is throw deleting any field then no field is save
+     *
+     * @param fields fields to save
+     * @param user user who save the fields
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
   @WrapInTransaction
   public void saveFields(final List<Field> fields, final User user) throws DotSecurityException, DotDataException {
     for (final Field field : fields) {

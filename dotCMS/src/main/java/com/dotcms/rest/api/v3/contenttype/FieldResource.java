@@ -133,14 +133,14 @@ public class FieldResource {
         return Response.ok(new ResponseEntityView(fieldLayoutFromDB.getRows())).build();
     }
 
-    private void checkFieldExists(Field fieldToUpdate, ContentType contentType) {
+    private void checkFieldExists(final Field fieldToUpdate, final ContentType contentType) {
         Optional<Field> optionalField = contentType.fields()
                 .stream()
                 .filter(field -> field.id().equals(fieldToUpdate.id()))
                 .findFirst();
 
         if (!optionalField.isPresent()) {
-            throw new NotFoundException("Field does not exists");
+            throw new NotFoundException(String.format("Field %s does not exists", fieldToUpdate.variable()));
         }
     }
 

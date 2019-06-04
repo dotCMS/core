@@ -15,6 +15,7 @@ abstract class FieldLayoutRowSyntaxValidator {
 
     /**
      * Check if a {@link FieldLayout} is valid.
+     * @see FieldLayout to know when a FieldLayout is not valid
      *
      * @throws FieldLayoutValidationException when a {@link FieldLayout} is not valid
      */
@@ -95,7 +96,7 @@ abstract class FieldLayoutRowSyntaxValidator {
     protected abstract void processSortOrder(final List<Field> fields) throws FieldLayoutValidationException;
 
     /**
-     * CCall when the List os fields is empty, each concrete class can decide if throw a exception or not in that case
+     * Call when the List os fields is empty, each concrete class can decide if throw a exception or not in that case
      *
      * @throws
      */

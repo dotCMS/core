@@ -210,7 +210,24 @@ public interface FieldAPI {
      */
     String nextAvailableColumn(Field field) throws DotDataException;
 
+	/**
+	 * Delete a bunch of fields
+	 *
+	 * @param fieldsID fields's id to delete
+	 * @param user user who delete the fields
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
 	Collection<String> deleteFields(final List<String> fieldsID, final User user) throws DotDataException, DotSecurityException;
 
+	/**
+	 * Save a bunch of fields
+	 *
+	 * @param fields fields to save
+	 * @param user user who save the fields
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
     void saveFields(final List<Field> fields, final User user) throws DotSecurityException, DotDataException;
 }

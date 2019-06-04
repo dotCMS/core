@@ -188,6 +188,13 @@ public class FieldUtil {
         return newFieldsWithSorOrder;
     }
 
+    /**
+     * Copy a Field changing the sortOrder attribute
+     *
+     * @param field Field to copy
+     * @param newSortOrder new sort order
+     * @return new field with all the attributes's valus equal to field but sortorder
+     */
     public static Field copyField(final Field field, final int newSortOrder) {
         JsonFieldTransformer jsonFieldTransformer = new JsonFieldTransformer(field);
         final JSONObject jsonObject = jsonFieldTransformer.jsonObject();
