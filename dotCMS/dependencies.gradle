@@ -13,8 +13,8 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.axiom-impl', version:'1.2.5_2'
     compile group: 'com.dotcms.lib', name: 'dot.bsf', version:'ukv_2'
     compile group: 'com.dotcms.lib', name: 'dot.bsh', version:'2.0b4_3'
-    compile 'net.bytebuddy:byte-buddy:1.6.12'
-    compile 'net.bytebuddy:byte-buddy-agent:1.6.12'
+    compile 'net.bytebuddy:byte-buddy:1.9.12'
+    compile 'net.bytebuddy:byte-buddy-agent:1.9.12'
     compile group: 'com.dotcms.lib', name: 'dot.cactus.integration.ant', version:'1.8.0_3'
     compile group: 'com.dotcms.lib', name: 'dot.cargo-ant', version:'0.9_2'
     compile group: 'com.dotcms.lib', name: 'dot.cargo-core-uberjar', version:'0.9_2'
@@ -22,7 +22,11 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.commons-cli', version:'1.2_2'
     compile group: 'com.dotcms.lib', name: 'dot.commons-dbcp', version:'1.3_2'
     compile group: 'com.dotcms.lib', name: 'dot.commons-fileupload', version:'1.3.3_1'
-    compile group: 'commons-fileupload', name: 'commons-fileupload', version: '1.3.3'
+    compile group: 'commons-io', name: 'commons-io', version: '2.6'
+    compile (group: 'commons-fileupload', name: 'commons-fileupload', version: '1.3.3') {
+        exclude(group: 'commons-io')
+    }
+
     compile group: 'com.dotcms.lib', name: 'dot.commons-httpclient', version:'3.1_3'
     compile group: 'com.dotcms.lib', name: 'dot.commons-io', version:'2.0.1_2'
     compile group: 'com.dotcms.lib', name: 'dot.commons-jci-core', version:'1.0.406301_2'
@@ -43,11 +47,11 @@ dependencies {
     }
 
     compile group: 'com.lmax', name: 'disruptor', version: '3.3.4'
-    compile group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.8.2'
-    compile group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.8.2'
-    compile group: 'org.apache.logging.log4j', name: 'log4j-1.2-api', version: '2.8.2'
-    compile group: 'org.apache.logging.log4j', name: 'log4j-jcl', version: '2.8.2'
-    compile group: 'org.apache.logging.log4j', name: 'log4j-web', version: '2.8.2'
+    compile group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.11.2'
+    compile group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.11.2'
+    compile group: 'org.apache.logging.log4j', name: 'log4j-1.2-api', version: '2.11.2'
+    compile group: 'org.apache.logging.log4j', name: 'log4j-jcl', version: '2.11.2'
+    compile group: 'org.apache.logging.log4j', name: 'log4j-web', version: '2.11.2'
 
     compile group: 'com.dotcms.lib', name: 'dot.fileupload-ext', version:'ukv_3'
     compile group: 'fop', name: 'fop', version:'0.20.3'
@@ -195,7 +199,10 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.xpp3-min', version:'1.1.4c_2'
     compile group: 'com.dotcms.lib', name: 'dot.slf4j-api', version:'1.7.12_2'
     compile group: 'com.dotcms.lib', name: 'dot.slf4j-jcl', version:'1.7.12_2'
-    compile (group: 'xerces', name: 'xercesImpl', version: '2.11.0'){
+    compile(group: 'xml-apis', name: 'xml-apis', version: '2.0.2'){
+        transitive = false
+    }
+    compile (group: 'xerces', name: 'xercesImpl', version: '2.12.0'){
         transitive = false
     }
     compile (group: 'org.apache.commons', name: 'commons-compress', version: '1.15'){
@@ -220,7 +227,7 @@ dependencies {
     compile (group: 'commons-lang', name: 'commons-lang', version: '2.6'){
         transitive = false
     }
-    compile (group: 'org.apache.commons', name: 'commons-lang3', version: '3.4'){
+    compile (group: 'org.apache.commons', name: 'commons-lang3', version: '3.7'){
         transitive = false
     }
     compile (group: 'commons-beanutils', name: 'commons-beanutils', version: '1.9.3'){
@@ -229,7 +236,7 @@ dependencies {
     compile (group: 'org.jdom', name: 'jdom', version: '1.1.3'){
         transitive = false
     }
-    compile (group: 'dom4j', name: 'dom4j', version: '1.6.1'){
+    compile (group: 'org.dom4j', name: 'dom4j', version: '2.1.1'){
         transitive = false
     }
     compile (group: 'org.apache.poi', name: 'poi', version: '3.17'){
@@ -296,10 +303,10 @@ dependencies {
         transitive = false
     }
 
-    compile group: 'net.jodah', name: 'failsafe', version:'1.0.4'
-
-    compile group: 'redis.clients', name: 'jedis', version:'2.7.3'
-    compile group: 'org.apache.commons', name: 'commons-pool2', version:'2.0'
+    compile (group: 'redis.clients', name: 'jedis', version:'2.7.3') {
+        exclude(module: 'org.apache.commons')
+    }
+    compile group: 'org.apache.commons', name: 'commons-pool2', version:'2.3'
     compile group: 'com.dotcms.lib', name: 'dot.maxmind-db', version:'1.0.0_2'
     compile group: 'org.openjdk.jmh', name: 'jmh-core', version:'0.1'
 
@@ -308,7 +315,11 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.aopalliance-repackaged', version:'2.4.0-b10_2'
 
     compile group: 'com.dotcms.lib', name: 'dot.javax.annotation-api', version:'1.2_2'
-    compile group: 'javax.annotation', name: 'javax.annotation-api', version: '1.2'
+    compile group: 'javax.annotation', name: 'javax.annotation-api', version: '1.3.2'
+    compile("javax.activation:javax.activation-api:1.2.0")
+    compile (group: 'javax.xml.bind', name: 'jaxb-api', version: '2.3.0') {
+        transitive=false
+    }
 
     //  compile group: 'com.dotcms.lib', name: 'dot.javax.ws.rs-api', version:'2.0.1_2'
     compile group: 'javax.ws.rs', name: 'javax.ws.rs-api', version: '2.0.1'
@@ -462,9 +473,19 @@ dependencies {
 
     compile group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.2'
 
-    compile group: 'org.apache.xmlgraphics', name: 'batik-rasterizer', version:'1.10'
-    compile group: 'org.apache.xmlgraphics', name: 'batik-codec', version:'1.10'
+    compile (group: 'org.apache.xmlgraphics', name: 'batik-rasterizer', version:'1.10') {
+        exclude(group: 'xml-apis')
+        exclude(group: 'commons-io')
+        exclude(group: 'commons-logging')
+        exclude(group: 'org.apache.xmlgraphics', module: 'batik-ext')
+    }
+    compile (group: 'org.apache.xmlgraphics', name: 'batik-codec', version:'1.10') {
+        exclude(group: 'xml-apis')
+        exclude(group: 'org.apache.xmlgraphics', module: 'batik-ext')
+    }
     compile (group: 'org.apache.xmlgraphics', name: 'xmlgraphics-commons', version:'1.5') {
+        exclude(group: 'xml-apis')
+        exclude(group: 'org.apache.xmlgraphics', module: 'batik-ext')
         exclude(group: 'commons-logging')
     }
 
@@ -473,18 +494,23 @@ dependencies {
     compileOnly "org.immutables:value:2.3.3:annotations"
     compile 'org.immutables:gson:2.3.3'
 
-    compile group: 'org.aspectj', name: 'aspectjrt', version:'1.8.10'
-    compile group: 'io.bit3', name: 'jsass', version: '5.7.1'
+    compile group: 'org.aspectj', name: 'aspectjrt', version:'1.9.2'
+    compile group: 'org.aspectj', name: 'aspectjweaver', version:'1.9.2'
+    compile (group: 'io.bit3', name: 'jsass', version: '5.7.1') {
+        exclude(group: 'commons-io')
+        exclude(group: 'org.apache.commons')
+    }
 
     //XML Tool dependency
     compile group: 'jaxen', name: 'jaxen', version: '1.1.6'
 
     compile 'com.graphql-java:graphql-java:11.0'
     compile ('com.graphql-java-kickstart:graphql-java-servlet:7.1.1'){
+        exclude(group: 'org.slf4j')
         exclude(group: 'com.fasterxml.jackson.core')
         exclude(group: 'com.fasterxml.jackson.datatype')
     }
-    compile 'com.graphql-java:graphql-java-extended-scalars:1.0'
+
 
     compile 'net.jodah:failsafe:1.1.1'
     compile 'com.rainerhahnekamp:sneakythrow:1.1.0'

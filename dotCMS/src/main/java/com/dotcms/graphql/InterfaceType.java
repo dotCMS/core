@@ -14,7 +14,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import graphql.scalars.ExtendedScalars;
 import graphql.schema.GraphQLInterfaceType;
 
 import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.BASE_TYPE;

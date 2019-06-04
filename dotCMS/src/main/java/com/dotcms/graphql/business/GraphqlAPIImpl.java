@@ -53,7 +53,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import graphql.scalars.ExtendedScalars;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLFieldDefinition;
@@ -263,8 +262,6 @@ public class GraphqlAPIImpl implements GraphqlAPI {
         allTypes.forEach((type)->createSchemaType(type, concreteTypes));
 
         final Set<GraphQLType> graphQLTypes = new HashSet<>(InterfaceType.valuesAsSet());
-        // custom scalar types
-        graphQLTypes.add(ExtendedScalars.DateTime);
         // add here the rest of types
         graphQLTypes.addAll(concreteTypes.values());
 
