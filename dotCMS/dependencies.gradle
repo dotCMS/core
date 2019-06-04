@@ -481,12 +481,15 @@ dependencies {
     }
     compile (group: 'org.apache.xmlgraphics', name: 'batik-codec', version:'1.10') {
         exclude(group: 'xml-apis')
+        exclude(group: 'commons-io')
+        exclude(group: 'commons-logging')
         exclude(group: 'org.apache.xmlgraphics', module: 'batik-ext')
     }
     compile (group: 'org.apache.xmlgraphics', name: 'xmlgraphics-commons', version:'1.5') {
         exclude(group: 'xml-apis')
         exclude(group: 'org.apache.xmlgraphics', module: 'batik-ext')
         exclude(group: 'commons-logging')
+        exclude(group: 'commons-io')
     }
 
     compile group: 'javax.websocket', name: 'javax.websocket-api', version:'1.1'
