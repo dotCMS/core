@@ -177,6 +177,7 @@ export class DotKeyValueComponent {
             <Fragment>
                 <dot-label label={this.label} required={this.required} name={this.name}>
                     <key-value-form
+                        onLostFocus={this.blurHandler.bind(this)}
                         add-button-label={this.formAddButtonLabel}
                         disabled={this.disabled || null}
                         key-label={this.formKeyLabel}
@@ -198,6 +199,15 @@ export class DotKeyValueComponent {
             </Fragment>
         );
     }
+
+    private blurHandler(): void {
+        if (!this.status.dotTouched) {
+            this.status = updateStatus(this.status, {
+                dotTouched: true
+            });
+            this.emitStatusChange();
+        }
+}
 
     private validateProps(): void {
         this.valueWatch();

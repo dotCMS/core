@@ -106,7 +106,7 @@ describe('key-value-form', () => {
         describe('keyPlaceholder', () => {
             it('should set default key input placeholder', async () => {
                 const key = await getKeyInput();
-                expect(key.getAttribute('placeholder')).toBeNull();
+                expect(key.getAttribute('placeholder')).toBe('');
             });
 
             it('should set a key input placeholder correctly', async () => {
@@ -127,7 +127,7 @@ describe('key-value-form', () => {
         describe('valuePlaceholder', () => {
             it('should set default value input placeholder', async () => {
                 const value = await getValueInput();
-                expect(value.getAttribute('placeholder')).toBeNull();
+                expect(value.getAttribute('placeholder')).toBe('');
             });
 
             it('should set a value input placeholder correctly', async () => {
@@ -157,13 +157,6 @@ describe('key-value-form', () => {
                 const label = await getLabel('key');
                 expect(label.textContent).toBe('some label');
             });
-
-            it('should handle key input label with invalid type', async () => {
-                element.setProperty('keyLabel', { i: 'am', a: 'object' });
-                await page.waitForChanges();
-                const label = await getLabel('key');
-                expect(label.textContent).toBe('Key');
-            });
         });
 
         describe('valueLabel', () => {
@@ -177,13 +170,6 @@ describe('key-value-form', () => {
                 await page.waitForChanges();
                 const label = await getLabel('value');
                 expect(label.textContent).toBe('some label');
-            });
-
-            it('should handle key input label with invalid type', async () => {
-                element.setProperty('valueLabel', { i: 'am', a: 'object' });
-                await page.waitForChanges();
-                const label = await getLabel('value');
-                expect(label.textContent).toBe('Value');
             });
         });
     });
@@ -211,6 +197,10 @@ describe('key-value-form', () => {
 
                 expect(spyAddEvent).not.toHaveReceivedEvent();
             });
+        });
+
+        xdescribe('lostFocus', () => {
+            it('should emit when input gets blur', async () => {});
         });
     });
 

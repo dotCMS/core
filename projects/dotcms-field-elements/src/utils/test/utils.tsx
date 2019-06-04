@@ -10,6 +10,7 @@ export const dotTestUtil = {
         emptyRequiredPristine: ['dot-required', 'dot-invalid', 'dot-untouched', 'dot-pristine'],
         filled: ['dot-valid', 'dot-touched', 'dot-dirty'],
         filledRequired: ['dot-required', 'dot-valid', 'dot-touched', 'dot-dirty'],
-        filledRequiredPristine: ['dot-required', 'dot-valid', 'dot-untouched', 'dot-pristine']
+        filledRequiredPristine: ['dot-required', 'dot-valid', 'dot-untouched', 'dot-pristine'],
+        touchedPristine: ['dot-valid', 'dot-pristine', 'dot-touched']
     }
 };

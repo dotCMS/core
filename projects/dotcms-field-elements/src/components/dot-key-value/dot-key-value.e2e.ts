@@ -95,6 +95,15 @@ describe('dot-key-value', () => {
             await page.waitForChanges();
             expect(element).toHaveClasses(dotTestUtil.class.filledRequired);
         });
+
+        it('should have touched but pristine', async () => {
+            const form = await getForm();
+            form.triggerEvent('lostFocus', {});
+            await page.waitForChanges();
+
+            await page.waitForChanges();
+            expect(element).toHaveClasses(dotTestUtil.class.touchedPristine);
+        });
     });
 
     describe('@Props', () => {
@@ -381,6 +390,19 @@ describe('dot-key-value', () => {
                 expect(spyStatusChangeEvent).toHaveReceivedEventDetail({
                     name: 'fieldName',
                     status: { dotPristine: false, dotTouched: true, dotValid: true }
+                });
+            });
+        });
+
+        describe('statusChange', () => {
+            it('should emit on lost focus in autocomplete', async () => {
+                const form = await getForm();
+                form.triggerEvent('lostFocus', {});
+                await page.waitForChanges();
+
+                expect(spyStatusChangeEvent).toHaveReceivedEventDetail({
+                    name: 'fieldName',
+                    status: { dotPristine: true, dotTouched: true, dotValid: true }
                 });
             });
         });

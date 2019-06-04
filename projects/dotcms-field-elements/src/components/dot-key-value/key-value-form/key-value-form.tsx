@@ -46,6 +46,9 @@ export class DotKeyValueComponent {
     /** Emit the added value, key/value pair */
     @Event() add: EventEmitter<DotKeyValueField>;
 
+    /** Emit when any of the input is blur */
+    @Event() lostFocus: EventEmitter<FocusEvent>;
+
     @State() inputs: DotKeyValueField = { ...DEFAULT_VALUE };
 
     render() {
@@ -57,6 +60,7 @@ export class DotKeyValueComponent {
                     <input
                         disabled={this.disabled}
                         name="key"
+                        onBlur={(e: FocusEvent) => this.lostFocus.emit(e)}
                         onInput={(event: Event) => this.setValue(event)}
                         placeholder={this.keyPlaceholder}
                         type="text"
@@ -68,6 +72,7 @@ export class DotKeyValueComponent {
                     <input
                         disabled={this.disabled}
                         name="value"
+                        onBlur={(e: FocusEvent) => this.lostFocus.emit(e)}
                         onInput={(event: Event) => this.setValue(event)}
                         placeholder={this.valuePlaceholder}
                         type="text"
