@@ -41,6 +41,7 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.util.*;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.Ints;
 import com.liferay.portal.model.User;
 import org.apache.commons.lang.StringUtils;
@@ -76,6 +77,7 @@ import java.util.function.Consumer;
 import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
 import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.datetimeFormat;
 import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotmarketing.util.StringUtils.lowercaseStringExceptMatchingTokens;
 
 /**
  * Implementation class for the {@link ContentletFactory} interface. This class
@@ -97,7 +99,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	private static final Contentlet cache404Content= new Contentlet();
 	public static final String CACHE_404_CONTENTLET="CACHE_404_CONTENTLET";
 
-	private static final String LUCENE_RESERVED_KEYWORDS_REGEX = "OR|AND|NOT|TO";
+	@VisibleForTesting
+	public static final String LUCENE_RESERVED_KEYWORDS_REGEX = "OR|AND|NOT|TO";
 
     /**
 	 * Default factory constructor that initializes the connection with the
@@ -1788,17 +1791,14 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	 */
 	    public static TranslatedQuery translateQuery(String query, String sortBy) {
 
-
-	        // TODO not working: 
-	        final String queryWithOperatorWithRightCase =
-                    com.dotmarketing.util.StringUtils.lowercaseStringExceptMatchingTokens(query,
-                    LUCENE_RESERVED_KEYWORDS_REGEX);
-
 	        TranslatedQuery result = CacheLocator.getContentletCache()
-                    .getTranslatedQuery(queryWithOperatorWithRightCase + " --- " + sortBy);
+                    .getTranslatedQuery(query + " --- " + sortBy);
 
-	        if(result != null)
-	            return result;
+	        if(result != null) {
+                result.setQuery(lowercaseStringExceptMatchingTokens(query,
+                        LUCENE_RESERVED_KEYWORDS_REGEX));
+                return result;
+            }
 
 	        result = new TranslatedQuery();
 
@@ -1922,9 +1922,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
 
 	        // DOTCMS-6247
-            // leave reserved operators with original case
-	        query = com.dotmarketing.util.StringUtils.lowercaseStringExceptMatchingTokens(query,
-                    LUCENE_RESERVED_KEYWORDS_REGEX);
+	        query = lowercaseStringExceptMatchingTokens(query, LUCENE_RESERVED_KEYWORDS_REGEX);
 
 	        //Pad NumericalRange Numbers
 	        List<RegExMatch> numberRangeMatches = RegEX.find(query, "(\\w+)\\.(\\w+):\\[(([0-9]+\\.?[0-9]+ |\\.?[0-9]+ |[0-9]+\\.?[0-9]+|\\.?[0-9]+) to ([0-9]+\\.?[0-9]+ |\\.?[0-9]+ |[0-9]+\\.?[0-9]+|\\.?[0-9]+))\\]");
@@ -1947,7 +1945,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	        result.setQuery(query.trim());
 
 	        CacheLocator.getContentletCache().addTranslatedQuery(
-	                queryWithOperatorWithRightCase + " --- " + sortBy, result);
+                    originalQuery + " --- " + sortBy, result);
 
 	        return result;
 	    }
