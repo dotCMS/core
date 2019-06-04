@@ -586,7 +586,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 					final boolean fileMetadata =
 							f.getVelocityVarName().equals(FileAssetAPI.META_DATA_FIELD)
 									&& st.getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET;
-					if(!fileMetadata || LicenseUtil.getLevel()>= LicenseLevel.STANDARD.level) {
+					if(LicenseUtil.getLevel()>= LicenseLevel.STANDARD.level) {
 
 						Map<String,Object> keyValueMap = KeyValueFieldUtil.JSONValueToHashMap((String)valueObj);
 
@@ -609,9 +609,12 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 							tikaUtils.filterMetadataFields(keyValueMap, allowedFields);
 
-							keyValueMap.forEach((k, v) -> m
-									.put(FileAssetAPI.META_DATA_FIELD.toLowerCase() + StringPool.PERIOD + k, v));
 						}
+
+						final String keyValuePrefix = fileMetadata ?
+								FileAssetAPI.META_DATA_FIELD.toLowerCase() : keyName;
+						keyValueMap.forEach((k, v) -> m
+								.put(keyValuePrefix + StringPool.PERIOD + k, v));
 					}
 				} else if(f.getFieldType().equals(Field.FieldType.TAG.toString())) {
 
