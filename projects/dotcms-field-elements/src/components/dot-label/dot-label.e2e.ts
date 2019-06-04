@@ -49,7 +49,7 @@ describe('dot-label', () => {
                 element.setProperty('label', {});
                 await page.waitForChanges();
                 const text = await getText();
-                expect(text.innerText).toBe('');
+                expect(text.innerText).toBe('[object Object]');
             });
 
             it('should render empty string with no value', async () => {
