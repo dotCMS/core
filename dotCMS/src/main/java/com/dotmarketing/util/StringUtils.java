@@ -288,10 +288,11 @@ public class StringUtils {
         return builder;
     } // builder.
 
-    public static String lowercaseStringExceptMatchingTokens(String query, final String regex) {
+    public static String lowercaseStringExceptMatchingTokens(final String query,
+            final String regex) {
 
-        StringTokenizer tokenizer = new StringTokenizer(query, " ", true);
-        StringBuilder loweredString = new StringBuilder();
+        final StringTokenizer tokenizer = new StringTokenizer(query, " ", true);
+        final StringBuilder loweredString = new StringBuilder();
 
         while(tokenizer.hasMoreElements()) {
             String token = tokenizer.nextToken();
