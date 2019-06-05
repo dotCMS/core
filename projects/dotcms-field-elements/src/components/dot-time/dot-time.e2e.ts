@@ -1,131 +1,386 @@
 import { E2EElement, E2EPage, newE2EPage } from '@stencil/core/testing';
 import { EventSpy } from '@stencil/core/dist/declarations';
+import { dotTestUtil } from '../../utils';
 
 describe('dot-time', () => {
     let page: E2EPage;
     let element: E2EElement;
-    let input: E2EElement;
-    let spyStatusChangeEvent: EventSpy;
-    let spyValueChange: EventSpy;
+    let inputCalendar: E2EElement;
 
     beforeEach(async () => {
         page = await newE2EPage({
-            html: `
-              <dot-time
-                    label="Time:"
-                    name="time01"
-                    value="18:30:30"
-                    hint="Time hint"
-                    required
-                    required-message="Required Time"
-                    validation-message="Time out of range"
-                    min="06:00:00"
-                    max="22:00:00"
-                    step="10"
-                ></dot-time>`
+            html: `<dot-time></dot-time>`
         });
-
-        spyStatusChangeEvent = await page.spyOnEvent('statusChange');
-        spyValueChange = await page.spyOnEvent('valueChange');
         element = await page.find('dot-time');
-        input = await page.find('input');
+        inputCalendar = await page.find('dot-input-calendar ');
     });
 
-    it('should render', () => {
-        // tslint:disable-next-line:max-line-length
-        const tagsRenderExpected = `<dot-time label=\"Time:\" name=\"time01\" value=\"18:30:30\" hint=\"Time hint\" required=\"\" required-message=\"Required Time\" validation-message=\"Time out of range\" min=\"06:00:00\" max=\"22:00:00\" step=\"10\" class=\"dot-valid dot-pristine dot-untouched dot-required hydrated\"><div class=\"dot-field__label\"><label for=\"dot-time01\">Time:</label><span class=\"dot-field__required-mark\">*</span></div><dot-input-calendar type=\"time\" required-message=\"Required Time\" validation-message=\"Time out of range\" class=\"hydrated\"><input id=\"dot-time01\" required=\"\" type=\"time\" min=\"06:00:00\" max=\"22:00:00\" step=\"10\"></dot-input-calendar><span class=\"dot-field__hint\">Time hint</span></dot-time>`;
-        expect(element.outerHTML).toBe(tagsRenderExpected);
-    });
+    describe('render CSS classes', () => {
+        it('should be valid, untouched & pristine on load', () => {
+            expect(element).toHaveClasses(dotTestUtil.class.empty);
+        });
 
-    it('should be valid, touched and dirty on value change', async () => {
-        await input.press('2');
-        await page.waitForChanges();
-        expect(element.classList.contains('dot-valid')).toBe(true);
-        expect(element.classList.contains('dot-dirty')).toBe(true);
-        expect(element.classList.contains('dot-touched')).toBe(true);
-    });
-
-    it('it should not render hint', async () => {
-        element.setProperty('hint', '');
-        await page.waitForChanges();
-        const hint = await element.find('.dot-field__hint');
-        expect(hint).toBeNull();
-    });
-
-    it('it should have required as false', async () => {
-        element.setProperty('required', 'false');
-        await page.waitForChanges();
-        const required = await element.getProperty('required');
-        expect(required).toBeFalsy();
-    });
-
-    it('should show invalid range validation message', async () => {
-        element.setProperty('value', '01:00:00');
-        await input.press('2');
-        await page.waitForChanges();
-        const errorMessage = await page.find('.dot-field__error-message');
-        expect(errorMessage.innerHTML).toBe('Time out of range');
-    });
-
-    it('should set the default value of "min" when is not valid', async () => {
-        element.setProperty('min', { test: 'min' });
-        await page.waitForChanges();
-        expect(await input.getProperty('min')).toBe('');
-    });
-
-    it('should set the default value of "max" when is not valid', async () => {
-        element.setProperty('max', [1, 6, 7]);
-        await page.waitForChanges();
-        expect(await input.getProperty('max')).toBe('');
-    });
-
-    describe('emit events', () => {
-        it('should mark as touched when onblur', async () => {
-            await input.triggerEvent('blur');
-            await page.waitForChanges();
-
-            expect(spyStatusChangeEvent).toHaveReceivedEventDetail({
-                name: 'time01',
-                status: {
-                    dotPristine: true,
-                    dotTouched: true,
-                    dotValid: true
+        it('should be valid, touched & dirty when filled', async () => {
+            inputCalendar.triggerEvent('_statusChange', {
+                detail: {
+                    name: '',
+                    status: {
+                        dotPristine: false,
+                        dotTouched: true,
+                        dotValid: true
+                    }
                 }
+            });
+            await page.waitForChanges();
+            expect(element).toHaveClasses(dotTestUtil.class.filled);
+        });
+
+        describe('required', () => {
+            beforeEach(async () => {
+                await element.setProperty('required', 'true');
+            });
+
+            it('should be valid, untouched & pristine and required when filled on load', async () => {
+                inputCalendar.triggerEvent('_statusChange', {
+                    detail: {
+                        name: '',
+                        status: {
+                            dotPristine: true,
+                            dotTouched: false,
+                            dotValid: true
+                        }
+                    }
+                });
+                await page.waitForChanges();
+                expect(element).toHaveClasses(dotTestUtil.class.filledRequiredPristine);
+            });
+
+            it('should be valid, touched & dirty and required when filled', async () => {
+                inputCalendar.triggerEvent('_statusChange', {
+                    detail: {
+                        name: '',
+                        status: {
+                            dotPristine: false,
+                            dotTouched: true,
+                            dotValid: true
+                        }
+                    }
+                });
+                await page.waitForChanges();
+                expect(element).toHaveClasses(dotTestUtil.class.filledRequired);
+            });
+
+            it('should be invalid, untouched, pristine and required when empty on load', async () => {
+                inputCalendar.triggerEvent('_statusChange', {
+                    detail: {
+                        name: '',
+                        status: {
+                            dotPristine: true,
+                            dotTouched: false,
+                            dotValid: false
+                        }
+                    }
+                });
+                await page.waitForChanges();
+                expect(element).toHaveClasses(dotTestUtil.class.emptyRequiredPristine);
+            });
+
+            it('should be invalid, touched, dirty and required when valued is cleared', async () => {
+                inputCalendar.triggerEvent('_statusChange', {
+                    detail: {
+                        name: '',
+                        status: {
+                            dotPristine: false,
+                            dotTouched: true,
+                            dotValid: false
+                        }
+                    }
+                });
+                await page.waitForChanges();
+                expect(element).toHaveClasses(dotTestUtil.class.emptyRequired);
+            });
+
+            it('should have touched but pristine', async () => {
+                inputCalendar.triggerEvent('_statusChange', {
+                    detail: {
+                        name: '',
+                        status: {
+                            dotPristine: true,
+                            dotTouched: true,
+                            dotValid: true
+                        }
+                    }
+                });
+
+                await page.waitForChanges();
+                expect(element).toHaveClasses(dotTestUtil.class.touchedPristine);
+            });
+        });
+    });
+
+    describe('@Props', () => {
+        describe('value', () => {
+            it('should render default value', () => {
+                expect(inputCalendar.getAttribute('value')).toBe('');
+            });
+
+            it('should pass correctly to dot-input-calendar', async () => {
+                element.setProperty('value', '10:10:00');
+                await page.waitForChanges();
+                expect(await inputCalendar.getProperty('value')).toBe('10:10:00');
             });
         });
 
-        it('should send status and value change and stop dot-input-calendar events', async () => {
-            const evt_statusChange = await page.spyOnEvent('_statusChange');
-            const evt_valueChange = await page.spyOnEvent('_valueChange');
-            await input.press('2');
-            await page.waitForChanges();
-            expect(spyStatusChangeEvent).toHaveReceivedEventDetail({
-                name: 'time01',
-                status: {
-                    dotPristine: false,
-                    dotTouched: true,
-                    dotValid: true
-                }
+        describe('name', () => {
+            it('should pass correctly to dot-input-calendar', async () => {
+                element.setProperty('name', 'time');
+                await page.waitForChanges();
+                expect(inputCalendar.getAttribute('name')).toBe('time');
             });
-            expect(spyValueChange).toHaveReceivedEventDetail({
-                name: 'time01',
-                value: '14:30:30'
+
+            it('should set name prop in dot-label', async () => {
+                element.setProperty('name', 'time');
+                await page.waitForChanges();
+                const label = await dotTestUtil.getDotLabel(page);
+                expect(label.getAttribute('name')).toBe('time');
             });
-            expect(evt_statusChange.events).toEqual([]);
-            expect(evt_valueChange.events).toEqual([]);
+
+            it('should render default value', () => {
+                expect(inputCalendar.getAttribute('name')).toBe('');
+            });
         });
 
-        it('should emit status and value on Reset', async () => {
-            await element.callMethod('reset');
-            expect(spyStatusChangeEvent).toHaveReceivedEventDetail({
-                name: 'time01',
-                status: {
-                    dotPristine: true,
-                    dotTouched: false,
-                    dotValid: false
-                }
+        describe('label', () => {
+            it('should set label prop in dot-label', async () => {
+                element.setProperty('label', 'test');
+                await page.waitForChanges();
+                const label = await dotTestUtil.getDotLabel(page);
+                expect(label.getAttribute('label')).toBe('test');
             });
-            expect(spyValueChange).toHaveReceivedEventDetail({ name: 'time01', value: '' });
+
+            it('should render default value', async () => {
+                const label = await dotTestUtil.getDotLabel(page);
+                expect(label.getAttribute('label')).toBe('');
+            });
+        });
+
+        describe('hint', () => {
+            it('should set hint correctly', async () => {
+                element.setProperty('hint', 'Test');
+                await page.waitForChanges();
+                expect((await dotTestUtil.getHint(page)).innerText).toBe('Test');
+            });
+
+            it('should not render hint', async () => {
+                expect(await dotTestUtil.getHint(page)).toBeNull();
+            });
+        });
+
+        describe('required', () => {
+            it('should render required attribute with invalid value', async () => {
+                element.setProperty('required', { test: 'test' });
+                await page.waitForChanges();
+                expect(inputCalendar.getAttribute('required')).toBeDefined();
+            });
+
+            it('should not render required attribute', async () => {
+                element.setProperty('required', 'false');
+                await page.waitForChanges();
+                expect(inputCalendar.getAttribute('required')).toBeNull();
+            });
+
+            it('should render required attribute for the dot-label', async () => {
+                element.setProperty('required', 'true');
+                await page.waitForChanges();
+                const label = await dotTestUtil.getDotLabel(page);
+                expect(label.getAttribute('required')).toBeDefined();
+            });
+        });
+
+        describe('requiredMessage', () => {
+            it('should render default value', () => {
+                expect(inputCalendar.getAttribute('required-message')).toBe(
+                    'This field is required'
+                );
+            });
+
+            it('should pass correctly to dot-input-calendar', async () => {
+                element.setProperty('requiredMessage', 'test');
+                await page.waitForChanges();
+                expect(inputCalendar.getAttribute('required-message')).toBe('test');
+            });
+        });
+
+        describe('validationMessage', () => {
+            it('should render default value', () => {
+                expect(inputCalendar.getAttribute('validation-message')).toBe(
+                    "The field doesn't comply with the specified format"
+                );
+            });
+
+            it('should pass correctly to dot-input-calendar', async () => {
+                element.setProperty('validationMessage', 'test');
+                await page.waitForChanges();
+                expect(inputCalendar.getAttribute('validation-message')).toBe('test');
+            });
+        });
+
+        describe('disabled', () => {
+            it('should render disabled attribute', async () => {
+                element.setProperty('disabled', 'true');
+                await page.waitForChanges();
+                expect(inputCalendar.getAttribute('disabled')).toBeDefined();
+            });
+
+            it('should not render disabled attribute', async () => {
+                element.setProperty('disabled', 'false');
+                await page.waitForChanges();
+                expect(inputCalendar.getAttribute('disabled')).toBeNull();
+            });
+        });
+
+        describe('min', () => {
+            it('should set correct value when valid', async () => {
+                element.setAttribute('min', '10:10:01');
+                await page.waitForChanges();
+                expect(inputCalendar.getAttribute('min')).toBe('10:10:01');
+            });
+
+            it('should set empty value when invalid', async () => {
+                element.setAttribute('min', '10');
+                await page.waitForChanges();
+                expect(inputCalendar.getAttribute('min')).toBe('');
+            });
+        });
+
+        describe('max', () => {
+            it('should set correct value when valid', async () => {
+                element.setAttribute('max', '10:10:01');
+                await page.waitForChanges();
+                expect(inputCalendar.getAttribute('max')).toBe('10:10:01');
+            });
+
+            it('should set empty value when invalid', async () => {
+                element.setAttribute('max', { test: true });
+                await page.waitForChanges();
+                expect(inputCalendar.getAttribute('max')).toBe('');
+            });
+        });
+
+        describe('step', () => {
+            it('should set default value', async () => {
+                expect(inputCalendar.getAttribute('step')).toBe('1');
+            });
+
+            it('should pass correctly to dot-input-calendar', async () => {
+                element.setAttribute('step', '5');
+                await page.waitForChanges();
+                expect(inputCalendar.getAttribute('step')).toBe('5');
+            });
+        });
+    });
+
+    describe('@Events', () => {
+        let spyStatusChangeEvent: EventSpy;
+        let spyValueChangeEvent: EventSpy;
+
+        beforeEach(async () => {
+            spyStatusChangeEvent = await page.spyOnEvent('statusChange');
+            spyValueChangeEvent = await page.spyOnEvent('valueChange');
+        });
+
+        describe('value and status changes', () => {
+            it('should send value when dot-input-calendar send it', async () => {
+                inputCalendar.triggerEvent('_valueChange', {
+                    detail: {
+                        name: '',
+                        value: '21:30:30'
+                    }
+                });
+                await page.waitForChanges();
+                expect(spyValueChangeEvent).toHaveReceivedEventDetail({
+                    name: '',
+                    value: '21:30:30'
+                });
+            });
+
+            it('should emit status and value on Reset', async () => {
+                await inputCalendar.callMethod('reset');
+                await page.waitForChanges();
+                expect(spyStatusChangeEvent).toHaveReceivedEventDetail({
+                    name: '',
+                    status: {
+                        dotPristine: true,
+                        dotTouched: false,
+                        dotValid: true
+                    }
+                });
+                expect(spyValueChangeEvent).toHaveReceivedEventDetail({
+                    name: '',
+                    value: ''
+                });
+            });
+
+            it('should send status and value change and stop dot-input-calendar events', async () => {
+                const evt_statusChange = await page.spyOnEvent('_statusChange');
+                const evt_valueChange = await page.spyOnEvent('_valueChange');
+
+                inputCalendar.triggerEvent('_valueChange', {
+                    detail: {
+                        name: '',
+                        value: '21:30:30'
+                    }
+                });
+                inputCalendar.triggerEvent('_statusChange', {
+                    detail: {
+                        name: '',
+                        status: {
+                            dotPristine: false,
+                            dotTouched: true,
+                            dotValid: true
+                        }
+                    }
+                });
+                await page.waitForChanges();
+                expect(spyStatusChangeEvent).toHaveReceivedEventDetail({
+                    name: '',
+                    status: {
+                        dotPristine: false,
+                        dotTouched: true,
+                        dotValid: true
+                    }
+                });
+                expect(spyValueChangeEvent).toHaveReceivedEventDetail({
+                    name: '',
+                    value: '21:30:30'
+                });
+                expect(evt_statusChange.events).toEqual([]);
+                expect(evt_valueChange.events).toEqual([]);
+            });
+        });
+
+        describe('status change', () => {
+            it('should send status when dot-input-calendar send it', async () => {
+                inputCalendar.triggerEvent('_statusChange', {
+                    detail: {
+                        name: '',
+                        status: {
+                            dotPristine: true,
+                            dotTouched: false,
+                            dotValid: false
+                        }
+                    }
+                });
+                await page.waitForChanges();
+                expect(spyStatusChangeEvent).toHaveReceivedEventDetail({
+                    name: '',
+                    status: {
+                        dotPristine: true,
+                        dotTouched: false,
+                        dotValid: false
+                    }
+                });
+            });
         });
     });
 });
