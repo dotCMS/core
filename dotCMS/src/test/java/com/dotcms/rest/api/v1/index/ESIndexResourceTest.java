@@ -5,26 +5,28 @@ import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.io.File;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.junit.Test;
+
 import com.dotcms.UnitTestBase;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESIndexHelper;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.RestUtilTest;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotmarketing.business.LayoutAPI;
 import com.liferay.portal.model.User;
-import java.io.File;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
-import org.junit.Test;
 
 public class ESIndexResourceTest extends UnitTestBase {
 
@@ -45,7 +47,6 @@ public class ESIndexResourceTest extends UnitTestBase {
     	final String requestParams = "/index/" + liveIndex;
 
     	final HttpServletRequest request = RestUtilTest.getMockHttpRequest();
-        final HttpServletResponse httpServletResponse = mock(HttpServletResponse.class);
         final InitDataObject initDataObject  = mock(InitDataObject.class);
         final WebResource webResource = mock(WebResource.class);
         final ESIndexAPI indexAPI = mock(ESIndexAPI.class);
@@ -73,8 +74,7 @@ public class ESIndexResourceTest extends UnitTestBase {
 
         ESIndexResource esIndexResource = new ESIndexResource(indexAPI, indexHelper, responseUtil, webResource, layoutAPI, indiciesAPI);
 
-        final Response response1 = esIndexResource
-                .snapshotIndex(request, httpServletResponse, requestParams);
+        final Response response1 = esIndexResource.snapshotIndex(request, requestParams);
 
         assertNotNull(response1);
         assertEquals(response1.getStatus(), 200);
@@ -92,7 +92,6 @@ public class ESIndexResourceTest extends UnitTestBase {
     	final String requestParams = "/index/live";
 
     	final HttpServletRequest request = RestUtilTest.getMockHttpRequest();
-        final HttpServletResponse httpServletResponse = mock(HttpServletResponse.class);
         final InitDataObject initDataObject  = mock(InitDataObject.class);
         final WebResource webResource = mock(WebResource.class);
         final ESIndexAPI indexAPI = mock(ESIndexAPI.class);
@@ -120,8 +119,7 @@ public class ESIndexResourceTest extends UnitTestBase {
 
         ESIndexResource esIndexResource = new ESIndexResource(indexAPI, indexHelper, responseUtil, webResource, layoutAPI, indiciesAPI);
 
-        final Response response1 = esIndexResource
-                .snapshotIndex(request, httpServletResponse, requestParams);
+        final Response response1 = esIndexResource.snapshotIndex(request, requestParams);
 
         assertNotNull(response1);
         assertEquals(response1.getStatus(), 200);
@@ -139,7 +137,6 @@ public class ESIndexResourceTest extends UnitTestBase {
     	final String requestParams = "/index/" + workingIndex;
 
     	final HttpServletRequest request = RestUtilTest.getMockHttpRequest();
-        final HttpServletResponse httpServletResponse = mock(HttpServletResponse.class);
         final InitDataObject initDataObject  = mock(InitDataObject.class);
         final WebResource webResource = mock(WebResource.class);
         final ESIndexAPI indexAPI = mock(ESIndexAPI.class);
@@ -167,8 +164,7 @@ public class ESIndexResourceTest extends UnitTestBase {
 
         ESIndexResource esIndexResource = new ESIndexResource(indexAPI, indexHelper, responseUtil, webResource, layoutAPI, indiciesAPI);
 
-        final Response response1 = esIndexResource
-                .snapshotIndex(request, httpServletResponse, requestParams);
+        final Response response1 = esIndexResource.snapshotIndex(request, requestParams);
 
         assertNotNull(response1);
         assertEquals(response1.getStatus(), 200);
@@ -186,7 +182,6 @@ public class ESIndexResourceTest extends UnitTestBase {
     	final String requestParams = "/index/working";
 
     	final HttpServletRequest request = RestUtilTest.getMockHttpRequest();
-        final HttpServletResponse httpServletResponse = mock(HttpServletResponse.class);
         final InitDataObject initDataObject  = mock(InitDataObject.class);
         final WebResource webResource = mock(WebResource.class);
         final ESIndexAPI indexAPI = mock(ESIndexAPI.class);
@@ -214,8 +209,7 @@ public class ESIndexResourceTest extends UnitTestBase {
 
         ESIndexResource esIndexResource = new ESIndexResource(indexAPI, indexHelper, responseUtil, webResource, layoutAPI, indiciesAPI);
 
-        final Response response1 = esIndexResource
-                .snapshotIndex(request, httpServletResponse, requestParams);
+        final Response response1 = esIndexResource.snapshotIndex(request, requestParams);
 
         assertNotNull(response1);
         assertEquals(response1.getStatus(), 200);
@@ -231,7 +225,6 @@ public class ESIndexResourceTest extends UnitTestBase {
     	final String requestParams = "/index/";
 
     	final HttpServletRequest request = RestUtilTest.getMockHttpRequest();
-        final HttpServletResponse httpServletResponse = mock(HttpServletResponse.class);
         final InitDataObject initDataObject  = mock(InitDataObject.class);
         final WebResource webResource = mock(WebResource.class);
         final ESIndexAPI indexAPI = mock(ESIndexAPI.class);
@@ -253,8 +246,7 @@ public class ESIndexResourceTest extends UnitTestBase {
 
         ESIndexResource esIndexResource = new ESIndexResource(indexAPI, indexHelper, responseUtil, webResource, layoutAPI, indiciesAPI);
 
-        Response response1 = esIndexResource
-                .snapshotIndex(request, httpServletResponse, requestParams);
+        Response response1 = esIndexResource.snapshotIndex(request, requestParams);
 
         assertNotNull(response1);
         assertEquals(response1.getStatus(), 400);

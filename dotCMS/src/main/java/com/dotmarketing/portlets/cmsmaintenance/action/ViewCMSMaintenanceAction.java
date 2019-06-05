@@ -183,7 +183,7 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 					structure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(ccf.getStructure());
 				if(!InodeUtils.isSet(structure.getInode()))
 				{
-			
+
 						int shards = Config.getIntProperty("es.index.number_of_shards", 2);
 						try{
 							shards = Integer.parseInt(req.getParameter("shards"));
@@ -194,10 +194,10 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 						Logger.info(this, "Running Contentlet Reindex");
 
 						conAPI.refreshAllContent();
-			
+
 						message = "message.cmsmaintenance.cache.indexrebuilt";
 						AdminLogger.log(ViewCMSMaintenanceAction.class, "processAction", "Running Contentlet Reindex");
-					
+
 				}
 				else
 				{
@@ -218,9 +218,17 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 				message = "message.cmsmaintenance.cache.flushmenucaches";
 			} else if (cacheName.equals("flushCache"))
 			{
-				Logger.info(this, "Flushing All Caches");
-				_flush(req.getParameter("cName"));
-				message = (cacheName.equals(WebKeys.Cache.CACHE_ALL_CACHES) ? "message.cmsmaintenance.cache.flushallcache" : "message.cmsmaintenance.cache.flushcache");
+				final String cacheToFlush = req.getParameter("cName");
+				boolean isAllCachesFlush = false;// this boolean is for the messages (logs and UI)
+				try{
+					CacheLocator.getCache(cacheToFlush);
+				}catch (NullPointerException e) {
+					isAllCachesFlush = true;//is a NPE is returned means it's cleaning all the caches
+				}
+				final String msgLogger = isAllCachesFlush ? "Flushing All Caches" : "Flushing " + cacheToFlush +" Cache";
+				Logger.info(this, msgLogger);
+				_flush(cacheToFlush);
+				message = isAllCachesFlush ? "message.cmsmaintenance.cache.flushallcache" : "message.cmsmaintenance.cache.flushcache";
 			} else {
 				Logger.info(this, "Flushing Live and Working File Cache");
 				_deleteFiles(com.dotmarketing.util.WebKeys.Cache.CACHE_LIVE_FILES);
@@ -995,7 +1003,7 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 					entry.append(id).append(", ");
 					entry.append(row.get("ident_to_index").toString()).append(", ");
 
-					
+
 					entry.append(priority).append(",");
 					entry.append(row.get("index_val").toString());
 					pr.print(entry.toString());

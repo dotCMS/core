@@ -35,6 +35,7 @@ public final class ESMappingConstants {
     public static final String FIELD_TYPE_CHECKBOX = "checkbox";
     public static final String FIELD_TYPE_MULTI_SELECT = "multi_select";
     public static final String FIELD_TYPE_KEY_VALUE = "key_value";
+    public static final String FIELD_TYPE_RELATIONSHIP = "relationship";
     /**
      * Contentlet properties
      */
@@ -89,8 +90,13 @@ public final class ESMappingConstants {
     public static final String RELATION_TYPE = "relation_type";
     public static final String TREE_ORDER = "tree_order";
 
+    @Deprecated
     public static final String SUFFIX_CHILD = "-child";
+
+    @Deprecated
     public static final String SUFFIX_PARENT = "-parent";
+
+    @Deprecated
     public static final String SUFFIX_ORDER = "-order";
 
 

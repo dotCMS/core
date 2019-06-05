@@ -37,11 +37,10 @@ THIS FILE AND ITS INCLUDES
 
 	<link rel="shortcut icon" href="//dotcms.com/favicon.ico" type="image/x-icon">
 	<title>dotCMS : <%= LanguageUtil.get(pageContext, "Enterprise-Web-Content-Management") %></title>
+    
+    <link rel="stylesheet" type="text/css" href="<%=dojoPath%>/dijit/themes/dijit.css">
+    <link rel="stylesheet" type="text/css" href="/html/css/dijit-dotcms/dotcms.css?b=<%= ReleaseInfo.getVersion() %>">
 
-	<style type="text/css">
-   		@import "<%=dojoPath%>/dijit/themes/dijit.css";
-        @import "/html/css/dijit-dotcms/dotcms.css?b=<%= ReleaseInfo.getVersion() %>";
-	</style>
 
 	<!--[if IE]>
 		<link rel="stylesheet" type="text/css" href="/html/css/iehacks.css" />

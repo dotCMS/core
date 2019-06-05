@@ -88,10 +88,9 @@ public class ContentRelationshipsResource {
     @NoCache
     @GET
     @Path("/{params: .*}")
-    public Response getContent(@Context final HttpServletRequest request,
-                               @Context final HttpServletResponse response,
-                               @PathParam("params") final String params) {
-        final InitDataObject initData = this.webResource.init(params, request, response, false, null);
+    public Response getContent(@Context final HttpServletRequest request, @Context final
+    HttpServletResponse response, @PathParam("params") final String params) {
+        final InitDataObject initData = this.webResource.init(params, false, request, false, null);
         final Map<String, String> paramsMap = initData.getParamsMap();
         final User user = initData.getUser();
         Response res = null;

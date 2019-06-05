@@ -26,9 +26,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
-
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 @Path("/v1/content/fileassets")
 public class FileAssetsResource {
@@ -49,7 +47,7 @@ public class FileAssetsResource {
     /**
      * Given an inode this will build get you a Resource Link
      * The inode is expected to be File Asset other wise you'll get exception
-     * @param httpServletRequest http request
+     * @param request http request
      * @param inode file asset inode
      * @return
      * @throws DotDataException
@@ -61,17 +59,16 @@ public class FileAssetsResource {
     @NoCache
     @Path("/{inode}/resourcelink")
     @Produces(MediaType.APPLICATION_JSON + ";charset=UTF-8")
-    public Response findResourceLink(@Context final HttpServletRequest httpServletRequest,
-            @Context final HttpServletResponse httpServletResponse,
+    public Response findResourceLink(@Context final HttpServletRequest request,
             @PathParam("inode") final String inode) throws DotStateException {
         try {
             if (!UtilMethods.isSet(inode)) {
                 throw new IllegalArgumentException("Missing required inode param");
             }
-            final InitDataObject auth = webResource.init(httpServletRequest, httpServletResponse, true);
+            final InitDataObject auth = webResource.init(true, request, true);
             final User user = auth.getUser();
             final Contentlet contentlet = contentletAPI.find(inode, user, false);
-            final ResourceLink link = new ResourceLinkBuilder().build(httpServletRequest, user, contentlet);
+            final ResourceLink link = new ResourceLinkBuilder().build(request, user, contentlet);
             if(link.isDownloadRestricted()){
                throw new DotSecurityException("The Resource link to the contentlet is restricted.");
             }

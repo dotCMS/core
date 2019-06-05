@@ -1,5 +1,15 @@
 package com.dotcms.rest;
 
+import javax.ws.rs.Consumes;
+import javax.ws.rs.FormParam;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -11,17 +21,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.FormParam;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 
 /**
  * @author Jonathan Gamba
@@ -50,9 +49,9 @@ public class TestResource {
     @GET
     @Path ("/testGet/{params:.*}")
     @Produces (MediaType.APPLICATION_JSON)
-    public Response getDocumentCount (@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam ("params") String params ) throws JSONException {
+    public Response getDocumentCount ( @Context HttpServletRequest request, @PathParam ("params") String params ) throws JSONException {
 
-        InitDataObject initData = webResource.init(params, request, response, true, null);
+        InitDataObject initData = webResource.init(params, true, request, true, null);
 
         //Creating an utility response object
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
@@ -134,14 +133,13 @@ public class TestResource {
     @Produces (MediaType.APPLICATION_JSON)
     @Consumes (MediaType.APPLICATION_FORM_URLENCODED)
     public Response saveTest ( @Context HttpServletRequest request,
-                               @Context final HttpServletResponse response,
                                @FormParam ("user") String user, @FormParam ("password") String password,
                                @FormParam ("param1") String param1,
                                @FormParam ("param2") String param2,
                                @FormParam ("type") String type,
                                @FormParam ("callback") String callback ) throws IOException, JSONException {
 
-        InitDataObject initData = webResource.init("user/" + user + "/password/" + password, request, response, true, null);
+        InitDataObject initData = webResource.init("user/" + user + "/password/" + password, true, request, true, null);
 
         Map<String, String> paramsMap = initData.getParamsMap();
         paramsMap.put( "param1", param1 );

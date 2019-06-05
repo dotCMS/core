@@ -17,12 +17,10 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
 
 
 @Path("/role")
@@ -63,11 +61,11 @@ public class RoleResource {
 	@GET
 	@Path("/loadchildren/{params:.*}")
 	@Produces("application/json")
-	public Response loadChildren(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("params") String params)
+	public Response loadChildren(@Context HttpServletRequest request, @PathParam("params") String params)
 			throws DotDataException, JSONException {
 
 
-        InitDataObject initData = webResource.init(params, request, response, true, null);
+        InitDataObject initData = webResource.init(params, true, request, true, null);
 
         //Creating an utility response object
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
@@ -169,8 +167,8 @@ public class RoleResource {
 	@GET
 	@Path("/loadbyid/{params:.*}")
 	@Produces("application/json")
-	public Response loadById(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("params") String params) throws DotDataException, JSONException {
-        InitDataObject initData = webResource.init(params, request, response, true, null);
+	public Response loadById(@Context HttpServletRequest request, @PathParam("params") String params) throws DotDataException, JSONException {
+        InitDataObject initData = webResource.init(params, true, request, true, null);
 
         //Creating an utility response object
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
@@ -233,8 +231,8 @@ public class RoleResource {
 	@Path("/loadbyname/{params:.*}")
 	@Produces("application/json")
 	@SuppressWarnings("unchecked")
-	public Response loadByName(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("params") String params) throws DotDataException, JSONException {
-        InitDataObject initData = webResource.init(params, request, response, true, null);
+	public Response loadByName(@Context HttpServletRequest request, @PathParam("params") String params) throws DotDataException, JSONException {
+        InitDataObject initData = webResource.init(params, true, request, true, null);
 
         //Creating an utility response object
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );

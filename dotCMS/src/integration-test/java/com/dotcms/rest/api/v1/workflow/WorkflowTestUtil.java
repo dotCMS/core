@@ -8,7 +8,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.rest.EmptyHttpResponse;
+import javax.ws.rs.core.Response;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.workflow.form.WorkflowActionForm;
 import com.dotcms.workflow.form.WorkflowSchemeForm;
@@ -38,7 +38,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.core.Response;
 import org.apache.commons.lang.RandomStringUtils;
 
 public abstract class WorkflowTestUtil {
@@ -103,7 +102,7 @@ public abstract class WorkflowTestUtil {
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final WorkflowSchemeForm form = new WorkflowSchemeForm.Builder()
                 .schemeName(randomSchemaName).schemeDescription("").schemeArchived(false).build();
-        final Response saveResponse = workflowResource.saveScheme(request,  new EmptyHttpResponse(), form);
+        final Response saveResponse = workflowResource.saveScheme(request, form);
         assertEquals(Response.Status.OK.getStatusCode(), saveResponse.getStatus());
         final ResponseEntityView savedEv = ResponseEntityView.class.cast(saveResponse.getEntity());
         return WorkflowScheme.class.cast(savedEv.getEntity());
@@ -115,7 +114,7 @@ public abstract class WorkflowTestUtil {
     @SuppressWarnings("unchecked")
     static List<WorkflowScheme> findSchemes(final WorkflowResource workflowResource) {
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final Response findResponse = workflowResource.findSchemes(request,  new EmptyHttpResponse(), null, true);
+        final Response findResponse = workflowResource.findSchemes(request, null, true);
         assertEquals(Response.Status.OK.getStatusCode(), findResponse.getStatus());
         final ResponseEntityView listEv = ResponseEntityView.class.cast(findResponse.getEntity());
         return List.class.cast(listEv.getEntity());
@@ -134,7 +133,7 @@ public abstract class WorkflowTestUtil {
                     .stepName(randomStepName).schemeId(savedScheme.getId()).enableEscalation(false)
                     .escalationTime("0").escalationAction("").stepResolved(false).build();
             final Response addStepResponse = workflowResource
-                    .addStep(addStepRequest,  new EmptyHttpResponse(), workflowStepAddForm);
+                    .addStep(addStepRequest, workflowStepAddForm);
             assertEquals(Response.Status.OK.getStatusCode(), addStepResponse.getStatus());
             final ResponseEntityView savedStepEntityView = ResponseEntityView.class
                     .cast(addStepResponse.getEntity());
@@ -176,7 +175,7 @@ public abstract class WorkflowTestUtil {
                             whoCanUse(Arrays.asList("")).
                             actionCondition("").
                             build();
-            final Response saveActionResponse = workflowResource.saveAction(saveActionRequest,  new EmptyHttpResponse(), form);
+            final Response saveActionResponse = workflowResource.saveAction(saveActionRequest, form);
             assertEquals(Response.Status.OK.getStatusCode(), saveActionResponse.getStatus());
             final ResponseEntityView savedActionEv = ResponseEntityView.class
                     .cast(saveActionResponse.getEntity());
@@ -200,7 +199,7 @@ public abstract class WorkflowTestUtil {
             final WorkflowScheme savedScheme) {
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final Response findResponse = workflowResource
-                .findStepsByScheme(request,  new EmptyHttpResponse(), savedScheme.getId());
+                .findStepsByScheme(request, savedScheme.getId());
         assertEquals(Response.Status.OK.getStatusCode(), findResponse.getStatus());
         final ResponseEntityView findResponseEv = ResponseEntityView.class
                 .cast(findResponse.getEntity());

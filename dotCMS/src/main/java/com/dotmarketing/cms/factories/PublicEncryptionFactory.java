@@ -4,14 +4,14 @@
  */
 package com.dotmarketing.cms.factories;
 
-import java.security.Key;
-import java.util.Random;
-
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.Company;
 import com.liferay.util.Encryptor;
 import com.liferay.util.EncryptorException;
+
+import java.security.Key;
+import java.util.Random;
 
 /**
  * @author will
@@ -31,43 +31,43 @@ public class PublicEncryptionFactory {
         return encryptString(getRandomPassword());
     }
     
-    public static String encryptString(String x){
-        try{
-            Company c = PublicCompanyFactory.getDefaultCompany();
-            Logger.debug(PublicEncryptionFactory.class, "c:"+c);
-            Key k = c.getKeyObj();
-            return Encryptor.encrypt(k, x);
-            
-        }
-        catch(EncryptorException e){
-            throw new DotRuntimeException("Encryption Failed");
+    public static String encryptString(final String string) {
+        try {
+
+            final Company company = PublicCompanyFactory.getDefaultCompany();
+            Logger.debug(PublicEncryptionFactory.class, ()-> "c:" + company);
+            final Key key = company.getKeyObj();
+            return Encryptor.encrypt(key, string);
+        } catch(EncryptorException e) {
+
+            throw new DotRuntimeException("Encryption Failed", e);
         }
         
     }
     
-    public static String digestString(String x){
-        if(x == null) return null;
-        try{
+    public static String digestString(final String string) {
+
+        if(string == null) return null;
+
+        try {
             
-            return Encryptor.digest(x);
-            
-        }
-        catch(Exception e){
-            Logger.debug(PublicEncryptionFactory.class, "", e);
-            throw new DotRuntimeException("Encryption digest");
+            return Encryptor.digest(string);
+        } catch(Exception e) {
+
+            Logger.debug(PublicEncryptionFactory.class, e.getMessage(), e);
+            throw new DotRuntimeException("Encryption digest", e);
         }
     }
     
-    public static String decryptString(String x){
+    public static String decryptString(final String string){
         try{
             
-            Key k = PublicCompanyFactory.getDefaultCompany().getKeyObj();
-            return Encryptor.decrypt(k, x);
+            final Key key = PublicCompanyFactory.getDefaultCompany().getKeyObj();
+            return Encryptor.decrypt(key, string);
+        } catch(EncryptorException e){
             
-        }
-        catch(EncryptorException e){
-            Logger.debug(PublicEncryptionFactory.class, "", e);
-            throw new DotRuntimeException("decryption Failed");
+            Logger.debug(PublicEncryptionFactory.class, e.getMessage(), e);
+            throw new DotRuntimeException("decryption Failed", e);
         }
     }
     
