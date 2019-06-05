@@ -1,348 +1,389 @@
 import { E2EElement, E2EPage, newE2EPage } from '@stencil/core/testing';
 import { EventSpy } from '@stencil/core/dist/declarations';
+import { dotTestUtil } from '../../utils';
 
 describe('dot-tags', () => {
     let page: E2EPage;
     let element: E2EElement;
+    let spyStatusChangeEvent: EventSpy;
+    let spyValueChangeEvent: EventSpy;
 
-    describe('render all attributes', () => {
-        beforeEach(async () => {
-            page = await newE2EPage({
-                html: `<dot-tags
-                            value="tag-1"
-                            name="tag_name"
-                            label="label"
-                            hint="hint"
-                            placeholder='placeholder'
-                            required="true"
-                            requiredMessage="requiredMessage"
-                            disabled="true"
-                            threshold="3"
-                            debounce="100"
-                       >
-                       </dot-tags>`
-            });
+    const getAutoComplete = () => page.find('dot-autocomplete');
+    const getChips = () => page.findAll('dot-chip');
 
-            element = await page.find('dot-tags');
+    beforeEach(async () => {
+        page = await newE2EPage();
+        await page.setContent(`<dot-tags></dot-tags>`);
+        element = await page.find('dot-tags');
+        await page.waitForChanges();
+    });
+
+    describe('css classes', () => {
+        it('should have empty', () => {
+            expect(element).toHaveClasses(dotTestUtil.class.empty);
         });
 
-        it('should has a label', async () => {
-            const label = await element.find('.dot-field__label label');
-            expect(label.innerHTML).toEqualHtml('label');
+        it('should have empty required pristine', async () => {
+            element.setProperty('required', true);
+            await page.waitForChanges();
+            expect(element).toHaveClasses(dotTestUtil.class.emptyRequiredPristine);
         });
 
-        describe('should has a tab container', () => {
-            it('should has a div tab container', async () => {
-                expect(await element.find('div.tag_container')).toBeDefined();
-            });
+        it('should have empty required touched when all items is removed', async () => {
+            element.setProperty('value', 'add,some');
+            element.setProperty('required', true);
+            await page.waitForChanges();
 
-            it('should has a div tab container', async () => {
-                const divContainer = await element.find('div.tag_container');
-                expect((await divContainer.findAll('dot-chip')).length).toEqual(1);
+            const chips = await getChips();
+            chips[0].triggerEvent('remove', {
+                detail: 'add'
+            });
+            chips[1].triggerEvent('remove', {
+                detail: 'some'
+            });
+            await page.waitForChanges();
+
+            expect(element).toHaveClasses(dotTestUtil.class.emptyRequired);
+        });
+
+        it('should have filled', async () => {
+            const autocomplete = await getAutoComplete();
+            autocomplete.triggerEvent('select', {
+                detail: 'a tag'
+            });
+            await page.waitForChanges();
+
+            expect(element).toHaveClasses(dotTestUtil.class.filled);
+        });
+
+        it('should have filled required', async () => {
+            element.setProperty('required', true);
+            const autocomplete = await getAutoComplete();
+            autocomplete.triggerEvent('select', {
+                detail: 'a tag'
+            });
+            await page.waitForChanges();
+
+            expect(element).toHaveClasses(dotTestUtil.class.filledRequired);
+        });
+
+        it('should have filled required pristine', async () => {
+            element.setProperty('required', true);
+            element.setProperty('value', 'some,tags');
+
+            await page.waitForChanges();
+            expect(element).toHaveClasses(dotTestUtil.class.filledRequiredPristine);
+        });
+
+        it('should have filled required touched when item is added', async () => {
+            element.setProperty('required', true);
+            const autocomplete = await getAutoComplete();
+            autocomplete.triggerEvent('select', {
+                detail: 'a tag'
+            });
+            await page.waitForChanges();
+
+            expect(element).toHaveClasses(dotTestUtil.class.filledRequired);
+        });
+
+        it('should have filled required touched when one item is removed', async () => {
+            element.setProperty('value', 'some,tags');
+            element.setProperty('required', true);
+            await page.waitForChanges();
+            const chips = await getChips();
+            chips[0].triggerEvent('remove', {
+                detail: 'some'
+            });
+            await page.waitForChanges();
+            expect(element).toHaveClasses(dotTestUtil.class.filledRequired);
+        });
+
+        it('should have touched but pristine', async () => {
+            const autocomplete = await getAutoComplete();
+            autocomplete.triggerEvent('lostFocus', {});
+            await page.waitForChanges();
+
+            expect(element).toHaveClasses(dotTestUtil.class.touchedPristine);
+        });
+    });
+
+    describe('@Props', () => {
+        describe('value', () => {
+            it('should render chips', async () => {
+                element.setProperty('value', 'give,me,tags');
+                await page.waitForChanges();
+
+                const chips = await getChips();
+                expect(chips.length).toBe(3);
             });
         });
 
-        describe('should has a dot-autocomplete', () => {
-            let dotAutoComplete;
-
-            beforeEach(async () => {
-                dotAutoComplete = await element.find('dot-autocomplete');
+        describe('name', () => {
+            it('should not render', async () => {
+                const dotLabel = await dotTestUtil.getDotLabel(page);
+                expect(await dotLabel.getAttribute('name')).toBe('');
             });
 
-            it('should has a id', async () => {
-                expect(await dotAutoComplete.getProperty('id')).toEqualHtml('tag_name');
+            it('should render', async () => {
+                element.setProperty('name', 'Some name');
+                await page.waitForChanges();
+
+                const dotLabel = await dotTestUtil.getDotLabel(page);
+                expect(dotLabel.getAttribute('name')).toBe('Some name');
+            });
+        });
+
+        describe('label', () => {
+            it('should render', async () => {
+                element.setProperty('label', 'Some label');
+                await page.waitForChanges();
+
+                const dotLabel = await dotTestUtil.getDotLabel(page);
+                expect(dotLabel.getAttribute('label')).toBe('Some label');
             });
 
-            it('should has a disabled', async () => {
-                expect(await dotAutoComplete.getProperty('disabled')).toBeTruthy();
+            it('should not render', async () => {
+                const dotLabel = await dotTestUtil.getDotLabel(page);
+                expect(dotLabel.getAttribute('label')).toBe('');
+            });
+        });
+
+        describe('hint', () => {
+            it('should render', async () => {
+                element.setProperty('hint', 'Some hint');
+                await page.waitForChanges();
+
+                const hint = await dotTestUtil.getHint(page);
+                expect(hint.innerText).toBe('Some hint');
+                expect(hint.getAttribute('id')).toBe('hint-some-hint');
             });
 
-            it('should has a plaveholder', async () => {
-                expect(await dotAutoComplete.getProperty('placeholder')).toBe('placeholder');
+            it('should not render', async () => {
+                const hint = await dotTestUtil.getHint(page);
+                expect(hint).toBeNull();
+            });
+        });
+
+        describe('placeholder', () => {
+            it('should render', async () => {
+                element.setProperty('placeholder', 'Some placeholder');
+                await page.waitForChanges();
+
+                const autocomplete = await getAutoComplete();
+                expect(autocomplete.getAttribute('placeholder')).toBe('Some placeholder');
+            });
+
+            it('should not render', async () => {
+                const autocomplete = await getAutoComplete();
+                expect(autocomplete.getAttribute('placeholder')).toBeNull();
+            });
+        });
+
+        describe('required', () => {
+            it('should render', async () => {
+                element.setProperty('required', true);
+                await page.waitForChanges();
+
+                const dotLabel = await dotTestUtil.getDotLabel(page);
+                expect(dotLabel.getAttribute('required')).toBe('');
+            });
+
+            it('should not render', async () => {
+                const dotLabel = await dotTestUtil.getDotLabel(page);
+                expect(dotLabel.getAttribute('required')).toBeNull();
+            });
+        });
+
+        describe('requiredMessage', () => {
+            it('should show default', async () => {
+                element.setProperty('required', true);
+                element.setProperty('value', 'some');
+                await page.waitForChanges();
+
+                const chips = await getChips();
+                chips[0].triggerEvent('remove', {
+                    detail: 'some'
+                });
+                await page.waitForChanges();
+
+                const error = await dotTestUtil.getErrorMessage(page);
+                expect(error.textContent).toBe('This field is required');
+            });
+
+            it('should render custom', async () => {
+                element.setProperty('required', true);
+                element.setProperty('requiredMessage', 'Custom error message');
+                element.setProperty('value', 'some');
+                await page.waitForChanges();
+
+                const chips = await getChips();
+                chips[0].triggerEvent('remove', {
+                    detail: 'some'
+                });
+                await page.waitForChanges();
+
+                const error = await dotTestUtil.getErrorMessage(page);
+                expect(error.textContent).toBe('Custom error message');
+            });
+
+            it('should not show', async () => {
+                element.setProperty('requiredMessage', 'Custom error message');
+                element.setProperty('value', 'some');
+                await page.waitForChanges();
+
+                const chips = await getChips();
+                chips[0].triggerEvent('remove', {
+                    detail: 'some'
+                });
+                await page.waitForChanges();
+
+                const error = await dotTestUtil.getErrorMessage(page);
+                expect(error).toBeNull();
+            });
+        });
+
+        describe('disabled', () => {
+            it('should render', async () => {
+                element.setProperty('disabled', true);
+                element.setProperty('value', 'some');
+                await page.waitForChanges();
+
+                const chips = await getChips();
+                const autocomplete = await getAutoComplete();
+
+                expect(chips[0].getAttribute('disabled')).toBeDefined();
+                expect(autocomplete.getAttribute('disabled')).toBeDefined();
+            });
+
+            it('should not render', async () => {
+                element.setProperty('value', 'some');
+                await page.waitForChanges();
+
+                const chips = await getChips();
+                const autocomplete = await getAutoComplete();
+
+                expect(chips[0].getAttribute('disabled')).toBeNull();
+                expect(autocomplete.getAttribute('disabled')).toBeNull();
+            });
+        });
+
+        describe('threshold', () => {
+            it('should render default', async () => {
+                await page.waitForChanges();
+
+                const autocomplete = await getAutoComplete();
+                expect(autocomplete.getAttribute('threshold')).toBe('0');
+            });
+
+            it('should render passed', async () => {
+                element.setProperty('threshold', 100);
+                await page.waitForChanges();
+
+                const autocomplete = await getAutoComplete();
+                expect(autocomplete.getAttribute('threshold')).toBe('100');
+            });
+        });
+
+        describe('debounce', () => {
+            it('should render default', async () => {
+                await page.waitForChanges();
+
+                const autocomplete = await getAutoComplete();
+                expect(autocomplete.getAttribute('debounce')).toBe('300');
+            });
+
+            it('should render passed', async () => {
+                element.setProperty('debounce', 100);
+                await page.waitForChanges();
+
+                const autocomplete = await getAutoComplete();
+                expect(autocomplete.getAttribute('debounce')).toBe('100');
             });
         });
     });
 
-    describe('render each attributes', () => {
+    describe('@Events', () => {
         beforeEach(async () => {
-            page = await newE2EPage({
-                html: `<dot-tags></dot-tags>`
-            });
-
-            element = await page.find('dot-tags');
-        });
-
-        it('should render', async () => {
-            expect(await element.find('.dot-field__label label')).toBeDefined();
-            expect(await element.find('div.tag_container')).toBeDefined();
-            expect(await element.find('dot-autocomplete')).toBeDefined();
-        });
-
-        it('should render with name', async () => {
-            element.setAttribute('name', 'testing');
-            await page.waitForChanges();
-
-            const label = await element.find('.dot-field__label label');
-            expect(label.getAttribute('for')).toBe('dot-testing');
-
-            const dotAutocomplete = await element.find('dot-autocomplete');
-            expect(await dotAutocomplete.getProperty('id')).toBe('testing');
-        });
-
-        it('should render with label', async () => {
-            element.setAttribute('label', 'testing');
-            await page.waitForChanges();
-
-            const label = await element.find('.dot-field__label label');
-            expect(label.innerHTML).toBe('testing');
-        });
-
-        it('should render with hint', async () => {
-            element.setAttribute('hint', 'hint');
-            await page.waitForChanges();
-
-            const hint = await element.find('.dot-field__hint');
-            expect(await hint.innerHTML).toBe('hint');
-        });
-
-        it('should render with paceholder', async () => {
-            element.setAttribute('placeholder', 'placeholder');
-            await page.waitForChanges();
-
-            const autocomplete = await element.find('dot-autocomplete');
-            expect(await autocomplete.getProperty('placeholder')).toBe('placeholder');
-        });
-
-        it('should mark autocomplete and tag as disabled', async () => {
-            element.setProperty('disabled', true);
-            element.setProperty('value', 'tag-1');
-            await page.waitForChanges();
-
-            const autocomplete = await page.find('dot-tags dot-autocomplete');
-            expect(await autocomplete.getProperty('disabled')).toBe(true);
-
-            const tag = await page.find('dot-tags dot-chip');
-            expect(await tag.getProperty('disabled')).toBe(true);
-        });
-
-        it('should mark any new tag as disabled', async () => {
-            element.setProperty('disabled', true);
-            await page.waitForChanges();
-
-            element.setProperty('value', 'tag-1');
-            await page.waitForChanges();
-
-            const tag = await page.find('dot-tags dot-chip');
-            expect(await tag.getProperty('disabled')).toBe(true);
-        });
-
-        describe('unvalid inputs', () => {
-            it('should not broke when value does not have comma', async () => {
-                element.setAttribute('value', 'tag-1');
-                await page.waitForChanges();
-
-                expect(element.getAttribute('value')).toBe('tag-1');
-            });
-
-            it('should not broke when value is not a string', async () => {
-                element.setAttribute('value', {});
-                await page.waitForChanges();
-
-               expect(element.getAttribute('value')).toBe('[object Object]');
-            });
-
-            it('should not broke when name is not a string', async () => {
-                element.setAttribute('name', {});
-                await page.waitForChanges();
-
-                expect(element.getAttribute('name')).toBe('[object Object]');
-            });
-
-            it('should not broke when label is not a string', async () => {
-                element.setAttribute('label', {});
-                await page.waitForChanges();
-
-                expect(element.getAttribute('label')).toBe('[object Object]');
-            });
-
-           it('should not broke when hint is not a string', async () => {
-                element.setAttribute('hint', {});
-                await page.waitForChanges();
-
-                expect(element.getAttribute('hint')).toBe('[object Object]');
-            });
-
-            it('should not broke when placeholder is not a string', async () => {
-                element.setAttribute('placeholder', {});
-                await page.waitForChanges();
-
-                expect(element.getAttribute('placeholder')).toBe('[object Object]');
-            });
-
-            it('should not broke when disabled is not a boolean', async () => {
-                element.setAttribute('disabled', {});
-                await page.waitForChanges();
-
-                expect(element.getAttribute('disabled')).toBeTruthy();
-            });
-
-            it('should not broke when required is not a boolean', async () => {
-                element.setAttribute('required', {});
-                await page.waitForChanges();
-
-                expect(element.getAttribute('required')).toBeTruthy();
-            });
-
-            it('should not broke when requiredMessage is not a string', async () => {
-                element.setAttribute('requiredMessage', {});
-                await page.waitForChanges();
-
-                expect(element.getAttribute('requiredMessage')).toBe('[object Object]');
-            });
-        });
-    });
-
-    describe('status', () => {
-        beforeEach(async () => {
-            page = await newE2EPage({
-                html: `<dot-tags name='tag'
-                                 label='tag'>
-                       </dot-tags>`
-            });
-
-            element = await page.find('dot-tags');
-        });
-
-        it('should load as pristine and untouched', () => {
-            expect(element).toHaveClasses(['dot-pristine', 'dot-untouched']);
-        });
-
-        it('should mark as dirty and touched when select a tag', async () => {
-            const autocomplete = await page.find('dot-tags dot-autocomplete');
-            await autocomplete.triggerEvent('selection', {detail: 'tag-1'});
-            await page.waitForChanges();
-
-            expect(element).toHaveClasses(['dot-dirty', 'dot-touched']);
-        });
-
-        it('should mark as dirty and touched when remove a tag', async () => {
-            element.setAttribute('value', 'tag-1');
-            await page.waitForChanges();
-
-            const dotChip = await page.find('dot-tags dot-chip');
-            await dotChip.triggerEvent('remove', {detail: 'tag-1'});
-            await page.waitForChanges();
-
-            expect(element).toHaveClasses(['dot-dirty', 'dot-touched']);
-        });
-
-        it('should clear value, set pristine and untouched  when input set reset', async () => {
-            element.callMethod('reset');
-            await page.waitForChanges();
-
-            expect(element).toHaveClasses(['dot-pristine', 'dot-untouched', 'dot-valid']);
-        });
-    });
-
-    describe('emit events', () => {
-        let spyStatusChangeEvent: EventSpy;
-        let spyValueChange: EventSpy;
-
-        beforeEach(async () => {
-            page = await newE2EPage({
-                html: `<dot-tags name='tag'
-                                 label='tag'>
-                       </dot-tags>`
-            });
-
+            element.setAttribute('name', 'fieldName');
+            spyValueChangeEvent = await page.spyOnEvent('valueChange');
             spyStatusChangeEvent = await page.spyOnEvent('statusChange');
-            spyValueChange = await page.spyOnEvent('valueChange');
-            element = await page.find('dot-tags');
         });
 
-        it('should emit status event when blur', async () => {
-            const autocomplete = await page.find('dot-autocomplete');
-            await autocomplete.triggerEvent('lostFocus');
-            await page.waitForChanges();
+        describe('valueChange and statusChange', () => {
+            it('should emit on add', async () => {
+                const autocomplete = await getAutoComplete();
+                autocomplete.triggerEvent('select', {
+                    detail: 'sometag'
+                });
+                await page.waitForChanges();
 
-            expect(spyStatusChangeEvent).toHaveReceivedEventDetail({
-                name: 'tag',
-                status: {
-                    dotPristine: true,
-                    dotTouched: true,
-                    dotValid: true
-                }
+                expect(spyValueChangeEvent).toHaveReceivedEventDetail({
+                    name: 'fieldName',
+                    value: 'sometag'
+                });
+                expect(spyStatusChangeEvent).toHaveReceivedEventDetail({
+                    name: 'fieldName',
+                    status: { dotPristine: false, dotTouched: true, dotValid: true }
+                });
+            });
+
+            it('should emit on remove', async () => {
+                element.setAttribute('value', 'some,tag');
+                await page.waitForChanges();
+
+                const chips = await getChips();
+                chips[0].triggerEvent('remove', {
+                    detail: 'some'
+                });
+                await page.waitForChanges();
+
+                expect(spyValueChangeEvent).toHaveReceivedEventDetail({
+                    name: 'fieldName',
+                    value: 'tag'
+                });
+                expect(spyStatusChangeEvent).toHaveReceivedEventDetail({
+                    name: 'fieldName',
+                    status: { dotPristine: false, dotTouched: true, dotValid: true }
+                });
             });
         });
 
-        it('should send status when autocomplete value is selection', async () => {
-            const autocomplete = await page.find('dot-tags dot-autocomplete');
-            await autocomplete.triggerEvent('selection', {detail: 'tag-1'});
-            await page.waitForChanges();
+        describe('statusChange', () => {
+            it('should emit on lost focus in autocomplete', async () => {
+                const autocomplete = await getAutoComplete();
+                autocomplete.triggerEvent('lostFocus', {});
+                await page.waitForChanges();
 
-            expect(spyStatusChangeEvent).toHaveReceivedEventDetail({
-                name: 'tag',
-                status: {
-                    dotPristine: false,
-                    dotTouched: true,
-                    dotValid: true
-                }
-            });
-            expect(spyValueChange).toHaveReceivedEventDetail({
-                name: 'tag',
-                value: 'tag-1'
+                expect(spyStatusChangeEvent).toHaveReceivedEventDetail({
+                    name: 'fieldName',
+                    status: { dotPristine: true, dotTouched: true, dotValid: true }
+                });
             });
         });
+    });
 
-        it('should send status when a tag is remove', async () => {
-            element.setAttribute('value', 'tag-1');
+    describe('@Methods', () => {
+        beforeEach(async () => {
+            element.setAttribute('name', 'fieldName');
+            element.setAttribute('value', 'some,tag');
+            spyValueChangeEvent = await page.spyOnEvent('valueChange');
+            spyStatusChangeEvent = await page.spyOnEvent('statusChange');
+
             await page.waitForChanges();
-
-            const dotChip = await page.find('dot-tags dot-chip');
-            await dotChip.triggerEvent('remove', {detail: 'tag-1'});
-            await page.waitForChanges();
-
-            expect(spyStatusChangeEvent).toHaveReceivedEventDetail({
-                name: 'tag',
-                status: {
-                    dotPristine: false,
-                    dotTouched: true,
-                    dotValid: true
-                }
-            });
-            expect(spyValueChange).toHaveReceivedEventDetail({
-                name: 'tag',
-                value: ''
-            });
         });
 
-        it('should emit status and value on Reset', async () => {
-            element.callMethod('reset');
-            await page.waitForChanges();
+        describe('reset', () => {
+            it('should clear and emit', async () => {
+                expect(await element.getProperty('value')).toBe('some,tag');
+                element.callMethod('reset');
 
-            expect(spyStatusChangeEvent).toHaveReceivedEventDetail({
-                name: 'tag',
-                status: {
-                    dotPristine: true,
-                    dotTouched: false,
-                    dotValid: true
-                }
+                await page.waitForChanges();
+                expect(await element.getProperty('value')).toBe('');
+                expect(spyStatusChangeEvent).toHaveReceivedEventDetail({
+                    name: 'fieldName',
+                    status: { dotPristine: true, dotTouched: false, dotValid: true }
+                });
             });
-            expect(spyValueChange).toHaveReceivedEventDetail({ name: 'tag', value: '' });
-        });
-
-        it('should be unvalid when not have any value and is mark as required', async () => {
-            element.setAttribute('required', true);
-            await page.waitForChanges();
-
-            expect(element).toHaveClasses(['dot-invalid']);
-        });
-
-        it('should be valid when not have any value and is not mark as required', async () => {
-            element.setAttribute('required', false);
-            await page.waitForChanges();
-
-            expect(element).toHaveClasses(['dot-valid']);
         });
     });
 });

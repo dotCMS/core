@@ -22,7 +22,7 @@
 | Event       | Description | Type                      |
 | ----------- | ----------- | ------------------------- |
 | `lostFocus` |             | `CustomEvent<FocusEvent>` |
-| `selection` |             | `CustomEvent<string>`     |
+| `select`    |             | `CustomEvent<string>`     |
 
 
 ----------------------------------------------

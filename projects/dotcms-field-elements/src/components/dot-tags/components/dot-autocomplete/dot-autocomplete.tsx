@@ -6,36 +6,34 @@ import autoComplete from '@tarekraafat/autocomplete.js/dist/js/autoComplete';
     styleUrl: 'dot-autocomplete.scss'
 })
 export class DotAutocompleteComponent {
-
     @Element() el: HTMLElement;
 
     /** (optional) Disables field's interaction */
-    @Prop() disabled = false;
+    @Prop({ reflectToAttr: true }) disabled = false;
 
     /** (optional) text to show when no value is set */
-    @Prop() placeholder = '';
+    @Prop({ reflectToAttr: true }) placeholder = '';
 
     /** (optional)  Min characters to start search in the autocomplete input */
-    @Prop() threshold = 0;
+    @Prop({ reflectToAttr: true }) threshold = 0;
 
     /** (optional)  Max results to show after a autocomplete search */
-    @Prop() maxResults = 0;
+    @Prop({ reflectToAttr: true }) maxResults = 0;
 
     /** (optional) Duraction in ms to start search into the autocomplete */
-    @Prop() debounce = 300;
+    @Prop({ reflectToAttr: true }) debounce = 300;
 
     /** Function to get the data to use for the autocomplete search */
-    @Prop() data: () => Promise<string[]> = null;
+    @Prop({ reflectToAttr: true }) data: () => Promise<string[]> = null;
 
-    @Event() selection: EventEmitter<string>;
+    @Event() select: EventEmitter<string>;
     @Event() lostFocus: EventEmitter<FocusEvent>;
 
     private readonly id = `autoComplete${new Date().getTime()}`;
-    private autocomplete: autoComplete;
 
     private keyEvent = {
-        'Enter': this.emitSelection.bind(this),
-        'Escape': this.clean.bind(this)
+        Enter: this.emitselect.bind(this),
+        Escape: this.clean.bind(this)
     };
 
     componentDidLoad(): void {
@@ -56,15 +54,23 @@ export class DotAutocompleteComponent {
         );
     }
 
+    @Watch('threshold')
+    watchThreshold(): void {
+        this.initAutocomplete();
+    }
+
     @Watch('data')
     watchData(): void {
-        if (!this.autocomplete) {
-            this.initAutocomplete();
-        }
+        this.initAutocomplete();
+    }
+
+    @Watch('maxResults')
+    watchMaxResults(): void {
+        this.initAutocomplete();
     }
 
     private handleKeyDown(event: KeyboardEvent): void {
-        const value = this.getInputElement()['value'];
+        const { value } = this.getInputElement();
 
         if (value && this.keyEvent[event.key]) {
             this.keyEvent[event.key](value);
@@ -81,7 +87,7 @@ export class DotAutocompleteComponent {
     }
 
     private clean(): void {
-        this.getInputElement()['value'] = '';
+        this.getInputElement().value = '';
         this.cleanOptions();
     }
 
@@ -89,17 +95,19 @@ export class DotAutocompleteComponent {
         this.getResultList().innerHTML = '';
     }
 
-    private emitSelection(selection: string): void {
+    private emitselect(select: string): void {
         this.clean();
-        this.selection.emit(selection);
+        this.select.emit(select);
     }
 
-    private getInputElement(): HTMLElement {
+    private getInputElement(): HTMLInputElement {
         return this.el.querySelector(`#${this.id}`);
     }
 
     private initAutocomplete(): void {
-        this.autocomplete = new autoComplete({
+        this.clearList();
+        // tslint:disable-next-line:no-unused-expression
+        new autoComplete({
             data: {
                 src: async () => this.getData()
             },
@@ -120,17 +128,30 @@ export class DotAutocompleteComponent {
             maxResults: this.maxResults,
             debounce: this.debounce,
             resultsList: {
-                container: () => {
-                    return this.getResultListId();
-                },
+                container: () => this.getResultListId(),
                 destination: this.getInputElement(),
                 position: 'afterend'
             },
             resultItem: (data) => {
                 return `${data.match}`;
             },
-            onSelection: (feedback) => this.emitSelection(feedback.selection.value)
+            onSelection: (feedback) => {
+                this.focusOnInput();
+                this.emitselect(feedback.selection.value);
+            }
+
         });
+    }
+
+    private clearList(): void {
+        const list = this.getResultList();
+        if (list) {
+            list.remove();
+        }
+    }
+
+    private focusOnInput(): void {
+        this.getInputElement().focus();
     }
 
     private getResultList(): HTMLElement {

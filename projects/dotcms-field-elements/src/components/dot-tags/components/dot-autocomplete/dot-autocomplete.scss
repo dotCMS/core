@@ -1,1 +1,20 @@
+dot-autocomplete input + ul {
+    list-style: none;
+    margin: 0;
+    max-height: 300px;
+    overflow: auto;
+    padding: 0;
+    position: absolute;
+    background-color: #fff;
 
+    li {
+        &:focus {
+            background-color: lightyellow;
+            outline: 0;
+        }
+
+        .autoComplete_highlighted {
+            font-weight: bold
+        }
+    }
+}

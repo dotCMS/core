@@ -1,3 +1,22 @@
-button {
-    border: 0;
+dot-tags {
+
+    .dot-tags__container {
+        display: flex;
+        align-items: flex-start;
+        border: solid 1px lightgray;
+        padding: 0.25rem;
+
+        dot-autocomplete {
+            margin-right: 1rem;
+        }
+
+        dot-chip {
+            display: inline-block;
+            margin-right: .5rem;
+        }
+    }
+
+    button {
+        border: 0;
+    }
 }

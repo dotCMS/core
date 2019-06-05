@@ -4,105 +4,101 @@ describe('dot-chip', () => {
     let page: E2EPage;
     let element: E2EElement;
 
-    describe('render all attributes', () => {
+    const getLabel = () => page.find('span');
+    const getButton = () => page.find('button');
+
+    describe('@Props', () => {
         beforeEach(async () => {
             page = await newE2EPage({
-                html: `<dot-chip
-                            label='test-tag'
-                            disabled>
-                        </dot-chip>`
+                html: '<dot-chip></dot-chip>'
             });
 
             element = await page.find('dot-chip');
         });
 
-        it('should render a span', async () => {
-            const span = await element.find('span');
-            expect(span.innerHTML).toBe('test-tag');
-        });
-
-        it('should render a delete button', async () => {
-            const button = await element.find('button');
-            expect(button.innerHTML).toBe('delete');
-            expect(button.getAttribute('type')).toBe('button');
-        });
-    });
-
-    describe('render each attributes', () => {
-        beforeEach(async () => {
-            page = await newE2EPage({
-                html: `<dot-chip></dot-chip>`
-            });
-
-            element = await page.find('dot-chip');
-        });
-
-        it('should render a span', async () => {
-            const span = await element.find('span');
-            expect(span.innerHTML).toBe('');
-        });
-
-        it('should render a delete button', async () => {
-            const button = await element.find('button');
-            expect(button.innerHTML).toBe('delete');
-            expect(button.getAttribute('type')).toBe('button');
-        });
-
-        it('should render with deleteLabel', async () => {
-            element.setAttribute('delete-label', 'x');
-            await page.waitForChanges();
-
-            const button = await element.find('button');
-            expect(button.innerHTML).toBe('x');
-        });
-
-        it('should be disabled', async () => {
-            element.setAttribute('disabled', true);
-            await page.waitForChanges();
-
-            const button = await element.find('button');
-            expect(button.getAttribute('disabled')).not.toBeNull();
-        });
-
-        describe('render with invalid attributes', () => {
-            it('should render with no string in deleteLabel', async () => {
-                element.setAttribute('delete-label', {});
+        describe('label', () => {
+            it('should render', async () => {
+                element.setProperty('label', 'hello chip');
                 await page.waitForChanges();
 
-                const button = await element.find('button');
-                expect(button.innerHTML).toBe('[object Object]');
+                const label = await getLabel();
+                expect(label.innerText).toBe('hello chip');
             });
 
-            it('should be disabled', async () => {
-                element.setAttribute('disabled', {});
+            it('should render default', async () => {
                 await page.waitForChanges();
 
-                const button = await element.find('button');
-                expect(button.getAttribute('disabled')).not.toBeNull();
+                const label = await getLabel();
+                expect(label.innerText).toBe('');
+            });
+        });
+
+        describe('deleteLabel', () => {
+            it('should render', async () => {
+                element.setProperty('deleteLabel', 'Remove');
+                await page.waitForChanges();
+
+                const button = await getButton();
+                expect(button.innerText).toBe('Remove');
+            });
+
+            it('should render default', async () => {
+                await page.waitForChanges();
+
+                const button = await getButton();
+                expect(button.innerText).toBe('Delete');
+            });
+        });
+
+        describe('disabled', () => {
+            it('should render', async () => {
+                element.setProperty('disabled', true);
+                await page.waitForChanges();
+
+                const button = await getButton();
+                expect(button.getAttribute('disabled')).toBeDefined();
+            });
+
+            it('should render default', async () => {
+                await page.waitForChanges();
+
+                const button = await getButton();
+                expect(button.getAttribute('disabled')).toBeNull();
             });
         });
     });
 
-    describe('events', () => {
+    describe('@Events', () => {
+        let spyRemoveEvent;
+
         beforeEach(async () => {
             page = await newE2EPage({
-                html: `<dot-chip
-                            label='test-tag'
-                            disabled>
-                        </dot-chip>`
+                html: '<dot-chip label="test-tag"></dot-chip>'
             });
 
             element = await page.find('dot-chip');
+            spyRemoveEvent = await element.spyOnEvent('remove');
+            await page.waitForChanges();
         });
 
-        it('should trigger remove event', async () => {
-            const spyRemoveEvent = await element.spyOnEvent('remove');
+        describe('remove', () => {
+            it('should trigger', async () => {
+                const button = await getButton();
+                await button.click();
+                await page.waitForChanges();
 
-            const removeButton = await page.find('button');
-            await removeButton.triggerEvent('click');
-            await page.waitForChanges();
+                expect(spyRemoveEvent).toHaveReceivedEventDetail('test-tag');
+            });
 
-            expect(spyRemoveEvent).toHaveReceivedEventDetail('test-tag');
+            it('should not trigger', async () => {
+                element.setProperty('disabled', true);
+                await page.waitForChanges();
+
+                const button = await getButton();
+                await button.click();
+
+                expect(spyRemoveEvent).not.toHaveReceivedEvent();
+            });
         });
     });
 });

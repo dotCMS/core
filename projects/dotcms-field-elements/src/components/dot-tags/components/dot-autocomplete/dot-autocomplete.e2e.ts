@@ -4,197 +4,226 @@ describe('dot-autocomplete', () => {
     let page: E2EPage;
     let element: E2EElement;
 
-    describe('render all attributes', () => {
-        beforeEach(async () => {
-            page = await newE2EPage({
-                html: `<dot-autocomplete
-                            placeholder='placeholder'
-                            threshold='3'
-                            maxResults='5'
-                            debounce='100'
-                            disabled
-                        >
-                        </dot-autocomplete>`
-            });
+    const getInput = () => page.find('input');
 
-            element = await page.find('dot-autocomplete');
+    beforeEach(async () => {
+        page = await newE2EPage({
+            html: '<dot-autocomplete></dot-autocomplete>'
         });
 
-        it('should render', async () => {
-            const input = await element.find('input');
+        await page.$eval('dot-autocomplete', (elm: any) => {
+            elm.data = () => [
+                'result-1',
+                'result-2',
+                'result-3',
+                'result-4',
+                'result-5',
+                'result-6'
+            ];
+        });
 
-            expect(input.getAttribute('id').startsWith('autoComplete')).toBe(true);
-            expect(input.getAttribute('disabled')).not.toBeNull();
-            expect(input.getAttribute('placeholder')).toBe('placeholder');
+        element = await page.find('dot-autocomplete');
+        await page.waitForChanges();
+    });
+
+    describe('@Props', () => {
+        describe('disabled', () => {
+            it('should render', async () => {
+                element.setAttribute('disabled', true);
+                await page.waitForChanges();
+                const input = await getInput();
+                expect(input.getAttribute('disabled')).toBeDefined();
+            });
+
+            it('should not render', async () => {
+                const input = await getInput();
+                expect(input.getAttribute('disabled')).toBeNull();
+            });
+        });
+
+        describe('placeholder', () => {
+            it('should render', async () => {
+                element.setAttribute('placeholder', 'some placeholder');
+                await page.waitForChanges();
+                const input = await getInput();
+                expect(input.getAttribute('placeholder')).toBe('some placeholder');
+            });
+
+            it('should not render', async () => {
+                const input = await getInput();
+                expect(input.getAttribute('placeholder')).toBe('');
+            });
+        });
+
+        describe('id', () => {
+            it('should render', async () => {
+                const input = await getInput();
+                expect(input.getAttribute('id').startsWith('autoComplete')).toBe(true);
+            });
+        });
+
+        describe('threshold', () => {
+            let input: E2EElement;
+
+            beforeEach(async () => {
+                element.setAttribute('threshold', 2);
+                await page.waitForChanges();
+                input = await page.find('input');
+            });
+
+            it('should show results after when meet', async () => {
+                await input.type('res');
+                await page.waitForChanges();
+
+                const ul = await element.find('ul');
+                expect(ul.innerHTML).toEqualHtml(`
+                    <li class="autoComplete_result" data-result="result-1" tabindex="1">
+                        <span class="autoComplete_highlighted">
+                            res
+                        </span>
+                        ult-1
+                    </li>
+                    <li class="autoComplete_result" data-result="result-2" tabindex="1">
+                        <span class="autoComplete_highlighted">
+                            res
+                        </span>
+                        ult-2
+                    </li>
+                    <li class="autoComplete_result" data-result="result-3" tabindex="1">
+                        <span class="autoComplete_highlighted">
+                            res
+                        </span>
+                        ult-3
+                    </li>
+                    <li class="autoComplete_result" data-result="result-4" tabindex="1">
+                        <span class="autoComplete_highlighted">
+                            res
+                        </span>
+                        ult-4
+                    </li>
+                    <li class="autoComplete_result" data-result="result-5" tabindex="1">
+                        <span class="autoComplete_highlighted">
+                            res
+                        </span>
+                        ult-5
+                    </li>
+                `);
+            });
+
+            it('should not show results before when meet', async () => {
+                input.type('re');
+                await page.waitForChanges();
+
+                const ul = await element.find('ul');
+                expect(ul.innerHTML).toBe('');
+            });
+        });
+
+        describe('maxResults', () => {
+            let input: E2EElement;
+
+            it('should show 5 (default) results', async () => {
+                input = await page.find('input');
+                input.type('res');
+                await page.waitForChanges();
+
+                const lis = await element.findAll('ul li');
+                expect(lis.length).toBe(5);
+            });
+
+            it('should show 3 results', async () => {
+                element.setAttribute('max-results', 3);
+                await page.waitForChanges();
+                input = await page.find('input');
+
+                input.type('res');
+                await page.waitForChanges();
+
+                const lis = await element.findAll('ul li');
+                expect(lis.length).toBe(3);
+            });
         });
     });
 
-    describe('render each attributes', () => {
-        beforeEach(async () => {
-            page = await newE2EPage({
-                html: `<dot-autocomplete></dot-autocomplete>`
-            });
-
-            element = await page.find('dot-autocomplete');
-        });
-
-        it('should render', async () => {
-            const input = await element.find('input');
-            expect(input.getAttribute('id').startsWith('autoComplete')).toBe(true);
-        });
-
-        it('should disabled', async () => {
-            element.setAttribute('disabled', true);
-            await page.waitForChanges();
-
-            const input = await element.find('input');
-            expect(input.getAttribute('disabled')).not.toBeNull();
-        });
-
-        it('should put a placeholder', async () => {
-            element.setAttribute('placeholder', 'placeholder');
-            await page.waitForChanges();
-
-            const input = await element.find('input');
-            expect(input.getAttribute('placeholder')).toBe('placeholder');
-        });
-
-        describe('invalid inputs', () => {
-            it('should not broke when disabled is not a boolean', async () => {
-                element.setAttribute('disabled', {});
-                await page.waitForChanges();
-
-                const input = await element.find('input');
-                expect(input.getAttribute('disabled')).toBeTruthy();
-            });
-
-            it('should not broke when placeholder is not a string', async () => {
-                element.setAttribute('placeholder', {});
-                await page.waitForChanges();
-
-                const input = await element.find('input');
-                expect(input.getAttribute('placeholder')).toBe('[object Object]');
-            });
-
-            it('should not broke when threshold is not a number', async () => {
-                element.setAttribute('threshold', {});
-                await page.waitForChanges();
-
-                expect(await element.find('input')).toBeDefined();
-            });
-
-            it('should not broke when debounce is not a number', async () => {
-                element.setAttribute('debounce', {});
-                await page.waitForChanges();
-
-                expect(await element.find('input')).toBeDefined();
-            });
-
-            it('should not broke when maxResults is not a number', async () => {
-                element.setAttribute('maxResults', {});
-                await page.waitForChanges();
-
-                expect(await element.find('input')).toBeDefined();
-            });
-
-            it('should not broke when data does is not a function', async () => {
-                element.setAttribute('data', {});
-                await page.waitForChanges();
-
-                expect(await element.find('input')).toBeDefined();
-            });
-        });
-    });
-
-    describe('show options', () => {
+    describe('@Events', () => {
         let input;
+        let spySelectEvent;
 
         beforeEach(async () => {
-            await page.$eval('dot-autocomplete', (elm: any) => {
-                elm.data = () => ['tag-1', 'label'];
+            input = await page.find('input');
+            spySelectEvent = await element.spyOnEvent('select');
+        });
+
+        describe('select', () => {
+            it('should trigger when press enter', async () => {
+                await input.type('test');
+                await input.press('Enter');
+                await page.waitForChanges();
+
+                expect(spySelectEvent).toHaveReceivedEventDetail('test');
             });
 
-            await page.waitForChanges();
+            it('should trigger when keyboard select a option', async () => {
+                input.type('res');
+                await page.waitForChanges();
 
+                await element.press('ArrowDown');
+                await element.press('ArrowDown');
+                await element.press('ArrowDown');
+                await element.press('Enter');
+                await page.waitForChanges();
+
+                expect(spySelectEvent).toHaveReceivedEventDetail('result-3');
+            });
+        });
+
+        xdescribe('lostFocus', () => {
+            it('should trigger on blur', async () => {});
+        });
+    });
+
+    describe('Behaviour', () => {
+        let input: E2EElement;
+        let lis: E2EElement[];
+
+        beforeEach(async () => {
             input = await page.find('input');
-            await input.press('t');
+            await input.type('res');
             await page.waitForChanges();
+            lis = await element.findAll('ul li');
         });
 
-        it('should put get data', async () => {
-            const ul = await element.find('ul');
-            expect(ul.innerHTML).toEqualHtml(`
-                <li data-result="tag-1" class="autoComplete_result" tabindex="1">
-                    <span class="autoComplete_highlighted">t</span>ag-1
-                </li>
-            `);
-        });
+        it('should clear the result list on esc key', async () => {
+            expect(await input.getProperty('value')).toBe('res');
+            expect(lis.length).toBe(5);
 
-        it('should clean value and hide options when press esc', async () => {
             await input.press('Escape');
             await page.waitForChanges();
+            lis = await element.findAll('ul li');
 
-            const ul = await element.find('ul');
-            expect(ul.innerHTML).toEqualHtml('');
+            expect(await input.getProperty('value')).toBe('');
+            expect(lis.length).toBe(0);
         });
 
-        it('should clean options when lost focus', async (done) => {
-            element.spyOnEvent('lostFocus').then(async () => {
-                await page.waitForChanges();
-                const options = await page.findAll('li');
-                expect(options.length).toBe(0);
-                done();
-            });
-
-            await input.triggerEvent('blur');
-        });
-
-    });
-
-    describe('events', () => {
-        let input;
-        let spySelectionEvent;
-
-        beforeEach(async () => {
-            await page.$eval('dot-autocomplete', (elm: any) => {
-                elm.data = () => ['tag-1', 'label'];
-            });
-
+        it('should focus on the input after item select', async () => {
+            await element.press('ArrowDown');
+            await element.press('ArrowDown');
+            await element.press('ArrowDown');
+            await element.press('Enter');
             await page.waitForChanges();
-            input = await page.find('input');
+            const focus = await element.find('*:focus');
 
-            spySelectionEvent = await element.spyOnEvent('selection');
+            expect(/autoComplete[0-9]{13}/gm.test(focus.getAttribute('id'))).toBe(true);
         });
 
-        it('should trigger selection event when press enter', async () => {
-            await input.press('t');
-            await input.press('e');
-            await input.press('s');
-            await input.press('t');
-            await input.press('Enter');
+        it('should not create a second result list after prop is updated', async () => {
+            element.setProperty('threshold', 3);
+            element.setProperty('data', async () => {});
+            element.setProperty('maxResults', 20);
             await page.waitForChanges();
 
-            expect(spySelectionEvent).toHaveReceivedEventDetail('test');
-        });
-
-        it('should trigger selection event when click a option', async () => {
-            await input.press('t');
-            await page.waitForChanges();
-
-            const option = await page.find('li');
-            await option.press('Enter');
-            await page.waitForChanges();
-
-            expect(await page.find('li')).toBeNull();
-            expect(spySelectionEvent).toHaveReceivedEventDetail('tag-1');
-        });
-
-        it('should trigger lost focus event', async (done) => {
-            element.spyOnEvent('lostFocus').then(() => {
-                done();
-            });
-
-            await input.triggerEvent('blur');
+            const lists = await element.findAll('ul');
+            expect(lists.length).toBe(1);
         });
     });
 });
