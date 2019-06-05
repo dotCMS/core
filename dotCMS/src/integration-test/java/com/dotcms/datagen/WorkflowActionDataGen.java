@@ -1,9 +1,12 @@
 package com.dotcms.datagen;
 
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowState;
+import com.dotmarketing.util.UtilMethods;
 import java.util.Set;
 
 /**
@@ -28,6 +31,11 @@ public class WorkflowActionDataGen extends AbstractDataGen<WorkflowAction> {
         this.schemeId = schemeId;
         this.stepId = stepId;
         this.nextStep = stepId;
+        try {
+            this.nextAssign = APILocator.getRoleAPI().loadCMSAnonymousRole().getId();
+        } catch (DotDataException e) {
+            throw new DotRuntimeException(e);
+        }
     }
 
     @SuppressWarnings("unused")
@@ -98,9 +106,13 @@ public class WorkflowActionDataGen extends AbstractDataGen<WorkflowAction> {
 
     @Override
     public WorkflowAction persist(final WorkflowAction workflowAction) {
+        final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
+
         try {
-            APILocator.getWorkflowAPI()
-                    .saveAction(workflowAction.getId(), stepId, APILocator.systemUser());
+            if(!UtilMethods.isSet(workflowAction.getId())){
+                workflowAPI.saveAction(workflowAction, null, APILocator.systemUser());
+            }
+            workflowAPI.saveAction(workflowAction.getId(), stepId, APILocator.systemUser());
             return workflowAction;
         } catch (Exception e) {
             throw new RuntimeException("Unable to persist WorkflowAction.", e);
