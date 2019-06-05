@@ -12,7 +12,7 @@ import java.util.List;
  */
 public class StrictFieldLayoutRowSyntaxValidator extends FieldLayoutRowSyntaxValidator {
 
-    StrictFieldLayoutRowSyntaxValidator(List<Field> fields) {
+    StrictFieldLayoutRowSyntaxValidator(final List<Field> fields) {
         super(fields);
     }
 

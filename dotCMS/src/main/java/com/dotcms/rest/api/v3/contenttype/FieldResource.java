@@ -3,14 +3,12 @@ package com.dotcms.rest.api.v3.contenttype;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.layout.FieldLayout;
-import com.dotcms.contenttype.model.field.layout.FieldLayoutRow;
 import com.dotcms.contenttype.model.type.ContentType;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import com.dotcms.contenttype.model.field.layout.FieldUtil;
 import com.dotcms.rest.exception.NotFoundException;
 import org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.InitDataObject;
@@ -23,11 +21,9 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.model.User;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.map;

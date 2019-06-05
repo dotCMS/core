@@ -2,10 +2,8 @@ package com.dotcms.contenttype.model.field.layout;
 
 import com.dotcms.contenttype.model.field.ColumnField;
 import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.FieldDivider;
 import com.dotcms.contenttype.model.field.RowField;
 import com.dotmarketing.exception.DotRuntimeException;
-import org.apache.commons.lang.reflect.FieldUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;

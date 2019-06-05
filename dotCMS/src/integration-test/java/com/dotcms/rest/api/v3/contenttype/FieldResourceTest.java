@@ -2,7 +2,6 @@ package com.dotcms.rest.api.v3.contenttype;
 
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.*;
-import com.dotcms.contenttype.model.field.layout.FieldLayoutColumn;
 import com.dotcms.contenttype.model.field.layout.FieldLayoutRow;
 import com.dotcms.contenttype.model.field.layout.FieldLayoutValidationException;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -16,8 +15,6 @@ import com.dotcms.mock.request.MockSessionRequest;
 import javax.ws.rs.core.Response;
 
 import com.dotcms.rest.exception.NotFoundException;
-import com.dotcms.util.JsonArrayToLinkedSetConverter;
-import com.dotmarketing.util.json.JSONArray;
 import org.glassfish.jersey.internal.util.Base64;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.util.IntegrationTestInitService;
@@ -40,8 +37,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 public class FieldResourceTest {
-
-    private String field;
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -260,7 +255,7 @@ public class FieldResourceTest {
 
         final ContentType contentTypeFromDB = APILocator.getContentTypeAPI(APILocator.systemUser()).find(type.id());
 
-        Optional<Field> optionalField = contentTypeFromDB.fields()
+        final Optional<Field> optionalField = contentTypeFromDB.fields()
                 .stream()
                 .filter(field -> field.id().equals(fieldToUpdate.id()))
                 .findFirst();
@@ -352,7 +347,7 @@ public class FieldResourceTest {
         ContentType type = ContentTypeBuilder.builder(SimpleContentType.class).name(typeName).build();
         type = APILocator.getContentTypeAPI(APILocator.systemUser()).save(type);
 
-        final List<Field> fields = createFields(type);
+        createFields(type);
 
         Field field = FieldBuilder.builder(TextField.class)
                 .name("text 2")
@@ -446,8 +441,8 @@ public class FieldResourceTest {
         assertEquals(fieldsFromDB.size(), fieldsFromDB.size());
 
         for (int i = 0; i < fieldsFromDB.size(); i++) {
-            assertEquals(fieldsFromDB.get(i).sortOrder(), i);
-            assertEquals(fieldsFromDB.get(i).name(), fieldsFromDB.get(i).name());
+            assertEquals(fieldsExpected.get(i).sortOrder(), i);
+            assertEquals(fieldsExpected.get(i).name(), fieldsFromDB.get(i).name());
         }
     }
 

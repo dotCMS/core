@@ -2,13 +2,11 @@ package com.dotcms.rest.api.v3.contenttype;
 
 import com.dotcms.contenttype.model.field.*;
 import com.dotcms.contenttype.model.field.layout.FieldLayout;
-import com.dotcms.contenttype.model.field.layout.FieldLayoutRow;
 import com.dotcms.contenttype.transform.field.JsonFieldTransformer;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.google.common.collect.ImmutableList;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
@@ -73,7 +71,7 @@ public class MoveFieldsForm {
                 fieldsMap.add((Map) row.get("divider"));
                 final List<Map<String, Object>> columnsMap = (List<Map<String, Object>>) row.get("columns");
 
-                for (Map<String, Object> columnMap : columnsMap) {
+                for (final Map<String, Object> columnMap : columnsMap) {
                     fieldsMap.add((Map) columnMap.get("columnDivider"));
                     fieldsMap.addAll((List<Map<String, Object>>) columnMap.get("fields"));
                 }
