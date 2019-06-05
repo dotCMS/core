@@ -20,38 +20,38 @@ import flatpickr from 'flatpickr';
 export class DotDateRangeComponent {
     @Element() el: HTMLElement;
 
-    /** Value formatted with start and end date splitted with a comma */
-    @Prop({ mutable: true }) value = '';
+    /** (optional) Value formatted with start and end date splitted with a comma */
+    @Prop({ mutable: true, reflectToAttr: true }) value = '';
 
     /** Name that will be used as ID */
-    @Prop() name = '';
+    @Prop({ reflectToAttr: true }) name = 'daterange';
 
     /** (optional) Text to be rendered next to input field */
-    @Prop() label = '';
+    @Prop({ reflectToAttr: true }) label = '';
 
     /** (optional) Hint text that suggest a clue of the field */
-    @Prop() hint = '';
+    @Prop({ reflectToAttr: true }) hint = '';
 
     /** (optional) Max value that the field will allow to set */
-    @Prop() max = '';
+    @Prop({ reflectToAttr: true }) max = '';
 
     /** (optional) Min value that the field will allow to set */
-    @Prop() min = '';
+    @Prop({ reflectToAttr: true }) min = '';
 
     /** (optional) Determine if it is needed */
-    @Prop() required = false;
+    @Prop({ reflectToAttr: true }) required = false;
 
     /** (optional) Text that be shown when required is set and condition not met */
-    @Prop() requiredMessage = '';
+    @Prop({ reflectToAttr: true }) requiredMessage = 'This field is required';
 
     /** (optional) Disables field's interaction */
-    @Prop() disabled = false;
+    @Prop({ reflectToAttr: true }) disabled = false;
 
-    /** (optional) Date format used by the field on every operation */
-    @Prop() dateFormat = 'Y-m-d';
+    /** (optional) Date format used by the field when displayed */
+    @Prop({ reflectToAttr: true }) displayFormat = 'Y-m-d';
 
     /** (optional) Array of date presets formatted as [{ label: 'PRESET_LABEL', days: NUMBER }] */
-    @Prop() presets = [
+    @Prop({ mutable: true, reflectToAttr: true }) presets = [
         {
             label: 'Date Presets',
             days: 0
@@ -74,14 +74,37 @@ export class DotDateRangeComponent {
         }
     ];
 
-    @Prop() presetLabel = 'Presets';
+    /** (optional) Text to be rendered next to presets field */
+    @Prop({ reflectToAttr: true }) presetLabel = 'Presets';
 
     @State() status: DotFieldStatus;
 
     @Event() valueChange: EventEmitter<DotFieldValueEvent>;
     @Event() statusChange: EventEmitter<DotFieldStatusEvent>;
 
-    private fp: any;
+    private flatpickr: any;
+    private defaultPresets = [
+        {
+            label: 'Date Presets',
+            days: 0
+        },
+        {
+            label: 'Last Week',
+            days: -7
+        },
+        {
+            label: 'Next Week',
+            days: 7
+        },
+        {
+            label: 'Last Month',
+            days: -30
+        },
+        {
+            label: 'Next Month',
+            days: 30
+        }
+    ];
 
     /**
      * Reset properties of the field, clear value and emit events.
@@ -99,21 +122,28 @@ export class DotDateRangeComponent {
         if (this.value) {
             const dates = checkProp<DotDateRangeComponent, string>(this, 'value', 'string');
             const [startDate, endDate] = dates.split(',');
-            this.fp.setDate([new Date(startDate), new Date(endDate)], true);
+            this.flatpickr.setDate([this.parseDate(startDate), this.parseDate(endDate)], false);
         }
+    }
+
+    @Watch('presets')
+    presetsWatch(): void {
+        this.presets = Array.isArray(this.presets) ? this.presets : this.defaultPresets;
     }
 
     componentWillLoad(): void {
         this.status = getOriginalStatus(this.isValid());
         this.emitStatusChange();
+        this.presetsWatch();
     }
 
     componentDidLoad(): void {
-        this.fp = flatpickr(`#${getId(this.name)}`, {
+        this.flatpickr = flatpickr(`#${getId(this.name)}`, {
             mode: 'range',
-            dateFormat: this.dateFormat,
-            maxDate: this.max,
-            minDate: this.min,
+            altFormat: this.displayFormat,
+            altInput: true,
+            maxDate: this.parseDate(this.max),
+            minDate: this.parseDate(this.min),
             onChange: this.setValue.bind(this)
         });
         this.validateProps();
@@ -140,7 +170,10 @@ export class DotDateRangeComponent {
                         />
                         <label>
                             {this.presetLabel}
-                            <select disabled={this.isDisabled()} onChange={this.setPreset.bind(this)}>
+                            <select
+                                disabled={this.isDisabled()}
+                                onChange={this.setPreset.bind(this)}
+                            >
                                 {this.presets.map((item) => {
                                     return <option value={item.days}>{item.label}</option>;
                                 })}
@@ -152,6 +185,12 @@ export class DotDateRangeComponent {
                 {getTagError(this.showErrorMessage(), this.getErrorMessage())}
             </Fragment>
         );
+    }
+
+    private parseDate(strDate: string): Date {
+        const [year, month, day] = strDate.split('-');
+        const newDate = new Date(parseInt(year, 10), parseInt(month, 10) - 1, parseInt(day, 10));
+        return newDate;
     }
 
     private validateProps(): void {
@@ -175,7 +214,7 @@ export class DotDateRangeComponent {
             dateRange.push(dt);
         }
 
-        this.fp.setDate(dateRange, true);
+        this.flatpickr.setDate(dateRange, true);
     }
 
     private isValid(): boolean {

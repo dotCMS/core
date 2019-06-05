@@ -3,7 +3,8 @@ import {
     DotCMSDateField,
     DotCMSKeyValueField,
     DotCMSMultiSelectField,
-    DotCMSTextFieldField
+    DotCMSTextFieldField,
+    DotCMSDateRangeField
 } from '../../models';
 
 export const DotFormFields = {
@@ -154,7 +155,7 @@ export const DotFormFields = {
         />
     ),
 
-    'Date-Range': (field: DotCMSDateField) => (
+    'Date-Range': (field: DotCMSDateRangeField) => (
         <dot-date-range
             disabled={field.disabled}
             label={field.name}
@@ -162,6 +163,9 @@ export const DotFormFields = {
             min={field.min}
             name={field.variable}
             hint={field.hint}
+            displayFormat={field.displayFormat}
+            presets={field.presets}
+            presetLabel={field.presetLabel}
             value={field.defaultValue}
             required={field.required}
             required-message={field.requiredMessage}
