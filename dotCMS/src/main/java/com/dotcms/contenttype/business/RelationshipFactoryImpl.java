@@ -536,7 +536,7 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
         dc.loadResult();
     }
 
-	public  List<Contentlet> dbRelatedContentByParent(final String parentInode, final String relationType, final boolean live,
+	public  List<Contentlet> dbRelatedContentByParent(final String parentIdentifier, final String relationType, final boolean live,
             final String orderBy) throws DotDataException{
 
 	    final StringBuilder query = new StringBuilder("select cont1.inode from contentlet cont1, inode ci1, tree tree1, "
@@ -544,17 +544,17 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
                 .append("and tree1.child = cont1.identifier and cont1.inode = ci1.inode and vi1.identifier = cont1.identifier and " + (live?"vi1.live_inode":"vi1.working_inode"))
                 .append(" = cont1.inode");
 
-            if (UtilMethods.isSet(orderBy) && !(orderBy.trim().equals("sort_order") || orderBy.trim().equals("tree_order"))) {
-            	query.append(" order by cont1.")
-                        .append(orderBy);
-            } else {
-            	query.append(" order by tree1.tree_order");
-            }
+        if (UtilMethods.isSet(orderBy) && !(orderBy.trim().equals("sort_order") || orderBy.trim().equals("tree_order"))) {
+            query.append(" order by cont1.")
+                    .append(orderBy);
+        } else {
+            query.append(" order by tree1.tree_order");
+        }
 
-            final DotConnect dc = new DotConnect();
-            dc.setSQL(query.toString());
-            dc.addParam(parentInode);
-            dc.addParam(relationType);
+        final DotConnect dc = new DotConnect();
+        dc.setSQL(query.toString());
+        dc.addParam(parentIdentifier);
+        dc.addParam(relationType);
 
         final List<Map<String, Object>> results = dc.loadObjectResults();
         final List<Contentlet> contentlets = new ArrayList<Contentlet>();
@@ -571,7 +571,7 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
     }
 
     @SuppressWarnings("unchecked")
-    public  List<Contentlet> dbRelatedContentByChild(final String childInode, final String relationType, final boolean live,
+    public  List<Contentlet> dbRelatedContentByChild(final String childIdentifier, final String relationType, final boolean live,
             final String orderBy) throws DotDataException {
 
         final StringBuilder query = new StringBuilder("select cont1.inode from contentlet cont1 join inode ci1 on (cont1.inode = ci1.inode) join contentlet_version_info vi1 on "
@@ -588,7 +588,7 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
 
         final DotConnect dc = new DotConnect();
         dc.setSQL(query.toString());
-        dc.addParam(childInode);
+        dc.addParam(childIdentifier);
         dc.addParam(relationType);
 
 

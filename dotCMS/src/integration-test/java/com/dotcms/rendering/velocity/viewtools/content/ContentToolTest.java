@@ -173,12 +173,15 @@ public class ContentToolTest extends IntegrationTestBase {
 
             //creates a new parent contentlet
             ContentletDataGen contentletDataGen = new ContentletDataGen(parentContentType.id());
-            final Contentlet parentContenlet = contentletDataGen.languageId(defaultLanguage.getId())
+            final Contentlet parentContentlet = contentletDataGen.languageId(defaultLanguage.getId())
                     .nextPersisted();
 
-            //creates a new child contentlet
+            //creates children contentlets
             contentletDataGen = new ContentletDataGen(childContentType.id());
-            final Contentlet childContenlet = contentletDataGen.languageId(defaultLanguage.getId())
+            final Contentlet childContentlet1 = contentletDataGen.languageId(defaultLanguage.getId())
+                    .nextPersisted();
+
+            final Contentlet childContentlet2 = contentletDataGen.languageId(defaultLanguage.getId())
                     .nextPersisted();
 
             final String fullFieldVar =
@@ -187,18 +190,25 @@ public class ContentToolTest extends IntegrationTestBase {
             final Relationship relationship = relationshipAPI.byTypeValue(fullFieldVar);
 
             //relates parent contentlet with the child contentlet
-            contentletAPI.relateContent(parentContenlet, relationship,
-                    CollectionsUtils.list(childContenlet), user, false);
+            contentletAPI.relateContent(parentContentlet, relationship,
+                    CollectionsUtils.list(childContentlet1, childContentlet2), user, false);
+
+            //refresh relationships in the ES index
+            contentletAPI.reindex(parentContentlet);
+            contentletAPI.reindex(childContentlet1);
+            contentletAPI.reindex(childContentlet2);
 
             final ContentTool contentTool = getContentTool(defaultLanguage.getId());
 
             final List<ContentMap> result = contentTool
                     .pullRelated(relationship.getRelationTypeValue(),
-                            parentContenlet.getIdentifier(), "+working:true", false, 1, null);
+                            parentContentlet.getIdentifier(), "+working:true", false, -1, null);
 
             assertNotNull(result);
-            assertEquals(1, result.size());
-            assertEquals(childContenlet.getIdentifier(),result.get(0).getContentObject().getIdentifier());
+            assertEquals(2, result.size());
+            assertTrue(result.stream().map(elem -> elem.getContentObject().getIdentifier())
+                    .allMatch(identifier -> identifier.equals(childContentlet1.getIdentifier())
+                            || identifier.equals(childContentlet2.getIdentifier())));
 
         } finally {
 
@@ -237,12 +247,12 @@ public class ContentToolTest extends IntegrationTestBase {
 
             //creates a new parent contentlet
             ContentletDataGen contentletDataGen = new ContentletDataGen(parentContentType.id());
-            final Contentlet parentContenlet = contentletDataGen.languageId(defaultLanguage.getId())
+            final Contentlet parentContentlet = contentletDataGen.languageId(defaultLanguage.getId())
                     .nextPersisted();
 
             //creates a new child contentlet
             contentletDataGen = new ContentletDataGen(childContentType.id());
-            final Contentlet childContenlet = contentletDataGen.languageId(defaultLanguage.getId())
+            final Contentlet childContentlet = contentletDataGen.languageId(defaultLanguage.getId())
                     .nextPersisted();
 
             final String fullFieldVar =
@@ -251,18 +261,22 @@ public class ContentToolTest extends IntegrationTestBase {
             final Relationship relationship = relationshipAPI.byTypeValue(fullFieldVar);
 
             //relates parent contentlet with the child contentlet
-            contentletAPI.relateContent(parentContenlet, relationship,
-                    CollectionsUtils.list(childContenlet), user, false);
+            contentletAPI.relateContent(parentContentlet, relationship,
+                    CollectionsUtils.list(childContentlet), user, false);
+
+            //refresh relationships in the ES index
+            contentletAPI.reindex(parentContentlet);
+            contentletAPI.reindex(childContentlet);
 
             final ContentTool contentTool = getContentTool(defaultLanguage.getId());
 
             final List<ContentMap> result = contentTool
                     .pullRelatedField(
-                            parentContenlet.getIdentifier(), fullFieldVar,"+working:true");
+                            parentContentlet.getIdentifier(), fullFieldVar,"+working:true");
 
             assertNotNull(result);
             assertEquals(1, result.size());
-            assertEquals(childContenlet.getIdentifier(),result.get(0).getContentObject().getIdentifier());
+            assertEquals(childContentlet.getIdentifier(),result.get(0).getContentObject().getIdentifier());
 
         } finally {
 

@@ -2,13 +2,19 @@ package com.dotmarketing.util;
 
 
 import com.liferay.util.StringPool;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import org.junit.Test;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.junit.runner.RunWith;
 
+import static com.dotcms.content.elasticsearch.business.ESContentFactoryImpl.LUCENE_RESERVED_KEYWORDS_REGEX;
 import static org.junit.Assert.*;
 
+@RunWith(DataProviderRunner.class)
 public class StringUtilsTest {
 
     public Map<String, Object> createParams() {
@@ -284,6 +290,29 @@ public class StringUtilsTest {
         String result = StringUtils.camelCaseUpper(toConvert);
         assertNotNull(result);
         assertEquals(expected, result);
+    }
+
+    @DataProvider
+    public static Object[][] testCasesLowercase() {
+        return new String[][] {
+                {"+contentType: (webpagecontent or blog)", "+contenttype: (webpagecontent or blog)"},
+                {"+contentType: (webpagecontent OR blog)", "+contenttype: (webpagecontent OR blog)"},
+                {"+blog.title:\"to live or to die\"", "+blog.title:\"to live or to die\""},
+                {"+blog.title:\"TO live OR to die\"", "+blog.title:\"to live OR to die\""},
+                {"+blog.title:\"to live OR TO die\"", "+blog.title:\"to live OR TO die\""}
+        };
+    }
+
+    @Test
+    @UseDataProvider("testCasesLowercase")
+    public void testLowercaseStringExceptMatchingTokens(final String query,
+            final String expectedQuery) {
+        final String resultingQuery =
+                StringUtils.lowercaseStringExceptMatchingTokens(query,
+                        LUCENE_RESERVED_KEYWORDS_REGEX);
+
+        assertEquals(expectedQuery, resultingQuery);
+
     }
 
 }

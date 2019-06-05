@@ -600,6 +600,28 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 	}
 
+    @Override
+    public void deleteRelatedContent(final Contentlet contentlet, final Relationship relationship,
+            final boolean hasParent, final User user, final boolean respectFrontendRoles,
+            final List<Contentlet> contentletsToBeRelated)
+            throws DotDataException, DotSecurityException, DotContentletStateException {
+        for (ContentletAPIPreHook pre : preHooks) {
+            boolean preResult = pre.deleteRelatedContent(contentlet, relationship, hasParent, user,
+                    respectFrontendRoles, contentletsToBeRelated);
+            if (!preResult) {
+                Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+                throw new DotRuntimeException(
+                        "The following prehook failed " + pre.getClass().getName());
+            }
+        }
+        conAPI.deleteRelatedContent(contentlet, relationship, hasParent, user, respectFrontendRoles,
+                contentletsToBeRelated);
+        for (ContentletAPIPostHook post : postHooks) {
+            post.deleteRelatedContent(contentlet, relationship, hasParent, user,
+                    respectFrontendRoles, contentletsToBeRelated);
+        }
+    }
+
 	@Override
 	public Contentlet find(String inode, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		for(ContentletAPIPreHook pre : preHooks){

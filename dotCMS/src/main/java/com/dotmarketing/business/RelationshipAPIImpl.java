@@ -350,6 +350,11 @@ public class RelationshipAPIImpl implements RelationshipAPI {
 
     }
 
+    @Override
+    public List<Relationship> dbAll() {
+        return relationshipFactory.dbAll();
+    }
+
     private void migrateOldRelationshipReferences(Relationship oldRelationship,
             Relationship newRelationship) throws DotDataException {
 
