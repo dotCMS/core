@@ -9,6 +9,10 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.filters.Constants;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.WebKeys;
+
+import io.vavr.control.Try;
+
 import org.apache.velocity.exception.ResourceNotFoundException;
 
 import javax.servlet.ServletConfig;
@@ -47,7 +51,7 @@ public class VelocityServlet extends HttpServlet {
         final boolean comeFromSomeWhere = request.getHeader("referer") != null;
 
         if (APILocator.getLoginServiceAPI().isLoggedIn(request) && !comeFromSomeWhere){
-            goToEditPage(uri, response);
+            goToEditPage(uri,request, response);
         } else {
 
             if ((DbConnectionFactory.isMsSql() && LicenseUtil.getLevel() < LicenseLevel.PROFESSIONAL.level) ||
@@ -83,11 +87,33 @@ public class VelocityServlet extends HttpServlet {
 
     }
 
-    private void goToEditPage(final String requestURI, final HttpServletResponse response)
-            throws ServletException, IOException {
-        response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-        final String url = String.format("/dotAdmin/#/edit-page/content?url=%s", requestURI);
-        response.sendRedirect(url);
-    }
+  /**
+   * This will redirect an edit mode request to either the url that matches the page requested or if
+   * it is a URLMap, to the url mapped page.
+   * 
+   * @param requestURI
+   * @param request
+   * @param response
+   * @throws ServletException
+   * @throws IOException
+   */
+  private void goToEditPage(final String requestURI, final HttpServletRequest request, final HttpServletResponse response)
+      throws ServletException, IOException {
+
+    final String urlMappedContent = (String) request.getAttribute(WebKeys.WIKI_CONTENTLET_INODE);
+
+    String finalUrl = (null == urlMappedContent) ? requestURI
+        : Try
+            .of(() -> APILocator.getContentletAPI().getUrlMapForContentlet(
+                APILocator.getContentletAPI().find(urlMappedContent, APILocator.systemUser(), false), APILocator.systemUser(), false))
+            .getOrElse(requestURI);
+
+    // pass the query string as well
+    finalUrl = finalUrl.replace("?", "&") + (request.getQueryString() != null ? "&" + request.getQueryString() : "");
+
+    response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    final String url = String.format("/dotAdmin/#/edit-page/content?url=%s", finalUrl);
+    response.sendRedirect(url);
+  }
 
 }

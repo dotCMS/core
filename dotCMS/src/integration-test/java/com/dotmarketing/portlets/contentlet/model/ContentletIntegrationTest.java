@@ -452,6 +452,8 @@ public class ContentletIntegrationTest {
 
         final Contentlet savedContentlet;
         if (testCase.checkIn) {
+            parentContentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
+            parentContentlet.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
             //Save related content
             savedContentlet = contentletAPI.checkin(parentContentlet, user, false);
             final List<Contentlet> result = contentletAPI.getRelatedContent(savedContentlet,
