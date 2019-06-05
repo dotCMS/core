@@ -25,7 +25,7 @@ public class SiteDataGen extends AbstractDataGen<Host> {
         site.setHostname(name);
         site.setDefault(false);
         site.setLanguageId(language.getId());
-        site.setIndexPolicy(IndexPolicy.FORCE);
+        site.setIndexPolicy(IndexPolicy.WAIT_FOR);
 
         return site;
     }
