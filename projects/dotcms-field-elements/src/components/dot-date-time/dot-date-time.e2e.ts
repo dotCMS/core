@@ -1,7 +1,7 @@
 import { E2EElement, E2EPage, newE2EPage } from '@stencil/core/testing';
 import { EventSpy } from '@stencil/core/dist/declarations';
 
-describe('dot-date-time', () => {
+xdescribe('dot-date-time', () => {
     let page: E2EPage;
     let element: E2EElement;
     let dateInput: E2EElement;

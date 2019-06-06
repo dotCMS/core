@@ -2,7 +2,7 @@ import { E2EElement, E2EPage, newE2EPage } from '@stencil/core/testing';
 import { EventSpy } from '@stencil/core/dist/declarations';
 import { dotTestUtil } from '../../utils';
 
-describe('dot-input-calendar', () => {
+xdescribe('dot-input-calendar', () => {
     let page: E2EPage;
     let element: E2EElement;
     let input: E2EElement;
@@ -162,7 +162,7 @@ describe('dot-input-calendar', () => {
                 });
                 expect(spyValueChange).toHaveReceivedEventDetail({ name: 'time01', value: '' });
                 expect(spyErrorMessageEvt).toHaveReceivedEventDetail({
-                    message: "The field doesn't comply with the specified format",
+                    message: 'The field doesn\'t comply with the specified format',
                     show: false
                 });
             });
@@ -201,7 +201,7 @@ describe('dot-input-calendar', () => {
                     await page.waitForChanges();
                     expect(spyErrorMessageEvt).toHaveReceivedEventDetail({
                         show: true,
-                        message: "The field doesn't comply with the specified format"
+                        message: 'The field doesn\'t comply with the specified format'
                     });
                 });
 
