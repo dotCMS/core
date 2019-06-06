@@ -73,7 +73,7 @@ public class MultiTree implements Serializable {
 
 
     private MultiTree(MultiTree tree) {
-        this(tree.parent1, tree.parent2, tree.child, tree.relationType, tree.treeOrder);
+        this(tree.parent1, tree.parent2, tree.child, tree.relationType, tree.treeOrder, tree.getPersonalization());
     }
 
     /**
@@ -181,6 +181,7 @@ public class MultiTree implements Serializable {
             .append(this.parent2, castOther.parent2)
             .append(this.child, castOther.child)
             .append(this.relationType, castOther.relationType)
+            .append(this.personalization, castOther.personalization)
             .isEquals();
     }
     

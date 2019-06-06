@@ -1,26 +1,7 @@
 package com.dotmarketing.factories;
 
-import static com.dotcms.util.CollectionsUtils.list;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import com.dotcms.IntegrationTestBase;
-import com.dotcms.datagen.ContainerDataGen;
-import com.dotcms.datagen.ContentletDataGen;
-import com.dotcms.datagen.FolderDataGen;
-import com.dotcms.datagen.HTMLPageDataGen;
-import com.dotcms.datagen.StructureDataGen;
-import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.datagen.*;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
@@ -33,7 +14,18 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.startup.runonce.Task04315UpdateMultiTreePK;
+import com.dotmarketing.util.UUIDGenerator;
 import com.google.common.collect.Table;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import static com.dotcms.util.CollectionsUtils.list;
+import static org.junit.Assert.*;
 
 public class MultiTreeAPITest extends IntegrationTestBase {
     
@@ -353,6 +345,26 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         List<MultiTree> multiTrees = APILocator.getMultiTreeAPI().getMultiTrees(parent1);
 
         assertEquals(0, multiTrees.size());
+    }
+
+    @Test
+    public void testMultiTreesSaveAndPersonalizationForPage() throws Exception {
+
+        final MultiTreeAPI multiTreeAPI = new MultiTreeAPIImpl();
+        final String htmlPage           = UUIDGenerator.generateUuid();
+        final String container          = UUIDGenerator.generateUuid();
+        final String content            = UUIDGenerator.generateUuid();
+        final String personalization    = "dot:somepersona";
+
+        multiTreeAPI.saveMultiTree(new MultiTree(htmlPage, container, content, UUIDGenerator.generateUuid(), 1)); // dot:default
+        multiTreeAPI.saveMultiTree(new MultiTree(htmlPage, container, content, UUIDGenerator.generateUuid(), 2, personalization)); // dot:default
+
+        final Set<String> personalizationSet = multiTreeAPI.getPersonalizationsForPage(htmlPage);
+
+        org.junit.Assert.assertNotNull(personalizationSet);
+        org.junit.Assert.assertEquals(2, personalizationSet.size());
+        org.junit.Assert.assertTrue(personalizationSet.contains(MultiTree.DOT_PERSONALIZATION_DEFAULT));
+        org.junit.Assert.assertTrue(personalizationSet.contains(personalization));
     }
 
     @Test

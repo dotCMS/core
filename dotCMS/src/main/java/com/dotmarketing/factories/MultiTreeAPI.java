@@ -287,4 +287,10 @@ public interface MultiTreeAPI {
      */
     List<MultiTree> getMultiTrees(String parentId) throws DotDataException;
 
+    /**
+     * Get an unique set of the personalization for a page
+     * @param pageId String
+     * @return unique Set of personalization values per the page
+     */
+    Set<String> getPersonalizationsForPage(String pageId) throws DotDataException;
 }

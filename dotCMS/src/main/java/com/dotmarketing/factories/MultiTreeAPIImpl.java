@@ -73,6 +73,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     private static final String INSERT_SQL = "insert into multi_tree (parent1, parent2, child, relation_type, tree_order, personalization) values (?,?,?,?,?,?)  ";
 
     private static final String SELECT_BY_PAGE = "select * from multi_tree where parent1 = ? order by tree_order";
+    private static final String SELECT_UNIQUE_PERSONALIZATION_PER_PAGE = "select distinct(personalization) from multi_tree where parent1 = ?";
     private static final String SELECT_BY_ONE_PARENT = "select * from multi_tree where parent1 = ? or parent2 = ? order by tree_order"; // search by page id or container id
     private static final String SELECT_BY_TWO_PARENTS = "select * from multi_tree where parent1 = ? and parent2 = ?  order by tree_order";
     private static final String SELECT_ALL = "select * from multi_tree  ";
@@ -214,7 +215,24 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
         final DotConnect db = new DotConnect().setSQL(SELECT_BY_ONE_PARENT).addParam(parentInode).addParam(parentInode);
         return TransformerLocator.createMultiTreeTransformer(db.loadObjectResults()).asList();
+    }
 
+
+    @CloseDBIfOpened
+    @Override
+    public Set<String> getPersonalizationsForPage(String pageId) throws DotDataException {
+
+        final Set<String> personalizationSet = new HashSet<>();
+        final  List<Map<String, Object>>  personalizationMaps =
+                 new DotConnect().setSQL(SELECT_UNIQUE_PERSONALIZATION_PER_PAGE).addParam(pageId).loadObjectResults();
+
+        for (final Map<String, Object> personalizationMap : personalizationMaps) {
+
+            personalizationSet.add(personalizationMap.values()
+                    .stream().findFirst().orElse(StringPool.BLANK).toString());
+        }
+
+        return personalizationSet;
     }
 
     /**
@@ -426,6 +444,9 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
 
     private void _dbInsert(final MultiTree multiTree) throws DotDataException {
+
+        Logger.info(this, String.format("_dbInsert -> Saving MutiTree: %s", multiTree));
+
         new DotConnect().setSQL(INSERT_SQL).addParam(multiTree.getHtmlPage()).addParam(multiTree.getContainerAsID()).addParam(multiTree.getContentlet())
                 .addParam(multiTree.getRelationType()).addParam(multiTree.getTreeOrder()).addObject(multiTree.getPersonalization()).loadResult();
     }
