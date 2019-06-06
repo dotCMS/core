@@ -1488,7 +1488,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             SearchResponse response = APILocator.getEsSearchAPI()
                     .esSearchRelated(contentlet.getIdentifier(), relationshipName, false,false, user,
-                            respectFrontendRoles, limit, offset, sortBy);
+                            respectFrontendRoles);
 
             if (response.getHits() == null) {
                 return result;
@@ -1497,7 +1497,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
             for (SearchHit sh : response.getHits()) {
                 Map<String, Object> sourceMap = sh.getSourceAsMap();
                 if (sourceMap.get(relationshipName) != null) {
-                    ((ArrayList<String>) sourceMap.get(relationshipName)).stream().forEach(child -> {
+                    List<String> relatedIdentifiers = ((ArrayList<String>) sourceMap.get(relationshipName));
+
+                    if (limit > 0 && offset >= 0 && (offset + limit) <= relatedIdentifiers.size()) {
+                        relatedIdentifiers = ((ArrayList<String>) sourceMap.get(relationshipName))
+                                .subList(offset, offset + limit);
+                    }
+
+                    relatedIdentifiers.stream().forEach(child -> {
                         try {
                             result.add(findContentletByIdentifierAnyLanguage(
                                     child));
