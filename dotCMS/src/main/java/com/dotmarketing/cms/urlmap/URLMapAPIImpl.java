@@ -182,7 +182,7 @@ public class URLMapAPIImpl implements URLMapAPI {
         final String query = this.buildContentQuery(matches, structure, hostField, context);
         final List<ContentletSearch> contentletSearches =
                 this.contentletAPI.searchIndex(query, 2, 0,
-                        hostField.isRequired() ? "conhost, modDate" : "modDate",
+                        (hostField!=null && hostField.isRequired()) ? "conhost, modDate" : "modDate",
                         this.wuserAPI.getSystemUser(), true);
 
         if (!contentletSearches.isEmpty()) {
