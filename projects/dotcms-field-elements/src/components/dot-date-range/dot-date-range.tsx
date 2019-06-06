@@ -119,8 +119,8 @@ export class DotDateRangeComponent {
 
     @Watch('value')
     valueWatch(): void {
-        if (this.value) {
-            const dates = checkProp<DotDateRangeComponent, string>(this, 'value', 'string');
+        const dates = checkProp<DotDateRangeComponent, string>(this, 'value', 'dateRange');
+        if (dates) {
             const [startDate, endDate] = dates.split(',');
             this.flatpickr.setDate([this.parseDate(startDate), this.parseDate(endDate)], false);
         }
@@ -142,8 +142,8 @@ export class DotDateRangeComponent {
             mode: 'range',
             altFormat: this.displayFormat,
             altInput: true,
-            maxDate: this.parseDate(this.max),
-            minDate: this.parseDate(this.min),
+            maxDate: this.max ? this.parseDate(this.max) : null,
+            minDate: this.min ? this.parseDate(this.min) : null,
             onChange: this.setValue.bind(this)
         });
         this.validateProps();

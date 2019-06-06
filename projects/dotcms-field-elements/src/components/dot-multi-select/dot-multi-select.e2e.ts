@@ -278,12 +278,12 @@ describe('dot-multi-select', () => {
             });
 
             it('should not break and not render with invalid data', async () => {
-                const wrongValue = [{ a: 1 }];
+                const wrongValue = [1, 2, '3'];
                 element.setProperty('required', wrongValue);
                 element.setProperty('requiredMessage', wrongValue);
                 await page.waitForChanges();
                 const errorElement = await dotTestUtil.getErrorMessage(page);
-                expect(errorElement).toBeNull();
+                expect(errorElement.innerText).toBe('1,2,3');
             });
         });
 

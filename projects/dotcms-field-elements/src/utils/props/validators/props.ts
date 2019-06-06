@@ -28,6 +28,20 @@ export function dateValidator<T>(propInfo: PropValidationInfo<T>): void {
     }
 }
 
+const areRangeDatesValid = <T>(start: Date, end: Date, propInfo: PropValidationInfo<T>): void => {
+    if (start > end) {
+        throw new DotFieldPropError(propInfo, 'Date');
+    }
+};
+
+export function dateRangeValidator<T>(propInfo: PropValidationInfo<T>): void {
+    const [start, end] = propInfo.value.toString().split(',');
+    if (!dotValidateDate(start) || !dotValidateDate(end)) {
+        throw new DotFieldPropError(propInfo, 'Date');
+    }
+    areRangeDatesValid(new Date(start), new Date(end), propInfo);
+}
+
 export function timeValidator<T>(propInfo: PropValidationInfo<T>): void {
     if (!dotValidateTime(propInfo.value.toString())) {
         throw new DotFieldPropError(propInfo, 'Time');

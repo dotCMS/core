@@ -4,12 +4,14 @@ import {
     numberValidator,
     stringValidator,
     regexValidator,
-    timeValidator
+    timeValidator,
+    dateRangeValidator
 } from './props/validators';
 import { PropValidationInfo } from './props/models';
 
 const PROP_VALIDATION_HANDLING = {
     date: dateValidator,
+    dateRange: dateRangeValidator,
     dateTime: dateTimeValidator,
     number: numberValidator,
     options: stringValidator,
