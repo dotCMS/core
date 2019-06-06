@@ -1,6 +1,5 @@
 package com.dotmarketing.portlets.contentlet.business;
 
-import com.dotcms.contenttype.model.type.ContentType;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -706,12 +705,12 @@ public interface ContentletAPIPreHook {
     }
 
 	/**
-	 * Gets all related content from a same structures (where the parent and child structures are the same type) 
+	 * Gets all related content from the same structure (where the parent and child structures are the same type)
 	 * The parameter pullByParent if set to true tells the method to pull all children where the passed 
 	 * contentlet is the parent, if set to false then the passed contentlet is the child and you want to pull 
 	 * parents
 	 * 
-	 * If this method is invoked for a no same structures kind of relationships then the parameter
+	 * If this method is invoked using different structures then the parameter
 	 * pullByParent will be ignored, and the side of the relationship will be figured out automatically
 	 * 
 	 * @param contentlet
@@ -723,6 +722,32 @@ public interface ContentletAPIPreHook {
 	 */
 	public default boolean getRelatedContent(Contentlet contentlet, Relationship rel, boolean pullByParent, User user, boolean respectFrontendRoles){
       return true;
+    }
+
+    /**
+     * Gets all related content from the same structure (where the parent and child structures are the same type)
+     * The parameter pullByParent if set to true tells the method to pull all children where the passed
+     * contentlet is the parent, if set to false then the passed contentlet is the child and you want to pull
+     * parents
+     *
+     * If this method is invoked using different structures then the parameter
+     * pullByParent will be ignored, and the side of the relationship will be figured out automatically
+     *
+     * This method uses pagination if necessary (limit, offset, sortBy)
+     * @param contentlet
+     * @param rel
+     * @param pullByParent
+     * @param user
+     * @param respectFrontendRoles
+     * @param limit
+     * @param offset
+     * @param sortBy
+     * @return
+     */
+    default boolean getRelatedContent(Contentlet contentlet, Relationship rel, boolean pullByParent,
+            User user, boolean respectFrontendRoles, int limit, int offset,
+            String sortBy){
+        return true;
     }
 
 	/**

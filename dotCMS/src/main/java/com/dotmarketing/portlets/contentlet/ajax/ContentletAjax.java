@@ -131,6 +131,10 @@ public class ContentletAjax {
 	private ContentletWebAPI contentletWebAPI = WebAPILocator.getContentletWebAPI();
 	private LanguageAPI langAPI = APILocator.getLanguageAPI();
 
+	//Number of children related IDs to be added to a lucene query to get children related to a selected parent
+	private static final int RELATIONSHIPS_FILTER_CRITERIA_SIZE = Config
+            .getIntProperty("RELATIONSHIPS_FILTER_CRITERIA_SIZE", 500);
+
 	public List<Map<String, Object>> getContentletsData(String inodesStr) {
 		List<Map<String,Object>> rows = new ArrayList<Map<String, Object>>();
 
@@ -528,11 +532,13 @@ public class ContentletAjax {
 	@SuppressWarnings("rawtypes")
 	@LogTime
 	public List searchContentletsByUser(List<BaseContentType> types, String structureInode, List<String> fields, List<String> categories, boolean showDeleted, boolean filterSystemHost, boolean filterUnpublish, boolean filterLocked, int page, String orderBy,int perPage, final User currentUser, HttpSession sess,String  modDateFrom, String modDateTo) throws DotStateException, DotDataException, DotSecurityException {
-    if (perPage < 1) {
-      perPage = Config.getIntProperty("PER_PAGE", 40);
-    }
-    
-    
+        if (perPage < 1) {
+          perPage = Config.getIntProperty("PER_PAGE", 40);
+        }
+
+        int offset = 0;
+        if (page != 0)
+            offset = perPage * (page - 1);
     
 		if(!InodeUtils.isSet(structureInode)) {
 			Logger.error(this, "An invalid structure inode =  \"" + structureInode + "\" was passed");
@@ -544,6 +550,8 @@ public class ContentletAjax {
 		String specialCharsToEscape = "([+\\-!\\(\\){}\\[\\]^\"~*?:\\\\]|[&\\|]{2})";
 		String specialCharsToEscapeForMetaData = "([+\\-!\\(\\){}\\[\\]^\"~?:/\\\\]{2})";
 		Map<String, Object> lastSearchMap = new HashMap<String, Object>();
+
+		List<String> relatedIdentifiers = new ArrayList();
 
 		if (UtilMethods.isSet(sess)) {
 	    sess.removeAttribute("structureSelected");
@@ -647,17 +655,23 @@ public class ContentletAjax {
                     //Getting related identifiers from index when filtering by parent
                     final Contentlet relatedParent = conAPI
                             .findContentletByIdentifierAnyLanguage(fieldValue);
-                    final List<Contentlet> relatedContent = conAPI
+                    final List<String> relatedContent = conAPI
                             .getRelatedContent(relatedParent, childRelationship.get(), true,
-                                    currentUser, false);
+                                    currentUser, false, RELATIONSHIPS_FILTER_CRITERIA_SIZE,
+                                    offset / RELATIONSHIPS_FILTER_CRITERIA_SIZE, orderBy).stream()
+                            .map(cont -> cont.getIdentifier()).collect(Collectors.toList());
+
                     if (!relatedContent.isEmpty()) {
-                        luceneQuery.append("+identifier:(")
-                                .append(String.join(" OR ", relatedContent
-                                        .stream().map(cont -> cont.getIdentifier()).collect(
-                                                Collectors.toList()))).append(") ");
+                        //creates an intersection of identifiers when filtering by multiple relationship fields
+                        if (relatedIdentifiers.isEmpty()){
+                            relatedIdentifiers.addAll(relatedContent);
+                        } else{
+                            relatedIdentifiers = relatedIdentifiers.stream().filter(relatedContent::contains).collect(
+                                    Collectors.toList());
+                        }
+
                         continue;
                     }
-
                 }
 
 				if(fieldsSearch.containsKey(fieldName)){//DOTCMS-5987, To handle lastSearch for multi-select fields.
@@ -913,14 +927,15 @@ public class ContentletAjax {
 			luceneQuery.append(dates);
 		}
 
-
-		int offset = 0;
-		if (page != 0)
-			offset = perPage * (page - 1);
-
 		lastSearchMap.put("orderBy", orderBy);
 
 		luceneQuery.append(" +working:true");
+
+		//filter related content
+        if (!relatedIdentifiers.isEmpty()) {
+            luceneQuery.append(" +identifier:(")
+                    .append(String.join(" OR ", relatedIdentifiers)).append(") ");
+        }
 
 		//Executing the query
 		long before = System.currentTimeMillis();
