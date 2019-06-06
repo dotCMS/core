@@ -49,7 +49,6 @@ export class DotLargeMessageDisplayComponent implements OnInit, OnDestroy, After
     }
 
     ngOnDestroy(): void {
-        this.dialogs.destroy();
         this.destroy$.next(true);
         this.destroy$.complete();
     }
