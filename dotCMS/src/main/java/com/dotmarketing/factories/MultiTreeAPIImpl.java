@@ -66,11 +66,11 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
     private static final String DELETE_ALL_MULTI_TREE_RELATED_TO_IDENTIFIER_SQL =
             "delete from multi_tree where child = ? or parent1 = ? or parent2 = ?";
-    private static final String DELETE_SQL = "delete from multi_tree where parent1=? and parent2=? and child=? and  relation_type = ?";
+    private static final String DELETE_SQL = "delete from multi_tree where parent1=? and parent2=? and child=? and  relation_type = ? and personalization = ?";
     private static final String DELETE_ALL_MULTI_TREE_SQL = "delete from multi_tree where parent1=? AND relation_type != ?";
-    private static final String SELECT_SQL = "select * from multi_tree where parent1 = ? and parent2 = ? and child = ? and  relation_type = ?";
+    private static final String SELECT_SQL = "select * from multi_tree where parent1 = ? and parent2 = ? and child = ? and  relation_type = ? and personalization = ?";
 
-    private static final String INSERT_SQL = "insert into multi_tree (parent1, parent2, child, relation_type, tree_order ) values (?,?,?,?,?)  ";
+    private static final String INSERT_SQL = "insert into multi_tree (parent1, parent2, child, relation_type, tree_order, personalization) values (?,?,?,?,?,?)  ";
 
     private static final String SELECT_BY_PAGE = "select * from multi_tree where parent1 = ? order by tree_order";
     private static final String SELECT_BY_ONE_PARENT = "select * from multi_tree where parent1 = ? or parent2 = ? order by tree_order"; // search by page id or container id
@@ -78,7 +78,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     private static final String SELECT_ALL = "select * from multi_tree  ";
     private static final String SELECT_BY_CHILD = "select * from multi_tree where child = ?  order by parent1, parent2, relation_type ";
     private static final String SELECT_BY_PARENTS_AND_RELATIONS =
-            " select * from multi_tree where parent1 = ? and parent2 = ? and relation_type = ? order by tree_order";
+            " select * from multi_tree where parent1 = ? and parent2 = ? and relation_type = ? and personalization = ? order by tree_order";
 
     private static final String SELECT_BY_CONTAINER_AND_STRUCTURE = "SELECT mt.* FROM multi_tree mt JOIN contentlet c "
             + " ON c.identifier = mt.child WHERE mt.parent2 = ? AND c.structure_inode = ? ";
@@ -142,8 +142,12 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
      */
     private void _dbDelete(final MultiTree multiTree) throws DotDataException {
 
-        new DotConnect().setSQL(DELETE_SQL).addParam(multiTree.getHtmlPage()).addParam(multiTree.getContainerAsID())
-                .addParam(multiTree.getContentlet()).addParam(multiTree.getRelationType())
+        new DotConnect().setSQL(DELETE_SQL)
+                .addParam(multiTree.getHtmlPage())
+                .addParam(multiTree.getContainerAsID())
+                .addParam(multiTree.getContentlet())
+                .addParam(multiTree.getRelationType())
+                .addObject(multiTree.getPersonalization())
                 .loadResult();
     }
 
@@ -157,15 +161,25 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
     @CloseDBIfOpened
     @Override
-    public MultiTree getMultiTree(final String htmlPage, final String container, final String childContent, final String containerInstance)
+    public MultiTree getMultiTree(final String htmlPage, final String container, final String childContent,
+                                  final String containerInstance, final String personalization)
             throws DotDataException {
 
         final DotConnect db =
-                new DotConnect().setSQL(SELECT_SQL).addParam(htmlPage).addParam(container).addParam(childContent).addParam(containerInstance);
+                new DotConnect().setSQL(SELECT_SQL).addParam(htmlPage).addParam(container)
+                        .addParam(childContent).addParam(containerInstance)
+                        .addParam(personalization);
         db.loadResult();
 
         return TransformerLocator.createMultiTreeTransformer(db.loadObjectResults()).findFirst();
 
+    }
+
+    @Override
+    public MultiTree getMultiTree(final String htmlPage, final String container, final String childContent, final String containerInstance)
+            throws DotDataException {
+
+        return this.getMultiTree(htmlPage, container, childContent, containerInstance, MultiTree.DOT_PERSONALIZATION_DEFAULT);
     }
 
     /**
@@ -177,26 +191,18 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
      * @param childContent
      * @throws DotDataException
      */
-    @CloseDBIfOpened
     @Override
     @Deprecated
     public MultiTree getMultiTree(final String htmlPage, final String container, final String childContent) throws DotDataException {
 
-        final DotConnect db = new DotConnect().setSQL(SELECT_SQL).addParam(htmlPage).addParam(container).addParam(childContent)
-                .addParam(Container.LEGACY_RELATION_TYPE);
-        db.loadResult();
-
-        return TransformerLocator.createMultiTreeTransformer(db.loadObjectResults()).findFirst();
-
+        return this.getMultiTree(htmlPage, container, childContent, Container.LEGACY_RELATION_TYPE);
     }
 
-    @CloseDBIfOpened
     @Override
     public java.util.List<MultiTree> getMultiTrees(final Identifier parent) throws DotDataException {
         return getMultiTrees(parent.getId());
     }
 
-    @CloseDBIfOpened
     @Override
     public java.util.List<MultiTree> getMultiTrees(final Identifier htmlPage, final Identifier container) throws DotDataException {
         return getMultiTrees(htmlPage.getId(), container.getId());
@@ -224,7 +230,6 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
         final DotConnect db = new DotConnect().setSQL(SELECT_BY_PAGE).addParam(parentInode);
         return TransformerLocator.createMultiTreeTransformer(db.loadObjectResults()).asList();
-
     }
 
     @CloseDBIfOpened
@@ -234,28 +239,33 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             final DotConnect db = new DotConnect().setSQL(SELECT_ALL);
 
             return TransformerLocator.createMultiTreeTransformer(db.loadObjectResults()).asList();
-
         } catch (Exception e) {
             Logger.error(MultiTreeAPIImpl.class, "getMultiTree failed:" + e, e);
             throw new DotRuntimeException(e);
         }
+    }
+
+    @Override
+    public java.util.List<MultiTree> getMultiTrees(final String htmlPage, final String container, final String containerInstance) {
+
+        return this.getMultiTrees(htmlPage, container, containerInstance, MultiTree.DOT_PERSONALIZATION_DEFAULT);
     }
 
     @CloseDBIfOpened
     @Override
-    public java.util.List<MultiTree> getMultiTrees(final String htmlPage, final String container, final String containerInstance) {
+    public List<MultiTree> getMultiTrees(final String htmlPage, final String container,
+                                         final String containerInstance, final String personalization) {
+
         try {
 
-            final DotConnect db =
-                    new DotConnect().setSQL(SELECT_BY_PARENTS_AND_RELATIONS).addParam(htmlPage).addParam(container).addParam(containerInstance);
-            return TransformerLocator.createMultiTreeTransformer(db.loadObjectResults()).asList();
+            return TransformerLocator.createMultiTreeTransformer(new DotConnect().setSQL(SELECT_BY_PARENTS_AND_RELATIONS)
+                    .addParam(htmlPage).addParam(container).addParam(containerInstance).addObject(personalization).loadObjectResults()).asList();
         } catch (Exception e) {
             Logger.error(MultiTreeAPIImpl.class, "getMultiTree failed:" + e, e);
             throw new DotRuntimeException(e);
         }
     }
 
-    @CloseDBIfOpened
     @Override
     public java.util.List<MultiTree> getMultiTrees(final IHTMLPage htmlPage, final Container container) throws DotDataException {
         return getMultiTrees(htmlPage.getIdentifier(), container.getIdentifier());
@@ -270,13 +280,11 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
     }
 
-    @CloseDBIfOpened
     @Override
     public java.util.List<MultiTree> getMultiTrees(final IHTMLPage htmlPage, final Container container, final String containerInstance) {
         return getMultiTrees(htmlPage.getIdentifier(), container.getIdentifier(), containerInstance);
     }
 
-    @CloseDBIfOpened
     @Override
     public java.util.List<MultiTree> getContainerMultiTrees(final String containerIdentifier) throws DotDataException {
         return getMultiTrees(containerIdentifier);
@@ -381,7 +389,8 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
             for (final MultiTree tree : mTrees) {
                 insertParams
-                        .add(new Params(pageId, tree.getContainerAsID(), tree.getContentlet(), tree.getRelationType(), tree.getTreeOrder()));
+                        .add(new Params(pageId, tree.getContainerAsID(), tree.getContentlet(),
+                                tree.getRelationType(), tree.getTreeOrder(), tree.getPersonalization()));
                 newContainers.add(tree.getContainer());
             }
 
@@ -393,7 +402,6 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     }
 
     @Override
-    @CloseDBIfOpened
     public List<String> getContainersId(final String pageId) throws DotDataException {
         return this.getMultiTrees(pageId).stream().map(multiTree -> multiTree.getContainer()).distinct().sorted()
                 .collect(Collectors.toList());
@@ -408,19 +416,18 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
     private void _reorder(final MultiTree tree) throws DotDataException {
 
-        List<MultiTree> trees = getMultiTrees(tree.getHtmlPage(), tree.getContainerAsID(), tree.getRelationType());
+        List<MultiTree> trees = getMultiTrees(tree.getHtmlPage(), tree.getContainerAsID(), tree.getRelationType(), tree.getPersonalization());
         trees = trees.stream().filter(rowTree -> !rowTree.equals(tree)).collect(Collectors.toList());
         int maxOrder = (tree.getTreeOrder() > trees.size()) ? trees.size() : tree.getTreeOrder();
         trees.add(maxOrder, tree);
 
         saveMultiTrees(trees);
-
     }
 
 
     private void _dbInsert(final MultiTree multiTree) throws DotDataException {
         new DotConnect().setSQL(INSERT_SQL).addParam(multiTree.getHtmlPage()).addParam(multiTree.getContainerAsID()).addParam(multiTree.getContentlet())
-                .addParam(multiTree.getRelationType()).addParam(multiTree.getTreeOrder()).loadResult();
+                .addParam(multiTree.getRelationType()).addParam(multiTree.getTreeOrder()).addObject(multiTree.getPersonalization()).loadResult();
     }
 
 
@@ -517,9 +524,9 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         }
 
         final Table<String, String, Set<String>> pageContents = HashBasedTable.create();
-        final List<MultiTree> multiTrees  = this.getMultiTrees(page.getIdentifier());
-        final ContainerAPI  containerAPI  = APILocator.getContainerAPI();
-        final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+        final List<MultiTree> multiTrees    = this.getMultiTrees(page.getIdentifier());
+        final ContainerAPI    containerAPI  = APILocator.getContainerAPI();
+        final ContentletAPI   contentletAPI = APILocator.getContentletAPI();
         final User systemUser = APILocator.systemUser();
 
         for (final MultiTree multiTree : multiTrees) {

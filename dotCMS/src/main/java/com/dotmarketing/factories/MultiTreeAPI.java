@@ -141,6 +141,17 @@ public interface MultiTreeAPI {
     List<MultiTree> getMultiTrees(String htmlPage, String container, String containerInstance);
 
     /**
+     * Gets a list of MultiTrees that belong to the page+container+container instance
+     *
+     * @param htmlPage
+     * @param container
+     * @param containerInstance
+     * @param personalization
+     * @return List of Multitree
+     */
+    List<MultiTree> getMultiTrees(String htmlPage, String container, String containerInstance, String personalization);
+
+    /**
      * Gets a list of MultiTrees that belong to the page+container
      * 
      * @param htmlPage
@@ -226,6 +237,19 @@ public interface MultiTreeAPI {
      * @throws DotDataException
      */
     MultiTree getMultiTree(String htmlPage, String container, String childContent, String containerInstance) throws DotDataException;
+
+    /**
+     * Gets a specific MultiTree entry
+     *
+     * @param htmlPage
+     * @param container
+     * @param childContent
+     * @param containerInstance
+     * @param personalization
+     * @return MultiTree
+     * @throws DotDataException
+     */
+    MultiTree getMultiTree(String htmlPage, String container, String childContent, String containerInstance, String personalization) throws DotDataException;
 
     /**
      * Gets a specific MultiTree entry regardless of containerInstance

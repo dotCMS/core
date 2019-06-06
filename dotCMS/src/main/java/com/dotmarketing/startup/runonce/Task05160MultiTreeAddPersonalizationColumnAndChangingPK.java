@@ -48,6 +48,7 @@ public class Task05160MultiTreeAddPersonalizationColumnAndChangingPK extends Abs
         if (DbConnectionFactory.isMsSql() && !DbConnectionFactory.getAutoCommit()) {
             DbConnectionFactory.setAutoCommit(true);
         }
+
         try {
 
             this.removeMultitreePK();

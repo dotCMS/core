@@ -22,6 +22,7 @@ public class MultiTree implements Serializable {
 
     public static final String LEGACY_RELATION_TYPE = "LEGACY_RELATION_TYPE";
     public static final String LEGACY_INSTANCE_ID = LEGACY_RELATION_TYPE;
+    public static final String DOT_PERSONALIZATION_DEFAULT = "dot:default";
     /** identifier field for pages */
     private String parent1;
 
@@ -37,13 +38,32 @@ public class MultiTree implements Serializable {
     /** nullable persistent field */
     private int treeOrder;
 
+    private String personalization;
+
     /** full constructor */
-    public MultiTree(String htmlPage, String container, String child, String instanceId, int treeOrder) {
-        this.parent1 = htmlPage;
-        this.parent2 = container;
-        this.child = child;
+    public MultiTree(final String htmlPage,
+                     final String container,
+                     final String child,
+                     final String instanceId,
+                     final int treeOrder,
+                     final String personalization) {
+
+        this.parent1      = htmlPage;
+        this.parent2      = container;
+        this.child        = child;
         this.relationType = (instanceId == null) ? LEGACY_INSTANCE_ID : instanceId;
-        this.treeOrder = (treeOrder < 0) ? 0 : treeOrder;
+        this.treeOrder    = (treeOrder < 0) ? 0 : treeOrder;
+        this.personalization = personalization;
+    }
+
+    /** full constructor */
+    public MultiTree(final String htmlPage,
+                     final String container,
+                     final String child,
+                     final String instanceId,
+                     final int treeOrder) {
+
+        this(htmlPage, container, child, instanceId, treeOrder, DOT_PERSONALIZATION_DEFAULT);
     }
 
     /** default constructor */
@@ -79,6 +99,14 @@ public class MultiTree implements Serializable {
     /** minimal constructor */
     public MultiTree(String htmlPage, String container, String child) {
         this(htmlPage, container, child, LEGACY_INSTANCE_ID, 0);
+    }
+
+    public String getPersonalization() {
+        return personalization;
+    }
+
+    public void setPersonalization(String personalization) {
+        this.personalization = personalization;
     }
 
     /**
@@ -165,6 +193,7 @@ public class MultiTree implements Serializable {
             .append(this.child, castOther.child)
             .append(this.relationType, castOther.relationType)
             .append(this.treeOrder, castOther.treeOrder)
+            .append(this.personalization, castOther.personalization)
             .isEquals();
     }
     public int hashCode() {
