@@ -179,7 +179,7 @@ public interface MultiTreeAPI {
     /**
      * gets all MultiTrees that have contentlet id as a child
      * 
-     * @param pageOrContainer
+     * @param contentIdentifier page Or Container
      * @throws DotDataException
      */
     List<MultiTree> getMultiTreesByChild(String contentIdentifier) throws DotDataException;
@@ -241,8 +241,7 @@ public interface MultiTreeAPI {
     /**
      * Gets a list of MultiTrees that have the Identifier as a Parent
      * 
-     * @param htmlPage
-     * @param container
+     * @param parent Container or Page
      * @return
      */
     List<MultiTree> getMultiTrees(Identifier parent) throws DotDataException;
@@ -259,8 +258,7 @@ public interface MultiTreeAPI {
     /**
      * Gets a list of MultiTrees that has the parentId as a parent
      * 
-     * @param htmlPage
-     * @param container
+     * @param parentId page id
      * @return
      */
     List<MultiTree> getMultiTrees(String parentId) throws DotDataException;

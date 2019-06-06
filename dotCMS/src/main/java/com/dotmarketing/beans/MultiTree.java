@@ -22,13 +22,13 @@ public class MultiTree implements Serializable {
 
     public static final String LEGACY_RELATION_TYPE = "LEGACY_RELATION_TYPE";
     public static final String LEGACY_INSTANCE_ID = LEGACY_RELATION_TYPE;
-    /** identifier field */
+    /** identifier field for pages */
     private String parent1;
 
-    /** identifier field */
+    /** identifier field for container */
     private String parent2;
 
-    /** identifier field */
+    /** identifier field for content */
     private String child;
 
     /** nullable persistent field */

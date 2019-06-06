@@ -73,7 +73,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     private static final String INSERT_SQL = "insert into multi_tree (parent1, parent2, child, relation_type, tree_order ) values (?,?,?,?,?)  ";
 
     private static final String SELECT_BY_PAGE = "select * from multi_tree where parent1 = ? order by tree_order";
-    private static final String SELECT_BY_ONE_PARENT = "select * from multi_tree where parent1 = ? or parent2 = ? order by tree_order";
+    private static final String SELECT_BY_ONE_PARENT = "select * from multi_tree where parent1 = ? or parent2 = ? order by tree_order"; // search by page id or container id
     private static final String SELECT_BY_TWO_PARENTS = "select * from multi_tree where parent1 = ? and parent2 = ?  order by tree_order";
     private static final String SELECT_ALL = "select * from multi_tree  ";
     private static final String SELECT_BY_CHILD = "select * from multi_tree where child = ?  order by parent1, parent2, relation_type ";
@@ -95,12 +95,12 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
     @WrapInTransaction
     @Override
-    public void deleteMultiTreesRelatedToIdentifier(final String identifier) throws DotDataException {
+    public void deleteMultiTreesRelatedToIdentifier(final String pageIdentifier) throws DotDataException {
 
-        final List<MultiTree> pagesRelatedList = getMultiTreesByPage(identifier);
+        final List<MultiTree> pagesRelatedList = getMultiTreesByPage(pageIdentifier);
 
-        new DotConnect().setSQL(DELETE_ALL_MULTI_TREE_RELATED_TO_IDENTIFIER_SQL).addParam(identifier).addParam(identifier)
-                .addParam(identifier).loadResult();
+        new DotConnect().setSQL(DELETE_ALL_MULTI_TREE_RELATED_TO_IDENTIFIER_SQL).addParam(pageIdentifier).addParam(pageIdentifier)
+                .addParam(pageIdentifier).loadResult();
 
         if (UtilMethods.isSet(pagesRelatedList)) {
             for (final MultiTree multiTree : pagesRelatedList) {
@@ -447,8 +447,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
 
     private void refreshPageInCache(final String pageIdentifier) throws DotDataException {
-        
-        
+
         CacheLocator.getMultiTreeCache().removePageMultiTrees(pageIdentifier);
         final Set<String> inodes = new HashSet<String>();
         final List<ContentletVersionInfo> infos = APILocator.getVersionableAPI().findContentletVersionInfos(pageIdentifier);
@@ -473,10 +472,6 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             Logger.warn(MultiTreeAPIImpl.class, "unable to refresh page cache:" + e.getMessage());
         }
     }
-
-
-
-
 
     @WrapInTransaction
     @Override
