@@ -1,10 +1,15 @@
 package com.dotcms.uuid.shorty;
 
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.datagen.CategoryDataGen;
+import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableList.Builder;
+import com.dotcms.datagen.FieldDataGen;
+import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.LinkDataGen;
+import com.dotcms.datagen.RelationshipDataGen;
+import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -12,18 +17,20 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.UUIDGenerator;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableList.Builder;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import org.apache.commons.lang.RandomStringUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
 /**
  * Integration tests for the Shorty ID API class.
@@ -56,9 +63,9 @@ public class ShortyIdApiTest {
     protected List<String[]> expectedIdsFromStarter = null;
     protected List<String[]> expectedIds = null;
     
-    final String GET_INODE = "SELECT inode FROM inode WHERE type = ?";
+    final String GET_INODE = "SELECT inode FROM inode WHERE type = ? AND inode <> 'SYSTEM_FOLDER'";
 	final String GET_ID_CONTAINERS = "SELECT identifier FROM dot_containers";
-	final String GET_ID_CONTENTLETS = "SELECT identifier FROM contentlet";
+    final String GET_ID_CONTENTLETS = "SELECT identifier FROM contentlet WHERE identifier <> 'SYSTEM_HOST'";
 	final String GET_ID_LINKS = "SELECT identifier FROM links";
 	final String GET_ID_TEMPLATES = "SELECT identifier FROM template";
 	final String GET_ID_FOLDERS = "SELECT identifier FROM folder";
@@ -76,10 +83,16 @@ public class ShortyIdApiTest {
 	 * @throws DotDataException
 	 *             An error occurred when reading the test data.
 	 */
-	private void getExpectedIds() throws DotDataException {
+    private void getExpectedIds() throws DotDataException, DotSecurityException {
+
+        final ContentType contentGenericType = APILocator.getContentTypeAPI(APILocator.systemUser())
+                .find("webPageContent");
+
 		final DotConnect dc = new DotConnect();
 		Builder<String[]> builder = ImmutableList.<String[]>builder();
 
+        new ContainerDataGen().nextPersisted();
+        new ContainerDataGen().nextPersisted();
 		dc.setSQL(GET_INODE, 2);
 		dc.addParam("containers");
 		List<Map<String, Object>> res = dc.loadObjectResults();
@@ -88,15 +101,30 @@ public class ShortyIdApiTest {
 		res = dc.loadObjectResults();
 		builder.add(new String[] { res.get(1).get("identifier").toString(), "identifier", "containers" });
 
+        new ContentletDataGen(contentGenericType.id())
+                .setProperty("title", "TestContent")
+                .setProperty("body", "TestBody").nextPersisted();
+        new ContentletDataGen(contentGenericType.id())
+                .setProperty("title", "TestContent")
+                .setProperty("body", "TestBody").nextPersisted();
 		dc.setSQL(GET_ID_CONTENTLETS, 2);
 		res = dc.loadObjectResults();
-		builder.add(new String[] { res.get(1).get("identifier").toString(), "identifier", "contentlet" });
+        builder.add(new String[] { res.get(1).get("identifier").toString(), "identifier", "contentlet" });
+
+        new FolderDataGen().nextPersisted();
+        new FolderDataGen().nextPersisted();
 		dc.setSQL(GET_ID_FOLDERS, 2);
 		res = dc.loadObjectResults();
-		builder.add(new String[] { res.get(1).get("identifier").toString(), "identifier", "folder" });
+        builder.add(new String[] { res.get(1).get("identifier").toString(), "identifier", "folder" });
+
+        new LinkDataGen().nextPersisted();
+        new LinkDataGen().nextPersisted();
 		dc.setSQL(GET_ID_LINKS, 2);
 		res = dc.loadObjectResults();
 		builder.add(new String[] { res.get(1).get("identifier").toString(), "identifier", "links" });
+
+        new TemplateDataGen().nextPersisted();
+        new TemplateDataGen().nextPersisted();
 		dc.setSQL(GET_ID_TEMPLATES, 2);
 		res = dc.loadObjectResults();
 		builder.add(new String[] { res.get(1).get("identifier").toString(), "identifier", "template" });
@@ -109,15 +137,24 @@ public class ShortyIdApiTest {
 		dc.addParam("template");
 		res = dc.loadObjectResults();
 		builder.add(new String[] { res.get(1).get("inode").toString(), "inode", "template" });
-		
+
+        new CategoryDataGen().nextPersisted();
+        new CategoryDataGen().nextPersisted();
 		dc.setSQL(GET_INODE, 2);
 		dc.addParam("category");
 		res = dc.loadObjectResults();
 		builder.add(new String[] { res.get(1).get("inode").toString(), "inode", "category" });
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        new FieldDataGen().contentTypeId(contentType.id()).nextPersisted();
+        new FieldDataGen().contentTypeId(contentType.id()).nextPersisted();
 		dc.setSQL(GET_INODE, 2);
 		dc.addParam("field");
 		res = dc.loadObjectResults();
 		builder.add(new String[] { res.get(1).get("inode").toString(), "inode", "field" });
+
+        new FolderDataGen().nextPersisted();
+        new FolderDataGen().nextPersisted();
 		dc.setSQL(GET_INODE, 2);
 		dc.addParam("folder");
 		res = dc.loadObjectResults();
@@ -126,6 +163,9 @@ public class ShortyIdApiTest {
 		dc.addParam("links");
 		res = dc.loadObjectResults();
 		builder.add(new String[] { res.get(1).get("inode").toString(), "inode", "links" });
+
+        new RelationshipDataGen(true).nextPersisted();
+        new RelationshipDataGen(true).nextPersisted();
 		dc.setSQL(GET_INODE, 2);
 		dc.addParam("relationship");
 		res = dc.loadObjectResults();
@@ -140,10 +180,16 @@ public class ShortyIdApiTest {
 	 * @throws DotDataException
 	 *             An error occurred when reading the test data.
 	 */
-	private void getExpectedIdsFromStarter() throws DotDataException {
+    private void getExpectedIdsFromStarter() throws DotDataException, DotSecurityException {
+
+        final ContentType contentGenericType = APILocator.getContentTypeAPI(APILocator.systemUser())
+                .find("webPageContent");
+
 		final DotConnect dc = new DotConnect();
 		Builder<String[]> builder = ImmutableList.<String[]>builder();
 
+        new ContainerDataGen().nextPersisted();
+        new ContainerDataGen().nextPersisted();
 		dc.setSQL(GET_INODE, 1);
 		dc.addParam("containers");
 		List<Map<String, Object>> res = dc.loadObjectResults();
@@ -152,22 +198,33 @@ public class ShortyIdApiTest {
 		res = dc.loadObjectResults();
 		builder.add(new String[] { res.get(0).get("identifier").toString(), "identifier", "containers" });
 
-		dc.setSQL(GET_ID_CONTENTLETS, 2);
+        new ContentletDataGen(contentGenericType.id())
+                .setProperty("title", "TestContent")
+                .setProperty("body", "TestBody").nextPersisted();
+        new ContentletDataGen(contentGenericType.id())
+                .setProperty("title", "TestContent")
+                .setProperty("body", "TestBody").nextPersisted();
+        dc.setSQL(GET_ID_CONTENTLETS, 2);
 		res = dc.loadObjectResults();
 		builder.add(new String[] { res.get(0).get("identifier").toString(), "identifier", "contentlet" });
 		builder.add(new String[] { res.get(1).get("identifier").toString(), "identifier", "contentlet" });
+
 		dc.setSQL(GET_INODE, 2);
 		dc.addParam("contentlet");
 		res = dc.loadObjectResults();
 		builder.add(new String[] { res.get(0).get("inode").toString(), "inode", "contentlet" });
 		builder.add(new String[] { res.get(1).get("inode").toString(), "inode", "contentlet" });
 
-		dc.setSQL(GET_INODE, 2);
+        new FolderDataGen().nextPersisted();
+        new FolderDataGen().nextPersisted();
+        dc.setSQL(GET_INODE, 2);
 		dc.addParam("folder");
 		res = dc.loadObjectResults();
 		builder.add(new String[] { res.get(0).get("inode").toString(), "inode", "folder" });
 		builder.add(new String[] { res.get(1).get("inode").toString(), "inode", "folder" });
 
+        new LinkDataGen().nextPersisted();
+        new LinkDataGen().nextPersisted();
 		dc.setSQL(GET_INODE, 1);
 		dc.addParam("links");
 		res = dc.loadObjectResults();
@@ -176,6 +233,8 @@ public class ShortyIdApiTest {
 		res = dc.loadObjectResults();
 		builder.add(new String[] { res.get(0).get("identifier").toString(), "identifier", "links" });
 
+        new TemplateDataGen().nextPersisted();
+        new TemplateDataGen().nextPersisted();
 		dc.setSQL(GET_ID_TEMPLATES, 1);
 		res = dc.loadObjectResults();
 		builder.add(new String[] { res.get(0).get("identifier").toString(), "identifier", "template" });
