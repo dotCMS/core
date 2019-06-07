@@ -1,11 +1,10 @@
 package com.dotcms.publishing.remote;
 
+import static com.dotcms.datagen.TestDataUtils.getWikiLikeContentType;
 import static com.dotcms.publisher.business.PublisherTestUtil.cleanBundleEndpointEnv;
 import static com.dotcms.publisher.business.PublisherTestUtil.createEndpoint;
 import static com.dotcms.publisher.business.PublisherTestUtil.createEnvironment;
 import static com.dotcms.publisher.business.PublisherTestUtil.generateBundle;
-import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.DM_WORKFLOW;
-import static com.dotmarketing.business.Role.ADMINISTRATOR;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -18,13 +17,11 @@ import static org.mockito.Mockito.when;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
-import com.dotcms.contenttype.business.ContentTypeAPI;
-import com.dotcms.contenttype.model.field.DataTypes;
-import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.FieldBuilder;
-import com.dotcms.contenttype.model.field.TextField;
-import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.LanguageDataGen;
+import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.bundle.business.BundleAPI;
 import com.dotcms.publisher.business.PublishAuditAPI;
@@ -41,18 +38,11 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
-import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest;
-import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
-import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -64,7 +54,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -72,7 +61,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.felix.framework.OSGIUtil;
 import org.apache.struts.Globals;
@@ -85,20 +73,16 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
     static final String ADMIN_DEFAULT_ID = "dotcms.org.1";
     static final String ADMIN_DEFAULT_MAIL = "admin@dotcms.com";
     static final String ADMIN_NAME = "User Admin";
-    static final String REQUIRED_TEXT_FIELD_NAME = "lang-name-field";
 
     static final String FILE = PublisherTestUtil.FILE;
 
     private static Host host;
     private static Role adminRole;
-    private static WorkflowAPI workflowAPI;
-    private static RoleAPI roleAPI;
-    private static ContentTypeAPI contentTypeAPI;
     private static LanguageAPI languageAPI;
-    private static HostAPI hostAPI;
     private static ContentletAPI contentletAPI;
     private static User systemUser;
     private static User adminUser;
+    private static ContentType contentType;
 
 
     @BeforeClass
@@ -114,9 +98,7 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
 
         LicenseTestUtil.getLicense();
 
-        workflowAPI = APILocator.getWorkflowAPI();
         contentletAPI = APILocator.getContentletAPI();
-        roleAPI = APILocator.getRoleAPI();
 
         final User user = mock(User.class);
         when(user.getUserId()).thenReturn(ADMIN_DEFAULT_ID);
@@ -131,79 +113,41 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
                 .init(anyString(), anyBoolean(), any(HttpServletRequest.class), anyBoolean(),
                         anyString())).thenReturn(dataObject);
 
-        contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
         systemUser = APILocator.systemUser();
 
         adminUser = APILocator.getUserAPI()
                 .loadByUserByEmail(ADMIN_DEFAULT_MAIL, systemUser, false);
 
         languageAPI = APILocator.getLanguageAPI();
-        hostAPI = APILocator.getHostAPI();
 
-        host = hostAPI.findDefaultHost(systemUser, false);
-        adminRole = roleAPI.loadRoleByKey(ADMINISTRATOR);
+        host = new SiteDataGen().nextPersisted();
+
+        adminRole = APILocator.getRoleAPI().loadCMSAdminRole();
+
+        if(null == adminUser){
+          adminUser = new UserDataGen().roles(adminRole).emailAddress(ADMIN_DEFAULT_MAIL).nextPersisted();
+        }
+        // Any CT should do it.
+        contentType = getWikiLikeContentType();
+
+        //Default Languages
+
+        if (null == APILocator.getLanguageAPI().getLanguage("en", "US")) {
+            new LanguageDataGen().languageCode("en").countryCode("US").languageName("English")
+                    .country("United States").nextPersisted();
+        }
+        if (null == APILocator.getLanguageAPI().getLanguage("es", "ES")) {
+            new LanguageDataGen().languageCode("es").countryCode("ES").languageName("Espanol")
+                    .country("Espana").nextPersisted();
+        }
+
+       System.out.println("LOL");
     }
 
     @AfterClass
     public static void cleanUp() throws Exception {
         //Stopping the OSGI framework
         OSGIUtil.getInstance().stopFramework();
-    }
-
-    /**
-     * Creates a custom contentType with a required field
-     */
-    private ContentType createSampleContentType() throws Exception {
-        ContentType contentType;
-        final String ctPrefix = "PPTestContentType";
-        final String newContentTypeName = ctPrefix + System.currentTimeMillis();
-
-        // Create ContentType
-        contentType = BaseWorkflowIntegrationTest
-                .createContentTypeAndAssignPermissions(newContentTypeName,
-                        BaseContentType.CONTENT, PermissionAPI.PERMISSION_READ, adminRole.getId());
-        final WorkflowScheme systemWorkflow = workflowAPI.findSystemWorkflowScheme();
-        final WorkflowScheme documentWorkflow = workflowAPI
-                .findSchemeByName(DM_WORKFLOW);
-
-        // Add fields to the contentType
-        final Field field =
-                FieldBuilder.builder(TextField.class).name(REQUIRED_TEXT_FIELD_NAME)
-                        .variable("langNameField")
-                        .required(true)
-                        .contentTypeId(contentType.id()).dataType(DataTypes.TEXT).build();
-        contentType = contentTypeAPI.save(contentType, Collections.singletonList(field));
-
-        // Assign contentType to Workflows
-        workflowAPI.saveSchemeIdsForContentType(contentType,
-                Stream.of(
-                        systemWorkflow.getId(),
-                        documentWorkflow.getId()
-                ).collect(Collectors.toSet())
-        );
-
-        return contentType;
-    }
-
-    /**
-     * Creates a contentlet based on the content type + Language passed
-     */
-    private Contentlet createSampleContent(final ContentType contentType, final Language language)
-            throws Exception {
-        // Create a content sample
-        Contentlet contentlet = new Contentlet();
-        // instruct the content with its own type
-        contentlet.setStructureInode(contentType.inode());
-        contentlet.setHost(host.getIdentifier());
-        contentlet.setLanguageId(language.getId());
-        //Now lets add some lang info to the instance itself.
-        contentlet.setStringProperty("langNameField", language.toString());
-        contentlet.setIndexPolicy(IndexPolicy.FORCE);
-
-        // Save the content
-        contentlet = contentletAPI.checkin(contentlet, systemUser, false);
-        assertNotNull(contentlet.getInode());
-        return contentlet;
     }
 
     private Language newLanguageInstance(final String languageCode, final String countryCode,
@@ -214,8 +158,9 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
     }
 
     /**
-     * This method test method simply tests that languages are pushed-published
+     * This method simply tests that languages are pushed-published
      */
+
     @Test
     public void test_create_languages_create_bundle_then_publish_then_read_languages()
             throws Exception {
@@ -226,9 +171,6 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
                 build();
 
         final List<String> assetIds = new ArrayList<>();
-
-        final ContentType contentType = createSampleContentType();
-
         final List<Language> languages = new ArrayList<>(3);
 
         for (final Language language : newLanguages) {
@@ -236,9 +178,11 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
             languages.add(language);
         }
 
+        final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType.id());
+
         final List<Contentlet> contentlets = new ArrayList<>();
         for (final Language language : languages) {
-            final Contentlet contentlet = createSampleContent(contentType, language);
+            final Contentlet contentlet = contentletDataGen.host(host).setProperty("title","lang is "+language.toString()).languageId(language.getId()).nextPersisted();
             assetIds.add(contentlet.getIdentifier());
             contentlets.add(contentlet);
         }
@@ -305,10 +249,6 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
                 languageAPI.deleteLanguage(language);
             }
 
-            if(null != contentType){
-                contentTypeAPI.delete(contentType);
-            }
-
             if (null != bundle && null != endpoint && null != environment) {
                 cleanBundleEndpointEnv(bundle, endpoint, environment);
             }
@@ -330,7 +270,6 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
                 add(newLanguageInstance("es", "ES", "Espanol", "Espana")).
                 build();
 
-
         final List<Language> savedDupeLanguages = new ArrayList<>();
         for (final Language language : dupeLanguages) {
             languageAPI.saveLanguage(language);
@@ -338,10 +277,10 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
         }
 
         final List<String> assetIds = new ArrayList<>();
-        final ContentType contentType = createSampleContentType();
+        final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType.id());
         final List<Contentlet> contentlets = new ArrayList<>();
         for (final Language dupeLanguage : savedDupeLanguages) {
-            final Contentlet contentlet = createSampleContent(contentType, dupeLanguage);
+            final Contentlet contentlet = contentletDataGen.host(host).setProperty("title","lang is "+dupeLanguage.toString()).languageId(dupeLanguage.getId()).nextPersisted();
             assetIds.add(contentlet.getIdentifier());
             contentlets.add(contentlet);
         }
@@ -402,7 +341,7 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
             //Push publish ends here.
 
             //Now we check the results
-            //Should have used only the language there came by default. Meaning the dupes should have been ignored.
+            //Should have used only the language there that came by default. Meaning the dupes should have been ignored.
             publishedContentlets = contentletAPI.findByStructure(contentType.inode(), adminUser, false,10, 0);
             assertEquals("We expected 2 instances of our custom type ", 2, publishedContentlets.size());
 
@@ -425,11 +364,6 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
                 languageAPI.deleteLanguage(language);
             }
 
-            if(null != contentType){
-                contentTypeAPI.delete(contentType);
-            }
-
-
             if (null != bundle && null != endpoint && null != environment) {
                 cleanBundleEndpointEnv(bundle, endpoint, environment);
             }
@@ -441,7 +375,6 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
         }
 
     }
-
 
     @Test
     public void test_create_new_languages_create_bundle_then_publish_bundle_then_read_verify_dupes_are_ignored_and_new_languges_were_created()
@@ -462,10 +395,10 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
         }
 
         final List<String> assetIds = new ArrayList<>();
-        final ContentType contentType = createSampleContentType();
+        final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType.id());
         final List<Contentlet> contentlets = new ArrayList<>();
         for (final Language dupeLanguage : savedNewLanguages) {
-            final Contentlet contentlet = createSampleContent(contentType, dupeLanguage);
+            final Contentlet contentlet = contentletDataGen.host(host).setProperty("title","lang is "+dupeLanguage.toString()).languageId(dupeLanguage.getId()).nextPersisted();
             assetIds.add(contentlet.getIdentifier());
             contentlets.add(contentlet);
         }
@@ -537,8 +470,6 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
                     Collectors.toMap(Language::getId, Function.identity())
             );
 
-            final Comparator<Language> comparator = Comparator.comparing( Language::getId );
-
             // Now lets do push-publish.
             final PublisherConfig publisherConfig = new PublisherConfig();
             final BundlePublisher bundlePublisher = new BundlePublisher();
@@ -554,7 +485,7 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
             //Now we check the results.
             //Should have used only the language that came by default. Meaning the dupes should have been ignored.
             publishedContentlets = contentletAPI.findByStructure(contentType.inode(), adminUser, false,10, 0);
-            assertEquals("We expected 5 instances of our custom type ", 5, publishedContentlets.size());
+            assertEquals("We expected 5 instances of our content type ", 5, publishedContentlets.size());
 
             printContentletLanguageInfo(publishedContentlets);
 
@@ -594,11 +525,6 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
                 }
             }
 
-            if(null != contentType){
-                contentTypeAPI.delete(contentType);
-            }
-
-
             if (null != bundle && null != endpoint && null != environment) {
                 cleanBundleEndpointEnv(bundle, endpoint, environment);
             }
@@ -616,7 +542,7 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
         publishedContentlets.forEach(contentlet -> {
             Logger.info(RemoteReceiverLanguageResolutionTest.class,
                     () -> "id: " + contentlet.getLanguageId() + " - " + contentlet
-                            .get(REQUIRED_TEXT_FIELD_NAME)
+                            .get("title")
             );
         });
     }

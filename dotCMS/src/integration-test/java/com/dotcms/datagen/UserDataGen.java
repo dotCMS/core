@@ -1,11 +1,15 @@
 package com.dotcms.datagen;
 
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDUtil;
 import com.liferay.portal.model.User;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class UserDataGen extends AbstractDataGen<User> {
 
@@ -17,6 +21,7 @@ public class UserDataGen extends AbstractDataGen<User> {
     private String lastName = "testLastName" + currentTime;
     private String emailAddress = "testEmailAddress@" + currentTime + ".com";
     private String password = String.valueOf(currentTime);
+    private List<Role> roles = new ArrayList<>();
 
     @SuppressWarnings("unused")
     public UserDataGen id(final String id) {
@@ -54,6 +59,12 @@ public class UserDataGen extends AbstractDataGen<User> {
         return this;
     }
 
+    @SuppressWarnings("unused")
+    public UserDataGen roles(final Role... roles) {
+        this.roles.addAll(Arrays.asList(roles));
+        return this;
+    }
+
     @Override
     public User next() {
         final User user = new User();
@@ -78,6 +89,10 @@ public class UserDataGen extends AbstractDataGen<User> {
             newUser.setPassword(user.getEmailAddress());
             newUser.setActive(user.getActive());
             APILocator.getUserAPI().save(newUser, APILocator.systemUser(), false);
+
+            for(final Role role:roles){
+                APILocator.getRoleAPI().addRoleToUser(role, newUser);
+            }
 
             return newUser;
 
