@@ -13,7 +13,6 @@
 | `fieldsToShow` | --             |             | `string[]`                 | `[]`       |
 | `resetLabel`   | `reset-label`  |             | `string`                   | `'Reset'`  |
 | `submitLabel`  | `submit-label` |             | `string`                   | `'Submit'` |
-| `value`        | --             |             | `{}`                       | `{}`       |
 
 
 ## Events

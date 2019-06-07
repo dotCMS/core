@@ -115,12 +115,7 @@ export class DotKeyValueComponent {
     requiredMessage = 'This field is required';
 
     /** Value of the field */
-    @Prop({ mutable: true }) value = '';
-
-    @Prop({
-        reflectToAttr: true
-    })
-    fieldType = ''; // TODO: remove this prop and fix dot-form to use tagName
+    @Prop({ reflectToAttr: true, mutable: true }) value = '';
 
     @State() status: DotFieldStatus;
     @State() items: DotKeyValueField[] = [];
@@ -151,12 +146,14 @@ export class DotKeyValueComponent {
         this.items = this.items.filter(
             (_item: DotKeyValueField, index: number) => index !== event.detail
         );
+        this.refreshStatus();
         this.emitChanges();
     }
 
     @Listen('add')
     addItemHandler({ detail }: CustomEvent<DotKeyValueField>): void {
         this.items = [...this.items, detail];
+        this.refreshStatus();
         this.emitChanges();
     }
 
@@ -207,7 +204,7 @@ export class DotKeyValueComponent {
             });
             this.emitStatusChange();
         }
-}
+    }
 
     private validateProps(): void {
         this.valueWatch();
@@ -248,13 +245,11 @@ export class DotKeyValueComponent {
         const returnedValue = getStringFromDotKeyArray(this.items);
         this.valueChange.emit({
             name: this.name,
-            value: returnedValue,
-            fieldType: this.fieldType
+            value: returnedValue
         });
     }
 
     private emitChanges(): void {
-        this.refreshStatus();
         this.emitStatusChange();
         this.emitValueChange();
     }

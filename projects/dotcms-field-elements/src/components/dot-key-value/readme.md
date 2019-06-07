@@ -10,7 +10,6 @@
 | Property               | Attribute                | Description                                                                      | Type      | Default                    |
 | ---------------------- | ------------------------ | -------------------------------------------------------------------------------- | --------- | -------------------------- |
 | `disabled`             | `disabled`               | (optional) Disables field's interaction                                          | `boolean` | `false`                    |
-| `fieldType`            | `field-type`             |                                                                                  | `string`  | `''`                       |
 | `formAddButtonLabel`   | `form-add-button-label`  | (optional) Label for the add button in the <key-value-form>                      | `string`  | `undefined`                |
 | `formKeyLabel`         | `form-key-label`         | (optional) The string to use in the key label in the <key-value-form>            | `string`  | `undefined`                |
 | `formKeyPlaceholder`   | `form-key-placeholder`   | (optional) Placeholder for the key input text in the <key-value-form>            | `string`  | `undefined`                |

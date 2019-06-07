@@ -364,7 +364,6 @@ describe('dot-key-value', () => {
                 });
                 await page.waitForChanges();
                 expect(spyValueChangeEvent).toHaveReceivedEventDetail({
-                    fieldType: '',
                     name: 'fieldName',
                     value: 'some key|hello world'
                 });
@@ -383,7 +382,6 @@ describe('dot-key-value', () => {
                 await page.waitForChanges();
 
                 expect(spyValueChangeEvent).toHaveReceivedEventDetail({
-                    fieldType: '',
                     name: 'fieldName',
                     value: 'first key|first value'
                 });
@@ -411,27 +409,40 @@ describe('dot-key-value', () => {
     describe('@Methods', () => {
         beforeEach(async () => {
             element.setAttribute('name', 'fieldName');
-            element.setAttribute('required', true);
+            element.setAttribute('value', 'first key|first value,second key|second value');
+
             spyValueChangeEvent = await page.spyOnEvent('valueChange');
             spyStatusChangeEvent = await page.spyOnEvent('statusChange');
         });
 
         describe('reset', () => {
-            it('should clear the field and emit', async () => {
-                element.setAttribute('value', 'first key|first value,second key|second value');
+            it('should clear the field and emit invalid (field required)', async () => {
+                element.setAttribute('required', true);
+                element.callMethod('reset');
+                await page.waitForChanges();
+
+                expect(spyValueChangeEvent).toHaveReceivedEventDetail({
+                    name: 'fieldName',
+                    value: ''
+                });
+                expect(spyStatusChangeEvent).toHaveReceivedEventDetail({
+                    name: 'fieldName',
+                    status: { dotPristine: true, dotTouched: false, dotValid: false }
+                });
+            });
+            it('should clear the field and emit valid (field not required)', async () => {
                 await page.waitForChanges();
 
                 element.callMethod('reset');
                 await page.waitForChanges();
 
                 expect(spyValueChangeEvent).toHaveReceivedEventDetail({
-                    fieldType: '',
                     name: 'fieldName',
                     value: ''
                 });
                 expect(spyStatusChangeEvent).toHaveReceivedEventDetail({
                     name: 'fieldName',
-                    status: { dotPristine: false, dotTouched: true, dotValid: false }
+                    status: { dotPristine: true, dotTouched: false, dotValid: true }
                 });
             });
         });

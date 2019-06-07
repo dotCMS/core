@@ -7,160 +7,179 @@
             content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=5.0"
         />
         <title>Dot-Fields</title>
+        <link
+            rel="stylesheet"
+            type="text/css"
+            href="//cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css"
+        />
         <style>
-            form > * {
-                display: block;
-                margin-bottom: 16px;
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            }
+
+            dot-form {
+                width: 80vw;
+                margin: 3rem auto;
             }
         </style>
     </head>
     <body>
-        <dot-form></dot-form>
+        <dot-form>
+            <dot-textfield
+                disabled="false"
+                hint="This is a hint"
+                label="Name"
+                name="text1"
+                placeholder="Type something"
+                regex-check="^[A-Za-z ]+$"
+                required-message="Please enter something"
+                required="true"
+                type="text"
+                validation-message="Value doesn't match"
+                value="Default value"
+            ></dot-textfield>
+
+            <dot-textarea
+                disabled="false"
+                hint="Enter your address"
+                label="Address"
+                name="textarea3"
+                regex-check="^[A-Za-z ]+$"
+                required-message="This field is required"
+                required="true"
+                validation-message="Value doesn't match format"
+                value=""
+            ></dot-textarea>
+
+            <dot-checkbox
+                disabled="false"
+                hint="The checkbox hint"
+                label="Favorite food"
+                name="checkbox01"
+                options="Pizza|pizza,Burguer|burguer,Sushi|sushi"
+                required-message="Select a food"
+                required="true"
+                value="pizza"
+            ></dot-checkbox>
+
+            <dot-multi-select
+                disabled="false"
+                hint="Pick favtorite cities"
+                label="City"
+                name="multiSelect5"
+                options="San Jose|sjo,Miami|mia,Madrid|mad"
+                required-message="You have to select a city"
+                required="true"
+                size="2"
+                value="mia"
+            ></dot-multi-select>
+
+            <dot-key-value
+                disabled="false"
+                hint="Please add stuff"
+                key-placeholder="Llave"
+                label="Add key and value"
+                name="keyvalue6"
+                required-message="This fields is also required"
+                required="true"
+                save-btn-label="Push"
+                value-placeholder="Valor"
+                value="some|value"
+            ></dot-key-value>
+
+            <dot-select
+                disabled="false"
+                hint="This is a hint"
+                label="Select a brand"
+                name="multiSelect5"
+                options="Apple|apple,Google|google,Amazon|amazon"
+                required-message="Select at least one option"
+                required="true"
+                value=""
+            ></dot-select>
+
+            <dot-radio
+                disabled="false"
+                hint="This is a hint"
+                label="What time is better?"
+                name="radio01"
+                options="Morning|morning,Afternoon|afternoon,Night|night"
+                required-message="Pick one"
+                required="true"
+                value=""
+            ></dot-radio>
+
+            <dot-date
+                disabled="false"
+                hint="This is a hint"
+                label="Pick a date"
+                max="2019-12-30"
+                min="2019-01-01"
+                name="date01"
+                required-message="This date is required"
+                required="true"
+                step="2"
+                validation-message="Hey pick the right date"
+                value="2015-10-25"
+            ></dot-date>
+
+            <dot-time
+                disabled="false"
+                hint="This is a hint"
+                label="Pick a time"
+                max="22:00:00"
+                min="08:00:00"
+                name="time01"
+                required-message="Required time"
+                required="true"
+                step="10"
+                validation-message="Time out of range"
+                value="20:30:30"
+            ></dot-time>
+
+            <dot-date-time
+                disabled="false"
+                hint="This is a hint"
+                label="Pick a date and a time"
+                max="2020-10-30 23:59:59"
+                min="2000-01-01 1:00:00"
+                name="dt01"
+                required-message="Hey pick something"
+                required="true"
+                step="2,10"
+                validation-message="Value out of range"
+                value="2019-01-20 11:10:00"
+            ></dot-date-time>
+
+            <dot-date-range
+                disabled="false"
+                displayFormat="d-m-Y"
+                hint="This is a hint"
+                label="Select a date range"
+                max="2019-12-30"
+                min="2019-01-01"
+                name="daterange01"
+                preset-label="Predefined dates"
+                presets=""
+                required-message="Please select a range"
+                required="true"
+                value="2019-11-25,2019-11-27"
+            ></dot-date-range>
+
+            <dot-tags
+                disabled="false"
+                hint="This is a hint"
+                label="Add Tags"
+                name="tags01"
+                placeholder="Start typing"
+                required-message="Please add tags"
+                required="true"
+                value="tag1,tag2"
+            ></dot-tags>
+        </dot-form>
         <script src="/build/dotcmsfields.js"></script>
         <script>
-            const fieldsConfig = [
-                {
-                    fieldType: 'Date-Range',
-                    name: 'Enter Date:',
-                    defaultValue: '2019-11-25,2019-11-27',
-                    hint: 'date hint',
-                    required: true,
-                    requiredMessage: 'Required Date range',
-                    variable: 'daterange01',
-                    displayFormat: 'd-m-Y',
-                    min: '2019-01-01',
-                    max: '2019-12-30'
-                },
-                {
-                    fieldType: 'Text',
-                    name: 'Name:',
-                    defaultValue: 'John',
-                    hint: 'this is a hint',
-                    placeholder: 'Enter Name',
-                    regexCheck: '^[A-Za-z ]+$',
-                    validationMessage: 'Invalid Name',
-                    required: true,
-                    requiredMessage: 'Required Name',
-                    variable: 'text1'
-                },
-                {
-                    defaultValue: '2',
-                    fieldType: 'Select',
-                    hint: 'dropdown hint',
-                    name: 'dropdown',
-                    required: true,
-                    requiredMessage: 'this field is required',
-                    values: '|,labelA|1,labelB|2,labelC|3',
-                    variable: 'dropdown2'
-                },
-                {
-                    defaultValue: '2',
-                    fieldType: 'Multi-Select',
-                    hint: 'multi select hint',
-                    name: 'multi select',
-                    required: true,
-                    requiredMessage: 'this field is required',
-                    size: 0,
-                    values: '|,labelA|1,labelB|2,labelC|3',
-                    variable: 'multiSelect5'
-                },
-                {
-                    fieldType: 'Key-Value',
-                    label: 'Name:',
-                    saveBtnLabel: 'Save',
-                    name: 'Key Value:',
-                    defaultValue: { a: 1, b: 2, c: 3 },
-                    hint: 'this is a hint',
-                    keyPlaceholder: 'Enter Key',
-                    valuePlaceholder: 'Enter Value',
-                    required: true,
-                    requiredMessage: 'Required Name',
-                    variable: 'keyvalue6'
-                },
-                {
-                    fieldType: 'Textarea',
-                    name: 'Address:',
-                    defaultValue: 'Address',
-                    hint: 'this is a hint',
-                    placeholder: 'Enter Name',
-                    regexCheck: '^[A-Za-z ]+$',
-                    validationMessage: 'Invalid Address',
-                    required: true,
-                    requiredMessage: 'Required Address',
-                    variable: 'textarea3'
-                },
-                {
-                    fieldType: 'Checkbox',
-                    defaultValue: '2,1',
-                    hint: 'Checkbox hint',
-                    name: 'checkbox',
-                    required: true,
-                    requiredMessage: 'this field is required',
-                    values: 'labelA|1 ,labelB|2,labelC|3',
-                    variable: 'checkbox4'
-                },
-                {
-                    fieldType: 'Radio',
-                    defaultValue: '2',
-                    hint: 'Radio hint',
-                    name: 'radio',
-                    required: true,
-                    requiredMessage: 'this radio field is required',
-                    values: 'Radio A |1, Radio B|2, Radio C |3',
-                    variable: 'radio5'
-                },
-                {
-                    fieldType: 'Date',
-                    name: 'Set Date:',
-                    defaultValue: '2015-10-25',
-                    hint: 'date hint',
-                    required: true,
-                    requiredMessage: 'Required Date',
-                    validationMessage: 'Date out of range',
-                    variable: 'date01',
-                    step: '2',
-                    min: '2019-01-01',
-                    max: '2019-12-30'
-                },
-                {
-                    fieldType: 'Time',
-                    name: 'Set Time:',
-                    defaultValue: '20:30:30',
-                    hint: 'time hint',
-                    required: true,
-                    requiredMessage: 'Required Time',
-                    validationMessage: 'Time out of range',
-                    variable: 'time01',
-                    step: '10',
-                    min: '08:00:00',
-                    max: '22:00:00'
-                },
-                {
-                    fieldType: 'Date-and-Time',
-                    name: 'Set Date and Time:',
-                    defaultValue: '2019-01-20 11:10:00',
-                    hint: 'date & time hint',
-                    required: true,
-                    requiredMessage: 'Required Time',
-                    validationMessage: 'Value out of range',
-                    variable: 'dt01',
-                    step: '2,10',
-                    min: '2000-01-01 1:00:00',
-                    max: '2020-10-30 23:59:59'
-                },
-                {
-                    fieldType: 'Tag',
-                    name: 'Tags:',
-                    variable: 'tags',
-                    defaultValue: 'tag-1,tag-2',
-                    hint: 'tag hint',
-                    required: true,
-                    requiredMessage: 'Required Tag'
-                }
-            ];
-
             const dotFormEl = document.querySelector('dot-form');
-            dotFormEl.fields = fieldsConfig;
             dotFormEl.addEventListener('onSubmit', (e) => {
                 e.preventDefault();
                 console.log(e);

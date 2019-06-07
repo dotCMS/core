@@ -1,38 +1,42 @@
-dot-form > form {
-    & > * {
-        display: block;
-        margin: 1rem 0;
+dot-form {
+    display: block;
 
-        &:first-child {
-            margin-top: 0;
+    & > form {
+        & > .form__fields > * {
+            display: block;
+            margin: 1rem 0;
+
+            &:first-child {
+                margin-top: 0;
+            }
+
+            &:last-child {
+                margin-bottom: 0;
+            }
         }
 
-        &:last-child {
-            margin-bottom: 0;
-        }
-    }
-
-    dot-label > label {
-        display: flex;
-        flex-direction: column;
-        margin: 0;
-
-        label {
+        dot-label > label {
+            display: flex;
+            flex-direction: column;
             margin: 0;
+
+            label {
+                margin: 0;
+            }
         }
-    }
 
-    .dot-field__hint {
-        font-size: 0.75rem;
-    }
+        .dot-field__hint {
+            font-size: 0.75rem;
+        }
 
-    .form__buttons {
-        display: flex;
-        flex-direction: row;
-        justify-content: flex-end;
+        .form__buttons {
+            display: flex;
+            flex-direction: row;
+            justify-content: flex-end;
 
-        button:last-child {
-            margin-left: 1rem;
+            button:last-child {
+                margin-left: 1rem;
+            }
         }
     }
 }

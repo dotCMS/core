@@ -1,53 +1,8 @@
-import { Component, Element, Event, EventEmitter, Listen, Prop, State } from '@stencil/core';
-import { DotCMSContentTypeField, DotFieldStatus, DotCMSKeyValueField } from '../../models';
-import { DotFormFields } from './dot-form-fields';
-import {
-    getClassNames,
-    getOriginalStatus,
-    getStringFromDotKeyArray,
-    updateStatus
-} from '../../utils';
-
-const fieldParamsConversionToBE = {
-    'Key-Value': (values: string): { [key: string]: string } => {
-        const returnValue = {};
-
-        if (typeof values === 'string' && values) {
-            values.split(',').forEach((item: string) => {
-                const [key, value] = item.split('|');
-                returnValue[key] = value;
-            });
-        }
-        return returnValue;
-    }
-};
-
-const fieldParamsConversionFromBE = {
-    'Key-Value': (field: DotCMSKeyValueField) => {
-        if (field.defaultValue && typeof field.defaultValue !== 'string') {
-            const valuesArray = Object.keys(field.defaultValue).map((key: string) => {
-                return { key: key, value: field.defaultValue[key] };
-            });
-            field.defaultValue = getStringFromDotKeyArray(valuesArray);
-        }
-        return DotFormFields['Key-Value'](field);
-    }
-};
-
-const fieldMap = {
-    'Checkbox': DotFormFields.Checkbox,
-    'Date': DotFormFields.Date,
-    'Date-Range': DotFormFields['Date-Range'],
-    'Date-and-Time': DotFormFields['Date-and-Time'],
-    'Key-Value': fieldParamsConversionFromBE['Key-Value'],
-    'Multi-Select': DotFormFields['Multi-Select'],
-    'Radio': DotFormFields.Radio,
-    'Select': DotFormFields.Select,
-    'Tag': DotFormFields.Tag,
-    'Text': DotFormFields.Text,
-    'Textarea': DotFormFields.Textarea,
-    'Time': DotFormFields.Time
-};
+import { Component, Element, Event, EventEmitter, Listen, Prop, State, Watch } from '@stencil/core';
+import { DotCMSContentTypeField } from './models';
+import { DotFieldStatus } from '../../models';
+import { fieldParamsConversionToBE, fieldMap } from './utils';
+import { getClassNames, getOriginalStatus, updateStatus } from '../../utils';
 
 @Component({
     tag: 'dot-form',
@@ -59,42 +14,56 @@ export class DotFormComponent {
     @Event() onSubmit: EventEmitter;
 
     @Prop() fieldsToShow: string[] = [];
-    @Prop() resetLabel = 'Reset';
-    @Prop() submitLabel = 'Submit';
+    @Prop({ reflectToAttr: true }) resetLabel = 'Reset';
+    @Prop({ reflectToAttr: true }) submitLabel = 'Submit';
     @Prop({ mutable: true }) fields: DotCMSContentTypeField[] = [];
-    @Prop({ mutable: true }) value = {};
 
     @State() status: DotFieldStatus = getOriginalStatus();
 
-    fieldsStatus: { [key: string]: string } = {};
+    private fieldsStatus: { [key: string]: { [key: string]: boolean } } = {};
+    private value = {};
 
     /**
-     * Listen for "valueChanges" and updates the form value with new value.
+     * Update the form value when valueChange in any of the child fields.
      *
      * @param CustomEvent event
      * @memberof DotFormComponent
      */
     @Listen('valueChange')
     onValueChange(event: CustomEvent): void {
-        const { name, value, fieldType } = event.detail;
-        this.value[name] = fieldType ? fieldParamsConversionToBE[fieldType](value) : value;
-        this.updateFieldsValues();
+        const { tagName } = event.target as HTMLElement;
+        const { name, value } = event.detail;
+        const transform = fieldParamsConversionToBE[tagName];
+
+        this.value[name] = transform ? transform(value) : value;
+        this.fields = this.getUpdateFieldsValues();
     }
 
     /**
-     * Listen for "statusChange" and updates the form status with new value.
+     * Update the form status when statusChange in any of the child fields
      *
      * @param CustomEvent event
      * @memberof DotFormComponent
      */
     @Listen('statusChange')
-    onStatusChange(event: CustomEvent): void {
-        this.fieldsStatus[event.detail.name] = event.detail.status;
+    onStatusChange({ detail }: CustomEvent): void {
+        this.fieldsStatus[detail.name] = detail.status;
+
         this.status = updateStatus(this.status, {
-            dotTouched: this.getStatusValue('dotTouched'),
-            dotPristine: this.getStatusValue('dotPristine'),
-            dotValid: this.getStatusValue('dotValid')
+            dotTouched: this.getTouched(),
+            dotPristine: this.getStatusValueByName('dotPristine'),
+            dotValid: this.getStatusValueByName('dotValid')
         });
+    }
+
+    @Watch('fields')
+    fieldsWatch() {
+        this.updateValue();
+    }
+
+    @Watch('fieldsToShow')
+    fieldsToShowWatch() {
+        this.updateValue();
     }
 
     hostData() {
@@ -104,22 +73,22 @@ export class DotFormComponent {
     }
 
     componentWillLoad() {
-        this.fields.forEach((field: DotCMSContentTypeField) => {
-            if (this.getFieldTag(field)) {
-                this.value[field.variable] = field.defaultValue || '';
-            }
-        });
+        this.updateValue();
     }
 
     render() {
         return (
-            <form onSubmit={(evt: Event) => this.handleSubmit(evt)}>
-                {this.fields.map((field: DotCMSContentTypeField) => this.getField(field))}
+            <form onSubmit={this.handleSubmit.bind(this)}>
+                <div class="form__fields">
+                    {this.fields.map((field: DotCMSContentTypeField) => this.getField(field))}
+                    <slot />
+                </div>
+
                 <div class="form__buttons">
-                    <button type="button" onClick={() => this.resetForm()}>
+                    <button type="reset" onClick={() => this.resetForm()}>
                         {this.resetLabel}
                     </button>
-                    <button type="submit" disabled={!this.status.dotValid || null}>
+                    <button type="submit" disabled={!this.status.dotValid}>
                         {this.submitLabel}
                     </button>
                 </div>
@@ -127,53 +96,63 @@ export class DotFormComponent {
         );
     }
 
-    private updateFieldsValues() {
-        this.fields = this.fields.map((field: DotCMSContentTypeField) => {
-            return typeof this.value[field.variable] !== 'undefined'
-                ? { ...field, defaultValue: this.value[field.variable] }
-                : field;
-        });
-    }
-
-    private getStatusValue(statusName: string): boolean {
-        let value;
-        const fields = Object.keys(this.fieldsStatus);
-        for (const field of fields) {
-            if (!this.fieldsStatus[field][statusName]) {
-                value = this.fieldsStatus[field][statusName];
-                break;
-            }
-            value = this.fieldsStatus[field][statusName];
-        }
-        return value;
-    }
-
-    private handleSubmit(evt: Event): void {
-        evt.preventDefault();
-        this.onSubmit.emit({
-            ...this.value
-        });
+    private getField(field: DotCMSContentTypeField): any {
+        return this.shouldShowField(field) ? this.getFieldTag(field) : '';
     }
 
     private getFieldTag(field: DotCMSContentTypeField): any {
         return fieldMap[field.fieldType] ? fieldMap[field.fieldType](field) : '';
     }
 
-    private areFieldsToShowDefined(field: DotCMSContentTypeField): boolean {
-        return this.fieldsToShow.length === 0 || this.fieldsToShow.includes(field.variable);
+    private getStatusValueByName(name: string): boolean {
+        return Object.values(this.fieldsStatus)
+            .map((field: { [key: string]: boolean }) => field[name])
+            .every((item: boolean) => item === true);
     }
 
-    private getField(field: DotCMSContentTypeField): any {
-        return this.areFieldsToShowDefined(field) ? this.getFieldTag(field) : '';
+    private getTouched(): boolean {
+        return Object.values(this.fieldsStatus)
+            .map((field: { [key: string]: boolean }) => field.dotTouched)
+            .includes(true);
+    }
+
+    private getUpdateFieldsValues(): DotCMSContentTypeField[] {
+        return this.fields.map((field: DotCMSContentTypeField) => {
+            return typeof this.value[field.variable] !== 'undefined'
+                ? { ...field, defaultValue: this.value[field.variable] }
+                : field;
+        });
+    }
+
+    private handleSubmit(event: Event): void {
+        event.preventDefault();
+        this.onSubmit.emit({
+            ...this.value
+        });
     }
 
     private resetForm(): void {
-        const elements = Array.from(this.el.querySelectorAll('form > *:not(button)'));
+        const elements = Array.from(this.el.querySelectorAll('form .form__fields > *'));
+
         elements.forEach((element: any) => {
             try {
                 element.reset();
             } catch (error) {
-                console.warn('Log:', error);
+                console.warn(`${element.tagName}`, error);
+            }
+        });
+    }
+
+    private shouldShowField(field: DotCMSContentTypeField): boolean {
+        return !this.fieldsToShow.length || this.fieldsToShow.includes(field.variable);
+    }
+
+    private updateValue(): void {
+        this.value = {};
+
+        this.fields.forEach((field: DotCMSContentTypeField) => {
+            if (this.shouldShowField(field)) {
+                this.value[field.variable] = field.defaultValue || '';
             }
         });
     }

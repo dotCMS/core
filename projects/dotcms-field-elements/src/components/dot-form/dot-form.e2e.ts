@@ -1,127 +1,319 @@
 import { newE2EPage, E2EPage, E2EElement } from '@stencil/core/testing';
+import { EventSpy } from '@stencil/core/dist/declarations';
+import { dotTestUtil } from '../../utils';
+import { DotCMSContentTypeField } from './models';
 
-xdescribe('dot-form', () => {
+const basicField: DotCMSContentTypeField = {
+    clazz: '',
+    contentTypeId: '',
+    dataType: '',
+    defaultValue: '',
+    fieldContentTypeProperties: [],
+    fieldType: '',
+    fieldTypeLabel: '',
+    fieldVariables: [],
+    fixed: true,
+    hint: '',
+    iDate: 100,
+    id: '',
+    indexed: true,
+    listed: true,
+    modDate: 100,
+    name: '',
+    readOnly: true,
+    regexCheck: '',
+    required: true,
+    searchable: true,
+    sortOrder: 100,
+    unique: true,
+    values: '',
+    variable: ''
+};
+
+const fieldsMock: DotCMSContentTypeField[] = [
+    {
+        ...basicField,
+        variable: 'textfield1',
+        required: true,
+        name: 'TexField',
+        fieldType: 'Text'
+    },
+    {
+        ...basicField,
+        defaultValue: 'key|value,llave|valor',
+        fieldType: 'Key-Value',
+        name: 'Key Value:',
+        required: false,
+        variable: 'keyvalue2'
+    },
+    {
+        ...basicField,
+        defaultValue: '2',
+        fieldType: 'Select',
+        name: 'Dropdwon',
+        required: false,
+        values: '|,labelA|1,labelB|2,labelC|3',
+        variable: 'dropdown3'
+    }
+];
+
+
+const fieldMockNotRequired = [
+    {
+        ...fieldsMock[0],
+        required: false
+    },
+    fieldsMock[1],
+    fieldsMock[2]
+];
+
+describe('dot-form', () => {
     let page: E2EPage;
     let element: E2EElement;
-    let formStatus = {};
+    let submitSpy: EventSpy;
 
-    const fields = [
-        {
-            fieldType: 'Text',
-            defaultValue: 'defaultValue1',
-            hint: 'hint1',
-            name: 'field1',
-            required: true,
-            value: 'value1',
-            variable: 'field1'
-        },
-        {
-            fieldType: 'Text',
-            defaultValue: 'defaultValue',
-            hint: 'hint2',
-            name: 'field2',
-            required: false,
-            value: 'value2',
-            variable: 'field2'
-        }
-    ];
+    const getFields = () => page.findAll('form .form__fields > *');
+
+    const getResetButton = () =>
+        page.find('.form__buttons button:not([type="submit"])');
+
+    const getSubmitButton = () => page.find('.form__buttons button[type="submit"]');
+
+    const fillTextfield = async (text?: string) => {
+        const textfield = await element.find('input');
+        await textfield.type(text || 'test');
+    };
+
+    const submitForm = async () => {
+        const button = await getSubmitButton();
+        await button.click();
+    };
+
+    const resetForm = async () => {
+        const button = await getResetButton();
+        await button.click();
+    };
+
 
     beforeEach(async () => {
         page = await newE2EPage();
-        await page.setContent(
-            `<dot-form submit-label="Saved" reset-label="Reseted"></dot-form>`
-        );
+        await page.setContent(`<dot-form></dot-form>`);
         element = await page.find('dot-form');
-        element.setProperty('fields', fields);
-        await page.waitForChanges();
-        const txtFields = await element.findAll('dot-textfield');
-        txtFields.forEach(async(field, index) => {
-            await field.triggerEvent('valueChange', {
-                bubbles: true,
-                cancelable: false,
+        submitSpy = await element.spyOnEvent('onSubmit');
+    });
+
+    describe('css class', () => {
+        beforeEach(async () => {
+            element.setProperty('fields', fieldMockNotRequired);
+            await page.waitForChanges();
+        });
+
+        it('should have empty', () => {
+            expect(element).toHaveClasses(dotTestUtil.class.empty);
+        });
+
+        it('should have filled', async () => {
+
+            const keyValue = await element.find('dot-key-value');
+            keyValue.triggerEvent('statusChange', {
                 detail: {
-                    name: fields[index].name,
-                    value: fields[index].value
+                    name: 'keyvalue2',
+                    status: {
+                        dotValid: true,
+                        dotTouched: true,
+                        dotPristine: false
+                    }
                 }
             });
-        });
-        await page.waitForChanges();
-        formStatus = await element.getProperty('value');
-    });
+            keyValue.triggerEvent('valueChange', {
+                detail: {
+                    name: 'keyvalue2',
+                    value: 'key|value,llave|valor'
+                }
+            });
 
-    it('should renders', async () => {
-        // tslint:disable-next-line:max-line-length
-        const tagsRenderExpected = `<form><dot-textfield class=\"dot-valid dot-pristine dot-untouched dot-required hydrated\"><div class=\"dot-field__label\"><label for=\"dot-field1\">field1</label><span class=\"dot-field__required-mark\">*</span></div><input id=\"dot-field1\" placeholder=\"\" required=\"\" type=\"text\"><span class=\"dot-field__hint\">hint1</span></dot-textfield><dot-textfield class=\"dot-valid dot-pristine dot-untouched hydrated\"><div class=\"dot-field__label\"><label for=\"dot-field2\">field2</label></div><input id=\"dot-field2\" placeholder=\"\" type=\"text\"><span class=\"dot-field__hint\">hint2</span></dot-textfield><div class=\"form__buttons\"><button type=\"button\">Reseted</button><button type=\"submit\">Saved</button></div></form>`;
-        expect(element.innerHTML).toBe(tagsRenderExpected);
-    });
-
-    it('should send "submit" event', async () => {
-        const expectedSubmit = {};
-        const spy = await page.spyOnEvent('onSubmit');
-        const saveBtn = await element.find('button[type="submit"]');
-
-        fields.forEach((field) => {
-            expectedSubmit[field.name] = field.value;
+            await page.waitForChanges();
+            expect(element).toHaveClasses(dotTestUtil.class.filled);
         });
 
-        saveBtn.click();
-        await page.waitForChanges();
-        expect(spy).toHaveReceivedEventDetail(expectedSubmit);
-    });
+        it('should have touched pristine', async () => {
+            await page.waitForChanges();
+            const keyValue = await element.find('dot-key-value');
+            keyValue.triggerEvent('statusChange', {
+                detail: {
+                    name: 'keyvalue2',
+                    status: {
+                        dotValid: true,
+                        dotTouched: true,
+                        dotPristine: true
+                    }
+                }
+            });
+            await page.waitForChanges();
 
-    it('should listen for valueChange', async () => {
-        const textField = await page.find('dot-textfield');
-        const newValue = {
-            name: 'field1',
-            value: 'test2'
-        };
-
-        textField.triggerEvent('valueChange', {
-            bubbles: true,
-            cancelable: false,
-            detail: newValue
-        });
-
-        formStatus = {...formStatus, field1: 'test2' };
-
-        await page.waitForChanges();
-        element.getProperty('value').then((data) => {
-            expect(data).toEqual(formStatus);
+            expect(element).toHaveClasses(dotTestUtil.class.touchedPristine);
         });
     });
 
-    it('should listen for statusChange, change form classes and invalidate Submit button', async () => {
-        const textField = await page.find('dot-textfield');
-        const newValue = {
-            name: 'field1',
-            status: {
-                dotPristine: false,
-                dotTouched: false,
-                dotValid: false
-            }
-        };
+    describe('@Props', () => {
+        describe('fieldsToShow', () => {
+            beforeEach(() => {
+                element.setProperty('fields', fieldsMock);
+            });
 
-        textField.triggerEvent('statusChange', {
-            bubbles: true,
-            cancelable: false,
-            detail: newValue
+            it('should render specified fields', async () => {
+                element.setProperty('fieldsToShow', ['textfield1', 'dropdown3']);
+                await page.waitForChanges();
+
+                const fields = await getFields();
+                expect(fields.length).toBe(2);
+
+                const keyValueField = await element.find('form > dot-key-value');
+                expect(keyValueField).toBeNull();
+            });
+
+            it('should render no fields', async () => {
+                element.setProperty('fieldsToShow', ['no', 'field', 'to', 'render']);
+                await page.waitForChanges();
+
+                const fields = await getFields();
+                expect(fields.length).toBe(0);
+            });
         });
 
-        // tslint:disable-next-line:max-line-length
-        const formStatusExpectedMarkup = `<dot-form submit-label=\"Saved\" reset-label=\"Reseted\" class=\"dot-untouched hydrated dot-invalid dot-dirty\"><form><dot-textfield class=\"dot-valid dot-pristine dot-untouched dot-required hydrated\"><div class=\"dot-field__label\"><label for=\"dot-field1\">field1</label><span class=\"dot-field__required-mark\">*</span></div><input id=\"dot-field1\" placeholder=\"\" required=\"\" type=\"text\"><span class=\"dot-field__hint\">hint1</span></dot-textfield><dot-textfield class=\"dot-valid dot-pristine dot-untouched hydrated\"><div class=\"dot-field__label\"><label for=\"dot-field2\">field2</label></div><input id=\"dot-field2\" placeholder=\"\" type=\"text\"><span class=\"dot-field__hint\">hint2</span></dot-textfield><div class=\"form__buttons\"><button type=\"button\">Reseted</button><button type=\"submit\" disabled=\"\">Saved</button></div></form></dot-form>`;
-        await page.waitForChanges();
-        expect(element.outerHTML).toBe(formStatusExpectedMarkup);
+        describe('resetLabel', () => {
+            it('should set default label', async () => {
+                const button = await getResetButton();
+                expect(button.innerText).toBe('Reset');
+            });
+
+            it('should set a label correctly', async () => {
+                element.setProperty('resetLabel', 'Reiniciar');
+                await page.waitForChanges();
+
+                const button = await getResetButton();
+                expect(button.innerText).toBe('Reiniciar');
+            });
+        });
+
+        describe('submitLabel', () => {
+            it('should set default label', async () => {
+                const button = await getSubmitButton();
+                expect(button.innerText).toBe('Submit');
+            });
+
+            it('should set a label correctly', async () => {
+                element.setProperty('submitLabel', 'Enviar');
+                await page.waitForChanges();
+
+                const button = await getSubmitButton();
+                expect(button.innerText).toBe('Enviar');
+            });
+        });
+
+        describe('fields', () => {
+            beforeEach(() => {
+                element.setProperty('fields', fieldsMock);
+            });
+
+            it('should render fields', async () => {
+                await page.waitForChanges();
+
+                const fields = await getFields();
+                expect(fields.map((field: E2EElement) => field.tagName)).toEqual([
+                    'DOT-TEXTFIELD',
+                    'DOT-KEY-VALUE',
+                    'DOT-SELECT'
+                ]);
+            });
+        });
     });
 
-    it('should reset event', async () => {
-        const resetBtn = await element.find('button[type="button"]');
-        const expectedStatus = Object.assign({}, formStatus);
-        Object.keys(expectedStatus).forEach(e => expectedStatus[e] = '');
+    describe('@Events', () => {
+        beforeEach(async () => {
+            element.setProperty('fields', fieldsMock);
+            await page.waitForChanges();
+        });
 
-        resetBtn.click();
-        await page.waitForChanges();
+        describe('onSubmit', () => {
+            it('should emit when form is valid', async () => {
+                await fillTextfield('hello world');
+                await page.waitForChanges();
 
-        const data = await element.getProperty('value');
-        expect(data).toEqual(expectedStatus);
+                await submitForm();
+                await page.waitForChanges();
+
+                expect(submitSpy).toHaveReceivedEventDetail({
+                    dropdown3: '2',
+                    keyvalue2: 'key|value,llave|valor',
+                    textfield1: 'hello world'
+                });
+            });
+
+            it('should not emit when form is invalid', async () => {
+                await submitForm();
+                await page.waitForChanges();
+
+                expect(submitSpy).not.toHaveReceivedEvent();
+            });
+        });
+    });
+
+    describe('buttons', () => {
+        describe('submit', () => {
+            it('should have type submit', async () => {
+                const button = await getSubmitButton();
+                expect(button.getAttribute('type')).toBe('submit');
+            });
+        });
+
+        describe('reset', () => {
+            it('should have type reset', async () => {
+                const button = await getResetButton();
+                expect(button.getAttribute('type')).toBe('reset');
+            });
+        });
+    });
+
+    describe('actions', () => {
+        beforeEach(async () => {
+            element.setProperty('fields', fieldMockNotRequired);
+            await page.waitForChanges();
+        });
+
+        describe('click reset button', () => {
+            it('should empty values', async () => {
+                await fillTextfield('hello world');
+                await page.waitForChanges();
+                const [textfield, keyvalue, select] = await getFields();
+
+                expect(await textfield.getProperty('value')).toBe('hello world');
+
+                await resetForm();
+                await page.waitForChanges();
+
+                expect(await textfield.getProperty('value')).toBe('');
+                expect(await keyvalue.getProperty('value')).toBe('');
+                expect(await select.getProperty('value')).toBe('');
+                expect(element).toHaveClasses(dotTestUtil.class.empty);
+            });
+        });
+    });
+
+    describe('<slot />', () => {
+        beforeEach(async () => {
+            page = await newE2EPage();
+            await page.setContent(`
+                <dot-form>
+                    <dot-textfield label="Hello World" />
+                </dot-form>
+            `);
+            element = await page.find('dot-form');
+        });
+
+        it('should render ast first child', async () => {
+            const slot = await element.find('.form__fields *:nth-child(1n)');
+            expect(slot.tagName).toBe('DOT-TEXTFIELD');
+        });
     });
 });
