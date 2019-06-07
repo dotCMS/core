@@ -1,6 +1,6 @@
 import { Component, Element, Event, EventEmitter, Method, Prop, State } from '@stencil/core';
 import Fragment from 'stencil-fragment';
-import { DotFieldStatus, DotFieldStatusEvent, DotFieldValueEvent } from '../../models';
+import { DotFieldStatus, DotFieldValueEvent, DotInputCalendarStatusEvent } from '../../models';
 import { getErrorClass, getId, getOriginalStatus, updateStatus } from '../../utils';
 
 @Component({
@@ -21,14 +21,6 @@ export class DotInputCalendarComponent {
     /** (optional) Determine if it is mandatory */
     @Prop({ reflectToAttr: true })
     required = false;
-
-    /** (optional) Text that be shown when required is set and condition not met */
-    @Prop({ reflectToAttr: true })
-    requiredMessage = 'This field is required';
-
-    /** (optional) Text that be shown when min or max are set and condition not met */
-    @Prop({ reflectToAttr: true })
-    validationMessage = "The field doesn't comply with the specified format";
 
     /** (optional) Disables field's interaction */
     @Prop({ reflectToAttr: true })
@@ -52,8 +44,8 @@ export class DotInputCalendarComponent {
 
     @State() status: DotFieldStatus;
     @Event() _valueChange: EventEmitter<DotFieldValueEvent>;
-    @Event() _statusChange: EventEmitter<DotFieldStatusEvent>;
-    @Event() _errorMessage: EventEmitter;
+    @Event() _statusChange: EventEmitter<DotInputCalendarStatusEvent>;
+
     /**
      * Reset properties of the field, clear value and emit events.
      */
@@ -68,11 +60,6 @@ export class DotInputCalendarComponent {
     componentWillLoad(): void {
         this.status = getOriginalStatus(this.isValid());
         this.emitStatusChange();
-        this.emitErrorMessage();
-    }
-
-    componentWillUpdate(): void {
-        this.emitErrorMessage();
     }
 
     render() {
@@ -115,16 +102,6 @@ export class DotInputCalendarComponent {
         return !!this.max ? this.value <= this.max : true;
     }
 
-    private showErrorMessage(): boolean {
-        return !this.status.dotPristine && !!this.getErrorMessage();
-    }
-
-    private getErrorMessage(): string {
-        return this.isValueInRange()
-            ? this.isRequired() ? '' : this.requiredMessage
-            : this.validationMessage;
-    }
-
     private blurHandler(): void {
         if (!this.status.dotTouched) {
             this.status = updateStatus(this.status, {
@@ -145,17 +122,11 @@ export class DotInputCalendarComponent {
         this.emitStatusChange();
     }
 
-    private emitErrorMessage(): void {
-        this._errorMessage.emit({
-            show: this.showErrorMessage(),
-            message: this.getErrorMessage()
-        });
-    }
-
     private emitStatusChange(): void {
         this._statusChange.emit({
             name: this.name,
-            status: this.status
+            status: this.status,
+            isValidRange: this.isValueInRange()
         });
     }
 

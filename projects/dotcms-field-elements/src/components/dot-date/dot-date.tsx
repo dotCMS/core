@@ -10,7 +10,12 @@ import {
     Watch
 } from '@stencil/core';
 import Fragment from 'stencil-fragment';
-import { DotFieldStatusClasses, DotFieldStatusEvent, DotFieldValueEvent } from '../../models';
+import {
+    DotFieldStatusClasses,
+    DotFieldStatusEvent,
+    DotFieldValueEvent,
+    DotInputCalendarStatusEvent
+} from '../../models';
 import { checkProp, getClassNames, getTagError, getTagHint } from '../../utils';
 
 @Component({
@@ -21,40 +26,48 @@ export class DotDateComponent {
     @Element() el: HTMLElement;
 
     /** Value format yyyy-mm-dd  e.g., 2005-12-01 */
-    @Prop({ mutable: true })
+    @Prop({ mutable: true, reflectToAttr: true })
     value = '';
 
     /** Name that will be used as ID */
-    @Prop() name = '';
+    @Prop({ reflectToAttr: true })
+    name = '';
 
     /** (optional) Text to be rendered next to input field */
-    @Prop() label = '';
+    @Prop({ reflectToAttr: true })
+    label = '';
 
     /** (optional) Hint text that suggest a clue of the field */
-    @Prop() hint = '';
+    @Prop({ reflectToAttr: true })
+    hint = '';
 
     /** (optional) Determine if it is mandatory */
-    @Prop() required = false;
+    @Prop({ reflectToAttr: true })
+    required = false;
 
     /** (optional) Text that be shown when required is set and condition not met */
-    @Prop() requiredMessage = '';
+    @Prop({ reflectToAttr: true })
+    requiredMessage = 'This field is required';
 
     /** (optional) Text that be shown when min or max are set and condition not met */
-    @Prop() validationMessage = '';
+    @Prop({ reflectToAttr: true })
+    validationMessage = "The field doesn't comply with the specified format";
 
     /** (optional) Disables field's interaction */
-    @Prop() disabled = false;
+    @Prop({ reflectToAttr: true })
+    disabled = false;
 
     /** (optional) Min, minimum value that the field will allow to set. Format should be yyyy-mm-dd */
-    @Prop({ mutable: true })
+    @Prop({ mutable: true, reflectToAttr: true })
     min = '';
 
     /** (optional) Max, maximum value that the field will allow to set. Format should be yyyy-mm-dd */
-    @Prop({ mutable: true })
+    @Prop({ mutable: true, reflectToAttr: true })
     max = '';
 
     /** (optional) Step specifies the legal number intervals for the input field */
-    @Prop() step = '1';
+    @Prop({ reflectToAttr: true })
+    step = '1';
 
     @State() classNames: DotFieldStatusClasses;
     @State() errorMessageElement: JSX.Element;
@@ -88,25 +101,25 @@ export class DotDateComponent {
     @Listen('_valueChange')
     emitValueChange(event: CustomEvent) {
         event.stopImmediatePropagation();
-        this.valueChange.emit(event.detail);
+        const valueEvent: DotFieldValueEvent = event.detail;
+        this.value = valueEvent.value;
+        this.valueChange.emit(valueEvent);
     }
 
     @Listen('_statusChange')
     emitStatusChange(event: CustomEvent) {
         event.stopImmediatePropagation();
-        const statusEvent: DotFieldStatusEvent = event.detail;
+        const inputCalendarStatus: DotInputCalendarStatusEvent = event.detail;
         this.classNames = getClassNames(
-            statusEvent.status,
-            statusEvent.status.dotValid,
+            inputCalendarStatus.status,
+            inputCalendarStatus.status.dotValid,
             this.required
         );
-        this.statusChange.emit(event.detail);
-    }
-
-    @Listen('_errorMessage')
-    showErrorElement(event: CustomEvent) {
-        event.stopImmediatePropagation();
-        this.errorMessageElement = getTagError(event.detail.show, event.detail.message);
+        this.setErrorMessageElement(inputCalendarStatus);
+        this.statusChange.emit({
+            name: inputCalendarStatus.name,
+            status: inputCalendarStatus.status
+        });
     }
 
     hostData() {
@@ -125,8 +138,6 @@ export class DotDateComponent {
                         name={this.name}
                         value={this.value}
                         required={this.required}
-                        required-message={this.requiredMessage}
-                        validation-message={this.validationMessage}
                         min={this.min}
                         max={this.max}
                         step={this.step}
@@ -141,5 +152,18 @@ export class DotDateComponent {
     private validateProps(): void {
         this.minWatch();
         this.maxWatch();
+    }
+
+    private setErrorMessageElement(statusEvent: DotInputCalendarStatusEvent) {
+        this.errorMessageElement = getTagError(
+            !statusEvent.status.dotValid && !statusEvent.status.dotPristine,
+            this.getErrorMessage(statusEvent)
+        );
+    }
+
+    private getErrorMessage(statusEvent: DotInputCalendarStatusEvent): string {
+        return !!this.value
+            ? statusEvent.isValidRange ? '' : this.validationMessage
+            : this.requiredMessage;
     }
 }

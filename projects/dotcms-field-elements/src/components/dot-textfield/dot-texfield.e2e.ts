@@ -9,81 +9,67 @@ describe('dot-textfield', () => {
     let spyStatusChangeEvent: EventSpy;
     let spyValueChangeEvent: EventSpy;
 
-    describe('render CSS classes', () => {
-        beforeEach(async () => {
-            page = await newE2EPage();
+    beforeEach(async () => {
+        page = await newE2EPage({
+            html: `<dot-textfield></dot-textfield>`
         });
 
-        describe('with data', () => {
+        element = await page.find('dot-textfield');
+        input = await page.find('input');
+    });
+
+    describe('render CSS classes', () => {
+        it('should be valid, untouched & pristine on load', async () => {
+            await page.waitForChanges();
+            expect(element).toHaveClasses(dotTestUtil.class.empty);
+        });
+
+        it('should be valid, touched & dirty when filled', async () => {
+            await input.press('a');
+            await page.waitForChanges();
+            expect(element).toHaveClasses(dotTestUtil.class.filled);
+        });
+
+        it('should have touched but pristine on blur', async () => {
+            await input.triggerEvent('blur');
+            await page.waitForChanges();
+            expect(element).toHaveClasses(dotTestUtil.class.touchedPristine);
+        });
+
+        describe('required', () => {
             beforeEach(async () => {
-                await page.setContent(`<dot-textfield value='John'></dot-textfield>`);
-                element = await page.find('dot-textfield');
-                input = await page.find('input');
+                element.setProperty('required', 'true');
             });
 
-            it('should be valid, untouched & pristine on load', async () => {
+            it('should be valid, untouched & pristine and required when filled on load', async () => {
+                element.setProperty('value', 'ab');
                 await page.waitForChanges();
-                expect(element).toHaveClasses(dotTestUtil.class.empty);
+                expect(element).toHaveClasses(dotTestUtil.class.filledRequiredPristine);
             });
 
-            it('should be valid, touched & dirty when filled', async () => {
+            it('should be valid, touched & dirty and required when filled', async () => {
                 await input.press('a');
                 await page.waitForChanges();
-                expect(element).toHaveClasses(dotTestUtil.class.filled);
+                expect(element).toHaveClasses(dotTestUtil.class.filledRequired);
             });
 
-            describe('required', () => {
-                beforeEach(async () => {
-                    element.setProperty('required', 'true');
-                });
-
-                it('should be valid, untouched & pristine and required when filled on load', async () => {
-                    element.setProperty('value', 'ab');
-                    await page.waitForChanges();
-                    expect(element).toHaveClasses(dotTestUtil.class.filledRequiredPristine);
-                });
-
-                it('should be valid, touched & dirty and required when filled', async () => {
-                    await input.press('a');
-                    await page.waitForChanges();
-                    expect(element).toHaveClasses(dotTestUtil.class.filledRequired);
-                });
-
-                it('should be invalid, untouched, pristine and required when empty on load', async () => {
-                    element.setProperty('value', '');
-                    await page.waitForChanges();
-                    expect(element).toHaveClasses(dotTestUtil.class.emptyRequiredPristine);
-                });
-
-                it('should be invalid, touched, dirty and required when valued is cleared', async () => {
-                    element.setProperty('value', 'a');
-                    await page.waitForChanges();
-                    await input.press('Backspace');
-                    await page.waitForChanges();
-                    expect(element).toHaveClasses(dotTestUtil.class.emptyRequired);
-                });
+            it('should be invalid, untouched, pristine and required when empty on load', async () => {
+                element.setProperty('value', '');
+                await page.waitForChanges();
+                expect(element).toHaveClasses(dotTestUtil.class.emptyRequiredPristine);
             });
-        });
 
-        describe('without data', () => {
-            it('should be pristine, untouched & valid', async () => {
-                await page.setContent(`<dot-textfield></dot-textfield>`);
-                element = await page.find('dot-textfield');
-                expect(element).toHaveClasses(dotTestUtil.class.empty);
+            it('should be invalid, touched, dirty and required when valued is cleared', async () => {
+                element.setProperty('value', 'a');
+                await page.waitForChanges();
+                await input.press('Backspace');
+                await page.waitForChanges();
+                expect(element).toHaveClasses(dotTestUtil.class.emptyRequired);
             });
         });
     });
 
     describe('@Props', () => {
-        beforeEach(async () => {
-            page = await newE2EPage({
-                html: `<dot-textfield></dot-textfield>`
-            });
-
-            element = await page.find('dot-textfield');
-            input = await page.find('input');
-        });
-
         describe('value', () => {
             it('should set value correctly', async () => {
                 element.setProperty('value', 'hi');
@@ -229,7 +215,7 @@ describe('dot-textfield', () => {
                 await input.press('a');
                 await page.waitForChanges();
                 expect((await dotTestUtil.getErrorMessage(page)).innerText).toBe(
-                    'The field doesn\'t comply with the specified format'
+                    "The field doesn't comply with the specified format"
                 );
             });
 
@@ -286,67 +272,61 @@ describe('dot-textfield', () => {
                 expect(input.getAttribute('type')).toBe('text');
             });
         });
+    });
 
-        describe('@Events', () => {
-            beforeEach(async () => {
-                page = await newE2EPage();
-                await page.setContent(`<dot-textfield></dot-textfield>`);
+    describe('@Events', () => {
+        beforeEach(async () => {
+            spyStatusChangeEvent = await page.spyOnEvent('statusChange');
+            spyValueChangeEvent = await page.spyOnEvent('valueChange');
+        });
 
-                spyStatusChangeEvent = await page.spyOnEvent('statusChange');
-                spyValueChangeEvent = await page.spyOnEvent('valueChange');
-
-                element = await page.find('dot-textfield');
-                input = await page.find('input');
-            });
-
-            describe('status and value change', () => {
-                it('should send status and value change', async () => {
-                    await input.press('a');
-                    await page.waitForChanges();
-                    expect(spyStatusChangeEvent).toHaveReceivedEventDetail({
-                        name: '',
-                        status: {
-                            dotPristine: false,
-                            dotTouched: true,
-                            dotValid: true
-                        }
-                    });
-                    expect(spyValueChangeEvent).toHaveReceivedEventDetail({
-                        name: '',
-                        value: 'a'
-                    });
+        describe('status and value change', () => {
+            it('should send status and value change', async () => {
+                await input.press('a');
+                await page.waitForChanges();
+                expect(spyStatusChangeEvent).toHaveReceivedEventDetail({
+                    name: '',
+                    status: {
+                        dotPristine: false,
+                        dotTouched: true,
+                        dotValid: true
+                    }
                 });
-
-                it('should emit status and value on Reset', async () => {
-                    await element.callMethod('reset');
-                    expect(spyStatusChangeEvent).toHaveReceivedEventDetail({
-                        name: '',
-                        status: {
-                            dotPristine: true,
-                            dotTouched: false,
-                            dotValid: true
-                        }
-                    });
-                    expect(spyValueChangeEvent).toHaveReceivedEventDetail({
-                        name: '',
-                        value: ''
-                    });
+                expect(spyValueChangeEvent).toHaveReceivedEventDetail({
+                    name: '',
+                    value: 'a'
                 });
             });
 
-            describe('status change', () => {
-                it('should mark as touched when onblur', async () => {
-                    await input.triggerEvent('blur');
-                    await page.waitForChanges();
+            it('should emit status and value on Reset', async () => {
+                await element.callMethod('reset');
+                expect(spyStatusChangeEvent).toHaveReceivedEventDetail({
+                    name: '',
+                    status: {
+                        dotPristine: true,
+                        dotTouched: false,
+                        dotValid: true
+                    }
+                });
+                expect(spyValueChangeEvent).toHaveReceivedEventDetail({
+                    name: '',
+                    value: ''
+                });
+            });
+        });
 
-                    expect(spyStatusChangeEvent).toHaveReceivedEventDetail({
-                        name: '',
-                        status: {
-                            dotPristine: true,
-                            dotTouched: true,
-                            dotValid: true
-                        }
-                    });
+        describe('status change', () => {
+            it('should mark as touched when onblur', async () => {
+                await input.triggerEvent('blur');
+                await page.waitForChanges();
+
+                expect(spyStatusChangeEvent).toHaveReceivedEventDetail({
+                    name: '',
+                    status: {
+                        dotPristine: true,
+                        dotTouched: true,
+                        dotValid: true
+                    }
                 });
             });
         });

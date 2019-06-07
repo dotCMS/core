@@ -8,6 +8,10 @@ export interface DotFieldStatusEvent extends DotFieldEvent {
     status: DotFieldStatus;
 }
 
+export interface DotInputCalendarStatusEvent extends DotFieldStatusEvent {
+    isValidRange: boolean;
+}
+
 export interface DotFieldValueEvent extends DotFieldEvent {
     fieldType?: string;
     value: string;

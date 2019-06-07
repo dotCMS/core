@@ -7,80 +7,66 @@ describe('dot-textarea', () => {
     let element: E2EElement;
     let textarea: E2EElement;
 
+    beforeEach(async () => {
+        page = await newE2EPage({
+            html: `<dot-textarea></dot-textarea>`
+        });
+        element = await page.find('dot-textarea');
+        textarea = await page.find('textarea');
+    });
+
     describe('render CSS classes', () => {
-        beforeEach(async () => {
-            page = await newE2EPage();
+        it('should be valid, untouched & pristine on load', async () => {
+            await page.waitForChanges();
+            expect(element).toHaveClasses(dotTestUtil.class.empty);
         });
 
-        describe('with data', () => {
+        it('should be valid, touched & dirty when filled', async () => {
+            await textarea.press('a');
+            await page.waitForChanges();
+            expect(element).toHaveClasses(dotTestUtil.class.filled);
+        });
+
+        it('should have touched but pristine on blur', async () => {
+            await textarea.triggerEvent('blur');
+            await page.waitForChanges();
+            expect(element).toHaveClasses(dotTestUtil.class.touchedPristine);
+        });
+
+        describe('required', () => {
             beforeEach(async () => {
-                await page.setContent(`<dot-textarea value='Address' ></dot-textarea>`);
-                element = await page.find('dot-textarea');
-                textarea = await page.find('textarea');
+                element.setProperty('required', 'true');
             });
 
-            it('should be valid, untouched & pristine on load', async () => {
+            it('should be valid, untouched & pristine and required when filled on load', async () => {
+                element.setProperty('value', 'ab');
                 await page.waitForChanges();
-                expect(element).toHaveClasses(dotTestUtil.class.empty);
+                expect(element).toHaveClasses(dotTestUtil.class.filledRequiredPristine);
             });
 
-            it('should be valid, touched & dirty when filled', async () => {
+            it('should be valid, touched & dirty and required when filled', async () => {
                 await textarea.press('a');
                 await page.waitForChanges();
-                expect(element).toHaveClasses(dotTestUtil.class.filled);
+                expect(element).toHaveClasses(dotTestUtil.class.filledRequired);
             });
 
-            describe('required', () => {
-                beforeEach(async () => {
-                    element.setProperty('required', 'true');
-                });
-
-                it('should be valid, untouched & pristine and required when filled on load', async () => {
-                    element.setProperty('value', 'ab');
-                    await page.waitForChanges();
-                    expect(element).toHaveClasses(dotTestUtil.class.filledRequiredPristine);
-                });
-
-                it('should be valid, touched & dirty and required when filled', async () => {
-                    await textarea.press('a');
-                    await page.waitForChanges();
-                    expect(element).toHaveClasses(dotTestUtil.class.filledRequired);
-                });
-
-                it('should be invalid, untouched, pristine and required when empty on load', async () => {
-                    element.setProperty('value', '');
-                    await page.waitForChanges();
-                    expect(element).toHaveClasses(dotTestUtil.class.emptyRequiredPristine);
-                });
-
-                it('should be invalid, touched, dirty and required when valued is cleared', async () => {
-                    element.setProperty('value', 'a');
-                    await page.waitForChanges();
-                    await textarea.press('Backspace');
-                    await page.waitForChanges();
-                    expect(element).toHaveClasses(dotTestUtil.class.emptyRequired);
-                });
+            it('should be invalid, untouched, pristine and required when empty on load', async () => {
+                element.setProperty('value', '');
+                await page.waitForChanges();
+                expect(element).toHaveClasses(dotTestUtil.class.emptyRequiredPristine);
             });
-        });
 
-        describe('without data', () => {
-            it('should be pristine, untouched & valid', async () => {
-                await page.setContent(`<dot-textarea></dot-textarea>`);
-                element = await page.find('dot-textarea');
-                expect(element).toHaveClasses(dotTestUtil.class.empty);
+            it('should be invalid, touched, dirty and required when valued is cleared', async () => {
+                element.setProperty('value', 'a');
+                await page.waitForChanges();
+                await textarea.press('Backspace');
+                await page.waitForChanges();
+                expect(element).toHaveClasses(dotTestUtil.class.emptyRequired);
             });
         });
     });
 
     describe('@Props', () => {
-        beforeEach(async () => {
-            page = await newE2EPage({
-                html: `<dot-textarea></dot-textarea>`
-            });
-            element = await page.find('dot-textarea');
-            textarea = await page.find('textarea');
-        });
-
         describe('value', () => {
             it('should set value correctly', async () => {
                 element.setProperty('value', 'text');
@@ -263,14 +249,8 @@ describe('dot-textarea', () => {
         let spyValueChangeEvent: EventSpy;
 
         beforeEach(async () => {
-            page = await newE2EPage();
-            await page.setContent(`<dot-textarea></dot-textarea>`);
-
             spyStatusChangeEvent = await page.spyOnEvent('statusChange');
             spyValueChangeEvent = await page.spyOnEvent('valueChange');
-
-            element = await page.find('dot-textarea');
-            textarea = await page.find('textarea');
         });
 
         describe('status and value change', () => {

@@ -10,7 +10,12 @@ import {
     Watch
 } from '@stencil/core';
 import Fragment from 'stencil-fragment';
-import { DotFieldStatusClasses, DotFieldStatusEvent, DotFieldValueEvent } from '../../models';
+import {
+    DotFieldStatusClasses,
+    DotFieldStatusEvent,
+    DotFieldValueEvent,
+    DotInputCalendarStatusEvent
+} from '../../models';
 import { checkProp, getClassNames, getTagError, getTagHint } from '../../utils';
 
 @Component({
@@ -96,25 +101,25 @@ export class DotTimeComponent {
     @Listen('_valueChange')
     emitValueChange(event: CustomEvent) {
         event.stopImmediatePropagation();
-        this.valueChange.emit(event.detail);
+        const valueEvent: DotFieldValueEvent = event.detail;
+        this.value = valueEvent.value;
+        this.valueChange.emit(valueEvent);
     }
 
     @Listen('_statusChange')
     emitStatusChange(event: CustomEvent) {
         event.stopImmediatePropagation();
-        const statusEvent: DotFieldStatusEvent = event.detail;
+        const inputCalendarStatus: DotInputCalendarStatusEvent = event.detail;
         this.classNames = getClassNames(
-            statusEvent.status,
-            statusEvent.status.dotValid,
+            inputCalendarStatus.status,
+            inputCalendarStatus.status.dotValid,
             this.required
         );
-        this.statusChange.emit(event.detail);
-    }
-
-    @Listen('_errorMessage')
-    setErrorElement(event: CustomEvent) {
-        event.stopImmediatePropagation();
-        this.errorMessageElement = getTagError(event.detail.show, event.detail.message);
+        this.setErrorMessageElement(inputCalendarStatus);
+        this.statusChange.emit({
+            name: inputCalendarStatus.name,
+            status: inputCalendarStatus.status
+        });
     }
 
     hostData() {
@@ -133,8 +138,6 @@ export class DotTimeComponent {
                         name={this.name}
                         value={this.value}
                         required={this.required}
-                        required-message={this.requiredMessage}
-                        validation-message={this.validationMessage}
                         min={this.min}
                         max={this.max}
                         step={this.step}
@@ -149,5 +152,18 @@ export class DotTimeComponent {
     private validateProps(): void {
         this.minWatch();
         this.maxWatch();
+    }
+
+    private setErrorMessageElement(statusEvent: DotInputCalendarStatusEvent) {
+        this.errorMessageElement = getTagError(
+            !statusEvent.status.dotValid && !statusEvent.status.dotPristine,
+            this.getErrorMessage(statusEvent)
+        );
+    }
+
+    private getErrorMessage(statusEvent: DotInputCalendarStatusEvent): string {
+        return !!this.value
+            ? statusEvent.isValidRange ? '' : this.validationMessage
+            : this.requiredMessage;
     }
 }

@@ -1,4 +1,4 @@
-import { E2EPage } from '@stencil/core/testing';
+import { E2EElement, E2EPage } from '@stencil/core/testing';
 
 export const dotTestUtil = {
     getDotLabel: (page: E2EPage) => page.find('dot-label'),
@@ -12,5 +12,24 @@ export const dotTestUtil = {
         filledRequired: ['dot-required', 'dot-valid', 'dot-touched', 'dot-dirty'],
         filledRequiredPristine: ['dot-required', 'dot-valid', 'dot-untouched', 'dot-pristine'],
         touchedPristine: ['dot-valid', 'dot-pristine', 'dot-touched']
+    },
+    triggerStatusChange: (
+        pristine: boolean,
+        touched: boolean,
+        valid: boolean,
+        element: E2EElement,
+        isValidRange?: boolean
+    ) => {
+        element.triggerEvent('_statusChange', {
+            detail: {
+                name: '',
+                status: {
+                    dotPristine: pristine,
+                    dotTouched: touched,
+                    dotValid: valid
+                },
+                isValidRange: isValidRange
+            }
+        });
     }
 };
