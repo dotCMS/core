@@ -5,31 +5,34 @@ import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.BadRequestException;
-import com.dotmarketing.beans.Host;
+import com.dotcms.util.PaginationUtil;
+import com.dotcms.util.pagination.ContentTypesPaginator;
+import com.dotcms.util.pagination.OrderDirection;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
+import com.dotmarketing.business.Treeable;
+import com.dotmarketing.business.web.HostWebAPI;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeAPI;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.personas.business.PersonaAPI;
 import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.WebKeys;
+import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
+import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static com.dotcms.util.DotPreconditions.checkNotEmpty;
 import static com.dotcms.util.DotPreconditions.checkNotNull;
@@ -40,22 +43,29 @@ import static com.dotcms.util.DotPreconditions.checkNotNull;
 @Path("/v1/personalization")
 public class PersonalizationResource {
 
-    private final PersonaAPI   personaAPI;
-    private final WebResource  webResource;
-    private final MultiTreeAPI multiTreeAPI;
+    private final PersonaAPI    personaAPI;
+    private final WebResource   webResource;
+    private final MultiTreeAPI  multiTreeAPI;
+    private final ContentletAPI contentletAPI;
+
+
 
     @SuppressWarnings("unused")
     public PersonalizationResource() {
-        this(APILocator.getPersonaAPI(), APILocator.getMultiTreeAPI(), new WebResource(new ApiProvider()));
+        this(APILocator.getPersonaAPI(), APILocator.getMultiTreeAPI(), new WebResource(new ApiProvider()),
+                APILocator.getContentletAPI());
     }
 
     @VisibleForTesting
     protected PersonalizationResource(final PersonaAPI personaAPI,
                                       final MultiTreeAPI multiTreeAPI,
-                                      final WebResource webResource) {
-        this.personaAPI   = personaAPI;
-        this.multiTreeAPI = multiTreeAPI;
-        this.webResource  = webResource;
+                                      final WebResource webResource,
+                                      final ContentletAPI contentletAPI) {
+
+        this.personaAPI    = personaAPI;
+        this.multiTreeAPI  = multiTreeAPI;
+        this.webResource   = webResource;
+        this.contentletAPI = contentletAPI;
     }
 
 
@@ -76,41 +86,24 @@ public class PersonalizationResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response getPersonasOnPage (@Context final HttpServletRequest  request,
                                        @Context final HttpServletResponse response,
-                                       @PathParam("pageId") final String  pageId) throws DotDataException, DotSecurityException {
+                                       @QueryParam(PaginationUtil.FILTER)   final String filter,
+                                       @QueryParam(PaginationUtil.PAGE) final int page,
+                                       @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
+                                       @DefaultValue("title") @QueryParam(PaginationUtil.ORDER_BY) String orderbyParam,
+                                       @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) String direction,
+                                       @PathParam("pageId") final String  pageId) {
 
-        final User user = webResource.init(true, request, true).getUser();
-        Host host = (Host)request.getSession().getAttribute(WebKeys.CURRENT_HOST);
-        if(host == null){
-            String siteId = request.getHeader(WebKeys.CURRENT_HOST);
-            siteId = checkNotEmpty(siteId, BadRequestException.class, "Site Id is required.");
-            host   = getHost(siteId);
-        }
-
-        host = checkNotNull(host, BadRequestException.class, "Current Site Host could not be determined.");
+        final User user = this.webResource.init(true, request, true).getUser();
 
         Logger.debug(this, ()-> "Getting page personas per page: " + pageId);
 
-        // todo: eventually do pagination here.
-        final List<Persona> personas        = this.personaAPI.getPersonas(host, true, false, user, true);
-        final Set<String> personaTagPerPage = this.multiTreeAPI.getPersonalizationsForPage (pageId);
-        final List<PersonalizationPersonaPageView> personalizationPersonaPageViews =
-                            new ArrayList<>(personas.size());
+        final Map<String, Object> extraParams =
+                ImmutableMap.<String, Object>builder().put(PersonalizationPersonaPageViewPaginator.PAGE_ID, pageId).build();
 
-        for (final Persona persona : personas) {
+        final PaginationUtil paginationUtil = new PaginationUtil(new PersonalizationPersonaPageViewPaginator());
 
-            personalizationPersonaPageViews.add(new PersonalizationPersonaPageView(pageId,
-                    personaTagPerPage.contains(persona.getKeyTag()), persona));
-        }
-
-        return Response.ok(new ResponseEntityView(personas)).build();
+        return paginationUtil.getPage(request, user, filter, page, perPage, orderbyParam,
+                OrderDirection.valueOf(direction), extraParams);
     }
-
-    private Host getHost(final String siteId) {
-        final Host proxy = new Host();
-        proxy.setIdentifier(siteId);
-        return proxy;
-    }
-
-
 
 }
