@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.personas.business;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -25,6 +26,7 @@ import com.liferay.portal.model.User;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class PersonaAPIImpl implements PersonaAPI {
 
@@ -287,6 +289,13 @@ public class PersonaAPIImpl implements PersonaAPI {
 		Structure defaultStr = APILocator.getStructureAPI().findByVarName(PersonaAPI.DEFAULT_PERSONAS_STRUCTURE_VARNAME,
 				APILocator.getUserAPI().getSystemUser());
 		return defaultStr;
+	}
+
+	@CloseDBIfOpened
+	@Override
+	public Optional<Persona> findPersonaByTag (final String personaTag) {
+
+		return Optional.empty();
 	}
 
 }

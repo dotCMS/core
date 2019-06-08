@@ -71,7 +71,7 @@ public class PersonalizationResource {
 
     /**
      * Returns the list of personas with a flag that determine if the persona has been customized on a page or not.
-     * { persona:Persona, personalized:boolean }
+     * { persona:Persona, personalized:boolean, pageId:String  }
      * @param request
      * @param response
      * @param pageId
@@ -84,7 +84,7 @@ public class PersonalizationResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public Response getPersonasOnPage (@Context final HttpServletRequest  request,
+    public Response getPersonalizadPersonasOnPage (@Context final HttpServletRequest  request,
                                        @Context final HttpServletResponse response,
                                        @QueryParam(PaginationUtil.FILTER)   final String filter,
                                        @QueryParam(PaginationUtil.PAGE) final int page,
@@ -104,6 +104,40 @@ public class PersonalizationResource {
 
         return paginationUtil.getPage(request, user, filter, page, perPage, orderbyParam,
                 OrderDirection.valueOf(direction), extraParams);
-    }
+    } // getPersonalizadPersonasOnPage
+
+    /**
+     * Copies the current content associated to the page containers with the personalization personas as {@link com.dotmarketing.beans.MultiTree#DOT_PERSONALIZATION_DEFAULT}
+     * and will set the a new same set of them, but with the personalization on the personalizationPersonaPageForm.personaTag
+     * @param request  {@link HttpServletRequest}
+     * @param response {@link HttpServletResponse}
+     * @param  personalizationPersonaPageForm {@link PersonalizationPersonaPageForm} (pageId, personaTag)
+     * @return Response, list of MultiTrees with the new personalization
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @POST
+    @Path("/pagepersonas")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public Response personalizePageContainers (@Context final HttpServletRequest  request,
+                                               @Context final HttpServletResponse response,
+                                               final PersonalizationPersonaPageForm personalizationPersonaPageForm) throws DotDataException {
+
+        final User user = this.webResource.init(true, request, true).getUser();
+
+        Logger.debug(this, ()-> "Personalizing all containers on the page personas per page: " + personalizationPersonaPageForm.getPageId());
+
+        if (!this.personaAPI.findPersonaByTag(personalizationPersonaPageForm.getPersonaTag()).isPresent()) {
+
+            throw new BadRequestException("Does not exists a Persona with the tag: " + personalizationPersonaPageForm.getPersonaTag());
+        }
+
+        return Response.ok(new ResponseEntityView(this.multiTreeAPI.
+                copyPersonalizationForPage(personalizationPersonaPageForm.getPageId(),
+                        personalizationPersonaPageForm.getPersonaTag()))).build();
+    } // personalizePageContainers
+
 
 }

@@ -36,6 +36,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.HashBasedTable;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Table;
 import com.liferay.portal.model.User;
@@ -73,6 +74,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     private static final String INSERT_SQL = "insert into multi_tree (parent1, parent2, child, relation_type, tree_order, personalization) values (?,?,?,?,?,?)  ";
 
     private static final String SELECT_BY_PAGE = "select * from multi_tree where parent1 = ? order by tree_order";
+    private static final String SELECT_BY_PAGE_AND_PERSONALIZATION = "select * from multi_tree where parent1 = ? and personalization = ? order by tree_order";
     private static final String SELECT_UNIQUE_PERSONALIZATION_PER_PAGE = "select distinct(personalization) from multi_tree where parent1 = ?";
     private static final String SELECT_BY_ONE_PARENT = "select * from multi_tree where parent1 = ? or parent2 = ? order by tree_order"; // search by page id or container id
     private static final String SELECT_BY_TWO_PARENTS = "select * from multi_tree where parent1 = ? and parent2 = ?  order by tree_order";
@@ -233,6 +235,48 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         }
 
         return personalizationSet;
+    }
+
+    @WrapInTransaction
+    @Override
+    public List<MultiTree> copyPersonalizationForPage (final String pageId,
+                                                       final String basePersonalization,
+                                                       final String newPersonalization)  throws DotDataException {
+
+        List<MultiTree> multiTrees = null;
+        final ImmutableList.Builder<MultiTree> personalizedContainerListBuilder =
+                new ImmutableList.Builder<>();
+
+        final List<MultiTree> basedMultiTreeList = this.getMultiTreesByPersonalizedPage(pageId, basePersonalization);
+
+        if (null != basedMultiTreeList) {
+
+            basedMultiTreeList.forEach(multiTree ->
+                    personalizedContainerListBuilder.add(MultiTree.personalized(multiTree, newPersonalization)));
+
+            multiTrees = personalizedContainerListBuilder.build();
+            this.saveMultiTrees(multiTrees);
+        }
+
+        return multiTrees;
+    }
+
+    /**
+     * Returns the trees associated to a page and personalization
+     *
+     * @param pageId String page id
+     * @param personalization String personalization to find
+     * @return List of MultiTree
+     * @throws DotDataException
+     */
+    @CloseDBIfOpened
+    @Override
+    public java.util.List<MultiTree> getMultiTreesByPersonalizedPage(final String pageId, final String personalization) throws DotDataException {
+
+        return TransformerLocator.createMultiTreeTransformer(
+                new DotConnect().setSQL(SELECT_BY_PAGE_AND_PERSONALIZATION)
+                        .addParam(pageId).addParam(personalization).loadObjectResults())
+                .asList();
     }
 
     /**

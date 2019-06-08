@@ -348,6 +348,38 @@ public class MultiTreeAPITest extends IntegrationTestBase {
     }
 
     @Test
+    public void testGetMultiTreesByPersonalizedPage() throws Exception {
+
+        final MultiTreeAPI multiTreeAPI = new MultiTreeAPIImpl();
+        final String htmlPage           = UUIDGenerator.generateUuid();
+        final String container          = UUIDGenerator.generateUuid();
+        final String content1           = UUIDGenerator.generateUuid();
+        final String content2           = UUIDGenerator.generateUuid();
+        final String personalization    = "dot:somepersona";
+        final String newPersonalization = "dot:newpersona";
+
+        multiTreeAPI.saveMultiTree(new MultiTree(htmlPage, container, content1, UUIDGenerator.generateUuid(), 1)); // dot:default
+        multiTreeAPI.saveMultiTree(new MultiTree(htmlPage, container, content2, UUIDGenerator.generateUuid(), 1)); // dot:default
+        multiTreeAPI.saveMultiTree(new MultiTree(htmlPage, container, content1, UUIDGenerator.generateUuid(), 2, personalization)); // dot:somepersona
+
+        List<MultiTree> multiTrees = multiTreeAPI.getMultiTreesByPersonalizedPage(htmlPage, MultiTree.DOT_PERSONALIZATION_DEFAULT);
+
+        org.junit.Assert.assertNotNull(multiTrees);
+        org.junit.Assert.assertEquals(2, multiTrees.size());
+
+        multiTrees = multiTreeAPI.getMultiTreesByPersonalizedPage(htmlPage, personalization);
+
+        org.junit.Assert.assertNotNull(multiTrees);
+        org.junit.Assert.assertEquals(1, multiTrees.size());
+
+        multiTrees = multiTreeAPI.copyPersonalizationForPage(htmlPage, MultiTree.DOT_PERSONALIZATION_DEFAULT, newPersonalization);
+        org.junit.Assert.assertNotNull(multiTrees);
+        org.junit.Assert.assertEquals(2, multiTrees.size());
+        org.junit.Assert.assertEquals(newPersonalization, multiTrees.get(0).getPersonalization());
+        org.junit.Assert.assertEquals(newPersonalization, multiTrees.get(1).getPersonalization());
+    }
+
+    @Test
     public void testMultiTreesSaveAndPersonalizationForPage() throws Exception {
 
         final MultiTreeAPI multiTreeAPI = new MultiTreeAPIImpl();
@@ -357,7 +389,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         final String personalization    = "dot:somepersona";
 
         multiTreeAPI.saveMultiTree(new MultiTree(htmlPage, container, content, UUIDGenerator.generateUuid(), 1)); // dot:default
-        multiTreeAPI.saveMultiTree(new MultiTree(htmlPage, container, content, UUIDGenerator.generateUuid(), 2, personalization)); // dot:default
+        multiTreeAPI.saveMultiTree(new MultiTree(htmlPage, container, content, UUIDGenerator.generateUuid(), 2, personalization)); // dot:somepersona
 
         final Set<String> personalizationSet = multiTreeAPI.getPersonalizationsForPage(htmlPage);
 

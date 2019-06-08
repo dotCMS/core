@@ -51,7 +51,7 @@ public interface MultiTreeAPI {
     /**
      * Removes any mutlitree that has the identifiers as either a parent or as a child
      * 
-     * @param inodes
+     * @param identifiers
      * @throws DotDataException
      */
     void deleteMultiTreesForIdentifiers(List<String> identifiers) throws DotDataException;
@@ -109,7 +109,7 @@ public interface MultiTreeAPI {
     /**
      * Deletes all MultiTrees that have contentlet id as a child
      * 
-     * @param pageOrContainer
+     * @param contentIdentifier
      * @throws DotDataException
      */
     void deleteMultiTreeByChild(String contentIdentifier) throws DotDataException;
@@ -120,6 +120,15 @@ public interface MultiTreeAPI {
      * @return
      */
     List<MultiTree> getAllMultiTrees();
+
+    /**
+     * Get MultiTrees on a page and personalization
+     * @param pageId String
+     * @param personalization String
+     * @return List MultiTree
+     * @throws DotDataException
+     */
+    List<MultiTree> getMultiTreesByPersonalizedPage(final String pageId, final String personalization) throws DotDataException;
 
     /**
      * Gets a list of all MultiTrees on a page (even if they are bad)
@@ -182,8 +191,8 @@ public interface MultiTreeAPI {
     /**
      * Gets a list of MultiTrees that belong to the container on any page
      * 
-     * @param container
-     * @return
+     * @param containerIdentifier
+     * @return List Multitree
      */
     List<MultiTree> getContainerMultiTrees(String containerIdentifier) throws DotDataException;
 
@@ -293,4 +302,24 @@ public interface MultiTreeAPI {
      * @return unique Set of personalization values per the page
      */
     Set<String> getPersonalizationsForPage(String pageId) throws DotDataException;
+
+    /**
+     * Take a set of containers with a based personalization and set to new personalization, for a page.
+     * @param pageId String page id
+     * @param basePersonalization String this personalization will use to get the containers and them apply a new personalization over a copy of the containers on the page.
+     * @param newPersonalization String this is the new personalization for the set of containers
+     * @return List MultiTree
+     */
+    List<MultiTree> copyPersonalizationForPage (String pageId, String basePersonalization, String newPersonalization) throws DotDataException;
+
+    /**
+     * Take a set of containers with a based personalization (the default one) and set to new personalization, for a page.
+     * @param pageId String page id
+     * @param newPersonalization String this is the new personalization for the set of containers
+     * @return List MultiTree
+     */
+    default List<MultiTree> copyPersonalizationForPage (final String pageId, final String newPersonalization) throws DotDataException {
+
+        return this.copyPersonalizationForPage(pageId, MultiTree.DOT_PERSONALIZATION_DEFAULT, newPersonalization);
+    }
 }

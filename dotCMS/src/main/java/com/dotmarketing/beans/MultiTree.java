@@ -71,9 +71,28 @@ public class MultiTree implements Serializable {
         this(null, null, null, LEGACY_INSTANCE_ID, 0);
     }
 
+    /** minimal constructor */
+    public MultiTree(String htmlPage, String container, String child) {
+        this(htmlPage, container, child, LEGACY_INSTANCE_ID, 0);
+    }
 
     private MultiTree(MultiTree tree) {
         this(tree.parent1, tree.parent2, tree.child, tree.relationType, tree.treeOrder, tree.getPersonalization());
+    }
+
+    /**
+     * Personalized an existing multitree with a new personalization
+     * @param multiTree {@link MultiTree}
+     * @param personalization {@link String}
+     * @return MultiTree
+     */
+    public static MultiTree personalized (final MultiTree multiTree, final String personalization) {
+
+        final MultiTree newMultiTree = new MultiTree(multiTree);
+
+        newMultiTree.setPersonalization(personalization);
+
+        return newMultiTree;
     }
 
     /**
@@ -96,11 +115,6 @@ public class MultiTree implements Serializable {
         return containerId;
     }
     
-    /** minimal constructor */
-    public MultiTree(String htmlPage, String container, String child) {
-        this(htmlPage, container, child, LEGACY_INSTANCE_ID, 0);
-    }
-
     public String getPersonalization() {
         return personalization;
     }
