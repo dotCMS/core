@@ -24,6 +24,7 @@ import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.WorkflowDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
@@ -114,6 +115,7 @@ public class ContentResourceTest extends IntegrationTestBase {
     private static RoleAPI roleAPI;
     private static User user;
     private static UserAPI userAPI;
+    private static Role adminRole;
 
     static private WorkflowScheme testScheme;
 
@@ -137,6 +139,12 @@ public class ContentResourceTest extends IntegrationTestBase {
         testScheme = APILocator.getWorkflowAPI().findSchemeByName(DM_WORKFLOW);
         if (testScheme == null) {
             testScheme = new WorkflowDataGen().name(DM_WORKFLOW).nextPersistedWithStepsAndActions();
+        }
+
+        //Creating a test role
+        adminRole = roleAPI.loadRoleByKey(ADMINISTRATOR);
+        if (adminRole == null) {
+            adminRole = new RoleDataGen().key(ADMINISTRATOR).nextPersisted();
         }
     }
 
@@ -193,7 +201,7 @@ public class ContentResourceTest extends IntegrationTestBase {
      * @throws Exception
      */
     private ContentType createSampleContentType(final boolean withFields) throws Exception{
-        final Role adminRole = APILocator.getRoleAPI().loadRoleByKey(ADMINISTRATOR);
+
         final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
         ContentType contentType;
         final String ctPrefix = "TestContentType";
