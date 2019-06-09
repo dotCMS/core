@@ -322,4 +322,11 @@ public interface MultiTreeAPI {
 
         return this.copyPersonalizationForPage(pageId, MultiTree.DOT_PERSONALIZATION_DEFAULT, newPersonalization);
     }
+
+    /**
+     * Deletes the personalization for the page
+     * @param pageId {@link String} page id
+     * @param personalization {@link String} personalization
+     */
+    void deletePersonalizationForPage(String pageId, String personalization) throws DotDataException;
 }

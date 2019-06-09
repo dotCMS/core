@@ -68,6 +68,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     private static final String DELETE_ALL_MULTI_TREE_RELATED_TO_IDENTIFIER_SQL =
             "delete from multi_tree where child = ? or parent1 = ? or parent2 = ?";
     private static final String DELETE_SQL = "delete from multi_tree where parent1=? and parent2=? and child=? and  relation_type = ? and personalization = ?";
+    private static final String DELETE_SQL_PERSONALIZATION_PER_PAGE = "delete from multi_tree where parent1=? and personalization = ?";
     private static final String DELETE_ALL_MULTI_TREE_SQL = "delete from multi_tree where parent1=? AND relation_type != ?";
     private static final String SELECT_SQL = "select * from multi_tree where parent1 = ? and parent2 = ? and child = ? and  relation_type = ? and personalization = ?";
 
@@ -259,7 +260,17 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         }
 
         return multiTrees;
-    }
+    } // copyPersonalizationForPage.
+
+    @WrapInTransaction
+    @Override
+    public void deletePersonalizationForPage(final String pageId, final String personalization) throws DotDataException {
+
+        new DotConnect().setSQL(DELETE_SQL_PERSONALIZATION_PER_PAGE)
+                .addParam(pageId)
+                .addParam(personalization)
+                .loadResult();
+    } // deletePersonalizationForPage.
 
     /**
      * Returns the trees associated to a page and personalization

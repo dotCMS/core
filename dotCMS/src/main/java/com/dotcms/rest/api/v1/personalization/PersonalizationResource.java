@@ -8,6 +8,7 @@ import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.ContentTypesPaginator;
 import com.dotcms.util.pagination.OrderDirection;
+import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.Treeable;
@@ -22,6 +23,7 @@ import com.dotmarketing.portlets.personas.business.PersonaAPI;
 import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
@@ -85,7 +87,7 @@ public class PersonalizationResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public Response getPersonalizadPersonasOnPage (@Context final HttpServletRequest  request,
+    public Response getPersonalizedPersonasOnPage (@Context final HttpServletRequest  request,
                                        @Context final HttpServletResponse response,
                                        @QueryParam(PaginationUtil.FILTER)   final String filter,
                                        @QueryParam(PaginationUtil.PAGE) final int page,
@@ -108,7 +110,7 @@ public class PersonalizationResource {
 
         return paginationUtil.getPage(request, user, filter, page, perPage, orderbyParam,
                 OrderDirection.valueOf(direction), extraParams);
-    } // getPersonalizadPersonasOnPage
+    } // getPersonalizedPersonasOnPage
 
     /**
      * Copies the current content associated to the page containers with the personalization personas as {@link com.dotmarketing.beans.MultiTree#DOT_PERSONALIZATION_DEFAULT}
@@ -144,5 +146,46 @@ public class PersonalizationResource {
                             personalizationPersonaPageForm.getPageId(),
                             personalizationPersonaPageForm.getPersonaTag())
                         )).build();
+    } // personalizePageContainers
+
+    /**
+     * Deletes a personalization persona for a page, can remove any persona personalization for a page container except {@link com.dotmarketing.beans.MultiTree#DOT_PERSONALIZATION_DEFAULT}
+     * @param request  {@link HttpServletRequest}
+     * @param response {@link HttpServletResponse}
+     * @return Response
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @DELETE
+    @Path("/pagepersonas/page/{pageId}/personalization/{personalization}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public Response personalizePageContainers (@Context final HttpServletRequest  request,
+                                               @Context final HttpServletResponse response,
+                                               @PathParam("pageId") final String  pageId,
+                                               @PathParam("personalization") final String personalization) throws DotDataException, DotSecurityException {
+
+        final User user = this.webResource.init(true, request, true).getUser();
+        final boolean respectFrontEndRoles = PageMode.get(request).respectAnonPerms;
+
+        Logger.debug(this, ()-> "Deleting all Personalizing:" + personalization
+                + ", on all containers on the page personas per page: " + pageId);
+
+        if (!UtilMethods.isSet(pageId) || !UtilMethods.isSet(personalization)) {
+
+            throw new BadRequestException(
+                    "Page or Personalization parameter are missing, should use: /pagepersonas/page/{pageId}/personalization/{personalization}");
+        }
+
+        if (MultiTree.DOT_PERSONALIZATION_DEFAULT.equalsIgnoreCase(personalization) &&
+                !this.personaAPI.findPersonaByTag(personalization, user, respectFrontEndRoles).isPresent()) {
+
+            throw new BadRequestException("Does not exists a Persona with the tag: " + personalization);
+        }
+
+        this.multiTreeAPI.deletePersonalizationForPage(pageId, personalization);
+
+        return Response.ok(new ResponseEntityView("OK")).build();
     } // personalizePageContainers
 }
