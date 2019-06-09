@@ -89,8 +89,10 @@ public interface PersonaAPI {
 	/**
 	 * If exists a persona indexed by the personaTag, will return an Optional with the persona, otherwise Optional will be empty.
 	 * @param personaTag {@link String}
+     * @param user {@link User}
+     * @param respectFrontEndRoles {@link Boolean}
 	 * @return Optional of Persona
 	 */
-	Optional<Persona> findPersonaByTag (final String personaTag);
+    Optional<Persona> findPersonaByTag (final String personaTag, final User user, final boolean respectFrontEndRoles) throws DotSecurityException, DotDataException;
 
 }

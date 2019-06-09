@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.personas.business;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -20,8 +21,10 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 
 import java.io.StringWriter;
 import java.util.ArrayList;
@@ -293,9 +296,19 @@ public class PersonaAPIImpl implements PersonaAPI {
 
 	@CloseDBIfOpened
 	@Override
-	public Optional<Persona> findPersonaByTag (final String personaTag) {
+	public Optional<Persona> findPersonaByTag (final String personaTag, final User user, final boolean respectFrontEndRoles) throws DotSecurityException, DotDataException {
 
-		return Optional.empty();
+		final StringBuilder query = new StringBuilder(" +contentType:")
+				.append(PersonaAPI.DEFAULT_PERSONAS_STRUCTURE_VARNAME)
+				.append(" +persona.keytag:").append(personaTag);
+
+		final List<Contentlet> contentlets = APILocator.getContentletAPI().search
+				(query.toString(), -1, 0, StringPool.BLANK, user, respectFrontEndRoles);
+		final Optional<Contentlet> persona = null != contentlets? contentlets.stream().findFirst():Optional.empty();
+		return persona.isPresent()? Optional.ofNullable(fromContentlet(persona.get())):Optional.empty();
 	}
+
+
+
 
 }

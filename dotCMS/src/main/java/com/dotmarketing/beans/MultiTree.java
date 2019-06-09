@@ -6,6 +6,7 @@ import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.lang.builder.ToStringBuilder;
@@ -99,6 +100,7 @@ public class MultiTree implements Serializable {
      * The {@link #getContainer()} could be a path or uuid, this method will get always the id no matter what is in {@link #getContainer()}
      * @return String
      */
+    @JsonIgnore
     public String getContainerAsID () {
 
         final String containerId = this.getContainer();
@@ -127,6 +129,7 @@ public class MultiTree implements Serializable {
      * @deprecated
      * {@link #getContentlet()}
      */
+    @JsonIgnore
     @Deprecated
     public String getChild() {
         return getContentlet();
@@ -222,6 +225,7 @@ public class MultiTree implements Serializable {
      * @deprecated 
      * {@link #getHtmlPage()}
      */
+    @JsonIgnore
     @Deprecated
     public String getParent1() {
         return parent1;
@@ -231,6 +235,7 @@ public class MultiTree implements Serializable {
      * @deprecated
      * {@link #getContainer()}
      */
+    @JsonIgnore
     @Deprecated
     public String getParent2() {
         return parent2;

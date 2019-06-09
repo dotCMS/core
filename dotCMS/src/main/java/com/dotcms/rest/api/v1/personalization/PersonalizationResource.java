@@ -21,6 +21,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.personas.business.PersonaAPI;
 import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
@@ -94,11 +95,14 @@ public class PersonalizationResource {
                                        @PathParam("pageId") final String  pageId) {
 
         final User user = this.webResource.init(true, request, true).getUser();
+        final boolean respectFrontEndRoles = PageMode.get(request).respectAnonPerms;
 
         Logger.debug(this, ()-> "Getting page personas per page: " + pageId);
 
         final Map<String, Object> extraParams =
-                ImmutableMap.<String, Object>builder().put(PersonalizationPersonaPageViewPaginator.PAGE_ID, pageId).build();
+                ImmutableMap.<String, Object>builder()
+                        .put(PersonalizationPersonaPageViewPaginator.PAGE_ID, pageId)
+                        .put("respectFrontEndRoles",respectFrontEndRoles).build();
 
         final PaginationUtil paginationUtil = new PaginationUtil(new PersonalizationPersonaPageViewPaginator());
 
@@ -123,21 +127,22 @@ public class PersonalizationResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response personalizePageContainers (@Context final HttpServletRequest  request,
                                                @Context final HttpServletResponse response,
-                                               final PersonalizationPersonaPageForm personalizationPersonaPageForm) throws DotDataException {
+                                               final PersonalizationPersonaPageForm personalizationPersonaPageForm) throws DotDataException, DotSecurityException {
 
         final User user = this.webResource.init(true, request, true).getUser();
+        final boolean respectFrontEndRoles = PageMode.get(request).respectAnonPerms;
 
         Logger.debug(this, ()-> "Personalizing all containers on the page personas per page: " + personalizationPersonaPageForm.getPageId());
 
-        if (!this.personaAPI.findPersonaByTag(personalizationPersonaPageForm.getPersonaTag()).isPresent()) {
+        if (!this.personaAPI.findPersonaByTag(personalizationPersonaPageForm.getPersonaTag(), user, respectFrontEndRoles).isPresent()) {
 
             throw new BadRequestException("Does not exists a Persona with the tag: " + personalizationPersonaPageForm.getPersonaTag());
         }
 
-        return Response.ok(new ResponseEntityView(this.multiTreeAPI.
-                copyPersonalizationForPage(personalizationPersonaPageForm.getPageId(),
-                        personalizationPersonaPageForm.getPersonaTag()))).build();
+        return Response.ok(new ResponseEntityView(
+                        this.multiTreeAPI.copyPersonalizationForPage(
+                            personalizationPersonaPageForm.getPageId(),
+                            personalizationPersonaPageForm.getPersonaTag())
+                        )).build();
     } // personalizePageContainers
-
-
 }

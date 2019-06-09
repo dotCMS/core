@@ -49,7 +49,7 @@ public class PersonalizationPersonaPageViewPaginator implements PaginatorOrdered
     public PaginatedArrayList<PersonalizationPersonaPageView> getItems(final User user, final String filter, final int limit, final int offset, final String orderBy,
                                                             final OrderDirection direction, final Map<String, Object> extraParams) {
 
-        final boolean respectFrontendRoles = false; // todo: figure out from the extraParams
+        final boolean respectFrontendRoles = (Boolean)extraParams.get("respectFrontEndRoles");
         final String pageId  = extraParams.get(PAGE_ID).toString();
         String orderByString = UtilMethods.isSet(orderBy) ? orderBy : "title desc";
 
