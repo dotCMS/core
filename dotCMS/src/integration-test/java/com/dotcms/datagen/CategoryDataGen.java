@@ -7,11 +7,12 @@ import com.dotmarketing.portlets.categories.model.Category;
 
 public class CategoryDataGen extends AbstractDataGen<Category> {
 
-    private Category category;
-    private String categoryName;
-    private String key;
-    private String velocityVarName;
-    private int orderNumber;
+    private final long currentTime = System.currentTimeMillis();
+
+    private String categoryName = "CategoryName" + currentTime;
+    private String key = "CategoryKey" + currentTime;
+    private String velocityVarName = "VelocityVarName" + currentTime;
+    private int orderNumber = 1;
     private String keywords;
 
     /**
@@ -70,19 +71,20 @@ public class CategoryDataGen extends AbstractDataGen<Category> {
      */
     @Override
     public Category next() {
-        final Category parentCategory = new Category();
-        parentCategory.setCategoryName(this.categoryName);
-        parentCategory.setKey(this.key);
-        parentCategory.setCategoryVelocityVarName(this.velocityVarName);
-        parentCategory.setSortOrder(this.orderNumber);
-        parentCategory.setKeywords(this.keywords);
-        return parentCategory;
+
+        final Category category = new Category();
+        category.setCategoryName(this.categoryName);
+        category.setKey(this.key);
+        category.setCategoryVelocityVarName(this.velocityVarName);
+        category.setSortOrder(this.orderNumber);
+        category.setKeywords(this.keywords);
+        
+        return category;
     }
 
     @Override
     public Category nextPersisted() {
-        category = persist(next());
-        return category;
+        return persist(next());
     }
 
 
