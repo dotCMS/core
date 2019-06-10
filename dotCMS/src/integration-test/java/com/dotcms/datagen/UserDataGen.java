@@ -86,7 +86,7 @@ public class UserDataGen extends AbstractDataGen<User> {
                     .createUser(user.getUserId(), user.getEmailAddress());
             newUser.setFirstName(user.getFirstName());
             newUser.setLastName(user.getLastName());
-            newUser.setPassword(user.getEmailAddress());
+            newUser.setPassword(user.getPassword());
             newUser.setActive(user.getActive());
             APILocator.getUserAPI().save(newUser, APILocator.systemUser(), false);
 
