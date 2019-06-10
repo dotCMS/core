@@ -377,6 +377,12 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         org.junit.Assert.assertEquals(2, multiTrees.size());
         org.junit.Assert.assertEquals(newPersonalization, multiTrees.get(0).getPersonalization());
         org.junit.Assert.assertEquals(newPersonalization, multiTrees.get(1).getPersonalization());
+
+        multiTreeAPI.deletePersonalizationForPage(htmlPage, newPersonalization);
+        multiTrees = multiTreeAPI.getMultiTreesByPersonalizedPage(htmlPage, newPersonalization);
+
+        org.junit.Assert.assertNotNull(multiTrees);
+        org.junit.Assert.assertEquals(0, multiTrees.size());
     }
 
     @Test
@@ -397,6 +403,42 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         org.junit.Assert.assertEquals(2, personalizationSet.size());
         org.junit.Assert.assertTrue(personalizationSet.contains(MultiTree.DOT_PERSONALIZATION_DEFAULT));
         org.junit.Assert.assertTrue(personalizationSet.contains(personalization));
+    }
+
+    @Test
+    public void testMultiTreesSavingWithPersonalizationForPage() throws Exception {
+
+        final MultiTreeAPI multiTreeAPI = new MultiTreeAPIImpl();
+        final String htmlPage           = UUIDGenerator.generateUuid();
+        final String container          = UUIDGenerator.generateUuid();
+        final String content            = UUIDGenerator.generateUuid();
+        final String instance1          = UUIDGenerator.generateUuid();
+        final String instance2          = UUIDGenerator.generateUuid();
+        final String instance3          = UUIDGenerator.generateUuid();
+        final String instance4          = UUIDGenerator.generateUuid();
+        final String personalization1   = "dot:persona:one";
+        final String personalization2   = "dot:persona:two";
+
+        multiTreeAPI.saveMultiTree(new MultiTree(htmlPage, container, content, instance1, 1, personalization1)); // dot:persona:one
+        multiTreeAPI.saveMultiTree(new MultiTree(htmlPage, container, content, instance2, 2, personalization1)); // dot:persona:one
+        multiTreeAPI.saveMultiTree(new MultiTree(htmlPage, container, content, instance3, 3, personalization2)); // dot:persona:two
+        multiTreeAPI.saveMultiTree(new MultiTree(htmlPage, container, content, instance4, 4, personalization2)); // dot:persona:two
+
+        final MultiTree multiTree1 = multiTreeAPI.getMultiTree(htmlPage, container, content, instance1, personalization1);
+        final MultiTree multiTree2 = multiTreeAPI.getMultiTree(htmlPage, container, content, instance2, personalization1);
+        final MultiTree multiTree3 = multiTreeAPI.getMultiTree(htmlPage, container, content, instance3, personalization2);
+        final MultiTree multiTree4 = multiTreeAPI.getMultiTree(htmlPage, container, content, instance4, personalization2);
+
+
+        org.junit.Assert.assertNotNull(multiTree1);
+        org.junit.Assert.assertNotNull(multiTree2);
+        org.junit.Assert.assertNotNull(multiTree3);
+        org.junit.Assert.assertNotNull(multiTree4);
+
+        org.junit.Assert.assertEquals(personalization1, multiTree1.getPersonalization());
+        org.junit.Assert.assertEquals(personalization1, multiTree2.getPersonalization());
+        org.junit.Assert.assertEquals(personalization2, multiTree3.getPersonalization());
+        org.junit.Assert.assertEquals(personalization2, multiTree4.getPersonalization());
     }
 
     @Test
