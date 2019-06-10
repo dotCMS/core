@@ -2,8 +2,10 @@
 
 package com.dotmarketing.startup.runonce;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.db.DotDatabaseMetaData;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
@@ -36,8 +38,16 @@ public class Task05160MultiTreeAddPersonalizationColumnAndChangingPK extends Abs
     final static String ALTER_TABLE_ADD_NEW_PK_WITH_PERSONALIZATION_COLUMN =   "ALTER TABLE multi_tree ADD CONSTRAINT idx_multitree_index1 PRIMARY KEY (parent1, parent2, child, relation_type,personalization)";
 
     @Override
+    @CloseDBIfOpened
     public boolean forceRun() {
-        return Boolean.TRUE;
+
+        try {
+            return !new DotDatabaseMetaData().getColumnNames
+                    (DbConnectionFactory.getConnection(), "multi_tree").contains("personalization");
+        } catch (SQLException e) {
+
+            return Boolean.TRUE;
+        }
     }
 
     @Override
