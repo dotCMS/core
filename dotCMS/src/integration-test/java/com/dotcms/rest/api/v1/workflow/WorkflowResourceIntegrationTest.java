@@ -1364,7 +1364,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                 assertEquals(Status.OK.getStatusCode(), statusCode1);
                 final ResponseEntityView fireEntityView1 = ResponseEntityView.class
                         .cast(response1.getEntity());
-                brandNewContentlet = Contentlet.class.cast(fireEntityView1.getEntity());
+                 brandNewContentlet = new Contentlet((Map) fireEntityView1.getEntity());
                 assertNotNull(brandNewContentlet);
                 assertEquals("value-1", brandNewContentlet.getMap().get(REQUIRED_TEXT_FIELD_NAME));
 
@@ -1384,7 +1384,8 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                 assertEquals(Status.OK.getStatusCode(), statusCode2);
                 final ResponseEntityView fireEntityView2 = ResponseEntityView.class
                          .cast(response2.getEntity());
-                final Contentlet updatedContentlet = Contentlet.class.cast(fireEntityView2.getEntity());
+                 final Contentlet updatedContentlet = new Contentlet(
+                         (Map) fireEntityView2.getEntity());
                 assertNotNull(updatedContentlet);
 
                 assertEquals(brandNewContentlet.getIdentifier(),updatedContentlet.getIdentifier());
@@ -1507,7 +1508,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                 assertEquals(Status.OK.getStatusCode(), statusCode1);
                 final ResponseEntityView fireEntityView1 = ResponseEntityView.class
                         .cast(response1.getEntity());
-                brandNewContentlet = Contentlet.class.cast(fireEntityView1.getEntity());
+                brandNewContentlet = new Contentlet((Map) fireEntityView1.getEntity());
                 checkBrandNewContentlet(fieldNameTitle, fieldNameFile1, fieldNameFile2, inputFile1Text, inputFile2Text, brandNewContentlet);
 
                 // update existing by content inode.
@@ -1520,7 +1521,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                 final ResponseEntityView fireEntityView2 = ResponseEntityView.class
                         .cast(response2.getEntity());
                 String identifier = brandNewContentlet.getIdentifier();
-                brandNewContentlet = Contentlet.class.cast(fireEntityView2.getEntity());
+                brandNewContentlet = new Contentlet((Map) fireEntityView2.getEntity());
                 checkBrandNewContentlet(fieldNameTitle, fieldNameFile1, fieldNameFile2, inputFile1Text, inputFile2Text, brandNewContentlet);
                 assertEquals(identifier, brandNewContentlet.getIdentifier());
 
@@ -1534,7 +1535,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                 assertEquals(Status.OK.getStatusCode(), statusCode3);
                 final ResponseEntityView fireEntityView3 = ResponseEntityView.class
                         .cast(response3.getEntity());
-                brandNewContentlet = Contentlet.class.cast(fireEntityView3.getEntity());
+                brandNewContentlet = new Contentlet((Map) fireEntityView3.getEntity());
                 checkBrandNewContentlet(fieldNameTitle, fieldNameFile1, fieldNameFile2, inputFile1Text, inputFile2Text, brandNewContentlet);
                 assertEquals(identifier, brandNewContentlet.getIdentifier());
             } finally {
@@ -1644,7 +1645,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                 assertEquals(Status.OK.getStatusCode(), statusCode1);
                 final ResponseEntityView fireEntityView1 = ResponseEntityView.class
                         .cast(response1.getEntity());
-                brandNewContentlet = Contentlet.class.cast(fireEntityView1.getEntity());
+                brandNewContentlet = new Contentlet((Map) fireEntityView1.getEntity());
                 assertNotNull(brandNewContentlet);
                 assertEquals(REQUIRED_TEXT_FIELD_VALUE, brandNewContentlet.getMap().get(REQUIRED_TEXT_FIELD_NAME));
                 assertEquals(NON_REQUIRED_IMAGE_VALUE, brandNewContentlet.getMap().get(NON_REQUIRED_IMAGE_FIELD_NAME));
@@ -1668,7 +1669,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                 assertEquals(Status.OK.getStatusCode(), statusCode2);
                 final ResponseEntityView fireEntityView2 = ResponseEntityView.class
                         .cast(response2.getEntity());
-                Contentlet fetchedContentlet = Contentlet.class.cast(fireEntityView2.getEntity());
+                Contentlet fetchedContentlet = new Contentlet((Map) fireEntityView2.getEntity());
                 assertNotNull(fetchedContentlet);
                 assertEquals(REQUIRED_TEXT_FIELD_VALUE, fetchedContentlet.getMap().get(REQUIRED_TEXT_FIELD_NAME));
 
@@ -1726,7 +1727,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
             assertEquals(Status.OK.getStatusCode(), statusCode1);
             final ResponseEntityView fireEntityView1 = ResponseEntityView.class
                     .cast(response1.getEntity());
-            brandNewContentlet = Contentlet.class.cast(fireEntityView1.getEntity());
+            brandNewContentlet = new Contentlet((Map) fireEntityView1.getEntity());
             assertNotNull(brandNewContentlet);
 
             for(final Field field : contentType.fields()){
@@ -1750,7 +1751,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
 
             final ResponseEntityView fireEntityView2 = ResponseEntityView.class
                     .cast(response2.getEntity());
-            final Contentlet fetchedContentlet = Contentlet.class.cast(fireEntityView2.getEntity());
+            final Contentlet fetchedContentlet = new Contentlet((Map) fireEntityView2.getEntity());
             assertNotNull(fetchedContentlet);
 
             for(final Field field : contentType.fields()){
@@ -1796,7 +1797,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
             assertEquals(Status.OK.getStatusCode(), statusCode1);
             final ResponseEntityView fireEntityView1 = ResponseEntityView.class
                     .cast(response1.getEntity());
-            brandNewContentlet = Contentlet.class.cast(fireEntityView1.getEntity());
+            brandNewContentlet = new Contentlet((Map) fireEntityView1.getEntity());
             assertNotNull(brandNewContentlet);
 
             //Once the content has been created lets send another request with half the fields
@@ -1822,7 +1823,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
 
             final ResponseEntityView fireEntityView2 = ResponseEntityView.class
                     .cast(response2.getEntity());
-            final Contentlet fetchedContentlet = Contentlet.class.cast(fireEntityView2.getEntity());
+            final Contentlet fetchedContentlet = new Contentlet((Map) fireEntityView2.getEntity());
             assertNotNull(fetchedContentlet);
 
             //This one got changed. It is expected since we are using the resource to modify its value.
@@ -1866,7 +1867,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
 
             final ResponseEntityView fireEntityView1 = ResponseEntityView.class
                     .cast(response1.getEntity());
-            brandNewContentlet = Contentlet.class.cast(fireEntityView1.getEntity());
+            brandNewContentlet = new Contentlet((Map) fireEntityView1.getEntity());
             assertNotNull(brandNewContentlet);
 
             final FireActionForm.Builder builder2 = new FireActionForm.Builder();
