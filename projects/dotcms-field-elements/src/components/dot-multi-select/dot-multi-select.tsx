@@ -54,7 +54,7 @@ export class DotMultiSelectComponent {
     @Prop({ mutable: true, reflectToAttr: true }) value = '';
 
     @State() _options: DotOption[];
-    @State() status: DotFieldStatus = getOriginalStatus();
+    @State() status: DotFieldStatus;
 
     @Event() valueChange: EventEmitter<DotFieldValueEvent>;
     @Event() statusChange: EventEmitter<DotFieldStatusEvent>;
@@ -65,6 +65,7 @@ export class DotMultiSelectComponent {
     componentWillLoad() {
         this.validateProps();
         this.emitInitialValue();
+        this.status = getOriginalStatus(this.isValid());
         this.emitStatusChange();
     }
 

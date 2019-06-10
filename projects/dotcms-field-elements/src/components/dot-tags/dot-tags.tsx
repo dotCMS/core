@@ -55,7 +55,7 @@ export class DotTagsComponent {
     /** Duraction in ms to start search into the autocomplete */
     @Prop({ reflectToAttr: true }) debounce = 300;
 
-    @State() status: DotFieldStatus = getOriginalStatus();
+    @State() status: DotFieldStatus;
 
     @Event() valueChange: EventEmitter<DotFieldValueEvent>;
     @Event() statusChange: EventEmitter<DotFieldStatusEvent>;
@@ -76,6 +76,7 @@ export class DotTagsComponent {
     }
 
     componentWillLoad(): void {
+        this.status = getOriginalStatus(this.isValid());
         this.validateProps();
         this.emitStatusChange();
     }
@@ -97,7 +98,15 @@ export class DotTagsComponent {
                             debounce={this.debounce}
                             disabled={this.disabled}
                             onLostFocus={() => this.blurHandler()}
-                            onSelect={(event: CustomEvent<string>) => this.addTag(event.detail)}
+                            onEnter={({ detail }: CustomEvent<string>) => {
+                                detail.split(',').forEach((label: string) => {
+                                    this.addTag(label.trim());
+                                });
+                            }}
+                            onSelect={({ detail }: CustomEvent<string>) => {
+                                const value = detail.replace(',', ' ').replace(/\s+/g, ' ');
+                                this.addTag(value);
+                            }}
                             placeholder={this.placeholder || null}
                             threshold={this.threshold}
                         />

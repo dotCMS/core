@@ -96,8 +96,9 @@ describe('dot-form', () => {
 
 
     beforeEach(async () => {
-        page = await newE2EPage();
-        await page.setContent(`<dot-form></dot-form>`);
+        page = await newE2EPage({
+            html: `<dot-form></dot-form>`
+        });
         element = await page.find('dot-form');
         submitSpy = await element.spyOnEvent('onSubmit');
     });
@@ -302,12 +303,13 @@ describe('dot-form', () => {
 
     describe('<slot />', () => {
         beforeEach(async () => {
-            page = await newE2EPage();
-            await page.setContent(`
+            page = await newE2EPage({
+                html: `
                 <dot-form>
                     <dot-textfield label="Hello World" />
                 </dot-form>
-            `);
+            `
+            });
             element = await page.find('dot-form');
         });
 

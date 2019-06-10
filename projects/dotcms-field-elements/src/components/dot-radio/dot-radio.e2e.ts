@@ -75,8 +75,9 @@ describe('dot-radio', () => {
 
     describe('@Props', () => {
         beforeEach(async () => {
-            page = await newE2EPage();
-            await page.setContent(`<dot-radio></dot-radio>`);
+            page = await newE2EPage({
+                html: `<dot-radio></dot-radio>`
+            });
             element = await page.find('dot-radio');
         });
 
@@ -292,13 +293,16 @@ describe('dot-radio', () => {
 
     describe('@Events', () => {
         beforeEach(async () => {
-            page = await newE2EPage();
-            await page.setContent(`
-            <dot-radio
-                name="testName"
-                options="|,valueA|1,valueB|2"
-                value="2">
-            </dot-radio>`);
+            page = await newE2EPage({
+                html: `
+                <dot-form>
+                    <dot-radio
+                        name="testName"
+                        options="|,valueA|1,valueB|2"
+                        required="true">
+                    </dot-radio>
+                </dot-form>`
+            });
             spyStatusChangeEvent = await page.spyOnEvent('statusChange');
             spyValueChangeEvent = await page.spyOnEvent('valueChange');
 
@@ -306,6 +310,11 @@ describe('dot-radio', () => {
         });
 
         describe('status and value change', () => {
+            it('should display on wrapper not valid css classes when loaded, required and no value set', async () => {
+                const form = await page.find('dot-form');
+                expect(form).toHaveClasses(dotTestUtil.class.emptyPristineInvalid);
+            });
+
             it('should emit when option selected', async () => {
                 const optionElements = await getOptions(page);
                 await optionElements[1].click();
@@ -327,12 +336,13 @@ describe('dot-radio', () => {
 
     describe('@Methods', () => {
         beforeEach(async () => {
-            page = await newE2EPage();
-            await page.setContent(`
-            <dot-radio
-                name="testName"
-                options="value|0,valueA|1,valueB|2">
-            </dot-radio>`);
+            page = await newE2EPage({
+                html: `
+                <dot-radio
+                    name="testName"
+                    options="value|0,valueA|1,valueB|2">
+                </dot-radio>`
+            });
             spyStatusChangeEvent = await page.spyOnEvent('statusChange');
             spyValueChangeEvent = await page.spyOnEvent('valueChange');
 

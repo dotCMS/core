@@ -101,14 +101,14 @@ describe('dot-multi-select', () => {
                 const htmlElement = await getSelect(page);
                 expect(htmlElement.getAttribute('size')).toBe('3');
             });
-
         });
     });
 
     describe('@Props', () => {
         beforeEach(async () => {
-            page = await newE2EPage();
-            await page.setContent(`<dot-multi-select></dot-multi-select>`);
+            page = await newE2EPage({
+                html: `<dot-multi-select></dot-multi-select>`
+            });
             element = await page.find('dot-multi-select');
         });
 
@@ -327,13 +327,16 @@ describe('dot-multi-select', () => {
 
     describe('@Events', () => {
         beforeEach(async () => {
-            page = await newE2EPage();
-            await page.setContent(`
-            <dot-multi-select
-                name="testName"
-                options="|,valueA|1,valueB|2"
-                value="2">
-            </dot-multi-select>`);
+            page = await newE2EPage({
+                html: `
+                <dot-form>
+                    <dot-multi-select
+                        name="testName"
+                        options="|,valueA|1,valueB|2"
+                        required="true">
+                    </dot-multi-select>
+                </dot-form>`
+            });
             spyStatusChangeEvent = await page.spyOnEvent('statusChange');
             spyValueChangeEvent = await page.spyOnEvent('valueChange');
 
@@ -341,6 +344,11 @@ describe('dot-multi-select', () => {
         });
 
         describe('status and value change', () => {
+            it('should display on wrapper not valid css classes when loaded, required and no value set', async () => {
+                const form = await page.find('dot-form');
+                expect(form).toHaveClasses(dotTestUtil.class.emptyPristineInvalid);
+            });
+
             it('should emit when option selected', async () => {
                 await page.select('select', '1');
                 expect(spyStatusChangeEvent).toHaveReceivedEventDetail({
@@ -377,13 +385,14 @@ describe('dot-multi-select', () => {
 
     describe('@Methods', () => {
         beforeEach(async () => {
-            page = await newE2EPage();
-            await page.setContent(`
-            <dot-multi-select
-                name="testName"
-                options="|,valueA|1,valueB|2"
-                value="2">
-            </dot-multi-select>`);
+            page = await newE2EPage({
+                html: `
+                <dot-multi-select
+                    name="testName"
+                    options="|,valueA|1,valueB|2"
+                    value="2">
+                </dot-multi-select>`
+            });
             spyStatusChangeEvent = await page.spyOnEvent('statusChange');
             spyValueChangeEvent = await page.spyOnEvent('valueChange');
 

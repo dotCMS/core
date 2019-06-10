@@ -21,6 +21,7 @@
 
 | Event       | Description | Type                      |
 | ----------- | ----------- | ------------------------- |
+| `enter`     |             | `CustomEvent<string>`     |
 | `lostFocus` |             | `CustomEvent<FocusEvent>` |
 | `select`    |             | `CustomEvent<string>`     |
 

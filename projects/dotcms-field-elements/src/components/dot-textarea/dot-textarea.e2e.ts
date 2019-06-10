@@ -204,7 +204,7 @@ describe('dot-textarea', () => {
                 await textarea.press('a');
                 await page.waitForChanges();
                 expect((await dotTestUtil.getErrorMessage(page)).innerText).toBe(
-                    "The field doesn't comply with the specified format"
+                    'The field doesn\'t comply with the specified format'
                 );
             });
 
@@ -249,11 +249,22 @@ describe('dot-textarea', () => {
         let spyValueChangeEvent: EventSpy;
 
         beforeEach(async () => {
+            page = await newE2EPage({
+                html: `<dot-form><dot-textarea required="true"></dot-textarea></dot-form>`
+            });
+            element = await page.find('dot-textarea');
+            textarea = await page.find('textarea');
+
             spyStatusChangeEvent = await page.spyOnEvent('statusChange');
             spyValueChangeEvent = await page.spyOnEvent('valueChange');
         });
 
         describe('status and value change', () => {
+            it('should display on wrapper not valid css classes when loaded, required and no value set', async () => {
+                const form = await page.find('dot-form');
+                expect(form).toHaveClasses(dotTestUtil.class.emptyPristineInvalid);
+            });
+
             it('should send status and value change', async () => {
                 await textarea.press('a');
                 await page.waitForChanges();
@@ -278,7 +289,7 @@ describe('dot-textarea', () => {
                     status: {
                         dotPristine: true,
                         dotTouched: false,
-                        dotValid: true
+                        dotValid: false
                     }
                 });
                 expect(spyValueChangeEvent).toHaveReceivedEventDetail({
@@ -298,7 +309,7 @@ describe('dot-textarea', () => {
                     status: {
                         dotPristine: true,
                         dotTouched: true,
-                        dotValid: true
+                        dotValid: false
                     }
                 });
             });

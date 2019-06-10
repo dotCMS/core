@@ -7,8 +7,9 @@ describe('key-value-table', () => {
     let spyDeleteEvent: EventSpy;
 
     beforeEach(async () => {
-        page = await newE2EPage();
-        await page.setContent(`<key-value-table />`);
+        page = await newE2EPage({
+            html: `<key-value-table />`
+        });
         element = await page.find('key-value-table');
         await page.waitForChanges();
     });

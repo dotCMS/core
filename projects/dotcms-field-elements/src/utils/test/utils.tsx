@@ -6,6 +6,7 @@ export const dotTestUtil = {
     getErrorMessage: (page: E2EPage) => page.find('.dot-field__error-message'),
     class: {
         empty: ['dot-valid', 'dot-untouched', 'dot-pristine'],
+        emptyPristineInvalid: ['dot-pristine', 'dot-untouched', 'dot-invalid'],
         emptyRequired: ['dot-required', 'dot-invalid', 'dot-touched', 'dot-dirty'],
         emptyRequiredPristine: ['dot-required', 'dot-invalid', 'dot-untouched', 'dot-pristine'],
         filled: ['dot-valid', 'dot-touched', 'dot-dirty'],

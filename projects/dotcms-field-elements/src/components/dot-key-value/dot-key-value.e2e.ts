@@ -12,8 +12,9 @@ describe('dot-key-value', () => {
     const getList = () => page.find('key-value-table');
 
     beforeEach(async () => {
-        page = await newE2EPage();
-        await page.setContent(`<dot-key-value></dot-key-value>`);
+        page = await newE2EPage({
+            html: `<dot-key-value></dot-key-value>`
+        });
         element = await page.find('dot-key-value');
         await page.waitForChanges();
     });
@@ -393,6 +394,20 @@ describe('dot-key-value', () => {
         });
 
         describe('statusChange', () => {
+            it('should emit default valueChange', async () => {
+                page = await newE2EPage({
+                    html: `
+                        <dot-form>
+                            <dot-key-value name="fieldName" required="true" />
+                        </dot-form>
+                    `
+                });
+                await page.waitForChanges();
+
+                const form = await page.find('dot-form');
+                expect(form).toHaveClasses(dotTestUtil.class.emptyPristineInvalid);
+            });
+
             it('should emit on lost focus in autocomplete', async () => {
                 const form = await getForm();
                 form.triggerEvent('lostFocus', {});

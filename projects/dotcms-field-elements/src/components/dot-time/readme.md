@@ -24,10 +24,10 @@
 
 ## Events
 
-| Event          | Description | Type                                       |
-| -------------- | ----------- | ------------------------------------------ |
-| `statusChange` |             | `CustomEvent<DotInputCalendarStatusEvent>` |
-| `valueChange`  |             | `CustomEvent<DotFieldValueEvent>`          |
+| Event          | Description | Type                               |
+| -------------- | ----------- | ---------------------------------- |
+| `statusChange` |             | `CustomEvent<DotFieldStatusEvent>` |
+| `valueChange`  |             | `CustomEvent<DotFieldValueEvent>`  |
 
 
 ## Methods

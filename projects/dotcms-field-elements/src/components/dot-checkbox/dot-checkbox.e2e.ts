@@ -89,8 +89,9 @@ describe('dot-checkbox', () => {
 
     describe('@Props', () => {
         beforeEach(async () => {
-            page = await newE2EPage();
-            await page.setContent(`<dot-checkbox></dot-checkbox>`);
+            page = await newE2EPage({
+                html: `<dot-checkbox></dot-checkbox>`
+            });
             element = await page.find('dot-checkbox');
         });
 
@@ -315,13 +316,16 @@ describe('dot-checkbox', () => {
 
     describe('@Events', () => {
         beforeEach(async () => {
-            page = await newE2EPage();
-            await page.setContent(`
-            <dot-checkbox
-                name="testName"
-                options="|,valueA|1,valueB|2"
-                value="2">
-            </dot-checkbox>`);
+            page = await newE2EPage({
+                html: `
+                <dot-form>
+                    <dot-checkbox
+                        name="testName"
+                        options="|,valueA|1,valueB|2"
+                        required="true">
+                    </dot-checkbox>
+                </dot-form>`
+            });
             spyStatusChangeEvent = await page.spyOnEvent('statusChange');
             spyValueChangeEvent = await page.spyOnEvent('valueChange');
 
@@ -329,6 +333,11 @@ describe('dot-checkbox', () => {
         });
 
         describe('status and value change', () => {
+            it('should emit default valueChange', async () => {
+                const form = await page.find('dot-form');
+                expect(form).toHaveClasses(dotTestUtil.class.emptyPristineInvalid);
+            });
+
             it('should emit when option selected', async () => {
                 const optionElements = await getOptions(page);
                 await optionElements[1].click();
@@ -342,24 +351,7 @@ describe('dot-checkbox', () => {
                 });
                 expect(spyValueChangeEvent).toHaveReceivedEventDetail({
                     name: 'testName',
-                    value: '2,1'
-                });
-            });
-
-            it('should emit empty value when none checked', async () => {
-                const optionElements = await getOptions(page);
-                await optionElements[2].click();
-                expect(spyStatusChangeEvent).toHaveReceivedEventDetail({
-                    name: 'testName',
-                    status: {
-                        dotPristine: false,
-                        dotTouched: true,
-                        dotValid: true
-                    }
-                });
-                expect(spyValueChangeEvent).toHaveReceivedEventDetail({
-                    name: 'testName',
-                    value: ''
+                    value: '1'
                 });
             });
         });
@@ -367,12 +359,13 @@ describe('dot-checkbox', () => {
 
     describe('@Methods', () => {
         beforeEach(async () => {
-            page = await newE2EPage();
-            await page.setContent(`
-            <dot-checkbox
-                name="testName"
-                options="value|0,valueA|1,valueB|2">
-            </dot-checkbox>`);
+            page = await newE2EPage({
+                html: `
+                <dot-checkbox
+                    name="testName"
+                    options="value|0,valueA|1,valueB|2">
+                </dot-checkbox>`
+            });
             spyStatusChangeEvent = await page.spyOnEvent('statusChange');
             spyValueChangeEvent = await page.spyOnEvent('valueChange');
 

@@ -27,12 +27,13 @@ export class DotAutocompleteComponent {
     @Prop({ reflectToAttr: true }) data: () => Promise<string[]> = null;
 
     @Event() select: EventEmitter<string>;
+    @Event() enter: EventEmitter<string>;
     @Event() lostFocus: EventEmitter<FocusEvent>;
 
     private readonly id = `autoComplete${new Date().getTime()}`;
 
     private keyEvent = {
-        Enter: this.emitselect.bind(this),
+        Enter: this.emitEnter.bind(this),
         Escape: this.clean.bind(this)
     };
 
@@ -98,6 +99,13 @@ export class DotAutocompleteComponent {
     private emitselect(select: string): void {
         this.clean();
         this.select.emit(select);
+    }
+
+    private emitEnter(select: string): void {
+        if (select) {
+            this.clean();
+            this.enter.emit(select);
+        }
     }
 
     private getInputElement(): HTMLInputElement {

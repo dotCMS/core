@@ -31,7 +31,9 @@ describe('dot-date-range', () => {
             });
 
             it('should be valid, touched, dirty & required when picked an option', async () => {
-                await page.setContent(`<dot-date-range name='dateRange' required="true"></dot-date-range>`);
+                await page.setContent(
+                    `<dot-date-range name='dateRange' required="true"></dot-date-range>`
+                );
                 input = await getInput(page);
                 await input.click();
                 const days = await getDays(page);
@@ -43,14 +45,18 @@ describe('dot-date-range', () => {
             });
 
             it('should be valid, untouched, pristine & required when loaded with default value', async () => {
-                await page.setContent(`<dot-date-range name='dateRange' value="2019-11-25,2019-11-27" required="true"></dot-date-range>`);
+                await page.setContent(
+                    `<dot-date-range name='dateRange' value="2019-11-25,2019-11-27" required="true"></dot-date-range>`
+                );
                 await page.waitForChanges();
                 element = await page.find('dot-date-range');
                 expect(element).toHaveClasses(dotTestUtil.class.filledRequiredPristine);
             });
 
             it('should be invalid, untouched, pristine & required when no option set on load', async () => {
-                await page.setContent(`<dot-date-range name='dateRange' required="true"></dot-date-range>`);
+                await page.setContent(
+                    `<dot-date-range name='dateRange' required="true"></dot-date-range>`
+                );
                 element = await page.find('dot-date-range');
                 await page.waitForChanges();
                 expect(element).toHaveClasses(dotTestUtil.class.emptyRequiredPristine);
@@ -62,8 +68,10 @@ describe('dot-date-range', () => {
                 expect(element).toHaveClasses(dotTestUtil.class.empty);
             });
 
-            it('should be dot-required, dot-invalid, dot-touched & dot-dirty when deleted value', async() => {
-                await page.setContent(`<dot-date-range name='dateRange' required="true"></dot-date-range>`);
+            it('should be dot-required, dot-invalid, dot-touched & dot-dirty when deleted value', async () => {
+                await page.setContent(
+                    `<dot-date-range name='dateRange' required="true"></dot-date-range>`
+                );
                 element = await page.find('dot-date-range');
                 input = await getInput(page);
                 await input.click();
@@ -76,8 +84,9 @@ describe('dot-date-range', () => {
 
     describe('@Props', () => {
         beforeEach(async () => {
-            page = await newE2EPage();
-            await page.setContent(`<dot-date-range></dot-date-range>`);
+            page = await newE2EPage({
+                html: `<dot-date-range></dot-date-range>`
+            });
             element = await page.find('dot-date-range');
             input = await getInput(page);
         });
@@ -167,7 +176,6 @@ describe('dot-date-range', () => {
             it('should render default value in presets', async () => {
                 const getOptions = await page.findAll('option');
                 expect(getOptions.length).toBe(5);
-
             });
 
             it('should not break with invalid data and load default values', async () => {
@@ -181,16 +189,18 @@ describe('dot-date-range', () => {
 
         describe('displayFormat', () => {
             it('should display right date format', async () => {
-                page = await newE2EPage();
-                await page.setContent(`<dot-date-range display-format="d-m-Y" value="2019-11-25,2019-11-27"></dot-date-range>`);
+                page = await newE2EPage({
+                    html: `<dot-date-range display-format="d-m-Y" value="2019-11-25,2019-11-27"></dot-date-range>`
+                });
                 await page.waitForChanges();
                 input = await getInput(page);
                 expect(await input.getProperty('value')).toBe('25-11-2019 to 27-11-2019');
             });
 
             it('should display default date format when displayFormat not set', async () => {
-                page = await newE2EPage();
-                await page.setContent(`<dot-date-range value="2019-11-25,2019-11-27"></dot-date-range>`);
+                page = await newE2EPage({
+                    html: `<dot-date-range value="2019-11-25,2019-11-27"></dot-date-range>`
+                });
                 await page.waitForChanges();
                 input = await getInput(page);
                 expect(await input.getProperty('value')).toBe('2019-11-25 to 2019-11-27');
@@ -200,17 +210,18 @@ describe('dot-date-range', () => {
         describe('min', () => {
             it('should disabled prev month button', async () => {
                 const today = new Date().toISOString().split('T')[0];
-                page = await newE2EPage();
-                await page.setContent(`<dot-date-range min=${today}></dot-date-range>`);
+                page = await newE2EPage({
+                    html: `<dot-date-range min=${today}></dot-date-range>`
+                });
                 input = await getInput(page);
                 await input.click();
-                const prevMonthBtn =  await page.find('.flatpickr-prev-month');
+                const prevMonthBtn = await page.find('.flatpickr-prev-month');
                 expect(prevMonthBtn).toHaveClasses(['flatpickr-prev-month', 'disabled']);
             });
 
             it('should not disabled prev month button', async () => {
                 await input.click();
-                const prevMonthBtn =  await page.find('.flatpickr-prev-month');
+                const prevMonthBtn = await page.find('.flatpickr-prev-month');
                 expect(prevMonthBtn).not.toHaveClasses(['disabled']);
             });
         });
@@ -218,17 +229,18 @@ describe('dot-date-range', () => {
         describe('max', () => {
             it('should disabled next month button', async () => {
                 const today = new Date().toISOString().split('T')[0];
-                page = await newE2EPage();
-                await page.setContent(`<dot-date-range max=${today}></dot-date-range>`);
+                page = await newE2EPage({
+                    html: `<dot-date-range max=${today}></dot-date-range>`
+                });
                 input = await getInput(page);
                 await input.click();
-                const prevMonthBtn =  await page.find('.flatpickr-next-month');
+                const prevMonthBtn = await page.find('.flatpickr-next-month');
                 expect(prevMonthBtn).toHaveClasses(['flatpickr-next-month', 'disabled']);
             });
 
             it('should not disabled next month button', async () => {
                 await input.click();
-                const prevMonthBtn =  await page.find('.flatpickr-next-month');
+                const prevMonthBtn = await page.find('.flatpickr-next-month');
                 expect(prevMonthBtn).not.toHaveClasses(['disabled']);
             });
         });
@@ -237,7 +249,7 @@ describe('dot-date-range', () => {
             it('should have "rangeMode" set', async () => {
                 input = await getInput(page);
                 await input.click();
-                const calendarModal =  await page.find('.flatpickr-calendar');
+                const calendarModal = await page.find('.flatpickr-calendar');
                 expect(calendarModal).toHaveClasses(['rangeMode']);
             });
         });
@@ -320,12 +332,13 @@ describe('dot-date-range', () => {
 
     describe('@Events', () => {
         beforeEach(async () => {
-            page = await newE2EPage();
-            await page.setContent(`
-            <dot-date-range
-                name="testName"
-                value="2019-11-25,2019-11-27">
-            </dot-date-range>`);
+            page = await newE2EPage({
+                html: `
+                <dot-date-range
+                    name="testName"
+                    value="2019-11-25,2019-11-27">
+                </dot-date-range>`
+            });
             spyStatusChangeEvent = await page.spyOnEvent('statusChange');
             spyValueChangeEvent = await page.spyOnEvent('valueChange');
 
@@ -358,7 +371,9 @@ describe('dot-date-range', () => {
         it('should emit when preset selected', async () => {
             const dt = new Date();
             dt.setDate(dt.getDate() + 7);
-            const expectedDate = `${new Date().toISOString().split('T')[0]},${dt.toISOString().split('T')[0]}`;
+            const expectedDate = `${new Date().toISOString().split('T')[0]},${
+                dt.toISOString().split('T')[0]
+            }`;
             await page.select('select', '7');
             await page.waitForChanges();
             expect(spyStatusChangeEvent).toHaveReceivedEventDetail({
@@ -378,8 +393,9 @@ describe('dot-date-range', () => {
 
     describe('@Methods', () => {
         beforeEach(async () => {
-            page = await newE2EPage();
-            await page.setContent(`<dot-date-range name="testName"></dot-date-range>`);
+            page = await newE2EPage({
+                html: `<dot-date-range name="testName"></dot-date-range>`
+            });
             spyStatusChangeEvent = await page.spyOnEvent('statusChange');
             spyValueChangeEvent = await page.spyOnEvent('valueChange');
 

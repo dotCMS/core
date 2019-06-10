@@ -45,8 +45,9 @@ describe('key-value-form', () => {
     };
 
     beforeEach(async () => {
-        page = await newE2EPage();
-        await page.setContent(`<key-value-form />`);
+        page = await newE2EPage({
+            html: `<key-value-form />`
+        });
         element = await page.find('key-value-form');
         await page.waitForChanges();
     });

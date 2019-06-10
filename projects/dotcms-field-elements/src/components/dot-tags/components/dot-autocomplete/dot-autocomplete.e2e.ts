@@ -1,4 +1,5 @@
 import { E2EElement, E2EPage, newE2EPage } from '@stencil/core/testing';
+import { EventSpy } from '@stencil/core/dist/declarations';
 
 describe('dot-autocomplete', () => {
     let page: E2EPage;
@@ -147,11 +148,13 @@ describe('dot-autocomplete', () => {
 
     describe('@Events', () => {
         let input;
-        let spySelectEvent;
+        let spySelectEvent: EventSpy;
+        let spyEnterEvent: EventSpy;
 
         beforeEach(async () => {
             input = await page.find('input');
             spySelectEvent = await element.spyOnEvent('select');
+            spyEnterEvent = await element.spyOnEvent('enter');
         });
 
         describe('select', () => {
@@ -160,7 +163,7 @@ describe('dot-autocomplete', () => {
                 await input.press('Enter');
                 await page.waitForChanges();
 
-                expect(spySelectEvent).toHaveReceivedEventDetail('test');
+                expect(spySelectEvent).not.toHaveReceivedEvent();
             });
 
             it('should trigger when keyboard select a option', async () => {
@@ -174,6 +177,27 @@ describe('dot-autocomplete', () => {
                 await page.waitForChanges();
 
                 expect(spySelectEvent).toHaveReceivedEventDetail('result-3');
+            });
+        });
+
+        describe('enter', () => {
+            it('should trigger when press enter', async () => {
+                await input.type('test');
+                await input.press('Enter');
+                await page.waitForChanges();
+
+                expect(spyEnterEvent).toHaveReceivedEventDetail('test');
+            });
+
+            it('should trigger when keyboard select a option', async () => {
+                input.type('res');
+                await page.waitForChanges();
+
+                await element.press('ArrowDown');
+                await element.press('Enter');
+                await page.waitForChanges();
+
+                expect(spyEnterEvent).not.toHaveReceivedEvent();
             });
         });
 
