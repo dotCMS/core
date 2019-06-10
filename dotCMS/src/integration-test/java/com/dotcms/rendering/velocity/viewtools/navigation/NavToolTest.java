@@ -168,8 +168,8 @@ public class NavToolTest extends IntegrationTestBase{
         APILocator.getContentletAPI().publish(pageAsset4, user, true);
 
         //Create 2 Folders (One with show on Menu and one without)
-        final Folder subFolder1 = new FolderDataGen().folder(folder).showOnMenu(true).nextPersisted();
-        final Folder subFolder2 = new FolderDataGen().folder(folder).showOnMenu(false).nextPersisted();
+        final Folder subFolder1 = new FolderDataGen().parent(folder).showOnMenu(true).nextPersisted();
+        final Folder subFolder2 = new FolderDataGen().parent(folder).showOnMenu(false).nextPersisted();
     }
 
     @Test

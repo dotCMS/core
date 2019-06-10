@@ -18,10 +18,7 @@ public class FolderDataGen extends AbstractDataGen<Folder> {
     private boolean showOnMenu;
     private int sortOrder = 0;
     private String fileMasks = "";
-
-    public FolderDataGen() {
-        this.folder = null;
-    }
+    private Folder parent;
 
     @SuppressWarnings("unused")
     public FolderDataGen name(String name) {
@@ -54,21 +51,21 @@ public class FolderDataGen extends AbstractDataGen<Folder> {
     }
 
     @SuppressWarnings("unused")
-    public FolderDataGen host(Host host) {
+    public FolderDataGen site(Host host) {
         this.host = host;
         this.folder = null;
         return this;
     }
 
     @SuppressWarnings("unused")
-    public FolderDataGen folder(Folder folder) {
-        this.folder = folder;
+    public FolderDataGen parent(Folder parent) {
+        this.parent = parent;
         try {
-            this.host = APILocator.getHostAPI().find(folder.getHostId(),APILocator.systemUser(),true);
+            this.host = APILocator.getHostAPI().find(parent.getHostId(),APILocator.systemUser(),true);
         } catch (DotDataException e) {
-            Logger.error(this,"ERROR GETTING HOST WITH ID: " + folder.getHostId());
+            Logger.error(this,"ERROR GETTING HOST WITH ID: " + parent.getHostId());
         } catch (DotSecurityException e) {
-            Logger.error(this,"USER DO NOT HAVE PERMISSION TO HOST WITH ID " + folder.getHostId());
+            Logger.error(this,"USER DO NOT HAVE PERMISSION TO HOST WITH ID " + parent.getHostId());
         }
         return this;
     }
@@ -93,10 +90,10 @@ public class FolderDataGen extends AbstractDataGen<Folder> {
     public Folder persist(Folder folder) {
         try {
             Identifier newIdentifier;
-            if (!UtilMethods.isSet(this.folder)) {
+            if (!UtilMethods.isSet(parent)) {
                 newIdentifier = APILocator.getIdentifierAPI().createNew(folder, host);
             } else {
-                newIdentifier = APILocator.getIdentifierAPI().createNew(folder, this.folder);
+                newIdentifier = APILocator.getIdentifierAPI().createNew(folder, parent);
             }
 
             folder.setIdentifier(newIdentifier.getId());

@@ -954,7 +954,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 	public void testSaveContentTypeLimitedUserPermissions(final TestCaseUpdateContentTypePermissions testCase)
 			throws DotDataException, DotSecurityException{
 	    //Create Folder
-		final Folder folder = new FolderDataGen().host(APILocator.systemHost()).nextPersisted();
+		final Folder folder = new FolderDataGen().site(APILocator.systemHost()).nextPersisted();
 
 		//Create Content Type
 		long time = System.currentTimeMillis();

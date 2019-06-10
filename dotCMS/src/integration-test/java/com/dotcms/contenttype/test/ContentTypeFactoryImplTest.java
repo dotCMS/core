@@ -345,7 +345,7 @@ public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
 		assertThat(types +" search is working", types.size() > 0);
 
 		Host defaultHost = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
-		Folder testFolder = new FolderDataGen().host(defaultHost).nextPersisted();
+		Folder testFolder = new FolderDataGen().site(defaultHost).nextPersisted();
 
 		for(ContentType type : types){
 			ContentType testing = contentTypeFactory.find(type.id());
