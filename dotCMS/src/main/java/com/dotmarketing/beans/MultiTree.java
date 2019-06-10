@@ -24,6 +24,7 @@ public class MultiTree implements Serializable {
     public static final String LEGACY_RELATION_TYPE = "LEGACY_RELATION_TYPE";
     public static final String LEGACY_INSTANCE_ID = LEGACY_RELATION_TYPE;
     public static final String DOT_PERSONALIZATION_DEFAULT = "dot:default";
+
     /** identifier field for pages */
     private String parent1;
 

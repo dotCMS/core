@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.personalization;
 
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.util.pagination.PaginatorOrdered;
+import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -9,18 +10,18 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeAPI;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.transform.ContentletToMapTransformer;
 import com.dotmarketing.portlets.personas.business.PersonaAPI;
 import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class PersonalizationPersonaPageViewPaginator implements PaginatorOrdered<PersonalizationPersonaPageView> {
 
@@ -67,8 +68,11 @@ public class PersonalizationPersonaPageViewPaginator implements PaginatorOrdered
             for (final Contentlet contentlet : contentlets) {
 
                 final Persona persona = this.personaAPI.fromContentlet(contentlet);
+                final ContentletToMapTransformer transformer = new ContentletToMapTransformer(persona);
+                final Map<String, Object> contentletMap = transformer.toMaps().stream().findFirst().orElse(Collections.EMPTY_MAP);
+
                 personalizationPersonaPageViews.add(new PersonalizationPersonaPageView(pageId,
-                        personaTagPerPage.contains(persona.getKeyTag()), persona));
+                        personaTagPerPage.contains(Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + persona.getKeyTag()), contentletMap));
             }
 
             final PaginatedArrayList<PersonalizationPersonaPageView> result = new PaginatedArrayList<>();
@@ -81,4 +85,5 @@ public class PersonalizationPersonaPageViewPaginator implements PaginatorOrdered
             throw new DotRuntimeException(e);
         }
     }
+
 }

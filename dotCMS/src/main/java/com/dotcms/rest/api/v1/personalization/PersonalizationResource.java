@@ -6,19 +6,14 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.util.PaginationUtil;
-import com.dotcms.util.pagination.ContentTypesPaginator;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
-import com.dotmarketing.business.Treeable;
-import com.dotmarketing.business.web.HostWebAPI;
-import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeAPI;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.personas.business.PersonaAPI;
 import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.util.Logger;
@@ -35,10 +30,7 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.util.*;
-
-import static com.dotcms.util.DotPreconditions.checkNotEmpty;
-import static com.dotcms.util.DotPreconditions.checkNotNull;
+import java.util.Map;
 
 /**
  * Resource to provide personalization stuff on dotCMS
@@ -49,26 +41,22 @@ public class PersonalizationResource {
     private final PersonaAPI    personaAPI;
     private final WebResource   webResource;
     private final MultiTreeAPI  multiTreeAPI;
-    private final ContentletAPI contentletAPI;
 
 
 
     @SuppressWarnings("unused")
     public PersonalizationResource() {
-        this(APILocator.getPersonaAPI(), APILocator.getMultiTreeAPI(), new WebResource(new ApiProvider()),
-                APILocator.getContentletAPI());
+        this(APILocator.getPersonaAPI(), APILocator.getMultiTreeAPI(), new WebResource(new ApiProvider()));
     }
 
     @VisibleForTesting
     protected PersonalizationResource(final PersonaAPI personaAPI,
                                       final MultiTreeAPI multiTreeAPI,
-                                      final WebResource webResource,
-                                      final ContentletAPI contentletAPI) {
+                                      final WebResource webResource) {
 
         this.personaAPI    = personaAPI;
         this.multiTreeAPI  = multiTreeAPI;
         this.webResource   = webResource;
-        this.contentletAPI = contentletAPI;
     }
 
 
@@ -90,10 +78,10 @@ public class PersonalizationResource {
     public Response getPersonalizedPersonasOnPage (@Context final HttpServletRequest  request,
                                        @Context final HttpServletResponse response,
                                        @QueryParam(PaginationUtil.FILTER)   final String filter,
-                                       @QueryParam(PaginationUtil.PAGE) final int page,
+                                       @QueryParam(PaginationUtil.PAGE)     final int page,
                                        @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
-                                       @DefaultValue("title") @QueryParam(PaginationUtil.ORDER_BY) String orderbyParam,
-                                       @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) String direction,
+                                       @DefaultValue("title") @QueryParam(PaginationUtil.ORDER_BY) final String orderbyParam,
+                                       @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION)  final String direction,
                                        @PathParam("pageId") final String  pageId) {
 
         final User user = this.webResource.init(true, request, true).getUser();
@@ -144,7 +132,7 @@ public class PersonalizationResource {
         return Response.ok(new ResponseEntityView(
                         this.multiTreeAPI.copyPersonalizationForPage(
                             personalizationPersonaPageForm.getPageId(),
-                            personalizationPersonaPageForm.getPersonaTag())
+                            Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + personalizationPersonaPageForm.getPersonaTag())
                         )).build();
     } // personalizePageContainers
 
@@ -178,13 +166,13 @@ public class PersonalizationResource {
                     "Page or Personalization parameter are missing, should use: /pagepersonas/page/{pageId}/personalization/{personalization}");
         }
 
-        if (MultiTree.DOT_PERSONALIZATION_DEFAULT.equalsIgnoreCase(personalization) &&
+        if (MultiTree.DOT_PERSONALIZATION_DEFAULT.equalsIgnoreCase(personalization) ||
                 !this.personaAPI.findPersonaByTag(personalization, user, respectFrontEndRoles).isPresent()) {
 
             throw new BadRequestException("Does not exists a Persona with the tag: " + personalization);
         }
 
-        this.multiTreeAPI.deletePersonalizationForPage(pageId, personalization);
+        this.multiTreeAPI.deletePersonalizationForPage(pageId, Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + personalization);
 
         return Response.ok(new ResponseEntityView("OK")).build();
     } // personalizePageContainers

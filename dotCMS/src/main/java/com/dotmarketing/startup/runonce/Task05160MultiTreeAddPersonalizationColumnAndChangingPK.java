@@ -4,12 +4,10 @@ package com.dotmarketing.startup.runonce;
 
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.common.db.DotDatabaseMetaData;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
 import com.dotmarketing.util.Logger;
-import com.google.common.collect.ImmutableList;
 
 import java.sql.Connection;
 import java.sql.SQLException;

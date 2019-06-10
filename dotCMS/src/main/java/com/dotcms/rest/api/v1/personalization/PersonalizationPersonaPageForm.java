@@ -2,14 +2,8 @@ package com.dotcms.rest.api.v1.personalization;
 
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.rest.api.Validated;
-import com.dotcms.workflow.form.WorkflowActionForm;
-import com.dotmarketing.portlets.workflows.model.WorkflowState;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
 
 @JsonDeserialize(builder = PersonalizationPersonaPageForm.Builder.class)
 public class PersonalizationPersonaPageForm extends Validated {
@@ -30,7 +24,7 @@ public class PersonalizationPersonaPageForm extends Validated {
     }
 
     public PersonalizationPersonaPageForm(final PersonalizationPersonaPageForm.Builder builder) {
-
+        super();
         this.pageId                     = builder.pageId;
         this.personaTag                 = builder.personaTag;
         this.checkValid();
