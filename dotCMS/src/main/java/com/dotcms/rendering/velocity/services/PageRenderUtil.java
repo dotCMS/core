@@ -10,9 +10,11 @@ import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.repackage.com.ibm.icu.text.SimpleDateFormat;
+import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
@@ -27,6 +29,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
+import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.tag.model.Tag;
@@ -231,7 +234,17 @@ public class PageRenderUtil implements Serializable {
                 defaultContainerFinderByIdOrPathStrategy.apply(containerIdOrPath, user, false, resourceHostSupplier);
     }
 
+    private String getPersonalization (final HttpServletRequest request) {
 
+        if (null != request) {
+
+            final Visitor visitor = APILocator.getVisitorAPI().getVisitor(request).orElse(null);
+            return null != visitor && visitor.getPersona() != null && visitor.getPersona().getKeyTag() != null ?
+                    Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + visitor.getPersona().getKeyTag() : MultiTree.DOT_PERSONALIZATION_DEFAULT;
+        }
+
+        return MultiTree.DOT_PERSONALIZATION_DEFAULT;
+    }
 
     private List<ContainerRaw> populateContainers() throws DotDataException, DotSecurityException {
 
@@ -240,8 +253,8 @@ public class PageRenderUtil implements Serializable {
                 request != null && request.getSession(false) != null && request.getSession().getAttribute("tm_date") != null ?
                         false :
                         mode.showLive;
-
-        final Table<String, String, Set<String>> pageContents = this.multiTreeAPI.getPageMultiTrees(htmlPage, live);
+        final String personalization = this.getPersonalization(request);
+        final Table<String, String, Set<String>> pageContents = this.multiTreeAPI.getPageMultiTrees(htmlPage, live, personalization);
         final List<ContainerRaw> raws = Lists.newArrayList();
 
         for (final String containerId : pageContents.rowKeySet()) {

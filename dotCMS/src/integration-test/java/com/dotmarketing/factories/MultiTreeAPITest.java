@@ -196,8 +196,9 @@ public class MultiTreeAPITest extends IntegrationTestBase {
             
             // should be the same object coming from in memory cache
             assert(trees==cachedTrees);
-            
+
             CacheLocator.getMultiTreeCache().removePageMultiTrees(page.getIdentifier());
+            CacheLocator.getMultiTreeCache().removePageMultiTrees(page.getIdentifier()+MultiTree.DOT_PERSONALIZATION_DEFAULT);
             
             
             trees= APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);

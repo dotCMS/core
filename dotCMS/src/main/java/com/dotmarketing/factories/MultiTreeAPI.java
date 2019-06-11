@@ -71,14 +71,32 @@ public interface MultiTreeAPI {
      * ever page renderer to properly choose which MultiTree children to show for example, show an
      * english content on a spanish page when language fallback=true or specific content for a given
      * persona.
+     *
+     * Note: Will use the default personalization
      * 
-     * @param page
-     * @param liveMode
+     *  @param page {@link IHTMLPage}
+     *  @param liveMode {@link Boolean}
      * @return
      * @throws DotDataException
      * @throws DotSecurityException
      */
     Table<String, String, Set<String>> getPageMultiTrees(final IHTMLPage page, final boolean liveMode)
+            throws DotDataException, DotSecurityException;
+
+    /**
+     * This method returns ALL MultiTree entries (in all languages) for a given page. It is up to what
+     * ever page renderer to properly choose which MultiTree children to show for example, show an
+     * english content on a spanish page when language fallback=true or specific content for a given
+     * persona. Additionally will use the personalization in order to filter the content, it assumes that the page is personalized, if not just pass {@link MultiTree#DOT_PERSONALIZATION_DEFAULT}
+     *
+     * @param page {@link IHTMLPage}
+     * @param liveMode {@link Boolean}
+     * @param personalization {@link String}
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    Table<String, String, Set<String>> getPageMultiTrees(final IHTMLPage page, final boolean liveMode, final String personalization)
             throws DotDataException, DotSecurityException;
 
 

@@ -530,27 +530,37 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
     private void refreshPageInCache(final String pageIdentifier) throws DotDataException {
 
-        CacheLocator.getMultiTreeCache().removePageMultiTrees(pageIdentifier);
-        final Set<String> inodes = new HashSet<String>();
-        final List<ContentletVersionInfo> infos = APILocator.getVersionableAPI().findContentletVersionInfos(pageIdentifier);
-        for (ContentletVersionInfo versionInfo : infos) {
-            inodes.add(versionInfo.getWorkingInode());
+        final Set<String> personalizationSet = this.getPersonalizationsForPage(pageIdentifier);
+        personalizationSet.forEach(personalization -> CacheLocator.getMultiTreeCache()
+                .removePageMultiTrees(pageIdentifier+personalization));
+
+        final Set<String> inodeSet = new HashSet<>();
+        final List<ContentletVersionInfo> contentletVersionInfos = APILocator.getVersionableAPI()
+                .findContentletVersionInfos(pageIdentifier);
+
+        for (final ContentletVersionInfo versionInfo : contentletVersionInfos) {
+
+            inodeSet.add(versionInfo.getWorkingInode());
             if (versionInfo.getLiveInode() != null) {
-                inodes.add(versionInfo.getLiveInode());
+                inodeSet.add(versionInfo.getLiveInode());
             }
         }
+
         try {
-            List<Contentlet> contentlets = APILocator.getContentletAPIImpl().findContentlets(Lists.newArrayList(inodes));
+            final List<Contentlet> contentlets = APILocator.getContentletAPIImpl()
+                    .findContentlets(Lists.newArrayList(inodeSet));
 
-            PageLoader pageLoader = new PageLoader();
+            final PageLoader pageLoader = new PageLoader();
 
-            for (Contentlet pageContent : contentlets) {
-                IHTMLPage htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(pageContent);
+            for (final Contentlet pageContent : contentlets) {
+
+                final IHTMLPage htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(pageContent);
 
                 pageLoader.invalidate(htmlPage, PageMode.EDIT_MODE);
                 pageLoader.invalidate(htmlPage, PageMode.PREVIEW_MODE);
             }
         } catch (DotStateException | DotSecurityException e) {
+
             Logger.warn(MultiTreeAPIImpl.class, "unable to refresh page cache:" + e.getMessage());
         }
     }
@@ -585,21 +595,28 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         }
     }
 
-    @CloseDBIfOpened
     @Override
     public Table<String, String, Set<String>> getPageMultiTrees(final IHTMLPage page, final boolean liveMode)
             throws DotDataException, DotSecurityException {
 
-        
+        return this.getPageMultiTrees(page, liveMode, MultiTree.DOT_PERSONALIZATION_DEFAULT);
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public Table<String, String, Set<String>> getPageMultiTrees(final IHTMLPage page, final boolean liveMode, final String personalization)
+            throws DotDataException, DotSecurityException {
+
+        final String multiTreeCacheKey = page.getIdentifier() + personalization;
         final Optional<Table<String, String, Set<String>>> pageContentsOpt =
-                CacheLocator.getMultiTreeCache().getPageMultiTrees(page.getIdentifier(), liveMode);
+                CacheLocator.getMultiTreeCache().getPageMultiTrees(multiTreeCacheKey, liveMode);
         
         if(pageContentsOpt.isPresent()) {
             return pageContentsOpt.get();
         }
 
         final Table<String, String, Set<String>> pageContents = HashBasedTable.create();
-        final List<MultiTree> multiTrees    = this.getMultiTrees(page.getIdentifier());
+        final List<MultiTree> multiTrees    = this.getMultiTreesByPersonalizedPage(page.getIdentifier(), personalization);
         final ContainerAPI    containerAPI  = APILocator.getContainerAPI();
         final ContentletAPI   contentletAPI = APILocator.getContentletAPI();
         final User systemUser = APILocator.systemUser();
@@ -648,7 +665,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
         this.addEmptyContainers(page, pageContents, liveMode);
         
-        CacheLocator.getMultiTreeCache().putPageMultiTrees(page.getIdentifier(), liveMode, pageContents);
+        CacheLocator.getMultiTreeCache().putPageMultiTrees(multiTreeCacheKey, liveMode, pageContents);
         return pageContents;
     }
 

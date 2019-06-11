@@ -27,6 +27,7 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -43,6 +44,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
+
+import com.liferay.util.StringPool;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -90,7 +93,10 @@ public class PageResourceHelper implements Serializable {
                         .setTreeOrder(i++)
                         .setHtmlPage(pageId);
 
-                multiTrees.add(multiTree);
+                final String personalization = UtilMethods.isSet(containerEntry.getPersonaTag())?
+                        Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + containerEntry.getPersonaTag():
+                        MultiTree.DOT_PERSONALIZATION_DEFAULT;
+                multiTrees.add(MultiTree.personalized(multiTree, personalization));
             }
         }
 
