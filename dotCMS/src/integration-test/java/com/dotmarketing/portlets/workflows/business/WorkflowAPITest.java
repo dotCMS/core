@@ -18,7 +18,7 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
-import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
@@ -305,22 +305,22 @@ public class WorkflowAPITest extends IntegrationTestBase {
         contentletAPI = APILocator.getContentletAPI();
         workflowCache = CacheLocator.getWorkFlowCache();
 
-        publisher = TestDataUtils.getOrCreatePublisherRole();
-        reviewer =  TestDataUtils.getOrCreateReviewerRole();
-        contributor = TestDataUtils.getOrCreateContributorRole();
-        intranet = TestDataUtils.getOrCreateIntranetRole();
+        publisher = TestUserUtils.getOrCreatePublisherRole();
+        reviewer =  TestUserUtils.getOrCreateReviewerRole();
+        contributor = TestUserUtils.getOrCreateContributorRole();
+        intranet = TestUserUtils.getOrCreateIntranetRole();
 
-        final Map<String,Role> workflowRoles = TestDataUtils.getOrCreateWorkflowRoles();
+        final Map<String,Role> workflowRoles = TestUserUtils.getOrCreateWorkflowRoles();
 
         anyWhoView = workflowRoles.get(RoleAPI.WORKFLOW_ANY_WHO_CAN_VIEW_ROLE_KEY);
         anyWhoEdit = workflowRoles.get(RoleAPI.WORKFLOW_ANY_WHO_CAN_EDIT_ROLE_KEY);
         anyWhoPublish = workflowRoles.get(RoleAPI.WORKFLOW_ANY_WHO_CAN_PUBLISH_ROLE_KEY);
         anyWhoEditPermissions = workflowRoles.get(RoleAPI.WORKFLOW_ANY_WHO_CAN_EDIT_PERMISSIONS_ROLE_KEY);
 
-        joeContributor = TestDataUtils.getJoeContributorUser();
-        janeReviewer = TestDataUtils.getJaneReviewerUser();
-        chrisPublisher = TestDataUtils.getChrisPublisherUser();
-        billIntranet =  TestDataUtils.getBillIntranetUser();
+        joeContributor = TestUserUtils.getJoeContributorUser();
+        janeReviewer = TestUserUtils.getJaneReviewerUser();
+        chrisPublisher = TestUserUtils.getChrisPublisherUser();
+        billIntranet =  TestUserUtils.getBillIntranetUser();
 
         long time = System.currentTimeMillis();
         contentTypeName = "WorkflowTesting_" + time;
@@ -1106,8 +1106,8 @@ public class WorkflowAPITest extends IntegrationTestBase {
     public void findActionRespectingPermissions() throws DotDataException, DotSecurityException {
 
         //Users
-        final User billIntranet =  TestDataUtils.getBillIntranetUser(); //APILocator.getUserAPI().loadUserById("dotcms.org.2806");
-        final User chrisPublisher = TestDataUtils.getChrisPublisherUser(); //APILocator.getUserAPI().loadUserById("dotcms.org.2795");
+        final User billIntranet =  TestUserUtils.getBillIntranetUser(); //APILocator.getUserAPI().loadUserById("dotcms.org.2806");
+        final User chrisPublisher = TestUserUtils.getChrisPublisherUser(); //APILocator.getUserAPI().loadUserById("dotcms.org.2795");
 
         Contentlet testContentlet = new Contentlet();
         try {
@@ -1193,8 +1193,8 @@ public class WorkflowAPITest extends IntegrationTestBase {
     public void findAction() throws DotDataException, DotSecurityException {
 
         //Users
-        final User billIntranet =  TestDataUtils.getBillIntranetUser(); //APILocator.getUserAPI().loadUserById("dotcms.org.2806");
-        final User chrisPublisher = TestDataUtils.getChrisPublisherUser(); //APILocator.getUserAPI().loadUserById("dotcms.org.2795");
+        final User billIntranet =  TestUserUtils.getBillIntranetUser(); //APILocator.getUserAPI().loadUserById("dotcms.org.2806");
+        final User chrisPublisher = TestUserUtils.getChrisPublisherUser(); //APILocator.getUserAPI().loadUserById("dotcms.org.2795");
 
         Contentlet testContentlet = new Contentlet();
         try {
