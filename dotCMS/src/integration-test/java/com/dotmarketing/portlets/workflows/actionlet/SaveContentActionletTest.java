@@ -117,6 +117,7 @@ public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
         Assert.assertNotNull(tagInodes);
         Assert.assertFalse(tagInodes.isEmpty());
 
+        contentletSaved.setTags();
         final Contentlet contentletPublished =
                 workflowAPI.fireContentWorkflow(contentletSaved,
                         new ContentletDependencies.Builder()

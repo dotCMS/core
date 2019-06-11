@@ -4,6 +4,27 @@ package com.dotcms.rest.api.v1.page;
 import com.dotcms.rendering.velocity.viewtools.navigation.NavResult;
 import com.dotcms.rendering.velocity.viewtools.navigation.NavTool;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.WebResource;
+import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.api.v1.authentication.ResponseUtil;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionLevel;
+import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.exception.DoesNotExistException;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.VelocityUtil;
+import com.liferay.portal.model.User;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -12,43 +33,8 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import com.dotcms.rest.InitDataObject;
-import com.dotcms.rest.ResponseEntityView;
-import com.dotcms.rest.WebResource;
-import com.dotcms.rest.annotation.NoCache;
-import com.dotcms.rest.api.v1.authentication.ResponseUtil;
-import com.dotcms.rest.exception.BadRequestException;
-import com.dotcms.rest.exception.ForbiddenException;
-import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
-
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.PermissionLevel;
-import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.exception.DoesNotExistException;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.StringUtils;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.VelocityUtil;
-
-import com.liferay.util.Validator;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.apache.velocity.tools.view.context.ChainedContext;
 import org.apache.velocity.tools.view.context.ViewContext;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.liferay.portal.model.User;
 
 @Path("/v1/nav")
 public class NavResource {
@@ -96,7 +82,7 @@ public class NavResource {
     public final Response loadJson(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
             @PathParam("uri") final String uri, @QueryParam("depth") final String depth, @QueryParam("languageId") final String languageId) {
 
-        final InitDataObject auth = webResource.init(false, request, true);
+        final InitDataObject auth = webResource.init(request, response, true);
         final User user = auth.getUser();
 
         try {
