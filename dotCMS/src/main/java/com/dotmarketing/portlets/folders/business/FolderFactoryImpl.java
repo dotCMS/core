@@ -34,8 +34,10 @@ import com.dotmarketing.portlets.links.factories.LinkFactory;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.AssetsComparator;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
@@ -1201,12 +1203,43 @@ public class FolderFactoryImpl extends FolderFactory {
     }
 
 
+    
+
+
+  private void dbSave(final Folder folder) throws DotDataException {
+
+    String[] reservedFolderNamesArray = Config.getStringArrayProperty("RESERVEDFOLDERNAMES");
+
+    Identifier id = APILocator.getIdentifierAPI().find(folder.getIdentifier());
+    if (id == null || !UtilMethods.isSet(id.getId())) {
+      throw new DotStateException("Folder must already have an identifier before saving");
+    }
+
+    if (id.getParentPath().equals("/")
+        && Arrays.asList(reservedFolderNamesArray)
+        .stream()
+        .anyMatch(n -> n.toUpperCase().equalsIgnoreCase(folder.getName()))) {
+      throw new DotStateException("Unable to create folder with reserved name:" + folder.getName());
+    }
+
+    if(!UtilMethods.isSet(folder.getInode())) {
+      folder.setInode(UUIDGenerator.generateUuid());
+    }
+
+    HibernateUtil.getSession().clear();
+    if (new DotConnect().setSQL("select count(*) as test from folder where inode = ?").addParam(folder.getInode()).getInt("test") > 0) {
+      HibernateUtil.saveOrUpdate(folder);
+    } else {
+      HibernateUtil.saveWithPrimaryKey(folder, folder.getInode());
+    }
+    folderCache.removeFolder(folder, APILocator.getIdentifierAPI().find(folder.getIdentifier()));
+
+  }
 
 
 	@Override
-	protected void save(Folder folderInode) throws DotDataException {
-		HibernateUtil.getSession().clear();
-		HibernateUtil.saveOrUpdate(folderInode);
+	protected void save(final Folder folderInode) throws DotDataException {
+	  dbSave(folderInode);
 	}
 
 	@Override
@@ -1222,11 +1255,9 @@ public class FolderFactoryImpl extends FolderFactory {
 					throw new DotDataException(e.getMessage(), e);
 				}
 			}
-			HibernateUtil.saveOrUpdate(folderToSave);
-			folderCache.removeFolder(folderToSave, APILocator.getIdentifierAPI().find(folderToSave.getIdentifier()));
 		}else{
 			folderInode.setInode(existingId);
-			HibernateUtil.saveWithPrimaryKey(folderInode, existingId);
 		}
+		this.save(folderInode);
 	}
 }
