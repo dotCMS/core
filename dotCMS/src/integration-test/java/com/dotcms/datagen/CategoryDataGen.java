@@ -3,7 +3,12 @@ package com.dotcms.datagen;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
+import com.dotmarketing.util.UtilMethods;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class CategoryDataGen extends AbstractDataGen<Category> {
 
@@ -14,6 +19,7 @@ public class CategoryDataGen extends AbstractDataGen<Category> {
     private String velocityVarName = "VelocityVarName" + currentTime;
     private int orderNumber = 1;
     private String keywords;
+    private List<Category> children = new ArrayList<>();
 
     /**
      *
@@ -65,6 +71,11 @@ public class CategoryDataGen extends AbstractDataGen<Category> {
         return this;
     }
 
+    public CategoryDataGen children(Category... categories) {
+        this.children.addAll(Arrays.asList(categories));
+        return this;
+    }
+
     /**
      *
      * @return
@@ -90,8 +101,15 @@ public class CategoryDataGen extends AbstractDataGen<Category> {
 
     @Override
     public Category persist(final Category object) {
+        final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
         try {
-            APILocator.getCategoryAPI().save(null, object, APILocator.systemUser(), false);
+             categoryAPI.save(null, object, APILocator.systemUser(), false);
+             if(UtilMethods.isSet(children)){
+                for(final Category category : children){
+                   categoryAPI.save(object, category, APILocator.systemUser(), false);
+                }
+             }
+
         } catch (DotDataException | DotSecurityException e) {
             throw new RuntimeException("Error persisting Category", e);
         }
