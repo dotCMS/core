@@ -2016,7 +2016,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				if (UtilMethods.isSet(processor.getContentlet()) && processor.getContentlet().needsReindex()) {
 				    Contentlet content = processor.getContentlet();
 				    content.setIndexPolicy(IndexPolicy.WAIT_FOR);
-					this.contentletIndexAPI.addContentToIndex(content);
+					this.contentletIndexAPI.addContentToIndex(content, false);
 				}
 			}
 		} catch(Exception e) {

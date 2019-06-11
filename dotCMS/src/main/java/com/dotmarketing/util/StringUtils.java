@@ -11,6 +11,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
@@ -286,4 +287,21 @@ public class StringUtils {
 
         return builder;
     } // builder.
+
+    public static String lowercaseStringExceptMatchingTokens(final String query,
+            final String regex) {
+
+        final StringTokenizer tokenizer = new StringTokenizer(query, " ", true);
+        final StringBuilder loweredString = new StringBuilder();
+
+        while(tokenizer.hasMoreElements()) {
+            String token = tokenizer.nextToken();
+            if(!token.matches(regex)) {
+                token = token.toLowerCase();
+            }
+            loweredString.append(token);
+        }
+
+        return loweredString.toString();
+    }
 }

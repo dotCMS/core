@@ -140,7 +140,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             if (!indexReady())
                 initIndex();
         } catch (Exception e) {
-            Logger.fatal("ESUil.checkAndInitialiazeIndex", e.getMessage());
+            Logger.fatal("ESUil.checkAndInitializeIndex", e.getMessage());
 
         }
     }
@@ -559,6 +559,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         builder.setBulkActions(ReindexThread.ELASTICSEARCH_BULK_ACTIONS)
                 .setBulkSize(new ByteSizeValue(ReindexThread.ELASTICSEARCH_BULK_SIZE, ByteSizeUnit.MB))
                 .setConcurrentRequests(ELASTICSEARCH_CONCURRENT_REQUESTS);
+
         return builder.build();
     }
 
@@ -610,7 +611,9 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         }
         inodes.values().removeIf(Objects::isNull);
         if (inodes.isEmpty()) {
-            APILocator.getReindexQueueAPI().markAsFailed(idx, "unable to find versions for content id:" + idx.getIdentToIndex());
+            //If there is no content for this entry, it should be deleted to avoid future attempts that will fail also
+            APILocator.getReindexQueueAPI().deleteReindexEntry(idx);
+            Logger.debug(this, "unable to find versions for content id:" + idx.getIdentToIndex());
         }
         for (Contentlet contentlet : inodes.values()) {
             Logger.debug(this, "indexing: id:" + contentlet.getInode() + " priority: " + idx.getPriority());
@@ -953,7 +956,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         idxsArr = idxs.toArray(idxsArr);
 
         final BulkByScrollResponse response = DeleteByQueryAction.INSTANCE.newRequestBuilder(new ESClient().getClient())
-                .filter(QueryBuilders.matchQuery("contenttype",structureName.toLowerCase())).source(idxsArr).get();
+                .filter(QueryBuilders.matchQuery("contenttype",structureName.toLowerCase())).source(idxsArr).get(new TimeValue(INDEX_OPERATIONS_TIMEOUT_IN_MS));
 
         Logger.info(this, "Records deleted: " + response.getDeleted() + " from contentType: " + structureName);
     }

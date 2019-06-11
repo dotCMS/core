@@ -26,104 +26,92 @@ import java.util.List;
  */
 public class LanguageVariableAPIImpl implements LanguageVariableAPI {
 
-    private final KeyValueAPI keyValueAPI;
-    private final LanguageAPI languageAPI;
+  private final KeyValueAPI keyValueAPI;
+  private final LanguageAPI languageAPI;
 
-    /**
-     * Creates a new instance of the {@link LanguageVariableAPI}.
-     */
-    public LanguageVariableAPIImpl() {
-        this(APILocator.getKeyValueAPI(), APILocator.getLanguageAPI());
-        
+  /**
+   * Creates a new instance of the {@link LanguageVariableAPI}.
+   */
+  public LanguageVariableAPIImpl() {
+    this(APILocator.getKeyValueAPI(), APILocator.getLanguageAPI());
+
+  }
+
+  @VisibleForTesting
+  public LanguageVariableAPIImpl(final KeyValueAPI keyValueAPI, final LanguageAPI languageAPI) {
+
+    this.keyValueAPI = keyValueAPI;
+    this.languageAPI = languageAPI;
+  }
+
+  @Override
+  public String get(final String key, final long languageId, final User user, final boolean respectFrontendRoles) {
+
+    if (!UtilMethods.isSet(key)) {
+      return null;
     }
+    String languageValue = null;
 
-    @VisibleForTesting
-    public LanguageVariableAPIImpl(final KeyValueAPI keyValueAPI, final LanguageAPI languageAPI) {
+    try {
 
-        this.keyValueAPI = keyValueAPI;
-        this.languageAPI = languageAPI;
-    }
+      // get the content type LANGUAGEVARIABLE
+      final ContentType languageVariableContentType = APILocator.getContentTypeAPI(user).find(LANGUAGEVARIABLE);
 
-    @Override
-    public String get(final String key, final long languageId,
-                      final User user, final boolean respectFrontendRoles) {
+      languageValue = this.getValueFromUserLanguage(key, languageId, user, respectFrontendRoles, languageVariableContentType);
 
-        if(!UtilMethods.isSet(key)) {
-            return null;
+      if (null == languageValue) {
+
+        languageValue = this.getValueFromUserFallbackLanguage(key, languageId, user, respectFrontendRoles, languageVariableContentType);
+
+        if (null == languageValue && languageVariableContentType instanceof MultilinguableFallback
+            && MultilinguableFallback.class.cast(languageVariableContentType).fallback()) {
+
+          languageValue = this.getValueFromDefaultLanguage(key, user, respectFrontendRoles, languageVariableContentType);
         }
-        String languageValue = null;
+      }
+    } catch (DotDataException | DotSecurityException e) {
 
-        try {
-
-            // get the content type LANGUAGEVARIABLE
-            final ContentType languageVariableContentType =
-                    APILocator.getContentTypeAPI(user).find(LANGUAGEVARIABLE);
-
-            languageValue = this.getValueFromUserLanguage(key, languageId, user,
-                    respectFrontendRoles, languageVariableContentType);
-
-            if (null == languageValue) {
-
-                languageValue = this.getValueFromUserFallbackLanguage(key, languageId, user,
-                        respectFrontendRoles, languageVariableContentType);
-
-                if (null == languageValue && languageVariableContentType instanceof MultilinguableFallback &&
-                        MultilinguableFallback.class.cast(languageVariableContentType).fallback()) {
-
-                    languageValue = this.getValueFromDefaultLanguage(key, user,
-                            respectFrontendRoles, languageVariableContentType);
-                }
-            }
-        } catch (DotDataException | DotSecurityException e) {
-
-            Logger.debug(this, ()-> String.format("Could not retrieve Language Variable '%s': %s", key, e.getMessage(), e));
-        }
-
-        return (null != languageValue)? languageValue:key;
+      Logger.debug(this, () -> String.format("Could not retrieve Language Variable '%s': %s", key, e.getMessage(), e));
     }
 
-    @Override
-    public List<KeyValue> getAllLanguageVariablesKeyStartsWith(final String key,
-            final long languageId, final User user, final int limit) throws DotDataException, DotSecurityException {
-        return this.keyValueAPI.getKeyValuesByKeyStartingWith(key,languageId,APILocator.getContentTypeAPI(user).find(LANGUAGEVARIABLE),user,false,limit);
+    return (null != languageValue) ? languageValue : key;
+  }
+
+  @Override
+  public List<KeyValue> getAllLanguageVariablesKeyStartsWith(final String key, final long languageId, final User user, final int limit)
+      throws DotDataException, DotSecurityException {
+    return this.keyValueAPI.getKeyValuesByKeyStartingWith(key, languageId, APILocator.getContentTypeAPI(user).find(LANGUAGEVARIABLE), user,
+        false, limit);
+  }
+
+  private String getValueFromUserLanguage(final String key, long languageId, final User user, final boolean respectFrontendRoles,
+      final ContentType languageVariableContentType) {
+
+    final KeyValue keyValue = this.keyValueAPI.get(key, languageId, languageVariableContentType, user, respectFrontendRoles);
+    return (null != keyValue) ? keyValue.getValue() : null;
+  }
+
+  private String getValueFromUserFallbackLanguage(final String key, long languageId, final User user, final boolean respectFrontendRoles,
+      final ContentType languageVariableContentType) {
+
+    KeyValue keyValue = null;
+    final Language fallbackLanguage = this.languageAPI.getFallbackLanguage(this.languageAPI.getLanguage(languageId).getLanguageCode());
+
+    if (null != fallbackLanguage) {
+
+      keyValue = this.keyValueAPI.get(key, fallbackLanguage.getId(), languageVariableContentType, user, respectFrontendRoles);
     }
 
-    private String getValueFromUserLanguage(final String key, long languageId,
-                                            final User user, final boolean respectFrontendRoles,
-                                            final ContentType languageVariableContentType) {
+    return (null != keyValue) ? keyValue.getValue() : null;
+  }
 
-        final KeyValue keyValue = this.keyValueAPI.get(key, languageId,
-                languageVariableContentType, user, respectFrontendRoles);
-        return (null != keyValue)?keyValue.getValue():null;
-    }
+  private String getValueFromDefaultLanguage(final String key, final User user, final boolean respectFrontendRoles,
+      final ContentType languageVariableContentType) {
 
-    private String getValueFromUserFallbackLanguage(final String key, long languageId,
-                                            final User user, final boolean respectFrontendRoles,
-                                            final ContentType languageVariableContentType) {
+    final KeyValue keyValue =
+        this.keyValueAPI.get(key, this.languageAPI.getDefaultLanguage().getId(), languageVariableContentType, user, respectFrontendRoles);
 
-        KeyValue keyValue               = null;
-        final Language fallbackLanguage = this.languageAPI.getFallbackLanguage
-                (this.languageAPI.getLanguage(languageId).getLanguageCode());
-
-        if (null != fallbackLanguage) {
-
-            keyValue = this.keyValueAPI.get(key, fallbackLanguage.getId(),
-                    languageVariableContentType, user, respectFrontendRoles);
-        }
-
-        return (null != keyValue)?keyValue.getValue():null;
-    }
-
-    private String getValueFromDefaultLanguage(final String key, final User user,
-                                               final boolean respectFrontendRoles,
-                                               final ContentType languageVariableContentType) {
-
-        final KeyValue keyValue  = this.keyValueAPI.get(key,
-                this.languageAPI.getDefaultLanguage().getId(),
-                languageVariableContentType, user, respectFrontendRoles);
-
-        return (null != keyValue)?keyValue.getValue():null;
-    }
-
+    return (null != keyValue) ? keyValue.getValue() : null;
+  }
 
 }

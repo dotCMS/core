@@ -23,14 +23,6 @@
                 }
             },
             {
-                "ordermapping": {
-                    "match": "*-order",
-                    "mapping": {
-                        "type": "keyword"
-                    }
-                }
-            },
-            {
                 "strings_as_dates": {
                     "match": "originalstartdate||recurrencestart||recurrenceend",
                     "mapping": {
