@@ -4,16 +4,6 @@ import static com.dotcms.util.CollectionsUtils.map;
 
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import javax.ws.rs.GET;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -23,21 +13,27 @@ import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.I18NUtil;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.SitePaginator;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-
-import java.io.Serializable;
-
-import javax.servlet.http.HttpServletRequest;
-
-import org.apache.commons.lang.StringUtils;
-
 import com.liferay.portal.model.User;
+import java.io.Serializable;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.GET;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import org.apache.commons.lang.StringUtils;
+import org.glassfish.jersey.server.JSONP;
 
 /**
  * This resource provides all the different end-points associated to information
@@ -88,7 +84,7 @@ public class SiteResource implements Serializable {
      * the HTTP session. If such a site does not exist in the list of sites, the
      * first site in it will be selected.
      *
-     * @param req
+     * @param httpServletRequest
      *            - The {@link HttpServletRequest} object.
      * @return The {@link Response} containing the list of Sites.
      */
@@ -97,14 +93,15 @@ public class SiteResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response currentSite(@Context final HttpServletRequest req) {
+    public final Response currentSite(@Context final HttpServletRequest httpServletRequest,
+                                      @Context final HttpServletResponse httpServletResponse) {
         Response response = null;
-        final InitDataObject initData = this.webResource.init(null, true, req, true, null);
+        final InitDataObject initData = this.webResource.init(null, httpServletRequest, httpServletResponse, true, null);
         final User user = initData.getUser();
 
         try {
 
-            Host currentSite = siteHelper.getCurrentSite(req, user);
+            Host currentSite = siteHelper.getCurrentSite(httpServletRequest, user);
             response = Response.ok( new ResponseEntityView(currentSite) ).build();
         } catch (Exception e) {
             if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
@@ -121,7 +118,8 @@ public class SiteResource implements Serializable {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response sites(
-            @Context final HttpServletRequest req,
+            @Context final HttpServletRequest httpServletRequest,
+            @Context final HttpServletResponse httpServletResponse,
             @QueryParam(PaginationUtil.FILTER)   final String filterParam,
             @QueryParam(SitePaginator.ARCHIVED_PARAMETER_NAME) final Boolean showArchived,
             @QueryParam(SitePaginator.LIVE_PARAMETER_NAME) final Boolean showLive,
@@ -131,7 +129,7 @@ public class SiteResource implements Serializable {
     ) {
 
         Response response = null;
-        final InitDataObject initData = this.webResource.init(null, true, req, true, null);
+        final InitDataObject initData = this.webResource.init(null, httpServletRequest, httpServletResponse, true, null);
         final User user = initData.getUser();
 
         String filter = (null != filterParam && filterParam.endsWith(NO_FILTER))?
@@ -140,7 +138,7 @@ public class SiteResource implements Serializable {
         final String sanitizedFilter = !"all".equals(filter) ? filter : StringUtils.EMPTY;
 
         try {
-            response = paginationUtil.getPage(req, user, sanitizedFilter, page, perPage,
+            response = paginationUtil.getPage(httpServletRequest, user, sanitizedFilter, page, perPage,
                     map(SitePaginator.ARCHIVED_PARAMETER_NAME, showArchived, SitePaginator.LIVE_PARAMETER_NAME, showLive,
                             SitePaginator.SYSTEM_PARAMETER_NAME, showSystem));
         } catch (Exception e) { // this is an unknown error, so we report as a 500.
@@ -160,12 +158,13 @@ public class SiteResource implements Serializable {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response switchSite(
-            @Context final HttpServletRequest req,
+            @Context final HttpServletRequest httpServletRequest,
+            @Context final HttpServletResponse httpServletResponse,
             @PathParam("id")   final String hostId
     ) {
 
         Response response = null;
-        final InitDataObject initData = this.webResource.init(null, true, req, true, null); // should logged in
+        final InitDataObject initData = this.webResource.init(null, httpServletRequest, httpServletResponse, true, null); // should logged in
         final User user = initData.getUser();
         boolean switchDone = false;
         Host hostFound = null;
@@ -178,7 +177,7 @@ public class SiteResource implements Serializable {
                 hostFound = siteHelper.getSite( user, hostId);
 
                 if (hostFound != null) {
-                    siteHelper.switchSite(req, hostId);
+                    siteHelper.switchSite(httpServletRequest, hostId);
                     switchDone = true;
                 }
             }
@@ -202,7 +201,7 @@ public class SiteResource implements Serializable {
     /**
      * Swicth to the user's default site
      *
-     * @param req
+     * @param request
      * @return
      */
     @PUT
@@ -211,16 +210,17 @@ public class SiteResource implements Serializable {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response switchSite(
-            @Context final HttpServletRequest req
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response
     ) {
 
-        final InitDataObject initData = this.webResource.init(null, true, req, true, null); // should logged in
+        final InitDataObject initData = this.webResource.init(null, request, response, true, null); // should logged in
         final User user = initData.getUser();
 
         Logger.debug(this, "Switching to default host for user: " + user.getUserId());
 
         try {
-            final Host host = siteHelper.switchToDefaultHost(req, user);
+            final Host host = siteHelper.switchToDefaultHost(request, user);
             return Response.ok(new ResponseEntityView(host)).build();
 
         } catch (DotSecurityException e) {

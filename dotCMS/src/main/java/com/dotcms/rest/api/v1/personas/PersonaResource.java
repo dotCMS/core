@@ -5,12 +5,6 @@ import static com.dotcms.util.DotPreconditions.checkNotNull;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.com.google.common.collect.Maps;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.BadRequestException;
@@ -27,6 +21,13 @@ import com.liferay.portal.model.User;
 import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
 import org.glassfish.jersey.server.JSONP;
 
 @Path("/v1/personas")
@@ -50,7 +51,7 @@ public class PersonaResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public Map<String, RestPersona> list(@Context HttpServletRequest request) {
+    public Map<String, RestPersona> list(@Context HttpServletRequest request, @Context final HttpServletResponse response) {
         Host host = (Host)request.getSession().getAttribute(WebKeys.CURRENT_HOST);
         if(host == null){
             String siteId = request.getHeader(WebKeys.CURRENT_HOST);
@@ -60,7 +61,7 @@ public class PersonaResource {
         host = checkNotNull(host, BadRequestException.class, "Current Site Host could not be determined.");
 
         PersonaTransform transform = new PersonaTransform();
-        User user = getUser(request);
+        User user = getUser(request, response);
         List<Persona> personas = getPersonasInternal(user, host);
         Map<String, RestPersona> hash = Maps.newHashMapWithExpectedSize(personas.size());
         for (Persona persona : personas) {
@@ -74,9 +75,11 @@ public class PersonaResource {
     @Path("{id}")
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public RestPersona self(@Context HttpServletRequest request, @PathParam("siteId") String siteId, @PathParam("id") String personaId) {
+    public RestPersona self(@Context HttpServletRequest request,
+                            @Context final HttpServletResponse response,
+                            @PathParam("siteId") String siteId, @PathParam("id") String personaId) {
         checkNotEmpty(siteId, BadRequestException.class, "Site Id is required.");
-        User user = getUser(request);
+        User user = getUser(request, response);
         personaId = checkNotEmpty(personaId, BadRequestException.class, "Persona Id is required.");
         return new PersonaTransform().appToRest(this.getPersonaInternal(personaId, user));
     }
@@ -87,8 +90,8 @@ public class PersonaResource {
         return proxy;
     }
 
-    private User getUser(@Context HttpServletRequest request) {
-        return webResource.init(true, request, true).getUser();
+    private User getUser(HttpServletRequest request, final HttpServletResponse response) {
+        return webResource.init(request, response, true).getUser();
     }
 
     private Persona getPersonaInternal(String personaId, User user) {

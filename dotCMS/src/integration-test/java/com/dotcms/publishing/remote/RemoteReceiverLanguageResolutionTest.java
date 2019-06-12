@@ -62,6 +62,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import org.apache.felix.framework.OSGIUtil;
 import org.apache.struts.Globals;
 import org.junit.AfterClass;
@@ -110,7 +111,7 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
         final InitDataObject dataObject = mock(InitDataObject.class);
         when(dataObject.getUser()).thenReturn(user);
         when(webResource
-                .init(anyString(), anyBoolean(), any(HttpServletRequest.class), anyBoolean(),
+                .init(anyString(), any(HttpServletRequest.class),  any(HttpServletResponse.class), anyBoolean(),
                         anyString())).thenReturn(dataObject);
 
         systemUser = APILocator.systemUser();

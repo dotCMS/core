@@ -1,23 +1,73 @@
 package com.dotcms.rest.api.v1.workflow;
 
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.ADMIN_DEFAULT_ID;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.ADMIN_DEFAULT_MAIL;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.ADMIN_NAME;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.CURRENT_STEP;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.DM_WORKFLOW;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.PUBLISH;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.SAVE;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.SAVE_AS_DRAFT;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.SAVE_PUBLISH;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.SEND_FOR_REVIEW;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.SEND_TO_LEGAL;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.SYSTEM_WORKFLOW;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.actionName;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.addSteps;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.collectSampleContent;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.createScheme;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.createWorkflowActions;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.doCleanUp;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.findSchemes;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.findSteps;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.getAllWorkflowActions;
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.schemeName;
+import static com.dotmarketing.business.Role.ADMINISTRATOR;
+import static com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil.ACTION_ID;
+import static com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil.ACTION_ORDER;
+import static com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil.STEP_ID;
+import static com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil.getInstance;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
-import com.dotcms.contenttype.model.field.*;
+import com.dotcms.contenttype.model.field.CategoryField;
+import com.dotcms.contenttype.model.field.CheckboxField;
+import com.dotcms.contenttype.model.field.CustomField;
+import com.dotcms.contenttype.model.field.DataTypes;
+import com.dotcms.contenttype.model.field.DateField;
+import com.dotcms.contenttype.model.field.DateTimeField;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.ImageField;
+import com.dotcms.contenttype.model.field.ImmutableBinaryField;
+import com.dotcms.contenttype.model.field.ImmutableTextField;
+import com.dotcms.contenttype.model.field.KeyValueField;
+import com.dotcms.contenttype.model.field.MultiSelectField;
+import com.dotcms.contenttype.model.field.RadioField;
+import com.dotcms.contenttype.model.field.SelectField;
+import com.dotcms.contenttype.model.field.TextAreaField;
+import com.dotcms.contenttype.model.field.TextField;
+import com.dotcms.contenttype.model.field.TimeField;
+import com.dotcms.contenttype.model.field.WysiwygField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.WorkflowDataGen;
 import com.dotcms.mock.response.MockAsyncResponse;
-import javax.ws.rs.container.AsyncResponse;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
-import org.glassfish.jersey.media.multipart.BodyPart;
-import org.glassfish.jersey.media.multipart.ContentDisposition;
-import org.glassfish.jersey.media.multipart.FormDataBodyPart;
-import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import com.dotcms.rest.ContentHelper;
+import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -25,7 +75,14 @@ import com.dotcms.rest.api.MultiPartUtils;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
-import com.dotcms.workflow.form.*;
+import com.dotcms.workflow.form.BulkActionForm;
+import com.dotcms.workflow.form.FireActionForm;
+import com.dotcms.workflow.form.FireBulkActionsForm;
+import com.dotcms.workflow.form.WorkflowActionForm;
+import com.dotcms.workflow.form.WorkflowActionStepForm;
+import com.dotcms.workflow.form.WorkflowSchemeForm;
+import com.dotcms.workflow.form.WorkflowSchemeImportObjectForm;
+import com.dotcms.workflow.form.WorkflowStepUpdateForm;
 import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
@@ -52,29 +109,45 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.io.input.ReaderInputStream;
-import org.apache.commons.lang.RandomStringUtils;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import javax.servlet.http.HttpServletRequest;
-import java.io.*;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.StringReader;
 import java.nio.charset.Charset;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Random;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.*;
-import static com.dotmarketing.business.Role.ADMINISTRATOR;
-import static com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil.*;
-import static org.junit.Assert.*;
-import static org.mockito.Matchers.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.container.AsyncResponse;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.input.ReaderInputStream;
+import org.apache.commons.lang.RandomStringUtils;
+import org.glassfish.jersey.media.multipart.BodyPart;
+import org.glassfish.jersey.media.multipart.ContentDisposition;
+import org.glassfish.jersey.media.multipart.FormDataBodyPart;
+import org.glassfish.jersey.media.multipart.FormDataMultiPart;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest {
 
@@ -119,7 +192,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
         final InitDataObject dataObject = mock(InitDataObject.class);
         when(dataObject.getUser()).thenReturn(user);
         when(webResource
-                .init(anyString(), anyBoolean(), any(HttpServletRequest.class), anyBoolean(),
+                .init(anyString(), any(HttpServletRequest.class), any(HttpServletResponse.class), anyBoolean(),
                         anyString())).thenReturn(dataObject);
 
         workflowResource = new WorkflowResource(workflowHelper, contentHelper, workflowAPI,
@@ -285,10 +358,10 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                             new WorkflowSchemeImportExportObjectView(WorkflowResource.VERSION,schemes,steps,actions,actionSteps,Collections.emptyList(),Collections.emptyList()),
                             permissions);
 
-            final Response importResponse = workflowResource.importScheme(request, exportObjectForm);
+            final Response importResponse = workflowResource.importScheme(request, new EmptyHttpResponse(), exportObjectForm);
             assertEquals(Response.Status.OK.getStatusCode(), importResponse.getStatus());
 
-            final Response exportResponse = workflowResource.exportScheme(request, scheme.getId());
+            final Response exportResponse = workflowResource.exportScheme(request, new EmptyHttpResponse(), scheme.getId());
             assertEquals(Response.Status.OK.getStatusCode(), importResponse.getStatus());
             final ResponseEntityView exportEntityView = ResponseEntityView.class.cast(exportResponse.getEntity());
             final Map importSchemeMap = Map.class.cast(exportEntityView.getEntity());
@@ -360,7 +433,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
         assertNotNull(savedScheme);
         final HttpServletRequest request = mock(HttpServletRequest.class);
         WorkflowSchemeForm form = new WorkflowSchemeForm.Builder().schemeDescription("lol").schemeArchived(false).schemeName(updatedName).build();
-        final Response updateResponse = workflowResource.updateScheme(request,savedScheme.getId(), form);
+        final Response updateResponse = workflowResource.updateScheme(request, new EmptyHttpResponse(), savedScheme.getId(), form);
         assertEquals(Response.Status.OK.getStatusCode(), updateResponse.getStatus());
         final ResponseEntityView updateSchemeEntityView = ResponseEntityView.class.cast(updateResponse.getEntity());
         final WorkflowScheme updatedScheme = WorkflowScheme.class.cast(updateSchemeEntityView.getEntity());
@@ -375,7 +448,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
         final String updatedName = savedScheme2.getName();
         final HttpServletRequest request = mock(HttpServletRequest.class);
         WorkflowSchemeForm form = new WorkflowSchemeForm.Builder().schemeDescription("lol").schemeArchived(false).schemeName(updatedName).build();
-        final Response updateResponse = workflowResource.updateScheme(request,savedScheme1.getId(), form);
+        final Response updateResponse = workflowResource.updateScheme(request, new EmptyHttpResponse(), savedScheme1.getId(), form);
         assertEquals(Status.OK.getStatusCode(), updateResponse.getStatus());
     }
 
@@ -470,7 +543,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
     private void reorderSteps(String stepId, int newPosition) {
         final HttpServletRequest reorderStepRequest = mock(HttpServletRequest.class);
         final Response reorderStepResponse = workflowResource
-                .reorderStep(reorderStepRequest, stepId, newPosition);
+                .reorderStep(reorderStepRequest, new EmptyHttpResponse(), stepId, newPosition);
         assertEquals(Response.Status.OK.getStatusCode(), reorderStepResponse.getStatus());
         final ResponseEntityView reorderedStepEntityView = ResponseEntityView.class
                 .cast(reorderStepResponse.getEntity());
@@ -498,7 +571,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
         final WorkflowStep workflowStep = workflowSteps.get(0);
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final WorkflowStepUpdateForm updatedValuesForm = new WorkflowStepUpdateForm.Builder().enableEscalation(false).escalationAction("").escalationTime("0").enableEscalation(false).stepName(updatedName).stepOrder(newOrder).build();
-        final Response updateStepResponse = workflowResource.updateStep(request, workflowStep.getId(), updatedValuesForm);
+        final Response updateStepResponse = workflowResource.updateStep(request, new EmptyHttpResponse(), workflowStep.getId(), updatedValuesForm);
         assertEquals(Response.Status.OK.getStatusCode(), updateStepResponse.getStatus());
         final ResponseEntityView updateResponseEv = ResponseEntityView.class.cast(updateStepResponse.getEntity());
         final WorkflowStep updatedWorkflowStep = WorkflowStep.class.cast(updateResponseEv.getEntity());
@@ -525,21 +598,21 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
         final HttpServletRequest request1 = mock(HttpServletRequest.class);
         //assign the first action to the second step
         final Response saveActionToStepResponse = workflowResource.saveActionToStep(
-                request1, secondStep.getId(),
+                request1, new EmptyHttpResponse(), secondStep.getId(),
                 new WorkflowActionStepForm.Builder().actionId(firstAction.getId()).build()
         );
         final ResponseEntityView updateResponseEv = ResponseEntityView.class.cast(saveActionToStepResponse.getEntity());
         assertEquals(ResponseEntityView.OK,updateResponseEv.getEntity());
 
         final HttpServletRequest request2 = mock(HttpServletRequest.class);
-        final Response actionsBySchemeResponse = workflowResource.findActionsByScheme(request2, savedScheme.getId());
+        final Response actionsBySchemeResponse = workflowResource.findActionsByScheme(request2, new EmptyHttpResponse(), savedScheme.getId());
         final ResponseEntityView findActionsResponseEv = ResponseEntityView.class.cast(actionsBySchemeResponse.getEntity());
         final List<WorkflowAction> actionsByScheme = List.class.cast(findActionsResponseEv.getEntity());
         assertEquals(2, actionsByScheme.size());
 
         final HttpServletRequest request3 = mock(HttpServletRequest.class);
         //This returns 1 single action
-        final Response actionsByStepResponse = workflowResource.findActionByStep(request3, secondStep.getId(), firstAction.getId());
+        final Response actionsByStepResponse = workflowResource.findActionByStep(request3, new EmptyHttpResponse(), secondStep.getId(), firstAction.getId());
         final ResponseEntityView findActionsByStepResponseEv = ResponseEntityView.class.cast(actionsByStepResponse.getEntity());
         final WorkflowAction actionByStep = WorkflowAction.class.cast(findActionsByStepResponseEv.getEntity());
         assertNotNull(actionByStep);
@@ -560,22 +633,22 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
         assertEquals(2, actions.size());
 
         final HttpServletRequest request1 = mock(HttpServletRequest.class);
-        final Response actionsByStepResponse1 = workflowResource.findActionsByStep(request1,workflowSteps.get(0).getId());
+        final Response actionsByStepResponse1 = workflowResource.findActionsByStep(request1, new EmptyHttpResponse(), workflowSteps.get(0).getId());
         final ResponseEntityView findActionsByStepResponseEv1 = ResponseEntityView.class.cast(actionsByStepResponse1.getEntity());
         final List<WorkflowAction> actionsByStep1 = List.class.cast(findActionsByStepResponseEv1.getEntity());
         assertEquals(1, actionsByStep1.size());
 
         final HttpServletRequest request2 = mock(HttpServletRequest.class);
         //This returns a list actions
-        final Response actionsByStepResponse2 = workflowResource.findActionsByStep(request2,workflowSteps.get(1).getId());
+        final Response actionsByStepResponse2 = workflowResource.findActionsByStep(request2, new EmptyHttpResponse(), workflowSteps.get(1).getId());
         final ResponseEntityView findActionsByStepResponseEv2 = ResponseEntityView.class.cast(actionsByStepResponse2.getEntity());
         final List<WorkflowAction> actionsByStep2 = List.class.cast(findActionsByStepResponseEv2.getEntity());
         assertEquals(1, actionsByStep2.size());
 
         final HttpServletRequest request3 = mock(HttpServletRequest.class);
-        final Response deleteActionResponse1 = workflowResource.deleteAction(request3,actionsByStep1.get(0).getId());
+        final Response deleteActionResponse1 = workflowResource.deleteAction(request3, new EmptyHttpResponse(), actionsByStep1.get(0).getId());
         final ResponseEntityView deleteActionByResponseEv1 = ResponseEntityView.class.cast(deleteActionResponse1.getEntity());
-        final Response deleteActionResponse2 = workflowResource.deleteAction(request3,actionsByStep2.get(0).getId());
+        final Response deleteActionResponse2 = workflowResource.deleteAction(request3, new EmptyHttpResponse(), actionsByStep2.get(0).getId());
         final ResponseEntityView deleteActionByResponseEv2 = ResponseEntityView.class.cast(deleteActionResponse2.getEntity());
         final String ok1 = String.class.cast(deleteActionByResponseEv1.getEntity());
         assertEquals(ResponseEntityView.OK,ok1);
@@ -583,7 +656,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
         assertEquals(ResponseEntityView.OK,ok2);
 
         final HttpServletRequest request4 = mock(HttpServletRequest.class);
-        final Response actionsBySchemeResponse = workflowResource.findActionsByScheme(request4, savedScheme.getId());
+        final Response actionsBySchemeResponse = workflowResource.findActionsByScheme(request4, new EmptyHttpResponse(), savedScheme.getId());
         final ResponseEntityView findActionsResponseEv = ResponseEntityView.class.cast(actionsBySchemeResponse.getEntity());
         final List<WorkflowAction> actionsByScheme = List.class.cast(findActionsResponseEv.getEntity());
         assertEquals(0, actionsByScheme.size());
@@ -620,12 +693,12 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                 build();
 
         final String actionId = actions.get(0).getId();
-        final Response updateResponse = workflowResource.updateAction(request, actionId, form);
+        final Response updateResponse = workflowResource.updateAction(request, new EmptyHttpResponse(), actionId, form);
         final ResponseEntityView updateResponseEv = ResponseEntityView.class.cast(updateResponse.getEntity());
         final WorkflowAction workflowAction = WorkflowAction.class.cast(updateResponseEv.getEntity());
         assertEquals(actionNewName,workflowAction.getName());
         final HttpServletRequest request2 = mock(HttpServletRequest.class);
-        final Response findActionResponse = workflowResource.findAction(request2, actionId);
+        final Response findActionResponse = workflowResource.findAction(request2, new EmptyHttpResponse(), actionId);
         final ResponseEntityView findActionResponseEv = ResponseEntityView.class.cast(findActionResponse.getEntity());
         final WorkflowAction wa = WorkflowAction.class.cast(findActionResponseEv.getEntity());
         assertNotNull(wa);
@@ -656,21 +729,21 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
 
         //assign the first action to the second step
         final Response saveActionToStepResponse = workflowResource.saveActionToStep(
-                request1, secondStep.getId(),
+                request1, new EmptyHttpResponse(), secondStep.getId(),
                 new WorkflowActionStepForm.Builder().actionId(firstAction.getId()).build()
         );
         final ResponseEntityView updateResponseEv = ResponseEntityView.class.cast(saveActionToStepResponse.getEntity());
         assertEquals(ResponseEntityView.OK,updateResponseEv.getEntity());
 
         final HttpServletRequest request2 = mock(HttpServletRequest.class);
-        final Response actionsBySchemeResponse = workflowResource.findActionsByScheme(request2, savedScheme.getId());
+        final Response actionsBySchemeResponse = workflowResource.findActionsByScheme(request2, new EmptyHttpResponse(), savedScheme.getId());
         final ResponseEntityView findActionsResponseEv = ResponseEntityView.class.cast(actionsBySchemeResponse.getEntity());
         final List<WorkflowAction> actionsByScheme = List.class.cast(findActionsResponseEv.getEntity());
         assertEquals(2, actionsByScheme.size());
 
         final HttpServletRequest request3 = mock(HttpServletRequest.class);
         //This returns 1 single action
-        final Response actionsByStepResponse = workflowResource.findActionByStep(request3, secondStep.getId(), firstAction.getId());
+        final Response actionsByStepResponse = workflowResource.findActionByStep(request3, new EmptyHttpResponse(), secondStep.getId(), firstAction.getId());
         final ResponseEntityView findActionsByStepResponseEv = ResponseEntityView.class.cast(actionsByStepResponse.getEntity());
         final WorkflowAction actionByStep = WorkflowAction.class.cast(findActionsByStepResponseEv.getEntity());
         assertNotNull(actionByStep);
@@ -685,7 +758,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
             //test archive scheme
             WorkflowSchemeForm form = new WorkflowSchemeForm.Builder().schemeDescription("Delete scheme").schemeArchived(true).schemeName(savedScheme.getName()).build();
             final HttpServletRequest request5 = mock(HttpServletRequest.class);
-            final Response updateResponse = workflowResource.updateScheme(request5,savedScheme.getId(), form);
+            final Response updateResponse = workflowResource.updateScheme(request5, new EmptyHttpResponse(), savedScheme.getId(), form);
             assertEquals(Response.Status.OK.getStatusCode(), updateResponse.getStatus());
 
             //test delete scheme
@@ -712,7 +785,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
         final String luceneQuery = "-contentType:Host -baseType:3 +(conhost:48190c8c-42c4-46af-8d1a-0cd5db894797 conhost:SYSTEM_HOST) +languageId:1 +deleted:false +working:true";
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final BulkActionForm form = new BulkActionForm(null, luceneQuery);
-        final Response response = workflowResource.getBulkActions(request, form);
+        final Response response = workflowResource.getBulkActions(request, new EmptyHttpResponse(), form);
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
         final ResponseEntityView entityView = ResponseEntityView.class.cast(response.getEntity());
         final BulkActionView wa = BulkActionView.class.cast(entityView.getEntity());
@@ -778,7 +851,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
 
                 final HttpServletRequest request = mock(HttpServletRequest.class);
                 final BulkActionForm form = new BulkActionForm(contentletIds, null);
-                final Response response = workflowResource.getBulkActions(request, form);
+                final Response response = workflowResource.getBulkActions(request, new EmptyHttpResponse(), form);
                 assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
                 final ResponseEntityView entityView = ResponseEntityView.class
                         .cast(response.getEntity());
@@ -1039,7 +1112,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                 );
                 final HttpServletRequest request = mock(HttpServletRequest.class);
                 final Response bulkActionsResponse = workflowResource
-                        .getBulkActions(request, form1);
+                        .getBulkActions(request, new EmptyHttpResponse(), form1);
                 assertEquals(Response.Status.OK.getStatusCode(), bulkActionsResponse.getStatus());
 
                 final ResponseEntityView beforeFireEntityView = ResponseEntityView.class
@@ -1110,7 +1183,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                                 Collections.singletonList(inode), null
                         );
 
-                        final Response response2 = workflowResource.getBulkActions(request2, form2);
+                        final Response response2 = workflowResource.getBulkActions(request2, new EmptyHttpResponse(), form2);
                         assertEquals(Response.Status.OK.getStatusCode(), response2.getStatus());
                         final ResponseEntityView afterFireEntityView = ResponseEntityView.class
                                 .cast(response2.getEntity());
@@ -1132,7 +1205,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                         );
 
                         final Response response3 = workflowResource
-                                .getBulkActions(request3, bulkActionFormAfterSave);
+                                .getBulkActions(request3, new EmptyHttpResponse(), bulkActionFormAfterSave);
                         assertEquals(Response.Status.OK.getStatusCode(), response3.getStatus());
                         final ResponseEntityView afterFireEntityViewNewInode = ResponseEntityView.class
                                 .cast(response3.getEntity());
@@ -1252,7 +1325,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                 );
                 final HttpServletRequest request = mock(HttpServletRequest.class);
                 final Response findActionsResponse = workflowResource
-                        .getBulkActions(request, form1);
+                        .getBulkActions(request, new EmptyHttpResponse(), form1);
                 assertEquals(Response.Status.OK.getStatusCode(), findActionsResponse.getStatus());
 
                 final ResponseEntityView beforeFireEntityView = ResponseEntityView.class
@@ -1312,7 +1385,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                                 Collections.singletonList(inode), null
                         );
                         final HttpServletRequest request2 = mock(HttpServletRequest.class);
-                        final Response response2 = workflowResource.getBulkActions(request2, form2);
+                        final Response response2 = workflowResource.getBulkActions(request2, new EmptyHttpResponse(), form2);
                         assertEquals(Response.Status.OK.getStatusCode(), response2.getStatus());
 
                         final ResponseEntityView afterFireEntityView = ResponseEntityView.class
@@ -1384,13 +1457,13 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                 final FireActionForm fireActionForm1 = new FireActionForm(builder1);
                 final HttpServletRequest request1 = mock(HttpServletRequest.class);
                 final Response response1 = workflowResource
-                        .fireAction(request1, saveAndPublishActionId, null, null, -1,  fireActionForm1);
+                        .fireAction(request1, new EmptyHttpResponse(), saveAndPublishActionId, null, null, -1,  fireActionForm1);
 
                 final int statusCode1 = response1.getStatus();
                 assertEquals(Status.OK.getStatusCode(), statusCode1);
                 final ResponseEntityView fireEntityView1 = ResponseEntityView.class
                         .cast(response1.getEntity());
-                 brandNewContentlet = new Contentlet((Map) fireEntityView1.getEntity());
+                brandNewContentlet = new Contentlet (Map.class.cast(fireEntityView1.getEntity()));
                 assertNotNull(brandNewContentlet);
                 assertEquals("value-1", brandNewContentlet.getMap().get(REQUIRED_TEXT_FIELD_NAME));
 
@@ -1404,14 +1477,13 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                 final FireActionForm fireActionForm2 = new FireActionForm(builder2);
                 final HttpServletRequest request2 = mock(HttpServletRequest.class);
                 final Response response2 = workflowResource
-                     .fireAction(request2, saveAndPublishActionId, brandNewContentlet.getInode(), null, -1, fireActionForm2);
+                     .fireAction(request2, new EmptyHttpResponse(), saveAndPublishActionId, brandNewContentlet.getInode(), null, -1, fireActionForm2);
 
                 final int statusCode2 = response2.getStatus();
                 assertEquals(Status.OK.getStatusCode(), statusCode2);
                 final ResponseEntityView fireEntityView2 = ResponseEntityView.class
                          .cast(response2.getEntity());
-                 final Contentlet updatedContentlet = new Contentlet(
-                         (Map) fireEntityView2.getEntity());
+                final Contentlet updatedContentlet = new Contentlet (Map.class.cast(fireEntityView2.getEntity()));
                 assertNotNull(updatedContentlet);
 
                 assertEquals(brandNewContentlet.getIdentifier(),updatedContentlet.getIdentifier());
@@ -1529,25 +1601,25 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                 FormDataMultiPart formDataMultiPart = this.createFormMultiPart(contentType, inputFile1Text, inputFile2Text);
                 final HttpServletRequest request1 = mock(HttpServletRequest.class);
                 final Response response1 = workflowResource
-                        .fireActionMultipart(request1, SAVE_ACTION_ID, null,null,-1, formDataMultiPart);
+                        .fireActionMultipart(request1, new EmptyHttpResponse(), SAVE_ACTION_ID, null,null,-1, formDataMultiPart);
                 final int statusCode1 = response1.getStatus();
                 assertEquals(Status.OK.getStatusCode(), statusCode1);
                 final ResponseEntityView fireEntityView1 = ResponseEntityView.class
                         .cast(response1.getEntity());
-                brandNewContentlet = new Contentlet((Map) fireEntityView1.getEntity());
+                brandNewContentlet = new Contentlet(Map.class.cast(fireEntityView1.getEntity()));
                 checkBrandNewContentlet(fieldNameTitle, fieldNameFile1, fieldNameFile2, inputFile1Text, inputFile2Text, brandNewContentlet);
 
                 // update existing by content inode.
                 formDataMultiPart = this.createFormMultiPart(contentType, inputFile1Text, inputFile2Text);
                 final HttpServletRequest request2 = mock(HttpServletRequest.class);
                 final Response response2 = workflowResource
-                        .fireActionMultipart(request2, SAVE_ACTION_ID, brandNewContentlet.getInode(),null,-1, formDataMultiPart);
+                        .fireActionMultipart(request2, new EmptyHttpResponse(), SAVE_ACTION_ID, brandNewContentlet.getInode(),null,-1, formDataMultiPart);
                 final int statusCode2 = response2.getStatus();
                 assertEquals(Status.OK.getStatusCode(), statusCode2);
                 final ResponseEntityView fireEntityView2 = ResponseEntityView.class
                         .cast(response2.getEntity());
                 String identifier = brandNewContentlet.getIdentifier();
-                brandNewContentlet = new Contentlet((Map) fireEntityView2.getEntity());
+                brandNewContentlet = new Contentlet(Map.class.cast(fireEntityView2.getEntity()));
                 checkBrandNewContentlet(fieldNameTitle, fieldNameFile1, fieldNameFile2, inputFile1Text, inputFile2Text, brandNewContentlet);
                 assertEquals(identifier, brandNewContentlet.getIdentifier());
 
@@ -1556,12 +1628,12 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                 final HttpServletRequest request3 = mock(HttpServletRequest.class);
                 identifier = brandNewContentlet.getIdentifier();
                 final Response response3 = workflowResource
-                        .fireActionMultipart(request3, SAVE_ACTION_ID, null,identifier,-1, formDataMultiPart);
+                        .fireActionMultipart(request3, new EmptyHttpResponse(), SAVE_ACTION_ID, null,identifier,-1, formDataMultiPart);
                 final int statusCode3 = response3.getStatus();
                 assertEquals(Status.OK.getStatusCode(), statusCode3);
                 final ResponseEntityView fireEntityView3 = ResponseEntityView.class
                         .cast(response3.getEntity());
-                brandNewContentlet = new Contentlet((Map) fireEntityView3.getEntity());
+                brandNewContentlet = new Contentlet(Map.class.cast(fireEntityView3.getEntity()));
                 checkBrandNewContentlet(fieldNameTitle, fieldNameFile1, fieldNameFile2, inputFile1Text, inputFile2Text, brandNewContentlet);
                 assertEquals(identifier, brandNewContentlet.getIdentifier());
             } finally {
@@ -1665,13 +1737,13 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                 final FireActionForm fireActionForm1 = new FireActionForm(builder1);
                 final HttpServletRequest request1 = mock(HttpServletRequest.class);
                 final Response response1 = workflowResource
-                        .fireAction(request1, SAVE_ACTION_ID, null,null,-1, fireActionForm1);
+                        .fireAction(request1, new EmptyHttpResponse(), SAVE_ACTION_ID, null,null,-1, fireActionForm1);
 
                 final int statusCode1 = response1.getStatus();
                 assertEquals(Status.OK.getStatusCode(), statusCode1);
                 final ResponseEntityView fireEntityView1 = ResponseEntityView.class
                         .cast(response1.getEntity());
-                brandNewContentlet = new Contentlet((Map) fireEntityView1.getEntity());
+                brandNewContentlet = new Contentlet(Map.class.cast(fireEntityView1.getEntity()));
                 assertNotNull(brandNewContentlet);
                 assertEquals(REQUIRED_TEXT_FIELD_VALUE, brandNewContentlet.getMap().get(REQUIRED_TEXT_FIELD_NAME));
                 assertEquals(NON_REQUIRED_IMAGE_VALUE, brandNewContentlet.getMap().get(NON_REQUIRED_IMAGE_FIELD_NAME));
@@ -1689,13 +1761,13 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                 final FireActionForm fireActionForm2 = new FireActionForm(builder2);
                 final HttpServletRequest request2 = mock(HttpServletRequest.class);
                 final Response response2 = workflowResource
-                        .fireAction(request2, SAVE_ACTION_ID, brandNewContentlet.getInode(), null, -1, fireActionForm2);
+                        .fireAction(request2, new EmptyHttpResponse(), SAVE_ACTION_ID, brandNewContentlet.getInode(), null, -1, fireActionForm2);
 
                 final int statusCode2 = response2.getStatus();
                 assertEquals(Status.OK.getStatusCode(), statusCode2);
                 final ResponseEntityView fireEntityView2 = ResponseEntityView.class
                         .cast(response2.getEntity());
-                Contentlet fetchedContentlet = new Contentlet((Map) fireEntityView2.getEntity());
+                Contentlet fetchedContentlet = new Contentlet(Map.class.cast(fireEntityView2.getEntity()));
                 assertNotNull(fetchedContentlet);
                 assertEquals(REQUIRED_TEXT_FIELD_VALUE, fetchedContentlet.getMap().get(REQUIRED_TEXT_FIELD_NAME));
 
@@ -1747,13 +1819,13 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
             final FireActionForm fireActionForm1 = new FireActionForm(builder1);
             final HttpServletRequest request1 = mock(HttpServletRequest.class);
             final Response response1 = workflowResource
-                    .fireAction(request1, SAVE_ACTION_ID, null, null, -1, fireActionForm1);
+                    .fireAction(request1, new EmptyHttpResponse(), SAVE_ACTION_ID, null, null, -1, fireActionForm1);
 
             final int statusCode1 = response1.getStatus();
             assertEquals(Status.OK.getStatusCode(), statusCode1);
             final ResponseEntityView fireEntityView1 = ResponseEntityView.class
                     .cast(response1.getEntity());
-            brandNewContentlet = new Contentlet((Map) fireEntityView1.getEntity());
+            brandNewContentlet = new Contentlet(Map.class.cast(fireEntityView1.getEntity()));
             assertNotNull(brandNewContentlet);
 
             for(final Field field : contentType.fields()){
@@ -1770,14 +1842,14 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
             final FireActionForm fireActionForm2 = new FireActionForm(builder2);
             final HttpServletRequest request2 = mock(HttpServletRequest.class);
             final Response response2 = workflowResource
-                    .fireAction(request2, SAVE_ACTION_ID, brandNewContentlet.getInode(), null, -1, fireActionForm2);
+                    .fireAction(request2, new EmptyHttpResponse(), SAVE_ACTION_ID, brandNewContentlet.getInode(), null, -1, fireActionForm2);
 
             final int statusCode2 = response2.getStatus();
             assertEquals(Status.OK.getStatusCode(), statusCode2);
 
             final ResponseEntityView fireEntityView2 = ResponseEntityView.class
                     .cast(response2.getEntity());
-            final Contentlet fetchedContentlet = new Contentlet((Map) fireEntityView2.getEntity());
+            final Contentlet fetchedContentlet = new Contentlet(Map.class.cast(fireEntityView2.getEntity()));
             assertNotNull(fetchedContentlet);
 
             for(final Field field : contentType.fields()){
@@ -1817,13 +1889,13 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
             final FireActionForm fireActionForm1 = new FireActionForm(builder1);
             final HttpServletRequest request1 = mock(HttpServletRequest.class);
             final Response response1 = workflowResource
-                    .fireAction(request1, SAVE_ACTION_ID, null, null, -1, fireActionForm1);
+                    .fireAction(request1, new EmptyHttpResponse(), SAVE_ACTION_ID, null, null, -1, fireActionForm1);
 
             final int statusCode1 = response1.getStatus();
             assertEquals(Status.OK.getStatusCode(), statusCode1);
             final ResponseEntityView fireEntityView1 = ResponseEntityView.class
                     .cast(response1.getEntity());
-            brandNewContentlet = new Contentlet((Map) fireEntityView1.getEntity());
+            brandNewContentlet = new Contentlet(Map.class.cast(fireEntityView1.getEntity()));
             assertNotNull(brandNewContentlet);
 
             //Once the content has been created lets send another request with half the fields
@@ -1840,7 +1912,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
             final FireActionForm fireActionForm2 = new FireActionForm(builder2);
             final HttpServletRequest request2 = mock(HttpServletRequest.class);
             final Response response2 = workflowResource
-                    .fireAction(request2, SAVE_ACTION_ID, brandNewContentlet.getInode(), null, -1, fireActionForm2);
+                    .fireAction(request2, new EmptyHttpResponse(), SAVE_ACTION_ID, brandNewContentlet.getInode(), null, -1, fireActionForm2);
 
             final int statusCode2 = response2.getStatus();
             assertEquals(Status.OK.getStatusCode(), statusCode2);
@@ -1849,7 +1921,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
 
             final ResponseEntityView fireEntityView2 = ResponseEntityView.class
                     .cast(response2.getEntity());
-            final Contentlet fetchedContentlet = new Contentlet((Map) fireEntityView2.getEntity());
+            final Contentlet fetchedContentlet = new Contentlet (Map.class.cast(fireEntityView2.getEntity()));
             assertNotNull(fetchedContentlet);
 
             //This one got changed. It is expected since we are using the resource to modify its value.
@@ -1886,14 +1958,14 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
             final FireActionForm fireActionForm1 = new FireActionForm(builder1);
             final HttpServletRequest request1 = mock(HttpServletRequest.class);
             final Response response1 = workflowResource
-                    .fireAction(request1, SAVE_ACTION_ID, null, null, -1, fireActionForm1);
+                    .fireAction(request1, new EmptyHttpResponse(), SAVE_ACTION_ID, null, null, -1, fireActionForm1);
 
             final int statusCode1 = response1.getStatus();
             assertEquals(Status.OK.getStatusCode(), statusCode1);
 
             final ResponseEntityView fireEntityView1 = ResponseEntityView.class
                     .cast(response1.getEntity());
-            brandNewContentlet = new Contentlet((Map) fireEntityView1.getEntity());
+            brandNewContentlet = new Contentlet(Map.class.cast(fireEntityView1.getEntity()));
             assertNotNull(brandNewContentlet);
 
             final FireActionForm.Builder builder2 = new FireActionForm.Builder();
@@ -1906,7 +1978,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
             final FireActionForm fireActionForm2 = new FireActionForm(builder2);
             final HttpServletRequest request2 = mock(HttpServletRequest.class);
             final Response response2 = workflowResource
-                    .fireAction(request2, SAVE_ACTION_ID, brandNewContentlet.getInode(), null, -1, fireActionForm2);
+                    .fireAction(request2, new EmptyHttpResponse(), SAVE_ACTION_ID, brandNewContentlet.getInode(), null, -1, fireActionForm2);
 
             final int statusCode2 = response2.getStatus();
             assertEquals(Status.BAD_REQUEST.getStatusCode(), statusCode2);
