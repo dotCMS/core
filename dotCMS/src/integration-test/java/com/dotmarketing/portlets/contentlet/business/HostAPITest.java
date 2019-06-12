@@ -9,7 +9,9 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.StructureDataGen;
+import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.enterprise.HostAssetsJobProxy;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -85,7 +87,38 @@ public class HostAPITest {
 
         User user = APILocator.getUserAPI().getSystemUser();
 
-        Host source = APILocator.getHostAPI().findByName("demo.dotcms.com", user, false);
+        Host source = new SiteDataGen().nextPersisted();
+        final ContentType blogContentType = TestDataUtils
+                .getBlogLikeContentType("Blog" + System.currentTimeMillis(), source);
+        final ContentType employeeContentType = TestDataUtils
+                .getEmployeeLikeContentType("Employee" + System.currentTimeMillis(), source);
+        final ContentType newsContentType = TestDataUtils
+                .getNewsLikeContentType("News" + System.currentTimeMillis(), source);
+
+        TestDataUtils.getBlogContent(true, APILocator.getLanguageAPI().getDefaultLanguage().getId(),
+                blogContentType.id(), source);
+        TestDataUtils.getBlogContent(true, APILocator.getLanguageAPI().getDefaultLanguage().getId(),
+                blogContentType.id(), source);
+        TestDataUtils
+                .getEmployeeContent(true, APILocator.getLanguageAPI().getDefaultLanguage().getId(),
+                        employeeContentType.id(), source);
+        TestDataUtils
+                .getEmployeeContent(true, APILocator.getLanguageAPI().getDefaultLanguage().getId(),
+                        employeeContentType.id(), source);
+        TestDataUtils.getNewsContent(true, APILocator.getLanguageAPI().getDefaultLanguage().getId(),
+                newsContentType.id(), source);
+        TestDataUtils.getNewsContent(true, APILocator.getLanguageAPI().getDefaultLanguage().getId(),
+                newsContentType.id(), source);
+
+        TestDataUtils.getGenericContentContent(true,
+                APILocator.getLanguageAPI().getDefaultLanguage().getId(),
+                source);
+        TestDataUtils.getGenericContentContent(true,
+                APILocator.getLanguageAPI().getDefaultLanguage().getId(),
+                source);
+        TestDataUtils.getGenericContentContent(true,
+                APILocator.getLanguageAPI().getDefaultLanguage().getId(),
+                source);
 
         //Create a new test host
         Host host = createHost("copy" + System.currentTimeMillis() + ".demo.dotcms.com", user);
