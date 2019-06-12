@@ -26,6 +26,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.ZipUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
+import com.rainerhahnekamp.sneakythrow.Sneaky;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -37,8 +38,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,43 +56,31 @@ import java.util.zip.ZipOutputStream;
 import org.apache.commons.lang.StringUtils;
 import org.apache.tools.zip.ZipEntry;
 import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.action.ActionFuture;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
-import org.elasticsearch.action.admin.cluster.repositories.delete.DeleteRepositoryResponse;
-import org.elasticsearch.action.admin.cluster.repositories.put.PutRepositoryResponse;
-import org.elasticsearch.action.admin.cluster.snapshots.create.CreateSnapshotResponse;
-import org.elasticsearch.action.admin.cluster.snapshots.get.GetSnapshotsRequest;
-import org.elasticsearch.action.admin.cluster.snapshots.get.GetSnapshotsResponse;
-import org.elasticsearch.action.admin.cluster.snapshots.restore.RestoreSnapshotRequest;
-import org.elasticsearch.action.admin.cluster.snapshots.restore.RestoreSnapshotResponse;
-import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
-import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest;
-import org.elasticsearch.action.admin.indices.cache.clear.ClearIndicesCacheRequestBuilder;
+import org.elasticsearch.action.admin.indices.cache.clear.ClearIndicesCacheRequest;
 import org.elasticsearch.action.admin.indices.cache.clear.ClearIndicesCacheResponse;
-import org.elasticsearch.action.admin.indices.close.CloseIndexRequest;
-import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
-import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
-import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
-import org.elasticsearch.action.admin.indices.delete.DeleteIndexResponse;
 import org.elasticsearch.action.admin.indices.forcemerge.ForceMergeRequest;
 import org.elasticsearch.action.admin.indices.forcemerge.ForceMergeResponse;
-import org.elasticsearch.action.admin.indices.open.OpenIndexRequest;
 import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
-import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequestBuilder;
-import org.elasticsearch.action.admin.indices.stats.IndexStats;
-import org.elasticsearch.action.admin.indices.stats.IndicesStatsResponse;
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
+import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.search.SearchScrollRequest;
+import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.client.AdminClient;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.IndicesAdminClient;
-import org.elasticsearch.client.IndicesClient;
+import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.Requests;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.client.indices.CreateIndexRequest;
+import org.elasticsearch.client.indices.CreateIndexResponse;
+import org.elasticsearch.client.indices.GetIndexRequest;
+import org.elasticsearch.client.indices.GetIndexResponse;
 import org.elasticsearch.cluster.health.ClusterIndexHealth;
 import org.elasticsearch.cluster.metadata.AliasMetaData;
 import org.elasticsearch.cluster.metadata.IndexMetaData;
@@ -104,6 +95,7 @@ import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.SortOrder;
 import org.elasticsearch.snapshots.SnapshotInfo;
 
@@ -119,7 +111,7 @@ public class ESIndexAPI {
 	public static final int INDEX_OPERATIONS_TIMEOUT_IN_MS =
 			Config.getIntProperty("ES_INDEX_OPERATIONS_TIMEOUT", 15000);
 
-	final private ESClient esclient;
+	final private RestHighLevelClient esclient;
 	final private ContentletIndexAPI iapi;
 	final private ESIndexHelper esIndexHelper;
 	private final ServerAPI serverAPI;
@@ -138,7 +130,7 @@ public class ESIndexAPI {
 	}
 
 	public ESIndexAPI(){
-		this.esclient = new ESClient();
+		this.esclient = DotRestHighLevelClient.getClient();
 		this.iapi = new ContentletIndexAPIImpl();
 		this.esIndexHelper = ESIndexHelper.INSTANCE;
 		this.serverAPI = APILocator.getServerAPI();
@@ -146,7 +138,7 @@ public class ESIndexAPI {
 	}
 
 	@VisibleForTesting
-	protected ESIndexAPI(final ESClient esclient, final ContentletIndexAPIImpl iapi, final ESIndexHelper esIndexHelper,
+	protected ESIndexAPI(final RestHighLevelClient esclient, final ContentletIndexAPIImpl iapi, final ESIndexHelper esIndexHelper,
 						 final ServerAPI serverAPI, final ClusterAPI clusterAPI){
 		this.esclient = esclient;
 		this.iapi = iapi;
@@ -156,21 +148,6 @@ public class ESIndexAPI {
 	}
 
     /**
-     * returns all indicies and status
-     * @return
-     */
-    public Map<String,IndexStats> getIndicesAndStatus() {
-        final Client client = esclient.getClient();
-        final IndicesStatsResponse
-            indicesStatsResponse =
-                client.admin().indices().prepareStats().setStore(true).execute().actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
-
-        return indicesStatsResponse.getIndices();
-    }
-
-    
-    
-    /**
      * This method will flush ElasticSearches field and filter 
      * caches.  The operation can take up to a minute to complete
      * 
@@ -179,21 +156,26 @@ public class ESIndexAPI {
      * @throws InterruptedException
      * @throws ExecutionException
      */
-    public Map<String, Integer> flushCaches(final List<String> indexNames) throws InterruptedException, ExecutionException {
-      Logger.warn(this.getClass(), "Flushing Elasticsearch index caches:" + indexNames);
-      if(indexNames==null || indexNames.isEmpty()) {
-        return ImmutableMap.of("failedShards",0, "successfulShards", 0);
-      }
-      final Client client = esclient.getClient();
-      final ClearIndicesCacheRequestBuilder requestBuilder =
-          client.admin().indices().prepareClearCache(indexNames.toArray(new String[indexNames.size()]));
+	public Map<String, Integer> flushCaches(final List<String> indexNames)  {
+		Logger.warn(this.getClass(), "Flushing Elasticsearch index caches:" + indexNames);
+		if(indexNames==null || indexNames.isEmpty()) {
+			return ImmutableMap.of("failedShards",0, "successfulShards", 0);
+		}
 
-      final ClearIndicesCacheResponse res = esclient.getClient().admin().indices().clearCache(requestBuilder.request()).get();
-      Map<String, Integer> map= ImmutableMap.of("failedShards",res.getFailedShards(), "successfulShards", res.getSuccessfulShards());
- 
-      Logger.warn(this.getClass(), "Flushed Elasticsearch index caches:" + map);
-      return map;
-    }
+		ClearIndicesCacheRequest request = new ClearIndicesCacheRequest(
+				indexNames.toArray(new String[0]));
+
+		ClearIndicesCacheResponse clearCacheResponse = Sneaky.sneak(()->(esclient.indices()
+				.clearCache(request, RequestOptions.DEFAULT)));
+
+
+		Map<String, Integer> map= ImmutableMap.of("failedShards",
+				clearCacheResponse.getFailedShards(), "successfulShards",
+				clearCacheResponse.getSuccessfulShards());
+
+		Logger.warn(this.getClass(), "Flushed Elasticsearch index caches:" + map);
+		return map;
+	}
     
     
     
@@ -233,8 +215,6 @@ public class ESIndexAPI {
 			toFile = new File(ConfigUtils.getBackupPath() + File.separator + index + "_" + date + ".json");
 		}
 
-		Client client = esclient.getClient();
-
 		BufferedWriter bw;
 		try (final ZipOutputStream zipOut = new ZipOutputStream(Files.newOutputStream(toFile.toPath()))){
 		    zipOut.setLevel(9);
@@ -243,29 +223,42 @@ public class ESIndexAPI {
 			bw = new BufferedWriter(
 			        new OutputStreamWriter(zipOut), 500000); // 500K buffer
 
-			final String type=index.startsWith("sitesearch_") ? SiteSearchAPI.ES_SITE_SEARCH_MAPPING : "content";
+			final String type=index.startsWith("sitesearch_") ? SiteSearchAPI.ES_SITE_SEARCH_MAPPING
+					: "content";
 	        final String mapping = mappingAPI.getMapping(index, type);
 	        bw.write(MAPPING_MARKER);
 	        bw.write(mapping);
 	        bw.newLine();
 
-	        // setting up the search for all content
-            SearchResponse scrollResp =
-                client
-                    .prepareSearch(index)
-                    .setQuery(QueryBuilders.matchAllQuery())
-                    .setSize(100)
-                    .setScroll(TimeValue.timeValueMinutes(2))
-                    //_doc has no real use-case besides being the most efficient sort order.
-                    .addSort("_doc", SortOrder.DESC)
-                    .execute()
-                    .actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
+			SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+			searchSourceBuilder.query(QueryBuilders.matchAllQuery());
+			searchSourceBuilder.size(100);
+			searchSourceBuilder.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
+			//_doc has no real use-case besides being the most efficient sort order.
+			searchSourceBuilder.sort("_doc", SortOrder.DESC);
+
+
+			SearchRequest searchRequest = new SearchRequest();
+			searchRequest.scroll(TimeValue.timeValueMinutes(2));
+			searchRequest.source(searchSourceBuilder);
+
+			final SearchResponse searchResponse = Sneaky.sneak(()->
+					esclient.search(searchRequest, RequestOptions.DEFAULT));
+
+			String scrollId = searchResponse.getScrollId();
+
 
 			while (true) {
-				scrollResp = client.prepareSearchScroll(scrollResp.getScrollId()).setScroll(TimeValue.timeValueMinutes(2)).execute()
-						.actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
+				// new way
+				SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId);
+				scrollRequest.scroll(TimeValue.timeValueMinutes(2));
+				SearchResponse searchScrollResponse = esclient
+						.scroll(scrollRequest, RequestOptions.DEFAULT);
+
+				scrollId = searchResponse.getScrollId();
+
 				boolean hitsRead = false;
-				for (SearchHit hit : scrollResp.getHits()) {
+				for (SearchHit hit : searchResponse.getHits()) {
 					bw.write(hit.getId());
 					bw.write(JSON_RECORD_DELIMITER);
 					bw.write(hit.getSourceAsString());
@@ -287,9 +280,10 @@ public class ESIndexAPI {
 
 	public boolean optimize(List<String> indexNames) {
 		try {
-            final ForceMergeRequest forceMergeRequest = new ForceMergeRequest(indexNames.toArray(new String[indexNames.size()]));
+            final ForceMergeRequest forceMergeRequest = new ForceMergeRequest(indexNames.toArray(
+					new String[0]));
             final ForceMergeResponse forceMergeResponse =
-                esclient.getClient().admin().indices().forceMerge(forceMergeRequest).get();
+                esclient.indices().forcemerge(forceMergeRequest, RequestOptions.DEFAULT);
 
             Logger.info(this.getClass(),
                 "Optimizing " + indexNames + " :" + forceMergeResponse.getSuccessfulShards()
@@ -309,14 +303,14 @@ public class ESIndexAPI {
 
 		try {
             AdminLogger.log(this.getClass(), "delete", "Trying to delete index: " + indexName);
-
-			IndicesAdminClient iac = new ESClient().getClient().admin().indices();
-			DeleteIndexRequest req = new DeleteIndexRequest(indexName);
-			DeleteIndexResponse res = iac.delete(req).actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
+			DeleteIndexRequest request = new DeleteIndexRequest(indexName);
+			request.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
+			AcknowledgedResponse deleteIndexResponse = esclient.indices()
+					.delete(request, RequestOptions.DEFAULT);
 
             AdminLogger.log(this.getClass(), "delete", "Index: " + indexName + " deleted.");
 
-            return res.isAcknowledged();
+            return deleteIndexResponse.isAcknowledged();
 		} catch (Exception e) {
 			throw new ElasticsearchException(e.getMessage(),e);
 		}
@@ -358,7 +352,7 @@ public class ESIndexAPI {
             String mapping = br.readLine();
             boolean mappingExists = mapping.startsWith(MAPPING_MARKER);
             String type = "content";
-            ArrayList<String> jsons = new ArrayList<String>();
+            ArrayList<String> jsons = new ArrayList<>();
             if (mappingExists) {
 
                 String patternStr = "^" + MAPPING_MARKER + "\\s*\\{\\s*\"(\\w+)\"";
@@ -382,15 +376,15 @@ public class ESIndexAPI {
 
                         if (jsons.size() > 0) {
                             try {
-                                Client client = new ESClient().getClient();
-                                BulkRequestBuilder req = client.prepareBulk();
+								BulkRequest request = new BulkRequest();
+								request.timeout(TimeValue.
+										timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
                                 for (String raw : jsons) {
                                     int delimidx = raw.indexOf(JSON_RECORD_DELIMITER);
                                     if (delimidx > 0) {
                                         String id = raw.substring(0, delimidx);
                                         String json = raw.substring(
-                                                delimidx + JSON_RECORD_DELIMITER.length(),
-                                                raw.length());
+                                                delimidx + JSON_RECORD_DELIMITER.length());
                                         if (id != null) {
                                             @SuppressWarnings("unchecked")
                                             Map<String, Object> oldMap = mapper
@@ -404,16 +398,16 @@ public class ESIndexAPI {
                                                     newMap.put(key, oldMap.get(key));
                                                 }
                                             }
-                                            req.add(new IndexRequest(index, type, id)
+											request.add(new IndexRequest(index, type, id)
                                                     .source(mapper.writeValueAsString(newMap)));
                                         }
                                     }
                                 }
-                                if (req.numberOfActions() > 0) {
-                                    req.execute().actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
+                                if (request.numberOfActions() > 0) {
+                                	esclient.bulk(request, RequestOptions.DEFAULT);
                                 }
                             } finally {
-                                jsons = new ArrayList<String>();
+                                jsons = new ArrayList<>();
                             }
                         }
                     }
@@ -443,23 +437,29 @@ public class ESIndexAPI {
 	 * @return
 	 */
 	public  Set<String> listIndices() {
-		return getIndicesAndStatus().keySet();
+		final GetIndexRequest request = new GetIndexRequest("*");
+		final GetIndexResponse response = Sneaky.sneak(()->(
+				esclient.indices().get(request, RequestOptions.DEFAULT)));
+
+		return new HashSet<>(Arrays.asList(response.getIndices()));
 	}
 
 	/**
 	 * Returns close status of an index
 	 * @return
 	 */
-	public boolean isIndexClosed(String index) {
-		Client client = esclient.getClient();
-		ImmutableOpenMap<String,IndexMetaData> indices = client.admin().cluster()
-			    .prepareState().get().getState()
-			    .getMetaData().getIndices();
-		IndexMetaData indexMetaData = indices.get(index);
-		if(indexMetaData != null)
-			return indexMetaData.getState() == State.CLOSE;
-		return true;
-	}
+	// TODO replace with high level client
+//	public boolean isIndexClosed(String index) {
+//
+//		Client client = esclient.getClient();
+//		ImmutableOpenMap<String,IndexMetaData> indices = client.admin().cluster()
+//			    .prepareState().get().getState()
+//			    .getMetaData().getIndices();
+//		IndexMetaData indexMetaData = indices.get(index);
+//		if(indexMetaData != null)
+//			return indexMetaData.getState() == State.CLOSE;
+//		return true;
+//	}
 
 	/**
 	 *
@@ -541,18 +541,20 @@ public class ESIndexAPI {
 	 * @param index
 	 * @throws IOException
 	 */
-	public  void moveIndexToLocalNode(final String index) throws IOException {
-        final Client client=new ESClient().getClient();
-        final String nodeName="dotCMS_" + APILocator.getServerAPI().readServerId();
+	private void moveIndexToLocalNode(final String index) throws IOException {
+		UpdateSettingsRequest request = new UpdateSettingsRequest(index);
+		request.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
 
-		client.admin().indices().updateSettings(
-          new UpdateSettingsRequest(index).settings(
-                jsonBuilder().startObject()
-                     .startObject("index")
-                        .field("number_of_replicas",0)
-                        .field("routing.allocation.include._name",nodeName)
-                     .endObject()
-               .endObject().string(), XContentType.JSON)).actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
+		final String nodeName="dotCMS_" + APILocator.getServerAPI().readServerId();
+
+		request.settings(jsonBuilder().startObject()
+				.startObject("index")
+				.field("number_of_replicas",0)
+				.field("routing.allocation.include._name",nodeName)
+				.endObject()
+				.endObject().toString(), XContentType.JSON);
+
+		esclient.indices().putSettings(request, RequestOptions.DEFAULT);
     }
 
 	/**
@@ -561,23 +563,26 @@ public class ESIndexAPI {
 	 * @throws IOException
 	 */
     public void moveIndexBackToCluster(final String index) throws IOException {
-        final Client client=new ESClient().getClient();
-        final ReplicasMode replicasMode = clusterAPI.getReplicasMode();
-
 		final XContentBuilder builder = jsonBuilder().startObject().startObject("index");
 
+		setReplicasFields(builder);
+
+		UpdateSettingsRequest request = new UpdateSettingsRequest(index);
+		request.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
+		request.settings(builder.endObject().endObject().toString(), XContentType.JSON);
+		esclient.indices().putSettings(request, RequestOptions.DEFAULT);
+    }
+
+	private void setReplicasFields(XContentBuilder builder) throws IOException {
+		final ReplicasMode replicasMode = clusterAPI.getReplicasMode();
 		if(replicasMode.getNumberOfReplicas()>-1) {
 			builder.field("number_of_replicas", replicasMode.getNumberOfReplicas());
 		}
 		builder.field("auto_expand_replicas",replicasMode.getAutoExpandReplicas());
+		builder.field("routing.allocation.include._name","*");
+	}
 
-        client.admin().indices().updateSettings(
-          new UpdateSettingsRequest(index).settings(builder
-				  .field("routing.allocation.include._name","*").endObject()
-				  .endObject().string(), XContentType.JSON)).actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
-    }
-
-    /**
+	/**
      * Creates a new index.  If settings is null, the getDefaultIndexSettings() will be applied,
      * if shards <1, then the default # of shards will be set
      * @param indexName
@@ -595,20 +600,7 @@ public class ESIndexAPI {
 		AdminLogger.log(this.getClass(), "createIndex",
 			"Trying to create index: " + indexName + " with shards: " + shards);
 
-		if(shards <1){
-			try{
-				shards = Integer.parseInt(System.getProperty("es.index.number_of_shards"));
-			}catch(Exception e){}
-		}
-		if(shards <1){
-			try{
-				shards = Config.getIntProperty("es.index.number_of_shards", 2);
-			}catch(Exception e){}
-		}
-
-		if(shards <0){
-			shards=1;
-		}
+		shards = getShardsFromConfigIfNeeded(shards);
 
 		//default settings, if null
 		if(settings ==null){
@@ -624,17 +616,11 @@ public class ESIndexAPI {
 		}
 		map.put("auto_expand_replicas",replicasMode.getAutoExpandReplicas());
 
-		// create index rest client
 		final CreateIndexRequest request = new CreateIndexRequest(indexName);
 		request.settings(map);
-		request.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
-		final CreateIndexResponse createIndexResponse = DotRestHighLevelClient
-				.getClient().indices().create(request);
-
-		// create actual index
-//		IndicesAdminClient iac = new ESClient().getClient().admin().indices();
-//		CreateIndexRequestBuilder cirb = iac.prepareCreate(indexName).setSettings(map);
-//		CreateIndexResponse createIndexResponse = cirb.execute().actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
+		request.setTimeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
+		final CreateIndexResponse createIndexResponse = esclient.indices().
+				create(request, RequestOptions.DEFAULT);
 
 		AdminLogger.log(this.getClass(), "createIndex",
 			"Index created: " + indexName + " with shards: " + shards);
@@ -642,47 +628,26 @@ public class ESIndexAPI {
 		return createIndexResponse;
 	}
 
-
-	public synchronized CreateIndexResponse createIndex(final String indexName, String settings,
-			int shards, final String type, final String mapping)
-			throws ElasticsearchException, IOException {
-
-		//Seems like the method is not longer used
-		// but I still will add the log just in case
-        AdminLogger.log(this.getClass(), "createIndex",
-                "Trying to create index: " + indexName + " with shards: " + shards);
-
-        IndicesAdminClient iac = new ESClient().getClient().admin().indices();
-
+	private int getShardsFromConfigIfNeeded(int shards) {
 		if(shards <1){
 			try{
 				shards = Integer.parseInt(System.getProperty("es.index.number_of_shards"));
-			}catch(Exception e){}
+			}catch(Exception e){
+				Logger.warnAndDebug(ESIndexAPI.class, "Unable to parse shards from config", e);
+			}
 		}
 		if(shards <1){
 			try{
 				shards = Config.getIntProperty("es.index.number_of_shards", 2);
-			}catch(Exception e){}
+			}catch(Exception e){
+				Logger.warnAndDebug(ESIndexAPI.class, "Unable to parse shards from config", e);
+			}
 		}
 
 		if(shards <0){
 			shards=1;
 		}
-
-		//default settings, if null
-		if(settings ==null){
-			settings = getDefaultIndexSettings(shards);
-		}
-
-
-        // create actual index
-		iac.prepareCreate(indexName).setSettings(settings, XContentType.JSON)
-				.addMapping(type, mapping).setTimeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS)).execute();
-
-        AdminLogger.log(this.getClass(), "createIndex",
-                "Index created: " + indexName + " with shards: " + shards);
-
-		return null;
+		return shards;
 	}
 
 	/**
@@ -704,9 +669,7 @@ public class ESIndexAPI {
              .endObject()
             .endObject()
            .endObject()
-          .endObject().string();
-
-
+          .endObject().toString();
 	}
 
     /**
@@ -714,15 +677,12 @@ public class ESIndexAPI {
      * @return
      */
     public Map<String,ClusterIndexHealth> getClusterHealth() {
-        AdminClient client=new ESClient().getClient().admin();
+		ClusterHealthRequest request = new ClusterHealthRequest();
+		request.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
+		ClusterHealthResponse response = Sneaky.sneak(()->
+				esclient.cluster().health(request,RequestOptions.DEFAULT));
 
-        ClusterHealthRequest req = new ClusterHealthRequest();
-        ActionFuture<ClusterHealthResponse> chr = client.cluster().health(req);
-
-        ClusterHealthResponse res  = chr.actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
-        Map<String,ClusterIndexHealth> map  = res.getIndices();
-
-        return map;
+		return response.getIndices();
     }
 
 	/**
@@ -964,14 +924,14 @@ public class ESIndexAPI {
 			GetSnapshotsRequest getSnapshotsRequest = new GetSnapshotsRequest(repositoryName);
 			GetSnapshotsResponse getSnapshotsResponse = client.admin().cluster().getSnapshots(getSnapshotsRequest).get();
 			final List<SnapshotInfo> snapshots = getSnapshotsResponse.getSnapshots();
-			for(SnapshotInfo snapshot: snapshots){
-				List<String> indices = snapshot.indices();
-				for(String index: indices){
-					if(!isIndexClosed(index)){
-						throw new DotStateException("Index \"" + index + "\" is not closed and can not be restored");
-					}
-				}
-			}
+//			for(SnapshotInfo snapshot: snapshots){
+//				List<String> indices = snapshot.indices();
+//				for(String index: indices){
+//					if(!isIndexClosed(index)){
+//						throw new DotStateException("Index \"" + index + "\" is not closed and can not be restored");
+//					}
+//				}
+//			}
 			RestoreSnapshotRequest restoreSnapshotRequest = new RestoreSnapshotRequest(repositoryName, snapshotName).waitForCompletion(true);
 			RestoreSnapshotResponse response = client.admin().cluster().restoreSnapshot(restoreSnapshotRequest).get();
 			if (response.status() != RestStatus.OK) {
