@@ -4,6 +4,7 @@ import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.DateField;
+import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -267,10 +268,18 @@ public class TestDataUtils {
     }
 
     public static ContentType getNewsLikeContentType() {
-        return getNewsLikeContentType("News" + System.currentTimeMillis());
+        return getNewsLikeContentType("News" + System.currentTimeMillis(), null, null, null);
     }
 
     public static ContentType getNewsLikeContentType(final String contentTypeName) {
+        return getNewsLikeContentType(contentTypeName, null, null, null);
+    }
+
+    public static ContentType getNewsLikeContentType(final String contentTypeName,
+            final Host site,
+            final String detailPageIdentifier,
+            final String urlMapPattern) {
+
         ContentType newsType = null;
         try {
             try {
@@ -282,6 +291,16 @@ public class TestDataUtils {
             if (newsType == null) {
 
                 List<com.dotcms.contenttype.model.field.Field> fields = new ArrayList<>();
+                if (null != site) {
+                    fields.add(
+                            new FieldDataGen()
+                                    .name("Site or Folder")
+                                    .velocityVarName("hostfolder")
+                                    .required(Boolean.TRUE)
+                                    .type(HostFolderField.class)
+                                    .next()
+                    );
+                }
                 fields.add(
                         new FieldDataGen()
                                 .name("Title")
@@ -339,11 +358,24 @@ public class TestDataUtils {
                                 .next()
                 );
 
-                newsType = new ContentTypeDataGen()
+                ContentTypeDataGen contentTypeDataGen = new ContentTypeDataGen()
                         .name(contentTypeName)
                         .velocityVarName(contentTypeName)
-                        .fields(fields)
-                        .nextPersisted();
+                        .fields(fields);
+
+                if (null != site) {
+                    contentTypeDataGen.host(site);
+                }
+
+                if (null != detailPageIdentifier) {
+                    contentTypeDataGen.detailPage(detailPageIdentifier);
+                }
+
+                if (null != urlMapPattern) {
+                    contentTypeDataGen.urlMapPattern(urlMapPattern);
+                }
+
+                newsType = contentTypeDataGen.nextPersisted();
             }
         } catch (Exception e) {
             throw new DotRuntimeException(e);
@@ -697,21 +729,33 @@ public class TestDataUtils {
 
     public static Contentlet getNewsContent(Boolean persist, long languageId,
             String contentTypeId) {
+        return getNewsContent(persist, languageId, contentTypeId, null);
+    }
+
+    public static Contentlet getNewsContent(Boolean persist, long languageId,
+            String contentTypeId, Host site) {
 
         if (null == contentTypeId) {
             contentTypeId = getNewsLikeContentType().id();
         }
 
         try {
+
+            final long millis = System.currentTimeMillis();
             ContentletDataGen contentletDataGen = new ContentletDataGen(contentTypeId)
                     .languageId(languageId)
                     .host(APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false))
-                    .setProperty("title", "newsContent")
-                    .setProperty("urlTitle", "newsContent")
+                    .setProperty("title", "newsContent Title" + millis)
+                    .setProperty("urlTitle", "news-content-url-title" + millis)
                     .setProperty("byline", "byline")
                     .setProperty("sysPublishDate", new Date())
                     .setProperty("story", "newsStory")
                     .setProperty("tags", "test");
+
+            if (null != site) {
+                contentletDataGen = contentletDataGen.host(site)
+                        .setProperty("hostfolder", site);
+            }
 
             if (persist) {
                 return contentletDataGen.nextPersisted();

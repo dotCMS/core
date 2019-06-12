@@ -1,16 +1,27 @@
 package com.dotmarketing.cms.urlmap;
 
+import static com.dotcms.datagen.TestDataUtils.getNewsLikeContentType;
 import static org.jgroups.util.Util.assertEquals;
 import static org.jgroups.util.Util.assertFalse;
 
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.PageMode;
 import com.liferay.portal.model.User;
-import java.util.List;
 import java.util.Optional;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -21,13 +32,40 @@ public class URLMapAPIImplTest {
     private static Host host;
 
     private URLMapAPIImpl urlMapAPI;
+    private static Contentlet newsTestContent;
+    private static final String newsPatternPrefix =
+            "/testpattern" + System.currentTimeMillis() + "/";
 
     @BeforeClass
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
 
         systemUser = APILocator.getUserAPI().getSystemUser();
-        host = APILocator.getHostAPI().findByName("demo.dotcms.com", systemUser, false);
+        host = new SiteDataGen().nextPersisted();
+
+        final String parent1Name = "news-events";
+        Folder parent1 = new FolderDataGen().name(parent1Name).title(parent1Name).site(host)
+                .nextPersisted();
+        final String parent2Name = "news";
+        Folder parent2 = new FolderDataGen().name(parent2Name).title(parent2Name).parent(parent1)
+                .site(host)
+                .nextPersisted();
+
+        Template template = new TemplateDataGen().nextPersisted();
+        HTMLPageAsset contentlet = new HTMLPageDataGen(parent2, template)
+                .pageURL("news-detail")
+                .title("news-detail")
+                .nextPersisted();
+
+        final ContentType newsContentType = getNewsLikeContentType(
+                "News" + System.currentTimeMillis(),
+                host,
+                contentlet.getIdentifier(),
+                newsPatternPrefix + "{urlTitle}");
+
+        newsTestContent = TestDataUtils
+                .getNewsContent(true, APILocator.getLanguageAPI().getDefaultLanguage().getId(),
+                        newsContentType.id(), host);
     }
 
     @Before
@@ -40,12 +78,13 @@ public class URLMapAPIImplTest {
             throws DotDataException, DotSecurityException {
 
         final UrlMapContext context = getUrlMapContext(systemUser, host,
-                "/news/u-s-labor-department-moves-forward-on-retirement-advice-proposal");
+                newsPatternPrefix + newsTestContent.getStringProperty("urlTitle"));
 
         final Optional<URLMapInfo> urlMapInfoOptional = urlMapAPI.processURLMap(context);
 
         final URLMapInfo urlMapInfo = urlMapInfoOptional.get();
-        assertEquals("U.S. Labor Department moves forward on retirement advice proposal", urlMapInfo.getContentlet().getName());
+        assertEquals(newsTestContent.getStringProperty("title"),
+                urlMapInfo.getContentlet().getName());
         assertEquals("/news-events/news/news-detail", urlMapInfo.getIdentifier().getURI());
     }
 
@@ -54,7 +93,9 @@ public class URLMapAPIImplTest {
             throws DotDataException, DotSecurityException {
 
         final UrlMapContext context = getUrlMapContext(systemUser, host,
-                "/news/u-s-labor-department-moves-forward-on-retirement-advice-proposal-esp");
+                newsPatternPrefix
+                        + "u-s-labor-department-moves-forward-on-retirement-advice-proposal-esp"
+                        + System.currentTimeMillis());
 
         final Optional<URLMapInfo> urlMapInfoOptional = urlMapAPI.processURLMap(context);
 
@@ -76,9 +117,9 @@ public class URLMapAPIImplTest {
     public void shouldThrowDotSecurityExceptionWhenUserDontHavePermission()
             throws DotDataException, DotSecurityException {
 
-        final List<User> users = APILocator.getUserAPI().getUsersByNameOrEmail("chris@dotcms.com", 1, 1);
-        final UrlMapContext context = getUrlMapContext(users.get(0), host,
-                "/news/u-s-labor-department-moves-forward-on-retirement-advice-proposal");
+        final User newUser = new UserDataGen().nextPersisted();
+        final UrlMapContext context = getUrlMapContext(newUser, host,
+                newsPatternPrefix + newsTestContent.getStringProperty("urlTitle"));
 
         urlMapAPI.processURLMap(context);
     }
@@ -87,7 +128,7 @@ public class URLMapAPIImplTest {
     private UrlMapContext getUrlMapContext(final User systemUser, final Host host, final String uri) {
         return UrlMapContextBuilder.builder()
                 .setHost(host)
-                .setLanguageId(1l)
+                .setLanguageId(1L)
                 .setMode(PageMode.PREVIEW_MODE)
                 .setUri(uri)
                 .setUser(systemUser)
