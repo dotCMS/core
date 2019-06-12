@@ -7,14 +7,13 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
+import com.dotcms.personalization.PersonalizationUtil;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.repackage.com.ibm.icu.text.SimpleDateFormat;
-import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
@@ -29,12 +28,10 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.Maps;
@@ -236,14 +233,7 @@ public class PageRenderUtil implements Serializable {
 
     private String getPersonalization (final HttpServletRequest request) {
 
-        if (null != request) {
-
-            final Visitor visitor = APILocator.getVisitorAPI().getVisitor(request).orElse(null);
-            return null != visitor && visitor.getPersona() != null && visitor.getPersona().getKeyTag() != null ?
-                    Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + visitor.getPersona().getKeyTag() : MultiTree.DOT_PERSONALIZATION_DEFAULT;
-        }
-
-        return MultiTree.DOT_PERSONALIZATION_DEFAULT;
+        return PersonalizationUtil.getContainerPersonalization(request);
     }
 
     private List<ContainerRaw> populateContainers() throws DotDataException, DotSecurityException {
