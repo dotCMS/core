@@ -281,6 +281,17 @@ describe('dot-textfield', () => {
         });
 
         describe('status and value change', () => {
+            it('should display on wrapper not valid css classes when loaded when required and no value set', async () => {
+                page = await newE2EPage({
+                    html: `
+                <dot-form>
+                    <dot-textfield required="true" ></dot-textfield>
+                </dot-form>`
+                });
+                const form = await page.find('dot-form');
+                expect(form).toHaveClasses(dotTestUtil.class.emptyPristineInvalid);
+            });
+
             it('should send status and value change', async () => {
                 await input.press('a');
                 await page.waitForChanges();

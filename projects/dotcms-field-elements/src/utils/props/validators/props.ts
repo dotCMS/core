@@ -50,8 +50,8 @@ export function timeValidator<T>(propInfo: PropValidationInfo<T>): void {
 
 export function dateTimeValidator<T>(propInfo: PropValidationInfo<T>): void {
     if (typeof propInfo.value === 'string') {
-        const dateSlot = dotParseDate(propInfo.value.toString());
-        if (!isValidDateSlot(dateSlot)) {
+        const dateSlot = dotParseDate(propInfo.value);
+        if (!isValidDateSlot(dateSlot, propInfo.value)) {
             throw new DotFieldPropError(propInfo, 'Date/Time');
         }
     } else {

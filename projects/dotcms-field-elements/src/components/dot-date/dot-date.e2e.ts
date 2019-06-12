@@ -247,6 +247,17 @@ describe('dot-date', () => {
         });
 
         describe('value and status changes', () => {
+            it('should display on wrapper not valid css classes when loaded when required and no value set', async () => {
+                page = await newE2EPage({
+                    html: `
+                <dot-form>
+                    <dot-date required="true" ></dot-date>
+                </dot-form>`
+                });
+                const form = await page.find('dot-form');
+                expect(form).toHaveClasses(dotTestUtil.class.emptyPristineInvalid);
+            });
+
             it('should send value when dot-input-calendar send it', async () => {
                 inputCalendar.triggerEvent('_valueChange', {
                     detail: {
