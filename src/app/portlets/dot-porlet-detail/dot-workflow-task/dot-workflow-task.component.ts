@@ -44,13 +44,13 @@ export class DotWorkflowTaskComponent implements AfterViewInit {
     }
 
     /**
-     * Habdle custom event from the dot-workflow-task-detail
+     * Handle custom event from the dot-workflow-task-detail
      *
      * @param CustomEvent $event
      * @memberof DotWorkflowTaskComponent
      */
     onCustomEvent($event: CustomEvent): void {
-        if ($event.detail.name === 'edit-task-executed-workflow') {
+        if (['edit-task-executed-workflow', 'close'].includes($event.detail.name)) {
             this.onCloseWorkflowTaskEditor();
         }
     }

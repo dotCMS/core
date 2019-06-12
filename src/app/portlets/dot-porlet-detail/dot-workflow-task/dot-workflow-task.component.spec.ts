@@ -99,4 +99,14 @@ describe('DotWorkflowTaskComponent', () => {
         });
         expect(component.onCloseWorkflowTaskEditor).toHaveBeenCalledTimes(1);
     });
+
+    it('should redirect to /workflow when close event is triggered', () => {
+        taskDetail.triggerEventHandler('custom', {
+            detail: {
+                name: 'close'
+            }
+        });
+        expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('/c/workflow');
+        expect(dotIframeService.reloadData).toHaveBeenCalledWith('workflow');
+    });
 });
