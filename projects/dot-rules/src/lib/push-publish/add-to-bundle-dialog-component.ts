@@ -21,8 +21,7 @@ import { MenuItem } from 'primeng/api';
         [value]="bundleStores ? bundleStores[0]?.id : null"
         allowAdditions="true"
         (onDropDownChange)="setSelectedBundle($event)"
-        (enter)="addToBundle.emit(selectedBundle)">
-
+        (keyup.enter)="addToBundle.emit(selectedBundle)">
       </cw-input-dropdown>
       <p-footer>
           <button type="button" pButton secondary (click)="cancel.emit()" label="Cancel" class="ui-button-secondary" ></button>
