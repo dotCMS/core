@@ -64,6 +64,8 @@ import com.dotcms.contenttype.model.field.WysiwygField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.RoleDataGen;
+import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.TestWorkflowUtils;
 import com.dotcms.datagen.WorkflowDataGen;
 import com.dotcms.mock.response.MockAsyncResponse;
 import com.dotcms.rest.ContentHelper;
@@ -217,10 +219,12 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
         systemRole = roleAPI.loadRoleByKey(Role.SYSTEM);
 
         //Creating a workflow for testing
-        testScheme = APILocator.getWorkflowAPI().findSchemeByName(DM_WORKFLOW);
-        if (testScheme == null) {
-            testScheme = new WorkflowDataGen().name(DM_WORKFLOW).nextPersistedWithStepsAndActions();
-        }
+        //testScheme = APILocator.getWorkflowAPI().findSchemeByName(DM_WORKFLOW);
+        //if (testScheme == null) {
+        //    testScheme = new WorkflowDataGen().name(DM_WORKFLOW).nextPersistedWithStepsAndActions();
+        //}
+        testScheme = TestWorkflowUtils.getDocumentWorkflow();
+
     }
 
     //@AfterClass
@@ -782,7 +786,15 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
 
     @Test
     public void Test_Get_Bulk_Actions_For_Query() throws Exception{
-        final String luceneQuery = "-contentType:Host -baseType:3 +(conhost:48190c8c-42c4-46af-8d1a-0cd5db894797 conhost:SYSTEM_HOST) +languageId:1 +deleted:false +working:true";
+
+        //We need to make sure at least one content for each Workflow exists in the database.
+
+        //System Workflow.
+        TestDataUtils.getFileAssetContent(true, languageAPI.getDefaultLanguage().getId());
+        //Document Workflow.
+        TestDataUtils.getDocumentLikeContent(true, languageAPI.getDefaultLanguage().getId(), null);
+
+        final String luceneQuery = String.format("-contentType:Host -baseType:3 +(conhost:%s conhost:SYSTEM_HOST) +languageId:1 +deleted:false +working:true",host.getIdentifier());
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final BulkActionForm form = new BulkActionForm(null, luceneQuery);
         final Response response = workflowResource.getBulkActions(request, new EmptyHttpResponse(), form);
@@ -1011,8 +1023,10 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
         contentType = createContentTypeAndAssignPermissions(newContentTypeName,
                 BaseContentType.CONTENT, PermissionAPI.PERMISSION_READ, adminRole.getId());
         final WorkflowScheme systemWorkflow = workflowAPI.findSystemWorkflowScheme();
-        final WorkflowScheme documentWorkflow = workflowAPI
-                .findSchemeByName(DM_WORKFLOW);
+        final WorkflowScheme documentWorkflow = workflowAPI.findSchemeByName(DM_WORKFLOW);
+
+        System.out.println(APILocator.getWorkflowAPI().findSteps(documentWorkflow));
+        //APILocator.getWorkflowAPI().findActions()
 
         // Add fields to the contentType
         final Field field =
@@ -1088,8 +1102,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
         assertTrue(editingStep.isPresent());
         final Map<String, Set<WorkflowState>> docWorkflowShowOn = new HashMap<>();
 
-        final List<WorkflowAction> dmWorkflowActions = workflowAPI
-                .findActions(editingStep.get(), systemUser);
+        final List<WorkflowAction> dmWorkflowActions = workflowAPI.findActions(editingStep.get(), systemUser);
         for (final WorkflowAction action : dmWorkflowActions) {
             docWorkflowShowOn
                     .computeIfAbsent(action.getId(), s -> new HashSet<>(action.getShowOn()));
@@ -1301,15 +1314,17 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
         }
 
         try {
-
+            final long langId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
             //Hand picked Form-like Widgets with a mandatory title field
-            final Contentlet candidate1 = contentletAPI.findContentletByIdentifier(
-                    "b4ae5fd4-c4c7-4590-8299-00569a9f13be", false, 1, systemUser, false
-            );
+            final Contentlet candidate1 = TestDataUtils.getEmptyFormWithRequiredFieldsContent(langId);
+           // contentletAPI.findContentletByIdentifier(
+           //         "b4ae5fd4-c4c7-4590-8299-00569a9f13be", false, 1, systemUser, false
+           // );
 
-            final Contentlet candidate2 = contentletAPI.findContentletByIdentifier(
-                    "2f180f39-59c3-4225-9cca-5daf778f3f3e", false, 1, systemUser, false
-            );
+            final Contentlet candidate2 = TestDataUtils.getEmptyFormWithRequiredFieldsContent(langId);
+           // contentletAPI.findContentletByIdentifier(
+           //         "2f180f39-59c3-4225-9cca-5daf778f3f3e", false, 1, systemUser, false
+           // );
 
             final List<Contentlet> contentlets = Arrays.asList(candidate1, candidate2);
 

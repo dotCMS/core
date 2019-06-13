@@ -11,12 +11,16 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public class ContentTypeDataGen extends AbstractDataGen<ContentType> {
 
@@ -31,6 +35,7 @@ public class ContentTypeDataGen extends AbstractDataGen<ContentType> {
     private boolean systemField = Boolean.FALSE;
     private String velocityVarNameField = "testVarname" + currentTime;
     private List<Field> fields = new ArrayList<>();
+    private Set<String> workflowIds = new HashSet<>();
 
     @SuppressWarnings("unused")
     public ContentTypeDataGen baseContentType(final BaseContentType baseContentType) {
@@ -110,6 +115,17 @@ public class ContentTypeDataGen extends AbstractDataGen<ContentType> {
         return this;
     }
 
+    @SuppressWarnings("unused")
+    public ContentTypeDataGen workflowId(final String... identifier) {
+        this.workflowIds.addAll(Arrays.asList(identifier));
+        return this;
+    }
+
+    public ContentTypeDataGen workflowId(final Set<String> identifier) {
+        this.workflowIds.addAll(identifier);
+        return this;
+    }
+
     @Override
     public ContentType next() {
 
@@ -130,12 +146,12 @@ public class ContentTypeDataGen extends AbstractDataGen<ContentType> {
     @Override
     public ContentType persist(final ContentType contentType) {
         try {
-            if (fields.isEmpty()) {
-                return APILocator.getContentTypeAPI(APILocator.systemUser()).save(contentType, fields);
-            } else {
-                return APILocator.getContentTypeAPI(APILocator.systemUser())
-                        .save(contentType, fields);
-            }
+          final ContentType persistedContentType = APILocator.getContentTypeAPI(APILocator.systemUser()).save(contentType, fields);
+           if(UtilMethods.isSet(workflowIds)) {
+               APILocator.getWorkflowAPI()
+                       .saveSchemeIdsForContentType(persistedContentType, workflowIds);
+           }
+          return persistedContentType;
         } catch (Exception e) {
             throw new RuntimeException("Unable to persist ContentType.", e);
         }

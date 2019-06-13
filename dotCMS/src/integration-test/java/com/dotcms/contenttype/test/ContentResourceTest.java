@@ -25,6 +25,7 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.RoleDataGen;
+import com.dotcms.datagen.TestWorkflowUtils;
 import com.dotcms.datagen.WorkflowDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
@@ -51,12 +52,10 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.google.common.collect.Sets;
 import com.liferay.portal.model.User;
@@ -136,10 +135,8 @@ public class ContentResourceTest extends IntegrationTestBase {
         relationshipAPI = APILocator.getRelationshipAPI();
 
         //Creating a workflow for testing
-        testScheme = APILocator.getWorkflowAPI().findSchemeByName(DM_WORKFLOW);
-        if (testScheme == null) {
-            testScheme = new WorkflowDataGen().name(DM_WORKFLOW).nextPersistedWithStepsAndActions();
-        }
+
+        testScheme = TestWorkflowUtils.getDocumentWorkflow();
 
         //Creating a test role
         adminRole = roleAPI.loadRoleByKey(ADMINISTRATOR);

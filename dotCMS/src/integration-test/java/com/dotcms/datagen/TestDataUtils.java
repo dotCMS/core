@@ -4,7 +4,9 @@ import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.DateField;
+import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.contenttype.model.field.TagField;
+import com.dotcms.contenttype.model.field.TextAreaField;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -12,6 +14,7 @@ import com.dotcms.util.ConfigTestHelper;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.RelationshipAPI;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
@@ -20,15 +23,18 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.google.common.io.Files;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * @author Jonathan Gamba 2019-04-16
@@ -482,6 +488,74 @@ public class TestDataUtils {
         return formContentType;
     }
 
+    public static ContentType getFormWithRequiredFieldsLikeContentType() {
+        try {
+            return getFormWithRequiredFieldsLikeContentType("Form" + System.currentTimeMillis(),
+              Collections.singleton(TestWorkflowUtils.getSystemWorkflow().getId()));
+        } catch (DotDataException e) {
+            throw new DotRuntimeException(e);
+        }
+    }
+
+    public static ContentType getFormWithRequiredFieldsLikeContentType(final String contentTypeName, Set<String> workFlows) {
+
+        ContentType formContentType = null;
+        try {
+            try {
+                formContentType = APILocator.getContentTypeAPI(APILocator.systemUser())
+                        .find(contentTypeName);
+            } catch (NotFoundInDbException e) {
+                //Do nothing...
+            }
+            if (formContentType == null) {
+
+                List<com.dotcms.contenttype.model.field.Field> fields = new ArrayList<>();
+                fields.add(
+                        new FieldDataGen()
+                                .name("formId")
+                                .velocityVarName("formId")
+                                .type(TextField.class)
+                                .required(true)
+                                .next()
+                );
+                fields.add(
+                        new FieldDataGen()
+                                .name("widgetTitle")
+                                .velocityVarName("widgetTitle")
+                                .type(TextField.class)
+                                .required(true)
+                                .next()
+                );
+
+                formContentType = new ContentTypeDataGen()
+                        .baseContentType(BaseContentType.FORM)
+                        .name(contentTypeName)
+                        .velocityVarName(contentTypeName)
+                        .workflowId(workFlows)
+                        .fields(fields)
+                        .nextPersisted();
+            }
+        } catch (Exception e) {
+            throw new DotRuntimeException(e);
+        }
+
+        return formContentType;
+    }
+
+    public static Contentlet getEmptyFormWithRequiredFieldsContent(long languageId) {
+
+        String contentTypeId = getFormWithRequiredFieldsLikeContentType().id();
+
+        try {
+            return new ContentletDataGen(contentTypeId)
+                    .languageId(languageId)
+                    .setProperty("formId", null)
+                    .setProperty("widgetTitle", null).skipValidation(true).nextPersisted();
+        } catch (Exception e) {
+            throw new DotRuntimeException(e);
+        }
+    }
+
     public static Contentlet getWikiContent(Boolean persist, long languageId,
             String contentTypeId) {
 
@@ -770,5 +844,134 @@ public class TestDataUtils {
 
         return spanishLanguage;
     }
+
+    public static ContentType getDocumentLikeContentType() {
+       return getDocumentLikeContentType("Document" + System.currentTimeMillis());
+    }
+
+    public static ContentType getDocumentLikeContentType(final String contentTypeName) {
+
+        ContentType simpleWidgetContentType = null;
+        try {
+            try {
+                simpleWidgetContentType = APILocator.getContentTypeAPI(APILocator.systemUser()).find(contentTypeName);
+            } catch (NotFoundInDbException e) {
+                //Do nothing...
+            }
+            if (simpleWidgetContentType == null) {
+
+                final WorkflowScheme documentWorkflow = TestWorkflowUtils.getDocumentWorkflow();
+
+                List<com.dotcms.contenttype.model.field.Field> fields = new ArrayList<>();
+                fields.add(
+                        new FieldDataGen()
+                                .name("hostFolder")
+                                .velocityVarName("hostFolder")
+                                .type(HostFolderField.class)
+                                .next()
+                );
+                fields.add(
+                        new FieldDataGen()
+                                .name("Title")
+                                .velocityVarName("title")
+                                .type(TextField.class)
+                                .next()
+                );
+                fields.add(
+                        new FieldDataGen()
+                                .name("fileAsset")
+                                .velocityVarName("fileAsset")
+                                .type(BinaryField.class)
+                                .next()
+                );
+                fields.add(
+                        new FieldDataGen()
+                                .name("fileName")
+                                .velocityVarName("fileName")
+                                .type(TextField.class)
+                                .next()
+                );
+                fields.add(
+                        new FieldDataGen()
+                                .name("description")
+                                .velocityVarName("description1")
+                                .type(TextAreaField.class)
+                                .next()
+                );
+                fields.add(
+                        new FieldDataGen()
+                                .name("PublishDate")
+                                .velocityVarName("sysPublishDate")
+                                .defaultValue(null)
+                                .type(DateField.class)
+                                .next()
+                );
+                fields.add(
+                        new FieldDataGen()
+                                .name("Tags")
+                                .velocityVarName("tags")
+                                .defaultValue(null)
+                                .type(TagField.class)
+                                .next()
+                );
+                fields.add(
+                        new FieldDataGen()
+                                .name("Topic")
+                                .velocityVarName("topic")
+                                .type(CategoryField.class)
+                                .next()
+                );
+
+                simpleWidgetContentType = new ContentTypeDataGen()
+                        .baseContentType(BaseContentType.CONTENT)
+                        .name(contentTypeName)
+                        .velocityVarName(contentTypeName)
+                        .fields(fields)
+                        .workflowId(documentWorkflow.getId())
+                        .nextPersisted();
+            }
+        } catch (Exception e) {
+            throw new DotRuntimeException(e);
+        }
+
+        return simpleWidgetContentType;
+    }
+
+
+    public static Contentlet getDocumentLikeContent(Boolean persist, long languageId,
+            String contentTypeId) {
+
+        if (null == contentTypeId) {
+            contentTypeId = getDocumentLikeContentType().id();
+        }
+
+        try {
+            final String testImagePath = "com/dotmarketing/portlets/contentlet/business/test_files/test_image1.jpg";
+            final File originalTestImage = new File(
+                    ConfigTestHelper.getUrlToTestResource(testImagePath).toURI());
+            final File testImage = new File(Files.createTempDir(),
+                    "test_image1" + System.currentTimeMillis() + ".jpg");
+            FileUtil.copyFile(originalTestImage, testImage);
+
+            ContentletDataGen contentletDataGen = new ContentletDataGen(contentTypeId)
+                    .languageId(languageId)
+                    .setProperty("title", "document")
+                    .setProperty("urlTitle", "blogContent")
+                    .setProperty("sysPublishDate", new Date())
+                    .setProperty("tags", "test")
+                    .setProperty("fileAsset", testImage)
+                    .setProperty("topic", "lol");
+
+            if (persist) {
+                return contentletDataGen.nextPersisted();
+            } else {
+                return contentletDataGen.next();
+            }
+        } catch (Exception e) {
+            throw new DotRuntimeException(e);
+        }
+    }
+
+
 
 }

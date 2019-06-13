@@ -36,6 +36,7 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
     protected long languageId;
     protected String modUser = UserAPI.SYSTEM_USER_ID;
     protected List<Category> categories;
+    private boolean skipValidation = false;
 
     public ContentletDataGen(String contentTypeId) {
         this.contentTypeId = contentTypeId;
@@ -124,6 +125,16 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
     }
 
     /**
+     * In case we need to create content with empty required fields
+     * @param skipValidation
+     * @return
+     */
+    public ContentletDataGen skipValidation(boolean skipValidation) {
+        this.skipValidation = skipValidation;
+        return this;
+    }
+
+    /**
      * Creates a new {@link Contentlet} instance kept in memory (not persisted)
      * @return Contentlet instance created
      */
@@ -141,7 +152,9 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
         }
         contentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
         contentlet.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
-
+        if(skipValidation){
+            contentlet.setBoolProperty(Contentlet.DONT_VALIDATE_ME, true);
+        }
         return contentlet;
     }
 
