@@ -235,6 +235,20 @@ public class LanguageWebAPITest extends IntegrationTestBase {
 	}
 
 	@Test
+	public void testLanguageWithCountryFallbackFalsePassingNoCountryId_returnTESTEXAMPLECOUNTRY() {
+		testKeyValueLanguageWebAPI("es", "CR",
+				Boolean.FALSE, LANGUAGE_VALUE_TEST_EXAMPLE_COUNTRY,
+				spanishNoCountryLanguage.getId());
+	}
+
+	@Test
+	public void testLanguageWithCountryFallbackTruePassingNoCountryId_returnTESTEXAMPLECOUNTRY() {
+		testKeyValueLanguageWebAPI("es", "CR",
+				Boolean.TRUE, LANGUAGE_VALUE_TEST_EXAMPLE_COUNTRY,
+				spanishNoCountryLanguage.getId());
+	}
+
+	@Test
 	public void testNotExistingLanguageFallbackTrue_returnTESTEXAMPLEDEFAULT() {
 		testKeyValueLanguageWebAPI("fr", "FR",
 				Boolean.TRUE, LANGUAGE_VALUE_TEST_EXAMPLE_DEFAULT_LANGUAGE,
@@ -286,6 +300,7 @@ public class LanguageWebAPITest extends IntegrationTestBase {
 
 			when(session.getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE)).thenReturn(String.valueOf(requestLanguageId));
 			when(request.getSession(false)).thenReturn(session);
+			when(request.getSession()).thenReturn(session);
 			when(request.getLocale()).thenReturn(new Locale(languageCode, countryCode));
 			when(viewContext.getRequest()).thenReturn(request);
 
