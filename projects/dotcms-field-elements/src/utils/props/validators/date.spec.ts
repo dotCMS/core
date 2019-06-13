@@ -6,7 +6,7 @@ import {
 } from './date';
 import { DotDateSlot } from '../../../models';
 
-const dateSlot: DotDateSlot = { time: '10:10:10', date: '20019-10-10' };
+const dateSlot: DotDateSlot = { time: '10:10:10', date: '2019-10-10' };
 const onlyDate: DotDateSlot = { time: null, date: dateSlot.date };
 const onlyTime: DotDateSlot = { time: dateSlot.time, date: null };
 const emptySlot: DotDateSlot = { time: null, date: null };
@@ -38,7 +38,7 @@ describe('Date Validators', () => {
 
     describe('dotParseDate', () => {
         it('should return DateSlot with date and time when value is valid', () => {
-            expect(dotParseDate(`${dateSlot.date}  ${dateSlot.time}`)).toEqual(dateSlot);
+            expect(dotParseDate(`${dateSlot.date} ${dateSlot.time}`)).toEqual(dateSlot);
         });
 
         it('should return DateSlot with date  when value is valid', () => {
