@@ -10,6 +10,7 @@ import com.dotcms.IntegrationTestBase;
 import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.util.IntegrationTestInitService;
@@ -60,7 +61,7 @@ public class NavToolTest extends IntegrationTestBase{
     private static boolean ORIGINAL_DEFAULT_PAGE_TO_DEFAULT_LANGUAGE;
     private static Folder folder;
     private static User user;
-    private static Host demoHost;
+    private static Host site;
     private static Language spanishLanguage;
 
     @BeforeClass
@@ -69,7 +70,7 @@ public class NavToolTest extends IntegrationTestBase{
         IntegrationTestInitService.getInstance().init();
         ORIGINAL_DEFAULT_PAGE_TO_DEFAULT_LANGUAGE = APILocator.getLanguageAPI().canDefaultPageToDefaultLanguage();
         user = APILocator.getUserAPI().getSystemUser();
-        demoHost = APILocator.getHostAPI().findDefaultHost(user, false);
+        site = new SiteDataGen().nextPersisted();
         spanishLanguage = TestDataUtils.getSpanishLanguage();
     }
 
@@ -91,7 +92,7 @@ public class NavToolTest extends IntegrationTestBase{
 
         //Using Identifier to get the path.
         Identifier folderIdentifier = APILocator.getIdentifierAPI().find(folder);
-        NavResult navResult = new NavTool().getNav(demoHost, folderIdentifier.getPath(), 1, user);
+        NavResult navResult = new NavTool().getNav(site, folderIdentifier.getPath(), 1, user);
         assertNotNull(navResult);
 
         //Find out how many show on menu items we currently have
@@ -103,7 +104,7 @@ public class NavToolTest extends IntegrationTestBase{
         assertEquals(currentShowOnMenuItems-1,englishResultChildren);
 
         navResult = new NavTool()
-                .getNav(demoHost, folderIdentifier.getPath(), spanishLanguage.getId(), user);
+                .getNav(site, folderIdentifier.getPath(), spanishLanguage.getId(), user);
         assertNotNull(navResult);
 
         //Expected: 1 SubFolder and 2 Pages (DEFAULT_PAGE_TO_DEFAULT_LANGUAGE=true) should make the english page to return also
@@ -120,7 +121,7 @@ public class NavToolTest extends IntegrationTestBase{
 
         //Using Identifier to get the path.
         Identifier folderIdentifier = APILocator.getIdentifierAPI().find(folder);
-        NavResult navResult = new NavTool().getNav(demoHost, folderIdentifier.getPath(), 1, user);
+        NavResult navResult = new NavTool().getNav(site, folderIdentifier.getPath(), 1, user);
         assertNotNull(navResult);
 
         //Find out how many show on menu items we currently have
@@ -132,7 +133,7 @@ public class NavToolTest extends IntegrationTestBase{
         assertEquals(currentShowOnMenuItems-1,englishResultChildren);
 
         navResult = new NavTool()
-                .getNav(demoHost, folderIdentifier.getPath(), spanishLanguage.getId(), user);
+                .getNav(site, folderIdentifier.getPath(), spanishLanguage.getId(), user);
         assertNotNull(navResult);
 
         //Expected: 1 SubFolder and 1 Page (DEFAULT_PAGE_TO_DEFAULT_LANGUAGE=false) should NOT include english page
@@ -144,7 +145,7 @@ public class NavToolTest extends IntegrationTestBase{
     private void createData() throws Exception {
 
         //Create Folder
-        folder = new FolderDataGen().nextPersisted();
+        folder = new FolderDataGen().site(site).nextPersisted();
 
         //New template
         final Template template = new TemplateDataGen().nextPersisted();
@@ -205,7 +206,7 @@ public class NavToolTest extends IntegrationTestBase{
 
             //Get the Nav at the Root Level
             final NavResult navResult = new NavTool()
-                    .getNav(demoHost, systemFolder.getPath(), 1, user);
+                    .getNav(site, systemFolder.getPath(), 1, user);
             assertNotNull(navResult);
 
             //Find out how many show on menu items we currently have
@@ -246,7 +247,7 @@ public class NavToolTest extends IntegrationTestBase{
         createData();
 
         Mockito.when(request.getRequestURI()).thenReturn("/" + folder.getName());
-        Mockito.when(request.getServerName()).thenReturn("demo.dotcms.com");
+        Mockito.when(request.getServerName()).thenReturn(site.getHostname());
         Mockito.when(viewContext.getRequest()).thenReturn(request);
 
 

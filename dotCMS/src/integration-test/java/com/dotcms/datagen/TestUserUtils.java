@@ -24,7 +24,7 @@ public class TestUserUtils {
         return getOrCreatePublisherRole(APILocator.systemHost());
     }
 
-    private static Role getOrCreatePublisherRole(final Host host)
+    public static Role getOrCreatePublisherRole(final Host host)
             throws DotDataException, DotSecurityException {
         final String roleName = "Publisher / Legal";
         final int pagePermissions = (PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT
@@ -38,7 +38,7 @@ public class TestUserUtils {
         return getOrCreateRole(host, roleName, null, true, typesAndPermissions);
     }
 
-    private static Role getOrCreateReviewerRole(final Host host)
+    public static Role getOrCreateReviewerRole(final Host host)
             throws DotDataException, DotSecurityException {
         final String roleName = "Reviewer";
         final Role publisher = getOrCreatePublisherRole(host);
@@ -55,7 +55,7 @@ public class TestUserUtils {
         return getOrCreateReviewerRole(APILocator.systemHost());
     }
 
-    private static Role getOrCreateContributorRole(final Host host)
+    public static Role getOrCreateContributorRole(final Host host)
             throws DotDataException, DotSecurityException {
         final String roleName = "Contributor";
         final Role reviewer = getOrCreateReviewerRole(host);
@@ -78,7 +78,7 @@ public class TestUserUtils {
         return getOrCreateContributorRole(APILocator.systemHost());
     }
 
-    private static Role getOrCreateIntranetRole(final Host host)
+    public static Role getOrCreateIntranetRole(final Host host)
             throws DotDataException, DotSecurityException {
         final String roleName = "Intranet";
         final int permissions = (PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_USE);
@@ -120,6 +120,18 @@ public class TestUserUtils {
             }
         }
         return role;
+    }
+
+    public static User getUser(final Role role, final String email,
+            final String name,
+            final String lastName, final String password)
+            throws DotDataException {
+        final List<User> users = APILocator.getUserAPI().getUsersByNameOrEmail(email, 0, 1);
+        if (UtilMethods.isSet(users)) {
+            return users.get(0);
+        }
+        return new UserDataGen().firstName(name).lastName(lastName).emailAddress(email)
+                .password(password).roles(role).nextPersisted();
     }
 
     public static User getChrisPublisherUser(final Host host)

@@ -31,9 +31,10 @@ public class ContentTypeDataGen extends AbstractDataGen<ContentType> {
     private boolean fixedField = Boolean.FALSE;
     private String name = "testName" + currentTime;
     private Date iDateField = new Date();
-    private String detailPageField;
+    private String detailPage;
+    private String urlMapPattern;
     private boolean systemField = Boolean.FALSE;
-    private String velocityVarNameField = "testVarname" + currentTime;
+    private String velocityVarName = "testVarname" + currentTime;
     private List<Field> fields = new ArrayList<>();
     private Set<String> workflowIds = new HashSet<>();
 
@@ -69,7 +70,13 @@ public class ContentTypeDataGen extends AbstractDataGen<ContentType> {
 
     @SuppressWarnings("unused")
     public ContentTypeDataGen detailPage(final String detailPage) {
-        this.detailPageField = detailPage;
+        this.detailPage = detailPage;
+        return this;
+    }
+
+    @SuppressWarnings("unused")
+    public ContentTypeDataGen urlMapPattern(final String urlMapPattern) {
+        this.urlMapPattern = urlMapPattern;
         return this;
     }
 
@@ -81,7 +88,7 @@ public class ContentTypeDataGen extends AbstractDataGen<ContentType> {
 
     @SuppressWarnings("unused")
     public ContentTypeDataGen velocityVarName(final String velocityVarName) {
-        this.velocityVarNameField = velocityVarName;
+        this.velocityVarName = velocityVarName;
         return this;
     }
 
@@ -134,9 +141,10 @@ public class ContentTypeDataGen extends AbstractDataGen<ContentType> {
                 .fixed(fixedField)
                 .name(name)
                 .owner(user.getUserId())
-                .detailPage(detailPageField)
+                .detailPage(detailPage)
+                .urlMapPattern(urlMapPattern)
                 .system(systemField)
-                .variable(velocityVarNameField)
+                .variable(velocityVarName)
                 .folder(folder.getInode())
                 .host(host.getIdentifier())
                 .iDate(iDateField)

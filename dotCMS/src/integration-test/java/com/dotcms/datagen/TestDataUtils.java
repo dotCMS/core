@@ -46,6 +46,11 @@ public class TestDataUtils {
     }
 
     public static ContentType getBlogLikeContentType(final String contentTypeName) {
+        return getBlogLikeContentType(contentTypeName, null);
+    }
+
+    public static ContentType getBlogLikeContentType(final String contentTypeName,
+            final Host site) {
 
         ContentType blogType = null;
         try {
@@ -58,6 +63,17 @@ public class TestDataUtils {
             if (blogType == null) {
 
                 List<com.dotcms.contenttype.model.field.Field> fields = new ArrayList<>();
+
+                if (null != site) {
+                    fields.add(
+                            new FieldDataGen()
+                                    .name("Site or Folder")
+                                    .velocityVarName("hostfolder")
+                                    .required(Boolean.TRUE)
+                                    .type(HostFolderField.class)
+                                    .next()
+                    );
+                }
                 fields.add(
                         new FieldDataGen()
                                 .name("title")
@@ -193,10 +209,15 @@ public class TestDataUtils {
     }
 
     public static ContentType getEmployeeLikeContentType() {
-        return getCommentsLikeContentType("Employee" + System.currentTimeMillis());
+        return getEmployeeLikeContentType("Employee" + System.currentTimeMillis());
     }
 
     public static ContentType getEmployeeLikeContentType(final String contentTypeName) {
+        return getEmployeeLikeContentType(contentTypeName, null);
+    }
+
+    public static ContentType getEmployeeLikeContentType(final String contentTypeName,
+            final Host site) {
 
         ContentType employeeType = null;
         try {
@@ -209,6 +230,17 @@ public class TestDataUtils {
             if (employeeType == null) {
 
                 List<com.dotcms.contenttype.model.field.Field> fields = new ArrayList<>();
+
+                if (null != site) {
+                    fields.add(
+                            new FieldDataGen()
+                                    .name("Site or Folder")
+                                    .velocityVarName("hostfolder")
+                                    .required(Boolean.TRUE)
+                                    .type(HostFolderField.class)
+                                    .next()
+                    );
+                }
                 fields.add(
                         new FieldDataGen()
                                 .name("First Name")
@@ -273,10 +305,23 @@ public class TestDataUtils {
     }
 
     public static ContentType getNewsLikeContentType() {
-        return getNewsLikeContentType("News" + System.currentTimeMillis());
+        return getNewsLikeContentType("News" + System.currentTimeMillis(), null, null, null);
     }
 
     public static ContentType getNewsLikeContentType(final String contentTypeName) {
+        return getNewsLikeContentType(contentTypeName, null, null, null);
+    }
+
+    public static ContentType getNewsLikeContentType(final String contentTypeName,
+            final Host site) {
+        return getNewsLikeContentType(contentTypeName, site, null, null);
+    }
+
+    public static ContentType getNewsLikeContentType(final String contentTypeName,
+            final Host site,
+            final String detailPageIdentifier,
+            final String urlMapPattern) {
+
         ContentType newsType = null;
         try {
             try {
@@ -288,6 +333,16 @@ public class TestDataUtils {
             if (newsType == null) {
 
                 List<com.dotcms.contenttype.model.field.Field> fields = new ArrayList<>();
+                if (null != site) {
+                    fields.add(
+                            new FieldDataGen()
+                                    .name("Site or Folder")
+                                    .velocityVarName("hostfolder")
+                                    .required(Boolean.TRUE)
+                                    .type(HostFolderField.class)
+                                    .next()
+                    );
+                }
                 fields.add(
                         new FieldDataGen()
                                 .name("Title")
@@ -345,11 +400,24 @@ public class TestDataUtils {
                                 .next()
                 );
 
-                newsType = new ContentTypeDataGen()
+                ContentTypeDataGen contentTypeDataGen = new ContentTypeDataGen()
                         .name(contentTypeName)
                         .velocityVarName(contentTypeName)
-                        .fields(fields)
-                        .nextPersisted();
+                        .fields(fields);
+
+                if (null != site) {
+                    contentTypeDataGen.host(site);
+                }
+
+                if (null != detailPageIdentifier) {
+                    contentTypeDataGen.detailPage(detailPageIdentifier);
+                }
+
+                if (null != urlMapPattern) {
+                    contentTypeDataGen.urlMapPattern(urlMapPattern);
+                }
+
+                newsType = contentTypeDataGen.nextPersisted();
             }
         } catch (Exception e) {
             throw new DotRuntimeException(e);
@@ -579,8 +647,17 @@ public class TestDataUtils {
     }
 
     public static Contentlet getGenericContentContent(Boolean persist, long languageId) {
+        return getGenericContentContent(persist, languageId, null);
+    }
+
+    public static Contentlet getGenericContentContent(Boolean persist, long languageId, Host site) {
 
         try {
+
+            if (null == site) {
+                site = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
+            }
+
             ContentType webPageContentContentType = APILocator
                     .getContentTypeAPI(APILocator.systemUser())
                     .find("webPageContent");
@@ -588,7 +665,8 @@ public class TestDataUtils {
             ContentletDataGen contentletDataGen = new ContentletDataGen(
                     webPageContentContentType.id())
                     .languageId(languageId)
-                    .host(APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false))
+                    .host(site)
+                    .setProperty("contentHost", site)
                     .setProperty("title", "genericContent")
                     .setProperty("author", "systemUser")
                     .setProperty("body", "Generic Content Body");
@@ -710,6 +788,11 @@ public class TestDataUtils {
 
     public static Contentlet getBlogContent(Boolean persist, long languageId,
             String contentTypeId) {
+        return getBlogContent(persist, languageId, contentTypeId, null);
+    }
+
+    public static Contentlet getBlogContent(Boolean persist, long languageId,
+            String contentTypeId, final Host site) {
 
         if (null == contentTypeId) {
             contentTypeId = getBlogLikeContentType().id();
@@ -723,6 +806,11 @@ public class TestDataUtils {
                 .setProperty("sysPublishDate", new Date())
                 .setProperty("body", "blogBody");
 
+        if (null != site) {
+            contentletDataGen = contentletDataGen.host(site)
+                    .setProperty("hostfolder", site);
+        }
+
         if (persist) {
             return contentletDataGen.nextPersisted();
         } else {
@@ -732,6 +820,12 @@ public class TestDataUtils {
 
     public static Contentlet getEmployeeContent(Boolean persist, long languageId,
             String contentTypeId) {
+        return getEmployeeContent(persist, languageId,
+                contentTypeId, null);
+    }
+
+    public static Contentlet getEmployeeContent(Boolean persist, long languageId,
+            String contentTypeId, final Host site) {
 
         if (null == contentTypeId) {
             contentTypeId = getEmployeeLikeContentType().id();
@@ -759,6 +853,11 @@ public class TestDataUtils {
                     .setProperty("email", "test@test" + millis + ".com")
                     .setProperty("photo", testPhoto);
 
+            if (null != site) {
+                contentletDataGen = contentletDataGen.host(site)
+                        .setProperty("hostfolder", site);
+            }
+
             if (persist) {
                 return contentletDataGen.nextPersisted();
             } else {
@@ -771,21 +870,34 @@ public class TestDataUtils {
 
     public static Contentlet getNewsContent(Boolean persist, long languageId,
             String contentTypeId) {
+        return getNewsContent(persist, languageId, contentTypeId, null);
+    }
+
+    public static Contentlet getNewsContent(Boolean persist, long languageId,
+            String contentTypeId, Host site) {
 
         if (null == contentTypeId) {
             contentTypeId = getNewsLikeContentType().id();
         }
 
         try {
+
+            final long millis = System.currentTimeMillis();
             ContentletDataGen contentletDataGen = new ContentletDataGen(contentTypeId)
                     .languageId(languageId)
-                    .host(APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false))
-                    .setProperty("title", "newsContent")
-                    .setProperty("urlTitle", "newsContent")
+                    .host(null != site ? site : APILocator.getHostAPI()
+                            .findDefaultHost(APILocator.systemUser(), false))
+                    .setProperty("title", "newsContent Title" + millis)
+                    .setProperty("urlTitle", "news-content-url-title" + millis)
                     .setProperty("byline", "byline")
                     .setProperty("sysPublishDate", new Date())
                     .setProperty("story", "newsStory")
                     .setProperty("tags", "test");
+
+            if (null != site) {
+                contentletDataGen = contentletDataGen.host(site)
+                        .setProperty("hostfolder", site);
+            }
 
             if (persist) {
                 return contentletDataGen.nextPersisted();
