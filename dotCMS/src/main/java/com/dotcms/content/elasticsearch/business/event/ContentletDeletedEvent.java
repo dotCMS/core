@@ -10,19 +10,19 @@ import java.util.Date;
  * Event to notified when a content is deleted
  * @author jsanca
  */
-public class ContentletDeletedEvent implements Serializable {
+public class ContentletDeletedEvent<T extends Contentlet> implements Serializable {
 
-    private final Contentlet contentlet;
+    private final T contentlet;
     private final User       user;
     private final Date       date;
 
-    public ContentletDeletedEvent(final Contentlet contentlet, final User user) {
+    public ContentletDeletedEvent(final T contentlet, final User user) {
         this.contentlet = contentlet;
         this.user = user;
         this.date = new Date();
     }
 
-    public Contentlet getContentlet() {
+    public T getContentlet() {
         return this.contentlet;
     }
 

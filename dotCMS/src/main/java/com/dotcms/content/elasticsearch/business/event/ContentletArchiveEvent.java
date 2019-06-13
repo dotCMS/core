@@ -10,14 +10,14 @@ import java.util.Date;
  * Event to notified when a contentlet is being archive or unarchive
  * @author jsanca
  */
-public class ContentletArchiveEvent implements Serializable {
+public class ContentletArchiveEvent<T extends Contentlet> implements Serializable {
 
     private final boolean    archive;
-    private final Contentlet contentlet;
+    private final T contentlet;
     private final User user;
     private final Date date;
 
-    public ContentletArchiveEvent(final Contentlet contentlet,
+    public ContentletArchiveEvent(final T contentlet,
                                   final User user, final boolean archive) {
 
         this.archive    = archive;
@@ -26,7 +26,7 @@ public class ContentletArchiveEvent implements Serializable {
         this.date = new Date();
     }
 
-    public Contentlet getContentlet() {
+    public T getContentlet() {
         return contentlet;
     }
 

@@ -95,4 +95,5 @@ public interface PersonaAPI {
 	 */
     Optional<Persona> findPersonaByTag (final String personaTag, final User user, final boolean respectFrontEndRoles) throws DotSecurityException, DotDataException;
 
+
 }

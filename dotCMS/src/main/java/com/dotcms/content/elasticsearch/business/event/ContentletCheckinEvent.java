@@ -10,14 +10,14 @@ import java.util.Date;
  * Event to notified when a contentlet is being checkin
  * @author jsanca
  */
-public class ContentletCheckinEvent implements Serializable {
+public class ContentletCheckinEvent<T extends Contentlet> implements Serializable {
 
-    private final Contentlet contentlet;
+    private final T contentlet;
     private final boolean newVersionCreated;
     private final User user;
     private final Date date;
 
-    public ContentletCheckinEvent(final Contentlet contentlet,
+    public ContentletCheckinEvent(final T contentlet,
                                   final boolean newVersionCreated,
                                   final User user) {
 
@@ -27,7 +27,7 @@ public class ContentletCheckinEvent implements Serializable {
         this.date = new Date();
     }
 
-    public Contentlet getContentlet() {
+    public T getContentlet() {
         return contentlet;
     }
 
