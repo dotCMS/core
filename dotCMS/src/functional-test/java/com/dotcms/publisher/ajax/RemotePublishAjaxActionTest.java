@@ -5,6 +5,34 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
 
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.nio.file.Files;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.util.EntityUtils;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
+
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.business.DotPublisherException;
@@ -50,27 +78,8 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.nio.file.Files;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+
 import junit.framework.Assert;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
 
 /**
  * @author Jonathan Gamba
@@ -170,7 +179,16 @@ public class RemotePublishAjaxActionTest {
 
 		//Execute the call
 		URL publishUrl = new URL( completeURL );
-		String response = IOUtils.toString( publishUrl.openStream(), "UTF-8" );
+		String response = null;
+    try(CloseableHttpClient client = HttpClients.createDefault()){
+      HttpGet method = new HttpGet(publishUrl.toExternalForm());
+      method.setHeader("Origin" , req.getServerName() );
+      try(CloseableHttpResponse r = client.execute(method)){
+        response =  EntityUtils.toString(r.getEntity());
+      }
+    }
+		
+
 		//Validations
 		JSONObject jsonResponse = new JSONObject( response );
 		assertNotNull( contentlets );
@@ -217,7 +235,14 @@ public class RemotePublishAjaxActionTest {
 
 		//Execute the call
 		URL retryUrl = new URL( completeURL );
-		response = IOUtils.toString( retryUrl.openStream(), "UTF-8" );//We can expect something like "Bundle id: <strong>1193e3eb-3ccd-496e-8995-29a9fcc48cbd</strong> added successfully to Publishing Queue."
+    response = null;
+    try(CloseableHttpClient client = HttpClients.createDefault()){
+      HttpGet method = new HttpGet(retryUrl.toExternalForm());
+      method.setHeader("Origin" , req.getServerName() );
+      try(CloseableHttpResponse r = client.execute(method)){
+        response =  EntityUtils.toString(r.getEntity());
+      }
+    }
 		//Validations
 		assertNotNull( response );
 		assertTrue( response.contains( bundleId ) );
