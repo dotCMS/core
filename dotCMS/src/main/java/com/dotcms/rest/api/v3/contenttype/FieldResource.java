@@ -158,6 +158,7 @@ public class FieldResource {
         final ContentType contentType = APILocator.getContentTypeAPI(user).find(typeIdOrVarName);
 
         final FieldLayout layout = moveFieldsForm.getRows(contentType.id());
+        layout.validate();
 
         fieldAPI.saveFields(layout.getFields(), user);
 

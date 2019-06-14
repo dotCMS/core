@@ -17,7 +17,15 @@ public class StrictFieldLayoutRowSyntaxValidator extends FieldLayoutRowSyntaxVal
     }
 
     @Override
-    protected void processRow (final List<Field> fragmentFields)
+    protected List<List<Field>> processMaxColumnsRule(final List<List<Field>> columns)
+            throws FieldLayoutValidationException {
+
+        throw new FieldLayoutValidationException(
+                String.format("Max columns by rows exceeded: %s", columns));
+    }
+
+    @Override
+    protected void processNotEmptyRow (final List<Field> fragmentFields)
             throws FieldLayoutValidationException {
 
         final Field firstField = fragmentFields.isEmpty() ? null : fragmentFields.get(0);
@@ -26,6 +34,11 @@ public class StrictFieldLayoutRowSyntaxValidator extends FieldLayoutRowSyntaxVal
             throw new FieldLayoutValidationException(
                     String.format("Expected RowField or TabField before: %s %s", fragmentFields, firstField));
         }
+    }
+
+    @Override
+    protected void processEmptyRow () throws FieldLayoutValidationException {
+        throw new FieldLayoutValidationException(String.format("Empty row is not allow"));
     }
 
     @Override

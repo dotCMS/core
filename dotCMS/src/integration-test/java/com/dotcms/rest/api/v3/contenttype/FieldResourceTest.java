@@ -45,10 +45,7 @@ public class FieldResourceTest {
 
     @Test
     public void shouldFixContentTypesFieldsBeforeReturn () throws DotSecurityException, DotDataException {
-        final String typeName="fieldResourceTest" + UUIDUtil.uuid();
-
-        ContentType type = ContentTypeBuilder.builder(SimpleContentType.class).name(typeName).build();
-        type = APILocator.getContentTypeAPI(APILocator.systemUser()).save(type);
+        final ContentType type = createContentType();
 
         Field field = FieldBuilder.builder(TextField.class).name("text").contentTypeId(type.id()).build();
         field = APILocator.getContentTypeFieldAPI().save(field,APILocator.systemUser());
@@ -65,11 +62,32 @@ public class FieldResourceTest {
     }
 
     @Test
-    public void shouldDeleteFields () throws DotSecurityException, DotDataException {
-        final String typeName="fieldResourceTest" + UUIDUtil.uuid();
+    public void shouldFixMaxColumnsPerRowRules () throws DotSecurityException, DotDataException {
+        final ContentType type = createContentType();
 
-        ContentType type = ContentTypeBuilder.builder(SimpleContentType.class).name(typeName).build();
-        type = APILocator.getContentTypeAPI(APILocator.systemUser()).save(type);
+        final List<Field> fields = createLayoutWithManyColumns(type);
+
+        final FieldResource fieldResource = new FieldResource();
+        final Response contentTypeFields = fieldResource.getContentTypeFields(type.id(), getHttpRequest());
+
+        final List<FieldLayoutRow> rows =
+                (List<FieldLayoutRow>) ((ResponseEntityView) contentTypeFields.getEntity()).getEntity();
+
+        assertEquals(1, rows.size());
+        assertEquals(4, rows.get(0).getColumns().size());
+        assertEquals(0, rows.get(0).getColumns().get(0).getFields().size());
+        assertEquals(1, rows.get(0).getColumns().get(1).getFields().size());
+        assertEquals(fields.get(3).id(), rows.get(0).getColumns().get(1).getFields().get(0).id());
+        assertEquals(1, rows.get(0).getColumns().get(2).getFields().size());
+        assertEquals(fields.get(5).id(), rows.get(0).getColumns().get(2).getFields().get(0).id());
+        assertEquals(2, rows.get(0).getColumns().get(3).getFields().size());
+        assertEquals(fields.get(8).id(), rows.get(0).getColumns().get(3).getFields().get(0).id());
+        assertEquals(fields.get(10).id(), rows.get(0).getColumns().get(3).getFields().get(1).id());
+    }
+
+    @Test
+    public void shouldDeleteFields () throws DotSecurityException, DotDataException {
+        final ContentType type = createContentType();
 
         final List<Field> fields = createFields(type);
 
@@ -102,10 +120,7 @@ public class FieldResourceTest {
 
     @Test(expected = FieldLayoutValidationException.class)
     public void shouldThrowExceptionAndNotDeleteAny () throws DotSecurityException, DotDataException {
-        final String typeName="fieldResourceTest" + UUIDUtil.uuid();
-
-        ContentType type = ContentTypeBuilder.builder(SimpleContentType.class).name(typeName).build();
-        type = APILocator.getContentTypeAPI(APILocator.systemUser()).save(type);
+        final ContentType type = createContentType();
 
         final List<Field> fields = createFields(type);
 
@@ -118,10 +133,7 @@ public class FieldResourceTest {
 
     @Test
     public void shouldUpdateFields () throws DotSecurityException, DotDataException, JSONException {
-        final String typeName="fieldResourceTest" + UUIDUtil.uuid();
-
-        ContentType type = ContentTypeBuilder.builder(SimpleContentType.class).name(typeName).build();
-        type = APILocator.getContentTypeAPI(APILocator.systemUser()).save(type);
+        final ContentType type = createContentType();
 
         final List<Field> fields = createFields(type);
 
@@ -157,18 +169,11 @@ public class FieldResourceTest {
 
     @Test
     public void shouldCreateField () throws DotSecurityException, DotDataException, JSONException {
-        final String typeName="fieldResourceTest" + System.currentTimeMillis();
-
-        ContentType type = ContentTypeBuilder.builder(SimpleContentType.class).name(typeName).variable(typeName).build();
-        type = APILocator.getContentTypeAPI(APILocator.systemUser()).save(type);
+        final  ContentType type = createContentType();
 
         createFields(type);
 
-        Field newField = FieldBuilder.builder(TextField.class)
-                .name("new field")
-                .sortOrder(4)
-                .contentTypeId(type.id())
-                .build();
+        Field newField = createTextField(type, "new field", 4);
 
         final JsonFieldTransformer jsonFieldTransformer = new JsonFieldTransformer(newField);
         final Map<String, Object> fieldToUpdatetMap = jsonFieldTransformer.mapObject();
@@ -201,10 +206,7 @@ public class FieldResourceTest {
 
     @Test(expected = FieldLayoutValidationException.class)
     public void shouldUpdateFieldsANdThrowException () throws DotSecurityException, DotDataException {
-        final String typeName="fieldResourceTest" + UUIDUtil.uuid();
-
-        ContentType type = ContentTypeBuilder.builder(SimpleContentType.class).name(typeName).build();
-        type = APILocator.getContentTypeAPI(APILocator.systemUser()).save(type);
+        final  ContentType type = createContentType();
 
         final List<Field> fields = createFields(type);
 
@@ -223,10 +225,7 @@ public class FieldResourceTest {
     @Test
     public void shouldUpdateField () throws DotSecurityException, DotDataException {
         final String updateFieldName = "field Updated";
-        final String typeName="fieldResourceTest" + UUIDUtil.uuid();
-
-        ContentType type = ContentTypeBuilder.builder(SimpleContentType.class).name(typeName).build();
-        type = APILocator.getContentTypeAPI(APILocator.systemUser()).save(type);
+        final  ContentType type = createContentType();
 
         final List<Field> fields = createFields(type);
 
@@ -269,10 +268,7 @@ public class FieldResourceTest {
 
     @Test
     public void shouldUpdateFieldAndUpdateSortOrder () throws DotSecurityException, DotDataException {
-        final String typeName="fieldResourceTest" + UUIDUtil.uuid();
-
-        ContentType type = ContentTypeBuilder.builder(SimpleContentType.class).name(typeName).build();
-        type = APILocator.getContentTypeAPI(APILocator.systemUser()).save(type);
+        final ContentType type = createContentType();
 
         final List<Field> fields = createFields(type);
 
@@ -301,10 +297,7 @@ public class FieldResourceTest {
 
     @Test(expected = FieldLayoutValidationException.class)
     public void shouldThrowErrorWhenUpdateTurnIntoWronhLayout () throws DotSecurityException, DotDataException {
-        final String typeName="fieldResourceTest" + UUIDUtil.uuid();
-
-        ContentType type = ContentTypeBuilder.builder(SimpleContentType.class).name(typeName).build();
-        type = APILocator.getContentTypeAPI(APILocator.systemUser()).save(type);
+        final ContentType type = createContentType();
 
         final List<Field> fields = createFields(type);
 
@@ -342,10 +335,7 @@ public class FieldResourceTest {
     @Test(expected = NotFoundException.class)
     public void shouldThrowErrorWhenFieldDoesNotExists () throws DotSecurityException, DotDataException {
 
-        final String typeName="fieldResourceTest" + UUIDUtil.uuid();
-
-        ContentType type = ContentTypeBuilder.builder(SimpleContentType.class).name(typeName).build();
-        type = APILocator.getContentTypeAPI(APILocator.systemUser()).save(type);
+        ContentType type = createContentType();
 
         createFields(type);
 
@@ -367,18 +357,11 @@ public class FieldResourceTest {
 
     @Test
     public void shouldCreateFieldWithPost () throws DotSecurityException, DotDataException {
-        final String typeName="fieldResourceTest" + System.currentTimeMillis();
-
-        ContentType type = ContentTypeBuilder.builder(SimpleContentType.class).name(typeName).variable(typeName).build();
-        type = APILocator.getContentTypeAPI(APILocator.systemUser()).save(type);
+        final ContentType type = createContentType();
 
         createFields(type);
 
-        Field newField = FieldBuilder.builder(TextField.class)
-                .name("new field")
-                .sortOrder(4)
-                .contentTypeId(type.id())
-                .build();
+        Field newField = createTextField(type, "new field", 4);
 
         final JsonFieldTransformer jsonFieldTransformer = new JsonFieldTransformer(newField);
         final Map<String, Object> fieldToUpdatetMap = jsonFieldTransformer.mapObject();
@@ -411,18 +394,11 @@ public class FieldResourceTest {
 
     @Test
     public void shouldCreateFieldAndUpdateSortOrder () throws DotSecurityException, DotDataException {
-        final String typeName="fieldResourceTest" + System.currentTimeMillis();
-
-        ContentType type = ContentTypeBuilder.builder(SimpleContentType.class).name(typeName).variable(typeName).build();
-        type = APILocator.getContentTypeAPI(APILocator.systemUser()).save(type);
+        final ContentType type = createContentType();
 
         final List<Field> fields = createFields(type);
 
-        final Field newField = FieldBuilder.builder(TextField.class)
-                .name("new field")
-                .sortOrder(2)
-                .contentTypeId(type.id())
-                .build();
+        final Field newField = createTextField(type, "new field", 2);
 
         final JsonFieldTransformer jsonFieldTransformer = new JsonFieldTransformer(newField);
         final Map<String, Object> fieldToUpdatetMap = jsonFieldTransformer.mapObject();
@@ -441,25 +417,18 @@ public class FieldResourceTest {
         assertEquals(fieldsFromDB.size(), fieldsFromDB.size());
 
         for (int i = 0; i < fieldsFromDB.size(); i++) {
-            assertEquals(fieldsExpected.get(i).sortOrder(), i);
+            assertEquals(fieldsFromDB.get(i).sortOrder(), i);
             assertEquals(fieldsExpected.get(i).name(), fieldsFromDB.get(i).name());
         }
     }
 
     @Test(expected = FieldLayoutValidationException.class)
     public void shouldThrowExceptionWhenNewFieldTurnIntoWrongLayout () throws DotSecurityException, DotDataException {
-        final String typeName="fieldResourceTest" + System.currentTimeMillis();
-
-        ContentType type = ContentTypeBuilder.builder(SimpleContentType.class).name(typeName).variable(typeName).build();
-        type = APILocator.getContentTypeAPI(APILocator.systemUser()).save(type);
+        final ContentType type = createContentType();
 
         createFields(type);
 
-        Field newField = FieldBuilder.builder(TextField.class)
-                .name("new field")
-                .sortOrder(1)
-                .contentTypeId(type.id())
-                .build();
+        Field newField = createTextField(type, "new field", 1);
 
         final JsonFieldTransformer jsonFieldTransformer = new JsonFieldTransformer(newField);
         final Map<String, Object> fieldToUpdatetMap = jsonFieldTransformer.mapObject();
@@ -492,10 +461,7 @@ public class FieldResourceTest {
 
     @Test
     public void shouldMoveFields () throws DotSecurityException, DotDataException {
-        final String typeName="fieldResourceTest" + UUIDUtil.uuid();
-
-        ContentType type = ContentTypeBuilder.builder(SimpleContentType.class).name(typeName).build();
-        type = APILocator.getContentTypeAPI(APILocator.systemUser()).save(type);
+        final ContentType type = createContentType();
 
         final List<Field> fields = createFields(type);
         final List<Map<String, Object>> layout = list(
@@ -550,36 +516,192 @@ public class FieldResourceTest {
         fieldResource.moveFields("NotExists", form, getHttpRequest());
     }
 
+    @Test(expected = FieldLayoutValidationException.class)
+    public void shouldThrowExceptionWhenUpdateFieldWithMaxColumnsRule () throws DotSecurityException, DotDataException, JSONException {
+        final ContentType type = createContentType();
+
+        final List<Field> fields = createLayoutWithMultiRow(type);
+
+        final Field fieldToUpdate = fields.get(12);
+        final JsonFieldTransformer jsonFieldTransformer = new JsonFieldTransformer(fieldToUpdate);
+        final Map<String, Object> fieldToUpdatetMap = jsonFieldTransformer.mapObject();
+        fieldToUpdatetMap.put("sortOrder", 7);
+
+        final UpdateFieldsForm form =
+                new UpdateFieldsForm.Builder().fields(list(fieldToUpdatetMap))
+                        .build();
+
+        final FieldResource fieldResource = new FieldResource();
+        fieldResource.updateFields(type.id(), form, getHttpRequest());
+    }
+
+    @Test(expected = FieldLayoutValidationException.class)
+    public void shouldThrowExceptionWhenDeleteFieldWithMaxColumnsRule () throws DotSecurityException, DotDataException {
+        final ContentType type = createContentType();
+
+        final List<Field> fields = createLayoutWithMultiRow(type);
+
+        final DeleteFieldsForm form =
+                new DeleteFieldsForm.Builder().fieldsID(list(fields.get(7).id())).build();
+
+        final FieldResource fieldResource = new FieldResource();
+        fieldResource.deleteFields(type.id(), form, getHttpRequest());
+    }
+
+    private ContentType createContentType() throws DotDataException, DotSecurityException {
+        final String typeName = "fieldResourceTest" + UUIDUtil.uuid();
+
+        ContentType type = ContentTypeBuilder.builder(SimpleContentType.class).name(typeName).build();
+        type = APILocator.getContentTypeAPI(APILocator.systemUser()).save(type);
+        return type;
+    }
+
+    @Test(expected = FieldLayoutValidationException.class)
+    public void shouldThrowExceptionWhenMoveFieldWithMaxColumnsRule () throws DotSecurityException, DotDataException, JSONException {
+        final ContentType type = createContentType();
+
+        final List<Field> fields = createLayoutWithMultiRow(type);
+        final List<Map<String, Object>> layout = list(
+                map("divider", getMap(fields.get(0)), "columns", list(
+                        map("columnDivider", getMap(fields.get(1)), "fields", list()),
+                        map("columnDivider", getMap(fields.get(2)), "fields", list(getMap(fields.get(3)))),
+                        map("columnDivider", getMap(fields.get(4)), "fields", list(getMap(fields.get(5)))),
+                        map("columnDivider", getMap(fields.get(6)), "fields", list()),
+                        map("columnDivider", getMap(fields.get(6)), "fields", list())
+                )),
+                map("divider", getMap(fields.get(7)), "columns", list(
+                        map("columnDivider", getMap(fields.get(8)), "fields", list(getMap(fields.get(9)))),
+                        map("columnDivider", getMap(fields.get(10)), "fields", list(getMap(fields.get(11))))
+                ))
+        );
+
+        final MoveFieldsForm form =
+                new MoveFieldsForm.Builder().layout(layout)
+                        .build();
+
+        final FieldResource fieldResource = new FieldResource();
+        fieldResource.moveFields(type.id(), form, getHttpRequest());
+    }
+
+    @Test
+    public void shouldRemoveEmptyRows () throws DotSecurityException, DotDataException {
+        final ContentType type = createContentType();
+
+        final List<Field> fields = createLayoutWithEmptyRows(type);
+
+        final FieldResource fieldResource = new FieldResource();
+        final Response contentTypeFields = fieldResource.getContentTypeFields(type.id(), getHttpRequest());
+
+        final List<FieldLayoutRow> rows =
+                (List<FieldLayoutRow>) ((ResponseEntityView) contentTypeFields.getEntity()).getEntity();
+
+        assertEquals(1, rows.size());
+        assertEquals(1, rows.get(0).getColumns().size());
+        assertEquals(1, rows.get(0).getColumns().get(0).getFields().size());
+
+        assertEquals(fields.get(3).id(), rows.get(0).getDivider().id());
+        assertEquals(fields.get(4).id(), rows.get(0).getColumns().get(0).getColumn().id());
+        assertEquals(fields.get(5).id(), rows.get(0).getColumns().get(0).getFields().get(0).id());
+    }
+
     private List<Field> createFields(final ContentType type) throws DotDataException, DotSecurityException {
-        Field rowField = FieldBuilder.builder(RowField.class)
-                .name("row field")
-                .sortOrder(0)
+        return list(
+            createRowField(type, "row field", 0),
+            createColumnField(type, "column field", 1),
+            createTextField(type, "text 1", 2),
+            createTextField(type, "text 2", 3)
+        );
+    }
+
+    private List<Field> createLayoutWithMultiRow(final ContentType type) throws DotDataException, DotSecurityException {
+
+        return list(
+            createRowField(type, "row field", 0),
+            createColumnField(type, "column field", 1),
+            createColumnField(type, "column field2", 2),
+            createTextField(type, "text 1", 3),
+            createColumnField(type, "column field3", 4),
+            createTextField(type, "text 2", 5),
+            createColumnField(type, "column field4", 6),
+
+            createRowField(type, "row field 2", 7),
+            createColumnField(type, "column field5", 8),
+            createTextField(type, "text 3", 9),
+            createColumnField(type, "column field6", 10),
+            createTextField(type, "text 4", 11),
+            createColumnField(type, "column field7", 12)
+        );
+    }
+
+    private List<Field> createLayoutWithEmptyRows(final ContentType type) throws DotDataException, DotSecurityException {
+
+        return list(
+                createRowField(type, "row field 1", 0),
+                createRowField(type, "row field 2", 1),
+                createRowField(type, "row field 3", 2),
+                createRowField(type, "row field 4", 3),
+                createColumnField(type, "column field 1", 4),
+                createTextField(type, "text 1", 5)
+        );
+    }
+
+    private List<Field> createLayoutWithManyColumns(final ContentType type) throws DotDataException, DotSecurityException {
+        return list(
+            createRowField(type, "row field", 0),
+            createColumnField(type, "column field", 1),
+            createColumnField(type, "column field2", 2),
+            createTextField(type, "text 1", 3),
+            createColumnField(type, "column field3", 4),
+            createTextField(type, "text 2", 5),
+            createColumnField(type, "column field4", 6),
+            createColumnField(type, "column field5", 7),
+            createTextField(type, "text 3", 8),
+            createColumnField(type, "column field6", 9),
+            createTextField(type, "text 4", 10),
+            createColumnField(type, "column field7", 11)
+        );
+    }
+
+    private Field createRowField(ContentType type, String s, int i) {
+        final Field field = FieldBuilder.builder(RowField.class)
+                .name(s)
+                .sortOrder(i)
                 .contentTypeId(type.id())
                 .build();
-        rowField = APILocator.getContentTypeFieldAPI().save(rowField,APILocator.systemUser());
 
-        Field columnField = FieldBuilder.builder(ColumnField.class)
-                .name("column field")
-                .sortOrder(1)
+        try{
+            return APILocator.getContentTypeFieldAPI().save(field, APILocator.systemUser());
+        } catch (DotDataException | DotSecurityException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private Field createColumnField(final ContentType type, final String name, final int sortOrder) {
+        final Field field = FieldBuilder.builder(ColumnField.class)
+                .name(name)
+                .sortOrder(sortOrder)
                 .contentTypeId(type.id())
                 .build();
-        columnField = APILocator.getContentTypeFieldAPI().save(columnField,APILocator.systemUser());
 
-        Field field_1 = FieldBuilder.builder(TextField.class)
-                .name("text 1")
-                .sortOrder(2)
+        try {
+            return APILocator.getContentTypeFieldAPI().save(field, APILocator.systemUser());
+        } catch (DotDataException | DotSecurityException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private Field createTextField(final ContentType type, final String name, final int sortOrder) {
+        final Field field =  FieldBuilder.builder(TextField.class)
+                .name(name)
+                .sortOrder(sortOrder)
                 .contentTypeId(type.id())
                 .build();
-        field_1 = APILocator.getContentTypeFieldAPI().save(field_1,APILocator.systemUser());
 
-        Field field_2 = FieldBuilder.builder(TextField.class)
-                .name("text 2")
-                .sortOrder(3)
-                .contentTypeId(type.id())
-                .build();
-        field_2 = APILocator.getContentTypeFieldAPI().save(field_2,APILocator.systemUser());
-
-        return list(rowField, columnField, field_1, field_2);
+        try {
+            return APILocator.getContentTypeFieldAPI().save(field, APILocator.systemUser());
+        } catch (DotDataException | DotSecurityException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private static HttpServletRequest getHttpRequest() {

@@ -7,6 +7,7 @@ import java.util.List;
  * Run throught a {@link FieldLayout} and allow validate it.
  */
 abstract class FieldLayoutRowSyntaxValidator {
+    protected static final int MAX_NUM_COLUMNS_ALLOW = 4;
     private final List<Field> fields;
 
     protected FieldLayoutRowSyntaxValidator(final List<Field> fields) {
@@ -30,12 +31,10 @@ abstract class FieldLayoutRowSyntaxValidator {
                     processTab((TabDividerField) fragment.getFieldDivider());
 
                     if (fragment.hasOthersFields()) {
-                        processRow(fragment.getOthersFields());
-                        processColumns(fragment.getOthersFields());
+                        processAnyRow(new FieldUtil.FieldsFragment(fragment.getOthersFields()));
                     }
                 } else {
-                    processRow(fragment.getAllFields());
-                    processColumns(fragment.getOthersFields());
+                    processAnyRow(fragment);
                 }
             }
 
@@ -51,17 +50,45 @@ abstract class FieldLayoutRowSyntaxValidator {
      *
      * @see {@link this#processColumn(List)}
      */
-    protected final void processColumns (final List<Field> columnsFields)
+    private void processColumns (final List<Field> columnsFields)
             throws FieldLayoutValidationException {
 
         if (columnsFields.isEmpty()) {
             processColumn(columnsFields);
         } else {
-            for (final List<Field> columnFields : FieldUtil.splitByColumnField(columnsFields)) {
+            List<List<Field>> columns = FieldUtil.splitByColumnField(columnsFields);
+
+            if (columns.size() > MAX_NUM_COLUMNS_ALLOW) {
+                columns = processMaxColumnsRule(columns);
+            }
+
+            for (final List<Field> columnFields : columns) {
                 processColumn(columnFields);
             }
         }
     }
+
+    /**
+     * Process a row in a {@link FieldLayout}
+     *
+     * @param fragment row's fields
+     * @throws FieldLayoutValidationException when the row is not valid
+     */
+    private void processAnyRow (final FieldUtil.FieldsFragment fragment) throws FieldLayoutValidationException {
+        if (fragment.getOthersFields().isEmpty()) {
+            processEmptyRow();
+        } else {
+            processNotEmptyRow(fragment.getAllFields());
+            processColumns(fragment.getOthersFields());
+        }
+    }
+
+    /**
+     *
+     * @param columns
+     * @return
+     */
+    protected abstract List<List<Field>> processMaxColumnsRule(List<List<Field>> columns) throws FieldLayoutValidationException;
 
     /**
      * Process a {@link TabDividerField} into a row in a {@link FieldLayout}
@@ -72,12 +99,19 @@ abstract class FieldLayoutRowSyntaxValidator {
     protected abstract void processTab (final TabDividerField tabDividerField) throws FieldLayoutValidationException;
 
     /**
-     * Process a row in a {@link FieldLayout}
+     * Allow process a empty row
      *
-     * @param rowFields fields into the row
-     * @throws FieldLayoutValidationException when the row is not valid
+     * @throws FieldLayoutValidationException
      */
-    protected abstract void processRow (final List<Field> rowFields) throws FieldLayoutValidationException;
+    protected abstract void processEmptyRow () throws FieldLayoutValidationException;
+
+    /**
+     * Allow Process a not empty row
+     *
+     * @param rowFields
+     * @throws FieldLayoutValidationException
+     */
+    protected abstract void processNotEmptyRow (final List<Field> rowFields) throws FieldLayoutValidationException;
 
     /**
      * Process a column into a row.

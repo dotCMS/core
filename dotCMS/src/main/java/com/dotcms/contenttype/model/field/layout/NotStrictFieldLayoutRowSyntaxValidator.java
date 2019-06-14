@@ -32,6 +32,25 @@ public class NotStrictFieldLayoutRowSyntaxValidator extends FieldLayoutRowSyntax
         super(fields);
     }
 
+    @Override
+    protected List<List<Field>> processMaxColumnsRule(final List<List<Field>> columns) {
+        final List<List<Field>> newColumns = new ArrayList<>();
+
+        for(int i = 0; i < columns.size(); i++) {
+            if (i < MAX_NUM_COLUMNS_ALLOW) {
+                final List<Field> column = new ArrayList<>();
+                column.addAll(columns.get(i));
+                newColumns.add(column);
+            } else if (!columns.get(i).isEmpty()){
+                final List<Field> withoutColumnField = columns.get(i).subList(1, columns.get(i).size());
+                newColumns.get(MAX_NUM_COLUMNS_ALLOW - 1).addAll(withoutColumnField);
+            }
+
+        }
+
+        return newColumns;
+    }
+
     /**
      * return {@link this#newFields}
      *
@@ -45,17 +64,25 @@ public class NotStrictFieldLayoutRowSyntaxValidator extends FieldLayoutRowSyntax
      * If the first element in fragmentFields is null or is not a {@link FieldDivider} then it create a new {@link RowField}
      * and add it to {@link this#newFields}
      *
-     * @param fragmentFields
+     * @param rowFields
      */
     @Override
-    protected void processRow (final List<Field> fragmentFields) {
-        final Field firstField = fragmentFields.isEmpty() ? null : fragmentFields.get(0);
+    protected void processNotEmptyRow (final List<Field> rowFields) {
+        final Field firstField = rowFields.isEmpty() ? null : rowFields.get(0);
 
-        if (firstField == null || !FieldUtil.isFieldDivider(firstField)) {
+        if (!FieldUtil.isFieldDivider(firstField)) {
             newFields.add(getNewRowField());
         } else {
             newFields.add(firstField);
         }
+    }
+
+    /**
+     * Always ignore empty row
+     */
+    @Override
+    protected void processEmptyRow () {
+
     }
 
     /**
@@ -67,7 +94,7 @@ public class NotStrictFieldLayoutRowSyntaxValidator extends FieldLayoutRowSyntax
     protected void processColumn (final List<Field> columnFields) {
         final Field firstField = columnFields.isEmpty() ? null : columnFields.get(0);
 
-        if (firstField == null || !FieldUtil.isColumnField(firstField)) {
+        if (!FieldUtil.isColumnField(firstField)) {
             newFields.add(getNewColumnField());
         }
 
