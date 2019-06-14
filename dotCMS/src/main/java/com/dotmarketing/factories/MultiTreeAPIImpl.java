@@ -43,9 +43,11 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import org.apache.commons.lang.StringUtils;
+import org.apache.poi.ss.formula.functions.T;
 
 import java.sql.SQLException;
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -236,6 +238,22 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         }
 
         return personalizationSet;
+    }
+
+    public Set<String> cleanUpUnusedPersonalization(final Predicate<String> personalizationFilter) {
+
+        final Set<String> personalizationRemovedSet = new HashSet<>();
+        final Set<String> currentPersonalizationSet = new HashSet<>(); // get distinct personalization
+
+        currentPersonalizationSet.stream().filter(personalizationFilter)
+                .forEach(personalizationRemovedSet::add);
+
+        if (!personalizationRemovedSet.isEmpty()) {
+
+            // todo: remove all of them in batch
+        }
+
+        return personalizationRemovedSet;
     }
 
     @WrapInTransaction

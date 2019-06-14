@@ -34,6 +34,8 @@ public class ParseContainer extends DotDirective {
 		final TemplatePathStrategyResolver templatePathResolver = TemplatePathStrategyResolver.getInstance();
 		final Optional<TemplatePathStrategy> strategy           = templatePathResolver.get(context, params, arguments);
 
+		// todo: take here the contentlist from the context and filter by visitor
+
 		return strategy.isPresent()?
 				strategy.get().apply(context, params, arguments):
 				templatePathResolver.getDefaultStrategy().apply(context, params, arguments);

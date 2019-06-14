@@ -2,6 +2,16 @@ package com.dotmarketing.portlets.personas.business;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.config.DotInitializer;
+import com.dotcms.content.elasticsearch.business.event.ContentletArchiveEvent;
+import com.dotcms.content.elasticsearch.business.event.ContentletCheckinEvent;
+import com.dotcms.content.elasticsearch.business.event.ContentletDeletedEvent;
+import com.dotcms.content.elasticsearch.business.event.ContentletPublishEvent;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.PersonaContentType;
+import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
+import com.dotcms.system.event.local.model.EventSubscriber;
+import com.dotcms.system.event.local.model.Subscriber;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -11,6 +21,8 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletListener;
+import com.dotmarketing.portlets.folders.business.FolderAPIImpl;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.personas.model.Persona;
@@ -26,12 +38,98 @@ import com.liferay.util.StringPool;
 
 import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CopyOnWriteArrayList;
 
-public class PersonaAPIImpl implements PersonaAPI {
+public class PersonaAPIImpl implements PersonaAPI, DotInitializer {
 
-	final PersonaFactory personaFactory = FactoryLocator.getPersonaFactory();
+	private final PersonaFactory personaFactory 					    = FactoryLocator.getPersonaFactory();
+	private final List<ContentletListener<Persona>> personaListenerList = new CopyOnWriteArrayList<>();
+	private final LocalSystemEventsAPI localSystemEventsAPI             = APILocator.getLocalSystemEventsAPI();
+
+	/// Event stuff
+	@Override
+	public void addPersonaListener(final ContentletListener<Persona> personaListener) {
+
+		if (null != personaListener) {
+			this.personaListenerList.add(personaListener);
+		}
+	}
+
+	private boolean isPersona (final Contentlet contentlet) {
+
+		boolean isPersona = false;
+
+		if (null != contentlet) {
+
+			final ContentType contentType = contentlet.getContentType();
+			return null != contentType && contentType instanceof PersonaContentType;
+		}
+
+		return isPersona;
+	}
+
+	@Subscriber
+	public void onArchiveUnArchive(final ContentletArchiveEvent event) {
+
+		if (null != event && this.isPersona(event.getContentlet())) {
+
+			final ContentletArchiveEvent<Persona> archiveEvent =
+					ContentletArchiveEvent.wrapContentlet(this.fromContentlet(event.getContentlet()), event);
+
+			this.personaListenerList.stream()
+					.forEach(personaListener -> personaListener.onArchive(archiveEvent));
+		}
+	} // onArchive.
+
+	@Subscriber
+	public void onPublishUnPublish(final ContentletPublishEvent event) {
+
+		if (null != event && this.isPersona(event.getContentlet())) {
+
+			final ContentletPublishEvent<Persona> publishEvent =
+					ContentletPublishEvent.wrapContentlet(this.fromContentlet(event.getContentlet()), event);
+
+			this.personaListenerList.stream()
+					.forEach(personaListener -> personaListener.onModified(publishEvent));
+		}
+	} // onPublishUnPublish.
+
+	@Subscriber
+	public void onDeleted(final ContentletDeletedEvent event) {
+
+		if (null != event && this.isPersona(event.getContentlet())) {
+
+			final ContentletDeletedEvent<Persona> deleteEvent =
+					ContentletDeletedEvent.wrapContentlet(this.fromContentlet(event.getContentlet()), event);
+
+			this.personaListenerList.stream()
+					.forEach(personaListener -> personaListener.onDeleted(deleteEvent));
+		}
+	} // onDeleted.
+
+	@Subscriber
+	public void onCheckin(final ContentletCheckinEvent event) {
+
+		if (null != event && this.isPersona(event.getContentlet())) {
+
+			final ContentletCheckinEvent<Persona> checkinEvent =
+					ContentletCheckinEvent.wrapContentlet(this.fromContentlet(event.getContentlet()), event);
+
+			this.personaListenerList.stream()
+					.forEach(personaListener -> personaListener.onModified(checkinEvent));
+		}
+	} // onCheckin.
+
+	@Override
+	public void init() {
+
+		this.localSystemEventsAPI.subscribe(this);
+	}
+	/// Event stuff
+
 
 	@Override
 	public List<Field> getBasePersonaFields(Structure structure) {
@@ -305,8 +403,4 @@ public class PersonaAPIImpl implements PersonaAPI {
 		final Optional<Contentlet> persona = null != contentlets? contentlets.stream().findFirst():Optional.empty();
 		return persona.isPresent()? Optional.ofNullable(fromContentlet(persona.get())):Optional.empty();
 	}
-
-
-
-
 }

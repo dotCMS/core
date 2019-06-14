@@ -4,6 +4,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Optional;
 
+import com.dotmarketing.portlets.contentlet.model.ContentletListener;
 import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.DotStateException;
@@ -95,5 +96,9 @@ public interface PersonaAPI {
 	 */
     Optional<Persona> findPersonaByTag (final String personaTag, final User user, final boolean respectFrontEndRoles) throws DotSecurityException, DotDataException;
 
-
+	/**
+	 * Adds a persona listener
+	 * @param personaListener
+	 */
+	void addPersonaListener (final ContentletListener<Persona> personaListener);
 }

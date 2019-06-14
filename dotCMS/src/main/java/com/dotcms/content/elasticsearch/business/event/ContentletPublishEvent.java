@@ -24,7 +24,22 @@ public class ContentletPublishEvent<T extends Contentlet> implements Serializabl
         this.contentlet = contentlet;
         this.publish    = publish;
         this.user       = user;
-        this.date        = new Date();
+        this.date       = new Date();
+    }
+
+    private ContentletPublishEvent(final T contentlet,
+                                  final User user, final boolean publish, final Date date) {
+
+        this.contentlet = contentlet;
+        this.publish    = publish;
+        this.user       = user;
+        this.date       = date;
+    }
+
+    public static <C extends Contentlet> ContentletPublishEvent<C> wrapContentlet (final C contentlet,
+                                                                                   final ContentletPublishEvent event) {
+
+        return new ContentletPublishEvent<>(contentlet, event.user, event.publish, event.date);
     }
 
     public T getContentlet() {

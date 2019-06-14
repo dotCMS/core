@@ -22,8 +22,25 @@ public class ContentletArchiveEvent<T extends Contentlet> implements Serializabl
 
         this.archive    = archive;
         this.contentlet = contentlet;
-        this.user = user;
-        this.date = new Date();
+        this.user       = user;
+        this.date       = new Date();
+    }
+
+    private ContentletArchiveEvent(final T contentlet,
+                                   final User user,
+                                   final boolean archive,
+                                   final Date date) {
+
+        this.archive    = archive;
+        this.contentlet = contentlet;
+        this.user       = user;
+        this.date       = date;
+    }
+
+    public static <C extends Contentlet> ContentletArchiveEvent<C> wrapContentlet (final C contentlet,
+                                                                                   final ContentletArchiveEvent event) {
+
+        return new ContentletArchiveEvent<>(contentlet, event.user, event.archive, event.date);
     }
 
     public T getContentlet() {

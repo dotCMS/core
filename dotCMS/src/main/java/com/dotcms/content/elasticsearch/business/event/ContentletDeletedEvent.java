@@ -22,6 +22,20 @@ public class ContentletDeletedEvent<T extends Contentlet> implements Serializabl
         this.date = new Date();
     }
 
+    private ContentletDeletedEvent(final T contentlet, final User user,
+                                  final Date date) {
+        this.contentlet = contentlet;
+        this.user = user;
+        this.date = date;
+    }
+
+
+    public static <C extends Contentlet> ContentletDeletedEvent<C> wrapContentlet (final C contentlet,
+                                                                                   final ContentletDeletedEvent event) {
+
+        return new ContentletDeletedEvent<>(contentlet, event.user, event.date);
+    }
+
     public T getContentlet() {
         return this.contentlet;
     }

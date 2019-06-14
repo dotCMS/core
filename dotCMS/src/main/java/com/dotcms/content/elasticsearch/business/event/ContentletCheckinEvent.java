@@ -27,6 +27,23 @@ public class ContentletCheckinEvent<T extends Contentlet> implements Serializabl
         this.date = new Date();
     }
 
+    private ContentletCheckinEvent(final T contentlet,
+                                  final boolean newVersionCreated,
+                                  final User user, final Date date) {
+
+        this.contentlet = contentlet;
+        this.newVersionCreated = newVersionCreated;
+        this.user = user;
+        this.date = date;
+    }
+
+    public static <C extends Contentlet> ContentletCheckinEvent<C> wrapContentlet (final C contentlet,
+                                                                                   final ContentletCheckinEvent event) {
+
+        return new ContentletCheckinEvent<>(contentlet, event.newVersionCreated, event.user, event.date);
+    }
+
+
     public T getContentlet() {
         return contentlet;
     }
