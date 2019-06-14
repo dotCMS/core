@@ -5,6 +5,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.tag.model.Tag;
 
+import com.dotmarketing.util.Logger;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import java.util.function.Function;
 
@@ -15,6 +16,7 @@ public class TagTransform implements RestTransform<Tag, RestTag>{
 
     @Override
     public RestTag appToRest(Tag app) {
+        Logger.info(this, "TAG: " + app.toString());
         return toRest.apply(app);
     }
 
