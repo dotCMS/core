@@ -10,7 +10,8 @@ import {
     getOriginalStatus,
     getTagError,
     getTagHint,
-    updateStatus
+    updateStatus,
+    getHintId
 } from '../../utils';
 
 /**
@@ -97,6 +98,7 @@ export class DotSelectComponent {
             <Fragment>
                 <dot-label label={this.label} required={this.required} name={this.name}>
                     <select
+                        aria-describedby={getHintId(this.hint)}
                         class={getErrorClass(this.status.dotValid)}
                         id={getId(this.name)}
                         disabled={this.shouldBeDisabled()}

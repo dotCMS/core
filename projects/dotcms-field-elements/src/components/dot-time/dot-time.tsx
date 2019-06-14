@@ -16,7 +16,7 @@ import {
     DotFieldValueEvent,
     DotInputCalendarStatusEvent
 } from '../../models';
-import { checkProp, getClassNames, getTagError, getTagHint } from '../../utils';
+import { checkProp, getClassNames, getTagError, getTagHint, getHintId } from '../../utils';
 
 @Component({
     tag: 'dot-time',
@@ -133,6 +133,8 @@ export class DotTimeComponent {
             <Fragment>
                 <dot-label label={this.label} required={this.required} name={this.name}>
                     <dot-input-calendar
+                        aria-describedby={getHintId(this.hint)}
+                        tabIndex={this.hint ? 0 : null}
                         disabled={this.disabled}
                         type="time"
                         name={this.name}

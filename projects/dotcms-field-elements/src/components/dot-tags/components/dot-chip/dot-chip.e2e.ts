@@ -22,14 +22,18 @@ describe('dot-chip', () => {
                 await page.waitForChanges();
 
                 const label = await getLabel();
+                const button = await getButton();
                 expect(label.innerText).toBe('hello chip');
+                expect(await button.getAttribute('aria-label')).toBe('Delete hello chip');
             });
 
             it('should render default', async () => {
                 await page.waitForChanges();
 
                 const label = await getLabel();
+                const button = await getButton();
                 expect(label.innerText).toBe('');
+                expect(await button.getAttribute('aria-label')).toBeNull();
             });
         });
 

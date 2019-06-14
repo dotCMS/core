@@ -111,14 +111,16 @@ describe('dot-textarea', () => {
         });
 
         describe('hint', () => {
-            it('should set hint correctly', async () => {
+            it('should set hint correctly and set aria attribute', async () => {
                 element.setProperty('hint', 'Test');
                 await page.waitForChanges();
                 expect((await dotTestUtil.getHint(page)).innerText).toBe('Test');
+                expect(textarea.getAttribute('aria-describedby')).toBe('hint-test');
             });
 
-            it('should not render hint', async () => {
+            it('should not render hint and does not set aria attribute', async () => {
                 expect(await dotTestUtil.getHint(page)).toBeNull();
+                expect(textarea.getAttribute('aria-describedby')).toBeNull();
             });
 
             it('should not break hint with invalid hint value', async () => {

@@ -10,7 +10,8 @@ import {
     getTagHint,
     updateStatus,
     checkProp,
-    getId
+    getId,
+    getHintId
 } from '../../utils';
 
 /**
@@ -89,14 +90,18 @@ export class DotRadioComponent {
         return (
             <Fragment>
                 <dot-label label={this.label} required={this.required} name={this.name}>
-                    <div class="dot-radio__items">
+                    <div
+                        class="dot-radio__items"
+                        aria-describedby={getHintId(this.hint)}
+                        tabIndex={this.hint ? 0 : null}
+                        role="radiogroup">
                         {this._options.map((item: DotOption) => {
                             return (
                                 <label>
                                     <input
                                         checked={this.value.indexOf(item.value) >= 0 || null}
                                         class={getErrorClass(this.isValid())}
-                                        id={getId(this.name)}
+                                        name={getId(this.name)}
                                         disabled={this.disabled || null}
                                         onInput={(event: Event) => this.setValue(event)}
                                         type="radio"

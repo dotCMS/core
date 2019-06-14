@@ -39,10 +39,12 @@ export class KeyValueTableComponent {
     }
 
     private getRow(item: DotKeyValueField, index: number): JSX.Element {
+        const label = `${this.buttonLabel} ${item.key}, ${item.value}`;
         return (
             <tr>
                 <td>
                     <button
+                        aria-label={label}
                         disabled={this.disabled || null}
                         onClick={() => this.onDelete(index)}
                         class="dot-key-value__delete-button"

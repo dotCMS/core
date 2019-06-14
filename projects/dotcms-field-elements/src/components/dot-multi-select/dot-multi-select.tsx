@@ -10,7 +10,8 @@ import {
     getTagError,
     getTagHint,
     updateStatus,
-    checkProp
+    checkProp,
+    getHintId
 } from '../../utils';
 
 /**
@@ -101,6 +102,7 @@ export class DotMultiSelectComponent {
                 <dot-label label={this.label} required={this.required} name={this.name}>
                     <select
                         multiple
+                        aria-describedby={getHintId(this.hint)}
                         size={+this.size}
                         class={getErrorClass(this.status.dotValid)}
                         id={getId(this.name)}

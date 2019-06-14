@@ -25,7 +25,8 @@ import {
     getStringFromDotKeyArray,
     getTagError,
     getTagHint,
-    updateStatus
+    updateStatus,
+    getHintId
 } from '../../utils';
 
 const mapToKeyValue = ({ label, value }: DotOption) => {
@@ -172,11 +173,16 @@ export class DotKeyValueComponent {
     render() {
         return (
             <Fragment>
-                <dot-label label={this.label} required={this.required} name={this.name}>
+                <dot-label
+                    aria-describedby={getHintId(this.hint)}
+                    tabIndex={this.hint ? 0 : null}
+                    label={this.label}
+                    required={this.required}
+                    name={this.name}>
                     <key-value-form
                         onLostFocus={this.blurHandler.bind(this)}
                         add-button-label={this.formAddButtonLabel}
-                        disabled={this.disabled || null}
+                        disabled={this.isDisabled()}
                         key-label={this.formKeyLabel}
                         key-placeholder={this.formKeyPlaceholder}
                         value-label={this.formValueLabel}
@@ -187,7 +193,7 @@ export class DotKeyValueComponent {
                             e.preventDefault();
                         }}
                         button-label={this.listDeleteLabel}
-                        disabled={this.disabled || null}
+                        disabled={this.isDisabled()}
                         items={this.items}
                     />
                 </dot-label>
@@ -195,6 +201,10 @@ export class DotKeyValueComponent {
                 {getTagError(this.showErrorMessage(), this.getErrorMessage())}
             </Fragment>
         );
+    }
+
+    private isDisabled(): boolean {
+        return this.disabled || null;
     }
 
     private blurHandler(): void {

@@ -110,14 +110,19 @@ describe('dot-time', () => {
         });
 
         describe('hint', () => {
-            it('should set hint correctly', async () => {
+            it('should set hint and set aria attribute', async () => {
                 element.setProperty('hint', 'Test');
                 await page.waitForChanges();
                 expect((await dotTestUtil.getHint(page)).innerText).toBe('Test');
+                expect(inputCalendar.getAttribute('aria-describedby')).toBe('hint-test');
+                expect(inputCalendar.getAttribute('tabIndex')).toBe('0');
             });
 
-            it('should not render hint', async () => {
+            it('should not render and not set aria attribute', async () => {
                 expect(await dotTestUtil.getHint(page)).toBeNull();
+                expect(inputCalendar.getAttribute('aria-describedby')).toBeNull();
+                expect(inputCalendar.getAttribute('tabIndex')).toBeNull();
+
             });
         });
 

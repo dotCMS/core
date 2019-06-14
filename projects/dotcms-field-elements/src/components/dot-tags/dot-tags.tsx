@@ -9,6 +9,7 @@ import {
     getTagError,
     getTagHint,
     updateStatus,
+    getHintId,
     isStringType
 } from '../../utils';
 
@@ -91,12 +92,15 @@ export class DotTagsComponent {
         return (
             <Fragment>
                 <dot-label label={this.label} required={this.required} name={this.name}>
-                    <div class="dot-tags__container">
+                    <div
+                        aria-describedby={getHintId(this.hint)}
+                        tabIndex={this.hint ? 0 : null}
+                        class="dot-tags__container">
                         <dot-autocomplete
                             class={getErrorClass(this.status.dotValid)}
                             data={getData}
                             debounce={this.debounce}
-                            disabled={this.disabled}
+                            disabled={this.isDisabled()}
                             onLostFocus={() => this.blurHandler()}
                             onEnter={({ detail }: CustomEvent<string>) => {
                                 detail.split(',').forEach((label: string) => {
@@ -113,7 +117,7 @@ export class DotTagsComponent {
                         <div class="dot-tags__chips">
                             {this.getValues().map((tagLab: string) => (
                                 <dot-chip
-                                    disabled={this.disabled}
+                                    disabled={this.isDisabled()}
                                     label={tagLab}
                                     onRemove={this.removeTag.bind(this)}
                                 />
@@ -126,6 +130,10 @@ export class DotTagsComponent {
                 {getTagError(this.showErrorMessage(), this.getErrorMessage())}
             </Fragment>
         );
+    }
+
+    private isDisabled(): boolean {
+        return this.disabled || null;
     }
 
     private addTag(label: string): void {

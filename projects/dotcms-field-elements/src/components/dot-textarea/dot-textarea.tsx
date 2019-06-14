@@ -9,7 +9,8 @@ import {
     getErrorClass,
     updateStatus,
     getId,
-    checkProp
+    checkProp,
+    getHintId
 } from '../../utils';
 
 /**
@@ -101,6 +102,7 @@ export class DotTextareaComponent {
             <Fragment>
                 <dot-label label={this.label} required={this.required} name={this.name}>
                     <textarea
+                        aria-describedby={getHintId(this.hint)}
                         class={getErrorClass(this.status.dotValid)}
                         id={getId(this.name)}
                         name={this.name}

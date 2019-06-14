@@ -179,18 +179,23 @@ describe('dot-key-value', () => {
         });
 
         describe('hint', () => {
-            it('should render', async () => {
+            it('should render and set aria attribute', async () => {
                 element.setProperty('hint', 'Some hint');
                 await page.waitForChanges();
-
+                const container = await page.find('dot-label');
                 const hint = await dotTestUtil.getHint(page);
                 expect(hint.innerText).toBe('Some hint');
                 expect(hint.getAttribute('id')).toBe('hint-some-hint');
+                expect(container.getAttribute('aria-describedby')).toBe('hint-some-hint');
+                expect(container.getAttribute('tabIndex')).toBe('0');
             });
 
-            it('should not render', async () => {
+            it('should not render and not set aria attribute', async () => {
                 const hint = await dotTestUtil.getHint(page);
+                const container = await page.find('dot-label');
                 expect(hint).toBeNull();
+                expect(container.getAttribute('aria-describedby')).toBeNull();
+                expect(container.getAttribute('tabIndex')).toBeNull();
             });
 
             it('should handle invalid', async () => {

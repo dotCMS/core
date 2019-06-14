@@ -255,17 +255,23 @@ describe('dot-date-range', () => {
         });
 
         describe('hint', () => {
-            it('should render hint', async () => {
+            it('should render hint and set aria attribute', async () => {
                 const value = 'test';
                 element.setProperty('hint', value);
                 await page.waitForChanges();
+                const container = await page.find('.dot-range__body');
                 const hintElement = await dotTestUtil.getHint(page);
                 expect(hintElement.innerText).toBe(value);
+                expect(container.getAttribute('aria-describedby')).toBe('hint-test');
+                expect(container.getAttribute('tabIndex')).toBe('0');
             });
 
-            it('should not render hint', async () => {
+            it('should not render hint and not set aria attribute', async () => {
                 const hintElement = await dotTestUtil.getHint(page);
+                const container = await page.find('.dot-range__body');
                 expect(hintElement).toBeNull();
+                expect(container.getAttribute('tabIndex')).toBeNull();
+                expect(container.getAttribute('aria-describedby')).toBeNull();
             });
         });
 

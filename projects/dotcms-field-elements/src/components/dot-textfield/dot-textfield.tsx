@@ -9,7 +9,8 @@ import {
     getOriginalStatus,
     getTagError,
     getTagHint,
-    updateStatus
+    updateStatus,
+    getHintId
 } from '../../utils';
 
 /**
@@ -109,6 +110,7 @@ export class DotTextfieldComponent {
             <Fragment>
                 <dot-label label={this.label} required={this.required} name={this.name}>
                     <input
+                        aria-describedby={getHintId(this.hint)}
                         class={getErrorClass(this.status.dotValid)}
                         disabled={this.disabled || null}
                         id={getId(this.name)}

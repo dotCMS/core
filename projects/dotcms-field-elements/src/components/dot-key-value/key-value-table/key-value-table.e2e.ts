@@ -18,7 +18,7 @@ describe('key-value-table', () => {
 
     describe('@Props', () => {
         describe('items', () => {
-            it('should fill table with valid value', async () => {
+            it('should fill table with valid value and set aria label', async () => {
                 element.setProperty('items', [
                     { key: 'keyA', value: '1' },
                     { key: 'keyB', value: '2' }
@@ -26,20 +26,29 @@ describe('key-value-table', () => {
                 await page.waitForChanges();
 
                 const rows = await element.findAll('tr');
-
                 expect(rows.length).toBe(2);
-
                 expect(rows[0]).toEqualHtml(`
                     <tr>
-                        <td><button class="dot-key-value__delete-button">Delete</button></td>
+                        <td>
+                            <button
+                                aria-label="Delete keyA, 1"
+                                class="dot-key-value__delete-button">
+                                    Delete
+                             </button>
+                        </td>
                         <td>keyA</td>
                         <td>1</td>
                     </tr>
                 `);
-
                 expect(rows[1]).toEqualHtml(`
                     <tr>
-                        <td><button class="dot-key-value__delete-button">Delete</button></td>
+                        <td>
+                            <button
+                                aria-label="Delete keyB, 2"
+                                class="dot-key-value__delete-button">
+                                    Delete
+                                </button>
+                        </td>
                         <td>keyB</td>
                         <td>2</td>
                     </tr>

@@ -137,14 +137,20 @@ describe('dot-date-time', () => {
         });
 
         describe('hint', () => {
-            it('should set hint correctly', async () => {
+            it('should render hint correctly and set aria attribute', async () => {
                 element.setProperty('hint', 'Test');
                 await page.waitForChanges();
+                const dateTimeBody = await page.find('.dot-date-time__body');
                 expect((await dotTestUtil.getHint(page)).innerText).toBe('Test');
+                expect(dateTimeBody.getAttribute('aria-describedby')).toBe('hint-test');
+                expect(dateTimeBody.getAttribute('tabIndex')).toBe('0');
             });
 
-            it('should not render hint', async () => {
+            it('should not render hint and not set aria attribute', async () => {
+                const dateTimeBody = await page.find('.dot-date-time__body');
                 expect(await dotTestUtil.getHint(page)).toBeNull();
+                expect(dateTimeBody.getAttribute('aria-describedby')).toBeNull();
+                expect(dateTimeBody.getAttribute('tabIndex')).toBeNull();
             });
         });
 

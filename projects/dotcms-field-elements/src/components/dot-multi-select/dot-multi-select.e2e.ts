@@ -190,17 +190,21 @@ describe('dot-multi-select', () => {
         });
 
         describe('hint', () => {
-            it('should render hint', async () => {
+            it('should render hint and set aria attr', async () => {
                 const value = 'test';
                 element.setProperty('hint', value);
                 await page.waitForChanges();
                 const hintElement = await dotTestUtil.getHint(page);
+                const selectElem = await getSelect(page);
                 expect(hintElement.innerText).toBe(value);
+                expect(selectElem.getAttribute('aria-describedby')).toBe('hint-test');
             });
 
             it('should not render hint', async () => {
                 const hintElement = await dotTestUtil.getHint(page);
+                const selectElem = await getSelect(page);
                 expect(hintElement).toBeNull();
+                expect(selectElem.getAttribute('aria-describedby')).toBeNull();
             });
 
             it('should not break and not render with invalid data', async () => {

@@ -20,7 +20,7 @@ import {
 } from '../../models';
 import { Components } from '../../components';
 import DotInputCalendar = Components.DotInputCalendar;
-import { checkProp, getClassNames, getTagError, getTagHint } from '../../utils';
+import { checkProp, getClassNames, getTagError, getTagHint, getHintId } from '../../utils';
 import { dotParseDate } from '../../utils/props/validators';
 
 const DATE_SUFFIX = '-date';
@@ -180,7 +180,10 @@ export class DotDateTimeComponent {
         return (
             <Fragment>
                 <dot-label label={this.label} required={this.required} name={this.name}>
-                    <div class="dot-date-time__body">
+                    <div
+                        class="dot-date-time__body"
+                        aria-describedby={getHintId(this.hint)}
+                        tabIndex={this.hint ? 0 : null}>
                         <label>
                             {this.dateLabel}
                             <dot-input-calendar
