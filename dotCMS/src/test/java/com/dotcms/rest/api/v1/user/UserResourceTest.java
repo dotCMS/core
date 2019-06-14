@@ -11,7 +11,6 @@ import static org.mockito.Mockito.when;
 import com.dotcms.UnitTestBase;
 import com.dotcms.api.system.user.UserService;
 import com.dotcms.cms.login.LoginServiceAPI;
-import javax.ws.rs.core.Response;
 import com.dotcms.rest.ErrorResponseHelper;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
@@ -37,7 +36,9 @@ import java.util.Locale;
 import java.util.Map;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import javax.ws.rs.core.Response;
 import org.apache.struts.Globals;
 import org.junit.Test;
 
@@ -51,6 +52,7 @@ public class UserResourceTest extends UnitTestBase {
     public void testUpdateUserNullValues() throws JSONException, DotSecurityException, DotDataException {
 
         final HttpServletRequest request  = mock(HttpServletRequest.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
         final HttpSession session  = mock(HttpSession.class);
         final WebResource webResource       = mock(WebResource.class);
         final ServletContext context = mock(ServletContext.class);
@@ -63,7 +65,7 @@ public class UserResourceTest extends UnitTestBase {
         Config.CONTEXT = context;
 
         when(initDataObject.getUser()).thenReturn(user);
-        when(webResource.init(null, true, request, true, null)).thenReturn(initDataObject);
+        when(webResource.init(null, request, response, true, null)).thenReturn(initDataObject);
         when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
         when(request.getSession()).thenReturn(session);
         when(request.getSession(false)).thenReturn(session);
@@ -74,7 +76,7 @@ public class UserResourceTest extends UnitTestBase {
         try {
 
             UpdateUserForm updateUserForm = new UpdateUserForm.Builder()/*.userId("dotcms.org.1")*/.givenName("Admin").surname("User Admin").email("admin@dotcms.com").build();
-            userResource.update(request, updateUserForm);
+            userResource.update(request, response, updateUserForm);
             fail ("Should throw a ValidationException");
         } catch (Exception e) {
             e.printStackTrace();
@@ -83,7 +85,7 @@ public class UserResourceTest extends UnitTestBase {
         try {
 
             UpdateUserForm updateUserForm = new UpdateUserForm.Builder().userId("dotcms.org.1")/*.givenName("Admin")*/.surname("User Admin").email("admin@dotcms.com").build();
-            userResource.update(request, updateUserForm);
+            userResource.update(request, response, updateUserForm);
             fail ("Should throw a ValidationException");
         } catch (Exception e) {
             e.printStackTrace();
@@ -92,7 +94,7 @@ public class UserResourceTest extends UnitTestBase {
         try {
 
             UpdateUserForm updateUserForm = new UpdateUserForm.Builder()/*.userId("dotcms.org.1")*/.givenName("Admin")/*.surname("User Admin")*/.email("admin@dotcms.com").build();
-            userResource.update(request, updateUserForm);
+            userResource.update(request, response, updateUserForm);
             fail ("Should throw a ValidationException");
         } catch (Exception e) {
             e.printStackTrace();
@@ -104,6 +106,7 @@ public class UserResourceTest extends UnitTestBase {
     @Test
     public void testUpdateWithoutPassword() throws Exception {
         HttpServletRequest request = RestUtilTest.getMockHttpRequest();
+        final HttpServletResponse httpServletResponse = mock(HttpServletResponse.class);
         HttpSession session = request.getSession();
         final UserService userService = mock(UserService.class);
         final RoleAPI roleAPI  = mock( RoleAPI.class );
@@ -129,7 +132,7 @@ public class UserResourceTest extends UnitTestBase {
         when(initDataObject.getUser()).thenReturn(user);
         when(userAPI.getSystemUser()).thenReturn(systemUser);
         when(userAPI.loadUserById("dotcms.org.1", systemUser, false)).thenReturn(user);
-        when(webResource.init(true, request, true)).thenReturn(initDataObject);
+        when(webResource.init(request, httpServletResponse, true)).thenReturn(initDataObject);
         when(request.getSession()).thenReturn(session);
         when(request.getSession(false)).thenReturn(session);
         when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(new Locale.Builder().setLanguage("en").setRegion("US").build());
@@ -149,7 +152,7 @@ public class UserResourceTest extends UnitTestBase {
                 .currentPassword("password")
                 .build();
 
-        Response response = userResource.update(request, updateUserForm);
+        Response response = userResource.update(request, httpServletResponse, updateUserForm);
         RestUtilTest.verifySuccessResponse(response);
 
         Map userMap = Map.class.cast(ResponseEntityView.class.cast(response.getEntity()).getEntity());
@@ -167,6 +170,7 @@ public class UserResourceTest extends UnitTestBase {
     @Test
     public void testUpdateWithPassword() throws Exception {
         HttpServletRequest request = RestUtilTest.getMockHttpRequest();
+        final HttpServletResponse httpServletResponse = mock(HttpServletResponse.class);
         HttpSession session = request.getSession();
         final UserService userService = mock(UserService.class);
         final RoleAPI roleAPI  = mock( RoleAPI.class );
@@ -192,7 +196,7 @@ public class UserResourceTest extends UnitTestBase {
         when(initDataObject.getUser()).thenReturn(user);
         when(userAPI.getSystemUser()).thenReturn(systemUser);
         when(userAPI.loadUserById("dotcms.org.1", systemUser, false)).thenReturn(user);
-        when(webResource.init(true, request, true)).thenReturn(initDataObject);
+        when(webResource.init(request, httpServletResponse, true)).thenReturn(initDataObject);
         when(request.getSession()).thenReturn(session);
         when(request.getSession(false)).thenReturn(session);
         when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(new Locale.Builder().setLanguage("en").setRegion("US").build());
@@ -213,7 +217,7 @@ public class UserResourceTest extends UnitTestBase {
                 .newPassword("new password")
                 .build();
 
-        Response response = userResource.update(request, updateUserForm);
+        Response response = userResource.update(request, httpServletResponse, updateUserForm);
         RestUtilTest.verifySuccessResponse(response);
 
         Map userMap = Map.class.cast(ResponseEntityView.class.cast(response.getEntity()).getEntity());
@@ -233,6 +237,7 @@ public class UserResourceTest extends UnitTestBase {
     @Test
     public void testUpdateWithIncorrectPassword() throws Exception {
         HttpServletRequest request = RestUtilTest.getMockHttpRequest();
+        final HttpServletResponse httpServletResponse = mock(HttpServletResponse.class);
         HttpSession session = request.getSession();
         final UserService userService = mock(UserService.class);
         final RoleAPI roleAPI  = mock( RoleAPI.class );
@@ -258,7 +263,7 @@ public class UserResourceTest extends UnitTestBase {
         when(initDataObject.getUser()).thenReturn(user);
         when(userAPI.getSystemUser()).thenReturn(systemUser);
         when(userAPI.loadUserById("dotcms.org.1", systemUser, false)).thenReturn(user);
-        when(webResource.init(true, request, true)).thenReturn(initDataObject);
+        when(webResource.init(request, httpServletResponse,true)).thenReturn(initDataObject);
         when(request.getSession()).thenReturn(session);
         when(request.getSession(false)).thenReturn(session);
         when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(new Locale.Builder().setLanguage("en").setRegion("US").build());
@@ -279,7 +284,7 @@ public class UserResourceTest extends UnitTestBase {
                 .newPassword("new password")
                 .build();
 
-        Response response = userResource.update(request, updateUserForm);
+        Response response = userResource.update(request, httpServletResponse, updateUserForm);
         assertEquals(response.getStatus(), 400);
     }
 
@@ -288,6 +293,7 @@ public class UserResourceTest extends UnitTestBase {
         String userFilter = "filter";
 
     	HttpServletRequest request = RestUtilTest.getMockHttpRequest();
+        final HttpServletResponse httpServletResponse = mock(HttpServletResponse.class);
         final UserService userService = mock(UserService.class);
         final RoleAPI roleAPI  = mock( RoleAPI.class );
         final UserAPI userAPI  = mock( UserAPI.class );
@@ -346,14 +352,16 @@ public class UserResourceTest extends UnitTestBase {
         when( roleAPI.doesUserHaveRoles(userId2, rolesId) ).thenReturn( false ) ;
         when( roleAPI.findRoleByFQN(Role.SYSTEM + " --> " + Role.LOGIN_AS) ).thenReturn( loginAsRole ) ;
         when( roleAPI.doesUserHaveRole(user3, loginAsRole) ).thenReturn( true ) ;
-        when( webResource.init(null, true, request, true, null)).thenReturn(initDataObject);
         when( initDataObject.getUser()).thenReturn(user3);
+        when( webResource.init(null, request, httpServletResponse, true, null)).thenReturn(initDataObject);
+
 
 
         UserResource userResource =
                 new UserResource(webResource, userAPI, userHelper, errorHelper);
 
-        Response response = userResource.loginAsData(request, userFilter, true);
+        Response response = userResource
+                .loginAsData(request, httpServletResponse, userFilter, true);
 
         RestUtilTest.verifySuccessResponse( response );
 

@@ -2,6 +2,10 @@ package com.dotcms.util;
 
 import com.dotcms.repackage.com.google.common.io.Files;
 import com.dotmarketing.util.Config;
+import com.liferay.portal.struts.MultiMessageResources;
+import com.liferay.portal.struts.MultiMessageResourcesFactory;
+import com.liferay.portal.util.WebAppPool;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -33,7 +37,11 @@ public class ConfigTestHelper extends Config {
 
             final ModuleConfig config = Mockito.mock(ModuleConfig.class);
             Mockito.when(context.getAttribute(Globals.MODULE_KEY)).thenReturn(config);
-            final MessageResources messages = Mockito.mock(MessageResources.class);
+            
+            // Set up language.properties files
+            final MultiMessageResources messages = (MultiMessageResources) new MultiMessageResourcesFactory().createResources("messages.Language,messages.Language-ext,messages.cms_language");
+            messages.setServletContext(context);
+            WebAppPool.put("dotcms.org", Globals.MESSAGES_KEY, messages);
             Mockito.when(context.getAttribute(Globals.MESSAGES_KEY)).thenReturn(messages);
 
             final String topPath = Files.createTempDir().getCanonicalPath();

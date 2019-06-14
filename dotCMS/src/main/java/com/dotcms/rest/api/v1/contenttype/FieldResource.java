@@ -8,17 +8,6 @@ import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.transform.field.JsonFieldTransformer;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -35,6 +24,18 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import org.glassfish.jersey.server.JSONP;
 
 /**
@@ -216,16 +217,16 @@ public class FieldResource implements Serializable {
 	@NoCache
 	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
 	public Response getContentTypeFieldByVar(@PathParam("typeId") final String typeId,
-			@PathParam("fieldVar") final String fieldVar, @Context final HttpServletRequest req)
+											 @PathParam("fieldVar") final String fieldVar, @Context final HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse)
 			throws DotDataException, DotSecurityException {
 
-		final InitDataObject initData = this.webResource.init(null, false, req, false, null);
-		final FieldAPI fapi = APILocator.getContentTypeFieldAPI();
+		this.webResource.init(null, httpServletRequest, httpServletResponse, false, null);
+		final FieldAPI typeFieldAPI = APILocator.getContentTypeFieldAPI();
 
 		Response response = null;
 		try {
 
-			Field field = fapi.byContentTypeIdAndVar(typeId, fieldVar);
+			Field field = typeFieldAPI.byContentTypeIdAndVar(typeId, fieldVar);
 
 			response = Response.ok(new ResponseEntityView(new JsonFieldTransformer(field).mapObject())).build();
 

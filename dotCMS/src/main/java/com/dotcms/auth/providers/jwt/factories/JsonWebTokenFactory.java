@@ -16,6 +16,7 @@ import io.jsonwebtoken.*;
 
 import java.io.Serializable;
 import java.security.Key;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -175,10 +176,25 @@ public class JsonWebTokenFactory implements Serializable {
 
         private String signToken(final JwtBuilder jwtBuilder) {
             //The JWT signature algorithm we will be using to sign the token
-            jwtBuilder.signWith(SignatureAlgorithm.HS256, this.getSigningKey());
+            jwtBuilder.setHeaderParam("typ", "JWT");
+            jwtBuilder.signWith(signatureAlgorithm(), this.getSigningKey());
             
             return jwtBuilder.compact();
         }
+        
+        /**
+         * this method returns the signatureAlgorithm
+         * @return
+         */
+        private SignatureAlgorithm signatureAlgorithm() {
+          final String algoFromKey  = this.getSigningKey().getAlgorithm();
+          return Arrays.asList(SignatureAlgorithm.values())
+            .stream()
+            .filter(algo -> algoFromKey.equals(algo.getJcaName()))
+            .findFirst()
+            .get();
+        }
+        
         
         
         
@@ -209,7 +225,7 @@ public class JsonWebTokenFactory implements Serializable {
         public JWToken parseToken(final String jsonWebToken, final String requestingIp) {
 
             final Jws<Claims> jws = Jwts.parser().setSigningKey(this.getSigningKey()).parseClaimsJws(jsonWebToken);
-
+            
             return validateToken(jws, resolveJWTokenType(jws), requestingIp);
 
         } // parseToken.
@@ -223,6 +239,15 @@ public class JsonWebTokenFactory implements Serializable {
                 claimException.setClaimValue(body.getSubject());
                 throw claimException;
             }
+            
+            
+            // Insure that we do not accept null or NONE algo and that it matches the
+            final String algo = jws.getHeader().getAlgorithm();
+            if(algo==null || algo.equalsIgnoreCase("none") || ! algo.equalsIgnoreCase(signatureAlgorithm().getValue())) {
+              throw new SignatureException( "Invalid JWT Signature Algorithm");
+            }
+            
+            
 
             // Validate the issuer is correct, meaning the same cluster id
             if (!this.getIssuer().equals(body.getIssuer())) {
