@@ -31,7 +31,7 @@ public class TempResourceTest {
   }
 
   HttpServletRequest mockRequest() {
-    return new MockSessionRequest(new MockHeaderRequest(new MockHttpRequest("localhost", "/").request(), "Origin", "localhost").request());
+    return new MockSessionRequest(new MockHeaderRequest(new MockHttpRequest("localhost", "/api/v1/tempResource").request(), "Origin", "localhost").request());
   }
   
   
