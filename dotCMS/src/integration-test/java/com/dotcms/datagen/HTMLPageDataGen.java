@@ -185,6 +185,7 @@ public class HTMLPageDataGen extends ContentletDataGen {
         htmlPageAsset.setIdentifier(identifier);
         htmlPageAsset.setIndexPolicy(IndexPolicy.WAIT_FOR);
         htmlPageAsset.setBoolProperty(Contentlet.IS_TEST_MODE, true);
+        htmlPageAsset.setProperty("hostFolder", folder.getIdentifier());
 
         for (Map.Entry<String, Object> element : properties.entrySet()) {
             htmlPageAsset.setProperty(element.getKey(), element.getValue());
