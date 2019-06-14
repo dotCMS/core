@@ -49,7 +49,7 @@ public class MoveFieldsForm {
                     ImmutableColumnField.class.getName().equals(fieldMap.get("clazz"));
 
             if (isLayoutField) {
-                fieldMap.put("name", String.format("fields-$d", layoutFieldIndex++));
+                fieldMap.put("name", String.format("fields-%d", layoutFieldIndex++));
             }
         }
     }
