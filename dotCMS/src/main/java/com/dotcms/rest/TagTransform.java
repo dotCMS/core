@@ -17,6 +17,9 @@ public class TagTransform implements RestTransform<Tag, RestTag>{
     @Override
     public RestTag appToRest(Tag app) {
         Logger.info(this, "TAG: " + app.toString());
+        final Host host = Sneaky.sneak(() -> APILocator.getHostAPI().find(app.getHostId(),
+                APILocator.systemUser(), false));
+        Logger.info(this,"HOST INFO: " + host.toString());
         return toRest.apply(app);
     }
 
@@ -33,7 +36,6 @@ public class TagTransform implements RestTransform<Tag, RestTag>{
     private final Function<Tag, RestTag> toRest = (app) -> {
         final Host host = Sneaky.sneak(() -> APILocator.getHostAPI().find(app.getHostId(),
                 APILocator.systemUser(), false));
-Logger.info(this,"HOST INFO: " + host.toString());
         return new RestTag.Builder()
             .key(app.getTagName())
             .label(app.getTagName())
