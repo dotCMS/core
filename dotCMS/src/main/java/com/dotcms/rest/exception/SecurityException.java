@@ -2,6 +2,7 @@ package com.dotcms.rest.exception;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 
 
 public class SecurityException extends WebApplicationException {
@@ -19,4 +20,8 @@ public class SecurityException extends WebApplicationException {
 		super(msg, Response.status(status).entity(msg).type("text/plain").build());
 	}
 
+	public SecurityException(String message, Throwable cause, Status status)
+			throws IllegalArgumentException {
+		super(message, cause, Response.status(status).entity(message).type("text/plain").build());
+	}
 }
