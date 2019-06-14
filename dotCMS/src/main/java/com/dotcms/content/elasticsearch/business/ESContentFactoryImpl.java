@@ -1795,7 +1795,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
                     .getTranslatedQuery(query + " --- " + sortBy);
 
 	        if(result != null) {
-                result.setQuery(lowercaseStringExceptMatchingTokens(query,
+                result.setQuery(lowercaseStringExceptMatchingTokens(result.getQuery(),
                         LUCENE_RESERVED_KEYWORDS_REGEX));
                 return result;
             }
