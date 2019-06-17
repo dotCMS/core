@@ -22,7 +22,6 @@ import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Date;
@@ -619,13 +618,6 @@ public class TagAPITest extends IntegrationTestBase {
 			host = conAPI.checkin(host, testUser, false);
 			host.setIndexPolicy(IndexPolicy.FORCE);
 			conAPI.publish(host, testUser, false);
-			assertTrue(conAPI.isInodeIndexed(host.getInode()));
-			assertTrue(conAPI.isInodeIndexed(host.getInode(), true));
-			try {
-				Thread.sleep(3000);
-			} catch (InterruptedException e) {
-				//Do nothing...
-			}
 
 			//Finds the new Host and set the Tag Storage to the new host id
 			newHost = hostAPI.findByName(hostName, systemUser, false);
@@ -635,13 +627,6 @@ public class TagAPITest extends IntegrationTestBase {
 			host = conAPI.checkin(host, testUser, false);
 			host.setIndexPolicy(IndexPolicy.FORCE);
 			conAPI.publish(host, testUser, false);
-			assertTrue(conAPI.isInodeIndexed(host.getInode()));
-			assertTrue(conAPI.isInodeIndexed(host.getInode(), true));
-			try {
-				Thread.sleep(3000);
-			} catch (InterruptedException e) {
-				//Do nothing...
-			}
 
 			//Gets the default Host Tags
 			List<Tag> tags = tagAPI.getTagsByHostId(defaultHostId);
