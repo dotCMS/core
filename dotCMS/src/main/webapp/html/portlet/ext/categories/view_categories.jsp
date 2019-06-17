@@ -683,21 +683,21 @@
 
                 switch (result) {
                     case 0:
-                        message = '<%= LanguageUtil.get(pageContext, "message.category.add") %>';
+                        message = `<%= LanguageUtil.get(pageContext, "message.category.add") %>`;
                         clearAddDialog();
                         if(!save) {
-                            message = '<%= LanguageUtil.get(pageContext, "message.category.update") %>';
+                            message = `<%= LanguageUtil.get(pageContext, "message.category.update") %>`;
                             showDotCMSSystemMessage(message);
                         }
                         break;
                     case 1:
-                        message = '<%= LanguageUtil.get(pageContext, "message.category.permission.error") %>';
+                        message = `<%= LanguageUtil.get(pageContext, "message.category.permission.error") %>`;
                         messageStyle = "color:red; font-size:11px;";
                         error = true;
                         clearAddDialog();
                         break;
                     case 2:
-                        message = '<%= LanguageUtil.get(pageContext, "error.category.folder.taken") %>';
+                        message = `<%= LanguageUtil.get(pageContext, "error.category.folder.taken") %>`;
                         messageStyle = "color:red; font-size:11px;";
                         break;
                     default:

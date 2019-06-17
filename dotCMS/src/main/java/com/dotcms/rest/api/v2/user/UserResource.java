@@ -2,11 +2,6 @@ package com.dotcms.rest.api.v2.user;
 
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import javax.ws.rs.*;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
@@ -17,8 +12,16 @@ import com.dotcms.util.pagination.UserPaginator;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
-
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import org.glassfish.jersey.server.JSONP;
 
 /**
  * This end-point provides access to information associated to dotCMS users.
@@ -51,18 +54,19 @@ public class UserResource {
     @JSONP
     @NoCache
     @Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
-    public final Response loginAsData(@Context final HttpServletRequest request,
+    public final Response loginAsData(@Context final HttpServletRequest httpServletRequest,
+                                      @Context final HttpServletResponse httpServletResponse,
                                       @QueryParam(PaginationUtil.FILTER)   final String filter,
                                       @QueryParam(PaginationUtil.PAGE) final int page,
                                       @QueryParam(PaginationUtil.PER_PAGE) final int perPage) {
 
-        final InitDataObject initData = webResource.init(null, true, request, true, null);
+        final InitDataObject initData = webResource.init(null, httpServletRequest, httpServletResponse, true, null);
 
         Response response = null;
         final User user = initData.getUser();
 
         try {
-            response = this.paginationUtil.getPage( request, user, filter, page, perPage );
+            response = this.paginationUtil.getPage( httpServletRequest, user, filter, page, perPage );
         } catch (Exception e) {
             if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
                 throw new ForbiddenException(e);

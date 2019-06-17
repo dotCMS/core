@@ -7,6 +7,12 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
+
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.util.EntityUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -41,7 +47,17 @@ public class SiteSearchAjaxActionTest {
 		String taskName = "SiteSearch Test "+UtilMethods.dateToHTMLDate(new Date(),"MM-dd-yyyy-HHmmss");
 
 		URL scheduleJobUrl = new URL(baseURL+"?indexhost="+UtilMethods.encodeURIComponent(host.getIdentifier())+"&RUN_NOW=false&QUARTZ_JOB_NAME="+UtilMethods.encodeURIComponent(taskName)+"&indexAlias=create-new&langToIndex="+APILocator.getLanguageAPI().getDefaultLanguage().getId()+"&includeExclude=exclude&paths="+UtilMethods.encodeURIComponent("*.vtl,*.css,*.js")+"&CRON_EXPRESSION="+UtilMethods.encodeURIComponent("0 0/60 * * * ?"));
-		IOUtils.toString(scheduleJobUrl.openStream(),"UTF-8");
+    //Execute the call
+
+		
+    try(CloseableHttpClient client = HttpClients.createDefault()){
+      HttpGet method = new HttpGet(scheduleJobUrl.toExternalForm());
+      method.setHeader("Origin" , ServletTestRunner.localRequest.get().getServerName() );
+      try(CloseableHttpResponse r = client.execute(method)){
+        EntityUtils.toString(r.getEntity());
+      }
+    }
+    
 		int currentAmountOfJobs = APILocator.getSiteSearchAPI().getTasks().size();
 		/**
 		 * Validate if the job was created
@@ -54,7 +70,14 @@ public class SiteSearchAjaxActionTest {
 		String newCronExpression="0 0/30 * * * ?";
 		String newPaths="*.vtl,*.css,*.js,*.vtl";
 		scheduleJobUrl = new URL(baseURL+"?indexhost="+UtilMethods.encodeURIComponent(host.getIdentifier())+"&RUN_NOW=false&QUARTZ_JOB_NAME="+UtilMethods.encodeURIComponent(taskName)+"&indexAlias=create-new&langToIndex="+APILocator.getLanguageAPI().getDefaultLanguage().getId()+"&includeExclude=exclude&paths="+UtilMethods.encodeURIComponent(newPaths)+"&CRON_EXPRESSION="+UtilMethods.encodeURIComponent(newCronExpression));
-		IOUtils.toString(scheduleJobUrl.openStream(),"UTF-8");
+
+    try(CloseableHttpClient client = HttpClients.createDefault()){
+      HttpGet method = new HttpGet(scheduleJobUrl.toExternalForm());
+      method.setHeader("Origin" , ServletTestRunner.localRequest.get().getServerName() );
+      try(CloseableHttpResponse r = client.execute(method)){
+        EntityUtils.toString(r.getEntity());
+      }
+    }
 
 		int newAmountOfJobs = APILocator.getSiteSearchAPI().getTasks().size();
 

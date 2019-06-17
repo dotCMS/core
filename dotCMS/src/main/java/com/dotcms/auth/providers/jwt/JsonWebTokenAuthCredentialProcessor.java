@@ -24,6 +24,8 @@ public interface JsonWebTokenAuthCredentialProcessor extends Serializable {
 
     /**
      * Process the authentication credentials based on the jwt authorization header (it should starts with BEARER prefix)
+     * this Authentication will only support {@link com.dotcms.auth.providers.jwt.beans.ApiToken},
+     * if {@link com.dotcms.auth.providers.jwt.beans.UserToken} is sent on the header a 400, BAD REQUEST will be returned
      * @param request {@link HttpServletRequest}
      * @return User
      */
