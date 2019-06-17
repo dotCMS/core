@@ -17,13 +17,11 @@ import com.luciad.imageio.webp.WebPWriteParam;
 public class WebPImageFilter extends ImageFilter {
 	public String[] getAcceptedParameters(){
 		return  new String[] {
-				"q (int) specifies quality",
-				"p (String) if set specifies progressive"
+				"q (int) between 0-100 specifies quality"
 		};
 	}
 	public File runFilter(File file,   Map<String, String[]> parameters) {
     int quality = parameters.get(getPrefix() +"q") != null?Integer.parseInt(parameters.get(getPrefix() +"q")[0]):85;
-    boolean progressive = (parameters.get(getPrefix() +"p") != null && Boolean.parseBoolean(parameters.get(getPrefix() +"p")[0]));
 
     
     Float q = new Float(quality);
@@ -50,12 +48,7 @@ public class WebPImageFilter extends ImageFilter {
         writeParam.setCompressionType("Lossy");
         writeParam.setCompressionQuality(q);
       }
-      
-      if(progressive) {
-        writeParam.setProgressiveMode(WebPWriteParam.MODE_DEFAULT);
-        
-      }
-      
+
       
       
 
