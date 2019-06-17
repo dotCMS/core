@@ -45,6 +45,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
@@ -58,22 +59,25 @@ import org.apache.tools.zip.ZipEntry;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
+import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
+import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest;
+import org.elasticsearch.action.admin.indices.alias.get.GetAliasesRequest;
 import org.elasticsearch.action.admin.indices.cache.clear.ClearIndicesCacheRequest;
 import org.elasticsearch.action.admin.indices.cache.clear.ClearIndicesCacheResponse;
+import org.elasticsearch.action.admin.indices.close.CloseIndexRequest;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.admin.indices.forcemerge.ForceMergeRequest;
 import org.elasticsearch.action.admin.indices.forcemerge.ForceMergeResponse;
+import org.elasticsearch.action.admin.indices.open.OpenIndexRequest;
 import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.index.IndexRequest;
-import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchScrollRequest;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
-import org.elasticsearch.client.AdminClient;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.client.IndicesAdminClient;
+import org.elasticsearch.client.GetAliasesResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.Requests;
 import org.elasticsearch.client.RestHighLevelClient;
@@ -712,42 +716,44 @@ public class ESIndexAPI {
 		final int curReplicas = health.getNumberOfReplicas();
 
 		if(curReplicas != replicas){
-			final Map newSettings = new HashMap();
+			final Map<String,Integer> newSettings = new HashMap<>();
 	        newSettings.put("number_of_replicas", replicas);
 
-			UpdateSettingsRequestBuilder usrb = new ESClient().getClient().admin().indices().prepareUpdateSettings(indexName);
-			usrb.setSettings(newSettings);
-			usrb.execute().actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
+			UpdateSettingsRequest request = new UpdateSettingsRequest(indexName);
+			request.settings(newSettings);
+			request.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
+			Sneaky.sneak(()->esclient.indices().putSettings(request, RequestOptions.DEFAULT));
 		}
 
 		AdminLogger.log(this.getClass(), "updateReplicas", "Replicas updated to index: " + indexName);
     }
 
-    public void putToIndex(String idx, String json, String id){
-	   try{
-		   Client client=new ESClient().getClient();
-
-		   IndexResponse response = client.prepareIndex(idx, SiteSearchAPI.ES_SITE_SEARCH_MAPPING, id)
-			        .setSource(json)
-			        .execute()
-			        .actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
-
-		} catch (Exception e) {
-		    Logger.error(ESIndexAPI.class, e.getMessage(), e);
-
-
-		}
-
-    }
+//    public void putToIndex(String idx, String json, String id){
+//	   try{
+//		   Client client=new ESClient().getClient();
+//
+//		   IndexResponse response = client.prepareIndex(idx, SiteSearchAPI.ES_SITE_SEARCH_MAPPING, id)
+//			        .setSource(json)
+//			        .execute()
+//			        .actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
+//
+//		} catch (Exception e) {
+//		    Logger.error(ESIndexAPI.class, e.getMessage(), e);
+//
+//
+//		}
+//
+//    }
 
     public void createAlias(String indexName, String alias) {
         try{
             // checking for existing alias
             if(getAliasToIndexMap(APILocator.getSiteSearchAPI().listIndices()).get(alias)==null) {
-                Client client = esclient.getClient();
-                IndicesAliasesRequest req = new IndicesAliasesRequest();
-                req.addAliasAction(IndicesAliasesRequest.AliasActions.add().alias(alias).index(indexName));
-                client.admin().indices().aliases(req).actionGet(30000L);
+                IndicesAliasesRequest request = new IndicesAliasesRequest();
+				request.addAliasAction(IndicesAliasesRequest.AliasActions.add().alias(alias)
+						.index(indexName));
+				request.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
+				esclient.indices().updateAliases(request, RequestOptions.DEFAULT);
             }
          } catch (Exception e) {
              Logger.error(ESIndexAPI.class, e.getMessage(), e);
@@ -760,27 +766,20 @@ public class ESIndexAPI {
     }
 
     public Map<String,String> getIndexAlias(String[] indexNames) {
-        Map<String,String> alias=new HashMap<String,String>();
-        try{
-            Client client = esclient.getClient();
-            ClusterStateRequest clusterStateRequest = Requests.clusterStateRequest()
-                    .routingTable(true)
-                    .nodes( true )
-                    .indices( indexNames );
-            MetaData md=client.admin().cluster().state(clusterStateRequest)
-                                                .actionGet(30000).getState().metaData();
 
-            for ( IndexMetaData imd : md ) {
-                for ( ObjectCursor<AliasMetaData> aliasCursor : imd.getAliases().values() ) {
-                    alias.put( imd.getIndex().getName(), aliasCursor.value.alias() );
-                }
-            }
+    	GetAliasesRequest request = new GetAliasesRequest();
+		request.indices(indexNames);
+		GetAliasesResponse response = Sneaky.sneak(()->esclient.indices()
+				.getAlias(request, RequestOptions.DEFAULT));
 
-            return alias;
-         } catch (Exception e) {
-             Logger.error(ESIndexAPI.class, e.getMessage(), e);
-             throw new RuntimeException(e);
-         }
+		Map<String,String> alias=new HashMap<>();
+
+		response.getAliases().forEach((indexName, value) -> {
+			final String aliasName = value.iterator().next().alias();
+			alias.put(indexName, aliasName);
+		});
+
+		return alias;
     }
 
     public String getIndexAlias(String indexName) {
@@ -789,7 +788,7 @@ public class ESIndexAPI {
 
     public Map<String,String> getAliasToIndexMap(List<String> indices) {
         Map<String,String> map=getIndexAlias(indices);
-        Map<String,String> mapReverse=new HashMap<String,String>();
+        Map<String,String> mapReverse=new HashMap<>();
         for (String idx : map.keySet())
             mapReverse.put(map.get(idx), idx);
         return mapReverse;
@@ -798,8 +797,9 @@ public class ESIndexAPI {
     public void closeIndex(String indexName) {
     	AdminLogger.log(this.getClass(), "closeIndex", "Trying to close index: " + indexName);
 
-        Client client=new ESClient().getClient();
-        client.admin().indices().close(new CloseIndexRequest(indexName)).actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
+		final CloseIndexRequest request = new CloseIndexRequest(indexName);
+		request.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
+        Sneaky.sneak(()->esclient.indices().close(request, RequestOptions.DEFAULT));
 
         AdminLogger.log(this.getClass(), "closeIndex", "Index: " + indexName + " closed");
     }
@@ -807,13 +807,18 @@ public class ESIndexAPI {
     public void openIndex(String indexName) {
     	AdminLogger.log(this.getClass(), "openIndex", "Trying to open index: " + indexName);
 
-        Client client=new ESClient().getClient();
-        client.admin().indices().open(new OpenIndexRequest(indexName)).actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
+        final OpenIndexRequest request = new OpenIndexRequest(indexName);
+		request.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
+		Sneaky.sneak(()->esclient.indices().open(new OpenIndexRequest(indexName));
 
         AdminLogger.log(this.getClass(), "openIndex", "Index: " + indexName + " opened");
     }
 
     public List<String> getClosedIndexes() {
+
+    	// new way
+
+		// old way
         Client client = new ESClient().getClient();
         ImmutableOpenMap<String, IndexMetaData>
             indexState =
