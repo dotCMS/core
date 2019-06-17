@@ -1,13 +1,10 @@
 package com.dotcms.rendering.velocity.servlet;
 
 import com.dotcms.enterprise.LicenseUtil;
-import com.dotcms.personalization.PersonalizationUtil;
-import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.BlockPageCache;
@@ -26,8 +23,6 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
-import com.liferay.util.StringPool;
-import org.apache.velocity.Template;
 import org.apache.velocity.context.Context;
 
 import javax.servlet.http.HttpServletRequest;

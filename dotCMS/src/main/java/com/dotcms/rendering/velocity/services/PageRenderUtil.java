@@ -14,10 +14,10 @@ import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -42,6 +42,7 @@ import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.VelocityUtil;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Table;
 import com.liferay.portal.model.User;
@@ -379,17 +380,31 @@ public class PageRenderUtil implements Serializable {
 
         final String containerIdentifier = container.getIdentifier();
         final String userContainerId     = getContainerUserId(container);
-        contextMap.put("containerIdentifier" + userContainerId, containerIdentifier);
+        contextMap.put("containerIdentifier" + VelocityUtil.escapeContextTokenIdentifier(userContainerId), containerIdentifier);
 
-        for (final String personalization : contentIdListByPersonalizationMap.keySet()) {
+        for (final String personalizationToken : contentIdListByPersonalizationMap.keySet()) {
 
-            final String[] contentStrList = contentIdListByPersonalizationMap.get(personalization).toArray(new String[0]);
+            final String personalization  =  VelocityUtil.escapeContextTokenIdentifier(personalizationToken);
+            final String[] contentStrList = contentIdListByPersonalizationMap.get(personalizationToken).toArray(new String[0]);
             contextMap.put("contentletList" + containerIdentifier + uniqueId + personalization, contentStrList);
 
             if (ContainerUUID.UUID_LEGACY_VALUE.equals(uniqueId)) { // todo: not sure about them
                 contextMap.put("contentletList" + containerIdentifier + ContainerUUID.UUID_START_VALUE + personalization, contentStrList);
             } else if (ContainerUUID.UUID_START_VALUE.equals(uniqueId)) {
                 contextMap.put("contentletList" + containerIdentifier + ContainerUUID.UUID_LEGACY_VALUE + personalization, contentStrList);
+            }
+        }
+
+        // todo: test if remove or not this fallback
+        final String currentPersonalization = WebAPILocator.getPersonalizationWebAPI().getContainerPersonalization();
+        if (contentIdListByPersonalizationMap.containsKey(currentPersonalization)) {
+            final String[] contentStrList = contentIdListByPersonalizationMap.get(currentPersonalization).toArray(new String[0]);
+            contextMap.put("contentletList" + containerIdentifier + uniqueId, contentStrList);
+
+            if (ContainerUUID.UUID_LEGACY_VALUE.equals(uniqueId)) {
+                contextMap.put("contentletList" + containerIdentifier + ContainerUUID.UUID_START_VALUE, contentStrList);
+            } else if (ContainerUUID.UUID_START_VALUE.equals(uniqueId)) {
+                contextMap.put("contentletList" + containerIdentifier + ContainerUUID.UUID_LEGACY_VALUE, contentStrList);
             }
         }
     } // setContentletListPerPersonalization.

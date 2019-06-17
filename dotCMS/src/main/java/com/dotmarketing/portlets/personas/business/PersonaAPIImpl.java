@@ -136,7 +136,7 @@ public class PersonaAPIImpl implements PersonaAPI {
 		query.append(liveWorkingDeleted);
 		if (parent instanceof Host) {
 			query.append(" +conFolder:SYSTEM_FOLDER");
-			query.append(" +conHost:(").append(parent.getIdentifier()).append(" ").append(Host.SYSTEM_HOST).append(")");
+			query.append(" +conHost:(").append(parent.getIdentifier()).append(" OR ").append(Host.SYSTEM_HOST).append(")");
 		}
 		else if (parent instanceof Folder) {
 			query.append(" +conFolder:").append(parent.getIdentifier()).append(" ");

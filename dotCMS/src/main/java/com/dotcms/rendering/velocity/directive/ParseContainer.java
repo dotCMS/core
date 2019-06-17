@@ -1,9 +1,9 @@
 package com.dotcms.rendering.velocity.directive;
 
-import com.dotcms.personalization.PersonalizationUtil;
 import com.dotmarketing.beans.MultiTree;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.util.UtilMethods;
-import jnr.ffi.Struct;
+import com.dotmarketing.util.VelocityUtil;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.context.InternalContextAdapter;
 import org.apache.velocity.exception.TemplateInitException;
@@ -48,12 +48,15 @@ public class ParseContainer extends DotDirective {
 	private void processContentletListPerPersona (final Context context, final String[] arguments) {
 
 		final String id 			 = arguments[0];
-		final String personalization = PersonalizationUtil.getContainerPersonalization();
+		final String personalization = WebAPILocator.getPersonalizationWebAPI().getContainerPersonalization();
 		final String uniqueId        = arguments.length > 1 && UtilMethods.isSet(arguments[1])? arguments[1] :  DEFAULT_UUID_VALUE;
-		final String containerId     = (String) context.get("containerIdentifier"+id);
+		final String containerId     = (String) context.get("containerIdentifier"+VelocityUtil.escapeContextTokenIdentifier(id));
 		final String key = "contentletList" + containerId + uniqueId;
-
-		context.put(key, context.get(key + personalization));
+		final Object personalizationPayload =
+				context.get(key + VelocityUtil.escapeContextTokenIdentifier(personalization));
+		if (null != personalizationPayload) {
+			context.put(key, personalizationPayload);
+		}
 
 	}
 
