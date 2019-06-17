@@ -1400,20 +1400,23 @@ public class ESContentletAPIImpl implements ContentletAPI {
             User user, boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException {
 
-        if (!UtilMethods.isSet(contentlet.getIdentifier())){
+        if (!UtilMethods.isSet(contentlet.getIdentifier())) {
             return Collections.emptyList();
         }
 
         if (rel.getChildStructureInode().equals(rel.getParentStructureInode())) {
-        return (List<Contentlet>) CollectionsUtils
-                .join(getRelatedChildren(contentlet, rel, user, respectFrontendRoles, -1, -1, null),
-                        getRelatedParents(contentlet, rel, user, respectFrontendRoles, -1, -1, null)).stream()
-                .collect(CollectionsUtils.toImmutableList());
-        }else{
-            if (rel.getChildStructureInode().equals(contentlet.getContentTypeId())){
+            return (List<Contentlet>) CollectionsUtils
+                    .join(getRelatedChildren(contentlet, rel, user, respectFrontendRoles, -1, -1,
+                            null),
+                            getRelatedParents(contentlet, rel, user, respectFrontendRoles, -1, -1,
+                                    null)).stream()
+                    .collect(CollectionsUtils.toImmutableList());
+        } else {
+            if (rel.getChildStructureInode().equals(contentlet.getContentTypeId())) {
                 return getRelatedParents(contentlet, rel, user, respectFrontendRoles, -1, -1, null);
-            } else{
-                return getRelatedChildren(contentlet, rel, user, respectFrontendRoles, -1, -1, null);
+            } else {
+                return getRelatedChildren(contentlet, rel, user, respectFrontendRoles, -1, -1,
+                        null);
             }
         }
     }
