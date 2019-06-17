@@ -67,6 +67,7 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.jetbrains.annotations.NotNull;
 
 import static com.dotmarketing.util.NumberUtil.toInt;
 import static com.dotmarketing.util.NumberUtil.toLong;
@@ -424,6 +425,7 @@ public class ContentResource {
         final User user = initData.getUser();
         final String render = paramsMap.get(RESTParams.RENDER.getValue());
         final String query = paramsMap.get(RESTParams.QUERY.getValue());
+        final String related = paramsMap.get(RESTParams.RELATED.getValue());
         final String id = paramsMap.get(RESTParams.ID.getValue());
         final String limitStr = paramsMap.get(RESTParams.LIMIT.getValue());
         final String offsetStr = paramsMap.get(RESTParams.OFFSET.getValue());
@@ -478,7 +480,20 @@ public class ContentResource {
             } else if (queryPassed = UtilMethods.isSet(query)) {
                 String tmDate = (String) request.getSession().getAttribute("tm_date");
                 String luceneQuery = processQuery(query);
-                contentlets = ContentUtils.pull(luceneQuery, offset, limit, orderBy, user, tmDate);
+
+                if (UtilMethods.isSet(related)){
+                    //Related identifier are expected this way: "ContentTypeVarName.FieldVarName:contentletIdentifier"
+                    //In case of multiple relationships, they must be sent as a comma separated list
+                    //i.e.: ContentTypeVarName1.FieldVarName1:contentletIdentifier1,ContentTypeVarName2.FieldVarName2:contentletIdentifier2
+                    for(String relationshipValue: related.split(",")){
+                        contentlets = getPullRelated(user, limit, contentlets, orderBy, tmDate,
+                                luceneQuery, relationshipValue);
+                    }
+                } else {
+                    contentlets = ContentUtils
+                            .pull(luceneQuery, offset, limit, orderBy, user, tmDate);
+                }
+
             }
 
         } catch (DotSecurityException e) {
@@ -488,10 +503,10 @@ public class ContentResource {
         } catch (Exception e) {
             if (idPassed) {
                 Logger.warn(this, "Can't find Content with Identifier: " + id);
-            } else if (queryPassed) {
-                Logger.warn(this, "Can't find Content with Inode: " + inode);
-            } else if (inodePassed) {
+            } else if (queryPassed || UtilMethods.isSet(related)) {
                 Logger.warn(this, "Error searching Content : " + e.getMessage());
+            } else if (inodePassed) {
+                Logger.warn(this, "Can't find Content with Inode: " + inode);
             }
             status = Optional.of(Status.INTERNAL_SERVER_ERROR);
         }
@@ -508,6 +523,48 @@ public class ContentResource {
         }
 
         return responseResource.response(result, null, status);
+    }
+
+    /**
+     *
+     * @param user
+     * @param limit
+     * @param contentlets
+     * @param orderBy
+     * @param tmDate
+     * @param luceneQuery
+     * @param relationshipValue
+     * @return
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @NotNull
+    private List<Contentlet> getPullRelated(User user, int limit, List<Contentlet> contentlets,
+            String orderBy, String tmDate, String luceneQuery, String relationshipValue)
+            throws DotSecurityException, DotDataException {
+        final String contentTypeVar = relationshipValue.split(":")[0].split("\\.")[0];
+        final String fieldVar = relationshipValue.split(":")[0].split("\\.")[1];
+        final String relatedIdentifier = relationshipValue.split(":")[1];
+
+        ContentType relatedContentType = APILocator.getContentTypeAPI(user).find(contentTypeVar);
+
+        final Relationship relationship = APILocator.getRelationshipAPI()
+                .getRelationshipFromField(relatedContentType.fieldMap().get(fieldVar),
+                        user);
+
+        List<Contentlet> pullRelated = ContentUtils
+                .pullRelated(relationship.getRelationTypeValue(), relatedIdentifier,
+                        luceneQuery, relationship.hasParents(), limit, orderBy, user,
+                        tmDate);
+
+        if (contentlets.isEmpty()){
+            contentlets.addAll(pullRelated);
+        } else{
+            //filter the intersection in case multiple relationship
+            contentlets = contentlets.stream().filter(pullRelated::contains).collect(
+                    Collectors.toList());
+        }
+        return contentlets;
     }
 
     /**

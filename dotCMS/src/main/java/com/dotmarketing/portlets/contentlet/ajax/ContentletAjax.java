@@ -89,6 +89,7 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+import com.liferay.util.StringPool;
 import com.liferay.util.servlet.SessionMessages;
 import java.io.File;
 import java.io.IOException;
@@ -552,6 +553,7 @@ public class ContentletAjax {
 		Map<String, Object> lastSearchMap = new HashMap<String, Object>();
 
 		List<String> relatedIdentifiers = new ArrayList();
+		final StringBuilder relatedQueryByChild = new StringBuilder();
 
 		if (UtilMethods.isSet(sess)) {
 	    sess.removeAttribute("structureSelected");
@@ -660,6 +662,12 @@ public class ContentletAjax {
                                     currentUser, false, RELATIONSHIPS_FILTER_CRITERIA_SIZE,
                                     offset / RELATIONSHIPS_FILTER_CRITERIA_SIZE, orderBy).stream()
                             .map(cont -> cont.getIdentifier()).collect(Collectors.toList());
+
+                    if (relatedQueryByChild.length() > 0) {
+                        relatedQueryByChild.append(StringPool.COMMA);
+                    }
+
+                    relatedQueryByChild.append(fieldName).append(StringPool.COLON).append(fieldValue);
 
                     if (!relatedContent.isEmpty()) {
                         //creates an intersection of identifiers when filtering by multiple relationship fields
@@ -930,7 +938,7 @@ public class ContentletAjax {
 		lastSearchMap.put("orderBy", orderBy);
 
 		luceneQuery.append(" +working:true");
-
+        final String luceneQueryToShow= luceneQuery.toString().replaceAll("\\s+", " ");
 		//filter related content
         if (!relatedIdentifiers.isEmpty()) {
             luceneQuery.append(" +identifier:(")
@@ -1178,12 +1186,14 @@ public class ContentletAjax {
 			counters.put("hasNext", perPage < hits.size());
 
 		// Data to show in the bottom content listing page
-		String luceneQueryToShow2= luceneQuery.toString();		
+		String luceneQueryToShow2= luceneQuery.toString();
 		luceneQueryToShow2=luceneQueryToShow2.replaceAll("\\+languageId:[0-9]*\\*?","").replaceAll("\\+deleted:[a-zA-Z]*","")
 			.replaceAll("\\+working:[a-zA-Z]*","").replaceAll("\\s+", " ").trim();
-		String luceneQueryToShow= luceneQuery.toString().replaceAll("\\s+", " ");
+
 		counters.put("luceneQueryRaw", luceneQueryToShow);
 		counters.put("luceneQueryFrontend", luceneQueryToShow2.replace("\"","\\${esc.quote}"));
+        counters.put("relatedQueryByChild",
+                relatedQueryByChild.length() > 0 ? relatedQueryByChild.toString() : null);
 		counters.put("sortByUF", orderBy);
 		counters.put("expiredInodes", expiredInodes);
 
