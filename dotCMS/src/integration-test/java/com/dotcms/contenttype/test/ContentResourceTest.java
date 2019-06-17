@@ -134,9 +134,11 @@ public class ContentResourceTest extends IntegrationTestBase {
 
     public static class PullRelatedTestCase {
         boolean pullFromParent;
+        boolean addQuery;
 
-        public PullRelatedTestCase(final boolean pullFromParent) {
+        public PullRelatedTestCase(final boolean pullFromParent, final boolean addQuery) {
             this.pullFromParent = pullFromParent;
+            this.addQuery = addQuery;
         }
     }
 
@@ -168,8 +170,10 @@ public class ContentResourceTest extends IntegrationTestBase {
     @DataProvider
     public static Object[] relatedTestCases(){
         return new PullRelatedTestCase[]{
-                new PullRelatedTestCase(false),
-                new PullRelatedTestCase(true)
+                new PullRelatedTestCase(false, true),
+                new PullRelatedTestCase(false, false),
+                new PullRelatedTestCase(true, false),
+                new PullRelatedTestCase(true, true)
         };
     }
 
@@ -428,9 +432,9 @@ public class ContentResourceTest extends IntegrationTestBase {
             final ContentResource contentResource = new ContentResource();
             final HttpServletRequest request = createHttpRequest(null, null);
             final HttpServletResponse response = mock(HttpServletResponse.class);
-            final Response endpointResponse = contentResource.getContent(request, response,
+            final Response endpointResponse = contentResource.getContent(request, response, (testCase.addQuery?
                     "/query/+identifier:" + (testCase.pullFromParent ? parent1.getIdentifier()
-                            : child1.getIdentifier()) + "/live/false/type/json"
+                            : child1.getIdentifier()):"") + "/live/false/type/json"
                             + pullRelatedQuery);
 
             assertEquals(Status.OK.getStatusCode(), endpointResponse.getStatus());
@@ -439,12 +443,16 @@ public class ContentResourceTest extends IntegrationTestBase {
             final JSONObject json = new JSONObject(endpointResponse.getEntity().toString());
             final JSONArray contentlets = json.getJSONArray("contentlets");
 
-            assertEquals(1, contentlets.length());
+            assertEquals((!testCase.pullFromParent && !testCase.addQuery)?2:1, contentlets.length());
 
             final JSONObject contentlet = (JSONObject) contentlets.get(0);
             assertEquals(
                     (testCase.pullFromParent ? parent1.getIdentifier() : child1.getIdentifier()),
                     contentlet.get(IDENTIFIER));
+
+            if ((!testCase.pullFromParent && !testCase.addQuery)){
+                assertEquals(child2.getIdentifier(),((JSONObject) contentlets.get(1)).get(IDENTIFIER));
+            }
 
         }finally{
             deleteContentTypes(CollectionsUtils

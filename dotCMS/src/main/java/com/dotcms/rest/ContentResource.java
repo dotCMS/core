@@ -461,6 +461,7 @@ public class ContentResource {
         Optional<Status> status = Optional.empty();
         String type = paramsMap.get(RESTParams.TYPE.getValue());
         String orderBy = paramsMap.get(RESTParams.ORDERBY.getValue());
+        final String tmDate = (String) request.getSession().getAttribute("tm_date");
 
         type = UtilMethods.isSet(type) ? type : "json";
         orderBy = UtilMethods.isSet(orderBy) ? orderBy : "modDate desc";
@@ -477,23 +478,17 @@ public class ContentResource {
                         this.contentHelper.hydrateContentlet(APILocator.getContentletAPI()
                                 .find(inode, user, respectFrontendRoles)))
                         .ifPresent(contentlets::add);
-            } else if (queryPassed = UtilMethods.isSet(query)) {
-                String tmDate = (String) request.getSession().getAttribute("tm_date");
-                String luceneQuery = processQuery(query);
-
-                if (UtilMethods.isSet(related)){
-                    //Related identifier are expected this way: "ContentTypeVarName.FieldVarName:contentletIdentifier"
-                    //In case of multiple relationships, they must be sent as a comma separated list
-                    //i.e.: ContentTypeVarName1.FieldVarName1:contentletIdentifier1,ContentTypeVarName2.FieldVarName2:contentletIdentifier2
-                    for(String relationshipValue: related.split(",")){
-                        contentlets = getPullRelated(user, limit, contentlets, orderBy, tmDate,
-                                luceneQuery, relationshipValue);
-                    }
-                } else {
-                    contentlets = ContentUtils
-                            .pull(luceneQuery, offset, limit, orderBy, user, tmDate);
+            } else if (UtilMethods.isSet(related)){
+                //Related identifier are expected this way: "ContentTypeVarName.FieldVarName:contentletIdentifier"
+                //In case of multiple relationships, they must be sent as a comma separated list
+                //i.e.: ContentTypeVarName1.FieldVarName1:contentletIdentifier1,ContentTypeVarName2.FieldVarName2:contentletIdentifier2
+                for(String relationshipValue: related.split(",")){
+                    contentlets = getPullRelated(user, limit, contentlets, orderBy, tmDate,
+                            processQuery(query), relationshipValue);
                 }
-
+            } else if (queryPassed = UtilMethods.isSet(query)){
+                contentlets = ContentUtils
+                        .pull(processQuery(query), offset, limit, orderBy, user, tmDate);
             }
 
         } catch (DotSecurityException e) {
