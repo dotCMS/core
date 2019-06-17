@@ -1396,30 +1396,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return permissionAPI.filterCollection(contentFactory.getRelatedLinks(contentlet), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
     }
 
-    private List<Contentlet> filterRelatedContent(Contentlet contentlet, Relationship rel,
-            User user, boolean respectFrontendRoles)
-            throws DotDataException, DotSecurityException {
-
-        if (!UtilMethods.isSet(contentlet.getIdentifier())){
-            return Collections.emptyList();
-        }
-
-        if (rel.getChildStructureInode().equals(rel.getParentStructureInode())) {
-        return (List<Contentlet>) CollectionsUtils
-                .join(getRelatedChildren(contentlet, rel, user, respectFrontendRoles),
-                        getRelatedParents(contentlet, rel, user, respectFrontendRoles)).stream()
-                .collect(CollectionsUtils.toImmutableList());
-        }else{
-            if (rel.getChildStructureInode().equals(contentlet.getContentTypeId())){
-                return getRelatedParents(contentlet, rel, user, respectFrontendRoles);
-            } else{
-                return getRelatedChildren(contentlet, rel, user, respectFrontendRoles);
-            }
-        }
-    }
-
-    private List<Contentlet> filterRelatedContent(Contentlet contentlet, Relationship rel,
-            User user, boolean respectFrontendRoles, boolean pullByParent)
+    public List<Contentlet> filterRelatedContent(Contentlet contentlet, Relationship rel,
+            User user, boolean respectFrontendRoles, Boolean pullByParent)
             throws DotDataException, DotSecurityException {
 
         if (!UtilMethods.isSet(contentlet.getIdentifier())){
@@ -1430,6 +1408,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 .sameParentAndChild(rel);
 
         if (isSameStructureRelationship){
+            if (pullByParent == null){
+                return (List<Contentlet>) CollectionsUtils
+                        .join(getRelatedChildren(contentlet, rel, user, respectFrontendRoles),
+                                getRelatedParents(contentlet, rel, user, respectFrontendRoles)).stream()
+                        .collect(CollectionsUtils.toImmutableList());
+            }
             if (pullByParent){
                 return getRelatedChildren(contentlet, rel, user, respectFrontendRoles).stream()
                         .collect(CollectionsUtils.toImmutableList());
@@ -1452,9 +1436,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
         try {
-            return permissionAPI.filterCollection(
-                    filterRelatedContent(contentlet, rel, user, respectFrontendRoles),
-                    PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
+            return getRelatedContent(contentlet, rel, null, user, respectFrontendRoles);
         } catch (Exception e) {
             final String errorMessage =
                     "Unable to look up related content for contentlet with identifier "
@@ -1539,12 +1521,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @CloseDBIfOpened
     @Override
     public List<Contentlet> getRelatedContent(Contentlet contentlet, Relationship rel,
-            boolean pullByParent, User user, boolean respectFrontendRoles)
+            Boolean pullByParent, User user, boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException {
         try {
-            return permissionAPI.filterCollection(
-                    filterRelatedContent(contentlet, rel, user, respectFrontendRoles, pullByParent),
-                    PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
+            final String fieldVariable = rel.isRelationshipField() ?
+                    rel.getParentStructureInode().equals(contentlet.getContentTypeId()) ? rel
+                            .getChildRelationName() : rel.getParentRelationName()
+                    : rel.getRelationTypeValue();
+            return contentlet.getRelated(fieldVariable, user, respectFrontendRoles, pullByParent);
         } catch (Exception e) {
             final String errorMessage =
                     "Unable to look up related content for contentlet with identifier "
@@ -1560,7 +1544,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     /**
-     * @deprecated Use {@link ContentletAPI#getRelatedContent(Contentlet, Relationship, User, boolean)} instead
+     * @deprecated Use {@link ContentletAPI#getRelatedContent(Contentlet, Relationship, Boolean, User, boolean)} instead
      * @param contentlet
      * @param rel
      * @param pullByParent
@@ -1576,7 +1560,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throws DotDataException, DotSecurityException {
 
         try {
-            return filterRelatedContent(contentlet, rel, user, respectFrontendRoles, pullByParent);
+            return getRelatedContent(contentlet, rel, pullByParent, user, respectFrontendRoles);
         } catch (Exception e){
             final String errorMessage = "Unable to look up related content for contentlet with identifier "
                     + contentlet.getIdentifier() + ". Relationship Name: " + rel.getRelationTypeValue();
