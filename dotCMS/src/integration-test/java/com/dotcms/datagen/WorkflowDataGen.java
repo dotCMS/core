@@ -70,8 +70,20 @@ public class WorkflowDataGen extends AbstractDataGen<WorkflowScheme> {
     }
 
     /**
+     * feed the builder with a the workflow step and actions definition.
+     * @param workflowStepsAndActions Takes a List conformed by a Tuple of 2 the first value on the tuple is the Step name.
+     * The second component of the tuple is a list that basically represents the actions definition for each step.
+     *.asList(
+     *  Tuple.of("Editing",  <-- Workflow step
+     *    Arrays.asList(  <-- Step Definitions
+     *      Tuple.of("Save as Draft", "Current Step", EnumSet.of(EDITING, LOCKED, NEW, PUBLISHED, UNPUBLISHED)), <-- Step Name, Next Step Name, And a Set of the showOnStates
+     *      Tuple.of("Send for Review", "Review",  EnumSet.of(EDITING, UNLOCKED, NEW, UNPUBLISHED)),
+     *      Tuple.of("Send to Legal", "Legal Approval", EnumSet.of(EDITING, UNLOCKED, NEW, PUBLISHED, UNPUBLISHED)),
+     *      Tuple.of("Publish", "Published", EnumSet.of(EDITING, LISTING, UNLOCKED, NEW, PUBLISHED, UNPUBLISHED))
+     *     )
+     *   )
+     * )
      *
-     * @param workflowStepsAndActions
      * @return
      */
     public WorkflowDataGen stepAndAction(

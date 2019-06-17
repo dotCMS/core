@@ -24,9 +24,17 @@ import java.util.Set;
 
 public class TestWorkflowUtils {
 
+    public static WorkflowScheme getDocumentWorkflow() throws DotDataException{
+        return getDocumentWorkflow(null);
+    }
 
-    public static WorkflowScheme getDocumentWorkflow() throws DotDataException {
-        WorkflowScheme documentWorkflow = APILocator.getWorkflowAPI().findSchemeByName(DM_WORKFLOW);
+    public static WorkflowScheme getDocumentWorkflow(String workFlowName) throws DotDataException {
+        if(null == workFlowName){
+            workFlowName = DM_WORKFLOW;
+        } else {
+            workFlowName = workFlowName + System.currentTimeMillis();
+        }
+        WorkflowScheme documentWorkflow = APILocator.getWorkflowAPI().findSchemeByName(workFlowName);
         if (null == documentWorkflow) {
 
             final List<Tuple2<String, List<Tuple3<String, String, Set<WorkflowState>>>>> workflowStepsAndActions = Arrays
