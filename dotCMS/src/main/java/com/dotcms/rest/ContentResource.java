@@ -504,9 +504,20 @@ public class ContentResource {
                 //Related identifier are expected this way: "ContentTypeVarName.FieldVarName:contentletIdentifier"
                 //In case of multiple relationships, they must be sent as a comma separated list
                 //i.e.: ContentTypeVarName1.FieldVarName1:contentletIdentifier1,ContentTypeVarName2.FieldVarName2:contentletIdentifier2
+                int i = 0;
                 for(String relationshipValue: related.split(",")){
-                    contentlets = getPullRelated(user, limit, contentlets, orderBy, tmDate,
-                            processQuery(query), relationshipValue);
+                    if (i == 0) {
+                        contentlets.addAll(getPullRelated(user, limit, contentlets, orderBy, tmDate,
+                                processQuery(query), relationshipValue));
+                    } else {
+                        //filter the intersection in case multiple relationship
+                        contentlets = contentlets.stream()
+                                .filter(getPullRelated(user, limit, contentlets, orderBy, tmDate,
+                                        processQuery(query), relationshipValue)::contains).collect(
+                                        Collectors.toList());
+                    }
+
+                    i++;
                 }
             } else if (queryPassed = UtilMethods.isSet(query)){
                 contentlets = ContentUtils
@@ -574,14 +585,7 @@ public class ContentResource {
                         luceneQuery, relationship.hasParents(), limit, orderBy, user,
                         tmDate);
 
-        if (contentlets.isEmpty()){
-            contentlets.addAll(pullRelated);
-        } else{
-            //filter the intersection in case multiple relationship
-            contentlets = contentlets.stream().filter(pullRelated::contains).collect(
-                    Collectors.toList());
-        }
-        return contentlets;
+        return pullRelated;
     }
 
     /**

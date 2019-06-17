@@ -134,11 +134,14 @@ public class ContentResourceTest extends IntegrationTestBase {
 
     public static class PullRelatedTestCase {
         boolean pullFromParent;
+        boolean multipleMatch;
         boolean addQuery;
 
-        public PullRelatedTestCase(final boolean pullFromParent, final boolean addQuery) {
+        public PullRelatedTestCase(final boolean pullFromParent, final boolean addQuery,
+                final boolean multipleMatch) {
             this.pullFromParent = pullFromParent;
             this.addQuery = addQuery;
+            this.multipleMatch = multipleMatch;
         }
     }
 
@@ -170,10 +173,11 @@ public class ContentResourceTest extends IntegrationTestBase {
     @DataProvider
     public static Object[] relatedTestCases(){
         return new PullRelatedTestCase[]{
-                new PullRelatedTestCase(false, true),
-                new PullRelatedTestCase(false, false),
-                new PullRelatedTestCase(true, false),
-                new PullRelatedTestCase(true, true)
+                new PullRelatedTestCase(false, true, true),
+                new PullRelatedTestCase(false, false, true),
+                new PullRelatedTestCase(true, false, true),
+                new PullRelatedTestCase(true, false, false),
+                new PullRelatedTestCase(true, true, true)
         };
     }
 
@@ -418,11 +422,18 @@ public class ContentResourceTest extends IntegrationTestBase {
             //Get related from parent
             if (testCase.pullFromParent) {
                 pullRelatedQuery.append("/related/").append(parentContentType.variable())
-                        .append(StringPool.PERIOD).append(parentField1.variable())
-                        .append(StringPool.COLON).append(child1.getIdentifier())
-                        .append(StringPool.COMMA).append(parentContentType.variable())
+                        .append(StringPool.PERIOD).append(parentField1.variable());
+
+                if (testCase.multipleMatch) {
+                    pullRelatedQuery.append(StringPool.COLON).append(child1.getIdentifier());
+                } else{
+                    pullRelatedQuery.append(StringPool.COLON).append("invalid_id");
+                }
+
+                pullRelatedQuery.append(StringPool.COMMA).append(parentContentType.variable())
                         .append(StringPool.PERIOD).append(parentField2.variable())
                         .append(StringPool.COLON).append(anotherChild.getIdentifier());
+
             } else{
                 pullRelatedQuery.append("/related/").append(childContentType1.variable())
                         .append(StringPool.PERIOD).append(childField.variable())
@@ -443,15 +454,23 @@ public class ContentResourceTest extends IntegrationTestBase {
             final JSONObject json = new JSONObject(endpointResponse.getEntity().toString());
             final JSONArray contentlets = json.getJSONArray("contentlets");
 
-            assertEquals((!testCase.pullFromParent && !testCase.addQuery)?2:1, contentlets.length());
+            if (!testCase.multipleMatch){
+                assertEquals(0,
+                        contentlets.length());
+            } else {
+                assertEquals((!testCase.pullFromParent && !testCase.addQuery) ? 2 : 1,
+                        contentlets.length());
 
-            final JSONObject contentlet = (JSONObject) contentlets.get(0);
-            assertEquals(
-                    (testCase.pullFromParent ? parent1.getIdentifier() : child1.getIdentifier()),
-                    contentlet.get(IDENTIFIER));
+                final JSONObject contentlet = (JSONObject) contentlets.get(0);
+                assertEquals(
+                        (testCase.pullFromParent ? parent1.getIdentifier()
+                                : child1.getIdentifier()),
+                        contentlet.get(IDENTIFIER));
 
-            if ((!testCase.pullFromParent && !testCase.addQuery)){
-                assertEquals(child2.getIdentifier(),((JSONObject) contentlets.get(1)).get(IDENTIFIER));
+                if ((!testCase.pullFromParent && !testCase.addQuery)) {
+                    assertEquals(child2.getIdentifier(),
+                            ((JSONObject) contentlets.get(1)).get(IDENTIFIER));
+                }
             }
 
         }finally{
