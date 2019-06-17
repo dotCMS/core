@@ -211,7 +211,10 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
         }
 
         try {
-            return templateAPI.saveTemplate(template, host, user, false);
+            final Template savedTemplate = templateAPI.saveTemplate(template, host, user, false);
+            APILocator.getVersionableAPI().setLive(savedTemplate);
+
+            return savedTemplate;
         } catch (DotDataException | DotSecurityException e) {
             throw new RuntimeException(e);
         }

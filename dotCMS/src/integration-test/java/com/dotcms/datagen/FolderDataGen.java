@@ -19,6 +19,7 @@ public class FolderDataGen extends AbstractDataGen<Folder> {
     private int sortOrder = 0;
     private String fileMasks = "";
     private Folder parent;
+    private Host site = host;
 
     @SuppressWarnings("unused")
     public FolderDataGen name(String name) {
@@ -39,21 +40,21 @@ public class FolderDataGen extends AbstractDataGen<Folder> {
     }
 
     @SuppressWarnings("unused")
-    public FolderDataGen showOnMenu(int sortOrder) {
+    public FolderDataGen sortOrder(int sortOrder) {
         this.sortOrder = sortOrder;
         return this;
     }
 
     @SuppressWarnings("unused")
-    public FolderDataGen showOnMenu(String fileMasks) {
+    public FolderDataGen fileMasks(String fileMasks) {
         this.fileMasks = fileMasks;
         return this;
     }
 
     @SuppressWarnings("unused")
-    public FolderDataGen site(Host host) {
-        this.host = host;
-        this.folder = null;
+    public FolderDataGen site(Host site) {
+        this.site = site;
+        this.parent = null;
         return this;
     }
 
@@ -61,7 +62,8 @@ public class FolderDataGen extends AbstractDataGen<Folder> {
     public FolderDataGen parent(Folder parent) {
         this.parent = parent;
         try {
-            this.host = APILocator.getHostAPI().find(parent.getHostId(),APILocator.systemUser(),true);
+            this.site = APILocator.getHostAPI()
+                    .find(parent.getHostId(), APILocator.systemUser(), true);
         } catch (DotDataException e) {
             Logger.error(this,"ERROR GETTING HOST WITH ID: " + parent.getHostId());
         } catch (DotSecurityException e) {
@@ -79,7 +81,7 @@ public class FolderDataGen extends AbstractDataGen<Folder> {
         f.setShowOnMenu(showOnMenu);
         f.setSortOrder(sortOrder);
         f.setFilesMasks(fileMasks);
-        f.setHostId(host.getIdentifier());
+        f.setHostId(site.getIdentifier());
         f.setDefaultFileType(CacheLocator.getContentTypeCache()
             .getStructureByVelocityVarName(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME)
             .getInode());
@@ -91,7 +93,7 @@ public class FolderDataGen extends AbstractDataGen<Folder> {
         try {
             Identifier newIdentifier;
             if (!UtilMethods.isSet(parent)) {
-                newIdentifier = APILocator.getIdentifierAPI().createNew(folder, host);
+                newIdentifier = APILocator.getIdentifierAPI().createNew(folder, site);
             } else {
                 newIdentifier = APILocator.getIdentifierAPI().createNew(folder, parent);
             }

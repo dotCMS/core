@@ -30,13 +30,22 @@ public class SiteDataGen extends AbstractDataGen<Host> {
         return site;
     }
 
-    @Override
-    public Host persist(final Host site) {
+    public Host persist(final Host site, boolean publish) {
         try {
-            return APILocator.getHostAPI().save(site, user, false);
+            final Host newSite = APILocator.getHostAPI().save(site, user, false);
+            if (publish) {
+                APILocator.getHostAPI().publish(newSite, user, false);
+            }
+
+            return newSite;
         } catch (Exception e) {
             throw new RuntimeException("Unable to persist Role.", e);
         }
+    }
+
+    @Override
+    public Host persist(final Host site) {
+        return persist(site, true);
     }
 
     /**
@@ -47,6 +56,15 @@ public class SiteDataGen extends AbstractDataGen<Host> {
     @Override
     public Host nextPersisted() {
         return persist(next());
+    }
+
+    /**
+     * Creates a new {@link Host} instance and persists it in DB
+     *
+     * @return A new Role instance persisted in DB
+     */
+    public Host nextPersisted(boolean publish) {
+        return persist(next(), publish);
     }
 
 }
