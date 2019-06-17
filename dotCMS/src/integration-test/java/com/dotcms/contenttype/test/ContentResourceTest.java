@@ -365,7 +365,7 @@ public class ContentResourceTest extends IntegrationTestBase {
 
     @Test
     @UseDataProvider("relatedTestCases")
-    public void testGetContentWithRelatedParameter(PullRelatedTestCase testCase) throws Exception {
+    public void testGetContentWithRelatedParameter(final PullRelatedTestCase testCase) throws Exception {
         final long language = languageAPI.getDefaultLanguage().getId();
 
         ContentType parentContentType = null;
@@ -400,11 +400,11 @@ public class ContentResourceTest extends IntegrationTestBase {
 
             //creates contentlets
             final ContentletDataGen childDataGen = new ContentletDataGen(childContentType1.id());
-            Contentlet child1 = childDataGen.languageId(language).nextPersisted();
-            Contentlet child2 = childDataGen.languageId(language).nextPersisted();
+            final Contentlet child1 = childDataGen.languageId(language).nextPersisted();
+            final Contentlet child2 = childDataGen.languageId(language).nextPersisted();
 
             final ContentletDataGen anotherChildDataGen = new ContentletDataGen(childContentType2.id());
-            Contentlet anotherChild = anotherChildDataGen.languageId(language).nextPersisted();
+            final Contentlet anotherChild = anotherChildDataGen.languageId(language).nextPersisted();
 
             final ContentletDataGen parentDataGen = new ContentletDataGen(parentContentType.id());
             Contentlet parent1 = parentDataGen.languageId(language).next();
@@ -458,16 +458,16 @@ public class ContentResourceTest extends IntegrationTestBase {
                 assertEquals(0,
                         contentlets.length());
             } else {
-                assertEquals((!testCase.pullFromParent && !testCase.addQuery) ? 2 : 1,
+                assertEquals(!testCase.pullFromParent && !testCase.addQuery ? 2 : 1,
                         contentlets.length());
 
                 final JSONObject contentlet = (JSONObject) contentlets.get(0);
                 assertEquals(
-                        (testCase.pullFromParent ? parent1.getIdentifier()
-                                : child1.getIdentifier()),
+                        testCase.pullFromParent ? parent1.getIdentifier()
+                                : child1.getIdentifier(),
                         contentlet.get(IDENTIFIER));
 
-                if ((!testCase.pullFromParent && !testCase.addQuery)) {
+                if (!testCase.pullFromParent && !testCase.addQuery) {
                     assertEquals(child2.getIdentifier(),
                             ((JSONObject) contentlets.get(1)).get(IDENTIFIER));
                 }
