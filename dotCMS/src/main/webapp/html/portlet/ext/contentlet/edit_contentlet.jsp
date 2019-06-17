@@ -180,7 +180,7 @@
 	final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
     boolean canSeeRules = layoutAPI.doesUserHaveAccessToPortlet("rules", user)
             && conPerAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_USE, user)
-               && conPerAPI.doesUserHavePermissions(contentlet.getParentPermissionable(), "RULES: " + PermissionAPI.PERMISSION_USE, user);
+               && conPerAPI.doesUserHavePermissions(contentlet.getParentPermissionable(), "RULES: " + PermissionAPI.PERMISSION_USE, user) && !contentlet.getStructure().isHTMLPageAsset();
 
 	Boolean isContentEditable = (Boolean) request.getAttribute(com.dotmarketing.util.WebKeys.CONTENT_EDITABLE);
 	isContentEditable = isContentEditable != null ? isContentEditable : false;
