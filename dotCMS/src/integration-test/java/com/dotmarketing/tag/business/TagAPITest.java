@@ -22,6 +22,7 @@ import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Date;
@@ -603,6 +604,7 @@ public class TagAPITest extends IntegrationTestBase {
 	 * @throws Exception
 	 */
 	@Test
+	@Ignore
 	public void updateTagReferences() throws Exception{
 
 		Host newHost = null;
