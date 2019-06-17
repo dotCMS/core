@@ -807,7 +807,7 @@ public interface ContentletAPI {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	public List<Contentlet> getRelatedContent(Contentlet contentlet, Relationship rel, boolean pullByParent, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	public List<Contentlet> getRelatedContent(Contentlet contentlet, Relationship rel, Boolean pullByParent, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
 	 * 
@@ -1918,5 +1918,9 @@ public interface ContentletAPI {
      * @return
      */
     Optional<Contentlet> findInDb(String inode);
+
+    List<Contentlet> filterRelatedContent(Contentlet contentlet, Relationship rel,
+            User user, boolean respectFrontendRoles, Boolean pullByParent)
+            throws DotDataException, DotSecurityException;
 
 }

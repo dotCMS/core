@@ -27,6 +27,7 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.tag.model.TagInode;
@@ -1509,6 +1510,18 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		return getRelated(variableName, user, true);
 	}
 
+    /**
+     * Returns a list of all contentlets related to this instance given a RelationshipField variable
+     * @param variableName
+     * @param user
+     * @param respectFrontendRoles
+     * @return
+     */
+    public List<Contentlet> getRelated(final String variableName, final User user,
+            final boolean respectFrontendRoles){
+        return getRelated(variableName, user,respectFrontendRoles, null);
+    }
+
 	/**
 	 * Returns a list of all contentlets related to this instance given a RelationshipField variable
 	 * @param variableName
@@ -1517,7 +1530,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * @return
 	 */
 	public List<Contentlet> getRelated(final String variableName, final User user,
-			final boolean respectFrontendRoles) {
+			final boolean respectFrontendRoles, Boolean pullByParents) {
 
 		if (!UtilMethods.isSet(this.relatedIds)){
 			relatedIds = Maps.newConcurrentMap();
@@ -1538,21 +1551,13 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 				relatedContentlet = getCachedRelatedContentlets(variableName);
 			} else {
 
-				relatedContentlet = getNonCachedRelatedContentlets(variableName);
+				relatedContentlet = getNonCachedRelatedContentlets(variableName, pullByParents);
 			}
 
 			//Restricts contentlet according to user permissions
-			return relatedContentlet.stream().filter(contentlet -> {
-				try {
-					return APILocator.getPermissionAPI()
-							.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ,
-									currentUser,
-									currentUser.equals(APILocator.getUserAPI().getAnonymousUser())
-											? true : respectFrontendRoles);
-				} catch (DotDataException e) {
-					return false;
-				}
-			}).collect(Collectors.toList());
+            return APILocator.getPermissionAPI().filterCollection(relatedContentlet, PermissionAPI.PERMISSION_READ,
+                    currentUser.equals(APILocator.getUserAPI().getAnonymousUser())
+                            ? true : respectFrontendRoles, currentUser);
 
 		} catch (DotDataException | DotSecurityException e) {
 			Logger.warn(this, "Error getting related content for field " + variableName, e);
@@ -1560,37 +1565,56 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		}
 	}
 
-	/**
-	 *
-	 * @param variableName
-	 * @return
-	 * @throws DotDataException
-	 * @throws DotSecurityException
-	 */
-	@Nullable
-	private List<Contentlet> getNonCachedRelatedContentlets(final String variableName)
-			throws DotDataException, DotSecurityException {
+    /**
+     *
+     * @param variableName
+     * @param pullByParent
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Nullable
+    private List<Contentlet> getNonCachedRelatedContentlets(final String variableName,
+            final Boolean pullByParent)
+            throws DotDataException, DotSecurityException {
 
-		final User systemUser = APILocator.getUserAPI().getSystemUser();
-		final com.dotcms.contenttype.model.field.Field field = APILocator.getContentTypeFieldAPI()
-				.byContentTypeIdAndVar(getContentTypeId(), variableName);
+        final User systemUser = APILocator.getUserAPI().getSystemUser();
+        com.dotcms.contenttype.model.field.Field field = null;
+        final List<Contentlet> relatedList;
+        Relationship relationship;
 
-		final List<Contentlet> relatedList = APILocator.getContentletAPI()
-				.getRelatedContent(this, APILocator.getRelationshipAPI()
-								.getRelationshipFromField(field, systemUser),
-						systemUser, false);
+        try {
+            field = APILocator
+                    .getContentTypeFieldAPI()
+                    .byContentTypeIdAndVar(getContentTypeId(), variableName);
 
-		if (UtilMethods.isSet(relatedList)) {
-			this.relatedIds.put(variableName,
-					relatedList.stream().map(contentlet -> contentlet.getIdentifier())
-							.collect(
-									CollectionsUtils.toImmutableList()));
-		}else{
-			this.relatedIds.put(variableName, Collections.emptyList());
-		}
+            relationship = APILocator.getRelationshipAPI()
+                    .getRelationshipFromField(field, systemUser);
 
-		return relatedList;
-	}
+
+        }catch(NotFoundInDbException e){
+            //Search for legacy relationships
+            relationship =  APILocator.getRelationshipAPI().byTypeValue(variableName);
+        }
+
+        relatedList = APILocator.getContentletAPI()
+                .filterRelatedContent(this, relationship, systemUser, false, pullByParent);
+
+
+        //Cache related content only if it is a relationship field
+        if (field != null) {
+            if (UtilMethods.isSet(relatedList)) {
+                this.relatedIds.put(variableName,
+                        relatedList.stream().map(contentlet -> contentlet.getIdentifier())
+                                .collect(
+                                        CollectionsUtils.toImmutableList()));
+            } else {
+                this.relatedIds.put(variableName, Collections.emptyList());
+            }
+        }
+
+        return relatedList;
+    }
 
 	/**
 	 *
