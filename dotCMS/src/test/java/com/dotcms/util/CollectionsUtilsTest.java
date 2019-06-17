@@ -3,6 +3,7 @@ package com.dotcms.util;
 import com.dotcms.UnitTestBase;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.*;
@@ -16,6 +17,42 @@ import static org.junit.Assert.*;
  * @author jsanca
  */
 public class CollectionsUtilsTest extends UnitTestBase {
+
+    @Test
+    public void classified_by_id_computeSubValueIfAbsentTest() {
+
+        final List<Tuple2<Integer, String>> unclassifiedList = CollectionsUtils.list(
+                Tuple.of(1, "a"), Tuple.of(1, "b"), Tuple.of(1, "c"), Tuple.of(1, "d"), Tuple.of(1, "e"), // 5
+                Tuple.of(2, "f"), Tuple.of(2, "g"), Tuple.of(2, "h"), Tuple.of(2, "i"), Tuple.of(2, "j"), Tuple.of(2, "k"), // 6
+                Tuple.of(3, "l"), Tuple.of(3, "m"), Tuple.of(3, "n"), Tuple.of(3, "o"), Tuple.of(3, "p"), Tuple.of(3, "q"), Tuple.of(3, "r")); // 7
+        final Map<Integer, List<String>> integerListMap = new HashMap<>();
+
+        for (final Tuple2<Integer, String> tuple2 : unclassifiedList) {
+
+            final Integer key = tuple2._1;
+            final String  abc = tuple2._2;
+            CollectionsUtils.computeSubValueIfAbsent(integerListMap, key, abc,
+                    (List<String> currentList, String abcLetter)-> CollectionsUtils.add(currentList, abcLetter),
+                    (Integer intKey, String abcLetter)-> CollectionsUtils.list(abcLetter));
+        }
+
+
+        Assert.assertFalse(integerListMap.isEmpty());
+
+        Assert.assertEquals(3, integerListMap.size());
+        Assert.assertEquals(5, integerListMap.get(1).size());
+        Assert.assertEquals(6, integerListMap.get(2).size());
+        Assert.assertEquals(7, integerListMap.get(3).size());
+
+        Assert.assertFalse(integerListMap.get(1).contains("h"));
+        Assert.assertTrue(integerListMap.get(1).contains("e"));
+
+        Assert.assertFalse(integerListMap.get(2).contains("o"));
+        Assert.assertTrue(integerListMap.get(2).contains("j"));
+
+        Assert.assertFalse(integerListMap.get(3).contains("a"));
+        Assert.assertTrue(integerListMap.get(3).contains("l"));
+    }
 
     @Test
     public void merge_current() {

@@ -595,28 +595,21 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         }
     }
 
-    @Override
-    public Table<String, String, Set<String>> getPageMultiTrees(final IHTMLPage page, final boolean liveMode)
-            throws DotDataException, DotSecurityException {
-
-        return this.getPageMultiTrees(page, liveMode, MultiTree.DOT_PERSONALIZATION_DEFAULT);
-    }
-
     @CloseDBIfOpened
     @Override
-    public Table<String, String, Set<String>> getPageMultiTrees(final IHTMLPage page, final boolean liveMode, final String personalization)
+    public Table<String, String, Set<PersonalizedContentlet>> getPageMultiTrees(final IHTMLPage page, final boolean liveMode)
             throws DotDataException, DotSecurityException {
 
-        final String multiTreeCacheKey = page.getIdentifier() + personalization;
-        final Optional<Table<String, String, Set<String>>> pageContentsOpt =
+        final String multiTreeCacheKey = page.getIdentifier();
+        final Optional<Table<String, String, Set<PersonalizedContentlet>>> pageContentsOpt =
                 CacheLocator.getMultiTreeCache().getPageMultiTrees(multiTreeCacheKey, liveMode);
         
         if(pageContentsOpt.isPresent()) {
             return pageContentsOpt.get();
         }
 
-        final Table<String, String, Set<String>> pageContents = HashBasedTable.create();
-        final List<MultiTree> multiTrees    = this.getMultiTreesByPersonalizedPage(page.getIdentifier(), personalization);
+        final Table<String, String, Set<PersonalizedContentlet>> pageContents = HashBasedTable.create();
+        final List<MultiTree> multiTrees    = this.getMultiTrees(page.getIdentifier());
         final ContainerAPI    containerAPI  = APILocator.getContainerAPI();
         final ContentletAPI   contentletAPI = APILocator.getContentletAPI();
         final User systemUser = APILocator.systemUser();
@@ -624,7 +617,8 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         for (final MultiTree multiTree : multiTrees) {
 
             Container container   = null;
-            final String    containerId = multiTree.getContainerAsID();
+            final String    containerId     = multiTree.getContainerAsID();
+            final String    personalization = multiTree.getPersonalization();
 
             try {
 
@@ -645,18 +639,20 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             try {
                 contentlet = contentletAPI.findContentletByIdentifierAnyLanguage(multiTree.getContentlet());
             } catch (DotDataException | DotSecurityException | DotContentletStateException e) {
+                Logger.debug(this.getClass(), "invalid contentlet on multitree:" + multiTree
+                        + ", msg: " + e.getMessage(), e);
                 Logger.warn(this.getClass(), "invalid contentlet on multitree:" + multiTree);
             }
 
             if (contentlet != null) {
 
-                final Set<String> myContents = pageContents.contains(containerId, multiTree.getRelationType())
+                final Set<PersonalizedContentlet> myContents = pageContents.contains(containerId, multiTree.getRelationType())
                         ? pageContents.get(containerId, multiTree.getRelationType())
                         : new LinkedHashSet<>();
 
                 if (container != null && myContents.size() < container.getMaxContentlets()) {
 
-                    myContents.add(multiTree.getContentlet());
+                    myContents.add(new PersonalizedContentlet(multiTree.getContentlet(), personalization));
                 }
 
                 pageContents.put(containerId, multiTree.getRelationType(), myContents);
@@ -677,7 +673,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     }
 
     private void addEmptyContainers(final IHTMLPage page,
-                                    final Table<String, String, Set<String>> pageContents,
+                                    final Table<String, String, Set<PersonalizedContentlet>> pageContents,
                                     final boolean liveMode)
             throws DotDataException, DotSecurityException {
 
@@ -730,7 +726,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
      * @return true in case of the containerUUId is contains in pageContents
      */
     private boolean doesPageContentsHaveContainer(
-            final Table<String, String, Set<String>> pageContents,
+            final Table<String, String, Set<PersonalizedContentlet>> pageContents,
             final ContainerUUID containerUUID,
             final Container container) {
 

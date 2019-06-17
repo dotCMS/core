@@ -173,17 +173,6 @@ public class VelocityLiveMode extends VelocityModeHandler {
         }
     }
 
-    @Override
-    protected String getVariant(final IHTMLPage page, final PageMode mode) {
-
-        final String containerPersonalization = PersonalizationUtil.getContainerPersonalization();
-        final String variant = MultiTree.DOT_PERSONALIZATION_DEFAULT.equalsIgnoreCase(containerPersonalization)?
-                StringPool.BLANK:
-                StringPool.SLASH + containerPersonalization;
-        return variant;
-    }
-
-
     User getUser() {
         User user = null;
         final HttpSession session = request.getSession(false);
