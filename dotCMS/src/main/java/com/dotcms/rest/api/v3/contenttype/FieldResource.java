@@ -3,6 +3,9 @@ package com.dotcms.rest.api.v3.contenttype;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.layout.FieldLayout;
+import com.dotcms.contenttype.model.field.layout.FieldLayoutValidationException;
+import com.dotcms.contenttype.model.field.layout.FieldUtil;
+import com.dotcms.contenttype.model.field.layout.NotStrictFieldLayoutRowSyntaxValidator;
 import com.dotcms.contenttype.model.type.ContentType;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
@@ -24,6 +27,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.map;
@@ -71,21 +75,42 @@ public class FieldResource {
                 this.webResource.init(null, true, req, true, null);
         final User user = initData.getUser();
 
-        final Field fieldToUpdate = updateFieldForm.getField();
+        final Field fieldFromInput = updateFieldForm.getField();
         final ContentType contentType = APILocator.getContentTypeAPI(user).find(typeIdOrVarName);
 
-        checkFieldExists(fieldToUpdate, contentType);
+        final Optional<Field> optionalField = checkFieldExists(fieldFromInput, contentType);
 
-        final FieldLayout fieldLayout = new FieldLayout(contentType.fields());
-        final FieldLayout fieldLayoutUpdated = fieldLayout.update(list(fieldToUpdate));
+        if (optionalField.isPresent()) {
+            final Field fieldToUpdate = checkSortOrder(optionalField.get(), fieldFromInput, contentType);
 
-        fieldLayoutUpdated.validate();
-        fieldAPI.save(fieldToUpdate, user);
+            fieldAPI.save(fieldToUpdate, user);
 
-        final List<Field> contentTypeFields = fieldAPI.byContentTypeId(contentType.id());
-        final FieldLayout fieldLayoutFromDB = new FieldLayout(contentTypeFields);
+            final List<Field> contentTypeFields = fieldAPI.byContentTypeId(contentType.id());
+            final FieldLayout fieldLayoutFromDB = new FieldLayout(contentTypeFields);
 
-        return Response.ok(new ResponseEntityView(fieldLayoutFromDB.getRows())).build();
+            return Response.ok(new ResponseEntityView(fieldLayoutFromDB.getRows())).build();
+        } else {
+            throw new NotFoundException(String.format("Field %s does not exists", fieldFromInput.variable()));
+        }
+    }
+
+    private Field checkSortOrder(
+            final Field fieldFromDB,
+            final Field fieldToUpdate,
+            final ContentType contentType
+    )
+            throws FieldLayoutValidationException {
+
+        if (Field.SORT_ORDER_DEFAUKT_VALUE == fieldToUpdate.sortOrder()) {
+            return FieldUtil.copyField(fieldToUpdate, fieldFromDB.sortOrder());
+        } else if (fieldFromDB.sortOrder() != fieldToUpdate.sortOrder()) {
+            final FieldLayout fieldLayout = new FieldLayout(contentType.fields());
+            final FieldLayout fieldLayoutUpdated = fieldLayout.update(list(fieldToUpdate));
+
+            fieldLayoutUpdated.validate();
+        }
+
+        return fieldToUpdate;
     }
 
 
@@ -129,15 +154,11 @@ public class FieldResource {
         return Response.ok(new ResponseEntityView(fieldLayoutFromDB.getRows())).build();
     }
 
-    private void checkFieldExists(final Field fieldToUpdate, final ContentType contentType) {
-        Optional<Field> optionalField = contentType.fields()
+    private Optional<Field> checkFieldExists(final Field fieldToUpdate, final ContentType contentType) {
+        return contentType.fields()
                 .stream()
                 .filter(field -> field.id().equals(fieldToUpdate.id()))
                 .findFirst();
-
-        if (!optionalField.isPresent()) {
-            throw new NotFoundException(String.format("Field %s does not exists", fieldToUpdate.variable()));
-        }
     }
 
     @PUT
@@ -160,7 +181,13 @@ public class FieldResource {
         final FieldLayout layout = moveFieldsForm.getRows(contentType.id());
         layout.validate();
 
+        final FieldLayout oldLayout = new FieldLayout(contentType.fields());
+
         fieldAPI.saveFields(layout.getFields(), user);
+        fieldAPI.deleteFields(
+                oldLayout.getLayoutFieldsToDelete().stream().map(field -> field.id()).collect(Collectors.toList()),
+                user
+        );
 
         final List<Field> contentTypeFields = fieldAPI.byContentTypeId(contentType.id());
         final FieldLayout fieldLayoutFromDB = new FieldLayout(contentTypeFields);

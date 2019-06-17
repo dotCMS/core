@@ -106,6 +106,24 @@ public class FieldLayout {
     }
 
     /**
+     * List of Layout fields to remove to get a right layout,
+     * Layout field could be: {@link RowField} and  {@link ColumnField}
+     * @return
+     */
+    public List<Field>  getLayoutFieldsToDelete() {
+        if (notStrictFieldLayoutRowSyntaxValidator == null) {
+            notStrictFieldLayoutRowSyntaxValidator = new NotStrictFieldLayoutRowSyntaxValidator(this.fields);
+        }
+
+        try {
+            notStrictFieldLayoutRowSyntaxValidator.validate();
+            return notStrictFieldLayoutRowSyntaxValidator.getFieldsToRemove();
+        } catch (FieldLayoutValidationException e) {
+            throw new DotRuntimeException(e);
+        }
+    }
+
+    /**
      * CHeck if the layout fulfill all the sintax rules
      *
      * @throws FieldLayoutValidationException when any sintax error is found in the layout

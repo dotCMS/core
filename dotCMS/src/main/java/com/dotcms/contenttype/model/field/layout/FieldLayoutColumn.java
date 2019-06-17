@@ -5,6 +5,7 @@ import com.dotcms.contenttype.model.field.Field;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.dotcms.util.CollectionsUtils;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.collect.ImmutableList;
 
 import java.util.Collections;
@@ -15,6 +16,7 @@ import java.util.List;
  *
  * @see FieldLayout
  */
+@JsonSerialize(using = FieldLayoutColumnSerializer.class)
 public class FieldLayoutColumn {
     @JsonProperty("columnDivider")
     private final ColumnField column;

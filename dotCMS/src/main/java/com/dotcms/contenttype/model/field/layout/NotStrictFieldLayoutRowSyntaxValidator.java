@@ -27,6 +27,7 @@ import java.util.List;
 public class NotStrictFieldLayoutRowSyntaxValidator extends FieldLayoutRowSyntaxValidator {
 
     private List<Field> newFields = new ArrayList<>();
+    private List<Field> layoutFieldsToRemove = new ArrayList<>();
 
     NotStrictFieldLayoutRowSyntaxValidator(final List<Field> fields) {
         super(fields);
@@ -44,6 +45,9 @@ public class NotStrictFieldLayoutRowSyntaxValidator extends FieldLayoutRowSyntax
             } else if (!columns.get(i).isEmpty()){
                 final List<Field> withoutColumnField = columns.get(i).subList(1, columns.get(i).size());
                 newColumns.get(MAX_NUM_COLUMNS_ALLOW - 1).addAll(withoutColumnField);
+
+                final Field columnToRemove = columns.get(i).get(0);
+                layoutFieldsToRemove.add(columnToRemove);
             }
 
         }
@@ -58,6 +62,10 @@ public class NotStrictFieldLayoutRowSyntaxValidator extends FieldLayoutRowSyntax
      */
     public List<Field> getFields() {
         return newFields;
+    }
+
+    public List<Field> getFieldsToRemove() {
+        return layoutFieldsToRemove;
     }
 
     /**
@@ -81,8 +89,8 @@ public class NotStrictFieldLayoutRowSyntaxValidator extends FieldLayoutRowSyntax
      * Always ignore empty row
      */
     @Override
-    protected void processEmptyRow () {
-
+    protected void processEmptyRow (final Field rowField) {
+        layoutFieldsToRemove.add(rowField);
     }
 
     /**

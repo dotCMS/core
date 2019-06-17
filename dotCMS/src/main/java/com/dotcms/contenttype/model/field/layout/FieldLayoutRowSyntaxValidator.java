@@ -76,7 +76,7 @@ abstract class FieldLayoutRowSyntaxValidator {
      */
     private void processAnyRow (final FieldUtil.FieldsFragment fragment) throws FieldLayoutValidationException {
         if (fragment.getOthersFields().isEmpty()) {
-            processEmptyRow();
+            processEmptyRow(fragment.getFieldDivider());
         } else {
             processNotEmptyRow(fragment.getAllFields());
             processColumns(fragment.getOthersFields());
@@ -103,7 +103,7 @@ abstract class FieldLayoutRowSyntaxValidator {
      *
      * @throws FieldLayoutValidationException
      */
-    protected abstract void processEmptyRow () throws FieldLayoutValidationException;
+    protected abstract void processEmptyRow (final Field rowField) throws FieldLayoutValidationException;
 
     /**
      * Allow Process a not empty row

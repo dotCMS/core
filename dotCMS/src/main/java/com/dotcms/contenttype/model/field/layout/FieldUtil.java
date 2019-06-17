@@ -56,7 +56,7 @@ public class FieldUtil {
      * @param fields
      * @return
      */
-    static List<FieldsFragment> splitByFieldDivider(final Collection<Field> fields) {
+    public static List<FieldsFragment> splitByFieldDivider(final Collection<Field> fields) {
         return split(fields, FieldDivider.class)
                 .stream()
                 .map(FieldsFragment::new)
@@ -95,7 +95,7 @@ public class FieldUtil {
      * @param fields
      * @return
      */
-    static List<List<Field>> splitByColumnField(final Collection<Field> fields) {
+    public static List<List<Field>> splitByColumnField(final Collection<Field> fields) {
         return split(fields, ColumnField.class);
     }
 
@@ -212,7 +212,7 @@ public class FieldUtil {
     /**
      * Represent a fragment from a set of fields split by {@link FieldDivider}
      */
-    protected static class FieldsFragment {
+    public static class FieldsFragment {
         private Field fieldDivider;
         private List<Field> othersFields;
 

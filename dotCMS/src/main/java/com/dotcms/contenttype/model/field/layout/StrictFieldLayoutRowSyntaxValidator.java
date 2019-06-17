@@ -37,7 +37,7 @@ public class StrictFieldLayoutRowSyntaxValidator extends FieldLayoutRowSyntaxVal
     }
 
     @Override
-    protected void processEmptyRow () throws FieldLayoutValidationException {
+    protected void processEmptyRow (final Field rowField) throws FieldLayoutValidationException {
         throw new FieldLayoutValidationException(String.format("Empty row is not allow"));
     }
 

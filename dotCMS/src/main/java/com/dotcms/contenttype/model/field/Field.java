@@ -60,6 +60,8 @@ import org.immutables.value.Value.Derived;
 })
 public abstract class Field implements FieldIf, Serializable {
 
+  public static int SORT_ORDER_DEFAUKT_VALUE = -1;
+
   @Value.Check
   public void check() {
 	Preconditions.checkArgument(StringUtils.isNotEmpty(name()), "Name cannot be empty for " + this.getClass());
@@ -144,7 +146,7 @@ public abstract class Field implements FieldIf, Serializable {
 
   @Value.Default
   public int sortOrder() {
-    return -1;
+    return SORT_ORDER_DEFAUKT_VALUE;
   }
 
   @Value.Lazy

@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
  *
  * @see FieldLayout
  */
+@JsonSerialize(using = FieldLayoutRowSerializer.class)
 public class FieldLayoutRow {
     private final Field divider;
     private final List<FieldLayoutColumn> columns;
