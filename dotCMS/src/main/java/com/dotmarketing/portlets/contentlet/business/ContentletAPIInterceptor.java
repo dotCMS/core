@@ -1133,7 +1133,31 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
-	@Override
+    @Override
+    public List<Contentlet> getRelatedContent(Contentlet contentlet, Relationship rel,
+            boolean pullByParent, User user, boolean respectFrontendRoles, int limit, int offset,
+            String sortBy) throws DotDataException {
+        for (ContentletAPIPreHook pre : preHooks) {
+            boolean preResult = pre
+                    .getRelatedContent(contentlet, rel, pullByParent, user, respectFrontendRoles,
+                            limit, offset, sortBy);
+            if (!preResult) {
+                Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+                throw new DotRuntimeException(
+                        "The following prehook failed " + pre.getClass().getName());
+            }
+        }
+        List<Contentlet> c = conAPI
+                .getRelatedContent(contentlet, rel, pullByParent, user, respectFrontendRoles, limit,
+                        offset, sortBy);
+        for (ContentletAPIPostHook post : postHooks) {
+            post.getRelatedContent(contentlet, rel, pullByParent, user, respectFrontendRoles, c, limit,
+                    offset, sortBy);
+        }
+        return c;
+    }
+
+    @Override
 	public List<Contentlet> getRelatedContent(Contentlet contentlet, Relationship rel, boolean pullByParent, User user,	boolean respectFrontendRoles) throws DotDataException,	DotSecurityException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.getRelatedContent(contentlet, rel,pullByParent, user, respectFrontendRoles);

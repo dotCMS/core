@@ -90,6 +90,7 @@ import javax.ws.rs.core.Response.Status;
 import org.glassfish.jersey.media.multipart.BodyPart;
 import org.glassfish.jersey.media.multipart.ContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
+import org.jetbrains.annotations.NotNull;
 
 @Path("/content")
 public class ContentResource {
@@ -446,6 +447,7 @@ public class ContentResource {
         final User user = initData.getUser();
         final String render = paramsMap.get(RESTParams.RENDER.getValue());
         final String query = paramsMap.get(RESTParams.QUERY.getValue());
+        final String related = paramsMap.get(RESTParams.RELATED.getValue());
         final String id = paramsMap.get(RESTParams.ID.getValue());
         final String limitStr = paramsMap.get(RESTParams.LIMIT.getValue());
         final String offsetStr = paramsMap.get(RESTParams.OFFSET.getValue());
@@ -481,6 +483,7 @@ public class ContentResource {
         Optional<Status> status = Optional.empty();
         String type = paramsMap.get(RESTParams.TYPE.getValue());
         String orderBy = paramsMap.get(RESTParams.ORDERBY.getValue());
+        final String tmDate = (String) request.getSession().getAttribute("tm_date");
 
         type = UtilMethods.isSet(type) ? type : "json";
         orderBy = UtilMethods.isSet(orderBy) ? orderBy : "modDate desc";
@@ -497,10 +500,28 @@ public class ContentResource {
                         this.contentHelper.hydrateContentlet(APILocator.getContentletAPI()
                                 .find(inode, user, respectFrontendRoles)))
                         .ifPresent(contentlets::add);
-            } else if (queryPassed = UtilMethods.isSet(query)) {
-                String tmDate = (String) request.getSession().getAttribute("tm_date");
-                String luceneQuery = processQuery(query);
-                contentlets = ContentUtils.pull(luceneQuery, offset, limit, orderBy, user, tmDate);
+            } else if (UtilMethods.isSet(related)){
+                //Related identifier are expected this way: "ContentTypeVarName.FieldVarName:contentletIdentifier"
+                //In case of multiple relationships, they must be sent as a comma separated list
+                //i.e.: ContentTypeVarName1.FieldVarName1:contentletIdentifier1,ContentTypeVarName2.FieldVarName2:contentletIdentifier2
+                int i = 0;
+                for(String relationshipValue: related.split(",")){
+                    if (i == 0) {
+                        contentlets.addAll(getPullRelated(user, limit, contentlets, orderBy, tmDate,
+                                processQuery(query), relationshipValue));
+                    } else {
+                        //filter the intersection in case multiple relationship
+                        contentlets = contentlets.stream()
+                                .filter(getPullRelated(user, limit, contentlets, orderBy, tmDate,
+                                        processQuery(query), relationshipValue)::contains).collect(
+                                        Collectors.toList());
+                    }
+
+                    i++;
+                }
+            } else if (queryPassed = UtilMethods.isSet(query)){
+                contentlets = ContentUtils
+                        .pull(processQuery(query), offset, limit, orderBy, user, tmDate);
             }
 
         } catch (DotSecurityException e) {
@@ -510,10 +531,10 @@ public class ContentResource {
         } catch (Exception e) {
             if (idPassed) {
                 Logger.warn(this, "Can't find Content with Identifier: " + id);
-            } else if (queryPassed) {
-                Logger.warn(this, "Can't find Content with Inode: " + inode);
-            } else if (inodePassed) {
+            } else if (queryPassed || UtilMethods.isSet(related)) {
                 Logger.warn(this, "Error searching Content : " + e.getMessage());
+            } else if (inodePassed) {
+                Logger.warn(this, "Can't find Content with Inode: " + inode);
             }
             status = Optional.of(Status.INTERNAL_SERVER_ERROR);
         }
@@ -530,6 +551,41 @@ public class ContentResource {
         }
 
         return responseResource.response(result, null, status);
+    }
+
+    /**
+     *
+     * @param user
+     * @param limit
+     * @param contentlets
+     * @param orderBy
+     * @param tmDate
+     * @param luceneQuery
+     * @param relationshipValue
+     * @return
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @NotNull
+    private List<Contentlet> getPullRelated(User user, int limit, List<Contentlet> contentlets,
+            String orderBy, String tmDate, String luceneQuery, String relationshipValue)
+            throws DotSecurityException, DotDataException {
+        final String contentTypeVar = relationshipValue.split(":")[0].split("\\.")[0];
+        final String fieldVar = relationshipValue.split(":")[0].split("\\.")[1];
+        final String relatedIdentifier = relationshipValue.split(":")[1];
+
+        ContentType relatedContentType = APILocator.getContentTypeAPI(user).find(contentTypeVar);
+
+        final Relationship relationship = APILocator.getRelationshipAPI()
+                .getRelationshipFromField(relatedContentType.fieldMap().get(fieldVar),
+                        user);
+
+        List<Contentlet> pullRelated = ContentUtils
+                .pullRelated(relationship.getRelationTypeValue(), relatedIdentifier,
+                        luceneQuery, relationship.hasParents(), limit, orderBy, user,
+                        tmDate);
+
+        return pullRelated;
     }
 
     /**
