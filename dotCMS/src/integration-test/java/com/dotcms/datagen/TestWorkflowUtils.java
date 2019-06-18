@@ -29,11 +29,11 @@ public class TestWorkflowUtils {
     }
 
     public static WorkflowScheme getDocumentWorkflow(String workFlowName) throws DotDataException {
+
         if(null == workFlowName){
             workFlowName = DM_WORKFLOW;
-        } else {
-            workFlowName = workFlowName + System.currentTimeMillis();
         }
+
         WorkflowScheme documentWorkflow = APILocator.getWorkflowAPI().findSchemeByName(workFlowName);
         if (null == documentWorkflow) {
 
