@@ -48,6 +48,7 @@ import com.dotcms.contenttype.model.type.WidgetContentType;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.TestUserUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
@@ -624,8 +625,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		final String originalName = contentGenericType.name();
 		contentGenericType = ContentTypeBuilder.builder(contentGenericType).name(updatedContentTypeName).build();
 
-		final User limitedUserEditPermsPermOnCT = APILocator.getUserAPI().loadUserById("dotcms.org.2795",
-				APILocator.systemUser(), false);
+		final User limitedUserEditPermsPermOnCT = TestUserUtils.getChrisPublisherUser();
 
 		final List<Integer> existingPermissions = APILocator.getPermissionAPI()
 				.getPermissionIdsFromUser(contentGenericType, limitedUserEditPermsPermOnCT);
@@ -817,8 +817,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		newType = contentTypeApi.save(newType);
 		final String newTypeId = newType.id();
 
-		final User limitedUserEditPermsPermOnCT = APILocator.getUserAPI().loadUserById("dotcms.org.2795",
-				APILocator.systemUser(), false);
+		final User limitedUserEditPermsPermOnCT = TestUserUtils.getChrisPublisherUser();
 
 		final List<Integer> existingPermissions = APILocator.getPermissionAPI()
 				.getPermissionIdsFromUser(newType, limitedUserEditPermsPermOnCT);
@@ -863,8 +862,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
 		final ContentType contentGenericType = contentTypeAPI.find("webPageContent");
 
-		final User limitedUserEditPermsPermOnCT = APILocator.getUserAPI().loadUserById("dotcms.org.2795",
-				APILocator.systemUser(), false);
+		final User limitedUserEditPermsPermOnCT = TestUserUtils.getChrisPublisherUser();
 
 		final List<Integer> existingPermissions = APILocator.getPermissionAPI()
 				.getPermissionIdsFromUser(contentGenericType, limitedUserEditPermsPermOnCT);
@@ -903,8 +901,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		newType = contentTypeApi.save(newType);
 		final String newTypeId = newType.id();
 
-		final User limitedUser = APILocator.getUserAPI().loadUserById("dotcms.org.2795",
-				APILocator.systemUser(), false);
+		final User limitedUser = TestUserUtils.getChrisPublisherUser();
 
 		final List<Integer> existingPermissions = APILocator.getPermissionAPI()
 				.getPermissionIdsFromUser(newType, limitedUser);
@@ -964,8 +961,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 				.owner(APILocator.systemUser().toString()).variable("CTVariable" + time).build();
 
 		//Get Limited User
-		final User limitedUserEditPermsPermOnCT = APILocator.getUserAPI().loadUserById("dotcms.org.2795",
-				APILocator.systemUser(), false);
+		final User limitedUserEditPermsPermOnCT = TestUserUtils.getChrisPublisherUser();
 
 		final PermissionAPI permAPI = Mockito.spy(APILocator.getPermissionAPI());
 		Mockito.doReturn(true).when(permAPI).doesUserHavePermissions(contentType.getParentPermissionable(),
@@ -1030,8 +1026,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		newType = contentTypeApi.save(newType);
 		final String newTypeId = newType.id();
 
-		final User limitedUserEditPermsPermOnCT = APILocator.getUserAPI().loadUserById("dotcms.org.2795",
-				APILocator.systemUser(), false);
+		final User limitedUserEditPermsPermOnCT = TestUserUtils.getChrisPublisherUser();
 
 		final List<Integer> existingPermissions = APILocator.getPermissionAPI()
 				.getPermissionIdsFromUser(newType, limitedUserEditPermsPermOnCT);

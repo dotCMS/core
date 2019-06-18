@@ -16,6 +16,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.mock.request.MockAttributeRequest;
@@ -103,13 +104,7 @@ public class ContentTypeBaseTest extends IntegrationTestBase {
 		dc.loadResult();
 
 		//Creating test users
-		chrisPublisher = new UserDataGen()
-				.id("dotcms.org.2795")
-				.active(Boolean.TRUE)
-				.emailAddress("chris@dotcms.com")
-				.firstName("Chris")
-				.lastName("Publisher")
-				.nextPersisted();
+		chrisPublisher = TestUserUtils.getChrisPublisherUser();
 
 		//Test news content type
 		newsLikeContentType = TestDataUtils.getNewsLikeContentType();
