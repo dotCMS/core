@@ -37,7 +37,7 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.daisydiff', version:'ukv_3'
     compile group: 'com.dotcms.lib', name: 'dot.dnsjava', version:'2.0.8_2'
     compile group: 'com.dotcms.lib', name: 'dot.dwr', version:'3rc2modified_3'
-    compile (group: 'org.elasticsearch', name: 'elasticsearch', version: '6.6.2'){
+    compile (group: 'org.elasticsearch', name: 'elasticsearch', version: '6.7.1'){
         exclude(group: 'org.apache.logging.log4j')
         exclude(group: 'com.fasterxml.jackson.core')
     }
@@ -489,7 +489,7 @@ dependencies {
     compile 'net.jodah:failsafe:1.1.1'
     compile 'com.rainerhahnekamp:sneakythrow:1.1.0'
 
-    compile ('org.elasticsearch.client:elasticsearch-rest-high-level-client:6.6.2') {
+    compile ('org.elasticsearch.client:elasticsearch-rest-high-level-client:6.7.1') {
         exclude(group: 'org.apache.logging.log4j')
         exclude(group: 'com.fasterxml.jackson.core')
     }

@@ -39,6 +39,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -59,6 +60,20 @@ import org.apache.tools.zip.ZipEntry;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
+import org.elasticsearch.action.admin.cluster.repositories.delete.DeleteRepositoryRequest;
+import org.elasticsearch.action.admin.cluster.repositories.get.GetRepositoriesRequest;
+import org.elasticsearch.action.admin.cluster.repositories.get.GetRepositoriesResponse;
+import org.elasticsearch.action.admin.cluster.repositories.put.PutRepositoryRequest;
+import org.elasticsearch.action.admin.cluster.repositories.verify.VerifyRepositoryRequest;
+import org.elasticsearch.action.admin.cluster.repositories.verify.VerifyRepositoryResponse;
+import org.elasticsearch.action.admin.cluster.settings.ClusterGetSettingsRequest;
+import org.elasticsearch.action.admin.cluster.settings.ClusterGetSettingsResponse;
+import org.elasticsearch.action.admin.cluster.snapshots.create.CreateSnapshotRequest;
+import org.elasticsearch.action.admin.cluster.snapshots.create.CreateSnapshotResponse;
+import org.elasticsearch.action.admin.cluster.snapshots.get.GetSnapshotsRequest;
+import org.elasticsearch.action.admin.cluster.snapshots.get.GetSnapshotsResponse;
+import org.elasticsearch.action.admin.cluster.snapshots.restore.RestoreSnapshotRequest;
+import org.elasticsearch.action.admin.cluster.snapshots.restore.RestoreSnapshotResponse;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest;
 import org.elasticsearch.action.admin.indices.alias.get.GetAliasesRequest;
@@ -69,7 +84,11 @@ import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.admin.indices.forcemerge.ForceMergeRequest;
 import org.elasticsearch.action.admin.indices.forcemerge.ForceMergeResponse;
 import org.elasticsearch.action.admin.indices.open.OpenIndexRequest;
+import org.elasticsearch.action.admin.indices.settings.get.GetSettingsRequest;
+import org.elasticsearch.action.admin.indices.settings.get.GetSettingsResponse;
 import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
+import org.elasticsearch.action.admin.indices.stats.IndexStats;
+import org.elasticsearch.action.admin.indices.stats.IndicesStatsResponse;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchRequest;
@@ -149,6 +168,31 @@ public class ESIndexAPI {
 		this.esIndexHelper = esIndexHelper;
 		this.serverAPI = serverAPI;
 		this.clusterAPI = clusterAPI;
+	}
+
+	/**
+	 * returns all indicies and status
+	 * @return
+	 */
+	public Map<String, IndexStats> getIndicesAndStatus() {
+		// TODO adapt
+//		final Client client = transportClient.getClient();
+//		final IndicesStatsResponse
+//				indicesStatsResponse =
+//				client.admin().indices().prepareStats().setStore(true).execute().actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
+//
+//		return indicesStatsResponse.getIndices();
+
+		return Collections.emptyMap();
+	}
+
+	public void getIndicesStats() {
+
+		GetIndexRequest request = new GetIndexRequest("*");
+		GetIndexResponse response = Sneaky.sneak(()->esclient.indices()
+				.get(request, RequestOptions.DEFAULT));
+		response.getSettings();
+
 	}
 
     /**
@@ -809,31 +853,33 @@ public class ESIndexAPI {
 
         final OpenIndexRequest request = new OpenIndexRequest(indexName);
 		request.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
-		Sneaky.sneak(()->esclient.indices().open(new OpenIndexRequest(indexName));
+		Sneaky.sneak(()->esclient.indices().open(new OpenIndexRequest(indexName)));
 
         AdminLogger.log(this.getClass(), "openIndex", "Index: " + indexName + " opened");
     }
 
     public List<String> getClosedIndexes() {
 
-    	// new way
+    	// new way TODO
 
 		// old way
-        Client client = new ESClient().getClient();
-        ImmutableOpenMap<String, IndexMetaData>
-            indexState =
-            client.admin().cluster().prepareState().execute().actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS)
-                .getState().getMetaData().indices();
+//        Client client = new ESClient().getClient();
+//        ImmutableOpenMap<String, IndexMetaData>
+//            indexState =
+//            client.admin().cluster().prepareState().execute().actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS)
+//                .getState().getMetaData().indices();
+//
+//        List<String> closeIdx = new ArrayList<>();
+//
+//        for (ObjectCursor<String> idx : indexState.keys()) {
+//            IndexMetaData idxM = indexState.get(idx.value);
+//            if (idxM.getState().equals(State.CLOSE)) {
+//                closeIdx.add(idx.value);
+//            }
+//        }
+//        return closeIdx;
 
-        List<String> closeIdx = new ArrayList<>();
-
-        for (ObjectCursor<String> idx : indexState.keys()) {
-            IndexMetaData idxM = indexState.get(idx.value);
-            if (idxM.getState().equals(State.CLOSE)) {
-                closeIdx.add(idx.value);
-            }
-        }
-        return closeIdx;
+		return Collections.emptyList();
     }
 
     public Status getIndexStatus(String indexName) throws DotDataException {
@@ -871,12 +917,20 @@ public class ESIndexAPI {
 			throws IOException, IllegalArgumentException, DotStateException, ElasticsearchException {
 		checkArgument(snapshotName!=null,"There is no valid snapshot name.");
 		checkArgument(indexName!=null,"There is no valid index name.");
-		Client client = esclient.getClient();
+
 		String fileName = indexName + "_" + DateUtil.format(new Date(), "yyyy-MM-dd_hh-mm-ss");
 		File toFile = null;
 		// creates specific backup path (if it shouldn't exist)
 
-		toFile = new File(client.settings().get(REPOSITORY_PATH));
+
+		ClusterGetSettingsRequest clusterGetSettingsRequest = new ClusterGetSettingsRequest();
+		ClusterGetSettingsResponse clusterGetSettingsResponse = esclient.cluster().
+				getSettings(clusterGetSettingsRequest, RequestOptions.DEFAULT);
+
+		// TODO this might bring no value, please check
+		final String REPO_PATH = clusterGetSettingsResponse.getSetting(REPOSITORY_PATH);
+
+		toFile = new File(REPO_PATH);
 		if (!toFile.exists()) {
 			toFile.mkdirs();
 		}
@@ -886,9 +940,12 @@ public class ESIndexAPI {
 		if (isSnapshotExist(repositoryName, snapshotName)) {
 			Logger.warn(this.getClass(), snapshotName + " snapshot already exists");
 		} else {
-			CreateSnapshotResponse response = client.admin().cluster()
-					.prepareCreateSnapshot(repositoryName, snapshotName).setWaitForCompletion(true)
-					.setIndices(indexName).get();
+			CreateSnapshotRequest request = new CreateSnapshotRequest(repositoryName,snapshotName);
+			request.waitForCompletion(true);
+			request.indices(indexName);
+
+			CreateSnapshotResponse response = esclient.snapshot()
+					.create(request, RequestOptions.DEFAULT);
 			if (response.status().equals(RestStatus.OK)) {
 				Logger.debug(this.getClass(), "Snapshot was created:" + snapshotName);
 			} else {
@@ -921,24 +978,28 @@ public class ESIndexAPI {
 	 */
 	private boolean restoreSnapshot(String repositoryName, String snapshotName)
 			throws InterruptedException, ExecutionException {
-		Client client = esclient.getClient();
 		if (!isSnapshotExist(repositoryName, snapshotName) && ESIndexAPI.BACKUP_REPOSITORY.equals(repositoryName)) {
 			snapshotName = BACKUP_REPOSITORY; //When restoring a snapshot created straight from a live index, the snapshotName is also: backup
 		}
 		if (isRepositoryExist(repositoryName) && isSnapshotExist(repositoryName, snapshotName)) {
 			GetSnapshotsRequest getSnapshotsRequest = new GetSnapshotsRequest(repositoryName);
-			GetSnapshotsResponse getSnapshotsResponse = client.admin().cluster().getSnapshots(getSnapshotsRequest).get();
+			GetSnapshotsResponse getSnapshotsResponse = Sneaky.sneak(()->esclient.snapshot().
+					get(getSnapshotsRequest, RequestOptions.DEFAULT));
+
 			final List<SnapshotInfo> snapshots = getSnapshotsResponse.getSnapshots();
-//			for(SnapshotInfo snapshot: snapshots){
-//				List<String> indices = snapshot.indices();
-//				for(String index: indices){
+			for(SnapshotInfo snapshot: snapshots){
+				List<String> indices = snapshot.indices();
+				for(String index: indices){
+					// TODO verify if index is closed
 //					if(!isIndexClosed(index)){
 //						throw new DotStateException("Index \"" + index + "\" is not closed and can not be restored");
 //					}
-//				}
-//			}
+				}
+			}
 			RestoreSnapshotRequest restoreSnapshotRequest = new RestoreSnapshotRequest(repositoryName, snapshotName).waitForCompletion(true);
-			RestoreSnapshotResponse response = client.admin().cluster().restoreSnapshot(restoreSnapshotRequest).get();
+			RestoreSnapshotResponse response = Sneaky.sneak(()->esclient.snapshot().restore(restoreSnapshotRequest,
+					RequestOptions.DEFAULT));
+
 			if (response.status() != RestStatus.OK) {
 				Logger.error(this.getClass(),
 						"Problems restoring snapshot " + snapshotName + " with status: " + response.status().name());
@@ -1008,7 +1069,14 @@ public class ESIndexAPI {
 		File outFile = null;
 		AdminLogger.log(this.getClass(), "uploadSnapshot", "Trying to restore snapshot index");
 		// creates specific backup path (if it shouldn't exist)
-		File toDirectory = new File(esclient.getClient().settings().get(REPOSITORY_PATH));
+		ClusterGetSettingsRequest clusterGetSettingsRequest = new ClusterGetSettingsRequest();
+		ClusterGetSettingsResponse clusterGetSettingsResponse = esclient.cluster().
+				getSettings(clusterGetSettingsRequest, RequestOptions.DEFAULT);
+
+		// TODO this might bring no value, please check
+		final String REPO_PATH = clusterGetSettingsResponse.getSetting(REPOSITORY_PATH);
+
+		File toDirectory = new File(REPO_PATH);
 		if (!toDirectory.exists()) {
 			toDirectory.mkdirs();
 		}
@@ -1077,9 +1145,13 @@ public class ESIndexAPI {
 	 */
 	private boolean isRepositoryExist(String repositoryName) {
 		boolean result = false;
-		Client client = esclient.getClient();
-		List<RepositoryMetaData> repositories = client.admin().cluster().prepareGetRepositories().get()
-				.repositories();
+
+		GetRepositoriesRequest request = new GetRepositoriesRequest();
+		GetRepositoriesResponse response = Sneaky.sneak(()->esclient.snapshot()
+				.getRepository(request, RequestOptions.DEFAULT));
+
+		List<RepositoryMetaData> repositories = response.repositories();
+
 		if (repositories.size() > 0) {
 			for (RepositoryMetaData repo : repositories) {
 				result = repo.name().equals(repositoryName);
@@ -1113,11 +1185,17 @@ public class ESIndexAPI {
 		if (!Files.exists(directory)) {
 			throw new IllegalArgumentException("Invalid path to repository while creating the repository.");
 		}
-		Client client = esclient.getClient();
 		if (!isRepositoryExist(repositoryName)) {
 			Settings settings = Settings.builder().put("location", path).put("compress", compress)
 					.build();
-			PutRepositoryResponse response = client.admin().cluster().preparePutRepository(repositoryName).setType("fs").setSettings(settings).get();
+
+			PutRepositoryRequest request = new PutRepositoryRequest();
+			request.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
+			request.settings(settings);
+
+			AcknowledgedResponse response = Sneaky.sneak(()->esclient.snapshot()
+					.createRepository(request, RequestOptions.DEFAULT));
+
 			if(result = response.isAcknowledged()){
 				Logger.debug(this.getClass(), "Repository was created.");
 			}else{
@@ -1141,9 +1219,15 @@ public class ESIndexAPI {
 	 */
 	private boolean isSnapshotExist(String repositoryName, String snapshotName) {
 		boolean result = false;
-		Client client = esclient.getClient();
-		List<SnapshotInfo> snapshotInfo = client.admin().cluster().prepareGetSnapshots(repositoryName).get()
-				.getSnapshots();
+		GetSnapshotsRequest request = new GetSnapshotsRequest();
+		request.repository(repositoryName);
+		request.masterNodeTimeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
+
+		GetSnapshotsResponse response = Sneaky.sneak(()->esclient.snapshot()
+				.get(request, RequestOptions.DEFAULT));
+
+		List<SnapshotInfo> snapshotInfo = response.getSnapshots();
+
 		if (snapshotInfo.size() > 0) {
 			for (SnapshotInfo snapshot : snapshotInfo){
 				result = snapshot.snapshotId().getName().equals(snapshotName);
@@ -1180,11 +1264,14 @@ public class ESIndexAPI {
 	public boolean deleteRepository(String repositoryName, boolean cleanUp) {
 
 		boolean result = false;
-		Client client = esclient.getClient();
 		if (isRepositoryExist(repositoryName)) {
 			try {
-				DeleteRepositoryResponse response = client.admin().cluster().prepareDeleteRepository(repositoryName)
-						.execute().actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
+				DeleteRepositoryRequest request = new DeleteRepositoryRequest(repositoryName);
+				request.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
+
+				AcknowledgedResponse response = esclient.snapshot()
+						.deleteRepository(request, RequestOptions.DEFAULT);
+
 				if (response.isAcknowledged()) {
 					Logger.info(this.getClass(), repositoryName + " repository has been deleted.");
 					result = true;
@@ -1193,7 +1280,14 @@ public class ESIndexAPI {
 				Logger.error(this.getClass(), e.getMessage());
 			}
 			if (cleanUp) {
-				File toDelete = new File(client.settings().get(REPOSITORY_PATH));
+				ClusterGetSettingsRequest clusterGetSettingsRequest = new ClusterGetSettingsRequest();
+				ClusterGetSettingsResponse clusterGetSettingsResponse = Sneaky.sneak(()-> esclient
+						.cluster().getSettings(clusterGetSettingsRequest, RequestOptions.DEFAULT));
+
+				// TODO this might bring no value, please check
+				final String REPO_PATH = clusterGetSettingsResponse.getSetting(REPOSITORY_PATH);
+
+				File toDelete = new File(REPO_PATH);
 				try {
 					FileUtil.deleteDir(toDelete.getAbsolutePath());
 				} catch (IOException e) {
@@ -1207,6 +1301,11 @@ public class ESIndexAPI {
 	}
 
 	public String getRepositoryPath(){
-		return esclient.getClient().settings().get(REPOSITORY_PATH);
+		ClusterGetSettingsRequest clusterGetSettingsRequest = new ClusterGetSettingsRequest();
+		ClusterGetSettingsResponse clusterGetSettingsResponse = Sneaky.sneak(()-> esclient
+				.cluster().getSettings(clusterGetSettingsRequest, RequestOptions.DEFAULT));
+
+		// TODO this might bring no value, please check
+		return clusterGetSettingsResponse.getSetting(REPOSITORY_PATH);
 	}
 }

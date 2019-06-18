@@ -30,9 +30,6 @@ import java.util.Set;
 
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
-import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRequest;
-import org.elasticsearch.action.admin.indices.get.GetIndexRequest;
 import org.elasticsearch.action.admin.indices.stats.IndexStats;
 import org.elasticsearch.action.bulk.BulkProcessor;
 import org.elasticsearch.action.bulk.BulkRequest;
@@ -44,6 +41,8 @@ import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.action.support.WriteRequest.RefreshPolicy;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.indices.CreateIndexResponse;
+import org.elasticsearch.client.indices.GetIndexRequest;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
@@ -1034,10 +1033,10 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
         for (String idx : indexNames) {
 
-            final GetIndexRequest getIndexRequest = new GetIndexRequest();
-            getIndexRequest.indices(idx);
+            final GetIndexRequest getIndexRequest = new GetIndexRequest(idx);
 
-            boolean doesIndexExist = Sneaky.sneak(()->DotRestHighLevelClient.getClient().indices().exists(getIndexRequest,
+            boolean doesIndexExist = Sneaky.sneak(()->DotRestHighLevelClient.getClient().indices()
+                    .exists(getIndexRequest,
                     RequestOptions.DEFAULT));
 
             if (doesIndexExist) {
