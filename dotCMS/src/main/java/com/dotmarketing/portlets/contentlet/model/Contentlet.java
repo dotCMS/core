@@ -1551,6 +1551,10 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 			final boolean respectFrontendRoles, Boolean pullByParents, final int limit, final int offset,
             final String sortBy) {
 
+	    if (variableName == null){
+	        return Collections.EMPTY_LIST;
+        }
+
 		if (!UtilMethods.isSet(this.relatedIds)){
 			relatedIds = Maps.newConcurrentMap();
 		}
