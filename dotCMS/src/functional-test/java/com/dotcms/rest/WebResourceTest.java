@@ -4,8 +4,10 @@ import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.liferay.portal.util.WebKeys;
 import javax.servlet.http.HttpServletRequest;
 
+import javax.servlet.http.HttpSession;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -106,10 +108,15 @@ public class WebResourceTest {
     public void testUserWithPermissionOnPortlet() throws DotDataException {
         final String requiredPortlet = "veryCoolPortlet";
         LayoutAPI mockLayoutAPI = mock(LayoutAPI.class);
+        final HttpSession session = mock(HttpSession.class);
         User user = APILocator.getUserAPI().getUsersByName("Admin User", 0, 0, APILocator.getUserAPI().getSystemUser(), false).get(0);
         HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getHeader("DOTAUTH")).thenReturn(Base64.encode("admin@dotcms.com:admin"));
         when(mockLayoutAPI.doesUserHaveAccessToPortlet(requiredPortlet, user)).thenReturn(true);
+        when(session.getAttribute(WebKeys.COMPANY_ID)).thenReturn("dotcms.org");
+        when(session.getId()).thenReturn("1");
+        when(request.getSession()).thenReturn(session);
+        when(request.getAttribute(WebKeys.USER)).thenReturn(user);
 
         ApiProvider mockProvider = mock(ApiProvider.class);
         when(mockProvider.layoutAPI()).thenReturn(mockLayoutAPI);

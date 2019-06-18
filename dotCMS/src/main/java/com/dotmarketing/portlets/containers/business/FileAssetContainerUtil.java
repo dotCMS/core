@@ -49,6 +49,7 @@ public class FileAssetContainerUtil {
     private static String [] DEFAULT_META_DATA_NAMES_ARRAY
             = new String[] { TITLE, DESCRIPTION, MAX_CONTENTLETS, NOTES};
 
+    static final String CODE                 = "container_code.vtl";
     static final String PRE_LOOP             = "preloop.vtl";
     static final String POST_LOOP            = "postloop.vtl";
     static final String CONTAINER_META_INFO  = "container.vtl";
@@ -191,6 +192,7 @@ public class FileAssetContainerUtil {
                 new FileAssetContainer();
         Optional<String> preLoop           = Optional.empty();
         Optional<String> postLoop          = Optional.empty();
+        Optional<String> codeScript        = Optional.empty();
         Optional<FileAsset> preLoopAsset   = Optional.empty();
         Optional<FileAsset> postLoopAsset  = Optional.empty();
         Optional<String> containerMetaInfo = Optional.empty();
@@ -217,6 +219,12 @@ public class FileAssetContainerUtil {
                 containerMetaInfo = Optional.of(this.toString(fileAsset)); continue;
             }
 
+            if (this.isCode(fileAsset, showLive)) {
+
+
+                codeScript = Optional.of(this.toString(fileAsset)); continue;
+            }
+
             if (this.isValidContentType(showLive, fileAsset)) {
                 containerStructures.add(fileAsset);
             }
@@ -230,9 +238,13 @@ public class FileAssetContainerUtil {
         }
 
         this.setContainerData(host, containerFolder, metaInfoFileAsset, containerStructures.build(), container,
-                preLoop, postLoop, preLoopAsset, postLoopAsset, containerMetaInfo.get(), includeHostOnPath);
+                preLoop, postLoop, preLoopAsset, postLoopAsset, containerMetaInfo.get(), includeHostOnPath, codeScript);
 
         return container;
+    }
+
+    private boolean isCode(final FileAsset fileAsset, final boolean showLive) {
+        return isType(fileAsset, showLive, CODE);
     }
 
     private boolean isValidContentType(final boolean showLive, final FileAsset fileAsset) {
@@ -271,7 +283,8 @@ public class FileAssetContainerUtil {
                                   final Optional<FileAsset> preLoopAsset,
                                   final Optional<FileAsset> postLoopAsset,
                                   final String containerMetaInfo,
-                                  final boolean includeHostOnPath) {
+                                  final boolean includeHostOnPath,
+                                  final Optional<String> codeScript) {
 
         container.setIdentifier (metaInfoFileAsset.getIdentifier());
         container.setInode      (metaInfoFileAsset.getInode());
@@ -294,6 +307,7 @@ public class FileAssetContainerUtil {
         container.setContainerStructuresAssets(containerStructures);
         preLoopAsset.ifPresent (asset -> container.setPreLoopAsset (asset));
         postLoopAsset.ifPresent(asset -> container.setPostLoopAsset(asset));
+        codeScript.ifPresent(script -> container.setCode(script));
     }
 
     private String buildPath(final Host host, final Folder containerFolder, final boolean includeHostOnPath) {

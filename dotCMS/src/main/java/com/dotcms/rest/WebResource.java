@@ -551,7 +551,7 @@ public  class WebResource {
 
                 Logger.warn(WebResource.class, "Request IP: " + ip + ". Can't authenticate user. Username: " + username);
                 SecurityLogger.logDebug(WebResource.class, "Request IP: " + ip + ". Can't authenticate user. Username: " + username);
-                throw new SecurityException("Authentication credentials are required", Response.Status.UNAUTHORIZED);
+                throw new SecurityException("Authentication credentials are required", e, Response.Status.UNAUTHORIZED);
             }
         } else if(StringUtils.isNotEmpty(username) || StringUtils.isNotEmpty(password)) { // providing login or password
 
