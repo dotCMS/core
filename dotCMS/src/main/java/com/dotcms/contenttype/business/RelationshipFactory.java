@@ -47,6 +47,10 @@ public interface RelationshipFactory {
             final boolean hasParent, final boolean live, final String orderBy)
             throws DotDataException;
 
+    List<Contentlet> dbRelatedContent(final Relationship relationship, final Contentlet contentlet,
+            final boolean hasParent, final boolean live, final String orderBy, int limit, int offset)
+            throws DotDataException;
+
     List<Tree> relatedContentTrees(final Relationship relationship, final Contentlet contentlet) throws  DotDataException;
 
     List<Tree> relatedContentTrees(final Relationship relationship, final Contentlet contentlet, final boolean hasParent) throws  DotDataException;

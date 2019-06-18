@@ -1472,14 +1472,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
             		srb.addSort(defaultSecondarySort, defaultSecondardOrder);
             	}
             	else if(!sortBy.startsWith("undefined") && !sortBy.startsWith("undefined_dotraw") && !sortBy.equals("random")) {
-            		String[] sortbyArr=sortBy.split(",");
-	            	for (String sort : sortbyArr) {
-	            		String[] x=sort.trim().split(" ");
-	            		srb.addSort(SortBuilders.fieldSort(x[0].toLowerCase() + "_dotraw").order(x.length>1 && x[1].equalsIgnoreCase("desc") ?
-	                                SortOrder.DESC : SortOrder.ASC));
-
-					}
-            	}
+                    addBuilderSort(sortBy, srb);
+                }
             }else{
                 srb.addSort("moddate", SortOrder.DESC);
             }
@@ -1513,7 +1507,18 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	    return resp.getHits();
 	}
 
-	@Override
+    public static void addBuilderSort(String sortBy, SearchRequestBuilder srb) {
+        String[] sortbyArr = sortBy.split(",");
+        for (String sort : sortbyArr) {
+            String[] x = sort.trim().split(" ");
+            srb.addSort(SortBuilders.fieldSort(x[0].toLowerCase() + "_dotraw")
+                    .order(x.length > 1 && x[1].equalsIgnoreCase("desc") ?
+                            SortOrder.DESC : SortOrder.ASC));
+
+        }
+    }
+
+    @Override
 	protected void removeUserReferences(String userId) throws DotDataException, DotStateException, ElasticsearchException, DotSecurityException {
 	   User systemUser =  APILocator.getUserAPI().getSystemUser();
        User userToReplace = APILocator.getUserAPI().loadUserById(userId);
