@@ -14,7 +14,6 @@ import com.dotcms.util.ConfigTestHelper;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.RelationshipAPI;
-import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
@@ -30,7 +29,6 @@ import com.liferay.util.FileUtil;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -51,6 +49,11 @@ public class TestDataUtils {
 
     public static ContentType getBlogLikeContentType(final String contentTypeName,
             final Host site) {
+            return getBlogLikeContentType(contentTypeName,site,null);
+    }
+
+    public static ContentType getBlogLikeContentType(final String contentTypeName,
+            final Host site, final Set <String> workflowIds) {
 
         ContentType blogType = null;
         try {
@@ -149,7 +152,7 @@ public class TestDataUtils {
                 blogType = new ContentTypeDataGen()
                         .name(contentTypeName)
                         .velocityVarName(contentTypeName)
-                        .fields(fields)
+                        .fields(fields).workflowId(workflowIds)
                         .nextPersisted();
             }
         } catch (Exception e) {
@@ -163,7 +166,11 @@ public class TestDataUtils {
         return getCommentsLikeContentType("Comments" + System.currentTimeMillis());
     }
 
-    public static ContentType getCommentsLikeContentType(final String contentTypeName) {
+    public static ContentType getCommentsLikeContentType(final String contentTypeName){
+        return getCommentsLikeContentType(contentTypeName, null);
+    }
+
+    public static ContentType getCommentsLikeContentType(final String contentTypeName, final Set<String> workflowIds) {
 
         ContentType commentsType = null;
         try {
@@ -199,6 +206,7 @@ public class TestDataUtils {
                         .name(contentTypeName)
                         .velocityVarName(contentTypeName)
                         .fields(fields)
+                        .workflowId(workflowIds)
                         .nextPersisted();
             }
         } catch (Exception e) {
@@ -213,11 +221,16 @@ public class TestDataUtils {
     }
 
     public static ContentType getEmployeeLikeContentType(final String contentTypeName) {
-        return getEmployeeLikeContentType(contentTypeName, null);
+        return getEmployeeLikeContentType(contentTypeName, null, null);
     }
 
     public static ContentType getEmployeeLikeContentType(final String contentTypeName,
-            final Host site) {
+    final Host site) {
+        return getEmployeeLikeContentType(contentTypeName, site, null);
+    }
+
+    public static ContentType getEmployeeLikeContentType(final String contentTypeName,
+            final Host site,  final Set<String> workflowIds) {
 
         ContentType employeeType = null;
         try {
@@ -295,6 +308,7 @@ public class TestDataUtils {
                         .name(contentTypeName)
                         .velocityVarName(contentTypeName)
                         .fields(fields)
+                        .workflowId(workflowIds)
                         .nextPersisted();
             }
         } catch (Exception e) {
@@ -305,22 +319,31 @@ public class TestDataUtils {
     }
 
     public static ContentType getNewsLikeContentType() {
-        return getNewsLikeContentType("News" + System.currentTimeMillis(), null, null, null);
+        return getNewsLikeContentType("News" + System.currentTimeMillis(), null, null, null, null);
     }
 
     public static ContentType getNewsLikeContentType(final String contentTypeName) {
-        return getNewsLikeContentType(contentTypeName, null, null, null);
+        return getNewsLikeContentType(contentTypeName, null, null, null, null);
     }
 
     public static ContentType getNewsLikeContentType(final String contentTypeName,
             final Host site) {
-        return getNewsLikeContentType(contentTypeName, site, null, null);
+        return getNewsLikeContentType(contentTypeName, site, null, null, null);
     }
 
     public static ContentType getNewsLikeContentType(final String contentTypeName,
             final Host site,
             final String detailPageIdentifier,
             final String urlMapPattern) {
+        return getNewsLikeContentType(contentTypeName, site, detailPageIdentifier, urlMapPattern, null);
+    }
+
+
+    public static ContentType getNewsLikeContentType(final String contentTypeName,
+            final Host site,
+            final String detailPageIdentifier,
+            final String urlMapPattern,
+            final Set<String> workflowIds) {
 
         ContentType newsType = null;
         try {
@@ -403,6 +426,7 @@ public class TestDataUtils {
                 ContentTypeDataGen contentTypeDataGen = new ContentTypeDataGen()
                         .name(contentTypeName)
                         .velocityVarName(contentTypeName)
+                        .workflowId(workflowIds)
                         .fields(fields);
 
                 if (null != site) {
@@ -427,10 +451,10 @@ public class TestDataUtils {
     }
 
     public static ContentType getWikiLikeContentType() {
-        return getWikiLikeContentType("Wiki" + System.currentTimeMillis());
+        return getWikiLikeContentType("Wiki" + System.currentTimeMillis(), null);
     }
 
-    public static ContentType getWikiLikeContentType(final String contentTypeName) {
+    public static ContentType getWikiLikeContentType(final String contentTypeName, final Set<String> workflowIds) {
 
         ContentType wikiType = null;
         try {
@@ -479,6 +503,7 @@ public class TestDataUtils {
                         .name(contentTypeName)
                         .velocityVarName(contentTypeName)
                         .fields(fields)
+                        .workflowId(workflowIds)
                         .nextPersisted();
             }
         } catch (Exception e) {
@@ -489,10 +514,10 @@ public class TestDataUtils {
     }
 
     public static ContentType getWidgetLikeContentType() {
-        return getWidgetLikeContentType("SimpleWidget" + System.currentTimeMillis());
+        return getWidgetLikeContentType("SimpleWidget" + System.currentTimeMillis(), null);
     }
 
-    public static ContentType getWidgetLikeContentType(final String contentTypeName) {
+    public static ContentType getWidgetLikeContentType(final String contentTypeName, final Set<String> workflowIds) {
 
         ContentType simpleWidgetContentType = null;
         try {
@@ -518,6 +543,7 @@ public class TestDataUtils {
                         .name(contentTypeName)
                         .velocityVarName(contentTypeName)
                         .fields(fields)
+                        .workflowId(workflowIds)
                         .nextPersisted();
             }
         } catch (Exception e) {
@@ -528,10 +554,10 @@ public class TestDataUtils {
     }
 
     public static ContentType getFormLikeContentType() {
-        return getFormLikeContentType("Form" + System.currentTimeMillis());
+        return getFormLikeContentType("Form" + System.currentTimeMillis(), null);
     }
 
-    public static ContentType getFormLikeContentType(final String contentTypeName) {
+    public static ContentType getFormLikeContentType(final String contentTypeName, final Set<String> workflowIds) {
 
         ContentType formContentType = null;
         try {
@@ -547,6 +573,7 @@ public class TestDataUtils {
                         .baseContentType(BaseContentType.FORM)
                         .name(contentTypeName)
                         .velocityVarName(contentTypeName)
+                        .workflowId(workflowIds)
                         .nextPersisted();
             }
         } catch (Exception e) {
@@ -557,15 +584,10 @@ public class TestDataUtils {
     }
 
     public static ContentType getFormWithRequiredFieldsLikeContentType() {
-        try {
-            return getFormWithRequiredFieldsLikeContentType("Form" + System.currentTimeMillis(),
-              Collections.singleton(TestWorkflowUtils.getSystemWorkflow().getId()));
-        } catch (DotDataException e) {
-            throw new DotRuntimeException(e);
-        }
+            return getFormWithRequiredFieldsLikeContentType("Form" + System.currentTimeMillis(), null);
     }
 
-    public static ContentType getFormWithRequiredFieldsLikeContentType(final String contentTypeName, Set<String> workFlows) {
+    public static ContentType getFormWithRequiredFieldsLikeContentType(final String contentTypeName, Set<String> workFlowsId) {
 
         ContentType formContentType = null;
         try {
@@ -599,7 +621,7 @@ public class TestDataUtils {
                         .baseContentType(BaseContentType.FORM)
                         .name(contentTypeName)
                         .velocityVarName(contentTypeName)
-                        .workflowId(workFlows)
+                        .workflowId(workFlowsId)
                         .fields(fields)
                         .nextPersisted();
             }
@@ -958,10 +980,10 @@ public class TestDataUtils {
     }
 
     public static ContentType getDocumentLikeContentType() {
-       return getDocumentLikeContentType("Document" + System.currentTimeMillis());
+       return getDocumentLikeContentType("Document" + System.currentTimeMillis(), null);
     }
 
-    public static ContentType getDocumentLikeContentType(final String contentTypeName) {
+    public static ContentType getDocumentLikeContentType(final String contentTypeName,Set<String> workflowIds) {
 
         ContentType simpleWidgetContentType = null;
         try {

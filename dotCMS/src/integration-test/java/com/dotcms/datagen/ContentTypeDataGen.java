@@ -11,7 +11,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -124,12 +123,16 @@ public class ContentTypeDataGen extends AbstractDataGen<ContentType> {
 
     @SuppressWarnings("unused")
     public ContentTypeDataGen workflowId(final String... identifier) {
-        this.workflowIds.addAll(Arrays.asList(identifier));
+        if(null != identifier){
+           this.workflowIds.addAll(Arrays.asList(identifier));
+        }
         return this;
     }
 
     public ContentTypeDataGen workflowId(final Set<String> identifier) {
-        this.workflowIds.addAll(identifier);
+        if(null != identifier){
+           this.workflowIds.addAll(identifier);
+        }
         return this;
     }
 
@@ -154,12 +157,12 @@ public class ContentTypeDataGen extends AbstractDataGen<ContentType> {
     @Override
     public ContentType persist(final ContentType contentType) {
         try {
-          final ContentType persistedContentType = APILocator.getContentTypeAPI(APILocator.systemUser()).save(contentType, fields);
-           if(UtilMethods.isSet(workflowIds)) {
-               APILocator.getWorkflowAPI()
-                       .saveSchemeIdsForContentType(persistedContentType, workflowIds);
-           }
-          return persistedContentType;
+            final ContentType persistedContentType = APILocator
+                    .getContentTypeAPI(APILocator.systemUser()).save(contentType, fields);
+            workflowIds.add(APILocator.getWorkflowAPI().findSystemWorkflowScheme().getId());
+            APILocator.getWorkflowAPI()
+                    .saveSchemeIdsForContentType(persistedContentType, workflowIds);
+            return persistedContentType;
         } catch (Exception e) {
             throw new RuntimeException("Unable to persist ContentType.", e);
         }

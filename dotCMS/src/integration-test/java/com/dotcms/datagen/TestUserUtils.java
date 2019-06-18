@@ -1,5 +1,7 @@
 package com.dotcms.datagen;
 
+import static com.dotmarketing.business.Role.ADMINISTRATOR;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
@@ -8,6 +10,7 @@ import com.dotmarketing.business.PermissionAPI.PermissionableType;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableMap;
@@ -230,6 +233,20 @@ public class TestUserUtils {
                 RoleAPI.WORKFLOW_ANY_WHO_CAN_PUBLISH_ROLE_KEY, anyWhoPublish,
                 RoleAPI.WORKFLOW_ANY_WHO_CAN_EDIT_PERMISSIONS_ROLE_KEY, anyWhoEditPermissions
         );
+    }
+
+
+    public static Role getOrCreateAdminRole(){
+        Role adminRole = null;
+        try {
+            adminRole = APILocator.getRoleAPI().loadRoleByKey(ADMINISTRATOR);
+        } catch (DotDataException e) {
+            throw new DotRuntimeException(e);
+        }
+        if (adminRole == null) {
+            adminRole = new RoleDataGen().key(ADMINISTRATOR).nextPersisted();
+        }
+        return adminRole;
     }
 
 }

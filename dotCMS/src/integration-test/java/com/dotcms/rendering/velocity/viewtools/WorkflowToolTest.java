@@ -1,6 +1,14 @@
 package com.dotcms.rendering.velocity.viewtools;
 
+import static com.dotcms.rendering.velocity.viewtools.WorkflowToolFireTestCase.Assertion;
+import static com.dotmarketing.business.APILocator.getUserAPI;
+import static com.dotmarketing.business.APILocator.systemUser;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.rendering.velocity.viewtools.content.ContentMap;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.exception.DotDataException;
@@ -11,20 +19,14 @@ import com.liferay.portal.model.User;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import java.util.HashMap;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-import java.util.HashMap;
-
-import static com.dotcms.rendering.velocity.viewtools.WorkflowToolFireTestCase.*;
-import static com.dotmarketing.business.APILocator.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 @RunWith(DataProviderRunner.class)
 public class WorkflowToolTest {
@@ -41,11 +43,17 @@ public class WorkflowToolTest {
     @DataProvider
     public static Object[] fireTestCases() {
 
+
+        long spaninsh = TestDataUtils.getSpanishLanguage().getId();
+
+        ContentType contentType = TestDataUtils.getEmployeeLikeContentType();
+        Contentlet employeeContent = TestDataUtils.getEmployeeContent(true,1,contentType.id());
+
         // CASE 1 - Saving new Employee contentlet should succeed
         final WorkflowToolFireTestCase case1 = new WorkflowToolFireTestCase();
 
         HashMap<String, Object> case1Properties = new HashMap<>();
-        case1Properties.put("contentType", "Employee");
+        case1Properties.put("contentType", contentType.name());
         case1Properties.put("languageId", 1);
         case1Properties.put("host1", "demo.dotcms.com");
         case1Properties.put("firstName", "Daniel");
@@ -61,15 +69,15 @@ public class WorkflowToolTest {
         case1.addAssertion(new Assertion((contentlet) -> "Daniel".equals(contentlet.get("firstName")), "First name does not match"));
         case1.addAssertion(new Assertion((contentlet) -> "Silva".equals(contentlet.get("lastName")), "Last name does not match"));
 
-        final String KNOWN_EMPLOYEE_ID = "69aaa4e9-a45a-453b-a29d-c518d64fef66";
-        final long SPANISH_LANG_ID = 2;
+        final String KNOWN_EMPLOYEE_ID = employeeContent.getIdentifier();
+        final long SPANISH_LANG_ID = spaninsh;
 
         // CASE 2 - Updating an existing Employee contentlet should succeed
         final WorkflowToolFireTestCase case2 = new WorkflowToolFireTestCase();
 
         HashMap<String, Object> case2Properties = new HashMap<>();
         case2Properties.put("identifier", KNOWN_EMPLOYEE_ID);
-        case2Properties.put("contentType", "Employee");
+        case2Properties.put("contentType", contentType.name());
         case2Properties.put("languageId", SPANISH_LANG_ID);
         case2Properties.put("host1", "demo.dotcms.com");
         case2Properties.put("firstName", "Updated Name");

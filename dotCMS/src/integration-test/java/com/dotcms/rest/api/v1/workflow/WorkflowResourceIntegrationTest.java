@@ -65,6 +65,7 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.TestWorkflowUtils;
 import com.dotcms.datagen.WorkflowDataGen;
 import com.dotcms.mock.response.MockAsyncResponse;
@@ -212,10 +213,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
         host = hostAPI.findDefaultHost(systemUser, false);
 
         //Creating a test role
-        adminRole = roleAPI.loadRoleByKey(ADMINISTRATOR);
-        if (adminRole == null) {
-            adminRole = new RoleDataGen().key(ADMINISTRATOR).nextPersisted();
-        }
+        adminRole = TestUserUtils.getOrCreateAdminRole();
         systemRole = roleAPI.loadRoleByKey(Role.SYSTEM);
 
         //Creating a workflow for testing
