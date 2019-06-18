@@ -1,62 +1,36 @@
 package com.dotmarketing.portlets.personas.business;
 
-import com.dotcms.content.elasticsearch.business.event.ContentletArchiveEvent;
-import com.dotcms.content.elasticsearch.business.event.ContentletCheckinEvent;
+import com.dotcms.content.elasticsearch.business.event.ContentletDeletedEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletPublishEvent;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.Versionable;
 import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.factories.MultiTreeAPI;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletListener;
 import com.dotmarketing.portlets.personas.model.Persona;
-import com.liferay.util.StringPool;
-
-import java.util.Optional;
+import com.dotmarketing.util.Logger;
 
 /**
  * This listener is to track the changes on personas in order to keep up to date changes on the
  * the personalization multitree
+ * By default it is just cleaning up when the publish/unpublish or delete
  * @author jsanca
  */
 public class MultiTreePersonaListener implements ContentletListener<Persona> {
 
-    private final VersionableAPI versionableAPI = APILocator.getVersionableAPI();
-    private final MultiTreeAPI   multiTreeAPI   = APILocator.getMultiTreeAPI();
 
     @Override
-    public void onModified(ContentletCheckinEvent<Persona> contentletCheckinEvent) {
+    public void onModified(final ContentletPublishEvent<Persona> contentletPublishEvent) {
 
-        if (null != contentletCheckinEvent.getContentlet() &&
-            null != contentletCheckinEvent.getContentlet().getIdentifier() &&
-            !contentletCheckinEvent.isNewVersionCreated()) {
-
-            final Persona persona    = contentletCheckinEvent.getContentlet();
-            final String  personaTag = persona.getKeyTag();
-            final String identifier  = persona.getIdentifier();
-            final Optional<Versionable> previousVersion =
-                    this.versionableAPI.findPreviousVersion(identifier);
-
-            // if there is a previous version, switch the old content associated to it to the new one.
-            if (previousVersion.isPresent()) {
-
-                final Versionable previousVersionable = previousVersion.get();
-                if (previousVersionable instanceof Contentlet) {
-
-                    final String previousPersonaTag = Contentlet.class.cast(previousVersionable)
-                            .getStringProperty(PersonaAPI.KEY_TAG_FIELD);
-
-                    this.multiTreeAPI.updateMultiTreeByPersonaTag (
-                            Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + previousPersonaTag,
-                            Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + personaTag);
-                }
-            }
-        }
+        // Here want to check if the persona key tag has changed.
+        DeleteMultiTreeUsedPersonaTagJob.triggerDeleteMultiTreeUsedPersonaTagJob(contentletPublishEvent.getUser(), false);
     }
 
-
     @Override
-    public void onArchive(ContentletArchiveEvent<Persona> contentletArchiveEvent) {
+    public void onDeleted(final ContentletDeletedEvent<Persona> contentletDeletedEvent) {
 
+        Logger.info(this, "The Persona tag: " + contentletDeletedEvent.getContentlet().getKeyTag() +
+                ", has been removed, triggering the DeleteMultiTreeUsedPersonaTagJob to remove the unused tags");
+
+        DeleteMultiTreeUsedPersonaTagJob.triggerDeleteMultiTreeUsedPersonaTagJob(contentletDeletedEvent.getUser(), false);
     }
 }

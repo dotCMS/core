@@ -43,7 +43,6 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import org.apache.commons.lang.StringUtils;
-import org.apache.poi.ss.formula.functions.T;
 
 import java.sql.SQLException;
 import java.util.*;
@@ -79,6 +78,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     private static final String SELECT_BY_PAGE = "select * from multi_tree where parent1 = ? order by tree_order";
     private static final String SELECT_BY_PAGE_AND_PERSONALIZATION = "select * from multi_tree where parent1 = ? and personalization = ? order by tree_order";
     private static final String SELECT_UNIQUE_PERSONALIZATION_PER_PAGE = "select distinct(personalization) from multi_tree where parent1 = ?";
+    private static final String SELECT_UNIQUE_PERSONALIZATION = "select distinct(personalization) from multi_tree where parent1 = ?";
     private static final String SELECT_BY_ONE_PARENT = "select * from multi_tree where parent1 = ? or parent2 = ? order by tree_order"; // search by page id or container id
     private static final String SELECT_BY_TWO_PARENTS = "select * from multi_tree where parent1 = ? and parent2 = ?  order by tree_order";
     private static final String SELECT_ALL = "select * from multi_tree  ";
@@ -240,20 +240,47 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         return personalizationSet;
     }
 
-    public Set<String> cleanUpUnusedPersonalization(final Predicate<String> personalizationFilter) {
+    @CloseDBIfOpened
+    @Override
+    public Set<String> getPersonalizations () throws DotDataException {
 
-        final Set<String> personalizationRemovedSet = new HashSet<>();
-        final Set<String> currentPersonalizationSet = new HashSet<>(); // get distinct personalization
+        final Set<String> personalizationSet = new HashSet<>();
+        final  List<Map<String, Object>>  personalizationMaps =
+                new DotConnect().setSQL(SELECT_UNIQUE_PERSONALIZATION).loadObjectResults();
 
-        currentPersonalizationSet.stream().filter(personalizationFilter)
-                .forEach(personalizationRemovedSet::add);
+        for (final Map<String, Object> personalizationMap : personalizationMaps) {
 
-        if (!personalizationRemovedSet.isEmpty()) {
-
-            // todo: remove all of them in batch
+            personalizationSet.add(personalizationMap.values()
+                    .stream().findFirst().orElse(StringPool.BLANK).toString());
         }
 
-        return personalizationRemovedSet;
+        return personalizationSet;
+    }
+
+    @WrapInTransaction
+    @Override
+    public Set<String> cleanUpUnusedPersonalization(final Predicate<String> personalizationFilter) throws DotDataException {
+
+        final Set<Params> personalizationToRemoveParamsSet = new HashSet<>();
+        final Set<String> personalizationToRemoveSet       = new HashSet<>();
+        final Set<String> currentPersonalizationSet        = this.getPersonalizations();
+
+        currentPersonalizationSet.stream()
+                .filter(personalizationFilter)
+                .forEach(personalization -> {
+
+                    personalizationToRemoveParamsSet.add(new Params(personalization));
+                    personalizationToRemoveSet.add(personalization);
+                });
+
+        if (!personalizationToRemoveParamsSet.isEmpty()) {
+
+            new DotConnect().executeBatch(
+                    "DELETE FROM multi_tree where personalization = ?",
+                    personalizationToRemoveParamsSet);
+        }
+
+        return personalizationToRemoveSet;
     }
 
     @WrapInTransaction
