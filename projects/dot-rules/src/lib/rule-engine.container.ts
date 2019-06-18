@@ -1,6 +1,6 @@
 
-import {from as observableFrom, Observable } from 'rxjs';
-import { reduce, mergeMap, take } from 'rxjs/operators';
+import {from as observableFrom, Observable, merge } from 'rxjs';
+import { reduce, mergeMap, take, map, filter } from 'rxjs/operators';
 // tslint:disable-next-line:max-file-line-count
 import { Component, EventEmitter, ViewEncapsulation } from '@angular/core';
 import {
@@ -19,7 +19,7 @@ import { ConditionGroupService } from './services/ConditionGroup';
 import { I18nService } from './services/system/locale/I18n';
 import { CwError } from 'dotcms-js';
 import { BundleService, IPublishEnvironment } from './services/bundle-service';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Params } from '@angular/router';
 import { HttpCode } from 'dotcms-js';
 import { LoggerService } from 'dotcms-js';
 
@@ -626,12 +626,16 @@ export class RuleEngineContainer {
   private initRules(): void {
     this.state.loading = true;
 
-    let siteId = '';
-    this.route.queryParams.subscribe(params => {
-      siteId = params['realmId'];
+    let pageId = '';
+
+    const pageIdParams = this.route.params.pipe(map((params: Params) => params.pageId));
+    const queryParams = this.route.queryParams.pipe(map((params: Params) => params.realmId));
+
+    merge(pageIdParams, queryParams).pipe(filter(res => !!res), take(1)).subscribe((id: string) => {
+        pageId = id;
     });
 
-    this._ruleService.requestRules(siteId);
+    this._ruleService.requestRules(pageId);
     this._ruleService.loadRules().pipe(take(1)).subscribe((rules: RuleModel[]) => {
       this.loadRules(rules);
     });

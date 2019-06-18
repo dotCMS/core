@@ -11,12 +11,12 @@ import { map, mergeMap } from 'rxjs/operators';
 import * as _ from 'lodash';
 
 interface DotEditPageNavItem {
-    needsEntepriseLicense: boolean;
+    action?: (inode: string) => void;
     disabled: boolean;
     icon: string;
     label: string;
     link?: string;
-    action?: object;
+    needsEntepriseLicense: boolean;
     tooltip?: string;
 }
 
@@ -26,10 +26,13 @@ interface DotEditPageNavItem {
     styleUrls: ['./dot-edit-page-nav.component.scss']
 })
 export class DotEditPageNavComponent implements OnChanges {
-    @Input()
-    pageState: DotRenderedPageState;
-    model: Observable<DotEditPageNavItem[]>;
+    @Input() pageState: DotRenderedPageState;
+
     isEnterpriseLicense: boolean;
+    model: Observable<DotEditPageNavItem[]>;
+    i18nMessages: {
+        [key: string]: string;
+    } = {};
 
     constructor(
         private dotLicenseService: DotLicenseService,
@@ -60,13 +63,15 @@ export class DotEditPageNavComponent implements OnChanges {
             .getMessages([
                 'editpage.toolbar.nav.content',
                 'editpage.toolbar.nav.properties',
+                'editpage.toolbar.nav.rules',
                 'editpage.toolbar.nav.layout',
                 'editpage.toolbar.nav.code',
                 'editpage.toolbar.nav.license.enterprise.only',
                 'editpage.toolbar.nav.layout.advance.disabled'
             ])
             .pipe(
-                mergeMap(() => {
+                mergeMap((messages: { [key: string]: string }) => {
+                    this.i18nMessages = messages;
                     return this.dotLicenseService.isEnterprise();
                 }),
                 map((isEnterpriseLicense: boolean) => {
@@ -86,21 +91,22 @@ export class DotEditPageNavComponent implements OnChanges {
         dotRenderedPage: DotRenderedPage,
         enterpriselicense: boolean
     ): DotEditPageNavItem[] {
-        const result = [
+        return [
             {
                 needsEntepriseLicense: false,
                 disabled: false,
                 icon: 'description',
-                label: this.dotMessageService.get('editpage.toolbar.nav.content'),
+                label: this.i18nMessages['editpage.toolbar.nav.content'],
                 link: 'content'
             },
-            this.getTemplateNavItem(dotRenderedPage, enterpriselicense),
+            this.getLayoutNavItem(dotRenderedPage, enterpriselicense),
+            this.getRulesNavItem(dotRenderedPage, enterpriselicense),
             {
                 needsEntepriseLicense: false,
                 disabled: false,
                 icon: 'add',
-                label: this.dotMessageService.get('editpage.toolbar.nav.properties'),
-                action: (inode) => {
+                label: this.i18nMessages['editpage.toolbar.nav.properties'],
+                action: (inode: string) => {
                     this.dotContentletEditorService.edit({
                         data: {
                             inode: inode
@@ -109,11 +115,9 @@ export class DotEditPageNavComponent implements OnChanges {
                 }
             }
         ];
-
-        return result;
     }
 
-    private getTemplateNavItem(
+    private getLayoutNavItem(
         dotRenderedPage: DotRenderedPage,
         enterpriselicense: boolean
     ): DotEditPageNavItem {
@@ -127,13 +131,31 @@ export class DotEditPageNavComponent implements OnChanges {
             link: 'layout',
             tooltip: dotRenderedPage.template.drawed
                 ? null
-                : this.dotMessageService.get('editpage.toolbar.nav.layout.advance.disabled')
+                : this.i18nMessages['editpage.toolbar.nav.layout.advance.disabled']
+        };
+    }
+
+    private getRulesNavItem(
+        dotRenderedPage: DotRenderedPage,
+        enterpriselicense: boolean
+    ): DotEditPageNavItem {
+        // Right now we only allowing users to edit layout, so no templates or advanced template can be edit from here.
+        // https://github.com/dotCMS/core-web/pull/589
+        return {
+            needsEntepriseLicense: !enterpriselicense,
+            disabled: !this.canGoToLayout(dotRenderedPage),
+            icon: 'tune',
+            label: this.i18nMessages['editpage.toolbar.nav.rules'],
+            link: `rules/${dotRenderedPage.page.identifier}`,
+            tooltip: dotRenderedPage.template.drawed
+                ? null
+                : this.i18nMessages['editpage.toolbar.nav.layout.advance.disabled']
         };
     }
 
     private getTemplateItemLabel(template: DotTemplate): string {
-        return this.dotMessageService.get(
+        return this.i18nMessages[
             !template ? 'editpage.toolbar.nav.layout' : 'editpage.toolbar.nav.layout'
-        );
+        ];
     }
 }

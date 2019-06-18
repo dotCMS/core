@@ -48,6 +48,7 @@ describe('DotEditPageNavComponent', () => {
 
     const messageServiceMock = new MockDotMessageService({
         'editpage.toolbar.nav.content': 'Content',
+        'editpage.toolbar.nav.rules': 'Rules',
         'editpage.toolbar.nav.layout': 'Layout',
         'editpage.toolbar.nav.properties': 'Properties',
         'editpage.toolbar.nav.code': 'Code',
@@ -107,7 +108,7 @@ describe('DotEditPageNavComponent', () => {
 
         it('should call the ContentletEditorService Edit when clicked on Properties button', () => {
             const menuListItems = fixture.debugElement.queryAll(By.css('.edit-page-nav__item'));
-            menuListItems[2].nativeNode.click();
+            menuListItems[3].nativeNode.click();
             expect(dotContentletEditorService.edit).toHaveBeenCalled();
         });
     });
@@ -115,10 +116,10 @@ describe('DotEditPageNavComponent', () => {
     describe('model change', () => {
         it('should have basic menu items', () => {
             const menuListItems = fixture.debugElement.queryAll(By.css('.edit-page-nav__item'));
-            expect(menuListItems.length).toEqual(3);
+            expect(menuListItems.length).toEqual(4);
 
-            const labels = ['Content', 'Layout', 'Properties'];
-            const icons = ['description', 'view_quilt', 'add'];
+            const labels = ['Content', 'Layout', 'Rules', 'Properties'];
+            const icons = ['description', 'view_quilt', 'tune', 'add'];
             menuListItems.forEach((item, index) => {
                 const iconClass = item.query(By.css('i')).nativeElement.innerHTML.trim();
                 expect(iconClass).toEqual(icons[index]);
@@ -172,7 +173,7 @@ describe('DotEditPageNavComponent', () => {
             );
             const iconClass = menuListItems[0].query(By.css('i')).nativeElement.innerHTML.trim();
 
-            expect(menuListItems.length).toEqual(3);
+            expect(menuListItems.length).toEqual(4);
             expect(iconClass).toEqual('description');
             expect(menuListItems[0].nativeElement.textContent).toContain('Content');
             expect(menuListItems[1].nativeElement.textContent).toContain('Layout');
@@ -229,8 +230,8 @@ describe('DotEditPageNavComponent', () => {
                 'edit-page-nav__item--disabled'
             );
 
-            const labels = ['Content', 'Layout', 'Properties'];
-            const icons = ['description', 'view_quilt', 'add'];
+            const labels = ['Content', 'Layout', 'Rules', 'Properties'];
+            const icons = ['description', 'view_quilt', 'tune', 'add'];
             menuListItems.forEach((item, index) => {
                 const iconClass = item.query(By.css('i')).nativeElement.innerHTML.trim();
                 expect(iconClass).toEqual(icons[index]);
