@@ -118,7 +118,9 @@ public class JsonWebTokenUtilsIntegrationTest {
         assertNotNull(subject);
         assertEquals(subject, userId);
 
-        userAPI.loadUserById(userId).setModificationDate(new Date());
+        final User user = userAPI.loadUserById(userId);
+        user.setModificationDate(new Date());
+        userAPI.save(user,APILocator.systemUser(),false);
 
         //Get the user
         JsonWebTokenUtils jsonWebTokenUtils = new JsonWebTokenUtils(jsonWebTokenService);
