@@ -1,20 +1,22 @@
-package com.dotcms.personalization;
+package com.dotcms.personalization.web;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.personas.model.Persona;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
 
 /**
- * Util for personalization stuff
+ * WEB API for personalization stuff
  * @see Visitor
  * @see Persona
  */
-public class PersonalizationUtil {
+public class PersonalizationWebAPIImpl implements PersonalizationWebAPI {
 
     /**
      * Gets the personalization for a container
@@ -22,7 +24,8 @@ public class PersonalizationUtil {
      * @param request {@link HttpServletRequest}
      * @return String
      */
-    public static String getContainerPersonalization (final HttpServletRequest request) {
+    @Override
+    public String getContainerPersonalization (final HttpServletRequest request) {
 
         if (null != request) {
 
@@ -39,8 +42,12 @@ public class PersonalizationUtil {
      * This method will tries to figure out the personalization based on the current thread local context, if not will return just {@link MultiTree#DOT_PERSONALIZATION_DEFAULT}
      * @return String
      */
-    public static String getContainerPersonalization () {
+    @Override
+    public String getContainerPersonalization () {
 
         return getContainerPersonalization(HttpServletRequestThreadLocal.INSTANCE.getRequest());
     }
+
+
+
 }

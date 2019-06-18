@@ -79,16 +79,7 @@ public abstract class VelocityModeHandler {
     public final Template getTemplate(final IHTMLPage page, final PageMode mode) {
 
         return VelocityUtil.getEngine().getTemplate(mode.name() + File.separator + page.getIdentifier() + "_"
-                + page.getLanguageId() + this.getVariant(page, mode) + "." + VelocityType.HTMLPAGE.fileExtension);
+                + page.getLanguageId() + "." + VelocityType.HTMLPAGE.fileExtension);
     }
 
-    /**
-     * Return the variant for this page, by default empty
-     * @param page {@link IHTMLPage}
-     * @param mode {@link PageMode}
-     * @return String
-     */
-    protected String getVariant(final IHTMLPage page, final PageMode mode) {
-        return StringPool.BLANK;
-    }
 }
