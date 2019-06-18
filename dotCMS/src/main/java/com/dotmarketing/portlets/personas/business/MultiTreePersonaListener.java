@@ -2,9 +2,6 @@ package com.dotmarketing.portlets.personas.business;
 
 import com.dotcms.content.elasticsearch.business.event.ContentletDeletedEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletPublishEvent;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.VersionableAPI;
-import com.dotmarketing.factories.MultiTreeAPI;
 import com.dotmarketing.portlets.contentlet.model.ContentletListener;
 import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.util.Logger;

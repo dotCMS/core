@@ -23,7 +23,7 @@ import java.util.function.Supplier;
  * Deletes the unused persona tags on the multi tree.
  * @author jsanca
  */
-public class DeleteMultiTreeUsedPersonaTagJob implements Job {
+public class DeleteMultiTreeUsedPersonaTagJob implements StatefulJob {
 
     private final MultiTreeAPI multiTreeAPI;
     private final PersonaAPI   personaAPI;
