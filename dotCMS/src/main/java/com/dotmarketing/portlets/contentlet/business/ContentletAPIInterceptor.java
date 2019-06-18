@@ -1135,7 +1135,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 
     @Override
     public List<Contentlet> getRelatedContent(Contentlet contentlet, Relationship rel,
-            boolean pullByParent, User user, boolean respectFrontendRoles, int limit, int offset,
+            Boolean pullByParent, User user, boolean respectFrontendRoles, int limit, int offset,
             String sortBy) throws DotDataException {
         for (ContentletAPIPreHook pre : preHooks) {
             boolean preResult = pre
@@ -1158,7 +1158,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
     }
 
     @Override
-	public List<Contentlet> getRelatedContent(Contentlet contentlet, Relationship rel, boolean pullByParent, User user,	boolean respectFrontendRoles) throws DotDataException,	DotSecurityException {
+	public List<Contentlet> getRelatedContent(Contentlet contentlet, Relationship rel, Boolean pullByParent, User user,	boolean respectFrontendRoles) throws DotDataException,	DotSecurityException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.getRelatedContent(contentlet, rel,pullByParent, user, respectFrontendRoles);
 			if(!preResult){
@@ -1534,7 +1534,30 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 	}
 
-	@Override
+    @Override
+    public List<Contentlet> filterRelatedContent(Contentlet contentlet, Relationship rel, User user,
+            boolean respectFrontendRoles, Boolean pullByParent, int limit, int offset,
+            String sortBy) throws DotDataException, DotSecurityException {
+        for(ContentletAPIPreHook pre : preHooks){
+            boolean preResult = pre.filterRelatedContent(contentlet, rel, user, respectFrontendRoles, pullByParent,
+                    limit, offset, sortBy);
+            if(!preResult){
+                Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+                throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+            }
+        }
+        List<Contentlet> contentlets = conAPI
+                .filterRelatedContent(contentlet, rel, user, respectFrontendRoles, pullByParent,
+                        limit, offset, sortBy);
+        for(ContentletAPIPostHook post : postHooks){
+            post.filterRelatedContent(contentlet, rel, user, respectFrontendRoles, pullByParent,
+                    limit, offset, sortBy);
+        }
+
+        return contentlets;
+    }
+
+    @Override
 	public void restoreVersion(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotSecurityException,	DotContentletStateException, DotDataException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.restoreVersion(contentlet, user, respectFrontendRoles);
