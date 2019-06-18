@@ -63,7 +63,6 @@ public class JsonWebTokenServiceIntegrationTest {
                 userId, new Date(), DateUtil.daysToMillis(2)));
         System.out.println(jsonWebToken);
         assertNotNull(jsonWebToken);
-        assertTrue(jsonWebToken.startsWith("eyJhbGciOiJIUzI1NiJ9"));
 
         //Parse the generated token
         final JWToken jwtBean = jsonWebTokenService.parseToken(jsonWebToken);
@@ -89,7 +88,6 @@ public class JsonWebTokenServiceIntegrationTest {
 
         System.out.println(jsonWebToken);
         assertNotNull(jsonWebToken);
-        assertTrue(jsonWebToken.startsWith("eyJhbGciOiJIUzI1NiJ9"));
 
         //Parse the expired token
         final JWToken jwtBean = jsonWebTokenService.parseToken(jsonWebToken);
@@ -108,7 +106,6 @@ public class JsonWebTokenServiceIntegrationTest {
         ));
         System.out.println(jsonWebToken);
         assertNotNull(jsonWebToken);
-        assertTrue(jsonWebToken.startsWith("eyJhbGciOiJIUzI1NiJ9"));
 
         /*
         Change the existing cluster id in order to simulate we are using the token in a

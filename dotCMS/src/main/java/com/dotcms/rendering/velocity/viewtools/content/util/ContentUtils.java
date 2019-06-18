@@ -536,7 +536,7 @@ public class ContentUtils {
                         .getParentStructureInode().equals(contentlet.getContentTypeId()))) {
                     fieldVariable = relationship.getChildRelationName();
                 } else{
-                    fieldVariable = relationship.getChildRelationName();
+                    fieldVariable = relationship.getParentRelationName();
                 }
 
                 //If no condition, get related content from cache (only if a relationship field exists).

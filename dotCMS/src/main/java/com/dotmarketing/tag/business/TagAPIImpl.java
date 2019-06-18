@@ -806,4 +806,18 @@ public class TagAPIImpl implements TagAPI {
         }
     }
 
+    @Override
+    public List<Tag> getTagsByHostId(final String hostId) throws DotDataException {
+        return tagFactory.getTagsByHost(hostId);
+    }
+
+    @Override
+    public void deleteTagsByHostId(final String hostId) throws DotDataException {
+        final List<Tag> tags = getTagsByHostId(hostId);
+        for(final Tag tag : tags){
+            deleteTag(tag);
+        }
+    }
+
+
 }

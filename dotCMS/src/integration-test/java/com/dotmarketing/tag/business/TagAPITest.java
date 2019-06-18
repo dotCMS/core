@@ -607,6 +607,7 @@ public class TagAPITest extends IntegrationTestBase {
 
 		Host newHost = null;
 		try {
+			//Creates a new Host
 			Contentlet host = new Contentlet();
 			Structure st = structureAPI.findByVarName("Host", systemUser);
 			host.setStructureInode(st.getInode());
@@ -617,14 +618,8 @@ public class TagAPITest extends IntegrationTestBase {
 			host = conAPI.checkin(host, testUser, false);
 			host.setIndexPolicy(IndexPolicy.FORCE);
 			conAPI.publish(host, testUser, false);
-			assertTrue(conAPI.isInodeIndexed(host.getInode()));
-			assertTrue(conAPI.isInodeIndexed(host.getInode(), true));
-			try {
-				Thread.sleep(3000);
-			} catch (InterruptedException e) {
-				//Do nothing...
-			}
 
+			//Finds the new Host and set the Tag Storage to the new host id
 			newHost = hostAPI.findByName(hostName, systemUser, false);
 			host.setProperty(Host.TAG_STORAGE, newHost.getIdentifier());
 			host.setInode(null);
@@ -632,60 +627,67 @@ public class TagAPITest extends IntegrationTestBase {
 			host = conAPI.checkin(host, testUser, false);
 			host.setIndexPolicy(IndexPolicy.FORCE);
 			conAPI.publish(host, testUser, false);
-			assertTrue(conAPI.isInodeIndexed(host.getInode()));
-			assertTrue(conAPI.isInodeIndexed(host.getInode(), true));
-			try {
-				Thread.sleep(3000);
-			} catch (InterruptedException e) {
-				//Do nothing...
-			}
 
-			TagFactory tagFactory = FactoryLocator.getTagFactory();
-			List<Tag> tags = tagFactory.getTagsByHost(defaultHostId);
-			int initialNumberOfTagsDemo = tags.size();
+			//Gets the default Host Tags
+			List<Tag> tags = tagAPI.getTagsByHostId(defaultHostId);
+			int defaultHostInitialNumberOfTags = tags.size();
 			assertNotNull(tags);
-			assertTrue(initialNumberOfTagsDemo > 0);
+			assertTrue(defaultHostInitialNumberOfTags > 0);
 
-			tags = tagFactory.getTagsByHost(newHost.getIdentifier());
-			int initialNumberOfTagsNewHost = tags.size();
+			//Gets the new Host Tags
+			tags = tagAPI.getTagsByHostId(newHost.getIdentifier());
+			int newHostinitialNumberOfTags = tags.size();
 			assertNotNull(tags);
-			assertTrue(initialNumberOfTagsNewHost >= 0);
+			assertTrue(newHostinitialNumberOfTags == 0);
 
-			//Move tags to other host
+			//Move the Tags to the new Host
 			tagAPI.updateTagReferences(defaultHostId, defaultHostId, newHost.getIdentifier());
 
 			//to refresh cache
 			tagCache.clearCache();
 
-			List<Tag> newHostTags = tagFactory.getTagsByHost(newHost.getIdentifier());
-			assertTrue(newHostTags.size() > initialNumberOfTagsNewHost);
+			//Checks that the tags have been moved
+			List<Tag> newHostTagsAfterUpdate = tagAPI.getTagsByHostId(newHost.getIdentifier());
+			assertTrue(newHostTagsAfterUpdate.size() > newHostinitialNumberOfTags);
 
-			List<Tag> tagsAfterUpdate = tagFactory.getTagsByHost(defaultHostId);
-			assertTrue(tagsAfterUpdate.size() < initialNumberOfTagsDemo);
+			List<Tag> defaultHostTagsAfterUpdate = tagAPI.getTagsByHostId(defaultHostId);
+			assertTrue(defaultHostTagsAfterUpdate.size() < defaultHostInitialNumberOfTags);
 
 			//return tags to original host
 			tagAPI.updateTagReferences(defaultHostId, newHost.getIdentifier(), defaultHostId);
 			tagCache.clearCache();
 
-			tagsAfterUpdate = tagFactory.getTagsByHost(defaultHostId);
-			assertTrue(tagsAfterUpdate.size() == initialNumberOfTagsDemo);
+			defaultHostTagsAfterUpdate = tagAPI.getTagsByHostId(defaultHostId);
+			assertTrue(defaultHostTagsAfterUpdate.size() == defaultHostInitialNumberOfTags);
 
 			/*here the amount is not 0 because is entering in the condition
 			 * if((hostIdentifier.equals(newTagStorageId) && hostTagList.size() == 0) && !newTagStorageId.equals(Host.SYSTEM_HOST)) {
 			 * saveTag(tag.getTagName(), "", hostIdentifier);
 			 */
-			newHostTags = tagFactory.getTagsByHost(newHost.getIdentifier());
-			assertTrue(newHostTags.size() == initialNumberOfTagsDemo);
+			newHostTagsAfterUpdate = tagAPI.getTagsByHostId(newHost.getIdentifier());
+			assertTrue(newHostTagsAfterUpdate.size() == defaultHostInitialNumberOfTags);
 		} finally {
 
 			if (null != newHost) {
 				//delete host
-				conAPI.unpublish(newHost, systemUser, false);
-				conAPI.archive(newHost, systemUser, false);
-				conAPI.delete(newHost, systemUser, false);
+				hostAPI.archive(newHost,systemUser,false);
+				hostAPI.delete(newHost,systemUser,false);
+				assertTrue(tagAPI.getTagsByHostId(newHost.getIdentifier()).size()==0);
 			}
 
 		}
+	}
+
+	/**
+	 * Test getTagsByHostId
+	 */
+	@Test
+	public void testGetTagsByHostId_returnAllTagsOfAHost() throws Exception{
+		//Gets the default Host Tags
+		List<Tag> tags = tagAPI.getTagsByHostId(defaultHostId);
+		int defaultHostInitialNumberOfTags = tags.size();
+		assertNotNull(tags);
+		assertTrue(defaultHostInitialNumberOfTags > 0);
 	}
 
 	/**
