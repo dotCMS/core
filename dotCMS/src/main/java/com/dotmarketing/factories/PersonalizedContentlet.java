@@ -12,7 +12,7 @@ import java.util.Objects;
 public class PersonalizedContentlet {
 
     private final String contentletId;
-    private final String    personalization;
+    private final String personalization;
 
     public PersonalizedContentlet(final String contentletId, final String personalization) {
         this.contentletId    = contentletId;

@@ -57,7 +57,6 @@ public class ParseContainer extends DotDirective {
 		if (null != personalizationPayload) {
 			context.put(key, personalizationPayload);
 		}
-
 	}
 
 }
