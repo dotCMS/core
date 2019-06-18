@@ -95,7 +95,7 @@ public class JsonWebTokenUtilsIntegrationTest {
      */
     @Test
     public void get_user_in_token_modified()
-            throws DotSecurityException, DotDataException, ParseException {
+            throws DotSecurityException, DotDataException, InterruptedException {
 
         //Generate the token service
         final JsonWebTokenService jsonWebTokenService =
@@ -118,9 +118,9 @@ public class JsonWebTokenUtilsIntegrationTest {
         assertNotNull(subject);
         assertEquals(subject, userId);
 
-        final User user = userAPI.loadUserById(userId);
-        user.setModificationDate(new Date());
-        userAPI.save(user,APILocator.systemUser(),false);
+        Thread.sleep(1000);
+
+        userAPI.loadUserById(userId).setModificationDate(new Date());
 
         //Get the user
         JsonWebTokenUtils jsonWebTokenUtils = new JsonWebTokenUtils(jsonWebTokenService);
