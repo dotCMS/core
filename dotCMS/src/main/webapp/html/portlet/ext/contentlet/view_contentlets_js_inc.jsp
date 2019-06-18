@@ -2233,9 +2233,9 @@
                             div.innerHTML += "<div class='contentViewTitle'><%= LanguageUtil.get(pageContext, "The-actual-query-") %></div>"+
                                 "<div class='contentViewQuery'>"+queryRaw+"</div>";
                         } else{
-                            test_api_xml_link += test_api_xml_link + "/related/" + relatedQueryByChild;
-                            test_api_json_link += test_api_json_link + "/related/" + relatedQueryByChild;
-                            apicall_urlencode += apicall_urlencode + "/related/" + relatedQueryByChild;
+                            test_api_xml_link +=  "/related/" + relatedQueryByChild;
+                            test_api_json_link += "/related/" + relatedQueryByChild;
+                            apicall_urlencode += "/related/" + relatedQueryByChild;
                         }
 
                         div.innerHTML += "<div class='contentViewTitle'><%= LanguageUtil.get(pageContext, "rest-api-call-urlencoded") %></div>"+
