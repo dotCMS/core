@@ -532,14 +532,21 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
     }
 
-    private void _reorder(final MultiTree tree) throws DotDataException {
+    private void _reorder(final MultiTree treeInput) throws DotDataException {
 
+        final MultiTree tree = this.checkPersonalization(treeInput);
         List<MultiTree> trees = getMultiTrees(tree.getHtmlPage(), tree.getContainerAsID(), tree.getRelationType(), tree.getPersonalization());
         trees = trees.stream().filter(rowTree -> !rowTree.equals(tree)).collect(Collectors.toList());
         int maxOrder = (tree.getTreeOrder() > trees.size()) ? trees.size() : tree.getTreeOrder();
         trees.add(maxOrder, tree);
 
         saveMultiTrees(trees);
+    }
+
+    private MultiTree checkPersonalization(final MultiTree tree) {
+
+        return null != tree && null != tree.getPersonalization()?
+                tree: MultiTree.personalized(tree, MultiTree.DOT_PERSONALIZATION_DEFAULT);
     }
 
     private void _dbInsert(final MultiTree multiTree) throws DotDataException {
