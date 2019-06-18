@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.contentlet.business;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotmarketing.beans.Host;
@@ -774,7 +775,27 @@ public interface ContentletAPI {
 	 */
 	public void relateContent(Contentlet contentlet, ContentletRelationshipRecords related, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException;
 
-	/**
+
+    /**
+     * Internally called by getRelatedContent methods (handles all the logic to filter by parents or children)
+     * @param contentlet
+     * @param rel
+     * @param user
+     * @param respectFrontendRoles
+     * @param pullByParent
+     * @param limit
+     * @param offset
+     * @param sortBy
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    List<Contentlet> filterRelatedContent(Contentlet contentlet, Relationship rel,
+            User user, boolean respectFrontendRoles, Boolean pullByParent, int limit, int offset,
+            String sortBy)
+            throws DotDataException, DotSecurityException;
+
+    /**
 	 * Gets all related content, if this method is invoked with the same structures (where the parent and child structures are the same type)
 	 * kind of relationship then all parents and children of the given contentlet will be retrieved in the same returned list
 	 * @param contentlet
@@ -809,8 +830,9 @@ public interface ContentletAPI {
      * @throws DotDataException
      */
     List<Contentlet> getRelatedContent(Contentlet contentlet, Relationship rel,
-            boolean pullByParent, User user, boolean respectFrontendRoles, int limit, int offset,
-            String sortBy)throws DotDataException;
+            Boolean pullByParent, User user, boolean respectFrontendRoles, int limit, int offset,
+            String sortBy)
+            throws DotDataException;
 
     /**
 	 * Gets all related content from the same structure (where the parent and child structures are the same type)
@@ -1941,9 +1963,5 @@ public interface ContentletAPI {
      * @return
      */
     Optional<Contentlet> findInDb(String inode);
-
-    List<Contentlet> filterRelatedContent(Contentlet contentlet, Relationship rel,
-            User user, boolean respectFrontendRoles, Boolean pullByParent)
-            throws DotDataException, DotSecurityException;
 
 }

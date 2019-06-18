@@ -1522,15 +1522,34 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
         return getRelated(variableName, user,respectFrontendRoles, null);
     }
 
-	/**
-	 * Returns a list of all contentlets related to this instance given a RelationshipField variable
-	 * @param variableName
-	 * @param user
-	 * @param respectFrontendRoles
-	 * @return
-	 */
+    /**
+     * Returns a list of all contentlets related to this instance given a RelationshipField variable
+     * @param variableName
+     * @param user
+     * @param respectFrontendRoles
+     * @param pullByParents
+     * @return
+     */
+    public List<Contentlet> getRelated(final String variableName, final User user,
+            final boolean respectFrontendRoles, Boolean pullByParents) {
+        return getRelated(variableName, user,respectFrontendRoles, pullByParents, -1, -1, null);
+    }
+
+    /**
+     * Returns a list of all contentlets related to this instance given a RelationshipField variable
+     * using pagination
+     * @param variableName
+     * @param user
+     * @param respectFrontendRoles
+     * @param pullByParents
+     * @param limit
+     * @param offset
+     * @param sortBy
+     * @return
+     */
 	public List<Contentlet> getRelated(final String variableName, final User user,
-			final boolean respectFrontendRoles, Boolean pullByParents) {
+			final boolean respectFrontendRoles, Boolean pullByParents, final int limit, final int offset,
+            final String sortBy) {
 
 		if (!UtilMethods.isSet(this.relatedIds)){
 			relatedIds = Maps.newConcurrentMap();
@@ -1551,7 +1570,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 				relatedContentlet = getCachedRelatedContentlets(variableName);
 			} else {
 
-				relatedContentlet = getNonCachedRelatedContentlets(variableName, pullByParents);
+                relatedContentlet = getNonCachedRelatedContentlets(variableName, pullByParents,
+                        limit, offset, sortBy);
 			}
 
 			//Restricts contentlet according to user permissions
@@ -1575,7 +1595,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
      */
     @Nullable
     private List<Contentlet> getNonCachedRelatedContentlets(final String variableName,
-            final Boolean pullByParent)
+            final Boolean pullByParent, final int limit, final int offset,
+            final String sortBy)
             throws DotDataException, DotSecurityException {
 
         final User systemUser = APILocator.getUserAPI().getSystemUser();
@@ -1598,11 +1619,11 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
         }
 
         relatedList = APILocator.getContentletAPI()
-                .filterRelatedContent(this, relationship, systemUser, false, pullByParent);
+                .filterRelatedContent(this, relationship, systemUser, false, pullByParent, limit, offset, sortBy);
 
 
         //Cache related content only if it is a relationship field
-        if (field != null) {
+        if (field != null && limit == -1 && offset== -1 && sortBy == null) {
             if (UtilMethods.isSet(relatedList)) {
                 this.relatedIds.put(variableName,
                         relatedList.stream().map(contentlet -> contentlet.getIdentifier())
