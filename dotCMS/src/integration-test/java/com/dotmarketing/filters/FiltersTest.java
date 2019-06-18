@@ -366,7 +366,6 @@ public class FiltersTest {
             final String parent2Name = "news";
             Folder parent2 = new FolderDataGen().name(parent2Name).title(parent2Name)
                     .parent(parent1)
-                    .site(site)
                     .nextPersisted();
 
             Template template = new TemplateDataGen().nextPersisted();
