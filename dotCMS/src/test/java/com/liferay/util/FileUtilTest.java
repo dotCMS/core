@@ -1,4 +1,4 @@
-package com.dotcms.util;
+package com.liferay.util;
 
 import java.io.File;
 import java.io.FileOutputStream;
