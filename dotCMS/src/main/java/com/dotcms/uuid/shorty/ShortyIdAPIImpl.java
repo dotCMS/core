@@ -1,6 +1,7 @@
 package com.dotcms.uuid.shorty;
 
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.rest.api.v1.temp.TempResourceAPI;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -47,7 +48,13 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
 
   @Override
   public Optional<ShortyId> getShorty(final String shortStr, final ShortyInputType shortyType) {
+
+    
     try {
+      if(shortStr.startsWith(TempResourceAPI.TEMP_PREFIX)) {
+          return Optional.of(new ShortyId(shortStr, shortStr, ShortType.TEMP_FILE, ShortType.TEMP_FILE));
+      }
+      
       validShorty(shortStr);
       ShortyId shortyId = null;
       final Optional<ShortyId> opt = new ShortyIdCache().get(shortStr);

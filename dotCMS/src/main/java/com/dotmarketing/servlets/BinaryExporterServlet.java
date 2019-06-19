@@ -355,6 +355,14 @@ public class BinaryExporterServlet extends HttpServlet {
 
 			}
 			
+			if(shorty.type == ShortType.TEMP_FILE) {
+			  inputFile = APILocator.getTempResourceAPI().getTempFile(user, req.getSession().getId(),shorty.longId).get();
+			  
+			  
+			}
+			
+			
+			
 			
 			//DOTCMS-5674
 			if(UtilMethods.isSet(fieldVarName)){

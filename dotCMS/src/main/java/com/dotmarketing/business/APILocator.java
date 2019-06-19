@@ -58,6 +58,7 @@ import com.dotcms.publishing.PublisherAPIImpl;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.api.v1.system.websocket.WebSocketContainerAPI;
 import com.dotcms.rest.api.v1.system.websocket.WebSocketContainerAPIFactory;
+import com.dotcms.rest.api.v1.temp.TempResourceAPI;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPIFactory;
 import com.dotcms.timemachine.business.TimeMachineAPI;
@@ -660,6 +661,11 @@ public class APILocator extends Locator<APIIndex>{
 		return (BundleAPI)getInstance(APIIndex.BUNDLE_API);
 	}
 
+	public static TempResourceAPI getTempResourceAPI() {
+	  return new TempResourceAPI();
+	}
+	
+	
 	/**
 	 * Creates a single instance of the {@link PushedAssetsAPI} class.
 	 *
@@ -1073,6 +1079,7 @@ enum APIIndex
 	THEME_API,
 	API_TOKEN_API,
 	GRAPHQL_API,
+	TEMP_RESOURCE_API,
 	URLMAP_API;
 
 
@@ -1134,6 +1141,7 @@ enum APIIndex
     		case RULES_API: return new RulesAPIProxy();
     		case VISITOR_API: return new VisitorAPIImpl();
     		case SHORTY_ID_API: return new ShortyIdAPIImpl();
+    		case TEMP_RESOURCE_API: return new TempResourceAPI();
     		case SYSTEM_EVENTS_API: return SystemEventsFactory.getInstance().getSystemEventsAPI();
     		case WEB_SOCKET_CONTAINER_API:return WebSocketContainerAPIFactory.getInstance().getWebSocketContainerAPI();
     		case COMPANY_API: return CompanyAPIFactory.getInstance().getCompanyAPI();

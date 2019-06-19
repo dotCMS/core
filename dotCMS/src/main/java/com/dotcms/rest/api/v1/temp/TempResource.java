@@ -2,16 +2,17 @@ package com.dotcms.rest.api.v1.temp;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URL;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
-import javax.ws.rs.PUT;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
@@ -21,20 +22,23 @@ import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.glassfish.jersey.server.JSONP;
 
+import com.dotcms.http.CircuitBreakerUrl;
+import com.dotcms.http.CircuitBreakerUrl.Method;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.util.SecurityUtils;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.SecurityLogger;
-import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
+import com.liferay.portal.model.User;
+
+import io.vavr.Tuple2;
+import io.vavr.control.Try;
 
 @Path("/v1/temp")
 public class TempResource {
@@ -55,49 +59,35 @@ public class TempResource {
     this.tempApi = tempApi;
   }
 
-  @PUT
+  @POST
   @Path("/upload")
   @JSONP
   @NoCache
   @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
   @Consumes(MediaType.MULTIPART_FORM_DATA)
   public final Response uploadTempResource(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-      @QueryParam("fieldVar") final String fieldVar, @FormDataParam("file") InputStream fileInputStream,
-      @FormDataParam("file") FormDataContentDisposition fileMetaData) {
+      @FormDataParam("file") InputStream fileInputStream, @FormDataParam("file") FormDataContentDisposition fileMetaData) {
 
-    return uploadTempResourceImpl(request, response, fieldVar, fileInputStream, fileMetaData);
+    return uploadTempResourceImpl(request, response, fileInputStream, fileMetaData);
   }
 
-  
   protected final Response uploadTempResourceImpl(final HttpServletRequest request, final HttpServletResponse response,
-      final String fieldVar, final InputStream inputStream, final FormDataContentDisposition fileMetaData) {
+      final InputStream inputStream, final FormDataContentDisposition fileMetaData) {
 
-    final InitDataObject initDataObject = this.webResource.init(false, request, response, false);
+    final InitDataObject initDataObject = this.webResource.init(false, request, false);
+
+    final User user = initDataObject.getUser();
+    final String uniqueKey = request.getSession().getId();
 
     if (!new SecurityUtils().validateReferer(request)) {
       throw new WebApplicationException("Invalid Origin or referer");
     }
+    final String fileName = FileUtil.sanitizeFileName(fileMetaData.getFileName());
 
-    if (!UtilMethods.isSet(fieldVar)) {
-      return ResponseUtil.mapExceptionResponse(new WebApplicationException("Invalid fieldVar passed in"));
-    }
-
-    final String tempFileUri =
-        File.separator + "tmp" + UUIDGenerator.generateUuid() + File.separator + fieldVar + File.separator + fileMetaData.getFileName();
-    final File tempFile = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + tempFileUri);
-    final File tempFolder = tempFile.getParentFile();
-
-    if (!tempFolder.mkdirs()) {
-      return ResponseUtil.mapExceptionResponse(new WebApplicationException("Error while creating temp directory"));
-    }
-
-    String absFilePath = FileUtil.getAbsolutlePath(tempFile.getPath());
-    String absTmpPath =FileUtil.getAbsolutlePath(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary());
-    if (!absFilePath.startsWith(absTmpPath)) {
-      SecurityLogger.logInfo(this.getClass(),
-          () -> "Attempted file upload outside of temp folder: " + absFilePath + " from " + request.getRemoteAddr());
-      return ResponseUtil.mapExceptionResponse(new DotSecurityException("Invalid file upload"));
-    }
+    DotTempFile dotTempFile = Try.of(() -> tempApi.createTempFile(fileName, user, uniqueKey)).getOrElseThrow(() -> new DotRuntimeException(
+        "Attempted file upload outside of temp folder: " + fileMetaData + " from " + request.getRemoteAddr()));
+    final String tempFileId = dotTempFile.id;
+    final File tempFile = dotTempFile.file;
 
     try (final OutputStream out = new FileOutputStream(tempFile)) {
       int read = 0;
@@ -105,29 +95,57 @@ public class TempResource {
       while ((read = inputStream.read(bytes)) != -1) {
         out.write(bytes, 0, read);
       }
-      tempApi.createWhoCanUseTempFile(request, tempFolder);
 
-      return Response.ok(ImmutableMap.of("tempFile", tempFileUri, "tempFileSize",fileMetaData.getSize(), "tempFileIsImage", UtilMethods.isImage(tempFileUri), "tempFileName",fileMetaData.getFileName() )).build();
+      return Response.ok(dotTempFile).build();
     } catch (Exception e) {
 
-      Logger.error(this.getClass(), "unable to save temp file:" + tempFileUri, e);
+      Logger.warnAndDebug(this.getClass(), "unable to save temp file:" + tempFileId, e);
 
       return ResponseUtil.mapExceptionResponse(e);
     }
   }
 
-  @PUT
-  @Path("/copy")
+  @POST
+  @Path("/byUrl")
   @JSONP
   @NoCache
   @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-  @Consumes({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
-  public final Response copyTempFromUrl(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-      @QueryParam("fieldVar") final String fieldVar, @FormDataParam("file") InputStream fileInputStream,
-      @FormDataParam("file") FormDataContentDisposition fileMetaData) {
+  @Consumes({MediaType.APPLICATION_JSON, MediaType.APPLICATION_JSON})
+  public final Response copyTempFromUrl(@Context final HttpServletRequest request, final RemoteUrlForm form) {
 
-    final InitDataObject initDataObject = this.webResource.init(null, true, request, true, null);
-    return Response.ok("Cool Tools!").build();
+    final InitDataObject initDataObject = this.webResource.init(false, request, false);
+
+    final User user = initDataObject.getUser();
+    final String uniqueKey = request.getSession().getId();
+
+    String tryFileName =
+        UtilMethods.isSet(form.fileName) ? form.fileName : Try.of(() -> new URL(form.remoteUrl).getPath()).getOrElse("uknown");
+
+    tryFileName =
+        tryFileName.indexOf("/") > -1 ? tryFileName.substring(tryFileName.lastIndexOf("/") + 1, tryFileName.length()) : tryFileName;
+
+    final String fileName = FileUtil.sanitizeFileName(tryFileName);
+    if (!new SecurityUtils().validateReferer(request)) {
+      throw new WebApplicationException("Invalid Origin or referer");
+    }
+    DotTempFile dotTempFile = Try.of(() -> tempApi.createTempFile(fileName, user, uniqueKey)).getOrElseThrow(() -> new DotRuntimeException(
+        "Attempted file upload outside of temp folder: " + form.fileName + " from " + request.getRemoteAddr()));
+    final String tempFileId = dotTempFile.id;
+    final File tempFile = dotTempFile.file;
+
+    try (final OutputStream fileOut = new FileOutputStream(tempFile)) {
+      CircuitBreakerUrl
+      .builder()
+      .setMethod(Method.GET)
+      .setUrl(form.remoteUrl)
+      .setTimeout(form.urlTimeout)
+      .build().doOut(fileOut);
+    } catch (IOException e) {
+      Logger.warnAndDebug(this.getClass(), "unable to save temp file:" + tempFileId, e);
+
+      return ResponseUtil.mapExceptionResponse(e);
+    }
+    return Response.ok(dotTempFile).build();
 
   }
 

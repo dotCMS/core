@@ -14,8 +14,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+
+import org.apache.commons.lang3.RandomStringUtils;
 
 public class FileUtil {
 
@@ -84,27 +87,28 @@ public class FileUtil {
 
 	}
 
-	public static String sanitizeFileName(String fileName){
-		if(fileName ==null){
-			return fileName;
-		}
-		fileName = URLDecoder.decode(fileName);
-		char[] invalids ={'\\', '/',':', '*', '?' ,'"','\'' ,'<' ,'>' ,'|','&'};
-		
-		
-		for(int i=0;i< invalids.length;i++){
-			while(fileName.indexOf(invalids[i]) > -1){
-				fileName = fileName.replace(invalids[i], ' ');
-	        }	
-		}
-		
-		while(fileName.indexOf("  ") > -1){
-			fileName = fileName.replaceAll("  ", " ");
-        }	
-		
-		return fileName;
-	}
-	
+  final static int[] illegalChars = {34, 60, 62, 124, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
+      24, 25, 26, 27, 28, 29, 30, 31, 58, 42, 63, 92, 47};
+
+  /**
+   * cleans filenames and allows unicode-  taken from
+   * https://stackoverflow.com/questions/1155107/is-there-a-cross-platform-java-method-to-remove-filename-special-chars
+   * @param badFileName
+   * @return
+   */
+  public static String sanitizeFileName(String badFileName) {
+    StringBuilder cleanName = new StringBuilder();
+    int len = badFileName.codePointCount(0, badFileName.length());
+    for (int i = 0; i < len; i++) {
+      int c = badFileName.codePointAt(i);
+      if (Arrays.binarySearch(illegalChars, c) < 0) {
+        cleanName.appendCodePoint(c);
+      }
+    }
+    String cleanFileName = cleanName.toString();
+    return (cleanFileName.length()>0) ? cleanFileName : RandomStringUtils.randomAlphabetic(10);
+  }
+
 	/**
 	 * This will write the given InputStream to a new File in the given location
 	 * 
