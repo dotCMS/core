@@ -71,9 +71,11 @@ public class MoveFieldsForm {
                 fieldsMap.add((Map) row.get("divider"));
                 final List<Map<String, Object>> columnsMap = (List<Map<String, Object>>) row.get("columns");
 
-                for (final Map<String, Object> columnMap : columnsMap) {
-                    fieldsMap.add((Map) columnMap.get("columnDivider"));
-                    fieldsMap.addAll((List<Map<String, Object>>) columnMap.get("fields"));
+                if (columnsMap != null) {
+                    for (final Map<String, Object> columnMap : columnsMap) {
+                        fieldsMap.add((Map) columnMap.get("columnDivider"));
+                        fieldsMap.addAll((List<Map<String, Object>>) columnMap.get("fields"));
+                    }
                 }
             }
 

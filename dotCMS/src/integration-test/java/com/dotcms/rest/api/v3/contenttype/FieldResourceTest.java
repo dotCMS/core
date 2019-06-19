@@ -568,6 +568,54 @@ public class FieldResourceTest {
     }
 
     @Test
+    public void shouldCreateFieldWithMoveEndPoint () throws DotSecurityException, DotDataException, JSONException {
+        final  ContentType type = createContentType();
+
+        final List<Field> fields = createFields(type);
+        final Field newField = createTextField(type, "new field", 0);
+        fields.add(newField);
+
+
+        final List<Map<String, Object>> layout = getToLayoutMap(fields);
+
+        final MoveFieldsForm form =
+                new MoveFieldsForm.Builder().layout(layout)
+                        .build();
+
+        final FieldResource fieldResource = new FieldResource();
+        fieldResource.moveFields(type.id(), form, getHttpRequest());
+
+        final ContentType contentTypeFromDB = APILocator.getContentTypeAPI(APILocator.systemUser()).find(type.id());
+        final int nFields = contentTypeFromDB.fields().size();
+
+        assertEquals(contentTypeFromDB.fields().get(nFields - 1).name(), newField.name());
+    }
+
+    @Test
+    public void shouldCreateTabDividerWithMoveEndPoint () throws DotSecurityException, DotDataException, JSONException {
+        final  ContentType type = createContentType();
+
+        final List<Field> fields = createFields(type);
+        final Field newField = createTabField(type, "tab_1", 0);
+        fields.add(newField);
+
+
+        final List<Map<String, Object>> layout = getToLayoutMap(fields);
+
+        final MoveFieldsForm form =
+                new MoveFieldsForm.Builder().layout(layout)
+                        .build();
+
+        final FieldResource fieldResource = new FieldResource();
+        fieldResource.moveFields(type.id(), form, getHttpRequest());
+
+        final ContentType contentTypeFromDB = APILocator.getContentTypeAPI(APILocator.systemUser()).find(type.id());
+        final int nFields = contentTypeFromDB.fields().size();
+
+        assertEquals(contentTypeFromDB.fields().get(nFields - 1).name(), newField.name());
+    }
+
+    @Test
     public void shouldFixMaxColumnsPerRowRulesWhenMovesAWrongLayoutContentType () throws DotSecurityException, DotDataException {
         final ContentType type = createContentType();
 
@@ -589,56 +637,6 @@ public class FieldResourceTest {
 
         final ContentType contentTypeFromDB = APILocator.getContentTypeAPI(APILocator.systemUser()).find(type.id());
         assertEquals(9, contentTypeFromDB.fields().size());
-    }
-
-    private List<Field> getFields(final List<FieldLayoutRow> rows) {
-        final List<Field> fields = new ArrayList();
-
-        for (final FieldLayoutRow row : rows) {
-            fields.add(row.getDivider());
-
-            for (final FieldLayoutColumn column : row.getColumns()) {
-                fields.add(column.getColumn());
-                fields.addAll(column.getFields());
-            }
-        }
-        return fields;
-    }
-
-    @NotNull
-    private List<Map<String, Object>> getToLayoutMap(final List<Field> fields) {
-        final List<Map<String, Object>> result = new ArrayList<>();
-
-        final List<FieldUtil.FieldsFragment> fieldsFragments = FieldUtil.splitByFieldDivider(fields);
-
-        for (final FieldUtil.FieldsFragment fieldsFragment : fieldsFragments) {
-            final Map rowMap = new HashMap();
-            rowMap.put("divider", getMap(fieldsFragment.getFieldDivider()));
-
-            final List<List<Field>> columns = FieldUtil.splitByColumnField(fieldsFragment.getOthersFields());
-
-            final List<Map<String, Object>> columnsMap = new ArrayList<>();
-
-            for (final List<Field> columnFields : columns) {
-                final Map columnMap = new HashMap();
-                columnMap.put("columnDivider", getMap(columnFields.get(0)));
-                columnMap.put("fields", columnFields.subList(1, columnFields.size())
-                        .stream().map(field -> getMap(field)).collect(toImmutableList())
-                );
-
-                columnsMap.add(columnMap);
-            }
-
-            rowMap.put("columns", columnsMap);
-            result.add(rowMap);
-        }
-
-        return result;
-    }
-
-    private Map getMap(final Field field) {
-        final JsonFieldTransformer jsonFieldTransformer = new JsonFieldTransformer(field);
-        return jsonFieldTransformer.mapObject();
     }
 
     @Test(expected = NotFoundInDbException.class)
@@ -684,14 +682,6 @@ public class FieldResourceTest {
 
         final FieldResource fieldResource = new FieldResource();
         fieldResource.deleteFields(type.id(), form, getHttpRequest());
-    }
-
-    private ContentType createContentType() throws DotDataException, DotSecurityException {
-        final String typeName = "fieldResourceTest" + UUIDUtil.uuid();
-
-        ContentType type = ContentTypeBuilder.builder(SimpleContentType.class).name(typeName).build();
-        type = APILocator.getContentTypeAPI(APILocator.systemUser()).save(type);
-        return type;
     }
 
     @Test(expected = FieldLayoutValidationException.class)
@@ -743,6 +733,64 @@ public class FieldResourceTest {
 
         final ContentType contentTypeFromDB = APILocator.getContentTypeAPI(APILocator.systemUser()).find(type.id());
         assertEquals(6, contentTypeFromDB.fields().size());
+    }
+
+    private ContentType createContentType() throws DotDataException, DotSecurityException {
+        final String typeName = "fieldResourceTest" + UUIDUtil.uuid();
+
+        ContentType type = ContentTypeBuilder.builder(SimpleContentType.class).name(typeName).build();
+        type = APILocator.getContentTypeAPI(APILocator.systemUser()).save(type);
+        return type;
+    }
+
+    private List<Field> getFields(final List<FieldLayoutRow> rows) {
+        final List<Field> fields = new ArrayList();
+
+        for (final FieldLayoutRow row : rows) {
+            fields.add(row.getDivider());
+
+            for (final FieldLayoutColumn column : row.getColumns()) {
+                fields.add(column.getColumn());
+                fields.addAll(column.getFields());
+            }
+        }
+        return fields;
+    }
+
+    @NotNull
+    private List<Map<String, Object>> getToLayoutMap(final List<Field> fields) {
+        final List<Map<String, Object>> result = new ArrayList<>();
+
+        final List<FieldUtil.FieldsFragment> fieldsFragments = FieldUtil.splitByFieldDivider(fields);
+
+        for (final FieldUtil.FieldsFragment fieldsFragment : fieldsFragments) {
+            final Map rowMap = new HashMap();
+            rowMap.put("divider", getMap(fieldsFragment.getFieldDivider()));
+
+            final List<List<Field>> columns = FieldUtil.splitByColumnField(fieldsFragment.getOthersFields());
+
+            final List<Map<String, Object>> columnsMap = new ArrayList<>();
+
+            for (final List<Field> columnFields : columns) {
+                final Map columnMap = new HashMap();
+                columnMap.put("columnDivider", getMap(columnFields.get(0)));
+                columnMap.put("fields", columnFields.subList(1, columnFields.size())
+                        .stream().map(field -> getMap(field)).collect(toImmutableList())
+                );
+
+                columnsMap.add(columnMap);
+            }
+
+            rowMap.put("columns", columnsMap.isEmpty() ? null : columnsMap);
+            result.add(rowMap);
+        }
+
+        return result;
+    }
+
+    private Map getMap(final Field field) {
+        final JsonFieldTransformer jsonFieldTransformer = new JsonFieldTransformer(field);
+        return jsonFieldTransformer.mapObject();
     }
 
     private List<Field> createFields(final ContentType type) throws DotDataException, DotSecurityException {
@@ -826,6 +874,20 @@ public class FieldResourceTest {
 
     private Field createColumnField(final ContentType type, final String name, final int sortOrder) {
         final Field field = FieldBuilder.builder(ColumnField.class)
+                .name(name)
+                .sortOrder(sortOrder)
+                .contentTypeId(type.id())
+                .build();
+
+        try {
+            return APILocator.getContentTypeFieldAPI().save(field, APILocator.systemUser());
+        } catch (DotDataException | DotSecurityException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private Field createTabField(final ContentType type, final String name, final int sortOrder) {
+        final Field field =  FieldBuilder.builder(TabDividerField.class)
                 .name(name)
                 .sortOrder(sortOrder)
                 .contentTypeId(type.id())
