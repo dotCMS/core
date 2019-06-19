@@ -83,7 +83,7 @@ const rsrc = {
         class="name cw-warn basic label">Name is required
       </div>
       </div>
-      <span class="cw-fire-on-label" *ngIf="!hideFireOn">{{rsrc('inputs.fireOn.label') | async}}</span>
+      <span class="cw-fire-on-label" *ngIf="!hideFireOn">{{ rsrc('inputs.fireOn.label') | async }}</span>
       <cw-input-dropdown flex="none"
                          *ngIf="!hideFireOn"
                          class="cw-fire-on-dropdown"
@@ -96,7 +96,7 @@ const rsrc = {
       </cw-input-dropdown>
     </div>
     <div flex="30" layout="row" layout-align="end center" class="cw-header-actions" >
-      <span class="cw-rule-status-text" title="{{statusText()}}">{{statusText(30)}}</span>
+      <span class="cw-rule-status-text" title="{{statusText()}}">{{ statusText(30) }}</span>
       <p-inputSwitch [(ngModel)]="rule.enabled" (onChange)="setRuleEnabledState($event)" [ngModelOptions]="{standalone: true}" ></p-inputSwitch>
       <div class="cw-btn-group">
         <div class="ui basic icon buttons">
@@ -135,7 +135,7 @@ const rsrc = {
                      ></condition-group>
     <div class="cw-action-group">
       <div class="cw-action-separator">
-        {{rsrc('inputs.action.firesActions') | async}}
+        {{ rsrc('inputs.action.firesActions') | async }}
       </div>
       <div flex layout="column" class="cw-rule-actions">
         <div layout="row" class="cw-action-row" *ngFor="let ruleAction of ruleActions; let i=index">
@@ -227,7 +227,7 @@ class RuleComponent {
         private loggerService: LoggerService
     ) {
         this._rsrcCache = {};
-        this.hideFireOn = apiRoot.hideFireOn;
+        this.hideFireOn = document.location.hash.includes('edit-page') || apiRoot.hideFireOn;
 
         /* Need to delay the firing of the state change toggle, to give any blur events time to fire. */
         this._updateEnabledStateDelay.pipe(debounceTime(20)).subscribe((event: RuleActionEvent) => {
