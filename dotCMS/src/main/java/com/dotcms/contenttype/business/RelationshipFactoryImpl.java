@@ -313,12 +313,18 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
     @Override
     public  List<Contentlet> dbRelatedContent(final Relationship relationship, final Contentlet contentlet,
             final boolean hasParent) throws DotDataException {
-        return dbRelatedContent (relationship, contentlet, hasParent, false, "tree_order");
+        return dbRelatedContent (relationship, contentlet, hasParent, false, "tree_order", -1, -1);
+    }
+
+    @Override
+    public  List<Contentlet> dbRelatedContent(final Relationship relationship, final Contentlet contentlet,
+            final boolean hasParent, final boolean live, final String orderBy) throws DotDataException {
+        return dbRelatedContent (relationship, contentlet, hasParent, live, orderBy, -1, -1);
     }
 
     @SuppressWarnings("deprecation")
     public  List<Contentlet> dbRelatedContent(final Relationship relationship, final Contentlet contentlet,
-            final boolean hasParent, final boolean live, final String orderBy)
+            final boolean hasParent, final boolean live, final String orderBy, int limit, int offset)
             throws DotDataException {
         List<Contentlet> matches = new ArrayList<Contentlet>();
 
@@ -337,11 +343,11 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
         }
 
         if (hasParent) {
-            matches = live ? dbRelatedContentByParent(iden, relationship.getRelationTypeValue(),true, orderBy):
-                    dbRelatedContentByParent(iden, relationship.getRelationTypeValue(),false, orderBy);
+            matches = live ? dbRelatedContentByParent(iden, relationship.getRelationTypeValue(),true, orderBy, limit, offset):
+                    dbRelatedContentByParent(iden, relationship.getRelationTypeValue(),false, orderBy, limit, offset);
         } else {
-            matches = live ? dbRelatedContentByChild(iden, relationship.getRelationTypeValue(),true, orderBy):
-                    dbRelatedContentByChild(iden, relationship.getRelationTypeValue(),false, orderBy);
+            matches = live ? dbRelatedContentByChild(iden, relationship.getRelationTypeValue(),true, orderBy, limit, offset):
+                    dbRelatedContentByChild(iden, relationship.getRelationTypeValue(),false, orderBy, limit, offset);
         }
         return matches;
     }
@@ -536,8 +542,14 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
         dc.loadResult();
     }
 
-	public  List<Contentlet> dbRelatedContentByParent(final String parentIdentifier, final String relationType, final boolean live,
+    public  List<Contentlet> dbRelatedContentByParent(final String parentIdentifier, final String relationType, final boolean live,
             final String orderBy) throws DotDataException{
+	    return dbRelatedContentByParent(parentIdentifier, relationType,live,orderBy, -1, -1);
+    }
+
+    public List<Contentlet> dbRelatedContentByParent(final String parentIdentifier,
+            final String relationType, final boolean live,
+            final String orderBy, final int limit, final int offset) throws DotDataException {
 
 	    final StringBuilder query = new StringBuilder("select cont1.inode from contentlet cont1, inode ci1, tree tree1, "
                 + "contentlet_version_info vi1 where tree1.parent = ? and tree1.relation_type = ? ")
@@ -556,6 +568,14 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
         dc.addParam(parentIdentifier);
         dc.addParam(relationType);
 
+        if (limit > -1){
+            dc.setMaxRows(limit);
+        }
+
+        if (offset > -1){
+            dc.setStartRow(offset);
+        }
+
         final List<Map<String, Object>> results = dc.loadObjectResults();
         final List<Contentlet> contentlets = new ArrayList<Contentlet>();
 
@@ -570,9 +590,15 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
         return contentlets;
     }
 
-    @SuppressWarnings("unchecked")
     public  List<Contentlet> dbRelatedContentByChild(final String childIdentifier, final String relationType, final boolean live,
             final String orderBy) throws DotDataException {
+	    return dbRelatedContentByChild(childIdentifier, relationType, live,orderBy, -1, -1);
+    }
+
+    @SuppressWarnings("unchecked")
+    public List<Contentlet> dbRelatedContentByChild(final String childIdentifier,
+            final String relationType, final boolean live,
+            final String orderBy, final int limit, final int offset) throws DotDataException {
 
         final StringBuilder query = new StringBuilder("select cont1.inode from contentlet cont1 join inode ci1 on (cont1.inode = ci1.inode) join contentlet_version_info vi1 on "
                         + "(" + (live?"vi1.live_inode":"vi1.working_inode") + " = cont1.inode) join tree tree1 on (tree1.parent = cont1.identifier) ")
@@ -591,6 +617,13 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
         dc.addParam(childIdentifier);
         dc.addParam(relationType);
 
+        if (limit > -1){
+            dc.setMaxRows(limit);
+        }
+
+        if (offset > -1){
+            dc.setStartRow(offset);
+        }
 
         final List<Map<String, Object>> results = dc.loadObjectResults();
         final List<Contentlet> contentlets = new ArrayList<Contentlet>();
