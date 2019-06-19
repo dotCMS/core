@@ -14,6 +14,7 @@ import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
@@ -392,19 +393,6 @@ public class PageRenderUtil implements Serializable {
                 contextMap.put("contentletList" + containerIdentifier + ContainerUUID.UUID_START_VALUE + personalization, contentStrList);
             } else if (ContainerUUID.UUID_START_VALUE.equals(uniqueId)) {
                 contextMap.put("contentletList" + containerIdentifier + ContainerUUID.UUID_LEGACY_VALUE + personalization, contentStrList);
-            }
-        }
-
-        // todo: test if remove or not this fallback
-        final String currentPersonalization = WebAPILocator.getPersonalizationWebAPI().getContainerPersonalization();
-        if (contentIdListByPersonalizationMap.containsKey(currentPersonalization)) {
-            final String[] contentStrList = contentIdListByPersonalizationMap.get(currentPersonalization).toArray(new String[0]);
-            contextMap.put("contentletList" + containerIdentifier + uniqueId, contentStrList);
-
-            if (ContainerUUID.UUID_LEGACY_VALUE.equals(uniqueId)) {
-                contextMap.put("contentletList" + containerIdentifier + ContainerUUID.UUID_START_VALUE, contentStrList);
-            } else if (ContainerUUID.UUID_START_VALUE.equals(uniqueId)) {
-                contextMap.put("contentletList" + containerIdentifier + ContainerUUID.UUID_LEGACY_VALUE, contentStrList);
             }
         }
     } // setContentletListPerPersonalization.
