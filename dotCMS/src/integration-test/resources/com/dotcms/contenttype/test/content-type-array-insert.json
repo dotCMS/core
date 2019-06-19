@@ -204,7 +204,7 @@
 		],
 		"fixed": false,
 		"folder": "SYSTEM_FOLDER",
-		"host": "48190c8c-42c4-46af-8d1a-0cd5db894797",
+		"host": "REPLACE_WITH_HOST_ID",
 		"iDate": 1453474503000,
 		"clazz": "com.dotcms.contenttype.model.type.ImmutableSimpleContentType",
 		"inode": "4c441ada-944a-43af-a653-9bb4f3f0cb2b",
