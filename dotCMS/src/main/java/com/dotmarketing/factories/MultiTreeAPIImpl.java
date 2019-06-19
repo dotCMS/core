@@ -584,9 +584,8 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
     private void refreshPageInCache(final String pageIdentifier) throws DotDataException {
 
-        final Set<String> personalizationSet = this.getPersonalizationsForPage(pageIdentifier);
-        personalizationSet.forEach(personalization -> CacheLocator.getMultiTreeCache()
-                .removePageMultiTrees(pageIdentifier+personalization));
+        CacheLocator.getMultiTreeCache()
+                .removePageMultiTrees(pageIdentifier);
 
         final Set<String> inodeSet = new HashSet<>();
         final List<ContentletVersionInfo> contentletVersionInfos = APILocator.getVersionableAPI()
