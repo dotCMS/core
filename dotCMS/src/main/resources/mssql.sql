@@ -1296,7 +1296,8 @@ create table multi_tree (
    parent2 NVARCHAR(36) not null,
    relation_type NVARCHAR(64) not null,
    tree_order int null,
-   primary key (child, parent1, parent2, relation_type)
+   personalization NVARCHAR(255) not null  default 'dot:default',
+   primary key (child, parent1, parent2, relation_type, personalization)
 );
 create table workflow_task (
    id NVARCHAR(36) not null,

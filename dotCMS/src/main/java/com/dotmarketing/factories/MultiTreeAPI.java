@@ -51,7 +51,7 @@ public interface MultiTreeAPI {
     /**
      * Removes any mutlitree that has the identifiers as either a parent or as a child
      * 
-     * @param inodes
+     * @param identifiers
      * @throws DotDataException
      */
     void deleteMultiTreesForIdentifiers(List<String> identifiers) throws DotDataException;
@@ -69,18 +69,17 @@ public interface MultiTreeAPI {
     /**
      * This method returns ALL MultiTree entries (in all languages) for a given page. It is up to what
      * ever page renderer to properly choose which MultiTree children to show for example, show an
-     * english content on a spanish page when language fallback=true or specific content for a given
-     * persona.
-     * 
-     * @param page
-     * @param liveMode
+     * english content on a spanish page when language fallback=true
+     *
+     *
+     *  @param page {@link IHTMLPage}
+     *  @param liveMode {@link Boolean}
      * @return
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    Table<String, String, Set<String>> getPageMultiTrees(final IHTMLPage page, final boolean liveMode)
+    Table<String, String, Set<PersonalizedContentlet>> getPageMultiTrees(final IHTMLPage page, final boolean liveMode)
             throws DotDataException, DotSecurityException;
-
 
     /**
      * Saves a list of MultiTrees
@@ -109,7 +108,7 @@ public interface MultiTreeAPI {
     /**
      * Deletes all MultiTrees that have contentlet id as a child
      * 
-     * @param pageOrContainer
+     * @param contentIdentifier
      * @throws DotDataException
      */
     void deleteMultiTreeByChild(String contentIdentifier) throws DotDataException;
@@ -120,6 +119,15 @@ public interface MultiTreeAPI {
      * @return
      */
     List<MultiTree> getAllMultiTrees();
+
+    /**
+     * Get MultiTrees on a page and personalization
+     * @param pageId String
+     * @param personalization String
+     * @return List MultiTree
+     * @throws DotDataException
+     */
+    List<MultiTree> getMultiTreesByPersonalizedPage(final String pageId, final String personalization) throws DotDataException;
 
     /**
      * Gets a list of all MultiTrees on a page (even if they are bad)
@@ -139,6 +147,17 @@ public interface MultiTreeAPI {
      * @return
      */
     List<MultiTree> getMultiTrees(String htmlPage, String container, String containerInstance);
+
+    /**
+     * Gets a list of MultiTrees that belong to the page+container+container instance
+     *
+     * @param htmlPage
+     * @param container
+     * @param containerInstance
+     * @param personalization
+     * @return List of Multitree
+     */
+    List<MultiTree> getMultiTrees(String htmlPage, String container, String containerInstance, String personalization);
 
     /**
      * Gets a list of MultiTrees that belong to the page+container
@@ -171,15 +190,15 @@ public interface MultiTreeAPI {
     /**
      * Gets a list of MultiTrees that belong to the container on any page
      * 
-     * @param container
-     * @return
+     * @param containerIdentifier
+     * @return List Multitree
      */
     List<MultiTree> getContainerMultiTrees(String containerIdentifier) throws DotDataException;
 
     /**
      * gets all MultiTrees that have contentlet id as a child
      * 
-     * @param pageOrContainer
+     * @param contentIdentifier page Or Container
      * @throws DotDataException
      */
     List<MultiTree> getMultiTreesByChild(String contentIdentifier) throws DotDataException;
@@ -228,6 +247,19 @@ public interface MultiTreeAPI {
     MultiTree getMultiTree(String htmlPage, String container, String childContent, String containerInstance) throws DotDataException;
 
     /**
+     * Gets a specific MultiTree entry
+     *
+     * @param htmlPage
+     * @param container
+     * @param childContent
+     * @param containerInstance
+     * @param personalization
+     * @return MultiTree
+     * @throws DotDataException
+     */
+    MultiTree getMultiTree(String htmlPage, String container, String childContent, String containerInstance, String personalization) throws DotDataException;
+
+    /**
      * Gets a specific MultiTree entry regardless of containerInstance
      * 
      * @param htmlPage
@@ -241,8 +273,7 @@ public interface MultiTreeAPI {
     /**
      * Gets a list of MultiTrees that have the Identifier as a Parent
      * 
-     * @param htmlPage
-     * @param container
+     * @param parent Container or Page
      * @return
      */
     List<MultiTree> getMultiTrees(Identifier parent) throws DotDataException;
@@ -259,10 +290,42 @@ public interface MultiTreeAPI {
     /**
      * Gets a list of MultiTrees that has the parentId as a parent
      * 
-     * @param htmlPage
-     * @param container
+     * @param parentId page id
      * @return
      */
     List<MultiTree> getMultiTrees(String parentId) throws DotDataException;
 
+    /**
+     * Get an unique set of the personalization for a page
+     * @param pageId String
+     * @return unique Set of personalization values per the page
+     */
+    Set<String> getPersonalizationsForPage(String pageId) throws DotDataException;
+
+    /**
+     * Take a set of containers with a based personalization and set to new personalization, for a page.
+     * @param pageId String page id
+     * @param basePersonalization String this personalization will use to get the containers and them apply a new personalization over a copy of the containers on the page.
+     * @param newPersonalization String this is the new personalization for the set of containers
+     * @return List MultiTree
+     */
+    List<MultiTree> copyPersonalizationForPage (String pageId, String basePersonalization, String newPersonalization) throws DotDataException;
+
+    /**
+     * Take a set of containers with a based personalization (the default one) and set to new personalization, for a page.
+     * @param pageId String page id
+     * @param newPersonalization String this is the new personalization for the set of containers
+     * @return List MultiTree
+     */
+    default List<MultiTree> copyPersonalizationForPage (final String pageId, final String newPersonalization) throws DotDataException {
+
+        return this.copyPersonalizationForPage(pageId, MultiTree.DOT_PERSONALIZATION_DEFAULT, newPersonalization);
+    }
+
+    /**
+     * Deletes the personalization for the page
+     * @param pageId {@link String} page id
+     * @param personalization {@link String} personalization
+     */
+    void deletePersonalizationForPage(String pageId, String personalization) throws DotDataException;
 }

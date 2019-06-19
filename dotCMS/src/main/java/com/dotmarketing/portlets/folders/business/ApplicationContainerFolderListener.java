@@ -55,7 +55,7 @@ public class ApplicationContainerFolderListener implements FolderListener {
 
         if (null != folderEvent && null != folderEvent.getChild()) {
 
-            final String fileAssetName       = folderEvent.getChildName();
+            final String fileAssetName   = folderEvent.getChildName();
             final Folder containerFolder = folderEvent.getParent();
             final Object child           = folderEvent.getChild();
             final long childLanguageId   = this.getLanguageFromChild(child);
@@ -286,7 +286,6 @@ public class ApplicationContainerFolderListener implements FolderListener {
                 ContainerAPI.PRE_LOOP.contains(childName);
     }
 
-    @CloseDBIfOpened
     private void invalidatedRelatedPages(final Container container) throws DotDataException, DotSecurityException {
 
         /*final List<MultiTree> pageContents = MultiTreeFactory.getMultiTrees(container.getIdentifier());

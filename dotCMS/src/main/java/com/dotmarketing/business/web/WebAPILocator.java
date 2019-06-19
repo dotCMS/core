@@ -1,6 +1,8 @@
 
 package com.dotmarketing.business.web;
 
+import com.dotcms.personalization.web.PersonalizationWebAPI;
+import com.dotcms.personalization.web.PersonalizationWebAPIImpl;
 import com.dotmarketing.business.Locator;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.business.web.ContentletWebAPI;
@@ -49,6 +51,10 @@ public class WebAPILocator extends Locator<WebAPIIndex>{
         return (HostWebAPI)getInstance(WebAPIIndex.HOST_WEB_API);
     }
 
+	public static PersonalizationWebAPI getPersonalizationWebAPI() {
+		return (PersonalizationWebAPI)getInstance(WebAPIIndex.PERSONALIZATION_WEB_API);
+	}
+
 	private static Object getInstance(WebAPIIndex index) {
 		
 		if(instance == null){
@@ -85,7 +91,8 @@ enum WebAPIIndex
 	CONTENTLET_WEB_API,
 	LANGUAGE_WEB_API,
 	PERMISSION_WEB_API,
-	HOST_WEB_API;
+	HOST_WEB_API,
+	PERSONALIZATION_WEB_API;
 
 	Object create() {
 		switch(this) {
@@ -100,6 +107,9 @@ enum WebAPIIndex
 				
 			case HOST_WEB_API:
 				return new HostWebAPIImpl();
+
+			case PERSONALIZATION_WEB_API:
+				return new PersonalizationWebAPIImpl();
 
 		}
 		throw new AssertionError("Unknown API index: " + this);

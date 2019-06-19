@@ -15,6 +15,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeAPI;
+import com.dotmarketing.factories.PersonalizedContentlet;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -27,6 +28,7 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -43,6 +45,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
+
+import com.liferay.util.StringPool;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -90,7 +94,10 @@ public class PageResourceHelper implements Serializable {
                         .setTreeOrder(i++)
                         .setHtmlPage(pageId);
 
-                multiTrees.add(multiTree);
+                final String personalization = UtilMethods.isSet(containerEntry.getPersonaTag())?
+                        Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + containerEntry.getPersonaTag():
+                        MultiTree.DOT_PERSONALIZATION_DEFAULT;
+                multiTrees.add(MultiTree.personalized(multiTree, personalization));
             }
         }
 
@@ -207,8 +214,7 @@ public class PageResourceHelper implements Serializable {
     @WrapInTransaction
     protected void updateMultiTrees(final IHTMLPage page, final PageForm pageForm) throws DotDataException, DotSecurityException {
 
-        final Table<String, String, Set<String>> pageContents = multiTreeAPI.getPageMultiTrees(page, false);
-
+        final Table<String, String, Set<PersonalizedContentlet>> pageContents = multiTreeAPI.getPageMultiTrees(page, false);
         final String pageIdentifier = page.getIdentifier();
         APILocator.getMultiTreeAPI().deleteMultiTreeByParent(pageIdentifier);
         final List<MultiTree> multiTrees = new ArrayList<>();
@@ -217,18 +223,18 @@ public class PageResourceHelper implements Serializable {
             int treeOrder = 0;
 
             for (final String uniqueId : pageContents.row(containerId).keySet()) {
-                final Map<String, Set<String>> row = pageContents.row(containerId);
-                final Set<String> contents = row.get(uniqueId);
+                final Map<String, Set<PersonalizedContentlet>> row = pageContents.row(containerId);
+                final Set<PersonalizedContentlet> contents         = row.get(uniqueId);
 
                 if (!contents.isEmpty()) {
                     final String newUUID = getNewUUID(pageForm, containerId, uniqueId);
 
-                    for (final String identifier : contents) {
-                        final MultiTree multiTree = new MultiTree().setContainer(containerId)
-                                .setContentlet(identifier)
-                                .setRelationType(newUUID)
+                    for (final PersonalizedContentlet identifierPersonalization : contents) {
+                        final MultiTree multiTree = MultiTree.personalized(new MultiTree().setContainer(containerId)
+                                .setContentlet(identifierPersonalization.getContentletId())
+                                .setInstanceId(newUUID)
                                 .setTreeOrder(treeOrder++)
-                                .setHtmlPage(pageIdentifier);
+                                .setHtmlPage(pageIdentifier), identifierPersonalization.getPersonalization());
 
                         multiTrees.add(multiTree);
                     }

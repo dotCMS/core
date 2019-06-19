@@ -7,7 +7,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.startup.StartupTask;
 import com.dotmarketing.util.Logger;
-import java.sql.Connection;
+
 import java.sql.SQLException;
 import java.util.Map;
 
