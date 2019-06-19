@@ -9,7 +9,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class DotTempFile {
 
-  public final String id,mimeType,referenceUrl,thumbnailUrl;
+  public final String id,mimeType,referenceUrl,thumbnailUrl,fileName;
   public boolean image;
 
   @JsonIgnore
@@ -23,7 +23,7 @@ public class DotTempFile {
     this.image = UtilMethods.isImage(file.getName());
     this.referenceUrl = (this.image) ? "/contentAsset/image/" + id + "/tmp/" + file.getName() : "/contentAsset/data/" + id + "/fileAsset/" + file.getName() ;
     this.thumbnailUrl = (this.image) ? "/contentAsset/image/" + id + "/tmp/filter/Thumbnail/thumbnail_w/250/thumbnail_h/250/" +  file.getName() :null;
-
+    this.fileName = file.getName();
   }
   @JsonProperty("length")
   public long length() {

@@ -17,11 +17,13 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.StatusType;
 
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.glassfish.jersey.server.JSONP;
 
+import com.dotcms.content.elasticsearch.business.ESIndexAPI.Status;
 import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.http.CircuitBreakerUrl.Method;
 import com.dotcms.rest.InitDataObject;
@@ -29,6 +31,8 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.util.SecurityUtils;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
@@ -118,6 +122,11 @@ public class TempResource {
     final User user = initDataObject.getUser();
     final String uniqueKey = request.getSession().getId();
 
+    
+    if(!validUrl(form.remoteUrl)) {
+      return Response.status(404).build();
+    }
+    
     String tryFileName =
         UtilMethods.isSet(form.fileName) ? form.fileName : Try.of(() -> new URL(form.remoteUrl).getPath()).getOrElse("uknown");
 
@@ -134,12 +143,16 @@ public class TempResource {
     final File tempFile = dotTempFile.file;
 
     try (final OutputStream fileOut = new FileOutputStream(tempFile)) {
-      CircuitBreakerUrl
-      .builder()
-      .setMethod(Method.GET)
-      .setUrl(form.remoteUrl)
-      .setTimeout(form.urlTimeout)
-      .build().doOut(fileOut);
+      final CircuitBreakerUrl urlGetter = CircuitBreakerUrl
+        .builder()
+        .setMethod(Method.GET)
+        .setUrl(form.remoteUrl)
+        .setTimeout(form.urlTimeoutSeconds*1000)
+        .build();
+      urlGetter.doOut(fileOut);
+      if(urlGetter.response()!=200) {
+        throw new DoesNotExistException("Url not found. Got a " + urlGetter.response());
+      }
     } catch (Exception e) {
       Logger.warnAndDebug(this.getClass(), "unable to save temp file:" + tempFileId, e);
 
@@ -147,6 +160,13 @@ public class TempResource {
     }
     return Response.ok(dotTempFile).build();
 
+  }
+  
+  private boolean validUrl(final String url) {
+    return (url!=null && (url.toLowerCase().startsWith("http://") || url.toLowerCase().startsWith("https://")) ) ;
+
+    
+    
   }
 
 }

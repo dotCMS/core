@@ -2,11 +2,14 @@ package com.dotcms.rest.api.v1.temp;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -14,6 +17,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.FileUtil;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -30,9 +34,9 @@ public class TempResourceAPI {
   public static final String TEMP_PREFIX = "temp_";
 
   /**
-   * Returns a TempFile of a unique id and file handle that can be used to write and access a temp file.
-   * The userId and uniqueKey will be written to the "allowList" and can be used to retreive the temp
-   * resource in other requests
+   * Returns a TempFile of a unique id and file handle that can be used to write and access a temp
+   * file. The userId and uniqueKey will be written to the "allowList" and can be used to retreive the
+   * temp resource in other requests
    * 
    * @param incomingFileName
    * @param user
@@ -40,8 +44,7 @@ public class TempResourceAPI {
    * @return
    * @throws DotSecurityException
    */
-  public DotTempFile createTempFile(final String incomingFileName, final User user, final String uniqueKey)
-      throws DotSecurityException {
+  public DotTempFile createTempFile(final String incomingFileName, final User user, final String uniqueKey) throws DotSecurityException {
     final String anon = Try.of(() -> APILocator.getUserAPI().getAnonymousUser().getUserId()).getOrElse("anonymous");
 
     final List<String> allowList = new ArrayList<>();
@@ -55,11 +58,12 @@ public class TempResourceAPI {
   }
 
   /**
-   * Returns a TempFile of a unique id and file handle that can be used to write and access a temp file.
-   * The allowList param acts like a permission and can include a userId, a session id and/or just a
-   * unique key that is writen to a whoCanUse.tmp file. When retrieving a temp resource, you will need
-   * to pass in another list of ids that will be checked against the values in whoCanUse.tmp and will
-   * only return the resource if any of the acceessingIds were in the whoCanUse.tmp original list
+   * Returns a TempFile of a unique id and file handle that can be used to write and access a temp
+   * file. The allowList param acts like a permission and can include a userId, a session id and/or
+   * just a unique key that is writen to a whoCanUse.tmp file. When retrieving a temp resource, you
+   * will need to pass in another list of ids that will be checked against the values in whoCanUse.tmp
+   * and will only return the resource if any of the acceessingIds were in the whoCanUse.tmp original
+   * list
    * 
    * @param incomingFileName
    * @param allowList
@@ -123,7 +127,7 @@ public class TempResourceAPI {
   }
 
   private boolean canUseTempFile(List<String> accessingList, final File tempFile) {
-    if (tempFile == null || !tempFile.exists() || accessingList==null) {
+    if (tempFile == null || !tempFile.exists() || accessingList == null) {
       return false;
     }
 
@@ -197,5 +201,7 @@ public class TempResourceAPI {
       return !(pathname.getName().equalsIgnoreCase(WHO_CAN_USE_TEMP_FILE));
     }
   };
+
+
 
 }

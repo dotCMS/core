@@ -3,14 +3,18 @@ package com.dotcms.rest.api.v1.temp;
 import static org.junit.Assert.assertFalse;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
 
+import org.apache.commons.io.IOUtils;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -21,9 +25,13 @@ import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.UUIDGenerator;
+import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
+import com.liferay.util.FileUtil;
 
 public class TempResourceTest {
   @BeforeClass
@@ -33,11 +41,14 @@ public class TempResourceTest {
 
   }
 
-  HttpServletRequest mockRequest() {
+  private HttpServletRequest mockRequest() {
     return new MockSessionRequest(
         new MockHeaderRequest(new MockHttpRequest("localhost", "/api/v1/tempResource").request(), "Origin", "localhost").request());
   }
-
+  private final InputStream inputStream() {
+    return this.getClass().getResourceAsStream("/images/SqcP9KgFqruagXJfe7CES.png");
+  }
+  
   @Test
   public void test_temp_resource_upload() throws Exception {
     TempResource resource = new TempResource();
@@ -47,12 +58,12 @@ public class TempResourceTest {
     final String fileName = "test.file";
     HttpServletResponse response = new MockHttpResponse();
 
-    InputStream inputStream = this.getClass().getResourceAsStream("/images/SqcP9KgFqruagXJfe7CES.png");
+
     Date date = new Date();
     final FormDataContentDisposition fileMetaData = FormDataContentDisposition.name("testData").fileName(fileName).creationDate(date)
         .modificationDate(date).readDate(date).size(1222).build();
 
-    Response jsonResponse = resource.uploadTempResource(request, response, inputStream, fileMetaData);
+    Response jsonResponse = resource.uploadTempResource(request, response, inputStream(), fileMetaData);
 
     DotTempFile dotTempFile = (DotTempFile) jsonResponse.getEntity();
 
@@ -76,12 +87,12 @@ public class TempResourceTest {
     final String fileName = "test.png";
     HttpServletResponse response = new MockHttpResponse();
 
-    InputStream inputStream = this.getClass().getResourceAsStream("/images/SqcP9KgFqruagXJfe7CES.png");
+
     Date date = new Date();
     final FormDataContentDisposition fileMetaData = FormDataContentDisposition.name("testData").fileName(fileName).creationDate(date)
         .modificationDate(date).readDate(date).size(1222).build();
 
-    Response jsonResponse = resource.uploadTempResource(request, response, inputStream, fileMetaData);
+    Response jsonResponse = resource.uploadTempResource(request, response, inputStream(), fileMetaData);
 
     DotTempFile dotTempFile = (DotTempFile) jsonResponse.getEntity();
 
@@ -111,12 +122,12 @@ public class TempResourceTest {
     final String fileName = "test.png";
     HttpServletResponse response = new MockHttpResponse();
     request.setAttribute(WebKeys.USER, user);
-    InputStream inputStream = this.getClass().getResourceAsStream("/images/SqcP9KgFqruagXJfe7CES.png");
+
     Date date = new Date();
     final FormDataContentDisposition fileMetaData = FormDataContentDisposition.name("testData").fileName(fileName).creationDate(date)
         .modificationDate(date).readDate(date).size(1222).build();
 
-    Response jsonResponse = resource.uploadTempResource(request, response, inputStream, fileMetaData);
+    Response jsonResponse = resource.uploadTempResource(request, response, inputStream(), fileMetaData);
 
     DotTempFile dotTempFile = (DotTempFile) jsonResponse.getEntity();
 
@@ -141,12 +152,12 @@ public class TempResourceTest {
     final String fileName = "test.png";
     HttpServletResponse response = new MockHttpResponse();
 
-    InputStream inputStream = this.getClass().getResourceAsStream("/images/SqcP9KgFqruagXJfe7CES.png");
+
     Date date = new Date();
     final FormDataContentDisposition fileMetaData = FormDataContentDisposition.name("testData").fileName(fileName).creationDate(date)
         .modificationDate(date).readDate(date).size(1222).build();
 
-    Response jsonResponse = resource.uploadTempResource(request, response, inputStream, fileMetaData);
+    Response jsonResponse = resource.uploadTempResource(request, response, inputStream(), fileMetaData);
 
     DotTempFile dotTempFile = (DotTempFile) jsonResponse.getEntity();
 
@@ -168,4 +179,7 @@ public class TempResourceTest {
     file = new TempResourceAPI().getTempFile(null, request.getSession().getId(), tempFileId);
     assertFalse(file.isPresent());
   }
+  
+
+
 }
