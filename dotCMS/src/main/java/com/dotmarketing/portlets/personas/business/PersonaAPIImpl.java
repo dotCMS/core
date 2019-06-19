@@ -124,6 +124,7 @@ public class PersonaAPIImpl implements PersonaAPI, DotInitializer {
 	public void init() {
 
 		this.localSystemEventsAPI.subscribe(this);
+		this.addPersonaListener(new MultiTreePersonaListener());
 	}
 	/// Event stuff
 
