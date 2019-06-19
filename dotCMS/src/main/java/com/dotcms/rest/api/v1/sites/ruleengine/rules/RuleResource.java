@@ -5,17 +5,6 @@ import static com.dotcms.util.DotPreconditions.checkNotEmpty;
 import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.com.google.common.collect.Maps;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
@@ -40,6 +29,18 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import org.glassfish.jersey.server.JSONP;
 
 @Path("/v1/sites/{siteId}/ruleengine")
@@ -76,9 +77,9 @@ public class RuleResource {
     @Path("/rules")
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public Map<String, RestRule> list(@Context HttpServletRequest request, @PathParam("siteId") String siteId) {
+    public Map<String, RestRule> list(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("siteId") String siteId) {
         siteId = checkNotEmpty(siteId, BadRequestException.class, "Site Id is required.");
-        User user = getUser(request);
+        User user = getUser(request, response);
         Ruleable proxy =  getParent(siteId, user);
         List<RestRule> restRules = getRulesInternal(user, proxy);
         Map<String, RestRule> hash = Maps.newHashMapWithExpectedSize(restRules.size());
@@ -99,9 +100,9 @@ public class RuleResource {
     @Path("/rules/{ruleId}")
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public RestRule self(@Context HttpServletRequest request, @PathParam("siteId") String siteId, @PathParam("ruleId") String ruleId) {
+    public RestRule self(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("siteId") String siteId, @PathParam("ruleId") String ruleId) {
         siteId = checkNotEmpty(siteId, BadRequestException.class, "Site Id is required.");
-        User user = getUser(request);
+        User user = getUser(request, response);
         Ruleable proxy =  getParent(siteId, user);
         ruleId = checkNotEmpty(ruleId, BadRequestException.class, "Rule Id is required.");
         return getRuleInternal(ruleId, user);
@@ -119,9 +120,9 @@ public class RuleResource {
     
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response add(@Context HttpServletRequest request, @PathParam("siteId") String siteId, RestRule restRule) {
+    public Response add(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("siteId") String siteId, RestRule restRule) {
         siteId = checkNotEmpty(siteId, BadRequestException.class, "Site id is required.");
-        User user = getUser(request);
+        User user = getUser(request, response);
         Ruleable proxy =  getParent(siteId, user);
         String ruleId = createRuleInternal(proxy.getIdentifier(), restRule, user);
 
@@ -145,10 +146,10 @@ public class RuleResource {
     @Path("/rules/{ruleId}")
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Consumes(MediaType.APPLICATION_JSON)
-    public RestRule update(@Context HttpServletRequest request, @PathParam("siteId") String siteId, @PathParam("ruleId") String ruleId, RestRule restRule) {
+    public RestRule update(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("siteId") String siteId, @PathParam("ruleId") String ruleId, RestRule restRule) {
         siteId = checkNotEmpty(siteId, BadRequestException.class, "Site Id is required.");
         ruleId = checkNotEmpty(ruleId, BadRequestException.class, "Rule Id is required.");
-        User user = getUser(request);
+        User user = getUser(request, response);
         Ruleable proxy =  getParent(siteId, user); // forces check that host exists. This should be handled by rulesAPI?
 
         updateRuleInternal(user, new RestRule.Builder().from(restRule).key(ruleId).build());
@@ -164,8 +165,8 @@ public class RuleResource {
      */
     @DELETE
     @Path("/rules/{ruleId}")
-    public Response remove(@Context HttpServletRequest request, @PathParam("siteId") String siteId, @PathParam("ruleId") String ruleId) {
-        User user = getUser(request);
+    public Response remove(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("siteId") String siteId, @PathParam("ruleId") String ruleId) {
+        User user = getUser(request, response);
 
         try {
             Ruleable proxy =  getParent(siteId, user);
@@ -208,8 +209,8 @@ public class RuleResource {
         }
     }
 
-    private User getUser(@Context HttpServletRequest request) {
-        return webResource.init(true, request, true).getUser();
+    private User getUser(final HttpServletRequest request, final HttpServletResponse response) {
+        return webResource.init(request, response, true).getUser();
     }
 
     private List<RestRule> getRulesInternal(User user, Ruleable host) {

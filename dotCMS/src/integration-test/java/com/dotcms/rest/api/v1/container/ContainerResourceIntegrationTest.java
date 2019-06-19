@@ -12,6 +12,7 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.RestUtilTest;
 import com.dotcms.rest.WebResource;
+import com.dotcms.rest.exception.SecurityException;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.uuid.shorty.ShortType;
@@ -67,12 +68,12 @@ public class ContainerResourceIntegrationTest {
     private final ShortyId shortyId = new ShortyId("2", "1234567", ShortType.IDENTIFIER, ShortType.IDENTIFIER);
 
     @Before
-    public void init() throws Exception {
+    public void init() throws Exception, SecurityException {
         final InitDataObject initData = mock(InitDataObject.class);
 
         when(request.getSession()).thenReturn(session);
         when(initData.getUser()).thenReturn(user);
-        when(webResource.init(true, request, true)).thenReturn(initData);
+        when(webResource.init(request, response, true)).thenReturn(initData);
         when(velocityUtil.getContext(request, response)).thenReturn(context);
         when(formAPI.getFormContent(formId)).thenReturn(formContent);
         when(shortyAPI.getShorty(containerId)).thenReturn(Optional.of(shortyId));

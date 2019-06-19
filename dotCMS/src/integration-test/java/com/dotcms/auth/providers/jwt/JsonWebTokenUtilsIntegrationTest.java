@@ -71,7 +71,6 @@ public class JsonWebTokenUtilsIntegrationTest {
         ));
         System.out.println(jsonWebToken);
         assertNotNull(jsonWebToken);
-        assertTrue(jsonWebToken.startsWith("eyJhbGciOiJIUzI1NiJ9"));
 
         //Parse the generated token
         final JWToken jwtBean = jsonWebTokenService.parseToken(jsonWebToken);
@@ -109,7 +108,6 @@ public class JsonWebTokenUtilsIntegrationTest {
         ));
         System.out.println(jsonWebToken);
         assertNotNull(jsonWebToken);
-        assertTrue(jsonWebToken.startsWith("eyJhbGciOiJIUzI1NiJ9"));
 
         //Parse the generated token
         final JWToken jwtBean = jsonWebTokenService.parseToken(jsonWebToken);

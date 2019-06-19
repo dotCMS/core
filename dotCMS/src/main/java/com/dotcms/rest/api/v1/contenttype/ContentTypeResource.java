@@ -6,20 +6,6 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.JsonContentTypeTransformer;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -54,7 +40,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import org.glassfish.jersey.server.JSONP;
 
 @Path("/v1/contenttype")
 public class ContentTypeResource implements Serializable {
@@ -91,15 +92,17 @@ public class ContentTypeResource implements Serializable {
 	@NoCache
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-	public final Response createType(@Context final HttpServletRequest req, final ContentTypeForm form)
+	public final Response createType(@Context final HttpServletRequest req,
+									 @Context final HttpServletResponse res,
+									 final ContentTypeForm form)
 			throws DotDataException {
-		final InitDataObject initData = this.webResource.init(null, true, req, true, null);
+		final InitDataObject initData = this.webResource.init(null, req, res, true, null);
 		final User user = initData.getUser();
 
 		Response response = null;
 
 		try {
-			Logger.debug(this, String.format("Saving new content type '%s' ", form.getRequestJson()));
+			Logger.debug(this, ()->String.format("Saving new content type '%s' ", form.getRequestJson()));
 			final HttpSession session = req.getSession(false);
 			final Iterable<ContentTypeForm.ContentTypeFormEntry> typesToSave = form.getIterable();
 			final List<Map<Object, Object>> retTypes = new ArrayList<>();
@@ -156,9 +159,9 @@ public class ContentTypeResource implements Serializable {
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
 	public Response updateType(@PathParam("idOrVar") final String idOrVar, final ContentTypeForm form,
-							   @Context final HttpServletRequest req) throws DotDataException {
+							   @Context final HttpServletRequest req, @Context final HttpServletResponse res) throws DotDataException {
 
-		final InitDataObject initData = this.webResource.init(null, false, req, false, null);
+		final InitDataObject initData = this.webResource.init(null, req, res, false, null);
 		final User user = initData.getUser();
 		final ContentTypeAPI capi = APILocator.getContentTypeAPI(user, true);
 
@@ -221,10 +224,10 @@ public class ContentTypeResource implements Serializable {
 	@JSONP
 	@NoCache
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-	public Response deleteType(@PathParam("idOrVar") final String idOrVar, @Context final HttpServletRequest req)
+	public Response deleteType(@PathParam("idOrVar") final String idOrVar, @Context final HttpServletRequest req, @Context final HttpServletResponse res)
 			throws DotDataException, JSONException {
 
-		final InitDataObject initData = this.webResource.init(null, true, req, true, null);
+		final InitDataObject initData = this.webResource.init(null, req, res, true, null);
 		final User user = initData.getUser();
 
 		ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user, true);
@@ -259,10 +262,10 @@ public class ContentTypeResource implements Serializable {
 	@JSONP
 	@NoCache
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-	public Response getType(@PathParam("idOrVar") final String idOrVar, @Context final HttpServletRequest req)
+	public Response getType(@PathParam("idOrVar") final String idOrVar, @Context final HttpServletRequest req, @Context final HttpServletResponse res)
 			throws DotDataException {
 
-		final InitDataObject initData = this.webResource.init(null, false, req, false, null);
+		final InitDataObject initData = this.webResource.init(null, req, res, false, null);
 		final User user = initData.getUser();
 		ContentTypeAPI tapi = APILocator.getContentTypeAPI(user, true);
 		Response response = Response.status(404).build();
@@ -339,7 +342,7 @@ public class ContentTypeResource implements Serializable {
 	 *
 	 * Url example: v1/contenttype?query=New%20L&limit=4&offset=5&orderby=name-asc
 	 *
-	 * @param request
+	 * @param httpRequest
 	 * @return
 	 */
 	@GET
@@ -347,7 +350,8 @@ public class ContentTypeResource implements Serializable {
 	@NoCache
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-	public final Response getContentTypes(@Context final HttpServletRequest request,
+	public final Response getContentTypes(@Context final HttpServletRequest httpRequest,
+										  @Context final HttpServletResponse httpResponse,
 										  @QueryParam(PaginationUtil.FILTER)   final String filter,
 										  @QueryParam(PaginationUtil.PAGE) final int page,
 										  @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
@@ -355,7 +359,7 @@ public class ContentTypeResource implements Serializable {
 										  @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) String direction,
 										  @QueryParam("type") String types) throws DotDataException {
 
-		final InitDataObject initData = webResource.init(null, true, request, true, null);
+		final InitDataObject initData = webResource.init(null, httpRequest, httpResponse, true, null);
 
 		Response response = null;
 
@@ -369,11 +373,9 @@ public class ContentTypeResource implements Serializable {
 							.put(ContentTypesPaginator.TYPE_PARAMETER_NAME, Arrays.asList(types.split(",")))
 							.build();
 
-			
 			final PaginationUtil paginationUtil = new PaginationUtil(new ContentTypesPaginator(APILocator.getContentTypeAPI(user)));
-			
-			
-			response = paginationUtil.getPage(request, user, filter, page, perPage, orderBy,
+
+			response = paginationUtil.getPage(httpRequest, user, filter, page, perPage, orderBy,
 					OrderDirection.valueOf(direction), extraParams);
 		} catch (IllegalArgumentException e) {
 			throw new DotDataException(e.getMessage());
