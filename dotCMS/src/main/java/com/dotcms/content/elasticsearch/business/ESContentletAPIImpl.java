@@ -1476,7 +1476,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             SearchResponse response = APILocator.getEsSearchAPI()
                     .esSearchRelated(contentlet.getIdentifier(), relationshipName, false,false, user,
-                            respectFrontendRoles);
+                            respectFrontendRoles, limit, offset, sortBy);
 
             if (response.getHits() == null) {
                 return result;
@@ -1544,10 +1544,19 @@ public class ESContentletAPIImpl implements ContentletAPI {
             String sortBy)
             throws DotDataException {
         try {
-            final String fieldVariable = rel.isRelationshipField() ?
-                    rel.getParentStructureInode().equals(contentlet.getContentTypeId()) ? rel
-                            .getChildRelationName() : rel.getParentRelationName()
-                    : rel.getRelationTypeValue();
+            String fieldVariable = rel.getRelationTypeValue();
+
+            if(rel.isRelationshipField()){
+                if ((relationshipAPI.sameParentAndChild(rel) && pullByParent!= null && pullByParent) || (relationshipAPI
+                        .isParent(rel, contentlet.getContentType()) && !relationshipAPI.sameParentAndChild(rel))) {
+                    if(rel.getChildRelationName()!= null) {
+                        fieldVariable = rel.getChildRelationName();
+                    }
+                } else if(rel.getParentRelationName() != null){
+                    fieldVariable = rel.getParentRelationName();
+                }
+            }
+
             return contentlet
                     .getRelated(fieldVariable, user, respectFrontendRoles, pullByParent, limit,
                             offset, sortBy);
@@ -2846,6 +2855,26 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             if(localTransaction){
                 HibernateUtil.commitTransaction();
+            }
+
+            //If relationship field, field cache must be invalidated
+            if (relationship.isRelationshipField()){
+
+                if (relationshipAPI.sameParentAndChild(relationship)){
+                    if (relationship.getParentRelationName() != null) {
+                        contentlet.setRelated(relationship.getParentRelationName(), null);
+                    }
+
+                    if (relationship.getChildRelationName() != null) {
+                        contentlet.setRelated(relationship.getChildRelationName(), null);
+                    }
+                }else {
+                    if (child && relationship.getParentRelationName() != null) {
+                        contentlet.setRelated(relationship.getParentRelationName(), null);
+                    } else if (!child && relationship.getChildRelationName() != null) {
+                        contentlet.setRelated(relationship.getChildRelationName(), null);
+                    }
+                }
             }
         } catch(Exception exception){
             Logger.debug(this.getClass(), "Failed to relate content. : " + exception.toString(), exception);

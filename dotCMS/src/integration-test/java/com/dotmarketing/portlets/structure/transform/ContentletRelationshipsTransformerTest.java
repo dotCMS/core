@@ -150,7 +150,7 @@ public class ContentletRelationshipsTransformerTest {
 
             //Check that contentletRelationship is not null and the hasParent is False
             assertNotNull(relationshipsData);
-            assertFalse(relationshipsData.getRelationshipsRecords().get(0).isHasParent());
+            assertTrue(relationshipsData.getRelationshipsRecords().get(0).isHasParent());
 
         }finally {
             if (parentContentType != null) {

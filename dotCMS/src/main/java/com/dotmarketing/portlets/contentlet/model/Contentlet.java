@@ -1622,6 +1622,9 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
             relationship =  APILocator.getRelationshipAPI().byTypeValue(variableName);
         }
 
+        if (relationship == null){
+            throw new DotStateException("No relationship found");
+        }
         relatedList = APILocator.getContentletAPI()
                 .filterRelatedContent(this, relationship, systemUser, false, pullByParent, limit, offset, sortBy);
 
