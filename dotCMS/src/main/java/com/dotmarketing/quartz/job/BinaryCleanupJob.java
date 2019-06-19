@@ -15,6 +15,7 @@ import org.quartz.StatefulJob;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.Logger;
 import com.liferay.util.FileUtil;
 
 /**
@@ -43,9 +44,10 @@ public class BinaryCleanupJob implements StatefulJob {
     int hours = Config.getIntProperty("BINARY_CLEANUP_FILE_LIFE_HOURS", 3);
 
     Date olderThan = Date.from(Instant.now().minus(Duration.ofHours(hours)));
-    Date now = Date.from(Instant.now());
-    
 
+    
+    
+    Logger.info(this.getClass(), "Deleting tmp files older than " + olderThan + " from " + APILocator.getFileAssetAPI().getRealAssetPathTmpBinary());
     final File folder = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary());
     FileUtil.cleanTree(folder, olderThan);
 
@@ -54,6 +56,8 @@ public class BinaryCleanupJob implements StatefulJob {
 
     // also delete bundles older than 2 days
     if (Config.getBooleanProperty("bundles.delete.enabled", true)) {
+      
+      Logger.info(this.getClass(), "Deleting bundle files older than " + olderThan + " from " + APILocator.getFileAssetAPI().getRealAssetPathTmpBinary());
       olderThan =  Date.from(Instant.now().minus(Duration.ofMillis(Config.getIntProperty("bundles.delete.older.than.milliseconds", 1000 * 60 * 60 * 24 * 2))));
       File bundleFolder = new File(ConfigUtils.getBundlePath());
       FileUtil.cleanTree(bundleFolder, olderThan);
