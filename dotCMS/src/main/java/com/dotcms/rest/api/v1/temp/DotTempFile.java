@@ -30,4 +30,10 @@ public class DotTempFile {
     return file.length();
   }
   
+  @Override
+  public String toString() {
+    return "DotTempFile [id=" + id + ", mimeType=" + mimeType + ", referenceUrl=" + referenceUrl + ", thumbnailUrl=" + thumbnailUrl
+        + ", image=" + image + ", file=" + file + "]";
+  }
+  
 }

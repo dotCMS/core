@@ -140,7 +140,7 @@ public class TempResource {
       .setUrl(form.remoteUrl)
       .setTimeout(form.urlTimeout)
       .build().doOut(fileOut);
-    } catch (IOException e) {
+    } catch (Exception e) {
       Logger.warnAndDebug(this.getClass(), "unable to save temp file:" + tempFileId, e);
 
       return ResponseUtil.mapExceptionResponse(e);
