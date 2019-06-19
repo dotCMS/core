@@ -41,7 +41,10 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
+<<<<<<< HEAD
 import java.util.concurrent.CopyOnWriteArrayList;
+=======
+>>>>>>> 0498982e63c255ecc4f8debf3c0596afe0752693
 
 public class PersonaAPIImpl implements PersonaAPI, DotInitializer {
 
@@ -403,4 +406,11 @@ public class PersonaAPIImpl implements PersonaAPI, DotInitializer {
 		final Optional<Contentlet> persona = null != contentlets? contentlets.stream().findFirst():Optional.empty();
 		return persona.isPresent()? Optional.ofNullable(fromContentlet(persona.get())):Optional.empty();
 	}
+<<<<<<< HEAD
+=======
+
+
+
+
+>>>>>>> 0498982e63c255ecc4f8debf3c0596afe0752693
 }
