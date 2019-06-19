@@ -31,7 +31,9 @@ class MockDotLicenseService {
 
 @Component({
     selector: 'dot-test-host-component',
-    template: `<dot-edit-page-nav [pageState]="pageState"></dot-edit-page-nav>`
+    template: `
+        <dot-edit-page-nav [pageState]="pageState"></dot-edit-page-nav>
+    `
 })
 class TestHostComponent {
     @Input()
@@ -179,63 +181,69 @@ describe('DotEditPageNavComponent', () => {
             expect(menuListItems[1].nativeElement.textContent).toContain('Layout');
         });
 
-        it('should have layout option disabled and cant edit message when template is advance and license is enterprise', () => {
-            spyOn(dotLicenseService, 'isEnterprise').and.returnValue(observableOf(true));
+        describe('disabled option', () => {
+            it('should have layout option disabled and cant edit message when template is advance and license is enterprise', () => {
+                spyOn(dotLicenseService, 'isEnterprise').and.returnValue(observableOf(true));
 
-            component.model = undefined;
-            fixture.componentInstance.pageState = new DotRenderedPageState(
-                mockUser,
-                mockDotRenderedPageAdvanceTemplate
-            );
-            fixture.detectChanges();
+                component.model = undefined;
+                fixture.componentInstance.pageState = new DotRenderedPageState(
+                    mockUser,
+                    mockDotRenderedPageAdvanceTemplate
+                );
+                fixture.detectChanges();
 
-            const menuListItems = fixture.debugElement.queryAll(By.css('.edit-page-nav__item'));
-            expect(menuListItems[1].nativeElement.classList).toContain(
-                'edit-page-nav__item--disabled'
-            );
-            expect(menuListItems[1].nativeElement.getAttribute('ng-reflect-text')).toBe(
-                'Can’t edit advanced template'
-            );
-        });
-
-        it('should have layout option disabled and enterprise only message when template is advance and license is comunity', () => {
-            fixture.componentInstance.pageState = new DotRenderedPageState(
-                mockUser,
-                mockDotRenderedPageAdvanceTemplate
-            );
-            fixture.detectChanges();
-
-            const menuListItems = fixture.debugElement.queryAll(By.css('.edit-page-nav__item'));
-            expect(menuListItems[1].nativeElement.classList).toContain(
-                'edit-page-nav__item--disabled'
-            );
-
-            expect(menuListItems[1].nativeElement.getAttribute('ng-reflect-text')).toBe(
-                'Enterprise only'
-            );
-        });
-
-        it('should have code option disabled because user can not edit the page thus the layout or template', () => {
-            fixture.componentInstance.pageState = new DotRenderedPageState(mockUser, {
-                ...mockDotRenderedPageAdvanceTemplate,
-                page: {
-                    ...mockDotRenderedPageAdvanceTemplate.page,
-                    canEdit: false
-                }
+                const menuListItems = fixture.debugElement.queryAll(By.css('.edit-page-nav__item'));
+                expect(menuListItems[1].nativeElement.classList).toContain(
+                    'edit-page-nav__item--disabled'
+                );
+                expect(menuListItems[1].nativeElement.getAttribute('ng-reflect-text')).toBe(
+                    'Can’t edit advanced template'
+                );
             });
-            fixture.detectChanges();
 
-            const menuListItems = fixture.debugElement.queryAll(By.css('.edit-page-nav__item'));
-            expect(menuListItems[1].nativeElement.classList).toContain(
-                'edit-page-nav__item--disabled'
-            );
+            it('should have layout and rules option disabled and enterprise only message when template is advance and license is comunity', () => {
+                fixture.componentInstance.pageState = new DotRenderedPageState(
+                    mockUser,
+                    mockDotRenderedPageAdvanceTemplate
+                );
+                fixture.detectChanges();
 
-            const labels = ['Content', 'Layout', 'Rules', 'Properties'];
-            const icons = ['description', 'view_quilt', 'tune', 'add'];
-            menuListItems.forEach((item, index) => {
-                const iconClass = item.query(By.css('i')).nativeElement.innerHTML.trim();
-                expect(iconClass).toEqual(icons[index]);
-                expect(item.nativeElement.textContent).toContain(labels[index]);
+                const menuListItems = fixture.debugElement.queryAll(
+                    By.css('.edit-page-nav__item--disabled')
+                );
+
+                menuListItems.forEach((item, index) => {
+                    const label = item.query(By.css('.edit-page-nav__item-text'));
+                    expect(label.nativeElement.textContent).toBe(index ? 'Rules' : 'Layout');
+
+                    expect(item.nativeElement.getAttribute('ng-reflect-text')).toBe(
+                        'Enterprise only'
+                    );
+                });
+            });
+
+            it('should have code option disabled because user can not edit the page thus the layout or template', () => {
+                fixture.componentInstance.pageState = new DotRenderedPageState(mockUser, {
+                    ...mockDotRenderedPageAdvanceTemplate,
+                    page: {
+                        ...mockDotRenderedPageAdvanceTemplate.page,
+                        canEdit: false
+                    }
+                });
+                fixture.detectChanges();
+
+                const menuListItems = fixture.debugElement.queryAll(By.css('.edit-page-nav__item'));
+                expect(menuListItems[1].nativeElement.classList).toContain(
+                    'edit-page-nav__item--disabled'
+                );
+
+                const labels = ['Content', 'Layout', 'Rules', 'Properties'];
+                const icons = ['description', 'view_quilt', 'tune', 'add'];
+                menuListItems.forEach((item, index) => {
+                    const iconClass = item.query(By.css('i')).nativeElement.innerHTML.trim();
+                    expect(iconClass).toEqual(icons[index]);
+                    expect(item.nativeElement.textContent).toContain(labels[index]);
+                });
             });
         });
 

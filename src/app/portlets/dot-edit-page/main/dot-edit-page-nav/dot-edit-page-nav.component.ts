@@ -143,13 +143,10 @@ export class DotEditPageNavComponent implements OnChanges {
         // https://github.com/dotCMS/core-web/pull/589
         return {
             needsEntepriseLicense: !enterpriselicense,
-            disabled: !this.canGoToLayout(dotRenderedPage),
+            disabled: false,
             icon: 'tune',
             label: this.i18nMessages['editpage.toolbar.nav.rules'],
-            link: `rules/${dotRenderedPage.page.identifier}`,
-            tooltip: dotRenderedPage.template.drawed
-                ? null
-                : this.i18nMessages['editpage.toolbar.nav.layout.advance.disabled']
+            link: `rules/${dotRenderedPage.page.identifier}`
         };
     }
 

@@ -240,11 +240,17 @@ export const DEFAULT_RULE: IRule = {
 // @dynamic
 @Injectable()
 export class RuleService {
+
+  get rules(): RuleModel[] {
+    return this._rules;
+  }
   ruleActionTypes$: BehaviorSubject<ServerSideTypeModel[]> = new BehaviorSubject([]);
   conditionTypes$: BehaviorSubject<ServerSideTypeModel[]> = new BehaviorSubject([]);
 
   _ruleActionTypes: { [key: string]: ServerSideTypeModel } = {};
   _conditionTypes: { [key: string]: ServerSideTypeModel } = {};
+
+  public _errors$: Subject<any> = new Subject();
 
   protected _actionsEndpointUrl: string;
   // tslint:disable-next-line:no-unused-variable
@@ -263,7 +269,42 @@ export class RuleService {
 
   private _rules: RuleModel[];
 
-  public _errors$: Subject<any> = new Subject();
+  constructor(
+    public _apiRoot: ApiRoot,
+    private _resources: I18nService,
+    private siteService: SiteService,
+    private coreWebService: CoreWebService
+  ) {
+    this._rulesEndpointUrl = `/ruleengine/rules`;
+    this._actionsEndpointUrl = `/ruleengine/actions`;
+    this._conditionTypesEndpointUrl = `${this._apiRoot.baseUrl}api/v1/system/ruleengine/conditionlets`;
+    this._ruleActionTypesEndpointUrl = `${this._apiRoot.baseUrl}api/v1/system/ruleengine/actionlets`;
+
+    this._preCacheCommonResources(_resources);
+    this.loadActionTypes().subscribe(
+      (types: ServerSideTypeModel[]) => {
+        this.ruleActionTypes$.next(types);
+      },
+      err => {
+        this._errors$.next(err);
+      }
+    );
+    this.loadConditionTypes().subscribe(
+      (types: ServerSideTypeModel[]) => {
+        this.conditionTypes$.next(types);
+      },
+      err => {
+        this._errors$.next(err);
+      }
+    );
+
+    this.siteService.switchSite$.subscribe(site => {
+      const siteId = this.loadRulesSiteId();
+      if (siteId === site.identifier) {
+        this.sendLoadRulesRequest(site.identifier);
+      }
+    });
+  }
 
   static fromServerRulesTransformFn(ruleMap): RuleModel[] {
     return Object.keys(ruleMap).map((id: string) => {
@@ -317,52 +358,6 @@ export class RuleService {
     };
   }
 
-  private fromServerServersideTypesTransformFn(typesMap): ServerSideTypeModel[] {
-    const types = Object.keys(typesMap).map((key: string) => {
-      const json: any = typesMap[key];
-      json.key = key;
-      return ServerSideTypeModel.fromJson(json);
-    });
-    return types.filter(type => type.key !== 'CountRulesActionlet');
-  }
-
-  constructor(
-    public _apiRoot: ApiRoot,
-    private _resources: I18nService,
-    private siteService: SiteService,
-    private coreWebService: CoreWebService
-  ) {
-    this._rulesEndpointUrl = `/ruleengine/rules`;
-    this._actionsEndpointUrl = `/ruleengine/actions`;
-    this._conditionTypesEndpointUrl = `${this._apiRoot.baseUrl}api/v1/system/ruleengine/conditionlets`;
-    this._ruleActionTypesEndpointUrl = `${this._apiRoot.baseUrl}api/v1/system/ruleengine/actionlets`;
-
-    this._preCacheCommonResources(_resources);
-    this.loadActionTypes().subscribe(
-      (types: ServerSideTypeModel[]) => {
-        this.ruleActionTypes$.next(types);
-      },
-      err => {
-        this._errors$.next(err);
-      }
-    );
-    this.loadConditionTypes().subscribe(
-      (types: ServerSideTypeModel[]) => {
-        this.conditionTypes$.next(types);
-      },
-      err => {
-        this._errors$.next(err);
-      }
-    );
-
-    this.siteService.switchSite$.subscribe(site => {
-      const siteId = this.loadRulesSiteId();
-      if (siteId === site.identifier) {
-        this.sendLoadRulesRequest(site.identifier);
-      }
-    });
-  }
-
   createRule(body: RuleModel): Observable<RuleModel | CwError> {
     const siteId = this.loadRulesSiteId();
     return this.coreWebService
@@ -403,10 +398,6 @@ export class RuleService {
             this.sendLoadRulesRequest(site.identifier);
         });
     }
-  }
-
-  get rules(): RuleModel[] {
-    return this._rules;
   }
 
   loadRule(id: string): Observable<RuleModel | CwError> {
@@ -478,6 +469,15 @@ export class RuleService {
       map(this.fromServerServersideTypesTransformFn));
   }
 
+  private fromServerServersideTypesTransformFn(typesMap): ServerSideTypeModel[] {
+    const types = Object.keys(typesMap).map((key: string) => {
+      const json: any = typesMap[key];
+      json.key = key;
+      return ServerSideTypeModel.fromJson(json);
+    });
+    return types.filter(type => type.key !== 'CountRulesActionlet');
+  }
+
   private _preCacheCommonResources(resources: I18nService): void {
     resources.get('api.sites.ruleengine').subscribe(rsrc => {});
     resources.get('api.ruleengine.system').subscribe(rsrc => {});
@@ -537,7 +537,7 @@ export class RuleService {
             typeMap[type.key] = type;
           });
           return typ;
-        }),);
+        }), );
     }));
   }
 
@@ -551,6 +551,20 @@ export class RuleService {
     return obs;
   }
 
+  private getPageIdFromUrl(): string {
+    let query;
+
+    const hash = document.location.hash;
+
+    if (hash.includes('fromCore')) {
+      query = hash.substr(hash.indexOf('?') + 1);
+      return ApiRoot.parseQueryParam(query, 'realmId');
+    } else if (hash.includes('edit-page')) {
+        return hash.split('/').pop().split('?')[0];
+    }
+    return null;
+  }
+
   /**
    * Return the Site Id or Page Id for the rules operations.
    * First will check if the realmId parameter is included in the url.
@@ -558,18 +572,7 @@ export class RuleService {
    * @returns string
    */
   private loadRulesSiteId(): string {
-    let siteId;
-    let query = document.location.search.substring(1);
-    if (query === '') {
-      if (document.location.hash.indexOf('?') >= 0) {
-        query = document.location.hash.substr(document.location.hash.indexOf('?') + 1);
-      }
-    }
-
-    /**
-     * Search if the realId parameter is set
-     */
-    siteId = ApiRoot.parseQueryParam(query, 'realmId');
+    let siteId = this.getPageIdFromUrl();
 
     if (!siteId) {
       /**
