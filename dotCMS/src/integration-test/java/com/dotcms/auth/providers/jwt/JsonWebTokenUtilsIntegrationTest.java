@@ -95,7 +95,7 @@ public class JsonWebTokenUtilsIntegrationTest {
      */
     @Test
     public void get_user_in_token_modified()
-            throws DotSecurityException, DotDataException, ParseException {
+            throws DotSecurityException, DotDataException, InterruptedException {
 
         //Generate the token service
         final JsonWebTokenService jsonWebTokenService =
@@ -117,6 +117,8 @@ public class JsonWebTokenUtilsIntegrationTest {
         final String subject = jwtBean.getSubject();
         assertNotNull(subject);
         assertEquals(subject, userId);
+
+        Thread.sleep(1000);
 
         userAPI.loadUserById(userId).setModificationDate(new Date());
 

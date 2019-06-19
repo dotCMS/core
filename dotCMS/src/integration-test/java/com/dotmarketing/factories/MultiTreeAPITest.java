@@ -190,9 +190,9 @@ public class MultiTreeAPITest extends IntegrationTestBase {
             //delete out any previous relation
             APILocator.getMultiTreeAPI().deleteMultiTree(multiTree);
             CacheLocator.getMultiTreeCache().clearCache();
-            Table<String, String, Set<String>> trees= APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);
+            Table<String, String, Set<PersonalizedContentlet>> trees= APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);
             
-            Table<String, String, Set<String>> cachedTrees= APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);
+            Table<String, String, Set<PersonalizedContentlet>> cachedTrees= APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);
             
             // should be the same object coming from in memory cache
             assert(trees==cachedTrees);
@@ -215,7 +215,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
     
             // check cache flush on save
             APILocator.getMultiTreeAPI().saveMultiTree( multiTree );
-            Table<String, String, Set<String>> addedTrees= APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);
+            Table<String, String, Set<PersonalizedContentlet>> addedTrees= APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);
             assert(cachedTrees!=addedTrees);
             
             // did we get a new object from the cache?
@@ -224,7 +224,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
             
             // check cache flush on delete
             APILocator.getMultiTreeAPI().deleteMultiTree(multiTree );
-            Table<String, String, Set<String>> deletedTrees= APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);
+            Table<String, String, Set<PersonalizedContentlet>> deletedTrees= APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);
             
             // did we get a new object from the cache?
             assert(!(addedTrees.equals(deletedTrees)));
