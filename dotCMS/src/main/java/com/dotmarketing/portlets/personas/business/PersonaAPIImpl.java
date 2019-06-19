@@ -10,7 +10,6 @@ import com.dotcms.content.elasticsearch.business.event.ContentletPublishEvent;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.PersonaContentType;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
-import com.dotcms.system.event.local.model.EventSubscriber;
 import com.dotcms.system.event.local.model.Subscriber;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -22,7 +21,6 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletListener;
-import com.dotmarketing.portlets.folders.business.FolderAPIImpl;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.personas.model.Persona;
@@ -38,13 +36,9 @@ import com.liferay.util.StringPool;
 
 import java.io.StringWriter;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
-<<<<<<< HEAD
 import java.util.concurrent.CopyOnWriteArrayList;
-=======
->>>>>>> 0498982e63c255ecc4f8debf3c0596afe0752693
 
 public class PersonaAPIImpl implements PersonaAPI, DotInitializer {
 
@@ -406,11 +400,5 @@ public class PersonaAPIImpl implements PersonaAPI, DotInitializer {
 		final Optional<Contentlet> persona = null != contentlets? contentlets.stream().findFirst():Optional.empty();
 		return persona.isPresent()? Optional.ofNullable(fromContentlet(persona.get())):Optional.empty();
 	}
-<<<<<<< HEAD
-=======
 
-
-
-
->>>>>>> 0498982e63c255ecc4f8debf3c0596afe0752693
 }

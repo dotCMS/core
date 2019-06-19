@@ -81,12 +81,23 @@ public class DeleteMultiTreeUsedPersonaTagJob implements StatefulJob {
         final User       user = (User) map.get("user");
         final boolean    respectFrontEndRoles = (Boolean)map.get("respectFrontEndRoles");
 
+        this.execute(user, respectFrontEndRoles);
+    }
+
+    /**
+     * Executes the clean up job personalization
+     * @param user {@link User} user that triggers the job
+     * @param respectFrontEndRoles {@link Boolean}
+     * @throws JobExecutionException
+     */
+    public void execute(final User user, final boolean respectFrontEndRoles) throws JobExecutionException {
+
         try {
 
             final Set<String> removedPersonaTagSet = this.multiTreeAPI.cleanUpUnusedPersonalization(personalization -> // clean up non-existing persona tags.
                     UtilMethods.isSet(personalization) &&
-                    personalization.startsWith(Persona.DOT_PERSONA_PREFIX_SCHEME) &&
-                    !existsPersonaTag(personalization, user, respectFrontEndRoles));
+                            personalization.startsWith(Persona.DOT_PERSONA_PREFIX_SCHEME) &&
+                            !existsPersonaTag(personalization, user, respectFrontEndRoles));
 
             Logger.info(this, "Removed the unused persona tags: " + removedPersonaTagSet);
         } catch (Exception e) {

@@ -96,12 +96,9 @@ public interface PersonaAPI {
 	 */
     Optional<Persona> findPersonaByTag (final String personaTag, final User user, final boolean respectFrontEndRoles) throws DotSecurityException, DotDataException;
 
-<<<<<<< HEAD
 	/**
 	 * Adds a persona listener
 	 * @param personaListener
 	 */
 	void addPersonaListener (final ContentletListener<Persona> personaListener);
-=======
->>>>>>> 0498982e63c255ecc4f8debf3c0596afe0752693
 }
