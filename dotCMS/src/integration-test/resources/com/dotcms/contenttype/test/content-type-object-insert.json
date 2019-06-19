@@ -180,7 +180,7 @@
         ],
         "fixed": false,
         "folder": "SYSTEM_FOLDER",
-        "host": "48190c8c-42c4-46af-8d1a-0cd5db894797",
+        "host": "REPLACE_WITH_HOST_ID",
         "clazz": "com.dotcms.contenttype.model.type.ImmutableSimpleContentType",
         "multilingualable": false,
         "name": "BannerTest",
