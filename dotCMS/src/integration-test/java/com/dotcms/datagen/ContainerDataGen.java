@@ -3,6 +3,7 @@ package com.dotcms.datagen;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotmarketing.beans.ContainerStructure;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -27,6 +28,7 @@ public class ContainerDataGen extends AbstractDataGen<Container> {
     private int maxContentlets = 5;
     private User modUser = user;
     private User owner = user;
+    private Host site = host;
     private String code;
     private String preLoop = "<div>";
     private String postLoop = "</div>";
@@ -130,6 +132,11 @@ public class ContainerDataGen extends AbstractDataGen<Container> {
 
     public ContainerDataGen owner(User owner) {
         this.owner = owner;
+        return this;
+    }
+
+    public ContainerDataGen site(Host site) {
+        this.site = site;
         return this;
     }
 
@@ -241,7 +248,7 @@ public class ContainerDataGen extends AbstractDataGen<Container> {
             }
 
             container = APILocator.getContainerAPI()
-                    .save(container, csList, host, owner, false);
+                    .save(container, csList, site, owner, false);
         } catch (Exception e) {
             throw new RuntimeException("Error persisting Container", e);
         }

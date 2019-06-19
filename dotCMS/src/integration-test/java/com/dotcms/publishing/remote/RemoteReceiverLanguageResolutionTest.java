@@ -21,7 +21,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.SiteDataGen;
-import com.dotcms.datagen.UserDataGen;
+import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.bundle.business.BundleAPI;
 import com.dotcms.publisher.business.PublishAuditAPI;
@@ -38,7 +38,6 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.Role;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
@@ -78,10 +77,8 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
     static final String FILE = PublisherTestUtil.FILE;
 
     private static Host host;
-    private static Role adminRole;
     private static LanguageAPI languageAPI;
     private static ContentletAPI contentletAPI;
-    private static User systemUser;
     private static User adminUser;
     private static ContentType contentType;
 
@@ -114,20 +111,11 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
                 .init(anyString(), any(HttpServletRequest.class),  any(HttpServletResponse.class), anyBoolean(),
                         anyString())).thenReturn(dataObject);
 
-        systemUser = APILocator.systemUser();
-
-        adminUser = APILocator.getUserAPI()
-                .loadByUserByEmail(ADMIN_DEFAULT_MAIL, systemUser, false);
-
         languageAPI = APILocator.getLanguageAPI();
 
         host = new SiteDataGen().nextPersisted();
 
-        adminRole = APILocator.getRoleAPI().loadCMSAdminRole();
-
-        if(null == adminUser){
-          adminUser = new UserDataGen().roles(adminRole).emailAddress(ADMIN_DEFAULT_MAIL).nextPersisted();
-        }
+        adminUser = TestUserUtils.getAdminUser();
         // Any CT should do it.
         contentType = getWikiLikeContentType();
 
@@ -142,7 +130,6 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
                     .country("Espana").nextPersisted();
         }
 
-       System.out.println("LOL");
     }
 
     @AfterClass

@@ -36,6 +36,7 @@ public class ContentTypeDataGen extends AbstractDataGen<ContentType> {
     private String velocityVarName = "testVarname" + currentTime;
     private List<Field> fields = new ArrayList<>();
     private Set<String> workflowIds = new HashSet<>();
+    private User owner = user;
 
     @SuppressWarnings("unused")
     public ContentTypeDataGen baseContentType(final BaseContentType baseContentType) {
@@ -136,6 +137,11 @@ public class ContentTypeDataGen extends AbstractDataGen<ContentType> {
         return this;
     }
 
+    public ContentTypeDataGen owner(User owner) {
+        this.owner = owner;
+        return this;
+    }
+
     @Override
     public ContentType next() {
 
@@ -143,7 +149,7 @@ public class ContentTypeDataGen extends AbstractDataGen<ContentType> {
                 .description(descriptionField)
                 .fixed(fixedField)
                 .name(name)
-                .owner(user.getUserId())
+                .owner(owner.getUserId())
                 .detailPage(detailPage)
                 .urlMapPattern(urlMapPattern)
                 .system(systemField)

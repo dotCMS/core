@@ -3,11 +3,16 @@ package com.dotcms.datagen;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.CategoryField;
+import com.dotcms.contenttype.model.field.CustomField;
 import com.dotcms.contenttype.model.field.DateField;
 import com.dotcms.contenttype.model.field.HostFolderField;
+import com.dotcms.contenttype.model.field.LineDividerField;
+import com.dotcms.contenttype.model.field.RadioField;
+import com.dotcms.contenttype.model.field.SelectField;
 import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.field.TextAreaField;
 import com.dotcms.contenttype.model.field.TextField;
+import com.dotcms.contenttype.model.field.WysiwygField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.util.ConfigTestHelper;
@@ -30,6 +35,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -44,12 +50,12 @@ public class TestDataUtils {
     }
 
     public static ContentType getBlogLikeContentType(final String contentTypeName) {
-        return getBlogLikeContentType(contentTypeName, null);
+        return getBlogLikeContentType(contentTypeName, null, null);
     }
 
     public static ContentType getBlogLikeContentType(final String contentTypeName,
             final Host site) {
-            return getBlogLikeContentType(contentTypeName,site,null);
+            return getBlogLikeContentType(contentTypeName, site,null);
     }
 
     public static ContentType getBlogLikeContentType(final String contentTypeName,
@@ -152,7 +158,8 @@ public class TestDataUtils {
                 blogType = new ContentTypeDataGen()
                         .name(contentTypeName)
                         .velocityVarName(contentTypeName)
-                        .fields(fields).workflowId(workflowIds)
+                        .fields(fields)
+                        .workflowId(workflowIds)
                         .nextPersisted();
             }
         } catch (Exception e) {
@@ -337,7 +344,6 @@ public class TestDataUtils {
             final String urlMapPattern) {
         return getNewsLikeContentType(contentTypeName, site, detailPageIdentifier, urlMapPattern, null);
     }
-
 
     public static ContentType getNewsLikeContentType(final String contentTypeName,
             final Host site,
@@ -983,7 +989,7 @@ public class TestDataUtils {
        return getDocumentLikeContentType("Document" + System.currentTimeMillis(), null);
     }
 
-    public static ContentType getDocumentLikeContentType(final String contentTypeName,Set<String> workflowIds) {
+    public static ContentType getDocumentLikeContentType(final String contentTypeName, Set<String> workflowIds) {
 
         ContentType simpleWidgetContentType = null;
         try {
@@ -995,6 +1001,11 @@ public class TestDataUtils {
             if (simpleWidgetContentType == null) {
 
                 final WorkflowScheme documentWorkflow = TestWorkflowUtils.getDocumentWorkflow();
+                final Set<String> collectedWorkflowIds = new HashSet<>();
+                collectedWorkflowIds.add(documentWorkflow.getId());
+                if(null != workflowIds){
+                   collectedWorkflowIds.addAll(workflowIds);
+                }
 
                 List<com.dotcms.contenttype.model.field.Field> fields = new ArrayList<>();
                 fields.add(
@@ -1061,7 +1072,7 @@ public class TestDataUtils {
                         .name(contentTypeName)
                         .velocityVarName(contentTypeName)
                         .fields(fields)
-                        .workflowId(documentWorkflow.getId())
+                        .workflowId(workflowIds)
                         .nextPersisted();
             }
         } catch (Exception e) {
@@ -1106,6 +1117,308 @@ public class TestDataUtils {
         }
     }
 
+    public static ContentType getBannerLikeContentType() {
+         return  getBannerLikeContentType("BannerLike" + System.currentTimeMillis(),APILocator.systemHost(), null);
+    }
+
+
+    public static ContentType getBannerLikeContentType(final String contentTypeName, final Host site) {
+        return getBannerLikeContentType(contentTypeName, site, null);
+    }
+
+    public static ContentType getBannerLikeContentType(final String contentTypeName,
+            final Host site,
+            final Set<String> workflowIds) {
+
+        ContentType bannerType = null;
+        try {
+            try {
+                bannerType = APILocator.getContentTypeAPI(APILocator.systemUser())
+                        .find(contentTypeName);
+            } catch (NotFoundInDbException e) {
+                //Do nothing...
+            }
+            if (bannerType == null) {
+
+                List<com.dotcms.contenttype.model.field.Field> fields = new ArrayList<>();
+                if (null != site) {
+                    fields.add(
+                            new FieldDataGen()
+                                    .name("Site or Folder")
+                                    .velocityVarName("hostfolder")
+                                    .required(Boolean.TRUE)
+                                    .type(HostFolderField.class)
+                                    .next()
+                    );
+                }
+                fields.add(
+                        new FieldDataGen()
+                                .name("Title")
+                                .velocityVarName("title")
+                                .next()
+                );
+                fields.add(
+                        new FieldDataGen()
+                                .name("Tags")
+                                .velocityVarName("tags")
+                                .defaultValue(null)
+                                .type(TagField.class)
+                                .next()
+                );
+
+                fields.add(
+                        new FieldDataGen()
+                                .name("Image")
+                                .velocityVarName("image")
+                                .type(BinaryField.class)
+                                .next()
+                );
+                fields.add(
+                        new FieldDataGen()
+                                .name("Caption")
+                                .velocityVarName("caption")
+                                .type(WysiwygField.class)
+                                .next()
+                );
+                fields.add(
+                        new FieldDataGen()
+                                .name("TextColor")
+                                .velocityVarName("textColor")
+                                .type(SelectField.class)
+                                .next()
+                );
+
+                fields.add(
+                        new FieldDataGen()
+                                .name("Layout")
+                                .velocityVarName("layout")
+                                .type(CustomField.class)
+                                .next()
+                );
+
+                fields.add(
+                        new FieldDataGen()
+                                .name("BackgroundColor")
+                                .velocityVarName("BackgroundColor")
+                                .type(CustomField.class)
+                                .next()
+                );
+
+                ContentTypeDataGen contentTypeDataGen = new ContentTypeDataGen()
+                        .name(contentTypeName)
+                        .velocityVarName(contentTypeName)
+                        .workflowId(workflowIds)
+                        .fields(fields);
+
+                if (null != site) {
+                    contentTypeDataGen.host(site);
+                }
+
+                bannerType = contentTypeDataGen.nextPersisted();
+            }
+        } catch (Exception e) {
+            throw new DotRuntimeException(e);
+        }
+
+        return bannerType;
+    }
+
+    public static Contentlet getBannerLikeContent(Boolean persist, long languageId,
+            String contentTypeId, Host site) {
+
+        if (null == contentTypeId) {
+            contentTypeId = getBannerLikeContentType().id();
+        }
+        try {
+
+            //Photo
+            final String testImagePath = "com/dotmarketing/portlets/contentlet/business/test_files/test_image1.jpg";
+            final File originalTestImage = new File(
+                    ConfigTestHelper.getUrlToTestResource(testImagePath).toURI());
+            final File testImage = new File(Files.createTempDir(),
+                    "image" + System.currentTimeMillis() + ".jpg");
+            FileUtil.copyFile(originalTestImage, testImage);
+
+
+            final long millis = System.currentTimeMillis();
+            ContentletDataGen contentletDataGen = new ContentletDataGen(contentTypeId)
+                    .languageId(languageId)
+                    .host(null != site ? site : APILocator.getHostAPI()
+                            .findDefaultHost(APILocator.systemUser(), false))
+                    .setProperty("title", "banner like Title" + millis)
+                    .setProperty("sysPublishDate", new Date())
+                    .setProperty("layout", "")
+                    .setProperty("textColor", "")
+                    .setProperty("image", testImage)
+                    .setProperty("tags", "test");
+
+            if (null != site) {
+                contentletDataGen = contentletDataGen.host(site)
+                        .setProperty("hostfolder", site);
+            }
+
+            if (persist) {
+                return contentletDataGen.nextPersisted();
+            } else {
+                return contentletDataGen.next();
+            }
+        } catch (Exception e) {
+            throw new DotRuntimeException(e);
+        }
+    }
+
+    public static ContentType getProductLikeContentType(){
+        return  getProductLikeContentType("ProductLike" + System.currentTimeMillis(), APILocator.systemHost(),null);
+    }
+
+    public static ContentType getProductLikeContentType(final String contentTypeName,
+            final Host site,
+            final Set<String> workflowIds) {
+
+        ContentType productType = null;
+        try {
+            try {
+                productType = APILocator.getContentTypeAPI(APILocator.systemUser())
+                        .find(contentTypeName);
+            } catch (NotFoundInDbException e) {
+                //Do nothing...
+            }
+            if (productType == null) {
+
+                List<com.dotcms.contenttype.model.field.Field> fields = new ArrayList<>();
+                if (null != site) {
+                    fields.add(
+                            new FieldDataGen()
+                                    .name("Site or Folder")
+                                    .velocityVarName("hostfolder")
+                                    .required(Boolean.TRUE)
+                                    .type(HostFolderField.class)
+                                    .next()
+                    );
+                }
+                fields.add(
+                        new FieldDataGen()
+                                .name("Title")
+                                .velocityVarName("title")
+                                .type(TextField.class)
+                                .next()
+                );
+                fields.add(
+                        new FieldDataGen()
+                                .name("urlTitle")
+                                .velocityVarName("urlTitle")
+                                .type(TextField.class)
+                                .next()
+                );
+                fields.add(
+                        new FieldDataGen()
+                                .name("Type")
+                                .velocityVarName("type")
+                                .type(RadioField.class)
+                                .next()
+                );
+                fields.add(
+                        new FieldDataGen()
+                                .name("Inception")
+                                .velocityVarName("inception")
+                                .defaultValue(null)
+                                .type(DateField.class)
+                                .next()
+                );
+
+                fields.add(
+                        new FieldDataGen()
+                                .name("Description")
+                                .velocityVarName("description")
+                                .type(LineDividerField.class)
+                                .next()
+                );
+
+                fields.add(
+                        new FieldDataGen()
+                                .name("Expense Ration")
+                                .velocityVarName("expenseRatio")
+                                .type(TextField.class)
+                                .next()
+                );
+
+                fields.add(
+                        new FieldDataGen()
+                                .name("Risk")
+                                .velocityVarName("risk")
+                                .type(SelectField.class)
+                                .next()
+                );
+
+                fields.add(
+                        new FieldDataGen()
+                                .name("Asset Class")
+                                .velocityVarName("assetClass")
+                                .type(CustomField.class)
+                                .next()
+                );
+                fields.add(
+                        new FieldDataGen()
+                                .name("Market Cap")
+                                .velocityVarName("marketCap")
+                                .type(SelectField.class)
+                                .next()
+                );
+                fields.add(
+                        new FieldDataGen()
+                                .name("Style")
+                                .velocityVarName("style")
+                                .type(SelectField.class)
+                                .next()
+                );
+                fields.add(
+                        new FieldDataGen()
+                                .name("Quality")
+                                .velocityVarName("quality")
+                                .type(SelectField.class)
+                                .next()
+                );
+                fields.add(
+                        new FieldDataGen()
+                                .name("Maturity")
+                                .velocityVarName("maturity")
+                                .type(SelectField.class)
+                                .next()
+                );
+                fields.add(
+                        new FieldDataGen()
+                                .name("Summary")
+                                .velocityVarName("summary")
+                                .type(WysiwygField.class)
+                                .next()
+                );
+
+                fields.add(
+                        new FieldDataGen()
+                                .name("Tags")
+                                .velocityVarName("tags")
+                                .defaultValue(null)
+                                .type(TagField.class)
+                                .next()
+                );
+                ContentTypeDataGen contentTypeDataGen = new ContentTypeDataGen()
+                        .name(contentTypeName)
+                        .velocityVarName(contentTypeName)
+                        .workflowId(workflowIds)
+                        .fields(fields);
+
+                if (null != site) {
+                    contentTypeDataGen.host(site);
+                }
+
+                productType = contentTypeDataGen.nextPersisted();
+            }
+        } catch (Exception e) {
+            throw new DotRuntimeException(e);
+        }
+
+        return productType;
+    }
 
 
 }

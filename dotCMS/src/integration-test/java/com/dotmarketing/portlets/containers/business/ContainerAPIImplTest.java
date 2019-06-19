@@ -1,5 +1,10 @@
 package com.dotmarketing.portlets.containers.business;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
@@ -7,12 +12,20 @@ import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.datagen.ContainerDataGen;
+import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.TestUserUtils;
+import com.dotcms.datagen.TestWorkflowUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
@@ -32,22 +45,23 @@ import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
-import org.apache.felix.framework.OSGIUtil;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-
-import static org.junit.Assert.*;
+import java.util.Optional;
+import org.apache.felix.framework.OSGIUtil;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 /**
  * Test of {@link ContainerAPIImpl}
  */
 public class ContainerAPIImplTest extends IntegrationTestBase  {
+
+    private static final String TEST_CONTAINER = "/testcontainer" + System.currentTimeMillis();
+    private static ContentType newsLikeContentType,documentLikeContentType,productLikeContentType;
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -61,29 +75,41 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
     @Test
     public void getContentTypesInContainer() throws DotDataException, DotSecurityException {
         Container container = null;
-        ContentType contentType = null;
+        Host host = new SiteDataGen().nextPersisted();
+        User user = TestUserUtils.getBillIntranetUser(host);
 
-        User user = APILocator.getUserAPI().getUsersByNameOrEmail("bill@dotcms.com", 0, 1).get(0);
-        User adminUser = APILocator.getUserAPI().getUsersByNameOrEmail("admin@dotcms.com", 0, 1).get(0);
+        Permission permissionWrite = new Permission(host.getPermissionId(),
+                TestUserUtils.getOrCreateIntranetRole(host).getId(),
+                PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_READ);
+        APILocator.getPermissionAPI().save(permissionWrite, host, APILocator.systemUser(), false);
+
+        User adminUser = TestUserUtils.getAdminUser();
 
         try {
-            contentType = createContentType(adminUser);
-            container = createContainer(user, adminUser, contentType);
+            final ContentType contentType1 = TestDataUtils.getBlogLikeContentType("Blog", host);
+            final ContentType contentType2 = TestDataUtils.getBannerLikeContentType("Banner", host);
+            container = new ContainerDataGen().site(host).owner(user)
+                    .withContentType(contentType1, "").withContentType(contentType2, "")
+                    .nextPersisted();
 
             ContainerAPIImpl containerAPI = new ContainerAPIImpl();
-            List<ContentType> contentTypesInContainer = containerAPI.getContentTypesInContainer(user, container);
+            List<ContentType> contentTypesInContainer = containerAPI
+                    .getContentTypesInContainer(user, container);
 
-            assertEquals(1, contentTypesInContainer.size());
-            assertEquals("Document", ((ContentType) contentTypesInContainer.get(0)).name());
+            assertEquals(2, contentTypesInContainer.size());
+
+            Optional optionalContentType1 = contentTypesInContainer.stream().filter(contentType -> contentType.name().equals(contentType1.name())).findFirst();
+            Optional optionalContentType2 = contentTypesInContainer.stream().filter(contentType -> contentType.name().equals(contentType2.name())).findFirst();
+
+            assertTrue("Blog like CT was expected", optionalContentType1.isPresent());
+            assertTrue("Banner Like CT was expected", optionalContentType2.isPresent());
+
         } finally {
             HibernateUtil.startTransaction();
             if (container != null) {
                 APILocator.getContainerAPI().delete(container, adminUser, false);
             }
 
-            if (contentType != null) {
-                APILocator.getContentTypeAPI(adminUser).delete(contentType);
-            }
             HibernateUtil.commitTransaction();
         }
     }
@@ -145,7 +171,7 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
         final ContainerAPI containerAPI = APILocator.getContainerAPI();
         final FolderAPI folderAPI       = APILocator.getFolderAPI();
         final Folder    folder          = folderAPI.findFolderByPath
-                (Constants.CONTAINER_FOLDER_PATH + "/testcontainer", defaultHost,
+                (Constants.CONTAINER_FOLDER_PATH + TEST_CONTAINER, defaultHost,
                         APILocator.systemUser(), false);
 
         final Container container = containerAPI.getContainerByFolder(folder, APILocator.systemUser(), false);
@@ -154,14 +180,14 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
         assertNotNull(container.getInode());
         assertTrue   (container instanceof FileAssetContainer);
         assertEquals ("Test Container", container.getTitle());
-        final List<FileAsset> fileAssets =  FileAssetContainer.class.cast(container)
+        final List<FileAsset> fileAssets = FileAssetContainer.class.cast(container)
                 .getContainerStructuresAssets();
 
         assertNotNull(fileAssets);
         assertEquals(3, fileAssets.size());
-        assertTrue(fileAssets.stream().anyMatch(fileAsset -> fileAsset.getFileName().equals("news.vtl")));
-        assertTrue(fileAssets.stream().anyMatch(fileAsset -> fileAsset.getFileName().equals("products.vtl")));
-        assertTrue(fileAssets.stream().anyMatch(fileAsset -> fileAsset.getFileName().equals("document.vtl")));
+        assertTrue(fileAssets.stream().anyMatch(fileAsset -> fileAsset.getFileName().equals(String.format("%s.vtl",newsLikeContentType.name()))));
+        assertTrue(fileAssets.stream().anyMatch(fileAsset -> fileAsset.getFileName().equals(String.format("%s.vtl",productLikeContentType.name()))));
+        assertTrue(fileAssets.stream().anyMatch(fileAsset -> fileAsset.getFileName().equals(String.format("%s.vtl",documentLikeContentType.name()))));
 
         final List<ContainerStructure> containerStructures = containerAPI.getContainerStructures(container);
         assertNotNull(containerStructures);
@@ -204,7 +230,7 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
             final ContainerAPI containerAPI = APILocator.getContainerAPI();
             final FolderAPI folderAPI       = APILocator.getFolderAPI();
             final Folder    folder          = folderAPI.findFolderByPath
-                    (Constants.CONTAINER_FOLDER_PATH + "/testcontainer", defaultHost,
+                    (Constants.CONTAINER_FOLDER_PATH + TEST_CONTAINER, defaultHost,
                             APILocator.systemUser(), false);
 
             final Container container = containerAPI.getContainerByFolder(folder, APILocator.systemUser(), false);
@@ -232,7 +258,7 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
         final ContainerAPI containerAPI = APILocator.getContainerAPI();
         final FolderAPI folderAPI       = APILocator.getFolderAPI();
         final Folder    folder          = folderAPI.findFolderByPath
-                (Constants.CONTAINER_FOLDER_PATH + "/testcontainer", defaultHost,
+                (Constants.CONTAINER_FOLDER_PATH + TEST_CONTAINER, defaultHost,
                         APILocator.systemUser(), false);
 
         final Container container = containerAPI.getContainerByFolder(folder, APILocator.systemUser(), false);
@@ -263,11 +289,14 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
 
     private Contentlet unpublish(final String containerInode) throws DotSecurityException, DotDataException {
 
+        List<WorkflowAction> actions = APILocator.getWorkflowAPI().findActions(TestWorkflowUtils.getSystemWorkflow(), APILocator.systemUser());
+        final Optional<WorkflowAction> optionalAction = actions.stream().filter(workflowAction -> "Unpublish".equalsIgnoreCase(workflowAction.getName())).findFirst();
+
         final WorkflowAPI workflowAPI        = APILocator.getWorkflowAPI();
         final ContentletAPI contentletAPI    = APILocator.getContentletAPI();
-        final WorkflowAction unpublishAction = workflowAPI.findAction
-                (SystemWorkflowConstants.WORKFLOW_UNPUBLISH_ACTION_ID, APILocator.systemUser());
+        assertTrue("Unable to locate Unpublish action on system workflow.", optionalAction.isPresent());
 
+        final WorkflowAction unpublishAction = optionalAction.get();
         final Contentlet contentlet = contentletAPI.find(containerInode, APILocator.systemUser(), false);
 
         return workflowAPI.fireContentWorkflow(contentlet,
@@ -284,8 +313,9 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
 
         final FolderAPI folderAPI = APILocator.getFolderAPI();
         try {
-            final Folder    folder    = folderAPI.findFolderByPath
-                    (Constants.CONTAINER_FOLDER_PATH, defaultHost, APILocator.systemUser(), true);
+            final Folder folder = folderAPI.findFolderByPath(Constants.CONTAINER_FOLDER_PATH,
+                  defaultHost, APILocator.systemUser(), true
+            );
 
             if (null == folder || !UtilMethods.isSet(folder.getIdentifier())) {
 
@@ -311,7 +341,7 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
         boolean exists = false;
         try {
             final Folder    folder    = folderAPI.findFolderByPath
-                    (Constants.CONTAINER_FOLDER_PATH + "/testcontainer", defaultHost, APILocator.systemUser(), true);
+                    (Constants.CONTAINER_FOLDER_PATH + TEST_CONTAINER, defaultHost, APILocator.systemUser(), true);
 
             if(null != folder && UtilMethods.isSet(folder.getIdentifier())) {
 
@@ -334,9 +364,7 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
     private static void creatApplicationContainerFolder(final Host defaultHost) {
 
         final FolderAPI folderAPI = APILocator.getFolderAPI();
-
         try {
-
             folderAPI.createFolders(Constants.CONTAINER_FOLDER_PATH, defaultHost, APILocator.systemUser(), true);
         } catch (DotDataException | DotSecurityException e) {
             fail("Couldn't create the " + Constants.CONTAINER_FOLDER_PATH);
@@ -348,7 +376,10 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
         final Folder testContainerFolder = createTestContainerFolder(defaultHost);
 
         try {
+            //Don't forget these are file Assets
+            //The container it self
             final Contentlet container = createContainerVTL(testContainerFolder, defaultHost);
+            //And the containers mapped to contentTypes
             final Contentlet document  = createDocumentVTL (testContainerFolder, defaultHost);
             final Contentlet news      = createNewsVTL     (testContainerFolder, defaultHost);
             final Contentlet products  = createProductsVTL (testContainerFolder, defaultHost);
@@ -366,11 +397,10 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
 
         final FolderAPI folderAPI        = APILocator.getFolderAPI();
         try {
-            return folderAPI.createFolders(Constants.CONTAINER_FOLDER_PATH + "/testcontainer", defaultHost, APILocator.systemUser(), true);
+            return folderAPI.createFolders(Constants.CONTAINER_FOLDER_PATH + TEST_CONTAINER, defaultHost, APILocator.systemUser(), true);
         } catch (DotDataException | DotSecurityException e) {
-            fail("Couldn't create the " + Constants.CONTAINER_FOLDER_PATH + "/testcontainer");
+            throw new DotRuntimeException("Couldn't create the " + Constants.CONTAINER_FOLDER_PATH + TEST_CONTAINER);
         }
-        return null;
     }
 
     private static Contentlet createContainerVTL(final Folder testContainerFolder, final Host defaultHost) throws DotSecurityException, DotDataException {
@@ -413,11 +443,12 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
     private static Contentlet createProductsVTL(final Folder testContainerFolder, final Host defaultHost) throws DotSecurityException, DotDataException {
 
         try {
+            productLikeContentType = TestDataUtils.getProductLikeContentType();
 
             final WorkflowAPI workflowAPI   = APILocator.getWorkflowAPI();
             final FileAsset fileAsset       = new FileAsset();
             final WorkflowAction saveAction = workflowAPI.findAction(SystemWorkflowConstants.WORKFLOW_SAVE_PUBLISH_ACTION_ID, APILocator.systemUser());
-            final String title              = "products";
+            final String title              = productLikeContentType.name();
 
             fileAsset.setContentTypeId(APILocator.getContentTypeAPI(APILocator.systemUser()).find(FileAssetAPI.BINARY_FIELD).id());
             fileAsset.setHost(defaultHost.getIdentifier());
@@ -491,10 +522,12 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
 
         try {
 
+            newsLikeContentType = TestDataUtils.getNewsLikeContentType();
+
             final WorkflowAPI workflowAPI   = APILocator.getWorkflowAPI();
             final FileAsset fileAsset       = new FileAsset();
             final WorkflowAction saveAction = workflowAPI.findAction(SystemWorkflowConstants.WORKFLOW_SAVE_PUBLISH_ACTION_ID, APILocator.systemUser());
-            final String title              = "news";
+            final String title              = newsLikeContentType.name(); //"news";
 
             fileAsset.setContentTypeId(APILocator.getContentTypeAPI(APILocator.systemUser()).find(FileAssetAPI.BINARY_FIELD).id());
             fileAsset.setHost(defaultHost.getIdentifier());
@@ -533,10 +566,12 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
 
         try {
 
+            documentLikeContentType = TestDataUtils.getDocumentLikeContentType();
+
             final WorkflowAPI workflowAPI   = APILocator.getWorkflowAPI();
             final FileAsset fileAsset       = new FileAsset();
             final WorkflowAction saveAction = workflowAPI.findAction(SystemWorkflowConstants.WORKFLOW_SAVE_PUBLISH_ACTION_ID, APILocator.systemUser());
-            final String title              = "document";
+            final String title              =  documentLikeContentType.name(); //"document";
 
             fileAsset.setContentTypeId(APILocator.getContentTypeAPI(APILocator.systemUser()).find(FileAssetAPI.BINARY_FIELD).id());
             fileAsset.setHost(defaultHost.getIdentifier());

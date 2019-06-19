@@ -23,6 +23,9 @@ import java.util.Map;
  */
 public class TestUserUtils {
 
+    static final String ADMIN_DEFAULT_MAIL = "admin@dotcms.com";
+    static final String ADMIN_NAME = "User Admin";
+
     public static Role getOrCreatePublisherRole() throws DotDataException, DotSecurityException {
         return getOrCreatePublisherRole(APILocator.systemHost());
     }
@@ -196,6 +199,22 @@ public class TestUserUtils {
 
     public static User getJaneReviewerUser() throws DotDataException, DotSecurityException {
         return getJaneReviewerUser(APILocator.systemHost());
+    }
+
+    public static User getAdminUser(){
+        User adminUser;
+        try {
+            adminUser = APILocator.getUserAPI()
+                    .loadByUserByEmail(ADMIN_DEFAULT_MAIL, APILocator.systemUser(), false);
+        } catch (Exception e) {
+            throw new DotRuntimeException(e);
+        }
+
+        if(null == adminUser){
+            final Role adminRole = getOrCreateAdminRole();
+            adminUser = new UserDataGen().roles(adminRole).emailAddress(ADMIN_DEFAULT_MAIL).nextPersisted();
+        }
+        return adminUser;
     }
 
     public static Map<String, Role> getOrCreateWorkflowRoles() throws DotDataException {
