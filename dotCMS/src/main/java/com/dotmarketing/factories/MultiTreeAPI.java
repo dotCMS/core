@@ -344,4 +344,13 @@ public interface MultiTreeAPI {
      * @param personalization {@link String} personalization
      */
     void deletePersonalizationForPage(String pageId, String personalization) throws DotDataException;
+
+    /**
+     * Overrides: removes the current multitrees by page + personalization and adds the multiTress
+     * @param pageId {@link String}
+     * @param personalization {@link String}
+     * @param multiTrees {@link List}
+     * @throws DotDataException
+     */
+    void overridesMultitreesByPersonalization(String pageId, String personalization, List<MultiTree> multiTrees)  throws DotDataException ;
 }

@@ -117,6 +117,6 @@ public class DeleteMultiTreeUsedPersonaTagJob implements StatefulJob {
 
     private String unwrapPersonalizationOnPersonaTag (final String personalization) {
 
-        return StringUtils.replace(personalization, Persona.DOT_PERSONA_PREFIX_SCHEME, StringPool.BLANK);
+        return StringUtils.replace(personalization, Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON, StringPool.BLANK);
     }
 }

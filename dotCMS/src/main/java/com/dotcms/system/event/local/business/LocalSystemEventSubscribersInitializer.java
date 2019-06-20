@@ -30,8 +30,6 @@ public class LocalSystemEventSubscribersInitializer implements DotInitializer {
         APILocator.getLocalSystemEventsAPI().subscribe(new ContentTypeAndFieldsModsListeners());
 
         this.initApplicationContainerFolderListener();
-
-        APILocator.getLocalSystemEventsAPI().subscribe(APILocator.getPersonaAPI());
     }
 
     public void initApplicationContainerFolderListener() {

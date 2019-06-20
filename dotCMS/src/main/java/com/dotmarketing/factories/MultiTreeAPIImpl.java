@@ -72,6 +72,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     private static final String DELETE_SQL = "delete from multi_tree where parent1=? and parent2=? and child=? and  relation_type = ? and personalization = ?";
     private static final String DELETE_SQL_PERSONALIZATION_PER_PAGE = "delete from multi_tree where parent1=? and personalization = ?";
     private static final String DELETE_ALL_MULTI_TREE_SQL = "delete from multi_tree where parent1=? AND relation_type != ?";
+    private static final String DELETE_ALL_MULTI_TREE_SQL_BY_RELATION_AND_PERSONALIZATION = "delete from multi_tree where parent1=? AND relation_type != ? and personalization = ?";
     private static final String SELECT_SQL = "select * from multi_tree where parent1 = ? and parent2 = ? and child = ? and  relation_type = ? and personalization = ?";
 
     private static final String INSERT_SQL = "insert into multi_tree (parent1, parent2, child, relation_type, tree_order, personalization) values (?,?,?,?,?,?)  ";
@@ -487,6 +488,56 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
      * {@link MultiTree} linked previously with the page.
      *
      * @param pageId Page's identifier
+     * @param multiTrees
+     * @throws DotDataException
+     */
+    @Override
+    @WrapInTransaction
+    public void overridesMultitreesByPersonalization(final String pageId,
+                                                    final String personalization,
+                                                    final List<MultiTree> multiTrees) throws DotDataException {
+
+        Logger.info(this, String.format(
+                "Overriding MutiTrees: pageId -> %s personalization -> %s multiTrees-> %s ",
+                pageId, personalization, multiTrees));
+
+        if (multiTrees == null) {
+
+            throw new DotDataException("empty list passed in");
+        }
+
+        Logger.debug(MultiTreeAPIImpl.class, ()->String.format("Saving page's content: %s", multiTrees));
+
+        final DotConnect db = new DotConnect();
+        db.setSQL(DELETE_ALL_MULTI_TREE_SQL_BY_RELATION_AND_PERSONALIZATION)
+                .addParam(pageId)
+                .addParam(ContainerUUID.UUID_DEFAULT_VALUE)
+                .addParam(personalization).loadResult();
+
+        if (!multiTrees.isEmpty()) {
+
+            final List<Params> insertParams = Lists.newArrayList();
+            final Set<String> newContainers = new HashSet<>();
+
+            for (final MultiTree tree : multiTrees) {
+                insertParams
+                        .add(new Params(pageId, tree.getContainerAsID(), tree.getContentlet(),
+                                tree.getRelationType(), tree.getTreeOrder(), tree.getPersonalization()));
+                newContainers.add(tree.getContainer());
+            }
+
+            db.executeBatch(INSERT_SQL, insertParams);
+        }
+
+        updateHTMLPageVersionTS(pageId);
+        refreshPageInCache(pageId);
+    }
+
+    /**
+     * Save a collection of {@link MultiTree} and link them with a page, Also delete all the
+     * {@link MultiTree} linked previously with the page.
+     *
+     * @param pageId Page's identifier
      * @param mTrees
      * @throws DotDataException
      */
@@ -572,8 +623,9 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
      * 
      */
     private void updateHTMLPageVersionTS(final String pageId) throws DotDataException {
-        final List<ContentletVersionInfo> infos = APILocator.getVersionableAPI().findContentletVersionInfos(pageId);
-        for (ContentletVersionInfo versionInfo : infos) {
+        final List<ContentletVersionInfo> contentletVersionInfos =
+                APILocator.getVersionableAPI().findContentletVersionInfos(pageId);
+        for (final ContentletVersionInfo versionInfo : contentletVersionInfos) {
             if (versionInfo != null) {
                 versionInfo.setVersionTs(new Date());
                 APILocator.getVersionableAPI().saveContentletVersionInfo(versionInfo);
