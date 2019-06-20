@@ -10,19 +10,19 @@ public class RemoteUrlForm {
   public final String accessKey;
   public final Integer urlTimeoutSeconds;
 
-  
-  protected RemoteUrlForm(@JsonProperty("remoteUrl") String remoteUrl, @JsonProperty("fileName") String fileName,
-      @JsonProperty("accessKey") String accessKey) {
-    this(remoteUrl,fileName,accessKey,null);
+  protected RemoteUrlForm(@JsonProperty("remoteUrl") final String remoteUrl, @JsonProperty("fileName") final String fileName,
+      @JsonProperty("accessKey") final String accessKey) {
+    this(remoteUrl, fileName, accessKey, null);
   }
+
   @JsonCreator
-  protected RemoteUrlForm(@JsonProperty("remoteUrl") String remoteUrl, @JsonProperty("fileName") String fileName,
-      @JsonProperty("accessKey") String accessKey, @JsonProperty("urlTimeoutSeconds") Integer urlTimeout) {
+  protected RemoteUrlForm(@JsonProperty("remoteUrl") final String remoteUrl, @JsonProperty("fileName") final String fileName,
+      @JsonProperty("accessKey") final String accessKey, @JsonProperty("urlTimeoutSeconds") final Integer urlTimeout) {
     super();
     this.remoteUrl = remoteUrl;
     this.fileName = fileName;
     this.accessKey = accessKey;
-    this.urlTimeoutSeconds = urlTimeout!=null && urlTimeout < 600 ? urlTimeout : 30;
+    this.urlTimeoutSeconds = urlTimeout != null && urlTimeout < 600 ? urlTimeout : 30;
   }
 
 }

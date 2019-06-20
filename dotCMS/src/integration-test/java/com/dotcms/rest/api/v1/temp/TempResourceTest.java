@@ -21,10 +21,8 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.dotcms.contenttype.model.field.BinaryField;
-import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
-import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
@@ -63,21 +61,21 @@ public class TempResourceTest {
   
   @Test
   public void test_temp_resource_upload() throws Exception {
-    TempResource resource = new TempResource();
+    final TempResource resource = new TempResource();
 
-    HttpServletRequest request = mockRequest();
+    final HttpServletRequest request = mockRequest();
 
     final String fileName = "test.file";
-    HttpServletResponse response = new MockHttpResponse();
+    final HttpServletResponse response = new MockHttpResponse();
 
 
-    Date date = new Date();
+    final Date date = new Date();
     final FormDataContentDisposition fileMetaData = FormDataContentDisposition.name("testData").fileName(fileName).creationDate(date)
         .modificationDate(date).readDate(date).size(1222).build();
 
-    Response jsonResponse = resource.uploadTempResource(request, response, inputStream(), fileMetaData);
+    final Response jsonResponse = resource.uploadTempResource(request, response, inputStream(), fileMetaData);
 
-    DotTempFile dotTempFile = (DotTempFile) jsonResponse.getEntity();
+    final DotTempFile dotTempFile = (DotTempFile) jsonResponse.getEntity();
 
     final String tempFileId = dotTempFile.id;
     // its not an image because we set the filename to "test.file"
@@ -92,21 +90,21 @@ public class TempResourceTest {
 
   @Test
   public void test_tempResourceAPI_who_can_use_via_session() throws Exception {
-    TempResource resource = new TempResource();
+    final TempResource resource = new TempResource();
 
-    HttpServletRequest request = mockRequest();
+    final HttpServletRequest request = mockRequest();
 
     final String fileName = "test.png";
-    HttpServletResponse response = new MockHttpResponse();
+    final HttpServletResponse response = new MockHttpResponse();
 
 
-    Date date = new Date();
+    final Date date = new Date();
     final FormDataContentDisposition fileMetaData = FormDataContentDisposition.name("testData").fileName(fileName).creationDate(date)
         .modificationDate(date).readDate(date).size(1222).build();
 
-    Response jsonResponse = resource.uploadTempResource(request, response, inputStream(), fileMetaData);
+    final Response jsonResponse = resource.uploadTempResource(request, response, inputStream(), fileMetaData);
 
-    DotTempFile dotTempFile = (DotTempFile) jsonResponse.getEntity();
+    final DotTempFile dotTempFile = (DotTempFile) jsonResponse.getEntity();
 
     final String tempFileId = dotTempFile.id;
 
@@ -126,22 +124,22 @@ public class TempResourceTest {
 
   @Test
   public void test_tempResourceAPI_who_can_use_via_userID() throws Exception {
-    TempResource resource = new TempResource();
+    final TempResource resource = new TempResource();
 
-    HttpServletRequest request = mockRequest();
-    User user = new UserDataGen().nextPersisted();
+    final HttpServletRequest request = mockRequest();
+    final User user = new UserDataGen().nextPersisted();
 
     final String fileName = "test.png";
-    HttpServletResponse response = new MockHttpResponse();
+    final HttpServletResponse response = new MockHttpResponse();
     request.setAttribute(WebKeys.USER, user);
 
-    Date date = new Date();
+    final Date date = new Date();
     final FormDataContentDisposition fileMetaData = FormDataContentDisposition.name("testData").fileName(fileName).creationDate(date)
         .modificationDate(date).readDate(date).size(1222).build();
 
-    Response jsonResponse = resource.uploadTempResource(request, response, inputStream(), fileMetaData);
+    final Response jsonResponse = resource.uploadTempResource(request, response, inputStream(), fileMetaData);
 
-    DotTempFile dotTempFile = (DotTempFile) jsonResponse.getEntity();
+    final DotTempFile dotTempFile = (DotTempFile) jsonResponse.getEntity();
 
     final String tempFileId = dotTempFile.id;
 
@@ -156,22 +154,22 @@ public class TempResourceTest {
 
   @Test
   public void test_tempResourceapi_max_age() throws Exception {
-    TempResource resource = new TempResource();
+    final TempResource resource = new TempResource();
 
-    HttpServletRequest request = mockRequest();
+    final HttpServletRequest request = mockRequest();
 
-    final String fieldVar = "image";
+
     final String fileName = "test.png";
-    HttpServletResponse response = new MockHttpResponse();
+    final HttpServletResponse response = new MockHttpResponse();
 
 
-    Date date = new Date();
+    final Date date = new Date();
     final FormDataContentDisposition fileMetaData = FormDataContentDisposition.name("testData").fileName(fileName).creationDate(date)
         .modificationDate(date).readDate(date).size(1222).build();
 
-    Response jsonResponse = resource.uploadTempResource(request, response, inputStream(), fileMetaData);
+    final Response jsonResponse = resource.uploadTempResource(request, response, inputStream(), fileMetaData);
 
-    DotTempFile dotTempFile = (DotTempFile) jsonResponse.getEntity();
+    final DotTempFile dotTempFile = (DotTempFile) jsonResponse.getEntity();
 
     final String tempFileId = dotTempFile.id;
 
@@ -195,16 +193,15 @@ public class TempResourceTest {
 
   @Test
   public void test_tempResourceapi_test_anonymous_access() throws Exception {
-    TempResource resource = new TempResource();
+    final TempResource resource = new TempResource();
 
-    HttpServletRequest request = mockRequest();
+    final HttpServletRequest request = mockRequest();
 
-    final String fieldVar = "image";
     final String fileName = "test.png";
-    HttpServletResponse response = new MockHttpResponse();
+    final HttpServletResponse response = new MockHttpResponse();
 
     Config.setProperty(TempResourceAPI.TEMP_RESOURCE_ALLOW_ANONYMOUS, false);
-    Date date = new Date();
+    final Date date = new Date();
     final FormDataContentDisposition fileMetaData = FormDataContentDisposition.name("testData").fileName(fileName).creationDate(date)
         .modificationDate(date).readDate(date).size(1222).build();
 
@@ -217,8 +214,8 @@ public class TempResourceTest {
       assertTrue("We should have thrown a SecurityException", false);
     }
     Config.setProperty(TempResourceAPI.TEMP_RESOURCE_ALLOW_ANONYMOUS, true);
-    Response jsonResponse = resource.uploadTempResource(request, response, inputStream(), fileMetaData);
-    DotTempFile dotTempFile = (DotTempFile) jsonResponse.getEntity();
+    final Response jsonResponse = resource.uploadTempResource(request, response, inputStream(), fileMetaData);
+    final DotTempFile dotTempFile = (DotTempFile) jsonResponse.getEntity();
     assert(UtilMethods.isSet(dotTempFile.id));
   }
   
@@ -244,7 +241,7 @@ public class TempResourceTest {
     contentType = APILocator.getContentTypeAPI(APILocator.systemUser()).save(contentType);
 
     // Add another binary field
-    List<Field> fields = new ArrayList<>(contentType.fields());
+    final List<Field> fields = new ArrayList<>(contentType.fields());
 
     final Field fieldToSave =
         FieldBuilder.builder(BinaryField.class)
@@ -259,15 +256,15 @@ public class TempResourceTest {
 
     final String fileName1 = "testFileName1" + UUIDGenerator.shorty() + ".png";
     final String fileName2 = "testFileName2" + UUIDGenerator.shorty() + ".gif";
-    Date date = new Date();
+    final Date date = new Date();
     final FormDataContentDisposition fileMetaData = FormDataContentDisposition.name("testData").fileName(fileName1).creationDate(date)
         .modificationDate(date).readDate(date).size(1222).build();
 
     Response jsonResponse = resource.uploadTempResource(request, response, inputStream(), fileMetaData);
 
-    DotTempFile dotTempFile1 = (DotTempFile) jsonResponse.getEntity();
+    final DotTempFile dotTempFile1 = (DotTempFile) jsonResponse.getEntity();
 
-    RemoteUrlForm form = new RemoteUrlForm(
+    final RemoteUrlForm form = new RemoteUrlForm(
         "https://raw.githubusercontent.com/dotCMS/core/master/dotCMS/src/main/webapp/html/images/skin/logo.gif", fileName2, null);
 
     jsonResponse = resource.copyTempFromUrl(request, form);

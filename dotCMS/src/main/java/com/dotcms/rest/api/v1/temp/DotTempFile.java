@@ -10,19 +10,19 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class DotTempFile {
 
   public final String id,mimeType,referenceUrl,thumbnailUrl,fileName;
-  public boolean image;
+  public final boolean image;
 
   @JsonIgnore
   public final File file;
   
-  public DotTempFile(String id, File file) {
+  public DotTempFile(final String id, final File file) {
     super();
     this.id = id;
     this.file = file;
     this.mimeType=APILocator.getFileAssetAPI().getMimeType(file.getName());
     this.image = UtilMethods.isImage(file.getName());
-    this.referenceUrl = (this.image) ? "/contentAsset/image/" + id + "/tmp/" + file.getName() : "/contentAsset/data/" + id + "/fileAsset/" + file.getName() ;
-    this.thumbnailUrl = (this.image) ? "/contentAsset/image/" + id + "/tmp/filter/Thumbnail/thumbnail_w/250/thumbnail_h/250/" +  file.getName() :null;
+    this.referenceUrl = this.image ? "/contentAsset/image/" + id + "/tmp/" + file.getName() : "/contentAsset/data/" + id + "/fileAsset/" + file.getName() ;
+    this.thumbnailUrl = this.image ? "/contentAsset/image/" + id + "/tmp/filter/Thumbnail/thumbnail_w/250/thumbnail_h/250/" +  file.getName() :null;
     this.fileName = file.getName();
   }
   @JsonProperty("length")

@@ -96,16 +96,16 @@ public class FileUtil {
    * @param badFileName
    * @return
    */
-  public static String sanitizeFileName(String badFileName) {
+  public static String sanitizeFileName(final String badFileName) {
     StringBuilder cleanName = new StringBuilder();
     int len = badFileName.codePointCount(0, badFileName.length());
     for (int i = 0; i < len; i++) {
-      int c = badFileName.codePointAt(i);
+      final int c = badFileName.codePointAt(i);
       if (Arrays.binarySearch(illegalChars, c) < 0) {
         cleanName.appendCodePoint(c);
       }
     }
-    String cleanFileName = cleanName.toString();
+    final String cleanFileName = cleanName.toString();
     return (cleanFileName.length()>0) ? cleanFileName : RandomStringUtils.randomAlphabetic(10);
   }
 

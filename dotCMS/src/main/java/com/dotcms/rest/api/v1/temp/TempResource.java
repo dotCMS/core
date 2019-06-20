@@ -54,7 +54,7 @@ public class TempResource {
   }
 
   @VisibleForTesting
-  TempResource(final WebResource webResource, TempResourceAPI tempApi) {
+  TempResource(final WebResource webResource, final TempResourceAPI tempApi) {
     this.webResource = webResource;
     this.tempApi = tempApi;
   }
@@ -80,7 +80,7 @@ public class TempResource {
       final InputStream inputStream, final FormDataContentDisposition fileMetaData) {
 
     
-    boolean allowAnonToUseTempFiles = !Config.getBooleanProperty(TempResourceAPI.TEMP_RESOURCE_ALLOW_ANONYMOUS, true);
+    final boolean allowAnonToUseTempFiles = !Config.getBooleanProperty(TempResourceAPI.TEMP_RESOURCE_ALLOW_ANONYMOUS, true);
     
 
     final InitDataObject initDataObject = this.webResource.init(false, request, allowAnonToUseTempFiles);
@@ -93,7 +93,7 @@ public class TempResource {
     }
     final String fileName = FileUtil.sanitizeFileName(fileMetaData.getFileName());
 
-    DotTempFile dotTempFile = Try.of(() -> tempApi.createTempFile(fileName, user, uniqueKey)).getOrElseThrow(() -> new DotRuntimeException(
+    final DotTempFile dotTempFile = Try.of(() -> tempApi.createTempFile(fileName, user, uniqueKey)).getOrElseThrow(() -> new DotRuntimeException(
         "Attempted file upload outside of temp folder: " + fileMetaData + " from " + request.getRemoteAddr()));
     final String tempFileId = dotTempFile.id;
     final File tempFile = dotTempFile.file;
@@ -125,7 +125,7 @@ public class TempResource {
   @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
   @Consumes({MediaType.APPLICATION_JSON, MediaType.APPLICATION_JSON})
   public final Response copyTempFromUrl(@Context final HttpServletRequest request, final RemoteUrlForm form) {
-    boolean allowAnonToUseTempFiles = !Config.getBooleanProperty(TempResourceAPI.TEMP_RESOURCE_ALLOW_ANONYMOUS, true);
+    final boolean allowAnonToUseTempFiles = !Config.getBooleanProperty(TempResourceAPI.TEMP_RESOURCE_ALLOW_ANONYMOUS, true);
     final InitDataObject initDataObject = this.webResource.init(false, request,allowAnonToUseTempFiles);
 
 
@@ -147,12 +147,12 @@ public class TempResource {
     if (!new SecurityUtils().validateReferer(request)) {
       throw new WebApplicationException("Invalid Origin or referer");
     }
-    DotTempFile dotTempFile = Try.of(() -> tempApi.createTempFile(fileName, user, uniqueKey)).getOrElseThrow(() -> new DotRuntimeException(
+    final DotTempFile dotTempFile = Try.of(() -> tempApi.createTempFile(fileName, user, uniqueKey)).getOrElseThrow(() -> new DotRuntimeException(
         "Attempted file upload outside of temp folder: " + form.fileName + " from " + request.getRemoteAddr()));
     final String tempFileId = dotTempFile.id;
     final File tempFile = dotTempFile.file;
 
-    try (final OutputStream fileOut = new FileOutputStream(tempFile)) {
+    try (OutputStream fileOut = new FileOutputStream(tempFile)) {
       final CircuitBreakerUrl urlGetter = CircuitBreakerUrl
         .builder()
         .setMethod(Method.GET)

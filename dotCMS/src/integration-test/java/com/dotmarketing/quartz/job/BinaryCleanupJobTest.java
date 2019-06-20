@@ -35,7 +35,7 @@ public class BinaryCleanupJobTest {
 
     Config.setProperty("BINARY_CLEANUP_FILE_LIFE_HOURS", 3);
 
-    List<Date> hours = ImmutableList.of(cal.getTime(), // now
+    final List<Date> hours = ImmutableList.of(cal.getTime(), // now
         new Date(cal.getTimeInMillis() - (60 * 60 * 1000)), // 1 hour ago
         new Date(cal.getTimeInMillis() - (2 * 60 * 60 * 1000)), // 2 hours ago
         new Date(cal.getTimeInMillis() - (5 * 60 * 60 * 1000)), // 5 hours ago
@@ -49,19 +49,19 @@ public class BinaryCleanupJobTest {
     assert (FileUtil.listFilesRecursively(tempDir).size() == 0);
 
     for (int i = 0; i < 5; i++) {
-      File parent = new File(tempDir, "folder" + i);
+      final File parent = new File(tempDir, "folder" + i);
       parent.mkdirs();
-      File child = new File(parent, "file" + i);
+      final File child = new File(parent, "file" + i);
       new FileOutputStream(child).close();
       child.setLastModified(hours.get(i).getTime());
       parent.setLastModified(hours.get(i).getTime());
     }
 
     // create an old folder with a new file in it
-    File parent = new File(tempDir, "folderx");
+    final File parent = new File(tempDir, "folderx");
     parent.mkdirs();
 
-    File child = new File(parent, "filex");
+    final File child = new File(parent, "filex");
     new FileOutputStream(child).close();
     child.setLastModified(System.currentTimeMillis());
     parent.setLastModified(hours.get(4).getTime());
@@ -82,7 +82,7 @@ public class BinaryCleanupJobTest {
 
     Config.setProperty("bundles.delete.older.than.milliseconds", 1000 * 60 * 60 * 24 * 2);
 
-    List<Date> hours = ImmutableList.of(cal.getTime(), // now
+    final List<Date> hours = ImmutableList.of(cal.getTime(), // now
         Date.from(Instant.now().minus(Duration.ofHours(12))), // 12 hours ago
         Date.from(Instant.now().minus(Duration.ofDays(1))), // 1 day ago
         Date.from(Instant.now().minus(Duration.ofDays(2))), // 2 days ago
@@ -96,19 +96,19 @@ public class BinaryCleanupJobTest {
     assert (FileUtil.listFilesRecursively(tempDir).size() == 0);
 
     for (int i = 0; i < 5; i++) {
-      File parent = new File(tempDir, "folder" + i);
+      final File parent = new File(tempDir, "folder" + i);
       parent.mkdirs();
-      File child = new File(parent, "file" + i);
+      final File child = new File(parent, "file" + i);
       new FileOutputStream(child).close();
       child.setLastModified(hours.get(i).getTime());
       parent.setLastModified(hours.get(i).getTime());
     }
 
     // create an old folder with a new file in it
-    File parent = new File(tempDir, "folderx");
+    final File parent = new File(tempDir, "folderx");
     parent.mkdirs();
 
-    File child = new File(parent, "filex");
+    final File child = new File(parent, "filex");
     new FileOutputStream(child).close();
     child.setLastModified(System.currentTimeMillis());
     parent.setLastModified(hours.get(4).getTime());

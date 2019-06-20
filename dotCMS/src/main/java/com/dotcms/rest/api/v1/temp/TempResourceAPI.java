@@ -2,14 +2,11 @@ package com.dotcms.rest.api.v1.temp;
 
 import java.io.File;
 import java.io.FileFilter;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -17,14 +14,12 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.FileUtil;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 
-import io.vavr.Tuple2;
 import io.vavr.control.Try;
 
 public class TempResourceAPI {
