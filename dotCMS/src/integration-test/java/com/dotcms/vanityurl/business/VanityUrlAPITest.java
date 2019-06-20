@@ -1,9 +1,13 @@
 package com.dotcms.vanityurl.business;
 
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.cache.VanityUrlCache;
 import com.dotcms.contenttype.model.type.VanityUrlContentType;
+import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.util.FiltersUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.vanityurl.model.CacheVanityKey;
@@ -19,14 +23,12 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
 /**
  * This class test the {@link VanityUrlAPI} methods
@@ -460,7 +462,7 @@ public class VanityUrlAPITest {
         long currentTime = System.currentTimeMillis();
         Contentlet vanityURLContentletEnglish = null;
         Contentlet vanityURLContentletSpanish = null;
-        int spanishLang = 2;
+        final Language spanish = TestDataUtils.getSpanishLanguage();
         try{
             vanityURLContentletEnglish = filtersUtil
                     .createVanityUrl("test Vanity Url " + currentTime, defaultHost.getIdentifier(),
@@ -488,10 +490,10 @@ public class VanityUrlAPITest {
 
             vanityURLContentletSpanish = contentletAPI.find(vanityURLContentletEnglish.getInode(), user, false);
             vanityURLContentletSpanish.setInode("");
-            vanityURLContentletSpanish.setLanguageId(spanishLang);
+            vanityURLContentletSpanish.setLanguageId(spanish.getId());
             vanityURLContentletSpanish = contentletAPI.checkin(vanityURLContentletSpanish, user, false);
 
-            Assert.assertEquals(VanityUrlAPI.CACHE_404_VANITY_URL, vanityUrlAPI.getLiveCachedVanityUrl("/testing"+currentTime, defaultHost, spanishLang, user).getVanityUrlId());
+            Assert.assertEquals(VanityUrlAPI.CACHE_404_VANITY_URL, vanityUrlAPI.getLiveCachedVanityUrl("/testing"+currentTime, defaultHost, spanish.getId(), user).getVanityUrlId());
             vanityURLCached = vanityUrlCache.get(
                     new CacheVanityKey(
                             vanityURLContentletSpanish.getStringProperty(VanityUrlContentType.SITE_FIELD_VAR),
@@ -502,7 +504,7 @@ public class VanityUrlAPITest {
 
             filtersUtil.publishVanityUrl(vanityURLContentletSpanish);
 
-            vanityUrlAPI.getLiveCachedVanityUrl("/testing"+currentTime, defaultHost, spanishLang, user);
+            vanityUrlAPI.getLiveCachedVanityUrl("/testing"+currentTime, defaultHost, spanish.getId(), user);
             vanityURLCached = vanityUrlCache.get(
                     new CacheVanityKey(
                             vanityURLContentletSpanish.getStringProperty(VanityUrlContentType.SITE_FIELD_VAR),
