@@ -278,7 +278,7 @@ public class FileUtil {
    * @param directory
    * @param deleteOlderTime
    */
-	 public static void cleanTree(final File directory, long deleteOlderTime) {
+	 public static void cleanTree(final File directory, final long deleteOlderTime) {
 
 	    if (directory==null || !directory.exists() || !directory.isDirectory()) {
 	      Logger.info(FileUtil.class, "cleanTree Directory " + directory + " not found exiting");
