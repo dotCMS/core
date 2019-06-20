@@ -8,6 +8,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.rest.ContentHelper;
 import com.dotcms.rest.MapToContentletPopulator;
@@ -33,16 +34,20 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
     @BeforeClass
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
+        final ContentType employeeLikeContentType = TestDataUtils.getEmployeeLikeContentType();
+        final ContentType bannerLikeContentType = TestDataUtils.getBannerLikeContentType();
+        final ContentType newsLikeContentType = TestDataUtils.getNewsLikeContentType();
+
+        // Creating the contentlets for they will be pulled-out from the index
+        for (int i = 0; i <= 10; i++) {
+            TestDataUtils.getEmployeeContent(true, 1, employeeLikeContentType.id());
+            TestDataUtils.getBannerLikeContent(true, 1, bannerLikeContentType.id(), null);
+            TestDataUtils.getNewsContent(true, 1, newsLikeContentType.id());
+        }
     }
 
     @Test
     public void Transformer_Simple_Test() throws DotDataException {
-
-        for (int i = 0; i <= 10; i++) {
-            TestDataUtils.getEmployeeContent(true, 1, null);
-            TestDataUtils.getBannerLikeContent(true, 1, null, null);
-            TestDataUtils.getNewsContent(true, 1, null);
-        }
 
         List<Contentlet> list = APILocator.getContentletAPI().findAllContent(0,20);
         list = list.stream().filter(Objects::nonNull).collect(Collectors.toList());
