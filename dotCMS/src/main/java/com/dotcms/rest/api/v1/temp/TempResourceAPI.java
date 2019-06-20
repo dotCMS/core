@@ -116,7 +116,7 @@ public class TempResourceAPI {
 
   private Optional<File> getTempFile(final String tempFileId) {
 
-    if (!tempFileId.startsWith(TEMP_RESOURCE_PREFIX)) {
+    if (tempFileId==null || !tempFileId.startsWith(TEMP_RESOURCE_PREFIX)) {
       return Optional.empty();
     }
 

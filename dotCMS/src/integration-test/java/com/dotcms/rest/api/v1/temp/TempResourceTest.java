@@ -5,7 +5,11 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import javax.servlet.http.HttpServletRequest;
@@ -16,6 +20,14 @@ import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import com.dotcms.contenttype.model.field.BinaryField;
+import com.dotcms.contenttype.model.field.DataTypes;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.TextField;
+import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequest;
@@ -23,7 +35,12 @@ import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.rest.exception.SecurityException;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
@@ -192,7 +209,7 @@ public class TempResourceTest {
         .modificationDate(date).readDate(date).size(1222).build();
 
     try {
-      Response jsonResponse = resource.uploadTempResource(request, response, inputStream(), fileMetaData);
+      resource.uploadTempResource(request, response, inputStream(), fileMetaData);
       assertTrue("We should have throw a resource unavailable exception", false);
     } catch (SecurityException se) {
       assertTrue("We  throw a resource unavailable exception", true);
@@ -204,5 +221,81 @@ public class TempResourceTest {
     DotTempFile dotTempFile = (DotTempFile) jsonResponse.getEntity();
     assert(UtilMethods.isSet(dotTempFile.id));
   }
+  
+  
+  @Test
+  public void temp_resource_makes_it_into_checked_in_content() throws Exception {
+
+    final TempResource resource = new TempResource();
+    final HttpServletRequest request = mockRequest();
+
+    final HttpServletResponse response = new MockHttpResponse();
+    final User user = APILocator.systemUser();
+    final Host host = APILocator.getHostAPI().findDefaultHost(user, true);
+
+    // set user to system user
+    request.setAttribute(WebKeys.USER, user);
+
+    // create a file asset type
+
+    ContentType contentType = ContentTypeBuilder.builder(BaseContentType.FILEASSET.immutableClass()).description("description")
+        .folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name("ContentTypeTesting" + System.currentTimeMillis()).owner("owner")
+        .variable("velocityVarNameTesting" + System.currentTimeMillis()).build();
+    contentType = APILocator.getContentTypeAPI(APILocator.systemUser()).save(contentType);
+
+    // Add another binary field
+    List<Field> fields = new ArrayList<>(contentType.fields());
+
+    final Field fieldToSave =
+        FieldBuilder.builder(BinaryField.class)
+        .name("testBinary")
+        .variable("testBinary")
+        .contentTypeId(contentType.id())
+            .build();
+
+    fields.add(fieldToSave);
+
+    contentType = APILocator.getContentTypeAPI(user).save(contentType, fields);
+
+    final String fileName1 = "testFileName1" + UUIDGenerator.shorty() + ".png";
+    final String fileName2 = "testFileName2" + UUIDGenerator.shorty() + ".gif";
+    Date date = new Date();
+    final FormDataContentDisposition fileMetaData = FormDataContentDisposition.name("testData").fileName(fileName1).creationDate(date)
+        .modificationDate(date).readDate(date).size(1222).build();
+
+    Response jsonResponse = resource.uploadTempResource(request, response, inputStream(), fileMetaData);
+
+    DotTempFile dotTempFile1 = (DotTempFile) jsonResponse.getEntity();
+
+    RemoteUrlForm form = new RemoteUrlForm(
+        "https://raw.githubusercontent.com/dotCMS/core/master/dotCMS/src/main/webapp/html/images/skin/logo.gif", fileName2, null);
+
+    jsonResponse = resource.copyTempFromUrl(request, form);
+    DotTempFile dotTempFile2 = (DotTempFile) jsonResponse.getEntity();
+
+    final Map<String, Object> m = new HashMap<String, Object>();
+    m.put("stInode", contentType.id());
+    m.put("hostFolder", host.getIdentifier());
+    m.put("languageId", host.getLanguageId());
+    m.put("title", dotTempFile1.fileName);
+    m.put("fileAsset", dotTempFile1.id);
+    m.put("showOnMenu", "false");
+    m.put("sortOrder", 1);
+    m.put("description", "description");
+    m.put("testBinary", dotTempFile2.id);
+    Contentlet contentlet = new Contentlet(m);
+    contentlet = APILocator.getContentletAPI().checkin(contentlet, user, true);
+
+    assert (contentlet.getBinary("fileAsset").exists());
+    assert (contentlet.getBinary("fileAsset").getName().equals(fileName1));
+    assert (contentlet.getBinary("fileAsset").length() == 381411);
+    assert (contentlet.getBinary("testBinary").exists());
+    assert (contentlet.getBinary("testBinary").getName().equals(fileName2));
+    assert (contentlet.getBinary("testBinary").length() == 13695);
+
+  }
+  
+  
+  
 
 }

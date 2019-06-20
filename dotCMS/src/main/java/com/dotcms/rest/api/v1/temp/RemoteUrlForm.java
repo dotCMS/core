@@ -10,6 +10,11 @@ public class RemoteUrlForm {
   public final String accessKey;
   public final Integer urlTimeoutSeconds;
 
+  
+  protected RemoteUrlForm(@JsonProperty("remoteUrl") String remoteUrl, @JsonProperty("fileName") String fileName,
+      @JsonProperty("accessKey") String accessKey) {
+    this(remoteUrl,fileName,accessKey,null);
+  }
   @JsonCreator
   protected RemoteUrlForm(@JsonProperty("remoteUrl") String remoteUrl, @JsonProperty("fileName") String fileName,
       @JsonProperty("accessKey") String accessKey, @JsonProperty("urlTimeoutSeconds") Integer urlTimeout) {

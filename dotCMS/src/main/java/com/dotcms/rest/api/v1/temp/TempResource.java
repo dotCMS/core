@@ -27,6 +27,7 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
+import com.dotcms.util.CloseUtils;
 import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -67,7 +68,12 @@ public class TempResource {
   public final Response uploadTempResource(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
       @FormDataParam("file") InputStream fileInputStream, @FormDataParam("file") FormDataContentDisposition fileMetaData) {
 
-    return uploadTempResourceImpl(request, response, fileInputStream, fileMetaData);
+    try {
+      return uploadTempResourceImpl(request, response, fileInputStream, fileMetaData);
+    }
+    finally {
+      CloseUtils.closeQuietly(fileInputStream);
+    }
   }
 
   protected final Response uploadTempResourceImpl(final HttpServletRequest request, final HttpServletResponse response,
@@ -108,6 +114,10 @@ public class TempResource {
     }
   }
 
+  
+  
+  
+  
   @POST
   @Path("/byUrl")
   @JSONP
