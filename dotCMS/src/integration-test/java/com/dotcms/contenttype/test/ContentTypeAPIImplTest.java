@@ -16,6 +16,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
@@ -1559,4 +1560,46 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 			}
 		}
 	}
+	
+	
+	 @Test
+	  public void test_get_fields_filtered_by_class() throws Exception{
+	
+	   ContentType newType = ContentTypeBuilder.builder(BaseContentType.FILEASSET.immutableClass())
+	        .description("description").folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
+	        .name("ContentTypeTesting"+System.currentTimeMillis()).owner("owner").variable("velocityVarNameTesting"+System.currentTimeMillis()).build();
+	    newType = contentTypeApi.save(newType);
+
+	    
+	    List<Field> fields = newType.fields(BinaryField.class);
+	    assert(fields.size()==1);
+	    
+	    fields = newType.fields(TextField.class);
+	    assert(fields.size()==3);
+	     
+      //Add Field.
+      fields = new ArrayList<>( newType.fields() );
+
+      Field fieldToSave = FieldBuilder.builder( TextField.class )
+              .name( "test"+System.currentTimeMillis() )
+              .variable( "test"+System.currentTimeMillis() )
+              .contentTypeId( newType.id() )
+              .dataType( DataTypes.TEXT )
+              .fixed( true )
+              .id( UUIDGenerator.generateUuid() )
+              .build();
+
+      fields.add( fieldToSave );
+
+      newType = contentTypeApi.save( newType, fields );
+	    
+	    
+      fields = newType.fields(TextField.class);
+      assert(fields.size()==4);
+	     
+      fields = newType.fields(SelectField.class);
+      assert(fields.size()==0);
+	 }
+	
+	
 }
