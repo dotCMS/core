@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v3.contenttype;
 
 import com.dotcms.contenttype.model.field.*;
 import com.dotcms.contenttype.model.field.layout.FieldLayout;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.JsonFieldTransformer;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -25,11 +26,11 @@ public class MoveFieldsForm {
         this.fields = fields;
     }
 
-    public FieldLayout getRows(final String contentTypeId) {
+    public FieldLayout getRows(final ContentType contentType) {
         try {
-            fixFields(fields, contentTypeId);
+            fixFields(fields, contentType.id());
             final String rowsString = MAPPER.writeValueAsString(fields);
-            return new FieldLayout(new JsonFieldTransformer(rowsString).asList());
+            return new FieldLayout(contentType, new JsonFieldTransformer(rowsString).asList());
         } catch (IOException e) {
             throw new DotRuntimeException(e);
         }

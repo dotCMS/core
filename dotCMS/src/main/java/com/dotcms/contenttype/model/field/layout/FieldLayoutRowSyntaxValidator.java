@@ -21,6 +21,8 @@ abstract class FieldLayoutRowSyntaxValidator {
      * @throws FieldLayoutValidationException when a {@link FieldLayout} is not valid
      */
     public final void validate() throws FieldLayoutValidationException {
+        beforeStartValidate();
+
         if (this.fields.isEmpty()) {
             processEmptyFields();
         } else {
@@ -135,4 +137,6 @@ abstract class FieldLayoutRowSyntaxValidator {
      * @throws
      */
     protected abstract void processEmptyFields() throws FieldLayoutValidationException;
+
+    protected  void beforeStartValidate() {}
 }

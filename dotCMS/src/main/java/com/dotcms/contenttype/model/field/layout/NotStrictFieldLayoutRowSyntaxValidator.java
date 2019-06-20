@@ -1,6 +1,7 @@
 package com.dotcms.contenttype.model.field.layout;
 
 import com.dotcms.contenttype.model.field.*;
+import com.dotcms.contenttype.model.type.ContentType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,11 +27,22 @@ import java.util.List;
  */
 public class NotStrictFieldLayoutRowSyntaxValidator extends FieldLayoutRowSyntaxValidator {
 
-    private List<Field> newFields = new ArrayList<>();
-    private List<Field> layoutFieldsToRemove = new ArrayList<>();
+    private ContentType contentType;
+    private List<Field> newFields;
+    private List<Field> layoutFieldsToRemove;
+    private List<Field> layoutFieldsToUpdate;
 
-    NotStrictFieldLayoutRowSyntaxValidator(final List<Field> fields) {
+    NotStrictFieldLayoutRowSyntaxValidator(final ContentType contentType, final List<Field> fields) {
         super(fields);
+
+        this.contentType = contentType;
+    }
+
+    @Override
+    protected  void beforeStartValidate() {
+        newFields = new ArrayList<>();
+        layoutFieldsToRemove = new ArrayList<>();
+        layoutFieldsToUpdate = new ArrayList<>();
     }
 
     @Override
@@ -66,6 +78,10 @@ public class NotStrictFieldLayoutRowSyntaxValidator extends FieldLayoutRowSyntax
 
     public List<Field> getFieldsToRemove() {
         return layoutFieldsToRemove;
+    }
+
+    public List<Field> getLayoutFieldsToCreateOrUpdate()  {
+        return layoutFieldsToUpdate;
     }
 
     /**
@@ -126,7 +142,9 @@ public class NotStrictFieldLayoutRowSyntaxValidator extends FieldLayoutRowSyntax
      */
     @Override
     protected void processSortOrder(final List<Field> fields) {
-        this.newFields = FieldUtil.fixSortOrder(this.newFields);
+        final FieldUtil.SortOrderFix sortOrderFix = FieldUtil.fixSortOrder(this.newFields);
+        this.newFields = sortOrderFix.getNewFields();
+        this.layoutFieldsToUpdate = sortOrderFix.getUpdatedFields();
     }
 
     /**
@@ -141,12 +159,14 @@ public class NotStrictFieldLayoutRowSyntaxValidator extends FieldLayoutRowSyntax
     private ColumnField getNewColumnField() {
         return ImmutableColumnField.builder()
                 .name("Column Field")
+                .contentTypeId(this.contentType.id())
                 .build();
     }
 
     private RowField getNewRowField() {
         return ImmutableRowField.builder()
                 .name("Row Field")
+                .contentTypeId(this.contentType.id())
                 .build();
     }
 }

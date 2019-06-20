@@ -16,6 +16,24 @@ import java.util.stream.Collectors;
  */
 public class FieldUtil {
 
+    public static class SortOrderFix {
+        private List<Field> newFields;
+        private List<Field> updatedFields;
+
+        private SortOrderFix(List<Field> newFields, List<Field> updatedFields) {
+            this.newFields = newFields;
+            this.updatedFields = updatedFields;
+        }
+
+        public List<Field> getNewFields() {
+            return newFields;
+        }
+
+        public List<Field> getUpdatedFields() {
+            return updatedFields;
+        }
+    }
+
     private FieldUtil() {}
 
     /**
@@ -168,11 +186,12 @@ public class FieldUtil {
     /**
      * Set the {@link Field#sortOrder()} to be equals the fields list index
      *
-     * @param fields
+     * @param fields new List with all sort order equals to list's index
      * @return
      */
-    static List<Field> fixSortOrder(final List<Field> fields) {
+    static SortOrderFix fixSortOrder(final List<Field> fields) {
         final List<Field> newFieldsWithSorOrder = new ArrayList<>();
+        final List<Field> fieldsUpdated = new ArrayList<>();
 
         for (int i = 0; i < fields.size(); i++) {
             final Field field = fields.get(i);
@@ -180,12 +199,13 @@ public class FieldUtil {
             if (i != field.sortOrder()) {
                 final Field fieldCopy = copyField(field, i);
                 newFieldsWithSorOrder.add(fieldCopy);
+                fieldsUpdated.add(fieldCopy);
             } else {
                 newFieldsWithSorOrder.add(field);
             }
         }
 
-        return newFieldsWithSorOrder;
+        return new SortOrderFix(newFieldsWithSorOrder, fieldsUpdated);
     }
 
     /**

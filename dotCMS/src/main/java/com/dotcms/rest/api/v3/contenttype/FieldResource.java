@@ -1,18 +1,15 @@
 package com.dotcms.rest.api.v3.contenttype;
 
+import com.dotcms.contenttype.business.ContentTypeFieldLayoutAPI;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.layout.FieldLayout;
-import com.dotcms.contenttype.model.field.layout.FieldLayoutValidationException;
-import com.dotcms.contenttype.model.field.layout.FieldUtil;
-import com.dotcms.contenttype.model.field.layout.NotStrictFieldLayoutRowSyntaxValidator;
 import com.dotcms.contenttype.model.type.ContentType;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import com.dotcms.rest.exception.NotFoundException;
 import org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
@@ -24,12 +21,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.model.User;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
-import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.map;
 
 /**
@@ -40,23 +32,37 @@ import static com.dotcms.util.CollectionsUtils.map;
 @Path("/v3/contenttype/{typeIdOrVarName}/fields")
 public class FieldResource {
     private final WebResource webResource;
-    private final FieldAPI fieldAPI;
+    private final ContentTypeFieldLayoutAPI contentTypeFieldLayoutAPI;
 
     public FieldResource() {
         this.webResource = new WebResource();
-        this.fieldAPI = APILocator.getContentTypeFieldAPI();
+        this.contentTypeFieldLayoutAPI = APILocator.getContentTypeFieldLayoutAPI();
     }
 
     /**
-     * Update a set of field and return the new {@link ContentType}'s layout in the response
+     * Update a field and return the new {@link ContentType}'s layout in the response.
+     * The request body should have the follow sintax:
      *
-     * @param typeIdOrVarName
-     * @param fieldId
-     * @param updateFieldForm
-     * @param req
+     * <code>
+     *     {
+     *         field: {
+     *             //All the field attributes including those that we want to keep with the same value
+     *         }
+     *     }
+     * </code>
+     *
+     * If the sortOrder attribute is sent it is ignore.
+     * If the content type has a wrong layout then it is fix first before the field update.
+     *
+     * @param typeIdOrVarName COntent type's id
+     * @param fieldId Field to update id
+     * @param updateFieldForm field attributes
+     * @param req Http request
      * @return
      * @throws DotDataException
      * @throws DotSecurityException
+     *
+     * @see FieldLayout
      */
     @PUT
     @JSONP
@@ -78,89 +84,52 @@ public class FieldResource {
         final Field fieldFromInput = updateFieldForm.getField();
         final ContentType contentType = APILocator.getContentTypeAPI(user).find(typeIdOrVarName);
 
-        final Optional<Field> optionalField = checkFieldExists(fieldFromInput, contentType);
-
-        if (optionalField.isPresent()) {
-            final Field fieldToUpdate = checkSortOrder(optionalField.get(), fieldFromInput, contentType);
-
-            fieldAPI.save(fieldToUpdate, user);
-
-            final List<Field> contentTypeFields = fieldAPI.byContentTypeId(contentType.id());
-            final FieldLayout fieldLayoutFromDB = new FieldLayout(contentTypeFields);
-
-            return Response.ok(new ResponseEntityView(fieldLayoutFromDB.getRows())).build();
-        } else {
-            throw new NotFoundException(String.format("Field %s does not exists", fieldFromInput.variable()));
-        }
+        final FieldLayout fieldLayout = this.contentTypeFieldLayoutAPI.updateField(contentType, fieldFromInput, user);
+        return Response.ok(new ResponseEntityView(fieldLayout.getRows())).build();
     }
-
-    private Field checkSortOrder(
-            final Field fieldFromDB,
-            final Field fieldToUpdate,
-            final ContentType contentType
-    )
-            throws FieldLayoutValidationException {
-
-        if (Field.SORT_ORDER_DEFAUKT_VALUE == fieldToUpdate.sortOrder()) {
-            return FieldUtil.copyField(fieldToUpdate, fieldFromDB.sortOrder());
-        } else if (fieldFromDB.sortOrder() != fieldToUpdate.sortOrder()) {
-            final FieldLayout fieldLayout = new FieldLayout(contentType.fields());
-            final FieldLayout fieldLayoutUpdated = fieldLayout.update(list(fieldToUpdate));
-
-            fieldLayoutUpdated.validate();
-        }
-
-        return fieldToUpdate;
-    }
-
 
     /**
-     * Create a new field and return the new {@link ContentType}'s layout in the response
+     * Move field and return the new {@link ContentType}'s layout in the response.
+     * The request body should have the follow sintax:
+     *
+     * <code>
+     *     {
+     *         layout: [
+     *             {
+     *                 divider: {
+     *                     //All the row field attributes
+     *                 },
+     *                 columns: [
+     *                   {
+     *                      columnDivider: {
+     *                          //All the column field attributes
+     *                      },
+     *                      fields: [
+     *                          {
+     *                              //All the field attributes
+     *                          },
+     *                          {
+     *                              //All the field attributes
+     *                          }
+     *                      ]
+     *                   }
+     *                 ]
+     *             }
+     *         ]
+     *     }
+     * </code>
+     *
+     * The sortOrder attribute is sent it is ignore, the array index is take as sortOrder.
+     * If the content type has a wrong layout then it is fix first before the field update.
+     * If a new field is sent in the set the fields it is created in the order where it is put.
      *
      * @param typeIdOrVarName
-     * @param updateFieldForm
+     * @param moveFieldsForm
      * @param req
      * @return
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    @POST
-    @JSONP
-    @NoCache
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
-    public Response createField(
-            @PathParam("typeIdOrVarName") final String typeIdOrVarName,
-            final UpdateFieldForm updateFieldForm,
-            @Context final HttpServletRequest req)
-            throws DotDataException, DotSecurityException {
-
-        final InitDataObject initData =
-                this.webResource.init(null, true, req, true, null);
-        final User user = initData.getUser();
-
-        final Field fieldToUpdate = updateFieldForm.getField();
-        final ContentType contentType = APILocator.getContentTypeAPI(user).find(typeIdOrVarName);
-
-        final FieldLayout fieldLayout = new FieldLayout(contentType.fields());
-        final FieldLayout fieldLayoutUpdated = fieldLayout.update(list(fieldToUpdate));
-
-        fieldLayoutUpdated.validate();
-        fieldAPI.save(fieldToUpdate, user);
-
-        final List<Field> contentTypeFields = fieldAPI.byContentTypeId(contentType.id());
-        final FieldLayout fieldLayoutFromDB = new FieldLayout(contentTypeFields);
-
-        return Response.ok(new ResponseEntityView(fieldLayoutFromDB.getRows())).build();
-    }
-
-    private Optional<Field> checkFieldExists(final Field fieldToUpdate, final ContentType contentType) {
-        return contentType.fields()
-                .stream()
-                .filter(field -> field.id().equals(fieldToUpdate.id()))
-                .findFirst();
-    }
-
     @PUT
     @JSONP
     @NoCache
@@ -178,64 +147,15 @@ public class FieldResource {
         final User user = initData.getUser();
         final ContentType contentType = APILocator.getContentTypeAPI(user).find(typeIdOrVarName);
 
-        final FieldLayout layout = moveFieldsForm.getRows(contentType.id());
-        layout.validate();
+        final FieldLayout layout = moveFieldsForm.getRows(contentType);
 
-        final FieldLayout oldLayout = new FieldLayout(contentType.fields());
-
-        fieldAPI.saveFields(layout.getFields(), user);
-        fieldAPI.deleteFields(
-                oldLayout.getLayoutFieldsToDelete().stream().map(field -> field.id()).collect(Collectors.toList()),
-                user
-        );
-
-        final List<Field> contentTypeFields = fieldAPI.byContentTypeId(contentType.id());
-        final FieldLayout fieldLayoutFromDB = new FieldLayout(contentTypeFields);
-        return Response.ok(new ResponseEntityView(fieldLayoutFromDB.getRows())).build();
+        final FieldLayout fieldLayout = this.contentTypeFieldLayoutAPI.moveFields(contentType, layout, user);
+        return Response.ok(new ResponseEntityView(fieldLayout.getRows())).build();
     }
 
     /**
-     * Update a set of fields and return the new {@link ContentType}'s layout in the response
-     *
-     * @param typeIdOrVarName
-     * @param updateFieldsForm
-     * @param req
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
-     */
-    @PUT
-    @JSONP
-    @NoCache
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
-    public Response updateFields(
-            @PathParam("typeIdOrVarName") final String typeIdOrVarName,
-            final UpdateFieldsForm updateFieldsForm,
-            @Context final HttpServletRequest req)
-                throws DotDataException, DotSecurityException {
-
-        final InitDataObject initData =
-                this.webResource.init(null, true, req, true, null);
-        final User user = initData.getUser();
-
-        final List<Field> fieldsToUpdate = updateFieldsForm.getFields();
-        final ContentType contentType = APILocator.getContentTypeAPI(user).find(typeIdOrVarName);
-        final FieldLayout fieldLayout = new FieldLayout(contentType.fields());
-        final FieldLayout fieldLayoutUpdated = fieldLayout.update(fieldsToUpdate);
-
-        fieldLayoutUpdated.validate();
-        fieldAPI.saveFields(fieldsToUpdate, user);
-
-        final List<Field> contentTypeFields = fieldAPI.byContentTypeId(contentType.id());
-        final FieldLayout fieldLayoutFromDB = new FieldLayout(contentTypeFields);
-
-        return Response.ok(new ResponseEntityView(fieldLayoutFromDB.getRows())).build();
-    }
-
-
-    /**
-     * Return the {@link ContentType}'s layout
+     * Return the {@link ContentType}'s layout, If the content type has a wrong layout then it is fix before return
+     * This end point don't make any change in Data Base
      *
      * @param typeIdOrVarName
      * @param req
@@ -256,8 +176,7 @@ public class FieldResource {
                 this.webResource.init(null, true, req, true, null);
         final User user = initData.getUser();
 
-        final ContentType contentType = APILocator.getContentTypeAPI(user).find(typeIdOrVarName);
-        final FieldLayout fieldLayout = new FieldLayout(contentType.fields());
+        final FieldLayout fieldLayout = this.contentTypeFieldLayoutAPI.getLayout(typeIdOrVarName, user);
 
         return Response.ok(new ResponseEntityView(fieldLayout.getRows())).build();
     }
@@ -287,14 +206,14 @@ public class FieldResource {
 
         final List<String> fieldsID = deleteFieldsForm.getFieldsID();
         final ContentType contentType = APILocator.getContentTypeAPI(user).find(typeIdOrVarName);
-        final FieldLayout fieldLayout = new FieldLayout(contentType.fields());
-        final FieldLayout fieldLayoutUpdated = fieldLayout.remove(fieldsID);
 
-        fieldLayoutUpdated.validate();
-        final Collection<String> ids = fieldAPI.deleteFields(fieldsID, user);
+        final ContentTypeFieldLayoutAPI.DeleteFieldResult deleteFieldResult =
+                this.contentTypeFieldLayoutAPI.deleteField(contentType, fieldsID, user);
+
         return Response.ok(new ResponseEntityView(
                 map(
-                   "fields", fieldLayoutUpdated.getRows(), "deletedIds", ids
+                   "fields", deleteFieldResult.getLayout().getRows(),
+                        "deletedIds", deleteFieldResult.getFieldDeletedIds()
                 )
         )).build();
     }

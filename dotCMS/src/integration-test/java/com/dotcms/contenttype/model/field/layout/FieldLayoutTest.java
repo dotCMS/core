@@ -1,6 +1,7 @@
 package com.dotcms.contenttype.model.field.layout;
 
 import com.dotcms.contenttype.model.field.*;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.util.CollectionsUtils;
 
 import com.dotcms.util.IntegrationTestInitService;
@@ -23,6 +24,7 @@ public class FieldLayoutTest {
 
     @Test
     public void shouldCreateFieldLayoutWhenHasMoreThanOneTabDividerInRow() throws FieldLayoutValidationException {
+        final ContentType contentType = mock(ContentType.class);
         final List<Field> fields = CollectionsUtils.list(
                 mock(TabDividerField.class),
                 mock(TabDividerField.class),
@@ -34,13 +36,14 @@ public class FieldLayoutTest {
             when(field.sortOrder()).thenReturn(i);
         }
 
-        final FieldLayout fieldLayout = new FieldLayout(fields);
+        final FieldLayout fieldLayout = new FieldLayout(contentType, fields);
         fieldLayout.validate();
         assertEquals(fields, fieldLayout.getFields());
     }
 
     @Test
     public void shouldCreateFieldLayoutAndNotThrowException() throws FieldLayoutValidationException {
+        final ContentType contentType = mock(ContentType.class);
         final List<Field> fields = CollectionsUtils.list(
             mock(RowField.class),
             mock(ColumnField.class),
@@ -58,13 +61,14 @@ public class FieldLayoutTest {
             when(field.sortOrder()).thenReturn(i);
         }
 
-        final FieldLayout fieldLayout = new FieldLayout(fields);
+        final FieldLayout fieldLayout = new FieldLayout(contentType, fields);
         fieldLayout.validate();
         assertEquals(fields, fieldLayout.getFields());
     }
 
     @Test
     public void shouldCreateFieldLayoutWithTabDivider() throws FieldLayoutValidationException {
+        final ContentType contentType = mock(ContentType.class);
         final List<Field> fields = CollectionsUtils.list(
                 mock(TabDividerField.class),
                 mock(RowField.class),
@@ -78,13 +82,14 @@ public class FieldLayoutTest {
             when(field.sortOrder()).thenReturn(i);
         }
 
-        final FieldLayout fieldLayout = new FieldLayout(fields);
+        final FieldLayout fieldLayout = new FieldLayout(contentType, fields);
         fieldLayout.validate();
         assertEquals(fields, fieldLayout.getFields());
     }
 
     @Test(expected = FieldLayoutValidationException.class)
     public void shouldThrowWhenSortOrderIsNorRight() throws FieldLayoutValidationException {
+        final ContentType contentType = mock(ContentType.class);
         final List<Field> fields = CollectionsUtils.list(
                 mock(TabDividerField.class),
                 mock(RowField.class),
@@ -98,14 +103,14 @@ public class FieldLayoutTest {
             when(field.sortOrder()).thenReturn(i * 2);
         }
 
-        final FieldLayout fieldLayout = new FieldLayout(fields);
+        final FieldLayout fieldLayout = new FieldLayout(contentType, fields);
         fieldLayout.validate();
     }
 
     @Test(expected = FieldLayoutValidationException.class)
     public void shouldThrowFieldLayoutValidationExceptionWhenHasRowWithoutColumn()
             throws FieldLayoutValidationException {
-
+        final ContentType contentType = mock(ContentType.class);
         final List<Field> fields = CollectionsUtils.list(
                 mock(RowField.class),
                 mock(RowField.class),
@@ -117,7 +122,7 @@ public class FieldLayoutTest {
             when(field.sortOrder()).thenReturn(i);
         }
 
-        FieldLayout fieldLayout = new FieldLayout(fields);
+        FieldLayout fieldLayout = new FieldLayout(contentType, fields);
         fieldLayout.validate();
     }
 
@@ -125,6 +130,7 @@ public class FieldLayoutTest {
     public void shouldThrowFieldLayoutValidationExceptionWhenHasRowsWithoutColumn()
             throws FieldLayoutValidationException {
 
+        final ContentType contentType = mock(ContentType.class);
         final List<Field> fields = CollectionsUtils.list(
                 mock(RowField.class),
                 mock(RowField.class),
@@ -136,7 +142,7 @@ public class FieldLayoutTest {
             when(field.sortOrder()).thenReturn(i);
         }
 
-        FieldLayout fieldLayout = new FieldLayout(fields);
+        FieldLayout fieldLayout = new FieldLayout(contentType, fields);
         fieldLayout.validate();
     }
 
@@ -144,6 +150,7 @@ public class FieldLayoutTest {
     public void shouldThrowFieldLayoutValidationExceptionWhenHasFieldsWithoutRows()
             throws FieldLayoutValidationException {
 
+        final ContentType contentType = mock(ContentType.class);
         final List<Field> fields = CollectionsUtils.list(
                 mock(Field.class),
                 mock(Field.class),
@@ -155,7 +162,7 @@ public class FieldLayoutTest {
             when(field.sortOrder()).thenReturn(i);
         }
 
-        FieldLayout fieldLayout = new FieldLayout(fields);
+        FieldLayout fieldLayout = new FieldLayout(contentType, fields);
         fieldLayout.validate();
     }
 
@@ -163,6 +170,7 @@ public class FieldLayoutTest {
     public void shouldThrowFieldLayoutValidationExceptionWhenHasTabFieldWithoutRows()
             throws FieldLayoutValidationException {
 
+        final ContentType contentType = mock(ContentType.class);
         final List<Field> fields = CollectionsUtils.list(
                 mock(TabDividerField.class),
                 mock(ColumnField.class),
@@ -175,7 +183,7 @@ public class FieldLayoutTest {
             when(field.sortOrder()).thenReturn(i);
         }
 
-        FieldLayout fieldLayout = new FieldLayout(fields);
+        FieldLayout fieldLayout = new FieldLayout(contentType, fields);
         fieldLayout.validate();
     }
 
@@ -183,6 +191,7 @@ public class FieldLayoutTest {
     public void shouldThrowFieldLayoutValidationExceptionWhenHasColumnWithoutRow()
             throws FieldLayoutValidationException {
 
+        final ContentType contentType = mock(ContentType.class);
         final List<Field> fields = CollectionsUtils.list(
                 mock(ColumnField.class),
                 mock(Field.class),
@@ -194,13 +203,14 @@ public class FieldLayoutTest {
             when(field.sortOrder()).thenReturn(i);
         }
 
-        FieldLayout fieldLayout = new FieldLayout(fields);
+        FieldLayout fieldLayout = new FieldLayout(contentType, fields);
         fieldLayout.validate();
     }
 
     @Test()
     public void shouldFixLayoutWhenHasRowWithoutColumn() {
 
+        final ContentType contentType = mock(ContentType.class);
         final List<Field> fields = CollectionsUtils.list(
                 ImmutableRowField.builder()
                         .name("Row Field 1")
@@ -216,7 +226,7 @@ public class FieldLayoutTest {
                         .build()
         );
 
-        FieldLayout fieldLayout = new FieldLayout(fields);
+        FieldLayout fieldLayout = new FieldLayout(contentType, fields);
         final List<Field> fieldsLayout = fieldLayout.getFields();
 
         assertEquals(5, fieldsLayout.size());
@@ -230,6 +240,7 @@ public class FieldLayoutTest {
     @Test()
     public void shouldFixLayoutValidationExceptionWhenHasFieldsWithoutRows() {
 
+        final ContentType contentType = mock(ContentType.class);
         final List<Field> fields = CollectionsUtils.list(
             ImmutableTextField.builder()
                     .name("Text Field 1")
@@ -248,7 +259,7 @@ public class FieldLayoutTest {
                     .build()
         );
 
-        FieldLayout fieldLayout = new FieldLayout(fields);
+        FieldLayout fieldLayout = new FieldLayout(contentType, fields);
         final List<Field> fieldsLayout = fieldLayout.getFields();
 
         assertEquals(5, fieldsLayout.size());
@@ -262,6 +273,7 @@ public class FieldLayoutTest {
     @Test()
     public void shouldFixLayoutValidationExceptionWhenHasTabFieldWithoutRows() {
 
+        final ContentType contentType = mock(ContentType.class);
         final List<Field> fields = CollectionsUtils.list(
                 ImmutableTabDividerField.builder()
                         .name("Tab Divider 1")
@@ -282,7 +294,7 @@ public class FieldLayoutTest {
         );
 
 
-        FieldLayout fieldLayout = new FieldLayout(fields);
+        FieldLayout fieldLayout = new FieldLayout(contentType, fields);
         final List<Field> fieldsLayout = fieldLayout.getFields();
 
         assertEquals(5, fieldsLayout.size());
@@ -296,6 +308,7 @@ public class FieldLayoutTest {
     @Test()
     public void shouldFixLayoutValidationExceptionWhenHasColumnWithoutRow() {
 
+        final ContentType contentType = mock(ContentType.class);
         final List<Field> fields = CollectionsUtils.list(
             ImmutableColumnField.builder()
                     .name("Column Field 1")
@@ -312,7 +325,7 @@ public class FieldLayoutTest {
                     .build()
         );
 
-        FieldLayout fieldLayout = new FieldLayout(fields);
+        FieldLayout fieldLayout = new FieldLayout(contentType, fields);
         final List<Field> fieldsLayout = fieldLayout.getFields();
 
         assertEquals(4, fieldsLayout.size());
@@ -324,6 +337,7 @@ public class FieldLayoutTest {
 
     @Test()
     public void shouldFixSortOrder() {
+        final ContentType contentType = mock(ContentType.class);
         final List<Field> fields = CollectionsUtils.list(
                 ImmutableRowField.builder()
                         .name("Row Field")
@@ -340,7 +354,7 @@ public class FieldLayoutTest {
         );
 
 
-        FieldLayout fieldLayout = new FieldLayout(fields);
+        FieldLayout fieldLayout = new FieldLayout(contentType, fields);
         final List<Field> fieldsLayout = fieldLayout.getFields();
 
         for(int i = 0; i < fieldsLayout.size(); i++) {
@@ -350,10 +364,10 @@ public class FieldLayoutTest {
 
     @Test
     public void shouldRemoveFieldsAndNotThrowException() throws FieldLayoutValidationException {
-
+        final ContentType contentType = mock(ContentType.class);
         final List<Field> fields = getData();
 
-        final FieldLayout fieldLayout = new FieldLayout(fields);
+        final FieldLayout fieldLayout = new FieldLayout(contentType, fields);
         final FieldLayout fieldLayoutRemove = fieldLayout.remove(CollectionsUtils.list("2", "6"));
         fieldLayoutRemove.validate();
 
@@ -372,19 +386,20 @@ public class FieldLayoutTest {
 
     @Test(expected = FieldLayoutValidationException.class)
     public void shouldRemoveFieldsAndThrowException() throws FieldLayoutValidationException {
+        final ContentType contentType = mock(ContentType.class);
         final List<Field> fields = getData();
 
-        final FieldLayout fieldLayout = new FieldLayout(fields);
+        final FieldLayout fieldLayout = new FieldLayout(contentType, fields);
         final FieldLayout fieldLayoutRemove = fieldLayout.remove(CollectionsUtils.list("4"));
         fieldLayoutRemove.validate();
     }
 
     @Test
     public void shouldMoveFieldBackward() throws FieldLayoutValidationException {
-
+        final ContentType contentType = mock(ContentType.class);
         final List<Field> fields = getData();
 
-        final FieldLayout fieldLayout = new FieldLayout(fields);
+        final FieldLayout fieldLayout = new FieldLayout(contentType, fields);
 
         final List<Field> fieldsToUpdate = CollectionsUtils.list(
                 ImmutableTextField.builder()
@@ -409,15 +424,15 @@ public class FieldLayoutTest {
                 fields.get(2)
         );
 
-        assertFieldListEquals(FieldUtil.fixSortOrder(fieldsExpected), fieldLayoutRemove.getFields());
+        assertFieldListEquals(FieldUtil.fixSortOrder(fieldsExpected).getNewFields(), fieldLayoutRemove.getFields());
     }
 
     @Test
     public void shouldMoveFieldForward() throws FieldLayoutValidationException {
-
+        final ContentType contentType = mock(ContentType.class);
         final List<Field> fields = getData();
 
-        final FieldLayout fieldLayout = new FieldLayout(fields);
+        final FieldLayout fieldLayout = new FieldLayout(contentType, fields);
 
         final List<Field> fieldsToUpdate = CollectionsUtils.list(
                 ImmutableTextField.builder()
@@ -442,15 +457,15 @@ public class FieldLayoutTest {
                 fields.get(7)
         );
 
-        assertFieldListEquals(FieldUtil.fixSortOrder(fieldsExpected), fieldLayoutUpdated.getFields());
+        assertFieldListEquals(FieldUtil.fixSortOrder(fieldsExpected).getNewFields(), fieldLayoutUpdated.getFields());
     }
 
     @Test(expected = FieldLayoutValidationException.class)
     public void shouldMoveFieldAndThrowException() throws FieldLayoutValidationException {
-
+        final ContentType contentType = mock(ContentType.class);
         final List<Field> fields = getData();
 
-        final FieldLayout fieldLayout = new FieldLayout(fields);
+        final FieldLayout fieldLayout = new FieldLayout(contentType, fields);
 
         final List<Field> fieldsToUpdate = CollectionsUtils.list(
                 ImmutableColumnField.builder()
@@ -466,10 +481,10 @@ public class FieldLayoutTest {
 
     @Test()
     public void shouldAddNewField() throws FieldLayoutValidationException {
-
+        final ContentType contentType = mock(ContentType.class);
         final List<Field> fields = getData();
 
-        final FieldLayout fieldLayout = new FieldLayout(fields);
+        final FieldLayout fieldLayout = new FieldLayout(contentType, fields);
 
         final ImmutableTextField newField = ImmutableTextField.builder()
                 .name("New Text Field")
@@ -500,17 +515,17 @@ public class FieldLayoutTest {
 
     private void assertFieldListEquals(final List<Field> fields1, final List<Field> fields2) {
         assertEquals(
-                FieldUtil.fixSortOrder(fields1).stream().map(Field::name).collect(Collectors.toList()),
-                FieldUtil.fixSortOrder(fields2).stream().map(Field::name).collect(Collectors.toList())
+                FieldUtil.fixSortOrder(fields1).getNewFields().stream().map(Field::name).collect(Collectors.toList()),
+                FieldUtil.fixSortOrder(fields2).getNewFields().stream().map(Field::name).collect(Collectors.toList())
         );
     }
 
     @Test(expected = FieldLayoutValidationException.class)
     public void shouldAddNewFieldAndThrowException() throws FieldLayoutValidationException {
-
+        final ContentType contentType = mock(ContentType.class);
         final List<Field> fields = getData();
 
-        final FieldLayout fieldLayout = new FieldLayout(fields);
+        final FieldLayout fieldLayout = new FieldLayout(contentType, fields);
 
         final ImmutableTextField newField = ImmutableTextField.builder()
                 .name("Text Field")
@@ -525,9 +540,10 @@ public class FieldLayoutTest {
 
     @Test
     public void shouldCreateFieldLayout() throws FieldLayoutValidationException {
+        final ContentType contentType = mock(ContentType.class);
         final List<Field> fields = this.getData();
 
-        final FieldLayout fieldLayout = new FieldLayout(fields);
+        final FieldLayout fieldLayout = new FieldLayout(contentType, fields);
         final List<FieldLayoutRow> rows = fieldLayout.getRows();
 
         assertEquals(2, rows.size());

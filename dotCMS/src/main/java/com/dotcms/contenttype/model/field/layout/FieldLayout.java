@@ -3,6 +3,7 @@ package com.dotcms.contenttype.model.field.layout;
 import com.dotcms.contenttype.model.field.ColumnField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.RowField;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.exception.DotRuntimeException;
 
 import java.util.*;
@@ -40,6 +41,7 @@ import java.util.stream.Collectors;
  * @see FieldLayoutRow
  */
 public class FieldLayout {
+    private final ContentType contentType;
     private final List<Field> fields;
     private NotStrictFieldLayoutRowSyntaxValidator notStrictFieldLayoutRowSyntaxValidator;
     private StrictFieldLayoutRowSyntaxValidator strictFieldLayoutRowSyntaxValidator;
@@ -48,9 +50,14 @@ public class FieldLayout {
      *
      * @param fields set of fields to build the layout
      */
-    public FieldLayout(final Collection<Field> fields) {
+    public FieldLayout(final ContentType contentType, final Collection<Field> fields) {
         this.fields = new ArrayList<>(fields);
         this.fields.sort(Comparator.comparingInt(Field::sortOrder));
+        this.contentType = contentType;
+    }
+
+    public FieldLayout(final ContentType contentType) {
+        this(contentType, contentType.fields());
     }
 
     /**
@@ -93,12 +100,13 @@ public class FieldLayout {
      */
     public List<Field> getFields() {
 
-        if (notStrictFieldLayoutRowSyntaxValidator == null) {
-            notStrictFieldLayoutRowSyntaxValidator = new NotStrictFieldLayoutRowSyntaxValidator(this.fields);
-        }
-
         try {
-            notStrictFieldLayoutRowSyntaxValidator.validate();
+            if (notStrictFieldLayoutRowSyntaxValidator == null) {
+                notStrictFieldLayoutRowSyntaxValidator = new NotStrictFieldLayoutRowSyntaxValidator(this.contentType, this.fields);
+                notStrictFieldLayoutRowSyntaxValidator.validate();
+            }
+
+
             return notStrictFieldLayoutRowSyntaxValidator.getFields();
         } catch (FieldLayoutValidationException e) {
             throw new DotRuntimeException(e);
@@ -111,13 +119,31 @@ public class FieldLayout {
      * @return
      */
     public List<Field>  getLayoutFieldsToDelete() {
-        if (notStrictFieldLayoutRowSyntaxValidator == null) {
-            notStrictFieldLayoutRowSyntaxValidator = new NotStrictFieldLayoutRowSyntaxValidator(this.fields);
-        }
-
         try {
-            notStrictFieldLayoutRowSyntaxValidator.validate();
+            if (notStrictFieldLayoutRowSyntaxValidator == null) {
+                notStrictFieldLayoutRowSyntaxValidator = new NotStrictFieldLayoutRowSyntaxValidator(this.contentType, this.fields);
+                notStrictFieldLayoutRowSyntaxValidator.validate();
+            }
+
             return notStrictFieldLayoutRowSyntaxValidator.getFieldsToRemove();
+        } catch (FieldLayoutValidationException e) {
+            throw new DotRuntimeException(e);
+        }
+    }
+
+    /**
+     * List of Layout fields to create or Update to get a right layout,
+     * Layout field could be: {@link RowField} and  {@link ColumnField}
+     * @return
+     */
+    public List<Field>  getLayoutFieldsToCreateOrUpdate() {
+        try {
+            if (notStrictFieldLayoutRowSyntaxValidator == null) {
+                notStrictFieldLayoutRowSyntaxValidator = new NotStrictFieldLayoutRowSyntaxValidator(this.contentType, this.fields);
+                notStrictFieldLayoutRowSyntaxValidator.validate();
+            }
+
+            return notStrictFieldLayoutRowSyntaxValidator.getLayoutFieldsToCreateOrUpdate();
         } catch (FieldLayoutValidationException e) {
             throw new DotRuntimeException(e);
         }
@@ -134,6 +160,23 @@ public class FieldLayout {
         }
         
         strictFieldLayoutRowSyntaxValidator.validate();
+    }
+
+    /**
+     * Retrn true is the FieldLayout is valid
+     * @throws FieldLayoutValidationException
+     */
+    public boolean isValidate() {
+        if (strictFieldLayoutRowSyntaxValidator == null) {
+            strictFieldLayoutRowSyntaxValidator = new StrictFieldLayoutRowSyntaxValidator(this.fields);
+        }
+
+        try {
+            strictFieldLayoutRowSyntaxValidator.validate();
+            return true;
+        } catch (FieldLayoutValidationException e) {
+            return false;
+        }
     }
 
     /**
@@ -157,8 +200,8 @@ public class FieldLayout {
                 newFields.add(newIndex, field);
             });
 
-        final List<Field> fieldsOrdered = FieldUtil.fixSortOrder(newFields);
-        return new FieldLayout(fieldsOrdered);
+        final List<Field> fieldsOrdered = FieldUtil.fixSortOrder(newFields).getNewFields();
+        return new FieldLayout(this.contentType, fieldsOrdered);
     }
 
     /**
@@ -177,11 +220,23 @@ public class FieldLayout {
                 fieldIterator.remove();
             }
         }
-        final List<Field> fieldsOrdered = FieldUtil.fixSortOrder(newFields);
-        return new FieldLayout(fieldsOrdered);
+        final List<Field> fieldsOrdered = FieldUtil.fixSortOrder(newFields).getNewFields();
+        return new FieldLayout(this.contentType, fieldsOrdered);
     }
 
     private void remove(final List<Field> newFields, final Field field) {
         newFields.removeIf(next -> next.id() != null && next.id().equals(field.id()));
+    }
+
+    public ContentType getContentType() {
+        return contentType;
+    }
+
+    /**
+     * Get a fixed Layout from this
+     * @return
+     */
+    public FieldLayout getLayoutFixed() {
+        return new FieldLayout(contentType, this.getFields());
     }
 }

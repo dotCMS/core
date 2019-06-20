@@ -6,6 +6,7 @@ import com.dotcms.contenttype.model.field.layout.FieldLayoutRow;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.JsonTransformer;
 import com.dotcms.contenttype.transform.field.JsonFieldTransformer;
+import com.dotmarketing.business.APILocator;
 import com.google.common.collect.ImmutableList;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.json.JSONArray;
@@ -156,7 +157,7 @@ public class JsonContentTypeTransformer implements ContentTypeTransformer, JsonT
   }
 
   private List<FieldLayoutRow> getLayout(final ContentType type) {
-    final FieldLayout fieldLayout = new FieldLayout(type.fields());
+    final FieldLayout fieldLayout = new FieldLayout(type);
     return fieldLayout.getRows();
   }
 
