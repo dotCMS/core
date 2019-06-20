@@ -141,8 +141,7 @@ public class VelocityLiveMode extends VelocityModeHandler {
             final PageCacheParameters cacheParameters =
                     new BlockPageCache.PageCacheParameters(userId, language, urlMap, queryString, persona);
 
-
-            String key = VelocityUtil.getPageCacheKey(request, htmlPage);
+            final String key = VelocityUtil.getPageCacheKey(request, htmlPage);
             if (key != null) {
                 String cachedPage = CacheLocator.getBlockPageCache().get(htmlPage, cacheParameters);
                 if (cachedPage != null) {
@@ -151,7 +150,6 @@ public class VelocityLiveMode extends VelocityModeHandler {
                     return;
                 }
             }
-
 
             try (Writer tmpOut = (key != null) ? new StringWriter(4096) : new BufferedWriter(new OutputStreamWriter(out))) {
 

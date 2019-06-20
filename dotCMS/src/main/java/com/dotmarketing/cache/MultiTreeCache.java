@@ -8,6 +8,7 @@ import com.dotmarketing.business.Cachable;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
+import com.dotmarketing.factories.PersonalizedContentlet;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.Table;
 
@@ -27,18 +28,18 @@ public class MultiTreeCache implements Cachable {
 
 
     @SuppressWarnings("unchecked")
-    public Optional<Table<String, String, Set<String>>> getPageMultiTrees(final String pageIdentifier, final boolean live) {
+    public Optional<Table<String, String, Set<PersonalizedContentlet>>> getPageMultiTrees(final String pageIdentifier, final boolean live) {
         final String group = (live) ? LIVE_GROUP : WORKING_GROUP;
 
         try {
-            return Optional.ofNullable((Table<String, String, Set<String>>) cache.get(pageIdentifier, group));
+            return Optional.ofNullable((Table<String, String, Set<PersonalizedContentlet>>) cache.get(pageIdentifier, group));
         } catch (DotCacheException e) {
             Logger.warn(this.getClass(), e.getMessage());
             return Optional.empty();
         }
     }
 
-    public void putPageMultiTrees(final String pageIdentifier, final boolean live, final Table<String, String, Set<String>> multiTrees) {
+    public void putPageMultiTrees(final String pageIdentifier, final boolean live, final Table<String, String, Set<PersonalizedContentlet>> multiTrees) {
         final String group = (live) ? LIVE_GROUP : WORKING_GROUP;
         cache.put(pageIdentifier, multiTrees, group);
     }

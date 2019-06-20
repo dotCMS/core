@@ -11,6 +11,7 @@ import com.dotmarketing.portlets.personas.business.PersonaAPI;
 public class Persona extends Contentlet implements IPersona{
 	private static final long serialVersionUID = -4775734788059690797L;
 
+	public static final String DOT_PERSONA_PREFIX_SCHEME = "dot:persona";
 	
 
 	public Persona(Contentlet oldCon) {

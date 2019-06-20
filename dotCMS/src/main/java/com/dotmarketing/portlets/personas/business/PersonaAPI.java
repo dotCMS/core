@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.personas.business;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
+import java.util.Optional;
 
 import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.beans.Host;
@@ -84,5 +85,14 @@ public interface PersonaAPI {
 	public void enableDisablePersonaTag ( Contentlet personaContentlet, boolean enable ) throws DotDataException, DotSecurityException;
 
 	void createDefaultPersonaStructure() throws DotDataException;
+
+	/**
+	 * If exists a persona indexed by the personaTag, will return an Optional with the persona, otherwise Optional will be empty.
+	 * @param personaTag {@link String}
+     * @param user {@link User}
+     * @param respectFrontEndRoles {@link Boolean}
+	 * @return Optional of Persona
+	 */
+    Optional<Persona> findPersonaByTag (final String personaTag, final User user, final boolean respectFrontEndRoles) throws DotSecurityException, DotDataException;
 
 }
