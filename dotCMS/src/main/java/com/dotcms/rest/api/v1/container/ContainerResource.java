@@ -470,24 +470,14 @@ public class ContainerResource implements Serializable {
         final User user = initData.getUser();
 
         try {
-            final Language id = WebAPILocator.getLanguageWebAPI()
-                    .getLanguage(req);
 
             final PageMode mode = PageMode.get(req);
-
             final Container container = APILocator.getContainerAPI()
                     .find(containerId, user, !mode.isAdmin);
 
             final org.apache.velocity.context.Context context = VelocityUtil.getWebContext(req, res);
             final Contentlet contentlet = APILocator.getContentletAPI()
                     .find(contentInode, user, !mode.isAdmin);
-            final ContainerStructure cStruct = APILocator.getContainerAPI() // todo: this is not used.
-                    .getContainerStructures(container)
-                    .stream()
-                    .filter(cs -> contentlet.getStructureInode()
-                            .equals(cs.getStructureId()))
-                    .findFirst()
-                    .orElse(null);
 
             final StringWriter inputWriter  = new StringWriter();
             final StringWriter outputWriter = new StringWriter();
@@ -512,11 +502,11 @@ public class ContainerResource implements Serializable {
             final Map<String, String> response = new HashMap<>();
             response.put("render", outputWriter.toString());
 
-            final Response.ResponseBuilder responseBuilder = Response.ok(response);
-
-            return responseBuilder.build();
+            return Response.ok(response).build();
         } catch (DotSecurityException e) {
             throw new ForbiddenException(e);
         }
     }
+
+
 }

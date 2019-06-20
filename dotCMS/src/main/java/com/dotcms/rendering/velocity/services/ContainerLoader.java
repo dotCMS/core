@@ -199,8 +199,6 @@ public class ContainerLoader implements DotLoader {
             .append("#set($CONTAINER_NUM_CONTENTLETS = 0)")
             .append("#end");
 
-
-
         velocityCodeBuilder.append("#set ($CONTAINER_NAME = \"")
             .append(UtilMethods.espaceForVelocity(container.getTitle()))
             .append("\")");
@@ -241,15 +239,17 @@ public class ContainerLoader implements DotLoader {
                     .append(" data-dot-accept-types=")
                     .append("\"");
 
-                Iterator<ContainerStructure> it= containerContentTypeList.iterator();
-                while (it.hasNext()) {
-                    ContainerStructure struct = it.next();
+                final Iterator<ContainerStructure> contentTypeIterator =
+                        containerContentTypeList.iterator();
+                while (contentTypeIterator.hasNext()) {
+
+                    final ContainerStructure containerContentType = contentTypeIterator.next();
                     try {
-                        ContentType t = typeAPI.find(struct.getStructureId());
-                        editWrapperDiv.append(t.variable());
+                        final ContentType contentType = typeAPI.find(containerContentType.getStructureId());
+                        editWrapperDiv.append(contentType.variable());
                         editWrapperDiv.append(",");
                     } catch (DotDataException | DotSecurityException e) {
-                        Logger.warn(this.getClass(), "unable to find content type:" + struct);
+                        Logger.warn(this.getClass(), "unable to find content type:" + containerContentType);
                     }
                 }
 
@@ -261,20 +261,12 @@ public class ContainerLoader implements DotLoader {
                 velocityCodeBuilder.append("#if($" +  SHOW_PRE_POST_LOOP + ")");
                 velocityCodeBuilder.append(editWrapperDiv);
                 velocityCodeBuilder.append("#end");
-
             }
-            
-            
-            
-            
-            
-            
-            
-            
+
             // sb.append("$contentletList" + identifier.getId() + uuid + "<br>");
 
             // START CONTENT LOOP
-            velocityCodeBuilder.append("#foreach ($contentletId in $contentletList") // todo:
+            velocityCodeBuilder.append("#foreach ($contentletId in $contentletList")
                 .append(container.getIdentifier())
                 .append(uuid)
                 .append(")");

@@ -1,6 +1,5 @@
 package com.dotcms.visitor.business;
 
-import org.apache.logging.log4j.util.Strings;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.HttpRequestDataUtil;
 import com.dotcms.visitor.domain.Visitor;
@@ -15,6 +14,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import eu.bitwalker.useragentutils.UserAgent;
+import org.apache.logging.log4j.util.Strings;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -49,18 +49,14 @@ public class VisitorAPIImpl implements VisitorAPI {
         Optional<Visitor> visitorOpt;
 
         if(!create) {
-            HttpSession session = request.getSession(false);
 
-            if(Objects.isNull(session)) {
-                visitorOpt = Optional.empty();
-            } else {
-                visitorOpt = Optional.ofNullable((Visitor) session.getAttribute(WebKeys.VISITOR));
-            }
-
+            final HttpSession session = request.getSession(false);
+            visitorOpt = Objects.isNull(session)?
+                    Optional.empty():Optional.ofNullable((Visitor) session.getAttribute(WebKeys.VISITOR));
         } else {
             // lets create a session if not already created
-            HttpSession session = request.getSession();
-            Visitor visitor = (Visitor) session.getAttribute(WebKeys.VISITOR);
+            final HttpSession session = request.getSession();
+            Visitor visitor           = (Visitor) session.getAttribute(WebKeys.VISITOR);
 
             if(Objects.isNull(visitor)) {
                 visitor = createVisitor(request);
@@ -71,15 +67,19 @@ public class VisitorAPIImpl implements VisitorAPI {
         }
         
         // If we are forcing a persona on a visitor
-        if(visitorOpt.isPresent()){
+        if(visitorOpt.isPresent()) {
+
 			if(Objects.nonNull(request.getParameter(WebKeys.CMS_PERSONA_PARAMETER))){
-				Visitor visitor = visitorOpt.get();
-				try{		
-					User user = com.liferay.portal.util.PortalUtil.getUser(request);
-					Persona p = APILocator.getPersonaAPI().find(request.getParameter(WebKeys.CMS_PERSONA_PARAMETER), user, true);
-					visitor.setPersona(p);
-				}
-				catch(Exception e){
+
+				final Visitor visitor = visitorOpt.get();
+				try {
+
+					final User user = com.liferay.portal.util.PortalUtil.getUser(request);
+					final Persona persona = APILocator.getPersonaAPI().find(request.getParameter(WebKeys.CMS_PERSONA_PARAMETER), user, true);
+					visitor.setPersona(persona);
+				} catch(Exception e) {
+
+                    Logger.error(this, e.getMessage(), e);
 					visitor.setPersona(null);
 				}
 			}
@@ -88,28 +88,23 @@ public class VisitorAPIImpl implements VisitorAPI {
         return visitorOpt;
     }
 
-    private Visitor createVisitor(HttpServletRequest request) {
+    private Visitor createVisitor(final HttpServletRequest request) {
 
-        Visitor visitor = new Visitor();
+        final Visitor visitor = new Visitor();
         
-        InetAddress ipAddress = lookupIPAddress(request);
+        final InetAddress ipAddress = lookupIPAddress(request);
 
         if(Objects.isNull(ipAddress)){
             //Exception was thrown so we return an empty, not-null visitor
             return visitor;
         }
 
-        Language selectedLanguage = languageWebAPI.getLanguage(request);
-
-        Locale locale = new Locale(selectedLanguage.getLanguageCode(), selectedLanguage.getCountryCode());
-
-        UserAgent userAgent = UserAgent.parseUserAgentString(request.getHeader("User-Agent"));
-
-        UUID dmid = lookupDMID(request);
-
-        boolean isNewVisitor = isNewVisitor(request);
-
-        URI initialReferrer = lookupReferrer(request);
+        final Language selectedLanguage = languageWebAPI.getLanguage(request);
+        final Locale locale = new Locale(selectedLanguage.getLanguageCode(), selectedLanguage.getCountryCode());
+        final UserAgent userAgent = UserAgent.parseUserAgentString(request.getHeader("User-Agent"));
+        final UUID dmid = lookupDMID(request);
+        final boolean isNewVisitor = isNewVisitor(request);
+        final URI initialReferrer = lookupReferrer(request);
 
         visitor.setIpAddress(ipAddress);
         visitor.setSelectedLanguage(selectedLanguage);
@@ -120,7 +115,6 @@ public class VisitorAPIImpl implements VisitorAPI {
         visitor.setReferrer(initialReferrer);
 
         return  visitor;
-
     }
 
     private boolean isNewVisitor(HttpServletRequest request) {
