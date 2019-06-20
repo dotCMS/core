@@ -1,20 +1,17 @@
 package com.dotcms.rest.api.v1.temp;
 
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.InputStream;
-import java.util.Calendar;
 import java.util.Date;
-import java.util.List;
 import java.util.Optional;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
 
-import org.apache.commons.io.IOUtils;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -24,14 +21,12 @@ import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.MockHttpResponse;
+import com.dotcms.rest.exception.SecurityException;
 import com.dotcms.util.IntegrationTestInitService;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.UUIDGenerator;
-import com.google.common.collect.ImmutableList;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
-import com.liferay.util.FileUtil;
 
 public class TempResourceTest {
   @BeforeClass
@@ -71,7 +66,7 @@ public class TempResourceTest {
     // its not an image because we set the filename to "test.file"
     assertFalse((Boolean) dotTempFile.image);
 
-    assert (tempFileId.startsWith(TempResourceAPI.TEMP_PREFIX));
+    assert (tempFileId.startsWith(TempResourceAPI.TEMP_RESOURCE_PREFIX));
 
     assert (dotTempFile.file.getName().equals(fileName));
     assert (dotTempFile.length() > 0);
@@ -181,5 +176,33 @@ public class TempResourceTest {
   }
   
 
+  @Test
+  public void test_tempResourceapi_test_anonymous_access() throws Exception {
+    TempResource resource = new TempResource();
+
+    HttpServletRequest request = mockRequest();
+
+    final String fieldVar = "image";
+    final String fileName = "test.png";
+    HttpServletResponse response = new MockHttpResponse();
+
+    Config.setProperty(TempResourceAPI.TEMP_RESOURCE_ALLOW_ANONYMOUS, false);
+    Date date = new Date();
+    final FormDataContentDisposition fileMetaData = FormDataContentDisposition.name("testData").fileName(fileName).creationDate(date)
+        .modificationDate(date).readDate(date).size(1222).build();
+
+    try {
+      Response jsonResponse = resource.uploadTempResource(request, response, inputStream(), fileMetaData);
+      assertTrue("We should have throw a resource unavailable exception", false);
+    } catch (SecurityException se) {
+      assertTrue("We  throw a resource unavailable exception", true);
+    } catch (Exception e) {
+      assertTrue("We should have thrown a SecurityException", false);
+    }
+    Config.setProperty(TempResourceAPI.TEMP_RESOURCE_ALLOW_ANONYMOUS, true);
+    Response jsonResponse = resource.uploadTempResource(request, response, inputStream(), fileMetaData);
+    DotTempFile dotTempFile = (DotTempFile) jsonResponse.getEntity();
+    assert(UtilMethods.isSet(dotTempFile.id));
+  }
 
 }

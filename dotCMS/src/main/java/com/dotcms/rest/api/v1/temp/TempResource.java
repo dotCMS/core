@@ -2,7 +2,6 @@ package com.dotcms.rest.api.v1.temp;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
@@ -17,13 +16,11 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.StatusType;
 
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.glassfish.jersey.server.JSONP;
 
-import com.dotcms.content.elasticsearch.business.ESIndexAPI.Status;
 import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.http.CircuitBreakerUrl.Method;
 import com.dotcms.rest.InitDataObject;
@@ -31,17 +28,15 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.util.SecurityUtils;
-import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 
-import io.vavr.Tuple2;
 import io.vavr.control.Try;
 
 @Path("/v1/temp")
@@ -49,7 +44,7 @@ public class TempResource {
 
   private final WebResource webResource;
   private final TempResourceAPI tempApi;
-
+  
   /**
    * Default constructor.
    */
@@ -78,7 +73,11 @@ public class TempResource {
   protected final Response uploadTempResourceImpl(final HttpServletRequest request, final HttpServletResponse response,
       final InputStream inputStream, final FormDataContentDisposition fileMetaData) {
 
-    final InitDataObject initDataObject = this.webResource.init(false, request, false);
+    
+    boolean allowAnonToUseTempFiles = !Config.getBooleanProperty(TempResourceAPI.TEMP_RESOURCE_ALLOW_ANONYMOUS, true);
+    
+
+    final InitDataObject initDataObject = this.webResource.init(false, request, allowAnonToUseTempFiles);
 
     final User user = initDataObject.getUser();
     final String uniqueKey = request.getSession().getId();
@@ -116,8 +115,9 @@ public class TempResource {
   @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
   @Consumes({MediaType.APPLICATION_JSON, MediaType.APPLICATION_JSON})
   public final Response copyTempFromUrl(@Context final HttpServletRequest request, final RemoteUrlForm form) {
+    boolean allowAnonToUseTempFiles = !Config.getBooleanProperty(TempResourceAPI.TEMP_RESOURCE_ALLOW_ANONYMOUS, true);
+    final InitDataObject initDataObject = this.webResource.init(false, request,allowAnonToUseTempFiles);
 
-    final InitDataObject initDataObject = this.webResource.init(false, request, false);
 
     final User user = initDataObject.getUser();
     final String uniqueKey = request.getSession().getId();
@@ -164,9 +164,6 @@ public class TempResource {
   
   private boolean validUrl(final String url) {
     return (url!=null && (url.toLowerCase().startsWith("http://") || url.toLowerCase().startsWith("https://")) ) ;
-
-    
-    
   }
 
 }

@@ -29,9 +29,15 @@ import io.vavr.control.Try;
 
 public class TempResourceAPI {
 
+  public static final String TEMP_RESOURCE_MAX_AGE_SECONDS="TEMP_RESOURCE_MAX_AGE_SECONDS";
+  public static final String TEMP_RESOURCE_ALLOW_ANONYMOUS="TEMP_RESOURCE_ALLOW_ANONYMOUS";
+  public static final String TEMP_RESOURCE_PREFIX = "temp_";
+  
+  
+  
   private static final String WHO_CAN_USE_TEMP_FILE = "whoCanUse.tmp";
 
-  public static final String TEMP_PREFIX = "temp_";
+
 
   /**
    * Returns a TempFile of a unique id and file handle that can be used to write and access a temp
@@ -72,7 +78,7 @@ public class TempResourceAPI {
    */
   public DotTempFile createTempFile(final String incomingFileName, final List<String> allowList) throws DotSecurityException {
 
-    final String tempFileId = TEMP_PREFIX + UUIDGenerator.shorty();
+    final String tempFileId = TEMP_RESOURCE_PREFIX + UUIDGenerator.shorty();
     if (incomingFileName == null) {
       throw new DotRuntimeException("Unable to create temp file without a name");
     }
@@ -110,11 +116,11 @@ public class TempResourceAPI {
 
   private Optional<File> getTempFile(final String tempFileId) {
 
-    if (!tempFileId.startsWith(TEMP_PREFIX)) {
+    if (!tempFileId.startsWith(TEMP_RESOURCE_PREFIX)) {
       return Optional.empty();
     }
 
-    int tempResourceMaxAgeSeconds = Config.getIntProperty("TEMP_RESOURCE_MAX_AGE_SECONDS", 1800);
+    int tempResourceMaxAgeSeconds = Config.getIntProperty(TEMP_RESOURCE_MAX_AGE_SECONDS, 1800);
     final File testFile = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + File.separator + tempFileId);
     final File tempFile = testFile.isDirectory() ? Try.of(() -> testFile.listFiles(tempFileFilter)[0]).getOrNull() : testFile;
 

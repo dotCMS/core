@@ -51,7 +51,7 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
 
     
     try {
-      if(shortStr.startsWith(TempResourceAPI.TEMP_PREFIX)) {
+      if(shortStr.startsWith(TempResourceAPI.TEMP_RESOURCE_PREFIX)) {
           return Optional.of(new ShortyId(shortStr, shortStr, ShortType.TEMP_FILE, ShortType.TEMP_FILE));
       }
       

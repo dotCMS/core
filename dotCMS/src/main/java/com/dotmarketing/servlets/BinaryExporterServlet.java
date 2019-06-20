@@ -6,6 +6,7 @@ import static com.liferay.util.HttpHeaders.EXPIRES;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.util.DownloadUtil;
+import com.dotcms.util.SecurityUtils;
 import com.dotcms.uuid.shorty.ShortType;
 import com.dotcms.uuid.shorty.ShortyException;
 import com.dotcms.uuid.shorty.ShortyId;
@@ -61,6 +62,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import javax.ws.rs.WebApplicationException;
 
 /**
  * This servlet allows you invoke content exporters over binary fields. With the following URL syntax you are able to
@@ -356,6 +358,12 @@ public class BinaryExporterServlet extends HttpServlet {
 			}
 			
 			if(shorty.type == ShortType.TEMP_FILE) {
+		    if (!new SecurityUtils().validateReferer(req)) {
+          resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+          DbConnectionFactory.closeSilently();
+          return;
+		    }
+			  
 			  inputFile = APILocator.getTempResourceAPI().getTempFile(user, req.getSession().getId(),shorty.longId).get();
 			  
 			  
