@@ -2,6 +2,7 @@ package com.dotcms.uuid.shorty;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.rest.api.v1.temp.TempResourceAPI;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -51,7 +52,7 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
 
     
     try {
-      if(shortStr.startsWith(TempResourceAPI.TEMP_RESOURCE_PREFIX)) {
+      if(shortStr.startsWith(TempResourceAPI.TEMP_RESOURCE_PREFIX) && APILocator.getTempResourceAPI().isTempResource(shortStr)) {
           return Optional.of(new ShortyId(shortStr, shortStr, ShortType.TEMP_FILE, ShortType.TEMP_FILE));
       }
       
