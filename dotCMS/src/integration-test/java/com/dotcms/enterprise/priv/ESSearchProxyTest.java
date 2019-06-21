@@ -3,11 +3,13 @@ package com.dotcms.enterprise.priv;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
+import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.liferay.portal.model.User;
 import java.util.List;
 import org.junit.Assert;
@@ -24,7 +26,10 @@ public class ESSearchProxyTest extends IntegrationTestBase {
         IntegrationTestInitService.getInstance().init();
         LicenseTestUtil.getLicense();
 
+        long defLangId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
         user = APILocator.getUserAPI().getSystemUser();
+        final Folder aboutUs = new FolderDataGen().name("about-us").nextPersisted();
+        TestDataUtils.getPageContent(true, defLangId, aboutUs);
     }
 
     @Test
@@ -39,6 +44,7 @@ public class ESSearchProxyTest extends IntegrationTestBase {
     @Test
     public void test_esSearch_WithLicense_Success() throws Exception {
         final String query = "{\"query\":{\"query_string\":{\"query\":\"+basetype:5 +parentpath:*\\\\\\/abou*\"}}}";
+        System.out.println(query);
         final List<ESSearchResults> resultsList = getEsSearchResults(query);
         Assert.assertFalse(resultsList.isEmpty());
     }
@@ -46,7 +52,7 @@ public class ESSearchProxyTest extends IntegrationTestBase {
     private List<ESSearchResults> getEsSearchResults(final String query)
             throws DotSecurityException, DotDataException {
         final ESSearchProxy esSearchProxy = new ESSearchProxy();
-        return (List<ESSearchResults>) esSearchProxy.esSearch(query,true,user,false);
+        return (List<ESSearchResults>) esSearchProxy.esSearch(query,true, user,false);
     }
 
 }

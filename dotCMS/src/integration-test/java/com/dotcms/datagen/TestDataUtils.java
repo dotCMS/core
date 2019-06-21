@@ -940,12 +940,12 @@ public class TestDataUtils {
 
     public static Contentlet getPageContent(Boolean persist, long languageId) {
 
+        return getPageContent(persist,languageId, null);
+    }
+
+    public static Contentlet getPageContent(Boolean persist, long languageId, Folder folder) {
+
         try {
-
-            final Host defaultHost = APILocator.getHostAPI()
-                    .findDefaultHost(APILocator.systemUser(), false);
-            final User systemUser = APILocator.systemUser();
-
             //Create a container for the given contentlet
             Container container = new ContainerDataGen()
                     .nextPersisted();
@@ -954,11 +954,17 @@ public class TestDataUtils {
             Template template = new TemplateDataGen().withContainer(container.getIdentifier())
                     .nextPersisted();
 
-            //Create the html page
-            Folder testFolder = APILocator.getFolderAPI()
-                    .createFolders("/folder" + System.currentTimeMillis() + "/",
-                            defaultHost, systemUser, false);
-            ContentletDataGen contentletDataGen = new HTMLPageDataGen(testFolder, template)
+            if(null == folder) {
+               final Host defaultHost = APILocator.getHostAPI()
+                       .findDefaultHost(APILocator.systemUser(), false);
+               final User systemUser = APILocator.systemUser();
+
+               //Create the html page
+               folder = APILocator.getFolderAPI()
+                       .createFolders("/folder" + System.currentTimeMillis() + "/",
+                               defaultHost, systemUser, false);
+           }
+            ContentletDataGen contentletDataGen = new HTMLPageDataGen(folder, template)
                     .languageId(languageId);
 
             if (persist) {
