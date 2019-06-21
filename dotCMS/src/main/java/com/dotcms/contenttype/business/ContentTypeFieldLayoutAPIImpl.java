@@ -64,7 +64,8 @@ public class ContentTypeFieldLayoutAPIImpl implements ContentTypeFieldLayoutAPI 
 
         fieldAPI.saveFields(newFieldLayout.getFields(), user);
 
-        return newFieldLayout;
+        final ContentType contentTypeFfromDB = APILocator.getContentTypeAPI(user).find(contentType.id());
+        return new FieldLayout(contentTypeFfromDB);
     }
 
     @Override

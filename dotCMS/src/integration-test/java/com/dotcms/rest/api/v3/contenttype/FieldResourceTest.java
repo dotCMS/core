@@ -471,7 +471,11 @@ public class FieldResourceTest {
         final  ContentType type = createContentType();
 
         final List<Field> fields = createFields(type);
-        final Field newField = createTextField(type, "new field", 0);
+        final Field newField = FieldBuilder.builder(TextField.class)
+                .name("new field")
+                .sortOrder(0)
+                .contentTypeId(type.id())
+                .build();
         fields.add(2, newField);
 
         final List<Map<String, Object>> layout = getToLayoutMap(fields);
@@ -491,6 +495,8 @@ public class FieldResourceTest {
 
         final ContentType contentTypeFromDB = APILocator.getContentTypeAPI(APILocator.systemUser()).find(type.id());
         checkAllFieldsIds(fields, contentTypeFromDB.fields());
+
+        assertNotNull(responseFields.get(2).id());
     }
 
     /**
