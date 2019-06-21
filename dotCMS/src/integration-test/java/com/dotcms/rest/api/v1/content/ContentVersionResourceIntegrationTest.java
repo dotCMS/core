@@ -12,17 +12,28 @@ import static org.mockito.Mockito.when;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
+import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest;
 import com.liferay.portal.model.User;
 import java.util.List;
@@ -44,6 +55,9 @@ public class ContentVersionResourceIntegrationTest extends BaseWorkflowIntegrati
     private static final String ADMIN_NAME = "User Admin";
 
     private static ContentVersionResource versionResource;
+    private static Host site;
+    private static Template template;
+    private static Language spanishLanguage;
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -64,12 +78,30 @@ public class ContentVersionResourceIntegrationTest extends BaseWorkflowIntegrati
         versionResource = new ContentVersionResource(APILocator.getContentletAPI(),
                 APILocator.getLanguageAPI(), webResource);
 
+        //Test data
+        site = new SiteDataGen().nextPersisted();
+        template = new TemplateDataGen().nextPersisted();
+        spanishLanguage = TestDataUtils.getSpanishLanguage();
     }
 
     @SuppressWarnings("unchecked")
     @Test
     public void test_Find_All_Expect_OK() throws DotDataException, DotSecurityException {
-        final String identifier = "f4a02846-7ca4-4e08-bf07-a61366bbacbb";
+
+        //Test data
+        Folder aboutUsFolder = new FolderDataGen()
+                .site(site)
+                .showOnMenu(true)
+                .nextPersisted();
+        final HTMLPageAsset englishPageAsset = new HTMLPageDataGen(aboutUsFolder, template)
+                .friendlyName("index")
+                .pageURL("index")
+                .languageId(APILocator.getLanguageAPI().getDefaultLanguage().getId())
+                .title("index")
+                .nextPersisted();
+        HTMLPageDataGen.publish(englishPageAsset);
+
+        final String identifier = englishPageAsset.getIdentifier();
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final Response response = versionResource.findVersions(request,  new EmptyHttpResponse(), null, identifier, "0",2);
 
@@ -100,7 +132,42 @@ public class ContentVersionResourceIntegrationTest extends BaseWorkflowIntegrati
     @SuppressWarnings("unchecked")
     @Test
     public void test_Find_All_By_Lang_Expect_OK() throws DotDataException, DotSecurityException {
-        final String identifier = "a9f30020-54ef-494e-92ed-645e757171c2";
+
+        //Test data
+        Folder aboutUsFolder = new FolderDataGen()
+                .site(site)
+                .showOnMenu(true)
+                .nextPersisted();
+        final HTMLPageAsset englishPageAsset = new HTMLPageDataGen(aboutUsFolder, template)
+                .friendlyName("index")
+                .pageURL("index")
+                .languageId(APILocator.getLanguageAPI().getDefaultLanguage().getId())
+                .title("index")
+                .nextPersisted();
+        HTMLPageDataGen.publish(englishPageAsset);
+
+        //Create a spanish version of the just created page
+        Contentlet htmlPage = APILocator.getContentletAPI()
+                .find(englishPageAsset.getInode(), APILocator.systemUser(), false);
+        assertNotNull(htmlPage);
+
+        Contentlet spanishPageAsset =
+                APILocator.getContentletAPI()
+                        .checkout(htmlPage.getInode(), APILocator.systemUser(), false);
+        assertNotNull(spanishPageAsset);
+        spanishPageAsset.setIdentifier(htmlPage.getIdentifier());
+        spanishPageAsset.setInode(null);
+        spanishPageAsset.setLanguageId(spanishLanguage.getId()); // spanish
+        spanishPageAsset.setIndexPolicy(IndexPolicy.WAIT_FOR);
+
+        spanishPageAsset =
+                APILocator.getContentletAPI()
+                        .checkin(spanishPageAsset, APILocator.systemUser(), false);
+        assertNotNull(spanishPageAsset);
+        assertNotNull(spanishPageAsset.getInode());
+        assertEquals(englishPageAsset.getIdentifier(), spanishPageAsset.getIdentifier());
+
+        final String identifier = englishPageAsset.getIdentifier();
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final Response response = versionResource
                 .findVersions(request,  new EmptyHttpResponse(), null, identifier, "1",2);
