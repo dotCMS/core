@@ -121,7 +121,7 @@ public class ESContentResourcePortletTest extends IntegrationTestBase {
             final long language = languageAPI.getDefaultLanguage().getId();
             final Contentlet workingContentlet = contentletDataGen.languageId(language).nextPersisted();
             final Contentlet liveContentlet = contentletDataGen.languageId(language).nextPersisted();
-            
+
             if(testCase.anonymous) {
                 final Role anonymous = TestUserUtils.getOrCreateAnonymousRole();
                 permissionAPI.save(new Permission(workingContentlet.getPermissionId(), anonymous.getId(),
