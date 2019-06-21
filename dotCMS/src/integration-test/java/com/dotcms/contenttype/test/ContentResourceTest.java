@@ -167,6 +167,19 @@ public class ContentResourceTest extends IntegrationTestBase {
         }
     }
 
+    public static class PullRelatedTestCase {
+        boolean pullFromParent;
+        boolean multipleMatch;
+        boolean addQuery;
+
+        public PullRelatedTestCase(final boolean pullFromParent, final boolean addQuery,
+                final boolean multipleMatch) {
+            this.pullFromParent = pullFromParent;
+            this.addQuery = addQuery;
+            this.multipleMatch = multipleMatch;
+        }
+    }
+
     @DataProvider
     public static Object[] testCases(){
         return new TestCase[]{
@@ -189,6 +202,17 @@ public class ContentResourceTest extends IntegrationTestBase {
 
                 new TestCase("0", JSON_RESPONSE, Status.OK.getStatusCode(), true),
                 new TestCase("0", XML_RESPONSE, Status.OK.getStatusCode(), true)
+        };
+    }
+
+    @DataProvider
+    public static Object[] relatedTestCases(){
+        return new PullRelatedTestCase[]{
+                new PullRelatedTestCase(false, true, true),
+                new PullRelatedTestCase(false, false, true),
+                new PullRelatedTestCase(true, false, true),
+                new PullRelatedTestCase(true, false, false),
+                new PullRelatedTestCase(true, true, true)
         };
     }
 
@@ -370,6 +394,123 @@ public class ContentResourceTest extends IntegrationTestBase {
             if (newRole != null){
                 roleAPI.delete(newRole);
             }
+        }
+
+    }
+
+    @Test
+    @UseDataProvider("relatedTestCases")
+    public void testGetContentWithRelatedParameter(final PullRelatedTestCase testCase) throws Exception {
+        final long language = languageAPI.getDefaultLanguage().getId();
+
+        ContentType parentContentType = null;
+        ContentType childContentType1  = null;
+        ContentType childContentType2  = null;
+
+        try {
+            //creates content types
+            parentContentType = createSampleContentType(false);
+            childContentType1 = createSampleContentType(false);
+            childContentType2 = createSampleContentType(false);
+
+            //creates relationship fields
+            final Field parentField1 = createRelationshipField("children", parentContentType,
+                    childContentType1.variable(), RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal());
+
+            final Field parentField2 = createRelationshipField("anotherChild", parentContentType,
+                    childContentType2.variable(), RELATIONSHIP_CARDINALITY.ONE_TO_ONE.ordinal());
+
+            //creates the other side of the parent relationship
+            final Field childField = createRelationshipField("parents",
+                    childContentType1,
+                    parentContentType.variable() + StringPool.PERIOD + parentField1.variable(),
+                    RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal());
+
+            //gets relationships
+            final Relationship relationship1 = relationshipAPI
+                    .getRelationshipFromField(parentField1, user);
+
+            final Relationship relationship2 = relationshipAPI
+                    .getRelationshipFromField(parentField2, user);
+
+            //creates contentlets
+            final ContentletDataGen childDataGen = new ContentletDataGen(childContentType1.id());
+            final Contentlet child1 = childDataGen.languageId(language).nextPersisted();
+            final Contentlet child2 = childDataGen.languageId(language).nextPersisted();
+
+            final ContentletDataGen anotherChildDataGen = new ContentletDataGen(childContentType2.id());
+            final Contentlet anotherChild = anotherChildDataGen.languageId(language).nextPersisted();
+
+            final ContentletDataGen parentDataGen = new ContentletDataGen(parentContentType.id());
+            Contentlet parent1 = parentDataGen.languageId(language).next();
+            parent1 = contentletAPI.checkin(parent1,
+                    CollectionsUtils.map(relationship1, CollectionsUtils.list(child1, child2),
+                            relationship2, CollectionsUtils.list(anotherChild)), user,
+                    false);
+
+            Contentlet parent2 = parentDataGen.languageId(language).next();
+            parent2 = contentletAPI.checkin(parent2,
+                    CollectionsUtils.map(relationship1, CollectionsUtils.list(child1, child2)), user,
+                    false);
+
+            final StringBuilder pullRelatedQuery = new StringBuilder();
+            //Get related from parent
+            if (testCase.pullFromParent) {
+                pullRelatedQuery.append("/related/").append(parentContentType.variable())
+                        .append(StringPool.PERIOD).append(parentField1.variable());
+
+                if (testCase.multipleMatch) {
+                    pullRelatedQuery.append(StringPool.COLON).append(child1.getIdentifier());
+                } else{
+                    pullRelatedQuery.append(StringPool.COLON).append("invalid_id");
+                }
+
+                pullRelatedQuery.append(StringPool.COMMA).append(parentContentType.variable())
+                        .append(StringPool.PERIOD).append(parentField2.variable())
+                        .append(StringPool.COLON).append(anotherChild.getIdentifier());
+
+            } else{
+                pullRelatedQuery.append("/related/").append(childContentType1.variable())
+                        .append(StringPool.PERIOD).append(childField.variable())
+                        .append(StringPool.COLON).append(parent2.getIdentifier());
+            }
+
+            final ContentResource contentResource = new ContentResource();
+            final HttpServletRequest request = createHttpRequest(null, null);
+            final HttpServletResponse response = mock(HttpServletResponse.class);
+            final Response endpointResponse = contentResource.getContent(request, response, (testCase.addQuery?
+                    "/query/+identifier:" + (testCase.pullFromParent ? parent1.getIdentifier()
+                            : child1.getIdentifier()):"") + "/live/false/type/json"
+                            + pullRelatedQuery);
+
+            assertEquals(Status.OK.getStatusCode(), endpointResponse.getStatus());
+
+            //validates results
+            final JSONObject json = new JSONObject(endpointResponse.getEntity().toString());
+            final JSONArray contentlets = json.getJSONArray("contentlets");
+
+            if (!testCase.multipleMatch){
+                assertEquals(0,
+                        contentlets.length());
+            } else {
+                assertEquals(!testCase.pullFromParent && !testCase.addQuery ? 2 : 1,
+                        contentlets.length());
+
+                final JSONObject contentlet = (JSONObject) contentlets.get(0);
+                assertEquals(
+                        testCase.pullFromParent ? parent1.getIdentifier()
+                                : child1.getIdentifier(),
+                        contentlet.get(IDENTIFIER));
+
+                if (!testCase.pullFromParent && !testCase.addQuery) {
+                    assertEquals(child2.getIdentifier(),
+                            ((JSONObject) contentlets.get(1)).get(IDENTIFIER));
+                }
+            }
+
+        }finally{
+            deleteContentTypes(CollectionsUtils
+                    .list(parentContentType, childContentType1, childContentType2));
         }
 
     }

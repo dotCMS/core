@@ -1294,42 +1294,51 @@ public abstract class AbstractJDBCStartupTask implements StartupTask {
 	 * Reads all the primary keys associated to every table in the specified
 	 * list. Additionally, the keys can be dropped.
 	 * 
-	 * @param conn
+	 * @param connection
 	 *            - The database connection object to access the dotCMS data.
 	 * @param tablesWithKeys
 	 *            - The list of database tables whose primary keys will be
 	 *            retrieved.
-	 * @param executeDrop
+	 * @param drop
 	 *            - If <code>true</code>, the primary keys will be dropped
 	 *            before being returned. Otherwise, set to <code>false</code>.
 	 * @return The list of primary keys associated to the tables.
 	 */
-	protected List<PrimaryKey> getPrimaryKey(final Connection conn, final List<String> tablesWithKeys, final boolean drop) {
+	protected List<PrimaryKey> getPrimaryKey(final Connection connection,
+											 final List<String> tablesWithKeys, final boolean drop) {
+
 		List<PrimaryKey> ret=new ArrayList<PrimaryKey>();
+
 		if (tablesWithKeys!=null) {
 			try {
-				for (String t:tablesWithKeys) {
-					DatabaseMetaData dbmd=conn.getMetaData();
+				for (String tableName: tablesWithKeys) {
+
+					DatabaseMetaData metaData = connection.getMetaData();
 
 					String schema=null;
-					if(DbConnectionFactory.isOracle()){
-						t = t.toUpperCase();
-						schema=dbmd.getUserName();
+					if(DbConnectionFactory.isOracle()) {
+
+						tableName = tableName.toUpperCase();
+						schema    = metaData.getUserName();
 					}
-					ResultSet rs=dbmd.getPrimaryKeys(conn.getCatalog(), schema, t);
-					PrimaryKey key=null;
-					while (rs.next()) {
+
+					final ResultSet resultSet = metaData.getPrimaryKeys(connection.getCatalog(), schema, tableName);
+					PrimaryKey key            = null;
+
+					while (resultSet.next()) {
 						if (key==null) {
-							key=new PrimaryKey();
-							key.keyName=rs.getString("PK_NAME");
-							key.tableName=t;
+							key = new PrimaryKey();
+							key.keyName=resultSet.getString("PK_NAME");
+							key.tableName=tableName;
 							key.columnNames=new ArrayList<String>();
 						}
-						key.columnNames.add(rs.getString("COLUMN_NAME"));
+						key.columnNames.add(resultSet.getString("COLUMN_NAME"));
 						
 					}
-					if(key!=null)
-					    ret.add(key);
+
+					if(key!=null) {
+						ret.add(key);
+					}
 			}
 			
 			if(drop) {
@@ -1337,7 +1346,7 @@ public abstract class AbstractJDBCStartupTask implements StartupTask {
 			    for(PrimaryKey idx : ret) {
 			    	if (!droppedPrimaryKeys.contains(idx.keyName)) {
 				        try {
-				            executeDropConstraint(conn, idx.tableName, idx.keyName);
+				            executeDropConstraint(connection, idx.tableName, idx.keyName);
 				            droppedPrimaryKeys.add(idx.keyName);
 				        }
 				        catch(Exception ex) {

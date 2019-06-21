@@ -2211,6 +2211,7 @@
                         var queryfield=document.getElementById("luceneQuery");
                         queryfield.value=queryRaw;
                         var queryFrontend = counters["luceneQueryFrontend"];
+                        var relatedQueryByChild = counters["relatedQueryByChild"];
                         var sortBy = counters["sortByUF"];
                         var div = document.getElementById("queryResults");
                         var apicall="<%= restBaseUrl %>/query/"+queryRaw+"/orderby/"+sortBy;
@@ -2223,13 +2224,21 @@
                         dojo.byId("expireDateReset").value="";
 
 
-                        div.innerHTML ="<div class='contentViewDialog' style=\"white-space: pre;\">" +
+                        div.innerHTML = "<div class='contentViewDialog' style=\"white-space: pre;\">" +
 
                             "<div class='contentViewTitle'><%= LanguageUtil.get(pageContext, "frontend-query") %></div>"+
-                            "<div class='contentViewQuery'>#foreach($con in $dotcontent.pull(\"" + queryFrontend + "\",10,\"" + sortBy + "\"))<br/>...<br/>#end</div>" +
-                            "<div class='contentViewTitle'><%= LanguageUtil.get(pageContext, "The-actual-query-") %></div>"+
-                            "<div class='contentViewQuery'>"+queryRaw+"</div>" +
-                            "<div class='contentViewTitle'><%= LanguageUtil.get(pageContext, "rest-api-call-urlencoded") %></div>"+
+                            "<div class='contentViewQuery'>#foreach($con in $dotcontent.pull(\"" + queryFrontend + "\",10,\"" + sortBy + "\"))<br/>...<br/>#end</div>";
+
+                        if (relatedQueryByChild == null){
+                            div.innerHTML += "<div class='contentViewTitle'><%= LanguageUtil.get(pageContext, "The-actual-query-") %></div>"+
+                                "<div class='contentViewQuery'>"+queryRaw+"</div>";
+                        } else{
+                            test_api_xml_link +=  "/related/" + relatedQueryByChild;
+                            test_api_json_link += "/related/" + relatedQueryByChild;
+                            apicall_urlencode += "/related/" + relatedQueryByChild;
+                        }
+
+                        div.innerHTML += "<div class='contentViewTitle'><%= LanguageUtil.get(pageContext, "rest-api-call-urlencoded") %></div>"+
                             "<div class='contentViewQuery'>"+apicall_urlencode+"</div>"+
                             "<div class='contentViewQuery' style='padding:20px;padding-top:10px;color:#333;'>REST API: " +
 

@@ -413,4 +413,8 @@ public interface TagAPI {
 	 */
 	public List<Tag> getTagsInText ( String text, String userId, String hostId ) throws DotSecurityException, DotDataException;
 
+	public List<Tag> getTagsByHostId(final String hostId) throws DotDataException;
+
+	public void deleteTagsByHostId(final String hostId) throws DotDataException;
+
 }

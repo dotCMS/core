@@ -1400,26 +1400,30 @@ public class ESContentletAPIImpl implements ContentletAPI {
             User user, boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException {
 
-        if (!UtilMethods.isSet(contentlet.getIdentifier())){
+        if (!UtilMethods.isSet(contentlet.getIdentifier())) {
             return Collections.emptyList();
         }
 
         if (rel.getChildStructureInode().equals(rel.getParentStructureInode())) {
-        return (List<Contentlet>) CollectionsUtils
-                .join(getRelatedChildren(contentlet, rel, user, respectFrontendRoles),
-                        getRelatedParents(contentlet, rel, user, respectFrontendRoles)).stream()
-                .collect(CollectionsUtils.toImmutableList());
-        }else{
-            if (rel.getChildStructureInode().equals(contentlet.getContentTypeId())){
-                return getRelatedParents(contentlet, rel, user, respectFrontendRoles);
-            } else{
-                return getRelatedChildren(contentlet, rel, user, respectFrontendRoles);
+            return (List<Contentlet>) CollectionsUtils
+                    .join(getRelatedChildren(contentlet, rel, user, respectFrontendRoles, -1, -1,
+                            null),
+                            getRelatedParents(contentlet, rel, user, respectFrontendRoles, -1, -1,
+                                    null)).stream()
+                    .collect(CollectionsUtils.toImmutableList());
+        } else {
+            if (rel.getChildStructureInode().equals(contentlet.getContentTypeId())) {
+                return getRelatedParents(contentlet, rel, user, respectFrontendRoles, -1, -1, null);
+            } else {
+                return getRelatedChildren(contentlet, rel, user, respectFrontendRoles, -1, -1,
+                        null);
             }
         }
     }
 
     private List<Contentlet> filterRelatedContent(Contentlet contentlet, Relationship rel,
-            User user, boolean respectFrontendRoles, boolean pullByParent)
+            User user, boolean respectFrontendRoles, boolean pullByParent, int limit, int offset,
+            String sortBy)
             throws DotDataException, DotSecurityException {
 
         if (!UtilMethods.isSet(contentlet.getIdentifier())){
@@ -1431,17 +1435,19 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         if (isSameStructureRelationship){
             if (pullByParent){
-                return getRelatedChildren(contentlet, rel, user, respectFrontendRoles).stream()
+                return getRelatedChildren(contentlet, rel, user, respectFrontendRoles, limit, offset, sortBy).stream()
                         .collect(CollectionsUtils.toImmutableList());
             } else{
-                return getRelatedParents(contentlet, rel, user, respectFrontendRoles).stream()
+                return getRelatedParents(contentlet, rel, user, respectFrontendRoles, limit, offset, sortBy).stream()
                         .collect(CollectionsUtils.toImmutableList());
             }
         } else {
             if (rel.getChildStructureInode().equals(contentlet.getContentTypeId())){
-                return getRelatedParents(contentlet, rel, user, respectFrontendRoles);
+                return getRelatedParents(contentlet, rel, user, respectFrontendRoles, limit, offset,
+                        sortBy);
             } else{
-                return getRelatedChildren(contentlet, rel, user, respectFrontendRoles);
+                return getRelatedChildren(contentlet, rel, user, respectFrontendRoles, limit,
+                        offset, sortBy);
             }
         }
     }
@@ -1471,11 +1477,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     private List<Contentlet> getRelatedChildren(final Contentlet contentlet, final Relationship rel,
-            final User user, final boolean respectFrontendRoles)
+            final User user, final boolean respectFrontendRoles, int limit, int offset,
+            String sortBy)
             throws DotSecurityException, DotDataException {
 
         if (rel.isRelationshipField() && GET_RELATED_CONTENT_FROM_DB){
-            return FactoryLocator.getRelationshipFactory().dbRelatedContent(rel, contentlet, true);
+            return FactoryLocator.getRelationshipFactory()
+                    .dbRelatedContent(rel, contentlet, true, false, "tree_order", limit, offset);
         } else{
 
             final List<Contentlet> result = new ArrayList<>();
@@ -1492,7 +1500,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
             for (SearchHit sh : response.getHits()) {
                 Map<String, Object> sourceMap = sh.getSourceAsMap();
                 if (sourceMap.get(relationshipName) != null) {
-                    ((ArrayList<String>) sourceMap.get(relationshipName)).stream().forEach(child -> {
+                    List<String> relatedIdentifiers = ((ArrayList<String>) sourceMap.get(relationshipName));
+
+                    if (limit > 0 && offset >= 0 && (offset + limit) <= relatedIdentifiers.size()) {
+                        relatedIdentifiers = ((ArrayList<String>) sourceMap.get(relationshipName))
+                                .subList(offset, offset + limit);
+                    }
+
+                    relatedIdentifiers.stream().forEach(child -> {
                         try {
                             result.add(findContentletByIdentifierAnyLanguage(
                                     child));
@@ -1508,18 +1523,19 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     private List<Contentlet> getRelatedParents(final Contentlet contentlet, final Relationship rel,
-            final User user, final boolean respectFrontendRoles)
+            final User user, final boolean respectFrontendRoles, int limit, int offset, String sortBy)
             throws DotSecurityException, DotDataException {
 
         if (rel.isRelationshipField() && GET_RELATED_CONTENT_FROM_DB){
-            return FactoryLocator.getRelationshipFactory().dbRelatedContent(rel, contentlet, false);
+            return FactoryLocator.getRelationshipFactory()
+                    .dbRelatedContent(rel, contentlet, false, false, "tree_order", limit, offset);
         } else{
             final List<Contentlet> result = new ArrayList<>();
             final String relationshipName = rel.getRelationTypeValue().toLowerCase();
 
             SearchResponse response = APILocator.getEsSearchAPI()
                     .esSearchRelated(contentlet.getIdentifier(), relationshipName, true,false, user,
-                            respectFrontendRoles);
+                            respectFrontendRoles, limit, offset, sortBy);
 
             if (response.getHits() == null) {
                 return result;
@@ -1539,11 +1555,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @CloseDBIfOpened
     @Override
     public List<Contentlet> getRelatedContent(Contentlet contentlet, Relationship rel,
-            boolean pullByParent, User user, boolean respectFrontendRoles)
-            throws DotDataException, DotSecurityException {
+            boolean pullByParent, User user, boolean respectFrontendRoles, int limit, int offset,
+            String sortBy)throws DotDataException {
         try {
             return permissionAPI.filterCollection(
-                    filterRelatedContent(contentlet, rel, user, respectFrontendRoles, pullByParent),
+                    filterRelatedContent(contentlet, rel, user, respectFrontendRoles, pullByParent, limit, offset, sortBy),
                     PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
         } catch (Exception e) {
             final String errorMessage =
@@ -1557,6 +1573,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
             throw new DotDataException(errorMessage, e);
         }
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public List<Contentlet> getRelatedContent(Contentlet contentlet, Relationship rel,
+            boolean pullByParent, User user, boolean respectFrontendRoles)
+            throws DotDataException, DotSecurityException {
+        return getRelatedContent(contentlet, rel, pullByParent, user, respectFrontendRoles, -1, -1,
+                null);
     }
 
     /**
@@ -1576,7 +1601,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throws DotDataException, DotSecurityException {
 
         try {
-            return filterRelatedContent(contentlet, rel, user, respectFrontendRoles, pullByParent);
+            return filterRelatedContent(contentlet, rel, user, respectFrontendRoles, pullByParent, -1, -1, null);
         } catch (Exception e){
             final String errorMessage = "Unable to look up related content for contentlet with identifier "
                     + contentlet.getIdentifier() + ". Relationship Name: " + rel.getRelationTypeValue();

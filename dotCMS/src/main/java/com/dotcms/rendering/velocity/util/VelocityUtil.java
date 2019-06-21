@@ -23,6 +23,7 @@ import com.dotmarketing.portlets.languagesmanager.model.DisplayedLanguage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.*;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import com.liferay.util.SystemProperties;
 import java.util.HashMap;
 import java.util.Map;
@@ -147,6 +148,25 @@ public class VelocityUtil {
 		}
 
 		return variableToReturn;
+	}
+
+	/**
+	 * Replace invalid tokens on the parameter "contextTokenIdentifier"  by allowed tokens for the velocity context identifier
+	 * For instance, the tokens / and : are not allowed, so they are replaced by -
+	 *
+	 * so if you need to add a key into the velocity context that might have invalid token, you can do
+	 *
+	 * velocityContext.put(VelocityUtil.escapeContextTokenIdentifier(myWeirdKey), value)
+	 *
+	 * @param contextTokenIdentifier String
+	 * @return String
+	 */
+	public static String escapeContextTokenIdentifier(final String contextTokenIdentifier) {
+
+		final String escapeToken = UtilMethods.isSet(contextTokenIdentifier)?
+				org.apache.commons.lang3.StringUtils.replace(contextTokenIdentifier, StringPool.COLON, StringPool.DASH):StringPool.BLANK;
+
+		return org.apache.commons.lang3.StringUtils.replace(escapeToken, StringPool.FORWARD_SLASH, StringPool.DASH);
 	}
 
 	@VisibleForTesting
