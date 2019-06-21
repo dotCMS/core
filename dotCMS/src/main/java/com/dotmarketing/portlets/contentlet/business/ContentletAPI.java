@@ -1,6 +1,5 @@
 package com.dotmarketing.portlets.contentlet.business;
 
-import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotmarketing.beans.Host;
