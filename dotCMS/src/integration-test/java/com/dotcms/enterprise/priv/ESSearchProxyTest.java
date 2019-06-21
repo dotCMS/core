@@ -28,7 +28,7 @@ public class ESSearchProxyTest extends IntegrationTestBase {
 
         long defLangId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
         user = APILocator.getUserAPI().getSystemUser();
-        final Folder aboutUs = new FolderDataGen().name("about-us").nextPersisted();
+        final Folder aboutUs = new FolderDataGen().name("about-us"+System.currentTimeMillis()).nextPersisted();
         TestDataUtils.getPageContent(true, defLangId, aboutUs);
     }
 
@@ -44,7 +44,6 @@ public class ESSearchProxyTest extends IntegrationTestBase {
     @Test
     public void test_esSearch_WithLicense_Success() throws Exception {
         final String query = "{\"query\":{\"query_string\":{\"query\":\"+basetype:5 +parentpath:*\\\\\\/abou*\"}}}";
-        System.out.println(query);
         final List<ESSearchResults> resultsList = getEsSearchResults(query);
         Assert.assertFalse(resultsList.isEmpty());
     }
