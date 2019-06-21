@@ -20,53 +20,41 @@ public class WebPImageFilter extends ImageFilter {
 				"q (int) between 0-100 specifies quality"
 		};
 	}
-	public File runFilter(File file,   Map<String, String[]> parameters) {
-    int quality = parameters.get(getPrefix() +"q") != null?Integer.parseInt(parameters.get(getPrefix() +"q")[0]):85;
+	public File runFilter(final File file, final Map<String, String[]> parameters) {
 
-    
-    Float q = new Float(quality);
-    q = q/100;
-    
-    File resultFile = getResultsFile(file, parameters, "webp");
+	    final int qualityParam = parameters.get(getPrefix() +"q") != null?Integer.parseInt(parameters.get(getPrefix() +"q")[0]):85;
 
-    if(!overwrite(resultFile,parameters)){
-      return resultFile;
-    }
-    
-    resultFile.delete();
+	    Float quality = new Float(qualityParam);
+	    quality = quality/100;
 
-    try {
-      ImageWriter writer = ImageIO.getImageWritersByMIMEType("image/webp").next();
-      WebPWriteParam writeParam = new WebPWriteParam(writer.getLocale());
-      
-      if(q==1) {
-        writeParam.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
-        writeParam.setCompressionType("Lossless");
+	    final File resultFile = getResultsFile(file, parameters, "webp");
 
-      }else {
-        writeParam.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
-        writeParam.setCompressionType("Lossy");
-        writeParam.setCompressionQuality(q);
-      }
+	    if(!overwrite(resultFile,parameters)){
+	        return resultFile;
+	    }
 
-      
-      
+	    resultFile.delete();
 
-      writer.setOutput(new FileImageOutputStream(resultFile));
-      writer.write(null, new IIOImage(ImageIO.read(file), null, null), writeParam);
-      writer.dispose();
-    } catch (FileNotFoundException e) {
-      Logger.error(this.getClass(), e.getMessage());
-    } catch (IOException e) {
-      Logger.error(this.getClass(), e.getMessage());
-    }
-    
-    
-    
-		
-		
-		return resultFile;
+	    try {
+	        final ImageWriter writer = ImageIO.getImageWritersByMIMEType("image/webp").next();
+	        final WebPWriteParam writeParam = new WebPWriteParam(writer.getLocale());
+
+	        if(quality==1) {
+	            writeParam.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+	            writeParam.setCompressionType("Lossless");
+	        }else {
+	            writeParam.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+	            writeParam.setCompressionType("Lossy");
+	            writeParam.setCompressionQuality(quality);
+	        }
+
+	        writer.setOutput(new FileImageOutputStream(resultFile));
+	        writer.write(null, new IIOImage(ImageIO.read(file), null, null), writeParam);
+	        writer.dispose();
+	    } catch (IOException e) {
+	        Logger.error(this.getClass(), e.getMessage());
+	    }
+
+	    return resultFile;
 	}
-	
-
 }
