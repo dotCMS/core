@@ -10,6 +10,7 @@ import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESIndexHelper;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
+import com.dotcms.content.elasticsearch.util.DotRestHighLevelClient;
 import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
@@ -37,6 +38,7 @@ import com.google.gson.Gson;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import com.rainerhahnekamp.sneakythrow.Sneaky;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -63,6 +65,11 @@ import javax.ws.rs.core.StreamingOutput;
 import org.elasticsearch.action.admin.indices.stats.IndexStats;
 import org.elasticsearch.action.admin.indices.stats.IndicesStatsResponse;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.core.CountRequest;
+import org.elasticsearch.client.core.CountResponse;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 
@@ -198,11 +205,15 @@ public class ESIndexResource {
 
     public static long indexDocumentCount(String indexName) {
 
-        final Client client = new ESClient().getClient();
-        final IndicesStatsResponse indicesStatsResponse =
-            client.admin().indices().prepareStats(indexName).setStore(true).execute().actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
-        final IndexStats indexStats = indicesStatsResponse.getIndex(indexName);
-        return (indexStats !=null && indexStats.getTotal().docs != null) ? indexStats.getTotal().docs.getCount(): 0;
+        final CountRequest countRequest = new CountRequest(indexName);
+        final SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+        searchSourceBuilder.query(QueryBuilders.matchAllQuery());
+        countRequest.source(searchSourceBuilder);
+
+        final CountResponse countResponse = Sneaky.sneak(()->DotRestHighLevelClient.getClient()
+                .count(countRequest, RequestOptions.DEFAULT));
+
+        return countResponse.getCount();
     }
 
     /**

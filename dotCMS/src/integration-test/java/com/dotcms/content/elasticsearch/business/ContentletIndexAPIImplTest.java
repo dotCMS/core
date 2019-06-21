@@ -7,6 +7,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.content.elasticsearch.util.DotRestHighLevelClient;
 import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.DateTimeField;
@@ -59,6 +60,7 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
+import com.rainerhahnekamp.sneakythrow.Sneaky;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -66,15 +68,20 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import org.apache.felix.framework.OSGIUtil;
+import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
+import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.support.WriteRequest.RefreshPolicy;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.QueryStringQueryBuilder;
 import org.elasticsearch.search.SearchHits;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -990,30 +997,18 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
             APILocator.getSiteSearchAPI().activateIndex( indexName );
         }
 
-        Client client = new ESClient().getClient();
-        SearchResponse resp;
-        try {
-            final QueryStringQueryBuilder qb = QueryBuilders.queryStringQuery( qq );
-            SearchRequestBuilder srb = client.prepareSearch();
-            srb.setQuery( qb );
+        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+        searchSourceBuilder.query(QueryBuilders.queryStringQuery( qq ));
+        searchSourceBuilder.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
+        searchSourceBuilder.fetchSource(new String[] {"inode"}, null);
+        searchSourceBuilder.storedField("id");
+        SearchRequest searchRequest = new SearchRequest();
+        searchRequest.indices(indexName);
+        searchRequest.source(searchSourceBuilder);
 
-            srb.setIndices( indexName );
-            srb.addStoredField( "id" );
-
-            try {
-                resp = srb.execute().actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
-            } catch ( SearchPhaseExecutionException e ) {
-                if ( e.getMessage().contains( "dotraw] in order to sort on" ) ) {
-                    return new SearchHits( SearchHits.EMPTY, 0, 0 );
-                } else {
-                    throw e;
-                }
-            }
-        } catch ( Exception e ) {
-            Logger.error( ESContentFactoryImpl.class, e.getMessage(), e );
-            throw new RuntimeException( e );
-        }
-        return resp.getHits();
+        final SearchResponse response = Sneaky.sneak(()->
+                DotRestHighLevelClient.getClient().search(searchRequest, RequestOptions.DEFAULT));
+        return response.getHits();
     }
 
     public boolean wasContentRemoved ( String query ) {
@@ -1129,7 +1124,7 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
 
         Map<String, ReindexEntry> entries = APILocator.getReindexQueueAPI().findContentToReindex();
 
-        final BulkRequestBuilder bulk = indexAPI.createBulkRequest();
+        final BulkRequest bulk = indexAPI.createBulkRequest();
         bulk.setRefreshPolicy(RefreshPolicy.IMMEDIATE);
         indexAPI.appendBulkRequest(bulk, entries.values());
         indexAPI.putToIndex(bulk);

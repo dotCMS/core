@@ -9,6 +9,7 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.business.ContentMappingAPI;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
+import com.dotcms.content.elasticsearch.util.DotRestHighLevelClient;
 import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
@@ -71,9 +72,13 @@ import java.util.stream.Collectors;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.time.FastDateFormat;
 import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.action.ActionFuture;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
-import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
+import org.elasticsearch.action.support.master.AcknowledgedResponse;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.indices.GetMappingsRequest;
+import org.elasticsearch.client.indices.GetMappingsResponse;
+import org.elasticsearch.client.indices.PutMappingRequest;
+import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentType;
 
 
@@ -100,55 +105,44 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	/**
 	 * This method takes a mapping string, a type and puts it as the mapping
 	 * @param indexName
-	 * @param type
 	 * @param mapping
 	 * @return
 	 * @throws ElasticsearchException
 	 * @throws IOException
 	 */
-	public  boolean putMapping(String indexName, String type, String mapping) throws ElasticsearchException, IOException{
+	public  boolean putMapping(String indexName, String mapping) throws ElasticsearchException, IOException{
 
-		final ActionFuture<PutMappingResponse> lis = new ESClient().getClient().admin().indices()
-				.preparePutMapping().setIndices(indexName).setType(type)
-				.setSource(mapping, XContentType.JSON).execute();
-		return lis.actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS).isAcknowledged();
-	}
+		final PutMappingRequest request = new PutMappingRequest(indexName);
+		request.setTimeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
+		request.source(mapping, XContentType.JSON);
 
-	/**
-	 * This method takes a mapping string, a type and puts it as the mapping
-	 * @param indexName
-	 * @param type
-	 * @param mapping
-	 * @return
-	 * @throws ElasticsearchException
-	 * @throws IOException
-	 */
-	public  boolean putMapping(String indexName, String type, String mapping, String settings) throws ElasticsearchException, IOException{
-		final ActionFuture<PutMappingResponse> lis = new ESClient().getClient().admin().indices()
-				.preparePutMapping().setIndices(indexName).setType(type)
-				.setSource(mapping, XContentType.JSON).execute();
-		return lis.actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS).isAcknowledged();
+		AcknowledgedResponse putMappingResponse = DotRestHighLevelClient.getClient().indices()
+				.putMapping(request, RequestOptions.DEFAULT);
+
+		return putMappingResponse.isAcknowledged();
 	}
 
 	/**
 	 * Gets the mapping params for an index and type
 	 * @param index
-	 * @param type
 	 * @return
 	 * @throws ElasticsearchException
 	 * @throws IOException
 	 */
-	public  String getMapping(String index, String type) throws ElasticsearchException, IOException{
+	public  String getMapping(String index) throws ElasticsearchException, IOException{
 
-		return new ESClient().getClient().admin().cluster().state(new ClusterStateRequest())
-				.actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS).getState().metaData().indices()
-				.get(index).mapping(type).source().string();
+		final GetMappingsRequest request = new GetMappingsRequest();
+		request.indices(index);
 
+		GetMappingsResponse getMappingResponse = DotRestHighLevelClient.getClient()
+				.indices().getMapping(request, RequestOptions.DEFAULT);
+
+		return getMappingResponse.mappings().get(index).source().string();
 	}
 
 	private Map<String, Object> getDefaultFieldMap() {
 
-		Map<String, Object> fieldProps = new HashMap<String, Object>();
+		Map<String, Object> fieldProps = new HashMap<>();
 		fieldProps.put("store", "no");
 		fieldProps.put("include_in_all", false);
 		return fieldProps;

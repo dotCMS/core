@@ -89,37 +89,37 @@ public class ESClient {
 	}
 
     private void initNode (final Builder extSettings) {
-    	
-        if ( _nodeInstance == null || _nodeInstance.isClosed()) {
-        	long start = System.currentTimeMillis();
-            synchronized (syncMe) {
-                if ( _nodeInstance == null || _nodeInstance.isClosed()) {
 
-                    shutDownNode();
+//        if ( _nodeInstance == null || _nodeInstance.isClosed()) {
+//        	long start = System.currentTimeMillis();
+//            synchronized (syncMe) {
+//                if ( _nodeInstance == null || _nodeInstance.isClosed()) {
+//
+//                    shutDownNode();
+//
+//
+//
+//                    try{
+//                        _nodeInstance = new Node(loadNodeSettings(extSettings)).start();
+//                    } catch (IOException | NodeValidationException e){
+//                        Logger.error(this, "Error validating ES node at start.", e);
+//                    }
+//
+//                    if (UtilMethods.isSet(extSettings)){
+//                        setReplicasSettings();
+//                    }
+//
+//                    try {
+//                        // wait a bit while the node gets available for requests
+//                        Thread.sleep( 5000L );
+//                    } catch ( InterruptedException e ) {
+//                        Logger.error( ESClient.class, "Error waiting for node to be available", e );
+//                    }
+//                }
+//            }
+//            System.setProperty(WebKeys.DOTCMS_STARTUP_TIME_ES, String.valueOf(System.currentTimeMillis() - start));
+//        }
 
-
-
-                    try{
-                        _nodeInstance = new Node(loadNodeSettings(extSettings)).start();
-                    } catch (IOException | NodeValidationException e){
-                        Logger.error(this, "Error validating ES node at start.", e);
-                    }
-
-                    if (UtilMethods.isSet(extSettings)){
-                        setReplicasSettings();
-                    }
-
-                    try {
-                        // wait a bit while the node gets available for requests
-                        Thread.sleep( 5000L );
-                    } catch ( InterruptedException e ) {
-                        Logger.error( ESClient.class, "Error waiting for node to be available", e );
-                    }
-                }
-            }
-            System.setProperty(WebKeys.DOTCMS_STARTUP_TIME_ES, String.valueOf(System.currentTimeMillis() - start));
-        }
-        
     }
 
     @VisibleForTesting
@@ -227,7 +227,7 @@ public class ESClient {
         }
         builder.field("auto_expand_replicas",replicasMode.getAutoExpandReplicas()).endObject();
 
-        settingsRequest.settings(builder.endObject().string(), XContentType.JSON);
+//        settingsRequest.settings(builder.endObject().string(), XContentType.JSON);
 
         return Optional.of(settingsRequest);
     }

@@ -3,8 +3,10 @@ package com.dotcms.rest.api.v1.system.monitor;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
+import com.dotcms.content.elasticsearch.util.DotRestHighLevelClient;
 import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.enterprise.cluster.ClusterFactory;
+import com.rainerhahnekamp.sneakythrow.Sneaky;
 import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.core.Context;
 import com.dotcms.util.HttpRequestDataUtil;
@@ -16,7 +18,11 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.util.*;
 import com.liferay.util.StringPool;
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilders;
 
 import java.io.File;
@@ -31,6 +37,7 @@ import net.jodah.failsafe.CircuitBreaker;
 import net.jodah.failsafe.Failsafe;
 
 import javax.servlet.http.HttpServletRequest;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
 
 import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
 
@@ -129,14 +136,20 @@ class MonitorHelper {
                 .withFallback(Boolean.FALSE)
                 .get(this.failFastBooleanPolicy(timeOut, () -> {
                     try{
-                        final Client client=new ESClient().getClient();
-                        return client.prepareSearch(index)
-                                .setQuery(QueryBuilders.termQuery("_type", "content"))
-                                .setSize(0)
-                                .execute()
-                                .actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS)
-                                .getHits()
-                                .getTotalHits() > 0;
+
+                        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+                        searchSourceBuilder.query(QueryBuilders.matchAllQuery());
+                        searchSourceBuilder.size(0);
+                        searchSourceBuilder.timeout(TimeValue
+                                .timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
+                        searchSourceBuilder.fetchSource(new String[] {"inode"}, null);
+                        SearchRequest searchRequest = new SearchRequest();
+                        searchRequest.source(searchSourceBuilder);
+
+                        final SearchResponse response = Sneaky.sneak(()->
+                                DotRestHighLevelClient.getClient().search(searchRequest,
+                                        RequestOptions.DEFAULT));
+                        return response.getHits().getTotalHits()>0;
                     }finally{
                         DbConnectionFactory.closeSilently();
                     }

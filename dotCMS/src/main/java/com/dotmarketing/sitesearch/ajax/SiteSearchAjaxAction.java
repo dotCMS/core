@@ -1,5 +1,6 @@
 package com.dotmarketing.sitesearch.ajax;
 
+import com.dotcms.content.elasticsearch.business.ESIndexHelper;
 import java.io.IOException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
@@ -261,7 +262,8 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
     public void getIndexStatus(HttpServletRequest request, HttpServletResponse response) throws IOException {
 	    try {
     	    Map<String, String> map = getURIParams();
-    	    String indexName = ESIndexResource.getIndexNameOrAlias(map,"indexName","indexAlias");
+    	    String indexName = ESIndexHelper.INSTANCE.getIndexNameOrAlias(map,"indexName",
+					"indexAlias", APILocator.getESIndexAPI());
     	    response.setContentType("text/plain");
             response.getWriter().println(APILocator.getIndiciesAPI().loadIndicies().site_search.equals(indexName) ? "default" : "inactive");
 	    }

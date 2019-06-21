@@ -273,7 +273,7 @@ public class ESIndexAPI {
 
 			final String type=index.startsWith("sitesearch_") ? SiteSearchAPI.ES_SITE_SEARCH_MAPPING
 					: "content";
-	        final String mapping = mappingAPI.getMapping(index, type);
+	        final String mapping = mappingAPI.getMapping(index);
 	        bw.write(MAPPING_MARKER);
 	        bw.write(mapping);
 	        bw.newLine();

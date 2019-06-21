@@ -180,7 +180,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             }
         }
 
-        mappingAPI.putMapping(indexName, "content", mapping);
+        mappingAPI.putMapping(indexName, mapping);
 
         return true;
     }
@@ -691,11 +691,11 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 if (Sneaky.sneak(() -> contentlet.isWorking())) {
                     mapping = gson.toJson(mappingAPI.toMap(contentlet));
                     if (!forReindex || info.reindex_working == null) {
-                        bulk.add(new IndexRequest(info.working, "content", id)
+                        bulk.add(new IndexRequest(info.working, "_doc", id)
                                 .source(mapping, XContentType.JSON));
                     }
                     if (info.reindex_working != null) {
-                        bulk.add(new IndexRequest(info.reindex_working, "content", id)
+                        bulk.add(new IndexRequest(info.reindex_working, "_doc", id)
                                 .source(mapping, XContentType.JSON));
                     }
                 }
@@ -705,11 +705,11 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                         mapping = gson.toJson(mappingAPI.toMap(contentlet));
                     }
                     if (!forReindex || info.reindex_live == null) {
-                        bulk.add(new IndexRequest(info.live, "content", id)
+                        bulk.add(new IndexRequest(info.live, "_doc", id)
                                 .source(mapping, XContentType.JSON));
                     }
                     if (info.reindex_live != null) {
-                        bulk.add(new IndexRequest(info.reindex_live, "content", id)
+                        bulk.add(new IndexRequest(info.reindex_live, "_doc", id)
                                 .source(mapping, XContentType.JSON));
                     }
                 }
