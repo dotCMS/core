@@ -1434,7 +1434,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             postFilter = QueryBuilders.queryStringQuery(query);
 
         } else {
-            queryBuilder = QueryBuilders.matchAllQuery();
+            queryBuilder = QueryBuilders.queryStringQuery(query);
         }
 
         searchSourceBuilder.query(queryBuilder);
@@ -1550,6 +1550,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 searchSourceBuilder.sort("moddate", SortOrder.DESC);
             }
 
+            searchRequest.source(searchSourceBuilder);
             response = Sneaky.sneak(()->
                     client.search(searchRequest, RequestOptions.DEFAULT));
 
