@@ -531,22 +531,6 @@ public class ContentUtils {
                 pullQuery.append(" ").append(condition);
                 return pull(pullQuery.toString(), offset, limit, sort, user, tmDate);
             } else {
-                String fieldVariable;
-                if ((selfRelated && pullByParent) || (!selfRelated && relationship
-                        .getParentStructureInode().equals(contentlet.getContentTypeId()))) {
-                    fieldVariable = relationship.getChildRelationName();
-                } else{
-                    fieldVariable = relationship.getParentRelationName();
-                }
-
-                //If no condition, get related content from cache (only if a relationship field exists).
-                if (relationshipName.contains(StringPool.PERIOD) && contentlet.getContentType()
-                        .fieldMap().containsKey(fieldVariable)) {
-                    return contentlet.getRelated(fieldVariable, user, false);
-                }
-
-                //Otherwise, it will go to the database or ES index
-                //(depending on the value set for GET_RELATED_CONTENT_FROM_DB)
                 return conAPI
                         .getRelatedContent(contentlet, relationship, pullByParent, user, false);
             }
