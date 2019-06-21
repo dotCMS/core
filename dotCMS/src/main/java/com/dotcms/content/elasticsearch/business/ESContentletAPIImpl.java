@@ -2738,21 +2738,49 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         // We need to refresh related parents, because currently the system does not
         // update the contentlets that lost the relationship (when the user remove a relationship).
-        if (cons != null && !hasParent) {
+        if (cons != null) {
             for (final Contentlet relatedContentlet : cons) {
                 //Only deleted parents will be reindexed
-                if (!identifiersToBeRelated.contains(relatedContentlet.getIdentifier())) {
+                if (!hasParent && !identifiersToBeRelated
+                        .contains(relatedContentlet.getIdentifier())) {
                     relatedContentlet.setIndexPolicy(contentlet.getIndexPolicyDependencies());
                     relatedContentlet
-                            .setIndexPolicyDependencies(contentlet.getIndexPolicyDependencies());
+                            .setIndexPolicyDependencies(
+                                    contentlet.getIndexPolicyDependencies());
                     refreshNoDeps(relatedContentlet);
                 }
+                //If relationship field, related content cache must be invalidated
+                invalidateRelatedContentCache(relatedContentlet, relationship, !hasParent);
+                CacheLocator.getContentletCache().add(relatedContentlet);
             }
         }
 
         // Refresh the parent only if the contentlet is not already in the checkin
         if (!contentlet.getBoolProperty(CHECKIN_IN_PROGRESS)) {
             refreshNoDeps(contentlet);
+        }
+    }
+
+    private void invalidateRelatedContentCache(Contentlet contentlet, Relationship relationship,
+            boolean hasParent) {
+        //If relationship field, related content cache must be invalidated
+        if (relationship.isRelationshipField()){
+
+            if (relationshipAPI.sameParentAndChild(relationship)){
+                if (relationship.getParentRelationName() != null) {
+                    contentlet.setRelated(relationship.getParentRelationName(), null);
+                }
+
+                if (relationship.getChildRelationName() != null) {
+                    contentlet.setRelated(relationship.getChildRelationName(), null);
+                }
+            }else {
+                if (!hasParent && relationship.getParentRelationName() != null) {
+                    contentlet.setRelated(relationship.getParentRelationName(), null);
+                } else if (hasParent && relationship.getChildRelationName() != null) {
+                    contentlet.setRelated(relationship.getChildRelationName(), null);
+                }
+            }
         }
     }
 
@@ -2851,30 +2879,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                     treePosition++;
                 }
+                invalidateRelatedContentCache(c, relationship, !related.isHasParent());
+                CacheLocator.getContentletCache().add(c);
             }
+
+            //If relationship field, related content cache must be invalidated
+            invalidateRelatedContentCache(contentlet, relationship, related.isHasParent());
 
             if(localTransaction){
                 HibernateUtil.commitTransaction();
-            }
-
-            //If relationship field, field cache must be invalidated
-            if (relationship.isRelationshipField()){
-
-                if (relationshipAPI.sameParentAndChild(relationship)){
-                    if (relationship.getParentRelationName() != null) {
-                        contentlet.setRelated(relationship.getParentRelationName(), null);
-                    }
-
-                    if (relationship.getChildRelationName() != null) {
-                        contentlet.setRelated(relationship.getChildRelationName(), null);
-                    }
-                }else {
-                    if (child && relationship.getParentRelationName() != null) {
-                        contentlet.setRelated(relationship.getParentRelationName(), null);
-                    } else if (!child && relationship.getChildRelationName() != null) {
-                        contentlet.setRelated(relationship.getChildRelationName(), null);
-                    }
-                }
             }
         } catch(Exception exception){
             Logger.debug(this.getClass(), "Failed to relate content. : " + exception.toString(), exception);

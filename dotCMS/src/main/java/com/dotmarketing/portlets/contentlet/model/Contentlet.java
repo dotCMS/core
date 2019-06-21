@@ -120,6 +120,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     public static final String WORKFLOW_NEVER_EXPIRE = "wfNeverExpire";
 	public static final String TEMP_BINARY_IMAGE_INODES_LIST = "tempBinaryImageInodesList";
 	public static final String RELATIONSHIP_KEY = "__##relationships##__";
+	public static final String RELATED_IDS_KEY = "__relatedIds__";
 
 	private transient ContentType contentType;
     protected Map<String, Object> map = new ContentletHashMap();
@@ -133,7 +134,6 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
 	private transient boolean needsReindex = false;
 
-	private transient Map<String, List<String>> relatedIds;
 	private transient boolean loadedTags = false;
 
 	/**
@@ -1555,9 +1555,11 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	        return Collections.EMPTY_LIST;
         }
 
-		if (!UtilMethods.isSet(this.relatedIds)){
-			relatedIds = Maps.newConcurrentMap();
+		if (!map.containsKey(RELATED_IDS_KEY)){
+			map.put(RELATED_IDS_KEY, Maps.newConcurrentMap());
 		}
+
+        Map<String, List<String>> relatedIds = (Map<String, List<String>>) map.get(RELATED_IDS_KEY);
 
 		try {
 			User currentUser;
@@ -1570,7 +1572,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
 			final List<Contentlet> relatedContentlet;
 
-			if (this.relatedIds.containsKey(variableName)) {
+			if (relatedIds.containsKey(variableName)) {
 				relatedContentlet = getCachedRelatedContentlets(variableName);
 			} else {
 
@@ -1632,39 +1634,40 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
         //Cache related content only if it is a relationship field
         if (field != null && limit == -1 && offset== -1 && sortBy == null) {
             if (UtilMethods.isSet(relatedList)) {
-                this.relatedIds.put(variableName,
+                ((Map<String, List<String>>)map.get(RELATED_IDS_KEY)).put(variableName,
                         relatedList.stream().map(contentlet -> contentlet.getIdentifier())
                                 .collect(
                                         CollectionsUtils.toImmutableList()));
             } else {
-                this.relatedIds.put(variableName, Collections.emptyList());
+                ((Map<String, List<String>>)map.get(RELATED_IDS_KEY)).put(variableName, Collections.emptyList());
             }
+            //refreshing cache when related content map is updated
+            CacheLocator.getContentletCache().add(this);
         }
 
         return relatedList;
     }
 
-	/**
-	 *
-	 * @param variableName
-	 * @return
-	 */
-	@NotNull
-	private List<Contentlet> getCachedRelatedContentlets(final String variableName) {
-		final List<Contentlet> relatedList = this.relatedIds.get(variableName).stream()
-				.map(identifier -> {
-					try {
-						return APILocator.getContentletAPI()
-								.findContentletByIdentifierAnyLanguage(identifier);
-					} catch (DotDataException | DotSecurityException e) {
-						Logger.warn(this, "No content found with id " + identifier,
-								e);
-						throw new DotStateException(e);
-					}
-				}).collect(Collectors.toList());
+    /**
+     *
+     */
+    @NotNull
+    private List<Contentlet> getCachedRelatedContentlets(final String variableName) {
+        final List<Contentlet> relatedList = ((Map<String, List<String>>) map.get(RELATED_IDS_KEY))
+                .get(variableName).stream()
+                .map(identifier -> {
+                    try {
+                        return APILocator.getContentletAPI()
+                                .findContentletByIdentifierAnyLanguage(identifier);
+                    } catch (DotDataException | DotSecurityException e) {
+                        Logger.warn(this, "No content found with id " + identifier,
+                                e);
+                        throw new DotStateException(e);
+                    }
+                }).collect(Collectors.toList());
 
-		return relatedList;
-	}
+        return relatedList;
+    }
 
     /**
      * Set related content for a content given a relationship field
@@ -1684,9 +1687,9 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     public void setRelated(final String fieldVarName, final List<Contentlet> contentlets) {
         map.put(fieldVarName, contentlets);
 
-        if (UtilMethods.isSet(this.relatedIds)) {
+        if (map.containsKey(RELATED_IDS_KEY)) {
             //clean up cache
-            relatedIds.remove(fieldVarName);
+            ((Map<String, List<String>>)map.get(RELATED_IDS_KEY)).remove(fieldVarName);
         }
     }
 
