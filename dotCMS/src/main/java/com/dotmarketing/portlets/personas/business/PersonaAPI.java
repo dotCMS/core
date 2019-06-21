@@ -57,6 +57,7 @@ public interface PersonaAPI {
 	List<Persona> getPersonas(Treeable parent, boolean live, boolean deleted, int limit, int offset, String sortBy, User user,boolean respectFrontEndRoles) throws DotDataException,DotSecurityException;
 
 	/**
+	 * Find a persona even a working version
 	 * @param id The Persona identifier.
 	 * @param user The User with Permissions to find the Persona.
 	 * @param respectFrontEndRoles true if call comes from FrontEnd, otherwise false.
@@ -65,6 +66,17 @@ public interface PersonaAPI {
 	 * @throws DotSecurityException
 	 */
 	Persona find(String id,  User user, boolean respectFrontEndRoles)throws DotDataException, DotSecurityException;
+
+	/**
+	 * Find a live persona version
+	 * @param id The Persona identifier.
+	 * @param user The User with Permissions to find the Persona.
+	 * @param respectFrontEndRoles true if call comes from FrontEnd, otherwise false.
+	 * @return Persona object from Contentlet, null if not present.
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	Persona findLive(String id,  User user, boolean respectFrontEndRoles)throws DotDataException, DotSecurityException;
 
 	Persona fromContentlet(Contentlet con) throws DotDataException, DotSecurityException, IllegalAccessException, InvocationTargetException;
 

@@ -359,12 +359,23 @@ public class PersonaAPIImpl implements PersonaAPI, DotInitializer {
 	}
 
 	@Override
-	public Persona find(String id, User user, boolean respectFrontEndRoles) throws DotDataException, DotSecurityException {
+	public Persona find(final String id, final User user, final boolean respectFrontEndRoles) throws DotDataException, DotSecurityException {
 
-		Contentlet con = APILocator.getContentletAPI().findContentletByIdentifier(id, false,
+		return this.find(id, user, respectFrontEndRoles, false);
+	}
+
+	@Override
+	public Persona findLive(final String id, final User user, final boolean respectFrontEndRoles) throws DotDataException, DotSecurityException {
+
+		return this.find(id, user, respectFrontEndRoles, true);
+	}
+
+	private Persona find(final String id, final User user, final boolean respectFrontEndRoles, final boolean live) throws DotDataException, DotSecurityException {
+
+		final Contentlet contentlet = APILocator.getContentletAPI().findContentletByIdentifier(id, live,
 				APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, respectFrontEndRoles);
 
-		return UtilMethods.isSet(con) ? fromContentlet(con) : null;
+		return UtilMethods.isSet(contentlet) ? fromContentlet(contentlet) : null;
 	}
 
 	@Override
