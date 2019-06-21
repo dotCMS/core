@@ -3,6 +3,7 @@ package com.dotcms.datagen;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.CategoryField;
+import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.CustomField;
 import com.dotcms.contenttype.model.field.DateField;
 import com.dotcms.contenttype.model.field.HostFolderField;
@@ -1419,6 +1420,148 @@ public class TestDataUtils {
 
         return productType;
     }
+
+
+    public static ContentType getYoutubeLikeContentType(){
+        return  getYoutubeLikeContentType("YoutubeLike" + System.currentTimeMillis(), APILocator.systemHost(),null);
+    }
+
+    public static ContentType getYoutubeLikeContentType(final String contentTypeName,
+            final Host site,
+            final Set<String> workflowIds) {
+
+        ContentType youtubeType = null;
+        try {
+            try {
+                youtubeType = APILocator.getContentTypeAPI(APILocator.systemUser())
+                        .find(contentTypeName);
+            } catch (NotFoundInDbException e) {
+                //Do nothing...
+            }
+            if (youtubeType == null) {
+
+                List<com.dotcms.contenttype.model.field.Field> fields = new ArrayList<>();
+                if (null != site) {
+                    fields.add(
+                            new FieldDataGen()
+                                    .name("Widget Usage")
+                                    .velocityVarName("widgetUsage")
+                                    .type(ConstantField.class)
+                                    .next()
+                    );
+                }
+                fields.add(
+                        new FieldDataGen()
+                                .name("Widget Code")
+                                .velocityVarName("widgetCode")
+                                .type(ConstantField.class)
+                                .next()
+                );
+                fields.add(
+                        new FieldDataGen()
+                                .name("Widget Pre-Executed")
+                                .velocityVarName("widgetPreExecuted")
+                                .type(ConstantField.class)
+                                .next()
+                );
+                fields.add(
+                        new FieldDataGen()
+                                .name("Search")
+                                .velocityVarName("search")
+                                .type(CustomField.class)
+                                .next()
+                );
+                fields.add(
+                        new FieldDataGen()
+                                .name("WidgetTitle")
+                                .velocityVarName("widgetTitle")
+                                .defaultValue(null)
+                                .required(true)
+                                .type(TextField.class)
+                                .next()
+                );
+
+                fields.add(
+                        new FieldDataGen()
+                                .name("Author")
+                                .velocityVarName("author")
+                                .defaultValue(null)
+                                .type(TextField.class)
+                                .next()
+                );
+
+                fields.add(
+                        new FieldDataGen()
+                                .name("Length")
+                                .velocityVarName("length")
+                                .type(TextField.class)
+                                .next()
+                );
+
+                fields.add(
+                        new FieldDataGen()
+                                .name("Thumbnail Small")
+                                .velocityVarName("thumbnail")
+                                .type(TextField.class)
+                                .next()
+                );
+
+                fields.add(
+                        new FieldDataGen()
+                                .name("Thumbnail Large")
+                                .velocityVarName("thumbnail2")
+                                .type(TextField.class)
+                                .next()
+                );
+                fields.add(
+                        new FieldDataGen()
+                                .name("Published")
+                                .velocityVarName("published")
+                                .type(TextField.class)
+                                .next()
+                );
+                fields.add(
+                        new FieldDataGen()
+                                .name("URL")
+                                .velocityVarName("url")
+                                .type(TextField.class)
+                                .next()
+                );
+
+/*
+                fields.add(
+                        new FieldDataGen()
+                                .name("Products-Youtube")
+                                .velocityVarName("productsYoutube")
+                                .defaultValue(null)
+                                .type(RelationshipField.class)
+                                .values(
+                                    String.valueOf(RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal())
+                                 )
+                                .relationType(contentTypeName + StringPool.PERIOD + "products")
+                                .next()
+                );
+*/
+
+                ContentTypeDataGen contentTypeDataGen = new ContentTypeDataGen()
+                        .name(contentTypeName)
+                        .velocityVarName(contentTypeName)
+                        .workflowId(workflowIds)
+                        .fields(fields);
+
+                if (null != site) {
+                    contentTypeDataGen.host(site);
+                }
+
+                youtubeType = contentTypeDataGen.nextPersisted();
+            }
+        } catch (Exception e) {
+            throw new DotRuntimeException(e);
+        }
+
+        return youtubeType;
+    }
+
 
 
 }
