@@ -11,21 +11,21 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.request.MockSessionRequest;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONArray;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
-import org.glassfish.jersey.internal.util.Base64;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
@@ -37,6 +37,10 @@ import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import org.glassfish.jersey.internal.util.Base64;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -51,6 +55,7 @@ public class ESContentResourcePortletTest extends IntegrationTestBase {
     private static LanguageAPI languageAPI;
     private static ContentletAPI contentletAPI;
     private static ContentTypeAPI contentTypeAPI;
+    private static PermissionAPI permissionAPI;
     private static User user;
 
     @BeforeClass
@@ -60,9 +65,11 @@ public class ESContentResourcePortletTest extends IntegrationTestBase {
 
         user = APILocator.getUserAPI().getSystemUser();
 
-        contentTypeAPI  = APILocator.getContentTypeAPI(user);
-        contentletAPI   = APILocator.getContentletAPI();
-        languageAPI     = APILocator.getLanguageAPI();
+        contentTypeAPI = APILocator.getContentTypeAPI(user);
+        contentletAPI = APILocator.getContentletAPI();
+        languageAPI = APILocator.getLanguageAPI();
+        permissionAPI = APILocator.getPermissionAPI();
+
     }
 
     public static class TestCase {
@@ -86,7 +93,7 @@ public class ESContentResourcePortletTest extends IntegrationTestBase {
                 new TestCase("0", false, true, Status.OK.getStatusCode()),
                 new TestCase("0", false, false, Status.OK.getStatusCode()),
                 new TestCase("0", true, true, Status.OK.getStatusCode()),
-                new TestCase("0", true, false, Status.OK.getStatusCode()),
+                new TestCase("0", true, true, Status.OK.getStatusCode()),
                 new TestCase("6", false, false, Status.BAD_REQUEST.getStatusCode()),
                 new TestCase("test", false, false, Status.BAD_REQUEST.getStatusCode())
         };
@@ -109,12 +116,19 @@ public class ESContentResourcePortletTest extends IntegrationTestBase {
                     .owner(user.getUserId()).build());
 
             //creates contentlets
-            final ContentletDataGen contentletDataGen = new ContentletDataGen(
-                    contentType.id());
+            final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType.id());
 
             final long language = languageAPI.getDefaultLanguage().getId();
             final Contentlet workingContentlet = contentletDataGen.languageId(language).nextPersisted();
             final Contentlet liveContentlet = contentletDataGen.languageId(language).nextPersisted();
+            
+            if(testCase.anonymous) {
+                final Role anonymous = TestUserUtils.getOrCreateAnonymousRole();
+                permissionAPI.save(new Permission(workingContentlet.getPermissionId(), anonymous.getId(),
+                        PermissionAPI.PERMISSION_READ, true), workingContentlet, user, false);
+                permissionAPI.save(new Permission(liveContentlet.getPermissionId(), anonymous.getId(),
+                        PermissionAPI.PERMISSION_READ, true), liveContentlet, user, false);
+            }
             contentletAPI.publish(liveContentlet, user, false);
 
             //calls endpoint
@@ -140,6 +154,7 @@ public class ESContentResourcePortletTest extends IntegrationTestBase {
             assertEquals(testCase.statusCode, endpointResponse.getStatus());
 
             if(testCase.statusCode == Status.OK.getStatusCode()) {
+
                 final JSONObject json = new JSONObject(endpointResponse.getEntity().toString());
                 final JSONArray contentlets = json.getJSONArray("contentlets");
                 final JSONObject contentletResult = (JSONObject) contentlets.get(0);

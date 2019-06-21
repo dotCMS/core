@@ -25,6 +25,7 @@ public class TestUserUtils {
 
     static final String ADMIN_DEFAULT_MAIL = "admin@dotcms.com";
     static final String ADMIN_NAME = "User Admin";
+    static final String ANONYMOUS_MAIL = "anonymous@dotcmsfakeemail.org";
 
     public static Role getOrCreatePublisherRole() throws DotDataException, DotSecurityException {
         return getOrCreatePublisherRole(APILocator.systemHost());
@@ -101,6 +102,27 @@ public class TestUserUtils {
 
     public static Role getOrCreateIntranetRole() throws DotDataException, DotSecurityException {
         return getOrCreateIntranetRole(APILocator.systemHost());
+    }
+
+    public static Role getOrCreateAnonymousRole()
+            throws DotDataException, DotSecurityException {
+              return getOrCreateAnonymousRole(APILocator.systemHost());
+    }
+
+    public static Role getOrCreateAnonymousRole(final Host host)
+            throws DotDataException, DotSecurityException {
+        final String roleName = "CMS Anonymous";
+        final int permissions = (PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_USE);
+        final Map<PermissionableType, Integer> permissionsAndTypes =
+                new ImmutableMap.Builder<PermissionableType, Integer>()
+                        .put(PermissionableType.FOLDERS, permissions)
+                        .put(PermissionableType.HTMLPAGES, permissions)
+                        .put(PermissionableType.LINKS, permissions)
+                        .put(PermissionableType.STRUCTURES, permissions)
+                        .put(PermissionableType.CONTENTLETS, permissions)
+                        .build();
+        final Role parent = APILocator.getRoleAPI().findRoleByName("System", null);
+        return getOrCreateRole(host, roleName, parent, false, permissionsAndTypes);
     }
 
     private static Role getOrCreateRole(final Host host, final String roleName,

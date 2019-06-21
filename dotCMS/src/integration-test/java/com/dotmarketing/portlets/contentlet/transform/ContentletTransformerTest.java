@@ -33,7 +33,9 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
 
     @BeforeClass
     public static void prepare() throws Exception {
+
         IntegrationTestInitService.getInstance().init();
+
         final ContentType employeeLikeContentType = TestDataUtils.getEmployeeLikeContentType();
         final ContentType bannerLikeContentType = TestDataUtils.getBannerLikeContentType();
         final ContentType newsLikeContentType = TestDataUtils.getNewsLikeContentType();
