@@ -3,12 +3,13 @@ package com.dotcms.enterprise.priv;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
-import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.liferay.portal.model.User;
 import java.util.List;
@@ -28,8 +29,20 @@ public class ESSearchProxyTest extends IntegrationTestBase {
 
         long defLangId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
         user = APILocator.getUserAPI().getSystemUser();
-        final Folder aboutUs = new FolderDataGen().name("about-us"+System.currentTimeMillis()).nextPersisted();
-        TestDataUtils.getPageContent(true, defLangId, aboutUs);
+
+        final Host defaultHost = APILocator.getHostAPI()
+                .findDefaultHost(APILocator.systemUser(), false);
+        final User systemUser = APILocator.systemUser();
+        final Folder aboutUs =
+         APILocator.getFolderAPI()
+                .createFolders("/about-us" + System.currentTimeMillis() + "/",
+                        defaultHost, systemUser, false);
+
+        for(int i=0; i<=10; i++ ){
+          final Contentlet page = TestDataUtils.getPageContent(true, defLangId, aboutUs);
+          APILocator.getVersionableAPI().setLive(page);
+        }
+
     }
 
     @Test

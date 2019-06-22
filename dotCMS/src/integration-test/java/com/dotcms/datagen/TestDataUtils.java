@@ -963,7 +963,7 @@ public class TestDataUtils {
                folder = APILocator.getFolderAPI()
                        .createFolders("/folder" + System.currentTimeMillis() + "/",
                                defaultHost, systemUser, false);
-           }
+            }
             ContentletDataGen contentletDataGen = new HTMLPageDataGen(folder, template)
                     .languageId(languageId);
 
