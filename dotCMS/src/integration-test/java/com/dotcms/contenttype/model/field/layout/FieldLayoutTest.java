@@ -229,12 +229,10 @@ public class FieldLayoutTest {
         FieldLayout fieldLayout = new FieldLayout(contentType, fields);
         final List<Field> fieldsLayout = fieldLayout.getFields();
 
-        assertEquals(5, fieldsLayout.size());
-        assertEquals(fields.get(0).name(), fieldsLayout.get(0).name());
+        assertEquals(3, fieldsLayout.size());
+        assertEquals(fields.get(1).name(), fieldsLayout.get(0).name());
         assertEquals(ImmutableColumnField.class, fieldsLayout.get(1).getClass());
-        assertEquals(fields.get(1).name(), fieldsLayout.get(2).name());
-        assertEquals(ImmutableColumnField.class, fieldsLayout.get(3).getClass());
-        assertEquals(fields.get(2).name(), fieldsLayout.get(4).name());
+        assertEquals(fields.get(2).name(), fieldsLayout.get(2).name());
     }
 
     @Test()
