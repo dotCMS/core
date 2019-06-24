@@ -297,6 +297,7 @@ public class FileUtil {
 
 
 	    for (final File dir : directories) {
+	      if(!dir.exists())continue;
 	      if (com.liferay.util.FileUtil.listFilesRecursively(dir, new FileFilter() {
 	        @Override
 	        public boolean accept(File pathname) {

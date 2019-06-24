@@ -2,42 +2,49 @@ package com.dotcms.rest.api.v1.temp;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import com.dotcms.http.CircuitBreakerUrl;
+import com.dotcms.http.CircuitBreakerUrl.Method;
+import com.dotcms.util.CloseUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.FileUtil;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 
 import io.vavr.control.Try;
 
-public class TempResourceAPI {
+public class TempFileAPI {
 
-  public static final String TEMP_RESOURCE_MAX_AGE_SECONDS="TEMP_RESOURCE_MAX_AGE_SECONDS";
-  public static final String TEMP_RESOURCE_ALLOW_ANONYMOUS="TEMP_RESOURCE_ALLOW_ANONYMOUS";
+  public static final String TEMP_RESOURCE_MAX_AGE_SECONDS = "TEMP_RESOURCE_MAX_AGE_SECONDS";
+  public static final String TEMP_RESOURCE_ALLOW_ANONYMOUS = "TEMP_RESOURCE_ALLOW_ANONYMOUS";
+  public static final String TEMP_RESOURCE_ALLOW_NO_REFERER = "TEMP_RESOURCE_ALLOW_NO_REFERER";
   public static final String TEMP_RESOURCE_PREFIX = "temp_";
-  
-  
-  
+
   private static final String WHO_CAN_USE_TEMP_FILE = "whoCanUse.tmp";
 
-
-
   /**
-   * Returns a TempFile of a unique id and file handle that can be used to write and access a temp
-   * file. The userId and uniqueKey will be written to the "allowList" and can be used to retreive the
-   * temp resource in other requests
+   * Returns an empty TempFile of a unique id and file handle that can be used to write and access a
+   * temp file. The userId and uniqueKey (e.g. session id) will be written to the "allowList" and can
+   * be used to retreive the temp resource in other requests
    * 
    * @param incomingFileName
    * @param user
@@ -45,7 +52,7 @@ public class TempResourceAPI {
    * @return
    * @throws DotSecurityException
    */
-  public DotTempFile createTempFile(final String incomingFileName, final User user, final String uniqueKey) throws DotSecurityException {
+  public DotTempFile createEmptyTempFile(final String incomingFileName, final User user, final String uniqueKey) throws DotSecurityException {
     final String anon = Try.of(() -> APILocator.getUserAPI().getAnonymousUser().getUserId()).getOrElse("anonymous");
 
     final List<String> allowList = new ArrayList<>();
@@ -55,28 +62,11 @@ public class TempResourceAPI {
     if (uniqueKey != null) {
       allowList.add(uniqueKey);
     }
-    return createTempFile(incomingFileName, allowList);
-  }
-
-  /**
-   * Returns a TempFile of a unique id and file handle that can be used to write and access a temp
-   * file. The allowList param acts like a permission and can include a userId, a session id and/or
-   * just a unique key that is writen to a whoCanUse.tmp file. When retrieving a temp resource, you
-   * will need to pass in another list of ids that will be checked against the values in whoCanUse.tmp
-   * and will only return the resource if any of the acceessingIds were in the whoCanUse.tmp original
-   * list
-   * 
-   * @param incomingFileName
-   * @param allowList
-   * @return
-   * @throws DotSecurityException
-   */
-  public DotTempFile createTempFile(final String incomingFileName, final List<String> allowList) throws DotSecurityException {
-
     final String tempFileId = TEMP_RESOURCE_PREFIX + UUIDGenerator.shorty();
     if (incomingFileName == null) {
       throw new DotRuntimeException("Unable to create temp file without a name");
     }
+    
     final String tempFileUri = File.separator + tempFileId + File.separator + incomingFileName;
     final File tempFile = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + tempFileUri);
     final File tempFolder = tempFile.getParentFile();
@@ -96,6 +86,98 @@ public class TempResourceAPI {
     return new DotTempFile(tempFileId, tempFile);
   }
 
+  /**
+   * Writes an InputStream to a temp file and returns the tempFile with a unique id and file handle
+   * that can be used to access the temp file. The userId and uniqueKey (e.g. session id) will be
+   * written to the "allowList" and can be used to retreive the temp resource in other requests
+   * 
+   * @param incomingFileName
+   * @param user
+   * @param uniqueKey
+   * @param inputStream
+   * @return
+   * @throws DotSecurityException
+   */
+  public DotTempFile createTempFile(final String incomingFileName, final User user, final String uniqueKey, final InputStream inputStream)
+      throws DotSecurityException {
+    final DotTempFile dotTempFile = this.createEmptyTempFile(incomingFileName, user, uniqueKey);
+    final File tempFile = dotTempFile.file;
+
+    try (final OutputStream out = new FileOutputStream(tempFile)) {
+      int read = 0;
+      byte[] bytes = new byte[4096];
+      while ((read = inputStream.read(bytes)) != -1) {
+        out.write(bytes, 0, read);
+      }
+      return dotTempFile;
+    } catch (Exception e) {
+      throw new DotRuntimeException("unable to create tmpFile:" + dotTempFile, e);
+    } finally {
+      CloseUtils.closeQuietly(inputStream);
+    }
+  }
+
+  /**
+   * Takes a url, downloads it and the returns the resulting file as tempFile with a unique id and
+   * file handle that can be used to access the temp file. The userId and uniqueKey (e.g. session id)
+   * will be written to the "allowList" and can be used to retreive the temp resource in other
+   * requests
+   * 
+   * @param incomingFileName
+   * @param user
+   * @param uniqueKey
+   * @param inputStream
+   * @return
+   * @throws DotSecurityException
+   */
+  public DotTempFile createTempFileFromUrl(final String incomingFileName,final User user, final String uniqueKey, final URL url, final int timeoutSeconds)
+      throws DotSecurityException {
+
+    if (!validUrl(url)) {
+      throw new DotSecurityException("Invalid url attempted for tempFile:" + url);
+    }
+
+
+
+    final String fileName = resolveFileName(incomingFileName, url);
+
+    final DotTempFile dotTempFile = createEmptyTempFile(fileName, user, uniqueKey);
+    final String tempFileId = dotTempFile.id;
+    final File tempFile = dotTempFile.file;
+
+    try (OutputStream fileOut = new FileOutputStream(tempFile)) {
+      final CircuitBreakerUrl urlGetter =
+          CircuitBreakerUrl.builder().setMethod(Method.GET).setUrl(url.toString()).setTimeout(timeoutSeconds * 1000).build();
+      urlGetter.doOut(fileOut);
+      if (urlGetter.response() != 200) {
+        throw new DoesNotExistException("Url not found. Got a " + urlGetter.response());
+      }
+    } catch (Exception e) {
+      Logger.warnAndDebug(this.getClass(), "unable to save temp file:" + tempFileId, e);
+      throw new DotRuntimeException(e);
+    }
+    return dotTempFile;
+
+  }
+
+  private boolean validUrl(final URL url) {
+    return Try.of(() -> url.toString().toLowerCase().startsWith("http://") || url.toString().toLowerCase().startsWith("https://"))
+        .getOrElse(false);
+  }
+
+  private String resolveFileName(final String desiredName, final URL url) {
+    final String path=(url!=null)? url.getPath() : UUIDGenerator.shorty();
+    final String tryFileName = (desiredName!=null) 
+        ? desiredName 
+            : path.indexOf(StringPool.FORWARD_SLASH) > -1
+              ? path.substring(path.lastIndexOf(StringPool.FORWARD_SLASH) + 1, path.length())
+              : path;
+    return FileUtil.sanitizeFileName(tryFileName);
+  }
+  
+  
+  
+  
   private File createTempPermissionFile(final File parentFolder, List<String> allowList) {
 
     parentFolder.mkdirs();
@@ -109,25 +191,30 @@ public class TempResourceAPI {
 
   }
 
-  private Optional<File> getTempFile(final String tempFileId) {
+  private Optional<DotTempFile> getTempFile(final String tempFileId) {
 
-    if (tempFileId==null || !tempFileId.startsWith(TEMP_RESOURCE_PREFIX)) {
+    if (tempFileId == null || !tempFileId.startsWith(TEMP_RESOURCE_PREFIX)) {
       return Optional.empty();
     }
 
     int tempResourceMaxAgeSeconds = Config.getIntProperty(TEMP_RESOURCE_MAX_AGE_SECONDS, 1800);
     final File testFile = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + File.separator + tempFileId);
-    final File tempFile = testFile.isDirectory() ? Try.of(() -> testFile.listFiles(tempFileFilter)[0]).getOrNull() : testFile;
+    
 
-    if (tempFile.exists() && !tempFile.isDirectory()
+    final File tempFile = testFile.isDirectory() ? Try.of(() -> com.liferay.util.FileUtil.listFilesRecursively(testFile, tempFileFilter).stream().filter(d->d.isFile()).findFirst().get()).getOrNull() : testFile;
+
+    if (tempFile.exists()
         && tempFile.lastModified() + (tempResourceMaxAgeSeconds * 1000) > System.currentTimeMillis()) {
-      return Optional.of(tempFile);
+      
+      return Optional.of(new DotTempFile(tempFileId, tempFile));
+
     }
     return Optional.empty();
 
   }
 
-  private boolean canUseTempFile(List<String> accessingList, final File tempFile) {
+  private boolean canUseTempFile(List<String> accessingList, final DotTempFile dotTempFile) {
+    final File tempFile = dotTempFile.file;
     if (tempFile == null || !tempFile.exists() || accessingList == null) {
       return false;
     }
@@ -153,8 +240,8 @@ public class TempResourceAPI {
    * @param tempFileId
    * @return
    */
-  public Optional<File> getTempFile(List<String> accessingList, final String tempFileId) {
-    Optional<File> tempFile = getTempFile(tempFileId);
+  public Optional<DotTempFile> getTempFile(List<String> accessingList, final String tempFileId) {
+    Optional<DotTempFile> tempFile = getTempFile(tempFileId);
     if (tempFile.isPresent() && canUseTempFile(accessingList, tempFile.get())) {
       return tempFile;
     }
@@ -173,7 +260,7 @@ public class TempResourceAPI {
    * @param tempFileId
    * @return
    */
-  public Optional<File> getTempFile(final User user, final String uniqueKey, final String tempFileId) {
+  public Optional<DotTempFile> getTempFile(final User user, final String uniqueKey, final String tempFileId) {
     final String anon = Try.of(() -> APILocator.getUserAPI().getAnonymousUser().getUserId()).getOrElse("anonymous");
 
     final List<String> accessingList = new ArrayList<>();
@@ -199,10 +286,11 @@ public class TempResourceAPI {
   private final FileFilter tempFileFilter = new FileFilter() {
     @Override
     public boolean accept(File pathname) {
-      return !(pathname.getName().equalsIgnoreCase(WHO_CAN_USE_TEMP_FILE));
+      return !pathname.getName().equalsIgnoreCase(WHO_CAN_USE_TEMP_FILE) &&
+             !pathname.getName().startsWith(".")
+          
+          ;
     }
   };
-
-
 
 }

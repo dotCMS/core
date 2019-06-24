@@ -6,6 +6,7 @@ import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
 
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.DotConcurrentFactory;
@@ -40,7 +41,8 @@ import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotcms.repackage.com.google.common.collect.Sets;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
-import com.dotcms.rest.api.v1.temp.TempResourceAPI;
+import com.dotcms.rest.api.v1.temp.DotTempFile;
+import com.dotcms.rest.api.v1.temp.TempFileAPI;
 import com.dotcms.services.VanityUrlServices;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.type.content.CommitListenerEvent;
@@ -174,6 +176,9 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import javax.servlet.http.HttpServletRequest;
+
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchResponse;
@@ -3098,7 +3103,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final boolean respectFrontendRoles,
             boolean createNewVersion
     ) throws DotDataException, DotSecurityException {
-        final TempResourceAPI tempApi = APILocator.getTempResourceAPI();
+        final TempFileAPI tempApi = APILocator.getTempResourceAPI();
         final boolean validateEmptyFile =
                 contentlet.getMap().get("_validateEmptyFile_") == null;
 
@@ -3127,14 +3132,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
           // if we have incoming temp files set as binaryFields, lets populate the contentlet with them
           for ( com.dotcms.contenttype.model.field.Field field : contentType.fields(BinaryField.class) ) {
             final Object fileObject = contentlet.get(field.variable());
-            if(fileObject instanceof String && tempApi.isTempResource(contentlet.getStringProperty((String) fileObject))) {
-              contentlet.setBinary(field, tempApi.getTempFile(user, null, contentlet.getStringProperty((String) fileObject)).get());
+            if(fileObject instanceof String && tempApi.isTempResource(contentlet.getStringProperty(field.variable()))) {
+
+              final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+              // we use the session 
+              final String sessionId = (request!=null && request.getSession(false)!=null) ? request.getSession().getId() : null;
+              final DotTempFile tempFile = tempApi.getTempFile(user, sessionId, contentlet.getStringProperty(field.variable())).get();
+              contentlet.setBinary(field, tempFile.file);
             }
           }
-          
-          
-          
-          
           
           
             if (createNewVersion && contentlet != null && InodeUtils.isSet(contentlet.getInode())) {

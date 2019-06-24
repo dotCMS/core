@@ -159,21 +159,25 @@ public class ShortyServlet extends HttpServlet {
     try {
 
         
-        
-        
-        final Optional<Contentlet> conOpt = (shorty.type == ShortType.IDENTIFIER)
-                    ? APILocator.getContentletAPI().findContentletByIdentifierOrFallback(shorty.longId, live, language.getId(), APILocator.systemUser(), false)
-                    : Optional.ofNullable(APILocator.getContentletAPI().find(shorty.longId, systemUser, false));
-                    
-        if(!conOpt.isPresent()) {
-            response.sendError(HttpServletResponse.SC_NOT_FOUND);
-            return;
+        String id = null;
+        if(shorty.type!= ShortType.TEMP_FILE) {
+          final Optional<Contentlet> conOpt = (shorty.type == ShortType.IDENTIFIER)
+                      ? APILocator.getContentletAPI().findContentletByIdentifierOrFallback(shorty.longId, live, language.getId(), APILocator.systemUser(), false)
+                      : Optional.ofNullable(APILocator.getContentletAPI().find(shorty.longId, systemUser, false));
+                      
+          if(!conOpt.isPresent()) {
+              response.sendError(HttpServletResponse.SC_NOT_FOUND);
+              return;
+          }
+          id=this.inodePath(conOpt.get(), fieldName, live);
+        }else {
+          id="/" + shorty.longId + "/temp";
         }
         
         
 
       final StringBuilder pathBuilder = new StringBuilder(path)
-              .append(this.inodePath(conOpt.get(), fieldName, live)).append("/byInode/true");
+              .append(id).append("/byInode/true");
 
       this.addImagePath(width, height, jpeg, jpegp, isImage, pathBuilder);
       this.doForward(request, response, pathBuilder.toString());
