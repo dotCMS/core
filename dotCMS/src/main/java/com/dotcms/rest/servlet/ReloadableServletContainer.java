@@ -51,8 +51,11 @@ import com.dotcms.rest.annotation.RequestFilter;
 import com.dotcms.rest.api.CorsFilter;
 import com.dotcms.rest.api.MyObjectMapperProvider;
 import com.dotcms.rest.config.DotRestApplication;
+import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.mapper.*;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.exception.AlreadyExistException;
+import com.dotmarketing.exception.DotDataValidationException;
 import com.dotmarketing.util.Logger;
 
 import javax.servlet.*;
@@ -61,6 +64,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 public class ReloadableServletContainer extends HttpServlet implements Filter {
 
@@ -173,7 +177,17 @@ public class ReloadableServletContainer extends HttpServlet implements Filter {
                 .register(UnrecognizedPropertyExceptionMapper.class)
                 .register(InvalidLicenseExceptionMapper.class)
                 .register(DotSecurityExceptionMapper.class)
-                .register(DotDataExceptionMapper.class);
+                .register(WorkflowPortletAccessExceptionMapper.class)
+                .register(NotFoundInDbExceptionMapper.class)
+                .register(DoesNotExistExceptionMapper.class)
+                .register(DotDataExceptionMapper.class)
+                .register((new DotBadRequestExceptionMapper<AlreadyExistException>(){}).getClass())
+                .register((new DotBadRequestExceptionMapper<IllegalArgumentException>(){}).getClass())
+                .register((new DotBadRequestExceptionMapper<DotStateException>(){}).getClass())
+                .register(DotDataValidationExceptionMapper.class)
+                .register(DefaultDotBadRequestExceptionMapper.class)
+                .register((new DotBadRequestExceptionMapper<JsonProcessingException>(){}).getClass())
+                .register((new DotBadRequestExceptionMapper<NumberFormatException>(){}).getClass());
                 //.register(ExceptionMapper.class); // temporaly unregister since some services are expecting just a plain message as an error instead of a json, so to keep the compatibility we won't apply this change yet.
     }
 }
