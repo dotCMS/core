@@ -165,7 +165,7 @@ public class HostAPITest {
 
         //Getting the default host
         Host defaultHost = APILocator.getHostAPI().findDefaultHost(user, false);
-        defaultHost.setIndexPolicy(IndexPolicy.FORCE);
+        defaultHost.setIndexPolicy(IndexPolicy.WAIT_FOR);
 
         //Create a new test host
         final String newHostName = "test" + System.currentTimeMillis() + ".dotcms.com";
@@ -173,10 +173,10 @@ public class HostAPITest {
         String newHostIdentifier = host.getIdentifier();
 
         //Publish the host
-        host.setIndexPolicy(IndexPolicy.FORCE);
+        host.setIndexPolicy(IndexPolicy.WAIT_FOR);
         APILocator.getHostAPI().publish(host, user, false);
         //And make it default
-        host.setIndexPolicy(IndexPolicy.FORCE);
+        host.setIndexPolicy(IndexPolicy.WAIT_FOR);
         APILocator.getHostAPI().makeDefault(host, user, false);
 
         host = APILocator.getHostAPI().find(host.getIdentifier(), user, false);
@@ -228,6 +228,9 @@ public class HostAPITest {
     public void givenSearch_whenNewHost_thenFindsNewHost() throws Exception {
 
         User user = APILocator.getUserAPI().getSystemUser();
+
+        new SiteDataGen().name("demo.test2" + System.currentTimeMillis() + ".dotcms.com")
+                .nextPersisted();
 
         final String newHostName = "demo.test" + System.currentTimeMillis() + ".dotcms.com";
         //Create a new test host
