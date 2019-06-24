@@ -3,7 +3,6 @@ package com.dotcms.rest.api.v1.temp;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import java.io.File;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Date;
@@ -14,9 +13,14 @@ import java.util.Optional;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import org.glassfish.jersey.media.multipart.BodyPart;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
+import org.glassfish.jersey.media.multipart.FormDataMultiPart;
+import org.glassfish.jersey.media.multipart.MultiPart;
+import org.glassfish.jersey.media.multipart.file.StreamDataBodyPart;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -75,8 +79,9 @@ public class TempFileResourceTest {
 
     final Response jsonResponse = resource.uploadTempResource(request, response, inputStream(), fileMetaData);
 
-    final DotTempFile dotTempFile = (DotTempFile) jsonResponse.getEntity();
-
+    final Map<String,List<DotTempFile>> dotTempFiles = (Map) jsonResponse.getEntity();
+    final DotTempFile dotTempFile = dotTempFiles.get("tempFiles").get(0);
+    
     final String tempFileId = dotTempFile.id;
     // its not an image because we set the filename to "test.file"
     assertFalse((Boolean) dotTempFile.image);
@@ -88,6 +93,56 @@ public class TempFileResourceTest {
 
   }
 
+  @Test
+  public void test_temp_resource_multifile_upload() throws Exception {
+    final TempFileResource resource = new TempFileResource();
+
+    final HttpServletRequest request = mockRequest();
+
+    final HttpServletResponse response = new MockHttpResponse();
+    final String fileName1 ="here-is-my-file.png";
+    BodyPart filePart1 = new StreamDataBodyPart(fileName1, inputStream());
+
+    final String fileName2 ="here-is-my-file2.png";
+    BodyPart filePart2 = new StreamDataBodyPart(fileName2, inputStream());
+
+    String fieldPartJson
+            = "{"
+            + "  \"id\": 1234,"
+            + "  \"name\": \"testing\""
+            + "}";
+
+    //uploading 2 files and a json field value 
+    MultiPart multipartEntity = new FormDataMultiPart()
+            .field("json", fieldPartJson, MediaType.APPLICATION_JSON_TYPE)
+            .bodyPart(filePart1)
+            .bodyPart(filePart2);
+    
+    final Response jsonResponse = resource.uploadTempResourceMulti(request, response, (FormDataMultiPart) multipartEntity);
+    assert (jsonResponse!=null);
+
+    final Map<String,List<DotTempFile>> dotTempFile = (Map) jsonResponse.getEntity();
+    assert (dotTempFile.size() > 0);
+    
+    assert (dotTempFile.get("tempFiles").size()==2);
+    DotTempFile file= (DotTempFile) dotTempFile.get("tempFiles").get(0);
+    assert(file.fileName.equals(fileName1));
+    assert(file.image);
+    assert(file.length()>1000);
+    
+    file= (DotTempFile) dotTempFile.get("tempFiles").get(1);
+    assert(file.fileName.equals(fileName2));
+    assert(file.image);
+    assert(file.length()>1000);
+
+  }
+
+  
+  
+  
+  
+  
+  
   @Test
   public void test_tempResourceAPI_who_can_use_via_session() throws Exception {
     final TempFileResource resource = new TempFileResource();
@@ -104,7 +159,8 @@ public class TempFileResourceTest {
 
     final Response jsonResponse = resource.uploadTempResource(request, response, inputStream(), fileMetaData);
 
-    final DotTempFile dotTempFile = (DotTempFile) jsonResponse.getEntity();
+    final Map<String,List<DotTempFile>> dotTempFiles = (Map) jsonResponse.getEntity();
+    final DotTempFile dotTempFile = dotTempFiles.get("tempFiles").get(0);
 
     final String tempFileId = dotTempFile.id;
 
@@ -139,7 +195,8 @@ public class TempFileResourceTest {
 
     final Response jsonResponse = resource.uploadTempResource(request, response, inputStream(), fileMetaData);
 
-    final DotTempFile dotTempFile = (DotTempFile) jsonResponse.getEntity();
+    final Map<String,List<DotTempFile>> dotTempFiles = ( Map<String,List<DotTempFile>>) jsonResponse.getEntity();
+    final DotTempFile dotTempFile = dotTempFiles.get("tempFiles").get(0);
 
     final String tempFileId = dotTempFile.id;
 
@@ -169,7 +226,8 @@ public class TempFileResourceTest {
 
     final Response jsonResponse = resource.uploadTempResource(request, response, inputStream(), fileMetaData);
 
-    final DotTempFile dotTempFile = (DotTempFile) jsonResponse.getEntity();
+    final Map<String,List<DotTempFile>> dotTempFiles = (Map) jsonResponse.getEntity();
+    final DotTempFile dotTempFile = dotTempFiles.get("tempFiles").get(0);
 
     final String tempFileId = dotTempFile.id;
 
@@ -215,7 +273,8 @@ public class TempFileResourceTest {
     }
     Config.setProperty(TempFileAPI.TEMP_RESOURCE_ALLOW_ANONYMOUS, true);
     final Response jsonResponse = resource.uploadTempResource(request, response, inputStream(), fileMetaData);
-    final DotTempFile dotTempFile = (DotTempFile) jsonResponse.getEntity();
+    final Map<String,List<DotTempFile>> dotTempFiles = (Map) jsonResponse.getEntity();
+    final DotTempFile dotTempFile = dotTempFiles.get("tempFiles").get(0);
     assert(UtilMethods.isSet(dotTempFile.id));
   }
   
@@ -262,13 +321,15 @@ public class TempFileResourceTest {
 
     Response jsonResponse = resource.uploadTempResource(request, response, inputStream(), fileMetaData);
 
-    final DotTempFile dotTempFile1 = (DotTempFile) jsonResponse.getEntity();
-
+    Map<String,List<DotTempFile>> dotTempFiles = (Map) jsonResponse.getEntity();
+    final DotTempFile dotTempFile1 = dotTempFiles.get("tempFiles").get(0);
+    
     final RemoteUrlForm form = new RemoteUrlForm(
         "https://raw.githubusercontent.com/dotCMS/core/master/dotCMS/src/main/webapp/html/images/skin/logo.gif", fileName2, null);
 
     jsonResponse = resource.copyTempFromUrl(request, form);
-    DotTempFile dotTempFile2 = (DotTempFile) jsonResponse.getEntity();
+    dotTempFiles = (Map) jsonResponse.getEntity();
+    final DotTempFile dotTempFile2 = dotTempFiles.get("tempFiles").get(0);
 
     final Map<String, Object> m = new HashMap<String, Object>();
     m.put("stInode", contentType.id());

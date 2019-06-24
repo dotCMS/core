@@ -35,7 +35,10 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
+
+import io.vavr.control.Try;
 
 @Path("/v1/temp")
 public class TempFileResource {
@@ -77,7 +80,9 @@ public class TempFileResource {
     }
 
     try {
-      return Response.ok(tempApi.createTempFile(fileMetaData.getFileName(), user, uniqueKey, inputStream)).build();
+      final List<DotTempFile> tempFiles = new ArrayList<DotTempFile>();
+      tempFiles.add(tempApi.createTempFile(fileMetaData.getFileName(), user, uniqueKey, inputStream));
+      return Response.ok(ImmutableMap.of("tempFiles", tempFiles)).build();
 
     } catch (Exception e) {
       Logger.warnAndDebug(this.getClass(), "unable to create temp file:" +  e.getMessage(),e);
@@ -92,8 +97,7 @@ public class TempFileResource {
   @NoCache
   @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
   @Consumes(MediaType.MULTIPART_FORM_DATA)
-  public final Response uploadTempResourceMulti(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-      @FormDataParam("files") FormDataBodyPart body) {
+  public final Response uploadTempResourceMulti(@Context final HttpServletRequest request, @Context final HttpServletResponse response, FormDataMultiPart body) {
 
     final boolean allowAnonToUseTempFiles = !Config.getBooleanProperty(TempFileAPI.TEMP_RESOURCE_ALLOW_ANONYMOUS, true);
 
@@ -109,16 +113,19 @@ public class TempFileResource {
     final List<DotTempFile> tempFiles = new ArrayList<DotTempFile>();
     try {
 
-      for (BodyPart part : body.getParent().getBodyParts()) {
+      for (final BodyPart part : body.getBodyParts()) {
 
-        InputStream in = part.getEntityAs(InputStream.class);
+        InputStream in = (part.getEntity() instanceof InputStream) ? InputStream.class.cast(part.getEntity()) : Try.of(()->part.getEntityAs(InputStream.class)).getOrNull();
+        
+        if(in==null) continue;
         ContentDisposition meta = part.getContentDisposition();
+        if(meta==null) continue;
         final String fileName = meta.getFileName();
         if(fileName==null || fileName.startsWith(".") || fileName.contains("/.")) continue;
         tempFiles.add(tempApi.createTempFile(fileName, user, uniqueKey, in));
       }
 
-      return Response.ok(tempFiles).build();
+      return Response.ok(ImmutableMap.of("tempFiles", tempFiles)).build();
 
     } catch (Exception e) {
       Logger.warnAndDebug(this.getClass(), e);
@@ -145,8 +152,11 @@ public class TempFileResource {
     }
 
     try {
-      return Response.ok(tempApi.createTempFileFromUrl(form.fileName, user, uniqueKey, new URL(form.remoteUrl), form.urlTimeoutSeconds))
-          .build();
+      
+      final List<DotTempFile> tempFiles = new ArrayList<DotTempFile>();
+      tempFiles.add(tempApi.createTempFileFromUrl(form.fileName, user, uniqueKey, new URL(form.remoteUrl), form.urlTimeoutSeconds));
+      
+      return Response.ok(ImmutableMap.of("tempFiles", tempFiles)).build();
 
     } catch (Exception e) {
       return ResponseUtil.mapExceptionResponse(e);
