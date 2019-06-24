@@ -136,6 +136,7 @@ export class DotKeyValueComponent {
     @Method()
     reset(): void {
         this.items = [];
+        this.value = '';
         this.status = getOriginalStatus(this.isValid());
         this.emitChanges();
     }

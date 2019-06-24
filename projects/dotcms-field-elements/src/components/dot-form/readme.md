@@ -7,12 +7,12 @@
 
 ## Properties
 
-| Property       | Attribute      | Description | Type                       | Default    |
-| -------------- | -------------- | ----------- | -------------------------- | ---------- |
-| `fields`       | --             |             | `DotCMSContentTypeField[]` | `[]`       |
-| `fieldsToShow` | --             |             | `string[]`                 | `[]`       |
-| `resetLabel`   | `reset-label`  |             | `string`                   | `'Reset'`  |
-| `submitLabel`  | `submit-label` |             | `string`                   | `'Submit'` |
+| Property       | Attribute        | Description                                                              | Type                     | Default     |
+| -------------- | ---------------- | ------------------------------------------------------------------------ | ------------------------ | ----------- |
+| `fieldsToShow` | `fields-to-show` | (optional) List of fields (variableName) separated by comma, to be shown | `string`                 | `undefined` |
+| `layout`       | --               | Layout metada to be rendered                                             | `DotCMSContentTypeRow[]` | `[]`        |
+| `resetLabel`   | `reset-label`    | (optional) Text to be rendered on Reset button                           | `string`                 | `'Reset'`   |
+| `submitLabel`  | `submit-label`   | (optional) Text to be rendered on Submit button                          | `string`                 | `'Submit'`  |
 
 
 ## Events

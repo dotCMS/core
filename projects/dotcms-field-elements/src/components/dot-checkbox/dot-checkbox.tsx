@@ -52,6 +52,7 @@ export class DotCheckboxComponent {
     @Event() statusChange: EventEmitter<DotFieldStatusEvent>;
 
     componentWillLoad() {
+        this.value = this.value || '';
         this.validateProps();
         this.emitValueChange();
         this.status = getOriginalStatus(this.isValid());
@@ -62,6 +63,11 @@ export class DotCheckboxComponent {
     optionsWatch(): void {
         const validOptions = checkProp<DotCheckboxComponent, string>(this, 'options');
         this._options = getDotOptionsFromFieldValue(validOptions);
+    }
+
+    @Watch('value')
+    valueWatch() {
+        this.value = this.value || '';
     }
 
     hostData() {

@@ -81,6 +81,7 @@ export class DotTextareaComponent {
     }
 
     componentWillLoad(): void {
+        this.value = this.value || '';
         this.validateProps();
         this.status = getOriginalStatus(this.isValid());
         this.emitStatusChange();
@@ -89,6 +90,11 @@ export class DotTextareaComponent {
     @Watch('regexCheck')
     regexCheckWatch(): void {
         this.regexCheck = checkProp<DotTextareaComponent, string>(this, 'regexCheck');
+    }
+
+    @Watch('value')
+    valueWatch() {
+        this.value = this.value || '';
     }
 
     hostData() {

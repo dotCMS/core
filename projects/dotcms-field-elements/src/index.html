@@ -15,16 +15,18 @@
         <style>
             body {
                 font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+                margin: 3rem auto;
+                width: 50vw;
             }
 
-            dot-form {
-                width: 80vw;
-                margin: 3rem auto;
+            .wrapper > * {
+                display: block;
+                margin-bottom: 1rem;
             }
         </style>
     </head>
     <body>
-        <dot-form>
+        <div class="wrapper">
             <dot-textfield
                 disabled="false"
                 hint="This is a hint"
@@ -176,14 +178,7 @@
                 required="true"
                 value="tag1,tag2"
             ></dot-tags>
-        </dot-form>
+        </div>
         <script src="/build/dotcmsfields.js"></script>
-        <script>
-            const dotFormEl = document.querySelector('dot-form');
-            dotFormEl.addEventListener('onSubmit', (e) => {
-                e.preventDefault();
-                console.log(e);
-            });
-        </script>
     </body>
 </html>

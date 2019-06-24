@@ -1,4 +1,4 @@
-import { DotCMSContentTypeField } from '../models';
+import { DotCMSContentTypeField, DotCMSContentTypeRow, DotCMSContentTypeColumn } from '../models';
 import { DotFormFields } from './fields';
 import { getStringFromDotKeyArray, isStringType } from '../../../utils';
 
@@ -16,6 +16,29 @@ const pipedValuesToObject = (values: string): { [key: string]: string } => {
               };
           }, {})
         : null;
+};
+
+/**
+ * Returns if a field should be displayed from a comma separated list of fields
+ * @param DotCMSContentTypeField field
+ * @returns boolean
+ */
+export const shouldShowField = (field: DotCMSContentTypeField, fieldsToShow: string): boolean => {
+    const fields2Show = fieldsToShow ? fieldsToShow.split(',') : [];
+    return !fields2Show.length || fields2Show.includes(field.variable);
+};
+
+/**
+ * Given a layout Object of fields, it returns a flat list of fields
+ * @param DotCMSContentTypeRow[] layout
+ * @returns DotCMSContentTypeField[]
+ */
+export const getFieldsFromLayout = (layout: DotCMSContentTypeRow[]): DotCMSContentTypeField[] => {
+    return layout.reduce(
+        (acc: DotCMSContentTypeField[], { columns }: DotCMSContentTypeRow) =>
+            acc.concat(...columns.map((col: DotCMSContentTypeColumn) => col.fields)),
+        []
+    );
 };
 
 const fieldParamsConversionFromBE = {

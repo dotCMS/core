@@ -1,7 +1,7 @@
 import { Component, Element, Event, EventEmitter, Listen, Prop, State, Watch } from '@stencil/core';
-import { DotCMSContentTypeField } from './models';
+import { DotCMSContentTypeField, DotCMSContentTypeRow } from './models';
 import { DotFieldStatus } from '../../models';
-import { fieldParamsConversionToBE, fieldMap } from './utils';
+import { fieldParamsConversionToBE, getFieldsFromLayout } from './utils';
 import { getClassNames, getOriginalStatus, updateStatus } from '../../utils';
 
 @Component({
@@ -13,10 +13,17 @@ export class DotFormComponent {
 
     @Event() onSubmit: EventEmitter;
 
-    @Prop() fieldsToShow: string[] = [];
+    /** (optional) List of fields (variableName) separated by comma, to be shown */
+    @Prop() fieldsToShow: string;
+
+    /** (optional) Text to be rendered on Reset button */
     @Prop({ reflectToAttr: true }) resetLabel = 'Reset';
+
+    /** (optional) Text to be rendered on Submit button */
     @Prop({ reflectToAttr: true }) submitLabel = 'Submit';
-    @Prop({ mutable: true }) fields: DotCMSContentTypeField[] = [];
+
+    /** Layout metada to be rendered */
+    @Prop({ mutable: true, reflectToAttr: true }) layout: DotCMSContentTypeRow[] = [];
 
     @State() status: DotFieldStatus = getOriginalStatus();
 
@@ -34,9 +41,7 @@ export class DotFormComponent {
         const { tagName } = event.target as HTMLElement;
         const { name, value } = event.detail;
         const transform = fieldParamsConversionToBE[tagName];
-
         this.value[name] = transform ? transform(value) : value;
-        this.fields = this.getUpdateFieldsValues();
     }
 
     /**
@@ -56,14 +61,14 @@ export class DotFormComponent {
         });
     }
 
-    @Watch('fields')
-    fieldsWatch() {
-        this.updateValue();
+    @Watch('layout')
+    layoutWatch() {
+        this.value = this.getUpdateValue();
     }
 
     @Watch('fieldsToShow')
     fieldsToShowWatch() {
-        this.updateValue();
+        this.value = this.getUpdateValue();
     }
 
     hostData() {
@@ -73,18 +78,16 @@ export class DotFormComponent {
     }
 
     componentWillLoad() {
-        this.updateValue();
+        this.value = this.getUpdateValue();
     }
 
     render() {
         return (
             <form onSubmit={this.handleSubmit.bind(this)}>
-                <div class="form__fields">
-                    {this.fields.map((field: DotCMSContentTypeField) => this.getField(field))}
-                    <slot />
-                </div>
-
-                <div class="form__buttons">
+                {this.layout.map((row: DotCMSContentTypeRow) => {
+                    return <dot-form-row row={row} fields-to-show={this.fieldsToShow} />;
+                })}
+                <div class="dot-form__buttons">
                     <button type="reset" onClick={() => this.resetForm()}>
                         {this.resetLabel}
                     </button>
@@ -94,14 +97,6 @@ export class DotFormComponent {
                 </div>
             </form>
         );
-    }
-
-    private getField(field: DotCMSContentTypeField): any {
-        return this.shouldShowField(field) ? this.getFieldTag(field) : '';
-    }
-
-    private getFieldTag(field: DotCMSContentTypeField): any {
-        return fieldMap[field.fieldType] ? fieldMap[field.fieldType](field) : '';
     }
 
     private getStatusValueByName(name: string): boolean {
@@ -116,14 +111,6 @@ export class DotFormComponent {
             .includes(true);
     }
 
-    private getUpdateFieldsValues(): DotCMSContentTypeField[] {
-        return this.fields.map((field: DotCMSContentTypeField) => {
-            return typeof this.value[field.variable] !== 'undefined'
-                ? { ...field, defaultValue: this.value[field.variable] }
-                : field;
-        });
-    }
-
     private handleSubmit(event: Event): void {
         event.preventDefault();
         this.onSubmit.emit({
@@ -132,7 +119,7 @@ export class DotFormComponent {
     }
 
     private resetForm(): void {
-        const elements = Array.from(this.el.querySelectorAll('form .form__fields > *'));
+        const elements = Array.from(this.el.querySelectorAll('form dot-form-column > *'));
 
         elements.forEach((element: any) => {
             try {
@@ -143,17 +130,18 @@ export class DotFormComponent {
         });
     }
 
-    private shouldShowField(field: DotCMSContentTypeField): boolean {
-        return !this.fieldsToShow.length || this.fieldsToShow.includes(field.variable);
-    }
-
-    private updateValue(): void {
-        this.value = {};
-
-        this.fields.forEach((field: DotCMSContentTypeField) => {
-            if (this.shouldShowField(field)) {
-                this.value[field.variable] = field.defaultValue || '';
-            }
-        });
+    private getUpdateValue(): { [key: string]: string } {
+        return getFieldsFromLayout(this.layout).reduce(
+            (
+                acc: { [key: string]: string },
+                { variable, defaultValue }: DotCMSContentTypeField
+            ) => {
+                return {
+                    ...acc,
+                    [variable]: defaultValue
+                };
+            },
+            {}
+        );
     }
 }

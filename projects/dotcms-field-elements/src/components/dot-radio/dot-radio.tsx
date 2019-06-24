@@ -69,6 +69,7 @@ export class DotRadioComponent {
     }
 
     componentWillLoad(): void {
+        this.value = this.value || '';
         this.validateProps();
         this.status = getOriginalStatus(this.isValid());
         this.emitStatusChange();
@@ -78,6 +79,11 @@ export class DotRadioComponent {
     optionsWatch(): void {
         const validOptions = checkProp<DotRadioComponent, string>(this, 'options');
         this._options = getDotOptionsFromFieldValue(validOptions);
+    }
+
+    @Watch('value')
+    valueWatch() {
+        this.value = this.value || '';
     }
 
     hostData() {

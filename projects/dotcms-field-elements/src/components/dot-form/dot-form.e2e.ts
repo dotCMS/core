@@ -1,7 +1,7 @@
 import { newE2EPage, E2EPage, E2EElement } from '@stencil/core/testing';
 import { EventSpy } from '@stencil/core/dist/declarations';
 import { dotTestUtil } from '../../utils';
-import { DotCMSContentTypeField } from './models';
+import { DotCMSContentTypeField, DotCMSContentTypeRow } from './models';
 
 const basicField: DotCMSContentTypeField = {
     clazz: '',
@@ -30,41 +30,67 @@ const basicField: DotCMSContentTypeField = {
     variable: ''
 };
 
-const fieldsMock: DotCMSContentTypeField[] = [
+const fieldsMock: DotCMSContentTypeRow[] = [
     {
-        ...basicField,
-        variable: 'textfield1',
-        required: true,
-        name: 'TexField',
-        fieldType: 'Text'
-    },
-    {
-        ...basicField,
-        defaultValue: 'key|value,llave|valor',
-        fieldType: 'Key-Value',
-        name: 'Key Value:',
-        required: false,
-        variable: 'keyvalue2'
-    },
-    {
-        ...basicField,
-        defaultValue: '2',
-        fieldType: 'Select',
-        name: 'Dropdwon',
-        required: false,
-        values: '|,labelA|1,labelB|2,labelC|3',
-        variable: 'dropdown3'
-    }
-];
-
+        columns: [
+            {
+                fields: [
+                    {
+                        ...basicField,
+                        variable: 'textfield1',
+                        required: true,
+                        name: 'TexField',
+                        fieldType: 'Text'
+                    }
+                ]
+            }
+        ],
+    }, {
+        columns: [
+            {
+                fields: [
+                    {
+                        ...basicField,
+                        defaultValue: 'key|value,llave|valor',
+                        fieldType: 'Key-Value',
+                        name: 'Key Value:',
+                        required: false,
+                        variable: 'keyvalue2'
+                    }
+                ]
+            }, {
+                fields: [
+                    {
+                        ...basicField,
+                        defaultValue: '2',
+                        fieldType: 'Select',
+                        name: 'Dropdwon',
+                        required: false,
+                        values: '|,labelA|1,labelB|2,labelC|3',
+                        variable: 'dropdown3'
+                    }
+                ]
+            }
+        ],
+    }];
 
 const fieldMockNotRequired = [
     {
-        ...fieldsMock[0],
-        required: false
+        columns: [
+            {
+                fields: [{
+                    ...basicField,
+                    defaultValue: 'key|value,llave|valor',
+                    fieldType: 'Key-Value',
+                    name: 'Key Value:',
+                    required: false,
+                    variable: 'keyvalue2'
+                }],
+                columnDivider: {}
+            }
+        ],
+        divider: {}
     },
-    fieldsMock[1],
-    fieldsMock[2]
 ];
 
 describe('dot-form', () => {
@@ -72,12 +98,11 @@ describe('dot-form', () => {
     let element: E2EElement;
     let submitSpy: EventSpy;
 
-    const getFields = () => page.findAll('form .form__fields > *');
+    const getFields = () => page.findAll('form dot-form-column > *');
 
-    const getResetButton = () =>
-        page.find('.form__buttons button:not([type="submit"])');
+    const getResetButton = () => page.find('.dot-form__buttons button:not([type="submit"])');
 
-    const getSubmitButton = () => page.find('.form__buttons button[type="submit"]');
+    const getSubmitButton = () => page.find('.dot-form__buttons button[type="submit"]');
 
     const fillTextfield = async (text?: string) => {
         const textfield = await element.find('input');
@@ -94,7 +119,6 @@ describe('dot-form', () => {
         await button.click();
     };
 
-
     beforeEach(async () => {
         page = await newE2EPage({
             html: `<dot-form></dot-form>`
@@ -105,7 +129,7 @@ describe('dot-form', () => {
 
     describe('css class', () => {
         beforeEach(async () => {
-            element.setProperty('fields', fieldMockNotRequired);
+            element.setProperty('layout', fieldMockNotRequired);
             await page.waitForChanges();
         });
 
@@ -114,7 +138,6 @@ describe('dot-form', () => {
         });
 
         it('should have filled', async () => {
-
             const keyValue = await element.find('dot-key-value');
             keyValue.triggerEvent('statusChange', {
                 detail: {
@@ -156,14 +179,33 @@ describe('dot-form', () => {
         });
     });
 
+    describe('rows', () => {
+        beforeEach(async () => {
+            element.setProperty('layout', fieldsMock);
+            element.setProperty('fieldsToShow', 'test');
+            await page.waitForChanges();
+        });
+
+        it('should have 2 rows', async () => {
+            const rows = await element.findAll('dot-form-row');
+            expect(rows.length).toBe(2);
+        });
+
+        it('should set values on dot-form-row', async () => {
+            const firstRow = await element.find('dot-form-row');
+            expect(await firstRow.getProperty('row')).toEqual(fieldsMock[0]);
+            expect(await firstRow.getProperty('fieldsToShow')).toEqual('test');
+        });
+    });
+
     describe('@Props', () => {
         describe('fieldsToShow', () => {
             beforeEach(() => {
-                element.setProperty('fields', fieldsMock);
+                element.setProperty('layout', fieldsMock);
             });
 
             it('should render specified fields', async () => {
-                element.setProperty('fieldsToShow', ['textfield1', 'dropdown3']);
+                element.setProperty('fieldsToShow', 'textfield1,dropdown3');
                 await page.waitForChanges();
 
                 const fields = await getFields();
@@ -174,7 +216,7 @@ describe('dot-form', () => {
             });
 
             it('should render no fields', async () => {
-                element.setProperty('fieldsToShow', ['no', 'field', 'to', 'render']);
+                element.setProperty('fieldsToShow', 'no,field,to,render');
                 await page.waitForChanges();
 
                 const fields = await getFields();
@@ -214,7 +256,7 @@ describe('dot-form', () => {
 
         describe('fields', () => {
             beforeEach(() => {
-                element.setProperty('fields', fieldsMock);
+                element.setProperty('layout', fieldsMock);
             });
 
             it('should render fields', async () => {
@@ -232,7 +274,7 @@ describe('dot-form', () => {
 
     describe('@Events', () => {
         beforeEach(async () => {
-            element.setProperty('fields', fieldsMock);
+            element.setProperty('layout', fieldsMock);
             await page.waitForChanges();
         });
 
@@ -278,8 +320,9 @@ describe('dot-form', () => {
 
     describe('actions', () => {
         beforeEach(async () => {
-            element.setProperty('fields', fieldMockNotRequired);
+            element.setProperty('layout', fieldsMock);
             await page.waitForChanges();
+
         });
 
         describe('click reset button', () => {
@@ -296,26 +339,8 @@ describe('dot-form', () => {
                 expect(await textfield.getProperty('value')).toBe('');
                 expect(await keyvalue.getProperty('value')).toBe('');
                 expect(await select.getProperty('value')).toBe('');
-                expect(element).toHaveClasses(dotTestUtil.class.empty);
+                expect(element).toHaveClasses(dotTestUtil.class.emptyPristineInvalid);
             });
-        });
-    });
-
-    describe('<slot />', () => {
-        beforeEach(async () => {
-            page = await newE2EPage({
-                html: `
-                <dot-form>
-                    <dot-textfield label="Hello World" />
-                </dot-form>
-            `
-            });
-            element = await page.find('dot-form');
-        });
-
-        it('should render ast first child', async () => {
-            const slot = await element.find('.form__fields *:nth-child(1n)');
-            expect(slot.tagName).toBe('DOT-TEXTFIELD');
         });
     });
 });

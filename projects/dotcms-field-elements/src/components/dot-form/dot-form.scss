@@ -2,7 +2,7 @@ dot-form {
     display: block;
 
     & > form {
-        & > .form__fields > * {
+        dot-form-column > * {
             display: block;
             margin: 1rem 0;
 
@@ -29,7 +29,7 @@ dot-form {
             font-size: 0.75rem;
         }
 
-        .form__buttons {
+        .dot-form__buttons {
             display: flex;
             flex-direction: row;
             justify-content: flex-end;
