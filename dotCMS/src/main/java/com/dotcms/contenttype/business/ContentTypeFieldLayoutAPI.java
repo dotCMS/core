@@ -10,16 +10,62 @@ import com.liferay.portal.model.User;
 import java.util.Collection;
 import java.util.List;
 
+/**
+ * Create, delete, Update and Move Field making sure that the {@link ContentType} keep with a right layout after the operation
+ *
+ * @see FieldLayout
+ */
 public interface ContentTypeFieldLayoutAPI {
 
+    /**
+     * Update a field making sure that the {@link ContentType} keep with a right layout after the operation
+     *
+     * @param contentType field's {@link ContentType}
+     * @param fieldToUpdate field to update
+     * @param user who is making the change
+     * @return
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
     FieldLayout updateField(ContentType contentType, Field fieldToUpdate, User user)
             throws DotSecurityException, DotDataException;
 
+    /**
+     * Move fields, receive a {@link FieldLayout} and update the sortOrder of each {@link Field} to match the index into
+     * the FieldLayout.
+     *
+     * @param contentType field's {@link ContentType}
+     * @param newFieldLayout
+     * @param user who is making the change
+     * @return
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
     FieldLayout moveFields(ContentType contentType, FieldLayout newFieldLayout, User user)
             throws DotSecurityException, DotDataException;
 
+    /**
+     * Return the {@link ContentType}'s layout
+     *
+     * @param contentTypeId
+     * @param user
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     FieldLayout getLayout(String contentTypeId, User user)  throws DotDataException, DotSecurityException;
 
+    /**
+     * Delete a field making sure that the {@link ContentType} keep with a right layout after the operation
+     *
+     * @param contentType field's {@link ContentType}
+     * @param fieldsID Fields'id to delete
+     * @param user who is making the change
+     * @return a DeleteFieldResult with the new {@link ContentType}'s layout and the fields id deleted
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
     DeleteFieldResult deleteField(ContentType contentType, List<String> fieldsID, User user)
             throws DotSecurityException, DotDataException;
 
