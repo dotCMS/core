@@ -3,13 +3,11 @@ package com.dotcms.content.elasticsearch.business;
 import static com.dotcms.util.DotPreconditions.checkArgument;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
-import com.carrotsearch.hppc.cursors.ObjectCursor;
 import com.dotcms.cluster.ClusterUtils;
 import com.dotcms.cluster.business.ClusterAPI;
 import com.dotcms.cluster.business.ReplicasMode;
 import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.content.elasticsearch.util.DotRestHighLevelClient;
-import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.org.dts.spell.utils.FileUtils;
 import com.dotmarketing.business.APILocator;
@@ -46,7 +44,6 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
@@ -64,8 +61,6 @@ import org.elasticsearch.action.admin.cluster.repositories.delete.DeleteReposito
 import org.elasticsearch.action.admin.cluster.repositories.get.GetRepositoriesRequest;
 import org.elasticsearch.action.admin.cluster.repositories.get.GetRepositoriesResponse;
 import org.elasticsearch.action.admin.cluster.repositories.put.PutRepositoryRequest;
-import org.elasticsearch.action.admin.cluster.repositories.verify.VerifyRepositoryRequest;
-import org.elasticsearch.action.admin.cluster.repositories.verify.VerifyRepositoryResponse;
 import org.elasticsearch.action.admin.cluster.settings.ClusterGetSettingsRequest;
 import org.elasticsearch.action.admin.cluster.settings.ClusterGetSettingsResponse;
 import org.elasticsearch.action.admin.cluster.snapshots.create.CreateSnapshotRequest;
@@ -74,7 +69,6 @@ import org.elasticsearch.action.admin.cluster.snapshots.get.GetSnapshotsRequest;
 import org.elasticsearch.action.admin.cluster.snapshots.get.GetSnapshotsResponse;
 import org.elasticsearch.action.admin.cluster.snapshots.restore.RestoreSnapshotRequest;
 import org.elasticsearch.action.admin.cluster.snapshots.restore.RestoreSnapshotResponse;
-import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest;
 import org.elasticsearch.action.admin.indices.alias.get.GetAliasesRequest;
 import org.elasticsearch.action.admin.indices.cache.clear.ClearIndicesCacheRequest;
@@ -84,33 +78,25 @@ import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.admin.indices.forcemerge.ForceMergeRequest;
 import org.elasticsearch.action.admin.indices.forcemerge.ForceMergeResponse;
 import org.elasticsearch.action.admin.indices.open.OpenIndexRequest;
-import org.elasticsearch.action.admin.indices.settings.get.GetSettingsRequest;
-import org.elasticsearch.action.admin.indices.settings.get.GetSettingsResponse;
 import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
-import org.elasticsearch.action.admin.indices.stats.IndexStats;
-import org.elasticsearch.action.admin.indices.stats.IndicesStatsResponse;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchScrollRequest;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
-import org.elasticsearch.client.Client;
 import org.elasticsearch.client.GetAliasesResponse;
+import org.elasticsearch.client.Request;
 import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.Requests;
+import org.elasticsearch.client.Response;
+import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.elasticsearch.client.indices.CreateIndexResponse;
 import org.elasticsearch.client.indices.GetIndexRequest;
 import org.elasticsearch.client.indices.GetIndexResponse;
 import org.elasticsearch.cluster.health.ClusterIndexHealth;
-import org.elasticsearch.cluster.metadata.AliasMetaData;
-import org.elasticsearch.cluster.metadata.IndexMetaData;
-import org.elasticsearch.cluster.metadata.IndexMetaData.State;
-import org.elasticsearch.cluster.metadata.MetaData;
 import org.elasticsearch.cluster.metadata.RepositoryMetaData;
-import org.elasticsearch.common.collect.ImmutableOpenMap;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentBuilder;
@@ -170,29 +156,34 @@ public class ESIndexAPI {
 		this.clusterAPI = clusterAPI;
 	}
 
-	/**
-	 * returns all indicies and status
-	 * @return
-	 */
-	public Map<String, IndexStats> getIndicesAndStatus() {
-		// TODO adapt
-//		final Client client = transportClient.getClient();
-//		final IndicesStatsResponse
-//				indicesStatsResponse =
-//				client.admin().indices().prepareStats().setStore(true).execute().actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
-//
-//		return indicesStatsResponse.getIndices();
+	public Map<String, IndexStats> getIndicesStats() {
+		final Request request = new Request("GET", "/_stats");
+		final RestClient lowLevelClient = esclient.getLowLevelClient();
 
-		return Collections.emptyMap();
-	}
+		final Response response = Sneaky.sneak(()->lowLevelClient.performRequest(request));
+		final ObjectMapper mapper = new ObjectMapper();
 
-	public void getIndicesStats() {
+		final Map<String, Object> jsonMap = Sneaky.sneak(()->mapper
+				.readValue(response.getEntity().getContent(), Map.class));
 
-		GetIndexRequest request = new GetIndexRequest("*");
-		GetIndexResponse response = Sneaky.sneak(()->esclient.indices()
-				.get(request, RequestOptions.DEFAULT));
-		response.getSettings();
+		Map<String, IndexStats> indexStatsMap = new HashMap<>();
 
+		final Map<String, Object> indices = (Map<String, Object>)jsonMap.get("indices");
+
+		indices.forEach((key, value)-> {
+			Map<String, Object> indexStats = (Map<String, Object>) ((Map<String, Object>)
+					indices.get(key)).get("total");
+
+			int numOfDocs = (int) ((Map<String, Object>) indexStats.get("docs"))
+					.get("count");
+
+			int sizeInBytes = (int) ((Map<String, Object>) indexStats.get("store"))
+					.get("size_in_bytes");
+
+			indexStatsMap.put(key, new IndexStats(key, numOfDocs, sizeInBytes));
+		});
+
+		return indexStatsMap;
 	}
 
     /**
@@ -860,26 +851,26 @@ public class ESIndexAPI {
 
     public List<String> getClosedIndexes() {
 
-    	// new way TODO
+    	final Request request = new Request("GET", "/_cluster/state/metadata/");
+    	final RestClient lowLevelClient = esclient.getLowLevelClient();
 
-		// old way
-//        Client client = new ESClient().getClient();
-//        ImmutableOpenMap<String, IndexMetaData>
-//            indexState =
-//            client.admin().cluster().prepareState().execute().actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS)
-//                .getState().getMetaData().indices();
-//
-//        List<String> closeIdx = new ArrayList<>();
-//
-//        for (ObjectCursor<String> idx : indexState.keys()) {
-//            IndexMetaData idxM = indexState.get(idx.value);
-//            if (idxM.getState().equals(State.CLOSE)) {
-//                closeIdx.add(idx.value);
-//            }
-//        }
-//        return closeIdx;
+    	final Response response = Sneaky.sneak(()->lowLevelClient.performRequest(request));
+		final ObjectMapper mapper = new ObjectMapper();
 
-		return Collections.emptyList();
+		final Map<String, Object> jsonMap = Sneaky.sneak(()->mapper
+				.readValue(response.getEntity().getContent(), Map.class));
+
+		final Map<String, Object> metadata = (Map<String, Object>) jsonMap.get("metadata");
+		final Map<String, Object> indices = (Map<String, Object>)metadata.get("indices");
+
+		final List<String> closedIndices = new ArrayList<>();
+		indices.forEach((key, value) -> {
+			if (((Map<String, String>) value).get("state").equals("closed")) {
+				closedIndices.add(key);
+			}
+		});
+
+		return closedIndices;
     }
 
     public Status getIndexStatus(String indexName) throws DotDataException {
@@ -1307,5 +1298,43 @@ public class ESIndexAPI {
 
 		// TODO this might bring no value, please check
 		return clusterGetSettingsResponse.getSetting(REPOSITORY_PATH);
+	}
+
+	public ClusterStats getClusterStats() {
+		final Request request = new Request("GET", "/_nodes/stats");
+		final RestClient lowLevelClient = esclient.getLowLevelClient();
+
+		final Response response = Sneaky.sneak(()->lowLevelClient.performRequest(request));
+		final ObjectMapper mapper = new ObjectMapper();
+
+		final Map<String, Object> jsonMap = Sneaky.sneak(()->mapper
+				.readValue(response.getEntity().getContent(), Map.class));
+
+		final String clusterName = (String) jsonMap.get("cluster_name");
+
+		final ClusterStats clusterStats = new ClusterStats(clusterName);
+
+		final Map<String, Object> nodes = (Map<String, Object>)jsonMap.get("nodes");
+
+		nodes.forEach((key, value)-> {
+			final NodeStats.Builder builder = new NodeStats.Builder();
+
+			final Map<String, Object> stats = (Map<String, Object>) value;
+
+			builder.name((String) stats.get("name"));
+
+			Map<String, Object> indexStats = (Map<String, Object>) ((Map<String, Object>)
+					indices.get(key)).get("total");
+
+			int numOfDocs = (int) ((Map<String, Object>) indexStats.get("docs"))
+					.get("count");
+
+			int sizeInBytes = (int) ((Map<String, Object>) indexStats.get("store"))
+					.get("size_in_bytes");
+
+			indexStatsMap.put(key, new IndexStats(key, numOfDocs, sizeInBytes));
+		});
+
+		return clusterStats;
 	}
 }

@@ -30,7 +30,6 @@ import java.util.Set;
 
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.admin.indices.stats.IndexStats;
 import org.elasticsearch.action.bulk.BulkProcessor;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
@@ -1006,7 +1005,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     }
 
     public List<String> listDotCMSClosedIndices() {
-        List<String> indexNames = new ArrayList<String>();
+        List<String> indexNames = new ArrayList<>();
         List<String> list = APILocator.getESIndexAPI().getClosedIndexes();
         for (String idx : list)
             if (isDotCMSIndexName(idx))
@@ -1020,7 +1019,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      * @return
      */
     public List<String> listDotCMSIndices() {
-        Map<String, IndexStats> indices = APILocator.getESIndexAPI().getIndicesAndStatus();
+        Map<String, IndexStats> indices = APILocator.getESIndexAPI().getIndicesStats();
         List<String> indexNames = new ArrayList<>();
 
         for (String idx : indices.keySet()) {
@@ -1046,7 +1045,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
         indexNames = existingIndex;
 
-        List<String> indexes = new ArrayList<String>();
+        List<String> indexes = new ArrayList<>();
         indexes.addAll(indexNames);
         Collections.sort(indexes, new IndexSortByDate());
 
