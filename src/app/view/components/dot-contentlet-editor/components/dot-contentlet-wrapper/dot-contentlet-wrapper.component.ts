@@ -2,6 +2,7 @@ import { Component, OnInit, Input, EventEmitter, Output } from '@angular/core';
 import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
 import { DotMessageService } from '@services/dot-messages-service';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm';
+import { DotRouterService } from '@services/dot-router/dot-router.service';
 
 @Component({
     selector: 'dot-contentlet-wrapper',
@@ -27,12 +28,16 @@ export class DotContentletWrapperComponent implements OnInit {
     constructor(
         private dotContentletEditorService: DotContentletEditorService,
         private dotAlertConfirmService: DotAlertConfirmService,
-        private dotMessageService: DotMessageService
+        private dotMessageService: DotMessageService,
+        private dotRouterService: DotRouterService
     ) {
         if (!this.customEventsHandler) {
             this.customEventsHandler = {
                 close: () => {
                     this.onClose();
+                },
+                'edit-page': (event: CustomEvent<{ [key: string]: string }>) => {
+                    this.dotRouterService.goToEditPage(event.detail.data);
                 },
                 'deleted-page': () => {
                     this.onClose();

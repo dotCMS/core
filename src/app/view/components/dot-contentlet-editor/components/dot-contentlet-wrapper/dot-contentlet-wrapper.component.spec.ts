@@ -16,6 +16,7 @@ import { DotMessageService } from '@services/dot-messages-service';
 import { LoginServiceMock } from '../../../../../test/login-service.mock';
 import { MockDotMessageService } from '../../../../../test/dot-message-service.mock';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm';
+import { DotRouterService } from '@services/dot-router/dot-router.service';
 
 const messageServiceMock = new MockDotMessageService({
     'editcontentlet.lose.dialog.header': 'Header',
@@ -30,6 +31,7 @@ describe('DotContentletWrapperComponent', () => {
     let dotIframeDialog: DebugElement;
     let dotAddContentletService: DotContentletEditorService;
     let dotAlertConfirmService: DotAlertConfirmService;
+    let dotRouterService: DotRouterService;
 
     beforeEach(async(() => {
         DOTTestBed.configureTestingModule({
@@ -63,6 +65,7 @@ describe('DotContentletWrapperComponent', () => {
         component = de.componentInstance;
         dotAddContentletService = de.injector.get(DotContentletEditorService);
         dotAlertConfirmService = de.injector.get(DotAlertConfirmService);
+        dotRouterService = de.injector.get(DotRouterService);
 
         spyOn(dotAddContentletService, 'clear');
         spyOn(dotAddContentletService, 'load');
@@ -108,6 +111,17 @@ describe('DotContentletWrapperComponent', () => {
                 expect(component.custom.emit).toHaveBeenCalledTimes(1);
                 expect(component.close.emit).toHaveBeenCalledTimes(1);
             });
+
+            it('should called goToEdit', () => {
+                dotIframeDialog.triggerEventHandler('custom', {
+                    detail: {
+                        name: 'edit-page',
+                        data: 'some/fake/url'
+                    }
+                });
+
+                expect(dotRouterService.goToEditPage).toHaveBeenCalledWith('some/fake/url');
+            })
 
             describe('beforeClose', () => {
                 it('should close without confirmation dialog', () => {
