@@ -52,6 +52,10 @@ describe('Date Validators', () => {
         it('should return empty DateSlot with invalid values', () => {
             expect(dotParseDate('a b c')).toEqual(emptySlot);
         });
+
+        it('should return empty DateSlot with null value', () => {
+            expect(dotParseDate(null)).toEqual(emptySlot);
+        });
     });
 
     describe('isValidDateSlot', () => {
@@ -67,5 +71,10 @@ describe('Date Validators', () => {
         it('should return false if raw data contains date and time and slot only one of them', () => {
             expect(isValidDateSlot(onlyDate, `${dateSlot.date} ${dateSlot.time}`)).toBe(false);
         });
+
+        it('should return false with null values', () => {
+            expect(isValidDateSlot(null, null)).toEqual(false);
+        });
+
     });
 });

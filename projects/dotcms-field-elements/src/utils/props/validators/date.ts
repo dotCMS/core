@@ -30,7 +30,7 @@ export function dotValidateTime(time: string): string {
  * @returns DotDateSlot
  */
 export function dotParseDate(data: string): DotDateSlot {
-    const [dateOrTime, time] = data.split(' ');
+    const [dateOrTime, time] = data ? data.split(' ') : '';
     return {
         date: dotValidateDate(dateOrTime),
         time: dotValidateTime(time) || dotValidateTime(dateOrTime)
@@ -44,9 +44,11 @@ export function dotParseDate(data: string): DotDateSlot {
  * @param string rawData
  */
 export function isValidDateSlot(dateSlot: DotDateSlot, rawData: string): boolean {
-    return rawData.split(' ').length > 1
-        ? isValidFullDateSlot(dateSlot)
-        : isValidPartialDateSlot(dateSlot);
+    return !!rawData
+        ? rawData.split(' ').length > 1
+          ? isValidFullDateSlot(dateSlot)
+          : isValidPartialDateSlot(dateSlot)
+        : false;
 }
 
 /**
