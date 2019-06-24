@@ -353,4 +353,12 @@ public interface MultiTreeAPI {
      * @throws DotDataException
      */
     void overridesMultitreesByPersonalization(String pageId, String personalization, List<MultiTree> multiTrees)  throws DotDataException ;
+
+    /**
+     * Updates the current personalization to a new personalization
+     *
+     * @param currentPersonalization {@link String}  current existing personalization
+     * @param newPersonalization     {@link String}  new personalization to replace the current one
+     */
+    void updatePersonalization(String currentPersonalization, String newPersonalization) throws DotDataException;
 }

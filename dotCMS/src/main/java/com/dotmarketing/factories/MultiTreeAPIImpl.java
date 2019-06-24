@@ -73,6 +73,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     private static final String DELETE_SQL_PERSONALIZATION_PER_PAGE = "delete from multi_tree where parent1=? and personalization = ?";
     private static final String DELETE_ALL_MULTI_TREE_SQL = "delete from multi_tree where parent1=? AND relation_type != ?";
     private static final String DELETE_ALL_MULTI_TREE_SQL_BY_RELATION_AND_PERSONALIZATION = "delete from multi_tree where parent1=? AND relation_type != ? and personalization = ?";
+    private static final String UPDATE_MULTI_TREE_PERSONALIZATION = "update multi_tree set personalization = ? where personalization = ?";
     private static final String SELECT_SQL = "select * from multi_tree where parent1 = ? and parent2 = ? and child = ? and  relation_type = ? and personalization = ?";
 
     private static final String INSERT_SQL = "insert into multi_tree (parent1, parent2, child, relation_type, tree_order, personalization) values (?,?,?,?,?,?)  ";
@@ -531,6 +532,18 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
         updateHTMLPageVersionTS(pageId);
         refreshPageInCache(pageId);
+    }
+
+    @Override
+    @WrapInTransaction
+    public void updatePersonalization(final String currentPersonalization, final String newPersonalization) throws DotDataException {
+
+        Logger.info(this, "Updating the personalization: " + currentPersonalization +
+                                        " to " + newPersonalization);
+
+        new DotConnect().setSQL(UPDATE_MULTI_TREE_PERSONALIZATION)
+                .addParam(newPersonalization)
+                .addParam(currentPersonalization).loadResult();
     }
 
     /**

@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.personas.business;
 
 import com.dotcms.content.elasticsearch.business.event.ContentletDeletedEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletPublishEvent;
+import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Versionable;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -9,6 +10,7 @@ import com.dotmarketing.portlets.contentlet.model.ContentletListener;
 import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.util.StringPool;
 
 import java.util.Optional;
 
@@ -42,14 +44,19 @@ public class MultiTreePersonaListener implements ContentletListener<Persona> {
                     if (UtilMethods.isSet(currentKeyTag) && UtilMethods.isSet(previousKeyTag) &&
                             !currentKeyTag.equals(previousKeyTag)) { //  if the tag has changed.
 
-                        // todo: update the previous multi tree personalization with persona tag with the new one
+                        APILocator.getMultiTreeAPI().updatePersonalization (
+                                this.wrapPersonaScheme(previousKeyTag), this.wrapPersonaScheme(currentKeyTag));
                     }
                 }
             }
-
         } catch (Exception e) {
             Logger.error(this, e.getMessage(), e);
         }
+    }
+
+    private String wrapPersonaScheme (final String personaKeyTag) {
+
+        return Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + personaKeyTag;
     }
 
     @Override
