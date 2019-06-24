@@ -5698,9 +5698,9 @@ public class ContentletAPITest extends ContentletBaseTest {
             Contentlet parentContent = dataGen.languageId(languageAPI.getDefaultLanguage().getId()).nextPersisted();
 
             Contentlet childContent = dataGen.languageId(languageAPI.getDefaultLanguage().getId()).next();
+            childContent.setRelated(childField.variable(), CollectionsUtils.list(parentContent));
 
-            childContent = contentletAPI.checkin(childContent, CollectionsUtils
-                    .map(relationship, CollectionsUtils.list(parentContent)), user, false);
+            childContent = contentletAPI.checkin(childContent, user, false);
 
             List<Contentlet> relatedContent = relationshipAPI.dbRelatedContent(relationship, childContent, false);
 

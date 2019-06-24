@@ -27,6 +27,7 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.tag.model.TagInode;
@@ -119,6 +120,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     public static final String WORKFLOW_NEVER_EXPIRE = "wfNeverExpire";
 	public static final String TEMP_BINARY_IMAGE_INODES_LIST = "tempBinaryImageInodesList";
 	public static final String RELATIONSHIP_KEY = "__##relationships##__";
+	public static final String RELATED_IDS_KEY = "__relatedIds__";
 
 	private transient ContentType contentType;
     protected Map<String, Object> map = new ContentletHashMap();
@@ -132,7 +134,6 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
 	private transient boolean needsReindex = false;
 
-	private transient Map<String, List<String>> relatedIds;
 	private transient boolean loadedTags = false;
 
 	/**
@@ -1514,19 +1515,56 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		return getRelated(variableName, user, true);
 	}
 
-	/**
-	 * Returns a list of all contentlets related to this instance given a RelationshipField variable
-	 * @param variableName
-	 * @param user
-	 * @param respectFrontendRoles
-	 * @return
-	 */
-	public List<Contentlet> getRelated(final String variableName, final User user,
-			final boolean respectFrontendRoles) {
+    /**
+     * Returns a list of all contentlets related to this instance given a RelationshipField variable
+     * @param variableName
+     * @param user
+     * @param respectFrontendRoles
+     * @return
+     */
+    public List<Contentlet> getRelated(final String variableName, final User user,
+            final boolean respectFrontendRoles){
+        return getRelated(variableName, user,respectFrontendRoles, null);
+    }
 
-		if (!UtilMethods.isSet(this.relatedIds)){
-			relatedIds = Maps.newConcurrentMap();
+    /**
+     * Returns a list of all contentlets related to this instance given a RelationshipField variable
+     * @param variableName
+     * @param user
+     * @param respectFrontendRoles
+     * @param pullByParents
+     * @return
+     */
+    public List<Contentlet> getRelated(final String variableName, final User user,
+            final boolean respectFrontendRoles, Boolean pullByParents) {
+        return getRelated(variableName, user,respectFrontendRoles, pullByParents, -1, -1, null);
+    }
+
+    /**
+     * Returns a list of all contentlets related to this instance given a RelationshipField variable
+     * using pagination
+     * @param variableName
+     * @param user
+     * @param respectFrontendRoles
+     * @param pullByParents
+     * @param limit
+     * @param offset
+     * @param sortBy
+     * @return
+     */
+	public List<Contentlet> getRelated(final String variableName, final User user,
+			final boolean respectFrontendRoles, Boolean pullByParents, final int limit, final int offset,
+            final String sortBy) {
+
+	    if (variableName == null){
+	        return Collections.EMPTY_LIST;
+        }
+
+		if (!map.containsKey(RELATED_IDS_KEY)){
+			map.put(RELATED_IDS_KEY, Maps.newConcurrentMap());
 		}
+
+        Map<String, List<String>> relatedIds = (Map<String, List<String>>) map.get(RELATED_IDS_KEY);
 
 		try {
 			User currentUser;
@@ -1539,25 +1577,18 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
 			final List<Contentlet> relatedContentlet;
 
-			if (this.relatedIds.containsKey(variableName)) {
+			if (relatedIds.containsKey(variableName)) {
 				relatedContentlet = getCachedRelatedContentlets(variableName);
 			} else {
 
-				relatedContentlet = getNonCachedRelatedContentlets(variableName);
+                relatedContentlet = getNonCachedRelatedContentlets(variableName, pullByParents,
+                        limit, offset, sortBy);
 			}
 
 			//Restricts contentlet according to user permissions
-			return relatedContentlet.stream().filter(contentlet -> {
-				try {
-					return APILocator.getPermissionAPI()
-							.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ,
-									currentUser,
-									currentUser.equals(APILocator.getUserAPI().getAnonymousUser())
-											? true : respectFrontendRoles);
-				} catch (DotDataException e) {
-					return false;
-				}
-			}).collect(Collectors.toList());
+            return APILocator.getPermissionAPI().filterCollection(relatedContentlet, PermissionAPI.PERMISSION_READ,
+                    currentUser.equals(APILocator.getUserAPI().getAnonymousUser())
+                            ? true : respectFrontendRoles, currentUser);
 
 		} catch (DotDataException | DotSecurityException e) {
 			Logger.warn(this, "Error getting related content for field " + variableName, e);
@@ -1565,59 +1596,83 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		}
 	}
 
-	/**
-	 *
-	 * @param variableName
-	 * @return
-	 * @throws DotDataException
-	 * @throws DotSecurityException
-	 */
-	@Nullable
-	private List<Contentlet> getNonCachedRelatedContentlets(final String variableName)
-			throws DotDataException, DotSecurityException {
+    /**
+     *
+     * @param variableName
+     * @param pullByParent
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Nullable
+    private List<Contentlet> getNonCachedRelatedContentlets(final String variableName,
+            final Boolean pullByParent, final int limit, final int offset,
+            final String sortBy)
+            throws DotDataException, DotSecurityException {
 
-		final User systemUser = APILocator.getUserAPI().getSystemUser();
-		final com.dotcms.contenttype.model.field.Field field = APILocator.getContentTypeFieldAPI()
-				.byContentTypeIdAndVar(getContentTypeId(), variableName);
+        final User systemUser = APILocator.getUserAPI().getSystemUser();
+        com.dotcms.contenttype.model.field.Field field = null;
+        final List<Contentlet> relatedList;
+        Relationship relationship;
 
-		final List<Contentlet> relatedList = APILocator.getContentletAPI()
-				.getRelatedContent(this, APILocator.getRelationshipAPI()
-								.getRelationshipFromField(field, systemUser),
-						systemUser, false);
+        try {
+            field = APILocator
+                    .getContentTypeFieldAPI()
+                    .byContentTypeIdAndVar(getContentTypeId(), variableName);
 
-		if (UtilMethods.isSet(relatedList)) {
-			this.relatedIds.put(variableName,
-					relatedList.stream().map(contentlet -> contentlet.getIdentifier())
-							.collect(
-									CollectionsUtils.toImmutableList()));
-		}else{
-			this.relatedIds.put(variableName, Collections.emptyList());
-		}
+            relationship = APILocator.getRelationshipAPI()
+                    .getRelationshipFromField(field, systemUser);
 
-		return relatedList;
-	}
 
-	/**
-	 *
-	 * @param variableName
-	 * @return
-	 */
-	@NotNull
-	private List<Contentlet> getCachedRelatedContentlets(final String variableName) {
-		final List<Contentlet> relatedList = this.relatedIds.get(variableName).stream()
-				.map(identifier -> {
-					try {
-						return APILocator.getContentletAPI()
-								.findContentletByIdentifierAnyLanguage(identifier);
-					} catch (DotDataException | DotSecurityException e) {
-						Logger.warn(this, "No content found with id " + identifier,
-								e);
-						throw new DotStateException(e);
-					}
-				}).collect(Collectors.toList());
+        }catch(NotFoundInDbException e){
+            //Search for legacy relationships
+            relationship =  APILocator.getRelationshipAPI().byTypeValue(variableName);
+        }
 
-		return relatedList;
-	}
+        if (relationship == null){
+            throw new DotStateException("No relationship found");
+        }
+        relatedList = APILocator.getContentletAPI()
+                .filterRelatedContent(this, relationship, systemUser, false, pullByParent, limit, offset, sortBy);
+
+
+        //Cache related content only if it is a relationship field
+        if (field != null && limit == -1 && offset== -1 && sortBy == null) {
+            if (UtilMethods.isSet(relatedList)) {
+                ((Map<String, List<String>>)map.get(RELATED_IDS_KEY)).put(variableName,
+                        relatedList.stream().map(contentlet -> contentlet.getIdentifier())
+                                .collect(
+                                        CollectionsUtils.toImmutableList()));
+            } else {
+                ((Map<String, List<String>>)map.get(RELATED_IDS_KEY)).put(variableName, Collections.emptyList());
+            }
+            //refreshing cache when related content map is updated
+            CacheLocator.getContentletCache().add(this);
+        }
+
+        return relatedList;
+    }
+
+    /**
+     *
+     */
+    @NotNull
+    private List<Contentlet> getCachedRelatedContentlets(final String variableName) {
+        final List<Contentlet> relatedList = ((Map<String, List<String>>) map.get(RELATED_IDS_KEY))
+                .get(variableName).stream()
+                .map(identifier -> {
+                    try {
+                        return APILocator.getContentletAPI()
+                                .findContentletByIdentifierAnyLanguage(identifier);
+                    } catch (DotDataException | DotSecurityException e) {
+                        Logger.warn(this, "No content found with id " + identifier,
+                                e);
+                        throw new DotStateException(e);
+                    }
+                }).collect(Collectors.toList());
+
+        return relatedList;
+    }
 
     /**
      * Set related content for a content given a relationship field
@@ -1637,9 +1692,9 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     public void setRelated(final String fieldVarName, final List<Contentlet> contentlets) {
         map.put(fieldVarName, contentlets);
 
-        if (UtilMethods.isSet(this.relatedIds)) {
+        if (map.containsKey(RELATED_IDS_KEY)) {
             //clean up cache
-            relatedIds.remove(fieldVarName);
+            ((Map<String, List<String>>)map.get(RELATED_IDS_KEY)).remove(fieldVarName);
         }
     }
 

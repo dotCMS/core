@@ -1405,56 +1405,43 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return permissionAPI.filterCollection(contentFactory.getRelatedLinks(contentlet), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
     }
 
-    private List<Contentlet> filterRelatedContent(Contentlet contentlet, Relationship rel,
-            User user, boolean respectFrontendRoles)
+    @CloseDBIfOpened
+    @Override
+    public List<Contentlet> filterRelatedContent(Contentlet contentlet, Relationship rel,
+            User user, boolean respectFrontendRoles, Boolean pullByParent, int limit, int offset,
+            String sortBy)
             throws DotDataException, DotSecurityException {
 
         if (!UtilMethods.isSet(contentlet.getIdentifier())) {
             return Collections.emptyList();
         }
 
-        if (rel.getChildStructureInode().equals(rel.getParentStructureInode())) {
-            return (List<Contentlet>) CollectionsUtils
-                    .join(getRelatedChildren(contentlet, rel, user, respectFrontendRoles, -1, -1,
-                            null),
-                            getRelatedParents(contentlet, rel, user, respectFrontendRoles, -1, -1,
-                                    null)).stream()
-                    .collect(CollectionsUtils.toImmutableList());
-        } else {
-            if (rel.getChildStructureInode().equals(contentlet.getContentTypeId())) {
-                return getRelatedParents(contentlet, rel, user, respectFrontendRoles, -1, -1, null);
-            } else {
-                return getRelatedChildren(contentlet, rel, user, respectFrontendRoles, -1, -1,
-                        null);
-            }
-        }
-    }
-
-    private List<Contentlet> filterRelatedContent(Contentlet contentlet, Relationship rel,
-            User user, boolean respectFrontendRoles, boolean pullByParent, int limit, int offset,
-            String sortBy)
-            throws DotDataException, DotSecurityException {
-
-        if (!UtilMethods.isSet(contentlet.getIdentifier())){
-            return Collections.emptyList();
-        }
-
         final boolean isSameStructureRelationship = FactoryLocator.getRelationshipFactory()
                 .sameParentAndChild(rel);
 
-        if (isSameStructureRelationship){
-            if (pullByParent){
-                return getRelatedChildren(contentlet, rel, user, respectFrontendRoles, limit, offset, sortBy).stream()
+        if (isSameStructureRelationship) {
+            if (pullByParent == null) {
+                return (List<Contentlet>) CollectionsUtils
+                        .join(getRelatedChildren(contentlet, rel, user, respectFrontendRoles, limit,
+                                offset, sortBy),
+                                getRelatedParents(contentlet, rel, user, respectFrontendRoles,
+                                        limit, offset, sortBy)).stream()
                         .collect(CollectionsUtils.toImmutableList());
-            } else{
-                return getRelatedParents(contentlet, rel, user, respectFrontendRoles, limit, offset, sortBy).stream()
+            }
+            if (pullByParent) {
+                return getRelatedChildren(contentlet, rel, user, respectFrontendRoles, limit,
+                        offset, sortBy).stream()
+                        .collect(CollectionsUtils.toImmutableList());
+            } else {
+                return getRelatedParents(contentlet, rel, user, respectFrontendRoles, limit, offset,
+                        sortBy).stream()
                         .collect(CollectionsUtils.toImmutableList());
             }
         } else {
-            if (rel.getChildStructureInode().equals(contentlet.getContentTypeId())){
+            if (rel.getChildStructureInode().equals(contentlet.getContentTypeId())) {
                 return getRelatedParents(contentlet, rel, user, respectFrontendRoles, limit, offset,
                         sortBy);
-            } else{
+            } else {
                 return getRelatedChildren(contentlet, rel, user, respectFrontendRoles, limit,
                         offset, sortBy);
             }
@@ -1467,9 +1454,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
         try {
-            return permissionAPI.filterCollection(
-                    filterRelatedContent(contentlet, rel, user, respectFrontendRoles),
-                    PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
+            return getRelatedContent(contentlet, rel, null, user, respectFrontendRoles);
         } catch (Exception e) {
             final String errorMessage =
                     "Unable to look up related content for contentlet with identifier "
@@ -1500,7 +1485,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             SearchResponse response = APILocator.getEsSearchAPI()
                     .esSearchRelated(contentlet.getIdentifier(), relationshipName, false,false, user,
-                            respectFrontendRoles);
+                            respectFrontendRoles, limit, offset, sortBy);
 
             if (response.getHits() == null) {
                 return result;
@@ -1564,16 +1549,31 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @CloseDBIfOpened
     @Override
     public List<Contentlet> getRelatedContent(Contentlet contentlet, Relationship rel,
-            boolean pullByParent, User user, boolean respectFrontendRoles, int limit, int offset,
-            String sortBy)throws DotDataException {
+            Boolean pullByParent, User user, boolean respectFrontendRoles, int limit, int offset,
+            String sortBy)
+            throws DotDataException {
         try {
-            return permissionAPI.filterCollection(
-                    filterRelatedContent(contentlet, rel, user, respectFrontendRoles, pullByParent, limit, offset, sortBy),
-                    PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
+            String fieldVariable = rel.getRelationTypeValue();
+
+            if(rel.isRelationshipField()){
+                if ((relationshipAPI.sameParentAndChild(rel) && pullByParent!= null && pullByParent) || (relationshipAPI
+                        .isParent(rel, contentlet.getContentType()) && !relationshipAPI.sameParentAndChild(rel))) {
+                    if(rel.getChildRelationName()!= null) {
+                        fieldVariable = rel.getChildRelationName();
+                    }
+                } else if(rel.getParentRelationName() != null){
+                    fieldVariable = rel.getParentRelationName();
+                }
+            }
+
+            return contentlet
+                    .getRelated(fieldVariable, user, respectFrontendRoles, pullByParent, limit,
+                            offset, sortBy);
         } catch (Exception e) {
             final String errorMessage =
                     "Unable to look up related content for contentlet with identifier "
-                            + contentlet.getIdentifier() + ". Relationship name: " + rel.getRelationTypeValue();
+                            + contentlet.getIdentifier() + ". Relationship name: " + rel
+                            .getRelationTypeValue();
             if (e instanceof SearchPhaseExecutionException || e
                     .getCause() instanceof SearchPhaseExecutionException) {
                 Logger.warnAndDebug(ESContentletAPIImpl.class,
@@ -1587,14 +1587,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @CloseDBIfOpened
     @Override
     public List<Contentlet> getRelatedContent(Contentlet contentlet, Relationship rel,
-            boolean pullByParent, User user, boolean respectFrontendRoles)
+            Boolean pullByParent, User user, boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException {
         return getRelatedContent(contentlet, rel, pullByParent, user, respectFrontendRoles, -1, -1,
                 null);
     }
 
     /**
-     * @deprecated Use {@link ContentletAPI#getRelatedContent(Contentlet, Relationship, User, boolean)} instead
+     * @deprecated Use {@link ContentletAPI#getRelatedContent(Contentlet, Relationship, Boolean, User, boolean)} instead
      * @param contentlet
      * @param rel
      * @param pullByParent
@@ -1610,7 +1610,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throws DotDataException, DotSecurityException {
 
         try {
-            return filterRelatedContent(contentlet, rel, user, respectFrontendRoles, pullByParent, -1, -1, null);
+            return getRelatedContent(contentlet, rel, pullByParent, user, respectFrontendRoles, -1, -1, null);
         } catch (Exception e){
             final String errorMessage = "Unable to look up related content for contentlet with identifier "
                     + contentlet.getIdentifier() + ". Relationship Name: " + rel.getRelationTypeValue();
@@ -2747,21 +2747,49 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         // We need to refresh related parents, because currently the system does not
         // update the contentlets that lost the relationship (when the user remove a relationship).
-        if (cons != null && !hasParent) {
+        if (cons != null) {
             for (final Contentlet relatedContentlet : cons) {
                 //Only deleted parents will be reindexed
-                if (!identifiersToBeRelated.contains(relatedContentlet.getIdentifier())) {
+                if (!hasParent && !identifiersToBeRelated
+                        .contains(relatedContentlet.getIdentifier())) {
                     relatedContentlet.setIndexPolicy(contentlet.getIndexPolicyDependencies());
                     relatedContentlet
-                            .setIndexPolicyDependencies(contentlet.getIndexPolicyDependencies());
+                            .setIndexPolicyDependencies(
+                                    contentlet.getIndexPolicyDependencies());
                     refreshNoDeps(relatedContentlet);
                 }
+                //If relationship field, related content cache must be invalidated
+                invalidateRelatedContentCache(relatedContentlet, relationship, !hasParent);
+                CacheLocator.getContentletCache().add(relatedContentlet);
             }
         }
 
         // Refresh the parent only if the contentlet is not already in the checkin
         if (!contentlet.getBoolProperty(CHECKIN_IN_PROGRESS)) {
             refreshNoDeps(contentlet);
+        }
+    }
+
+    private void invalidateRelatedContentCache(Contentlet contentlet, Relationship relationship,
+            boolean hasParent) {
+        //If relationship field, related content cache must be invalidated
+        if (relationship.isRelationshipField()){
+
+            if (relationshipAPI.sameParentAndChild(relationship)){
+                if (relationship.getParentRelationName() != null) {
+                    contentlet.setRelated(relationship.getParentRelationName(), null);
+                }
+
+                if (relationship.getChildRelationName() != null) {
+                    contentlet.setRelated(relationship.getChildRelationName(), null);
+                }
+            }else {
+                if (!hasParent && relationship.getParentRelationName() != null) {
+                    contentlet.setRelated(relationship.getParentRelationName(), null);
+                } else if (hasParent && relationship.getChildRelationName() != null) {
+                    contentlet.setRelated(relationship.getChildRelationName(), null);
+                }
+            }
         }
     }
 
@@ -2860,7 +2888,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                     treePosition++;
                 }
+                invalidateRelatedContentCache(c, relationship, !related.isHasParent());
+                CacheLocator.getContentletCache().add(c);
             }
+
+            //If relationship field, related content cache must be invalidated
+            invalidateRelatedContentCache(contentlet, relationship, related.isHasParent());
 
             if(localTransaction){
                 HibernateUtil.commitTransaction();
