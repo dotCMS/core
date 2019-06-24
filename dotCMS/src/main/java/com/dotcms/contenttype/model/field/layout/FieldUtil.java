@@ -3,6 +3,7 @@ package com.dotcms.contenttype.model.field.layout;
 import com.dotcms.contenttype.model.field.*;
 import com.dotcms.contenttype.transform.field.JsonFieldTransformer;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 
@@ -20,7 +21,7 @@ public class FieldUtil {
         private List<Field> newFields;
         private List<Field> updatedFields;
 
-        private SortOrderFix(List<Field> newFields, List<Field> updatedFields) {
+        private SortOrderFix(final List<Field> newFields, final List<Field> updatedFields) {
             this.newFields = newFields;
             this.updatedFields = updatedFields;
         }
@@ -222,6 +223,7 @@ public class FieldUtil {
         try {
             jsonObject.put("sortOrder", newSortOrder);
         } catch (JSONException e) {
+            Logger.error(FieldUtil.class, String.format("Eror witg fiels %s: %s", field.name(), e.getMessage()));
             throw new DotRuntimeException(e);
         }
 

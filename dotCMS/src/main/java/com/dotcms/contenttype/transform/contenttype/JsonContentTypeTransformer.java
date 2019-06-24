@@ -7,6 +7,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.JsonTransformer;
 import com.dotcms.contenttype.transform.field.JsonFieldTransformer;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableList;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.json.JSONArray;
@@ -68,6 +69,7 @@ public class JsonContentTypeTransformer implements ContentTypeTransformer, JsonT
 
       return jsonObject;
     } catch (JSONException | JsonProcessingException e) {
+      Logger.error(JsonContentTypeTransformer.class, String.format("Error with the content type %s: %s", type.name(), e.getMessage()));
       throw new DotStateException(e);
     }
   }

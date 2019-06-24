@@ -182,7 +182,9 @@ public class ContentTypeFieldLayoutAPIImpl implements ContentTypeFieldLayoutAPI 
         fieldAPI.saveFields(fieldLayout.getLayoutFieldsToCreateOrUpdate(), user);
     }
 
-    private void deleteUnecessaryLayoutFields(FieldLayout fieldLayout, User user) throws DotDataException, DotSecurityException {
+    private void deleteUnecessaryLayoutFields(final FieldLayout fieldLayout, final User user)
+            throws DotDataException, DotSecurityException {
+
         fieldAPI.deleteFields(
                 fieldLayout.getLayoutFieldsToDelete().stream().map(field -> field.id()).collect(Collectors.toList()),
                 user

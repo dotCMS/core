@@ -299,11 +299,11 @@ public class FieldResourceTest {
     @Test(expected = NotFoundException.class)
     public void shouldThrowErrorWhenFieldDoesNotExists () throws DotSecurityException, DotDataException {
 
-        ContentType type = createContentType();
+        final ContentType type = createContentType();
 
         createFields(type);
 
-        Field field = FieldBuilder.builder(TextField.class)
+        final Field field = FieldBuilder.builder(TextField.class)
                 .name("text 2")
                 .sortOrder(3)
                 .build();
@@ -579,27 +579,27 @@ public class FieldResourceTest {
 
         final List<Field> responseFields = this.getFields(responseRows);
         assertEquals(9, responseFields.size());
-        assertEquals(responseFields.get(0).getClass(), com.dotcms.contenttype.model.field.ImmutableRowField.class);
-        assertEquals(responseFields.get(1).getClass(), com.dotcms.contenttype.model.field.ImmutableColumnField.class);
-        assertEquals(responseFields.get(2).getClass(), com.dotcms.contenttype.model.field.ImmutableColumnField.class);
+        assertEquals(responseFields.get(0).getClass(), ImmutableRowField.class);
+        assertEquals(responseFields.get(1).getClass(), ImmutableColumnField.class);
+        assertEquals(responseFields.get(2).getClass(), ImmutableColumnField.class);
         assertEquals(responseFields.get(3).id(), fields.get(3).id());
-        assertEquals(responseFields.get(4).getClass(), com.dotcms.contenttype.model.field.ImmutableColumnField.class);
+        assertEquals(responseFields.get(4).getClass(), ImmutableColumnField.class);
         assertEquals(responseFields.get(5).id(), fields.get(5).id());
-        assertEquals(responseFields.get(6).getClass(), com.dotcms.contenttype.model.field.ImmutableColumnField.class);
+        assertEquals(responseFields.get(6).getClass(), ImmutableColumnField.class);
         assertEquals(responseFields.get(7).id(), fields.get(10).id());
         assertEquals(responseFields.get(8).id(), fields.get(8).id());
 
         final ContentType contentTypeFromDB = APILocator.getContentTypeAPI(APILocator.systemUser()).find(type.id());
         assertEquals(9, responseFields.size());
-        assertEquals(responseFields.get(0).getClass(), com.dotcms.contenttype.model.field.ImmutableRowField.class);
-        assertEquals(responseFields.get(1).getClass(), com.dotcms.contenttype.model.field.ImmutableColumnField.class);
-        assertEquals(responseFields.get(2).getClass(), com.dotcms.contenttype.model.field.ImmutableColumnField.class);
-        assertEquals(responseFields.get(3).id(), fields.get(3).id());
-        assertEquals(responseFields.get(4).getClass(), com.dotcms.contenttype.model.field.ImmutableColumnField.class);
-        assertEquals(responseFields.get(5).id(), fields.get(5).id());
-        assertEquals(responseFields.get(6).getClass(), com.dotcms.contenttype.model.field.ImmutableColumnField.class);
-        assertEquals(responseFields.get(7).id(), fields.get(10).id());
-        assertEquals(responseFields.get(8).id(), fields.get(8).id());
+        assertEquals(contentTypeFromDB.fields().get(0).getClass(), ImmutableRowField.class);
+        assertEquals(contentTypeFromDB.fields().get(1).getClass(), ImmutableColumnField.class);
+        assertEquals(contentTypeFromDB.fields().get(2).getClass(), ImmutableColumnField.class);
+        assertEquals(contentTypeFromDB.fields().get(3).id(), fields.get(3).id());
+        assertEquals(contentTypeFromDB.fields().get(4).getClass(), ImmutableColumnField.class);
+        assertEquals(contentTypeFromDB.fields().get(5).id(), fields.get(5).id());
+        assertEquals(contentTypeFromDB.fields().get(6).getClass(), ImmutableColumnField.class);
+        assertEquals(contentTypeFromDB.fields().get(7).id(), fields.get(10).id());
+        assertEquals(contentTypeFromDB.fields() .get(8).id(), fields.get(8).id());
     }
 
     /**
@@ -745,13 +745,13 @@ public class FieldResourceTest {
 
         final ContentType contentTypeFromDB = APILocator.getContentTypeAPI(APILocator.systemUser()).find(type.id());
         assertEquals(contentTypeFromDB.fields().size(), 8);
-        assertEquals(contentTypeFromDB.fields().get(0).getClass(), com.dotcms.contenttype.model.field.ImmutableRowField.class);
-        assertEquals(contentTypeFromDB.fields().get(1).getClass(), com.dotcms.contenttype.model.field.ImmutableColumnField.class);
-        assertEquals(contentTypeFromDB.fields().get(2).getClass(), com.dotcms.contenttype.model.field.ImmutableColumnField.class);
-        assertEquals(contentTypeFromDB.fields().get(3).getClass(), com.dotcms.contenttype.model.field.ImmutableColumnField.class);
+        assertEquals(contentTypeFromDB.fields().get(0).getClass(), ImmutableRowField.class);
+        assertEquals(contentTypeFromDB.fields().get(1).getClass(), ImmutableColumnField.class);
+        assertEquals(contentTypeFromDB.fields().get(2).getClass(), ImmutableColumnField.class);
+        assertEquals(contentTypeFromDB.fields().get(3).getClass(), ImmutableColumnField.class);
 
         assertEquals(contentTypeFromDB.fields().get(4).id(), fields.get(5).id());
-        assertEquals(contentTypeFromDB.fields().get(5).getClass(), com.dotcms.contenttype.model.field.ImmutableColumnField.class);
+        assertEquals(contentTypeFromDB.fields().get(5).getClass(), ImmutableColumnField.class);
         assertEquals(contentTypeFromDB.fields().get(6).id(), fields.get(8).id());
         assertEquals(contentTypeFromDB.fields().get(7).id(), fields.get(10).id());
     }

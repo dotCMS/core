@@ -27,7 +27,7 @@ public interface ContentTypeFieldLayoutAPI {
      * @throws DotSecurityException
      * @throws DotDataException
      */
-    FieldLayout updateField(ContentType contentType, Field fieldToUpdate, User user)
+    FieldLayout updateField(final ContentType contentType, final Field fieldToUpdate, final User user)
             throws DotSecurityException, DotDataException;
 
     /**
@@ -41,7 +41,7 @@ public interface ContentTypeFieldLayoutAPI {
      * @throws DotSecurityException
      * @throws DotDataException
      */
-    FieldLayout moveFields(ContentType contentType, FieldLayout newFieldLayout, User user)
+    FieldLayout moveFields(final ContentType contentType, final FieldLayout newFieldLayout, final User user)
             throws DotSecurityException, DotDataException;
 
     /**
@@ -53,7 +53,7 @@ public interface ContentTypeFieldLayoutAPI {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    FieldLayout getLayout(String contentTypeId, User user)  throws DotDataException, DotSecurityException;
+    FieldLayout getLayout(final String contentTypeId, final User user)  throws DotDataException, DotSecurityException;
 
     /**
      * Delete a field making sure that the {@link ContentType} keep with a right layout after the operation
@@ -66,7 +66,7 @@ public interface ContentTypeFieldLayoutAPI {
      * @throws DotSecurityException
      * @throws DotDataException
      */
-    DeleteFieldResult deleteField(ContentType contentType, List<String> fieldsID, User user)
+    DeleteFieldResult deleteField(final ContentType contentType, final List<String> fieldsID, final User user)
             throws DotSecurityException, DotDataException;
 
     class DeleteFieldResult {

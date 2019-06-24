@@ -5,6 +5,7 @@ import com.dotcms.contenttype.model.field.layout.FieldLayout;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.JsonFieldTransformer;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -32,6 +33,8 @@ public class MoveFieldsForm {
             final String rowsString = MAPPER.writeValueAsString(fields);
             return new FieldLayout(contentType, new JsonFieldTransformer(rowsString).asList());
         } catch (IOException e) {
+            Logger.error(MoveFieldsForm.class,
+                    String.format("Error moving fields to Content Type %s: %s", contentType.name(), e.getMessage()));
             throw new DotRuntimeException(e);
         }
     }

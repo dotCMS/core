@@ -5,6 +5,7 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.RowField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.Logger;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -109,6 +110,7 @@ public class FieldLayout {
 
             return notStrictFieldLayoutRowSyntaxValidator.getFields();
         } catch (FieldLayoutValidationException e) {
+            Logger.error(FieldLayout.class, e.getMessage());
             throw new DotRuntimeException(e);
         }
     }
@@ -127,6 +129,7 @@ public class FieldLayout {
 
             return notStrictFieldLayoutRowSyntaxValidator.getFieldsToRemove();
         } catch (FieldLayoutValidationException e) {
+            Logger.error(FieldLayout.class, e.getMessage());
             throw new DotRuntimeException(e);
         }
     }
@@ -145,6 +148,7 @@ public class FieldLayout {
 
             return notStrictFieldLayoutRowSyntaxValidator.getLayoutFieldsToCreateOrUpdate();
         } catch (FieldLayoutValidationException e) {
+            Logger.error(FieldLayout.class, e.getMessage());
             throw new DotRuntimeException(e);
         }
     }
