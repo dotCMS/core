@@ -43,7 +43,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 
-public class TempResourceTest {
+public class TempFileResourceTest {
   @BeforeClass
   public static void prepare() throws Exception {
     // Setting web app environment
@@ -61,7 +61,7 @@ public class TempResourceTest {
   
   @Test
   public void test_temp_resource_upload() throws Exception {
-    final TempResource resource = new TempResource();
+    final TempFileResource resource = new TempFileResource();
 
     final HttpServletRequest request = mockRequest();
 
@@ -81,7 +81,7 @@ public class TempResourceTest {
     // its not an image because we set the filename to "test.file"
     assertFalse((Boolean) dotTempFile.image);
 
-    assert (tempFileId.startsWith(TempResourceAPI.TEMP_RESOURCE_PREFIX));
+    assert (tempFileId.startsWith(TempFileAPI.TEMP_RESOURCE_PREFIX));
 
     assert (dotTempFile.file.getName().equals(fileName));
     assert (dotTempFile.length() > 0);
@@ -90,7 +90,7 @@ public class TempResourceTest {
 
   @Test
   public void test_tempResourceAPI_who_can_use_via_session() throws Exception {
-    final TempResource resource = new TempResource();
+    final TempFileResource resource = new TempFileResource();
 
     final HttpServletRequest request = mockRequest();
 
@@ -109,22 +109,22 @@ public class TempResourceTest {
     final String tempFileId = dotTempFile.id;
 
     // we can get the file because we have the same sessionId as the request
-    Optional<File> file = new TempResourceAPI().getTempFile(null, request.getSession().getId(), tempFileId);
-    assert (file.isPresent() && !file.get().isDirectory());
+    Optional<DotTempFile> file = new TempFileAPI().getTempFile(null, request.getSession().getId(), tempFileId);
+    assert (file.isPresent() && !file.get().file.isDirectory());
 
     // we can get the file again because we have the same sessionId as the request
-    file = new TempResourceAPI().getTempFile(null, request.getSession().getId(), tempFileId);
-    assert (file.isPresent() && !file.get().isDirectory());
+    file = new TempFileAPI().getTempFile(null, request.getSession().getId(), tempFileId);
+    assert (file.isPresent() && !file.get().file.isDirectory());
 
     // we CANNOT get the file again because we have a new session ID in the request
-    file = new TempResourceAPI().getTempFile(null, mockRequest().getSession().getId(), tempFileId);
+    file = new TempFileAPI().getTempFile(null, mockRequest().getSession().getId(), tempFileId);
     assert (!file.isPresent());
 
   }
 
   @Test
   public void test_tempResourceAPI_who_can_use_via_userID() throws Exception {
-    final TempResource resource = new TempResource();
+    final TempFileResource resource = new TempFileResource();
 
     final HttpServletRequest request = mockRequest();
     final User user = new UserDataGen().nextPersisted();
@@ -144,17 +144,17 @@ public class TempResourceTest {
     final String tempFileId = dotTempFile.id;
 
     // CANNOT get the file again because we have a new session ID in the new mock request
-    Optional<File> file = new TempResourceAPI().getTempFile(null, mockRequest().getSession().getId(), tempFileId);
+    Optional<DotTempFile> file = new TempFileAPI().getTempFile(null, mockRequest().getSession().getId(), tempFileId);
     assert (!file.isPresent());
 
     // CAN get the file again because we are the user who uploaded it
-    file = new TempResourceAPI().getTempFile(user, mockRequest().getSession().getId(), tempFileId);
-    assert (file.isPresent() && !file.get().isDirectory());
+    file = new TempFileAPI().getTempFile(user, mockRequest().getSession().getId(), tempFileId);
+    assert (file.isPresent() && !file.get().file.isDirectory());
   }
 
   @Test
   public void test_tempResourceapi_max_age() throws Exception {
-    final TempResource resource = new TempResource();
+    final TempFileResource resource = new TempFileResource();
 
     final HttpServletRequest request = mockRequest();
 
@@ -173,34 +173,34 @@ public class TempResourceTest {
 
     final String tempFileId = dotTempFile.id;
 
-    Optional<File> file = new TempResourceAPI().getTempFile(null, request.getSession().getId(), tempFileId);
+    Optional<DotTempFile> file = new TempFileAPI().getTempFile(null, request.getSession().getId(), tempFileId);
 
     assert (file.isPresent());
 
     int tempResourceMaxAgeSeconds = Config.getIntProperty("TEMP_RESOURCE_MAX_AGE_SECONDS", 1800);
 
     // this works becuase we set the file age to newer than max age
-    file.get().setLastModified(System.currentTimeMillis() - 60 * 10 * 1000);
-    file = new TempResourceAPI().getTempFile(null, request.getSession().getId(), tempFileId);
+    file.get().file.setLastModified(System.currentTimeMillis() - 60 * 10 * 1000);
+    file = new TempFileAPI().getTempFile(null, request.getSession().getId(), tempFileId);
     assert (file.isPresent());
 
     // Setting the file to older than max age makes the file inaccessable
-    file.get().setLastModified(System.currentTimeMillis() - (tempResourceMaxAgeSeconds * 1000) - 1);
-    file = new TempResourceAPI().getTempFile(null, request.getSession().getId(), tempFileId);
+    file.get().file.setLastModified(System.currentTimeMillis() - (tempResourceMaxAgeSeconds * 1000) - 1);
+    file = new TempFileAPI().getTempFile(null, request.getSession().getId(), tempFileId);
     assertFalse(file.isPresent());
   }
   
 
   @Test
   public void test_tempResourceapi_test_anonymous_access() throws Exception {
-    final TempResource resource = new TempResource();
+    final TempFileResource resource = new TempFileResource();
 
     final HttpServletRequest request = mockRequest();
 
     final String fileName = "test.png";
     final HttpServletResponse response = new MockHttpResponse();
 
-    Config.setProperty(TempResourceAPI.TEMP_RESOURCE_ALLOW_ANONYMOUS, false);
+    Config.setProperty(TempFileAPI.TEMP_RESOURCE_ALLOW_ANONYMOUS, false);
     final Date date = new Date();
     final FormDataContentDisposition fileMetaData = FormDataContentDisposition.name("testData").fileName(fileName).creationDate(date)
         .modificationDate(date).readDate(date).size(1222).build();
@@ -213,7 +213,7 @@ public class TempResourceTest {
     } catch (Exception e) {
       assertTrue("We should have thrown a SecurityException", false);
     }
-    Config.setProperty(TempResourceAPI.TEMP_RESOURCE_ALLOW_ANONYMOUS, true);
+    Config.setProperty(TempFileAPI.TEMP_RESOURCE_ALLOW_ANONYMOUS, true);
     final Response jsonResponse = resource.uploadTempResource(request, response, inputStream(), fileMetaData);
     final DotTempFile dotTempFile = (DotTempFile) jsonResponse.getEntity();
     assert(UtilMethods.isSet(dotTempFile.id));
@@ -223,7 +223,7 @@ public class TempResourceTest {
   @Test
   public void temp_resource_makes_it_into_checked_in_content() throws Exception {
 
-    final TempResource resource = new TempResource();
+    final TempFileResource resource = new TempFileResource();
     final HttpServletRequest request = mockRequest();
 
     final HttpServletResponse response = new MockHttpResponse();
@@ -282,6 +282,10 @@ public class TempResourceTest {
     m.put("testBinary", dotTempFile2.id);
     Contentlet contentlet = new Contentlet(m);
     contentlet = APILocator.getContentletAPI().checkin(contentlet, user, true);
+    
+    contentlet = APILocator.getContentletAPI().find(contentlet.getInode(), user, true);
+    
+    
 
     assert (contentlet.getBinary("fileAsset").exists());
     assert (contentlet.getBinary("fileAsset").getName().equals(fileName1));
