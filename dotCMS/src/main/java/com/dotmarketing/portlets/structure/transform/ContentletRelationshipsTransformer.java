@@ -62,17 +62,8 @@ public class ContentletRelationshipsTransformer implements DBTransformer<Content
         for(final Map.Entry<Relationship, List<Contentlet>> relEntry : contentRelationships.entrySet()) {
 
             final Relationship relationship = relEntry.getKey();
-            final boolean hasChildren       = FactoryLocator.getRelationshipFactory().isChild(relationship, structure);
             boolean hasParent               = FactoryLocator.getRelationshipFactory().isParent(relationship, structure);
 
-            // self-join (same CT for parent and child) relationships return true to both, so if the
-            // parentRelationName is not set the relationship is one-sided so we add children
-            // if the parentRelationName is set there is no way to know if we are adding parents or children
-            // so we assume we are adding children
-            if (hasParent && hasChildren) {
-                hasParent = !UtilMethods.isSet(relationship.getParentRelationName());
-            }
-            
             final ContentletRelationships.ContentletRelationshipRecords
                     records = relationshipsData.new ContentletRelationshipRecords(relationship, hasParent);
             records.setRecords(relEntry.getValue());
