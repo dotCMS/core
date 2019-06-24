@@ -44,7 +44,6 @@ import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import org.apache.commons.lang.StringUtils;
 
-import javax.ws.rs.HEAD;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.function.Predicate;

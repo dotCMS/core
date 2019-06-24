@@ -58,14 +58,14 @@ public interface PersonaAPI {
 
 	/**
 	 * Find a persona even a working version
-	 * @param id The Persona identifier.
+	 * @param identifier The Persona identifier.
 	 * @param user The User with Permissions to find the Persona.
 	 * @param respectFrontEndRoles true if call comes from FrontEnd, otherwise false.
 	 * @return Persona object from Contentlet, null if not present.
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	Persona find(String id,  User user, boolean respectFrontEndRoles)throws DotDataException, DotSecurityException;
+	Persona find(String identifier,  User user, boolean respectFrontEndRoles)throws DotDataException, DotSecurityException;
 
 	/**
 	 * Find a live persona version

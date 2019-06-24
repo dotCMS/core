@@ -12,23 +12,17 @@ import java.util.Map;
 public class PersonalizationPersonaPageView implements Serializable {
 
     private final String pageId;
-    private final boolean personalized;
     private final Map<String, Object> persona;
 
-    public PersonalizationPersonaPageView(final String pageId, final boolean personalized,
+    public PersonalizationPersonaPageView(final String pageId,
                                           final Map<String, Object> persona) {
         this.pageId       = pageId;
-        this.personalized = personalized;
         this.persona      = persona;
     }
 
 
     public String getPageId() {
         return pageId;
-    }
-
-    public boolean isPersonalized() {
-        return personalized;
     }
 
     public Map<String, Object> getPersona() {

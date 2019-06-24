@@ -75,7 +75,7 @@ public class DeleteMultiTreeUsedPersonaTagJob implements StatefulJob {
     }
 
     @Override
-    public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException {
+    public void execute(final JobExecutionContext jobExecutionContext) throws JobExecutionException {
 
         final JobDataMap map  = jobExecutionContext.getJobDetail().getJobDataMap();
         final User       user = (User) map.get("user");

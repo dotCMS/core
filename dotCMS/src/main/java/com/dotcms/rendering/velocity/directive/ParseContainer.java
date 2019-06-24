@@ -46,7 +46,7 @@ public class ParseContainer extends DotDirective {
 	}
 
 	// depending on the persona selected (if any) will set the contentlist default
-	private void processContentletListPerPersona (final Context context, final RenderParams params, final String[] arguments) {
+	private void processContentletListPerPersona (final Context context, final RenderParams params, final String... arguments) {
 
 		final String id 			 = arguments[0];
 		final String personalization = WebAPILocator.getPersonalizationWebAPI().getContainerPersonalization();

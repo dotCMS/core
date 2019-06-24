@@ -95,23 +95,23 @@ public interface VersionableAPI {
 
 	/**
 	 * Finds all versions based on an id
-	 * @param id {@link Identifier}
+	 * @param identifier {@link Identifier}
 	 * @return
 	 * @throws DotDataException
 	 * @throws DotStateException
 	 * @throws DotSecurityException
 	 */
-	public List<Versionable>  findAllVersions(Identifier id)  throws DotDataException, DotStateException,DotSecurityException;
+	public List<Versionable>  findAllVersions(Identifier identifier)  throws DotDataException, DotStateException,DotSecurityException;
 
 	/**
 	 * Finds previous versions based on an identifier (if exists)
-	 * @param id {@link Identifier}
+	 * @param identifier {@link Identifier}
 	 * @return Optional of Versionable
 	 * @throws DotDataException
 	 * @throws DotStateException
 	 * @throws DotSecurityException
 	 */
-	 Optional<Versionable> findPreviousVersion(Identifier id)  throws DotDataException, DotStateException,DotSecurityException;
+	 Optional<Versionable> findPreviousVersion(Identifier identifier)  throws DotDataException, DotStateException,DotSecurityException;
 
 	/**
 	 * Finds previous versions based on an identifier (if exists)

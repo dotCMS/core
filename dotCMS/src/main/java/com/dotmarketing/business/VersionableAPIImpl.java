@@ -147,11 +147,11 @@ public class VersionableAPIImpl implements VersionableAPI {
         return findPreviousVersion(identifier, APILocator.getUserAPI().getSystemUser(), false);
     }
 
-    public Optional<Versionable> findPreviousVersion(final Identifier id)  throws DotDataException, DotStateException,DotSecurityException {
-        if (id == null) {
+    public Optional<Versionable> findPreviousVersion(final Identifier identifier)  throws DotDataException, DotStateException,DotSecurityException {
+        if (identifier == null) {
             throw new DotStateException("Identifier is null");
         }
-        return findPreviousVersion(id.getId(), APILocator.getUserAPI().getSystemUser(), false);
+        return findPreviousVersion(identifier.getId(), APILocator.getUserAPI().getSystemUser(), false);
     }
 
 	@Override

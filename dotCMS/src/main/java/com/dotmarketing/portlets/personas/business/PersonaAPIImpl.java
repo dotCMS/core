@@ -57,15 +57,13 @@ public class PersonaAPIImpl implements PersonaAPI, DotInitializer {
 
 	private boolean isPersona (final Contentlet contentlet) {
 
-		boolean isPersona = false;
-
 		if (null != contentlet) {
 
 			final ContentType contentType = contentlet.getContentType();
 			return null != contentType && contentType instanceof PersonaContentType;
 		}
 
-		return isPersona;
+		return false;
 	}
 
 	@Subscriber
@@ -359,20 +357,20 @@ public class PersonaAPIImpl implements PersonaAPI, DotInitializer {
 	}
 
 	@Override
-	public Persona find(final String id, final User user, final boolean respectFrontEndRoles) throws DotDataException, DotSecurityException {
+	public Persona find(final String identifier, final User user, final boolean respectFrontEndRoles) throws DotDataException, DotSecurityException {
 
-		return this.find(id, user, respectFrontEndRoles, false);
+		return this.find(identifier, user, respectFrontEndRoles, false);
 	}
 
 	@Override
-	public Persona findLive(final String id, final User user, final boolean respectFrontEndRoles) throws DotDataException, DotSecurityException {
+	public Persona findLive(final String identifier, final User user, final boolean respectFrontEndRoles) throws DotDataException, DotSecurityException {
 
-		return this.find(id, user, respectFrontEndRoles, true);
+		return this.find(identifier, user, respectFrontEndRoles, true);
 	}
 
-	private Persona find(final String id, final User user, final boolean respectFrontEndRoles, final boolean live) throws DotDataException, DotSecurityException {
+	private Persona find(final String identifier, final User user, final boolean respectFrontEndRoles, final boolean live) throws DotDataException, DotSecurityException {
 
-		final Contentlet contentlet = APILocator.getContentletAPI().findContentletByIdentifier(id, live,
+		final Contentlet contentlet = APILocator.getContentletAPI().findContentletByIdentifier(identifier, live,
 				APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, respectFrontEndRoles);
 
 		return UtilMethods.isSet(contentlet) ? fromContentlet(contentlet) : null;
