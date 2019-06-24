@@ -13,7 +13,7 @@ import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { FormBuilder, FormGroup, ValidationErrors, Validators } from '@angular/forms';
 import { FieldPropertyService } from '../service';
 import { DotMessageService } from '@services/dot-messages-service';
-import { ContentTypeField } from '../index';
+import { DotContentTypeField } from '../index';
 import { By } from '@angular/platform-browser';
 
 const mockDFormFieldData = {
@@ -27,7 +27,7 @@ const mockDFormFieldData = {
         '<dot-content-type-fields-properties-form [formFieldData]="mockDFormFieldData"></dot-content-type-fields-properties-form>'
 })
 class DotHostTesterComponent {
-    mockDFormFieldData: ContentTypeField = {};
+    mockDFormFieldData: DotContentTypeField = {};
 
     constructor() {}
 }
@@ -39,7 +39,7 @@ class TestDynamicFieldPropertyDirective {
     @Input()
     propertyName: string;
     @Input()
-    field: ContentTypeField;
+    field: DotContentTypeField;
     @Input()
     group: FormGroup;
 }
@@ -107,21 +107,16 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
     });
 
     const startHostComponent = () => {
-        hostFixture.detectChanges();
-
-        /*
-            This is the way it work in the real life, it triggers the ngOnChange twice, when is added to the DOM
-            and when is passed data, so I'm recreating this.
-
-            TODO: it's should NOT be in the DOM until data is passed, need to refactor that because we're triggering
-            a whole lifecycle events just because.
-        */
 
         hostComp.mockDFormFieldData = {
             ...mockDFormFieldData
         };
 
         hostFixture.detectChanges();
+
+        return new Promise((resolve) => {
+            setTimeout(() => resolve(), 1);
+          });
     };
 
     beforeEach(async(() => {
@@ -152,14 +147,16 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
     }));
 
     describe('should init component', () => {
+
         beforeEach(() => {
             spyOn(mockFieldPropertyService, 'getProperties').and.returnValue([
                 'property1',
                 'property2',
                 'property3'
             ]);
-            startHostComponent();
         });
+
+        beforeEach(async () => await startHostComponent());
 
         it('should init form', () => {
             expect(mockFieldPropertyService.getProperties).toHaveBeenCalledWith('field.class');
@@ -193,8 +190,9 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
                 'listed'
             ]);
             spyOn(mockFieldPropertyService, 'existsComponent').and.returnValue(true);
-            startHostComponent();
         });
+
+        beforeEach(async () => await startHostComponent());
 
         it('should set system indexed true when select user searchable', () => {
             comp.form.get('indexed').setValue(false);
@@ -234,8 +232,9 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
                 'listed'
             ]);
             spyOn(mockFieldPropertyService, 'existsComponent').and.returnValue(true);
-            startHostComponent();
         });
+
+        beforeEach(async () => await startHostComponent());
 
         it('should set unique and no break when indexed and required doesn\'t exist', () => {
             comp.form.get('unique').setValue(true);

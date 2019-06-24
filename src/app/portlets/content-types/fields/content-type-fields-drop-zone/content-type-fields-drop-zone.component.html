@@ -7,22 +7,24 @@
     >
         <ng-template ngFor let-row [ngForOf]="fieldRows">
             <dot-content-type-fields-row
-                *ngIf="row.columns && row.columns.length"
+                *ngIf="row.columns && row.columns.length;else tab_container"
                 [fieldRow]="row"
-                (editField)="editField($event)"
+                (editField)="editFieldHandler($event)"
                 (removeField)="removeField($event)"
                 (removeRow)="removeFieldRow($event)"
             >
             </dot-content-type-fields-row>
 
-            <dot-content-type-fields-tab
-                *ngIf="isTab(row)"
-                class="row-header__drag"
-                [fieldTab]="row"
-                (editTab)="saveFieldsHandler($event)"
-                (removeTab)="removeTab($event)"
-            >
-            </dot-content-type-fields-tab>
+            <ng-template #tab_container>
+                <dot-content-type-fields-tab
+                    class="row-header__drag"
+                    [fieldTab]="row"
+                    (editTab)="saveFieldsHandler($event)"
+                    (removeTab)="removeTab($event)"
+                >
+                </dot-content-type-fields-tab>
+            </ng-template>
+        
         </ng-template>
         <dot-add-rows (selectColums)="addRow($event)"></dot-add-rows>
     </div>
@@ -40,7 +42,7 @@
     <p-tabView [activeIndex]="dialogActiveTab" (onChange)="handleTabChange($event.index)">
         <p-tabPanel [header]="i18nMessages['contenttypes.dropzone.tab.overview']">
             <dot-content-type-fields-properties-form
-                [formFieldData]="formData"
+                [formFieldData]="currentField"
                 (saveField)="saveFieldsHandler($event)"
                 (valid)="setDialogOkButtonState($event)"
                 #fieldPropertiesForm
@@ -49,7 +51,7 @@
         </p-tabPanel>
         <p-tabPanel
             [header]="i18nMessages['contenttypes.dropzone.tab.variables']"
-            [disabled]="!formData?.id"
+            [disabled]="!currentField?.id"
         >
             <ng-template pTemplate="content">
                 <dot-content-type-fields-variables

@@ -1,4 +1,5 @@
-import { ContentTypeField } from '../';
+import { DotContentTypeField, DotContentTypeLayoutDivider } from '../';
+import { DotContentTypeColumn } from '../models';
 
 const COLUMN_FIELD = {
     clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField'
@@ -13,77 +14,156 @@ export const TAB_FIELD = {
 };
 
 export class FieldUtil {
-    private static NG_ID_SEQUENCER = new Date().getTime();
-    private static NG_ID__PREFIX = 'ng-';
     /**
      * Verify if the Field already exist
-     * @param ContentTypeField field
+     * @param DotContentTypeField field
      * @returns Boolean
      * @memberof ContentTypeFieldsDropZoneComponent
      */
-    static isNewField(field: ContentTypeField): Boolean {
-        return !field.id || field.id.startsWith(FieldUtil.NG_ID__PREFIX);
+    static isNewField(field: DotContentTypeField): Boolean {
+        return !field.id;
     }
 
-    static isRowOrColumn(field: ContentTypeField) {
+
+    /**
+     * Return true if the field is a RowField or a ColumnField
+     *
+     * @static
+     * @param {DotContentTypeField} field
+     * @returns
+     * @memberof FieldUtil
+     */
+    static isLayoutField(field: DotContentTypeField): boolean {
         return this.isRow(field) || this.isColumn(field);
     }
 
     /**
      * Verify if the Field is a row
-     * @param ContentTypeField field
+     * @param DotContentTypeField field
      * @returns Boolean
      * @memberof ContentTypeFieldsDropZoneComponent
      */
-    static isRow(field: ContentTypeField): boolean {
+    static isRow(field: DotContentTypeField): boolean {
         return field.clazz === ROW_FIELD.clazz;
     }
 
     /**
      * Verify if the Field is a column
-     * @param ContentTypeField field
+     * @param DotContentTypeField field
      * @returns Boolean
      * @memberof ContentTypeFieldsDropZoneComponent
      */
-    static isColumn(field: ContentTypeField): boolean {
+    static isColumn(field: DotContentTypeField): boolean {
         return field.clazz === COLUMN_FIELD.clazz;
     }
 
     /**
      * Verify if the Field is a tab
-     * @param {ContentTypeField} field
+     * @param {DotContentTypeField} field
      * @returns {Boolean}
      * @memberof ContentTypeFieldsDropZoneComponent
      */
-    static isTabDivider(field: ContentTypeField): boolean {
+    static isTabDivider(field: DotContentTypeField): boolean {
         return field.clazz === TAB_FIELD.clazz;
     }
 
-    static createFieldRow(): ContentTypeField {
-        return Object.assign({}, ROW_FIELD);
+
+    /**
+     * Create a new row
+     * @static
+     * @param {number} nColumns
+     * @returns {DotContentTypeLayoutDivider}
+     * @memberof FieldUtil
+     */
+    static createFieldRow(nColumns: number): DotContentTypeLayoutDivider {
+        return {
+            divider: {...ROW_FIELD},
+            columns: new Array(nColumns).fill(null).map(() => FieldUtil.createFieldColumn())
+        };
     }
 
-    static createFieldColumn(): ContentTypeField {
-        return Object.assign({}, COLUMN_FIELD);
+
+    /**
+     * Create a new column
+     *
+     * @static
+     * @returns {FieldColumn}
+     * @memberof FieldUtil
+     */
+    static createFieldColumn(): DotContentTypeColumn {
+        return {
+            columnDivider: {...COLUMN_FIELD},
+            fields: []
+        };
     }
 
-    static createFieldTabDivider(): ContentTypeField {
-        return Object.assign({}, TAB_FIELD);
+
+    /**
+     * Create a new TabField
+     *
+     * @static
+     * @returns {DotContentTypeLayoutDivider}
+     * @memberof FieldUtil
+     */
+    static createFieldTabDivider(): DotContentTypeLayoutDivider {
+        return {
+            divider: Object.assign({}, TAB_FIELD)
+        };
     }
 
-    static splitFieldsByRows(fields: ContentTypeField[]): ContentTypeField[][] {
+
+    /**
+     * Split the fields array by FieldDivider: for example if we have a field array like:
+     * ROW_FIELD, COLUMN_FIELD,TEXT_FIELD,TAB_FIELD,ROW_FIELD,COLUMN_FIELD,TEXT_FIELD
+     * 
+     * then you would get:
+     * [ROW_FIELD, COLUMN_FIELD,TEXT_FIELD], [TAB_FIELD] , [ROW_FIELD, COLUMN_FIELD, TEXT_FIELD]
+     *
+     * @static
+     * @param {DotContentTypeField[]} fields
+     * @returns {DotContentTypeField[][]}
+     * @memberof FieldUtil
+     */
+    static getRows(fields: DotContentTypeField[]): DotContentTypeField[][] {
         return FieldUtil.splitFieldsBy(fields, [ROW_FIELD.clazz, TAB_FIELD.clazz]);
     }
 
-    static splitFieldsByTabDivider(fields: ContentTypeField[]): ContentTypeField[][] {
+
+    /**
+     * Split the fields array by ColumnField: for example if we have a field array like:
+     * COLUMN_FIELD,TEXT_FIELD,COLUMN_FIELD,TEXT_FIELD
+     * 
+     * then you would get:
+     * [COLUMN_FIELD,TEXT_FIELD], [COLUMN_FIELD,TEXT_FIELD]
+     *
+     * @static
+     * @param {DotContentTypeField[]} fields
+     * @returns {DotContentTypeField[][]}
+     * @memberof FieldUtil
+     */
+    static getColumns(fields: DotContentTypeField[]): DotContentTypeField[][] {
         return FieldUtil.splitFieldsBy(fields, [COLUMN_FIELD.clazz]);
     }
 
-    static splitFieldsBy(fields: ContentTypeField[], fieldClass: string[]): ContentTypeField[][] {
-        const result: ContentTypeField[][] = [];
-        let currentFields: ContentTypeField[];
 
-        fields.forEach((field: ContentTypeField) => {
+    /**
+     * Split the fields array by fieldClass: for example if we have a field array like:
+     * COLUMN_FIELD,TEXT_FIELD,COLUMN_FIELD,TEXT_FIELD
+     * 
+     * and fieldClass is equal to 'com.dotcms.contenttype.model.field.ImmutableColumnField', then you would get:
+     * [COLUMN_FIELD,TEXT_FIELD], [COLUMN_FIELD,TEXT_FIELD]
+     *
+     * @static
+     * @param {DotContentTypeField[]} fields
+     * @param {string[]} fieldClass
+     * @returns {DotContentTypeField[][]}
+     * @memberof FieldUtil
+     */
+    static splitFieldsBy(fields: DotContentTypeField[], fieldClass: string[]): DotContentTypeField[][] {
+        const result: DotContentTypeField[][] = [];
+        let currentFields: DotContentTypeField[];
+
+        fields.forEach((field: DotContentTypeField) => {
             if (fieldClass.includes(field.clazz)) {
                 currentFields = [];
                 result.push(currentFields);
@@ -103,9 +183,5 @@ export class FieldUtil {
         });
 
         return result;
-    }
-
-    static createNGID(): string {
-        return `${FieldUtil.NG_ID__PREFIX}${FieldUtil.NG_ID_SEQUENCER++}`;
     }
 }

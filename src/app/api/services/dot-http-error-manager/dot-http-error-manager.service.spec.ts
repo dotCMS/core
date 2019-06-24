@@ -22,7 +22,11 @@ describe('DotHttpErrorManagerService', () => {
         'dot.common.http.error.500.header': '500 Header',
         'dot.common.http.error.500.message': '500 Message',
         'dot.common.http.error.403.license.message': 'license message',
-        'dot.common.http.error.403.license.header': 'license header'
+        'dot.common.http.error.403.license.header': 'license header',
+        'dot.common.http.error.400.header': '400 Header',
+        'dot.common.http.error.400.message': '400 Message',
+        'dot.common.http.error.204.header': '204 Header',
+        'dot.common.http.error.204.message': '204 Message',
     });
 
     beforeEach(() => {
@@ -138,6 +142,59 @@ describe('DotHttpErrorManagerService', () => {
         expect(dotDialogService.alert).toHaveBeenCalledWith({
             message: 'license message',
             header: 'license header'
+        });
+    });
+
+    it('should handle 400 error', () => {
+        spyOn(dotDialogService, 'alert');
+
+        let responseView: ResponseView = mockResponseView(400);
+        spyOn(responseView.response, 'json').and.returnValue({
+            message: 'Error'
+        });
+
+        service.handle(responseView).subscribe((res) => {
+            result = res;
+        });
+
+        expect(result).toEqual({
+            redirected: false
+        });
+        expect(dotDialogService.alert).toHaveBeenCalledWith({
+            message: 'Error',
+            header: '400 Header'
+        });
+    });
+
+    it('should handle 400 error and show reponse message', () => {
+        spyOn(dotDialogService, 'alert');
+
+        service.handle(mockResponseView(400)).subscribe((res) => {
+            result = res;
+        });
+
+        expect(result).toEqual({
+            redirected: false
+        });
+        expect(dotDialogService.alert).toHaveBeenCalledWith({
+            message: '400 Message',
+            header: '400 Header'
+        });
+    });
+
+    it('should handle 204 error', () => {
+        spyOn(dotDialogService, 'alert');
+
+        service.handle(mockResponseView(204)).subscribe((res) => {
+            result = res;
+        });
+
+        expect(result).toEqual({
+            redirected: false
+        });
+        expect(dotDialogService.alert).toHaveBeenCalledWith({
+            message: '204 Message',
+            header: '204 Header'
         });
     });
 });

@@ -3,7 +3,7 @@ import { Response, ResponseOptions, ConnectionBackend } from '@angular/http';
 import { MockBackend } from '@angular/http/testing';
 import { FieldService } from './';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
-import { FieldType } from '@portlets/content-types/fields';
+import { FieldType, DotContentTypeField } from '@portlets/content-types/fields';
 
 export const mockFieldType: FieldType = {
     clazz: 'TextField',
@@ -49,12 +49,16 @@ describe('FieldService', () => {
         beforeEach(() => {
             this.mockData = [
                 {
-                    clazz: 'com.dotcms.contenttype.model.field.ImmutableRadioField',
-                    name: 'Hello World'
+                    divider: {
+                        clazz: 'com.dotcms.contenttype.model.field.ImmutableRadioField',
+                        name: 'Hello World'
+                    }
                 },
                 {
-                    clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField'
-                }
+                    divider:                 {
+                        clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField'
+                    }
+                },
             ];
 
             this.fieldService
@@ -74,16 +78,8 @@ describe('FieldService', () => {
 
         it('should save field', () => {
             expect(this.mockData).toEqual(this.response);
-            expect(this.lastConnection.request.url).toContain('v2/contenttype/1/fields');
+            expect(this.lastConnection.request.url).toContain('v3/contenttype/1/fields');
             expect(2).toBe(this.lastConnection.request.method); // 2 is PUT method
-        });
-
-        it('should set name and contentTypeId', () => {
-            const requestBody = this.lastConnection.request._body;
-
-            expect('1').toBe(requestBody[0].contentTypeId);
-            expect('1').toBe(requestBody[1].contentTypeId);
-            expect('fields-1').toBe(requestBody[1].name);
         });
     });
 
@@ -123,15 +119,42 @@ describe('FieldService', () => {
             expect(['1', '2']).toEqual(this.response.deletedIds);
             expect(this.mockData).toEqual(this.response.fields);
             expect(3).toBe(this.lastConnection.request.method); // 3 is DELETE method
-            expect(this.lastConnection.request.url).toContain('v2/contenttype/1/fields');
+            expect(this.lastConnection.request.url).toContain('v3/contenttype/1/fields');
+        });
+    });
+
+    describe('Update Field', () => {
+        beforeEach(() => {
+            const field: DotContentTypeField = {
+                name: 'test field',
+                id: '1',
+                sortOrder: 1
+            };
+
+            this.fieldService
+                .updateField('2', field)
+                .subscribe(res => (this.response = JSON.parse(res)));
+
+            this.lastConnection.mockRespond(
+                new Response(
+                    new ResponseOptions({
+                        body: {
+                            entity: JSON.stringify([field])
+                        }
+                    })
+                )
+            );
         });
 
-        it('should set name and contentTypeId', () => {
-            const requestBody = this.lastConnection.request._body;
+        it('should update field', () => {
+            expect(this.lastConnection.request._body.field).toEqual({
+                name: 'test field',
+                id: '1',
+                sortOrder: 1
+            });
 
-            expect(2).toBe(requestBody.length);
-            expect('1').toBe(requestBody[0]);
-            expect('2').toBe(requestBody[1]);
+            expect(this.lastConnection.request.url).toContain('v3/contenttype/2/fields/1');
+            expect(2).toBe(this.lastConnection.request.method); // 2 is PUT method
         });
     });
 });

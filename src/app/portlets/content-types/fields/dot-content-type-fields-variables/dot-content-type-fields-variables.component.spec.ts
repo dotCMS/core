@@ -62,7 +62,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
 
         comp.field = {
             contentTypeId: 'ddf29c1e-babd-40a8-bfed-920fc9b8c77',
-            fieldId: mockFieldVariables[0].fieldId
+            id: mockFieldVariables[0].fieldId
         };
     });
 
@@ -94,18 +94,14 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
 
     it('should save a variable', () => {
         spyOn(dotFieldVariableService, 'save').and.returnValue(of(mockFieldVariables[0]));
-        const params = {
-            contentTypeId: comp.field.contentTypeId,
-            fieldId: comp.field.fieldId,
-            variable: mockFieldVariables[1]
-        };
+
         fixture.detectChanges();
         comp.fieldVariablesBackup[0] = _.cloneDeep(mockFieldVariables[1]);
         comp.fieldVariablesBackup[2] = _.cloneDeep(mockFieldVariables[0]);
 
         tableRow = de.query(By.css('dot-content-type-fields-variables-table-row')).componentInstance;
         tableRow.save.emit(1);
-        expect(dotFieldVariableService.save).toHaveBeenCalledWith(params);
+        expect(dotFieldVariableService.save).toHaveBeenCalledWith(comp.field, mockFieldVariables[1]);
         expect(comp.fieldVariablesBackup[0]).not.toEqual(comp.fieldVariables[0]);
         expect(comp.fieldVariablesBackup[1]).toEqual(comp.fieldVariables[1]);
         expect(comp.fieldVariablesBackup[2]).not.toEqual(comp.fieldVariables[2]);
@@ -115,15 +111,10 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
         spyOn(dotFieldVariableService, 'delete').and.returnValue(of([]));
         fixture.detectChanges();
 
-        const params = {
-            contentTypeId: comp.field.contentTypeId,
-            fieldId: comp.field.fieldId,
-            variable: mockFieldVariables[0]
-        };
         tableRow = de.query(By.css('dot-content-type-fields-variables-table-row')).componentInstance;
         tableRow.delete.emit(0);
 
-        expect(dotFieldVariableService.delete).toHaveBeenCalledWith(params);
+        expect(dotFieldVariableService.delete).toHaveBeenCalledWith(comp.field, mockFieldVariables[0]);
     });
 
     it('should delete an empty variable from the UI', () => {

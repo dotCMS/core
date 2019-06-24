@@ -11,7 +11,7 @@ import {
 } from '@angular/core';
 import { FormGroup, FormBuilder, AbstractControl } from '@angular/forms';
 import { DotMessageService } from '@services/dot-messages-service';
-import { ContentTypeField } from '../shared';
+import { DotContentTypeField } from '../models';
 import { FieldPropertyService } from '../service/';
 import { take, takeUntil } from 'rxjs/operators';
 import * as _ from 'lodash';
@@ -27,7 +27,7 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
 
     @Output() valid: EventEmitter<boolean> = new EventEmitter();
 
-    @Input() formFieldData: ContentTypeField;
+    @Input() formFieldData: DotContentTypeField;
 
     @ViewChild('properties') propertiesContainer;
 
@@ -50,12 +50,9 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
 
     ngOnChanges(changes: SimpleChanges): void {
         if (changes.formFieldData.currentValue && this.formFieldData) {
-            this.updateFormFieldData();
-            const properties: string[] = this.fieldPropertyService.getProperties(
-                this.formFieldData.clazz
-            );
-            this.initFormGroup(properties);
-            this.sortProperties(properties);
+            this.destroy();
+
+            setTimeout(this.init.bind(this), 0);
         }
     }
 
@@ -124,12 +121,26 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
 
     destroy(): void {
         this.fieldProperties = [];
-        const propertiesContainer = this.propertiesContainer.nativeElement;
-        propertiesContainer.childNodes.forEach(child => {
-            if (child.tagName) {
-                propertiesContainer.removeChild(child);
-            }
-        });
+
+        if (this.propertiesContainer) {
+            const propertiesContainer = this.propertiesContainer.nativeElement;
+            propertiesContainer.childNodes.forEach(child => {
+                if (child.tagName) {
+                    propertiesContainer.removeChild(child);
+                }
+            });
+        }
+    }
+
+    private init(): void {
+        this.updateFormFieldData();
+
+        const properties: string[] = this.fieldPropertyService.getProperties(
+            this.formFieldData.clazz
+        );
+
+        this.initFormGroup(properties);
+        this.sortProperties(properties);
     }
 
     private initFormGroup(properties?: string[]): void {

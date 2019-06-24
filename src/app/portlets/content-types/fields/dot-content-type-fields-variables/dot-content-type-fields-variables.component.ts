@@ -13,12 +13,12 @@ import {
 } from './services/dot-field-variables.service';
 import { DotHttpErrorManagerService } from '../../../../api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotFieldVariable } from './models/dot-field-variable.interface';
-import { DotFieldVariableParams } from './models/dot-field-variable-params.interface';
 import { ResponseView } from 'dotcms-js';
 import { take, takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs/internal/Subject';
 import { Table } from 'primeng/table';
 import * as _ from 'lodash';
+import { DotContentTypeField } from '../models';
 
 @Component({
     selector: 'dot-content-type-fields-variables',
@@ -30,7 +30,7 @@ export class DotContentTypeFieldsVariablesComponent implements OnInit, OnChanges
     table: Table;
 
     @Input()
-    field: DotFieldVariableParams;
+    field: DotContentTypeField;
 
     fieldVariables: DotFieldVariable[] = [];
     fieldVariablesBackup: DotFieldVariable[] = [];
@@ -116,12 +116,8 @@ export class DotContentTypeFieldsVariablesComponent implements OnInit, OnChanges
     }
 
     private initTableData(): void {
-        const params: DotFieldVariableParams = {
-            contentTypeId: this.field.contentTypeId,
-            fieldId: this.field.fieldId
-        };
         this.fieldVariablesService
-            .load(params)
+            .load(this.field)
             .pipe(takeUntil(this.destroy$))
             .subscribe((fieldVariables: DotFieldVariable[]) => {
                 this.fieldVariables = fieldVariables;
@@ -130,13 +126,8 @@ export class DotContentTypeFieldsVariablesComponent implements OnInit, OnChanges
     }
 
     private deleteExistingVariable(fieldIndex: number): void {
-        const params: DotFieldVariableParams = {
-            contentTypeId: this.field.contentTypeId,
-            fieldId: this.field.fieldId,
-            variable: this.fieldVariables[fieldIndex]
-        };
         this.fieldVariablesService
-            .delete(params)
+            .delete(this.field, this.fieldVariables[fieldIndex])
             .pipe(take(1))
             .subscribe(
                 () => {
@@ -168,13 +159,8 @@ export class DotContentTypeFieldsVariablesComponent implements OnInit, OnChanges
     }
 
     private updateExistingVariable(variable: DotFieldVariable, variableIndex: number): void {
-        const params: DotFieldVariableParams = {
-            contentTypeId: this.field.contentTypeId,
-            fieldId: this.field.fieldId,
-            variable: variable
-        };
         this.fieldVariablesService
-            .save(params)
+            .save(this.field, variable)
             .pipe(take(1))
             .subscribe(
                 (savedVariable: DotFieldVariable) => {

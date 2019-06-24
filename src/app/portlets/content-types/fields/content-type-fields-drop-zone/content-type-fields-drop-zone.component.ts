@@ -6,22 +6,21 @@ import {
     EventEmitter,
     OnInit,
     OnChanges,
-    ViewChild,
-    OnDestroy
+    OnDestroy,
+    ViewChild
 } from '@angular/core';
 import { FieldDragDropService, DropFieldData } from '../service';
-import { FieldRow, FieldTab, ContentTypeField, FieldType, FieldColumn } from '../shared';
+import { DotContentTypeField, FieldType, DotContentTypeLayoutDivider } from '../models';
 import { ContentTypeFieldsPropertiesFormComponent } from '../content-type-fields-properties-form';
 import { DotMessageService } from '@services/dot-messages-service';
 import { FieldUtil } from '../util/field-util';
 import { FieldPropertyService } from '../service/field-properties.service';
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
-import { FieldDivider } from '@portlets/content-types/fields/shared/field-divider.interface';
-import { takeUntil, take } from 'rxjs/operators';
+import { takeUntil, take  } from 'rxjs/operators';
 import { Subject } from 'rxjs';
-import { DotFieldVariableParams } from '../dot-content-type-fields-variables/models/dot-field-variable-params.interface';
 import { DotLoadingIndicatorService } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.service';
+import * as _ from 'lodash';
 
 /**
  * Display all the Field Types
@@ -39,23 +38,23 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
 
     dialogActiveTab: number;
     displayDialog = false;
-    fieldRows: FieldDivider[] = [];
-    formData: ContentTypeField;
+    currentField: DotContentTypeField;
     currentFieldType: FieldType;
-    currentField: DotFieldVariableParams;
     dialogActions: DotDialogActions;
+    fieldRows: DotContentTypeLayoutDivider[];
 
     @ViewChild('fieldPropertiesForm')
     propertiesForm: ContentTypeFieldsPropertiesFormComponent;
 
-    @ViewChild('fieldPropertiesForm')
     @Input()
-    fields: ContentTypeField[];
+    layout: DotContentTypeLayoutDivider[];
 
     @Output()
-    saveFields = new EventEmitter<ContentTypeField[]>();
+    saveFields = new EventEmitter<DotContentTypeLayoutDivider[]>();
     @Output()
-    removeFields = new EventEmitter<ContentTypeField[]>();
+    editField = new EventEmitter<DotContentTypeField>();
+    @Output()
+    removeFields = new EventEmitter<DotContentTypeField[]>();
 
     hideButtons = false;
 
@@ -108,27 +107,23 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
             .pipe(takeUntil(this.destroy$))
             .subscribe((data: DropFieldData) => {
                 this.setDroppedField(data.item);
-                this.setModel(data.target);
                 this.toggleDialog();
             });
 
+
         this.fieldDragDropService.fieldDropFromTarget$
             .pipe(takeUntil(this.destroy$))
-            .subscribe((data: DropFieldData) => {
-                this.setModel(data.target);
-
-                if (data.source !== data.target) {
-                    this.setModel(data.source);
-                }
-
-                this.moveFields();
+            .subscribe(() => {
+                setTimeout(() => {
+                    this.saveFields.emit(this.fieldRows);
+                }, 0);
             });
 
         this.fieldDragDropService.fieldRowDropFromTarget$
             .pipe(takeUntil(this.destroy$))
-            .subscribe((fieldRows: FieldDivider[]) => {
+            .subscribe((fieldRows: DotContentTypeLayoutDivider[]) => {
                 this.fieldRows = fieldRows;
-                this.moveFields();
+                this.saveFields.emit(fieldRows);
             });
 
         this.dotEventsService
@@ -144,22 +139,16 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
             .listen('add-tab-divider')
             .pipe(takeUntil(this.destroy$))
             .subscribe(() => {
-                const fieldTab: FieldTab = new FieldTab(FieldUtil.createFieldTabDivider());
+                const fieldTab: DotContentTypeLayoutDivider = FieldUtil.createFieldTabDivider();
                 this.fieldRows.push(fieldTab);
-                this.setDroppedField(fieldTab.getFieldDivider());
+                this.setDroppedField(fieldTab.divider);
                 this.toggleDialog();
             });
     }
 
     ngOnChanges(changes: SimpleChanges): void {
-        if (changes.fields && changes.fields.currentValue) {
-            const fields = changes.fields.currentValue;
-
-            if (Array.isArray(fields)) {
-                this.fieldRows = this.getRowFields(fields);
-            } else {
-                throw new Error('Fields attribute must be a Array');
-            }
+        if (changes.layout && changes.layout.currentValue) {
+            this.fieldRows = _.cloneDeep(changes.layout.currentValue);
         }
     }
 
@@ -184,45 +173,46 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
     }
 
     /**
-     * Adds columns to the layout of content type
-     * @param number columns
+     * Adds row to the layout of content type
+     * @param number columns new row's number of columns
      * @memberof ContentTypeFieldsDropZoneComponent
      */
     addRow(columns: number): void {
-        this.fieldRows.push(new FieldRow(columns));
+        const newRow = FieldUtil.createFieldRow(columns);
+        this.fieldRows.push(newRow);
     }
 
     /**
      * Emit the saveField event
-     * @param ContentTypeField fieldToSave
+     * @param DotContentTypeField fieldToSave
      * @memberof ContentTypeFieldsDropZoneComponent
      */
-    saveFieldsHandler(fieldToSave: ContentTypeField): void {
-        let fields: ContentTypeField[];
-
-        if (fieldToSave.id) {
-            fields = [fieldToSave];
-        } else {
-            fields = this.getFieldsToSave(fieldToSave);
-            this.toggleDialog();
+    saveFieldsHandler(fieldToSave: DotContentTypeField): void {
+        if (!this.currentField) {
+            const tabDividerFields = this.getTabDividerFields();
+            this.currentField = tabDividerFields.find((field: DotContentTypeField) => fieldToSave.id === field.id);
         }
 
-        this.saveFields.emit(fields);
+        Object.assign(this.currentField, fieldToSave);
+
+        if (!!fieldToSave.id) {
+            this.editField.emit(this.currentField);
+        } else {
+            this.saveFields.emit(this.fieldRows);
+        }
+
+        this.toggleDialog();
     }
 
     /**
      * Get the field to be edited
-     * @param ContentTypeField fieldToEdit
+     * @param DotContentTypeField fieldToEdit
      * @memberof ContentTypeFieldsDropZoneComponent
      */
-    editField(fieldToEdit: ContentTypeField): void {
-        const fields = this.getFields();
-        this.formData = fields.filter((field) => fieldToEdit.id === field.id)[0];
-        this.currentFieldType = this.fieldPropertyService.getFieldType(this.formData.clazz);
-        this.currentField = {
-            fieldId: this.formData.id,
-            contentTypeId: this.formData.contentTypeId
-        };
+    editFieldHandler(fieldToEdit: DotContentTypeField): void {
+        const fields = this.getFieldsWithoutLayout();
+        this.currentField = fields.find((field: DotContentTypeField) => fieldToEdit.id === field.id);
+        this.currentFieldType = this.fieldPropertyService.getFieldType(this.currentField.clazz);
         this.toggleDialog();
     }
 
@@ -243,39 +233,37 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
                         }
                     });
                 });
-            } else if (!row.fieldDivider.name) {
+            } else if (!row.divider.name) {
                 this.fieldRows.splice(rowIndex, 1);
             }
         });
         this.hideButtons = false;
         this.displayDialog = false;
-        this.formData = null;
+        this.currentField = null;
         this.dialogActiveTab = null;
-        this.propertiesForm.destroy();
         this.setDialogOkButtonState(false);
     }
 
     /**
      * Trigger the removeFields event with fieldToDelete
-     * @param {ContentTypeField} fieldToDelete
+     * @param {DotContentTypeField} fieldToDelete
      * @memberof ContentTypeFieldsDropZoneComponent
      */
-    removeField(fieldToDelete: ContentTypeField): void {
+    removeField(fieldToDelete: DotContentTypeField): void {
         this.removeFields.emit([fieldToDelete]);
     }
 
     /**
      * Trigger the removeFields event with all the fields in fieldRow
-     * @param {FieldRow} fieldRow
+     * @param {DotContentTypeLayoutDivider} fieldRow
      * @memberof ContentTypeFieldsDropZoneComponent
      */
-    removeFieldRow(fieldRow: FieldRow): void {
+    removeFieldRow(fieldRow: DotContentTypeLayoutDivider): void {
         this.fieldRows.splice(this.fieldRows.indexOf(fieldRow), 1);
-        const fieldsToDelete: ContentTypeField[] = [];
-        const fieldDivider = fieldRow.getFieldDivider();
+        const fieldsToDelete: DotContentTypeField[] = [];
 
-        if (!FieldUtil.isNewField(fieldDivider)) {
-            fieldsToDelete.push(fieldDivider);
+        if (!FieldUtil.isNewField(fieldRow.divider)) {
+            fieldsToDelete.push(fieldRow.divider);
             fieldRow.columns.forEach((fieldColumn) => {
                 fieldsToDelete.push(fieldColumn.columnDivider);
                 fieldColumn.fields.forEach((field) => fieldsToDelete.push(field));
@@ -286,22 +274,12 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
 
     /**
      * Trigger the removeFields event with the tab to be removed
-     * @param {FieldTab} fieldTab
+     * @param {DotContentTypeLayoutDivider} fieldTab
      * @memberof ContentTypeFieldsDropZoneComponent
      */
-    removeTab(fieldTab: FieldTab): void {
+    removeTab(fieldTab: DotContentTypeLayoutDivider): void {
         this.fieldRows.splice(this.fieldRows.indexOf(fieldTab), 1);
-        this.removeFields.emit([fieldTab.getFieldDivider()]);
-    }
-
-    /**
-     * Checks if field is Tab Divider
-     * @param {FieldDivider} row
-     * @returns {boolean}
-     * @memberof ContentTypeFieldsDropZoneComponent
-     */
-    isTab(row: FieldDivider): boolean {
-        return row instanceof FieldTab;
+        this.removeFields.emit([fieldTab.divider]);
     }
 
     /**
@@ -310,7 +288,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
      * @memberof ContentTypeFieldsDropZoneComponent
      */
     cancelLastDragAndDrop(): void {
-        this.fieldRows = this.getRowFields(this.fields);
+        this.fieldRows = _.cloneDeep(this.layout);
     }
 
     /**
@@ -329,146 +307,37 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
         };
     }
 
-    /**
-     * Hide or show the 'save' and 'hide' buttons according to the field tab selected
-     */
+     /**
+      * Hide or show the 'save' and 'hide' buttons according to the field tab selected
+      * 
+      * @param index
+      */
     handleTabChange(index: number): void {
         this.hideButtons = index !== this.OVERVIEW_TAB_INDEX;
     }
 
-    private setDroppedField(droppedField: ContentTypeField): void {
-        this.formData = droppedField;
-
-        if (this.formData) {
-            this.currentFieldType = this.fieldPropertyService.getFieldType(this.formData.clazz);
-        }
+    private getFieldsWithoutLayout(): DotContentTypeField[] {
+        return this.fieldRows
+            .map(row => row.columns)
+            .filter(columns => !!columns)
+            .reduce((accumulator, currentValue) => accumulator.concat(currentValue), [])
+            .map(fieldColumn => fieldColumn.fields)
+            .reduce((accumulator, currentValue) => accumulator.concat(currentValue), []);
     }
 
-    private setModel(data: { columnId: string; model: ContentTypeField[] }): void {
-        const modelFieldColumn: FieldColumn = this.fieldRows
-            .filter((fieldDivider: FieldDivider) => fieldDivider instanceof FieldRow)
-            .map((fieldDivider: FieldDivider) => (<FieldRow>fieldDivider).columns)
-            .reduce((acc, val) => acc.concat(val), [])
-            .find((fieldColumn: FieldColumn) => fieldColumn.id === data.columnId);
-
-        modelFieldColumn.fields = data.model;
+    private getTabDividerFields(): DotContentTypeField[] {
+        return this.fieldRows
+            .map(row => row.divider)
+            .filter(field => FieldUtil.isTabDivider(field));
     }
 
-    private moveFields(): void {
-        const fields = this.getFields().filter((field, index) => {
-            const currentSortOrder = index;
-
-            if (field.sortOrder !== currentSortOrder) {
-                field.sortOrder = currentSortOrder;
-                return true;
-            } else {
-                return false;
-            }
-        });
-
-        this.saveFields.emit(fields);
-    }
-
-    private getFieldsToSave(fieldToSave: ContentTypeField): ContentTypeField[] {
-        return this.formData.id
-            ? [this.getUpdatedField(fieldToSave)]
-            : this.getUpdatedFields(fieldToSave);
-    }
-
-    private getUpdatedField(fieldToSave: ContentTypeField): ContentTypeField {
-        const fields = this.getFields();
-        let result: ContentTypeField;
-
-        for (let i = 0; i < fields.length; i++) {
-            const field = fields[i];
-
-            if (this.formData.id === field.id) {
-                result = Object.assign({}, field, fieldToSave);
-                break;
-            }
-        }
-
-        return result;
-    }
-
-    private getUpdatedFields(newField: ContentTypeField): ContentTypeField[] {
-        const fields = this.getFields();
-        const result: ContentTypeField[] = [];
-
-        fields.forEach((field, index) => {
-            if (field.sortOrder !== index) {
-                field.sortOrder = index;
-                const fieldToPush = this.isNewOrLayoutFiled(field)
-                    ? Object.assign(field, newField)
-                    : field;
-                result.push(fieldToPush);
-            }
-        });
-
-        return result;
-    }
-
-    private isNewOrLayoutFiled(field: ContentTypeField): boolean {
-        return FieldUtil.isNewField(field) && !FieldUtil.isRowOrColumn(field);
+    private setDroppedField(droppedField: DotContentTypeField): void {
+        this.currentField = droppedField;
+        this.currentFieldType = this.fieldPropertyService.getFieldType(this.currentField.clazz);
     }
 
     private toggleDialog(): void {
         this.displayDialog = !this.displayDialog;
         this.dialogActiveTab = 0;
-
-        if (!this.displayDialog) {
-            this.propertiesForm.destroy();
-        }
-    }
-
-    private getFields(): ContentTypeField[] {
-        const fields: ContentTypeField[] = [];
-
-        this.fieldRows.forEach((fieldDivider: FieldDivider) => {
-            const divider: ContentTypeField = fieldDivider.getFieldDivider();
-
-            fields.push(divider);
-
-            if (fieldDivider instanceof FieldRow) {
-                (<FieldRow>fieldDivider).columns.forEach((fieldColumn) => {
-                    fields.push(fieldColumn.columnDivider);
-                    fieldColumn.fields.forEach((field) => fields.push(field));
-                });
-            }
-        });
-
-        return fields;
-    }
-
-    private getRowFields(fields: ContentTypeField[]): FieldDivider[] {
-        const splitFields: ContentTypeField[][] = FieldUtil.splitFieldsByRows(fields);
-        const fieldRows: FieldDivider[] = [];
-
-        splitFields.forEach((fieldsInRow: ContentTypeField[]) => {
-            if (FieldUtil.isTabDivider(fieldsInRow[0])) {
-                const tabRow: FieldTab = new FieldTab(fieldsInRow[0]);
-                fieldRows.push(tabRow);
-
-                if (fieldsInRow.length > 1) {
-                    fieldRows.push(this.generateRow(fieldsInRow.slice(1)));
-                }
-            } else {
-                fieldRows.push(this.generateRow(fieldsInRow));
-            }
-        });
-
-        return fieldRows.length ? fieldRows : this.getEmptyRow();
-    }
-
-    private generateRow(fieldDivider: ContentTypeField[]): FieldRow {
-        const fieldRow: FieldRow = new FieldRow();
-        fieldRow.addFields(JSON.parse(JSON.stringify(fieldDivider)));
-        return fieldRow;
-    }
-
-    private getEmptyRow(): FieldDivider[] {
-        const row = new FieldRow(1);
-
-        return [row];
     }
 }

@@ -4,35 +4,36 @@ import { DebugElement, Component, Input, Output, EventEmitter } from '@angular/c
 import { ContentTypeFieldsRowComponent } from './';
 import { By } from '@angular/platform-browser';
 import { FieldDragDropService } from '../service';
-import { ContentTypeField, FieldRow, FieldColumn } from '../';
+import { DotContentTypeField } from '../';
 import { DragulaModule, DragulaService } from 'ng2-dragula';
 import { DotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
 import { DotMessageService } from '@services/dot-messages-service';
 import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm';
+import { DotContentTypeLayoutDivider } from '../models';
+import { FieldUtil } from '../util/field-util';
 
-const mockFieldRow = new FieldRow();
-mockFieldRow.columns = [
-    new FieldColumn([
-        {
-            clazz: 'text',
-            name: 'field-1'
-        },
-        {
-            clazz: 'image',
-            name: 'field-1'
-        }
-    ]),
-    new FieldColumn([
-        {
-            clazz: 'text',
-            name: 'field-1'
-        }
-    ])
+const mockFieldRow: DotContentTypeLayoutDivider = FieldUtil.createFieldRow(2);
+
+mockFieldRow.columns[0].fields = [
+    {
+        clazz: 'text',
+        name: 'field-1'
+    },
+    {
+        clazz: 'image',
+        name: 'field-1'
+    }
 ];
 
-const mockFieldRowFieldEmpty = new FieldRow();
-mockFieldRowFieldEmpty.columns = [new FieldColumn([]), new FieldColumn([])];
+mockFieldRow.columns[1].fields = [
+    {
+        clazz: 'text',
+        name: 'field-1'
+    }
+];
+
+const mockFieldRowFieldEmpty: DotContentTypeLayoutDivider = FieldUtil.createFieldRow(2);
 
 @Component({
     selector: 'dot-content-type-field-dragabble-item',
@@ -40,11 +41,11 @@ mockFieldRowFieldEmpty.columns = [new FieldColumn([]), new FieldColumn([])];
 })
 class TestContentTypeFieldDraggableItemComponent {
     @Input()
-    field: ContentTypeField;
+    field: DotContentTypeField;
     @Output()
-    remove: EventEmitter<ContentTypeField> = new EventEmitter();
+    remove: EventEmitter<DotContentTypeField> = new EventEmitter();
     @Output()
-    edit: EventEmitter<ContentTypeField> = new EventEmitter();
+    edit: EventEmitter<DotContentTypeField> = new EventEmitter();
 }
 
 @Component({
@@ -52,9 +53,9 @@ class TestContentTypeFieldDraggableItemComponent {
     template: '<dot-content-type-fields-row [fieldRow]="data"></dot-content-type-fields-row>'
 })
 class DotTestHostComponent {
-    data: FieldRow;
+    data: DotContentTypeLayoutDivider;
 
-    setData(data: FieldRow): void {
+    setData(data: DotContentTypeLayoutDivider): void {
         this.data = data;
     }
 }
@@ -164,7 +165,7 @@ describe('ContentTypeFieldsRowComponent', () => {
             spyOn(dotDialogService, 'confirm');
 
             let result;
-            comp.removeRow.subscribe((rowToRemove: FieldRow) => {
+            comp.removeRow.subscribe((rowToRemove: DotContentTypeLayoutDivider) => {
                 result = rowToRemove;
             });
 

@@ -5,4 +5,4 @@ export * from './content-type-fields-tab';
 export * from './content-type-field-dragabble-item';
 export * from './content-type-fields-properties-form';
 export * from './content-type-fields-add-row';
-export * from './shared';
+export * from './models';

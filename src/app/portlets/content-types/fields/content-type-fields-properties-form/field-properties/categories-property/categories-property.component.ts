@@ -3,7 +3,7 @@ import { DotMessageService } from '@services/dot-messages-service';
 import { FieldProperty } from '../field-properties.model';
 import { PaginatorService } from '@services/paginator';
 import { FormGroup } from '@angular/forms';
-import { Category } from '../../../shared';
+import { Category } from '../../../models';
 import { take } from 'rxjs/operators';
 
 /**

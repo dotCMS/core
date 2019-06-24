@@ -1,4 +1,4 @@
-export interface ContentTypeField {
+export interface DotContentTypeField {
     clazz?: string;
     contentTypeId?: string;
     fixed?: boolean;

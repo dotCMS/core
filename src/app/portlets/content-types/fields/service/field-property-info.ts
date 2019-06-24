@@ -16,6 +16,7 @@ import {
 import {
     DotRelationshipsPropertyComponent
 } from '../content-type-fields-properties-form/field-properties/dot-relationships-property/dot-relationships-property.component';
+import { noWhitespaceValidator } from '../content-type-fields-properties-form/field-properties/dot-relationships-property/services/validators/no-whitespace-validator';
 
 export const PROPERTY_INFO = {
     categories: {
@@ -55,7 +56,7 @@ export const PROPERTY_INFO = {
         component: NamePropertyComponent,
         defaultValue: '',
         order: 0,
-        validations: [Validators.required],
+        validations: [Validators.required, noWhitespaceValidator],
         disabledInFixed: true
     },
     regexCheck: {
