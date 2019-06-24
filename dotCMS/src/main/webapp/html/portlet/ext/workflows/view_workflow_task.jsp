@@ -178,9 +178,11 @@ public String getPostedby(String postedBy){
     }
 
     function cancel () {
-        document.location = "<portlet:actionURL windowState="<%=WindowState.MAXIMIZED.toString()%>">
-        <portlet:param name="struts_action" value="/ext/workflows/view_workflow_tasks" />
-        </portlet:actionURL>";
+        var customEvent = document.createEvent("CustomEvent");
+        customEvent.initCustomEvent("ng-event", false, false,  {
+            name: "close"
+        });
+        document.dispatchEvent(customEvent)
     }
 
     function doEdit(){

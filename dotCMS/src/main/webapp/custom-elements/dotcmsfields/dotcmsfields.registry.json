@@ -2,97 +2,102 @@
   "namespace": "dotcmsFields",
   "fsNamespace": "dotcmsfields",
   "loader": "../dotcmsfields.js",
-  "core": "dotcmsfields.6kizh6ff.js",
-  "corePolyfilled": "dotcmsfields.1jwalvwy.js",
+  "core": "dotcmsfields.7ddqhji1.js",
+  "corePolyfilled": "dotcmsfields.aqv1omuo.js",
   "components": {
     "dot-autocomplete": {
       "bundleIds": {
-        "$": "akcehuoc"
+        "$": "7d4zwhvd"
       }
     },
     "dot-checkbox": {
       "bundleIds": {
-        "$": "hvthoely"
+        "$": "tcln5kix"
       }
     },
     "dot-chip": {
       "bundleIds": {
-        "$": "akcehuoc"
+        "$": "7d4zwhvd"
       }
     },
     "dot-date": {
       "bundleIds": {
-        "$": "hvthoely"
+        "$": "tcln5kix"
       }
     },
     "dot-date-range": {
       "bundleIds": {
-        "$": "hvthoely"
+        "$": "tcln5kix"
       }
     },
     "dot-date-time": {
       "bundleIds": {
-        "$": "hvthoely"
+        "$": "tcln5kix"
       }
     },
     "dot-form": {
       "bundleIds": {
-        "$": "hvthoely"
+        "$": "tcln5kix"
       }
     },
     "dot-input-calendar": {
       "bundleIds": {
-        "$": "vv1fstd3"
+        "$": "cg9cw0ai"
       }
     },
     "dot-key-value": {
       "bundleIds": {
-        "$": "y5eglwug"
+        "$": "uxhw6wjo"
       }
     },
     "dot-label": {
       "bundleIds": {
-        "$": "vv1fstd3"
+        "$": "cg9cw0ai"
       }
     },
     "dot-multi-select": {
       "bundleIds": {
-        "$": "hvthoely"
+        "$": "tcln5kix"
       }
     },
     "dot-radio": {
       "bundleIds": {
-        "$": "hvthoely"
+        "$": "tcln5kix"
       }
     },
     "dot-select": {
       "bundleIds": {
-        "$": "hvthoely"
+        "$": "tcln5kix"
       }
     },
     "dot-tags": {
       "bundleIds": {
-        "$": "akcehuoc"
+        "$": "7d4zwhvd"
       }
     },
     "dot-textarea": {
       "bundleIds": {
-        "$": "hvthoely"
+        "$": "tcln5kix"
       }
     },
     "dot-textfield": {
       "bundleIds": {
-        "$": "hvthoely"
+        "$": "tcln5kix"
       }
     },
     "dot-time": {
       "bundleIds": {
-        "$": "hvthoely"
+        "$": "tcln5kix"
+      }
+    },
+    "key-value-form": {
+      "bundleIds": {
+        "$": "uxhw6wjo"
       }
     },
     "key-value-table": {
       "bundleIds": {
-        "$": "y5eglwug"
+        "$": "uxhw6wjo"
       }
     }
   }

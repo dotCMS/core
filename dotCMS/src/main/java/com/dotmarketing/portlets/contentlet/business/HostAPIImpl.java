@@ -700,6 +700,9 @@ public class HostAPIImpl implements HostAPI {
                     }
                 }
 
+                //Remove Tags
+                APILocator.getTagAPI().deleteTagsByHostId(host.getIdentifier());
+
                 // Double-check that ALL contentlets are effectively removed  
                 // before using dotConnect to kill bad identifiers
                 List<Contentlet> remainingContenlets = contentAPI

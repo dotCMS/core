@@ -16,6 +16,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import org.apache.velocity.Template;
 import org.apache.velocity.exception.ParseErrorException;
 
@@ -75,9 +76,10 @@ public abstract class VelocityModeHandler {
         return pageModeVelocityMap.get(mode).apply(request, response, request.getRequestURI(), hostWebAPI.getCurrentHostNoThrow(request));
     }
 
-    public final Template getTemplate(IHTMLPage page, PageMode mode) {
+    public final Template getTemplate(final IHTMLPage page, final PageMode mode) {
 
         return VelocityUtil.getEngine().getTemplate(mode.name() + File.separator + page.getIdentifier() + "_"
                 + page.getLanguageId() + "." + VelocityType.HTMLPAGE.fileExtension);
     }
+
 }

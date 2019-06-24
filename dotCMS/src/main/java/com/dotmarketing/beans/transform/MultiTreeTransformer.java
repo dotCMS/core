@@ -8,7 +8,6 @@ import com.dotmarketing.util.UtilMethods;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import org.jetbrains.annotations.NotNull;
 
 public class MultiTreeTransformer implements DBTransformer<MultiTree> {
 
@@ -18,6 +17,7 @@ public class MultiTreeTransformer implements DBTransformer<MultiTree> {
     private static final String PARENT2 = "parent2";
     private static final String RELATION_TYPE = "relation_type";
     private static final String TREE_ORDER = "tree_order";
+    private static final String PERSONALIZATION = "personalization";
 
     private final ArrayList<MultiTree> list = new ArrayList<>();
 
@@ -34,19 +34,20 @@ public class MultiTreeTransformer implements DBTransformer<MultiTree> {
         }
     }
 
-    @NotNull
     private static MultiTree transform(final Map<String, Object> map) {
-        final MultiTree mt = new MultiTree();
-        mt.setContentlet((String) map.get(CHILD));
-        mt.setHtmlPage((String) map.get(PARENT1));
-        mt.setContainer((String) map.get(PARENT2));
+
+        final MultiTree multiTree = new MultiTree();
+        multiTree.setContentlet((String) map.get(CHILD));
+        multiTree.setHtmlPage((String) map.get(PARENT1));
+        multiTree.setContainer((String) map.get(PARENT2));
+        multiTree.setPersonalization((String) map.get(PERSONALIZATION));
         if (UtilMethods.isSet(map.get(RELATION_TYPE))) {
-            mt.setRelationType((String) map.get(RELATION_TYPE));
+            multiTree.setRelationType((String) map.get(RELATION_TYPE));
         }
         if (UtilMethods.isSet(map.get(TREE_ORDER))) {
-            mt.setTreeOrder(ConversionUtils.toInt(map.get(TREE_ORDER), 0));
+            multiTree.setTreeOrder(ConversionUtils.toInt(map.get(TREE_ORDER), 0));
         }
 
-        return mt;
+        return multiTree;
     }
 }

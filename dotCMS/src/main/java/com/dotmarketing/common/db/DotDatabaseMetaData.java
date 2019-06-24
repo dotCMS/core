@@ -2,6 +2,7 @@ package com.dotmarketing.common.db;
 
 import com.dotcms.util.CloseUtils;
 import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.startup.AbstractJDBCStartupTask;
 import com.dotmarketing.util.Logger;
 import com.liferay.util.StringPool;
 
@@ -313,5 +314,109 @@ public class DotDatabaseMetaData {
             CloseUtils.closeQuietly(preparedStatement);
         }
     } // executeDropForeignKeyMySql.
+
+
+    /**
+     * Returns the columns list of the table as a list
+     * @param connection {@link Connection}
+     * @param tableName  {@link String}
+     * @return
+     */
+    public Set<String> getColumnNames (final Connection connection, final String tableName) throws SQLException {
+
+        final Set<String> columns = new LinkedHashSet<>();
+        DatabaseMetaData databaseMetaData     = null;
+        ResultSet        resultSet            = null;
+        ForeignKey       foreignKey           = null;
+        String           schema               = null;
+        String           table                = tableName;
+
+        try {
+
+            databaseMetaData = connection.getMetaData();
+
+            if (DbConnectionFactory.isOracle()) {
+                table = table.toUpperCase();
+                schema = databaseMetaData.getUserName();
+            }
+
+            resultSet = databaseMetaData.getColumns
+                    (connection.getCatalog(), schema, table, null);
+
+            // Iterates over the foreign foreignKey columns
+            while (resultSet.next()) {
+
+                columns.add(resultSet.getString("COLUMN_NAME"));
+
+            }
+        } catch (SQLException e) {
+            Logger.error(this,
+                    "An error occurred when getting the the column names: " + e.getMessage(), e);
+            throw e;
+        }
+
+        return Collections.unmodifiableSet(columns);
+    }
+
+
+    /**
+     * Drop the primary keys associated to a table, additionally returns the list of pk removed
+     *
+     * @param connection
+     *            - The database connection object to access the dotCMS data.
+     * @param tableName
+     *            - database table name whose primary keys will be
+     *            retrieved.
+     *
+     * @return The list of primary keys associated to the tables.
+     */
+    public PrimaryKey dropPrimaryKey(final Connection connection,
+                                                 String tableName)  throws SQLException{
+
+        PrimaryKey primaryKey = null;
+        if (tableName!=null) {
+            try {
+
+                final DatabaseMetaData metaData = connection.getMetaData();
+
+                String schema=null;
+                if(DbConnectionFactory.isOracle()) {
+
+                    tableName = tableName.toUpperCase();
+                    schema    = metaData.getUserName();
+                }
+
+                System.out.println("metaData: " + metaData);
+                final ResultSet resultSet = metaData.getPrimaryKeys(connection.getCatalog(), schema, tableName);
+                String keyName            = null;
+                final List<String> columnNames = new ArrayList<>();
+
+                while (resultSet.next()) {
+                    keyName = resultSet.getString("PK_NAME");
+                    System.out.println("keyName: " + keyName);
+                    columnNames.add(resultSet.getString("COLUMN_NAME"));
+                }
+
+                if (null != keyName) {
+                    primaryKey = new PrimaryKey(tableName, keyName, columnNames);
+
+                    try {
+                        executeDropConstraint(connection, primaryKey.getTableName(), primaryKey.getKeyName());
+                    } catch (Exception ex) {
+                        if (primaryKey != null) {
+                            Logger.error(this,
+                                    "Drop primary key '" + primaryKey.getKeyName() + "' failed on table '" + primaryKey.getTableName() + "'", ex);
+                        }
+                    }
+                }
+            } catch (SQLException e) {
+                Logger.error(AbstractJDBCStartupTask.class,
+                        "An error occurred when processing the primary keys : " + e.getMessage(), e);
+                throw e;
+            }
+        }
+
+        return primaryKey;
+    }
 } // E:O:F:DotDatabaseMetaData.
 

@@ -1428,6 +1428,7 @@ public class ImportExportUtil {
                         }
                         else if(obj instanceof MultiTree){
                             final MultiTree t = (MultiTree) obj;
+                            t.setPersonalization(MultiTree.DOT_PERSONALIZATION_DEFAULT);
                             APILocator.getMultiTreeAPI().saveMultiTree(t);
 
                         } else{

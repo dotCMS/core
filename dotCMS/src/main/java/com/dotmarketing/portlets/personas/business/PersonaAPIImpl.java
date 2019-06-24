@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.personas.business;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -21,10 +22,12 @@ import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class PersonaAPIImpl implements PersonaAPI {
 
@@ -133,7 +136,7 @@ public class PersonaAPIImpl implements PersonaAPI {
 		query.append(liveWorkingDeleted);
 		if (parent instanceof Host) {
 			query.append(" +conFolder:SYSTEM_FOLDER");
-			query.append(" +conHost:(").append(parent.getIdentifier()).append(" ").append(Host.SYSTEM_HOST).append(")");
+			query.append(" +conHost:(").append(parent.getIdentifier()).append(" OR ").append(Host.SYSTEM_HOST).append(")");
 		}
 		else if (parent instanceof Folder) {
 			query.append(" +conFolder:").append(parent.getIdentifier()).append(" ");
@@ -288,5 +291,22 @@ public class PersonaAPIImpl implements PersonaAPI {
 				APILocator.getUserAPI().getSystemUser());
 		return defaultStr;
 	}
+
+	@CloseDBIfOpened
+	@Override
+	public Optional<Persona> findPersonaByTag (final String personaTag, final User user, final boolean respectFrontEndRoles) throws DotSecurityException, DotDataException {
+
+		final StringBuilder query = new StringBuilder(" +contentType:")
+				.append(PersonaAPI.DEFAULT_PERSONAS_STRUCTURE_VARNAME)
+				.append(" +persona.keytag:").append(personaTag);
+
+		final List<Contentlet> contentlets = APILocator.getContentletAPI().search
+				(query.toString(), -1, 0, StringPool.BLANK, user, respectFrontEndRoles);
+		final Optional<Contentlet> persona = null != contentlets? contentlets.stream().findFirst():Optional.empty();
+		return persona.isPresent()? Optional.ofNullable(fromContentlet(persona.get())):Optional.empty();
+	}
+
+
+
 
 }

@@ -1,24 +1,19 @@
 package com.dotcms.rest;
 
+import static com.dotmarketing.util.NumberUtil.toInt;
+import static com.dotmarketing.util.NumberUtil.toLong;
+
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
-import javax.ws.rs.*;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONArray;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
-import org.glassfish.jersey.media.multipart.BodyPart;
-import org.glassfish.jersey.media.multipart.ContentDisposition;
-import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.uuid.shorty.ShortyId;
@@ -43,7 +38,12 @@ import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityLogger;
+import com.dotmarketing.util.UUIDUtil;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.converters.Converter;
@@ -52,10 +52,6 @@ import com.thoughtworks.xstream.converters.UnmarshallingContext;
 import com.thoughtworks.xstream.io.HierarchicalStreamReader;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import com.thoughtworks.xstream.io.xml.DomDriver;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.Part;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -63,13 +59,38 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.nio.file.Files;
-import java.util.*;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static com.dotmarketing.util.NumberUtil.toInt;
-import static com.dotmarketing.util.NumberUtil.toLong;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.Part;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import org.glassfish.jersey.media.multipart.BodyPart;
+import org.glassfish.jersey.media.multipart.ContentDisposition;
+import org.glassfish.jersey.media.multipart.FormDataMultiPart;
+import org.jetbrains.annotations.NotNull;
 
 @Path("/content")
 public class ContentResource {
@@ -103,6 +124,7 @@ public class ContentResource {
     @Path("/indexsearch/{query}/sortby/{sortby}/limit/{limit}/offset/{offset}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response indexSearch(@Context HttpServletRequest request,
+            @Context final HttpServletResponse response,
             @PathParam("query") String query,
             @PathParam("sortby") String sortBy, @PathParam("limit") int limit,
             @PathParam("offset") int offset,
@@ -110,7 +132,7 @@ public class ContentResource {
             @PathParam("callback") String callback)
             throws DotDataException, JSONException {
 
-        InitDataObject initData = webResource.init(null, true, request, false, null);
+        InitDataObject initData = webResource.init(null, request, response, false, null);
 
         Map<String, String> paramsMap = new HashMap<String, String>();
         paramsMap.put("type", type);
@@ -149,11 +171,12 @@ public class ContentResource {
     @Path("/indexcount/{query}")
     @Produces(MediaType.TEXT_PLAIN)
     public Response indexCount(@Context HttpServletRequest request,
+            @Context final HttpServletResponse response,
             @PathParam("query") String query,
             @PathParam("type") String type,
             @PathParam("callback") String callback) throws DotDataException {
 
-        InitDataObject initData = webResource.init(null, true, request, false, null);
+        InitDataObject initData = webResource.init(null, request, response, false, null);
 
         Map<String, String> paramsMap = new HashMap<String, String>();
         paramsMap.put("type", type);
@@ -178,7 +201,7 @@ public class ContentResource {
             @Context HttpServletResponse response, @PathParam("params") String params)
             throws DotDataException, JSONException {
 
-        InitDataObject initData = webResource.init(params, true, request, false, null);
+        InitDataObject initData = webResource.init(params, request, response, false, null);
         Map<String, String> paramsMap = initData.getParamsMap();
         String callback = paramsMap.get(RESTParams.CALLBACK.getValue());
         String language = paramsMap.get(RESTParams.LANGUAGE.getValue());
@@ -245,11 +268,11 @@ public class ContentResource {
     @PUT
     @Path("/canLock/{params:.*}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response canLockContent(@Context HttpServletRequest request,
+    public Response canLockContent(@Context HttpServletRequest request, @Context final HttpServletResponse response,
             @PathParam("params") String params)
             throws DotDataException, JSONException {
 
-        InitDataObject initData = webResource.init(params, true, request, false, null);
+        InitDataObject initData = webResource.init(params, request, response, false, null);
         Map<String, String> paramsMap = initData.getParamsMap();
         String callback = paramsMap.get(RESTParams.CALLBACK.getValue());
         String language = paramsMap.get(RESTParams.LANGUAGE.getValue());
@@ -335,7 +358,7 @@ public class ContentResource {
             @Context HttpServletResponse response, @PathParam("params") String params)
             throws DotDataException, JSONException {
 
-        InitDataObject initData = webResource.init(params, true, request, false, null);
+        InitDataObject initData = webResource.init(params, request, response, false, null);
 
         Map<String, String> paramsMap = initData.getParamsMap();
         String callback = paramsMap.get(RESTParams.CALLBACK.getValue());
@@ -413,17 +436,18 @@ public class ContentResource {
     @GET
     @Path("/{params:.*}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getContent(@Context HttpServletRequest request,
-            @Context HttpServletResponse response, @PathParam("params") String params) {
+    public Response getContent(@Context HttpServletRequest request, @Context final HttpServletResponse response,
+            @PathParam("params") String params) {
 
         final InitDataObject initData = this.webResource.init
-                (params, true, request, false, null);
+                (params, request, response, false, null);
         //Creating an utility response object
         final ResourceResponse responseResource = new ResourceResponse(initData.getParamsMap());
         final Map<String, String> paramsMap = initData.getParamsMap();
         final User user = initData.getUser();
         final String render = paramsMap.get(RESTParams.RENDER.getValue());
         final String query = paramsMap.get(RESTParams.QUERY.getValue());
+        final String related = paramsMap.get(RESTParams.RELATED.getValue());
         final String id = paramsMap.get(RESTParams.ID.getValue());
         final String limitStr = paramsMap.get(RESTParams.LIMIT.getValue());
         final String offsetStr = paramsMap.get(RESTParams.OFFSET.getValue());
@@ -459,6 +483,7 @@ public class ContentResource {
         Optional<Status> status = Optional.empty();
         String type = paramsMap.get(RESTParams.TYPE.getValue());
         String orderBy = paramsMap.get(RESTParams.ORDERBY.getValue());
+        final String tmDate = (String) request.getSession().getAttribute("tm_date");
 
         type = UtilMethods.isSet(type) ? type : "json";
         orderBy = UtilMethods.isSet(orderBy) ? orderBy : "modDate desc";
@@ -475,10 +500,28 @@ public class ContentResource {
                         this.contentHelper.hydrateContentlet(APILocator.getContentletAPI()
                                 .find(inode, user, respectFrontendRoles)))
                         .ifPresent(contentlets::add);
-            } else if (queryPassed = UtilMethods.isSet(query)) {
-                String tmDate = (String) request.getSession().getAttribute("tm_date");
-                String luceneQuery = processQuery(query);
-                contentlets = ContentUtils.pull(luceneQuery, offset, limit, orderBy, user, tmDate);
+            } else if (UtilMethods.isSet(related)){
+                //Related identifier are expected this way: "ContentTypeVarName.FieldVarName:contentletIdentifier"
+                //In case of multiple relationships, they must be sent as a comma separated list
+                //i.e.: ContentTypeVarName1.FieldVarName1:contentletIdentifier1,ContentTypeVarName2.FieldVarName2:contentletIdentifier2
+                int i = 0;
+                for(String relationshipValue: related.split(",")){
+                    if (i == 0) {
+                        contentlets.addAll(getPullRelated(user, limit, contentlets, orderBy, tmDate,
+                                processQuery(query), relationshipValue));
+                    } else {
+                        //filter the intersection in case multiple relationship
+                        contentlets = contentlets.stream()
+                                .filter(getPullRelated(user, limit, contentlets, orderBy, tmDate,
+                                        processQuery(query), relationshipValue)::contains).collect(
+                                        Collectors.toList());
+                    }
+
+                    i++;
+                }
+            } else if (queryPassed = UtilMethods.isSet(query)){
+                contentlets = ContentUtils
+                        .pull(processQuery(query), offset, limit, orderBy, user, tmDate);
             }
 
         } catch (DotSecurityException e) {
@@ -488,10 +531,10 @@ public class ContentResource {
         } catch (Exception e) {
             if (idPassed) {
                 Logger.warn(this, "Can't find Content with Identifier: " + id);
-            } else if (queryPassed) {
-                Logger.warn(this, "Can't find Content with Inode: " + inode);
-            } else if (inodePassed) {
+            } else if (queryPassed || UtilMethods.isSet(related)) {
                 Logger.warn(this, "Error searching Content : " + e.getMessage());
+            } else if (inodePassed) {
+                Logger.warn(this, "Can't find Content with Inode: " + inode);
             }
             status = Optional.of(Status.INTERNAL_SERVER_ERROR);
         }
@@ -508,6 +551,41 @@ public class ContentResource {
         }
 
         return responseResource.response(result, null, status);
+    }
+
+    /**
+     *
+     * @param user
+     * @param limit
+     * @param contentlets
+     * @param orderBy
+     * @param tmDate
+     * @param luceneQuery
+     * @param relationshipValue
+     * @return
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @NotNull
+    private List<Contentlet> getPullRelated(User user, int limit, List<Contentlet> contentlets,
+            String orderBy, String tmDate, String luceneQuery, String relationshipValue)
+            throws DotSecurityException, DotDataException {
+        final String contentTypeVar = relationshipValue.split(":")[0].split("\\.")[0];
+        final String fieldVar = relationshipValue.split(":")[0].split("\\.")[1];
+        final String relatedIdentifier = relationshipValue.split(":")[1];
+
+        ContentType relatedContentType = APILocator.getContentTypeAPI(user).find(contentTypeVar);
+
+        final Relationship relationship = APILocator.getRelationshipAPI()
+                .getRelationshipFromField(relatedContentType.fieldMap().get(fieldVar),
+                        user);
+
+        List<Contentlet> pullRelated = ContentUtils
+                .pullRelated(relationship.getRelationTypeValue(), relatedIdentifier,
+                        luceneQuery, relationship.hasParents(), limit, orderBy, user,
+                        tmDate);
+
+        return pullRelated;
     }
 
     /**
@@ -1047,7 +1125,7 @@ public class ContentResource {
             final FormDataMultiPart multipart, final String params, final String method)
             throws URISyntaxException, DotDataException {
 
-        final InitDataObject init = webResource.init(params, true, request, false, null);
+        final InitDataObject init = webResource.init(params, request, response, false, null);
         final Contentlet contentlet = new Contentlet();
         setRequestMetadata(contentlet, request);
 
@@ -1219,7 +1297,7 @@ public class ContentResource {
     private Response singlePUTandPOST(HttpServletRequest request, HttpServletResponse response,
             String params, String method)
             throws URISyntaxException {
-        InitDataObject init = webResource.init(params, true, request, false, null);
+        InitDataObject init = webResource.init(params, request, response,false, null);
 
         Contentlet contentlet = new Contentlet();
         setRequestMetadata(contentlet, request);

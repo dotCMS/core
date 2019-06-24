@@ -2,6 +2,7 @@ package com.dotcms.util;
 
 import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableList;
+import org.apache.poi.ss.formula.functions.T;
 import org.elasticsearch.common.collect.MapBuilder;
 
 import java.io.Serializable;
@@ -129,6 +130,62 @@ public class CollectionsUtils implements Serializable {
 	}
 
     /**
+     * This method is pretty useful when you have a collection as a value inside a map, for instance: <br/>
+     *
+     * Map<String, List<Contentlet>> mapOfLists = ....
+     *
+     * Lets say you have the Contentlet value called "content" and the key called "identifier"
+     * usually you will have to see if the mapOfList contains the key identifier (the idea behind is the classified a subsets of contentlets by key).
+     * Then if contains the key, get the list and then add the content value to the list.
+     * Otherwise, you will have to create the list, add the content value and put into the map.
+     *
+     * With this method you can do all of these in just one line, such as
+     *
+     * Remember identifier is the key of the Map, content is the value to accumulate in the list.
+     *
+     * <pre>
+     * computeSubValueIfAbsent (mapOfLists, identifier, content,
+     *                          (List<Contentlet> currentList, Contentlet content)-> CollectionsUtils.add(currentList, content),
+     *                          (String key, Contentlet content)-> CollectionsUtils.list(content));
+     *</pre>
+     *
+     * So the first parameter is the Map with the list of contentlets as a value.
+     * The second parameter will be the key to get the value associated to that key.
+     * The third one will be in this case the sub value to add to the existing or new list.
+     * The next is the a {@link BiFunction}, this function is to performs the subvalue when the value already exists in the map;
+     * it expects the current value, the subvalue and will return the new current value, in our example will receive a current list, and them adds and returns the list plus the new subvalue.
+     *
+     * Finally, there is the {@link BiFunction} when there is not value associated to the key, in this case will receive the key and the subvalue and will expect
+     * a new value to be added to the map, performing at the same time the current subvalue; in our example it is creating a new ArrayList with the content value inside it.
+     *
+     * @param map
+     * @param key
+     * @param subValue
+     * @param mappingSubValueOnCurrentValueFunction
+     * @param mappingFunction
+     * @param <K>
+     * @param <V>
+     * @param <SV>
+     * @return V
+     */
+	public static <K,V, SV>  V computeSubValueIfAbsent (final Map<K, V> map, final K key,
+                                                     final SV subValue,
+                                                     final BiFunction<V,SV,V> mappingSubValueOnCurrentValueFunction,
+                                                     final BiFunction<? super K,SV,V> mappingFunction) {
+
+        V value;
+        if ((value = map.get(key)) == null) { // if accumulator value does not exists
+
+            final V newValue = mappingFunction.apply(key, subValue);
+            map.put(key, newValue);
+            return newValue;
+        }
+
+        // if value exists compute the sub value on it
+        return mappingSubValueOnCurrentValueFunction.apply(value, subValue);
+    } // computeSubValueIfAbsent.
+
+    /**
      * Get a new empty list
      * @param <T>
      * @return List
@@ -152,6 +209,21 @@ public class CollectionsUtils implements Serializable {
 
 
     /**
+     * This method just adds several values to the list and return the list to continue a chain
+     * @param list  {@link List}
+     * @param values T array of values
+     * @param <T>
+     * @return the List with the old and new values
+     */
+    public static <T> List<T> add(final List<T> list,  final T... values) {
+
+        for (final T value : values) {
+            list.add(value);
+        }
+        return list;
+    }
+
+     /**
      * Get a new list with the elements
      *
      * Example:

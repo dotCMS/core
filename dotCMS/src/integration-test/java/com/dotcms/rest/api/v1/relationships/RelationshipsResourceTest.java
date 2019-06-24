@@ -11,9 +11,7 @@ import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.request.MockSessionRequest;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
-import org.glassfish.jersey.internal.util.Base64;
+import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
@@ -28,6 +26,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import org.glassfish.jersey.internal.util.Base64;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -69,7 +70,7 @@ public class RelationshipsResourceTest {
             relationshipAPI.create(relationship);
 
             final Response response = relationshipsResource
-                    .getOneSidedRelationships(contentType.id(), -1, 100, getHttpRequest());
+                    .getOneSidedRelationships(contentType.id(), -1, 100, getHttpRequest(),  new EmptyHttpResponse());
 
             //Validate response
             assertEquals(Status.OK.getStatusCode(), response.getStatus());
@@ -93,7 +94,7 @@ public class RelationshipsResourceTest {
         final RelationshipsResource relationshipsResource = new RelationshipsResource();
 
         final Response response = relationshipsResource
-                .getOneSidedRelationships(null, -1, 100, getHttpRequest());
+                .getOneSidedRelationships(null, -1, 100, getHttpRequest(),  new EmptyHttpResponse());
 
         //Validate response
         assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
@@ -105,7 +106,7 @@ public class RelationshipsResourceTest {
         final RelationshipsResource relationshipsResource = new RelationshipsResource();
 
         final Response response = relationshipsResource
-                .getOneSidedRelationships(null, -1, 0, getHttpRequest());
+                .getOneSidedRelationships(null, -1, 0, getHttpRequest(),  new EmptyHttpResponse());
 
         //Validate response
         assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());

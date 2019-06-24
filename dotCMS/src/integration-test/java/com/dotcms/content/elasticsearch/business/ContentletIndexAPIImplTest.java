@@ -495,6 +495,7 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
      * @see ContentletIndexAPIImpl
      */
     @Test
+    @Ignore
     public void removeContentFromIndexByStructureInode () throws Exception {
 
         ContentletIndexAPI indexAPI = APILocator.getContentletIndexAPI();

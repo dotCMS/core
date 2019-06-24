@@ -15,6 +15,8 @@ public enum RESTParams {
     CALLBACK ("callback"),
 	INODE ("inode"),
 	RESPECT_FRONT_END_ROLES ("respectFrontendRoles"),
+    //keeps the identifier of the related content to filter by (useful when retrieving parents given a child
+    RELATED ("related"),
 	DEPTH ("depth");
 
 	private final String  value;
