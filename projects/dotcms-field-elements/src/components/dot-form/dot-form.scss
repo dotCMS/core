@@ -15,20 +15,6 @@ dot-form {
             }
         }
 
-        dot-label > label {
-            display: flex;
-            flex-direction: column;
-            margin: 0;
-
-            label {
-                margin: 0;
-            }
-        }
-
-        .dot-field__hint {
-            font-size: 0.75rem;
-        }
-
         .dot-form__buttons {
             display: flex;
             flex-direction: row;
