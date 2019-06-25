@@ -95,7 +95,7 @@ function editPage(url) {
 
 <div class="content-edit-actions">
 
-        <%if(contentlet.isHTMLPage()) {%>
+        <%if(contentlet.isHTMLPage() && contentlet.getIdentifier() != "") {%>
             <a onClick="editPage('<%= APILocator.getIdentifierAPI().find(contentlet.getIdentifier()).getURI() %>')">
 			    Edit Page 
             </a>
