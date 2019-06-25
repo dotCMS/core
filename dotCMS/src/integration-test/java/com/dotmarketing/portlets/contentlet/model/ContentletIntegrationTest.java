@@ -1,21 +1,36 @@
 package com.dotmarketing.portlets.contentlet.model;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
-import com.dotcms.contenttype.model.field.*;
+import com.dotcms.contenttype.model.field.DataTypes;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.ImmutableTextField;
+import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.RelationshipAPI;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Relationship;
@@ -25,15 +40,12 @@ import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import static org.junit.Assert.*;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 /**
  * @author nollymar
@@ -44,14 +56,13 @@ public class ContentletIntegrationTest {
     private static ContentletAPI contentletAPI;
     private static ContentTypeAPI contentTypeAPI;
     private static FieldAPI fieldAPI;
-    private static HostAPI hostAPI;
     private static Language defaultLanguage;
     private static LanguageAPI languageAPI;
     private static RelationshipAPI relationshipAPI;
     private static RoleAPI roleAPI;
     private static UserAPI userAPI;
     private static User user;
-    private static Host defaultHost;
+    private static Host site;
 
     private final static String CARDINALITY = String
             .valueOf(RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal());
@@ -97,7 +108,6 @@ public class ContentletIntegrationTest {
         IntegrationTestInitService.getInstance().init();
 
         fieldAPI    = APILocator.getContentTypeFieldAPI();
-        hostAPI     = APILocator.getHostAPI();
         languageAPI = APILocator.getLanguageAPI();
 
         userAPI = APILocator.getUserAPI();
@@ -107,8 +117,8 @@ public class ContentletIntegrationTest {
         contentletAPI   = APILocator.getContentletAPI();
         contentTypeAPI  = APILocator.getContentTypeAPI(user);
         relationshipAPI = APILocator.getRelationshipAPI();
-        defaultHost     = hostAPI.findDefaultHost(user, false);
         defaultLanguage = languageAPI.getDefaultLanguage();
+        site = new SiteDataGen().nextPersisted();
     }
 
 
@@ -258,19 +268,20 @@ public class ContentletIntegrationTest {
                     user,
                     false);
 
-            newRole = createRole();
+            //newRole = createRole();
 
             //set individual permissions to the child
             APILocator.getPermissionAPI()
                     .save(new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
-                            childContentlet1.getPermissionId(), newRole.getId(),
+                            childContentlet1.getPermissionId(),
+                            APILocator.getRoleAPI().loadCMSAnonymousRole().getId(),
                             PermissionAPI.PERMISSION_READ, true), childContentlet1, user, false);
 
             //Get related content with anonymous user
             List<Contentlet> result = parentContentlet.getRelated(field.variable(), null, false);
 
             assertEquals(1, result.size());
-            assertEquals(childContentlet2.getIdentifier(), result.get(0).getIdentifier());
+            assertEquals(childContentlet1.getIdentifier(), result.get(0).getIdentifier());
 
             //Get related content with system user
             result = parentContentlet.getRelated(field.variable(), user, false);
@@ -558,7 +569,7 @@ public class ContentletIntegrationTest {
 
         return contentTypeAPI.save(ContentTypeBuilder.builder(BaseContentType.CONTENT.immutableClass())
                 .description("Test ContentType " + time)
-                .host(defaultHost.getIdentifier())
+                .host(site.getIdentifier())
                 .name("Test ContentType "+ time)
                 .owner("owner")
                 .variable("testContentType" + time)
