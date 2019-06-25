@@ -1,14 +1,5 @@
 package com.dotcms.cluster.business;
 
-import com.google.common.annotations.VisibleForTesting;
-
-import com.dotcms.content.elasticsearch.business.ESIndexAPI;
-import com.dotcms.enterprise.LicenseUtil;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
-
 public enum ReplicasMode { AUTOWIRE(-1, "false"), BOUNDED(-1, "0-all"), STATIC(1, "false");
     private int numberOfReplicas;
     private String autoExpandReplicas;

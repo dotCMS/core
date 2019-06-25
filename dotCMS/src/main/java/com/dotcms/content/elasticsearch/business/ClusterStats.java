@@ -19,4 +19,8 @@ public class ClusterStats {
     public List<NodeStats> getNodeStats() {
         return nodeStats;
     }
+
+    public String getClusterName() {
+        return clusterName;
+    }
 }

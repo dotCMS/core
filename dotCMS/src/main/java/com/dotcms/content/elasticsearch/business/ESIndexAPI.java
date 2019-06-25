@@ -158,13 +158,7 @@ public class ESIndexAPI {
 
 	public Map<String, IndexStats> getIndicesStats() {
 		final Request request = new Request("GET", "/_stats");
-		final RestClient lowLevelClient = esclient.getLowLevelClient();
-
-		final Response response = Sneaky.sneak(()->lowLevelClient.performRequest(request));
-		final ObjectMapper mapper = new ObjectMapper();
-
-		final Map<String, Object> jsonMap = Sneaky.sneak(()->mapper
-				.readValue(response.getEntity().getContent(), Map.class));
+		final Map<String, Object> jsonMap = performLowLevelRequest(request);
 
 		Map<String, IndexStats> indexStatsMap = new HashMap<>();
 
@@ -852,13 +846,7 @@ public class ESIndexAPI {
     public List<String> getClosedIndexes() {
 
     	final Request request = new Request("GET", "/_cluster/state/metadata/");
-    	final RestClient lowLevelClient = esclient.getLowLevelClient();
-
-    	final Response response = Sneaky.sneak(()->lowLevelClient.performRequest(request));
-		final ObjectMapper mapper = new ObjectMapper();
-
-		final Map<String, Object> jsonMap = Sneaky.sneak(()->mapper
-				.readValue(response.getEntity().getContent(), Map.class));
+		final Map<String, Object> jsonMap = performLowLevelRequest(request);
 
 		final Map<String, Object> metadata = (Map<String, Object>) jsonMap.get("metadata");
 		final Map<String, Object> indices = (Map<String, Object>)metadata.get("indices");
@@ -1300,41 +1288,44 @@ public class ESIndexAPI {
 		return clusterGetSettingsResponse.getSetting(REPOSITORY_PATH);
 	}
 
+	@SuppressWarnings("unchecked")
 	public ClusterStats getClusterStats() {
 		final Request request = new Request("GET", "/_nodes/stats");
-		final RestClient lowLevelClient = esclient.getLowLevelClient();
-
-		final Response response = Sneaky.sneak(()->lowLevelClient.performRequest(request));
-		final ObjectMapper mapper = new ObjectMapper();
-
-		final Map<String, Object> jsonMap = Sneaky.sneak(()->mapper
-				.readValue(response.getEntity().getContent(), Map.class));
+		final Map<String, Object> jsonMap = performLowLevelRequest(request);
 
 		final String clusterName = (String) jsonMap.get("cluster_name");
-
 		final ClusterStats clusterStats = new ClusterStats(clusterName);
-
 		final Map<String, Object> nodes = (Map<String, Object>)jsonMap.get("nodes");
 
 		nodes.forEach((key, value)-> {
 			final NodeStats.Builder builder = new NodeStats.Builder();
-
 			final Map<String, Object> stats = (Map<String, Object>) value;
-
 			builder.name((String) stats.get("name"));
+			builder.transportAddress((String) stats.get("transport_address"));
+			builder.host((String) stats.get("host"));
 
-			Map<String, Object> indexStats = (Map<String, Object>) ((Map<String, Object>)
-					indices.get(key)).get("total");
-
-			int numOfDocs = (int) ((Map<String, Object>) indexStats.get("docs"))
-					.get("count");
-
-			int sizeInBytes = (int) ((Map<String, Object>) indexStats.get("store"))
+			final Map<String, Object> indexStats = (Map<String, Object>) stats.get("indices");
+			final int docCount = (int) ((Map<String, Object>) indexStats.get("docs")).get("count");
+			final int size = (int) ((Map<String, Object>) indexStats.get("store"))
 					.get("size_in_bytes");
 
-			indexStatsMap.put(key, new IndexStats(key, numOfDocs, sizeInBytes));
+			final List<String> roles = (List<String>) stats.get("roles");
+
+			builder.master(roles.contains("master"));
+			builder.docCount(docCount);
+			builder.size(size);
+
+			clusterStats.addNodeStats(builder.build());
 		});
 
 		return clusterStats;
+	}
+
+	private Map<String, Object> performLowLevelRequest(Request request) {
+		final RestClient lowLevelClient = esclient.getLowLevelClient();
+		final Response response = Sneaky.sneak(() -> lowLevelClient.performRequest(request));
+		final ObjectMapper mapper = new ObjectMapper();
+		return Sneaky.sneak(() -> mapper
+				.readValue(response.getEntity().getContent(), Map.class));
 	}
 }

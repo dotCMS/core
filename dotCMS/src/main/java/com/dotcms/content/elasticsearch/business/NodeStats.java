@@ -45,6 +45,10 @@ public class NodeStats {
         return docCount;
     }
 
+    public String getName() {
+        return name;
+    }
+
     public static class Builder {
         private String name;
         private String host;
@@ -80,7 +84,7 @@ public class NodeStats {
             return this;
         }
 
-        public Builder master(final int docCount) {
+        public Builder docCount(final int docCount) {
             this.docCount = docCount;
             return this;
         }
