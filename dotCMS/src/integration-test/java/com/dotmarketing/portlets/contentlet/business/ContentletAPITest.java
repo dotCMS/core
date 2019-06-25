@@ -5179,9 +5179,11 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         assertNotNull(result);
         assertFalse(result.isEmpty());
-        assertFalse(result.stream().anyMatch(
-                e -> !(e.getStringProperty("fileName").toLowerCase().endsWith("jpg") || e
-                        .getStringProperty("fileName").toLowerCase().endsWith("jpeg"))));
+
+        assertTrue(result.stream().anyMatch(contentlet -> {
+            final String fileName = contentlet.getStringProperty("fileName").toLowerCase();
+               return fileName.endsWith("jpg") ||  fileName.endsWith("jpeg");
+        }));
     }
 
     @Test
@@ -5590,10 +5592,15 @@ public class ContentletAPITest extends ContentletBaseTest {
                 languageAPI.getDefaultLanguage().getId());
         assertNotNull(beforeTouch);
 
+        //We need to evict the contentlet from hibernate's cache so we can see our changes once we pull-it out from db.
+        HibernateUtil.evict(HibernateUtil.load(com.dotmarketing.portlets.contentlet.business.Contentlet.class, beforeTouch.getInode()));
+
         final Set<String> inodes = Stream.of(beforeTouch).map(Contentlet::getInode).collect(Collectors.toSet());
-        contentletAPI.updateModDate(inodes, user);
-        final Contentlet afterTouch = contentletFactory.find(beforeTouch.getInode());
-        assertEquals(beforeTouch.getInode(),afterTouch.getInode());
+        int count = contentletAPI.updateModDate(inodes, user);
+        assertEquals("update count does not match",1, count);
+
+        final Contentlet afterTouch = contentletAPI.find(beforeTouch.getInode(), APILocator.getUserAPI().getSystemUser(),false);
+        assertEquals(beforeTouch.getInode(), afterTouch.getInode());
         assertNotEquals(afterTouch.getModDate(), beforeTouch.getModDate());
         assertEquals(user.getUserId(),afterTouch.getModUser());
     }
