@@ -41,7 +41,7 @@ public class BinaryCleanupJob implements StatefulJob {
 
   public void execute(JobExecutionContext ctx) throws JobExecutionException {
 
-    int hours = Config.getIntProperty("BINARY_CLEANUP_FILE_LIFE_HOURS", 3);
+    final int hours = Config.getIntProperty("BINARY_CLEANUP_FILE_LIFE_HOURS", 3);
 
     Date olderThan = Date.from(Instant.now().minus(Duration.ofHours(hours)));
 
@@ -59,7 +59,7 @@ public class BinaryCleanupJob implements StatefulJob {
       
       Logger.info(this.getClass(), "Deleting bundle files older than " + olderThan + " from " + APILocator.getFileAssetAPI().getRealAssetPathTmpBinary());
       olderThan =  Date.from(Instant.now().minus(Duration.ofMillis(Config.getIntProperty("bundles.delete.older.than.milliseconds", 1000 * 60 * 60 * 24 * 2))));
-      File bundleFolder = new File(ConfigUtils.getBundlePath());
+      final File bundleFolder = new File(ConfigUtils.getBundlePath());
       FileUtil.cleanTree(bundleFolder, olderThan);
     }
 

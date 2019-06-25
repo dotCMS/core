@@ -53,6 +53,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 import java.util.stream.Collectors;
@@ -292,16 +293,16 @@ public class FileUtil {
 	      }
 	    });
 
-	    allFiles.stream().filter(f -> f.isFile()).forEach(f->f.delete());
+      List<File> files       = allFiles.stream().filter(f -> f.isFile()).collect(Collectors.toList());
 	    List<File> directories = allFiles.stream().filter(f -> f.isDirectory()).collect(Collectors.toList());
-
+	    files.stream().forEach(f->f.delete());
 
 	    for (final File dir : directories) {
 	      if(!dir.exists())continue;
 	      if (com.liferay.util.FileUtil.listFilesRecursively(dir, new FileFilter() {
 	        @Override
 	        public boolean accept(File pathname) {
-	          return pathname.isFile();
+	          return pathname.exists() && pathname.isFile();
 	        }
 	      }).size() == 0) {
 	        com.liferay.util.FileUtil.deltree(dir, true);

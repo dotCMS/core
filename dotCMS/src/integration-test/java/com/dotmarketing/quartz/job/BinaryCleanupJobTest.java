@@ -80,6 +80,8 @@ public class BinaryCleanupJobTest {
     cal.set(Calendar.MILLISECOND, 0);
     cal.set(Calendar.SECOND, 0);
 
+    
+    // deleting older than 2 days
     Config.setProperty("bundles.delete.older.than.milliseconds", 1000 * 60 * 60 * 24 * 2);
 
     final List<Date> hours = ImmutableList.of(cal.getTime(), // now

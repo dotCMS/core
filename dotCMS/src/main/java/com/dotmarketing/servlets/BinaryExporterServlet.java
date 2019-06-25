@@ -366,7 +366,7 @@ public class BinaryExporterServlet extends HttpServlet {
           DbConnectionFactory.closeSilently();
           return;
         }
-        inputFile = APILocator.getTempResourceAPI().getTempFile(user, req.getSession().getId(), shorty.longId).get().file;
+        inputFile = APILocator.getTempFileAPI().getTempFile(user, req.getSession().getId(), shorty.longId).get().file;
       }
 			
 			

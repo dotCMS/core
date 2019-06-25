@@ -661,7 +661,7 @@ public class APILocator extends Locator<APIIndex>{
 		return (BundleAPI)getInstance(APIIndex.BUNDLE_API);
 	}
 
-	public static TempFileAPI getTempResourceAPI() {
+	public static TempFileAPI getTempFileAPI() {
 	  return new TempFileAPI();
 	}
 	

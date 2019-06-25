@@ -50,7 +50,7 @@ public class TempFileResource {
    * Default constructor.
    */
   public TempFileResource() {
-    this(new WebResource(), APILocator.getTempResourceAPI());
+    this(new WebResource(), APILocator.getTempFileAPI());
   }
 
   @VisibleForTesting

@@ -145,11 +145,15 @@ import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import com.liferay.portal.util.PortalUtil;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.DomDriver;
+
+import io.vavr.control.Try;
+
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -209,10 +213,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private final RelationshipAPI       relationshipAPI;
     private final FieldAPI              fieldAPI;
     private final LanguageAPI           languageAPI;
-    private final ReindexQueueAPI reindexQueueAPI;
+    private final ReindexQueueAPI       reindexQueueAPI;
     private final TagAPI                tagAPI;
     private final IdentifierStripedLock lockManager;
-
+    private final TempFileAPI           tempApi ;
     private static final int MAX_LIMIT = 10000;
 
     private static final String backupPath = ConfigUtils.getBackupPath() + File.separator + "contentlets";
@@ -247,6 +251,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         contentletSystemEventUtil = ContentletSystemEventUtil.getInstance();
         localSystemEventsAPI      = APILocator.getLocalSystemEventsAPI();
         lockManager = DotConcurrentFactory.getInstance().getIdentifierStripedLock();
+        tempApi=  APILocator.getTempFileAPI();
 
     }
 
@@ -3136,7 +3141,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final boolean respectFrontendRoles,
             boolean createNewVersion
     ) throws DotDataException, DotSecurityException {
-        final TempFileAPI tempApi = APILocator.getTempResourceAPI();
+        
         final boolean validateEmptyFile =
                 contentlet.getMap().get("_validateEmptyFile_") == null;
 
@@ -4664,9 +4669,22 @@ public class ESContentletAPIImpl implements ContentletAPI {
             // setBinary
         }else if(Field.FieldType.BINARY.toString().equals(field.getFieldType())){
             try{
-                // only if the value is a file
+
+           
+                // only if the value is a file or a tempFile
                 if(value.getClass()==File.class){
                     contentlet.setBinary(field.getVelocityVarName(), (java.io.File) value);
+                }
+                // if this value is a String and a temp resource, use it to populate the 
+                // binary field
+                else if(value instanceof String && tempApi.isTempResource((String) value)) {
+                  final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+                  // we use the session to verify access to the temp resource
+                  final String sessionId = (request!=null && request.getSession(false)!=null) ? request.getSession().getId() : null;
+                  final User user = Try.of(()->PortalUtil.getUser(request)).getOrNull();
+                  final DotTempFile tempFile = tempApi.getTempFile(user, sessionId, (String) value).get();
+                  contentlet.setBinary(field.getVelocityVarName(), tempFile.file);
+
                 }
             }catch (Exception e) {
                 throw new DotContentletStateException("Unable to set binary file Object",e);
