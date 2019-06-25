@@ -23,10 +23,7 @@ import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImpl;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPIImpl;
-import com.dotcms.contenttype.business.ContentTypeAPI;
-import com.dotcms.contenttype.business.ContentTypeAPIImpl;
-import com.dotcms.contenttype.business.FieldAPI;
-import com.dotcms.contenttype.business.FieldAPIImpl;
+import com.dotcms.contenttype.business.*;
 import com.dotcms.enterprise.ESSeachAPI;
 import com.dotcms.enterprise.RulesAPIProxy;
 import com.dotcms.enterprise.ServerActionAPIImplProxy;
@@ -937,6 +934,15 @@ public class APILocator extends Locator<APIIndex>{
 	}
 
 	/**
+	 * Creates a single instance of the {@link PermissionAPI} class.
+	 *
+	 * @return The {@link PermissionAPI} class.
+	 */
+	public static ContentTypeFieldLayoutAPI getContentTypeFieldLayoutAPI() {
+		return (ContentTypeFieldLayoutAPI)getInstance(APIIndex.CONTENT_TYPE_FIELD_LAYOUT_API);
+	}
+
+	/**
 	 * Generates a unique instance of the specified dotCMS API.
 	 *
 	 * @param index
@@ -1073,7 +1079,8 @@ enum APIIndex
 	THEME_API,
 	API_TOKEN_API,
 	GRAPHQL_API,
-	URLMAP_API;
+	URLMAP_API,
+	CONTENT_TYPE_FIELD_LAYOUT_API;
 
 
 
@@ -1150,6 +1157,7 @@ enum APIIndex
 			case GRAPHQL_API: return  new GraphqlAPIImpl();
 	        case API_TOKEN_API: return new ApiTokenAPI();
 			case URLMAP_API: return new URLMapAPIImpl();
+			case CONTENT_TYPE_FIELD_LAYOUT_API: return new ContentTypeFieldLayoutAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}

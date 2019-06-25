@@ -14,9 +14,11 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.startup.runonce.Task04315UpdateMultiTreePK;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.google.common.collect.Table;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -185,6 +187,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
             multiTree.setContainer(container);
             multiTree.setContentlet(content);
             multiTree.setInstanceId("abc");
+            multiTree.setPersonalization(MultiTree.DOT_PERSONALIZATION_DEFAULT);
             multiTree.setTreeOrder( 1 );
             
             //delete out any previous relation
@@ -193,14 +196,13 @@ public class MultiTreeAPITest extends IntegrationTestBase {
             Table<String, String, Set<PersonalizedContentlet>> trees= APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);
             
             Table<String, String, Set<PersonalizedContentlet>> cachedTrees= APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);
-            
+
+            Logger.info(this, "\n\n**** cachedTrees: " + cachedTrees);
             // should be the same object coming from in memory cache
             assert(trees==cachedTrees);
 
             CacheLocator.getMultiTreeCache().removePageMultiTrees(page.getIdentifier());
-            CacheLocator.getMultiTreeCache().removePageMultiTrees(page.getIdentifier()+MultiTree.DOT_PERSONALIZATION_DEFAULT);
-            
-            
+
             trees= APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);
             
             // cache flush forced a cache reload, so different objects in memory
@@ -219,7 +221,11 @@ public class MultiTreeAPITest extends IntegrationTestBase {
             assert(cachedTrees!=addedTrees);
             
             // did we get a new object from the cache?
-            assert(!(cachedTrees.equals(addedTrees)));
+            Assert.assertNotNull(cachedTrees);
+            Assert.assertNotNull(addedTrees);
+            Logger.info(this, "\n\n**** cachedTrees: " + cachedTrees);
+            Logger.info(this, "\n\n**** addedTrees: " + addedTrees);
+            assertNotEquals(cachedTrees, addedTrees);
             assert(addedTrees.rowKeySet().contains(container.getIdentifier()));
             
             // check cache flush on delete

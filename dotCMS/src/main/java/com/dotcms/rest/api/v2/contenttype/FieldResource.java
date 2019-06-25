@@ -65,6 +65,11 @@ public class FieldResource implements Serializable {
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
+    /**
+     * @deprecated {@link com.dotcms.rest.api.v3.contenttype.FieldResource#updateFields(String, String, HttpServletRequest)}
+     * @since 5.2
+     */
+    @Deprecated()
     public Response updateFields(@PathParam("typeIdOrVarName") final String typeIdOrVarName, final String fieldsJson,
                                  @Context final HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse) throws DotDataException, DotSecurityException {
 
@@ -126,6 +131,11 @@ public class FieldResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
+    /**
+     * @deprecated {@link com.dotcms.rest.api.v3.contenttype.FieldResource#getContentTypeFields(String, String, HttpServletRequest)}
+     * @since 5.2
+     */
+    @Deprecated()
     public final Response getContentTypeFields(@PathParam("typeIdOrVarName") final String typeIdOrVarName,
             @Context final HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse) {
 
@@ -299,6 +309,11 @@ public class FieldResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
+    /**
+     * @deprecated {@link com.dotcms.rest.api.v3.contenttype.FieldResource#deleteFields(String, String[], HttpServletRequest)}
+     * @since 5.2
+     */
+    @Deprecated()
     public Response deleteFields(@PathParam("typeIdOrVarName") final String typeIdOrVarName, final String[] fieldsID,
                                  @Context final HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse)
             throws DotDataException, DotSecurityException {

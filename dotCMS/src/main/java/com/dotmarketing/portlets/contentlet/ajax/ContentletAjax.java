@@ -961,7 +961,7 @@ public class ContentletAjax {
 
 		before = System.currentTimeMillis();
 
-		//The reesults list returned to the page
+		//The results list returned to the page
 		List<Object> results = new ArrayList<Object>();
 
 		//Adding the result counters as the first row of the results

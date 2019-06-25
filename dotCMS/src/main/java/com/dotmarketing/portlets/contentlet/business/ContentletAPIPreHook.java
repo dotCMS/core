@@ -55,7 +55,7 @@ public interface ContentletAPIPreHook {
 	/**
 	 * Returns a live Contentlet Object for a given language 
 	 * @param languageId
-	 * @param inode
+	 * @param contentletId
 	 * @return
 	 */
 	public default boolean findContentletForLanguage(long languageId, Identifier contentletId){
@@ -308,7 +308,6 @@ public interface ContentletAPIPreHook {
 	 * sure to pass in an Admin User.  If a user doesn't have permissions to clean all teh contentlets it will clean 
 	 * as many as it can and throw the DotSecurityException  
 	 * @param structure
-	 * @param field
 	 * @param user
 	 * @param respectFrontendRoles
 	 */
@@ -682,7 +681,6 @@ public interface ContentletAPIPreHook {
 	 * methods removes old associated content and reset the relatioships based
 	 * on the list of content passed as parameter
 	 * @param contentlet
-	 * @param rel
 	 * @param related
 	 * @param user
 	 * @param respectFrontendRoles
@@ -942,11 +940,9 @@ public interface ContentletAPIPreHook {
 	/**
 	 * Will check in a new version of you contentlet. The inode of your contentlet must be 0.  
 	 * @param contentlet - The inode of your contentlet must be 0.
-	 * @param contentRelationships - throws IllegalArgumentException if null. Used to set relationships to new contentlet version 
-	 * @param cats - throws IllegalArgumentException if null. Used to set categories to new contentlet version
-	 * @param permissions - throws IllegalArgumentException if null. Used to set permissions to new contentlet version
 	 * @param user
 	 * @param respectFrontendRoles
+     * @param cats - throws IllegalArgumentException if null. Used to set categories to new contentlet version
 	 */
 	public default boolean checkin(Contentlet contentlet ,User user,boolean respectFrontendRoles,List<Category> cats){
       return true;
@@ -1091,7 +1087,6 @@ public interface ContentletAPIPreHook {
 	 * Will return all content assigned to a specified Categories
 	 * @param categories - List of categories to look for
 	 * @param languageId language to pull content for. If 0 will return all languages
-	 * @param category Category to look for
 	 * @param live should return live or working content
 	 * @param orderBy indexName(previously known as dbColumnName) to order by. Can be null or empty string
 	 * @param user
@@ -1107,8 +1102,6 @@ public interface ContentletAPIPreHook {
 	 * @param contentlet
 	 * @param field
 	 * @param value
-	 * @param user
-	 * @param respectFrontendRoles
 	 */
 	public default boolean setContentletProperty(Contentlet contentlet, Field field, Object value){
       return true;
@@ -1117,7 +1110,7 @@ public interface ContentletAPIPreHook {
 	/**
 	 * Use to validate your contentlet.
 	 * @param contentlet
-	 * @param categories
+	 * @param cats - categories
 	 */
 	public default boolean validateContentlet(Contentlet contentlet,List<Category> cats){
       return true;
@@ -1127,7 +1120,7 @@ public interface ContentletAPIPreHook {
 	 * Use to validate your contentlet.
 	 * @param contentlet
 	 * @param contentRelationships
-	 * @param categories
+	 * @param cats - categories
 	 * Use the notValidFields property of the exception to get which fields where not valid
 	 */
 	public default boolean validateContentlet(Contentlet contentlet,Map<Relationship, List<Contentlet>> contentRelationships,List<Category> cats){
@@ -1138,7 +1131,7 @@ public interface ContentletAPIPreHook {
 	 * Use to validate your contentlet.
 	 * @param contentlet
 	 * @param contentRelationships
-	 * @param categories
+	 * @param cats - categories
 	 */
 	public default boolean validateContentlet(Contentlet contentlet, ContentletRelationships contentRelationships, List<Category> cats){
       return true;
@@ -1191,7 +1184,7 @@ public interface ContentletAPIPreHook {
 
 	/**
 	 * Converts a "fat" (legacy) contentlet into a new contentlet.
-	 * @param Fat contentlet to be converted.
+	 * @param fatty contentlet to be converted.
 	 * @return
 	 */
 	public default boolean convertFatContentletToContentlet (com.dotmarketing.portlets.contentlet.business.Contentlet fatty){
@@ -1200,7 +1193,8 @@ public interface ContentletAPIPreHook {
 	
 	/**
 	 * Converts a "light" contentlet into a "fat" (legacy) contentlet.
-	 * @param A "light" contentlet to be converted.
+	 * @param cont "light" contentlet to be converted.
+     * @param fatty
 	 * @return
 	 */
 	public default boolean convertContentletToFatContentlet (Contentlet cont, com.dotmarketing.portlets.contentlet.business.Contentlet fatty){
@@ -1226,13 +1220,16 @@ public interface ContentletAPIPreHook {
 	public default boolean deleteOldContent(Date deleteFrom){
       return true;
     }
-	
-	/**
-	 * 
-	 * @param deleteFrom
-	 * @param offset
-	 * @return
-	 */
+
+
+    /**
+     *
+     * @param structureInode
+     * @param field
+     * @param user
+     * @param respectFrontEndRoles
+     * @return
+     */
 	public default boolean findFieldValues(String structureInode, Field field, User user, boolean respectFrontEndRoles){
       return true;
     }
@@ -1368,11 +1365,9 @@ public interface ContentletAPIPreHook {
 	/**
 	 * Will check in a new version of you contentlet without indexing. The inode of your contentlet must be not set.  
 	 * @param contentlet - The inode of your contentlet must be not set.
-	 * @param contentRelationships - throws IllegalArgumentException if null. Used to set relationships to new contentlet version 
-	 * @param cats - throws IllegalArgumentException if null. Used to set categories to new contentlet version
-	 * @param permissions - throws IllegalArgumentException if null. Used to set permissions to new contentlet version
 	 * @param user
 	 * @param respectFrontendRoles
+     * @param cats - throws IllegalArgumentException if null. Used to set categories to new contentlet version
 	 */
 	public default boolean checkinWithNoIndex(Contentlet contentlet ,User user,boolean respectFrontendRoles,List<Category> cats){
       return true;
@@ -1475,7 +1470,7 @@ public interface ContentletAPIPreHook {
 
 	/**
 	 * Method will update hostInode of content to systemhost
-	 * @param identifier
+	 * @param hostIdentifier
 	 */	
 	public default boolean UpdateContentWithSystemHost(String hostIdentifier)throws DotDataException{
       return true;
@@ -1828,4 +1823,24 @@ public interface ContentletAPIPreHook {
         return true;
     }
 
+    /**
+     * Internally called by getRelatedContent methods (handles all the logic to filter by parents or children)
+     * @param contentlet
+     * @param rel
+     * @param user
+     * @param respectFrontendRoles
+     * @param pullByParent
+     * @param limit
+     * @param offset
+     * @param sortBy
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    default boolean  filterRelatedContent(Contentlet contentlet, Relationship rel,
+            User user, boolean respectFrontendRoles, Boolean pullByParent, int limit, int offset,
+            String sortBy)
+            throws DotDataException, DotSecurityException{
+        return true;
+    }
 }

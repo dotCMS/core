@@ -14,13 +14,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.google.common.collect.ImmutableMap;
 import java.io.Serializable;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.elasticsearch.common.Nullable;
@@ -64,6 +59,8 @@ import org.immutables.value.Value.Derived;
     @Type(value = ColumnField.class),
 })
 public abstract class Field implements FieldIf, Serializable {
+
+  public static int SORT_ORDER_DEFAULT_VALUE = -1;
 
   @Value.Check
   public void check() {
@@ -149,7 +146,7 @@ public abstract class Field implements FieldIf, Serializable {
 
   @Value.Default
   public int sortOrder() {
-    return -1;
+    return SORT_ORDER_DEFAULT_VALUE;
   }
 
   @Value.Lazy
