@@ -37,10 +37,6 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.daisydiff', version:'ukv_3'
     compile group: 'com.dotcms.lib', name: 'dot.dnsjava', version:'2.0.8_2'
     compile group: 'com.dotcms.lib', name: 'dot.dwr', version:'3rc2modified_3'
-    compile (group: 'org.elasticsearch', name: 'elasticsearch', version: '6.7.1'){
-        exclude(group: 'org.apache.logging.log4j')
-        exclude(group: 'com.fasterxml.jackson.core')
-    }
 
     compile group: 'com.lmax', name: 'disruptor', version: '3.3.4'
     compile group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.8.2'
