@@ -28,24 +28,27 @@ public class MultiTreePersonaListener implements ContentletListener<Persona> {
 
         try {
 
-            final Optional<Versionable> versionable = APILocator.getVersionableAPI()
-                    .findPreviousVersion(contentletPublishEvent.getContentlet().getIdentifier());
+            if (null != contentletPublishEvent.getContentlet() && contentletPublishEvent.getContentlet().isLive()) {
 
-            if (versionable.isPresent()) {
+                final Optional<Versionable> versionable = APILocator.getVersionableAPI()
+                        .findPreviousVersion(contentletPublishEvent.getContentlet().getIdentifier());
 
-                final Contentlet previousPersonaContent = APILocator.getContentletAPI().find
-                        (versionable.get().getInode(), APILocator.systemUser(), false);
+                if (versionable.isPresent()) {
 
-                if (null != previousPersonaContent) {
+                    final Contentlet previousPersonaContent = APILocator.getContentletAPI().find
+                            (versionable.get().getInode(), APILocator.systemUser(), false);
 
-                    final String currentKeyTag  = contentletPublishEvent.getContentlet().getKeyTag();
-                    final String previousKeyTag = previousPersonaContent.getStringProperty(PersonaAPI.KEY_TAG_FIELD);
+                    if (null != previousPersonaContent) {
 
-                    if (UtilMethods.isSet(currentKeyTag) && UtilMethods.isSet(previousKeyTag) &&
-                            !currentKeyTag.equals(previousKeyTag)) { //  if the tag has changed.
+                        final String currentKeyTag = contentletPublishEvent.getContentlet().getKeyTag();
+                        final String previousKeyTag = previousPersonaContent.getStringProperty(PersonaAPI.KEY_TAG_FIELD);
 
-                        APILocator.getMultiTreeAPI().updatePersonalization (
-                                this.wrapPersonaScheme(previousKeyTag), this.wrapPersonaScheme(currentKeyTag));
+                        if (UtilMethods.isSet(currentKeyTag) && UtilMethods.isSet(previousKeyTag) &&
+                                !currentKeyTag.equals(previousKeyTag)) { //  if the tag has changed.
+
+                            APILocator.getMultiTreeAPI().updatePersonalization(
+                                    this.wrapPersonaScheme(previousKeyTag), this.wrapPersonaScheme(currentKeyTag));
+                        }
                     }
                 }
             }

@@ -75,8 +75,8 @@ public class PersonaActionlet extends RuleActionlet<PersonaActionlet.Instance> {
                 final User user         = userAPI.getSystemUser();
                 final PageMode pageMode = PageMode.get(request);
                 final Persona persona   = pageMode.showLive?
-                        personaAPI.findLive(instance.personaId, user, false):
-                        personaAPI.find(instance.personaId, user, false);
+                        personaAPI.findLive(instance.personaId, user, pageMode.respectAnonPerms):
+                        personaAPI.find(instance.personaId, user, pageMode.respectAnonPerms);
                 if(persona == null) {
 
                     Logger.warn(PersonaActionlet.class, "Persona with id '" + instance.personaId + "' not be found. Could not execute action.");

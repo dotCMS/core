@@ -549,7 +549,7 @@ public class PageResource {
                                                    @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION)  final String direction,
                                                    @PathParam("pageId") final String  pageId) {
 
-        final User user = this.webResource.init(true, request, true).getUser();
+        final User user = this.webResource.init(request, response, true).getUser();
         final boolean respectFrontEndRoles = PageMode.get(request).respectAnonPerms;
 
         Logger.debug(this, ()-> "Getting page personas per page: " + pageId);
