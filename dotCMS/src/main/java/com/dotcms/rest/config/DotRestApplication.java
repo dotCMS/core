@@ -126,6 +126,7 @@ public class DotRestApplication extends javax.ws.rs.core.Application {
 					REST_CLASSES.add(ContentTypeResource.class);
 					REST_CLASSES.add(FieldResource.class);
 					REST_CLASSES.add(com.dotcms.rest.api.v2.contenttype.FieldResource.class);
+					REST_CLASSES.add(com.dotcms.rest.api.v3.contenttype.FieldResource.class);
 					REST_CLASSES.add(FieldTypeResource.class);
 					REST_CLASSES.add(FieldVariableResource.class);
 					REST_CLASSES.add(ResetPasswordResource.class);

@@ -1,6 +1,8 @@
 package com.dotcms.contenttype.business;
 
 import com.dotcms.business.CloseDBIfOpened;
+
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -206,5 +208,25 @@ public interface FieldAPI {
      * @throws DotDataException Error occurred when performing the action.
      */
     String nextAvailableColumn(Field field) throws DotDataException;
-	
+
+	/**
+	 * Delete a bunch of fields
+	 *
+	 * @param fieldsID fields's id to delete
+	 * @param user user who delete the fields
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	Collection<String> deleteFields(final List<String> fieldsID, final User user) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Save a bunch of fields
+	 *
+	 * @param fields fields to save
+	 * @param user user who save the fields
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
+    void saveFields(final List<Field> fields, final User user) throws DotSecurityException, DotDataException;
 }

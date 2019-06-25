@@ -85,7 +85,7 @@ public class ContentTypeResource implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 
-	static final String SELECTED_STRUCTURE_KEY = "selectedStructure";
+	public static final String SELECTED_STRUCTURE_KEY = "selectedStructure";
 
 	@POST
 	@JSONP

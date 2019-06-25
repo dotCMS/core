@@ -45,7 +45,7 @@ public class FileUtilTest {
       }
       
       // create an old folder with a new file in it
-      File parent = new File(tempDir,"folderx");
+      File parent = new File(tempDir,"folderxx");
       parent.mkdirs();
    
       File child = new File(parent,"filex");

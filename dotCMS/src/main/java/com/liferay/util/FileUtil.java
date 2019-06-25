@@ -52,6 +52,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -281,34 +282,34 @@ public class FileUtil {
    */
 	 public static void cleanTree(final File directory, final long deleteOlderTime) {
 
-	    if (directory==null || !directory.exists() || !directory.isDirectory()) {
+	    if (directory==null || !directory.exists() ) {
 	      Logger.info(FileUtil.class, "cleanTree Directory " + directory + " not found exiting");
 	      return;
 	    }
+	    if(!directory.isDirectory()) {
+	      directory.delete();
+	      return;
+	    }
 
-	    final List<File> allFiles = com.liferay.util.FileUtil.listFilesRecursively(directory, new FileFilter() {
+	    final List<File> allOldFiles = com.liferay.util.FileUtil.listFilesRecursively(directory, new FileFilter() {
 	      @Override
 	      public boolean accept(File pathname) {
 	        return pathname.lastModified() < deleteOlderTime;
 	      }
 	    });
 
-      List<File> files       = allFiles.stream().filter(f -> f.isFile()).collect(Collectors.toList());
-	    List<File> directories = allFiles.stream().filter(f -> f.isDirectory()).collect(Collectors.toList());
-	    files.stream().forEach(f->f.delete());
+	    // delete old files
+      allOldFiles.stream().filter(f -> f.isFile()).forEach(f->f.delete());
+      
+      //delete old directories (only empy directories will be deleted)
+	    allOldFiles.stream().filter(f -> f.exists() && f.isDirectory()).sorted(new Comparator<File>() {
+        @Override
+        public int compare(final File a, final File b) {
+          return a.getAbsolutePath().length() - b.getAbsolutePath().length();
+        }
+	    }).forEach(f->f.delete());
 
-	    for (final File dir : directories) {
-	      if(!dir.exists())continue;
-	      if (com.liferay.util.FileUtil.listFilesRecursively(dir, new FileFilter() {
-	        @Override
-	        public boolean accept(File pathname) {
-	          return pathname.exists() && pathname.isFile();
-	        }
-	      }).size() == 0) {
-	        com.liferay.util.FileUtil.deltree(dir, true);
-	      } 
 
-	    }
 	  }
 	
 	
