@@ -25,19 +25,16 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.RoleDataGen;
+import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.TestWorkflowUtils;
 import com.dotcms.datagen.WorkflowDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.request.MockSessionRequest;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONArray;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
-import org.glassfish.jersey.internal.util.Base64;
 import com.dotcms.rest.ContentResource;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
@@ -80,10 +77,14 @@ import javax.servlet.ReadListener;
 import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import org.apache.xerces.dom.DeferredElementImpl;
+import org.glassfish.jersey.internal.util.Base64;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -298,6 +299,7 @@ public class ContentResourceTest extends IntegrationTestBase {
         ContentType grandChildContentType = null;
 
         Role newRole = null;
+        User createdLimitedUser = null;
 
         try {
 
@@ -347,9 +349,16 @@ public class ContentResourceTest extends IntegrationTestBase {
             if (testCase.limitedUser){
                 newRole = createRole();
 
+                createdLimitedUser = TestUserUtils
+                        .getUser(newRole, "email" + System.currentTimeMillis() + "@dotcms.com",
+                                "name" + System.currentTimeMillis(),
+                                "lastName" + System.currentTimeMillis(),
+                                "password" + System.currentTimeMillis());
+
                 //set individual permissions to the child
                 permissionAPI.save(new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
-                        child.getPermissionId(), newRole.getId(), PermissionAPI.PERMISSION_READ, true), child, user, false);
+                        child.getPermissionId(), newRole.getId(), PermissionAPI.PERMISSION_READ,
+                        true), child, user, false);
             }
 
 
@@ -358,6 +367,13 @@ public class ContentResourceTest extends IntegrationTestBase {
             parent = contentletAPI.checkin(parent,
                     CollectionsUtils.map(parentRelationship, CollectionsUtils.list(child)), user,
                     false);
+
+            if (testCase.limitedUser) {
+                //set individual permissions to the child
+                permissionAPI.save(new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                        parent.getPermissionId(), newRole.getId(), PermissionAPI.PERMISSION_READ,
+                        true), parent, user, false);
+            }
 
             final Map<String, Contentlet> contentlets = new HashMap();
             contentlets.put("parent", parent);
@@ -369,7 +385,8 @@ public class ContentResourceTest extends IntegrationTestBase {
             Thread.sleep(10000);
 
             final ContentResource contentResource = new ContentResource();
-            final HttpServletRequest request = createHttpRequest(null, testCase.limitedUser?userAPI.getAnonymousUser():null);
+            final HttpServletRequest request = createHttpRequest(null,
+                    testCase.limitedUser ? createdLimitedUser : null);
             final HttpServletResponse response = mock(HttpServletResponse.class);
             final Response endpointResponse = contentResource.getContent(request, response,
                     "/id/" + parent.getIdentifier() + "/live/false/type/" + testCase.responseType

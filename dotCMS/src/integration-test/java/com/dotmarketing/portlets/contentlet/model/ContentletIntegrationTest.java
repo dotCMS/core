@@ -17,6 +17,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -268,17 +269,23 @@ public class ContentletIntegrationTest {
                     user,
                     false);
 
-            //newRole = createRole();
+            newRole = createRole();
+            User createdLimitedUser = TestUserUtils
+                    .getUser(newRole, "email" + System.currentTimeMillis() + "@dotcms.com",
+                            "name" + System.currentTimeMillis(),
+                            "lastName" + System.currentTimeMillis(),
+                            "password" + System.currentTimeMillis());
 
             //set individual permissions to the child
             APILocator.getPermissionAPI()
                     .save(new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
                             childContentlet1.getPermissionId(),
-                            APILocator.getRoleAPI().loadCMSAnonymousRole().getId(),
+                            newRole.getId(),
                             PermissionAPI.PERMISSION_READ, true), childContentlet1, user, false);
 
             //Get related content with anonymous user
-            List<Contentlet> result = parentContentlet.getRelated(field.variable(), null, false);
+            List<Contentlet> result = parentContentlet
+                    .getRelated(field.variable(), createdLimitedUser, false);
 
             assertEquals(1, result.size());
             assertEquals(childContentlet1.getIdentifier(), result.get(0).getIdentifier());
