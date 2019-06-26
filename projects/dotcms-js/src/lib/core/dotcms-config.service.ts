@@ -1,8 +1,8 @@
 import { CoreWebService } from './core-web.service';
 import { RequestMethod } from '@angular/http';
 import { Injectable } from '@angular/core';
-import { Observable, Observer } from 'rxjs';
-import { pluck } from 'rxjs/operators';
+import { Observable, BehaviorSubject } from 'rxjs';
+import { pluck, filter } from 'rxjs/operators';
 import { LoggerService } from './logger.service';
 import { Menu } from './routing.service';
 
@@ -35,8 +35,7 @@ export interface WebSocketConfigParams {
 }
 @Injectable()
 export class DotcmsConfig {
-    private waiting: Observer<any>[] = [];
-    private configParams: ConfigParams;
+    private configParamsSubject: BehaviorSubject<ConfigParams> = new BehaviorSubject(null);
     private configUrl: string;
 
     /**
@@ -50,13 +49,7 @@ export class DotcmsConfig {
     }
 
     getConfig(): Observable<ConfigParams> {
-        return Observable.create((obs) => {
-            if (this.configParams) {
-                obs.next(this.configParams);
-            } else {
-                this.waiting.push(obs);
-            }
-        });
+        return this.configParamsSubject.asObservable().pipe(filter((config: ConfigParams) => !!config));
     }
 
     loadConfig(): void {
@@ -71,7 +64,7 @@ export class DotcmsConfig {
             .subscribe((res: any) => {
                 this.loggerService.debug('Configuration Loaded!', res);
 
-                this.configParams = {
+                const configParams: ConfigParams = {
                     colors: res.config.colors,
                     emailRegex: res.config[EMAIL_REGEX],
                     license: res.config.license,
@@ -79,15 +72,15 @@ export class DotcmsConfig {
                     paginatorLinks: res.config[DOTCMS_PAGINATOR_LINKS],
                     paginatorRows: res.config[DOTCMS_PAGINATOR_ROWS],
                     websocket: {
-                        websocketReconnectTime: res.config[DOTCMS_WEBSOCKET_RECONNECT_TIME],
-                        disabledWebsockets: res.config[DOTCMS_DISABLE_WEBSOCKET_PROTOCOL],
+                        websocketReconnectTime: res.config.websocket[DOTCMS_WEBSOCKET_RECONNECT_TIME],
+                        disabledWebsockets: res.config.websocket[DOTCMS_DISABLE_WEBSOCKET_PROTOCOL],
                     }
                 };
 
-                this.loggerService.debug('this.configParams', this.configParams);
+                this.configParamsSubject.next(configParams);
 
-                this.waiting.forEach((obs) => obs.next(this.configParams));
-                this.waiting = null;
+                this.loggerService.debug('this.configParams', configParams);
+
                 return res;
             });
     }
