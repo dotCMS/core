@@ -1,11 +1,13 @@
-import { MenuItem } from 'primeng/primeng';
+import { MenuItem, Dropdown as PDropdown } from 'primeng/primeng';
 
 import {
     Component,
     EventEmitter,
     Optional,
     OnChanges,
-    SimpleChanges
+    SimpleChanges,
+    ViewChild,
+    ElementRef
 } from '@angular/core';
 import { Output, Input, ChangeDetectionStrategy } from '@angular/core';
 import { ControlValueAccessor, NgControl } from '@angular/forms';
@@ -22,6 +24,7 @@ import { map, mergeMap, toArray } from 'rxjs/operators';
     selector: 'cw-input-dropdown',
     template: `
         <p-dropdown
+            #inputDropdown
             ng-valid
             class="ui fluid ng-valid"
             appendTo="body"
@@ -52,6 +55,7 @@ export class Dropdown implements ControlValueAccessor, OnChanges {
     set value(value: string) {
         this.modelValue = value;
     }
+    @Input() focus: boolean;
     @Input() options: any;
     @Input() name: string;
     @Input() placeholder: string;
@@ -62,6 +66,8 @@ export class Dropdown implements ControlValueAccessor, OnChanges {
     @Output() onDropDownChange: EventEmitter<any> = new EventEmitter();
     @Output() touch: EventEmitter<any> = new EventEmitter();
     @Output() enter: EventEmitter<boolean> = new EventEmitter(false);
+
+    @ViewChild('inputDropdown') inputDropdown: PDropdown;
 
     modelValue: string;
     dropdownOptions: Observable<MenuItem[]>;
@@ -79,7 +85,7 @@ export class Dropdown implements ControlValueAccessor, OnChanges {
     ngOnChanges(changes: SimpleChanges) {
         if (changes.options && changes.options.currentValue) {
             this.dropdownOptions = from(this.options).pipe(
-                mergeMap((item: {[key: string]: any}) => {
+                mergeMap((item: { [key: string]: any }) => {
                     if (item.label.pipe) {
                         return item.label.pipe(
                             map((text: string) => {
@@ -98,6 +104,15 @@ export class Dropdown implements ControlValueAccessor, OnChanges {
                 }),
                 toArray()
             );
+        }
+        this.isFocusSet(changes);
+    }
+
+    isFocusSet: Function = (changes: SimpleChanges) => {
+        if (changes.focus && changes.focus.currentValue) {
+            setTimeout(() => {
+                this.inputDropdown.focus();
+            }, 0);
         }
     }
 

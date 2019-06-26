@@ -4,7 +4,7 @@ import {
     Input,
     Output,
     EventEmitter,
-    OnChanges
+    OnChanges,
 } from '@angular/core';
 import { IBundle } from '../services/bundle-service';
 import { MenuItem } from 'primeng/api';
@@ -17,6 +17,7 @@ import { MenuItem } from 'primeng/api';
       <p-message  *ngIf="errorMessage" style="margin-bottom: 16px; display: block;" severity="error" [text]="errorMessage"></p-message>
       <cw-input-dropdown
         flex
+        [focus]="!hidden"
         [options]="options"
         [value]="bundleStores ? bundleStores[0]?.id : null"
         allowAdditions="true"
