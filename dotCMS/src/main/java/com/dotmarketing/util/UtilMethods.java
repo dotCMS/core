@@ -1,22 +1,14 @@
 package com.dotmarketing.util;
 
-import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.layout.FieldLayout;
-import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.transform.contenttype.ContentTypeTransformer;
-import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
-import com.dotcms.contenttype.transform.field.JsonFieldTransformer;
-import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
+
 import com.dotcms.repackage.com.csvreader.CsvReader;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.WebAssetException;
 import com.dotmarketing.factories.PublishFactory;
@@ -28,10 +20,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.links.model.LinkVersionInfo;
-import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.TemplateVersionInfo;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import java.beans.PropertyDescriptor;
@@ -91,8 +80,6 @@ import org.apache.velocity.context.Context;
  * 
  */
 public class UtilMethods {
-
-    private static final ObjectMapper MAPPER = new ObjectMapper();
 
     public static String VERSION_PREVIEW = "preview";
 
@@ -3536,17 +3523,5 @@ public class UtilMethods {
             }
         }
         return adminMode;
-    }
-
-    public static String getLayousAsJson(final Structure structure, final User user) {
-        try {
-            final StructureTransformer transformer = new StructureTransformer(structure);
-            final ContentType contentType = transformer.from();
-
-            final FieldLayout layout = APILocator.getContentTypeFieldLayoutAPI().getLayout(contentType.id(), user);
-            return MAPPER.writeValueAsString(layout.getRows());
-        } catch (DotDataException | DotSecurityException | JsonProcessingException e) {
-            throw new DotRuntimeException(e);
-        }
     }
 }

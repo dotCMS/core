@@ -130,7 +130,7 @@
             });
         }
 
-        const layout = $UtilMethods.getLayousAsJson($structure, $user);
+        const layout = $structures.getLayousAsJson($structure, $user);
         const dotFormEl = document.querySelector('dot-form');
         dotFormEl.layout = layout;
         dotFormEl.addEventListener('onSubmit', submitContent);
