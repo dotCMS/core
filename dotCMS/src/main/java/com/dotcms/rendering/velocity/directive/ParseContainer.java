@@ -52,7 +52,7 @@ public class ParseContainer extends DotDirective {
 		final String personalization = WebAPILocator.getPersonalizationWebAPI().getContainerPersonalization();
 		final String uniqueId        = arguments.length > 1 && UtilMethods.isSet(arguments[1])? arguments[1] :  DEFAULT_UUID_VALUE;
 		final String containerId     = (String) context.get("containerIdentifier"+VelocityUtil.escapeContextTokenIdentifier(id));
-		final String key 			 = "contentletList" + containerId + uniqueId;
+		final String key 			 = "contentletList" +(null != containerId ?containerId:id) + uniqueId;
 		final Object personalizationPayload =
 				context.get(key + VelocityUtil.escapeContextTokenIdentifier(personalization));
 		if (null != personalizationPayload) {
