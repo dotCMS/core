@@ -157,7 +157,7 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
     return list;
   }
 
-  public Map<String, Object> mapObject() {
+  public Map<String, Object>  mapObject() {
     try {
       final Field field = from();
       final Map<String, Object> fieldMap = mapper.convertValue(field, HashMap.class);

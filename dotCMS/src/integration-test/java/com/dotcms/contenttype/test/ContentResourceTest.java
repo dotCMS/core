@@ -670,8 +670,8 @@ public class ContentResourceTest extends IntegrationTestBase {
         final Contentlet parent = contentletMap.get("parent");
         final Contentlet child = contentletMap.get("child");
 
-        assertEquals(parent.getIdentifier(), contentlet.getElementsByTagName(
-                IDENTIFIER).item(0).getTextContent());
+        assertEquals(parent.getInode(), contentlet.getElementsByTagName(
+                "inode").item(0).getTextContent());
 
         if (testCase.depth == null) {
             assertEquals(0, contentlet

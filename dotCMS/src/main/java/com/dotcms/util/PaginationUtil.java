@@ -4,12 +4,8 @@ import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotmarketing.util.WebKeys.DOTCMS_PAGINATION_LINKS;
 import static com.dotmarketing.util.WebKeys.DOTCMS_PAGINATION_ROWS;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
 import javax.ws.rs.core.Response;
 import com.dotcms.rest.ResponseEntityView;
-import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.util.pagination.Paginator;
 import com.dotmarketing.common.util.SQLUtil;

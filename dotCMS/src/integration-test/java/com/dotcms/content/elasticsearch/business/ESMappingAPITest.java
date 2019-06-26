@@ -159,19 +159,19 @@ public class ESMappingAPITest {
                     .setProperty("title", "Child Comment for Test")
                     .setProperty("email", "testing@dotcms.com")
                     .setProperty("comment", "Child Comment for Test")
-                    .next();
+                    .nextPersisted();
 
             //creates child contentlet
             parentContentlet = dataGen.languageId(language.getId())
                     .setProperty("title", "Parent Comment for Test")
                     .setProperty("email", "testing@dotcms.com")
                     .setProperty("comment", "Parent Comment for Test")
-                    .nextPersisted();
+                    .next();
 
             final Relationship relationship = relationshipAPI.byTypeValue("Comments-Comments");
 
-            childContentlet = contentletAPI.checkin(childContentlet,
-                    map(relationship, list(parentContentlet)),
+            parentContentlet = contentletAPI.checkin(parentContentlet,
+                    map(relationship, list(childContentlet)),
                     null, user, false);
 
             esMappingAPI.loadRelationshipFields(parentContentlet, esMap);

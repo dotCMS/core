@@ -448,7 +448,6 @@
                 : '<span class="'+item.iconClass+'" style="font-size:24px;width:auto;"></span>';
                
             var titleCell = row.insertCell (row.cells.length);
-            titleCell.style.whiteSpace="nowrap";
             
             
             titleCell.innerHTML = <%= relationJsName%>WriteLinkTitle (item);
