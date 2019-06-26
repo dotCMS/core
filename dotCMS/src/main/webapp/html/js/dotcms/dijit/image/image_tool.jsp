@@ -83,25 +83,21 @@
 		dojo.require("dijit.form.ComboButton");
 		dojo.require("dijit.Menu");
 		dojo.require("dijit.MenuItem");
-		
+		dojo.require("dijit.form.ComboBox");
+		dojo.require("dijit.form.Select");
 		dojo.require("dotcms.dijit.form.HostFolderFilteringSelect");
 
 		var imageEditor = window.top._dotImageEditor;
 		
 		dojo.ready(
 			function(){
-				// dojo.parser.parse();
+			  
 				imageEditor.initIframe();
 			}
 		);
 
 		
-		function openAddress(){
 
-			newwin = window.open(dijit.byId("viewingUrl").value, "newwin", "width=700,height=500,scrollbars=1,addressbar=1,resizable=1,menubars=1,toolbars=1");
-			newwin.focus();
-		}
-		
 		
 		
 		
@@ -109,12 +105,9 @@
 	
 </head>
 <body class="dmundra" style="background-color:#eeeeee" >
-	
-
-
 <!--  top button bar -->
 <div class="imageToolButtonBar">
-	<table style="width:100%;">
+	<table style="width:100%;margin:0px">
 		<tr>
 			<td width="100%;" style="white-space: nowrap;">
 				<table>
@@ -123,15 +116,16 @@
 							<%= LanguageUtil.get(pageContext, "Address") %>: 
 						</td>
 						<td width="100%;" style="white-space: nowrap;padding-right:25px;">
-							<input type="text" id="viewingUrl" dojoType="dijit.form.TextBox" value="<%=baseImage %>" onfocus="imageEditor.selectAllUrl()" style="width:100%;">
+							<input type="text" id="viewingUrl" dojoType="dijit.form.TextBox" value="<%=baseImage %>" style="width:100%;">
 						</td>
 					</tr>
 				</table>
 			</td>
 			<td style="white-space: nowrap;">
-				<button dojoType="dijit.form.Button" id="goUrl" iconClass="arrowIcon" onclick="openAddress()">
-					<%= LanguageUtil.get(pageContext, "Show") %>
-				</button>
+                <span style="display:inline-block;margin-left:0px;margin-right:10px;">
+                    <a href="#" id="showLink" target="showDotImages">show</a>
+                </span>
+
 
 				<button dojoType="dijit.form.Button" onclick="imageEditor.doDownload()" iconClass="downloadIcon">
 					<%= LanguageUtil.get(pageContext, "download") %>
@@ -196,116 +190,98 @@
 		
 <!--  toolBar -->
 <div id="toolBar" >
-	<table id="controlTable" align="center">
-		<tr>
-			<td rowspan="3" id="zoomTd" >
-				
-				<div style="text-align:center;padding-left:30px;">zoom: <span id="zoomInfo"></span></div>
-		   		<div id="showScaleSlider" dojoType="dijit.form.HorizontalSlider" 
-						onChange="imageEditor.updateSlider()" 
-						onMouseUp="imageEditor.doSliderResize()"
-						maximum="200" 
-						minimum="1" 
-						showButtons="true"
-						intermediateChanges="true"> 
-							
-					<div dojoType="dijit.form.HorizontalRule" container="bottomDecoration" count=11 style="height:5px;"></div>
-					<ol dojoType="dijit.form.HorizontalRuleLabels" container="bottomDecoration" style="height:1em;font-size:75%;color:gray;">
-				        <li>
-				            0
-				        </li>
-				        <li>
-				            50%
-				        </li>
-				        <li>
-				            100%
-				        </li>
-				        <li>
-				            150%
-				        </li>
-				        <li>
-				            200%
-				        </li>
-				    </ol>
-				</div> 
-				
-			</td>
+	<table id="controlTable" border="1">
+        <tr>
+          <td colspan="2" id="filterListTd">
+                <div id="filterListBox">
+                    <div id="filtersUndoDiv">Filters:</div>
+                    <div id="filterListDiv">
+                        <div id="filtersListContainer"></div>
+                    </div>
+                </div>
+            </td>
+        </tr>
+
+        <tr>
 			<td style="border-right:1px solid white;"><%= LanguageUtil.get(pageContext, "Original") %>:</td>
 			<td align="center" valign="middle">
 				<span  id="baseImageWidth"></span>
 				&nbsp; x &nbsp;
 				<span id="baseImageHeight"></span>
 			</td>
-			<td>
-				Flip: <input id="flip" dojoType="dijit.form.CheckBox" name="flip" type="checkbox" value="true" onchange="imageEditor.toggleFlip()">
-			</td>
-			<td style="border-right:1px solid white;">
-				Rotate:
-					<input id="rotate" type="text" dojoType="dijit.form.NumberTextBox" name="rotate"
-						value="0" constraints="{min:-360,max:360,places:0}" required="false" maxlength="4"
-						invalidMessage="Angle is between -360 and 360" style="width:55px;">
-					<!--<input id="rotate" type="text" class="textInputClass" name="rotate"
-						value="0" maxlength="4">  -->
-			</td>
-			<td>
-				<button dojoType="dijit.form.Button"  onclick="imageEditor.doRotate()" iconClass="rotateIcon">
-					<%= LanguageUtil.get(pageContext, "Rotate") %>
-				</button>
-			</td>
-			<td rowspan="3" id="filterListTd">
-				<div id="filterListBox">
-					<div id="filtersUndoDiv">Filters:</div>
-					<div id="filterListDiv">
-						<div id="filtersListContainer"></div>
-					</div>
-				</div>
-			</td>
+        </tr>
+        <tr>
+        <td><%= LanguageUtil.get(pageContext, "Flip") %>:</td>
+        <td><input id="flip" dojoType="dijit.form.CheckBox" name="flip" type="checkbox" value="true" onchange="imageEditor.toggleFlip()"></td>
+        </tr>
+        <tr>
+            <td style="white-space:no-wrap;border-right:white 1px solid;text-align: center">
+                
+                    <input type="text" id="displayImageWidth" class="textInputClass" maxlength="4" onblur="imageEditor.setHieghtFromWidth()" onkeydown="return imageEditor.allowNumbers(event)">
+                     x 
+                    <input type="text" id="displayImageHeight" class="textInputClass" maxlength="4" onblur="imageEditor.setWidthFromHeight()"  onkeydown="return imageEditor.allowNumbers(event)"></td>
+                
+            <td>
+                <button dojoType="dijit.form.Button" id="resizeBtn" iconClass="resizeIcon" onclick="imageEditor.resizeBtnClick('resize')">
+                    <%= LanguageUtil.get(pageContext, "Resize") %>
+                </button>
+            </td>
+         </tr>
+         <tr>
+
+            <td style="white-space:no-wrap;border-right:white 1px solid;text-align: center">
+                <input type="text" value="150" id="cropWidth" name="cropWidth" maxlength="4" class="textInputClass" onchange="imageEditor.setCropHeightFromWidth()" onkeydown="return imageEditor.allowNumbers(event)"/> 
+                     x 
+                <input type="text" value="150" id="cropHeight" name="cropHeight" maxlength="4"  class="textInputClass"  onchange="imageEditor.setCropWidthFromHeight()" onkeydown="return imageEditor.allowNumbers(event)"/>
+                <div style="display:none">
+                
+                <label for="constrain"><%=LanguageUtil.get(pageContext, "Constrain") %></label>: <input name="constrain" id="constrain" dojoType="dijit.form.CheckBox" onclick="imageEditor.doConstrain()" type="checkbox" value="true">                    
+                </div>
+            </td>
+            <td valign="top">
+                <button id="cropBtn" dojoType="dijit.form.Button"  iconClass="cropIcon" onclick="imageEditor.toggleCrop()">
+                    <%= LanguageUtil.get(pageContext, "Crop") %>&nbsp;&nbsp;
+                </button>
+            </td>
+         </tr>
+         <tr>
+           <td>
+				<input id="rotate" type="text" dojoType="dijit.form.NumberTextBox" name="rotate"
+					value="0" constraints="{min:-360,max:360,places:0}" required="false" maxlength="4"
+					invalidMessage="Angle is between -360 and 360" style="width:55px;">
+           </td>
+           <td>
+    			<button dojoType="dijit.form.Button"  onclick="imageEditor.doRotate()" iconClass="rotateIcon">
+    				<%= LanguageUtil.get(pageContext, "Rotate") %>
+    			</button>
+    		</td>
+
 		</tr>
 		<tr>
-			<td style="border-right:white 1px solid"><%= LanguageUtil.get(pageContext, "Resize") %>:</td>
-			<td style="white-space:no-wrap;border-right:white 1px solid;text-align: center">
-				
-					<input type="text" id="displayImageWidth" class="textInputClass" maxlength="4" onblur="imageEditor.setHieghtFromWidth()" onkeydown="return imageEditor.allowNumbers(event)">
-					 x 
-					<input type="text" id="displayImageHeight" class="textInputClass" maxlength="4" onblur="imageEditor.setWidthFromHeight()"  onkeydown="return imageEditor.allowNumbers(event)"></td>
-				
-			<td>
-				<button dojoType="dijit.form.Button" id="resizeBtn" iconClass="resizeIcon" onclick="imageEditor.resizeBtnClick('resize')">
-					<%= LanguageUtil.get(pageContext, "Resize") %>
-				</button>
-			</td>
 			<td style="border-right:1px solid white;">
-				<label for="grayscale"><%=LanguageUtil.get(pageContext, "Grayscale") %></label>: <input name="grayscale" id="grayscale" dojoType="dijit.form.CheckBox" name="grayscale" type="checkbox" value="true" onchange="imageEditor.toggleGrayscale()">					
+				<label for="grayscale"><%=LanguageUtil.get(pageContext, "Grayscale") %></label>:
+            </td>
+            <td>
+                <input name="grayscale" id="grayscale" dojoType="dijit.form.CheckBox" name="grayscale" type="checkbox" value="true" onchange="imageEditor.toggleGrayscale()">					
 			
 			</td>
-			<td>
-				<%if(UtilMethods.isSet(request.getParameter("fieldName"))) {%>
-				<%=LanguageUtil.get(pageContext, "Compress" )%> :
-					<input id="jpeg" dojoType="dijit.form.CheckBox" name="jpeg" type="checkbox" value="true" onchange="imageEditor.toggleJpeg()">	
-				<%} %>&nbsp;
-			</td>
-		</tr>
-		
-		
+        </tr>
+        <tr>
+			<td><%=LanguageUtil.get(pageContext, "Compress" )%> :</td>
+            <td>
 
-		<tr>
-			<td valign="top" style="border-right:white 1px solid;">
-				<%= LanguageUtil.get(pageContext, "Crop") %>:
-			</td>
-			<td style="white-space:no-wrap;border-right:white 1px solid;text-align: center">
-				<input type="text" value="150" id="cropWidth" name="cropWidth" maxlength="4" class="textInputClass" onchange="imageEditor.setCropHeightFromWidth()" onkeydown="return imageEditor.allowNumbers(event)"/> 
-					 x 
-				<input type="text" value="150" id="cropHeight" name="cropHeight" maxlength="4"  class="textInputClass"  onchange="imageEditor.setCropWidthFromHeight()" onkeydown="return imageEditor.allowNumbers(event)"/>
-				<div style="display:none">
 				
-				<label for="constrain"><%=LanguageUtil.get(pageContext, "Constrain") %></label>: <input name="constrain" id="constrain" dojoType="dijit.form.CheckBox" onclick="imageEditor.doConstrain()" type="checkbox" value="true">					
-				</div>
+                    <select dojoType="dijit.form.Select" name="compression" id="compression" >
+                        <option selected>none</option>
+                        <option>jpeg</option>
+                        <option>webp</option>
+                    
+                    </select>
+					<input id="jpeg" dojoType="dijit.form.CheckBox" name="jpeg" type="checkbox" value="true" onchange="imageEditor.toggleJpeg()">	
+	
 			</td>
-			<td valign="top">
-				<button id="cropBtn" dojoType="dijit.form.Button"  iconClass="cropIcon" onclick="imageEditor.toggleCrop()">
-					<%= LanguageUtil.get(pageContext, "Crop") %>&nbsp;&nbsp;
-				</button>
-			</td>
+        </tr>
+        <tr>
 			<td colspan="2" onclick="imageEditor.toggleHSB()" style="cursor:pointer;">
 				Bright:<span id="brightSpan">0</span>&nbsp;
 				Hue:<span id="hueSpan">0</span>&nbsp;
@@ -313,6 +289,41 @@
 				
 			</td>
 		</tr>
+       <tr>
+            <td colspan="2" id="zoomTd" >
+                
+                <div style="text-align:center;padding-left:30px;">zoom: <span id="zoomInfo"></span></div>
+                <div id="showScaleSlider" dojoType="dijit.form.HorizontalSlider" 
+                        onChange="imageEditor.updateSlider()" 
+                        onMouseUp="imageEditor.doSliderResize()"
+                        maximum="200" 
+                        minimum="1" 
+                        showButtons="true"
+                        intermediateChanges="true"> 
+                            
+                    <div dojoType="dijit.form.HorizontalRule" container="bottomDecoration" count=11 style="height:5px;"></div>
+                    <ol dojoType="dijit.form.HorizontalRuleLabels" container="bottomDecoration" style="height:1em;font-size:75%;color:gray;">
+                        <li>
+                            0
+                        </li>
+                        <li>
+                            50%
+                        </li>
+                        <li>
+                            100%
+                        </li>
+                        <li>
+                            150%
+                        </li>
+                        <li>
+                            200%
+                        </li>
+                    </ol>
+                </div> 
+                
+            </td>
+        </tr>
+
 	</table>
 </div>
 <!--  /toolBar -->

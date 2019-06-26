@@ -44,29 +44,36 @@ table {font-size:inherit;font-family:Roboto,sans-serif;}
 
 .imageToolButtonBar {
 	background:#fff;
-
+    height:48px;
 	border-bottom:1px solid silver;
-	border-top:1px solid silver;
+
 	margin-width:0 0px;
 	padding:5px 15px 1px 15px;
 	vertical-align: middle;
-	box-shadow:0 1px 3px rgba(0,0,0,0.2);-moz-box-shadow:0 1px 3px rgba(0,0,0,0.2);-webkit-box-shadow:0 1px 3px rgba(0,0,0,0.2);
+
 }
 
 
 #imageViewPort{
     overflow: auto;
     margin-top: 0px;
-    position: relative;
+    position: absolute;
+    right:300px;
+    top:52px;
+    bottom:0px;
+    left:0px;
+    border:1px solid blue;
 }
 
 
 #toolBar{
 	background:#fff;
 	position:absolute;
-	bottom:0px;
-	left:0px;
 	right:0px;
+	top:52px;
+	bottom:0px;
+	width:300px;
+	margin:0px;
 	/*border:1px solid blue;*/
 }
 
@@ -192,7 +199,7 @@ table {font-size:inherit;font-family:Roboto,sans-serif;}
 
         
 #controlTable td{
-	border:1px solid silver;
+	border:0px solid silver;
 	padding:3px;	
 	text-align:center;
 	white-space: nowrap;
