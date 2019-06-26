@@ -102,6 +102,7 @@ import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.repositories.fs.FsRepository;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
@@ -156,6 +157,7 @@ public class ESIndexAPI {
 		this.clusterAPI = clusterAPI;
 	}
 
+	@SuppressWarnings("unchecked")
 	public Map<String, IndexStats> getIndicesStats() {
 		final Request request = new Request("GET", "/_stats");
 		final Map<String, Object> jsonMap = performLowLevelRequest(request);
@@ -482,17 +484,9 @@ public class ESIndexAPI {
 	 * @return
 	 */
 	// TODO replace with high level client
-//	public boolean isIndexClosed(String index) {
-//
-//		Client client = esclient.getClient();
-//		ImmutableOpenMap<String,IndexMetaData> indices = client.admin().cluster()
-//			    .prepareState().get().getState()
-//			    .getMetaData().getIndices();
-//		IndexMetaData indexMetaData = indices.get(index);
-//		if(indexMetaData != null)
-//			return indexMetaData.getState() == State.CLOSE;
-//		return true;
-//	}
+	public boolean isIndexClosed(String index) {
+		return getClosedIndexes().contains(index);
+	}
 
 	/**
 	 *
@@ -853,7 +847,7 @@ public class ESIndexAPI {
 
 		final List<String> closedIndices = new ArrayList<>();
 		indices.forEach((key, value) -> {
-			if (((Map<String, String>) value).get("state").equals("closed")) {
+			if (((Map<String, String>) value).get("state").equals("close")) {
 				closedIndices.add(key);
 			}
 		});
@@ -901,13 +895,7 @@ public class ESIndexAPI {
 		File toFile = null;
 		// creates specific backup path (if it shouldn't exist)
 
-
-		ClusterGetSettingsRequest clusterGetSettingsRequest = new ClusterGetSettingsRequest();
-		ClusterGetSettingsResponse clusterGetSettingsResponse = esclient.cluster().
-				getSettings(clusterGetSettingsRequest, RequestOptions.DEFAULT);
-
-		// TODO this might bring no value, please check
-		final String REPO_PATH = clusterGetSettingsResponse.getSetting(REPOSITORY_PATH);
+		final String REPO_PATH = getRepositoryPath();
 
 		toFile = new File(REPO_PATH);
 		if (!toFile.exists()) {
@@ -970,9 +958,9 @@ public class ESIndexAPI {
 				List<String> indices = snapshot.indices();
 				for(String index: indices){
 					// TODO verify if index is closed
-//					if(!isIndexClosed(index)){
-//						throw new DotStateException("Index \"" + index + "\" is not closed and can not be restored");
-//					}
+					if(!isIndexClosed(index)){
+						throw new DotStateException("Index \"" + index + "\" is not closed and can not be restored");
+					}
 				}
 			}
 			RestoreSnapshotRequest restoreSnapshotRequest = new RestoreSnapshotRequest(repositoryName, snapshotName).waitForCompletion(true);
@@ -1048,13 +1036,7 @@ public class ESIndexAPI {
 		File outFile = null;
 		AdminLogger.log(this.getClass(), "uploadSnapshot", "Trying to restore snapshot index");
 		// creates specific backup path (if it shouldn't exist)
-		ClusterGetSettingsRequest clusterGetSettingsRequest = new ClusterGetSettingsRequest();
-		ClusterGetSettingsResponse clusterGetSettingsResponse = esclient.cluster().
-				getSettings(clusterGetSettingsRequest, RequestOptions.DEFAULT);
-
-		// TODO this might bring no value, please check
-		final String REPO_PATH = clusterGetSettingsResponse.getSetting(REPOSITORY_PATH);
-
+		final String REPO_PATH = getRepositoryPath();
 		File toDirectory = new File(REPO_PATH);
 		if (!toDirectory.exists()) {
 			toDirectory.mkdirs();
@@ -1171,6 +1153,8 @@ public class ESIndexAPI {
 			PutRepositoryRequest request = new PutRepositoryRequest();
 			request.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
 			request.settings(settings);
+			request.name(repositoryName);
+			request.type(FsRepository.TYPE);
 
 			AcknowledgedResponse response = Sneaky.sneak(()->esclient.snapshot()
 					.createRepository(request, RequestOptions.DEFAULT));
@@ -1259,13 +1243,7 @@ public class ESIndexAPI {
 				Logger.error(this.getClass(), e.getMessage());
 			}
 			if (cleanUp) {
-				ClusterGetSettingsRequest clusterGetSettingsRequest = new ClusterGetSettingsRequest();
-				ClusterGetSettingsResponse clusterGetSettingsResponse = Sneaky.sneak(()-> esclient
-						.cluster().getSettings(clusterGetSettingsRequest, RequestOptions.DEFAULT));
-
-				// TODO this might bring no value, please check
-				final String REPO_PATH = clusterGetSettingsResponse.getSetting(REPOSITORY_PATH);
-
+				final String REPO_PATH = getRepositoryPath();
 				File toDelete = new File(REPO_PATH);
 				try {
 					FileUtil.deleteDir(toDelete.getAbsolutePath());
@@ -1281,11 +1259,12 @@ public class ESIndexAPI {
 
 	public String getRepositoryPath(){
 		ClusterGetSettingsRequest clusterGetSettingsRequest = new ClusterGetSettingsRequest();
+		clusterGetSettingsRequest.includeDefaults(true);
 		ClusterGetSettingsResponse clusterGetSettingsResponse = Sneaky.sneak(()-> esclient
 				.cluster().getSettings(clusterGetSettingsRequest, RequestOptions.DEFAULT));
 
-		// TODO this might bring no value, please check
-		return clusterGetSettingsResponse.getSetting(REPOSITORY_PATH);
+		final String repoPathFromConfig = clusterGetSettingsResponse.getSetting(REPOSITORY_PATH);
+		return repoPathFromConfig.substring(1, repoPathFromConfig.length()-1);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -1321,11 +1300,16 @@ public class ESIndexAPI {
 		return clusterStats;
 	}
 
-	private Map<String, Object> performLowLevelRequest(Request request) {
+	Map performLowLevelRequest(Request request) {
+		return performLowLevelRequest(request, Map.class);
+	}
+
+	<T> T performLowLevelRequest(Request request, Class<T> mappingClass) {
 		final RestClient lowLevelClient = esclient.getLowLevelClient();
 		final Response response = Sneaky.sneak(() -> lowLevelClient.performRequest(request));
 		final ObjectMapper mapper = new ObjectMapper();
 		return Sneaky.sneak(() -> mapper
-				.readValue(response.getEntity().getContent(), Map.class));
+				.readValue(response.getEntity().getContent(), mappingClass));
 	}
+
 }
