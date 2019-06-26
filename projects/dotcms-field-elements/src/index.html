@@ -179,5 +179,14 @@
             ></dot-tags>
         </div>
         <script src="/build/dotcmsfields.js"></script>
+        <script>
+            const tags = document.querySelector('dot-tags');
+
+            tags.data = async () => {
+                return fetch('https://tarekraafat.github.io/autoComplete.js/demo/db/generic.json')
+                    .then((data) => data.json())
+                    .then((items) => items.map(({ food }) => food));
+            };
+        </script>
     </body>
 </html>

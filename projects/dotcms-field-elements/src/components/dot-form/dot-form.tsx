@@ -84,9 +84,9 @@ export class DotFormComponent {
     render() {
         return (
             <form onSubmit={this.handleSubmit.bind(this)}>
-                {this.layout.map((row: DotCMSContentTypeRow) => {
-                    return <dot-form-row row={row} fields-to-show={this.fieldsToShow} />;
-                })}
+                {this.layout.map((row: DotCMSContentTypeRow) => (
+                    <dot-form-row row={row} fields-to-show={this.fieldsToShow} />
+                ))}
                 <div class="dot-form__buttons">
                     <button type="reset" onClick={() => this.resetForm()}>
                         {this.resetLabel}

@@ -13,12 +13,6 @@ import {
     isStringType
 } from '../../utils';
 
-const getData = async (): Promise<string[]> => {
-    return fetch('https://tarekraafat.github.io/autoComplete.js/demo/db/generic.json')
-        .then((data) => data.json())
-        .then((items) => items.map(({ food }) => food));
-};
-
 @Component({
     tag: 'dot-tags',
     styleUrl: 'dot-tags.scss'
@@ -28,6 +22,9 @@ export class DotTagsComponent {
 
     /** Value formatted splitted with a comma, for example: tag-1,tag-2 */
     @Prop({ mutable: true, reflectToAttr: true }) value = '';
+
+    /** Function or array of string to get the data to use for the autocomplete search */
+    @Prop() data: () => Promise<string[]> | string[] = null;
 
     /** Name that will be used as ID */
     @Prop({ reflectToAttr: true }) name = '';
@@ -95,22 +92,16 @@ export class DotTagsComponent {
                     <div
                         aria-describedby={getHintId(this.hint)}
                         tabIndex={this.hint ? 0 : null}
-                        class="dot-tags__container">
+                        class="dot-tags__container"
+                    >
                         <dot-autocomplete
                             class={getErrorClass(this.status.dotValid)}
-                            data={getData}
+                            data={this.data}
                             debounce={this.debounce}
                             disabled={this.isDisabled()}
-                            onLostFocus={() => this.blurHandler()}
-                            onEnter={({ detail }: CustomEvent<string>) => {
-                                detail.split(',').forEach((label: string) => {
-                                    this.addTag(label.trim());
-                                });
-                            }}
-                            onSelect={({ detail }: CustomEvent<string>) => {
-                                const value = detail.replace(',', ' ').replace(/\s+/g, ' ');
-                                this.addTag(value);
-                            }}
+                            onEnter={this.onEnterHandler.bind(this)}
+                            onLostFocus={this.blurHandler.bind(this)}
+                            onSelection={this.onSelectHandler.bind(this)}
                             placeholder={this.placeholder || null}
                             threshold={this.threshold}
                         />
@@ -130,10 +121,6 @@ export class DotTagsComponent {
                 {getTagError(this.showErrorMessage(), this.getErrorMessage())}
             </Fragment>
         );
-    }
-
-    private isDisabled(): boolean {
-        return this.disabled || null;
     }
 
     private addTag(label: string): void {
@@ -184,8 +171,23 @@ export class DotTagsComponent {
         return isStringType(this.value) ? this.value.split(',') : [];
     }
 
+    private isDisabled(): boolean {
+        return this.disabled || null;
+    }
+
     private isValid(): boolean {
         return !this.required || (this.required && !!this.value);
+    }
+
+    private onEnterHandler({ detail = '' }: CustomEvent<string>) {
+        detail.split(',').forEach((label: string) => {
+            this.addTag(label.trim());
+        });
+    }
+
+    private onSelectHandler({ detail = '' }: CustomEvent<string>) {
+        const value = detail.replace(',', ' ').replace(/\s+/g, ' ');
+        this.addTag(value);
     }
 
     private removeTag(event: CustomEvent): void {

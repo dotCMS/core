@@ -10,6 +10,7 @@ describe('dot-tags', () => {
 
     const getAutoComplete = () => page.find('dot-autocomplete');
     const getChips = () => page.findAll('dot-chip');
+
     const createEmptyDotTags = async () => {
         page = await newE2EPage({
             html: `<dot-tags></dot-tags>`
@@ -19,7 +20,7 @@ describe('dot-tags', () => {
     };
     const autocompleteSelect = async (tag?: string) => {
         const autocomplete = await getAutoComplete();
-        autocomplete.triggerEvent('select', {
+        autocomplete.triggerEvent('selection', {
             detail: tag || 'sometag'
         });
         await page.waitForChanges();
@@ -115,6 +116,24 @@ describe('dot-tags', () => {
     describe('@Props', () => {
         beforeEach(async () => {
             await createEmptyDotTags();
+        });
+
+        describe('data', () => {
+            it('should pass data down', async () => {
+                spyValueChangeEvent = await page.spyOnEvent('valueChange');
+                const mock = async () => ['hello', 'world'];
+                element.setProperty('data', mock);
+                await page.waitForChanges();
+
+                const autocomplete = await getAutoComplete();
+                const input = await autocomplete.find('input');
+                input.type('hel');
+                await element.press('ArrowDown');
+                await element.press('Enter');
+                await page.waitForChanges();
+
+                expect(spyValueChangeEvent).toHaveReceivedEventDetail({ name: '', value: 'hel' });
+            });
         });
 
         describe('value', () => {

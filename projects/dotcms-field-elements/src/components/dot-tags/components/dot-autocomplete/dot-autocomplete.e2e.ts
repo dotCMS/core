@@ -153,7 +153,7 @@ describe('dot-autocomplete', () => {
 
         beforeEach(async () => {
             input = await page.find('input');
-            spySelectEvent = await element.spyOnEvent('select');
+            spySelectEvent = await element.spyOnEvent('selection');
             spyEnterEvent = await element.spyOnEvent('enter');
         });
 
