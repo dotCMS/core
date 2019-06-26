@@ -43,16 +43,20 @@ describe('DotAlertConfirmComponent', () => {
     });
 
     describe('confirmation dialog', () => {
-        it('should show', () => {
+        it('should show and focus on Confirm button', async(() => {
             dialogService.confirm({
                 header: '',
                 message: ''
             });
 
             fixture.detectChanges();
+            spyOn(component.confirmBtn.nativeElement, 'focus');
             const confirm = de.query(By.css('p-confirmDialog'));
             expect(confirm === null).toBe(false);
-        });
+            setTimeout(() => {
+                expect(component.confirmBtn.nativeElement.focus).toHaveBeenCalledTimes(1);
+            }, 100);
+        }));
 
         it('should have right attrs', () => {
             dialogService.confirm({
@@ -67,76 +71,67 @@ describe('DotAlertConfirmComponent', () => {
             expect(confirm.closable).toBe(false, 'closable');
         });
 
-        it(
-            'should bind correctly to buttons',
-            fakeAsync(() => {
-                spyOn(component, 'onClickConfirm');
+        it('should bind correctly to buttons', fakeAsync(() => {
+            spyOn(component, 'onClickConfirm');
 
-                dialogService.confirm({
-                    header: '',
-                    message: ''
-                });
+            dialogService.confirm({
+                header: '',
+                message: ''
+            });
 
-                fixture.detectChanges(); // ngIf
-                tick();
-                fixture.detectChanges(); // confirmation service make it happen
+            fixture.detectChanges(); // ngIf
+            tick();
+            fixture.detectChanges(); // confirmation service make it happen
 
-                const buttons = de.queryAll(By.css('p-confirmDialog button'));
-                buttons[0].nativeElement.click();
-                expect(component.onClickConfirm).toHaveBeenCalledTimes(1);
+            const buttons = de.queryAll(By.css('p-confirmDialog button'));
+            buttons[0].nativeElement.click();
+            expect(component.onClickConfirm).toHaveBeenCalledTimes(1);
 
-                buttons[1].nativeElement.click();
-                expect(component.onClickConfirm).toHaveBeenCalledTimes(2);
-            })
-        );
+            buttons[1].nativeElement.click();
+            expect(component.onClickConfirm).toHaveBeenCalledTimes(2);
+        }));
 
-        it(
-            'should handle accept click correctly',
-            fakeAsync(() => {
-                spyOn(dialogService, 'clearConfirm');
+        it('should handle accept click correctly', fakeAsync(() => {
+            spyOn(dialogService, 'clearConfirm');
 
-                const model = {
-                    header: '',
-                    message: '',
-                    accept: jasmine.createSpy('accept'),
-                    reject: jasmine.createSpy('reject')
-                };
-                dialogService.confirm(model);
+            const model = {
+                header: '',
+                message: '',
+                accept: jasmine.createSpy('accept'),
+                reject: jasmine.createSpy('reject')
+            };
+            dialogService.confirm(model);
 
-                fixture.detectChanges(); // ngIf
-                tick();
-                fixture.detectChanges(); // confirmation service make it happen
+            fixture.detectChanges(); // ngIf
+            tick();
+            fixture.detectChanges(); // confirmation service make it happen
 
-                component.onClickConfirm('accept');
+            component.onClickConfirm('accept');
 
-                expect(dialogService.clearConfirm).toHaveBeenCalledTimes(1);
-                expect(model.accept).toHaveBeenCalledTimes(1);
-            })
-        );
+            expect(dialogService.clearConfirm).toHaveBeenCalledTimes(1);
+            expect(model.accept).toHaveBeenCalledTimes(1);
+        }));
 
-        it(
-            'should handle reject click correctly',
-            fakeAsync(() => {
-                spyOn(dialogService, 'clearConfirm');
+        it('should handle reject click correctly', fakeAsync(() => {
+            spyOn(dialogService, 'clearConfirm');
 
-                const model = {
-                    header: '',
-                    message: '',
-                    accept: jasmine.createSpy('accept'),
-                    reject: jasmine.createSpy('reject')
-                };
-                dialogService.confirm(model);
+            const model = {
+                header: '',
+                message: '',
+                accept: jasmine.createSpy('accept'),
+                reject: jasmine.createSpy('reject')
+            };
+            dialogService.confirm(model);
 
-                fixture.detectChanges(); // ngIf
-                tick();
-                fixture.detectChanges(); // confirmation service make it happen
+            fixture.detectChanges(); // ngIf
+            tick();
+            fixture.detectChanges(); // confirmation service make it happen
 
-                component.onClickConfirm('reject');
+            component.onClickConfirm('reject');
 
-                expect(dialogService.clearConfirm).toHaveBeenCalledTimes(1);
-                expect(model.reject).toHaveBeenCalledTimes(1);
-            })
-        );
+            expect(dialogService.clearConfirm).toHaveBeenCalledTimes(1);
+            expect(model.reject).toHaveBeenCalledTimes(1);
+        }));
     });
 
     describe('alert dialog', () => {

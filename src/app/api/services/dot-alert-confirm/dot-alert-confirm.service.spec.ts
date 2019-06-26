@@ -8,6 +8,7 @@ import { LoginServiceMock } from '../../../test/login-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { DotMessageService } from '../dot-messages-service';
+import { take } from 'rxjs/operators';
 
 const messageServiceMock = new MockDotMessageService({
     'dot.common.dialog.accept': 'Go',
@@ -56,6 +57,9 @@ describe('DotDialogService', () => {
             'should set model and call confirm method in primeng service',
             fakeAsync(() => {
                 spyOn(confirmationService, 'confirm');
+                service.confirmDialogOpened$.pipe(take(1)).subscribe((response: boolean) => {
+                    expect(response).toBe(true);
+                });
                 service.confirm(mockData);
                 tick();
                 expect(service.confirmModel).toEqual(mockData);

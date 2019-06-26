@@ -1,26 +1,26 @@
 <p-confirmDialog #cd
-    *ngIf="dotDialogService.confirmModel"
+    *ngIf="dotAlertConfirmService.confirmModel"
     [closable]="false"
     width="400">
     <p-footer>
-        <button type="button" pButton secondary tabindex="-1" [label]="dotDialogService.confirmModel.footerLabel.reject" (click)="onClickConfirm('reject')"></button>
-        <button type="button" pButton [label]="dotDialogService.confirmModel.footerLabel.accept" (click)="onClickConfirm('accept')"></button>
+        <button type="button" pButton secondary tabindex="-1" [label]="dotAlertConfirmService.confirmModel.footerLabel.reject" (click)="onClickConfirm('reject')"></button>
+        <button type="button" pButton #confirmBtn [label]="dotAlertConfirmService.confirmModel.footerLabel.accept" (click)="onClickConfirm('accept')"></button>
     </p-footer>
 </p-confirmDialog>
 
 <p-dialog
-    *ngIf="dotDialogService.alertModel"
+    *ngIf="dotAlertConfirmService.alertModel"
     [closable]="false"
     [draggable]="false"
-    [header]="dotDialogService.alertModel.header"
+    [header]="dotAlertConfirmService.alertModel.header"
     [responsive]="true"
     [visible]="true"
     modal="modal"
     width="400">
-    <p [innerHTML]="dotDialogService.alertModel.message"></p>
+    <p [innerHTML]="dotAlertConfirmService.alertModel.message"></p>
 
     <p-footer>
-        <button *ngIf="dotDialogService.alertModel.footerLabel.reject" type="button" pButton secondary (click)="dotDialogService.alertReject($event)" [label]="dotDialogService.alertModel.footerLabel.reject"></button>
-        <button type="button" pButton (click)="dotDialogService.alertAccept($event)" [label]="dotDialogService.alertModel.footerLabel.accept"></button>
+        <button *ngIf="dotAlertConfirmService.alertModel.footerLabel.reject" type="button" pButton secondary (click)="dotAlertConfirmService.alertReject($event)" [label]="dotAlertConfirmService.alertModel.footerLabel.reject"></button>
+        <button type="button" pButton (click)="dotAlertConfirmService.alertAccept($event)" [label]="dotAlertConfirmService.alertModel.footerLabel.accept"></button>
     </p-footer>
 </p-dialog>

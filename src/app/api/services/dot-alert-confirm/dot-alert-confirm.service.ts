@@ -2,6 +2,7 @@ import { DotMessageService } from '../dot-messages-service';
 import { Injectable } from '@angular/core';
 import { DotAlertConfirm } from '@models/dot-alert-confirm/dot-alert-confirm.model';
 import { ConfirmationService } from 'primeng/primeng';
+import { Observable, Subject } from 'rxjs';
 
 /**
  * Handle global confirmation and alert dialog component
@@ -13,6 +14,7 @@ import { ConfirmationService } from 'primeng/primeng';
 export class DotAlertConfirmService {
     alertModel: DotAlertConfirm = null;
     confirmModel: DotAlertConfirm = null;
+    private _confirmDialogOpened$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
         public confirmationService: ConfirmationService,
@@ -21,6 +23,14 @@ export class DotAlertConfirmService {
         this.dotMessageService
             .getMessages(['dot.common.dialog.accept', 'dot.common.dialog.reject'])
             .subscribe();
+    }
+
+    /**
+     * Get the confirmDialogOpened notification as an Observable
+     * @returns Observable<boolean>
+     */
+    get confirmDialogOpened$(): Observable<boolean> {
+        return this._confirmDialogOpened$.asObservable();
     }
 
     /**
@@ -40,6 +50,7 @@ export class DotAlertConfirmService {
         this.confirmModel = dialogModel;
         setTimeout(() => {
             this.confirmationService.confirm(dialogModel);
+            this._confirmDialogOpened$.next(true);
         }, 0);
     }
 
