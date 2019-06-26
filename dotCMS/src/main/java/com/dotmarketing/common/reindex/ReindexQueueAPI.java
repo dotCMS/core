@@ -88,6 +88,12 @@ public interface ReindexQueueAPI {
     public void deleteReindexAndFailedRecords() throws DotDataException;
 
     /**
+     * Deletes from dist_reindex_journal all failed records
+     * @throws DotDataException
+     */
+    void deleteFailedRecords() throws DotDataException;
+
+    /**
      * Reindexes content under a given host
      * 
      * @param host - Host object

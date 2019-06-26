@@ -36,7 +36,7 @@ public class LanguagesResourceTest {
         final List<Language> languages = CollectionsUtils.list(mock(Language.class));
 
         when(initDataObject.getUser()).thenReturn(user);
-        when(webResource.init(true, request, true)).thenReturn(initDataObject);
+        when(webResource.init(request, httpServletResponse,true)).thenReturn(initDataObject);
         when(languageAPI.getLanguages()).thenReturn(languages);
 
         final LanguagesResource languagesResource = new LanguagesResource(languageAPI, webResource);
@@ -56,7 +56,7 @@ public class LanguagesResourceTest {
         final List<Language> languages = CollectionsUtils.list(mock(Language.class));
 
         when(initDataObject.getUser()).thenReturn(user);
-        when(webResource.init(true, request, true)).thenReturn(initDataObject);
+        when(webResource.init(request, httpServletResponse,true)).thenReturn(initDataObject);
         when(languageAPI.getAvailableContentLanguages("2", user)).thenReturn(languages);
 
         final LanguagesResource languagesResource = new LanguagesResource(languageAPI, webResource);
@@ -76,7 +76,7 @@ public class LanguagesResourceTest {
         final DotDataException exception = mock(DotDataException.class);
 
         when(initDataObject.getUser()).thenReturn(user);
-        when(webResource.init(true, request, true)).thenReturn(initDataObject);
+        when(webResource.init(request, httpServletResponse, true)).thenReturn(initDataObject);
         when(languageAPI.getAvailableContentLanguages("2", user)).thenThrow(exception);
 
         final LanguagesResource languagesResource = new LanguagesResource(languageAPI, webResource);
@@ -95,7 +95,7 @@ public class LanguagesResourceTest {
         final DotSecurityException exception = mock(DotSecurityException.class);
 
         when(initDataObject.getUser()).thenReturn(user);
-        when(webResource.init(true, request, true)).thenReturn(initDataObject);
+        when(webResource.init(request, httpServletResponse, true)).thenReturn(initDataObject);
         when(languageAPI.getAvailableContentLanguages("2", user)).thenThrow(exception);
 
         final LanguagesResource languagesResource = new LanguagesResource(languageAPI, webResource);

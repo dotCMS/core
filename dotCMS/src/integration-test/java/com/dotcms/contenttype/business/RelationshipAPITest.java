@@ -20,6 +20,7 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Relationship;
@@ -232,12 +233,11 @@ public class RelationshipAPITest extends IntegrationTestBase {
 
         final Map<Relationship, List<Contentlet>> relationshipListMap = Maps.newHashMap();
         relationshipListMap.put(relationship, relationshipList);
+        contentletParent.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        contentletParent.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
         //Checkin of the parent to validate Relationships
         contentletParent = APILocator
                 .getContentletAPI().checkin(contentletParent,relationshipListMap,user,false);
-
-        //wait for reindex
-        DateUtil.sleep(4000);
 
         //List Related Contentlets
         List<Contentlet> relatedContent = APILocator.getContentletAPI()
@@ -271,9 +271,12 @@ public class RelationshipAPITest extends IntegrationTestBase {
         //Check old relationship does not exists
         assertNull(relationshipAPI.byInode(relationship.getInode()));
 
+        final Relationship newRelationship = relationshipAPI
+                .byContentType(contentletParent.getContentType()).get(0);
+
         //Check Content is still related
         relatedContent = APILocator.getContentletAPI()
-                .getRelatedContent(contentletParent, relationship, user, false);
+                .getRelatedContent(contentletParent, newRelationship, user, false);
         assertNotNull(relatedContent);
         assertEquals(relationshipList.size(), relatedContent.size());
 

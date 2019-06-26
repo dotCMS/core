@@ -76,8 +76,8 @@ public class PageResourceTest {
         esapi = mock(ContentletAPI.class);
 
         when(webResource.init(anyString(), any(HttpServletRequest.class), any(HttpServletResponse.class), anyBoolean(), anyString())).thenReturn(initDataObject);
-        when(webResource.init(false, request, true))
-                .thenReturn(initDataObject);
+        when(webResource.init(any(HttpServletRequest.class), any(HttpServletResponse.class), anyBoolean())).thenReturn(initDataObject);
+        when(webResource.init(false, request, true)).thenReturn(initDataObject);
         when(initDataObject.getUser()).thenReturn(user);
         pageResource = new PageResource(pageResourceHelper, webResource, htmlPageAssetRenderedAPI, esapi);
 

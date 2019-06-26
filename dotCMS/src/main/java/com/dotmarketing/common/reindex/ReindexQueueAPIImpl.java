@@ -97,6 +97,12 @@ public class ReindexQueueAPIImpl implements ReindexQueueAPI {
 
     @Override
     @WrapInTransaction
+    public void deleteFailedRecords() throws DotDataException {
+        reindexQueueFactory.deleteFailedRecords();
+    }
+
+    @Override
+    @WrapInTransaction
     public void refreshContentUnderHost(Host host) throws DotDataException {
         reindexQueueFactory.refreshContentUnderHost(host);
     }

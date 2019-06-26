@@ -1,8 +1,13 @@
 package com.dotmarketing.portlets.languagesmanager.model;
 
 import java.io.Serializable;
+import java.util.Locale;
+
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
+
+import com.dotmarketing.exception.DotRuntimeException;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 
 /**
@@ -74,6 +79,20 @@ public class Language implements Serializable {
         return country;
     }
 
+    @JsonIgnore
+    public Locale asLocale() {
+      if(this.languageCode==null) {
+        throw new DotRuntimeException("Locale requires a language code");
+      }
+      else if(this.countryCode==null) {
+        return new Locale(this.languageCode);
+      }else {
+        return new Locale(this.languageCode, this.countryCode);
+      }
+    }
+    
+    
+    
     /**
      * @param country The country to set.
      */

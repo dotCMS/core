@@ -55,7 +55,6 @@ import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.languagesmanager.model.LanguageKey;
 import com.dotmarketing.portlets.structure.StructureUtil;
-import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
@@ -90,6 +89,7 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+import com.liferay.util.StringPool;
 import com.liferay.util.servlet.SessionMessages;
 import java.io.File;
 import java.io.IOException;
@@ -131,6 +131,10 @@ public class ContentletAjax {
 	private ContentletAPI conAPI = APILocator.getContentletAPI();
 	private ContentletWebAPI contentletWebAPI = WebAPILocator.getContentletWebAPI();
 	private LanguageAPI langAPI = APILocator.getLanguageAPI();
+
+	//Number of children related IDs to be added to a lucene query to get children related to a selected parent
+	private static final int RELATIONSHIPS_FILTER_CRITERIA_SIZE = Config
+            .getIntProperty("RELATIONSHIPS_FILTER_CRITERIA_SIZE", 500);
 
 	public List<Map<String, Object>> getContentletsData(String inodesStr) {
 		List<Map<String,Object>> rows = new ArrayList<Map<String, Object>>();
@@ -529,11 +533,13 @@ public class ContentletAjax {
 	@SuppressWarnings("rawtypes")
 	@LogTime
 	public List searchContentletsByUser(List<BaseContentType> types, String structureInode, List<String> fields, List<String> categories, boolean showDeleted, boolean filterSystemHost, boolean filterUnpublish, boolean filterLocked, int page, String orderBy,int perPage, final User currentUser, HttpSession sess,String  modDateFrom, String modDateTo) throws DotStateException, DotDataException, DotSecurityException {
-    if (perPage < 1) {
-      perPage = Config.getIntProperty("PER_PAGE", 40);
-    }
-    
-    
+        if (perPage < 1) {
+          perPage = Config.getIntProperty("PER_PAGE", 40);
+        }
+
+        int offset = 0;
+        if (page != 0)
+            offset = perPage * (page - 1);
     
 		if(!InodeUtils.isSet(structureInode)) {
 			Logger.error(this, "An invalid structure inode =  \"" + structureInode + "\" was passed");
@@ -545,6 +551,9 @@ public class ContentletAjax {
 		String specialCharsToEscape = "([+\\-!\\(\\){}\\[\\]^\"~*?:\\\\]|[&\\|]{2})";
 		String specialCharsToEscapeForMetaData = "([+\\-!\\(\\){}\\[\\]^\"~?:/\\\\]{2})";
 		Map<String, Object> lastSearchMap = new HashMap<String, Object>();
+
+		List<String> relatedIdentifiers = new ArrayList();
+		final StringBuilder relatedQueryByChild = new StringBuilder();
 
 		if (UtilMethods.isSet(sess)) {
 	    sess.removeAttribute("structureSelected");
@@ -643,6 +652,36 @@ public class ContentletAjax {
 				//http://jira.dotmarketing.net/browse/DOTCMS-2656 add the try catch here in case the value is null.
 			}catch (Exception e) {}
 			if (UtilMethods.isSet(fieldValue)) {
+                Optional<Relationship> childRelationship = getRelationshipFromChildField(st, fieldName);
+                if (childRelationship.isPresent()) {
+                    //Getting related identifiers from index when filtering by parent
+                    final Contentlet relatedParent = conAPI
+                            .findContentletByIdentifierAnyLanguage(fieldValue);
+                    final List<String> relatedContent = conAPI
+                            .getRelatedContent(relatedParent, childRelationship.get(), true,
+                                    currentUser, false, RELATIONSHIPS_FILTER_CRITERIA_SIZE,
+                                    offset / RELATIONSHIPS_FILTER_CRITERIA_SIZE, orderBy).stream()
+                            .map(cont -> cont.getIdentifier()).collect(Collectors.toList());
+
+                    if (relatedQueryByChild.length() > 0) {
+                        relatedQueryByChild.append(StringPool.COMMA);
+                    }
+
+                    relatedQueryByChild.append(fieldName).append(StringPool.COLON).append(fieldValue);
+
+                    if (!relatedContent.isEmpty()) {
+                        //creates an intersection of identifiers when filtering by multiple relationship fields
+                        if (relatedIdentifiers.isEmpty()){
+                            relatedIdentifiers.addAll(relatedContent);
+                        } else{
+                            relatedIdentifiers = relatedIdentifiers.stream().filter(relatedContent::contains).collect(
+                                    Collectors.toList());
+                        }
+
+                        continue;
+                    }
+                }
+
 				if(fieldsSearch.containsKey(fieldName)){//DOTCMS-5987, To handle lastSearch for multi-select fields.
 					fieldsSearch.put(fieldName, fieldsSearch.get(fieldName)+","+fieldValue);
 				}else{
@@ -896,14 +935,15 @@ public class ContentletAjax {
 			luceneQuery.append(dates);
 		}
 
-
-		int offset = 0;
-		if (page != 0)
-			offset = perPage * (page - 1);
-
 		lastSearchMap.put("orderBy", orderBy);
 
 		luceneQuery.append(" +working:true");
+        final String luceneQueryToShow= luceneQuery.toString().replaceAll("\\s+", " ");
+		//filter related content
+        if (!relatedIdentifiers.isEmpty()) {
+            luceneQuery.append(" +identifier:(")
+                    .append(String.join(" OR ", relatedIdentifiers)).append(") ");
+        }
 
 		//Executing the query
 		long before = System.currentTimeMillis();
@@ -921,7 +961,7 @@ public class ContentletAjax {
 
 		before = System.currentTimeMillis();
 
-		//The reesults list returned to the page
+		//The results list returned to the page
 		List<Object> results = new ArrayList<Object>();
 
 		//Adding the result counters as the first row of the results
@@ -1146,12 +1186,14 @@ public class ContentletAjax {
 			counters.put("hasNext", perPage < hits.size());
 
 		// Data to show in the bottom content listing page
-		String luceneQueryToShow2= luceneQuery.toString();		
+		String luceneQueryToShow2= luceneQuery.toString();
 		luceneQueryToShow2=luceneQueryToShow2.replaceAll("\\+languageId:[0-9]*\\*?","").replaceAll("\\+deleted:[a-zA-Z]*","")
 			.replaceAll("\\+working:[a-zA-Z]*","").replaceAll("\\s+", " ").trim();
-		String luceneQueryToShow= luceneQuery.toString().replaceAll("\\s+", " ");
+
 		counters.put("luceneQueryRaw", luceneQueryToShow);
 		counters.put("luceneQueryFrontend", luceneQueryToShow2.replace("\"","\\${esc.quote}"));
+        counters.put("relatedQueryByChild",
+                relatedQueryByChild.length() > 0 ? relatedQueryByChild.toString() : null);
 		counters.put("sortByUF", orderBy);
 		counters.put("expiredInodes", expiredInodes);
 
@@ -1181,7 +1223,29 @@ public class ContentletAjax {
 		return results;
 	}
 
-	private void setCurrentStep(final User currentUser,
+    /**
+     * Returns a relationship field from the child side
+     * @param st
+     * @param fieldName
+     * @return
+     */
+    private Optional<Relationship> getRelationshipFromChildField(final Structure st,
+            final String fieldName) {
+
+        if (st != null) {
+            final Field field = st.getFieldVar(
+                    fieldName.split("\\.").length > 1 ? fieldName.split("\\.")[1] : fieldName);
+
+            if (field != null && field.getFieldType().equals(FieldType.RELATIONSHIP.toString())) {
+                Relationship relationship = APILocator.getRelationshipAPI()
+                        .byTypeValue(field.getFieldRelationType());
+                return relationship != null?Optional.of(relationship):Optional.empty();
+            }
+        }
+        return Optional.empty();
+    }
+
+    private void setCurrentStep(final User currentUser,
 								final Map<String, String> searchResult,
 								final Contentlet contentlet) throws DotDataException, LanguageException {
 		try {

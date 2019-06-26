@@ -63,6 +63,15 @@ function setMyWorkflowScheme(){
 	});
 }
 
+function editPage(url) {
+    var customEvent = document.createEvent("CustomEvent");
+    customEvent.initCustomEvent("ng-event", false, false,  {
+        name: 'edit-page',
+		data: url
+    });
+    document.dispatchEvent(customEvent);
+}
+
 </script>
 
 
@@ -83,7 +92,14 @@ function setMyWorkflowScheme(){
 <%--check permissions to display the save and publish button or not--%>
 <%boolean canUserWriteToContentlet = conPerAPI.doesUserHavePermission(contentlet,PermissionAPI.PERMISSION_WRITE,user);%>
 
+
 <div class="content-edit-actions">
+
+        <%if(contentlet.isHTMLPage() && contentlet.getIdentifier() != "") {%>
+            <a onClick="editPage('<%= APILocator.getIdentifierAPI().find(contentlet.getIdentifier()).getURI() %>')">
+			    Edit Page 
+            </a>
+        <%} %>
 
 		<%if(isContLocked && (contentEditable || isUserCMSAdmin)) {%>
 			<%if(contentEditable){ %>

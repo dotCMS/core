@@ -12,12 +12,11 @@ import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.content.elasticsearch.util.DotRestHighLevelClient;
 import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.content.elasticsearch.util.ESUtils;
-import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.CategoryField;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.tika.TikaUtils;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.Host;
@@ -55,6 +54,8 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.ThreadSafeSimpleDateFormat;
 import com.dotmarketing.util.UtilMethods;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import java.io.File;
 import java.io.IOException;
@@ -72,7 +73,6 @@ import java.util.stream.Collectors;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.time.FastDateFormat;
 import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.indices.GetMappingsRequest;
@@ -81,10 +81,17 @@ import org.elasticsearch.client.indices.PutMappingRequest;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentType;
 
-
+/**
+ * Implementation class for the {@link ContentMappingAPI}.
+ * <p>
+ * This class provides useful methods and mechanisms to map properties that are present in a {@link Contentlet} object,
+ * specially for ES indexation purposes.
+ *
+ * @author root
+ * @since Mar 22nd, 2012
+ */
 public class ESMappingAPIImpl implements ContentMappingAPI {
 
-	private static final int UUID_LENGTH = 36;
 	public static final String TEXT = "_text";
 	static ObjectMapper mapper = null;
 
@@ -100,8 +107,6 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 		}
 	}
 
-	
-	
 	/**
 	 * This method takes a mapping string, a type and puts it as the mapping
 	 * @param indexName
@@ -122,6 +127,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 		return putMappingResponse.isAcknowledged();
 	}
 
+
 	/**
 	 * Gets the mapping params for an index and type
 	 * @param index
@@ -139,16 +145,6 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 		return getMappingResponse.mappings().get(index).source().string();
 	}
-
-	private Map<String, Object> getDefaultFieldMap() {
-
-		Map<String, Object> fieldProps = new HashMap<>();
-		fieldProps.put("store", "no");
-		fieldProps.put("include_in_all", false);
-		return fieldProps;
-
-	}
-
 
 	@SuppressWarnings("unchecked")
 	public String toJson(Contentlet con) throws DotMappingException {
@@ -173,30 +169,29 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	 */
 	@CloseDBIfOpened
 	public Map<String,Object> toMap(final Contentlet contentlet) throws DotMappingException {
-
 		try {
-
+			final StringWriter sw = new StringWriter();
+			final User systemUser = APILocator.getUserAPI().getSystemUser();
 			final Map<String,Object> contentletMap = new HashMap();
 			final Map<String,Object> mlowered	   = new HashMap();
 			loadCategories(contentlet, contentletMap);
 			loadFields(contentlet, contentletMap);
 			loadPermissions(contentlet, contentletMap);
-			loadRelationshipFields(contentlet, contentletMap);
+            loadRelationshipFields(contentlet, contentletMap, sw);
 
-			Identifier ident = APILocator.getIdentifierAPI().find(contentlet);
-			ContentletVersionInfo cvi = APILocator.getVersionableAPI().getContentletVersionInfo(ident.getId(), contentlet.getLanguageId());
-			Structure st=CacheLocator.getContentTypeCache().getStructureByInode(contentlet.getStructureInode());
+			final Identifier contentIdentifier = APILocator.getIdentifierAPI().find(contentlet);
+			final ContentletVersionInfo versionInfo = APILocator.getVersionableAPI().getContentletVersionInfo(contentIdentifier.getId(), contentlet.getLanguageId());
+			final ContentType contentType = CacheLocator.getContentTypeCache2().byVarOrInode(contentlet.getContentTypeId());
+			final Folder contentFolder = APILocator.getFolderAPI().findFolderByPath(contentIdentifier.getParentPath(), contentIdentifier.getHostId(), systemUser, false);
+			final Host contentSite = APILocator.getHostAPI().find(contentIdentifier.getHostId(), systemUser, false);
 
-			Folder conFolder=APILocator.getFolderAPI().findFolderByPath(ident.getParentPath(), ident.getHostId(), APILocator.getUserAPI().getSystemUser(), false);
-			Host conHost = APILocator.getHostAPI().find(ident.getHostId(), APILocator.getUserAPI().getSystemUser(), false);
-			
 			contentletMap.put(ESMappingConstants.TITLE, contentlet.getTitle());
-			contentletMap.put(ESMappingConstants.STRUCTURE_NAME, st.getVelocityVarName()); // marked for DEPRECATION
-			contentletMap.put(ESMappingConstants.CONTENT_TYPE, st.getVelocityVarName());
-			contentletMap.put(ESMappingConstants.STRUCTURE_TYPE, st.getStructureType()); // marked for DEPRECATION
-			contentletMap.put(ESMappingConstants.STRUCTURE_TYPE  + TEXT, Integer.toString(st.getStructureType())); // marked for DEPRECATION
-			contentletMap.put(ESMappingConstants.BASE_TYPE, st.getStructureType());
-			contentletMap.put(ESMappingConstants.BASE_TYPE + TEXT, Integer.toString(st.getStructureType()));
+			contentletMap.put(ESMappingConstants.STRUCTURE_NAME, contentType.variable()); // marked for DEPRECATION
+			contentletMap.put(ESMappingConstants.CONTENT_TYPE, contentType.variable());
+			contentletMap.put(ESMappingConstants.STRUCTURE_TYPE, contentType.baseType().getType()); // marked for DEPRECATION
+			contentletMap.put(ESMappingConstants.STRUCTURE_TYPE + TEXT, Integer.toString(contentType.baseType().getType())); // marked for DEPRECATION
+			contentletMap.put(ESMappingConstants.BASE_TYPE, contentType.baseType().getType());
+			contentletMap.put(ESMappingConstants.BASE_TYPE + TEXT, Integer.toString(contentType.baseType().getType()));
 			contentletMap.put(ESMappingConstants.TYPE, ESMappingConstants.CONTENT);
 			contentletMap.put(ESMappingConstants.INODE, contentlet.getInode());
 			contentletMap.put(ESMappingConstants.MOD_DATE, elasticSearchDateTimeFormat.format(contentlet.getModDate()));
@@ -213,43 +208,39 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			contentletMap.put(ESMappingConstants.DELETED + TEXT, Boolean.toString(contentlet.isArchived()));
 			contentletMap.put(ESMappingConstants.LANGUAGE_ID, contentlet.getLanguageId());
 			contentletMap.put(ESMappingConstants.LANGUAGE_ID + TEXT, Long.toString(contentlet.getLanguageId()));
-			contentletMap.put(ESMappingConstants.IDENTIFIER, ident.getId());
-			contentletMap.put(ESMappingConstants.CONTENTLET_HOST, ident.getHostId());
-	        contentletMap.put(ESMappingConstants.CONTENTLET_HOSTNAME, conHost.getHostname());
-			
-			
-			
-			contentletMap.put(ESMappingConstants.CONTENTLET_FOLER, conFolder!=null && InodeUtils.isSet(conFolder.getInode()) ? conFolder.getInode() : contentlet.getFolder());
-			contentletMap.put(ESMappingConstants.PARENT_PATH, ident.getParentPath());
-			contentletMap.put(ESMappingConstants.PATH, ident.getPath());
+			contentletMap.put(ESMappingConstants.IDENTIFIER, contentIdentifier.getId());
+			contentletMap.put(ESMappingConstants.CONTENTLET_HOST, contentIdentifier.getHostId());
+			contentletMap.put(ESMappingConstants.CONTENTLET_HOSTNAME, contentSite.getHostname());
+			contentletMap.put(ESMappingConstants.CONTENTLET_FOLER, contentFolder!=null && InodeUtils.isSet(contentFolder.getInode()) ? contentFolder.getInode() : contentlet.getFolder());
+			contentletMap.put(ESMappingConstants.PARENT_PATH, contentIdentifier.getParentPath());
+			contentletMap.put(ESMappingConstants.PATH, contentIdentifier.getPath());
 			// makes shorties searchable regardless of length
-			contentletMap.put(ESMappingConstants.SHORT_ID, ident.getId().replace("-", ""));
+			contentletMap.put(ESMappingConstants.SHORT_ID, contentIdentifier.getId().replace("-", ""));
 			contentletMap.put(ESMappingConstants.SHORT_INODE, contentlet.getInode().replace("-", ""));
-			
 			//add workflow to map
 			contentletMap.putAll(getWorkflowInfoForContentlet(contentlet));
 
-			if(UtilMethods.isSet(ident.getSysPublishDate())) {
-				contentletMap.put(ESMappingConstants.PUBLISH_DATE, elasticSearchDateTimeFormat.format(ident.getSysPublishDate()));
+			if(UtilMethods.isSet(contentIdentifier.getSysPublishDate())) {
+				contentletMap.put(ESMappingConstants.PUBLISH_DATE, elasticSearchDateTimeFormat.format(contentIdentifier.getSysPublishDate()));
 				contentletMap.put(ESMappingConstants.PUBLISH_DATE + TEXT,
-						datetimeFormat.format(ident.getSysPublishDate()));
+						datetimeFormat.format(contentIdentifier.getSysPublishDate()));
 			}else {
-				contentletMap.put(ESMappingConstants.PUBLISH_DATE, elasticSearchDateTimeFormat.format(cvi.getVersionTs()));
+				contentletMap.put(ESMappingConstants.PUBLISH_DATE, elasticSearchDateTimeFormat.format(versionInfo.getVersionTs()));
 				contentletMap.put(ESMappingConstants.PUBLISH_DATE + TEXT,
-						datetimeFormat.format(cvi.getVersionTs()));
+						datetimeFormat.format(versionInfo.getVersionTs()));
 			}
 
-			if(UtilMethods.isSet(ident.getSysExpireDate())) {
-				contentletMap.put(ESMappingConstants.EXPIRE_DATE, elasticSearchDateTimeFormat.format(ident.getSysExpireDate()));
+			if(UtilMethods.isSet(contentIdentifier.getSysExpireDate())) {
+				contentletMap.put(ESMappingConstants.EXPIRE_DATE, elasticSearchDateTimeFormat.format(contentIdentifier.getSysExpireDate()));
 				contentletMap.put(ESMappingConstants.EXPIRE_DATE + TEXT,
-						datetimeFormat.format(ident.getSysExpireDate()));
+						datetimeFormat.format(contentIdentifier.getSysExpireDate()));
 			}else {
 				contentletMap.put(ESMappingConstants.EXPIRE_DATE, elasticSearchDateTimeFormat.format(29990101000000L));
 				contentletMap.put(ESMappingConstants.EXPIRE_DATE + TEXT, "29990101000000");
 			}
 
-			contentletMap.put(ESMappingConstants.VERSION_TS, elasticSearchDateTimeFormat.format(cvi.getVersionTs()));
-			contentletMap.put(ESMappingConstants.VERSION_TS + TEXT, datetimeFormat.format(cvi.getVersionTs()));
+			contentletMap.put(ESMappingConstants.VERSION_TS, elasticSearchDateTimeFormat.format(versionInfo.getVersionTs()));
+			contentletMap.put(ESMappingConstants.VERSION_TS + TEXT, datetimeFormat.format(versionInfo.getVersionTs()));
 
 			String urlMap = null;
 			try{
@@ -257,40 +248,27 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 				if(urlMap != null){
 					contentletMap.put(ESMappingConstants.URL_MAP,urlMap );
 				}
-			}
-			catch(Exception e){
-				Logger.warn(this.getClass(), "Cannot get URLMap for structure : "+ st.getName() + " and contentlet.id : " + ((ident != null) ? ident.getId() : contentlet) + " , reason: "+e.getMessage());
-				
+			} catch (final Exception e) {
+				Logger.warn(this.getClass(), "Cannot get URLMap for Content Type: " + contentType.name() + " and " +
+						"contentlet.id : " + ((contentIdentifier != null) ? contentIdentifier.getId() : contentlet) +
+						" , reason: " + e.getMessage());
 			}
 
-			final StringWriter sw = new StringWriter();
 			for(final Entry<String,Object> entry : contentletMap.entrySet()){
 				final String lowerCaseKey = entry.getKey().toLowerCase();
 				Object lowerCaseValue = entry.getValue();
 
 				if (UtilMethods.isSet(lowerCaseValue) && (lowerCaseValue instanceof String || (
 						//filters relationships
+                        !(lowerCaseValue instanceof List) &&
 						 !lowerCaseKey
-								.endsWith(ESMappingConstants.TAGS) && !lowerCaseKey
-								.endsWith(ESMappingConstants.SUFFIX_ORDER)))) {
+								.endsWith(ESMappingConstants.TAGS)))) {
 
 					if (lowerCaseValue instanceof String){
 						lowerCaseValue = ((String) lowerCaseValue).toLowerCase();
 					}
-					// add relationships to catchall
-                    if (lowerCaseValue instanceof List){
-                        List<Object> valList = (List<Object>) lowerCaseValue;
-                        for(Object listVal : valList) {
-                            if (listVal!=null && listVal instanceof String){
-                                sw.append(((String) listVal).toLowerCase().toString()).append(' ');
-                            }
-                        }
-                    }
-					
-					
-					
-					
-					if (!lowerCaseKey.endsWith(TEXT)){
+
+                    if (!lowerCaseKey.endsWith(TEXT)){
 						//for example: when lowerCaseValue=moddate, moddate_dotraw must be created from its moddate_text if exists
 						//when the moddate_text is evaluated.
 						if (!contentletMap.containsKey(entry.getKey() + TEXT)){
@@ -303,13 +281,13 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 				mlowered.put(lowerCaseKey, lowerCaseValue);
 
-				if(lowerCaseValue!=null) {
+				//exclude null values and relationships because they where appended on the loadRelationships method
+				if(lowerCaseValue!=null && !(lowerCaseValue instanceof List)) {
 					sw.append(lowerCaseValue.toString()).append(' ');
 				}
 			}
 
-			if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
-			    
+			if (contentlet.getContentType().baseType().getType() == BaseContentType.FILEASSET.getType()) {
                 //Verify if it is enabled the option to regenerate missing metadata files on reindex
                 boolean regenerateMissingMetadata = Config
                         .getBooleanProperty("regenerate.missing.metadata.on.reindex", true);
@@ -317,7 +295,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                 Verify if it is enabled the option to always regenerate metadata files on reindex,
                 enabling this could affect greatly the performance of a reindex process.
                  */
-                boolean alwaysRegenerateMetadata = Config
+                final boolean alwaysRegenerateMetadata = Config
                         .getBooleanProperty("always.regenerate.metadata.on.reindex", false);
                 if (contentlet.isLive() || contentlet.isWorking()) {
                     if (alwaysRegenerateMetadata) {
@@ -326,30 +304,26 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                         new TikaUtils().generateMetaData(contentlet);
                     }
                 }
-			    
-			    
 				// see if we have content metadata
 				File contentMeta=APILocator.getFileAssetAPI().getContentMetadataFile(contentlet.getInode());
 				if(contentMeta.exists() && contentMeta.length()>0) {
-
-					String contentData=APILocator.getFileAssetAPI().getContentMetadataAsString(contentMeta);
-
+					final String contentData=APILocator.getFileAssetAPI().getContentMetadataAsString(contentMeta);
 					mlowered.put(FileAssetAPI.META_DATA_FIELD.toLowerCase() + StringPool.PERIOD + "content", contentData);
 					sw.append(contentData).append(' ');
 				}
 			}
-
 			//The url is now stored under the identifier for html pages, so we need to index that also.
-			if(contentlet.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE){
-				mlowered.put(contentlet.getStructure().getVelocityVarName().toLowerCase() + ".url", ident.getAssetName());
-				mlowered.put(contentlet.getStructure().getVelocityVarName().toLowerCase() + ".url_dotraw", ident.getAssetName());
-				sw.append(ident.getAssetName());
+			if (contentlet.getContentType().baseType().getType() == BaseContentType.HTMLPAGE.getType()) {
+				mlowered.put(contentlet.getContentType().variable().toLowerCase() + ".url", contentIdentifier.getAssetName());
+				mlowered.put(contentlet.getContentType().variable().toLowerCase() + ".url_dotraw", contentIdentifier.getAssetName());
+				sw.append(contentIdentifier.getAssetName());
 			}
-
 			mlowered.put("catchall", sw.toString());
 
 			return mlowered;
-		} catch (Exception e) {
+		} catch (final Exception e) {
+			Logger.error(this, "An error occurred when mapping properties of Contentlet '" + contentlet.getIdentifier
+					() + "' : " + e.getMessage(), e);
 			throw new DotMappingException(e.getMessage(), e);
 		}
 	}
@@ -567,7 +541,10 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 					}
 				} else if (f.getFieldType().equals(ESMappingConstants.FIELD_TYPE_CATEGORY)) {
 					// moved the logic to loadCategories
-				} else if (f.getFieldType().equals(ESMappingConstants.FIELD_TYPE_CHECKBOX) || f
+				} else if (f.getFieldType().equals(ESMappingConstants.FIELD_TYPE_RELATIONSHIP)) {
+                    // loadRelationshipFields processes relationship fields
+                    continue;
+                } else if (f.getFieldType().equals(ESMappingConstants.FIELD_TYPE_CHECKBOX) || f
 						.getFieldType().equals(ESMappingConstants.FIELD_TYPE_MULTI_SELECT)) {
 					if (f.getFieldContentlet().startsWith(ESMappingConstants.FIELD_ELASTIC_TYPE_BOOLEAN)) {
 						m.put(keyName, valueObj);
@@ -580,7 +557,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 					final boolean fileMetadata =
 							f.getVelocityVarName().equals(FileAssetAPI.META_DATA_FIELD)
 									&& st.getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET;
-					if(!fileMetadata || LicenseUtil.getLevel()>= LicenseLevel.STANDARD.level) {
+					if(LicenseUtil.getLevel()>= LicenseLevel.STANDARD.level) {
 
 						Map<String,Object> keyValueMap = KeyValueFieldUtil.JSONValueToHashMap((String)valueObj);
 
@@ -603,9 +580,12 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 							tikaUtils.filterMetadataFields(keyValueMap, allowedFields);
 
-							keyValueMap.forEach((k, v) -> m
-									.put(FileAssetAPI.META_DATA_FIELD.toLowerCase() + StringPool.PERIOD + k, v));
 						}
+
+						final String keyValuePrefix = fileMetadata ?
+								FileAssetAPI.META_DATA_FIELD.toLowerCase() : keyName;
+						keyValueMap.forEach((k, v) -> m
+								.put(keyValuePrefix + StringPool.PERIOD + k, v));
 					}
 				} else if(f.getFieldType().equals(Field.FieldType.TAG.toString())) {
 
@@ -672,6 +652,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			}
 		}
 	}
+
 	public String toJsonString(Map<String, Object> map) throws IOException{
 		return mapper.writeValueAsString(map);
 	}
@@ -682,10 +663,9 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 		final ContentletAPI conAPI=APILocator.getContentletAPI();
 
-		final String relatedSQL = "select tree.* from tree where parent = ? or child = ? order by tree_order";
+		final String relatedSQL = "select tree.* from tree where child = ? order by tree_order";
 		final DotConnect db = new DotConnect();
 		db.setSQL(relatedSQL);
-		db.addParam(contentlet.getIdentifier());
 		db.addParam(contentlet.getIdentifier());
 
 		final List<HashMap<String, String>> relatedContentlets = db.loadResults();
@@ -700,28 +680,11 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 				final List<Contentlet> oldDocs;
 				final List<String> oldRelatedIds = new ArrayList<>();
 				final List<String> newRelatedIds = new ArrayList<>();
-				final StringBuilder q = new StringBuilder();
 
-				boolean isSameStructRelationship = FactoryLocator.getRelationshipFactory()
-						.sameParentAndChild(relationship);
+                oldDocs = conAPI.getRelatedContent(contentlet, relationship,
+                        APILocator.getUserAPI().getSystemUser(), false);
 
-				if(isSameStructRelationship) {
-					q.append("+type:content +(").append(relationship.getRelationTypeValue())
-							.append(ESMappingConstants.SUFFIX_PARENT).append(":")
-							.append(contentlet.getIdentifier())
-							.append(" ").append(relationship.getRelationTypeValue())
-							.append(ESMappingConstants.SUFFIX_CHILD).append(":")
-							.append(contentlet.getIdentifier()).append(") ");
-				}else {
-					q.append("+type:content +").append(relationship.getRelationTypeValue()).append(":")
-							.append(contentlet.getIdentifier());
-				}
-
-				oldDocs = conAPI
-						.search(q.toString(), -1, 0, null, APILocator.getUserAPI().getSystemUser(),
-								false);
-
-				if(oldDocs.size() > 0) {
+                if(oldDocs.size() > 0) {
 					for(Contentlet oldDoc : oldDocs) {
 						oldRelatedIds.add(oldDoc.getIdentifier());
 					}
@@ -763,104 +726,54 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 		}
 	}
 
-	protected void loadRelationshipFields(final Contentlet contentlet, final Map<String, Object> esMap)
-			throws DotStateException, DotDataException {
+    /**
+     * @deprecated Use {@link ESMappingAPIImpl#loadRelationshipFields(Contentlet, Map, StringWriter)} instead
+     * @param contentlet
+     * @param esMap
+     * @throws DotStateException
+     * @throws DotDataException
+     */
+	@Deprecated
+    protected void loadRelationshipFields(final Contentlet contentlet,
+            final Map<String, Object> esMap) throws DotStateException, DotDataException {
+        loadRelationshipFields(contentlet, esMap, new StringWriter());
+    }
 
-		String orderKey;
-		String propName;
+    /**
+     *
+     * @param contentlet Contentlet to be mapped
+     * @param esMap Map with fields to be indexed
+     * @param catchallWriter StringWriter to save related content identifiers in the catchall field
+     * @throws DotStateException
+     * @throws DotDataException
+     */
+    protected void loadRelationshipFields(final Contentlet contentlet,
+            final Map<String, Object> esMap, final StringWriter catchallWriter)
+            throws DotStateException, DotDataException {
 
-		final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
-		final Map<String, List> relationshipsRecords = new HashMap<>();
+        final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
 
-		final DotConnect db = new DotConnect();
-		db.setSQL("select * from tree where parent = ? or child = ? order by tree_order asc");
-		db.addParam(contentlet.getIdentifier());
-		db.addParam(contentlet.getIdentifier());
+        final DotConnect db = new DotConnect();
+        db.setSQL(
+                "select child, relation_type from tree where parent = ? and relation_type !='child' order by tree_order asc");
+        db.addParam(contentlet.getIdentifier());
 
-		for (Map<String, Object> relatedEntry : db.loadObjectResults()) {
+        for (Map<String, Object> relatedEntry : db.loadObjectResults()) {
 
-			final String childId = relatedEntry.get(ESMappingConstants.CHILD).toString();
-			final String parentId = relatedEntry.get(ESMappingConstants.PARENT).toString();
-			final String relType = relatedEntry.get(ESMappingConstants.RELATION_TYPE).toString();
-			final String order = relatedEntry.get(ESMappingConstants.TREE_ORDER).toString();
+            final String childId = relatedEntry.get(ESMappingConstants.CHILD).toString();
+            final String relType = relatedEntry.get(ESMappingConstants.RELATION_TYPE).toString();
+            final Relationship relationship = relationshipAPI.byTypeValue(relType);
 
-			if ("child".equals(relType)) {
-				continue;
-			}
+            if (relationship != null && InodeUtils.isSet(relationship.getInode())) {
+                List.class.cast(esMap
+                        .computeIfAbsent(relType,
+                                k -> new ArrayList<>()))
+                        .add(childId);
 
-			final Relationship relationship = relationshipAPI.byTypeValue(relType);
+                //add related content to catchall
+                catchallWriter.append(childId).append(' ');
+            }
+        }
+    }
 
-			if (relationship != null && InodeUtils.isSet(relationship.getInode())) {
-
-				final boolean isSameStructRelationship = relationshipAPI.sameParentAndChild(relationship);
-
-				//Support for legacy relationships
-				propName = isSameStructRelationship ?
-						(contentlet.getIdentifier().equals(parentId) ? relationship.getRelationTypeValue()
-								+ ESMappingConstants.SUFFIX_CHILD
-								: relationship.getRelationTypeValue() + ESMappingConstants.SUFFIX_PARENT)
-						: relationship.getRelationTypeValue();
-
-				orderKey = relationship.getRelationTypeValue() + ESMappingConstants.SUFFIX_ORDER;
-
-				if (relType.equals(relationship.getRelationTypeValue())) {
-					final String me = contentlet.getIdentifier();
-					final String related = me.equals(childId) ? parentId : childId;
-
-					List.class.cast(esMap.computeIfAbsent(propName, k -> new ArrayList<>())).add(related);
-
-					//adding sort elements as a list
-					List.class.cast(esMap.computeIfAbsent(orderKey, k -> new ArrayList<>()))
-							.add(related + "_" + order);
-
-					if (relationship.isRelationshipField()){
-						addRelationshipRecords(contentlet, me.equals(childId) ? relationship.getParentRelationName()
-								: relationship.getChildRelationName(), related, relationshipsRecords, esMap);
-					}
-
-				}
-			}
-		}
-
-		//Adding new relationships fields to the index map
-		esMap.putAll(relationshipsRecords);
-
-	}
-
-	/**
-	 * Groups all relationships records by relationship field
-	 */
-	private void addRelationshipRecords(final Contentlet contentlet, final String relationName,
-			final String related,
-			final Map<String, List> relationshipsRecords, final Map<String, Object> mapping) {
-
-		final ContentType contentType = contentlet.getContentType();
-		if (relationName != null) {
-			final String key = contentType.variable() + StringPool.PERIOD + relationName;
-
-			//this relationship has been already added
-			if (mapping.containsKey(key)) {
-				return;
-			}
-			if (!relationshipsRecords.containsKey(key)) {
-				try {
-					//Search for a relationship field
-					final com.dotcms.contenttype.model.field.Field field = APILocator
-							.getContentTypeFieldAPI()
-							.byContentTypeAndVar(contentType, relationName);
-					if (field != null) {
-						relationshipsRecords.put(key, new ArrayList());
-						relationshipsRecords.get(key).add(related);
-					}
-				} catch (NotFoundInDbException e) {
-					//Do nothing and continue searching for others relationships fields
-				} catch (DotDataException e) {
-					Logger.warn(this, "Error getting field for relation type " + key, e);
-				}
-
-			} else{
-				relationshipsRecords.get(key).add(related);
-			}
-		}
-	}
 }

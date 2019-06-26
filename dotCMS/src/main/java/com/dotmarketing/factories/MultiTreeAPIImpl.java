@@ -36,6 +36,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.HashBasedTable;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Table;
 import com.liferay.portal.model.User;
@@ -66,19 +67,22 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
     private static final String DELETE_ALL_MULTI_TREE_RELATED_TO_IDENTIFIER_SQL =
             "delete from multi_tree where child = ? or parent1 = ? or parent2 = ?";
-    private static final String DELETE_SQL = "delete from multi_tree where parent1=? and parent2=? and child=? and  relation_type = ?";
+    private static final String DELETE_SQL = "delete from multi_tree where parent1=? and parent2=? and child=? and  relation_type = ? and personalization = ?";
+    private static final String DELETE_SQL_PERSONALIZATION_PER_PAGE = "delete from multi_tree where parent1=? and personalization = ?";
     private static final String DELETE_ALL_MULTI_TREE_SQL = "delete from multi_tree where parent1=? AND relation_type != ?";
-    private static final String SELECT_SQL = "select * from multi_tree where parent1 = ? and parent2 = ? and child = ? and  relation_type = ?";
+    private static final String SELECT_SQL = "select * from multi_tree where parent1 = ? and parent2 = ? and child = ? and  relation_type = ? and personalization = ?";
 
-    private static final String INSERT_SQL = "insert into multi_tree (parent1, parent2, child, relation_type, tree_order ) values (?,?,?,?,?)  ";
+    private static final String INSERT_SQL = "insert into multi_tree (parent1, parent2, child, relation_type, tree_order, personalization) values (?,?,?,?,?,?)  ";
 
     private static final String SELECT_BY_PAGE = "select * from multi_tree where parent1 = ? order by tree_order";
-    private static final String SELECT_BY_ONE_PARENT = "select * from multi_tree where parent1 = ? or parent2 = ? order by tree_order";
+    private static final String SELECT_BY_PAGE_AND_PERSONALIZATION = "select * from multi_tree where parent1 = ? and personalization = ? order by tree_order";
+    private static final String SELECT_UNIQUE_PERSONALIZATION_PER_PAGE = "select distinct(personalization) from multi_tree where parent1 = ?";
+    private static final String SELECT_BY_ONE_PARENT = "select * from multi_tree where parent1 = ? or parent2 = ? order by tree_order"; // search by page id or container id
     private static final String SELECT_BY_TWO_PARENTS = "select * from multi_tree where parent1 = ? and parent2 = ?  order by tree_order";
     private static final String SELECT_ALL = "select * from multi_tree  ";
     private static final String SELECT_BY_CHILD = "select * from multi_tree where child = ?  order by parent1, parent2, relation_type ";
     private static final String SELECT_BY_PARENTS_AND_RELATIONS =
-            " select * from multi_tree where parent1 = ? and parent2 = ? and relation_type = ? order by tree_order";
+            " select * from multi_tree where parent1 = ? and parent2 = ? and relation_type = ? and personalization = ? order by tree_order";
 
     private static final String SELECT_BY_CONTAINER_AND_STRUCTURE = "SELECT mt.* FROM multi_tree mt JOIN contentlet c "
             + " ON c.identifier = mt.child WHERE mt.parent2 = ? AND c.structure_inode = ? ";
@@ -95,12 +99,12 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
     @WrapInTransaction
     @Override
-    public void deleteMultiTreesRelatedToIdentifier(final String identifier) throws DotDataException {
+    public void deleteMultiTreesRelatedToIdentifier(final String pageIdentifier) throws DotDataException {
 
-        final List<MultiTree> pagesRelatedList = getMultiTreesByPage(identifier);
+        final List<MultiTree> pagesRelatedList = getMultiTreesByPage(pageIdentifier);
 
-        new DotConnect().setSQL(DELETE_ALL_MULTI_TREE_RELATED_TO_IDENTIFIER_SQL).addParam(identifier).addParam(identifier)
-                .addParam(identifier).loadResult();
+        new DotConnect().setSQL(DELETE_ALL_MULTI_TREE_RELATED_TO_IDENTIFIER_SQL).addParam(pageIdentifier).addParam(pageIdentifier)
+                .addParam(pageIdentifier).loadResult();
 
         if (UtilMethods.isSet(pagesRelatedList)) {
             for (final MultiTree multiTree : pagesRelatedList) {
@@ -142,8 +146,12 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
      */
     private void _dbDelete(final MultiTree multiTree) throws DotDataException {
 
-        new DotConnect().setSQL(DELETE_SQL).addParam(multiTree.getHtmlPage()).addParam(multiTree.getContainerAsID())
-                .addParam(multiTree.getContentlet()).addParam(multiTree.getRelationType())
+        new DotConnect().setSQL(DELETE_SQL)
+                .addParam(multiTree.getHtmlPage())
+                .addParam(multiTree.getContainerAsID())
+                .addParam(multiTree.getContentlet())
+                .addParam(multiTree.getRelationType())
+                .addObject(multiTree.getPersonalization())
                 .loadResult();
     }
 
@@ -157,15 +165,25 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
     @CloseDBIfOpened
     @Override
-    public MultiTree getMultiTree(final String htmlPage, final String container, final String childContent, final String containerInstance)
+    public MultiTree getMultiTree(final String htmlPage, final String container, final String childContent,
+                                  final String containerInstance, final String personalization)
             throws DotDataException {
 
         final DotConnect db =
-                new DotConnect().setSQL(SELECT_SQL).addParam(htmlPage).addParam(container).addParam(childContent).addParam(containerInstance);
+                new DotConnect().setSQL(SELECT_SQL).addParam(htmlPage).addParam(container)
+                        .addParam(childContent).addParam(containerInstance)
+                        .addParam(personalization);
         db.loadResult();
 
         return TransformerLocator.createMultiTreeTransformer(db.loadObjectResults()).findFirst();
 
+    }
+
+    @Override
+    public MultiTree getMultiTree(final String htmlPage, final String container, final String childContent, final String containerInstance)
+            throws DotDataException {
+
+        return this.getMultiTree(htmlPage, container, childContent, containerInstance, MultiTree.DOT_PERSONALIZATION_DEFAULT);
     }
 
     /**
@@ -177,26 +195,18 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
      * @param childContent
      * @throws DotDataException
      */
-    @CloseDBIfOpened
     @Override
     @Deprecated
     public MultiTree getMultiTree(final String htmlPage, final String container, final String childContent) throws DotDataException {
 
-        final DotConnect db = new DotConnect().setSQL(SELECT_SQL).addParam(htmlPage).addParam(container).addParam(childContent)
-                .addParam(Container.LEGACY_RELATION_TYPE);
-        db.loadResult();
-
-        return TransformerLocator.createMultiTreeTransformer(db.loadObjectResults()).findFirst();
-
+        return this.getMultiTree(htmlPage, container, childContent, Container.LEGACY_RELATION_TYPE);
     }
 
-    @CloseDBIfOpened
     @Override
     public java.util.List<MultiTree> getMultiTrees(final Identifier parent) throws DotDataException {
         return getMultiTrees(parent.getId());
     }
 
-    @CloseDBIfOpened
     @Override
     public java.util.List<MultiTree> getMultiTrees(final Identifier htmlPage, final Identifier container) throws DotDataException {
         return getMultiTrees(htmlPage.getId(), container.getId());
@@ -208,7 +218,76 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
         final DotConnect db = new DotConnect().setSQL(SELECT_BY_ONE_PARENT).addParam(parentInode).addParam(parentInode);
         return TransformerLocator.createMultiTreeTransformer(db.loadObjectResults()).asList();
+    }
 
+
+    @CloseDBIfOpened
+    @Override
+    public Set<String> getPersonalizationsForPage(final String pageId) throws DotDataException {
+
+        final Set<String> personalizationSet = new HashSet<>();
+        final  List<Map<String, Object>>  personalizationMaps =
+                 new DotConnect().setSQL(SELECT_UNIQUE_PERSONALIZATION_PER_PAGE).addParam(pageId).loadObjectResults();
+
+        for (final Map<String, Object> personalizationMap : personalizationMaps) {
+
+            personalizationSet.add(personalizationMap.values()
+                    .stream().findFirst().orElse(StringPool.BLANK).toString());
+        }
+
+        return personalizationSet;
+    }
+
+    @WrapInTransaction
+    @Override
+    public List<MultiTree> copyPersonalizationForPage (final String pageId,
+                                                       final String basePersonalization,
+                                                       final String newPersonalization)  throws DotDataException {
+
+        List<MultiTree> multiTrees = null;
+        final ImmutableList.Builder<MultiTree> personalizedContainerListBuilder =
+                new ImmutableList.Builder<>();
+
+        final List<MultiTree> basedMultiTreeList = this.getMultiTreesByPersonalizedPage(pageId, basePersonalization);
+
+        if (null != basedMultiTreeList) {
+
+            basedMultiTreeList.forEach(multiTree ->
+                    personalizedContainerListBuilder.add(MultiTree.personalized(multiTree, newPersonalization)));
+
+            multiTrees = personalizedContainerListBuilder.build();
+            this.saveMultiTrees(multiTrees);
+        }
+
+        return multiTrees;
+    } // copyPersonalizationForPage.
+
+    @WrapInTransaction
+    @Override
+    public void deletePersonalizationForPage(final String pageId, final String personalization) throws DotDataException {
+
+        new DotConnect().setSQL(DELETE_SQL_PERSONALIZATION_PER_PAGE)
+                .addParam(pageId)
+                .addParam(personalization)
+                .loadResult();
+    } // deletePersonalizationForPage.
+
+    /**
+     * Returns the trees associated to a page and personalization
+     *
+     * @param pageId String page id
+     * @param personalization String personalization to find
+     * @return List of MultiTree
+     * @throws DotDataException
+     */
+    @CloseDBIfOpened
+    @Override
+    public List<MultiTree> getMultiTreesByPersonalizedPage(final String pageId, final String personalization) throws DotDataException {
+
+        return TransformerLocator.createMultiTreeTransformer(
+                new DotConnect().setSQL(SELECT_BY_PAGE_AND_PERSONALIZATION)
+                        .addParam(pageId).addParam(personalization).loadObjectResults())
+                .asList();
     }
 
     /**
@@ -220,71 +299,73 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
      */
     @CloseDBIfOpened
     @Override
-    public java.util.List<MultiTree> getMultiTreesByPage(final String parentInode) throws DotDataException {
+    public List<MultiTree> getMultiTreesByPage(final String parentInode) throws DotDataException {
 
         final DotConnect db = new DotConnect().setSQL(SELECT_BY_PAGE).addParam(parentInode);
         return TransformerLocator.createMultiTreeTransformer(db.loadObjectResults()).asList();
-
     }
 
     @CloseDBIfOpened
     @Override
-    public java.util.List<MultiTree> getAllMultiTrees() {
+    public List<MultiTree> getAllMultiTrees() {
         try {
             final DotConnect db = new DotConnect().setSQL(SELECT_ALL);
 
             return TransformerLocator.createMultiTreeTransformer(db.loadObjectResults()).asList();
-
         } catch (Exception e) {
             Logger.error(MultiTreeAPIImpl.class, "getMultiTree failed:" + e, e);
             throw new DotRuntimeException(e);
         }
     }
 
+    @Override
+    public List<MultiTree> getMultiTrees(final String htmlPage, final String container, final String containerInstance) {
+
+        return this.getMultiTrees(htmlPage, container, containerInstance, MultiTree.DOT_PERSONALIZATION_DEFAULT);
+    }
+
     @CloseDBIfOpened
     @Override
-    public java.util.List<MultiTree> getMultiTrees(final String htmlPage, final String container, final String containerInstance) {
+    public List<MultiTree> getMultiTrees(final String htmlPage, final String container,
+                                         final String containerInstance, final String personalization) {
+
         try {
 
-            final DotConnect db =
-                    new DotConnect().setSQL(SELECT_BY_PARENTS_AND_RELATIONS).addParam(htmlPage).addParam(container).addParam(containerInstance);
-            return TransformerLocator.createMultiTreeTransformer(db.loadObjectResults()).asList();
+            return TransformerLocator.createMultiTreeTransformer(new DotConnect().setSQL(SELECT_BY_PARENTS_AND_RELATIONS)
+                    .addParam(htmlPage).addParam(container).addParam(containerInstance).addObject(personalization).loadObjectResults()).asList();
         } catch (Exception e) {
             Logger.error(MultiTreeAPIImpl.class, "getMultiTree failed:" + e, e);
             throw new DotRuntimeException(e);
         }
     }
 
-    @CloseDBIfOpened
     @Override
-    public java.util.List<MultiTree> getMultiTrees(final IHTMLPage htmlPage, final Container container) throws DotDataException {
+    public List<MultiTree> getMultiTrees(final IHTMLPage htmlPage, final Container container) throws DotDataException {
         return getMultiTrees(htmlPage.getIdentifier(), container.getIdentifier());
     }
 
     @CloseDBIfOpened
     @Override
-    public java.util.List<MultiTree> getMultiTrees(final String htmlPage, final String container) throws DotDataException {
+    public List<MultiTree> getMultiTrees(final String htmlPage, final String container) throws DotDataException {
 
         final DotConnect db = new DotConnect().setSQL(SELECT_BY_TWO_PARENTS).addParam(htmlPage).addParam(container);
         return TransformerLocator.createMultiTreeTransformer(db.loadObjectResults()).asList();
 
     }
 
-    @CloseDBIfOpened
     @Override
-    public java.util.List<MultiTree> getMultiTrees(final IHTMLPage htmlPage, final Container container, final String containerInstance) {
+    public List<MultiTree> getMultiTrees(final IHTMLPage htmlPage, final Container container, final String containerInstance) {
         return getMultiTrees(htmlPage.getIdentifier(), container.getIdentifier(), containerInstance);
     }
 
-    @CloseDBIfOpened
     @Override
-    public java.util.List<MultiTree> getContainerMultiTrees(final String containerIdentifier) throws DotDataException {
+    public List<MultiTree> getContainerMultiTrees(final String containerIdentifier) throws DotDataException {
         return getMultiTrees(containerIdentifier);
     }
 
     @CloseDBIfOpened
     @Override
-    public java.util.List<MultiTree> getMultiTreesByChild(final String contentIdentifier) throws DotDataException {
+    public List<MultiTree> getMultiTreesByChild(final String contentIdentifier) throws DotDataException {
 
         final DotConnect db = new DotConnect().setSQL(SELECT_BY_CHILD).addParam(contentIdentifier);
 
@@ -381,7 +462,8 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
             for (final MultiTree tree : mTrees) {
                 insertParams
-                        .add(new Params(pageId, tree.getContainerAsID(), tree.getContentlet(), tree.getRelationType(), tree.getTreeOrder()));
+                        .add(new Params(pageId, tree.getContainerAsID(), tree.getContentlet(),
+                                tree.getRelationType(), tree.getTreeOrder(), tree.getPersonalization()));
                 newContainers.add(tree.getContainer());
             }
 
@@ -393,7 +475,6 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     }
 
     @Override
-    @CloseDBIfOpened
     public List<String> getContainersId(final String pageId) throws DotDataException {
         return this.getMultiTrees(pageId).stream().map(multiTree -> multiTree.getContainer()).distinct().sorted()
                 .collect(Collectors.toList());
@@ -408,19 +489,20 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
     private void _reorder(final MultiTree tree) throws DotDataException {
 
-        List<MultiTree> trees = getMultiTrees(tree.getHtmlPage(), tree.getContainerAsID(), tree.getRelationType());
+        List<MultiTree> trees = getMultiTrees(tree.getHtmlPage(), tree.getContainerAsID(), tree.getRelationType(), tree.getPersonalization());
         trees = trees.stream().filter(rowTree -> !rowTree.equals(tree)).collect(Collectors.toList());
         int maxOrder = (tree.getTreeOrder() > trees.size()) ? trees.size() : tree.getTreeOrder();
         trees.add(maxOrder, tree);
 
         saveMultiTrees(trees);
-
     }
 
-
     private void _dbInsert(final MultiTree multiTree) throws DotDataException {
+
+        Logger.info(this, String.format("_dbInsert -> Saving MutiTree: %s", multiTree));
+
         new DotConnect().setSQL(INSERT_SQL).addParam(multiTree.getHtmlPage()).addParam(multiTree.getContainerAsID()).addParam(multiTree.getContentlet())
-                .addParam(multiTree.getRelationType()).addParam(multiTree.getTreeOrder()).loadResult();
+                .addParam(multiTree.getRelationType()).addParam(multiTree.getTreeOrder()).addObject(multiTree.getPersonalization()).loadResult();
     }
 
 
@@ -447,36 +529,40 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
 
     private void refreshPageInCache(final String pageIdentifier) throws DotDataException {
-        
-        
-        CacheLocator.getMultiTreeCache().removePageMultiTrees(pageIdentifier);
-        final Set<String> inodes = new HashSet<String>();
-        final List<ContentletVersionInfo> infos = APILocator.getVersionableAPI().findContentletVersionInfos(pageIdentifier);
-        for (ContentletVersionInfo versionInfo : infos) {
-            inodes.add(versionInfo.getWorkingInode());
+
+        CacheLocator.getMultiTreeCache()
+                .removePageMultiTrees(pageIdentifier);
+
+        final Set<String> inodeSet = new HashSet<>();
+        final List<ContentletVersionInfo> contentletVersionInfos = APILocator.getVersionableAPI()
+                .findContentletVersionInfos(pageIdentifier);
+
+        for (final ContentletVersionInfo versionInfo : contentletVersionInfos) {
+
+            inodeSet.add(versionInfo.getWorkingInode());
             if (versionInfo.getLiveInode() != null) {
-                inodes.add(versionInfo.getLiveInode());
+                inodeSet.add(versionInfo.getLiveInode());
             }
         }
+
         try {
-            List<Contentlet> contentlets = APILocator.getContentletAPIImpl().findContentlets(Lists.newArrayList(inodes));
+            final List<Contentlet> contentlets = APILocator.getContentletAPIImpl()
+                    .findContentlets(Lists.newArrayList(inodeSet));
 
-            PageLoader pageLoader = new PageLoader();
+            final PageLoader pageLoader = new PageLoader();
 
-            for (Contentlet pageContent : contentlets) {
-                IHTMLPage htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(pageContent);
+            for (final Contentlet pageContent : contentlets) {
+
+                final IHTMLPage htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(pageContent);
 
                 pageLoader.invalidate(htmlPage, PageMode.EDIT_MODE);
                 pageLoader.invalidate(htmlPage, PageMode.PREVIEW_MODE);
             }
         } catch (DotStateException | DotSecurityException e) {
+
             Logger.warn(MultiTreeAPIImpl.class, "unable to refresh page cache:" + e.getMessage());
         }
     }
-
-
-
-
 
     @WrapInTransaction
     @Override
@@ -510,27 +596,28 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
     @CloseDBIfOpened
     @Override
-    public Table<String, String, Set<String>> getPageMultiTrees(final IHTMLPage page, final boolean liveMode)
+    public Table<String, String, Set<PersonalizedContentlet>> getPageMultiTrees(final IHTMLPage page, final boolean liveMode)
             throws DotDataException, DotSecurityException {
 
-        
-        final Optional<Table<String, String, Set<String>>> pageContentsOpt =
-                CacheLocator.getMultiTreeCache().getPageMultiTrees(page.getIdentifier(), liveMode);
+        final String multiTreeCacheKey = page.getIdentifier();
+        final Optional<Table<String, String, Set<PersonalizedContentlet>>> pageContentsOpt =
+                CacheLocator.getMultiTreeCache().getPageMultiTrees(multiTreeCacheKey, liveMode);
         
         if(pageContentsOpt.isPresent()) {
             return pageContentsOpt.get();
         }
 
-        final Table<String, String, Set<String>> pageContents = HashBasedTable.create();
-        final List<MultiTree> multiTrees  = this.getMultiTrees(page.getIdentifier());
-        final ContainerAPI  containerAPI  = APILocator.getContainerAPI();
-        final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+        final Table<String, String, Set<PersonalizedContentlet>> pageContents = HashBasedTable.create();
+        final List<MultiTree> multiTrees    = this.getMultiTrees(page.getIdentifier());
+        final ContainerAPI    containerAPI  = APILocator.getContainerAPI();
+        final ContentletAPI   contentletAPI = APILocator.getContentletAPI();
         final User systemUser = APILocator.systemUser();
 
         for (final MultiTree multiTree : multiTrees) {
 
             Container container   = null;
-            final String    containerId = multiTree.getContainerAsID();
+            final String    containerId     = multiTree.getContainerAsID();
+            final String    personalization = multiTree.getPersonalization();
 
             try {
 
@@ -551,18 +638,20 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             try {
                 contentlet = contentletAPI.findContentletByIdentifierAnyLanguage(multiTree.getContentlet());
             } catch (DotDataException | DotSecurityException | DotContentletStateException e) {
+                Logger.debug(this.getClass(), "invalid contentlet on multitree:" + multiTree
+                        + ", msg: " + e.getMessage(), e);
                 Logger.warn(this.getClass(), "invalid contentlet on multitree:" + multiTree);
             }
 
             if (contentlet != null) {
 
-                final Set<String> myContents = pageContents.contains(containerId, multiTree.getRelationType())
+                final Set<PersonalizedContentlet> myContents = pageContents.contains(containerId, multiTree.getRelationType())
                         ? pageContents.get(containerId, multiTree.getRelationType())
                         : new LinkedHashSet<>();
 
                 if (container != null && myContents.size() < container.getMaxContentlets()) {
 
-                    myContents.add(multiTree.getContentlet());
+                    myContents.add(new PersonalizedContentlet(multiTree.getContentlet(), personalization));
                 }
 
                 pageContents.put(containerId, multiTree.getRelationType(), myContents);
@@ -571,7 +660,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
         this.addEmptyContainers(page, pageContents, liveMode);
         
-        CacheLocator.getMultiTreeCache().putPageMultiTrees(page.getIdentifier(), liveMode, pageContents);
+        CacheLocator.getMultiTreeCache().putPageMultiTrees(multiTreeCacheKey, liveMode, pageContents);
         return pageContents;
     }
 
@@ -583,7 +672,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     }
 
     private void addEmptyContainers(final IHTMLPage page,
-                                    final Table<String, String, Set<String>> pageContents,
+                                    final Table<String, String, Set<PersonalizedContentlet>> pageContents,
                                     final boolean liveMode)
             throws DotDataException, DotSecurityException {
 
@@ -636,7 +725,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
      * @return true in case of the containerUUId is contains in pageContents
      */
     private boolean doesPageContentsHaveContainer(
-            final Table<String, String, Set<String>> pageContents,
+            final Table<String, String, Set<PersonalizedContentlet>> pageContents,
             final ContainerUUID containerUUID,
             final Container container) {
 

@@ -1,6 +1,5 @@
 package com.dotmarketing.portlets.contentlet.business;
 
-import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotmarketing.beans.Host;
@@ -730,8 +729,39 @@ public interface ContentletAPI {
 	 * @throws DotContentletStateException if contentlet doesn't have passed in relationship
 	 */
 	public void deleteRelatedContent(Contentlet contentlet, Relationship relationship, boolean hasParent, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException;
-	
-	/**
+
+    /**
+     * Deletes all related content from passed in contentlet and relationship
+     * @param contentlet
+     * @param relationship
+     * @param hasParent
+     * @param user
+     * @param respectFrontendRoles
+     * @param contentletsToBeRelated if the delete operation is being used to update related content later,
+     * the list of related content should be sent to perform an optimal reindex
+     */
+    void deleteRelatedContent(Contentlet contentlet, Relationship relationship,
+            boolean hasParent, User user, boolean respectFrontendRoles,
+            List<Contentlet> contentletsToBeRelated)
+            throws DotDataException, DotSecurityException, DotContentletStateException;
+
+    /**
+     * Returns a list of all contentlets related to this instance given a RelationshipField variable
+     * using pagination
+     * @param variableName
+     * @param user
+     * @param respectFrontendRoles
+     * @param pullByParents
+     * @param limit
+     * @param offset
+     * @param sortBy
+     * @return
+     */
+    List<Contentlet> getRelatedContent(Contentlet contentlet, String variableName, User user,
+            boolean respectFrontendRoles, Boolean pullByParents, int limit, int offset,
+            String sortBy);
+
+    /**
 	 * Associates the given list of contentlets using the relationship this
 	 * methods removes old associated content and reset the relationships based
 	 * on the list of content passed as parameter
@@ -760,8 +790,28 @@ public interface ContentletAPI {
 	 */
 	public void relateContent(Contentlet contentlet, ContentletRelationshipRecords related, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException;
 
-	/**
-	 * Gets all related content, if this method is invoked with a same structures (where the parent and child structures are the same type) 
+
+    /**
+     * Internally called by getRelatedContent methods (handles all the logic to filter by parents or children)
+     * @param contentlet
+     * @param rel
+     * @param user
+     * @param respectFrontendRoles
+     * @param pullByParent
+     * @param limit
+     * @param offset
+     * @param sortBy
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    List<Contentlet> filterRelatedContent(Contentlet contentlet, Relationship rel,
+            User user, boolean respectFrontendRoles, Boolean pullByParent, int limit, int offset,
+            String sortBy)
+            throws DotDataException, DotSecurityException;
+
+    /**
+	 * Gets all related content, if this method is invoked with the same structures (where the parent and child structures are the same type)
 	 * kind of relationship then all parents and children of the given contentlet will be retrieved in the same returned list
 	 * @param contentlet
 	 * @param rel
@@ -773,13 +823,39 @@ public interface ContentletAPI {
 	 */
 	public List<Contentlet> getRelatedContent(Contentlet contentlet, Relationship rel, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
-	/**
-	 * Gets all related content from a same structures (where the parent and child structures are the same type) 
+    /**
+     * Gets all related content from the same structure (where the parent and child structures are the same type)
+     * the parameter pullByParent if set to true tells the method to pull all children where the passed
+     * contentlet is the parent, if set to false then the passed contentlet is the child and you want to pull
+     * parents
+     *
+     * If this method is invoked using different structures kind of relationships then the parameter
+     * pullByParent will be ignored, and the side of the relationship will be figured out automatically
+     *
+     * This method uses pagination if necessary (limit, offset, sortBy)
+     * @param contentlet
+     * @param rel
+     * @param pullByParent
+     * @param user
+     * @param respectFrontendRoles
+     * @param limit
+     * @param offset
+     * @param sortBy
+     * @return
+     * @throws DotDataException
+     */
+    List<Contentlet> getRelatedContent(Contentlet contentlet, Relationship rel,
+            Boolean pullByParent, User user, boolean respectFrontendRoles, int limit, int offset,
+            String sortBy)
+            throws DotDataException;
+
+    /**
+	 * Gets all related content from the same structure (where the parent and child structures are the same type)
 	 * The parameter pullByParent if set to true tells the method to pull all children where the passed 
 	 * contentlet is the parent, if set to false then the passed contentlet is the child and you want to pull 
 	 * parents
 	 * 
-	 * If this method is invoked for a no same structures kind of relationships then the parameter
+	 * If this method is invoked using different structures kind of relationships then the parameter
 	 * pullByParent will be ignored, and the side of the relationship will be figured out automatically
 	 * 
 	 * @param contentlet
@@ -791,7 +867,7 @@ public interface ContentletAPI {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	public List<Contentlet> getRelatedContent(Contentlet contentlet, Relationship rel, boolean pullByParent, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	public List<Contentlet> getRelatedContent(Contentlet contentlet, Relationship rel, Boolean pullByParent, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
 	 * 

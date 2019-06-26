@@ -85,7 +85,7 @@ public class ContentTypeResource implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 
-	static final String SELECTED_STRUCTURE_KEY = "selectedStructure";
+	public static final String SELECTED_STRUCTURE_KEY = "selectedStructure";
 
 	@POST
 	@JSONP
@@ -373,9 +373,7 @@ public class ContentTypeResource implements Serializable {
 							.put(ContentTypesPaginator.TYPE_PARAMETER_NAME, Arrays.asList(types.split(",")))
 							.build();
 
-
 			final PaginationUtil paginationUtil = new PaginationUtil(new ContentTypesPaginator(APILocator.getContentTypeAPI(user)));
-
 
 			response = paginationUtil.getPage(httpRequest, user, filter, page, perPage, orderBy,
 					OrderDirection.valueOf(direction), extraParams);

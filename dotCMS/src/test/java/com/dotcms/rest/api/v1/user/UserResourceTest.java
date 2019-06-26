@@ -65,7 +65,7 @@ public class UserResourceTest extends UnitTestBase {
         Config.CONTEXT = context;
 
         when(initDataObject.getUser()).thenReturn(user);
-        when(webResource.init(null, true, request, true, null)).thenReturn(initDataObject);
+        when(webResource.init(null, request, response, true, null)).thenReturn(initDataObject);
         when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
         when(request.getSession()).thenReturn(session);
         when(request.getSession(false)).thenReturn(session);
@@ -132,7 +132,7 @@ public class UserResourceTest extends UnitTestBase {
         when(initDataObject.getUser()).thenReturn(user);
         when(userAPI.getSystemUser()).thenReturn(systemUser);
         when(userAPI.loadUserById("dotcms.org.1", systemUser, false)).thenReturn(user);
-        when(webResource.init(true, request, true)).thenReturn(initDataObject);
+        when(webResource.init(request, httpServletResponse, true)).thenReturn(initDataObject);
         when(request.getSession()).thenReturn(session);
         when(request.getSession(false)).thenReturn(session);
         when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(new Locale.Builder().setLanguage("en").setRegion("US").build());
@@ -196,7 +196,7 @@ public class UserResourceTest extends UnitTestBase {
         when(initDataObject.getUser()).thenReturn(user);
         when(userAPI.getSystemUser()).thenReturn(systemUser);
         when(userAPI.loadUserById("dotcms.org.1", systemUser, false)).thenReturn(user);
-        when(webResource.init(true, request, true)).thenReturn(initDataObject);
+        when(webResource.init(request, httpServletResponse, true)).thenReturn(initDataObject);
         when(request.getSession()).thenReturn(session);
         when(request.getSession(false)).thenReturn(session);
         when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(new Locale.Builder().setLanguage("en").setRegion("US").build());
@@ -263,7 +263,7 @@ public class UserResourceTest extends UnitTestBase {
         when(initDataObject.getUser()).thenReturn(user);
         when(userAPI.getSystemUser()).thenReturn(systemUser);
         when(userAPI.loadUserById("dotcms.org.1", systemUser, false)).thenReturn(user);
-        when(webResource.init(true, request, true)).thenReturn(initDataObject);
+        when(webResource.init(request, httpServletResponse,true)).thenReturn(initDataObject);
         when(request.getSession()).thenReturn(session);
         when(request.getSession(false)).thenReturn(session);
         when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(new Locale.Builder().setLanguage("en").setRegion("US").build());
@@ -352,8 +352,9 @@ public class UserResourceTest extends UnitTestBase {
         when( roleAPI.doesUserHaveRoles(userId2, rolesId) ).thenReturn( false ) ;
         when( roleAPI.findRoleByFQN(Role.SYSTEM + " --> " + Role.LOGIN_AS) ).thenReturn( loginAsRole ) ;
         when( roleAPI.doesUserHaveRole(user3, loginAsRole) ).thenReturn( true ) ;
-        when( webResource.init(null, true, request, true, null)).thenReturn(initDataObject);
         when( initDataObject.getUser()).thenReturn(user3);
+        when( webResource.init(null, request, httpServletResponse, true, null)).thenReturn(initDataObject);
+
 
 
         UserResource userResource =

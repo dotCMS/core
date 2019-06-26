@@ -42,7 +42,7 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.util.*;
-import com.google.common.collect.ImmutableMap;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.Ints;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
@@ -61,11 +61,9 @@ import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.functionscore.RandomScoreFunctionBuilder;
-import org.elasticsearch.script.Script;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
-import org.elasticsearch.search.sort.ScriptSortBuilder;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 import org.jetbrains.annotations.NotNull;
@@ -83,6 +81,7 @@ import java.util.function.Consumer;
 
 import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
 import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.datetimeFormat;
+import static com.dotmarketing.util.StringUtils.lowercaseStringExceptMatchingTokens;
 
 /**
  * Implementation class for the {@link ContentletFactory} interface. This class
@@ -103,6 +102,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
 	private static final Contentlet cache404Content= new Contentlet();
 	public static final String CACHE_404_CONTENTLET="CACHE_404_CONTENTLET";
+
+	@VisibleForTesting
+	public static final String LUCENE_RESERVED_KEYWORDS_REGEX = "OR|AND|NOT|TO";
 
     /**
 	 * Default factory constructor that initializes the connection with the
@@ -1482,43 +1484,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
             if(UtilMethods.isSet(sortBy) ) {
             	sortBy = sortBy.toLowerCase();
-            	if(sortBy.endsWith(ESMappingConstants.SUFFIX_ORDER)) {
-            	    // related content ordering
-            	    // relationships typically have a format stname1-stname2(legacy relationships) or relationType (one-sided relationships)
-            	    if(sortBy.indexOf('-')>0) {
-
-                        String identifier = sortBy
-                                .substring(sortBy.indexOf(StringPool.DASH) + 1,
-                                        sortBy.lastIndexOf(StringPool.DASH));
-
-                        if (UtilMethods.isSet(identifier)) {
-
-                            //Support for one-sided relationships
-                            String relName = sortBy.substring(0, sortBy.indexOf(StringPool.DASH));
-                            if (UtilMethods.isSet(identifier) && !relName.contains(StringPool.PERIOD)) {
-                                //Support for legacy relationships
-                                relName += StringPool.DASH + identifier
-                                        .substring(0, identifier.indexOf(StringPool.DASH));
-                                identifier = identifier
-                                        .substring(identifier.indexOf(StringPool.DASH) + 1);
-                            }
-
-                            final Script script = new Script(
-                                Script.DEFAULT_SCRIPT_TYPE,
-                                "expert_scripts",
-                                "related",
-                                Collections.emptyMap(),
-                                ImmutableMap.of("relName", relName, "identifier", identifier));
-
-                            searchSourceBuilder.sort(
-                                SortBuilders
-                                    .scriptSort(script, ScriptSortBuilder.ScriptSortType.NUMBER)
-                                    .order(SortOrder.ASC));
-                        }
-
-            	    }
-            	}
-            	else if(sortBy.startsWith("score")){
+            	if(sortBy.startsWith("score")){
             		String[] test = sortBy.split("\\s+");
             		String defaultSecondarySort = "moddate";
             		SortOrder defaultSecondardOrder = SortOrder.DESC;
@@ -1535,17 +1501,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
                     searchSourceBuilder.sort("_score", SortOrder.DESC);
                     searchSourceBuilder.sort(defaultSecondarySort, defaultSecondardOrder);
-            	}
-            	else if(!sortBy.startsWith("undefined") && !sortBy.startsWith("undefined_dotraw") && !sortBy.equals("random")) {
-            		String[] sortbyArr=sortBy.split(",");
-	            	for (String sort : sortbyArr) {
-	            		String[] x=sort.trim().split(" ");
-                        searchSourceBuilder.sort(SortBuilders.fieldSort(x[0].toLowerCase() + "_dotraw")
-                                .order(x.length>1 && x[1].equalsIgnoreCase("desc") ?
-	                                SortOrder.DESC : SortOrder.ASC));
-
-					}
-            	}
+            	} else if(!sortBy.startsWith("undefined") && !sortBy.startsWith("undefined_dotraw") && !sortBy.equals("random")) {
+                    addBuilderSort(sortBy, searchSourceBuilder);
+                }
             }else{
                 searchSourceBuilder.sort("moddate", SortOrder.DESC);
             }
@@ -1571,7 +1529,18 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	    return response.getHits();
 	}
 
-	@Override
+    public static void addBuilderSort(String sortBy, SearchSourceBuilder srb) {
+        String[] sortbyArr = sortBy.split(",");
+        for (String sort : sortbyArr) {
+            String[] x = sort.trim().split(" ");
+            srb.sort(SortBuilders.fieldSort(x[0].toLowerCase() + "_dotraw")
+                    .order(x.length > 1 && x[1].equalsIgnoreCase("desc") ?
+                            SortOrder.DESC : SortOrder.ASC));
+
+        }
+    }
+
+    @Override
 	protected void removeUserReferences(String userId) throws DotDataException, DotStateException, ElasticsearchException, DotSecurityException {
 	   User systemUser =  APILocator.getUserAPI().getSystemUser();
        User userToReplace = APILocator.getUserAPI().loadUserById(userId);
@@ -1849,9 +1818,14 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	 */
 	    public static TranslatedQuery translateQuery(String query, String sortBy) {
 
-	        TranslatedQuery result = CacheLocator.getContentletCache().getTranslatedQuery(query + " --- " + sortBy);
-	        if(result != null)
-	            return result;
+	        TranslatedQuery result = CacheLocator.getContentletCache()
+                    .getTranslatedQuery(query + " --- " + sortBy);
+
+	        if(result != null) {
+                result.setQuery(lowercaseStringExceptMatchingTokens(result.getQuery(),
+                        LUCENE_RESERVED_KEYWORDS_REGEX));
+                return result;
+            }
 
 	        result = new TranslatedQuery();
 
@@ -1973,8 +1947,10 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	        if (UtilMethods.isSet(sortBy))
 	            result.setSortBy(translateQuerySortBy(sortBy, query));
 
+
 	        // DOTCMS-6247
-	        query = query.toLowerCase();
+	        query = lowercaseStringExceptMatchingTokens(query, LUCENE_RESERVED_KEYWORDS_REGEX);
+
 	        //Pad NumericalRange Numbers
 	        List<RegExMatch> numberRangeMatches = RegEX.find(query, "(\\w+)\\.(\\w+):\\[(([0-9]+\\.?[0-9]+ |\\.?[0-9]+ |[0-9]+\\.?[0-9]+|\\.?[0-9]+) to ([0-9]+\\.?[0-9]+ |\\.?[0-9]+ |[0-9]+\\.?[0-9]+|\\.?[0-9]+))\\]");
 	        if(numberRangeMatches != null && numberRangeMatches.size() > 0){
@@ -1995,12 +1971,13 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	        }
 	        result.setQuery(query.trim());
 
-	        CacheLocator.getContentletCache().addTranslatedQuery(originalQuery + " --- " + sortBy, result);
+	        CacheLocator.getContentletCache().addTranslatedQuery(
+                    originalQuery + " --- " + sortBy, result);
 
 	        return result;
 	    }
 
-	    /**
+    /**
 	     *
 	     * @param sortBy
 	     * @param originalQuery
@@ -2215,10 +2192,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
             //https://github.com/elasticsearch/elasticsearch/issues/2980
             if (query.contains( "/" )) {
                 query = query.replaceAll( "/", "\\\\/" );
-            }
-
-            if (query.contains( " to " )) {
-                query = query.replaceAll( " to ", " TO " );
             }
 
             return query;

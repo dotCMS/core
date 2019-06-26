@@ -567,8 +567,11 @@ public class LanguageFactoryImpl extends LanguageFactory {
 			CacheLocator.getLanguageCache().removeLanguageKeys( lang.getLanguageCode(), lang.getCountryCode() );
 			CacheLocator.getLanguageCache().removeLanguageKeys( lang.getLanguageCode(), null );
 			//Force the reading of the languages files as we add/remove/edit keys
-			MultiMessageResources messages = (MultiMessageResources) Config.CONTEXT.getAttribute( Globals.MESSAGES_KEY );
-			messages.reload();
+			// doing instanceof so tests don't fail with Mockito
+			if(Config.CONTEXT.getAttribute( Globals.MESSAGES_KEY ) instanceof MultiMessageResources) {
+  			MultiMessageResources messages = (MultiMessageResources) Config.CONTEXT.getAttribute( Globals.MESSAGES_KEY );
+  			messages.reload();
+			}
 		} catch (IOException e) {
 			Logger.error(this, "A IOException as occurred while saving the properties files", e);
 			throw new DotRuntimeException("A IOException as occurred while saving the properties files", e);

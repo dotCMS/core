@@ -25,6 +25,7 @@ import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
@@ -92,11 +93,12 @@ public class WorkflowResourceTest extends UnitTestBase {
 
         final InitDataObject dataObject = mock(InitDataObject.class);
         when(dataObject.getUser()).thenReturn(user);
-        when(webResource.init(anyString(), anyBoolean(), any(HttpServletRequest.class), anyBoolean(), anyString())).thenReturn(dataObject);
+        when(webResource.init(anyString(), any(HttpServletRequest.class), any(HttpServletResponse.class), anyBoolean(), anyString())).thenReturn(dataObject);
 
         final ResponseUtil responseUtil = mock(ResponseUtil.class);
         final WorkflowImportExportUtil exportUtil = mock(WorkflowImportExportUtil.class);
-        return new WorkflowResource(workflowHelper, contentHelper, workflowAPI, contentletAPI, responseUtil, permissionAPI, exportUtil,new MultiPartUtils(), webResource);
+        final FileAssetAPI fileAssetAPI = mock(FileAssetAPI.class);
+        return new WorkflowResource(workflowHelper, contentHelper, workflowAPI, contentletAPI, responseUtil, permissionAPI, exportUtil,new MultiPartUtils(fileAssetAPI), webResource);
     }
 
     @Test

@@ -138,4 +138,10 @@ public interface RelationshipAPI {
    * @throws DotSecurityException
    */
   void convertRelationshipToRelationshipField(final Relationship oldRelationship) throws DotDataException, DotSecurityException;
+
+    /**
+     * Returns all relationships existing in DB
+     * @return
+     */
+    List<Relationship> dbAll();
 }

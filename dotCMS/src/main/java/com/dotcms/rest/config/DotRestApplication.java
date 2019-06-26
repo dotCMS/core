@@ -1,6 +1,7 @@
 package com.dotcms.rest.config;
 
 import com.dotcms.contenttype.model.field.FieldTypeResource;
+import com.dotcms.rest.api.v1.personalization.PersonalizationResource;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import com.dotcms.rest.RulesEnginePortlet;
 import com.dotcms.rest.TagResource;
@@ -123,13 +124,14 @@ public class DotRestApplication extends javax.ws.rs.core.Application {
 					REST_CLASSES.add(ContentTypeResource.class);
 					REST_CLASSES.add(FieldResource.class);
 					REST_CLASSES.add(com.dotcms.rest.api.v2.contenttype.FieldResource.class);
+					REST_CLASSES.add(com.dotcms.rest.api.v3.contenttype.FieldResource.class);
 					REST_CLASSES.add(FieldTypeResource.class);
 					REST_CLASSES.add(FieldVariableResource.class);
 					REST_CLASSES.add(ResetPasswordResource.class);
 					REST_CLASSES.add(RoleResource.class);
 					REST_CLASSES.add(CreateJsonWebTokenResource.class);
 					REST_CLASSES.add(ApiTokenResource.class);
-          REST_CLASSES.add(PortletResource.class);
+					REST_CLASSES.add(PortletResource.class);
 					REST_CLASSES.add(EventsResource.class);
 					REST_CLASSES.add(FolderResource.class);
 
@@ -149,6 +151,8 @@ public class DotRestApplication extends javax.ws.rs.core.Application {
 					REST_CLASSES.add(VTLResource.class);
 					REST_CLASSES.add(ContentVersionResource.class);
 					REST_CLASSES.add(FileAssetsResource.class);
+
+					REST_CLASSES.add(PersonalizationResource.class);
 				}
 			}
 		}

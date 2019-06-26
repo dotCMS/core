@@ -80,10 +80,9 @@ public class SiteResourceTest extends UnitTestBase {
         final Response responseExpected = Response.ok(new ResponseEntityView(hosts)).build();
 
         Config.CONTEXT = context;
-        Config.CONTEXT = context;
 
         when(initDataObject.getUser()).thenReturn(user);
-        when(webResource.init(null, true, request, true, null)).thenReturn(initDataObject);
+        when(webResource.init(null, request, httpServletResponse, true, null)).thenReturn(initDataObject);
         when(paginationUtil.getPage(request, user, "filter",1, count,
                 map("archive", false, "live", false, "system", false))).thenReturn(responseExpected);
         when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
@@ -119,7 +118,8 @@ public class SiteResourceTest extends UnitTestBase {
         Config.CONTEXT = context;
 
         when(initDataObject.getUser()).thenReturn(user);
-        when(webResource.init(null, true, request, true, null)).thenReturn(initDataObject);
+        // final InitDataObject initData = this.webResource.init(null, request, response, true, null); // should logged in
+        when(webResource.init(null, request, httpServletResponse, true, null)).thenReturn(initDataObject);
         when(hostAPI.findAll(user, true)).thenReturn(hosts);
         when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
         when(request.getSession()).thenReturn(session);
@@ -128,12 +128,12 @@ public class SiteResourceTest extends UnitTestBase {
         SiteResource siteResource =
                 new SiteResource(webResource, new SiteHelper( hostAPI ), I18NUtil.INSTANCE, userAPI, paginationUtil);
 
-        Response response1 = siteResource.switchSite(request, null);
+        Response response1 = siteResource.switchSite(request, httpServletResponse);
         System.out.println(response1);
         System.out.println(response1.getEntity());
 
         assertNotNull(response1);
-        assertEquals(response1.getStatus(), 404);
+        assertEquals(response1.getStatus(), 500);
 
         response1 = siteResource.switchSite(request, httpServletResponse, StringUtils.EMPTY);
         System.out.println(response1);
@@ -178,7 +178,7 @@ public class SiteResourceTest extends UnitTestBase {
         Map<String, Object> sessionAttributes = map(WebKeys.CONTENTLET_LAST_SEARCH, "mock mock mock mock");
 
         when(initDataObject.getUser()).thenReturn(user);
-        when(webResource.init(null, true, request, true, null)).thenReturn(initDataObject);
+        when(webResource.init(null, request, httpServletResponse, true, null)).thenReturn(initDataObject);
         when(hostAPI.find("48190c8c-42c4-46af-8d1a-0cd5db894798", user, Boolean.TRUE)).thenReturn(host);
         when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
         when(request.getSession()).thenReturn(session);
@@ -254,6 +254,10 @@ public class SiteResourceTest extends UnitTestBase {
         when(userAPI.loadUserById(Mockito.anyString())).thenReturn(user);
         when( session.getAttribute( WebKeys.CMS_SELECTED_HOST_ID ) )
                 .thenReturn( currentSite.getIdentifier() );
+
+        final InitDataObject initDataObject = mock(InitDataObject.class);
+        when(webResource.init(null, request, httpServletResponse, true, null)).thenReturn(initDataObject);
+        when(initDataObject.getUser()).thenReturn(user);
 
         final SiteResource siteResource =
                 new SiteResource(webResource, new SiteHelper( hostAPI ), I18NUtil.INSTANCE, userAPI, paginationUtil);

@@ -10,12 +10,20 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.com.google.common.collect.Maps;
-import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.RelationshipUtil;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PermissionSummary;
+import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.RelatedPermissionableGroup;
+import com.dotmarketing.business.Ruleable;
+import com.dotmarketing.business.Treeable;
+import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.business.Versionable;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -36,18 +44,20 @@ import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.nio.file.Files;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
+import org.apache.commons.lang.builder.ToStringBuilder;
 
 /**
  * Represents a content unit in the system. Ideally, every single domain object
@@ -132,7 +142,6 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
 	private transient boolean needsReindex = false;
 
-	private transient Map<String, List<String>> relatedIds;
 	private transient boolean loadedTags = false;
 
 	/**
@@ -1509,110 +1518,32 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		return getRelated(variableName, user, true);
 	}
 
-	/**
-	 * Returns a list of all contentlets related to this instance given a RelationshipField variable
-	 * @param variableName
-	 * @param user
-	 * @param respectFrontendRoles
-	 * @return
-	 */
-	public List<Contentlet> getRelated(final String variableName, final User user,
-			final boolean respectFrontendRoles) {
+    /**
+     * Returns a list of all contentlets related to this instance given a RelationshipField variable
+     * @param variableName
+     * @param user
+     * @param respectFrontendRoles
+     * @return
+     */
+    public List<Contentlet> getRelated(final String variableName, final User user,
+            final boolean respectFrontendRoles){
+        return getRelated(variableName, user,respectFrontendRoles, null);
+    }
 
-		if (!UtilMethods.isSet(this.relatedIds)){
-			relatedIds = Maps.newConcurrentMap();
-		}
-
-		try {
-			User currentUser;
-
-			if (user != null){
-				currentUser = user;
-			} else{
-				currentUser = APILocator.getUserAPI().getAnonymousUser();
-			}
-
-			final List<Contentlet> relatedContentlet;
-
-			if (this.relatedIds.containsKey(variableName)) {
-				relatedContentlet = getCachedRelatedContentlets(variableName);
-			} else {
-
-				relatedContentlet = getNonCachedRelatedContentlets(variableName);
-			}
-
-			//Restricts contentlet according to user permissions
-			return relatedContentlet.stream().filter(contentlet -> {
-				try {
-					return APILocator.getPermissionAPI()
-							.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ,
-									currentUser,
-									currentUser.equals(APILocator.getUserAPI().getAnonymousUser())
-											? true : respectFrontendRoles);
-				} catch (DotDataException e) {
-					return false;
-				}
-			}).collect(Collectors.toList());
-
-		} catch (DotDataException | DotSecurityException e) {
-			Logger.warn(this, "Error getting related content for field " + variableName, e);
-			throw new DotStateException(e);
-		}
-	}
-
-	/**
-	 *
-	 * @param variableName
-	 * @return
-	 * @throws DotDataException
-	 * @throws DotSecurityException
-	 */
-	@Nullable
-	private List<Contentlet> getNonCachedRelatedContentlets(final String variableName)
-			throws DotDataException, DotSecurityException {
-
-		final User systemUser = APILocator.getUserAPI().getSystemUser();
-		final com.dotcms.contenttype.model.field.Field field = APILocator.getContentTypeFieldAPI()
-				.byContentTypeIdAndVar(getContentTypeId(), variableName);
-
-		final List<Contentlet> relatedList = APILocator.getContentletAPI()
-				.getRelatedContent(this, APILocator.getRelationshipAPI()
-								.getRelationshipFromField(field, systemUser),
-						systemUser, false);
-
-		if (UtilMethods.isSet(relatedList)) {
-			this.relatedIds.put(variableName,
-					relatedList.stream().map(contentlet -> contentlet.getIdentifier())
-							.collect(
-									CollectionsUtils.toImmutableList()));
-		}else{
-			this.relatedIds.put(variableName, Collections.emptyList());
-		}
-
-		return relatedList;
-	}
-
-	/**
-	 *
-	 * @param variableName
-	 * @return
-	 */
-	@NotNull
-	private List<Contentlet> getCachedRelatedContentlets(final String variableName) {
-		final List<Contentlet> relatedList = this.relatedIds.get(variableName).stream()
-				.map(identifier -> {
-					try {
-						return APILocator.getContentletAPI()
-								.findContentletByIdentifierAnyLanguage(identifier);
-					} catch (DotDataException | DotSecurityException e) {
-						Logger.warn(this, "No content found with id " + identifier,
-								e);
-						throw new DotStateException(e);
-					}
-				}).collect(Collectors.toList());
-
-		return relatedList;
-	}
+    /**
+     * Returns a list of all contentlets related to this instance given a RelationshipField variable
+     * @param variableName
+     * @param user
+     * @param respectFrontendRoles
+     * @param pullByParents
+     * @return
+     */
+    public List<Contentlet> getRelated(final String variableName, final User user,
+            final boolean respectFrontendRoles, Boolean pullByParents) {
+        return APILocator.getContentletAPI()
+                .getRelatedContent(this, variableName, user, respectFrontendRoles, pullByParents,
+                        -1, 0, null);
+    }
 
     /**
      * Set related content for a content given a relationship field
@@ -1631,11 +1562,6 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
      */
     public void setRelated(final String fieldVarName, final List<Contentlet> contentlets) {
         map.put(fieldVarName, contentlets);
-
-        if (UtilMethods.isSet(this.relatedIds)) {
-            //clean up cache
-            relatedIds.remove(fieldVarName);
-        }
     }
 
     /**

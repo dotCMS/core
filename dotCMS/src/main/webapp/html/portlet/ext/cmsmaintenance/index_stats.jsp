@@ -144,7 +144,7 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 
 
 				<tr class="<%=(active) ? "trIdxActive" : (building) ? "trIdxBuilding" : "trIdxNothing" %>" id="<%=x%>Row">
-					<td  align="center" class="showPointer" >
+					<td  align="center" class="showPointer">
 						<%if(active){ %>
 							<%= LanguageUtil.get(pageContext,"active") %>
 						<%}else if(building){ %>
@@ -184,7 +184,11 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 			         <td  align="center" class="showPointer"> <%= LanguageUtil.get(pageContext,"Closed") %> </td>
 			         <td  class="showPointer" ><%=idx%></td>
 			         <td><%=UtilMethods.webifyString(myDate) %></td>
-			         <td colspan="5">n/a</td>
+			         <td align="center">n/a</td>
+					<td align="center">n/a</td>
+					<td align="center">n/a</td>
+					<td align="center">n/a</td>
+					<td align="center">n/a</td>
 			    </tr>
 			<% } %>
 			<tr>

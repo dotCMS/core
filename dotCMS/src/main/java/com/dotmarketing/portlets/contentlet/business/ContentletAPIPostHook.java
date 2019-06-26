@@ -1,6 +1,5 @@
 package com.dotmarketing.portlets.contentlet.business;
 
-import com.dotcms.contenttype.model.type.ContentType;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
@@ -55,7 +54,7 @@ public interface ContentletAPIPostHook {
 	/**
 	 * Returns a live Contentlet Object for a given language 
 	 * @param languageId
-	 * @param inode
+	 * @param contentletId
 	 * @param returnValue - value returned by primary API Method
 	 */
 	public default void findContentletForLanguage(long languageId, Identifier contentletId,Contentlet returnValue){}
@@ -93,7 +92,6 @@ public interface ContentletAPIPostHook {
 	/**
 	 * Retrieves a contentlet from the database based on its identifier
 	 * @param identifier
-	 * @param returnValue - value returned by primary API Method
 	 */
 	public default void findContentletByIdentifierAnyLanguage (String identifier) { }
 
@@ -267,7 +265,6 @@ public interface ContentletAPIPostHook {
 	 * sure to pass in an Admin User.  If a user doesn't have permissions to clean all teh contentlets it will clean 
 	 * as many as it can and throw the DotSecurityException  
 	 * @param structure
-	 * @param field
 	 * @param user
 	 * @param respectFrontendRoles
 	 */
@@ -481,7 +478,6 @@ public interface ContentletAPIPostHook {
 	 * @param contentlets
 	 * @param user
 	 * @param respectFrontendRoles
-	 * @param returnValue - value returned by primary API Method 
 	 */
 	public default void publish(List<Contentlet> contentlets, User user, boolean respectFrontendRoles){}
 
@@ -490,7 +486,6 @@ public interface ContentletAPIPostHook {
 	 * @param contentlet
 	 * @param user
 	 * @param respectFrontendRoles
-	 * @param returnValue - value returned by primary API Method 
 	 */
 	public default void unpublish(Contentlet contentlet, User user, boolean respectFrontendRoles){}
 	
@@ -568,6 +563,21 @@ public interface ContentletAPIPostHook {
 	 * @param respectFrontendRoles
 	 */
 	public default void deleteRelatedContent(Contentlet contentlet, Relationship relationship, boolean hasParent, User user, boolean respectFrontendRoles){}
+
+    /**
+     * Deletes all related content from passed in contentlet and relationship
+     * @param contentlet
+     * @param relationship
+     * @param hasParent
+     * @param user
+     * @param respectFrontendRoles
+     * @param contentletsToBeRelated if the delete operation is being used to update related content later,
+     * the list of related content should be sent to perform an optimal reindex
+     */
+    public default void deleteRelatedContent(final Contentlet contentlet, final Relationship relationship,
+            final boolean hasParent, final User user, final boolean respectFrontendRoles,
+            final List<Contentlet> contentletsToBeRelated) {
+    }
 	
 	/**
 	 * Associates the given list of contentlets using the relationship this
@@ -604,21 +614,45 @@ public interface ContentletAPIPostHook {
 	public default void getRelatedContent(Contentlet contentlet, Relationship rel, User user, boolean respectFrontendRoles,List<Contentlet> returnValue){}
 
 	/**
-	 * Gets all related content from a same structures (where the parent and child structures are the same type) 
-	 * The parameter pullByParent if set to true tells the method to pull all children where the passed 
-	 * contentlet is the parent, if set to false then the passed contentlet is the child and you want to pull 
-	 * parents
-	 * 
-	 * If this method is invoked for a no same structures kind of relationships then the parameter
-	 * pullByParent will be ignored, and the side of the relationship will be figured out automatically
-	 * 
-	 * @param contentlet
-	 * @param rel
-	 * @param pullByParent
-	 * @param user
-	 * @param respectFrontendRoles
-	 * @param returnValue - value returned by primary API Method */
-	public default void getRelatedContent(Contentlet contentlet, Relationship rel, boolean pullByParent, User user, boolean respectFrontendRoles,List<Contentlet> returnValue){}
+     * Gets all related content from the same structure (where the parent and child structures are the same type)
+     * The parameter pullByParent if set to true tells the method to pull all children where the passed
+     * contentlet is the parent, if set to false then the passed contentlet is the child and you want to pull
+     * parents
+     *
+     * If this method is invoked using different structures, then the parameter
+     * pullByParent will be ignored, and the side of the relationship will be figured out automatically
+     *
+     * @param contentlet
+     * @param rel
+     * @param pullByParent
+     * @param user
+     * @param respectFrontendRoles
+     * @param returnValue - value returned by primary API Method */
+    public default void getRelatedContent(Contentlet contentlet, Relationship rel, boolean pullByParent, User user, boolean respectFrontendRoles,List<Contentlet> returnValue){}
+
+    /**
+     * Gets all related content from the same structure (where the parent and child structures are the same type)
+     * The parameter pullByParent if set to true tells the method to pull all children where the passed
+     * contentlet is the parent, if set to false then the passed contentlet is the child and you want to pull
+     * parents
+     *
+     * If this method is invoked using different structures, then the parameter
+     * pullByParent will be ignored, and the side of the relationship will be figured out automatically
+     *
+     * This method uses pagination if necessary (limit, offset, sortBy)
+     *
+     * @param contentlet
+     * @param rel
+     * @param pullByParent
+     * @param user
+     * @param respectFrontendRoles
+     * @param returnValue
+     * @param limit
+     * @param offset
+     * @param sortBy
+     */
+    default void getRelatedContent(Contentlet contentlet, Relationship rel, boolean pullByParent, User user, boolean respectFrontendRoles, List<Contentlet> returnValue, int limit, int offset,
+            String sortBy){}
 
 
 	/**
@@ -769,11 +803,9 @@ public interface ContentletAPIPostHook {
 	/**
 	 * Will check in a new version of you contentlet. The inode of your contentlet must be 0.  
 	 * @param contentlet - The inode of your contentlet must be 0.
-	 * @param contentRelationships - throws IllegalArgumentException if null. Used to set relationships to new contentlet version 
-	 * @param cats - throws IllegalArgumentException if null. Used to set categories to new contentlet version
-	 * @param permissions - throws IllegalArgumentException if null. Used to set permissions to new contentlet version
 	 * @param user
 	 * @param respectFrontendRoles
+     * @param cats - throws IllegalArgumentException if null. Used to set categories to new contentlet version
 	 * @param returnValue - value returned by primary API Method 
 	 */
 	public default void checkin(Contentlet contentlet ,User user,boolean respectFrontendRoles,List<Category> cats,Contentlet returnValue){}
@@ -897,7 +929,6 @@ public interface ContentletAPIPostHook {
 	 * Will return all content assigned to a specified Categories
 	 * @param categories - List of categories to look for
 	 * @param languageId language to pull content for. If 0 will return all languages
-	 * @param category Category to look for
 	 * @param live should return live or working content
 	 * @param orderBy indexName(previously known as dbColumnName) to order by. Can be null or empty string
 	 * @param user
@@ -911,15 +942,13 @@ public interface ContentletAPIPostHook {
 	 * @param contentlet
 	 * @param field
 	 * @param value
-	 * @param user
-	 * @param respectFrontendRoles
 	 */
 	public default void setContentletProperty(Contentlet contentlet, Field field, Object value){}
 	
 	/**
 	 * Use to validate your contentlet.
 	 * @param contentlet
-	 * @param categories
+	 * @param cats - categories
 	 */
 	public default void validateContentlet(Contentlet contentlet,List<Category> cats){} 
 	
@@ -927,7 +956,7 @@ public interface ContentletAPIPostHook {
 	 * Use to validate your contentlet.
 	 * @param contentlet
 	 * @param contentRelationships
-	 * @param categories
+	 * @param cats - categories
 	 * Use the notValidFields property of the exception to get which fields where not valid
 	 */
 	public default void validateContentlet(Contentlet contentlet,Map<Relationship, List<Contentlet>> contentRelationships,List<Category> cats){} 
@@ -936,7 +965,7 @@ public interface ContentletAPIPostHook {
 	 * Use to validate your contentlet.
 	 * @param contentlet
 	 * @param contentRelationships
-	 * @param categories
+	 * @param cats - categories
 	 */
 	public default void validateContentlet(Contentlet contentlet, ContentletRelationships contentRelationships, List<Category> cats){} 
 	
@@ -972,13 +1001,16 @@ public interface ContentletAPIPostHook {
 
 	/**
 	 * Converts a "fat" (legacy) contentlet into a new contentlet.
-	 * @param Fat contentlet to be converted.
+	 * @param fatty contentlet to be converted.
+     * @param returnValue
 	 */
 	public default void convertFatContentletToContentlet (com.dotmarketing.portlets.contentlet.business.Contentlet fatty,Contentlet returnValue){}
 	
 	/**
 	 * Converts a "light" contentlet into a "fat" (legacy) contentlet.
-	 * @param A "light" contentlet to be converted.
+	 * @param cont "light" contentlet to be converted.
+     * @param fatty
+     * @param returnValue
 	 */
 	public default void convertContentletToFatContentlet (Contentlet cont, com.dotmarketing.portlets.contentlet.business.Contentlet fatty,com.dotmarketing.portlets.contentlet.business.Contentlet returnValue){}
     
@@ -997,13 +1029,15 @@ public interface ContentletAPIPostHook {
     * @return
     * @param returnValue - value returned by primary API Method */
 	public default void deleteOldContent(Date deleteFrom,int returnValue){}
-	
-	/**
-	 * 
-	 * @param deleteFrom
-	 * @param offset
-	 * @param returnValue - value returned by primary API Method 
-	 */
+
+    /**
+     *
+     * @param structureInode
+     * @param field
+     * @param user
+     * @param respectFrontEndRoles
+     * @param returnValue  - value returned by primary API Method
+     */
 	public default void findFieldValues(String structureInode, Field field, User user, boolean respectFrontEndRoles,List<String> returnValue){}
 	
 	/**
@@ -1122,12 +1156,10 @@ public interface ContentletAPIPostHook {
 	/**
 	 * Will check in a new version of you contentlet without indexing. The inode of your contentlet must be not set.  
 	 * @param contentlet - The inode of your contentlet must be not set.
-	 * @param contentRelationships - throws IllegalArgumentException if null. Used to set relationships to new contentlet version 
-	 * @param cats - throws IllegalArgumentException if null. Used to set categories to new contentlet version
-	 * @param permissions - throws IllegalArgumentException if null. Used to set permissions to new contentlet version
 	 * @param user
 	 * @param respectFrontendRoles
-	 * @param returnValue - value returned by primary API Method 
+     * @param cats - throws IllegalArgumentException if null. Used to set categories to new contentlet version
+     * @param returnValue - value returned by primary API Method
 	 */
 	public default void checkinWithNoIndex(Contentlet contentlet ,User user,boolean respectFrontendRoles,List<Category> cats,Contentlet returnValue){}
 	
@@ -1215,7 +1247,7 @@ public interface ContentletAPIPostHook {
 	
 	/**
 	 * Method will update hostInode of content to systemhost
-	 * @param identifier
+	 * @param hostIdentifier
 	 */	
 	public default void UpdateContentWithSystemHost(String hostIdentifier)throws DotDataException{}
 	
@@ -1503,5 +1535,30 @@ public interface ContentletAPIPostHook {
 
     public default void findInDb(String inode) {};
 
+    /**
+     * Internally called by getRelatedContent methods (handles all the logic to filter by parents or children)
+     * @param contentlet
+     * @param rel
+     * @param user
+     * @param respectFrontendRoles
+     * @param pullByParent
+     * @param limit
+     * @param offset
+     * @param sortBy
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    default boolean  filterRelatedContent(Contentlet contentlet, Relationship rel,
+            User user, boolean respectFrontendRoles, Boolean pullByParent, int limit, int offset,
+            String sortBy)
+            throws DotDataException, DotSecurityException{
+        return true;
+    }
 
+    default void getRelatedContent(Contentlet contentlet, String variableName, User user,
+            boolean respectFrontendRoles, Boolean pullByParents, int limit, int offset,
+            String sortBy){
+
+    }
 }

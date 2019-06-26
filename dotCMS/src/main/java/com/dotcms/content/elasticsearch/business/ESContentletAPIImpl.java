@@ -17,6 +17,7 @@ import com.dotcms.content.elasticsearch.business.event.ContentletPublishEvent;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.DataTypes;
@@ -48,6 +49,7 @@ import com.dotmarketing.beans.Permission;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -167,6 +169,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -176,6 +179,7 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.BeanUtils;
 
 /**
@@ -208,6 +212,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private static final int MAX_LIMIT = 10000;
 
     private static final String backupPath = ConfigUtils.getBackupPath() + File.separator + "contentlets";
+
+    /**
+     * Property to fetch related content from database (only applies for relationship fields)
+     * Related content for legacy relationship will always be pulled from the index
+     */
+    private static final boolean GET_RELATED_CONTENT_FROM_DB = Config
+            .getBooleanProperty("GET_RELATED_CONTENT_FROM_DB", true);
 
     private final ContentletSystemEventUtil contentletSystemEventUtil;
     private final LocalSystemEventsAPI      localSystemEventsAPI;
@@ -1390,152 +1401,217 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return permissionAPI.filterCollection(contentFactory.getRelatedLinks(contentlet), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
     }
 
-    private List<ContentletSearch> getRelatedContentSearchFromIndex(Contentlet contentlet,Relationship rel, User user, boolean respectFrontendRoles)
+    @CloseDBIfOpened
+    @Override
+    public List<Contentlet> filterRelatedContent(Contentlet contentlet, Relationship rel,
+            User user, boolean respectFrontendRoles, Boolean pullByParent, int limit, int offset,
+            String sortBy)
             throws DotDataException, DotSecurityException {
 
-        String q = getRelatedContentESQuery(contentlet, rel);
-
-        try{
-            return searchIndex(q, -1, 0,
-                    rel.getRelationTypeValue() + "-" + contentlet.getIdentifier() + "-order", user,
-                    respectFrontendRoles);
-        } catch (Exception e){
-            final String errorMessage = "Unable to look up related content for contentlet with identifier "
-                    + contentlet.getIdentifier();
-            if (e.getCause() instanceof SearchPhaseExecutionException){
-                Logger.warn(this, errorMessage + ". An empty list will be returned", e);
-                return Collections.emptyList();
-            }
-            throw new DotDataException(errorMessage, e);
+        if (!UtilMethods.isSet(contentlet.getIdentifier())) {
+            return Collections.emptyList();
         }
-    }
 
-    private List<Contentlet> getRelatedContentFromIndex(Contentlet contentlet,Relationship rel, User user, boolean respectFrontendRoles)throws DotDataException, DotSecurityException {
+        final boolean isSameStructureRelationship = FactoryLocator.getRelationshipFactory()
+                .sameParentAndChild(rel);
 
-        List<ContentletSearch> contentletSearchList = getRelatedContentSearchFromIndex(contentlet, rel, user, respectFrontendRoles);
-        return contentletSearchList.stream().map(ESContentletAPIImpl::transformContentletSearchToContent).collect(CollectionsUtils.toImmutableList());
-    }
-
-    private static Contentlet transformContentletSearchToContent(ContentletSearch contentletSearch) {
-        Contentlet contentlet = new Contentlet();
-        contentlet.setInode(contentletSearch.getInode());
-        contentlet.setIdentifier(contentletSearch.getIdentifier());
-        return contentlet;
+        if (isSameStructureRelationship) {
+            if (pullByParent == null) {
+                return (List<Contentlet>) CollectionsUtils
+                        .join(getRelatedChildren(contentlet, rel, user, respectFrontendRoles, limit,
+                                offset, sortBy),
+                                getRelatedParents(contentlet, rel, user, respectFrontendRoles,
+                                        limit, offset, sortBy)).stream()
+                        .collect(CollectionsUtils.toImmutableList());
+            }
+            if (pullByParent) {
+                return getRelatedChildren(contentlet, rel, user, respectFrontendRoles, limit,
+                        offset, sortBy).stream()
+                        .collect(CollectionsUtils.toImmutableList());
+            } else {
+                return getRelatedParents(contentlet, rel, user, respectFrontendRoles, limit, offset,
+                        sortBy).stream()
+                        .collect(CollectionsUtils.toImmutableList());
+            }
+        } else {
+            if (rel.getChildStructureInode().equals(contentlet.getContentTypeId())) {
+                return getRelatedParents(contentlet, rel, user, respectFrontendRoles, limit, offset,
+                        sortBy);
+            } else {
+                return getRelatedChildren(contentlet, rel, user, respectFrontendRoles, limit,
+                        offset, sortBy);
+            }
+        }
     }
 
     @CloseDBIfOpened
     @Override
-    public List<Contentlet> getRelatedContent(Contentlet contentlet,Relationship rel, User user, boolean respectFrontendRoles)throws DotDataException, DotSecurityException {
+    public List<Contentlet> getRelatedContent(Contentlet contentlet, Relationship rel, User user,
+            boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
-        String q = getRelatedContentESQuery(contentlet, rel);
-
-        try{
-            return permissionAPI.filterCollection(searchByIdentifier(q, -1, 0, rel.getRelationTypeValue() + "-" + contentlet.getIdentifier() + "-order" , user, respectFrontendRoles, PermissionAPI.PERMISSION_READ, true), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
-        }catch (Exception e) {
+        try {
+            return getRelatedContent(contentlet, rel, null, user, respectFrontendRoles);
+        } catch (Exception e) {
             final String errorMessage =
                     "Unable to look up related content for contentlet with identifier "
                             + contentlet.getIdentifier() + " and title " + contentlet.getTitle()
                             + ". Relationship Name: " + rel.getRelationTypeValue();
-            if(e.getMessage() != null && e.getMessage().contains("[query_fetch]")){
-                try{
-                    APILocator.getContentletIndexAPI().addContentToIndex(contentlet,false,false);
-                    return permissionAPI.filterCollection(searchByIdentifier(q, 1, 0, rel.getRelationTypeValue() + "" + contentlet.getIdentifier() + "-order" , user, respectFrontendRoles, PermissionAPI.PERMISSION_READ, true), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
-                }catch(Exception ex){
-                    throw new DotDataException(errorMessage, ex);
-                }
-            } else if (e.getCause() instanceof SearchPhaseExecutionException){
-                Logger.warn(this, errorMessage + ". An empty list will be returned");
-                Logger.debug(this, errorMessage + ". An empty list will be returned", e);
+            if (e instanceof SearchPhaseExecutionException || e
+                    .getCause() instanceof SearchPhaseExecutionException) {
+                Logger.warnAndDebug(ESContentletAPIImpl.class,
+                        errorMessage + ". An empty list will be returned", e);
                 return Collections.emptyList();
             }
             throw new DotDataException(errorMessage, e);
         }
     }
 
-    private String getRelatedContentESQuery(Contentlet contentlet, Relationship rel) {
-        final boolean isSameStructRelationship = FactoryLocator.getRelationshipFactory()
-                .sameParentAndChild(rel);
-        String q;
+    private List<Contentlet> getRelatedChildren(final Contentlet contentlet, final Relationship rel,
+            final User user, final boolean respectFrontendRoles, int limit, int offset,
+            String sortBy)
+            throws DotSecurityException, DotDataException {
 
-        if(isSameStructRelationship) {
-            q = "+type:content +(" + rel.getRelationTypeValue() + "-parent:" + contentlet.getIdentifier() + " " +
-                    rel.getRelationTypeValue() + "-child:" + contentlet.getIdentifier() + ") ";
-            if(!InodeUtils.isSet(contentlet.getIdentifier())){
-                q = "+type:content +(" + rel.getRelationTypeValue() + "-parent:" + "0 " +
-                        rel.getRelationTypeValue() + "-child:"  + "0 ) ";
+        if (rel.isRelationshipField() && GET_RELATED_CONTENT_FROM_DB){
+            return FactoryLocator.getRelationshipFactory()
+                    .dbRelatedContent(rel, contentlet, true, false, "tree_order", limit, offset);
+        } else{
+
+            final List<Contentlet> result = new ArrayList<>();
+            final String relationshipName = rel.getRelationTypeValue().toLowerCase();
+
+            SearchResponse response = APILocator.getEsSearchAPI()
+                    .esSearchRelated(contentlet.getIdentifier(), relationshipName, false,false, user,
+                            respectFrontendRoles, limit, offset, sortBy);
+
+            if (response.getHits() == null) {
+                return result;
             }
-        } else {
-            q = "+type:content +" + rel.getRelationTypeValue() + ":" + contentlet.getIdentifier();
-            if(!InodeUtils.isSet(contentlet.getIdentifier())){
-                q = "+type:content +" + rel.getRelationTypeValue() + ":" + "0";
+
+            for (SearchHit sh : response.getHits()) {
+                Map<String, Object> sourceMap = sh.getSourceAsMap();
+                if (sourceMap.get(relationshipName) != null) {
+                    List<String> relatedIdentifiers = ((ArrayList<String>) sourceMap.get(relationshipName));
+
+                    if (limit > 0 && offset >= 0 && (offset + limit) <= relatedIdentifiers.size()) {
+                        relatedIdentifiers = ((ArrayList<String>) sourceMap.get(relationshipName))
+                                .subList(offset, offset + limit);
+                    }
+
+                    relatedIdentifiers.stream().forEach(child -> {
+                        try {
+                            result.add(findContentletByIdentifierAnyLanguage(
+                                    child));
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+                }
             }
+            return result;
         }
-        return q;
+
     }
 
-    private String getRelatedContentESQuery(Contentlet contentlet,Relationship rel, boolean pullByParent) {
-        final boolean isSameStructureRelationship = FactoryLocator.getRelationshipFactory()
-                .sameParentAndChild(rel);
-        String q;
+    private List<Contentlet> getRelatedParents(final Contentlet contentlet, final Relationship rel,
+            final User user, final boolean respectFrontendRoles, int limit, int offset, String sortBy)
+            throws DotSecurityException, DotDataException {
 
-        if(isSameStructureRelationship) {
-            String disc = pullByParent?"-parent":"-child";
-            q = "+type:content +" + rel.getRelationTypeValue() + disc + ":" + contentlet.getIdentifier();
-            if(!InodeUtils.isSet(contentlet.getIdentifier()))
-                q = "+type:content +" + rel.getRelationTypeValue() + disc + ":" + "0";
+        if (rel.isRelationshipField() && GET_RELATED_CONTENT_FROM_DB){
+            return FactoryLocator.getRelationshipFactory()
+                    .dbRelatedContent(rel, contentlet, false, false, "tree_order", limit, offset);
+        } else{
+            final List<Contentlet> result = new ArrayList<>();
+            final String relationshipName = rel.getRelationTypeValue().toLowerCase();
 
-        } else {
-            q = "+type:content +" + rel.getRelationTypeValue() + ":" + contentlet.getIdentifier();
-            if(!InodeUtils.isSet(contentlet.getIdentifier()))
-                q = "+type:content +" + rel.getRelationTypeValue() + ":" + "0";
+            SearchResponse response = APILocator.getEsSearchAPI()
+                    .esSearchRelated(contentlet.getIdentifier(), relationshipName, true,false, user,
+                            respectFrontendRoles, limit, offset, sortBy);
+
+            if (response.getHits() == null) {
+                return result;
+            }
+
+            for (SearchHit sh : response.getHits()) {
+                Map<String, Object> sourceMap = sh.getSourceAsMap();
+                if (sourceMap.get("identifier") != null) {
+                    result.add(findContentletByIdentifierAnyLanguage(sourceMap.get("identifier").toString()));
+                }
+            }
+
+            return result;
         }
-
-        return q;
     }
 
+    @CloseDBIfOpened
     @Override
-    public List<Contentlet> getRelatedContent(Contentlet contentlet,Relationship rel, boolean pullByParent, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+    public List<Contentlet> getRelatedContent(Contentlet contentlet, Relationship rel,
+            Boolean pullByParent, User user, boolean respectFrontendRoles, int limit, int offset,
+            String sortBy)
+            throws DotDataException {
+        try {
+            String fieldVariable = rel.getRelationTypeValue();
 
-        String q = getRelatedContentESQuery(contentlet, rel, pullByParent);
-
-        try{
-            return permissionAPI.filterCollection(searchByIdentifier(q, -1, 0, rel.getRelationTypeValue() + "-" + contentlet.getIdentifier() + "-order" , user, respectFrontendRoles, PermissionAPI.PERMISSION_READ, true), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
-        }catch (Exception e) {
-            final String errorMessage = "Unable to look up related content for contentlet with identifier "
-                    + contentlet.getIdentifier();
-            if(e instanceof SearchPhaseExecutionException){
-                try{
-                    APILocator.getContentletIndexAPI().addContentToIndex(contentlet,false,true);
-                    return permissionAPI.filterCollection(searchByIdentifier(q, -1, 0, rel.getRelationTypeValue() + "-" + contentlet.getIdentifier() + "-order" , user, respectFrontendRoles, PermissionAPI.PERMISSION_READ, true), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
-                }catch(Exception ex){
-                    throw new DotDataException(errorMessage, ex);
+            if(rel.isRelationshipField()){
+                if ((relationshipAPI.sameParentAndChild(rel) && pullByParent!= null && pullByParent) || (relationshipAPI
+                        .isParent(rel, contentlet.getContentType()) && !relationshipAPI.sameParentAndChild(rel))) {
+                    if(rel.getChildRelationName()!= null) {
+                        fieldVariable = rel.getChildRelationName();
+                    }
+                } else if(rel.getParentRelationName() != null){
+                    fieldVariable = rel.getParentRelationName();
                 }
-            } else if (e.getCause() instanceof SearchPhaseExecutionException){
-                Logger.warn(this, errorMessage + ". An empty list will be returned", e);
+            }
+
+            return getRelatedContent(contentlet, fieldVariable, user, respectFrontendRoles, pullByParent, limit,
+                            offset, sortBy);
+        } catch (Exception e) {
+            final String errorMessage =
+                    "Unable to look up related content for contentlet with identifier "
+                            + contentlet.getIdentifier() + ". Relationship name: " + rel
+                            .getRelationTypeValue();
+            if (e instanceof SearchPhaseExecutionException || e
+                    .getCause() instanceof SearchPhaseExecutionException) {
+                Logger.warnAndDebug(ESContentletAPIImpl.class,
+                        errorMessage + ". An empty list will be returned", e);
                 return Collections.emptyList();
             }
             throw new DotDataException(errorMessage, e);
         }
-
     }
 
+    @CloseDBIfOpened
+    @Override
+    public List<Contentlet> getRelatedContent(Contentlet contentlet, Relationship rel,
+            Boolean pullByParent, User user, boolean respectFrontendRoles)
+            throws DotDataException, DotSecurityException {
+        return getRelatedContent(contentlet, rel, pullByParent, user, respectFrontendRoles, -1, -1,
+                null);
+    }
+
+    /**
+     * @deprecated Use {@link ContentletAPI#getRelatedContent(Contentlet, Relationship, Boolean, User, boolean)} instead
+     * @param contentlet
+     * @param rel
+     * @param pullByParent
+     * @param user
+     * @param respectFrontendRoles
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Deprecated
     public List<Contentlet> getRelatedContentFromIndex(Contentlet contentlet,Relationship rel, boolean pullByParent,
                                                        User user, boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException {
 
-        String q = getRelatedContentESQuery(contentlet, rel, pullByParent);
-        String sortBy = rel.getRelationTypeValue() + "-" + contentlet.getIdentifier() + "-order";
-
         try {
-            List<ContentletSearch> contentletSearchList =
-                    searchIndex(q, -1, 0, sortBy, user, respectFrontendRoles);
-            return contentletSearchList.stream().map(ESContentletAPIImpl::transformContentletSearchToContent)
-                    .collect(CollectionsUtils.toImmutableList());
+            return getRelatedContent(contentlet, rel, pullByParent, user, respectFrontendRoles, -1, -1, null);
         } catch (Exception e){
             final String errorMessage = "Unable to look up related content for contentlet with identifier "
-                    + contentlet.getIdentifier();
-            if (e.getCause() instanceof SearchPhaseExecutionException){
-                Logger.warn(this, errorMessage + ". An empty list will be returned", e);
+                    + contentlet.getIdentifier() + ". Relationship Name: " + rel.getRelationTypeValue();
+            if (e instanceof SearchPhaseExecutionException || e
+                    .getCause() instanceof SearchPhaseExecutionException) {
+                Logger.warnAndDebug(ESContentletAPIImpl.class, errorMessage + ". An empty list will be returned", e);
                 return Collections.emptyList();
             }
             throw new DotDataException(errorMessage, e);
@@ -2379,6 +2455,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
             // we prepare the new index and aliases to point both old and new
             indexAPI.fullReindexStart();
 
+            // delete failing records
+            reindexQueueAPI.deleteFailedRecords();
+
             // new records to index
             reindexQueueAPI.addAllToReindexQueue();
 
@@ -2621,33 +2700,61 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     @Override
-    public void deleteRelatedContent(Contentlet contentlet,Relationship relationship, User user, boolean respectFrontendRoles)throws DotDataException, DotSecurityException,DotContentletStateException {
-        deleteRelatedContent(contentlet, relationship, FactoryLocator.getRelationshipFactory().isParent(relationship, contentlet.getStructure()), user, respectFrontendRoles);
+    public void deleteRelatedContent(Contentlet contentlet, Relationship relationship, User user,
+            boolean respectFrontendRoles)
+            throws DotDataException, DotSecurityException, DotContentletStateException {
+        deleteRelatedContent(contentlet, relationship, FactoryLocator.getRelationshipFactory()
+                .isParent(relationship, contentlet.getStructure()), user, respectFrontendRoles);
+    }
+
+    @Override
+    public void deleteRelatedContent(final Contentlet contentlet, final Relationship relationship,
+            final boolean hasParent, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
+        deleteRelatedContent(contentlet, relationship, hasParent, user, respectFrontendRoles, Collections.emptyList());
     }
 
     @WrapInTransaction
     @Override
-    public void deleteRelatedContent(final Contentlet contentlet, final Relationship relationship, final boolean hasParent, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException,DotContentletStateException {
-        if(!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT, user, respectFrontendRoles)){
-            throw new DotSecurityException("User: " + (user != null ? user.getUserId() : "Unknown") + " cannot edit Contentlet");
+    public void deleteRelatedContent(final Contentlet contentlet, final Relationship relationship,
+            final boolean hasParent, final User user, final boolean respectFrontendRoles, final List<Contentlet> contentletsToBeRelated)
+            throws DotDataException, DotSecurityException, DotContentletStateException {
+        if (!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT, user,
+                respectFrontendRoles)) {
+            throw new DotSecurityException("User: " + (user != null ? user.getUserId() : "Unknown")
+                    + " cannot edit Contentlet with identifier " + contentlet.getIdentifier());
         }
-        List<Relationship> rels = FactoryLocator.getRelationshipFactory().byContentType(contentlet.getContentType());
-        if(!rels.contains(relationship)){
+        List<Relationship> rels = FactoryLocator.getRelationshipFactory()
+                .byContentType(contentlet.getContentType());
+        if (!rels.contains(relationship)) {
             throw new DotContentletStateException(
                     "Error deleting existing relationships in contentlet: " + (contentlet != null
                             ? contentlet.getInode() : "Unknown"));
         }
-        List<Contentlet> cons = relationshipAPI.dbRelatedContent(relationship, contentlet, hasParent);
-        cons = permissionAPI.filterCollection(cons, PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
+
+        List<Contentlet> cons = relationshipAPI
+                .dbRelatedContent(relationship, contentlet, hasParent);
+        cons = permissionAPI
+                .filterCollection(cons, PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
         FactoryLocator.getRelationshipFactory().deleteByContent(contentlet, relationship, cons);
 
-        // We need to refresh all related contentlets, because currently the system does not
+        final List<String> identifiersToBeRelated = contentletsToBeRelated.stream().map(
+                Contentlet::getIdentifier).collect(Collectors.toList());
+
+        // We need to refresh related parents, because currently the system does not
         // update the contentlets that lost the relationship (when the user remove a relationship).
-        if(cons != null) {
+        if (cons != null) {
             for (final Contentlet relatedContentlet : cons) {
-                relatedContentlet.setIndexPolicy(contentlet.getIndexPolicyDependencies());
-                relatedContentlet.setIndexPolicyDependencies(contentlet.getIndexPolicyDependencies());
-                refreshNoDeps(relatedContentlet);
+                //Only deleted parents will be reindexed
+                if (!hasParent && !identifiersToBeRelated
+                        .contains(relatedContentlet.getIdentifier())) {
+                    relatedContentlet.setIndexPolicy(contentlet.getIndexPolicyDependencies());
+                    relatedContentlet
+                            .setIndexPolicyDependencies(
+                                    contentlet.getIndexPolicyDependencies());
+                    refreshNoDeps(relatedContentlet);
+                }
+                //If relationship field, related content cache must be invalidated
+                invalidateRelatedContentCache(relatedContentlet, relationship, !hasParent);
             }
         }
 
@@ -2655,6 +2762,204 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if (!contentlet.getBoolProperty(CHECKIN_IN_PROGRESS)) {
             refreshNoDeps(contentlet);
         }
+    }
+
+    private void invalidateRelatedContentCache(Contentlet contentlet, Relationship relationship,
+            boolean hasParent) {
+
+        String fieldVariable = null;
+        try {
+            //If relationship field, related content cache must be invalidated
+            if (relationship.isRelationshipField()) {
+
+                if (relationshipAPI.sameParentAndChild(relationship)) {
+                    if (relationship.getParentRelationName() != null) {
+                        fieldVariable = relationship.getParentRelationName();
+                        contentlet.setRelated(relationship.getParentRelationName(), null);
+                        CacheLocator.getRelationshipCache()
+                                .removeRelatedContentFromMap(contentlet.getIdentifier(),
+                                        relationship.getParentRelationName());
+                    }
+
+                    if (relationship.getChildRelationName() != null) {
+                        fieldVariable = relationship.getChildRelationName();
+                        contentlet.setRelated(relationship.getChildRelationName(), null);
+                        CacheLocator.getRelationshipCache()
+                                .removeRelatedContentFromMap(contentlet.getIdentifier(),
+                                        relationship.getChildRelationName());
+                    }
+                } else {
+                    if (!hasParent && relationship.getParentRelationName() != null) {
+                        fieldVariable = relationship.getParentRelationName();
+                        contentlet.setRelated(relationship.getParentRelationName(), null);
+                        CacheLocator.getRelationshipCache()
+                                .removeRelatedContentFromMap(contentlet.getIdentifier(),
+                                        relationship.getParentRelationName());
+                    } else if (hasParent && relationship.getChildRelationName() != null) {
+                        fieldVariable = relationship.getChildRelationName();
+                        contentlet.setRelated(relationship.getChildRelationName(), null);
+                        CacheLocator.getRelationshipCache()
+                                .removeRelatedContentFromMap(contentlet.getIdentifier(),
+                                        relationship.getChildRelationName());
+                    }
+                }
+            }
+
+        } catch (DotCacheException e) {
+            Logger.debug(this, String.format(
+                    "Cache entry with key %s was not found for contentlet with identifier %s.",
+                    fieldVariable, contentlet.getIdentifier()),
+                    e);
+        }
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public List<Contentlet> getRelatedContent(final Contentlet contentlet, final String variableName,
+            final User user,
+            final boolean respectFrontendRoles, Boolean pullByParents, final int limit,
+            final int offset,
+            final String sortBy) {
+
+        if (variableName == null){
+            return Collections.EMPTY_LIST;
+        }
+
+        final String contentletIdentifier = contentlet.getIdentifier();
+        Map<String, List<String>> relatedIds = null;
+        try {
+            if (UtilMethods.isSet(CacheLocator.getRelationshipCache()
+                    .getRelatedContentMap(contentletIdentifier))) {
+
+                //Get mutable map
+                relatedIds = new ConcurrentHashMap<>(CacheLocator.getRelationshipCache()
+                        .getRelatedContentMap(contentletIdentifier));
+            }
+        } catch (DotCacheException e) {
+            Logger.debug(this,
+                    String.format("Cache entry with key %s was not found.", contentletIdentifier),
+                    e);
+        }
+
+        if (relatedIds == null) {
+            relatedIds = Maps.newConcurrentMap();
+        }
+
+        try {
+            User currentUser;
+
+            if (user != null){
+                currentUser = user;
+            } else{
+                currentUser = APILocator.getUserAPI().getAnonymousUser();
+            }
+
+            final List<Contentlet> relatedContentlet;
+
+            if (relatedIds.containsKey(variableName)) {
+                relatedContentlet = getCachedRelatedContentlets(relatedIds, variableName);
+            } else {
+                relatedContentlet = getNonCachedRelatedContentlets(contentlet, relatedIds,
+                        variableName, pullByParents,
+                        limit, offset, sortBy);
+            }
+
+            //Restricts contentlet according to user permissions
+            return APILocator.getPermissionAPI().filterCollection(relatedContentlet, PermissionAPI.PERMISSION_READ,
+                    currentUser.equals(APILocator.getUserAPI().getAnonymousUser())
+                            ? true : respectFrontendRoles, currentUser);
+
+        } catch (DotDataException | DotSecurityException e) {
+            Logger.warn(this, "Error getting related content for field " + variableName, e);
+            throw new DotStateException(e);
+        }
+    }
+
+    /**
+     *
+     * @param contentlet
+     * @param relatedIds
+     * @param variableName
+     * @param pullByParent
+     * @param limit
+     * @param offset
+     * @param sortBy
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Nullable
+    private List<Contentlet> getNonCachedRelatedContentlets(final Contentlet contentlet,
+            final Map<String, List<String>> relatedIds, final String variableName,
+            final Boolean pullByParent, final int limit, final int offset,
+            final String sortBy)
+            throws DotDataException, DotSecurityException {
+
+        final User systemUser = APILocator.getUserAPI().getSystemUser();
+        com.dotcms.contenttype.model.field.Field field = null;
+        final List<Contentlet> relatedList;
+        Relationship relationship;
+
+        try {
+            field = APILocator
+                    .getContentTypeFieldAPI()
+                    .byContentTypeIdAndVar(contentlet.getContentTypeId(), variableName);
+
+            relationship = relationshipAPI.getRelationshipFromField(field, systemUser);
+
+
+        }catch(NotFoundInDbException e){
+            //Search for legacy relationships
+            relationship =  relationshipAPI.byTypeValue(variableName);
+        }
+
+        if (relationship == null){
+            throw new DotStateException("No relationship found");
+        }
+        relatedList = filterRelatedContent(contentlet, relationship, systemUser, false,
+                pullByParent, limit, offset, sortBy);
+
+
+        //Cache related content only if it is a relationship field
+        if (field != null && limit == -1 && offset == 0 && sortBy == null) {
+            if (UtilMethods.isSet(relatedList)) {
+                relatedIds.put(variableName,
+                        relatedList.stream().map(cont -> cont.getIdentifier())
+                                .collect(
+                                        CollectionsUtils.toImmutableList()));
+            } else {
+                relatedIds.put(variableName, Collections.emptyList());
+            }
+            //refreshing cache when related content map is updated
+            CacheLocator.getRelationshipCache().putRelatedContentMap(contentlet.getIdentifier(), relatedIds);
+        }
+
+        return relatedList;
+    }
+
+    /**
+     *
+     * @param relatedIds
+     * @param variableName
+     * @return
+     */
+    @NotNull
+    private List<Contentlet> getCachedRelatedContentlets(final Map<String, List<String>> relatedIds,
+            final String variableName) {
+        final List<Contentlet> relatedList = relatedIds
+                .get(variableName).stream()
+                .map(identifier -> {
+                    try {
+                        return APILocator.getContentletAPI()
+                                .findContentletByIdentifierAnyLanguage(identifier);
+                    } catch (DotDataException | DotSecurityException e) {
+                        Logger.warn(this, "No content found with id " + identifier,
+                                e);
+                        throw new DotStateException(e);
+                    }
+                }).collect(Collectors.toList());
+
+        return relatedList;
     }
 
     @WrapInTransaction
@@ -2718,7 +3023,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
 
             deleteRelatedContent(contentlet, relationship, related.isHasParent(), user,
-                    respectFrontendRoles);
+                    respectFrontendRoles, related.getRecords());
 
             Tree newTree;
             Set<Tree> uniqueRelationshipSet = new HashSet<>();
@@ -2744,22 +3049,19 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 positionInParent=positionInParent+1;
 
                 if( uniqueRelationshipSet.add(newTree) ) {
-                    int newTreePosistion = newTree.getTreeOrder();
-                    Tree treeToUpdate = TreeFactory.getTree(newTree);
-                    treeToUpdate.setTreeOrder(newTreePosistion);
+                    final int newTreePosition = newTree.getTreeOrder();
+                    final Tree treeToUpdate = TreeFactory.getTree(newTree);
+                    treeToUpdate.setTreeOrder(newTreePosition);
 
                     TreeFactory.saveTree(treeToUpdate != null && UtilMethods.isSet(treeToUpdate.getRelationType())?treeToUpdate:newTree);
 
                     treePosition++;
                 }
-
-                if(!child){// when we change the order we need to index all the sibling content
-                    for(final Contentlet contentletSibling : getSiblings(c.getIdentifier())){
-                        contentletSibling.setIndexPolicy(contentlet.getIndexPolicyDependencies());
-                        refreshNoDeps(contentletSibling);
-                    }
-                }
+                invalidateRelatedContentCache(c, relationship, !related.isHasParent());
             }
+
+            //If relationship field, related content cache must be invalidated
+            invalidateRelatedContentCache(contentlet, relationship, related.isHasParent());
 
             if(localTransaction){
                 HibernateUtil.commitTransaction();
@@ -3009,8 +3311,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if(contentRelationships == null) {
 
             //Obtain all relationships
-            contentRelationships = getAllRelationships(contentlet,
-                    getContentletRelationships(contentlet, user));
+            contentRelationships =  getContentletRelationships(contentlet, user);
+
+            if (contentRelationships!=null) {
+                getAllRelationships(contentlet, contentRelationships);
+            }
         }
 
         if(cats == null) {
@@ -3081,9 +3386,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     this.throwSecurityException(contentlet, user);
                 }
             }
-            if (createNewVersion && (contentRelationships == null || cats == null))
+            if (createNewVersion && cats == null)
                 throw new IllegalArgumentException(
-                        "The categories, and content relationships cannot be null when trying to checkin. The method was called improperly");
+                        "The categories cannot be null when trying to checkin. The method was called improperly");
             try {
                 validateContentlet(contentlet, contentRelationships, cats);
 
@@ -3646,7 +3951,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                 }
 
-                indexAPI.addContentToIndex(contentlet);
+                indexAPI.addContentToIndex(contentlet, false);
             }
 
             if(contentlet != null && contentlet.isVanityUrl()){
@@ -3719,12 +4024,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    @NotNull
     private ContentletRelationships getContentletRelationships(final Contentlet contentlet,
             final User user)
             throws DotDataException, DotSecurityException {
-        final ContentletRelationships contentRelationships = new ContentletRelationships(
-                contentlet);
+        ContentletRelationships contentRelationships = null;
 
         //Get all relationship fields
         final List<com.dotcms.contenttype.model.field.Field> relationshipFields = contentlet
@@ -3746,6 +4049,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     } else {
                         hasParent = relationshipAPI
                                 .isParent(relationship, contentlet.getContentType());
+                    }
+
+                    if (contentRelationships == null){
+                        contentRelationships = new ContentletRelationships(contentlet);
                     }
                     final ContentletRelationshipRecords relationshipRecords = contentRelationships.new ContentletRelationshipRecords(
                             relationship, hasParent);

@@ -15,20 +15,12 @@
             }
         },
         {
-            "textmapping": {
-                "match": "*_text",
-                "mapping": {
+              "textmapping": {
+                  "match": "*_text",
+                  "mapping": {
                     "type": "text"
-                }
-            }
-        },
-        {
-            "ordermapping": {
-                "match": "*-order",
-                "mapping": {
-                    "type": "keyword"
-                }
-            }
+                  }
+              }
         },
         {
             "strings_as_dates": {
@@ -38,6 +30,7 @@
                 }
             }
         },
+
         {
             "geomapping": {
                 "match": "*latlon",

@@ -16,7 +16,7 @@ import java.util.List;
 
 
 /**
- * {@link PageResource#addContent(HttpServletRequest, HttpServletResponse, String)}'s form
+ * {@link PageResource#addContent(HttpServletRequest, String, PageContainerForm)}'s form
  */
 @JsonDeserialize(using = PageContainerForm.ContainerDeserialize.class)
 public class PageContainerForm {
@@ -25,7 +25,8 @@ public class PageContainerForm {
     private final String requestJson;
 
     public PageContainerForm(final List<ContainerEntry> entries, final String requestJson) {
-        this.entries = ImmutableList.copyOf(entries);
+
+        this.entries     = ImmutableList.copyOf(entries);
         this.requestJson = requestJson;
     }
 
@@ -41,6 +42,7 @@ public class PageContainerForm {
 
         private static final String CONTAINER_ID_ATTRIBUTE_NAME = "identifier";
         private static final String CONTAINER_UUID_ATTRIBUTE_NAME = "uuid";
+        private static final String CONTAINER_PERSONA_TAG_ATTRIBUTE_NAME = "personaTag";
         private static final String CONTAINER_CONTENTLETSID_ATTRIBUTE_NAME = "contentletsId";
 
         @Override
@@ -52,18 +54,18 @@ public class PageContainerForm {
             final List<ContainerEntry> entries = new ArrayList<>();
 
             for (final JsonNode jsonElement : jsonNode) {
-                final JsonNode containerIdNode = jsonElement.get(CONTAINER_ID_ATTRIBUTE_NAME);
+                final JsonNode containerIdNode   = jsonElement.get(CONTAINER_ID_ATTRIBUTE_NAME);
                 final JsonNode containerUUIDNode = jsonElement.get(CONTAINER_UUID_ATTRIBUTE_NAME);
+                final JsonNode personaTagNode    = jsonElement.get(CONTAINER_PERSONA_TAG_ATTRIBUTE_NAME);
 
                 if (containerIdNode == null || containerUUIDNode == null) {
                     throw new BadRequestException("Container id and uuid are required");
                 }
 
-                final String containerId = containerIdNode.asText();
-                final String containerUUID = containerUUIDNode.asText();
-
-                final ContainerEntry containerEntry = new ContainerEntry(containerId, containerUUID);
-
+                final String containerId    = containerIdNode.asText();
+                final String containerUUID  = containerUUIDNode.asText();
+                final String personaTag     = personaTagNode != null? personaTagNode.asText():null;
+                final ContainerEntry containerEntry = new ContainerEntry(personaTag, containerId, containerUUID);
                 final JsonNode containerNode = jsonElement.get(CONTAINER_CONTENTLETSID_ATTRIBUTE_NAME);
 
                 containerNode.forEach((JsonNode contentId) -> containerEntry.addContentId(contentId.textValue()));
@@ -75,14 +77,21 @@ public class PageContainerForm {
     }
 
     static final class ContainerEntry {
+
+        private final String personaTag;
         private final String id;
         private final String uuid;
         private final List<String> contentIds;
 
-        public ContainerEntry(final String id, final String uuid) {
+        public ContainerEntry(final String personaTag, final String id, final String uuid) {
             this.id = id;
             this.uuid = uuid;
+            this.personaTag  = personaTag;
             contentIds = new ArrayList<>();
+        }
+
+        public String getPersonaTag() {
+            return personaTag;
         }
 
         public String getContainerId() {
