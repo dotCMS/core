@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.structure.factories;
 
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableMap;
 import java.util.Collections;
 import java.util.List;
 
@@ -10,17 +11,20 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.portlets.structure.model.Relationship;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 public class RelationshipCacheImpl extends RelationshipCache {
 
 	private DotCacheAdministrator cache;
 	
-	private String primaryGroup = "RelationshipCacheByInode";
-	private String secondaryGroup = "RelationshipCacheByName";
+	private final String primaryGroup = "RelationshipCacheByInode";
+	private final String secondaryGroup = "RelationshipCacheByName";
+    private final String tertiaryGroup = "RelatedContentCache";
 
 	// region's name for the cache
-    private String[] groupNames = {primaryGroup, secondaryGroup};
+    private final String[] groupNames = {primaryGroup, secondaryGroup, tertiaryGroup};
 
 	public RelationshipCacheImpl() {
         cache = CacheLocator.getCacheAdministrator();
@@ -87,6 +91,42 @@ public class RelationshipCacheImpl extends RelationshipCache {
 		for(String g : groupNames)
 			cache.flushGroup(g);
 	}
+
+    @Override
+    public Map<String, List<String>> getRelatedContentMap(final String contentletIdentifier)
+            throws DotCacheException {
+        return UtilMethods.isSet(contentletIdentifier) ? (Map<String, List<String>>) cache
+                .get(contentletIdentifier, tertiaryGroup) : Collections.emptyMap();
+    }
+
+    @Override
+    public void putRelatedContentMap(final String contentletIdentifier, final Map<String, List<String>> relatedContent){
+	    if(UtilMethods.isSet(contentletIdentifier)) {
+            cache.put(contentletIdentifier, ImmutableMap.copyOf(relatedContent), tertiaryGroup);
+        }
+    }
+
+    @Override
+    public void removeRelatedContentMap(final String contentletIdentifier)  {
+        if (UtilMethods.isSet(contentletIdentifier)) {
+            cache.remove(contentletIdentifier, tertiaryGroup);
+        }
+    }
+
+    @Override
+    public void removeRelatedContentFromMap(final String contentletIdentifier, final String relationshipFieldVar)
+            throws DotCacheException {
+        if (UtilMethods.isSet(contentletIdentifier) && UtilMethods.isSet(relationshipFieldVar)
+                && UtilMethods.isSet(getRelatedContentMap(contentletIdentifier))) {
+            final Map<String, List<String>> relatedContent = new ConcurrentHashMap(
+                    getRelatedContentMap(contentletIdentifier));
+            if (UtilMethods.isSet(relatedContent) && relatedContent
+                    .containsKey(relationshipFieldVar)) {
+                relatedContent.remove(relationshipFieldVar);
+                putRelatedContentMap(contentletIdentifier, relatedContent);
+            }
+        }
+    }
 
 	public String[] getGroups() {
 		return groupNames;

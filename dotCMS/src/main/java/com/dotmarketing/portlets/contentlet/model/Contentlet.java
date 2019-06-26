@@ -10,12 +10,20 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.com.google.common.collect.Maps;
-import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.RelationshipUtil;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PermissionSummary;
+import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.RelatedPermissionableGroup;
+import com.dotmarketing.business.Ruleable;
+import com.dotmarketing.business.Treeable;
+import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.business.Versionable;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -27,7 +35,6 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.structure.model.Field;
-import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.tag.model.TagInode;
@@ -37,18 +44,20 @@ import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.nio.file.Files;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
+import org.apache.commons.lang.builder.ToStringBuilder;
 
 /**
  * Represents a content unit in the system. Ideally, every single domain object
@@ -120,7 +129,6 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     public static final String WORKFLOW_NEVER_EXPIRE = "wfNeverExpire";
 	public static final String TEMP_BINARY_IMAGE_INODES_LIST = "tempBinaryImageInodesList";
 	public static final String RELATIONSHIP_KEY = "__##relationships##__";
-	public static final String RELATED_IDS_KEY = "__relatedIds__";
 
 	private transient ContentType contentType;
     protected Map<String, Object> map = new ContentletHashMap();
@@ -1532,141 +1540,9 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
      */
     public List<Contentlet> getRelated(final String variableName, final User user,
             final boolean respectFrontendRoles, Boolean pullByParents) {
-        return getRelated(variableName, user,respectFrontendRoles, pullByParents, -1, -1, null);
-    }
-
-    /**
-     * Returns a list of all contentlets related to this instance given a RelationshipField variable
-     * using pagination
-     * @param variableName
-     * @param user
-     * @param respectFrontendRoles
-     * @param pullByParents
-     * @param limit
-     * @param offset
-     * @param sortBy
-     * @return
-     */
-	public List<Contentlet> getRelated(final String variableName, final User user,
-			final boolean respectFrontendRoles, Boolean pullByParents, final int limit, final int offset,
-            final String sortBy) {
-
-	    if (variableName == null){
-	        return Collections.EMPTY_LIST;
-        }
-
-		if (!map.containsKey(RELATED_IDS_KEY)){
-			map.put(RELATED_IDS_KEY, Maps.newConcurrentMap());
-		}
-
-        Map<String, List<String>> relatedIds = (Map<String, List<String>>) map.get(RELATED_IDS_KEY);
-
-		try {
-			User currentUser;
-
-			if (user != null){
-				currentUser = user;
-			} else{
-				currentUser = APILocator.getUserAPI().getAnonymousUser();
-			}
-
-			final List<Contentlet> relatedContentlet;
-
-			if (relatedIds.containsKey(variableName)) {
-				relatedContentlet = getCachedRelatedContentlets(variableName);
-			} else {
-
-                relatedContentlet = getNonCachedRelatedContentlets(variableName, pullByParents,
-                        limit, offset, sortBy);
-			}
-
-			//Restricts contentlet according to user permissions
-            return APILocator.getPermissionAPI().filterCollection(relatedContentlet, PermissionAPI.PERMISSION_READ,
-                    currentUser.equals(APILocator.getUserAPI().getAnonymousUser())
-                            ? true : respectFrontendRoles, currentUser);
-
-		} catch (DotDataException | DotSecurityException e) {
-			Logger.warn(this, "Error getting related content for field " + variableName, e);
-			throw new DotStateException(e);
-		}
-	}
-
-    /**
-     *
-     * @param variableName
-     * @param pullByParent
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
-     */
-    @Nullable
-    private List<Contentlet> getNonCachedRelatedContentlets(final String variableName,
-            final Boolean pullByParent, final int limit, final int offset,
-            final String sortBy)
-            throws DotDataException, DotSecurityException {
-
-        final User systemUser = APILocator.getUserAPI().getSystemUser();
-        com.dotcms.contenttype.model.field.Field field = null;
-        final List<Contentlet> relatedList;
-        Relationship relationship;
-
-        try {
-            field = APILocator
-                    .getContentTypeFieldAPI()
-                    .byContentTypeIdAndVar(getContentTypeId(), variableName);
-
-            relationship = APILocator.getRelationshipAPI()
-                    .getRelationshipFromField(field, systemUser);
-
-
-        }catch(NotFoundInDbException e){
-            //Search for legacy relationships
-            relationship =  APILocator.getRelationshipAPI().byTypeValue(variableName);
-        }
-
-        if (relationship == null){
-            throw new DotStateException("No relationship found");
-        }
-        relatedList = APILocator.getContentletAPI()
-                .filterRelatedContent(this, relationship, systemUser, false, pullByParent, limit, offset, sortBy);
-
-
-        //Cache related content only if it is a relationship field
-        if (field != null && limit == -1 && offset== -1 && sortBy == null) {
-            if (UtilMethods.isSet(relatedList)) {
-                ((Map<String, List<String>>)map.get(RELATED_IDS_KEY)).put(variableName,
-                        relatedList.stream().map(contentlet -> contentlet.getIdentifier())
-                                .collect(
-                                        CollectionsUtils.toImmutableList()));
-            } else {
-                ((Map<String, List<String>>)map.get(RELATED_IDS_KEY)).put(variableName, Collections.emptyList());
-            }
-            //refreshing cache when related content map is updated
-            CacheLocator.getContentletCache().add(this);
-        }
-
-        return relatedList;
-    }
-
-    /**
-     *
-     */
-    @NotNull
-    private List<Contentlet> getCachedRelatedContentlets(final String variableName) {
-        final List<Contentlet> relatedList = ((Map<String, List<String>>) map.get(RELATED_IDS_KEY))
-                .get(variableName).stream()
-                .map(identifier -> {
-                    try {
-                        return APILocator.getContentletAPI()
-                                .findContentletByIdentifierAnyLanguage(identifier);
-                    } catch (DotDataException | DotSecurityException e) {
-                        Logger.warn(this, "No content found with id " + identifier,
-                                e);
-                        throw new DotStateException(e);
-                    }
-                }).collect(Collectors.toList());
-
-        return relatedList;
+        return APILocator.getContentletAPI()
+                .getRelatedContent(this, variableName, user, respectFrontendRoles, pullByParents,
+                        -1, 0, null);
     }
 
     /**
@@ -1686,11 +1562,6 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
      */
     public void setRelated(final String fieldVarName, final List<Contentlet> contentlets) {
         map.put(fieldVarName, contentlets);
-
-        if (map.containsKey(RELATED_IDS_KEY)) {
-            //clean up cache
-            ((Map<String, List<String>>)map.get(RELATED_IDS_KEY)).remove(fieldVarName);
-        }
     }
 
     /**

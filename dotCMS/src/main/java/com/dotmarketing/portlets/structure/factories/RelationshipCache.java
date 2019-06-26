@@ -6,6 +6,7 @@ import com.dotcms.contenttype.model.type.ContentTypeIf;
 import com.dotmarketing.business.Cachable;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.portlets.structure.model.Relationship;
+import java.util.Map;
 
 
 public abstract class RelationshipCache implements Cachable {
@@ -50,5 +51,38 @@ public abstract class RelationshipCache implements Cachable {
 		// TODO Auto-generated method stub
 		return null;
 	}
-	
+
+    /**
+     * Gets related content for a given contentlet
+     * @param contentletIdentifier
+     * @return
+     * @throws DotCacheException
+     */
+    public abstract Map<String, List<String>> getRelatedContentMap(String contentletIdentifier)
+            throws DotCacheException;
+
+    /**
+     * Adds related content to the cache for a given contentlet
+     * @param contentletIdentifier
+     * @param relatedContent
+     */
+    public abstract void putRelatedContentMap(String contentletIdentifier,
+            Map<String, List<String>> relatedContent);
+
+    /**
+     * Invalidates relationship cache for a given contentlet
+     * @param contentletIdentifier
+     */
+    public abstract void removeRelatedContentMap(String contentletIdentifier);
+
+    /**
+     * Removes related content from cache given a contentlet identifier and the velocity var name of
+     * the relationship field
+     * @param contentletIdentifier
+     * @param relationshipFieldVar
+     * @throws DotCacheException
+     */
+    public abstract void removeRelatedContentFromMap(String contentletIdentifier,
+            String relationshipFieldVar)
+            throws DotCacheException;
 }
