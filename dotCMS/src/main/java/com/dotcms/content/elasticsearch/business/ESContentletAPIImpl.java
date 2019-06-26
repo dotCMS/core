@@ -2921,7 +2921,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
 
         //Cache related content only if it is a relationship field
-        if (field != null && limit == -1 && offset== -1 && sortBy == null) {
+        if (field != null && limit == -1 && offset == 0 && sortBy == null) {
             if (UtilMethods.isSet(relatedList)) {
                 relatedIds.put(variableName,
                         relatedList.stream().map(cont -> cont.getIdentifier())

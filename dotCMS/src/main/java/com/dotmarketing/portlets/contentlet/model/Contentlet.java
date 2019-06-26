@@ -1542,7 +1542,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
             final boolean respectFrontendRoles, Boolean pullByParents) {
         return APILocator.getContentletAPI()
                 .getRelatedContent(this, variableName, user, respectFrontendRoles, pullByParents,
-                        -1, -1, null);
+                        -1, 0, null);
     }
 
     /**
