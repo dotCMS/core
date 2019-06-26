@@ -57,7 +57,7 @@ public class ParseContainer extends DotDirective {
 				context.get(key + VelocityUtil.escapeContextTokenIdentifier(personalization));
 		if (null != personalizationPayload) {
 			context.put(key, personalizationPayload);
-		} else if (params.mode == PageMode.LIVE) {
+		} else {
 			context.put(key, context.get(key + VelocityUtil.escapeContextTokenIdentifier(MultiTree.DOT_PERSONALIZATION_DEFAULT)));
 		}
 	}
