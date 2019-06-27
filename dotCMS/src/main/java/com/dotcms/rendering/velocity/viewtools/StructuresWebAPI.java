@@ -266,12 +266,12 @@ public class StructuresWebAPI implements ViewTool {
 
 	/**
 	 * Return the Structure's Layout in a json format.
-	 * 
+	 *
 	 * @param structure
 	 * @param user
 	 * @return
 	 */
-	public String getLayousAsJson(final Structure structure, final User user) {
+	public String getLayoutAsJson(final Structure structure, final User user) {
 		try {
 			final StructureTransformer transformer = new StructureTransformer(structure);
 			final ContentType contentType = transformer.from();
