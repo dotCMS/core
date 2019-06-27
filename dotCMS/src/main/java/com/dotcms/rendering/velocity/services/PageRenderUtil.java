@@ -244,14 +244,6 @@ public class PageRenderUtil implements Serializable {
                 defaultContainerFinderByIdOrPathStrategy.apply(containerIdOrPath, user, false, resourceHostSupplier);
     }
 
-    private Set<String> getPersonaTags () throws DotDataException, DotSecurityException {
-
-        final List<Persona> personas = this.personaAPI.getPersonas
-                (this.site, true, false, this.user, this.mode.respectAnonPerms);
-
-        return null != personas? personas.stream().map(Persona::getKeyTag).collect(Collectors.toSet()) : Collections.emptySet();
-    }
-
     private List<ContainerRaw> populateContainers() throws DotDataException, DotSecurityException {
 
         final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
@@ -406,7 +398,7 @@ public class PageRenderUtil implements Serializable {
     } // setContentletListPerPersonalization.
 
     /*
-    * If there container is personalized to at least one persona, the rest of the existing personas need to add an empty list
+    * If there page is personalized to at least one persona, the rest of the existing container without this persona personalization needs to add an empty list
     * since the user wants to avoid to show content on it.
      */
     private void setDefaultOnPersonalization (final Map<String, List<String>> contentIdListByPersonalizationMap,
