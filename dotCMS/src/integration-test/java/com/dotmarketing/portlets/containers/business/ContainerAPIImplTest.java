@@ -7,11 +7,8 @@ import static org.junit.Assert.fail;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
-import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestDataUtils;
@@ -47,7 +44,6 @@ import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -83,18 +79,19 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
                 PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_READ);
         APILocator.getPermissionAPI().save(permissionWrite, host, APILocator.systemUser(), false);
 
-        User adminUser = TestUserUtils.getAdminUser();
-
         try {
-            final ContentType contentType1 = TestDataUtils.getBlogLikeContentType("Blog", host);
-            final ContentType contentType2 = TestDataUtils.getBannerLikeContentType("Banner", host);
-            container = new ContainerDataGen().site(host).owner(user)
-                    .withContentType(contentType1, "").withContentType(contentType2, "")
+            final ContentType contentType1 = TestDataUtils
+                    .getBlogLikeContentType("Blog" + System.currentTimeMillis(), host);
+            final ContentType contentType2 = TestDataUtils
+                    .getBannerLikeContentType("Banner" + System.currentTimeMillis(), host);
+            container = new ContainerDataGen().site(host)
+                    .withContentType(contentType1, "")
+                    .withContentType(contentType2, "")
                     .nextPersisted();
 
             ContainerAPIImpl containerAPI = new ContainerAPIImpl();
             List<ContentType> contentTypesInContainer = containerAPI
-                    .getContentTypesInContainer(user, container);
+                    .getContentTypesInContainer(APILocator.systemUser(), container);
 
             assertEquals(2, contentTypesInContainer.size());
 
@@ -107,61 +104,11 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
         } finally {
             HibernateUtil.startTransaction();
             if (container != null) {
-                APILocator.getContainerAPI().delete(container, adminUser, false);
+                APILocator.getContainerAPI().delete(container, APILocator.systemUser(), false);
             }
 
             HibernateUtil.commitTransaction();
         }
-    }
-
-    private Container createContainer(User user, User adminUser, ContentType contentType) throws DotDataException, DotSecurityException {
-        HibernateUtil.startTransaction();
-        Host defaultHost = APILocator.getHostAPI().findDefaultHost( user, false );
-        ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
-
-        Container container = new Container();
-        container.setFriendlyName("test container");
-        container.setTitle("this is the title");
-        container.setMaxContentlets(5);
-        container.setPreLoop("preloop code");
-        container.setPostLoop("postloop code");
-
-        List<ContainerStructure> containerStructures = new ArrayList<ContainerStructure>();
-
-        ContainerStructure containerStructure = new ContainerStructure();
-        containerStructure.setStructureId(contentTypeAPI.find("Document").inode());
-        containerStructure.setCode("this is the code");
-
-        ContainerStructure containerStructure2 = new ContainerStructure();
-        containerStructure2.setStructureId(contentType.inode());
-        containerStructure2.setCode("this is the code");
-
-        containerStructures.add(containerStructure);
-        containerStructures.add(containerStructure2);
-
-        Container containerSaved = APILocator.getContainerAPI().save(container, containerStructures, defaultHost, adminUser, false);
-
-        HibernateUtil.commitTransaction();
-
-        return containerSaved;
-    }
-
-    private ContentType createContentType(User user) throws DotSecurityException, DotDataException {
-        Host host = APILocator.getHostAPI().findDefaultHost(user, false);
-
-        Folder folder = APILocator.getFolderAPI()
-                .createFolders("/folderMoveSourceTest"+System.currentTimeMillis(), host, user, false);
-
-        ContentType contentType = ContentTypeBuilder.builder(BaseContentType.CONTENT.immutableClass())
-                .description("description")
-                .folder(folder.getInode()).host(host.getInode())
-                .name("ContentTypeTesting")
-                .owner("owner")
-                .variable("velocityVarNameTesting")
-                .build();
-
-
-        return APILocator.getContentTypeAPI(user).save(contentType);
     }
 
     @Test

@@ -11,6 +11,7 @@ import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.rendering.velocity.servlet.VelocityServlet;
 import com.dotcms.util.FiltersUtil;
 import com.dotcms.util.IntegrationTestInitService;
@@ -145,6 +146,12 @@ public class FiltersTest {
                 .title("index")
                 .nextPersisted();
         HTMLPageDataGen.publish(intranetIndexPage);
+        //Assign permissions
+        APILocator.getPermissionAPI().save(
+                new Permission(intranetIndexPage.getPermissionId(),
+                        TestUserUtils.getOrCreateIntranetRole().getId(),
+                        PermissionAPI.PERMISSION_READ),
+                intranetIndexPage, APILocator.systemUser(), false);
     }
 
     @Test
@@ -436,6 +443,7 @@ public class FiltersTest {
         Mockito.when(response.getOutputStream()).thenReturn(Mockito.mock(ServletOutputStream.class));
         return new MockResponseWrapper(response);
     }
+
     private HttpServletRequest getMockRequest(String hostName, String uri) {
 
         HttpServletRequest request = Mockito.mock(HttpServletRequest.class);

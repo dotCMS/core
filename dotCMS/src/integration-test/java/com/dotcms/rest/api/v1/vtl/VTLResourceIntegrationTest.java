@@ -82,7 +82,7 @@ public class VTLResourceIntegrationTest {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
 
-        final ContentType employeeContentType = getEmployeeLikeContentType("Employee");
+        final ContentType employeeContentType = getEmployeeLikeContentType();
         final Contentlet employee = getEmployeeContent(employeeContentType.id());
         ContentletDataGen.publish(employee);
         final String KNOWN_EMPLOYEE_ID = employee.getInode();

@@ -466,7 +466,8 @@ public class TestDataUtils {
         ContentType wikiType = null;
         try {
             try {
-                wikiType = APILocator.getContentTypeAPI(APILocator.systemUser()).find("Wiki");
+                wikiType = APILocator.getContentTypeAPI(APILocator.systemUser())
+                        .find(contentTypeName);
             } catch (NotFoundInDbException e) {
                 //Do nothing...
             }
@@ -1125,7 +1126,8 @@ public class TestDataUtils {
     }
 
     public static ContentType getBannerLikeContentType() {
-         return  getBannerLikeContentType("BannerLike" + System.currentTimeMillis(),APILocator.systemHost(), null);
+        return getBannerLikeContentType("Banner" + System.currentTimeMillis(),
+                APILocator.systemHost(), null);
     }
 
 

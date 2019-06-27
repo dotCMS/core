@@ -4,6 +4,7 @@ import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.CategoryDataGen;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.util.ConfigTestHelper;
@@ -35,6 +36,7 @@ import org.junit.runner.RunWith;
 @RunWith(DataProviderRunner.class)
 public class ES6UpgradeTest extends IntegrationTestBase {
 
+    private static final String TO_REPLACE_HOST_ID = "REPLACE_WITH_HOST_ID";
     private final static String RESOURCE_DIR = "com/dotcms/content/elasticsearch/business/json";
 
     private static User systemUser;
@@ -43,6 +45,8 @@ public class ES6UpgradeTest extends IntegrationTestBase {
 
     private static ContentType blogContentType = null;
 
+    private static Host site = null;
+
     @BeforeClass
     public static void prepare () throws Exception {
 
@@ -50,8 +54,11 @@ public class ES6UpgradeTest extends IntegrationTestBase {
         IntegrationTestInitService.getInstance().init();
 
         systemUser = APILocator.getUserAPI().getSystemUser();
-        newsContentType = TestDataUtils.getNewsLikeContentType("News");
-        blogContentType = TestDataUtils.getBlogLikeContentType("Blog");
+        site = new SiteDataGen().nextPersisted();
+        newsContentType = TestDataUtils
+                .getNewsLikeContentType("News" + System.currentTimeMillis(), site);
+        blogContentType = TestDataUtils
+                .getBlogLikeContentType("Blog" + System.currentTimeMillis(), site);
     }
 
     /**
@@ -75,7 +82,9 @@ public class ES6UpgradeTest extends IntegrationTestBase {
 
         final boolean skip = loadQueryData(file.getName());
         if (!skip) {
-            final String json = FileUtils.readFileToString(file);
+            String json = FileUtils.readFileToString(file);
+            json = json.replaceAll(TO_REPLACE_HOST_ID,
+                    site.getIdentifier());
             Logger.info(this, json);
             final ESSearchResults results = APILocator.getContentletAPI()
                     .esSearch(json, false, systemUser, false);
@@ -187,11 +196,10 @@ public class ES6UpgradeTest extends IntegrationTestBase {
         @Override
         public void loadData() throws Exception {
             final Category category = new CategoryDataGen().setCategoryName("Investment Banking").setKey("investing").setKeywords("investing").setCategoryVelocityVarName("investing").nextPersisted();
-            final Host host = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
             final long languageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
             new ContentletDataGen(newsContentType.id())
                     .languageId(languageId)
-                    .host(host)
+                    .host(site)
                     .addCategory(category)
                     .setProperty("title", "blah")
                     .setProperty("urlTitle", "title")
@@ -213,11 +221,10 @@ public class ES6UpgradeTest extends IntegrationTestBase {
 
         @Override
         public void loadData() throws Exception {
-            final Host host = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
             final long languageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
             new ContentletDataGen(newsContentType.id())
                     .languageId(languageId)
-                    .host(host)
+                    .host(site)
                     .setProperty("title", "The Gas Price Roller coaster")
                     .setProperty("urlTitle", "title")
                     .setProperty("byline", "gas")
@@ -239,11 +246,10 @@ public class ES6UpgradeTest extends IntegrationTestBase {
 
         @Override
         public void loadData() throws Exception {
-            final Host host = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
             final long languageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
             new ContentletDataGen(blogContentType.id())
                     .languageId(languageId)
-                    .host(host)
+                    .host(site)
                     .setProperty("title", "Tiffany & Co: Still Shining With Substantial Earnings Beat And Guidance Increase")
                     .setProperty("urlTitle", "title")
                     .setProperty("body", "Blah blah Pssa blah blah ")
@@ -270,11 +276,10 @@ public class ES6UpgradeTest extends IntegrationTestBase {
         @Override
         public void loadData() throws Exception {
 
-            final Host host = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
             final long languageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
             new ContentletDataGen(newsContentType.id())
                     .languageId(languageId)
-                    .host(host)
+                    .host(site)
                     .setProperty("title", "The Gas Price Roller coaster")
                     .setProperty("urlTitle", "title")
                     .setProperty("byline", "gas")
@@ -296,12 +301,11 @@ public class ES6UpgradeTest extends IntegrationTestBase {
 
         @Override
         public void loadData() throws Exception {
-            final Host host = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
             final long languageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
             final Date publishedDate = DateUtil.convertDate("20/10/2015", new String[]{"dd/MM/yyyy"});
             new ContentletDataGen(newsContentType.id())
                     .languageId(languageId)
-                    .host(host)
+                    .host(site)
                     .setProperty("title", "These states are the most financially ready for retirement")
                     .setProperty("urlTitle", "title")
                     .setProperty("sysPublishDate", publishedDate)
@@ -321,11 +325,10 @@ public class ES6UpgradeTest extends IntegrationTestBase {
 
         @Override
         public void loadData() throws Exception {
-            final Host host = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
             final long languageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
             new ContentletDataGen(newsContentType.id())
                     .languageId(languageId)
-                    .host(host)
+                    .host(site)
                     .setProperty("title", "Any News article")
                     .setProperty("urlTitle", "title")
                     .setProperty("sysPublishDate", new Date())

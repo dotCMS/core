@@ -1843,4 +1843,10 @@ public interface ContentletAPIPreHook {
             throws DotDataException, DotSecurityException{
         return true;
     }
+
+    default boolean getRelatedContent(Contentlet contentlet, String variableName, User user,
+            boolean respectFrontendRoles, Boolean pullByParents, int limit, int offset,
+            String sortBy){
+        return true;
+    }
 }

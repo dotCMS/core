@@ -1,8 +1,6 @@
 package com.dotmarketing.util;
 
-import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.transform.field.JsonFieldTransformer;
-import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
+
 import com.dotcms.repackage.com.csvreader.CsvReader;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -3525,11 +3523,5 @@ public class UtilMethods {
             }
         }
         return adminMode;
-    }
-
-    public static JsonFieldTransformer getJsonFieldTransformer(
-            final List<com.dotmarketing.portlets.structure.model.Field> oldField) {
-
-        return new JsonFieldTransformer(new LegacyFieldTransformer(oldField).asList());
     }
 }

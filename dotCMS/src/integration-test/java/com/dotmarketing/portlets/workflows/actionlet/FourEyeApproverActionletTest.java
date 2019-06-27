@@ -13,9 +13,10 @@ import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
-import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -61,7 +62,6 @@ public class FourEyeApproverActionletTest extends BaseWorkflowIntegrationTest {
     private static ContentletAPI contentletAPI;
     private static LanguageAPI languageAPI;
     private static ContentTypeAPI contentTypeAPI;
-    private static UserAPI userAPI;
 
     private static User systemUser;
     private static CreateSchemeStepActionResult schemeStepActionResult = null;
@@ -81,7 +81,6 @@ public class FourEyeApproverActionletTest extends BaseWorkflowIntegrationTest {
         contentTypeAPI = APILocator.getContentTypeAPI(systemUser);
         contentletAPI = APILocator.getContentletAPI();
         languageAPI = APILocator.getLanguageAPI();
-        userAPI = APILocator.getUserAPI();
 
         site = new SiteDataGen().nextPersisted();
         // Get the test role and two users from such a role
@@ -164,6 +163,15 @@ public class FourEyeApproverActionletTest extends BaseWorkflowIntegrationTest {
             Contentlet contentlet1 = contentletAPI.checkin(cont, systemUser, false);
             Assert.assertFalse("The contentlet cannot be live, it has just been created.",
                     contentlet1.isLive());
+            //Assign permissions
+            final int contentPermissions = (PermissionAPI.PERMISSION_READ
+                    | PermissionAPI.PERMISSION_EDIT | PermissionAPI.PERMISSION_PUBLISH);
+
+            APILocator.getPermissionAPI().save(
+                    new Permission(contentlet1.getPermissionId(),
+                            TestUserUtils.getOrCreatePublisherRole().getId(),
+                            contentPermissions),
+                    contentlet1, APILocator.systemUser(), false);
 
             // Set the appropriate workflow action to the contentlet
             contentlet1.setActionId(
@@ -244,6 +252,15 @@ public class FourEyeApproverActionletTest extends BaseWorkflowIntegrationTest {
         final Contentlet contentlet1 = contentletAPI.checkin(cont, systemUser, false);
         Assert.assertFalse("The contentlet cannot be live, it has just been created.",
                 contentlet1.isLive());
+        //Assign permissions
+        final int contentPermissions = (PermissionAPI.PERMISSION_READ
+                | PermissionAPI.PERMISSION_EDIT | PermissionAPI.PERMISSION_PUBLISH);
+
+        APILocator.getPermissionAPI().save(
+                new Permission(contentlet1.getPermissionId(),
+                        TestUserUtils.getOrCreatePublisherRole().getId(),
+                        contentPermissions),
+                contentlet1, APILocator.systemUser(), false);
 
         // Set the appropriate workflow action to the contentlet
         contentlet1.setActionId(

@@ -9,6 +9,7 @@ import static org.junit.Assert.fail;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -36,12 +37,16 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class ESContentFactoryImplTest extends IntegrationTestBase {
-	
+
+    private static Host site;
+
 	@BeforeClass
 	public static void prepare() throws Exception{
 		//Setting web app environment
         IntegrationTestInitService.getInstance().init();
         //setDebugMode(true);
+
+        site = new SiteDataGen().nextPersisted();
     }
 
     /*@AfterClass
@@ -141,12 +146,12 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
     @Test
     public void testScore () throws DotDataException, DotSecurityException {
 
-        final ContentType blogContentType = TestDataUtils.getBlogLikeContentType("blog");
-        final Host host = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
+        final ContentType blogContentType = TestDataUtils
+                .getBlogLikeContentType("Blog" + System.currentTimeMillis());
         final long languageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
         new ContentletDataGen(blogContentType.id())
                 .languageId(languageId)
-                .host(host)
+                .host(site)
                 .setProperty("title", "Bullish On America? Get On Board With Southwest Air")
                 .setProperty("urlTitle", "title")
                 .setProperty("body", "During the 1980s and 1990s Southwest Air (LUV) ")
