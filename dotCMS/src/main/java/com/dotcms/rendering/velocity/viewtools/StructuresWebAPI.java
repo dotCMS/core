@@ -4,6 +4,13 @@ import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.dotcms.contenttype.model.field.layout.FieldLayout;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
@@ -30,6 +37,8 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
 public class StructuresWebAPI implements ViewTool {
+
+	private final ObjectMapper MAPPER = new ObjectMapper();
 
 	private HttpServletRequest request;
 	private User user = null;
@@ -253,5 +262,24 @@ public class StructuresWebAPI implements ViewTool {
 	
 	public boolean isFieldHidden(final Field field) throws DotDataException{
 	    return (new LegacyFieldTransformer(field).from() instanceof HiddenField);
+	}
+
+	/**
+	 * Return the Structure's Layout in a json format.
+	 *
+	 * @param structure
+	 * @param user
+	 * @return
+	 */
+	public String getLayoutAsJson(final Structure structure, final User user) {
+		try {
+			final StructureTransformer transformer = new StructureTransformer(structure);
+			final ContentType contentType = transformer.from();
+
+			final FieldLayout layout = APILocator.getContentTypeFieldLayoutAPI().getLayout(contentType.id(), user);
+			return MAPPER.writeValueAsString(layout.getRows());
+		} catch (DotDataException | DotSecurityException | JsonProcessingException e) {
+			throw new DotRuntimeException(e);
+		}
 	}
 }

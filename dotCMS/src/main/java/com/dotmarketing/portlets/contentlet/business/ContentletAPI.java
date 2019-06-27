@@ -746,6 +746,22 @@ public interface ContentletAPI {
             throws DotDataException, DotSecurityException, DotContentletStateException;
 
     /**
+     * Returns a list of all contentlets related to this instance given a RelationshipField variable
+     * using pagination
+     * @param variableName
+     * @param user
+     * @param respectFrontendRoles
+     * @param pullByParents
+     * @param limit
+     * @param offset
+     * @param sortBy
+     * @return
+     */
+    List<Contentlet> getRelatedContent(Contentlet contentlet, String variableName, User user,
+            boolean respectFrontendRoles, Boolean pullByParents, int limit, int offset,
+            String sortBy);
+
+    /**
 	 * Associates the given list of contentlets using the relationship this
 	 * methods removes old associated content and reset the relationships based
 	 * on the list of content passed as parameter

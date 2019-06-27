@@ -1555,4 +1555,10 @@ public interface ContentletAPIPostHook {
             throws DotDataException, DotSecurityException{
         return true;
     }
+
+    default void getRelatedContent(Contentlet contentlet, String variableName, User user,
+            boolean respectFrontendRoles, Boolean pullByParents, int limit, int offset,
+            String sortBy){
+
+    }
 }

@@ -143,12 +143,9 @@ public class ContentletCacheImpl extends ContentletCache {
         if ("host".equalsIgnoreCase(contentlet.getContentType().variable())) {
             new SiteLoader().invalidate(new Host(contentlet));
         }
-            
 
-        
-        
-        
-        
+        //Invalidating relationship cache
+        CacheLocator.getRelationshipCache().removeRelatedContentMap(contentlet.getIdentifier());
     }
 	/* (non-Javadoc)
      * @see com.dotmarketing.business.PermissionCache#remove(java.lang.String)
