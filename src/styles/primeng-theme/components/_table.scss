@@ -28,14 +28,23 @@
     }
 
     .ui-table-thead tr th {
+        border-bottom: $table-cell-border;
         color: $table-head-color;
         font-size: $font-size-small;
         font-weight: normal;
-        border-bottom: $table-cell-border;
+        overflow: hidden;
         padding: $table-header-cell-padding;
+        position: relative;
+        text-overflow: ellipsis;
+        white-space: nowrap;
 
         a:focus {
             outline: 0;
+        }
+
+        p-sorticon {
+            position: absolute;
+            right: 0;
         }
     }
 
