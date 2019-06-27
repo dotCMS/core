@@ -120,7 +120,6 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
         contentType = getWikiLikeContentType();
 
         //Default Languages
-
         if (null == APILocator.getLanguageAPI().getLanguage("en", "US")) {
             new LanguageDataGen().languageCode("en").countryCode("US").languageName("English")
                     .country("United States").nextPersisted();
@@ -509,7 +508,11 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
             for (final Language language : savedNewLanguages) {
                 final Language persistedLang = languageAPI.getLanguage(language.getLanguageCode(), language.getCountryCode());
                 if(UtilMethods.isSet(persistedLang) && persistedLang.getId() > 0 ){
-                    languageAPI.deleteLanguage(persistedLang);
+                    try {
+                        languageAPI.deleteLanguage(persistedLang);
+                    } catch (Exception e) {
+                        // Do nothing...
+                    }
                 }
             }
 
