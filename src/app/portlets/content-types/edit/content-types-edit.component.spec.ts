@@ -70,7 +70,7 @@ class TestContentTypesFormComponent {
     @Input()
     data: any;
     @Input()
-    fields: DotContentTypeField[];
+    layout: DotContentTypeField[];
     // tslint:disable-next-line:no-output-on-prefix
     @Output()
     onSubmit: EventEmitter<any> = new EventEmitter();
@@ -304,7 +304,7 @@ describe('ContentTypesEditComponent', () => {
                     mockContentType
                 );
                 expect(comp.data).toEqual(responseContentType, 'set data with response');
-                expect(comp.fields).toEqual(responseContentType.layout, 'ser fields with response');
+                expect(comp.layout).toEqual(responseContentType.layout, 'ser fields with response');
                 expect(dotRouterService.goToEditContentType).toHaveBeenCalledWith('123');
             });
 
@@ -433,7 +433,7 @@ describe('ContentTypesEditComponent', () => {
 
         it('should set data, fields and cache', () => {
             expect(comp.data).toBe(fakeContentType);
-            expect(comp.fields).toBe(fakeContentType.layout);
+            expect(comp.layout).toBe(fakeContentType.layout);
 
             const dotEditContentTypeCacheService = de.injector.get(DotEditContentTypeCacheService);
             expect(dotEditContentTypeCacheService.get()).toEqual(fakeContentType);
@@ -506,7 +506,7 @@ describe('ContentTypesEditComponent', () => {
             contentTypeFieldsDropZone.componentInstance.saveFields.emit([fieldToUpdate]);
 
             expect(fieldService.saveFields).toHaveBeenCalledWith('1234567890', [fieldToUpdate]);
-            expect(comp.fields).toEqual(layout);
+            expect(comp.layout).toEqual(layout);
         });
 
         it('should save fields on dropzone event', () => {
@@ -593,7 +593,7 @@ describe('ContentTypesEditComponent', () => {
             // when: the saveFields event is tiggered in content-type-fields-drop-zone
             contentTypeFieldsDropZone.componentInstance.saveFields.emit(newFieldsAdded);
             // ...and the comp.data.fields has to be set to the fields return by the service
-            expect(comp.fields).toEqual(fieldsReturnByServer);
+            expect(comp.layout).toEqual(fieldsReturnByServer);
         });
 
         it('should update fields on dropzone event when creating a new row and move a existing field', () => {
@@ -630,7 +630,7 @@ describe('ContentTypesEditComponent', () => {
             // when: the saveFields event is tiggered in content-type-fields-drop-zone
             contentTypeFieldsDropZone.componentInstance.saveFields.emit(layout);
             // ...and the comp.data.fields has to be set to the fields return by the service
-            expect(comp.fields).toEqual(layout);
+            expect(comp.layout).toEqual(layout);
         });
 
         it('should handle 403 when user doesn\'t have permission to save feld', () => {
@@ -690,7 +690,7 @@ describe('ContentTypesEditComponent', () => {
             // then: the saveFields method has to be called in FileService ...
             expect(fieldService.deleteFields).toHaveBeenCalledWith('1234567890', fieldToRemove);
             // ...and the comp.data.fields has to be set to the fields return by the service
-            expect(comp.fields).toEqual(layout);
+            expect(comp.layout).toEqual(layout);
         });
 
         it('should handle remove field error', () => {

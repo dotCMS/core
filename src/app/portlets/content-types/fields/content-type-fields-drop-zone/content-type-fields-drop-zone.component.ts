@@ -189,7 +189,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
      */
     saveFieldsHandler(fieldToSave: DotContentTypeField): void {
         if (!this.currentField) {
-            const tabDividerFields = this.getTabDividerFields();
+            const tabDividerFields = FieldUtil.getTabDividerFields(this.fieldRows);
             this.currentField = tabDividerFields.find((field: DotContentTypeField) => fieldToSave.id === field.id);
         }
 
@@ -210,7 +210,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
      * @memberof ContentTypeFieldsDropZoneComponent
      */
     editFieldHandler(fieldToEdit: DotContentTypeField): void {
-        const fields = this.getFieldsWithoutLayout();
+        const fields = FieldUtil.getFieldsWithoutLayout(this.fieldRows);
         this.currentField = fields.find((field: DotContentTypeField) => fieldToEdit.id === field.id);
         this.currentFieldType = this.fieldPropertyService.getFieldType(this.currentField.clazz);
         this.toggleDialog();
@@ -314,21 +314,6 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
       */
     handleTabChange(index: number): void {
         this.hideButtons = index !== this.OVERVIEW_TAB_INDEX;
-    }
-
-    private getFieldsWithoutLayout(): DotContentTypeField[] {
-        return this.fieldRows
-            .map(row => row.columns)
-            .filter(columns => !!columns)
-            .reduce((accumulator, currentValue) => accumulator.concat(currentValue), [])
-            .map(fieldColumn => fieldColumn.fields)
-            .reduce((accumulator, currentValue) => accumulator.concat(currentValue), []);
-    }
-
-    private getTabDividerFields(): DotContentTypeField[] {
-        return this.fieldRows
-            .map(row => row.divider)
-            .filter(field => FieldUtil.isTabDivider(field));
     }
 
     private setDroppedField(droppedField: DotContentTypeField): void {

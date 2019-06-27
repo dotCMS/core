@@ -31,7 +31,7 @@
     <dot-content-type-fields-drop-zone
         #fieldsDropZone
         *ngIf="data.id"
-        [layout]="fields"
+        [layout]="layout"
         [loading]="loadingFields"
         (saveFields)="saveFields($event)"
         (removeFields)="removeFields($event)"
@@ -50,7 +50,7 @@
     <dot-content-types-form
         *ngIf="show"
         #form
-        [fields]="fields"
+        [layout]="layout"
         [data]="data"
         (valid)="setDialogOkButtonState($event)"
         (onSubmit)="handleFormSubmit($event)"

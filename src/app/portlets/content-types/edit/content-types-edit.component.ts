@@ -46,7 +46,7 @@ export class ContentTypesEditComponent implements OnInit, OnDestroy {
     data: ContentType;
     dialogActions: DotDialogActions;
     editButtonLbl: string;
-    fields: DotContentTypeLayoutDivider[];
+    layout: DotContentTypeLayoutDivider[];
     messagesKey: { [key: string]: string } = {};
     show: boolean;
     templateInfo = {
@@ -81,7 +81,7 @@ export class ContentTypesEditComponent implements OnInit, OnDestroy {
             .subscribe((contentType: ContentType) => {
                 this.data = contentType;
                 this.dotEditContentTypeCacheService.set(contentType);
-                this.fields = contentType.layout;
+                this.layout = contentType.layout;
             });
 
         this.dotMessageService
@@ -226,7 +226,7 @@ export class ContentTypesEditComponent implements OnInit, OnDestroy {
             .pipe(pluck('fields'), take(1))
             .subscribe(
                 (fields: DotContentTypeLayoutDivider[]) => {
-                    this.fields = fields;
+                    this.layout = fields;
                 },
                 (err: ResponseView) => {
                     this.dotHttpErrorManagerService.handle(err).pipe(take(1)).subscribe(() => {});
@@ -243,7 +243,7 @@ export class ContentTypesEditComponent implements OnInit, OnDestroy {
         this.loadingFields = true;
         this.fieldService.saveFields(this.data.id, layout).pipe(take(1)).subscribe(
             (fields: DotContentTypeLayoutDivider[]) => {
-                this.fields = fields;
+                this.layout = fields;
                 this.loadingFields = false;
             },
             (err: ResponseView) => {
@@ -312,7 +312,7 @@ export class ContentTypesEditComponent implements OnInit, OnDestroy {
             .subscribe(
                 (contentType: ContentType) => {
                     this.data = contentType;
-                    this.fields = this.data.layout;
+                    this.layout = this.data.layout;
                     this.dotRouterService.goToEditContentType(this.data.id);
                     this.show = false;
                 },

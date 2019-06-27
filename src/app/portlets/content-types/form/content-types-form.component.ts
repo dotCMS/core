@@ -21,7 +21,8 @@ import { SiteSelectorComponent } from '@components/_common/site-selector/site-se
 import { DotWorkflow } from '@models/dot-workflow/dot-workflow.model';
 import { DotWorkflowService } from '@services/dot-workflow/dot-workflow.service';
 import { DotLicenseService } from '@services/dot-license/dot-license.service';
-import { DotContentTypeField } from '../fields';
+import { DotContentTypeField, DotContentTypeLayoutDivider } from '../fields';
+import { FieldUtil } from '../fields/util/field-util';
 
 /**
  * Form component to create or edit content types
@@ -44,7 +45,7 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
     data: any;
 
     @Input()
-    fields: DotContentTypeField[];
+    layout: DotContentTypeLayoutDivider[];
 
     @Output()
     onSubmit: EventEmitter<any> = new EventEmitter();
@@ -183,7 +184,7 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
     }
 
     private getDateVarOptions(): SelectItem[] {
-        const dateVarOptions = this.fields
+        const dateVarOptions = FieldUtil.getFieldsWithoutLayout(this.layout)
             .filter((field: DotContentTypeField) => this.isDateVarField(field))
             .map((field: DotContentTypeField) => this.getDateVarFieldOption(field));
 
@@ -227,7 +228,7 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
             this.originalValue = this.form.value;
         }
 
-        if (this.fields && this.fields.length) {
+        if (this.layout && this.layout.length) {
             this.setDateVarFieldsState();
         }
     }

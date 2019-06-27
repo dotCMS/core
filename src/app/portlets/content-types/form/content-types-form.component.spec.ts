@@ -41,6 +41,7 @@ import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
 import { DotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { MdInputTextModule } from '@directives/md-inputtext/md-input-text.module';
 import { DotFieldHelperModule } from '@components/dot-field-helper/dot-field-helper.module';
+import { DotContentTypeLayoutDivider } from '../fields/models';
 
 @Component({
     selector: 'dot-site-selector-field',
@@ -75,6 +76,36 @@ describe('ContentTypesFormComponent', () => {
     let fixture: ComponentFixture<ContentTypesFormComponent>;
     let de: DebugElement;
     let dotLicenseService: DotLicenseService;
+    const layout: DotContentTypeLayoutDivider[] = [
+        {
+            divider: {
+                clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField',
+                name: 'row_field'
+            },
+            columns: [
+                {
+                    columnDivider: {
+                        clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
+                        name: 'column_field'
+                    },
+                    fields: [
+                        {
+                            clazz: 'com.dotcms.contenttype.model.field.ImmutableDateTimeField',
+                            id: '123',
+                            indexed: true,
+                            name: 'Date 1'
+                        },
+                        {
+                            clazz: 'com.dotcms.contenttype.model.field.ImmutableDateTimeField',
+                            id: '456',
+                            indexed: true,
+                            name: 'Date 2'
+                        }
+                    ]
+                }
+            ]
+        }
+    ];
 
     beforeEach(
         async(() => {
@@ -292,20 +323,8 @@ describe('ContentTypesFormComponent', () => {
             id: '123',
             name: 'Hello World'
         };
-        comp.fields = [
-            {
-                clazz: 'com.dotcms.contenttype.model.field.ImmutableDateTimeField',
-                id: '123',
-                indexed: true,
-                name: 'Date 1'
-            },
-            {
-                clazz: 'com.dotcms.contenttype.model.field.ImmutableDateTimeField',
-                id: '456',
-                indexed: true,
-                name: 'Date 2'
-            }
-        ];
+        comp.layout = layout;
+
         fixture.detectChanges();
         expect(comp.canSave).toBe(false, 'by default is false');
     });
@@ -411,20 +430,7 @@ describe('ContentTypesFormComponent', () => {
         };
 
         comp.data = fakeData;
-        comp.fields = [
-            {
-                clazz: 'com.dotcms.contenttype.model.field.ImmutableDateTimeField',
-                id: '123',
-                indexed: true,
-                name: 'publishDateVar'
-            },
-            {
-                clazz: 'com.dotcms.contenttype.model.field.ImmutableDateTimeField',
-                id: '456',
-                indexed: true,
-                name: 'expireDateVar'
-            }
-        ];
+        comp.layout = layout;
 
         fixture.detectChanges();
 
@@ -474,20 +480,7 @@ describe('ContentTypesFormComponent', () => {
             comp.data = {
                 baseType: 'CONTENT'
             };
-            comp.fields = [
-                {
-                    clazz: 'com.dotcms.contenttype.model.field.ImmutableDateTimeField',
-                    id: '123',
-                    indexed: true,
-                    name: 'Date 1'
-                },
-                {
-                    clazz: 'com.dotcms.contenttype.model.field.ImmutableDateTimeField',
-                    id: '456',
-                    indexed: true,
-                    name: 'Date 2'
-                }
-            ];
+            comp.layout = layout;
             fixture.detectChanges();
         });
 
@@ -539,14 +532,7 @@ describe('ContentTypesFormComponent', () => {
             baseType: 'CONTENT',
             id: '123'
         };
-        comp.fields = [
-            {
-                clazz: 'com.dotcms.contenttype.model.field.ImmutableDateTimeField',
-                id: '123',
-                indexed: true,
-                name: 'publishDateVar'
-            }
-        ];
+        comp.layout = layout;
         fixture.detectChanges();
         spyOn(comp, 'submitForm').and.callThrough();
         spyOn(comp.onSubmit, 'emit');

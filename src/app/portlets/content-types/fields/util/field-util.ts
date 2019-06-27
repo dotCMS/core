@@ -184,4 +184,33 @@ export class FieldUtil {
 
         return result;
     }
+
+    /**
+     * Get all the not layout fields from a layout, layout field could be RowField, ColumnFiled and TabField
+     *
+     * @static
+     * @param {DotContentTypeLayoutDivider[]} layout
+     * @returns {DotContentTypeField[]}
+     * @memberof FieldUtil
+     */
+    static getFieldsWithoutLayout(layout: DotContentTypeLayoutDivider[]): DotContentTypeField[] {
+        return layout.map((row: DotContentTypeLayoutDivider) => row.columns)
+            .filter((columns: DotContentTypeColumn[]) => !!columns)
+            .reduce((accumulator: DotContentTypeColumn[], currentValue: DotContentTypeColumn[]) => accumulator.concat(currentValue), [])
+            .map(fieldColumn => fieldColumn.fields)
+            .reduce((accumulator: DotContentTypeField[], currentValue: DotContentTypeField[]) => accumulator.concat(currentValue), []);
+    }
+
+    /**
+     * Return just the TabField from a layout
+     *
+     * @static
+     * @param {DotContentTypeLayoutDivider[]} layout
+     * @returns {DotContentTypeField[]}
+     * @memberof FieldUtil
+     */
+    static getTabDividerFields(layout: DotContentTypeLayoutDivider[]): DotContentTypeField[] {
+        return layout.map(row => row.divider)
+            .filter((field: DotContentTypeField) => FieldUtil.isTabDivider(field));
+    }
 }
