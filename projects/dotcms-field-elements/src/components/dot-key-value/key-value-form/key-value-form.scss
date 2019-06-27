@@ -11,9 +11,9 @@ key-value-form form {
     }
 
     label {
-        flex-grow: 1;
-        display: flex;
         align-items: center;
+        display: flex;
+        flex-grow: 1;
 
         input {
             flex-grow: 1;

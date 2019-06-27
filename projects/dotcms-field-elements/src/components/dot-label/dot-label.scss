@@ -2,6 +2,7 @@
 .dot-field__hint {
     display: block;
     font-size: 0.75rem;
+    line-height: 1rem;
     margin-top: 0.25rem;
     position: absolute;
     transition: opacity 200ms ease;
@@ -28,6 +29,7 @@ dot-label > label {
     flex-direction: column;
 
     .dot-label__text {
+        line-height: 1.25rem;
         margin-bottom: 0.25rem;
     }
 }
