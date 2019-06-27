@@ -130,9 +130,9 @@
             });
         }
 
-        const fieldsConfig = $UtilMethods.getJsonFieldTransformer($fields).jsonArray().toString();
+        const layout = $structures.getLayoutAsJson($structure, $user);
         const dotFormEl = document.querySelector('dot-form');
-        dotFormEl.fields = fieldsConfig;
+        dotFormEl.layout = layout;
         dotFormEl.addEventListener('onSubmit', submitContent);
     </script>
 
