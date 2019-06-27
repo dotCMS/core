@@ -82,7 +82,8 @@ public class VisitorAPIImpl implements VisitorAPI {
 					visitor.setPersona(persona);
 				} catch(Exception e) {
 
-                    Logger.error(this, e.getMessage(), e);
+                    Logger.error(this, e.getMessage()); // trying to be no so much noise
+                    Logger.debug(this, e.getMessage(), e);
 					visitor.setPersona(null);
 				}
 			}

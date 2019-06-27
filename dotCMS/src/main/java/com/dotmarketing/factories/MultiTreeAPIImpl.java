@@ -314,10 +314,16 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     @Override
     public void deletePersonalizationForPage(final String pageId, final String personalization) throws DotDataException {
 
+        Logger.debug(this, "Removing personalization for: " + pageId + 
+                                ", personalization: " + personalization);
+
         new DotConnect().setSQL(DELETE_SQL_PERSONALIZATION_PER_PAGE)
                 .addParam(pageId)
                 .addParam(personalization)
                 .loadResult();
+
+        updateHTMLPageVersionTS(pageId);
+        refreshPageInCache(pageId);
     } // deletePersonalizationForPage.
 
     /**
