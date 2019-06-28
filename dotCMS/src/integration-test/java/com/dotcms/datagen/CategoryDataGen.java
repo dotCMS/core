@@ -76,10 +76,6 @@ public class CategoryDataGen extends AbstractDataGen<Category> {
         return this;
     }
 
-    /**
-     *
-     * @return
-     */
     @Override
     public Category next() {
 
@@ -97,7 +93,6 @@ public class CategoryDataGen extends AbstractDataGen<Category> {
     public Category nextPersisted() {
         return persist(next());
     }
-
 
     @Override
     public Category persist(final Category object) {

@@ -3,12 +3,12 @@
       "bool": {
            "must": {
                 "query_string" : {
-                   "query" : "+news.title:retirement"
+                   "query" : "+REPLACE_WITH_NEWS_CONTENT_TYPE_VARNAME.title:retirement"
                 }
             },
             "filter": {
                 "range" : {
-                    "news.sysPublishDate" : {
+                    "REPLACE_WITH_NEWS_CONTENT_TYPE_VARNAME.sysPublishDate" : {
                         "gte": "01/01/2015",
                         "lte": "2016",
                         "format": "MM/dd/yyyy||yyyy"

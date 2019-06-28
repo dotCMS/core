@@ -3,7 +3,7 @@
     "bool": {
       "must": {
         "query_string" : {
-          "query" : "+contentType:Blog +Blog.body:pass~2"
+          "query" : "+contentType:REPLACE_WITH_BLOG_CONTENT_TYPE_VARNAME +REPLACE_WITH_BLOG_CONTENT_TYPE_VARNAME.body:pass~2"
         }
       }
     }
