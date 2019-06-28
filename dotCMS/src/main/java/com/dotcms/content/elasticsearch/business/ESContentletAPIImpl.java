@@ -11,6 +11,7 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.lock.IdentifierStripedLock;
 import com.dotcms.content.business.DotMappingException;
+import com.dotcms.content.elasticsearch.business.event.ContentletArchiveEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletCheckinEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletDeletedEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletPublishEvent;
@@ -2310,7 +2311,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }
 
                 HibernateUtil.addCommitListener(() -> this.contentletSystemEventUtil.pushArchiveEvent(workingContentlet), 1000);
-                HibernateUtil.addCommitListener(() -> localSystemEventsAPI.notify(new ContentletPublishEvent(contentlet, user, true)));
+                HibernateUtil.addCommitListener(() -> localSystemEventsAPI.notify(new ContentletArchiveEvent(contentlet, user, true)));
             } else {
                 throw new DotContentletStateException("Contentlet with Identifier '" + contentlet.getIdentifier() +
                         "' must be unlocked before being archived");
@@ -2665,7 +2666,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             publishRelatedHtmlPages(contentlet);
 
             HibernateUtil.addCommitListener(() -> this.sendUnArchiveContentSystemEvent(contentlet), 1000);
-            HibernateUtil.addCommitListener(() -> localSystemEventsAPI.notify(new ContentletPublishEvent(contentlet, user, false)));
+            HibernateUtil.addCommitListener(() -> localSystemEventsAPI.notify(new ContentletArchiveEvent(contentlet, user, false)));
         } catch(DotDataException | DotStateException| DotSecurityException e) {
             ActivityLogger.logInfo(getClass(), "Error Unarchiving Content", "StartDate: " +contentPushPublishDate+ "; "
                     + "EndDate: " +contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown")

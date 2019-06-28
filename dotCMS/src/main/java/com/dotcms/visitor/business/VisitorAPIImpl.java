@@ -7,11 +7,9 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.LanguageWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.personas.business.PersonaAPI;
 import com.dotmarketing.portlets.personas.model.Persona;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
+import com.dotmarketing.util.*;
 import com.liferay.portal.model.User;
 import eu.bitwalker.useragentutils.UserAgent;
 import org.apache.logging.log4j.util.Strings;
@@ -31,6 +29,7 @@ public class VisitorAPIImpl implements VisitorAPI {
 
     private LanguageWebAPI languageWebAPI = WebAPILocator.getLanguageWebAPI();
 
+
     @Override
     public void setLanguageWebAPI(LanguageWebAPI languageWebAPI) {
         this.languageWebAPI = languageWebAPI;
@@ -47,6 +46,7 @@ public class VisitorAPIImpl implements VisitorAPI {
         DotPreconditions.checkNotNull(request, IllegalArgumentException.class, "Null Request");
 
         Optional<Visitor> visitorOpt;
+        final PersonaAPI personaAPI = APILocator.getPersonaAPI();
 
         if(!create) {
 
@@ -71,15 +71,19 @@ public class VisitorAPIImpl implements VisitorAPI {
 
 			if(Objects.nonNull(request.getParameter(WebKeys.CMS_PERSONA_PARAMETER))){
 
-				final Visitor visitor = visitorOpt.get();
+				final Visitor visitor   = visitorOpt.get();
+				final PageMode pageMode = PageMode.get(request);
 				try {
 
 					final User user = com.liferay.portal.util.PortalUtil.getUser(request);
-					final Persona persona = APILocator.getPersonaAPI().find(request.getParameter(WebKeys.CMS_PERSONA_PARAMETER), user, true);
+					final Persona persona = pageMode.showLive?
+                            personaAPI.findLive(request.getParameter(WebKeys.CMS_PERSONA_PARAMETER), user, true):
+                            personaAPI.find(request.getParameter(WebKeys.CMS_PERSONA_PARAMETER), user, true);
 					visitor.setPersona(persona);
 				} catch(Exception e) {
 
-                    Logger.error(this, e.getMessage(), e);
+                    Logger.error(this, e.getMessage()); // trying to be no so much noise
+                    Logger.debug(this, e.getMessage(), e);
 					visitor.setPersona(null);
 				}
 			}
