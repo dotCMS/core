@@ -5,6 +5,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.CategoryDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TagDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.util.ConfigTestHelper;
@@ -37,6 +38,8 @@ import org.junit.runner.RunWith;
 public class ES6UpgradeTest extends IntegrationTestBase {
 
     private static final String TO_REPLACE_HOST_ID = "REPLACE_WITH_HOST_ID";
+    private static final String TO_REPLACE_NEWS_CONTENT_TYPE_VARNAME = "REPLACE_WITH_NEWS_CONTENT_TYPE_VARNAME";
+    private static final String TO_REPLACE_BLOG_CONTENT_TYPE_VARNAME = "REPLACE_WITH_BLOG_CONTENT_TYPE_VARNAME";
     private final static String RESOURCE_DIR = "com/dotcms/content/elasticsearch/business/json";
 
     private static User systemUser;
@@ -56,9 +59,9 @@ public class ES6UpgradeTest extends IntegrationTestBase {
         systemUser = APILocator.getUserAPI().getSystemUser();
         site = new SiteDataGen().nextPersisted();
         newsContentType = TestDataUtils
-                .getNewsLikeContentType("News" + System.currentTimeMillis(), site);
+                .getNewsLikeContentType(site);
         blogContentType = TestDataUtils
-                .getBlogLikeContentType("Blog" + System.currentTimeMillis(), site);
+                .getBlogLikeContentType(site);
     }
 
     /**
@@ -83,6 +86,10 @@ public class ES6UpgradeTest extends IntegrationTestBase {
         final boolean skip = loadQueryData(file.getName());
         if (!skip) {
             String json = FileUtils.readFileToString(file);
+            json = json.replaceAll(TO_REPLACE_NEWS_CONTENT_TYPE_VARNAME,
+                    newsContentType.variable());
+            json = json.replaceAll(TO_REPLACE_BLOG_CONTENT_TYPE_VARNAME,
+                    blogContentType.variable());
             json = json.replaceAll(TO_REPLACE_HOST_ID,
                     site.getIdentifier());
             Logger.info(this, json);
@@ -197,6 +204,10 @@ public class ES6UpgradeTest extends IntegrationTestBase {
         public void loadData() throws Exception {
             final Category category = new CategoryDataGen().setCategoryName("Investment Banking").setKey("investing").setKeywords("investing").setCategoryVelocityVarName("investing").nextPersisted();
             final long languageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+
+            //Making sure the tags we are going to use exist
+            new TagDataGen().name("gas").nextPersisted();
+
             new ContentletDataGen(newsContentType.id())
                     .languageId(languageId)
                     .host(site)

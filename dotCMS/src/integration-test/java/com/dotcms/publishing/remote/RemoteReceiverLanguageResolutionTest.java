@@ -1,5 +1,6 @@
 package com.dotcms.publishing.remote;
 
+import static com.dotcms.datagen.TestDataUtils.getSpanishLanguage;
 import static com.dotcms.datagen.TestDataUtils.getWikiLikeContentType;
 import static com.dotcms.publisher.business.PublisherTestUtil.cleanBundleEndpointEnv;
 import static com.dotcms.publisher.business.PublisherTestUtil.createEndpoint;
@@ -8,6 +9,7 @@ import static com.dotcms.publisher.business.PublisherTestUtil.generateBundle;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
@@ -19,7 +21,6 @@ import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentletDataGen;
-import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.publisher.bundle.bean.Bundle;
@@ -62,6 +63,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.felix.framework.OSGIUtil;
 import org.apache.struts.Globals;
 import org.junit.AfterClass;
@@ -82,6 +84,8 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
     private static User adminUser;
     private static ContentType contentType;
 
+    private static final String languagesSuffix = RandomStringUtils
+            .random(3, true, true).toLowerCase();
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -119,15 +123,8 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
         // Any CT should do it.
         contentType = getWikiLikeContentType();
 
-        //Default Languages
-        if (null == APILocator.getLanguageAPI().getLanguage("en", "US")) {
-            new LanguageDataGen().languageCode("en").countryCode("US").languageName("English")
-                    .country("United States").nextPersisted();
-        }
-        if (null == APILocator.getLanguageAPI().getLanguage("es", "ES")) {
-            new LanguageDataGen().languageCode("es").countryCode("ES").languageName("Espanol")
-                    .country("Espana").nextPersisted();
-        }
+        //Make sure some default Languages exist
+        getSpanishLanguage();
 
     }
 
@@ -153,8 +150,8 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
             throws Exception {
 
         final List<Language> newLanguages = new ImmutableList.Builder<Language>().
-                add(newLanguageInstance("eu", "", "Basque", "")).
-                add(newLanguageInstance("hin", "hi", "Hindi", "India")).
+                add(newLanguageInstance("eu" + languagesSuffix, "", "Basque", "")).
+                add(newLanguageInstance("hi" + languagesSuffix, "hi", "Hindi", "India")).
                 build();
 
         final List<String> assetIds = new ArrayList<>();
@@ -254,7 +251,7 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
         //We assume these languages already exist in the db
         final List<Language> dupeLanguages = new ImmutableList.Builder<Language>().
                 add(newLanguageInstance("en", "US", "English", "United States")).
-                add(newLanguageInstance("es", "ES", "Espanol", "Espana")).
+                add(newLanguageInstance("es", "ES", "Spanish", "Spain")).
                 build();
 
         final List<Language> savedDupeLanguages = new ArrayList<>();
@@ -368,11 +365,11 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
             throws Exception {
 
         final List<Language> newLanguages = new ImmutableList.Builder<Language>().
-                add(newLanguageInstance("ep", "", "Esperanto", "")).
-                add(newLanguageInstance("de", "DE", "German", "Germany")).
-                add(newLanguageInstance("ru", "RUS", "Russian", "Russia")).
-                add(newLanguageInstance("da", "DK ", "Danish", "Denmark")).
-                add(newLanguageInstance("en", "NZ ", "English", "New Zealand")).
+                add(newLanguageInstance("ep" + languagesSuffix, "", "Esperanto", "")).
+                add(newLanguageInstance("de" + languagesSuffix, "DE", "German", "Germany")).
+                add(newLanguageInstance("ru" + languagesSuffix, "RUS", "Russian", "Russia")).
+                add(newLanguageInstance("da" + languagesSuffix, "DK ", "Danish", "Denmark")).
+                add(newLanguageInstance("en" + languagesSuffix, "NZ ", "English", "New Zealand")).
                 build();
 
         final List<Language> savedNewLanguages = new ArrayList<>();
@@ -385,7 +382,9 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
         final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType.id());
         final List<Contentlet> contentlets = new ArrayList<>();
         for (final Language dupeLanguage : savedNewLanguages) {
-            final Contentlet contentlet = contentletDataGen.host(host).setProperty("title","lang is "+dupeLanguage.toString()).languageId(dupeLanguage.getId()).nextPersisted();
+            final Contentlet contentlet = contentletDataGen.host(host)
+                    .setProperty("title", "lang is " + dupeLanguage.toString())
+                    .languageId(dupeLanguage.getId()).nextPersisted();
             assetIds.add(contentlet.getIdentifier());
             contentlets.add(contentlet);
         }
@@ -431,8 +430,11 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
             final List<Long>savedLanguagesNowDeletedIds = new ArrayList<>();
             // Remove all the languages we just created from the db.. see if they get re-generated out of the push-publish process.
             for (final Language language : savedNewLanguages) {
-                savedLanguagesNowDeletedIds.add(language.getId());
                 languageAPI.deleteLanguage(language);
+
+                //The language should be already deleted
+                assertNull(languageAPI.getLanguage(language.getId()));
+                savedLanguagesNowDeletedIds.add(language.getId());
             }
 
             // Now we need to flush cache so the next time the pp process asks for a Language
@@ -442,8 +444,8 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
             //Now recreate a few languages to simulate a conflict on the receiver. They will be re-inserted under a different id. so that creates a clash.
             //Now the contentlets generated out of pp should come with these codes.
             final List<Language> reinsertLanguages = new ImmutableList.Builder<Language>().
-                    add(newLanguageInstance("ep", "", "Esperanto", "")).
-                    add(newLanguageInstance("de", "DE", "German", "Germany")).
+                    add(newLanguageInstance("ep" + languagesSuffix, "", "Esperanto", "")).
+                    add(newLanguageInstance("de" + languagesSuffix, "DE", "German", "Germany")).
                     build();
 
             final List<Language> savedReinsertedLanguages = new ArrayList<>();
@@ -488,7 +490,11 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
             assertEquals("We expected 3 new languages created after pp.",3, contentletsWithNewLanguages);
 
             //Expected language codes. These are created by PP
-            final Set<String> expectedNewLangs = new HashSet<>(Arrays.asList("ru","da","en")); //Should have been created with the original ids that they originally had.
+            final Set<String> expectedNewLangs = new HashSet<>(
+                    Arrays.asList("ru" + languagesSuffix,
+                            "da" + languagesSuffix,
+                            "en"
+                                    + languagesSuffix)); //Should have been created with the original ids that they originally had.
             final boolean newLanguagesMatch = publishedContentlets.stream().
               filter(contentlet -> savedLanguagesNowDeletedIds.contains(contentlet.getLanguageId())).allMatch(contentlet ->  {
                 final Language lang = languageAPI.getLanguage(contentlet.getLanguageId());

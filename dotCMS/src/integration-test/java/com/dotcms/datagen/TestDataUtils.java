@@ -59,6 +59,10 @@ public class TestDataUtils {
             return getBlogLikeContentType(contentTypeName, site,null);
     }
 
+    public static ContentType getBlogLikeContentType(final Host site) {
+        return getBlogLikeContentType("Blog" + System.currentTimeMillis(), site);
+    }
+
     public static ContentType getBlogLikeContentType(final String contentTypeName,
             final Host site, final Set <String> workflowIds) {
 
@@ -339,6 +343,10 @@ public class TestDataUtils {
         return getNewsLikeContentType(contentTypeName, site, null, null, null);
     }
 
+    public static ContentType getNewsLikeContentType(final Host site) {
+        return getNewsLikeContentType("News" + System.currentTimeMillis(), site, null, null, null);
+    }
+
     public static ContentType getNewsLikeContentType(final String contentTypeName,
             final Host site,
             final String detailPageIdentifier,
@@ -422,11 +430,15 @@ public class TestDataUtils {
                                 .indexed(true)
                                 .next()
                 );
+
+                Category parentCategory = new CategoryDataGen().nextPersisted();
                 fields.add(
                         new FieldDataGen()
                                 .name("Categories")
                                 .velocityVarName("categories")
                                 .type(CategoryField.class)
+                                .defaultValue(null)
+                                .values(parentCategory.getInode())
                                 .next()
                 );
 
@@ -1277,7 +1289,7 @@ public class TestDataUtils {
     }
 
     public static ContentType getProductLikeContentType(){
-        return  getProductLikeContentType("ProductLike" + System.currentTimeMillis(), APILocator.systemHost(),null);
+        return  getProductLikeContentType("Product" + System.currentTimeMillis(), APILocator.systemHost(),null);
     }
 
     public static ContentType getProductLikeContentType(final String contentTypeName,
@@ -1431,7 +1443,7 @@ public class TestDataUtils {
 
 
     public static ContentType getYoutubeLikeContentType(){
-        return  getYoutubeLikeContentType("YoutubeLike" + System.currentTimeMillis(), APILocator.systemHost(),null);
+        return  getYoutubeLikeContentType("Youtube" + System.currentTimeMillis(), APILocator.systemHost(),null);
     }
 
     public static ContentType getYoutubeLikeContentType(final String contentTypeName,
