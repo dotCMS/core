@@ -35,6 +35,8 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
+import com.dotmarketing.portlets.personas.business.PersonaAPI;
+import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.tag.business.TagAPI;
@@ -71,6 +73,7 @@ public class PageRenderUtil implements Serializable {
     private final MultiTreeAPI  multiTreeAPI  = APILocator.getMultiTreeAPI();
     private final ContentletAPI contentletAPI = APILocator.getContentletAPI();
     private final TagAPI        tagAPI        = APILocator.getTagAPI();
+    private final PersonaAPI    personaAPI    = APILocator.getPersonaAPI();
 
     final IHTMLPage htmlPage;
     final User user;
@@ -249,6 +252,7 @@ public class PageRenderUtil implements Serializable {
                         false :
                         mode.showLive;
         final Table<String, String, Set<PersonalizedContentlet>> pageContents = this.multiTreeAPI.getPageMultiTrees(htmlPage, live);
+        final Set<String> personalizationsForPage = this.multiTreeAPI.getPersonalizationsForPage(htmlPage.getIdentifier());
         final List<ContainerRaw> raws = Lists.newArrayList();
 
         for (final String containerId : pageContents.rowKeySet()) {
@@ -300,6 +304,7 @@ public class PageRenderUtil implements Serializable {
                     continue;
                 }
 
+                // personalization -> contentlet id list
                 final Map<String, List<String>> contentIdListByPersonalizationMap = new HashMap<>();
                 final Set<PersonalizedContentlet> personalizedContentletSet = pageContents.get(containerId, uniqueId);
                 final List<Contentlet> contentlets = personalizedContentletSet.stream().map(personalizedContentlet -> {
@@ -317,7 +322,7 @@ public class PageRenderUtil implements Serializable {
 
                         CollectionsUtils.computeSubValueIfAbsent(
                                 contentIdListByPersonalizationMap, personalization, contentletIdentifier,
-                                CollectionsUtils::add, (key, identifier)-> CollectionsUtils.list(contentletIdentifier));
+                                CollectionsUtils::add, (String key, String identifier)-> CollectionsUtils.list(identifier));
 
                         return contentlet;
                     } catch (final DotContentletStateException e) {
@@ -365,7 +370,7 @@ public class PageRenderUtil implements Serializable {
                 }
                 
                 contentMaps.put((uniqueId.startsWith("uuid-")) ? uniqueId : "uuid-" + uniqueId, cListAsMaps);
-                this.setContentletListPerPersonalization(uniqueId, container, contentIdListByPersonalizationMap);
+                this.setContentletListPerPersonalization(uniqueId, container, contentIdListByPersonalizationMap, personalizationsForPage);
                 contextMap.put("totalSize" +  container.getIdentifier() + uniqueId, new Integer(contentlets.size())); // todo: not sure about this
             }
 
@@ -376,38 +381,52 @@ public class PageRenderUtil implements Serializable {
     }
 
     private void setContentletListPerPersonalization (final String uniqueId, final Container container,
-                                    final Map<String, List<String>> contentIdListByPersonalizationMap) {
+                                    final Map<String, List<String>> contentIdListByPersonalizationMap,
+                                    final Set<String> personalizationsForPage) {
+
 
         final String containerIdentifier = container.getIdentifier();
         final String userContainerId     = getContainerUserId(container);
         contextMap.put("containerIdentifier" + VelocityUtil.escapeContextTokenIdentifier(userContainerId), containerIdentifier);
 
+        this.setDefaultOnPersonalization(contentIdListByPersonalizationMap, personalizationsForPage);
+
         for (final String personalizationToken : contentIdListByPersonalizationMap.keySet()) {
 
-            final String personalization  =  VelocityUtil.escapeContextTokenIdentifier(personalizationToken);
-            final String[] contentStrList = contentIdListByPersonalizationMap.get(personalizationToken).toArray(new String[0]);
-            contextMap.put("contentletList" + containerIdentifier + uniqueId + personalization, contentStrList);
-
-            if (ContainerUUID.UUID_LEGACY_VALUE.equals(uniqueId)) { // todo: not sure about them
-                contextMap.put("contentletList" + containerIdentifier + ContainerUUID.UUID_START_VALUE + personalization, contentStrList);
-            } else if (ContainerUUID.UUID_START_VALUE.equals(uniqueId)) {
-                contextMap.put("contentletList" + containerIdentifier + ContainerUUID.UUID_LEGACY_VALUE + personalization, contentStrList);
-            }
-        }
-
-        // todo: test if remove or not this fallback
-        final String currentPersonalization = WebAPILocator.getPersonalizationWebAPI().getContainerPersonalization();
-        if (contentIdListByPersonalizationMap.containsKey(currentPersonalization)) {
-            final String[] contentStrList = contentIdListByPersonalizationMap.get(currentPersonalization).toArray(new String[0]);
-            contextMap.put("contentletList" + containerIdentifier + uniqueId, contentStrList);
-
-            if (ContainerUUID.UUID_LEGACY_VALUE.equals(uniqueId)) {
-                contextMap.put("contentletList" + containerIdentifier + ContainerUUID.UUID_START_VALUE, contentStrList);
-            } else if (ContainerUUID.UUID_START_VALUE.equals(uniqueId)) {
-                contextMap.put("contentletList" + containerIdentifier + ContainerUUID.UUID_LEGACY_VALUE, contentStrList);
-            }
+            setContentletList(uniqueId, contentIdListByPersonalizationMap, containerIdentifier, personalizationToken);
         }
     } // setContentletListPerPersonalization.
+
+    /*
+    * If there page is personalized to at least one persona, the rest of the existing container without this persona personalization needs to add an empty list
+    * since the user wants to avoid to show content on it.
+     */
+    private void setDefaultOnPersonalization (final Map<String, List<String>> contentIdListByPersonalizationMap,
+                                              final Set<String> personalizationsForPage) {
+
+        final boolean isPersonalized = personalizationsForPage.size() > 1; // if it is not only dot:default
+
+        if (isPersonalized) {
+
+            personalizationsForPage.forEach(personalization ->
+                    contentIdListByPersonalizationMap.putIfAbsent(personalization, Collections.emptyList()));
+        }
+    }
+    private void setContentletList(final String uniqueId,
+                                   final Map<String, List<String>> contentIdListByPersonalizationMap,
+                                   final String containerIdentifier,
+                                   final String personalizationToken) {
+
+        final String personalization  =  VelocityUtil.escapeContextTokenIdentifier(personalizationToken);
+        final String[] contentStrList = contentIdListByPersonalizationMap.get(personalizationToken).toArray(new String[0]);
+        contextMap.put("contentletList" + containerIdentifier + uniqueId + personalization, contentStrList);
+
+        if (ContainerUUID.UUID_LEGACY_VALUE.equals(uniqueId)) {
+            contextMap.put("contentletList" + containerIdentifier + ContainerUUID.UUID_START_VALUE + personalization, contentStrList);
+        } else if (ContainerUUID.UUID_START_VALUE.equals(uniqueId)) {
+            contextMap.put("contentletList" + containerIdentifier + ContainerUUID.UUID_LEGACY_VALUE + personalization, contentStrList);
+        }
+    }
 
     private String getContainerUserId (final Container container) {
 

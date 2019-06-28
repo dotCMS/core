@@ -61,46 +61,6 @@ public class PersonalizationResource {
 
 
     /**
-     * Returns the list of personas with a flag that determine if the persona has been customized on a page or not.
-     * { persona:Persona, personalized:boolean, pageId:String  }
-     * @param request
-     * @param response
-     * @param pageId
-     * @return Response, pair with
-     * @throws DotDataException
-     * @throws DotSecurityException
-     */
-    @GET
-    @Path("/pagepersonas/{pageId}")
-    @JSONP
-    @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public Response getPersonalizedPersonasOnPage (@Context final HttpServletRequest  request,
-                                       @Context final HttpServletResponse response,
-                                       @QueryParam(PaginationUtil.FILTER)   final String filter,
-                                       @QueryParam(PaginationUtil.PAGE)     final int page,
-                                       @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
-                                       @DefaultValue("title") @QueryParam(PaginationUtil.ORDER_BY) final String orderbyParam,
-                                       @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION)  final String direction,
-                                       @PathParam("pageId") final String  pageId) {
-
-        final User user = this.webResource.init(true, request, true).getUser();
-        final boolean respectFrontEndRoles = PageMode.get(request).respectAnonPerms;
-
-        Logger.debug(this, ()-> "Getting page personas per page: " + pageId);
-
-        final Map<String, Object> extraParams =
-                ImmutableMap.<String, Object>builder()
-                        .put(PersonalizationPersonaPageViewPaginator.PAGE_ID, pageId)
-                        .put("respectFrontEndRoles",respectFrontEndRoles).build();
-
-        final PaginationUtil paginationUtil = new PaginationUtil(new PersonalizationPersonaPageViewPaginator());
-
-        return paginationUtil.getPage(request, user, filter, page, perPage, orderbyParam,
-                OrderDirection.valueOf(direction), extraParams);
-    } // getPersonalizedPersonasOnPage
-
-    /**
      * Copies the current content associated to the page containers with the personalization personas as {@link com.dotmarketing.beans.MultiTree#DOT_PERSONALIZATION_DEFAULT}
      * and will set the a new same set of them, but with the personalization on the personalizationPersonaPageForm.personaTag
      * @param request  {@link HttpServletRequest}

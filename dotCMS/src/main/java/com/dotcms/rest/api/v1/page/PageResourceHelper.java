@@ -3,6 +3,7 @@ package com.dotcms.rest.api.v1.page;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.rest.exception.BadRequestException;
+import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
@@ -40,10 +41,7 @@ import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import javax.servlet.http.HttpServletRequest;
 
 import com.liferay.util.StringPool;
@@ -79,10 +77,10 @@ public class PageResourceHelper implements Serializable {
 
     }
 
+    @WrapInTransaction
     public void saveContent(final String pageId, final List<PageContainerForm.ContainerEntry> containerEntries) throws DotDataException {
 
-        final List<MultiTree> multiTrees = new ArrayList<>();
-
+        final Map<String, List<MultiTree>> multiTreesMap = new HashMap<>();
         for (final PageContainerForm.ContainerEntry containerEntry : containerEntries) {
             int i = 0;
             final  List<String> contentIds = containerEntry.getContentIds();
@@ -97,11 +95,19 @@ public class PageResourceHelper implements Serializable {
                 final String personalization = UtilMethods.isSet(containerEntry.getPersonaTag())?
                         Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + containerEntry.getPersonaTag():
                         MultiTree.DOT_PERSONALIZATION_DEFAULT;
-                multiTrees.add(MultiTree.personalized(multiTree, personalization));
+
+                CollectionsUtils.computeSubValueIfAbsent(
+                        multiTreesMap, personalization, MultiTree.personalized(multiTree, personalization),
+                        CollectionsUtils::add,
+                        (String key, MultiTree multitree)-> CollectionsUtils.list(multitree));
             }
         }
 
-        multiTreeAPI.saveMultiTrees(pageId, multiTrees);
+        for (final String personalization : multiTreesMap.keySet()) {
+
+            multiTreeAPI.overridesMultitreesByPersonalization(pageId, personalization,
+                    multiTreesMap.get(personalization));
+        }
     }
 
     public void saveMultiTree(final String containerId,
