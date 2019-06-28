@@ -1277,7 +1277,7 @@ public class TestDataUtils {
     }
 
     public static ContentType getProductLikeContentType(){
-        return  getProductLikeContentType("ProductLike" + System.currentTimeMillis(), APILocator.systemHost(),null);
+        return  getProductLikeContentType("Product" + System.currentTimeMillis(), APILocator.systemHost(),null);
     }
 
     public static ContentType getProductLikeContentType(final String contentTypeName,
@@ -1431,7 +1431,7 @@ public class TestDataUtils {
 
 
     public static ContentType getYoutubeLikeContentType(){
-        return  getYoutubeLikeContentType("YoutubeLike" + System.currentTimeMillis(), APILocator.systemHost(),null);
+        return  getYoutubeLikeContentType("Youtube" + System.currentTimeMillis(), APILocator.systemHost(),null);
     }
 
     public static ContentType getYoutubeLikeContentType(final String contentTypeName,
