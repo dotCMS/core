@@ -399,7 +399,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         final String htmlPage           = UUIDGenerator.generateUuid();
         final String container          = UUIDGenerator.generateUuid();
         final String content            = UUIDGenerator.generateUuid();
-        final String personalization    = "dot:somepersona";
+        final String personalization    = "dot:persona:somepersona";
 
         multiTreeAPI.saveMultiTree(new MultiTree(htmlPage, container, content, UUIDGenerator.generateUuid(), 1)); // dot:default
         multiTreeAPI.saveMultiTree(new MultiTree(htmlPage, container, content, UUIDGenerator.generateUuid(), 2, personalization)); // dot:somepersona
@@ -410,7 +410,28 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         org.junit.Assert.assertEquals(2, personalizationSet.size());
         org.junit.Assert.assertTrue(personalizationSet.contains(MultiTree.DOT_PERSONALIZATION_DEFAULT));
         org.junit.Assert.assertTrue(personalizationSet.contains(personalization));
+
+        final Set<String> allPersonalizationSet = multiTreeAPI.getPersonalizations();
+
+        org.junit.Assert.assertNotNull(allPersonalizationSet);
+        org.junit.Assert.assertTrue(allPersonalizationSet.size() >= 2);
+        org.junit.Assert.assertTrue(allPersonalizationSet.contains(MultiTree.DOT_PERSONALIZATION_DEFAULT));
+        org.junit.Assert.assertTrue(allPersonalizationSet.contains(personalization));
     }
+
+    @Test
+    public void testCleanUpUnusedPersonalization() throws Exception {
+
+        this.testMultiTreesSaveAndPersonalizationForPage();
+        final MultiTreeAPI multiTreeAPI = new MultiTreeAPIImpl();
+        multiTreeAPI.cleanUpUnusedPersonalization(personalization -> personalization.startsWith("dot:persona:"));
+        final Set<String> allPersonalizationSet = multiTreeAPI.getPersonalizations();
+
+        org.junit.Assert.assertNotNull(allPersonalizationSet);
+        org.junit.Assert.assertTrue(allPersonalizationSet.size() == 1);
+        org.junit.Assert.assertTrue(allPersonalizationSet.contains(MultiTree.DOT_PERSONALIZATION_DEFAULT));
+    }
+
 
     @Test
     public void testMultiTreesSavingWithPersonalizationForPage() throws Exception {

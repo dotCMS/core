@@ -15,6 +15,8 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.dotcms.util.CollectionsUtils.map;
 
@@ -27,11 +29,10 @@ import static com.dotcms.util.CollectionsUtils.map;
  */
 public class Task05160MultiTreeAddPersonalizationColumnAndChangingPK extends AbstractJDBCStartupTask {
 
-
     private static final Map<DbType, String> addPersonalizationColumnSQLMap = map(
             DbType.POSTGRESQL,   "ALTER TABLE multi_tree ADD personalization varchar(255)   not null default 'dot:default'",
             DbType.MYSQL,        "ALTER TABLE multi_tree ADD personalization varchar(255)   not null default 'dot:default'",
-            DbType.ORACLE,       "ALTER TABLE multi_tree ADD personalization varchar2(255)  not null default 'dot:default'",
+            DbType.ORACLE,       "ALTER TABLE multi_tree ADD personalization varchar2(255)  default 'dot:default' not null",
             DbType.MSSQL,        "ALTER TABLE multi_tree ADD personalization NVARCHAR(255)  not null default 'dot:default'"
     );
 
@@ -42,8 +43,11 @@ public class Task05160MultiTreeAddPersonalizationColumnAndChangingPK extends Abs
     public boolean forceRun() {
 
         try {
-            return !new DotDatabaseMetaData().getColumnNames
-                    (DbConnectionFactory.getConnection(), "multi_tree").contains("personalization");
+
+            final Set<String> columns = new DotDatabaseMetaData().getColumnNames
+                    (DbConnectionFactory.getConnection(), "multi_tree");
+            final Set<String> lowerColumns = columns.stream().map(String::toLowerCase).collect(Collectors.toSet());
+            return !lowerColumns.contains("personalization");
         } catch (SQLException e) {
 
             return Boolean.TRUE;

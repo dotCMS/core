@@ -8,6 +8,8 @@ import com.dotmarketing.portlets.personas.model.Persona;
 import com.google.common.collect.ImmutableMap;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Json serializer {@link ViewAsPageStatus}
@@ -20,7 +22,10 @@ public class ViewAsPageStatusSerializer extends JsonSerializer<ViewAsPageStatus>
         final ImmutableMap.Builder<Object, Object> viewAsMapBuilder = ImmutableMap.builder();
 
         if (viewAsPageStatus.getPersona() != null) {
-            viewAsMapBuilder.put("persona", ((Persona) viewAsPageStatus.getPersona()).getMap() );
+
+            final Map personaMap = new HashMap(Persona.class.cast(viewAsPageStatus.getPersona()).getMap());
+            personaMap.put("personalized", viewAsPageStatus.isPersonalized());
+            viewAsMapBuilder.put("persona", personaMap);
         }
 
         viewAsMapBuilder.put("language", viewAsPageStatus.getLanguage());

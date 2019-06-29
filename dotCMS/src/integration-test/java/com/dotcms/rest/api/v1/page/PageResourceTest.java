@@ -19,17 +19,16 @@ import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.StructureDataGen;
 import com.dotcms.datagen.TemplateDataGen;
-import com.dotcms.rest.EmptyHttpResponse;
-import com.dotcms.rest.InitDataObject;
-import com.dotcms.rest.ResponseEntityView;
-import com.dotcms.rest.RestUtilTest;
-import com.dotcms.rest.WebResource;
+import com.dotcms.rest.*;
+import com.dotcms.rest.api.v1.personalization.PersonalizationPersonaPageView;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.factories.MultiTreeAPI;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -41,22 +40,34 @@ import com.dotmarketing.portlets.htmlpageasset.business.render.page.PageView;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.personas.business.PersonaAPI;
+import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.PaginatedArrayList;
+import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.json.JSONException;
 import com.liferay.portal.model.User;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import javax.ws.rs.core.Response;
+import com.liferay.util.StringPool;
 import org.elasticsearch.action.search.SearchResponse;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import javax.ws.rs.core.Response;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import static com.dotcms.util.CollectionsUtils.list;
+import static org.junit.Assert.*;
+import static org.mockito.Matchers.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * {@link PageResource} test
@@ -128,6 +139,47 @@ public class PageResourceTest {
         APILocator.getVersionableAPI().setLive(pageAsset);
         pageAsset = HTMLPageAsset.class.cast(APILocator.getHTMLPageAssetAPI().getPageByPath(pagePath, host, defaultLang.getId(), true));
         assertNotNull(pageAsset.getIdentifier());
+    }
+
+
+
+    /**
+     * Should return at least one persona personalized
+     *
+     * @throws JSONException
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test
+    public void testGetPersonalizedPersonasOnPage()
+            throws DotSecurityException, DotDataException {
+
+        final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
+        final String  htmlPage            = UUIDGenerator.generateUuid();
+        final String  container           = UUIDGenerator.generateUuid();
+        final String  content             = UUIDGenerator.generateUuid();
+        final Persona persona             = APILocator.getPersonaAPI().getPersonas
+                (APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false), true, false,
+                        APILocator.systemUser(), false).stream().findFirst().get();
+        final String personaTag           = persona.getKeyTag();
+        final String personalization      = Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + personaTag;
+
+        multiTreeAPI.saveMultiTree(new MultiTree(htmlPage, container, content, UUIDGenerator.generateUuid(), 1)); // dot:default
+        multiTreeAPI.saveMultiTree(new MultiTree(htmlPage, container, content, UUIDGenerator.generateUuid(), 2, personalization)); // dot:somepersona
+
+        when(request.getRequestURI()).thenReturn("/index");
+        final Response response = pageResource.getPersonalizedPersonasOnPage(request,  new EmptyHttpResponse(),
+                null, 0, 10, "title", "ASC", htmlPage);
+
+        final ResponseEntityView entityView = (ResponseEntityView)response.getEntity();
+        assertNotNull(entityView);
+
+        final PaginatedArrayList<PersonalizationPersonaPageView> paginatedArrayList = (PaginatedArrayList)entityView.getEntity();
+        assertNotNull(paginatedArrayList);
+
+        assertTrue(paginatedArrayList.stream().anyMatch(personalizationPersonaPageView ->
+                personalizationPersonaPageView.getPersona().get(PersonaAPI.KEY_TAG_FIELD).equals(personaTag) &&
+                Boolean.TRUE.equals(personalizationPersonaPageView.getPersona().get("personalized"))));
     }
 
     /**

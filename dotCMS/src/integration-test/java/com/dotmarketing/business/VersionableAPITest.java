@@ -12,6 +12,7 @@ import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Config;
@@ -20,7 +21,9 @@ import com.liferay.portal.model.User;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
+import java.util.Optional;
+
+import static org.junit.Assert.*;
 
 /**
  * Created by Erick Gonzalez
@@ -48,6 +51,41 @@ public class VersionableAPITest {
 		Folder folder = APILocator.getFolderAPI().createFolders("/testingVersionable", host, user, false);
 				
 		return new HTMLPageDataGen(folder,template).nextPersisted();
+	}
+	@Test
+	public void testFindPreviousVersion() throws Exception {
+
+		//Create Contentlet
+		final Structure structure = new StructureDataGen().nextPersisted();
+		final Contentlet contentletPrevious = new ContentletDataGen(structure.getInode()).nextPersisted();
+
+
+		final Contentlet checkoutContentlet = APILocator.getContentletAPI()
+				.checkout(contentletPrevious.getInode(), APILocator.systemUser(), false);
+
+		final String inode = checkoutContentlet.getInode();
+		APILocator.getContentletAPI().copyProperties(checkoutContentlet, contentletPrevious.getMap());
+		checkoutContentlet.setInode(inode);
+		checkoutContentlet.setStringProperty("name", "New Name");
+		APILocator.getContentletAPI().checkin(checkoutContentlet, APILocator.systemUser(), false);
+
+		try {
+			//Call Versionable
+			final Optional<Versionable> previousVersion = APILocator.getVersionableAPI()
+					.findPreviousVersion(contentletPrevious.getIdentifier());
+
+			assertNotNull(previousVersion);
+			assertTrue(previousVersion.isPresent());
+			final Contentlet recoveryPreviousContentlet =  APILocator.getContentletAPI().find
+					(previousVersion.get().getInode(), APILocator.systemUser(), false);
+
+			assertNotNull(recoveryPreviousContentlet);
+			assertEquals(recoveryPreviousContentlet.getStringProperty("name"),
+					contentletPrevious.getStringProperty("name"));
+		}finally {
+			StructureDataGen.remove(structure);
+		}
+
 	}
 
 	@Test

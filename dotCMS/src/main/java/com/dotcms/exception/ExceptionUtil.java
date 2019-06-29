@@ -367,6 +367,7 @@ public class ExceptionUtil {
         }
         return builder.toString();
     }
+
     /**
      * Get the current thread stack trace as a simple string
      * @param limit {@link Integer} limit for the stack trace to attach
@@ -381,6 +382,31 @@ public class ExceptionUtil {
             if (count-- < 0) {
                 break;
             }
+        }
+        return builder.toString();
+    }
+
+    /**
+     * Get the current thread stack trace as a simple string
+     * @param offset {@link Integer} offset to start to attach stack trace to attach
+     * @param limit  {@link Integer} limit for the stack trace to attach
+     * @return String
+     */
+    public static String getCurrentStackTraceAsString (final int offset, final int limit) {
+        final StringBuilder builder = new StringBuilder();
+        final StackTraceElement [] traces = Thread.currentThread().getStackTrace();
+        int countItem  = 0;
+        int countLimit = limit;
+        for (final StackTraceElement traceElement : traces) {
+
+            if (countItem++ > offset) {
+
+                builder.append("\tat " + traceElement + "\n");
+                if (countLimit-- < 0) {
+                    break;
+                }
+            }
+
         }
         return builder.toString();
     }
