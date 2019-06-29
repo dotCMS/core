@@ -1,12 +1,15 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render.page;
 
+import com.dotmarketing.factories.MultiTreeAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import java.util.Collection;
-import java.util.Optional;
+
+import java.util.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.dotmarketing.portlets.personas.model.Persona;
+import com.liferay.util.StringPool;
 import org.apache.velocity.context.Context;
 
 import com.dotcms.business.CloseDBIfOpened;
@@ -54,19 +57,21 @@ public class HTMLPageAssetRenderedBuilder {
     private HttpServletResponse response;
     private Host site;
 
-    private final PermissionAPI permissionAPI;
-    private final UserAPI userAPI;
-    private final ContentletAPI contentletAPI;
-    private final LayoutAPI layoutAPI;
+    private final PermissionAPI  permissionAPI;
+    private final UserAPI        userAPI;
+    private final ContentletAPI  contentletAPI;
+    private final LayoutAPI      layoutAPI;
     private final VersionableAPI versionableAPI;
+    private final MultiTreeAPI   multiTreeAPI;
 
     public HTMLPageAssetRenderedBuilder() {
-        permissionAPI = APILocator.getPermissionAPI();
-        userAPI = APILocator.getUserAPI();
-        contentletAPI = APILocator.getContentletAPI();
-        layoutAPI = APILocator.getLayoutAPI();
 
-        versionableAPI = APILocator.getVersionableAPI();
+        this.permissionAPI  = APILocator.getPermissionAPI();
+        this.userAPI        = APILocator.getUserAPI();
+        this.contentletAPI  = APILocator.getContentletAPI();
+        this.layoutAPI      = APILocator.getLayoutAPI();
+        this.versionableAPI = APILocator.getVersionableAPI();
+        this.multiTreeAPI   = APILocator.getMultiTreeAPI();
     }
 
     public HTMLPageAssetRenderedBuilder setHtmlPageAsset(final IHTMLPage htmlPageAsset) {
@@ -100,8 +105,10 @@ public class HTMLPageAssetRenderedBuilder {
                 getContentletVersionInfo(htmlPageAsset.getIdentifier(), htmlPageAsset.getLanguageId());
 
         final HTMLPageAssetInfo htmlPageAssetInfo = getHTMLPageAssetInfo(info);
+        final Set<String> pagePersonalizationSet  = this.multiTreeAPI.getPersonalizationsForPage(htmlPageAsset.getIdentifier());
         final Template template = getTemplate(mode);
         final Language language = WebAPILocator.getLanguageWebAPI().getLanguage(request);
+
         final TemplateLayout layout = template != null && template.isDrawed() && !LicenseManager.getInstance().isCommunity()
                 ? DotTemplateTool.themeLayout(template.getInode()) : null;
 
@@ -118,7 +125,8 @@ public class HTMLPageAssetRenderedBuilder {
 
         if (!rendered) {
             final Collection<? extends ContainerRaw> containers =  pageRenderUtil.getContainersRaw();
-            return new PageView(site, template, containers, htmlPageAssetInfo, layout, canCreateTemplates, canEditTemplate, this.getViewAsStatus(mode));
+            return new PageView(site, template, containers, htmlPageAssetInfo, layout, canCreateTemplates,
+                    canEditTemplate, this.getViewAsStatus(mode, pagePersonalizationSet));
         } else {
             final Context velocityContext  = pageRenderUtil
                     .addAll(VelocityUtil.getInstance().getContext(request, response));
@@ -126,7 +134,7 @@ public class HTMLPageAssetRenderedBuilder {
                     pageRenderUtil.getContainersRaw(), velocityContext, mode).build();
             final String pageHTML = this.getPageHTML();
             return new HTMLPageAssetRendered(site, template, containers, htmlPageAssetInfo, layout, pageHTML,
-                    canCreateTemplates, canEditTemplate, this.getViewAsStatus(mode)
+                    canCreateTemplates, canEditTemplate, this.getViewAsStatus(mode, pagePersonalizationSet)
             );
         }
     }
@@ -194,14 +202,25 @@ public class HTMLPageAssetRenderedBuilder {
         }
     }
 
-    private ViewAsPageStatus getViewAsStatus(PageMode pageMode)
+    private ViewAsPageStatus getViewAsStatus(final PageMode pageMode, final Set<String> pagePersonalizationSet)
             throws DotDataException {
 
+        final IPersona persona     = this.getCurrentPersona();
+        final boolean personalized = this.isPersonalized(persona, pagePersonalizationSet);
+
         return new ViewAsPageStatus()
+            .setPersonalized(personalized)
             .setPersona(this.getCurrentPersona())
             .setLanguage(WebAPILocator.getLanguageWebAPI().getLanguage(request))
             .setDevice(getCurrentDevice())
             .setPageMode(pageMode);
+    }
+
+    private boolean isPersonalized (final IPersona persona, final Set<String> pagePersonalizationSet) {
+
+        return null != persona?
+                pagePersonalizationSet.contains
+                    (Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + persona.getKeyTag()): false;
     }
 
     private IPersona getCurrentPersona() {

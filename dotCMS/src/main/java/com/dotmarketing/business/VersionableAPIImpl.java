@@ -18,6 +18,8 @@ import com.rainerhahnekamp.sneakythrow.Sneaky;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.apache.commons.beanutils.BeanUtils;
 
@@ -138,6 +140,20 @@ public class VersionableAPIImpl implements VersionableAPI {
 		return findAllVersions(id.getId(), APILocator.getUserAPI().getSystemUser(), false);
 	}
 
+    public Optional<Versionable> findPreviousVersion(final String identifier)  throws DotDataException, DotStateException,DotSecurityException {
+        if (identifier == null) {
+            throw new DotStateException("Identifier is null");
+        }
+        return findPreviousVersion(identifier, APILocator.getUserAPI().getSystemUser(), false);
+    }
+
+    public Optional<Versionable> findPreviousVersion(final Identifier identifier)  throws DotDataException, DotStateException,DotSecurityException {
+        if (identifier == null) {
+            throw new DotStateException("Identifier is null");
+        }
+        return findPreviousVersion(identifier.getId(), APILocator.getUserAPI().getSystemUser(), false);
+    }
+
 	@Override
 	@CloseDBIfOpened
 	public List<Versionable> findAllVersions(final String id) throws DotDataException, DotStateException, DotSecurityException {
@@ -192,6 +208,24 @@ public class VersionableAPIImpl implements VersionableAPI {
 
 		return versions;
 	}
+
+    @CloseDBIfOpened
+    @Override
+	public Optional<Versionable> findPreviousVersion(final String identifier, final User user,
+                                                      final boolean respectAnonPermissions)  throws DotDataException, DotStateException, DotSecurityException {
+
+        final List<Versionable> versions =
+                versionableFactory.findAllVersions(identifier, Optional.of(2))
+                .stream()
+                .filter(versionable -> versionable instanceof  Permissionable &&
+                        Sneaky.sneaked(()->permissionAPI.doesUserHavePermission((Permissionable)versionable,
+                                PermissionAPI.PERMISSION_READ, user, respectAnonPermissions)).get())
+                .collect(Collectors.toList());
+
+        return versions.size() >= 2?
+                Optional.ofNullable(versions.get(1)):
+                Optional.empty();
+    }
 
 	@CloseDBIfOpened
     @Override

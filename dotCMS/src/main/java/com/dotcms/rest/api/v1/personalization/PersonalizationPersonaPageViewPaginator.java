@@ -70,9 +70,10 @@ public class PersonalizationPersonaPageViewPaginator implements PaginatorOrdered
                 final Persona persona = this.personaAPI.fromContentlet(contentlet);
                 final ContentletToMapTransformer transformer = new ContentletToMapTransformer(persona);
                 final Map<String, Object> contentletMap = transformer.toMaps().stream().findFirst().orElse(Collections.EMPTY_MAP);
+                contentletMap.put("personalized",
+                        personaTagPerPage.contains(Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + persona.getKeyTag()));
 
-                personalizationPersonaPageViews.add(new PersonalizationPersonaPageView(pageId,
-                        personaTagPerPage.contains(Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + persona.getKeyTag()), contentletMap));
+                personalizationPersonaPageViews.add(new PersonalizationPersonaPageView(pageId, contentletMap));
             }
 
             final PaginatedArrayList<PersonalizationPersonaPageView> result = new PaginatedArrayList<>();
