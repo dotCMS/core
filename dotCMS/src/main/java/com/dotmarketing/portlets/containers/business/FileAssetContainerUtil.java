@@ -266,7 +266,7 @@ public class FileAssetContainerUtil {
 
             final Host host = APILocator.getHostAPI().find(fileAsset.getHost(), APILocator.systemUser(), false);
 
-            return "#dotParse(\"//" + host.getHostname()  + fileAsset.getPath() + fileAsset.getFileName() + "\")";
+            return "#dotParse(\"//" + host.getHostname()  + fileAsset.getURI() + "\")";
 
         } catch (DotSecurityException | DotDataException  e) {
             return StringPool.BLANK;
