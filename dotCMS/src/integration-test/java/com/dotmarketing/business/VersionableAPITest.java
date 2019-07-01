@@ -50,9 +50,7 @@ public class VersionableAPITest {
 		        
 		Folder folder = APILocator.getFolderAPI().createFolders("/testingVersionable", host, user, false);
 				
-		HTMLPageAsset page = new HTMLPageDataGen(folder,template).nextPersisted();
-		
-		return page;
+		return new HTMLPageDataGen(folder,template).nextPersisted();
 	}
 	@Test
 	public void testFindPreviousVersion() throws Exception {

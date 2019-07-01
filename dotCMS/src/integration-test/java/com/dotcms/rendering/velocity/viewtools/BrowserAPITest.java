@@ -2,6 +2,7 @@ package com.dotcms.rendering.velocity.viewtools;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -51,7 +52,7 @@ public class BrowserAPITest extends IntegrationTestBase {
 
         //Creating folder to check.
         User user = userAPI.getSystemUser();
-        Host demo = hostAPI.findByName("demo.dotcms.com", user, false);
+        Host demo = new SiteDataGen().nextPersisted();
         Folder folder = folderAPI.createFolders( folderPath, demo, user, false );
 
         try {

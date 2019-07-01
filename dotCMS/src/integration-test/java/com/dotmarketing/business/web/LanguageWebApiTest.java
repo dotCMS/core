@@ -2,6 +2,7 @@ package com.dotmarketing.business.web;
 
 import static org.junit.Assert.assertEquals;
 
+import com.dotcms.datagen.TestDataUtils;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -46,22 +47,27 @@ public class LanguageWebApiTest {
 
     @Test
     public void testLanguageIdParameter() {
+
+        final Language spanishLanguage = TestDataUtils.getSpanishLanguage();
+
         HttpServletRequest pageRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
                         .request();
         
         // test passing in a parameter
         ImmutableMap<String, String> map =
-                ImmutableMap.<String, String>builder().put("language_id", "2").build();
+                ImmutableMap.<String, String>builder().put("language_id", String.valueOf(spanishLanguage.getId())).build();
 
         pageRequest = new MockParameterRequest(pageRequest,map);
         Language lang2 = lapi.getLanguage(pageRequest);
-        assertEquals(lang2.getId(), 2);
+        assertEquals(lang2.getId(), spanishLanguage.getId());
     }
     
     @Test
     public void testLangWebKeyParameter() {
 
+        final Language spanishLanguage = TestDataUtils.getSpanishLanguage();
+
         HttpServletRequest pageRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
                         .request();
@@ -72,16 +78,19 @@ public class LanguageWebApiTest {
         
         // test passing in a parameter
         ImmutableMap<String, String> map =
-                ImmutableMap.<String, String>builder().put(WebKeys.HTMLPAGE_LANGUAGE, "2").build();
+                ImmutableMap.<String, String>builder().put(WebKeys.HTMLPAGE_LANGUAGE, String.valueOf(spanishLanguage.getId())).build();
 
         pageRequest = new MockParameterRequest(pageRequest,map);
         Language lang = lapi.getLanguage(pageRequest);
-        assertEquals(lang.getId(), 2);
+        assertEquals(lang.getId(), spanishLanguage.getId());
 
     }
     
     @Test
     public void testLangAttribute() {
+
+        final Language spanishLanguage = TestDataUtils.getSpanishLanguage();
+
         HttpServletRequest pageRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
                         .request();
@@ -90,32 +99,35 @@ public class LanguageWebApiTest {
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
                         .request();
 
-        pageRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "2");
+        pageRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, String.valueOf(spanishLanguage.getId()));
         
         
         Language lang = lapi.getLanguage(pageRequest);
-        assertEquals(lang.getId(), 2);
+        assertEquals(lang.getId(), spanishLanguage.getId());
 
     }
     
     @Test
     public void testLangInSession() {
+
+        final Language spanishLanguage = TestDataUtils.getSpanishLanguage();
+
         HttpServletRequest pageRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
                         .request();
         
         assertEquals(pageRequest.getSession(false), null);
-        pageRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "2");
+        pageRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, String.valueOf(spanishLanguage.getId()));
         
         
         Language lang = lapi.getLanguage(pageRequest);
-        assertEquals(lang.getId(), 2);
+        assertEquals(lang.getId(), spanishLanguage.getId());
         assert(pageRequest.getSession(false) !=null);
         
         pageRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, null);
         // this should still be 2 because of the session
         lang = lapi.getLanguage(pageRequest);
-        assertEquals(lang.getId(), 2);
+        assertEquals(lang.getId(), spanishLanguage.getId());
 
     }
     
@@ -124,16 +136,17 @@ public class LanguageWebApiTest {
         HttpServletRequest pageRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
                         .request();
-        
+
+        final Language spanishLanguage = TestDataUtils.getSpanishLanguage();
         
         Language lang1 = lapi.getLanguage(pageRequest);
         assertEquals(lang1.getId(), 1);
         assertEquals(pageRequest.getSession(true), pageRequest.getSession(false));
-        pageRequest.getSession().setAttribute("tm_lang", "2");
+        pageRequest.getSession().setAttribute("tm_lang", String.valueOf(spanishLanguage.getId()));
         
         
         Language lang = lapi.getLanguage(pageRequest);
-        assertEquals(lang.getId(), 2);
+        assertEquals(lang.getId(), spanishLanguage.getId());
         assert(pageRequest.getSession(false) !=null);
         
         
@@ -187,6 +200,7 @@ public class LanguageWebApiTest {
     @Test
     public void testSettingMultipleWays() {
 
+        final Language spanishLanguage = TestDataUtils.getSpanishLanguage();
         
         HttpServletRequest pageRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
@@ -207,11 +221,11 @@ public class LanguageWebApiTest {
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
                         .request();
 
-        pageRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "2");
+        pageRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, String.valueOf(spanishLanguage.getId()));
         
         
         Language lang = lapi.getLanguage(pageRequest);
-        assertEquals(lang.getId(), 2);
+        assertEquals(lang.getId(), spanishLanguage.getId());
 
     }
     

@@ -1,34 +1,34 @@
 package com.dotcms.rendering.velocity;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.when;
+
+import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.MockHttpResponse;
-import com.dotcms.util.IntegrationTestInitService;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.util.Config;
-import com.liferay.portal.util.WebKeys;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.rendering.velocity.viewtools.VelocityRequestWrapper;
 import com.dotcms.rendering.velocity.viewtools.VelocitySessionWrapper;
-import com.dotcms.repackage.javax.validation.constraints.AssertTrue;
-
+import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.Config;
+import com.liferay.portal.util.WebKeys;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-
 import org.apache.velocity.context.Context;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.when;
 
 /**
  * VelocityUtilTest
@@ -80,9 +80,11 @@ public class VelocityUtilTest {
                 ).request())
                 .request();
 
-        final Host defaultHost = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(),false);
-        final IHTMLPage page = APILocator.getHTMLPageAssetAPI().
-                getPageByPath("/",defaultHost,APILocator.getLanguageAPI().getDefaultLanguage().getId(),true);
+        final Host site = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().nextPersisted();
+        HTMLPageAsset page = new HTMLPageDataGen(site, template)
+                .nextPersisted();
+        HTMLPageDataGen.publish(page);
 
         //DotCache set to Refresh must return null (not use cached page)
         request.getSession().setAttribute(VelocityUtil.DOTCACHE, VelocityUtil.REFRESH);

@@ -1,10 +1,18 @@
 package com.dotmarketing.portlets.htmlpages.business;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
@@ -21,7 +29,6 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.portlets.AssetUtil;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -41,13 +48,12 @@ import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
-import static org.junit.Assert.*;
 
 @RunWith(DataProviderRunner.class)
 public class HTMLPageAPITest extends IntegrationTestBase {
@@ -133,11 +139,12 @@ public class HTMLPageAPITest extends IntegrationTestBase {
         container.setMaxContentlets(5);
         container.setPreLoop("preloop code");
         container.setPostLoop("postloop code");
-        Structure st=CacheLocator.getContentTypeCache().getStructureByVelocityVarName("FileAsset");
+		final ContentType fileAssetContentType = APILocator
+				.getContentTypeAPI(APILocator.systemUser()).find("FileAsset");
 
         List<ContainerStructure> csList = new ArrayList<ContainerStructure>();
         ContainerStructure cs = new ContainerStructure();
-        cs.setStructureId(st.getInode());
+		cs.setStructureId(fileAssetContentType.id());
         cs.setCode("this is the code");
         csList.add(cs);
 
@@ -157,11 +164,17 @@ public class HTMLPageAPITest extends IntegrationTestBase {
         HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
 
         // associate some contentlets with the page/container
-        List<Contentlet> conns=APILocator.getContentletAPI().search(
-                "+structureName:"+st.getVelocityVarName(), 5, 0, "moddate", sysuser, false);
-        assertEquals(5, conns.size());
 
-        for(Contentlet cc : conns) {
+		//Create test file assets
+		Collection<Contentlet> contentlets = new ArrayList<>();
+		for (int i = 0; i < 5; i++) {
+			contentlets.add(TestDataUtils.getFileAssetContent(true,
+					APILocator.getLanguageAPI().getDefaultLanguage().getId()));
+		}
+		assertNotNull(contentlets);
+		assertFalse(contentlets.isEmpty());
+
+		for (Contentlet cc : contentlets) {
             APILocator.getMultiTreeAPI().saveMultiTree(
               new MultiTree(page.getIdentifier(),container.getIdentifier(),cc.getIdentifier()));
         }
@@ -329,7 +342,7 @@ public class HTMLPageAPITest extends IntegrationTestBase {
 	@Test
 	public void removeOneLanguageOfHtmlAsset() throws Exception  {
 		int english = 1;
-		int spanish = 2;
+		long spanish = TestDataUtils.getSpanishLanguage().getId();
 
 			Template template = new TemplateDataGen().nextPersisted();
 			Folder folder = new FolderDataGen().nextPersisted();
@@ -350,12 +363,20 @@ public class HTMLPageAPITest extends IntegrationTestBase {
 	}
 
 	@DataProvider
-	public static Object[] testCasesFindByIdLanguageFallback() {
+	public static Object[] testCasesFindByIdLanguageFallback() throws Exception {
+
+		//Setting web app environment
+		IntegrationTestInitService.getInstance().init();
+
+		long spanishLanguageId = TestDataUtils.getSpanishLanguage().getId();
+
 		return new Object[] {
 			new TestCaseFindByIdLanguageFallback(1, 1, 1, null, false, new User()),
 			new TestCaseFindByIdLanguageFallback(2,1, 1, null, true, new User()),
-			new TestCaseFindByIdLanguageFallback(1,-1, 2, ResourceNotFoundException.class, false, new User()),
-			new TestCaseFindByIdLanguageFallback(1,-1, 2, ResourceNotFoundException.class, false, new User()),
+				new TestCaseFindByIdLanguageFallback(1, -1, spanishLanguageId,
+						ResourceNotFoundException.class, false, new User()),
+				new TestCaseFindByIdLanguageFallback(1, -1, spanishLanguageId,
+						ResourceNotFoundException.class, false, new User()),
 			new TestCaseFindByIdLanguageFallback(1, 1, 1, DotSecurityException.class, false, null),
 		};
 	}
@@ -431,16 +452,18 @@ public class HTMLPageAPITest extends IntegrationTestBase {
 	public void checkcout_populate_url_field_for_pages()
 			throws DotSecurityException, DotDataException {
 
-		final String pageURI = "/about-us/index";
-		final String indexAssetName = "index";
-        final String indexParentPath = "/about-us/";
+		Contentlet pageContentlet = TestDataUtils
+				.getPageContent(true, APILocator.getLanguageAPI().getDefaultLanguage().getId());
+		Folder pageFolder = APILocator.getFolderAPI()
+				.find(pageContentlet.getFolder(), APILocator.systemUser(), false);
+		IHTMLPage page = APILocator.getHTMLPageAssetAPI().fromContentlet(pageContentlet);
 
 		Host defaultHost = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), true);
 
 		// CHECKOUT the "About Us" page
 		Identifier id = APILocator.getIdentifierAPI()
 				.find(defaultHost,
-						pageURI);
+						page.getURI());
 		final String identifierId = id.getId();
 
 		ContentletVersionInfo cvi = APILocator.getVersionableAPI()
@@ -450,7 +473,7 @@ public class HTMLPageAPITest extends IntegrationTestBase {
 		//Validations
 		assertNotNull(contentlet);
 		assertNotNull(contentlet.getStringProperty(HTMLPageAssetAPI.URL_FIELD));
-		assertEquals(contentlet.getStringProperty(HTMLPageAssetAPI.URL_FIELD), indexAssetName);
+		assertEquals(contentlet.getStringProperty(HTMLPageAssetAPI.URL_FIELD), page.getPageUrl());
 
 		//Saving the content
 		contentlet.setBoolProperty(Contentlet.DONT_VALIDATE_ME, true);
@@ -461,17 +484,17 @@ public class HTMLPageAPITest extends IntegrationTestBase {
 		HTMLPageAsset newPage = APILocator.getHTMLPageAssetAPI().fromContentlet(newCon);
 		assertNotNull(newPage);
 		assertNotNull(newPage.getURI());
-		assertEquals(newPage.getURI(), pageURI);
+		assertEquals(newPage.getURI(), page.getURI());
 
         //Make sure the identifier is intact
-        id = APILocator.getIdentifierAPI().find(defaultHost, pageURI);
+		id = APILocator.getIdentifierAPI().find(defaultHost, page.getURI());
         //Validations
         assertNotNull(id);
         assertNotNull(id.getId());
         assertNotNull(id.getParentPath());
         assertNotNull(id.getAssetName());
-        assertEquals(id.getParentPath(), indexParentPath);
-        assertEquals(id.getAssetName(), indexAssetName);
+		assertEquals(id.getParentPath(), pageFolder.getPath());
+		assertEquals(id.getAssetName(), page.getPageUrl());
         assertEquals(id.getId(), identifierId);
 	}
 

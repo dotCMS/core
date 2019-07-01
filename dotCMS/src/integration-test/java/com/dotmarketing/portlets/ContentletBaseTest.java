@@ -3,13 +3,19 @@ package com.dotmarketing.portlets;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.Permission;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.RelationshipAPI;
+import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
@@ -43,12 +49,18 @@ import com.dotmarketing.tag.business.TagAPI;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
-
-import java.util.*;
 
 /**
  * Created by Jonathan Gamba.
@@ -93,6 +105,14 @@ public class ContentletBaseTest extends IntegrationTestBase {
             "Donec quam felis, ultricies nec, pellentesque eu, pretium quis, sem.</p>" +
             "<p>Nulla consequat massa quis enim. Donec pede justo, fringilla vel, aliquet nec, vulputate eget, arcu. In enim justo, rhoncus ut, imperdiet a, venenatis vitae, justo. Nullam dictum felis eu pede mollis pretium. Integer " +
             "tincidunt. Cras dapibus. Vivamus elementum semper nisi. Aenean vulputate eleifend tellus. Aenean leo ligula, porttitor eu, consequat vitae, eleifend ac, enim. Aliquam lorem ante, dapibus in, viverra quis, feugiat a.</p>";
+
+    protected static ContentType blogContentType;
+    protected static ContentType commentsContentType;
+    protected static ContentType newsContentType;
+    protected static ContentType wikiContentType;
+    protected static ContentType simpleWidgetContentType;
+
+    protected static Language spanishLanguage;
 
     @BeforeClass
     public static void prepare () throws Exception {
@@ -190,6 +210,16 @@ public class ContentletBaseTest extends IntegrationTestBase {
         contentlets.add( newContentlet );
         
         IntegrationTestInitService.getInstance().mockStrutsActionModule();
+
+        //Test content types
+        blogContentType = TestDataUtils.getBlogLikeContentType();
+        commentsContentType = TestDataUtils.getCommentsLikeContentType();
+        newsContentType = TestDataUtils.getNewsLikeContentType();
+        wikiContentType = TestDataUtils.getWikiLikeContentType();
+        simpleWidgetContentType = TestDataUtils.getWidgetLikeContentType();
+
+        //Search for the Spanish language, if does not exist we need to create it
+        spanishLanguage = TestDataUtils.getSpanishLanguage();
     }
 
     @AfterClass
@@ -227,16 +257,6 @@ public class ContentletBaseTest extends IntegrationTestBase {
             }
             contentTypeAPI.delete(new StructureTransformer(structure).from());
         }
-
-        //Delete the identifiers
-        /*for ( Identifier identifier : identifiers ) {
-            APILocator.getIdentifierAPI().delete( identifier );
-        }*/
-
-        //hostAPI.delete( defaultHost, user, false );
-
-        //Delete the folder
-        //folderAPI.delete( testFolder, user, false );
     }
 
     /**

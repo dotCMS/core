@@ -1,12 +1,17 @@
 package com.dotcms.rendering.velocity.viewtools;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.rendering.velocity.util.VelocityUtil;
-import com.dotcms.repackage.org.apache.http.*;
-import com.dotcms.repackage.org.apache.http.params.HttpParams;
+import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
@@ -19,26 +24,19 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
-import com.liferay.util.Http;
-import org.apache.velocity.VelocityContext;
-import org.apache.velocity.tools.view.context.ChainedContext;
-import org.apache.velocity.tools.view.context.ViewContext;
-import org.junit.*;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
-
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+import org.apache.velocity.VelocityContext;
+import org.apache.velocity.tools.view.context.ViewContext;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 /**
  * Integration test of {@link ContainerWebAPI}
@@ -56,6 +54,12 @@ public class ContainerWebAPIIntegrationTest extends IntegrationTestBase {
         IntegrationTestInitService.getInstance().init();
 
         adminUser = APILocator.getUserAPI().getUsersByNameOrEmail("admin@dotcms.com", 0, 1).get(0);
+
+        TestDataUtils.getFormContent(true, APILocator.getLanguageAPI().getDefaultLanguage().getId(),
+                null);
+        TestDataUtils
+                .getWidgetContent(true, APILocator.getLanguageAPI().getDefaultLanguage().getId(),
+                        null);
     }
 
     private static User createUser() throws DotDataException, DotSecurityException {
@@ -162,8 +166,9 @@ public class ContainerWebAPIIntegrationTest extends IntegrationTestBase {
         this.addPermissionToBaseType(BaseContentType.FORM);
         this.addPermissionToBaseType(BaseContentType.WIDGET);
 
-        final ContentType documentContent = APILocator.getContentTypeAPI(user).find("Document");
-        this.addPermission(documentContent.inode(), documentContent);
+        final ContentType genericContentContentType = APILocator.getContentTypeAPI(APILocator.systemUser())
+                .find("webPageContent");
+        this.addPermission(genericContentContentType.inode(), genericContentContentType);
 
         final String baseContentTypeUserHasPermissionToAdd = containerWebAPI.getBaseContentTypeUserHasPermissionToAdd(container.getInode());
         final List<String> baseContentTypes = Arrays.asList(baseContentTypeUserHasPermissionToAdd.split(","));
@@ -190,8 +195,9 @@ public class ContainerWebAPIIntegrationTest extends IntegrationTestBase {
     }
 
     private void addPermissionToBaseType(BaseContentType baseContentType) throws DotSecurityException, DotDataException {
-        final ContentType widget = APILocator.getContentTypeAPI(adminUser).findByType(baseContentType).get(0);
-        this.addPermission(widget.inode(), widget);
+        final ContentType contentType = APILocator.getContentTypeAPI(adminUser)
+                .findByType(baseContentType).get(0);
+        this.addPermission(contentType.inode(), contentType);
     }
 
     private void addPermission(final String permissionableInode, final Permissionable permissionable)
@@ -223,7 +229,7 @@ public class ContainerWebAPIIntegrationTest extends IntegrationTestBase {
         final List<ContainerStructure> containerStructures = new ArrayList<ContainerStructure>();
 
         final ContainerStructure containerStructure = new ContainerStructure();
-        containerStructure.setStructureId(contentTypeAPI.find("Document").inode());
+        containerStructure.setStructureId(contentTypeAPI.find("webPageContent").inode());
         containerStructure.setCode("this is the code");
 
         containerStructures.add(containerStructure);
