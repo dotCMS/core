@@ -36,10 +36,15 @@ public class PublishContentActionlet extends WorkFlowActionlet {
 
     public void executeAction(WorkflowProcessor processor, Map<String, WorkflowActionClassParameter> params) throws WorkflowActionFailureException {
 
+        Object workflowInProgress = null;
+
         try {
 
-            Contentlet contentlet = processor.getContentlet();
-            int structureType = contentlet.getStructure().getStructureType();
+            final Contentlet contentlet = processor.getContentlet();
+            final int structureType = contentlet.getStructure().getStructureType();
+            workflowInProgress = contentlet.get(Contentlet.WORKFLOW_IN_PROGRESS);
+            contentlet.setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.TRUE);
+            processor.getContentlet().setProperty(Contentlet.DO_REINDEX, Boolean.FALSE);
 
             if (processor.getContentlet().isArchived()) {
                 APILocator.getContentletAPI().unarchive(processor.getContentlet(), processor.getUser(), false);
@@ -48,7 +53,7 @@ public class PublishContentActionlet extends WorkFlowActionlet {
             //First verify if we are handling a HTML page
             if (structureType == Structure.STRUCTURE_TYPE_HTMLPAGE) {
 
-                HTMLPageAsset htmlPageAsset = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
+                final HTMLPageAsset htmlPageAsset = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
 
                 //Get the un-publish content related to this HTMLPage
                 List relatedNotPublished = new ArrayList();
@@ -56,8 +61,12 @@ public class PublishContentActionlet extends WorkFlowActionlet {
                 Returns the list of unpublished related content for this HTML page where
                 the user have permissions to publish that related content.
                  */
+                htmlPageAsset.setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.TRUE);
+                htmlPageAsset.setProperty(Contentlet.DO_REINDEX, Boolean.FALSE);
                 relatedNotPublished = PublishFactory.getUnpublishedRelatedAssetsForPage(htmlPageAsset, relatedNotPublished, true, processor.getUser(), false);
                 //Publish the page and the related content
+                htmlPageAsset.setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.TRUE);
+                htmlPageAsset.setProperty(Contentlet.DO_REINDEX, Boolean.FALSE);
                 PublishFactory.publishHTMLPage(htmlPageAsset, relatedNotPublished, processor.getUser(),
                         processor.getContentletDependencies() != null
                                 && processor.getContentletDependencies().isRespectAnonymousPermissions());
@@ -69,8 +78,14 @@ public class PublishContentActionlet extends WorkFlowActionlet {
             }
 
         } catch (Exception e) {
+
             Logger.error(PublishContentActionlet.class, e.getMessage(), e);
             throw new WorkflowActionFailureException(e.getMessage(),e);
+        } finally {
+
+            if (null != processor.getContentlet()) {
+                processor.getContentlet().setProperty(Contentlet.WORKFLOW_IN_PROGRESS, workflowInProgress);
+            }
         }
 
     }

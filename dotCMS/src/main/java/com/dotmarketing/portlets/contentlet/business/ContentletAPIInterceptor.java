@@ -310,6 +310,11 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 	}
 
 	@Override
+	public Contentlet checkout(String contentletInode, User user, boolean respectFrontendRoles, boolean doIndexing) throws DotDataException, DotSecurityException, DotContentletStateException {
+		return conAPI.checkout(contentletInode, user, respectFrontendRoles, doIndexing); // todo: do interceptor
+	}
+
+	@Override
 	public List<Contentlet> checkout(List<Contentlet> contentlets, User user,boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.checkout(contentlets, user, respectFrontendRoles);

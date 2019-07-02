@@ -627,10 +627,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
     public void publishAssociated(Contentlet contentlet, boolean isNew, boolean isNewVersion) throws
             DotSecurityException, DotDataException, DotStateException {
 
-        if (!contentlet.isWorking())
+        if (!contentlet.isWorking()) {
             throw new DotContentletStateException("Only the working version can be published");
+        }
 
-        indexAPI.addContentToIndex(contentlet, true, false);
+        if (contentlet.doReindex()) {
+            indexAPI.addContentToIndex(contentlet, true, false);
+        }
 
         // Publishes the files associated with the Contentlet
         List<Field> fields = FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode());
@@ -1346,7 +1349,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @WrapInTransaction
     @Override
-    public void unlock(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+    public void unlock(final Contentlet contentlet, final User user,
+                       final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
         if(contentlet == null){
             throw new DotContentletStateException("The contentlet cannot Be null");
         }
@@ -1372,7 +1376,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
             if(contentlet.isLocked() ){
                 // persists the webasset
                 APILocator.getVersionableAPI().setLocked(contentlet, false, user);
-                indexAPI.addContentToIndex(contentlet,false);
+                if (contentlet.doReindex()) {
+                    indexAPI.addContentToIndex(contentlet, false);
+                }
             }
 
         } catch(DotDataException | DotStateException| DotSecurityException e) {
@@ -2379,7 +2385,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             // persists the webasset
             APILocator.getVersionableAPI().setLocked(contentlet, true, user);
-            indexAPI.addContentToIndex(contentlet,false);
+
+            if (contentlet.doReindex()) {
+                indexAPI.addContentToIndex(contentlet, false);
+            }
 
         } catch(DotDataException | DotStateException| DotSecurityException e) {
             ActivityLogger.logInfo(getClass(), "Error Locking Content", "StartDate: " +contentPushPublishDate+ "; "
@@ -3308,6 +3317,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         final boolean validateEmptyFile =
                 contentlet.getMap().get("_validateEmptyFile_") == null;
+        final boolean workflowInProgress = contentlet.isWorkflowInProgress();
+        final boolean doReindex          = contentlet.doReindex();
 
         if(contentRelationships == null) {
 
@@ -3565,6 +3576,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                 contentlet.setIdentifier(identifier.getId() );
                 contentlet = contentFactory.save(contentlet);
+                contentlet.setProperty(Contentlet.WORKFLOW_IN_PROGRESS, workflowInProgress);
+                contentlet.setProperty(Contentlet.DO_REINDEX, doReindex);
                 contentlet.setIndexPolicy(indexPolicy);
                 contentlet.setIndexPolicyDependencies(indexPolicyDependencies);
             } else {
@@ -3900,6 +3913,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         contentlet = contentFactory.save(contentlet);
                         contentlet.setIndexPolicy(indexPolicy);
                         contentlet.setIndexPolicyDependencies(indexPolicyDependencies);
+                        contentlet.setProperty(Contentlet.WORKFLOW_IN_PROGRESS, workflowInProgress);
+                        contentlet.setProperty(Contentlet.DO_REINDEX, doReindex);
                     }
                 }
 
@@ -3952,7 +3967,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                 }
 
-                indexAPI.addContentToIndex(contentlet, false);
+                if (doReindex) {
+                    indexAPI.addContentToIndex(contentlet, false);
+                }
             }
 
             if(contentlet != null && contentlet.isVanityUrl()){
@@ -4202,10 +4219,19 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @WrapInTransaction
     @Override
-    public Contentlet checkout(String contentletInode, User user,boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException {
-        //return new version
-        Contentlet contentlet = find(contentletInode, user, respectFrontendRoles);
+    public Contentlet checkout(final String contentletInode,
+                               final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
 
+        return this.checkout(contentletInode, user, respectFrontendRoles, true);
+    }
+    public Contentlet checkout(final String contentletInode,
+                               final User user, final boolean respectFrontendRoles,
+                               final boolean doIndexing) throws DotDataException, DotSecurityException, DotContentletStateException {
+
+        //return new version
+        final Contentlet contentlet = find(contentletInode, user, respectFrontendRoles);
+
+        contentlet.setProperty(Contentlet.DO_REINDEX, doIndexing);
         canLock(contentlet, user);
         lock(contentlet, user, respectFrontendRoles);
         Contentlet workingContentlet = new Contentlet();

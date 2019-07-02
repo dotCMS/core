@@ -2,7 +2,6 @@ package com.dotmarketing.portlets.contentlet.business;
 
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
-import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
@@ -17,7 +16,6 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
-import com.dotmarketing.portlets.contentlet.model.ContentletListener;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
@@ -26,12 +24,9 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.liferay.portal.model.User;
+
 import java.io.Serializable;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Provides access to a wide range of routines aimed to interact with
@@ -998,7 +993,24 @@ public interface ContentletAPI {
 	 * @throws DotContentletStateException if contentlet is not already persisted
 	 */
 	public Contentlet checkout(String contentletInode, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException;
-	
+
+	/**
+	 * Allows you to checkout a content so it can be altered and checked in
+	 * Note that this method is only intended for use with Checkin methods.
+	 * Methods like publish, archive, unpublish,.. will fail when passing
+	 * a contentlet returned by this method.
+	 * @param contentletInode
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @param doIndexing  true if wants to reindex on this call
+	 * @return Contentlet object
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 * @throws DotContentletStateException if contentlet is not already persisted
+	 */
+	public Contentlet checkout(String contentletInode, User user, boolean respectFrontendRoles, boolean doIndexing) throws DotDataException, DotSecurityException, DotContentletStateException;
+
+
 	/**
 	 * Allows you to checkout contents so it can be altered and checked in.
 	 * Note that this method is only intended for use with Checkin methods.

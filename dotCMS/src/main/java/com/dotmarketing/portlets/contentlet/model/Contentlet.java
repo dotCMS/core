@@ -122,6 +122,11 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public static final String IS_COPY_CONTENTLET = "_is_copy_contentlet";
 	public static final String CONTENTLET_ASSET_NAME_COPY = "_contentlet_asset_name_copy";
 
+	/**
+	 * By default the contentlet will be reindex, even if this is null.
+	 * If want to avoid the api reindex, set this to false
+	 */
+	public static final String DO_REINDEX = "__do_reindex__";
     public static final String WORKFLOW_PUBLISH_DATE = "wfPublishDate";
     public static final String WORKFLOW_PUBLISH_TIME = "wfPublishTime";
     public static final String WORKFLOW_EXPIRE_DATE = "wfExpireDate";
@@ -1391,6 +1396,28 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	    getMap().remove(IS_COPY_CONTENTLET);
 	    getMap().remove(CONTENTLET_ASSET_NAME_COPY);
 		getWritableNullProperties().clear();
+	}
+
+	/**
+	 * True if the content is in a workflow process.
+	 * @return
+	 */
+	public boolean isWorkflowInProgress() {
+
+		final Object inProgress = this.get(Contentlet.WORKFLOW_IN_PROGRESS);
+
+		return null != inProgress && Boolean.TRUE.equals(inProgress);
+	}
+
+	/**
+	 * If wants to avoid the reindex set this to false.
+	 * @return boolean
+	 */
+	public boolean doReindex () {
+
+		final Object doReindex = this.get(Contentlet.DO_REINDEX);
+
+		return null == doReindex || Boolean.TRUE.equals(doReindex);
 	}
 
 

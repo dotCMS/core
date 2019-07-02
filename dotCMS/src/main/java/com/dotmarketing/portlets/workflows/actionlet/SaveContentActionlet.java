@@ -50,17 +50,22 @@ public class SaveContentActionlet extends WorkFlowActionlet {
 	public void executeAction(final WorkflowProcessor processor,
 							  final Map<String, WorkflowActionClassParameter> params) throws WorkflowActionFailureException {
 
+		Object workflowInProgress = null;
+
 		try {
 
-			final Contentlet contentlet =
-					processor.getContentlet();
+			final Contentlet contentlet = processor.getContentlet();
+
+			workflowInProgress = contentlet.get(Contentlet.WORKFLOW_IN_PROGRESS);
+			contentlet.setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.TRUE);
+			contentlet.setProperty(Contentlet.DO_REINDEX, Boolean.FALSE);
 
 			Logger.debug(this,
 					"Saving the content of the contentlet: " + contentlet.getIdentifier());
 
 			final boolean    isNew              = this.isNew (contentlet);
 			final Contentlet checkoutContentlet = isNew? contentlet:
-					this.contentletAPI.checkout(contentlet.getInode(), processor.getUser(), false);
+					this.contentletAPI.checkout(contentlet.getInode(), processor.getUser(), false, Boolean.FALSE);
 
 			if (!isNew) {
 
@@ -70,8 +75,9 @@ public class SaveContentActionlet extends WorkFlowActionlet {
 			}
 
 			checkoutContentlet.setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.TRUE);
+			checkoutContentlet.setProperty(Contentlet.DO_REINDEX, Boolean.FALSE);
 
-			final Contentlet contentletNew = (null != processor.getContentletDependencies())?
+			final Contentlet contentletNew = null != processor.getContentletDependencies()?
 					this.contentletAPI.checkin(checkoutContentlet, processor.getContentletDependencies()):
 					this.contentletAPI.checkin(checkoutContentlet, processor.getUser(), false);
 
@@ -83,6 +89,11 @@ public class SaveContentActionlet extends WorkFlowActionlet {
 
 			Logger.error(this.getClass(),e.getMessage(),e);
 			throw new  WorkflowActionFailureException(e.getMessage(),e);
+		} finally {
+
+			if (null != processor.getContentlet()) {
+				processor.getContentlet().setProperty(Contentlet.WORKFLOW_IN_PROGRESS, workflowInProgress);
+			}
 		}
 	}
 
