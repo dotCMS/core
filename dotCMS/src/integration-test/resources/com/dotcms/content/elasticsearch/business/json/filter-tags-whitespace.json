@@ -4,7 +4,7 @@
       "must": [
         {
           "term": {
-            "contenttype": "news"
+            "contenttype": "REPLACE_WITH_NEWS_CONTENT_TYPE_VARNAME"
           }
         },
         {

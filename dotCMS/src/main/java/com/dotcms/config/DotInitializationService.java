@@ -5,6 +5,7 @@ import com.dotcms.api.system.event.SystemEventProcessorFactoryInitializer;
 import com.dotcms.rendering.velocity.events.ExceptionHandlersInitializer;
 import com.dotcms.system.event.local.business.LocalSystemEventSubscribersInitializer;
 import com.dotcms.util.ReflectionUtils;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.*;
 import org.apache.commons.lang.time.StopWatch;
 
@@ -108,6 +109,7 @@ public class DotInitializationService implements Serializable {
                 new SystemEventProcessorFactoryInitializer(),
                 new PayloadVerifierFactoryInitializer(),
                 new LocalSystemEventSubscribersInitializer(),
+                (DotInitializer)APILocator.getPersonaAPI(),
                 new ExceptionHandlersInitializer());
     } // getInternalInitializers.
 

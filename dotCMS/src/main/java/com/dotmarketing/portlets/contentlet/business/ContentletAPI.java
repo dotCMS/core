@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.contentlet.business;
 
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
@@ -16,6 +17,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
+import com.dotmarketing.portlets.contentlet.model.ContentletListener;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
@@ -744,6 +746,22 @@ public interface ContentletAPI {
             boolean hasParent, User user, boolean respectFrontendRoles,
             List<Contentlet> contentletsToBeRelated)
             throws DotDataException, DotSecurityException, DotContentletStateException;
+
+    /**
+     * Returns a list of all contentlets related to this instance given a RelationshipField variable
+     * using pagination
+     * @param variableName
+     * @param user
+     * @param respectFrontendRoles
+     * @param pullByParents
+     * @param limit
+     * @param offset
+     * @param sortBy
+     * @return
+     */
+    List<Contentlet> getRelatedContent(Contentlet contentlet, String variableName, User user,
+            boolean respectFrontendRoles, Boolean pullByParents, int limit, int offset,
+            String sortBy);
 
     /**
 	 * Associates the given list of contentlets using the relationship this

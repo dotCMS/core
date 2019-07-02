@@ -12,6 +12,7 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.lock.IdentifierStripedLock;
 import com.dotcms.content.business.DotMappingException;
+import com.dotcms.content.elasticsearch.business.event.ContentletArchiveEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletCheckinEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletDeletedEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletPublishEvent;
@@ -54,6 +55,7 @@ import com.dotmarketing.beans.Permission;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -177,6 +179,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -188,6 +191,8 @@ import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.BeanUtils;
 
 /**
@@ -1571,8 +1576,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }
             }
 
-            return contentlet
-                    .getRelated(fieldVariable, user, respectFrontendRoles, pullByParent, limit,
+            return getRelatedContent(contentlet, fieldVariable, user, respectFrontendRoles, pullByParent, limit,
                             offset, sortBy);
         } catch (Exception e) {
             final String errorMessage =
@@ -2320,7 +2324,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }
 
                 HibernateUtil.addCommitListener(() -> this.contentletSystemEventUtil.pushArchiveEvent(workingContentlet), 1000);
-                HibernateUtil.addCommitListener(() -> localSystemEventsAPI.notify(new ContentletPublishEvent(contentlet, user, true)));
+                HibernateUtil.addCommitListener(() -> localSystemEventsAPI.notify(new ContentletArchiveEvent(contentlet, user, true)));
             } else {
                 throw new DotContentletStateException("Contentlet with Identifier '" + contentlet.getIdentifier() +
                         "' must be unlocked before being archived");
@@ -2675,7 +2679,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             publishRelatedHtmlPages(contentlet);
 
             HibernateUtil.addCommitListener(() -> this.sendUnArchiveContentSystemEvent(contentlet), 1000);
-            HibernateUtil.addCommitListener(() -> localSystemEventsAPI.notify(new ContentletPublishEvent(contentlet, user, false)));
+            HibernateUtil.addCommitListener(() -> localSystemEventsAPI.notify(new ContentletArchiveEvent(contentlet, user, false)));
         } catch(DotDataException | DotStateException| DotSecurityException e) {
             ActivityLogger.logInfo(getClass(), "Error Unarchiving Content", "StartDate: " +contentPushPublishDate+ "; "
                     + "EndDate: " +contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown")
@@ -2765,7 +2769,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }
                 //If relationship field, related content cache must be invalidated
                 invalidateRelatedContentCache(relatedContentlet, relationship, !hasParent);
-                CacheLocator.getContentletCache().add(relatedContentlet);
             }
         }
 
@@ -2777,25 +2780,200 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     private void invalidateRelatedContentCache(Contentlet contentlet, Relationship relationship,
             boolean hasParent) {
-        //If relationship field, related content cache must be invalidated
-        if (relationship.isRelationshipField()){
 
-            if (relationshipAPI.sameParentAndChild(relationship)){
-                if (relationship.getParentRelationName() != null) {
-                    contentlet.setRelated(relationship.getParentRelationName(), null);
-                }
+        String fieldVariable = null;
+        try {
+            //If relationship field, related content cache must be invalidated
+            if (relationship.isRelationshipField()) {
 
-                if (relationship.getChildRelationName() != null) {
-                    contentlet.setRelated(relationship.getChildRelationName(), null);
-                }
-            }else {
-                if (!hasParent && relationship.getParentRelationName() != null) {
-                    contentlet.setRelated(relationship.getParentRelationName(), null);
-                } else if (hasParent && relationship.getChildRelationName() != null) {
-                    contentlet.setRelated(relationship.getChildRelationName(), null);
+                if (relationshipAPI.sameParentAndChild(relationship)) {
+                    if (relationship.getParentRelationName() != null) {
+                        fieldVariable = relationship.getParentRelationName();
+                        contentlet.setRelated(relationship.getParentRelationName(), null);
+                        CacheLocator.getRelationshipCache()
+                                .removeRelatedContentFromMap(contentlet.getIdentifier(),
+                                        relationship.getParentRelationName());
+                    }
+
+                    if (relationship.getChildRelationName() != null) {
+                        fieldVariable = relationship.getChildRelationName();
+                        contentlet.setRelated(relationship.getChildRelationName(), null);
+                        CacheLocator.getRelationshipCache()
+                                .removeRelatedContentFromMap(contentlet.getIdentifier(),
+                                        relationship.getChildRelationName());
+                    }
+                } else {
+                    if (!hasParent && relationship.getParentRelationName() != null) {
+                        fieldVariable = relationship.getParentRelationName();
+                        contentlet.setRelated(relationship.getParentRelationName(), null);
+                        CacheLocator.getRelationshipCache()
+                                .removeRelatedContentFromMap(contentlet.getIdentifier(),
+                                        relationship.getParentRelationName());
+                    } else if (hasParent && relationship.getChildRelationName() != null) {
+                        fieldVariable = relationship.getChildRelationName();
+                        contentlet.setRelated(relationship.getChildRelationName(), null);
+                        CacheLocator.getRelationshipCache()
+                                .removeRelatedContentFromMap(contentlet.getIdentifier(),
+                                        relationship.getChildRelationName());
+                    }
                 }
             }
+
+        } catch (DotCacheException e) {
+            Logger.debug(this, String.format(
+                    "Cache entry with key %s was not found for contentlet with identifier %s.",
+                    fieldVariable, contentlet.getIdentifier()),
+                    e);
         }
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public List<Contentlet> getRelatedContent(final Contentlet contentlet, final String variableName,
+            final User user,
+            final boolean respectFrontendRoles, Boolean pullByParents, final int limit,
+            final int offset,
+            final String sortBy) {
+
+        if (variableName == null){
+            return Collections.EMPTY_LIST;
+        }
+
+        final String contentletIdentifier = contentlet.getIdentifier();
+        Map<String, List<String>> relatedIds = null;
+        try {
+            if (UtilMethods.isSet(CacheLocator.getRelationshipCache()
+                    .getRelatedContentMap(contentletIdentifier))) {
+
+                //Get mutable map
+                relatedIds = new ConcurrentHashMap<>(CacheLocator.getRelationshipCache()
+                        .getRelatedContentMap(contentletIdentifier));
+            }
+        } catch (DotCacheException e) {
+            Logger.debug(this,
+                    String.format("Cache entry with key %s was not found.", contentletIdentifier),
+                    e);
+        }
+
+        if (relatedIds == null) {
+            relatedIds = Maps.newConcurrentMap();
+        }
+
+        try {
+            User currentUser;
+
+            if (user != null){
+                currentUser = user;
+            } else{
+                currentUser = APILocator.getUserAPI().getAnonymousUser();
+            }
+
+            final List<Contentlet> relatedContentlet;
+
+            if (relatedIds.containsKey(variableName)) {
+                relatedContentlet = getCachedRelatedContentlets(relatedIds, variableName);
+            } else {
+                relatedContentlet = getNonCachedRelatedContentlets(contentlet, relatedIds,
+                        variableName, pullByParents,
+                        limit, offset, sortBy);
+            }
+
+            //Restricts contentlet according to user permissions
+            return APILocator.getPermissionAPI().filterCollection(relatedContentlet, PermissionAPI.PERMISSION_READ,
+                    currentUser.equals(APILocator.getUserAPI().getAnonymousUser())
+                            ? true : respectFrontendRoles, currentUser);
+
+        } catch (DotDataException | DotSecurityException e) {
+            Logger.warn(this, "Error getting related content for field " + variableName, e);
+            throw new DotStateException(e);
+        }
+    }
+
+    /**
+     *
+     * @param contentlet
+     * @param relatedIds
+     * @param variableName
+     * @param pullByParent
+     * @param limit
+     * @param offset
+     * @param sortBy
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Nullable
+    private List<Contentlet> getNonCachedRelatedContentlets(final Contentlet contentlet,
+            final Map<String, List<String>> relatedIds, final String variableName,
+            final Boolean pullByParent, final int limit, final int offset,
+            final String sortBy)
+            throws DotDataException, DotSecurityException {
+
+        final User systemUser = APILocator.getUserAPI().getSystemUser();
+        com.dotcms.contenttype.model.field.Field field = null;
+        final List<Contentlet> relatedList;
+        Relationship relationship;
+
+        try {
+            field = APILocator
+                    .getContentTypeFieldAPI()
+                    .byContentTypeIdAndVar(contentlet.getContentTypeId(), variableName);
+
+            relationship = relationshipAPI.getRelationshipFromField(field, systemUser);
+
+
+        }catch(NotFoundInDbException e){
+            //Search for legacy relationships
+            relationship =  relationshipAPI.byTypeValue(variableName);
+        }
+
+        if (relationship == null){
+            throw new DotStateException("No relationship found");
+        }
+        relatedList = filterRelatedContent(contentlet, relationship, systemUser, false,
+                pullByParent, limit, offset, sortBy);
+
+
+        //Cache related content only if it is a relationship field
+        if (field != null && limit == -1 && offset == 0 && sortBy == null) {
+            if (UtilMethods.isSet(relatedList)) {
+                relatedIds.put(variableName,
+                        relatedList.stream().map(cont -> cont.getIdentifier())
+                                .collect(
+                                        CollectionsUtils.toImmutableList()));
+            } else {
+                relatedIds.put(variableName, Collections.emptyList());
+            }
+            //refreshing cache when related content map is updated
+            CacheLocator.getRelationshipCache().putRelatedContentMap(contentlet.getIdentifier(), relatedIds);
+        }
+
+        return relatedList;
+    }
+
+    /**
+     *
+     * @param relatedIds
+     * @param variableName
+     * @return
+     */
+    @NotNull
+    private List<Contentlet> getCachedRelatedContentlets(final Map<String, List<String>> relatedIds,
+            final String variableName) {
+        final List<Contentlet> relatedList = relatedIds
+                .get(variableName).stream()
+                .map(identifier -> {
+                    try {
+                        return APILocator.getContentletAPI()
+                                .findContentletByIdentifierAnyLanguage(identifier);
+                    } catch (DotDataException | DotSecurityException e) {
+                        Logger.warn(this, "No content found with id " + identifier,
+                                e);
+                        throw new DotStateException(e);
+                    }
+                }).collect(Collectors.toList());
+
+        return relatedList;
     }
 
     @WrapInTransaction
@@ -2894,7 +3072,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     treePosition++;
                 }
                 invalidateRelatedContentCache(c, relationship, !related.isHasParent());
-                CacheLocator.getContentletCache().add(c);
             }
 
             //If relationship field, related content cache must be invalidated

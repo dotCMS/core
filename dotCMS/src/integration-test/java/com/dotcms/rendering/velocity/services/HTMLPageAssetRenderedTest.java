@@ -12,7 +12,9 @@ import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.request.MockSessionRequest;
@@ -20,8 +22,10 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.PublishFactory;
@@ -34,6 +38,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetNotFoundException;
 import com.dotmarketing.portlets.htmlpageasset.business.render.PageContextBuilder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.PageMode;
@@ -48,6 +53,7 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 public class HTMLPageAssetRenderedTest {
 
@@ -61,9 +67,12 @@ public class HTMLPageAssetRenderedTest {
     private static final boolean contentFallbackDefaultValue = Config.getBooleanProperty(contentFallbackProperty,false);
     private static final boolean pageFallbackDefaultValue =Config.getBooleanProperty(pageFallbackProperty,true);
     private static Folder folder;
-    private static final List<String> contentletsIds = new ArrayList<String>();
+    private static final List<String> contentletsIds = new ArrayList<>();
     private static ContentletAPI contentletAPI;
     private static final String UUID = UUIDGenerator.generateUuid();
+
+    private static Language spanishLanguage;
+    private static Host site;
 
 
     @BeforeClass
@@ -77,8 +86,13 @@ public class HTMLPageAssetRenderedTest {
     }
 
     private static void createTestPage() throws Exception{
+
+        site = new SiteDataGen().nextPersisted();
         //Create test folder
-        folder =  new FolderDataGen().nextPersisted();
+        folder = new FolderDataGen().site(site).nextPersisted();
+
+        //Spanish language
+        spanishLanguage = TestDataUtils.getSpanishLanguage();
 
         //Get ContentGeneric Content-Type
         final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(systemUser);
@@ -101,7 +115,7 @@ public class HTMLPageAssetRenderedTest {
         cs.setStructureId(contentGenericType.id());
         cs.setCode("$!{body}");
         csList.add(cs);
-        container = APILocator.getContainerAPI().save(container, csList, APILocator.systemHost(), systemUser, false);
+        container = APILocator.getContainerAPI().save(container, csList, site, systemUser, false);
         PublishFactory.publishAsset(container, systemUser, false, false);
         containerId = container.getIdentifier();
 
@@ -114,28 +128,30 @@ public class HTMLPageAssetRenderedTest {
         final Contentlet contentlet1 = new ContentletDataGen(contentGenericId)
                 .languageId(1)
                 .folder(folder)
-                .host(APILocator.systemHost())
+                .host(site)
                 .setProperty("title", "content1")
                 .setProperty("body", "content1")
                 .nextPersisted();
 
-        contentlet1.setIndexPolicy(IndexPolicy.FORCE);
-        contentlet1.setIndexPolicyDependencies(IndexPolicy.FORCE);
+        contentlet1.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        contentlet1.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
         contentlet1.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         contentletAPI.publish(contentlet1, systemUser, false);
+        //Assign permissions
+        addAnonymousPermissions(contentlet1);
         contentletsIds.add(contentlet1.getIdentifier());
 
         //Create Contentlet with English and Spanish Versions
         final Contentlet contentlet2English = new ContentletDataGen(contentGenericId)
                 .languageId(1)
                 .folder(folder)
-                .host(APILocator.systemHost())
+                .host(site)
                 .setProperty("title", "content2")
                 .setProperty("body", "content2")
                 .nextPersisted();
 
-        contentlet2English.setIndexPolicy(IndexPolicy.FORCE);
-        contentlet2English.setIndexPolicyDependencies(IndexPolicy.FORCE);
+        contentlet2English.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        contentlet2English.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
         contentlet2English.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         contentletAPI.publish(contentlet2English, systemUser, false);
 
@@ -143,29 +159,33 @@ public class HTMLPageAssetRenderedTest {
         contentlet2Spanish.setProperty("title","content2Spa");
         contentlet2Spanish.setProperty("body","content2Spa");
         contentlet2Spanish.setInode("");
-        contentlet2Spanish.setLanguageId(2);
-        contentlet2Spanish.setIndexPolicy(IndexPolicy.FORCE);
-        contentlet2Spanish.setIndexPolicyDependencies(IndexPolicy.FORCE);
+        contentlet2Spanish.setLanguageId(spanishLanguage.getId());
+        contentlet2Spanish.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        contentlet2Spanish.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
         contentlet2Spanish.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         contentlet2Spanish = contentletAPI.checkin(contentlet2Spanish, systemUser, false);
 
-        contentlet2Spanish.setIndexPolicy(IndexPolicy.FORCE);
-        contentlet2Spanish.setIndexPolicyDependencies(IndexPolicy.FORCE);
+        contentlet2Spanish.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        contentlet2Spanish.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
         contentlet2Spanish.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         contentletAPI.publish(contentlet2Spanish, systemUser, false);
+        //Assign permissions
+        addAnonymousPermissions(contentlet2Spanish);
         contentletsIds.add(contentlet2English.getIdentifier());
 
         //Create Contentlet in Spanish
         final Contentlet contentlet3 = new ContentletDataGen(contentGenericId)
-                .languageId(2)
+                .languageId(spanishLanguage.getId())
                 .setProperty("title", "content3")
                 .setProperty("body", "content3")
                 .nextPersisted();
 
-        contentlet3.setIndexPolicy(IndexPolicy.FORCE);
-        contentlet3.setIndexPolicyDependencies(IndexPolicy.FORCE);
+        contentlet3.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        contentlet3.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
         contentlet3.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         contentletAPI.publish(contentlet3, systemUser, false);
+        //Assign permissions
+        addAnonymousPermissions(contentlet3);
         contentletsIds.add(contentlet3.getIdentifier());
     }
 
@@ -210,8 +230,8 @@ public class HTMLPageAssetRenderedTest {
                continue;
             }
 
-            contentlet.setIndexPolicy(IndexPolicy.FORCE);
-            contentlet.setIndexPolicyDependencies(IndexPolicy.FORCE);
+            contentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
+            contentlet.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
             contentlet.setBoolProperty(Contentlet.IS_TEST_MODE, true);
 
             contentletAPI.unpublish(contentlet,systemUser,false);
@@ -239,16 +259,18 @@ public class HTMLPageAssetRenderedTest {
 
         final String pageName = "test1Page-"+System.currentTimeMillis();
         final HTMLPageAsset pageEnglishVersion = new HTMLPageDataGen(folder,template).languageId(1).pageURL(pageName).title(pageName).nextPersisted();
-        pageEnglishVersion.setIndexPolicy(IndexPolicy.FORCE);
-        pageEnglishVersion.setIndexPolicyDependencies(IndexPolicy.FORCE);
+        pageEnglishVersion.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        pageEnglishVersion.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
         pageEnglishVersion.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         contentletAPI.publish(pageEnglishVersion, systemUser, false);
+        addAnonymousPermissions(pageEnglishVersion);
 
         createMultiTree(pageEnglishVersion.getIdentifier());
 
         HttpServletRequest mockRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
                 .request();
+        Mockito.when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
@@ -264,7 +286,9 @@ public class HTMLPageAssetRenderedTest {
         mockRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
                 .request();
-        mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "2");
+        Mockito.when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
+        mockRequest
+                .setAttribute(WebKeys.HTMLPAGE_LANGUAGE, String.valueOf(spanishLanguage.getId()));
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
                 PageContextBuilder.builder()
@@ -294,28 +318,32 @@ public class HTMLPageAssetRenderedTest {
 
         final String pageName = "test2Page-"+System.currentTimeMillis();
         final HTMLPageAsset pageEnglishVersion = new HTMLPageDataGen(folder,template).languageId(1).pageURL(pageName).title(pageName).nextPersisted();
-        pageEnglishVersion.setIndexPolicy(IndexPolicy.FORCE);
-        pageEnglishVersion.setIndexPolicyDependencies(IndexPolicy.FORCE);
+        pageEnglishVersion.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        pageEnglishVersion.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
         pageEnglishVersion.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         contentletAPI.publish(pageEnglishVersion, systemUser, false);
+        addAnonymousPermissions(pageEnglishVersion);
+
         Contentlet pageSpanishVersion = contentletAPI.find(pageEnglishVersion.getInode(),systemUser,false);
         pageSpanishVersion.setInode("");
-        pageSpanishVersion.setLanguageId(2);
-        pageSpanishVersion.setIndexPolicy(IndexPolicy.FORCE);
-        pageSpanishVersion.setIndexPolicyDependencies(IndexPolicy.FORCE);
+        pageSpanishVersion.setLanguageId(spanishLanguage.getId());
+        pageSpanishVersion.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        pageSpanishVersion.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
         pageSpanishVersion.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         pageSpanishVersion = contentletAPI.checkin(pageSpanishVersion,systemUser,false);
 
-        pageSpanishVersion.setIndexPolicy(IndexPolicy.FORCE);
-        pageSpanishVersion.setIndexPolicyDependencies(IndexPolicy.FORCE);
+        pageSpanishVersion.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        pageSpanishVersion.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
         pageSpanishVersion.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         contentletAPI.publish(pageSpanishVersion,systemUser,false);
+        addAnonymousPermissions(pageSpanishVersion);
 
         createMultiTree(pageEnglishVersion.getIdentifier());
 
         HttpServletRequest mockRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
                 .request();
+        Mockito.when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
@@ -331,7 +359,9 @@ public class HTMLPageAssetRenderedTest {
         mockRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
                 .request();
-        mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "2");
+        Mockito.when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
+        mockRequest
+                .setAttribute(WebKeys.HTMLPAGE_LANGUAGE, String.valueOf(spanishLanguage.getId()));
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
                 PageContextBuilder.builder()
@@ -362,18 +392,22 @@ public class HTMLPageAssetRenderedTest {
         Config.setProperty(pageFallbackProperty,true);
 
         final String pageName = "test3Page-"+System.currentTimeMillis();
-        final HTMLPageAsset pageSpanishVersion = new HTMLPageDataGen(folder,template).languageId(2).pageURL(pageName).title(pageName).nextPersisted();
-        pageSpanishVersion.setIndexPolicy(IndexPolicy.FORCE);
-        pageSpanishVersion.setIndexPolicyDependencies(IndexPolicy.FORCE);
+        final HTMLPageAsset pageSpanishVersion = new HTMLPageDataGen(folder, template)
+                .languageId(spanishLanguage.getId()).pageURL(pageName).title(pageName)
+                .nextPersisted();
+        pageSpanishVersion.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        pageSpanishVersion.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
         pageSpanishVersion.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         contentletAPI.publish(pageSpanishVersion, systemUser, false);
+        addAnonymousPermissions(pageSpanishVersion);
 
         createMultiTree(pageSpanishVersion.getIdentifier());
 
         HttpServletRequest mockRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
                 .request();
-        mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "2");
+        mockRequest
+                .setAttribute(WebKeys.HTMLPAGE_LANGUAGE, String.valueOf(spanishLanguage.getId()));
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
         String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
@@ -388,6 +422,7 @@ public class HTMLPageAssetRenderedTest {
         mockRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
                 .request();
+        Mockito.when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
@@ -417,16 +452,18 @@ public class HTMLPageAssetRenderedTest {
 
         final String pageName = "test4Page-"+System.currentTimeMillis();
         final HTMLPageAsset pageEnglishVersion = new HTMLPageDataGen(folder,template).languageId(1).pageURL(pageName).title(pageName).nextPersisted();
-        pageEnglishVersion.setIndexPolicy(IndexPolicy.FORCE);
-        pageEnglishVersion.setIndexPolicyDependencies(IndexPolicy.FORCE);
+        pageEnglishVersion.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        pageEnglishVersion.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
         pageEnglishVersion.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         contentletAPI.publish(pageEnglishVersion, systemUser, false);
+        addAnonymousPermissions(pageEnglishVersion);
 
         createMultiTree(pageEnglishVersion.getIdentifier());
 
         HttpServletRequest mockRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
                 .request();
+        Mockito.when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
@@ -442,7 +479,8 @@ public class HTMLPageAssetRenderedTest {
         mockRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
                 .request();
-        mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "2");
+        mockRequest
+                .setAttribute(WebKeys.HTMLPAGE_LANGUAGE, String.valueOf(spanishLanguage.getId()));
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
                 PageContextBuilder.builder()
@@ -471,27 +509,31 @@ public class HTMLPageAssetRenderedTest {
 
         final String pageName = "test5Page-"+System.currentTimeMillis();
         final HTMLPageAsset pageEnglishVersion = new HTMLPageDataGen(folder,template).languageId(1).pageURL(pageName).title(pageName).nextPersisted();
-        pageEnglishVersion.setIndexPolicy(IndexPolicy.FORCE);
-        pageEnglishVersion.setIndexPolicyDependencies(IndexPolicy.FORCE);
+        pageEnglishVersion.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        pageEnglishVersion.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
         pageEnglishVersion.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         contentletAPI.publish(pageEnglishVersion, systemUser, false);
+        addAnonymousPermissions(pageEnglishVersion);
+
         Contentlet pageSpanishVersion = contentletAPI.find(pageEnglishVersion.getInode(),systemUser,false);
         pageSpanishVersion.setInode("");
-        pageSpanishVersion.setLanguageId(2);
-        pageSpanishVersion.setIndexPolicy(IndexPolicy.FORCE);
-        pageSpanishVersion.setIndexPolicyDependencies(IndexPolicy.FORCE);
+        pageSpanishVersion.setLanguageId(spanishLanguage.getId());
+        pageSpanishVersion.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        pageSpanishVersion.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
         pageSpanishVersion.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         pageSpanishVersion = contentletAPI.checkin(pageSpanishVersion,systemUser,false);
-        pageSpanishVersion.setIndexPolicy(IndexPolicy.FORCE);
-        pageSpanishVersion.setIndexPolicyDependencies(IndexPolicy.FORCE);
+        pageSpanishVersion.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        pageSpanishVersion.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
         pageSpanishVersion.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         contentletAPI.publish(pageSpanishVersion,systemUser,false);
+        addAnonymousPermissions(pageSpanishVersion);
 
         createMultiTree(pageEnglishVersion.getIdentifier());
 
         HttpServletRequest mockRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
                 .request();
+        Mockito.when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
@@ -507,7 +549,9 @@ public class HTMLPageAssetRenderedTest {
         mockRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
                 .request();
-        mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "2");
+        Mockito.when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
+        mockRequest
+                .setAttribute(WebKeys.HTMLPAGE_LANGUAGE, String.valueOf(spanishLanguage.getId()));
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
                 PageContextBuilder.builder()
@@ -537,29 +581,32 @@ public class HTMLPageAssetRenderedTest {
 
         final String pageName = "test6Page-"+System.currentTimeMillis();
         final HTMLPageAsset pageEnglishVersion = new HTMLPageDataGen(folder,template).languageId(1).pageURL(pageName).title(pageName).nextPersisted();
-        pageEnglishVersion.setIndexPolicy(IndexPolicy.FORCE);
-        pageEnglishVersion.setIndexPolicyDependencies(IndexPolicy.FORCE);
+        pageEnglishVersion.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        pageEnglishVersion.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
         pageEnglishVersion.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         contentletAPI.publish(pageEnglishVersion, systemUser, false);
+        addAnonymousPermissions(pageEnglishVersion);
         Contentlet pageSpanishVersion = contentletAPI.find(pageEnglishVersion.getInode(),systemUser,false);
 
         pageSpanishVersion.setInode("");
-        pageSpanishVersion.setLanguageId(2);
-        pageSpanishVersion.setIndexPolicy(IndexPolicy.FORCE);
-        pageSpanishVersion.setIndexPolicyDependencies(IndexPolicy.FORCE);
+        pageSpanishVersion.setLanguageId(spanishLanguage.getId());
+        pageSpanishVersion.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        pageSpanishVersion.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
         pageEnglishVersion.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         pageSpanishVersion = contentletAPI.checkin(pageSpanishVersion,systemUser,false);
 
-        pageSpanishVersion.setIndexPolicy(IndexPolicy.FORCE);
-        pageSpanishVersion.setIndexPolicyDependencies(IndexPolicy.FORCE);
+        pageSpanishVersion.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        pageSpanishVersion.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
         pageEnglishVersion.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         contentletAPI.publish(pageSpanishVersion,systemUser,false);
+        addAnonymousPermissions(pageSpanishVersion);
 
         createMultiTree(pageEnglishVersion.getIdentifier());
 
         HttpServletRequest mockRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
                 .request();
+        Mockito.when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
@@ -575,7 +622,9 @@ public class HTMLPageAssetRenderedTest {
         mockRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
                 .request();
-        mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "2");
+        Mockito.when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
+        mockRequest
+                .setAttribute(WebKeys.HTMLPAGE_LANGUAGE, String.valueOf(spanishLanguage.getId()));
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
                 PageContextBuilder.builder()
@@ -605,16 +654,18 @@ public class HTMLPageAssetRenderedTest {
 
         final String pageName = "test7Page-"+System.currentTimeMillis();
         final HTMLPageAsset pageEnglishVersion = new HTMLPageDataGen(folder,template).languageId(1).pageURL(pageName).title(pageName).nextPersisted();
-        pageEnglishVersion.setIndexPolicy(IndexPolicy.FORCE);
-        pageEnglishVersion.setIndexPolicyDependencies(IndexPolicy.FORCE);
+        pageEnglishVersion.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        pageEnglishVersion.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
         pageEnglishVersion.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         contentletAPI.publish(pageEnglishVersion, systemUser, false);
+        addAnonymousPermissions(pageEnglishVersion);
 
         createMultiTree(pageEnglishVersion.getIdentifier());
 
         HttpServletRequest mockRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
                 .request();
+        Mockito.when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
@@ -630,7 +681,8 @@ public class HTMLPageAssetRenderedTest {
         mockRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
                 .request();
-        mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "2");
+        mockRequest
+                .setAttribute(WebKeys.HTMLPAGE_LANGUAGE, String.valueOf(spanishLanguage.getId()));
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
                 PageContextBuilder.builder()
@@ -671,18 +723,20 @@ public class HTMLPageAssetRenderedTest {
             final Contentlet contentlet = new ContentletDataGen(contentType.id()).languageId(1)
                     .setProperty("widgetTitle", "testing").nextPersisted();
 
-            contentlet.setIndexPolicy(IndexPolicy.FORCE);
-            contentlet.setIndexPolicyDependencies(IndexPolicy.FORCE);
+            contentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
+            contentlet.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
             contentlet.setBoolProperty(Contentlet.IS_TEST_MODE, true);
             contentletAPI.publish(contentlet, systemUser, false);
+            addAnonymousPermissions(contentlet);
 
             final HTMLPageAsset pageEnglishVersion = new HTMLPageDataGen(folder, template)
                     .languageId(1).pageURL("testPageWidget").title("testPageWidget")
                     .nextPersisted();
-            pageEnglishVersion.setIndexPolicy(IndexPolicy.FORCE);
-            pageEnglishVersion.setIndexPolicyDependencies(IndexPolicy.FORCE);
+            pageEnglishVersion.setIndexPolicy(IndexPolicy.WAIT_FOR);
+            pageEnglishVersion.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
             contentlet.setBoolProperty(Contentlet.IS_TEST_MODE, true);
             contentletAPI.publish(pageEnglishVersion, systemUser, false);
+            addAnonymousPermissions(pageEnglishVersion);
 
             MultiTree multiTree = new MultiTree(pageEnglishVersion.getIdentifier(), containerId,
                     contentlet.getIdentifier(), UUID, 0);
@@ -692,6 +746,7 @@ public class HTMLPageAssetRenderedTest {
                     new MockAttributeRequest(new MockHttpRequest("localhost", "/").request())
                             .request())
                     .request();
+            Mockito.when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
             mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
             HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
             final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
@@ -717,6 +772,7 @@ public class HTMLPageAssetRenderedTest {
                     new MockAttributeRequest(new MockHttpRequest("localhost", "/").request())
                             .request())
                     .request();
+            Mockito.when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
             mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
             HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
             html = APILocator.getHTMLPageAssetRenderedAPI()
@@ -753,10 +809,11 @@ public class HTMLPageAssetRenderedTest {
                     .title(pageName)
                     .nextPersisted();
 
-            pageEnglishVersion.setIndexPolicy(IndexPolicy.FORCE);
-            pageEnglishVersion.setIndexPolicyDependencies(IndexPolicy.FORCE);
+            pageEnglishVersion.setIndexPolicy(IndexPolicy.WAIT_FOR);
+            pageEnglishVersion.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
             pageEnglishVersion.setBoolProperty(Contentlet.IS_TEST_MODE, true);
             contentletAPI.publish(pageEnglishVersion, systemUser, false);
+            addAnonymousPermissions(pageEnglishVersion);
 
             createMultiTree(pageEnglishVersion.getIdentifier());
 
@@ -764,6 +821,7 @@ public class HTMLPageAssetRenderedTest {
                     new MockAttributeRequest(new MockHttpRequest("localhost", "/").request())
                             .request())
                     .request();
+            Mockito.when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
             mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
             HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
             final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
@@ -785,6 +843,7 @@ public class HTMLPageAssetRenderedTest {
                     new MockAttributeRequest(new MockHttpRequest("localhost", "/").request())
                             .request())
                     .request();
+            Mockito.when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
             mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
             HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
             html = APILocator.getHTMLPageAssetRenderedAPI()
@@ -805,6 +864,7 @@ public class HTMLPageAssetRenderedTest {
                     new MockAttributeRequest(new MockHttpRequest("localhost", "/").request())
                             .request())
                     .request();
+            Mockito.when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
             mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
             HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
             html = APILocator.getHTMLPageAssetRenderedAPI()
@@ -820,6 +880,17 @@ public class HTMLPageAssetRenderedTest {
             WebAssetFactory.unArchiveAsset(container);
             WebAssetFactory.publishAsset(container, systemUser);
         }
+    }
+
+    private static void addAnonymousPermissions(final Contentlet contentlet)
+            throws DotDataException, DotSecurityException {
+
+        //Assign permissions
+        APILocator.getPermissionAPI().save(
+                new Permission(contentlet.getPermissionId(),
+                        APILocator.getRoleAPI().loadCMSAnonymousRole().getId(),
+                        PermissionAPI.PERMISSION_READ),
+                contentlet, APILocator.systemUser(), false);
     }
 
 }

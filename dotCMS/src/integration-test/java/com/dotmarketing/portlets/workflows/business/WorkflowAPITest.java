@@ -18,6 +18,7 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
@@ -65,6 +66,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -303,20 +305,22 @@ public class WorkflowAPITest extends IntegrationTestBase {
         contentletAPI = APILocator.getContentletAPI();
         workflowCache = CacheLocator.getWorkFlowCache();
 
-        publisher = roleAPI.findRoleByName("Publisher / Legal", null);
-        reviewer = roleAPI.findRoleByName("Reviewer", publisher);
-        contributor = roleAPI.findRoleByName("Contributor", reviewer);
-        intranet = roleAPI.findRoleByName("Intranet", null);
-        anyWhoView = roleAPI.loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_VIEW_ROLE_KEY);
-        anyWhoEdit = roleAPI.loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_EDIT_ROLE_KEY);
-        anyWhoPublish = roleAPI.loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_PUBLISH_ROLE_KEY);
-        anyWhoEditPermissions = roleAPI
-                .loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_EDIT_PERMISSIONS_ROLE_KEY);
+        publisher = TestUserUtils.getOrCreatePublisherRole();
+        reviewer =  TestUserUtils.getOrCreateReviewerRole();
+        contributor = TestUserUtils.getOrCreateContributorRole();
+        intranet = TestUserUtils.getOrCreateIntranetRole();
 
-        joeContributor = APILocator.getUserAPI().loadUserById("dotcms.org.2789");
-        janeReviewer = APILocator.getUserAPI().loadUserById("dotcms.org.2787");
-        chrisPublisher = APILocator.getUserAPI().loadUserById("dotcms.org.2795");
-        billIntranet = APILocator.getUserAPI().loadUserById("dotcms.org.2806");
+        final Map<String,Role> workflowRoles = TestUserUtils.getOrCreateWorkflowRoles();
+
+        anyWhoView = workflowRoles.get(RoleAPI.WORKFLOW_ANY_WHO_CAN_VIEW_ROLE_KEY);
+        anyWhoEdit = workflowRoles.get(RoleAPI.WORKFLOW_ANY_WHO_CAN_EDIT_ROLE_KEY);
+        anyWhoPublish = workflowRoles.get(RoleAPI.WORKFLOW_ANY_WHO_CAN_PUBLISH_ROLE_KEY);
+        anyWhoEditPermissions = workflowRoles.get(RoleAPI.WORKFLOW_ANY_WHO_CAN_EDIT_PERMISSIONS_ROLE_KEY);
+
+        joeContributor = TestUserUtils.getJoeContributorUser();
+        janeReviewer = TestUserUtils.getJaneReviewerUser();
+        chrisPublisher = TestUserUtils.getChrisPublisherUser();
+        billIntranet =  TestUserUtils.getBillIntranetUser();
 
         long time = System.currentTimeMillis();
         contentTypeName = "WorkflowTesting_" + time;
@@ -462,6 +466,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
                 workflowScheme4.getId());
 
         /* Generate actions */
+        //-- Step 3
         workflowScheme4Step3ActionView = addWorkflowAction(workflowScheme4Step3ActionViewName, 1,
                 workflowScheme4Step3.getId(), false, workflowScheme4Step3.getId(), anyWhoView,
                 workflowScheme4.getId());
@@ -476,11 +481,13 @@ public class WorkflowAPITest extends IntegrationTestBase {
                 workflowScheme4Step3ActionEditPermissionsName, 4,
                 workflowScheme4Step3.getId(), false, workflowScheme4Step3.getId(),
                 anyWhoEditPermissions, workflowScheme4.getId());
+
         workflowScheme4Step3ActionPublisher = addWorkflowAction(
                 workflowScheme4Step3ActionPublisherName, 5,
                 workflowScheme4Step3.getId(), false, workflowScheme4Step3.getId(), publisher,
                 workflowScheme4.getId());
 
+       //-- Step 2
         workflowScheme4Step2ActionView = addWorkflowAction(workflowScheme4Step2ActionViewName, 1,
                 workflowScheme4Step3.getId(), false, workflowScheme4Step2.getId(), anyWhoView,
                 workflowScheme4.getId());
@@ -495,11 +502,13 @@ public class WorkflowAPITest extends IntegrationTestBase {
                 workflowScheme4Step2ActionEditPermissionsName, 4,
                 workflowScheme4Step3.getId(), false, workflowScheme4Step2.getId(),
                 anyWhoEditPermissions, workflowScheme4.getId());
+
         workflowScheme4Step2ActionReviewer = addWorkflowAction(
                 workflowScheme4Step2ActionReviewerName, 5,
                 workflowScheme4Step3.getId(), false, workflowScheme4Step2.getId(), reviewer,
                 workflowScheme4.getId());
 
+       //-- Step 1
         workflowScheme4Step1ActionView = addWorkflowAction(workflowScheme4Step1ActionViewName, 1,
                 workflowScheme4Step2.getId(), false, workflowScheme4Step1.getId(), anyWhoView,
                 workflowScheme4.getId());
@@ -903,14 +912,14 @@ public class WorkflowAPITest extends IntegrationTestBase {
 
         Contentlet testContentlet = new Contentlet();
         try {
-            List<WorkflowScheme> worflowSchemes = new ArrayList<>();
-            worflowSchemes.add(workflowScheme1);
-            worflowSchemes.add(workflowScheme2);
-            worflowSchemes.add(workflowScheme3);
-            worflowSchemes.add(workflowScheme4);
+            List<WorkflowScheme> workflowSchemes = new ArrayList<>();
+            workflowSchemes.add(workflowScheme1);
+            workflowSchemes.add(workflowScheme2);
+            workflowSchemes.add(workflowScheme3);
+            workflowSchemes.add(workflowScheme4);
 
             /* Associate the schemas to the content type */
-            workflowAPI.saveSchemesForStruct(contentTypeStructure, worflowSchemes);
+            workflowAPI.saveSchemesForStruct(contentTypeStructure, workflowSchemes);
 
             long time = System.currentTimeMillis();
 
@@ -972,24 +981,32 @@ public class WorkflowAPITest extends IntegrationTestBase {
              */
             List<WorkflowAction> foundActions = APILocator.getWorkflowAPI()
                     .findAvailableActions(testContentlet, billIntranet);
+
+                    for(final WorkflowAction a:foundActions){
+                       System.out.println(a);
+                    }
+
             assertNotNull(foundActions);
             assertFalse(foundActions.isEmpty());
             assertEquals(foundActions.size(), 4);
 
             foundActions = APILocator.getWorkflowAPI()
                     .findAvailableActions(testContentlet, janeReviewer);
+
             assertNotNull(foundActions);
             assertFalse(foundActions.isEmpty());
             assertEquals(foundActions.size(), 4);
 
             foundActions = APILocator.getWorkflowAPI()
                     .findAvailableActions(testContentlet, chrisPublisher);
+
             assertNotNull(foundActions);
             assertFalse(foundActions.isEmpty());
             assertEquals(foundActions.size(), 6);
 
             foundActions = APILocator.getWorkflowAPI()
                     .findAvailableActions(testContentlet, joeContributor);
+
             assertNotNull(foundActions);
             assertFalse(foundActions.isEmpty());
             assertEquals(foundActions.size(), 5);
@@ -1019,14 +1036,14 @@ public class WorkflowAPITest extends IntegrationTestBase {
         Contentlet testContentlet2Checkout = null;
         Contentlet testContentletTop = new Contentlet();
         try {
-            List<WorkflowScheme> worflowSchemes = new ArrayList<>();
-            worflowSchemes.add(workflowScheme1);
-            worflowSchemes.add(workflowScheme2);
-            worflowSchemes.add(workflowScheme3);
-            worflowSchemes.add(workflowScheme4);
+            List<WorkflowScheme> workflowSchemes = new ArrayList<>();
+            workflowSchemes.add(workflowScheme1);
+            workflowSchemes.add(workflowScheme2);
+            workflowSchemes.add(workflowScheme3);
+            workflowSchemes.add(workflowScheme4);
 
             /* Associate the schemas to the content type */
-            workflowAPI.saveSchemesForStruct(contentTypeStructure, worflowSchemes);
+            workflowAPI.saveSchemesForStruct(contentTypeStructure, workflowSchemes);
 
             long time = System.currentTimeMillis();
 
@@ -1038,11 +1055,12 @@ public class WorkflowAPITest extends IntegrationTestBase {
             testContentlet1.setIndexPolicy(IndexPolicy.FORCE);
             testContentlet1 = contentletAPI.checkin(testContentlet1, user, false);
 
+            final Role role = APILocator.getRoleAPI().getUserRole(billIntranet);
             //Adding permissions to the just created contentlet
             List<Permission> permissions = new ArrayList<>();
             Permission p1 = new Permission(
                     testContentlet1.getPermissionId(),
-                    APILocator.getRoleAPI().getUserRole(billIntranet).getId(),
+                    role.getId(),
                     (PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT),
                     true);
 
@@ -1063,8 +1081,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
             testContentletTop = contentletAPI.checkin(testContentlet2Checkout, user, false);
 
             // expected behavior
-            List<WorkflowAction> foundActions = APILocator.getWorkflowAPI()
-                    .findAvailableActions(testContentletTop, billIntranet);
+            List<WorkflowAction> foundActions = APILocator.getWorkflowAPI().findAvailableActions(testContentletTop, billIntranet);
             assertNotNull(foundActions);
             assertFalse(foundActions.isEmpty());
             assertEquals(foundActions.size(), 4);
@@ -1089,8 +1106,8 @@ public class WorkflowAPITest extends IntegrationTestBase {
     public void findActionRespectingPermissions() throws DotDataException, DotSecurityException {
 
         //Users
-        final User billIntranet = APILocator.getUserAPI().loadUserById("dotcms.org.2806");
-        final User chrisPublisher = APILocator.getUserAPI().loadUserById("dotcms.org.2795");
+        final User billIntranet =  TestUserUtils.getBillIntranetUser(); //APILocator.getUserAPI().loadUserById("dotcms.org.2806");
+        final User chrisPublisher = TestUserUtils.getChrisPublisherUser(); //APILocator.getUserAPI().loadUserById("dotcms.org.2795");
 
         Contentlet testContentlet = new Contentlet();
         try {
@@ -1176,8 +1193,8 @@ public class WorkflowAPITest extends IntegrationTestBase {
     public void findAction() throws DotDataException, DotSecurityException {
 
         //Users
-        final User billIntranet = APILocator.getUserAPI().loadUserById("dotcms.org.2806");
-        final User chrisPublisher = APILocator.getUserAPI().loadUserById("dotcms.org.2795");
+        final User billIntranet =  TestUserUtils.getBillIntranetUser(); //APILocator.getUserAPI().loadUserById("dotcms.org.2806");
+        final User chrisPublisher = TestUserUtils.getChrisPublisherUser(); //APILocator.getUserAPI().loadUserById("dotcms.org.2795");
 
         Contentlet testContentlet = new Contentlet();
         try {
@@ -1253,9 +1270,11 @@ public class WorkflowAPITest extends IntegrationTestBase {
         Contentlet contentlet1 = null;
 
         try {
+
             final User adminUser = APILocator.getUserAPI()
                     .loadByUserByEmail("admin@dotcms.com", user, false);
             Role role = roleAPI.getUserRole(adminUser);
+
 
             final User anonymousUser = APILocator.getUserAPI().getAnonymousUser();
             final Role anonymousRole = roleAPI.getUserRole(anonymousUser);

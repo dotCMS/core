@@ -1,12 +1,18 @@
 package com.dotcms.publisher.util;
 
+import static org.junit.Assert.assertNotNull;
+
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.publisher.assets.bean.PushedAsset;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.bean.impl.PushPublishingEndPoint;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -15,16 +21,12 @@ import com.liferay.portal.model.User;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
-
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-
-import static org.junit.Assert.assertNotNull;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 @RunWith(DataProviderRunner.class)
 public class DependencySetTest extends IntegrationTestBase {
@@ -56,8 +58,14 @@ public class DependencySetTest extends IntegrationTestBase {
         final DependencySet dependencySet = new DependencySet(testBundle.getId(), "content", IS_DOWNLOADING,
             IS_PUBLISHING, IS_STATIC);
 
-        final String ABOUT_QUEST_ID = "767509b1-2392-4661-a16b-e0e31ce27719";
-        final Contentlet contentlet = APILocator.getContentletAPI().findContentletByIdentifier(ABOUT_QUEST_ID,
+        final Host site = new SiteDataGen().nextPersisted();
+        final Contentlet testGenericContent = TestDataUtils.getGenericContentContent(true,
+                APILocator.getLanguageAPI().getDefaultLanguage().getId(),
+                site);
+        ContentletDataGen.publish(testGenericContent);
+
+        final Contentlet contentlet = APILocator.getContentletAPI()
+                .findContentletByIdentifier(testGenericContent.getIdentifier(),
             false, 1, systemUser, false);
 
         dependencySet.add(contentlet.getIdentifier(), new Date());

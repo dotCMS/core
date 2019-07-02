@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.vtl;
 
+import static com.dotcms.datagen.TestDataUtils.getEmployeeLikeContentType;
 import static com.dotcms.rest.api.v1.vtl.RequestBodyVelocityReader.EMBEDDED_VELOCITY_KEY_NAME;
 import static com.dotcms.rest.api.v1.vtl.VTLResource.VTL_PATH;
 import static org.junit.Assert.assertEquals;
@@ -8,14 +9,20 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FileAssetDataGen;
+import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.WebResource;
 import com.dotcms.util.ConfigTestHelper;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
@@ -31,7 +38,6 @@ import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.io.File;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -61,8 +67,6 @@ public class VTLResourceIntegrationTest {
     private static final String ONE_EMPLOYEE_JSON_RESPONSE = "com/dotcms/rest/api/v1/vtl/one_employee_json_response.json";
     private static final String ONE_EMPLOYEE_XML_RESPONSE = "com/dotcms/rest/api/v1/vtl/one_employee_xml_response.xml";
 
-    private static final String KNOWN_EMPLOYEE_ID = "37f93fcb-6124-46af-83b4-9ece6c1c5380";
-
     private final User systemUser = APILocator.systemUser();
     private static final String ANONYMOUS_USER_ID = "anonymous";
 
@@ -73,7 +77,28 @@ public class VTLResourceIntegrationTest {
     }
 
     @DataProvider
-    public static Object[] getTestCases() throws URISyntaxException, IOException {
+    public static Object[] getTestCases() throws Exception {
+
+        //Setting web app environment
+        IntegrationTestInitService.getInstance().init();
+
+        final ContentType employeeContentType = getEmployeeLikeContentType();
+        final Contentlet employee = getEmployeeContent(employeeContentType.id());
+        ContentletDataGen.publish(employee);
+        final String KNOWN_EMPLOYEE_ID = employee.getInode();
+        //Assign permissions
+        APILocator.getPermissionAPI().save(
+                new Permission(employee.getPermissionId(),
+                        APILocator.getRoleAPI().loadCMSAnonymousRole().getId(),
+                        PermissionAPI.PERMISSION_READ),
+                employee, APILocator.systemUser(), false);
+
+        String expectedJSONResponse = FileUtil
+                .read(new File(
+                        ConfigTestHelper.getUrlToTestResource(ONE_EMPLOYEE_JSON_RESPONSE).toURI()));
+        expectedJSONResponse = expectedJSONResponse
+                .replace("{IDENTIFIER_TO_REPLACE}", employee.getIdentifier());
+
         final MultivaluedMap<String, String> queryParameters = new MultivaluedHashMap<>();
         queryParameters.put("key1", Collections.singletonList("value1"));
         queryParameters.put("key2", Arrays.asList("value2", "value3"));
@@ -90,7 +115,7 @@ public class VTLResourceIntegrationTest {
                         .setFolderName(folderName)
                         .setQueryParameters(queryParameters)
                         .setPathParameter(KNOWN_EMPLOYEE_ID)
-                        .setExpectedJSON(FileUtil.read(new File(ConfigTestHelper.getUrlToTestResource(ONE_EMPLOYEE_JSON_RESPONSE).toURI())))
+                        .setExpectedJSON(expectedJSONResponse)
                         .setExpectedOutput(null)
                         .setResourceMethod(ResourceMethod.GET)
                         .build(),
@@ -115,7 +140,7 @@ public class VTLResourceIntegrationTest {
                         .setFolderName(folderName)
                         .setQueryParameters(queryParameters)
                         .setPathParameter(KNOWN_EMPLOYEE_ID)
-                        .setExpectedJSON(FileUtil.read(new File(ConfigTestHelper.getUrlToTestResource(ONE_EMPLOYEE_JSON_RESPONSE).toURI())))
+                        .setExpectedJSON(expectedJSONResponse)
                         .setExpectedOutput(null)
                         .setUser(ANONYMOUS_USER_ID)
                         .setResourceMethod(ResourceMethod.GET)
@@ -124,7 +149,7 @@ public class VTLResourceIntegrationTest {
                         .setFolderName(folderName)
                         .setQueryParameters(queryParameters)
                         .setPathParameter(KNOWN_EMPLOYEE_ID)
-                        .setExpectedJSON(FileUtil.read(new File(ConfigTestHelper.getUrlToTestResource(ONE_EMPLOYEE_JSON_RESPONSE).toURI())))
+                        .setExpectedJSON(expectedJSONResponse)
                         .setExpectedOutput(null)
                         .setBodyMapString(new ObjectMapper().writeValueAsString(dynamicGetBodyMap))
                         .setResourceMethod(ResourceMethod.DYNAMIC_GET)
@@ -148,12 +173,13 @@ public class VTLResourceIntegrationTest {
     public void testGet(final VTLResourceTestCase testCase) throws
             DotDataException, DotSecurityException, IOException {
 
-        final Host demoSite = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
+        final Host site = new SiteDataGen().nextPersisted();
 
-        final Folder vtlFolder = createVTLFolder(testCase.getFolderName(), demoSite);
+        final Folder vtlFolder = createVTLFolder(testCase.getFolderName(), site);
 
         try {
-            final Response response = getResponseFromVTLResource(testCase, vtlFolder);
+            final Response response = getResponseFromVTLResource(testCase, vtlFolder,
+                    site.getHostname());
 
             final String expectedOutput = expectedOutput(testCase);
             final String actualOutput = actualOutput(testCase, response);
@@ -163,18 +189,20 @@ public class VTLResourceIntegrationTest {
         }
     }
 
-    private Response getResponseFromVTLResource(final VTLResourceTestCase testCase, final Folder vtlFolder)
+    private Response getResponseFromVTLResource(final VTLResourceTestCase testCase,
+            final Folder vtlFolder, final String hostName)
             throws IOException, DotSecurityException, DotDataException {
         createVTLFile(testCase.getVtlFile(), vtlFolder);
 
-        final HttpServletRequest  request  = getMockedRequest();
+        final HttpServletRequest request = getMockedRequest();
+        when(request.getServerName()).thenReturn(hostName);
+
         final HttpServletResponse response = getMockedResponse();
 
         final UriInfo uriInfo = mock(UriInfo.class);
         when(uriInfo.getQueryParameters()).thenReturn(testCase.getQueryParameters());
 
         final WebResource webResource = getSpiedWebResource(testCase, request, response);
-
 
         final HTTPMethodParams params = new HTTPMethodParamsBuilder()
                 .setRequest(request)
@@ -255,16 +283,56 @@ public class VTLResourceIntegrationTest {
         getVTLFileAsset.setIndexPolicyDependencies(IndexPolicy.FORCE);
         getVTLFileAsset.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         APILocator.getContentletAPI().publish(getVTLFileAsset, systemUser, false);
+
+        //Assign permissions
+        APILocator.getPermissionAPI().save(
+                new Permission(getVTLFileAsset.getPermissionId(),
+                        APILocator.getRoleAPI().loadCMSAnonymousRole().getId(),
+                        PermissionAPI.PERMISSION_READ),
+                getVTLFileAsset, systemUser, false);
+
+        Permission folderPermissions = new Permission();
+        folderPermissions.setInode(vtlFolder.getPermissionId());
+        folderPermissions.setRoleId(APILocator.getRoleAPI().loadCMSAnonymousRole().getId());
+        folderPermissions.setPermission(PermissionAPI.PERMISSION_READ);
+        APILocator.getPermissionAPI().save(folderPermissions, vtlFolder, systemUser, true);
     }
 
-    private Folder createVTLFolder(final String folderName, final Host demoSite) throws DotSecurityException, DotDataException {
+    private Folder createVTLFolder(final String folderName, final Host site)
+            throws DotSecurityException, DotDataException {
         return APILocator.getFolderAPI()
                 .createFolders(VTL_PATH + "/" + folderName,
-                        demoSite,
+                        site,
                         APILocator.systemUser(), false);
     }
 
+    private static Contentlet getEmployeeContent(String contentTypeId) {
+
+        if (null == contentTypeId) {
+            contentTypeId = getEmployeeLikeContentType().id();
+        }
+
+        try {
+            //Creating the content
+            ContentletDataGen contentletDataGen = new ContentletDataGen(contentTypeId)
+                    .languageId(APILocator.getLanguageAPI().getDefaultLanguage().getId())
+                    .setProperty("firstName", "Brent")
+                    .setProperty("lastName", "Griffin")
+                    .setProperty("jobTitle", "VP Wealth Liquidation")
+                    .setProperty("phone", "(215) 555-5555")
+                    .setProperty("mobile", "(215) 555-5555")
+                    .setProperty("fax", "(215) 555-5916")
+                    .setProperty("email", "brent.griffin@questfake.com");
+
+            return contentletDataGen.nextPersisted();
+
+        } catch (Exception e) {
+            throw new DotRuntimeException(e);
+        }
+    }
+
     static class HTTPMethodParams {
+
         private final HttpServletRequest request;
         private final HttpServletResponse servletResponse;
         private final UriInfo uriInfo;
@@ -307,8 +375,8 @@ public class VTLResourceIntegrationTest {
         }
 
         HTTPMethodParams(final HttpServletRequest request, final HttpServletResponse servletResponse, final UriInfo uriInfo,
-                         final String folderName, final String pathParam, final Map<String, Object> bodyMap,
-                         final WebResource webResource, final String bodyMapString) {
+                final String folderName, final String pathParam, final Map<String, Object> bodyMap,
+                final WebResource webResource, final String bodyMapString) {
             this.request = request;
             this.servletResponse = servletResponse;
             this.uriInfo = uriInfo;
@@ -319,4 +387,5 @@ public class VTLResourceIntegrationTest {
             this.bodyMapString = bodyMapString;
         }
     }
+
 }

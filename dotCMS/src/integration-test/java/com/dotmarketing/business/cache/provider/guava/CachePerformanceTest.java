@@ -16,6 +16,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.apache.commons.lang.RandomStringUtils;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class CachePerformanceTest {
@@ -37,6 +38,7 @@ public class CachePerformanceTest {
   Class provider = HazelcastCacheProviderEmbedded.class;
   //Class provider = HazelcastCacheProviderClient.class;
 
+  @Ignore
   @Test
   public void testInit() throws Exception {
 

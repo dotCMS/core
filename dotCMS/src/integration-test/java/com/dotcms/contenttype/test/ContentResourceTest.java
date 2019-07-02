@@ -3,7 +3,12 @@ package com.dotcms.contenttype.test;
 import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.DM_WORKFLOW;
 import static com.dotmarketing.business.Role.ADMINISTRATOR;
 import static com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest.createContentTypeAndAssignPermissions;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -19,22 +24,27 @@ import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.RoleDataGen;
+import com.dotcms.datagen.TestUserUtils;
+import com.dotcms.datagen.TestWorkflowUtils;
+import com.dotcms.datagen.WorkflowDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.request.MockSessionRequest;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONArray;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
-import org.glassfish.jersey.internal.util.Base64;
 import com.dotcms.rest.ContentResource;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Permission;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.RelationshipAPI;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -67,10 +77,15 @@ import javax.servlet.ReadListener;
 import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import org.apache.xerces.dom.DeferredElementImpl;
+import org.glassfish.jersey.internal.util.Base64;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -100,6 +115,9 @@ public class ContentResourceTest extends IntegrationTestBase {
     private static RoleAPI roleAPI;
     private static User user;
     private static UserAPI userAPI;
+    private static Role adminRole;
+
+    static private WorkflowScheme testScheme;
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -116,6 +134,24 @@ public class ContentResourceTest extends IntegrationTestBase {
         languageAPI     = APILocator.getLanguageAPI();
         permissionAPI   = APILocator.getPermissionAPI();
         relationshipAPI = APILocator.getRelationshipAPI();
+
+        //Creating a workflow for testing
+
+        testScheme = TestWorkflowUtils.getDocumentWorkflow();
+
+        //Creating a test role
+        adminRole = roleAPI.loadRoleByKey(ADMINISTRATOR);
+        if (adminRole == null) {
+            adminRole = new RoleDataGen().key(ADMINISTRATOR).nextPersisted();
+        }
+    }
+
+    @AfterClass
+    public static void cleanUp() {
+
+        if (testScheme != null) {
+            WorkflowDataGen.remove(testScheme);
+        }
     }
 
     public static class TestCase {
@@ -187,7 +223,7 @@ public class ContentResourceTest extends IntegrationTestBase {
      * @throws Exception
      */
     private ContentType createSampleContentType(final boolean withFields) throws Exception{
-        final Role adminRole = APILocator.getRoleAPI().loadRoleByKey(ADMINISTRATOR);
+
         final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
         ContentType contentType;
         final String ctPrefix = "TestContentType";
@@ -263,6 +299,7 @@ public class ContentResourceTest extends IntegrationTestBase {
         ContentType grandChildContentType = null;
 
         Role newRole = null;
+        User createdLimitedUser = null;
 
         try {
 
@@ -312,9 +349,16 @@ public class ContentResourceTest extends IntegrationTestBase {
             if (testCase.limitedUser){
                 newRole = createRole();
 
+                createdLimitedUser = TestUserUtils
+                        .getUser(newRole, "email" + System.currentTimeMillis() + "@dotcms.com",
+                                "name" + System.currentTimeMillis(),
+                                "lastName" + System.currentTimeMillis(),
+                                "password" + System.currentTimeMillis());
+
                 //set individual permissions to the child
                 permissionAPI.save(new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
-                        child.getPermissionId(), newRole.getId(), PermissionAPI.PERMISSION_READ, true), child, user, false);
+                        child.getPermissionId(), newRole.getId(), PermissionAPI.PERMISSION_READ,
+                        true), child, user, false);
             }
 
 
@@ -323,6 +367,13 @@ public class ContentResourceTest extends IntegrationTestBase {
             parent = contentletAPI.checkin(parent,
                     CollectionsUtils.map(parentRelationship, CollectionsUtils.list(child)), user,
                     false);
+
+            if (testCase.limitedUser) {
+                //set individual permissions to the child
+                permissionAPI.save(new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                        parent.getPermissionId(), newRole.getId(), PermissionAPI.PERMISSION_READ,
+                        true), parent, user, false);
+            }
 
             final Map<String, Contentlet> contentlets = new HashMap();
             contentlets.put("parent", parent);
@@ -334,7 +385,8 @@ public class ContentResourceTest extends IntegrationTestBase {
             Thread.sleep(10000);
 
             final ContentResource contentResource = new ContentResource();
-            final HttpServletRequest request = createHttpRequest(null, testCase.limitedUser?userAPI.getAnonymousUser():null);
+            final HttpServletRequest request = createHttpRequest(null,
+                    testCase.limitedUser ? createdLimitedUser : null);
             final HttpServletResponse response = mock(HttpServletResponse.class);
             final Response endpointResponse = contentResource.getContent(request, response,
                     "/id/" + parent.getIdentifier() + "/live/false/type/" + testCase.responseType

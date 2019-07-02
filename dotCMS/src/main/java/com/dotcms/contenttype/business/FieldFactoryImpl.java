@@ -265,7 +265,8 @@ public class FieldFactoryImpl implements FieldFactory {
         if (f.values() != null) {
           if (f.values().equals(field.values())) {
             if (!f.id().equals(field.id())) {
-              throw new DotDataValidationException("This category field already exists on this content type",
+              final String exceptionString = String.format("[f1 %s , f2 %s]", field.name(), f.name() );
+              throw new DotDataValidationException("This category field already exists on this content type " + exceptionString ,
                   "message.category.existing.field");
             }
           }

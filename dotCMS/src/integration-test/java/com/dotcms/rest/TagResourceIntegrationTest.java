@@ -9,11 +9,11 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.tag.business.TagAPI;
 import com.dotmarketing.util.Logger;
@@ -37,10 +37,16 @@ import org.junit.runner.RunWith;
 @RunWith(DataProviderRunner.class)
 public class TagResourceIntegrationTest extends IntegrationTestBase {
 
+    private static Host demoHost;
+
     @BeforeClass
     public static void prepare() throws Exception{
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
+
+        if (null == demoHost) {
+            demoHost = new SiteDataGen().nextPersisted();
+        }
     }
 
     private static List<String> tagsKnownNamesSystemHost =
@@ -54,9 +60,16 @@ public class TagResourceIntegrationTest extends IntegrationTestBase {
                     "termometer" + UUIDGenerator.generateUuid());
 
     @DataProvider
-    public static Object[] listTestCases() {
-        final String DEMO_HOST_IDENTIFIER = "48190c8c-42c4-46af-8d1a-0cd5db894797";
+    public static Object[] listTestCases() throws Exception {
 
+        //Setting web app environment
+        IntegrationTestInitService.getInstance().init();
+
+        if (null == demoHost) {
+            demoHost = new SiteDataGen().nextPersisted();
+        }
+
+        final String DEMO_HOST_IDENTIFIER = demoHost.getIdentifier();
 
         // tag name provided, demo site id provided, should return tags filtered by name and host
         final TagResourceTestCase case1 = new TagResourceTestCase();
@@ -94,8 +107,6 @@ public class TagResourceIntegrationTest extends IntegrationTestBase {
         // let's create some tags under SYSTEM_HOST
         final TagAPI tagAPI = APILocator.getTagAPI();
         final User systemUser = APILocator.systemUser();
-        final Host demoHost = APILocator.getHostAPI().findByName("demo.dotcms.com",
-                 systemUser, false);
 
         final List<String> tagsKnownNamesSystemHostIds = new ArrayList<>();
         final List<String> tagsKnownNamesDemoHostIds = new ArrayList<>();

@@ -13,7 +13,6 @@ import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.schemeName;
 import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.stepName;
 import static com.dotcms.rest.exception.mapper.ExceptionMapperUtil.ACCESS_CONTROL_HEADER_INVALID_LICENSE;
 import static com.dotcms.rest.exception.mapper.ExceptionMapperUtil.ACCESS_CONTROL_HEADER_PERMISSION_VIOLATION;
-import static com.dotmarketing.business.Role.ADMINISTRATOR;
 import static com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest.createContentTypeAndAssignPermissions;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -30,6 +29,8 @@ import static org.mockito.Mockito.when;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.TestUserUtils;
+import com.dotcms.datagen.TestWorkflowUtils;
 import com.dotcms.mock.response.MockAsyncResponse;
 import com.dotcms.rest.ContentHelper;
 import com.dotcms.rest.EmptyHttpResponse;
@@ -122,9 +123,8 @@ public class WorkflowResourceLicenseIntegrationTest {
         ResponseUtil responseUtil = ResponseUtil.INSTANCE;
 
         userAdmin = APILocator.systemUser();
-        billIntranet = APILocator.getUserAPI().loadUserById("dotcms.org.2806");
-
-        publisher = roleAPI.findRoleByName("Publisher / Legal", null);
+        billIntranet = TestUserUtils.getBillIntranetUser();
+        publisher = TestUserUtils.getOrCreatePublisherRole();
 
         final WebResource webResourceThatReturnsAdminUser = mock(WebResource.class);
         final InitDataObject dataObject1 = mock(InitDataObject.class);
@@ -197,7 +197,7 @@ public class WorkflowResourceLicenseIntegrationTest {
     @Test
     public void Find_Actions_By_Schemas_InvalidLicense() throws Exception {
 
-        final WorkflowScheme defaultScheme = licensedWorkflowAPI.findSchemeByName("Document Management");
+        final WorkflowScheme defaultScheme = TestWorkflowUtils.getDocumentWorkflow();
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final Response findResponse = nonLicenseWorkflowResource
                 .findActionsByScheme(request,  new EmptyHttpResponse(), defaultScheme.getId());
@@ -207,7 +207,7 @@ public class WorkflowResourceLicenseIntegrationTest {
 
     @Test
     public void Find_Action_InvalidLicense() throws Exception {
-        final WorkflowScheme defaultScheme = licensedWorkflowAPI.findSchemeByName("Document Management");
+        final WorkflowScheme defaultScheme = TestWorkflowUtils.getDocumentWorkflow();
         assertNotNull("Unable to find \"Document Management\" scheme", defaultScheme);
         final List<WorkflowAction> actions = licensedWorkflowAPI
                 .findActions(defaultScheme, APILocator.systemUser());
@@ -223,7 +223,7 @@ public class WorkflowResourceLicenseIntegrationTest {
     @Test
     public void Find_Action_By_Step_Invalid_License() throws Exception {
         //we use
-        final WorkflowScheme defaultScheme = licensedWorkflowAPI.findSchemeByName("Document Management");
+        final WorkflowScheme defaultScheme = TestWorkflowUtils.getDocumentWorkflow();
         assertNotNull("Unable to find document management scheme", defaultScheme);
         final List<WorkflowAction> actions = licensedWorkflowAPI
                 .findActions(defaultScheme, APILocator.systemUser());
@@ -280,7 +280,7 @@ public class WorkflowResourceLicenseIntegrationTest {
     @Test
     public void Find_All_Schemes_By_Content_Type_Invalid_License_Expect_Only_System_Workflow()
             throws Exception {
-        final WorkflowScheme defaultScheme = licensedWorkflowAPI.findSchemeByName("Document Management");
+        final WorkflowScheme defaultScheme = TestWorkflowUtils.getDocumentWorkflow();
         assertNotNull("Unable to find default scheme", defaultScheme);
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
@@ -400,7 +400,7 @@ public class WorkflowResourceLicenseIntegrationTest {
 
     @Test
     public void Reorder_Action_InvalidLicense() throws Exception {
-        final Role adminRole = roleAPI.loadRoleByKey(ADMINISTRATOR);
+        final Role adminRole = TestUserUtils.getOrCreateAdminRole();
         final String adminRoleId = adminRole.getId();
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final int numSteps = 2;
@@ -426,7 +426,7 @@ public class WorkflowResourceLicenseIntegrationTest {
 
     @Test
     public void Save_Action_InvalidLicense() throws Exception {
-        final Role adminRole = roleAPI.loadRoleByKey(ADMINISTRATOR);
+        final Role adminRole = TestUserUtils.getOrCreateAdminRole();
         final String adminRoleId = adminRole.getId();
         final WorkflowScheme savedScheme = createScheme(licenseWorkflowResource);
         assertNotNull(savedScheme);
@@ -464,7 +464,7 @@ public class WorkflowResourceLicenseIntegrationTest {
     @Test
     public void Update_Action_Invalid_License() throws Exception {
 
-            final Role adminRole = roleAPI.loadRoleByKey(ADMINISTRATOR);
+            final Role adminRole = TestUserUtils.getOrCreateAdminRole();
             final String adminRoleId = adminRole.getId();
             final WorkflowScheme savedScheme = createScheme(licenseWorkflowResource);
             assertNotNull(savedScheme);
@@ -499,7 +499,7 @@ public class WorkflowResourceLicenseIntegrationTest {
 
         @Test
     public void Save_Action_To_Step_Invalid_License() throws Exception{
-        final Role adminRole = roleAPI.loadRoleByKey(ADMINISTRATOR);
+        final Role adminRole = TestUserUtils.getOrCreateAdminRole();
         final String adminRoleId = adminRole.getId();
         final WorkflowScheme savedScheme = createScheme(licenseWorkflowResource);
         assertNotNull(savedScheme);
@@ -524,7 +524,7 @@ public class WorkflowResourceLicenseIntegrationTest {
 
     @Test
     public void Delete_Action_Invalid_License()throws Exception {
-        final Role adminRole = roleAPI.loadRoleByKey(ADMINISTRATOR);
+        final Role adminRole = TestUserUtils.getOrCreateAdminRole();
         final String adminRoleId = adminRole.getId();
         final WorkflowScheme savedScheme = createScheme(licenseWorkflowResource);
         assertNotNull(savedScheme);
@@ -542,7 +542,7 @@ public class WorkflowResourceLicenseIntegrationTest {
 
     @Test
     public void Delete_Action_by_Action_and_Step_Id_Invalid_License()throws Exception {
-        final Role adminRole = roleAPI.loadRoleByKey(ADMINISTRATOR);
+        final Role adminRole = TestUserUtils.getOrCreateAdminRole();
         final String adminRoleId = adminRole.getId();
         final WorkflowScheme savedScheme = createScheme(licenseWorkflowResource);
         assertNotNull(savedScheme);

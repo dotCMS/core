@@ -3,6 +3,8 @@ package com.dotmarketing.business.portal;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -39,7 +41,12 @@ public class PortletAPIImplTest {
     public static void prepare() throws Exception {
         // Setting web app environment
         IntegrationTestInitService.getInstance().init();
-        portletApi = APILocator.getPortletAPI();
+
+        //portletApi = APILocator.getPortletAPI();
+        final String[] portletXMLFilesnew = {
+                PortletAPIImplTest.class.getResource("/WEB-INF/portlet.xml").getPath(),
+                PortletAPIImplTest.class.getResource("/WEB-INF/portlet-ext.xml").getPath()};
+        portletApi = new PortletAPIImpl(new PortletFactoryImpl(portletXMLFilesnew), Config.CONTEXT);
         systemUser = APILocator.systemUser();
         when(Config.CONTEXT.getAttribute(Globals.MESSAGES_KEY))
                 .thenReturn(new MultiMessageResources(MultiMessageResourcesFactory.createFactory(),""));
@@ -110,16 +117,23 @@ public class PortletAPIImplTest {
     }
 
     @DataProvider
-    public static Object[] testCasesCreateCustomPortlet() {
+    public static Object[] testCasesCreateCustomPortlet() throws Exception {
+
+        // Setting web app environment
+        IntegrationTestInitService.getInstance().init();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final ContentType contentType1 = new ContentTypeDataGen().nextPersisted();
+
         return new Object[]{
                 new testCaseCreateCustomPortlet(PORTLET_ID, PORTLET_ID, "Persona",
                         "", true),
                 new testCaseCreateCustomPortlet(PORTLET_ID, PORTLET_ID,
                         "Content, Persona", "", true),
                 new testCaseCreateCustomPortlet(PORTLET_ID, PORTLET_ID, "",
-                        "news", true),
+                        contentType.variable(), true),
                 new testCaseCreateCustomPortlet(PORTLET_ID, PORTLET_ID, "",
-                        "news, youtube", true),
+                        contentType.variable() + "," + contentType1.variable(), true),
                 new testCaseCreateCustomPortlet("", PORTLET_ID, "Persona", "", false),
                 new testCaseCreateCustomPortlet(PORTLET_ID, "", "Persona", "", false),
                 new testCaseCreateCustomPortlet(PORTLET_ID, PORTLET_ID, "", "",

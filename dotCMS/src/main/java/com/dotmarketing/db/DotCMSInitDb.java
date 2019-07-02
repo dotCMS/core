@@ -1,11 +1,5 @@
 package com.dotmarketing.db;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.List;
-
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -22,6 +16,13 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.List;
+import org.apache.commons.io.FileUtils;
 
 public class DotCMSInitDb {
 
@@ -92,18 +93,29 @@ public class DotCMSInitDb {
 
 	private static void loadStarterSite(PrintWriter pw) throws IOException{
 		
-		String starter = Config.getStringProperty("STARTER_DATA_LOAD");
 		File starterZip = null;
-		
-		if(UtilMethods.isSet(starter)){
-            starterZip = new File(FileUtil.getRealPath(starter));
+
+		String starter = Config.getStringProperty("STARTER_DATA_LOAD");
+		if (UtilMethods.isSet(starter)) {
+			starterZip = new File(starter);
 		}
-		
-		if(starterZip==null || (starterZip!=null && !starterZip.exists())){
+
+		if (starterZip == null || !starterZip.exists()) {
+
+			InputStream starterStream = Thread.currentThread().getContextClassLoader()
+					.getResourceAsStream("starter.zip");
+
+			if (starterStream != null) {
+				starterZip = File.createTempFile("starter", ".zip");
+				FileUtils.copyInputStreamToFile(starterStream, starterZip);
+			}
+		}
+
+		if (starterZip == null || !starterZip.exists()) {
 			String starterSitePath = "/starter.zip";
 			String zipPath = FileUtil.getRealPath(starterSitePath);
-			starterZip = new File(zipPath); 
-		 }
+			starterZip = new File(zipPath);
+		}
 		
 		ImportExportUtil ieu = new ImportExportUtil();
 		if(ieu.validateZipFile(starterZip)){

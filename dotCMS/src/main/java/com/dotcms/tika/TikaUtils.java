@@ -49,6 +49,17 @@ public class TikaUtils {
     public TikaUtils() throws DotDataException {
 
         osgiInitialized = OSGIUtil.getInstance().isInitialized();
+        try {
+            if (!osgiInitialized) {
+                Logger.warn(this.getClass(),
+                        "OSGI Framework not initialized, trying to initialize...");
+                OSGIUtil.getInstance().initializeFramework(Config.CONTEXT);
+                osgiInitialized = true;
+            }
+        } catch (Exception e) {
+            Logger.error(this.getClass(), "Unable to initialized OSGI Framework", e);
+        }
+
         if (osgiInitialized) {
 
             //Search for the TikaServiceBuilder service instance expose through OSGI
