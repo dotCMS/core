@@ -47,8 +47,10 @@ import com.google.common.primitives.Ints;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
+import java.io.IOException;
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchRequest;
@@ -1509,11 +1511,10 @@ public class ESContentFactoryImpl extends ContentletFactory {
             }
 
             searchRequest.source(searchSourceBuilder);
-            response = Sneaky.sneak(()->
-                    client.search(searchRequest, RequestOptions.DEFAULT));
+            response = client.search(searchRequest, RequestOptions.DEFAULT);
 
 
-        } catch (IndexNotFoundException | SearchPhaseExecutionException infe ) {
+        } catch (ElasticsearchStatusException | IndexNotFoundException | SearchPhaseExecutionException infe ) {
             Logger.warn(this.getClass(), "----------------------------------------------");
             Logger.warn(this.getClass(), "Elasticsearch Index Error : " + indexToHit);
             Logger.warnAndDebug(this.getClass(), infe.getMessage(), infe);
