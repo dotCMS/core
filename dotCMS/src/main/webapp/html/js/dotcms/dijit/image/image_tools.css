@@ -74,6 +74,7 @@ table {font-size:inherit;font-family:Roboto,sans-serif;}
 	bottom:0px;
 	width:300px;
 	margin:0px;
+	padding:20px 10px;
 	/*border:1px solid blue;*/
 }
 
@@ -138,7 +139,7 @@ table {font-size:inherit;font-family:Roboto,sans-serif;}
 	border:1px solid silver;
 	width:46px;
 	margin:2px;
-
+    text-align:center;
 	height:23px;
 }
 
@@ -164,10 +165,7 @@ table {font-size:inherit;font-family:Roboto,sans-serif;}
 	
 	text-align:left;
 }
-#filterListTd{
-	vertical-align:top;	
-	padding:0px;
-}
+
 #filterListBox{
 	height:115px;
 	display:block;
@@ -183,11 +181,27 @@ table {font-size:inherit;font-family:Roboto,sans-serif;}
 .loader{
       	background:url('/html/js/dotcms/dijit/image/loading.gif') no-repeat center center;
 }
+
+#filterListDiv{
+    border:1px solid #eeeeee;
+    width:90%;
+    height:100px;
+}
+
+
+#filtersListContainer{
+
+
+}
+
 .filterListItem{
 	text-align:left;
 	cursor: pointer;
-	width:100px;
 	padding:2px;
+	padding-right:20px;
+	display:inline-block;
+	float:left;
+	margin:5px;
 	border:1px solid silver;	
 	background:url('/html/images/icons/minus-small-circle.png') no-repeat right center ;
 }
@@ -206,6 +220,14 @@ table {font-size:inherit;font-family:Roboto,sans-serif;}
 	vertical-align: middle;
 }
 
+#controlTable .leftCol{
+  text-align: right;  
+  width:50%;
+}
+
+#controlTable .rightCol{
+  text-align: left;  
+}
 #showScaleSlider td{
 	border:0px solid silver;
 	padding:0px;	

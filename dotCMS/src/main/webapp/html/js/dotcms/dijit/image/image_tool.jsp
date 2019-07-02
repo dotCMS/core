@@ -127,37 +127,38 @@
                 </span>
 
 
-				<button dojoType="dijit.form.Button" onclick="imageEditor.doDownload()" iconClass="downloadIcon">
+				<button dojoType="dijit.form.Button" onclick="imageEditor.doDownload()" >
 					<%= LanguageUtil.get(pageContext, "download") %>
 				</button>
 				&nbsp; &nbsp;
-				<button dojoType="dijit.form.Button" id="clipBoard" iconClass="clipIcon" <% if(id == null) { %>disabled<% } %> onclick="imageEditor.addToClipboard()">
+				<button dojoType="dijit.form.Button" id="clipBoard"  <% if(id == null) { %>disabled<% } %> onclick="imageEditor.addToClipboard()">
 					<%= LanguageUtil.get(pageContext, "Clip") %>
 				</button>
 				
 				<%-- this span is hidden for binary images --%>
 				<span id="saveAsSpan" style="display:none;">
-					<button dojoType="dijit.form.ComboButton" iconClass="saveAsIcon" title="save-as">
+					<button dojoType="dijit.form.ComboButton"  title="save-as">
 						<span><%= LanguageUtil.get(pageContext, "save-as") %></span>
 						<div dojoType="dijit.Menu" id="createMenu" style="display: none;">
-							<div dojoType="dijit.MenuItem"  iconClass="jpgIcon" onClick="imageEditor.showSaveAsDialog('jpg')">
+							<div dojoType="dijit.MenuItem"   onClick="imageEditor.showSaveAsDialog('jpg')">
 								<%= LanguageUtil.get(pageContext, "jpeg") %>
 							</div>
-							<div dojoType="dijit.MenuItem"   iconClass="pngIcon" onClick="imageEditor.showSaveAsDialog('png');">
+							<div dojoType="dijit.MenuItem"   onClick="imageEditor.showSaveAsDialog('png');">
 								<%= LanguageUtil.get(pageContext, "png") %>
 							</div>
-							<div dojoType="dijit.MenuItem"  iconClass="gifIcon" onClick="imageEditor.showSaveAsDialog('gif');">
+							<div dojoType="dijit.MenuItem"  onClick="imageEditor.showSaveAsDialog('gif');">
 								<%= LanguageUtil.get(pageContext, "gif") %>
 							</div>
 						</div>
 					</button>
 					&nbsp;
 				</span>
-				<button dojoType="dijit.form.Button" onclick="imageEditor.saveImage()" iconClass="saveIcon">
+                &nbsp;
+				<button dojoType="dijit.form.Button" onclick="imageEditor.saveImage()" >
 					<%= LanguageUtil.get(pageContext, "Save") %>
 				</button>
-				
-				<button dojoType="dijit.form.Button" onClick="imageEditor.closeImageWindow()" iconClass="closeIcon">
+				&nbsp;
+				<button dojoType="dijit.form.Button" onClick="imageEditor.closeImageWindow()" >
 					<%= LanguageUtil.get(pageContext, "Close") %>
 				</button>
 			</td>
@@ -190,46 +191,72 @@
 		
 <!--  toolBar -->
 <div id="toolBar" >
-	<table id="controlTable" border="1">
-        <tr>
-          <td colspan="2" id="filterListTd">
-                <div id="filterListBox">
-                    <div id="filtersUndoDiv">Filters:</div>
-                    <div id="filterListDiv">
-                        <div id="filtersListContainer"></div>
-                    </div>
-                </div>
-            </td>
-        </tr>
+	<table id="controlTable">
 
         <tr>
-			<td style="border-right:1px solid white;"><%= LanguageUtil.get(pageContext, "Original") %>:</td>
-			<td align="center" valign="middle">
-				<span  id="baseImageWidth"></span>
-				&nbsp; x &nbsp;
-				<span id="baseImageHeight"></span>
+            <td class="leftCol"><%= LanguageUtil.get(pageContext, "Flip") %> : </td>
+            <td class="rightCol"><input id="flip" dojoType="dijit.form.CheckBox" name="flip" type="checkbox" value="true" onchange="imageEditor.toggleFlip()"></td>
+        </tr>
+
+
+         <tr>
+           <td class="leftCol">
+				<input id="rotate" class="textInputClass" type="text" dojoType="dijit.form.NumberTextBox" name="rotate"
+					value="0" constraints="{min:-360,max:360,places:0}" required="false" maxlength="4"
+					invalidMessage="Angle is between -360 and 360" style="width:55px;">
+           </td>
+           <td class="rightCol">
+    			<button dojoType="dijit.form.Button"  onclick="imageEditor.doRotate()" >
+    				<%= LanguageUtil.get(pageContext, "Rotate") %>
+    			</button>
+    		</td>
+
+		</tr>
+		<tr>
+			<td class="leftCol">
+				<label for="grayscale"><%=LanguageUtil.get(pageContext, "Grayscale") %></label> : 
+            </td>
+            <td class="rightCol">
+                <input name="grayscale" id="grayscale" dojoType="dijit.form.CheckBox" name="grayscale" type="checkbox" value="true" onchange="imageEditor.toggleGrayscale()">					
+			
 			</td>
         </tr>
         <tr>
-        <td><%= LanguageUtil.get(pageContext, "Flip") %>:</td>
-        <td><input id="flip" dojoType="dijit.form.CheckBox" name="flip" type="checkbox" value="true" onchange="imageEditor.toggleFlip()"></td>
+			<td class="leftCol"><%=LanguageUtil.get(pageContext, "Compress" )%> :</td>
+            <td class="rightCol">
+
+				
+                    <select dojoType="dijit.form.Select" name="compression" id="compression" style="width:70px;" onchange="imageEditor.toggleCompression()">
+                        <option value="none" selected>none</option>
+                        <option value="jpeg">jpeg</option>
+                        <option value="webp">webp</option>
+                    </select>
+		
+	
+			</td>
         </tr>
         <tr>
-            <td style="white-space:no-wrap;border-right:white 1px solid;text-align: center">
-                
-                    <input type="text" id="displayImageWidth" class="textInputClass" maxlength="4" onblur="imageEditor.setHieghtFromWidth()" onkeydown="return imageEditor.allowNumbers(event)">
-                     x 
-                    <input type="text" id="displayImageHeight" class="textInputClass" maxlength="4" onblur="imageEditor.setWidthFromHeight()"  onkeydown="return imageEditor.allowNumbers(event)"></td>
-                
-            <td>
-                <button dojoType="dijit.form.Button" id="resizeBtn" iconClass="resizeIcon" onclick="imageEditor.resizeBtnClick('resize')">
-                    <%= LanguageUtil.get(pageContext, "Resize") %>
+			<td class="leftCol" onclick="imageEditor.toggleHSB()" style="cursor:pointer;">
+				Bright:<span id="brightSpan">0</span>&nbsp;
+				Hue:<span id="hueSpan">0</span>&nbsp;
+				Sat:<span id="satSpan">0</span>&nbsp;
+				 : 
+			</td>
+            <td class="rightCol">
+                <button id="hsbButton" dojoType="dijit.form.Button" onclick="imageEditor.toggleHSB()">
+                    <%= LanguageUtil.get(pageContext, "Color") %>&nbsp;&nbsp;
                 </button>
             </td>
-         </tr>
+		</tr>
+        
+        
+        
+        
+         <tr><td colspan=2><hr style="height:1px; border:none;  background-color:silver; "></td></tr>
+         
          <tr>
 
-            <td style="white-space:no-wrap;border-right:white 1px solid;text-align: center">
+            <td class="leftCol">
                 <input type="text" value="150" id="cropWidth" name="cropWidth" maxlength="4" class="textInputClass" onchange="imageEditor.setCropHeightFromWidth()" onkeydown="return imageEditor.allowNumbers(event)"/> 
                      x 
                 <input type="text" value="150" id="cropHeight" name="cropHeight" maxlength="4"  class="textInputClass"  onchange="imageEditor.setCropWidthFromHeight()" onkeydown="return imageEditor.allowNumbers(event)"/>
@@ -238,57 +265,12 @@
                 <label for="constrain"><%=LanguageUtil.get(pageContext, "Constrain") %></label>: <input name="constrain" id="constrain" dojoType="dijit.form.CheckBox" onclick="imageEditor.doConstrain()" type="checkbox" value="true">                    
                 </div>
             </td>
-            <td valign="top">
-                <button id="cropBtn" dojoType="dijit.form.Button"  iconClass="cropIcon" onclick="imageEditor.toggleCrop()">
+            <td   class="rightCol">
+                <button id="cropBtn" dojoType="dijit.form.Button"  onclick="imageEditor.toggleCrop()">
                     <%= LanguageUtil.get(pageContext, "Crop") %>&nbsp;&nbsp;
                 </button>
             </td>
-         </tr>
-         <tr>
-           <td>
-				<input id="rotate" type="text" dojoType="dijit.form.NumberTextBox" name="rotate"
-					value="0" constraints="{min:-360,max:360,places:0}" required="false" maxlength="4"
-					invalidMessage="Angle is between -360 and 360" style="width:55px;">
-           </td>
-           <td>
-    			<button dojoType="dijit.form.Button"  onclick="imageEditor.doRotate()" iconClass="rotateIcon">
-    				<%= LanguageUtil.get(pageContext, "Rotate") %>
-    			</button>
-    		</td>
-
-		</tr>
-		<tr>
-			<td style="border-right:1px solid white;">
-				<label for="grayscale"><%=LanguageUtil.get(pageContext, "Grayscale") %></label>:
-            </td>
-            <td>
-                <input name="grayscale" id="grayscale" dojoType="dijit.form.CheckBox" name="grayscale" type="checkbox" value="true" onchange="imageEditor.toggleGrayscale()">					
-			
-			</td>
         </tr>
-        <tr>
-			<td><%=LanguageUtil.get(pageContext, "Compress" )%> :</td>
-            <td>
-
-				
-                    <select dojoType="dijit.form.Select" name="compression" id="compression" >
-                        <option selected>none</option>
-                        <option>jpeg</option>
-                        <option>webp</option>
-                    
-                    </select>
-					<input id="jpeg" dojoType="dijit.form.CheckBox" name="jpeg" type="checkbox" value="true" onchange="imageEditor.toggleJpeg()">	
-	
-			</td>
-        </tr>
-        <tr>
-			<td colspan="2" onclick="imageEditor.toggleHSB()" style="cursor:pointer;">
-				Bright:<span id="brightSpan">0</span>&nbsp;
-				Hue:<span id="hueSpan">0</span>&nbsp;
-				Sat:<span id="satSpan">0</span>&nbsp;
-				
-			</td>
-		</tr>
        <tr>
             <td colspan="2" id="zoomTd" >
                 
@@ -307,13 +289,7 @@
                             0
                         </li>
                         <li>
-                            50%
-                        </li>
-                        <li>
                             100%
-                        </li>
-                        <li>
-                            150%
                         </li>
                         <li>
                             200%
@@ -323,8 +299,41 @@
                 
             </td>
         </tr>
+        <tr>
+            <td class="leftCol">
+                
+                    <input type="text" id="displayImageWidth" class="textInputClass" maxlength="4" onblur="imageEditor.setHieghtFromWidth()" onkeydown="return imageEditor.allowNumbers(event)">
+                     x 
+                    <input type="text" id="displayImageHeight" class="textInputClass" maxlength="4" onblur="imageEditor.setWidthFromHeight()"  onkeydown="return imageEditor.allowNumbers(event)"></td>
+                
+            <td class="rightCol">
+                <button dojoType="dijit.form.Button" id="resizeBtn" onclick="imageEditor.resizeBtnClick('resize')">
+                    <%= LanguageUtil.get(pageContext, "Resize") %>
+                </button>
+            </td>
+         </tr>
+        <tr>
+            <td class="leftCol"><span id="baseImageWidth"></span> &nbsp; x &nbsp; <span id="baseImageHeight"></span></td>
+            <td class="rightCol"><%=LanguageUtil.get(pageContext, "Original")%></td>
+        </tr>
+            
+         <tr><td colspan=2><hr style="height:1px; border:none;  background-color:silver; "></td></tr>
+         
+            
+        <tr>
+          <td colspan="2"  style="text-align: center">
+                <div id="filterListBox">
+                    <div id="filtersUndoDiv">Filters:</div>
+                    <div id="filterListDiv" >
+                        <div id="filtersListContainer"></div>
+                    </div>
+                </div>
+            </td>
+        </tr>
 
-	</table>
+
+
+        </table>
 </div>
 <!--  /toolBar -->
 
@@ -476,21 +485,21 @@
 			<tr style="height:20px;">
 				<td  align="center">
 				<div id="saveAsFailBtn" style="display:none" >
-					<button dojoType="dijit.form.Button" iconClass="closeIcon" onclick="imageEditor.closeSaveAsDia()">
+					<button dojoType="dijit.form.Button"  onclick="imageEditor.closeSaveAsDia()">
 						<%= LanguageUtil.get(pageContext, "Close") %>
 					</button>
 				</div>
 				<div  id="saveAsSuccessBtn" style="display:none" >
-					<button dojoType="dijit.form.Button" iconClass="cancelIcon" onclick="imageEditor.closeSaveAsDia()">
+					<button dojoType="dijit.form.Button"  onclick="imageEditor.closeSaveAsDia()">
 						<%= LanguageUtil.get(pageContext, "Close") %>
 					</button>
 				</div>
 					<div id="saveAsButtonCluster">
-						<button dojoType="dijit.form.Button" id="saveAsFinalBtn" iconClass="saveIcon" onclick="imageEditor.doSaveAs()">
+						<button dojoType="dijit.form.Button" id="saveAsFinalBtn"  onclick="imageEditor.doSaveAs()">
 							<%= LanguageUtil.get(pageContext, "Save") %>
 						</button>
 						&nbsp;
-						<button dojoType="dijit.form.Button" iconClass="closeIcon" onclick="imageEditor.closeSaveAsDia()">
+						<button dojoType="dijit.form.Button"  onclick="imageEditor.closeSaveAsDia()">
 							<%= LanguageUtil.get(pageContext, "Cancel") %>
 						</button>
 					</div>

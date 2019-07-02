@@ -37,17 +37,12 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
  * document.getElementsByTagName("head")[0].appendChild(e); },
  */
     _initBaseFilterUrl: function() {
-    	if(this.inode != '0'){
-    		this.baseFilterUrl+= "/" + this.inode;
-    	}else{
-    		this.baseFilterUrl+= "/" + this.identifier;
-    	}
+        var shorty = (this.inode && this.inode != '0') ? this.inode.replace("-","").substr(0,12) : this.identifier.replace("-","").substr(0,12)
+        this.baseFilterUrl+= "/" + shorty;
+
     	if(this.fieldName != undefined){
     		this.baseFilterUrl+= "/" + this.fieldName;
     	}
-    	if(this.inode != '0'){
-    		 this.baseFilterUrl+= "/byInode/1";
-    	 }
 
         this.currentUrl = this.baseFilterUrl;
     },
@@ -212,8 +207,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
         //if we are a File Asset
         if(this.binaryFieldId == ''){
             this.iframe.dojo.style(this.iframe.dojo.byId("saveAsSpan"), "display", "inline");
-            this.iframe.dijit.byId("jpeg").disabled = true;
-            this.iframe.dijit.byId("jpeg").focus();
+
         }
 
 
@@ -482,21 +476,24 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
 
         //if this is not a png
         if(this.saveAsFileName.toLowerCase().indexOf(".jpg") >-1){
-            this.iframe.dijit.byId("jpeg").checked=true;
+            this.iframe.dijit.byId("compression").setValue("jpeg");
             this._removeFilter("Gif");
+            this._removeFilter("WebP");
             this._addFilter("Jpeg", "/jpeg_q/85");
             this._redrawImage();
         }
         else if(this.saveAsFileName.toLowerCase().indexOf(".gif") >-1){
-            this.iframe.dijit.byId("jpeg").checked=false;
+            this.iframe.dijit.byId("compression").setValue("none");
             this._removeFilter("Jpeg");
+            this._removeFilter("WebP");
             this._addFilter("Gif", "/gif/2");
             this._redrawImage();
         }
         else if(this.saveAsFileName.toLowerCase().indexOf(".png") >-1){
-            this.iframe.dijit.byId("jpeg").checked=false;
+            this.iframe.dijit.byId("compression").setValue("none");
             this._removeFilter("Jpeg");
-            //this._addFilter("Gif", "gif=2");
+            this._removeFilter("WebP");
+            this._addFilter("Png", "/png/2");
             this._redrawImage();
         }
         var x = this.cleanUrl(this.currentUrl);
@@ -1015,32 +1012,24 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
         this._redrawImage();
     },
 
-    toggleJpeg: function(){
-        var x = this.iframe.dijit.byId("jpeg");
+    toggleCompression: function(){
+        var x = this.iframe.dijit.byId("compression").getValue();
+        this._removeFilter("Jpeg");
+        this._removeFilter("WebP");
+        
+        if(x=="jpeg"){
 
-        if(x.checked){
             this._addFilter("Jpeg", "/jpeg_q/85");
+            this.iframe.dijit.byId("compression").set("value", "jpeg", false);
         }
-        else{
-            this._removeFilter("Jpeg");
+        else if(x=="webp"){
+
+            this._addFilter("WebP", "/webp_q/85");
+            this.iframe.dijit.byId("compression").set("value", "webp", false);
         }
         this._redrawImage();
     },
-    /*
-    toggleConstrain: function(){
-        var x = this.iframe.dijit.byId("constrain");
 
-        if(x.checked){
-            if(this.crop){
-
-            }
-        }
-        else{
-            this._removeFilter("Jpeg");
-        }
-        this._redrawImage();
-    },
-    */
     toggleGrayscale: function(){
         var x = this.iframe.dijit.byId("grayscale");
 
@@ -1107,6 +1096,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
         var newFilters = new Array();
         var isResize = (filterName == "Resize");
         var hasJpeg= (filterName == "Jpeg") ? true : false;
+        var hasWebP= (filterName == "WebP") ? true : false;
         var added = false;
 
 
@@ -1124,6 +1114,10 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
             // if we are adding Jpeg, it always needs to be last in the chain
             if(this.filters[i][0] == "Jpeg" ){
                 hasJpeg = true;
+                continue;
+            }
+            else if(this.filters[i][0] == "WebP" ){
+                hasWebP = true;
                 continue;
             }
 
@@ -1146,6 +1140,10 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
         if(hasJpeg && filterName != "Jpeg"){
             newFilters.push(["Jpeg", "/jpeg_q/75"]);
         }
+        if(hasWebP && filterName != "WebP"){
+            newFilters.push(["WebP", "/webp_q/75"]);
+        }
+        
         this.filters = newFilters;
 
         this.writeFilterList();
@@ -1153,7 +1151,11 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
 
 
     removeFilterClick:function(filterName){
+
         this._removeFilter(filterName);
+        
+        
+        
         this._redrawImage();
 
 
@@ -1166,6 +1168,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
 
 
      _removeFilter:function(filterName){
+        console.log("removing:" + filterName)
         if(this.filters == undefined || this.filters.length ==0){
             return;
         }
@@ -1185,17 +1188,17 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
             this.iframe.dijit.byId("showScaleSlider").setValue(100);
             // set the img dimentions so user can see
         }
-        else if(filterName=="Jpeg"){
-            this.iframe.dijit.byId("jpeg").setValue(false);
-        }
         else if(filterName=="Flip"){
-            this.iframe.dijit.byId("flip").setValue(false);
+            this.iframe.dijit.byId("flip").set("value", false, false);
         }
         else if(filterName=="Rotate"){
-            this.iframe.dijit.byId("rotate").setValue(0);
+            this.iframe.dijit.byId("rotate").set("value", 0, false);
         }
         else if(filterName=="Grayscale"){
-            this.iframe.dijit.byId("grayscale").setValue(false);
+            this.iframe.dijit.byId("grayscale").set("value", false, false);
+        }
+        else if(filterName=="Jpeg" || filterName=="WebP"){
+            this.iframe.dijit.byId("compression").set("value", "none", false);
         }
         else if(filterName=="Hsb"){
             this.iframe.dojo.byId("hueSpan").innerHTML = 0;
@@ -1251,10 +1254,9 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
     _redrawImage: function (){
 
         var x = 0;
-        while(this.painting){
-            x++;
-            if(x > 100000000){
-                alert("redrawing image, please wait");
+        while(window.top._dotImageEditor.painting){
+
+            if(++x > 100000){
                 return;
             }
         }
