@@ -1418,6 +1418,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		final Object doReindex = this.get(Contentlet.DO_REINDEX);
 
 		return null == doReindex || Boolean.TRUE.equals(doReindex);
+		//return true;
 	}
 
 

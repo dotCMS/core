@@ -33,13 +33,8 @@ public class CheckinContentActionlet extends WorkFlowActionlet {
 	public void executeAction(final WorkflowProcessor processor,
 							  final Map<String,WorkflowActionClassParameter>  params) throws WorkflowActionFailureException {
 
-		Object workflowInProgress = null;
-
 		try {
 
-			final Contentlet contentlet = processor.getContentlet();
-			workflowInProgress = contentlet.get(Contentlet.WORKFLOW_IN_PROGRESS);
-			contentlet.setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.TRUE);
 			processor.getContentlet().setProperty(Contentlet.DO_REINDEX, Boolean.FALSE);
 
 			APILocator.getContentletAPI().unlock(processor.getContentlet(), processor.getUser(),
@@ -49,13 +44,7 @@ public class CheckinContentActionlet extends WorkFlowActionlet {
 
 			Logger.error(this.getClass(),e.getMessage(),e);
 			throw new  WorkflowActionFailureException(e.getMessage(),e);
-		} finally {
-
-			if (null != processor.getContentlet()) {
-				processor.getContentlet().setProperty(Contentlet.WORKFLOW_IN_PROGRESS, workflowInProgress);
-			}
 		}
-
 	}
 
 	public WorkflowStep getNextStep() {

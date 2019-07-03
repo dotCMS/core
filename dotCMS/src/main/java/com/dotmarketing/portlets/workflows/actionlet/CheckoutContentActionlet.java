@@ -12,13 +12,11 @@ import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.util.Logger;
 
+/**
+ * Lock a {@link Contentlet}
+ */
 public class CheckoutContentActionlet extends WorkFlowActionlet {
 
-
-
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 1L;
 
 	public String getName() {
@@ -30,29 +28,21 @@ public class CheckoutContentActionlet extends WorkFlowActionlet {
 		return "This actionlet will checkout and lock the content.";
 	}
 
-	public void executeAction(WorkflowProcessor processor,Map<String,WorkflowActionClassParameter>  params) throws WorkflowActionFailureException {
-
-		Object workflowInProgress = null;
+	public void executeAction(final WorkflowProcessor processor,
+							  final Map<String,WorkflowActionClassParameter>  params) throws WorkflowActionFailureException {
 
 		try {
 
 			final Contentlet contentlet = processor.getContentlet();
-			workflowInProgress = contentlet.get(Contentlet.WORKFLOW_IN_PROGRESS);
-			contentlet.setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.TRUE);
 			contentlet.setProperty(Contentlet.DO_REINDEX, Boolean.FALSE);
 
-			APILocator.getContentletAPI().lock(processor.getContentlet(), processor.getUser(), true);
+			APILocator.getContentletAPI().lock(processor.getContentlet(),
+					processor.getUser(), true);
 		} catch (Exception e) {
 
 			Logger.error(this.getClass(),e.getMessage(),e);
 			throw new  WorkflowActionFailureException(e.getMessage(),e);
-		} finally {
-
-			if (null != processor.getContentlet()) {
-				processor.getContentlet().setProperty(Contentlet.WORKFLOW_IN_PROGRESS, workflowInProgress);
-			}
 		}
-
 	}
 
 	public WorkflowStep getNextStep() {

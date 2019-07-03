@@ -36,14 +36,10 @@ public class PublishContentActionlet extends WorkFlowActionlet {
 
     public void executeAction(WorkflowProcessor processor, Map<String, WorkflowActionClassParameter> params) throws WorkflowActionFailureException {
 
-        Object workflowInProgress = null;
-
         try {
 
             final Contentlet contentlet = processor.getContentlet();
             final int structureType = contentlet.getStructure().getStructureType();
-            workflowInProgress = contentlet.get(Contentlet.WORKFLOW_IN_PROGRESS);
-            contentlet.setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.TRUE);
             processor.getContentlet().setProperty(Contentlet.DO_REINDEX, Boolean.FALSE);
 
             if (processor.getContentlet().isArchived()) {
@@ -81,13 +77,7 @@ public class PublishContentActionlet extends WorkFlowActionlet {
 
             Logger.error(PublishContentActionlet.class, e.getMessage(), e);
             throw new WorkflowActionFailureException(e.getMessage(),e);
-        } finally {
-
-            if (null != processor.getContentlet()) {
-                processor.getContentlet().setProperty(Contentlet.WORKFLOW_IN_PROGRESS, workflowInProgress);
-            }
         }
-
     }
 
 }

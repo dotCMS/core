@@ -211,6 +211,8 @@ public class WorkflowProcessor {
 	}
 
 	public Contentlet getContentlet() {
+
+		contentlet.setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.TRUE);
 		return contentlet;
 	}
 

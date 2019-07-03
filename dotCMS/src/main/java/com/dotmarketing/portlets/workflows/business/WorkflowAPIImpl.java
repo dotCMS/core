@@ -1981,15 +1981,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	@Override
 	public void fireWorkflowPostCheckin(final WorkflowProcessor processor) throws DotDataException, DotWorkflowException {
 
-		Object workflowInProgress = null;
-
 		try {
 
 			if(!processor.inProcess()){
 				return;
 			}
 
-			workflowInProgress = processor.getContentlet().get(Contentlet.WORKFLOW_IN_PROGRESS);
 			processor.getContentlet().setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.TRUE);
 			processor.getContentlet().setProperty(Contentlet.DO_REINDEX, Boolean.FALSE);
 			processor.getContentlet().setActionId(processor.getAction().getId());
@@ -2039,7 +2036,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 				try {
 
-					processor.getContentlet().setProperty(Contentlet.WORKFLOW_IN_PROGRESS, workflowInProgress);
+					processor.getContentlet().setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.FALSE);
+					processor.getContentlet().setProperty(Contentlet.DO_REINDEX, Boolean.TRUE);
 
 					Logger.info(this, "**********");
 					Logger.info(this, "Indexing: " + processor.getContentlet().getIdentifier());
