@@ -1249,9 +1249,14 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
         this._redrawImage();
     },
 
+    changeViewingUrl: function(){
+        var newUrl = this.iframe.dijit.byId("viewingUrl").getValue();
+        
+        this._redrawImage(newUrl);
+    },
 
 
-    _redrawImage: function (){
+    _redrawImage: function (useUrl){
 
         var x = 0;
         while(window.top._dotImageEditor.painting){
@@ -1306,21 +1311,44 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
             ctx.painting = false;
             ctx.inited=false;
             ctx.initViewport();
+            
+            
+            var xhr = new XMLHttpRequest();
+            xhr.open('HEAD', target.src, true);
+            xhr.onreadystatechange = function(){
+              if ( xhr.readyState == 4 ) {
+                if ( xhr.status == 200 ) {
+                    ctx.iframe.dojo.byId("fileSizeDiv").innerHTML=  parseInt(xhr.getResponseHeader('Content-Length')/1024) + "k";
+                } else {
+                  alert('ERROR');
+                }
+              }
+            };
+            xhr.send(null);
+            
         };
 
-
-        var url = this.baseFilterUrl;
-        if(this.filters.length > 0){
-            //url+=(this.baseFilterUrl.indexOf("?")<0) ? "?":"&";
-        	//alert(f);
-            url+= "/filter/" + f + args;
+        
+        var url = useUrl;
+        
+        if(!useUrl){
+            url= this.baseFilterUrl;
+            if(this.filters.length > 0){
+                url+= "/filter/" + f + args;
+            }
         }
-
         img.src = url +"?test=" + new Date().getTime()
         
         this.currentUrl = url;
-        this.iframe.dojo.byId("viewingUrl").value = location.protocol +"//"+  location.host + url;
-        this.iframe.dojo.byId("showLink").href = location.protocol +"//"+  location.host + url;
+        this.iframe.dijit.byId("viewingUrl").set("value", (url.includes("://") ? url : location.protocol +"//"+  location.host + url), false);
+        this.iframe.dojo.byId("showLink").href =  url.includes("://") ? url : location.protocol +"//"+  location.host + url;
+        return;
+            
+
+        img.src = url +"?test=" + new Date().getTime()
+        this.currentUrl = url;
+        this.iframe.dijit.byId("viewingUrl").set("value",  url, false);
+        this.iframe.dojo.byId("showLink").href =  url;
 
 
     },

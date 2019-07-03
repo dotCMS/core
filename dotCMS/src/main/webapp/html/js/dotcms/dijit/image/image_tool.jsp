@@ -116,7 +116,7 @@
 							<%= LanguageUtil.get(pageContext, "Address") %>: 
 						</td>
 						<td width="100%;" style="white-space: nowrap;padding-right:25px;">
-							<input type="text" id="viewingUrl" dojoType="dijit.form.TextBox" value="<%=baseImage %>" style="width:100%;">
+							<input type="text" id="viewingUrl" dojoType="dijit.form.TextBox" value="<%=baseImage %>" style="width:100%;" onchange="imageEditor.changeViewingUrl()">
 						</td>
 					</tr>
 				</table>
@@ -294,7 +294,11 @@
          </tr>
             <td colspan="2" style="text-align: center">
             <span id="baseImageWidth"></span> &nbsp; x &nbsp; <span id="baseImageHeight"></span> 
-            <%=LanguageUtil.get(pageContext, "Original")%></td>
+            <%=LanguageUtil.get(pageContext, "Original")%>
+            
+            <div id="fileSizeDiv" style="text-align: center;padding:5px"></div>
+            
+            </td>
         </tr>
             
          <tr><td colspan=2><hr style="height:1px; border:none;  background-color:silver; "></td></tr>
