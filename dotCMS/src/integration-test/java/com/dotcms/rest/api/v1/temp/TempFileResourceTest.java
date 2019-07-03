@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.temp;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -16,6 +17,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import javax.ws.rs.core.Response.Status;
 import org.glassfish.jersey.media.multipart.BodyPart;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
@@ -355,6 +357,38 @@ public class TempFileResourceTest {
     assert (contentlet.getBinary("testBinary").getName().equals(fileName2));
     assert (contentlet.getBinary("testBinary").length() == 13695);
 
+  }
+
+  /**
+   * This test is for the TEMP_RESOURCE_ENABLED property
+   * If is set to false the temp resource is disabled and a 404 should be thrown.
+   *
+   * @throws Exception
+   */
+  @Test
+  public void test_TempResourceAPI_TempResourceEnabledProperty() throws Exception{
+    final boolean tempResourceEnabledOriginalValue = Config.getBooleanProperty(TempFileAPI.TEMP_RESOURCE_ENABLED, true);
+    try {
+      final TempFileResource resource = new TempFileResource();
+
+      final HttpServletRequest request = mockRequest();
+
+      final String fileName = "test.png";
+      final HttpServletResponse response = new MockHttpResponse();
+
+      Config.setProperty(TempFileAPI.TEMP_RESOURCE_ENABLED, false);
+      final Date date = new Date();
+      final FormDataContentDisposition fileMetaData = FormDataContentDisposition.name("testData")
+              .fileName(fileName).creationDate(date)
+              .modificationDate(date).readDate(date).size(1222).build();
+
+      final Response jsonResponse = resource
+              .uploadTempResource(request, response, inputStream(), fileMetaData);
+
+      assertEquals(Status.NOT_FOUND.getStatusCode(), jsonResponse.getStatus());
+    }finally {
+      Config.setProperty(TempFileAPI.TEMP_RESOURCE_ENABLED, tempResourceEnabledOriginalValue);
+    }
   }
   
   

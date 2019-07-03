@@ -17,6 +17,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import javax.ws.rs.core.Response.Status;
 import org.glassfish.jersey.media.multipart.BodyPart;
 import org.glassfish.jersey.media.multipart.BodyPartEntity;
 import org.glassfish.jersey.media.multipart.ContentDisposition;
@@ -68,6 +69,12 @@ public class TempFileResource {
   public final Response uploadTempResource(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
       @FormDataParam("file") final InputStream inputStream, @FormDataParam("file") final FormDataContentDisposition fileMetaData) {
 
+    if(!Config.getBooleanProperty(TempFileAPI.TEMP_RESOURCE_ENABLED, true)){
+      final String message = "Temp Files Resource is not enabled, please change the TEMP_RESOURCE_ENABLED to true in your properties file";
+      Logger.error(this,message);
+      return Response.status(Status.NOT_FOUND).entity(message).build();
+    }
+
     final boolean allowAnonToUseTempFiles = !Config.getBooleanProperty(TempFileAPI.TEMP_RESOURCE_ALLOW_ANONYMOUS, true);
 
     final InitDataObject initDataObject = this.webResource.init(false, request, allowAnonToUseTempFiles);
@@ -98,6 +105,12 @@ public class TempFileResource {
   @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
   @Consumes(MediaType.MULTIPART_FORM_DATA)
   public final Response uploadTempResourceMulti(@Context final HttpServletRequest request, @Context final HttpServletResponse response, FormDataMultiPart body) {
+
+    if(!Config.getBooleanProperty(TempFileAPI.TEMP_RESOURCE_ENABLED, true)){
+      final String message = "Temp Files Resource is not enabled, please change the TEMP_RESOURCE_ENABLED to true in your properties file";
+      Logger.error(this,message);
+      return Response.status(Status.NOT_FOUND).entity(message).build();
+    }
 
     final boolean allowAnonToUseTempFiles = !Config.getBooleanProperty(TempFileAPI.TEMP_RESOURCE_ALLOW_ANONYMOUS, true);
 
@@ -141,6 +154,13 @@ public class TempFileResource {
   @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
   @Consumes({MediaType.APPLICATION_JSON, MediaType.APPLICATION_JSON})
   public final Response copyTempFromUrl(@Context final HttpServletRequest request, final RemoteUrlForm form) {
+
+    if(!Config.getBooleanProperty(TempFileAPI.TEMP_RESOURCE_ENABLED, true)){
+      final String message = "Temp Files Resource is not enabled, please change the TEMP_RESOURCE_ENABLED to true in your properties file";
+      Logger.error(this,message);
+      return Response.status(Status.NOT_FOUND).entity(message).build();
+    }
+
     final boolean allowAnonToUseTempFiles = !Config.getBooleanProperty(TempFileAPI.TEMP_RESOURCE_ALLOW_ANONYMOUS, true);
     final InitDataObject initDataObject = this.webResource.init(false, request, allowAnonToUseTempFiles);
 

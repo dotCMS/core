@@ -37,6 +37,7 @@ public class TempFileAPI {
   public static final String TEMP_RESOURCE_MAX_AGE_SECONDS = "TEMP_RESOURCE_MAX_AGE_SECONDS";
   public static final String TEMP_RESOURCE_ALLOW_ANONYMOUS = "TEMP_RESOURCE_ALLOW_ANONYMOUS";
   public static final String TEMP_RESOURCE_ALLOW_NO_REFERER = "TEMP_RESOURCE_ALLOW_NO_REFERER";
+  public static final String TEMP_RESOURCE_ENABLED = "TEMP_RESOURCE_ENABLED";
   public static final String TEMP_RESOURCE_PREFIX = "temp_";
 
   private static final String WHO_CAN_USE_TEMP_FILE = "whoCanUse.tmp";
