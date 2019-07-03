@@ -729,7 +729,16 @@ public interface ContentletAPIPostHook {
 	 * @param returnValue - value returned by primary API Method 
 	 */
 	public default void checkout(List<Contentlet> contentlets, User user, boolean respectFrontendRoles,List<Contentlet> returnValue){}
-	
+
+	/**
+	 * Allows you to checkout contents so it can be altered and checked in
+	 * @param contentletInode
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @param contentlet
+	 * @param doIndexing
+	 */
+	default  void checkout(String contentletInode, User user, boolean respectFrontendRoles, Contentlet contentlet, boolean doIndexing) {}
 	/**
 	 * Allows you to checkout contents based on a lucene query so it can be altered and checked in 
 	 * @param luceneQuery
@@ -1561,4 +1570,6 @@ public interface ContentletAPIPostHook {
             String sortBy){
 
     }
+
+
 }

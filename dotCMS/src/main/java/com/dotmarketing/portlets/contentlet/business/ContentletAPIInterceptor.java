@@ -310,8 +310,24 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 	}
 
 	@Override
-	public Contentlet checkout(String contentletInode, User user, boolean respectFrontendRoles, boolean doIndexing) throws DotDataException, DotSecurityException, DotContentletStateException {
-		return conAPI.checkout(contentletInode, user, respectFrontendRoles, doIndexing); // todo: do interceptor
+	public Contentlet checkout(final String contentletInode, final User user,
+							   final boolean respectFrontendRoles, final boolean doIndexing) throws DotDataException, DotSecurityException, DotContentletStateException {
+
+		for(final ContentletAPIPreHook pre : preHooks){
+
+			final boolean preResult = pre.checkout(contentletInode, user, respectFrontendRoles, doIndexing);
+			if(!preResult){
+				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+			}
+		}
+
+		final Contentlet contentlet = conAPI.checkout(contentletInode, user, respectFrontendRoles, doIndexing);
+		for(final ContentletAPIPostHook post : postHooks){
+			post.checkout(contentletInode, user, respectFrontendRoles,contentlet, doIndexing);
+		}
+
+		return contentlet;
 	}
 
 	@Override

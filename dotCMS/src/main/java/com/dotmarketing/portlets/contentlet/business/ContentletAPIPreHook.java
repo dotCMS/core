@@ -854,6 +854,18 @@ public interface ContentletAPIPreHook {
 	public default boolean checkout(List<Contentlet> contentlets, User user, boolean respectFrontendRoles){
       return true;
     }
+
+	/**
+	 * Allows you to checkout contents so it can be altered and checked in
+	 * @param contentletInode
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @param doIndexing
+	 * @return
+	 */
+	default  boolean checkout(String contentletInode, User user, boolean respectFrontendRoles, boolean doIndexing) {
+		return true;
+	}
 	
 	/**
 	 * Allows you to checkout contents based on a lucene query so it can be altered and checked in 
@@ -1849,4 +1861,6 @@ public interface ContentletAPIPreHook {
             String sortBy){
         return true;
     }
+
+
 }

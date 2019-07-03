@@ -2039,10 +2039,6 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					processor.getContentlet().setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.FALSE);
 					processor.getContentlet().setProperty(Contentlet.DO_REINDEX, Boolean.TRUE);
 
-					Logger.info(this, "**********");
-					Logger.info(this, "Indexing: " + processor.getContentlet().getIdentifier());
-					Logger.info(this, "**********");
-
 					this.reindexQueueAPI.addIdentifierReindex(processor.getContentlet().getIdentifier());
 				} catch (DotDataException e) {
 					Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
@@ -2675,7 +2671,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		}
 	}
 
-	@LogTime(loggingLevel = "INFO")
+	//@LogTime(loggingLevel = "INFO")
 	@WrapInTransaction
 	@Override
 	public Contentlet fireContentWorkflow(final Contentlet contentlet, final ContentletDependencies dependencies) throws DotDataException, DotSecurityException {
