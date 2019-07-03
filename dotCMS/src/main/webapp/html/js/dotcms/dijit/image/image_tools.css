@@ -43,26 +43,33 @@ table {font-size:inherit;font-family:Roboto,sans-serif;}
 
 
 .imageToolButtonBar {
-	background:#fff;
+    position: absolute;
+    top:0px;
+    left:0px;
+    right:0px;
+	background:#eeeeee;
     height:48px;
 	border-bottom:1px solid silver;
-
-	margin-width:0 0px;
-	padding:5px 15px 1px 15px;
+    margin:0px;
+	margin-width:0px 0px;
+	padding:10px 15px 2px 15px;
 	vertical-align: middle;
+	z-index: 99999;
 
 }
 
 
 #imageViewPort{
     overflow: auto;
-    margin-top: 0px;
+    margin: 0px;
+    padding: 0px;
     position: absolute;
-    right:300px;
-    top:52px;
+    right:320px;
+    top:60px;
     bottom:0px;
     left:0px;
-    border:1px solid blue;
+    border:0px solid blue;
+    background:#f3f3f3;
 }
 
 
@@ -70,7 +77,7 @@ table {font-size:inherit;font-family:Roboto,sans-serif;}
 	background:#fff;
 	position:absolute;
 	right:0px;
-	top:52px;
+	top:62px;
 	bottom:0px;
 	width:300px;
 	margin:0px;
@@ -162,19 +169,23 @@ table {font-size:inherit;font-family:Roboto,sans-serif;}
 
 
 #filtersUndoDiv{
-	
 	text-align:left;
 }
 
 #filterListBox{
-	height:115px;
-	display:block;
+	width:90%;
+    margin-left:auto;
+    margin-right:auto;
+    border:0px red solid;
 }
+
 #filterListDiv{
-	width:115px;
+    border:1px solid #eeeeee;
+    height:100px;
 	overflow-y:auto;
-	height:80px;
+	height:120px;
 	overflow-x:hidden;
+
 }
 
         
@@ -182,23 +193,25 @@ table {font-size:inherit;font-family:Roboto,sans-serif;}
       	background:url('/html/js/dotcms/dijit/image/loading.gif') no-repeat center center;
 }
 
-#filterListDiv{
-    border:1px solid #eeeeee;
-    width:90%;
-    height:100px;
+
+
+#hsbButton {
+    transition: .5s ease;
+}
+
+#hsbButton:hover{
+    box-shadow: 0 0 0 1px rgba(0, 103, 244, 0.5);;
+    transition: .5s ease;
 }
 
 
-#filtersListContainer{
-
-
-}
 
 .filterListItem{
 	text-align:left;
 	cursor: pointer;
 	padding:2px;
 	padding-right:20px;
+	min-width:50px;
 	display:inline-block;
 	float:left;
 	margin:5px;
@@ -222,7 +235,7 @@ table {font-size:inherit;font-family:Roboto,sans-serif;}
 
 #controlTable .leftCol{
   text-align: right;  
-  width:50%;
+  width:30%;
 }
 
 #controlTable .rightCol{
