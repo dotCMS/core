@@ -16,6 +16,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -110,7 +111,7 @@ public class ContentToolTest extends IntegrationTestBase {
     public void testPullMultiLanguage() throws Exception { // https://github.com/dotCMS/core/issues/11172
 
     	// Test uses Spanish language
-    	final long languageId = 2;
+    	final long languageId = TestDataUtils.getSpanishLanguage().getId();
 
         // Get "News" content-type
         final ContentType contentType = contentTypeAPI.search(" velocity_var_name = 'News'").get(0);

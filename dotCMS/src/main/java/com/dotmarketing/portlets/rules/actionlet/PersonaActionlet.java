@@ -14,6 +14,7 @@ import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.parameter.ParameterDefinition;
 import com.dotmarketing.portlets.rules.parameter.display.RestDropdownInput;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.liferay.portal.model.User;
 import java.util.Map;
 import java.util.Optional;
@@ -61,27 +62,39 @@ public class PersonaActionlet extends RuleActionlet<PersonaActionlet.Instance> {
     }
 
     @Override
-    public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance instance) {
+    public boolean evaluate(final HttpServletRequest request, final HttpServletResponse response, final Instance instance) {
+
         boolean result;
+
         try {
-            Optional<Visitor> opt = visitorAPI.getVisitor(request);
-            if(opt.isPresent()){
-                User user = userAPI.getSystemUser();
-                Persona p = personaAPI.find(instance.personaId, user, false);
-                if(p == null){
+
+            final Optional<Visitor> opt = visitorAPI.getVisitor(request);
+
+            if(opt.isPresent()) {
+
+                final User user         = userAPI.getSystemUser();
+                final PageMode pageMode = PageMode.get(request);
+                final Persona persona   = pageMode.showLive?
+                        personaAPI.findLive(instance.personaId, user, pageMode.respectAnonPerms):
+                        personaAPI.find(instance.personaId, user, pageMode.respectAnonPerms);
+                if(persona == null) {
+
                     Logger.warn(PersonaActionlet.class, "Persona with id '" + instance.personaId + "' not be found. Could not execute action.");
                     result = false;
                 } else {
-                    opt.get().setPersona(p);
+                    opt.get().setPersona(persona);
                     result = true;
                 }
-            } else{
+            } else {
+
                 Logger.warn(PersonaActionlet.class, "No visitor was available on which to set a persona. Could not execute action.");
                 result = false;
             }
         } catch (Exception e) {
+
             throw new RuleEvaluationFailedException(e, "Could not evaluate action %s", this.getClass().getName());
         }
+
         return result;
     }
 

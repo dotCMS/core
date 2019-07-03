@@ -2,6 +2,7 @@ package com.dotmarketing.business;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.VersionInfo;
@@ -91,18 +92,49 @@ public interface VersionableAPI {
 	 * @throws DotSecurityException
 	 */
 	public List<Versionable>  findAllVersions(Versionable inode)  throws DotDataException, DotStateException,DotSecurityException;
+
 	/**
 	 * Finds all versions based on an id
-	 * @param inode
-	 * @param user
-	 * @param respectAnonPermissions
+	 * @param identifier {@link Identifier}
 	 * @return
 	 * @throws DotDataException
 	 * @throws DotStateException
 	 * @throws DotSecurityException
 	 */
-	public List<Versionable>  findAllVersions(Identifier id)  throws DotDataException, DotStateException,DotSecurityException;
-	
+	public List<Versionable>  findAllVersions(Identifier identifier)  throws DotDataException, DotStateException,DotSecurityException;
+
+	/**
+	 * Finds previous versions based on an identifier (if exists)
+	 * @param identifier {@link Identifier}
+	 * @return Optional of Versionable
+	 * @throws DotDataException
+	 * @throws DotStateException
+	 * @throws DotSecurityException
+	 */
+	 Optional<Versionable> findPreviousVersion(Identifier identifier)  throws DotDataException, DotStateException,DotSecurityException;
+
+	/**
+	 * Finds previous versions based on an identifier (if exists)
+	 * @param identifier {@link String}
+	 * @return Optional of Versionable
+	 * @throws DotDataException
+	 * @throws DotStateException
+	 * @throws DotSecurityException
+	 */
+	Optional<Versionable> findPreviousVersion(String identifier)  throws DotDataException, DotStateException,DotSecurityException;
+
+	/**
+	 * Finds previous versions based on an identifier (if exists)
+	 * @param identifier {@link String}
+	 * @param user {@link User}
+	 * @param respectAnonPermissions {@link Boolean}
+	 * @return Optional of Versionable
+	 * @throws DotDataException
+	 * @throws DotStateException
+	 * @throws DotSecurityException
+	 */
+	 Optional<Versionable>  findPreviousVersion(String identifier, User user, boolean respectAnonPermissions)  throws DotDataException, DotStateException,DotSecurityException;
+
 	/**
 	 * Finds all versions based on an id
 	 * @param inode

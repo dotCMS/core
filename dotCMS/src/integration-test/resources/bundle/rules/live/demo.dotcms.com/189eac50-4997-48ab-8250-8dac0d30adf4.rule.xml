@@ -4,7 +4,7 @@
     <name>Identify user from M param</name>
     <fireOn>EVERY_PAGE</fireOn>
     <shortCircuit>false</shortCircuit>
-    <parent>48190c8c-42c4-46af-8d1a-0cd5db894797</parent>
+    <parent>REPLACE_WITH_HOST_ID</parent>
     <folder>SYSTEM_FOLDER</folder>
     <priority>1</priority>
     <enabled>true</enabled>

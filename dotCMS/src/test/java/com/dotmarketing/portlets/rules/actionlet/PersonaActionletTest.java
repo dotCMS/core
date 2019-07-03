@@ -104,6 +104,9 @@ public class PersonaActionletTest extends UnitTestBase {
 
         public TestCase withMockPersona(Persona persona) {
             try {
+                when(personaAPI.findLive(persona.getIdentifier(), user, true)).thenReturn(persona);
+                when(personaAPI.find(persona.getIdentifier(), user, true)).thenReturn(persona);
+                when(personaAPI.findLive(persona.getIdentifier(), user, false)).thenReturn(persona);
                 when(personaAPI.find(persona.getIdentifier(), user, false)).thenReturn(persona);
             } catch (DotDataException | DotSecurityException e) {
                 throw new RuntimeException(e);

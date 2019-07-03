@@ -18,10 +18,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import org.apache.commons.beanutils.BeanUtils;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static com.dotcms.util.CollectionsUtils.set;
 
@@ -172,16 +169,33 @@ public class VersionableFactoryImpl extends VersionableFactory {
 
 	@Override
 	protected List<Versionable> findAllVersions(String id) throws DotDataException, DotStateException {
-		Identifier identifier = this.iapi.find(id);
-		if(identifier ==null){
-			throw new DotDataException("identifier:" + id +" not found");
+
+		return findAllVersions(id, Optional.empty());
+	}
+
+	protected  List<Versionable> findAllVersions(final String id, final Optional<Integer> maxResults) throws DotDataException, DotStateException {
+
+		final Identifier identifier = this.iapi.find(id);
+
+		if(identifier ==null) {
+
+			throw new DotDataException("identifier:" + identifier +" not found");
 		}
-		Class<?> clazz = InodeUtils.getClassByDBType(identifier.getAssetType());
-		if(clazz.equals(Inode.class))
-		    return new ArrayList<Versionable>(1);
-		HibernateUtil dh = new HibernateUtil(clazz);
+
+		final Class<?> clazz = InodeUtils.getClassByDBType(identifier.getAssetType());
+		if(clazz.equals(Inode.class)) {
+
+			return new ArrayList<Versionable>(1);
+		}
+
+		final HibernateUtil dh = new HibernateUtil(clazz);
 		dh.setQuery("from inode in class " + clazz.getName() + " where inode.identifier = ? and inode.type='" + identifier.getAssetType() + "' order by mod_date desc");
 		dh.setParam(id);
+
+		if (maxResults.isPresent()) {
+			dh.setMaxResults(maxResults.get());
+		}
+
 		Logger.debug(this.getClass(), "findAllVersions query: " + dh.getQuery());
 		return (List<Versionable>) dh.list();
 	}

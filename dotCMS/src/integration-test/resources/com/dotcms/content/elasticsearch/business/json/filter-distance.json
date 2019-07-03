@@ -7,7 +7,7 @@
       "filter": {
         "geo_distance": {
           "distance": "2000km",
-          "news.latlong": {
+          "REPLACE_WITH_NEWS_CONTENT_TYPE_VARNAME.latlong": {
             "lat": 37.776,
             "lon": -122.41
           }

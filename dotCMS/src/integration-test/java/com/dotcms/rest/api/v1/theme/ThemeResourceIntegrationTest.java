@@ -9,6 +9,8 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.datagen.FileAssetDataGen;
+import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.ThemeDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequest;
@@ -65,7 +67,14 @@ public class ThemeResourceIntegrationTest {
         folderAPI = APILocator.getFolderAPI();
 
         user = userAPI.getSystemUser();
-        host = hostAPI.findDefaultHost(user, false);
+
+        host = new SiteDataGen().nextPersisted();
+
+        //Create themes associated to the just created site
+        new ThemeDataGen().site(host).nextPersisted();
+        new ThemeDataGen().site(host).nextPersisted();
+        new ThemeDataGen().site(host).nextPersisted();
+
     }
 
     @Test

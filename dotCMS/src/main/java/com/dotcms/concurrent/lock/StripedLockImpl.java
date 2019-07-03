@@ -72,7 +72,7 @@ public class StripedLockImpl<K> implements DotKeyLockManager<K> {
         final Lock lock = lockStripes.get(key);
         if (!lock.tryLock(time, unit)) {
             throw new DotConcurrentException(
-                    String.format("Unable to acquire Lock on key %s ", key)
+                    String.format("Unable to acquire Lock on key `%s` and thread `%s` ", key, Thread.currentThread().getName())
                     );
         }
         try {
@@ -97,7 +97,7 @@ public class StripedLockImpl<K> implements DotKeyLockManager<K> {
         final Lock lock = lockStripes.get(key);
         if (!lock.tryLock(time, unit)) {
             throw new DotConcurrentException(
-                    String.format("Unable to acquire Lock on key %s ", key)
+                    String.format("Unable to acquire Lock on key `%s` and thread `%s` ", key, Thread.currentThread().getName())
                     );
         }
         try {

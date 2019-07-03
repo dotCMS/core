@@ -19,12 +19,12 @@ public class RelationshipCacheImpl extends RelationshipCache {
 
 	private DotCacheAdministrator cache;
 	
-	private String primaryGroup = "RelationshipCacheByInode";
-	private String secondaryGroup = "RelationshipCacheByName";
-    private String tertiaryGroup = "RelatedContentCache";
+	private final String primaryGroup = "RelationshipCacheByInode";
+	private final String secondaryGroup = "RelationshipCacheByName";
+    private final String tertiaryGroup = "RelatedContentCache";
 
 	// region's name for the cache
-    private String[] groupNames = {primaryGroup, secondaryGroup, tertiaryGroup};
+    private final String[] groupNames = {primaryGroup, secondaryGroup, tertiaryGroup};
 
 	public RelationshipCacheImpl() {
         cache = CacheLocator.getCacheAdministrator();

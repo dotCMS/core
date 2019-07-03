@@ -1,0 +1,211 @@
+## QUEST FINANCIAL THEME **
+<!doctype html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+
+<head>
+    #if($dotTheme.htmlHead)
+
+        #if($UtilMethods.isSet($URLMapContent.title))
+            #set($pageTitle = $URLMapContent.title)
+            #set($crumbTitle = $URLMapContent.title)
+        #else
+            #set($pageTitle = $dotPageContent.title)
+        #end
+        #set($dotRelativeThemePath=$dotTheme.path)
+        #if($dotRelativeThemePath.startsWith("//"))
+            #set($dotRelativeThemePath=$dotRelativeThemePath.substring(2))
+            #set($dotRelativeThemePath=$dotRelativeThemePath.substring($dotRelativeThemePath.indexOf("/")))
+        #end
+        #if("0" == $request.getParameter("com.dotmarketing.persona.id"))
+            ${visitor.clearTags()}
+        #end
+
+        <title>$pageTitle</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <meta charset="UTF-8">
+        <meta name="application-name" content="dotCMS dotcms.com">
+        <meta name="description" content="$!dotPageContent.seodescription">
+        <meta name="keywords" content="$!dotPageContent.seokeywords">
+        <meta name="author" content="$!dotPageContent.pagemetadata">
+        <meta name="lastModifiedDate" content="$!dotPageContent.modDate">
+        <meta name="application-name" content="dotcms.com" />
+        <meta name="generator" content="dotCMS" />
+        #if($UtilMethods.isSet($dotPageContent.canonicalUrl))
+            <link rel="canonical" href="//demo.dotcms.com$!{dotPageContent.canonicalUrl}" />
+        #else
+            <link rel="canonical" href="//demo.dotcms.com$!{request.getAttribute("javax.servlet.forward.request_uri")}" />
+        #end
+
+
+        <link rel="shortcut icon" href="//dotcms.com/favicon.ico" type="image/x-icon">
+        <link href='//fonts.googleapis.com/css?family=Kameron|Oxygen:300,400,700' rel='stylesheet' type='text/css'>
+
+        <!-- Load jQuery from Google CDN -->
+        <script src="//code.jquery.com/jquery.min.js"></script>
+
+    #end
+</head>
+
+    #set($utilClass = $pageTitle.toLowerCase().replace(' ', '-'))
+
+<body class="$dotThemeLayout.title.replace("--",'-') $utilClass">
+
+    #if($dotThemeLayout.header)
+
+        <header id="header" class="header-wrap">
+            <div class="header-tools  d-none d-lg-flex">
+                <div class="container">
+                    <div class="col-md-12">
+                        <h1>Header Tools</h1>
+                    </div>
+                </div>
+            </div>
+            <div class="navbar navbar-expand-lg navbar-toggleable-md navbar-light bg-white">
+                <div class="container">
+                    <h1>Headers navbar</h1>
+                </div><!-- container -->
+            </div><!-- navbar -->
+        </header>
+
+    #end
+
+<div class="content-wrap">
+    <div class="container">
+        ##Main column
+        #set ($mainColumn = $dotThemeLayout.body)
+
+        ##Sidebar
+        #set ($sidebar = $dotThemeLayout.sidebar)
+
+
+        ############################
+        ## SIDEBAR - (IF PRESENT) ##
+        ############################
+        #if ($sidebar && $sidebar.location != "")
+
+        <div class="row">
+
+            #if ($sidebar.width == 'small')
+                #set ($sidebarColumn1Span = "col-sm-2")
+                #set ($sidebarColumn2Span = "col-sm-10")
+            #elseif ($sidebar.width == 'medium')
+                #set ($sidebarColumn1Span = "col-sm-3")
+                #set ($sidebarColumn2Span = "col-sm-9")
+            #elseif ($sidebar.width == 'large')
+                #set ($sidebarColumn1Span = "col-sm-4")
+                #set ($sidebarColumn2Span = "col-sm-8")
+            #else
+                #set ($sidebarColumn1Span = "")
+                #set ($sidebarColumn2Span = "")
+            #end
+
+            #if ($sidebar.location == "left")
+                <div class="$sidebarColumn1Span">
+                ##Draw the column content
+                $render.eval($sidebar.draw())
+                </div><!--/div sidebar left-->
+            <div class="$sidebarColumn2Span">
+            #else
+            <div class="$sidebarColumn2Span">
+            #end
+
+        #end
+
+        ## support "Simple Pages" that use a field called content
+        #if($dotPageContent && $dotPageContent.content)
+            <div class="row">
+                #dotedit($!dotPageContent.inode,$!dotPageContent.content)
+            </div>
+        #end
+
+        #########################################
+        ## ADDING THE ROWS FOR THE MAIN COLUMN ##
+        #########################################
+        #if ($mainColumn.rows)
+
+            #set($count = 0)
+            #foreach($row in $mainColumn.rows)
+                #set($count = $count + 1)
+                #set($rowLeftOffset = 1)
+                ##Every row will have a number of columns, lets add one by one using bootstrap grid layout
+                #foreach($column in $row.columns)
+                    #if($velocityCount == 1)
+                        #set($rowClass = "")
+
+                        #if($row.styleClass != "")
+                            #set($rowClass = $row.styleClass)
+                        #end
+
+                    <div class="row-wrapper-$!{count} ${rowClass}">
+                    <div class="row">
+                    #end
+
+                    ##Now..., depending on the width of the column lets try to use bootstrap layout styles
+                    #set ($currentColumnSpan = "col-md-${column.width}")
+                    #set ($offset = 0)
+
+                    ## Set the bootstrap Offset of each column based on the left offset of the row.
+                    #if ($rowLeftOffset == $column.leftOffset)
+                        #set($columnOffset = "")
+                    #else
+                        #set($offset = $column.leftOffset - $rowLeftOffset)
+                        #set($columnOffset = "offset-sm-${offset}")
+                    #end
+                    #set($rowLeftOffset = $rowLeftOffset + $column.width + $offset)
+
+                    #set($columnClass = $column.styleClass)
+                    #if($column.styleClass != "")
+                        #set($columnClass = $column.styleClass)
+                    #end
+
+                    <div class="$currentColumnSpan $columnOffset ${columnClass}">
+                    ##Draw the column content
+                                $render.eval($column.draw())
+                    </div><!--/span-->
+
+                    #if($velocityCount == $row.columns.size())
+                    </div><!--/row-->
+                    </div><!-- /row-wrapper-->
+                    #end
+                #end
+            #end
+        #end
+
+        ############################
+        ## SIDEBAR - (IF PRESENT) ##
+        ############################
+        #if ($sidebar && $sidebar.location != "")
+            #if ($sidebar.location == "left")
+            </div><!--/div columns-->
+            #else
+            </div><!--/div columns-->
+                <div class="$sidebarColumn1Span">
+                ##Draw the column content
+                $render.eval($sidebar.draw())
+                </div><!--/div sidebar right-->
+            #end
+        </div><!--/div row-->
+        #end
+
+    </div><!-- /container-->
+
+</div>
+
+    #if($dotThemeLayout.footer)
+
+        <footer class="footer-wrapper">
+            <div class="container">
+                <div class="row footer-nav">
+                    <h1>Footer</h1>
+                </div>
+            </div>
+        </footer>
+
+    #end
+
+<a href="http://www.dotcms.com" class="powered-by">Powered by dotCMS - The Leading Open Source Java Content Management System</a>
+</body>
+</html>

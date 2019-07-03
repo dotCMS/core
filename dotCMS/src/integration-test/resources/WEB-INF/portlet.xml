@@ -1,0 +1,510 @@
+<?xml version="1.0"?>
+
+<portlet-app>
+
+
+
+    <portlet>
+        <portlet-name>files-legacy</portlet-name>
+        <display-name>File Manager</display-name>
+        <portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+        <init-param>
+            <name>view-action</name>
+            <value>/ext/files/view_files</value>
+        </init-param>
+
+
+        <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+
+
+    </portlet>
+
+    <portlet>
+        <portlet-name>categories</portlet-name>
+        <display-name>Category Manager</display-name>
+        <portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+        <init-param>
+            <name>view-action</name>
+            <value>/ext/categories/view_categories</value>
+        </init-param>
+
+
+        <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+
+
+    </portlet>
+
+    <portlet>
+        <portlet-name>folders</portlet-name>
+        <display-name>Folder Manager</display-name>
+        <portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+        <init-param>
+            <name>view-action</name>
+            <value>/ext/folders/view_folders</value>
+        </init-param>
+
+
+        <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+
+
+    </portlet>
+
+    <portlet>
+        <portlet-name>site-browser</portlet-name>
+        <display-name>CMS Browser</display-name>
+        <portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+        <init-param>
+            <name>view-action</name>
+            <value>/ext/browser/view_browser</value>
+        </init-param>
+        <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+    </portlet>
+    
+    <portlet>
+        <portlet-name>content</portlet-name>
+        <display-name>Contents Manager</display-name>
+        <portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+        <init-param>
+            <name>view-action</name>
+            <value>/ext/contentlet/view_contentlets</value>
+        </init-param>
+        <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+    </portlet>
+    
+
+
+    <!-- BEGIN: PORTLET CONTENT PUBLISHING FRAMEWORK -->
+    <portlet>
+        <portlet-name>publishing-queue</portlet-name>
+        <display-name>Content Publishing Tools</display-name>
+        <portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
+        <init-param>
+            <name>view-jsp</name>
+            <value>/portlet/ext/contentlet/publishing/view_publish_tool.jsp</value>
+        </init-param>
+        <init-param>
+            <name>useWEBINFDIR</name>
+            <value>false</value>
+        </init-param>
+
+
+        <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+
+    </portlet>
+    <!-- END: PORTLET CONTENT PUBLISHING FRAMEWORK -->
+
+    <portlet>
+        <portlet-name>containers</portlet-name>
+        <display-name>Container Manager</display-name>
+        <portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+        <init-param>
+            <name>view-action</name>
+            <value>/ext/containers/view_containers</value>
+        </init-param>
+
+
+        <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+
+    </portlet>
+
+    <portlet>
+        <portlet-name>templates</portlet-name>
+        <display-name>Templates Manager</display-name>
+        <portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+        <init-param>
+            <name>view-action</name>
+            <value>/ext/templates/view_templates</value>
+        </init-param>
+
+
+        <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+
+    </portlet>
+
+    <portlet>
+        <portlet-name>html-pages</portlet-name>
+        <display-name>HTML Pages Manager</display-name>
+        <portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+        <init-param>
+            <name>view-action</name>
+            <value>/ext/htmlpages/view_htmlpages</value>
+        </init-param>
+
+
+        <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+
+
+    </portlet>
+
+    <portlet>
+        <portlet-name>director</portlet-name>
+        <display-name>Director</display-name>
+        <portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+        <init-param>
+            <name>view-action</name>
+            <value>/ext/director/view_director</value>
+        </init-param>
+
+
+        <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+
+
+    </portlet>
+
+
+    <portlet>
+        <portlet-name>links</portlet-name>
+        <display-name>Links Manager</display-name>
+        <portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+        <init-param>
+            <name>view-action</name>
+            <value>/ext/links/view_links</value>
+        </init-param>
+
+
+        <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+
+
+    </portlet>
+
+    <portlet>
+        <portlet-name>workflow</portlet-name>
+        <display-name>Workflow Tasks</display-name>
+        <portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+        <init-param>
+            <name>view-action</name>
+            <value>/ext/workflows/view_workflow_tasks</value>
+        </init-param>
+
+
+        <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+
+
+    </portlet>
+
+    <portlet>
+        <portlet-name>legacy-page-views</portlet-name>
+        <display-name>HTML Pages Statistics</display-name>
+        <portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+        <init-param>
+            <name>view-action</name>
+            <value>/ext/htmlpageviews/view_htmlpage_views</value>
+        </init-param>
+        <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+    </portlet>
+
+
+    <portlet>
+        <portlet-name>vanity-urls</portlet-name>
+        <display-name>Contents Manager</display-name>
+        <portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+        <init-param>
+            <name>view-action</name>
+            <value>/ext/contentlet/view_contentlets</value>
+        </init-param>
+        <init-param>
+            <name>baseTypes</name>
+            <value>VANITY_URL</value>
+        </init-param>
+        <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+    </portlet>
+
+    <portlet>
+        <portlet-name>landing-pages</portlet-name>
+        <display-name>Landing Pages</display-name>
+        <portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+        <init-param>
+            <name>view-action</name>
+            <value>/ext/contentlet/view_contentlets</value>
+        </init-param>
+        <init-param>
+            <name>contentTypes</name>
+            <value>LandingPage</value>
+        </init-param>
+        <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+    </portlet>
+
+    <portlet>
+        <portlet-name>languages</portlet-name>
+        <display-name>Languages Manager</display-name>
+        <portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+        <init-param>
+            <name>view-action</name>
+            <value>/ext/languages_manager/view_languages_manager</value>
+        </init-param>
+        <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+    </portlet>
+
+    <portlet>
+        <portlet-name>events</portlet-name>
+        <display-name>Events</display-name>
+        <portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+        <init-param>
+            <name>view-action</name>
+            <value>/ext/events/view_events</value>
+        </init-param>
+        <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+    </portlet>
+
+    <portlet>
+        <portlet-name>content-types</portlet-name>
+        <display-name>Structures</display-name>
+        <portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+        <init-param>
+            <name>view-action</name>
+            <value>/ext/structure/view_structure</value>
+        </init-param>
+        <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+    </portlet>
+
+    <portlet>
+        <portlet-name>forms</portlet-name>
+        <display-name>Form Handler</display-name>
+        <portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+        <init-param>
+            <name>view-action</name>
+            <value>/ext/formhandler/view_form</value>
+        </init-param>
+        <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+    </portlet>
+
+    <portlet>
+        <portlet-name>users</portlet-name>
+        <display-name>User Admin</display-name>
+        <portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+        <init-param>
+            <name>view-action</name>
+            <value>/ext/useradmin/view_users</value>
+        </init-param>
+        <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+    </portlet>
+
+    <portlet>
+        <portlet-name>roles</portlet-name>
+        <display-name>Roles Admin</display-name>
+        <portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
+        <init-param>
+            <name>view-jsp</name>
+            <value>/portlet/ext/roleadmin/view_roles.jsp</value>
+        </init-param>
+    </portlet>
+
+
+
+    <portlet>
+        <portlet-name>maintenance</portlet-name>
+        <display-name>CMS Maintenance</display-name>
+        <portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+        <init-param>
+            <name>view-action</name>
+            <value>/ext/cmsmaintenance/view_cms_maintenance</value>
+        </init-param>
+        <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+
+    </portlet>
+
+
+    <portlet>
+        <portlet-name>jobs</portlet-name>
+        <display-name>Scheduler</display-name>
+        <portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+        <init-param>
+            <name>view-action</name>
+            <value>/ext/scheduler/view_schedulers</value>
+        </init-param>
+
+
+        <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+
+    </portlet>
+
+    <portlet>
+        <portlet-name>calendar</portlet-name>
+        <display-name>Calendar of Events</display-name>
+        <portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+        <init-param>
+            <name>view-action</name>
+            <value>/ext/calendar/view_calendar</value>
+        </init-param>
+
+
+        <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+
+    </portlet>
+
+    <portlet>
+        <portlet-name>sites</portlet-name>
+        <display-name>Host Admin</display-name>
+        <portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+        <init-param>
+            <name>view-action</name>
+            <value>/ext/hostadmin/view_hosts</value>
+        </init-param>
+
+
+        <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+
+
+    </portlet>
+
+
+    <!-- JSP PORTLETS -->
+    <portlet>
+        <portlet-name>query-tool</portlet-name>
+        <display-name>Lucene Test Tool</display-name>
+        <portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
+        <init-param>
+            <name>view-jsp</name>
+            <value>/jsp/lucene/lucene_search.jsp</value>
+        </init-param>
+        <init-param>
+            <name>useWEBINFDIR</name>
+            <value>true</value>
+        </init-param>
+
+
+        <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+
+    </portlet>
+
+    <portlet>
+        <portlet-name>site-search</portlet-name>
+        <display-name>Site Search Manager</display-name>
+        <portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
+        <init-param>
+            <name>view-jsp</name>
+            <value>/portlet/ext/sitesearch/site_search.jsp</value>
+        </init-param>
+
+    </portlet>
+
+    <portlet>
+        <portlet-name>dashboard</portlet-name>
+        <display-name>Dashboard</display-name>
+        <portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+        <init-param>
+            <name>view-action</name>
+            <value>/ext/dashboard/view_dashboard</value>
+        </init-param>
+
+
+        <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+
+
+    </portlet>
+
+
+    <portlet>
+        <portlet-name>workflow-schemes</portlet-name>
+        <display-name>Workflow Schemes</display-name>
+        <portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
+        <init-param>
+            <name>view-jsp</name>
+            <value>/portlet/ext/workflows/schemes/workflow_main.jsp</value>
+        </init-param>
+
+
+
+    </portlet>
+
+    <portlet>
+        <portlet-name>dynamic-plugins</portlet-name>
+        <display-name>OSGI Manager</display-name>
+        <portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
+        <init-param>
+            <name>view-jsp</name>
+            <value>/portlet/ext/osgi/main.jsp</value>
+        </init-param>
+
+
+
+    </portlet>
+
+    <portlet>
+        <portlet-name>configuration</portlet-name>
+        <display-name>CMS Config</display-name>
+        <portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
+        <init-param>
+            <name>view-jsp</name>
+            <value>/portlet/ext/cmsconfig/main.jsp</value>
+        </init-param>
+        <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+    </portlet>
+
+    <portlet>
+        <portlet-name>tags</portlet-name>
+        <display-name>Tag Manager</display-name>
+        <portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
+        <init-param>
+            <name>view-jsp</name>
+            <value>/jsp/tag_manager/tag_manager.jsp</value>
+        </init-param>
+        <init-param>
+            <name>useWEBINFDIR</name>
+            <value>true</value>
+        </init-param>
+
+
+        <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+
+    </portlet>
+
+    <portlet>
+        <portlet-name>time-machine</portlet-name>
+        <display-name>Time Machine</display-name>
+        <portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
+        <init-param>
+            <name>view-jsp</name>
+            <value>/portlet/ext/timemachine/view.jsp</value>
+        </init-param>
+        <expiration-cache>0</expiration-cache>
+        <supports>
+            <mime-type>text/html</mime-type>
+        </supports>
+        <security-role-ref>
+            <role-name>CMS Administrator</role-name>
+        </security-role-ref>
+    </portlet>
+
+    <portlet>
+        <portlet-name>link-checker</portlet-name>
+        <display-name>Broken Links</display-name>
+        <portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
+        <init-param>
+            <name>view-jsp</name>
+            <value>/portlet/ext/linkchecker/view_broken_links.jsp</value>
+        </init-param>
+    </portlet>
+
+
+
+    <portlet>
+        <portlet-name>es-search</portlet-name>
+        <display-name>ES Query Tool</display-name>
+        <portlet-class>com.dotcms.rest.elasticsearch.ESContentResourcePortlet</portlet-class>
+    </portlet>
+    <portlet>
+        <portlet-name>rules</portlet-name>
+        <display-name>Rules Editor</display-name>
+        <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
+    </portlet>
+
+    <portlet>
+        <portlet-name>dot-browser</portlet-name>
+        <display-name>dotCMS Site Browser</display-name>
+        <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
+    </portlet>
+
+    <portlet>
+        <portlet-name>content-types-angular</portlet-name>
+        <display-name>Content Types Angular</display-name>
+        <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
+    </portlet>
+
+    <portlet>
+        <portlet-name>embedded-dashboard</portlet-name>
+        <display-name>Embedded Analytics Dashboard</display-name>
+        <portlet-class>com.dotcms.rest.JSPPortlet</portlet-class>
+    </portlet>
+
+</portlet-app>

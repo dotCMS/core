@@ -2,25 +2,35 @@ package com.dotcms.enterprise.publishing.remote.handler;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
+import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.portlets.rules.model.*;
+import com.dotmarketing.portlets.rules.model.Condition;
+import com.dotmarketing.portlets.rules.model.ConditionGroup;
+import com.dotmarketing.portlets.rules.model.LogicalOperator;
+import com.dotmarketing.portlets.rules.model.Rule;
+import com.dotmarketing.portlets.rules.model.RuleAction;
 import com.liferay.portal.model.User;
+import java.io.File;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import java.io.File;
-import java.net.URL;
-import java.util.List;
 
 /**
  * Integration for Rule Handler
  */
 public class RuleBundlerHandlerTest extends IntegrationTestBase {
 
+    private static final String TO_REPLACE_HOST_ID = "REPLACE_WITH_HOST_ID";
+
     private static User user;
+    private static Host site;
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -30,6 +40,7 @@ public class RuleBundlerHandlerTest extends IntegrationTestBase {
         LicenseTestUtil.getLicense();
 
         user = APILocator.getUserAPI().getSystemUser();
+        site = new SiteDataGen().nextPersisted();
     }
 
     @Test
@@ -39,10 +50,19 @@ public class RuleBundlerHandlerTest extends IntegrationTestBase {
         final PublisherConfig publisherConfig = new PublisherConfig();
         final RuleHandler ruleHandler         = new RuleHandler(publisherConfig);
         final URL fileUrl = getClass().getResource("/bundle/rules/");
-        final File file   = new File(fileUrl.getFile());
+        final File folderFile = new File(fileUrl.getFile());
+        final File rulesFile = new File(getClass().getResource(
+                "/bundle/rules/live/demo.dotcms.com/189eac50-4997-48ab-8250-8dac0d30adf4.rule.xml")
+                .getFile());
+
+        //Read the rules file, replace the test site id and add it back as a file in order
+        //to be processed
+        String rulesFileContent = FileUtils.readFileToString(rulesFile, StandardCharsets.UTF_8);
+        rulesFileContent = rulesFileContent.replaceAll(TO_REPLACE_HOST_ID, site.getIdentifier());
+        FileUtils.writeStringToFile(rulesFile, rulesFileContent, StandardCharsets.UTF_8);
 
         LicenseTestUtil.getLicense();
-        ruleHandler.handle(file);
+        ruleHandler.handle(folderFile);
 
         final Rule rule = APILocator.getRulesAPI().getRuleById("189eac50-4997-48ab-8250-8dac0d30adf4", user, false);
         Assert.assertNotNull(rule);

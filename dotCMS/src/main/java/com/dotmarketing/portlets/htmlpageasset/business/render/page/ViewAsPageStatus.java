@@ -1,31 +1,28 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render.page;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.personas.model.IPersona;
-import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.dotmarketing.portlets.personas.model.IPersona;
 import com.dotmarketing.util.PageMode;
-import com.fasterxml.jackson.databind.ObjectWriter;
-import com.google.common.collect.ImmutableMap;
-
-import java.io.IOException;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 /**
  * View as rendered page status
  */
 @JsonSerialize(using = ViewAsPageStatusSerializer.class)
 public class ViewAsPageStatus {
-    private IPersona persona;
-    private Language language;
+    private IPersona   persona;
+    private Language   language;
     private Contentlet device;
-    private PageMode pageMode;
+    private PageMode   pageMode;
+    private boolean    personalized;
 
     ViewAsPageStatus(){}
+
+    ViewAsPageStatus setPersonalized(final boolean personalized) {
+        this.personalized = personalized;
+        return this;
+    }
 
     ViewAsPageStatus setPersona(IPersona persona) {
         this.persona = persona;
@@ -61,5 +58,9 @@ public class ViewAsPageStatus {
 
     public PageMode getPageMode() {
         return pageMode;
+    }
+
+    public boolean isPersonalized() {
+        return personalized;
     }
 }
