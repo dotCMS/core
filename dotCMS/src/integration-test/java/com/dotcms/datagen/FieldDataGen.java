@@ -1,162 +1,177 @@
 package com.dotcms.datagen;
 
-import com.dotmarketing.exception.DotHibernateException;
-import com.dotmarketing.portlets.structure.factories.FieldFactory;
-import com.dotmarketing.portlets.structure.model.Field;
-import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.TextField;
+import com.dotmarketing.business.APILocator;
 
 public class FieldDataGen extends AbstractDataGen<Field> {
 
-    private long currentTime = System.currentTimeMillis();
-    private String name = "test-field-name-" + currentTime;
-    private Field.FieldType type = Field.FieldType.TEXT;
-    private Field.DataType dataType = Field.DataType.TEXT;
-    private boolean required;
-    private String velocityVarName = "test-field-varname-" + currentTime;
-    private int sortOrder = 1;
-    private String values;
-    private String regexCheck;
-    private String hint;
-    private String defaultValue;
-    private boolean indexed;
-    private boolean listed;
-    private boolean fixed;
-    private boolean readOnly;
-    private boolean searchable;
-    private boolean unique;
-    private Structure structure;
+    private final long currentTime = System.currentTimeMillis();
 
-    public FieldDataGen(Structure structure) {
-        this.structure = structure;
-    }
+    private String name = "testFieldName" + currentTime;
+    private Class type = TextField.class;
+    private boolean required = Boolean.FALSE;
+    private String velocityVarName = "testFieldVarname" + currentTime;
+    private int sortOrder = 1;
+    private String values = "testValue" + currentTime;
+    private String hint = "testHint" + currentTime;
+    private String defaultValue = "testDefaultValue" + currentTime;
+    private boolean indexed = Boolean.TRUE;
+    private boolean listed = Boolean.FALSE;
+    private boolean fixed = Boolean.FALSE;
+    private boolean readOnly = Boolean.FALSE;
+    private boolean searchable = Boolean.TRUE;
+    private boolean unique = Boolean.FALSE;
+    private String contentTypeId;
+    private String relationType;
 
     @SuppressWarnings("unused")
-    public FieldDataGen name(String name) {
+    public FieldDataGen name(final String name) {
         this.name = name;
         return this;
     }
 
     @SuppressWarnings("unused")
-    public FieldDataGen type(Field.FieldType type) {
+    public FieldDataGen type(final Class type) {
         this.type = type;
         return this;
     }
 
-    @SuppressWarnings("unused")
-    public FieldDataGen dataType(Field.DataType dataType) {
-        this.dataType = dataType;
+    public FieldDataGen contentTypeId(final String contentTypeId) {
+        this.contentTypeId = contentTypeId;
         return this;
     }
 
     @SuppressWarnings("unused")
-    public FieldDataGen required(boolean required) {
+    public FieldDataGen required(final boolean required) {
         this.required = required;
         return this;
     }
 
     @SuppressWarnings("unused")
-    public FieldDataGen velocityVarName(String velocityVarName) {
+    public FieldDataGen velocityVarName(final String velocityVarName) {
         this.velocityVarName = velocityVarName;
         return this;
     }
 
     @SuppressWarnings("unused")
-    public FieldDataGen sortOrder(int sortOrder) {
+    public FieldDataGen sortOrder(final int sortOrder) {
         this.sortOrder = sortOrder;
         return this;
     }
 
     @SuppressWarnings("unused")
-    public FieldDataGen values(String values) {
+    public FieldDataGen values(final String values) {
         this.values = values;
         return this;
     }
 
     @SuppressWarnings("unused")
-    public FieldDataGen regexCheck(String regexCheck) {
-        this.regexCheck = regexCheck;
-        return this;
-    }
-
-    @SuppressWarnings("unused")
-    public FieldDataGen hint(String hint) {
+    public FieldDataGen hint(final String hint) {
         this.hint = hint;
         return this;
     }
 
     @SuppressWarnings("unused")
-    public FieldDataGen defaultValue(String defaultValue) {
+    public FieldDataGen defaultValue(final String defaultValue) {
         this.defaultValue = defaultValue;
         return this;
     }
 
     @SuppressWarnings("unused")
-    public FieldDataGen indexed(boolean indexed) {
+    public FieldDataGen relationType(final String relationType) {
+        this.relationType = relationType;
+        return this;
+    }
+
+    @SuppressWarnings("unused")
+    public FieldDataGen indexed(final boolean indexed) {
         this.indexed = indexed;
         return this;
     }
 
     @SuppressWarnings("unused")
-    public FieldDataGen listed(boolean listed) {
+    public FieldDataGen listed(final boolean listed) {
         this.listed = listed;
         return this;
     }
 
     @SuppressWarnings("unused")
-    public FieldDataGen fixed(boolean fixed) {
+    public FieldDataGen fixed(final boolean fixed) {
         this.fixed = fixed;
         return this;
     }
 
     @SuppressWarnings("unused")
-    public FieldDataGen readOnly(boolean readOnly) {
+    public FieldDataGen readOnly(final boolean readOnly) {
         this.readOnly = readOnly;
         return this;
     }
 
     @SuppressWarnings("unused")
-    public FieldDataGen searchable(boolean searchable) {
+    public FieldDataGen searchable(final boolean searchable) {
         this.searchable = searchable;
         return this;
     }
 
     @SuppressWarnings("unused")
-    public FieldDataGen unique(boolean unique) {
+    public FieldDataGen unique(final boolean unique) {
         this.unique = unique;
-        return this;
-    }
-
-    public FieldDataGen structure(Structure structure) {
-        this.structure = structure;
         return this;
     }
 
     @Override
     public Field next() {
-        Field ff = new Field(name, type, dataType, structure, required, listed, indexed, sortOrder, values,
-                defaultValue, regexCheck, fixed, readOnly, searchable);
-        ff.setHint(hint);
-        ff.setUnique(unique);
-        ff.setVelocityVarName(velocityVarName);
-        return ff;
+
+        return FieldBuilder
+                .builder(type)
+                .name(name)
+                .contentTypeId(contentTypeId)
+                .required(required)
+                .variable(velocityVarName)
+                .sortOrder(sortOrder)
+                .values(values)
+                .hint(hint)
+                .defaultValue(defaultValue)
+                .indexed(indexed)
+                .listed(listed)
+                .fixed(fixed)
+                .readOnly(readOnly)
+                .searchable(searchable)
+                .unique(unique)
+                .relationType(relationType)
+                .build();
     }
 
     @Override
-    public Field persist(Field object) {
+    public Field persist(Field field) {
+
         try {
-            FieldFactory.saveField(object);
-        } catch (DotHibernateException e) {
+            field = APILocator.getContentTypeFieldAPI().save(field, APILocator.systemUser());
+        } catch (Exception e) {
             throw new RuntimeException("Error persisting Field", e);
         }
 
-        return object;
+        return field;
     }
 
-    public void remove(Field object) {
+    /**
+     * Creates a new {@link Field} instance and persists it in DB
+     *
+     * @return A new Field instance persisted in DB
+     */
+    @Override
+    public Field nextPersisted() {
+        return persist(next());
+    }
+
+    public static void remove(Field field) {
         try {
-            FieldFactory.deleteField(object);
-        } catch (DotHibernateException e) {
+            APILocator.getContentTypeFieldAPI().delete(field);
+        } catch (Exception e) {
             throw new RuntimeException("Error persisting Field", e);
         }
     }
+
 }

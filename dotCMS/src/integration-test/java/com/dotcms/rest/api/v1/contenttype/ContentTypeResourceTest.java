@@ -17,6 +17,8 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.PersonaContentType;
 import com.dotcms.contenttype.transform.contenttype.JsonContentTypeTransformer;
+import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequest;
@@ -32,6 +34,7 @@ import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.ContentTypesPaginator;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.workflow.helper.WorkflowHelper;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -63,11 +66,17 @@ import org.mockito.Mockito;
 @RunWith(DataProviderRunner.class)
 public class ContentTypeResourceTest {
 
+	private static final String HOST_TO_REPLACE = "{REPLACE_ME_WITH_HOST_ID}";
 	private static final ObjectMapper mapper = new ObjectMapper();
+
+	private static Host site;
 
 	@BeforeClass
 	public static void prepare() throws Exception{
 		IntegrationTestInitService.getInstance().init();
+
+		//Prepare test data
+		site = new SiteDataGen().nextPersisted();
 	}
 
 
@@ -78,16 +87,22 @@ public class ContentTypeResourceTest {
 		Response response = null;
 		Map<String, Object> fieldMap = null;
 
+		final String jsonContentTypeCreate = JSON_CONTENT_TYPE_CREATE
+				.replace(HOST_TO_REPLACE, site.getIdentifier());
+		final String jsonContentTypeUpdate = JSON_CONTENT_TYPE_UPDATE
+				.replace(HOST_TO_REPLACE, site.getIdentifier());
+
 		ContentTypeForm.ContentTypeFormDeserialize contentTypeFormDeserialize = new ContentTypeForm.ContentTypeFormDeserialize();
 
 		// Test INVALID Content Type Creation
 		assertResponse_BAD_REQUEST(
-				response = resource.createType(getHttpRequest(),  new EmptyHttpResponse(), contentTypeFormDeserialize.buildForm(JSON_CONTENT_TYPE_UPDATE.replace("CONTENT_TYPE_ID", "INVALID_CONTENT_TYPE_ID")))
+				response = resource.createType(getHttpRequest(),  new EmptyHttpResponse(), contentTypeFormDeserialize.buildForm(jsonContentTypeUpdate.replace("CONTENT_TYPE_ID", "INVALID_CONTENT_TYPE_ID")))
 		);
 
 		// Test Content Type Creation
 		RestUtilTest.verifySuccessResponse(
-				response = resource.createType(getHttpRequest(),  new EmptyHttpResponse(), contentTypeFormDeserialize.buildForm(JSON_CONTENT_TYPE_CREATE))
+				response = resource.createType(getHttpRequest(), new EmptyHttpResponse(),
+						contentTypeFormDeserialize.buildForm(jsonContentTypeCreate))
 		);
 
 		try {
@@ -117,7 +132,8 @@ public class ContentTypeResourceTest {
 			assertResponse_BAD_REQUEST(
 					response = resource.updateType(
 							(String) fieldMap.get("id"),
-							contentTypeFormDeserialize.buildForm(JSON_CONTENT_TYPE_UPDATE.replace("CONTENT_TYPE_ID", "INVALID_CONTENT_TYPE_ID")),
+							contentTypeFormDeserialize.buildForm(jsonContentTypeUpdate
+									.replace("CONTENT_TYPE_ID", "INVALID_CONTENT_TYPE_ID")),
 							getHttpRequest(),  new EmptyHttpResponse()
 					)
 			);
@@ -126,7 +142,8 @@ public class ContentTypeResourceTest {
 			RestUtilTest.verifySuccessResponse(
 					response = resource.updateType(
 							(String) fieldMap.get("id"),
-							contentTypeFormDeserialize.buildForm(JSON_CONTENT_TYPE_UPDATE.replace("CONTENT_TYPE_ID", (String) fieldMap.get("id"))),
+							contentTypeFormDeserialize.buildForm(jsonContentTypeUpdate
+									.replace("CONTENT_TYPE_ID", (String) fieldMap.get("id"))),
 							getHttpRequest(),  new EmptyHttpResponse()
 					)
 			);
@@ -170,9 +187,15 @@ public class ContentTypeResourceTest {
 		ContentTypeForm.ContentTypeFormDeserialize contentTypeFormDeserialize = new ContentTypeForm.ContentTypeFormDeserialize();
 		Response response = null;
 		Map<String, Object> fieldMap = null;
+
+		final String jsonContentTypeCreate = JSON_CONTENT_TYPE_CREATE
+				.replace(HOST_TO_REPLACE, site.getIdentifier());
+		final String jsonContentTypeUpdate = JSON_CONTENT_TYPE_UPDATE
+				.replace(HOST_TO_REPLACE, site.getIdentifier());
+
 		// Test Content Type Creation
 		RestUtilTest.verifySuccessResponse(
-				response = resource.createType(getHttpRequest(),  new EmptyHttpResponse(),  contentTypeFormDeserialize.buildForm(JSON_CONTENT_TYPE_CREATE))
+				response = resource.createType(getHttpRequest(),  new EmptyHttpResponse(),  contentTypeFormDeserialize.buildForm(jsonContentTypeCreate))
 		);
 		try{
 
@@ -187,7 +210,8 @@ public class ContentTypeResourceTest {
 			RestUtilTest.verifySuccessResponse(
 					resource.updateType(
 							(String) fieldMap.get("variable"),
-							contentTypeFormDeserialize.buildForm(JSON_CONTENT_TYPE_UPDATE.replace("CONTENT_TYPE_ID", (String) fieldMap.get("id"))),
+							contentTypeFormDeserialize.buildForm(jsonContentTypeUpdate
+									.replace("CONTENT_TYPE_ID", (String) fieldMap.get("id"))),
 							getHttpRequest(),  new EmptyHttpResponse()
 					)
 			);
@@ -310,7 +334,7 @@ public class ContentTypeResourceTest {
 					"\"name\": \"The Content Type 1\","+
 					"\"description\": \"THE DESCRIPTION\","+
 
-					"\"host\": \"48190c8c-42c4-46af-8d1a-0cd5db894797\","+
+					"\"host\": \"" + HOST_TO_REPLACE + "\"," +
 					"\"owner\": \"dotcms.org.1\","+
 
 					"\"variable\": \"TheContentType1\","+
@@ -347,7 +371,7 @@ public class ContentTypeResourceTest {
 
 		assertEquals("The Content Type 1", contentType.name());
 		assertEquals("THE DESCRIPTION", contentType.description());
-		assertEquals("48190c8c-42c4-46af-8d1a-0cd5db894797", contentType.host());
+		assertEquals(site.getIdentifier(), contentType.host());
 		assertEquals("dotcms.org.1", contentType.owner());
 		assertEquals("TheContentType1", contentType.variable());
 
@@ -369,7 +393,7 @@ public class ContentTypeResourceTest {
 					"\"name\": \"The Content Type 2\","+
 					"\"description\": \"THE DESCRIPTION 2\","+
 
-					"\"host\": \"48190c8c-42c4-46af-8d1a-0cd5db894797\","+
+					"\"host\": \"" + HOST_TO_REPLACE + "\"," +
 					"\"owner\": \"dotcms.org.1\","+
 
 					"\"variable\": \"TheContentType1\","+
@@ -386,7 +410,7 @@ public class ContentTypeResourceTest {
 
 		assertEquals("The Content Type 2", contentType.name());
 		assertEquals("THE DESCRIPTION 2", contentType.description());
-		assertEquals("48190c8c-42c4-46af-8d1a-0cd5db894797", contentType.host());
+		assertEquals(site.getIdentifier(), contentType.host());
 		assertEquals("dotcms.org.1", contentType.owner());
 		assertEquals("TheContentType1", contentType.variable());
 
@@ -481,7 +505,7 @@ public class ContentTypeResourceTest {
 		when(session.getAttribute(WebKeys.CTX_PATH)).thenReturn("/"); //prevents a NPE
 		when(request.getSession()).thenReturn(session);
 
-		final User chrisPublisher = APILocator.getUserAPI().loadUserById("dotcms.org.2795");
+		final User chrisPublisher = TestUserUtils.getChrisPublisherUser();
 		final WebResource webResource = mock(WebResource.class);
 		final InitDataObject dataObject = mock(InitDataObject.class);
 		when(dataObject.getUser()).thenReturn(chrisPublisher);

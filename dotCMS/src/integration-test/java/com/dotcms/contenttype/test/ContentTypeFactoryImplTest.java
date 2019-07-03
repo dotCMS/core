@@ -18,10 +18,13 @@ import com.dotcms.contenttype.model.type.ImmutablePersonaContentType;
 import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
 import com.dotcms.contenttype.model.type.ImmutableWidgetContentType;
 import com.dotcms.contenttype.model.type.UrlMapable;
+import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.TestDataUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.portlets.folders.model.Folder;
 import java.io.File;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -35,9 +38,9 @@ public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
 	public void testDifferentContentTypes() throws Exception {
 
 		ContentType content 	= contentTypeFactory.find(Constants.CONTENT);
-		ContentType news 		= contentTypeFactory.find(Constants.NEWS);
-		ContentType widget 		= contentTypeFactory.find(Constants.WIDGET);
-		ContentType form 		= contentTypeFactory.find(Constants.FORM);
+		ContentType news = contentTypeFactory.find(newsLikeContentType.id());
+		ContentType widget = TestDataUtils.getWidgetLikeContentType();
+		ContentType form = TestDataUtils.getFormLikeContentType();
 		ContentType fileAsset 	= contentTypeFactory.find(Constants.FILEASSET);
 		ContentType htmlPage 	= contentTypeFactory.find(Constants.HTMLPAGE);
 		ContentType persona 	= contentTypeFactory.find(Constants.PERSONA);
@@ -98,10 +101,10 @@ public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
 	@Test
 	public void testFieldsMethod() throws Exception {
 
-		ContentType type = contentTypeFactory.find(Constants.NEWS);
+		ContentType type = contentTypeFactory.find(newsLikeContentType.id());
 
 		//System.out.println(type);
-		ContentType otherType = contentTypeFactory.find(Constants.NEWS);
+		ContentType otherType = contentTypeFactory.find(newsLikeContentType.id());
 
 		List<Field> fields = otherType.fields();
 		//System.out.println(type);
@@ -124,10 +127,9 @@ public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
 
 		File temp = File.createTempFile("test1", "obj");
 		File temp2 = File.createTempFile("test2", "obj");
-		ContentType origType = contentTypeFactory.find(Constants.NEWS);
 
 		try(ObjectOutputStream oos = new ObjectOutputStream(Files.newOutputStream(temp.toPath()))){
-			oos.writeObject(origType);
+			oos.writeObject(newsLikeContentType);
 		}
 
 		temp.renameTo(temp2);
@@ -139,14 +141,14 @@ public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
 
 
 		try {
-			assertThat("fields are correct:", origType.equals(fromDisk));
+			assertThat("fields are correct:", newsLikeContentType.equals(fromDisk));
 		} catch (Throwable e) {
-			System.out.println("origType" + origType);
+			System.out.println("origType" + newsLikeContentType);
 			System.out.println("fromDisk" + fromDisk);
 			throw e;
 		}
 
-		List<Field> fields = origType.fields();
+		List<Field> fields = newsLikeContentType.fields();
 		List<Field> fields2 = fromDisk.fields();
 
 		assertThat("We have fields!", fields.size() > 0 && fields.size() == fields2.size());
@@ -228,7 +230,8 @@ public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
 
 	@Test
 	public void testSearch() throws Exception {
-		String[] searchTerms = { Constants.NEWS, "structuretype = 2", " And structure.inode='" + Constants.NEWS + "'" };
+		String[] searchTerms = {newsLikeContentType.id(), "structuretype = 2",
+				" And structure.inode='" + newsLikeContentType.id() + "'"};
 
 		int totalCount = contentTypeFactory.searchCount(null);
 
@@ -321,7 +324,9 @@ public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
 		assertThat("random velocity var works", newVar!=null);
 		assertThat("random velocity var works : " + newVar + " == " + tryVar, newVar.equals(tryVar));
 
-		tryVar = "News" ;
+		//Create a test content type
+		final ContentType newsLikeContentType = TestDataUtils.getNewsLikeContentType();
+		tryVar = newsLikeContentType.variable();
 		newVar = contentTypeFactory.suggestVelocityVar(tryVar);
 		assertThat("existing velocity var will not work", !newVar.equals(tryVar));
 	}
@@ -338,13 +343,17 @@ public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
 	private void testUpdating() throws Exception {
 		List<ContentType> types = contentTypeFactory.search("velocity_var_name like 'velocityVarNameTesting%'", BaseContentType.ANY, "mod_date", -1, 0);
 		assertThat(types +" search is working", types.size() > 0);
+
+		Host defaultHost = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
+		Folder testFolder = new FolderDataGen().site(defaultHost).nextPersisted();
+
 		for(ContentType type : types){
 			ContentType testing = contentTypeFactory.find(type.id());
 			assertThat("contenttype is in db", testing.equals(type) );
 			ContentTypeBuilder builder = ContentTypeBuilder.builder(type);
 
-			builder.host(Constants.DEFAULT_HOST);
-			builder.folder(Constants.ABOUT_US_FOLDER);
+			builder.host(defaultHost.getIdentifier());
+			builder.folder(testFolder.getInode());
 
 			if(type instanceof UrlMapable){
 				builder.urlMapPattern("/asdsadsadsad/");

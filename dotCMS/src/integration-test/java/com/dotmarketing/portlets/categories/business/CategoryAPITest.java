@@ -1,5 +1,13 @@
 package com.dotmarketing.portlets.categories.business;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.model.field.CategoryField;
@@ -9,6 +17,8 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.datagen.CategoryDataGen;
+import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -29,14 +39,11 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.Lists;
 import com.liferay.portal.model.User;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-
-import static org.junit.Assert.*;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 /**
  * Created by Jonathan Gamba
@@ -144,10 +151,17 @@ public class CategoryAPITest extends IntegrationTestBase {
     @Test
     public void findChildren() throws DotSecurityException, DotDataException {
 
+        final CategoryDataGen rootCategoryDataGen = new CategoryDataGen().setCategoryName("Bikes-"+System.currentTimeMillis()).setKey("Bikes").setKeywords("Bikes").setCategoryVelocityVarName("bikes");
+        final Category child1 = new CategoryDataGen().setCategoryName("RoadBike-"+System.currentTimeMillis()).setKey("RoadBike").setKeywords("RoadBike").setCategoryVelocityVarName("roadBike").next();
+        final Category child2 = new CategoryDataGen().setCategoryName("MTB-"+System.currentTimeMillis()).setKey("MTB").setKeywords("MTB").setCategoryVelocityVarName("mtb").next();
+
+        final Category root = rootCategoryDataGen.children(child1, child2).nextPersisted();
+        System.out.println(root);
+
         CategoryAPI categoryAPI = APILocator.getCategoryAPI();
 
         //Find a parent category
-        PaginatedCategories categories = categoryAPI.findTopLevelCategories(user, false, 0, 10, "event", null);
+        PaginatedCategories categories = categoryAPI.findTopLevelCategories(user, false, 0, 10, "bike", null);
 
         //Apply some validations
         assertNotNull(categories.getCategories());
@@ -171,7 +185,7 @@ public class CategoryAPITest extends IntegrationTestBase {
         assertTrue(categories.getTotalCount() > 0);
 
         //***************************************************************
-        filter = "release";
+        filter = "road";
         sort = null;
 
         //Test the category API
@@ -195,7 +209,7 @@ public class CategoryAPITest extends IntegrationTestBase {
         assertTrue(categories.getTotalCount() > 0);
 
         //***************************************************************
-        filter = "release";
+        filter = "road";
 
         //Test the category API
         List<Category> categoriesList = categoryAPI.findChildren(user, inode, false, filter);
@@ -1032,7 +1046,8 @@ public class CategoryAPITest extends IntegrationTestBase {
         final String textFieldVar = "title"+time;
         final String catFieldVar = "eventType"+time;
 
-        final Host demoHost =APILocator.getHostAPI().findByName("demo.dotcms.com", user, false);
+        final SiteDataGen siteDataGen = new SiteDataGen();
+        final Host demoHost = siteDataGen.nextPersisted();
 
         ContentType type = ContentTypeBuilder.builder(SimpleContentType.class)
                 .name("TestCat" + time)

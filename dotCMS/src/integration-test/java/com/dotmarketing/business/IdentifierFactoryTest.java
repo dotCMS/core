@@ -7,6 +7,8 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -73,8 +75,18 @@ public class IdentifierFactoryTest {
     @Test
     public void testFindByURIPatternSuccessWhenInclude()
             throws DotDataException, DotSecurityException {
+
+        Contentlet fileAsset = TestDataUtils.getFileAssetContent(true,
+                APILocator.getLanguageAPI().getDefaultLanguage().getId());
+        Folder assetFolder = APILocator.getFolderAPI()
+                .find(fileAsset.getFolder(), APILocator.systemUser(), false);
+        String folderPath = assetFolder.getPath();
+        if (folderPath.endsWith("/")) {//Removing trailing /
+            folderPath = folderPath.substring(0, folderPath.length() - 1);
+        }
+
         final List<Identifier> identifiers = factory
-                .findByURIPattern(Identifier.ASSET_TYPE_FOLDER, "/products", true,
+                .findByURIPattern(Identifier.ASSET_TYPE_FOLDER, folderPath, true,
                         defaultHost);
 
         assertNotNull(identifiers);
@@ -82,32 +94,49 @@ public class IdentifierFactoryTest {
 
         final Identifier identifier = identifiers.get(0);
         assertTrue(identifier.getId() != null && !identifier.getId().isEmpty());
-        assertEquals("products", identifier.getAssetName());
+        assertEquals(assetFolder.getName(), identifier.getAssetName());
         assertEquals(Identifier.ASSET_TYPE_FOLDER, identifier.getAssetType());
     }
 
     @Test
     public void testFindByURIPatternSuccessWhenNotInclude()
             throws DotDataException, DotSecurityException {
+
+        Contentlet fileAsset = TestDataUtils.getFileAssetContent(true,
+                APILocator.getLanguageAPI().getDefaultLanguage().getId());
+        Folder assetFolder = APILocator.getFolderAPI()
+                .find(fileAsset.getFolder(), APILocator.systemUser(), false);
+        String folderPath = assetFolder.getPath();
+        if (folderPath.endsWith("/")) {//Removing trailing /
+            folderPath = folderPath.substring(0, folderPath.length() - 1);
+        }
+
         final List<Identifier> identifiers = factory
-                .findByURIPattern(Identifier.ASSET_TYPE_FOLDER, "/products", false,
+                .findByURIPattern(Identifier.ASSET_TYPE_FOLDER, folderPath, false,
                         defaultHost);
 
         assertNotNull(identifiers);
         assertFalse(identifiers.isEmpty());
-
-        assertTrue(identifiers.size() > 1);
     }
 
     @Test
-    public void testFindByURIFound() throws DotDataException {
+    public void testFindByURIFound() throws DotDataException, DotSecurityException {
+
+        Contentlet fileAsset = TestDataUtils.getFileAssetContent(true,
+                APILocator.getLanguageAPI().getDefaultLanguage().getId());
+        Folder assetFolder = APILocator.getFolderAPI()
+                .find(fileAsset.getFolder(), APILocator.systemUser(), false);
+        String folderPath = assetFolder.getPath();
+        if (folderPath.endsWith("/")) {//Removing trailing /
+            folderPath = folderPath.substring(0, folderPath.length() - 1);
+        }
 
         //Flush cache for this contentlet to force look up in database
-        ic.removeFromCacheByURI(defaultHost.getIdentifier(), "/products");
-        final Identifier identifier = factory.findByURI(defaultHost.getIdentifier(), "/products");
+        ic.removeFromCacheByURI(defaultHost.getIdentifier(), folderPath);
+        final Identifier identifier = factory.findByURI(defaultHost.getIdentifier(), folderPath);
 
         assertTrue(identifier.getId() != null && !identifier.getId().isEmpty());
-        assertEquals("products", identifier.getAssetName());
+        assertEquals(assetFolder.getName(), identifier.getAssetName());
         assertEquals(Identifier.ASSET_TYPE_FOLDER, identifier.getAssetType());
     }
 
@@ -125,29 +154,48 @@ public class IdentifierFactoryTest {
     }
 
     @Test
-    public void testFindByParentPathFound() throws DotDataException {
+    public void testFindByParentPathFound() throws DotDataException, DotSecurityException {
+
+        Contentlet fileAsset = TestDataUtils.getFileAssetContent(true,
+                APILocator.getLanguageAPI().getDefaultLanguage().getId());
+        Folder assetFolder = APILocator.getFolderAPI()
+                .find(fileAsset.getFolder(), APILocator.systemUser(), false);
+        String folderPath = assetFolder.getPath();
+        if (folderPath.endsWith("/")) {//Removing trailing /
+            folderPath = folderPath.substring(0, folderPath.length() - 1);
+        }
 
         final List<Identifier> identifiers = factory
-                .findByParentPath(defaultHost.getIdentifier(), "/blogs");
+                .findByParentPath(defaultHost.getIdentifier(), folderPath);
 
         assertTrue(identifiers != null && !identifiers.isEmpty());
-        assertEquals("/blogs/", identifiers.get(0).getParentPath());
+        assertEquals(assetFolder.getPath(), identifiers.get(0).getParentPath());
     }
 
     @Test
-    public void testFindByParentPathVsFindByURIEquivalency() throws DotDataException {
+    public void testFindByParentPathVsFindByURIEquivalency()
+            throws DotDataException, DotSecurityException {
+
+        Contentlet fileAsset = TestDataUtils.getFileAssetContent(true,
+                APILocator.getLanguageAPI().getDefaultLanguage().getId());
+        Folder assetFolder = APILocator.getFolderAPI()
+                .find(fileAsset.getFolder(), APILocator.systemUser(), false);
+        String folderPath = assetFolder.getPath();
+        if (folderPath.endsWith("/")) {//Removing trailing /
+            folderPath = folderPath.substring(0, folderPath.length() - 1);
+        }
 
         final List<Identifier> identifiers = factory
-                .findByParentPath(defaultHost.getIdentifier(), "/blogs");
+                .findByParentPath(defaultHost.getIdentifier(), folderPath);
 
         assertTrue(identifiers != null && !identifiers.isEmpty());
-        assertEquals("/blogs/", identifiers.get(0).getParentPath());
+        assertEquals(assetFolder.getPath(), identifiers.get(0).getParentPath());
 
         final Identifier identifier = factory
-                .findByURI(defaultHost.getIdentifier(), "/blogs");
+                .findByURI(defaultHost.getIdentifier(), folderPath);
 
         assertNotNull(identifier);
-        assertEquals("/blogs/", identifier.getURI() + "/" );
+        assertEquals(assetFolder.getPath(), identifier.getURI() + "/");
 
     }
 
@@ -358,7 +406,7 @@ public class IdentifierFactoryTest {
         Folder newFolder, parentFolder;
         Identifier identifier;
 
-        parentFolder = folderAPI.findFolderByPath("/products", defaultHost, systemUser, false);
+        parentFolder = new FolderDataGen().nextPersisted();
         newFolder = new Folder();
         identifier = null;
 
@@ -397,7 +445,7 @@ public class IdentifierFactoryTest {
         newContentlet = new FileAsset();
         fileName = TEMP_FILE + System.currentTimeMillis();
         tempFile = File.createTempFile(fileName, TXT);
-        parentFolder = folderAPI.findFolderByPath("/products", defaultHost, systemUser, false);
+        parentFolder = new FolderDataGen().nextPersisted();
 
         newContentlet.setContentTypeId(contentTypeAPI.find(FileAssetAPI.BINARY_FIELD).id());
         newContentlet.setBinary(FileAssetAPI.BINARY_FIELD, tempFile);
@@ -438,7 +486,7 @@ public class IdentifierFactoryTest {
         identifier = null;
         newContentlet = new HTMLPageAsset();
         pageName = "tempPage" + System.currentTimeMillis();
-        parentFolder = folderAPI.findFolderByPath("/products", defaultHost, systemUser, false);
+        parentFolder = new FolderDataGen().nextPersisted();
 
         newContentlet.setContentTypeId(contentTypeAPI.find(
                         HTMLPageAssetAPI.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_VARNAME).inode());
@@ -473,7 +521,7 @@ public class IdentifierFactoryTest {
 
         identifier = null;
         newWebAsset = new Template();
-        parentFolder = folderAPI.findFolderByPath("/resources", defaultHost, systemUser, false);
+        parentFolder = new FolderDataGen().nextPersisted();
 
         try {
             //Creates new identifier
@@ -506,7 +554,7 @@ public class IdentifierFactoryTest {
 
         identifier = null;
         newWebAsset = new Link();
-        parentFolder = folderAPI.findFolderByPath("/resources", defaultHost, systemUser, false);
+        parentFolder = new FolderDataGen().nextPersisted();
         newWebAsset.setInode(UUIDGenerator.generateUuid());
 
         try {

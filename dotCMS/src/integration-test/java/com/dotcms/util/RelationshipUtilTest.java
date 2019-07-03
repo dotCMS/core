@@ -5,7 +5,9 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.TestDataUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -66,7 +68,9 @@ public class RelationshipUtilTest {
     public void testFilterContentletWithIdentifier()
             throws DotSecurityException, DotDataException {
 
-        final Contentlet contentlet = createContentlet();
+        final ContentType widgetContentType = TestDataUtils.getWidgetLikeContentType();
+        final Contentlet contentlet = TestDataUtils
+                .getWidgetContent(true, languageID, widgetContentType.id());
 
         try {
             final String query = "+identifier:" + contentlet.getIdentifier() + " +languageId:" + languageID;
@@ -91,10 +95,12 @@ public class RelationshipUtilTest {
     public void testFilterContentletWithIdentifierAndLuceneQuery()
             throws DotSecurityException, DotDataException {
 
-        final Contentlet contentlet = createContentlet();
+        final ContentType widgetContentType = TestDataUtils.getWidgetLikeContentType();
+        final Contentlet contentlet = TestDataUtils
+                .getWidgetContent(true, languageID, widgetContentType.id());
 
         try {
-            final String filter = "+contentType:Youtube";
+            final String filter = "+contentType:" + widgetContentType.variable();
             final List<Contentlet> testResults = RelationshipUtil
                     .filterContentlet(languageID,  contentlet.getIdentifier() + "," + filter , user, false);
 
@@ -110,12 +116,6 @@ public class RelationshipUtilTest {
                 ContentletDataGen.remove(contentlet);
             }
         }
-    }
-
-    private Contentlet createContentlet() throws DotDataException, DotSecurityException {
-        return new ContentletDataGen(contentTypeAPI.find("Youtube").id())
-                .setProperty("widgetTitle", "New YouTube Content")
-                .setProperty("url", "new-youtube-content").nextPersisted();
     }
 
 }

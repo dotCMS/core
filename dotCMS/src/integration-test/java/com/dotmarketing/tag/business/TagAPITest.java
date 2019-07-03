@@ -1,6 +1,8 @@
 package com.dotmarketing.tag.business;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.UserProxy;
@@ -84,9 +86,11 @@ public class TagAPITest extends IntegrationTestBase {
 	 * @throws Exception
 	 */
 	@Test
-	public void getAllTags () throws Exception {		
+	public void getAllTags () throws Exception {
+
 		List<Tag> tags = tagAPI.getAllTags();
-		assertTrue( tags.size() >= 125 );
+		assertNotNull( tags );
+		assertFalse( tags.isEmpty() );
 	}
 
 	/**
@@ -210,11 +214,16 @@ public class TagAPITest extends IntegrationTestBase {
 	 */
 	@Test
 	public void getTagByNameAndHost() throws Exception{
-		String tagName="inflation";
-		Tag tag = tagAPI.getTagByNameAndHost( tagName, defaultHostId);
 
+		final String tagName = ("testTag" + System.currentTimeMillis()).toLowerCase();
+
+		Tag tag = tagAPI.saveTag(tagName, testUser.getUserId(), defaultHostId, false);
 		assertNotNull(tag);
-		assertTrue(tag.getTagName().equals(tagName));
+		assertEquals(tagName, tag.getTagName());
+
+		tag = tagAPI.getTagByNameAndHost(tagName, defaultHostId);
+		assertNotNull(tag);
+		assertEquals(tagName, tag.getTagName());
 	}
 
 	/**
@@ -322,8 +331,8 @@ public class TagAPITest extends IntegrationTestBase {
 	public void addTagInode() throws Exception {
 
 		Contentlet contentAsset=new Contentlet();
-		Structure st = structureAPI.findByVarName(WIKI_STRUCTURE_VARNAME, systemUser);
-		contentAsset.setStructureInode(st.getInode());
+		ContentType contentType = TestDataUtils.getWikiLikeContentType();
+		contentAsset.setStructureInode(contentType.id());
 		contentAsset.setHost(defaultHostId);
 		contentAsset.setProperty(WIKI_SYSPUBLISHDATE_VARNAME, new Date());
 		String name="testtagapi"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss");
@@ -363,8 +372,8 @@ public class TagAPITest extends IntegrationTestBase {
 	public void getTagInodesByInode() throws Exception{
 
 		Contentlet contentAsset=new Contentlet();
-		Structure st = structureAPI.findByVarName(WIKI_STRUCTURE_VARNAME, systemUser);
-		contentAsset.setStructureInode(st.getInode());
+		ContentType contentType = TestDataUtils.getWikiLikeContentType();
+		contentAsset.setStructureInode(contentType.id());
 		contentAsset.setHost(defaultHostId);
 		contentAsset.setProperty(WIKI_SYSPUBLISHDATE_VARNAME, new Date());
 		String name="testtagapi15"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss");
@@ -403,8 +412,8 @@ public class TagAPITest extends IntegrationTestBase {
 	@Test
 	public void getTagInodesByTagId() throws Exception{
 		Contentlet contentAsset=new Contentlet();
-		Structure st = structureAPI.findByVarName(WIKI_STRUCTURE_VARNAME, systemUser);
-		contentAsset.setStructureInode(st.getInode());
+		ContentType contentType = TestDataUtils.getWikiLikeContentType();
+		contentAsset.setStructureInode(contentType.id());
 		contentAsset.setHost(defaultHostId);
 		contentAsset.setProperty(WIKI_SYSPUBLISHDATE_VARNAME, new Date());
 		String name="testtagapi16"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss");
@@ -445,8 +454,8 @@ public class TagAPITest extends IntegrationTestBase {
 	public void getTagInode() throws Exception {
 
 		Contentlet contentAsset=new Contentlet();
-		Structure st = structureAPI.findByVarName(WIKI_STRUCTURE_VARNAME, systemUser);
-		contentAsset.setStructureInode(st.getInode());
+		ContentType contentType = TestDataUtils.getWikiLikeContentType();
+		contentAsset.setStructureInode(contentType.id());
 		contentAsset.setHost(defaultHostId);
 		contentAsset.setProperty(WIKI_SYSPUBLISHDATE_VARNAME, new Date());
 		String name="testtagapi17"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss");
@@ -483,8 +492,8 @@ public class TagAPITest extends IntegrationTestBase {
 	@Test
 	public void deleteTagInode() throws Exception {
 		Contentlet contentAsset=new Contentlet();
-		Structure st = structureAPI.findByVarName(WIKI_STRUCTURE_VARNAME, systemUser);
-		contentAsset.setStructureInode(st.getInode());
+		ContentType contentType = TestDataUtils.getWikiLikeContentType();
+		contentAsset.setStructureInode(contentType.id());
 		contentAsset.setHost(defaultHostId);
 		contentAsset.setProperty(WIKI_SYSPUBLISHDATE_VARNAME, new Date());
 		String name="testtagapi18"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss");
@@ -542,8 +551,8 @@ public class TagAPITest extends IntegrationTestBase {
 	public void removeTagRelationAndTagWhenPossible() throws Exception {
 
 		Contentlet contentAsset=new Contentlet();
-		Structure st = structureAPI.findByVarName(WIKI_STRUCTURE_VARNAME, systemUser);
-		contentAsset.setStructureInode(st.getInode());
+		ContentType contentType = TestDataUtils.getWikiLikeContentType();
+		contentAsset.setStructureInode(contentType.id());
 		contentAsset.setHost(defaultHostId);
 		contentAsset.setProperty(WIKI_SYSPUBLISHDATE_VARNAME, new Date());
 		String name="testtagapi21"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss");
@@ -697,8 +706,8 @@ public class TagAPITest extends IntegrationTestBase {
 	@Test
 	public void getTagsByInode() throws Exception{
 		Contentlet contentAsset=new Contentlet();
-		Structure st = structureAPI.findByVarName(WIKI_STRUCTURE_VARNAME, systemUser);
-		contentAsset.setStructureInode(st.getInode());
+		ContentType contentType = TestDataUtils.getWikiLikeContentType();
+		contentAsset.setStructureInode(contentType.id());
 		contentAsset.setHost(defaultHostId);
 		contentAsset.setProperty(WIKI_SYSPUBLISHDATE_VARNAME, new Date());
 		String name="testtagapi22"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss");
@@ -873,8 +882,8 @@ public class TagAPITest extends IntegrationTestBase {
 		 * Test cache by Inode
 		 */
 		Contentlet contentAsset=new Contentlet();
-		Structure st = structureAPI.findByVarName(WIKI_STRUCTURE_VARNAME, systemUser);
-		contentAsset.setStructureInode(st.getInode());
+		ContentType contentType = TestDataUtils.getWikiLikeContentType();
+		contentAsset.setStructureInode(contentType.id());
 		contentAsset.setHost(defaultHostId);
 		contentAsset.setProperty(WIKI_SYSPUBLISHDATE_VARNAME, new Date());
 		String name="testtagapi27"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss");

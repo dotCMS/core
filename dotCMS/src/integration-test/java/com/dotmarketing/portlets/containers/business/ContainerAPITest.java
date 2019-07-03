@@ -7,6 +7,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.datagen.ContainerDataGen;
+import com.dotcms.datagen.TestDataUtils;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.db.HibernateUtil;
@@ -188,7 +190,11 @@ public class ContainerAPITest extends ContentletBaseTest {
 
     @Test
     public void testFindContainersWithParent() throws DotDataException, DotSecurityException {
-        final ContentType contentType = contentTypeAPI.find("banner");
+
+        final ContentType contentType = TestDataUtils.getBlogLikeContentType();
+        final Container container = new ContainerDataGen().withContentType(contentType, "").nextPersisted();
+
+
         final List<Container> results = containerAPI
                 .findContainers(user, false, null, defaultHost.getIdentifier(), null, null,
                         contentType.id(), 0,

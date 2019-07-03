@@ -1,5 +1,11 @@
 package com.dotcms.vanityurl.business;
 
+import static com.dotcms.util.CollectionsUtils.map;
+import static com.dotcms.util.CollectionsUtils.toImmutableList;
+import static com.dotcms.util.VanityUrlUtil.isValidRegex;
+import static com.dotcms.util.VanityUrlUtil.processExpressions;
+import static java.util.stream.IntStream.rangeClosed;
+
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -29,18 +35,16 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
-import org.apache.commons.collections.keyvalue.MultiKey;
-
 import java.text.MessageFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
-
-import static com.dotcms.util.CollectionsUtils.map;
-import static com.dotcms.util.CollectionsUtils.toImmutableList;
-import static com.dotcms.util.VanityUrlUtil.isValidRegex;
-import static com.dotcms.util.VanityUrlUtil.processExpressions;
-import static java.util.stream.IntStream.rangeClosed;
+import org.apache.commons.collections.keyvalue.MultiKey;
 
 /**
  * Implementation class for the {@link VanityUrlAPI}.
@@ -557,8 +561,10 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
     public void validateVanityUrl(final Contentlet contentlet) {
 
         final User user = getUser(contentlet);
-        final Language language =
+        Language language =
                 APILocator.getLanguageAPI().getLanguage(user.getLanguageId());
+
+        language = (null == language ? APILocator.getLanguageAPI().getDefaultLanguage() : language);
 
         // check fields
         checkMissingField(contentlet, language, VanityUrlContentType.ACTION_FIELD_VAR);

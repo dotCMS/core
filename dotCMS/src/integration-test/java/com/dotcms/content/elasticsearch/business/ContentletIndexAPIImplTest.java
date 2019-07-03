@@ -165,9 +165,28 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
 
     }
 
+    private void generateTestContentlets(final int count) throws Exception {
+        final long languageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+
+        final ContentType webPageContentContentType = APILocator
+                .getContentTypeAPI(APILocator.systemUser()).find("webPageContent");
+        final Host host = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
+
+        for (int i = 0; i <= count; i++) {
+            new ContentletDataGen(
+                    webPageContentContentType.id())
+                    .languageId(languageId)
+                    .host(host)
+                    .setProperty("title", "genericContent")
+                    .setProperty("author", "systemUser")
+                    .setProperty("body", "Generic Content Body").nextPersisted();
+        }
+    }
 
     @Test
     public void test_indexContentList_with_diff_refresh_strategies () throws Exception {
+
+        generateTestContentlets(50);
 
         final List<Contentlet>   contentlets = APILocator.getContentletAPI().findAllContent(0, 100)
                 .stream().filter(Objects::nonNull).collect(Collectors.toList());

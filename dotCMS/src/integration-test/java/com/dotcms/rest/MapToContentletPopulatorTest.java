@@ -1,5 +1,9 @@
 package com.dotcms.rest;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.model.field.Field;
@@ -10,6 +14,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -28,8 +33,6 @@ import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import static org.junit.Assert.*;
-
 import java.util.Map.Entry;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -81,14 +84,20 @@ public class MapToContentletPopulatorTest {
     @Test
     public void testPopulateLegacyRelationshipWithLuceneQueryAndIdentifier() throws DotDataException, DotSecurityException {
         final MapToContentletPopulator populator = new MapToContentletPopulator();
-        final ContentType contentType = contentTypeAPI.find("Youtube");
 
-        Contentlet contentlet = createContentlet(contentType);
+        final ContentType product = TestDataUtils.getProductLikeContentType();
+        final ContentType youtube = TestDataUtils.getYoutubeLikeContentType();
+
+        final Relationship relationship = TestDataUtils.relateContentTypes(product,youtube);
+        final String name = relationship.getRelationTypeValue();
+
+        Contentlet contentlet = createContentlet(youtube);
 
         try {
             final Map<String, Object> properties = new HashMap<>();
-            properties.put(Contentlet.STRUCTURE_INODE_KEY, contentType.id());
-            properties.put("Products-Youtube", "+Youtube.url:new-youtube-content, " + contentlet.getIdentifier());
+            properties.put(Contentlet.STRUCTURE_INODE_KEY, youtube.id());
+            final String productYoutube = String.format("+%s.url:new-youtube-content, ", youtube.name()) + contentlet.getIdentifier();
+            properties.put(name, productYoutube );
 
             contentlet = populator.populate(contentlet, properties);
 
@@ -102,7 +111,7 @@ public class MapToContentletPopulatorTest {
             Entry<Relationship, List<Contentlet>> result = resultMap.entrySet().iterator().next();
 
             //validates the relationship
-            assertEquals("Products-Youtube", result.getKey().getRelationTypeValue());
+            assertEquals(name, result.getKey().getRelationTypeValue());
 
             //validates the contentlet
             assertEquals(1, result.getValue().size());
