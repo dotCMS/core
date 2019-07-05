@@ -5,7 +5,6 @@ import static org.junit.Assert.assertFalse;
 
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -13,12 +12,10 @@ import java.util.Optional;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import javax.ws.rs.core.Response.Status;
 import org.glassfish.jersey.media.multipart.BodyPart;
-import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.media.multipart.MultiPart;
 import org.glassfish.jersey.media.multipart.file.StreamDataBodyPart;
@@ -48,73 +45,64 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 
 public class TempFileResourceTest {
+
+  static HttpServletRequest request;
+  static HttpServletResponse response;
+  static TempFileResource resource;
+
   @BeforeClass
   public static void prepare() throws Exception {
     // Setting web app environment
     IntegrationTestInitService.getInstance().init();
 
+    resource = new TempFileResource();
+    request = mockRequest();
+    response = new MockHttpResponse();
   }
 
-  private HttpServletRequest mockRequest() {
+  private static HttpServletRequest mockRequest() {
     return new MockSessionRequest(
         new MockHeaderRequest(new MockHttpRequest("localhost", "/api/v1/tempResource").request(), "Origin", "localhost").request());
   }
   private final InputStream inputStream() {
     return this.getClass().getResourceAsStream("/images/SqcP9KgFqruagXJfe7CES.png");
   }
-  
-  @Test
-  public void test_temp_resource_upload() throws Exception {
-    final TempFileResource resource = new TempFileResource();
 
-    final HttpServletRequest request = mockRequest();
+  private DotTempFile saveTempFile_usingTempResource(final String fileName){
+    final BodyPart filePart1 = new StreamDataBodyPart(fileName, inputStream());
 
-    final String fileName = "test.file";
-    final HttpServletResponse response = new MockHttpResponse();
+    final MultiPart multipartEntity = new FormDataMultiPart()
+            .bodyPart(filePart1);
 
-
-    final Date date = new Date();
-    final FormDataContentDisposition fileMetaData = FormDataContentDisposition.name("testData").fileName(fileName).creationDate(date)
-        .modificationDate(date).readDate(date).size(1222).build();
-
-    final Response jsonResponse = resource.uploadTempResource(request, response, inputStream(), fileMetaData);
+    final Response jsonResponse = resource.uploadTempResourceMulti(request, response, (FormDataMultiPart) multipartEntity);
 
     final Map<String,List<DotTempFile>> dotTempFiles = (Map) jsonResponse.getEntity();
-    final DotTempFile dotTempFile = dotTempFiles.get("tempFiles").get(0);
-    
-    final String tempFileId = dotTempFile.id;
-    // its not an image because we set the filename to "test.file"
+    return dotTempFiles.get("tempFiles").get(0);
+  }
+  
+  @Test
+  public void test_temp_resource_upload(){
+    final String fileName = "test.file";
+    final DotTempFile dotTempFile = saveTempFile_usingTempResource(fileName);
+  // its not an image because we set the filename to "test.file"
     assertFalse((Boolean) dotTempFile.image);
 
-    assert (tempFileId.startsWith(TempFileAPI.TEMP_RESOURCE_PREFIX));
+    assert (dotTempFile.id.startsWith(TempFileAPI.TEMP_RESOURCE_PREFIX));
 
     assert (dotTempFile.file.getName().equals(fileName));
     assert (dotTempFile.length() > 0);
-
   }
 
   @Test
-  public void test_temp_resource_multifile_upload() throws Exception {
-    final TempFileResource resource = new TempFileResource();
-
-    final HttpServletRequest request = mockRequest();
-
-    final HttpServletResponse response = new MockHttpResponse();
+  public void test_temp_resource_multifile_upload(){
     final String fileName1 ="here-is-my-file.png";
-    BodyPart filePart1 = new StreamDataBodyPart(fileName1, inputStream());
+    final BodyPart filePart1 = new StreamDataBodyPart(fileName1, inputStream());
 
     final String fileName2 ="here-is-my-file2.png";
-    BodyPart filePart2 = new StreamDataBodyPart(fileName2, inputStream());
+    final BodyPart filePart2 = new StreamDataBodyPart(fileName2, inputStream());
 
-    String fieldPartJson
-            = "{"
-            + "  \"id\": 1234,"
-            + "  \"name\": \"testing\""
-            + "}";
-
-    //uploading 2 files and a json field value 
-    MultiPart multipartEntity = new FormDataMultiPart()
-            .field("json", fieldPartJson, MediaType.APPLICATION_JSON_TYPE)
+    //uploading 2 files
+    final MultiPart multipartEntity = new FormDataMultiPart()
             .bodyPart(filePart1)
             .bodyPart(filePart2);
     
@@ -137,101 +125,48 @@ public class TempFileResourceTest {
 
   }
 
-  
-  
-  
-  
-  
-  
   @Test
-  public void test_tempResourceAPI_who_can_use_via_session() throws Exception {
-    final TempFileResource resource = new TempFileResource();
+  public void test_tempResourceAPI_who_can_use_via_session(){
 
-    final HttpServletRequest request = mockRequest();
-
-    final String fileName = "test.png";
-    final HttpServletResponse response = new MockHttpResponse();
-
-
-    final Date date = new Date();
-    final FormDataContentDisposition fileMetaData = FormDataContentDisposition.name("testData").fileName(fileName).creationDate(date)
-        .modificationDate(date).readDate(date).size(1222).build();
-
-    final Response jsonResponse = resource.uploadTempResource(request, response, inputStream(), fileMetaData);
-
-    final Map<String,List<DotTempFile>> dotTempFiles = (Map) jsonResponse.getEntity();
-    final DotTempFile dotTempFile = dotTempFiles.get("tempFiles").get(0);
-
-    final String tempFileId = dotTempFile.id;
+    final String fileName = "test.file";
+    final DotTempFile dotTempFile = saveTempFile_usingTempResource(fileName);
 
     // we can get the file because we have the same sessionId as the request
-    Optional<DotTempFile> file = new TempFileAPI().getTempFile(null, request.getSession().getId(), tempFileId);
-    assert (file.isPresent() && !file.get().file.isDirectory());
-
-    // we can get the file again because we have the same sessionId as the request
-    file = new TempFileAPI().getTempFile(null, request.getSession().getId(), tempFileId);
+    Optional<DotTempFile> file = new TempFileAPI().getTempFile(null, request.getSession().getId(), dotTempFile.id);
     assert (file.isPresent() && !file.get().file.isDirectory());
 
     // we CANNOT get the file again because we have a new session ID in the request
-    file = new TempFileAPI().getTempFile(null, mockRequest().getSession().getId(), tempFileId);
+    file = new TempFileAPI().getTempFile(null, mockRequest().getSession().getId(), dotTempFile.id);
     assert (!file.isPresent());
 
   }
 
   @Test
-  public void test_tempResourceAPI_who_can_use_via_userID() throws Exception {
-    final TempFileResource resource = new TempFileResource();
+  public void test_tempResourceAPI_who_can_use_via_userID(){
 
-    final HttpServletRequest request = mockRequest();
     final User user = new UserDataGen().nextPersisted();
-
-    final String fileName = "test.png";
-    final HttpServletResponse response = new MockHttpResponse();
     request.setAttribute(WebKeys.USER, user);
 
-    final Date date = new Date();
-    final FormDataContentDisposition fileMetaData = FormDataContentDisposition.name("testData").fileName(fileName).creationDate(date)
-        .modificationDate(date).readDate(date).size(1222).build();
-
-    final Response jsonResponse = resource.uploadTempResource(request, response, inputStream(), fileMetaData);
-
-    final Map<String,List<DotTempFile>> dotTempFiles = ( Map<String,List<DotTempFile>>) jsonResponse.getEntity();
-    final DotTempFile dotTempFile = dotTempFiles.get("tempFiles").get(0);
-
-    final String tempFileId = dotTempFile.id;
+    final String fileName = "test.png";
+    final DotTempFile dotTempFile = saveTempFile_usingTempResource(fileName);
 
     // CANNOT get the file again because we have a new session ID in the new mock request
-    Optional<DotTempFile> file = new TempFileAPI().getTempFile(null, mockRequest().getSession().getId(), tempFileId);
+    Optional<DotTempFile> file = new TempFileAPI().getTempFile(null, mockRequest().getSession().getId(), dotTempFile.id);
     assert (!file.isPresent());
 
     // CAN get the file again because we are the user who uploaded it
-    file = new TempFileAPI().getTempFile(user, mockRequest().getSession().getId(), tempFileId);
+    file = new TempFileAPI().getTempFile(user, mockRequest().getSession().getId(), dotTempFile.id);
     assert (file.isPresent() && !file.get().file.isDirectory());
   }
 
   @Test
-  public void test_tempResourceapi_max_age() throws Exception {
-    final TempFileResource resource = new TempFileResource();
-
-    final HttpServletRequest request = mockRequest();
-
+  public void test_tempResourceapi_max_age(){
 
     final String fileName = "test.png";
-    final HttpServletResponse response = new MockHttpResponse();
 
+    final DotTempFile dotTempFile = saveTempFile_usingTempResource(fileName);
 
-    final Date date = new Date();
-    final FormDataContentDisposition fileMetaData = FormDataContentDisposition.name("testData").fileName(fileName).creationDate(date)
-        .modificationDate(date).readDate(date).size(1222).build();
-
-    final Response jsonResponse = resource.uploadTempResource(request, response, inputStream(), fileMetaData);
-
-    final Map<String,List<DotTempFile>> dotTempFiles = (Map) jsonResponse.getEntity();
-    final DotTempFile dotTempFile = dotTempFiles.get("tempFiles").get(0);
-
-    final String tempFileId = dotTempFile.id;
-
-    Optional<DotTempFile> file = new TempFileAPI().getTempFile(null, request.getSession().getId(), tempFileId);
+    Optional<DotTempFile> file = new TempFileAPI().getTempFile(null, request.getSession().getId(), dotTempFile.id);
 
     assert (file.isPresent());
 
@@ -239,36 +174,32 @@ public class TempFileResourceTest {
 
     // this works becuase we set the file age to newer than max age
     file.get().file.setLastModified(System.currentTimeMillis() - 60 * 10 * 1000);
-    file = new TempFileAPI().getTempFile(null, request.getSession().getId(), tempFileId);
+    file = new TempFileAPI().getTempFile(null, request.getSession().getId(), dotTempFile.id);
     assert (file.isPresent());
 
     // Setting the file to older than max age makes the file inaccessable
     file.get().file.setLastModified(System.currentTimeMillis() - (tempResourceMaxAgeSeconds * 1000) - 1);
-    file = new TempFileAPI().getTempFile(null, request.getSession().getId(), tempFileId);
+    file = new TempFileAPI().getTempFile(null, request.getSession().getId(), dotTempFile.id);
     assertFalse(file.isPresent());
   }
   
 
   @Test
-  public void test_tempResourceapi_test_anonymous_access() throws Exception {
-    final TempFileResource resource = new TempFileResource();
-
-    final HttpServletRequest request = mockRequest();
+  public void test_tempResourceapi_test_anonymous_access(){
 
     final String fileName = "test.png";
-    final HttpServletResponse response = new MockHttpResponse();
 
     Config.setProperty(TempFileAPI.TEMP_RESOURCE_ALLOW_ANONYMOUS, false);
-    final Date date = new Date();
-    final FormDataContentDisposition fileMetaData = FormDataContentDisposition.name("testData").fileName(fileName).creationDate(date)
-        .modificationDate(date).readDate(date).size(1222).build();
+    final BodyPart filePart1 = new StreamDataBodyPart(fileName, inputStream());
 
-    Response jsonResponse  = resource.uploadTempResource(request, response, inputStream(), fileMetaData);
+    final MultiPart multipartEntity = new FormDataMultiPart()
+            .bodyPart(filePart1);
+
+    Response jsonResponse = resource.uploadTempResourceMulti(request, response, (FormDataMultiPart) multipartEntity);
     assertEquals(Status.UNAUTHORIZED.getStatusCode(), jsonResponse.getStatus());
 
-
     Config.setProperty(TempFileAPI.TEMP_RESOURCE_ALLOW_ANONYMOUS, true);
-    jsonResponse = resource.uploadTempResource(request, response, inputStream(), fileMetaData);
+    jsonResponse = resource.uploadTempResourceMulti(request, response, (FormDataMultiPart) multipartEntity);
     final Map<String,List<DotTempFile>> dotTempFiles = (Map) jsonResponse.getEntity();
     final DotTempFile dotTempFile = dotTempFiles.get("tempFiles").get(0);
     assert(UtilMethods.isSet(dotTempFile.id));
@@ -278,10 +209,6 @@ public class TempFileResourceTest {
   @Test
   public void temp_resource_makes_it_into_checked_in_content() throws Exception {
 
-    final TempFileResource resource = new TempFileResource();
-    final HttpServletRequest request = mockRequest();
-
-    final HttpServletResponse response = new MockHttpResponse();
     final User user = APILocator.systemUser();
     final Host host = APILocator.getHostAPI().findDefaultHost(user, true);
 
@@ -311,20 +238,13 @@ public class TempFileResourceTest {
 
     final String fileName1 = "testFileName1" + UUIDGenerator.shorty() + ".png";
     final String fileName2 = "testFileName2" + UUIDGenerator.shorty() + ".gif";
-    final Date date = new Date();
-    final FormDataContentDisposition fileMetaData = FormDataContentDisposition.name("testData").fileName(fileName1).creationDate(date)
-        .modificationDate(date).readDate(date).size(1222).build();
-
-    Response jsonResponse = resource.uploadTempResource(request, response, inputStream(), fileMetaData);
-
-    Map<String,List<DotTempFile>> dotTempFiles = (Map) jsonResponse.getEntity();
-    final DotTempFile dotTempFile1 = dotTempFiles.get("tempFiles").get(0);
+    final DotTempFile dotTempFile1 = saveTempFile_usingTempResource(fileName1);
     
     final RemoteUrlForm form = new RemoteUrlForm(
         "https://raw.githubusercontent.com/dotCMS/core/master/dotCMS/src/main/webapp/html/images/skin/logo.gif", fileName2, null);
 
-    jsonResponse = resource.copyTempFromUrl(request, form);
-    dotTempFiles = (Map) jsonResponse.getEntity();
+    Response jsonResponse = resource.copyTempFromUrl(request, form);
+    final Map<String,List<DotTempFile>> dotTempFiles = (Map) jsonResponse.getEntity();
     final DotTempFile dotTempFile2 = dotTempFiles.get("tempFiles").get(0);
 
     final Map<String, Object> m = new HashMap<String, Object>();
@@ -346,46 +266,39 @@ public class TempFileResourceTest {
 
     assert (contentlet.getBinary("fileAsset").exists());
     assert (contentlet.getBinary("fileAsset").getName().equals(fileName1));
-    assert (contentlet.getBinary("fileAsset").length() == 381411);
+    assert (contentlet.getBinary("fileAsset").length() > 0);
     assert (contentlet.getBinary("testBinary").exists());
     assert (contentlet.getBinary("testBinary").getName().equals(fileName2));
-    assert (contentlet.getBinary("testBinary").length() == 13695);
+    assert (contentlet.getBinary("testBinary").length() > 0);
 
   }
 
+
   /**
    * This test is for the TEMP_RESOURCE_ENABLED property
-   * If is set to false the temp resource is disabled and a 404 should be thrown.
+   * If is set to false the temp resource is disabled and a 403 should be thrown.
    *
    * @throws Exception
    */
   @Test
-  public void test_TempResourceAPI_TempResourceEnabledProperty() throws Exception{
+  public void test_TempResourceAPI_TempResourceEnabledProperty(){
     final boolean tempResourceEnabledOriginalValue = Config.getBooleanProperty(TempFileAPI.TEMP_RESOURCE_ENABLED, true);
     try {
-      final TempFileResource resource = new TempFileResource();
-
-      final HttpServletRequest request = mockRequest();
 
       final String fileName = "test.png";
-      final HttpServletResponse response = new MockHttpResponse();
 
       Config.setProperty(TempFileAPI.TEMP_RESOURCE_ENABLED, false);
-      final Date date = new Date();
-      final FormDataContentDisposition fileMetaData = FormDataContentDisposition.name("testData")
-              .fileName(fileName).creationDate(date)
-              .modificationDate(date).readDate(date).size(1222).build();
+      final BodyPart filePart1 = new StreamDataBodyPart(fileName, inputStream());
 
-      final Response jsonResponse = resource
-              .uploadTempResource(request, response, inputStream(), fileMetaData);
+      final MultiPart multipartEntity = new FormDataMultiPart()
+              .bodyPart(filePart1);
+
+      final Response jsonResponse = resource.uploadTempResourceMulti(request, response, (FormDataMultiPart) multipartEntity);
 
       assertEquals(Status.FORBIDDEN.getStatusCode(), jsonResponse.getStatus());
     }finally {
       Config.setProperty(TempFileAPI.TEMP_RESOURCE_ENABLED, tempResourceEnabledOriginalValue);
     }
   }
-  
-  
-  
 
 }
