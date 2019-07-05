@@ -770,6 +770,18 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		return workFlowFactory.findSteps(scheme);
 	}
 
+	@CloseDBIfOpened
+	public Optional<WorkflowStep> findFirstStepForAction(final WorkflowAction workflowAction) throws DotDataException {
+
+		return workFlowFactory.findFirstStep (workflowAction.getId(), workflowAction.getSchemeId());
+	}
+
+	@CloseDBIfOpened
+	public Optional<WorkflowStep> findFirstStep(final String schemeId) throws DotDataException {
+
+		return workFlowFactory.findFirstStep (schemeId);
+	}
+
 	@WrapInTransaction
 	public void saveStep(final WorkflowStep step, final User user) throws DotDataException, AlreadyExistException {
 

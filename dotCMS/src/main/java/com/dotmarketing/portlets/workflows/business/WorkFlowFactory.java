@@ -18,6 +18,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.liferay.portal.model.User;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 
@@ -188,6 +189,12 @@ public interface WorkFlowFactory {
 	 */
 	void saveAction(WorkflowAction workflowAction, WorkflowStep workflowStep)  throws DotDataException,AlreadyExistException;
 
+	/**
+	 * Finds a step by given id
+	 * @param id {@link String} workflow step id
+	 * @return WorkflowStep
+	 * @throws DotDataException
+	 */
 	public WorkflowStep findStep(String id) throws DotDataException;
 
 	/**
@@ -330,4 +337,21 @@ public interface WorkFlowFactory {
 	 * @throws DotDataException
 	 */
 	public WorkflowScheme findSystemWorkflow() throws DotDataException;
+
+	/**
+	 * Find the first step for the actionId, if the action is not associated to any action, returns the first step for the action scheme id
+	 * @param actionId {@link String} workflow action id
+	 * @param actionSchemeId {@link String} scheme id for the given action
+	 * @return WorkflowStep
+	 *  @throws DotDataException
+	 */
+	Optional<WorkflowStep> findFirstStep(String actionId, String actionSchemeId)  throws DotDataException;
+
+	/**
+	 *
+	 * @param schemeId
+	 * @return
+	 * @throws DotDataException
+	 */
+	Optional<WorkflowStep> findFirstStep(final String schemeId) throws DotDataException;
 }

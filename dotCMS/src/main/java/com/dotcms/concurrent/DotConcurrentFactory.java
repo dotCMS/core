@@ -253,7 +253,7 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
     }
     /**
      * Get the instance.
-     * @return JsonWebTokenFactory
+     * @return DotConcurrentFactory
      */
     public static DotConcurrentFactory getInstance() {
 

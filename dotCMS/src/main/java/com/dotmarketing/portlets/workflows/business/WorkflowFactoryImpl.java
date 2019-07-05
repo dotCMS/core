@@ -733,6 +733,34 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	}
 
 	@Override
+	public Optional<WorkflowStep> findFirstStep(final String actionId, final String actionSchemeId) throws DotDataException {
+
+		WorkflowStep workflowStep = null;
+		final List<Map<String, Object>> workflowStepRows =
+				new DotConnect().setMaxRows(1).setSQL(sql.SELECT_STEPS_BY_ACTION)
+					.addParam(actionId).loadObjectResults();
+
+		try {
+
+			workflowStep = UtilMethods.isSet(workflowStepRows) && workflowStepRows.size() > 0?
+					this.convertStep(workflowStepRows.get(0)):
+					this.findFirstStep(actionSchemeId).orElse(null);
+		} catch (IllegalAccessException | InvocationTargetException e) {
+
+			throw new DotDataException(e);
+		}
+
+		return Optional.ofNullable(workflowStep);
+	}
+
+	@Override
+	public Optional<WorkflowStep> findFirstStep(final String schemeId) throws DotDataException {
+
+		return this.findSteps(this.findScheme(schemeId))
+				.stream().findFirst();
+	}
+
+	@Override
 	public List<WorkflowStep> findStepsByContentlet(final Contentlet contentlet, final List<WorkflowScheme> schemes) throws DotDataException {
 		List<WorkflowStep> steps            = new ArrayList<>();
         List<WorkflowStep> currentSteps     = cache.getSteps(contentlet);

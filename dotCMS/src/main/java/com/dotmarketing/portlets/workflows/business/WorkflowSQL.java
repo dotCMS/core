@@ -55,6 +55,9 @@ abstract class WorkflowSQL {
 	protected static String SELECT_ACTIONS_BY_SCHEME= "select * from workflow_action where scheme_id = ? order by  name";
 	protected static String SELECT_ACTIONS_BY_STEP =
 		"select workflow_action.* from workflow_action join workflow_action_step on workflow_action.id = workflow_action_step.action_id  where workflow_action_step.step_id = ? order by  action_order";
+
+	protected static String SELECT_STEPS_BY_ACTION =
+			"select workflow_step.* from workflow_step join workflow_action_step on workflow_step.id = workflow_action_step.step_id where action_id = ? order by my_order asc";
 	protected static String SELECT_ACTION= "select * from workflow_action where id = ? ";
 
 	/**

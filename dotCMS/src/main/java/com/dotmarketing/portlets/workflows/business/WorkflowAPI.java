@@ -297,6 +297,22 @@ public interface WorkflowAPI {
 	public List<WorkflowStep> findSteps(WorkflowScheme scheme) throws DotDataException;
 
 	/**
+	 * Finds the first step (in order) for a given action
+	 * @param workflowAction {@link WorkflowAction} action
+	 * @return WorkflowStep
+	 * @throws DotDataException
+	 */
+	Optional<WorkflowStep> findFirstStepForAction(WorkflowAction workflowAction) throws DotDataException;
+
+	/**
+	 * Find the first step (in order) for the scheme
+	 * @param schemeId
+	 * @return
+	 * @throws DotDataException
+	 */
+	public Optional<WorkflowStep> findFirstStep(final String schemeId) throws DotDataException;
+
+	/**
 	 * If the user is allowed to modified workflow (valid license and permissions) will save the step.
 	 * @param step
 	 * @param user
@@ -841,6 +857,8 @@ public interface WorkflowAPI {
 	 * @throws DotDataException
 	 */
     List<WorkflowTimelineItem> getCommentsAndChangeHistory(WorkflowTask task) throws DotDataException;
+
+
 
 	/**
 	 * Render mode for the available actions
