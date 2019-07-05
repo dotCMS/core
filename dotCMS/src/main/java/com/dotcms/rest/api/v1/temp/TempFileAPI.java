@@ -127,7 +127,6 @@ public class TempFileAPI {
    * @param incomingFileName
    * @param user
    * @param uniqueKey
-   * @param inputStream
    * @return
    * @throws DotSecurityException
    */
@@ -210,6 +209,8 @@ public class TempFileAPI {
       return Optional.of(new DotTempFile(tempFileId, tempFile));
 
     }
+
+    Logger.error(this,"Temp File does not exists or TTL of the file already expired");
     return Optional.empty();
 
   }
