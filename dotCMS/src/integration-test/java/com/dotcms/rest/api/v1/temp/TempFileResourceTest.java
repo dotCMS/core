@@ -2,7 +2,6 @@ package com.dotcms.rest.api.v1.temp;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -37,7 +36,6 @@ import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.MockHttpResponse;
-import com.dotcms.rest.exception.SecurityException;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -265,16 +263,12 @@ public class TempFileResourceTest {
     final FormDataContentDisposition fileMetaData = FormDataContentDisposition.name("testData").fileName(fileName).creationDate(date)
         .modificationDate(date).readDate(date).size(1222).build();
 
-    try {
-      resource.uploadTempResource(request, response, inputStream(), fileMetaData);
-      assertTrue("We should have throw a resource unavailable exception", false);
-    } catch (SecurityException se) {
-      assertTrue("We  throw a resource unavailable exception", true);
-    } catch (Exception e) {
-      assertTrue("We should have thrown a SecurityException", false);
-    }
+    Response jsonResponse  = resource.uploadTempResource(request, response, inputStream(), fileMetaData);
+    assertEquals(Status.UNAUTHORIZED.getStatusCode(), jsonResponse.getStatus());
+
+
     Config.setProperty(TempFileAPI.TEMP_RESOURCE_ALLOW_ANONYMOUS, true);
-    final Response jsonResponse = resource.uploadTempResource(request, response, inputStream(), fileMetaData);
+    jsonResponse = resource.uploadTempResource(request, response, inputStream(), fileMetaData);
     final Map<String,List<DotTempFile>> dotTempFiles = (Map) jsonResponse.getEntity();
     final DotTempFile dotTempFile = dotTempFiles.get("tempFiles").get(0);
     assert(UtilMethods.isSet(dotTempFile.id));
@@ -385,7 +379,7 @@ public class TempFileResourceTest {
       final Response jsonResponse = resource
               .uploadTempResource(request, response, inputStream(), fileMetaData);
 
-      assertEquals(Status.NOT_FOUND.getStatusCode(), jsonResponse.getStatus());
+      assertEquals(Status.FORBIDDEN.getStatusCode(), jsonResponse.getStatus());
     }finally {
       Config.setProperty(TempFileAPI.TEMP_RESOURCE_ENABLED, tempResourceEnabledOriginalValue);
     }
