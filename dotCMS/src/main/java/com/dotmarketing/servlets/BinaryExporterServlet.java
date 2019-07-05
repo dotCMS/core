@@ -64,7 +64,6 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import javax.ws.rs.WebApplicationException;
 
 /**
  * This servlet allows you invoke content exporters over binary fields. With the following URL syntax you are able to

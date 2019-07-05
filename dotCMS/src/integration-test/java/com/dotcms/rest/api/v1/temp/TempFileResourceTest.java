@@ -2,6 +2,8 @@ package com.dotcms.rest.api.v1.temp;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -40,7 +42,6 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UUIDGenerator;
-import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 
@@ -64,7 +65,7 @@ public class TempFileResourceTest {
     return new MockSessionRequest(
         new MockHeaderRequest(new MockHttpRequest("localhost", "/api/v1/tempResource").request(), "Origin", "localhost").request());
   }
-  private final InputStream inputStream() {
+  private InputStream inputStream() {
     return this.getClass().getResourceAsStream("/images/SqcP9KgFqruagXJfe7CES.png");
   }
 
@@ -87,10 +88,10 @@ public class TempFileResourceTest {
   // its not an image because we set the filename to "test.file"
     assertFalse((Boolean) dotTempFile.image);
 
-    assert (dotTempFile.id.startsWith(TempFileAPI.TEMP_RESOURCE_PREFIX));
+    assertTrue(dotTempFile.id.startsWith(TempFileAPI.TEMP_RESOURCE_PREFIX));
 
-    assert (dotTempFile.file.getName().equals(fileName));
-    assert (dotTempFile.length() > 0);
+    assertTrue(dotTempFile.file.getName().equals(fileName));
+    assertTrue(dotTempFile.length() > 0);
   }
 
   @Test
@@ -107,21 +108,21 @@ public class TempFileResourceTest {
             .bodyPart(filePart2);
     
     final Response jsonResponse = resource.uploadTempResourceMulti(request, response, (FormDataMultiPart) multipartEntity);
-    assert (jsonResponse!=null);
+    assertNotNull(jsonResponse);
 
     final Map<String,List<DotTempFile>> dotTempFile = (Map) jsonResponse.getEntity();
-    assert (dotTempFile.size() > 0);
+    assertFalse(dotTempFile.isEmpty());
     
-    assert (dotTempFile.get("tempFiles").size()==2);
+    assertEquals(2,dotTempFile.get("tempFiles").size());
     DotTempFile file= (DotTempFile) dotTempFile.get("tempFiles").get(0);
-    assert(file.fileName.equals(fileName1));
-    assert(file.image);
-    assert(file.length()>1000);
+    assertEquals(fileName1,file.fileName);
+    assertNotNull(file.image);
+    assertTrue(file.length()>1000);
     
     file= (DotTempFile) dotTempFile.get("tempFiles").get(1);
-    assert(file.fileName.equals(fileName2));
-    assert(file.image);
-    assert(file.length()>1000);
+    assertEquals(fileName2,file.fileName);
+    assertNotNull(file.image);
+    assertTrue(file.length()>1000);
 
   }
 
@@ -133,11 +134,11 @@ public class TempFileResourceTest {
 
     // we can get the file because we have the same sessionId as the request
     Optional<DotTempFile> file = new TempFileAPI().getTempFile(null, request.getSession().getId(), dotTempFile.id);
-    assert (file.isPresent() && !file.get().file.isDirectory());
+    assertTrue(file.isPresent() && !file.get().file.isDirectory());
 
     // we CANNOT get the file again because we have a new session ID in the request
     file = new TempFileAPI().getTempFile(null, mockRequest().getSession().getId(), dotTempFile.id);
-    assert (!file.isPresent());
+    assertFalse(file.isPresent());
 
   }
 
@@ -152,11 +153,11 @@ public class TempFileResourceTest {
 
     // CANNOT get the file again because we have a new session ID in the new mock request
     Optional<DotTempFile> file = new TempFileAPI().getTempFile(null, mockRequest().getSession().getId(), dotTempFile.id);
-    assert (!file.isPresent());
+    assertFalse(file.isPresent());
 
     // CAN get the file again because we are the user who uploaded it
     file = new TempFileAPI().getTempFile(user, mockRequest().getSession().getId(), dotTempFile.id);
-    assert (file.isPresent() && !file.get().file.isDirectory());
+    assertTrue(file.isPresent() && !file.get().file.isDirectory());
   }
 
   @Test
@@ -168,14 +169,14 @@ public class TempFileResourceTest {
 
     Optional<DotTempFile> file = new TempFileAPI().getTempFile(null, request.getSession().getId(), dotTempFile.id);
 
-    assert (file.isPresent());
+    assertTrue(file.isPresent());
 
     int tempResourceMaxAgeSeconds = Config.getIntProperty("TEMP_RESOURCE_MAX_AGE_SECONDS", 1800);
 
     // this works becuase we set the file age to newer than max age
     file.get().file.setLastModified(System.currentTimeMillis() - 60 * 10 * 1000);
     file = new TempFileAPI().getTempFile(null, request.getSession().getId(), dotTempFile.id);
-    assert (file.isPresent());
+    assertTrue(file.isPresent());
 
     // Setting the file to older than max age makes the file inaccessable
     file.get().file.setLastModified(System.currentTimeMillis() - (tempResourceMaxAgeSeconds * 1000) - 1);
@@ -202,7 +203,7 @@ public class TempFileResourceTest {
     jsonResponse = resource.uploadTempResourceMulti(request, response, (FormDataMultiPart) multipartEntity);
     final Map<String,List<DotTempFile>> dotTempFiles = (Map) jsonResponse.getEntity();
     final DotTempFile dotTempFile = dotTempFiles.get("tempFiles").get(0);
-    assert(UtilMethods.isSet(dotTempFile.id));
+    assertNotNull(dotTempFile.id);
   }
   
   
@@ -243,7 +244,7 @@ public class TempFileResourceTest {
     final RemoteUrlForm form = new RemoteUrlForm(
         "https://raw.githubusercontent.com/dotCMS/core/master/dotCMS/src/main/webapp/html/images/skin/logo.gif", fileName2, null);
 
-    Response jsonResponse = resource.copyTempFromUrl(request, form);
+    final Response jsonResponse = resource.copyTempFromUrl(request, form);
     final Map<String,List<DotTempFile>> dotTempFiles = (Map) jsonResponse.getEntity();
     final DotTempFile dotTempFile2 = dotTempFiles.get("tempFiles").get(0);
 
@@ -264,12 +265,12 @@ public class TempFileResourceTest {
     
     
 
-    assert (contentlet.getBinary("fileAsset").exists());
-    assert (contentlet.getBinary("fileAsset").getName().equals(fileName1));
-    assert (contentlet.getBinary("fileAsset").length() > 0);
-    assert (contentlet.getBinary("testBinary").exists());
-    assert (contentlet.getBinary("testBinary").getName().equals(fileName2));
-    assert (contentlet.getBinary("testBinary").length() > 0);
+    assertNotNull(contentlet.getBinary("fileAsset"));
+    assertEquals(fileName1,contentlet.getBinary("fileAsset").getName());
+    assertTrue(contentlet.getBinary("fileAsset").length() > 0);
+    assertNotNull(contentlet.getBinary("testBinary").exists());
+    assertEquals(fileName2,contentlet.getBinary("testBinary").getName());
+    assertTrue(contentlet.getBinary("testBinary").length() > 0);
 
   }
 

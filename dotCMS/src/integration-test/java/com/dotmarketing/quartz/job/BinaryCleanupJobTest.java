@@ -10,6 +10,8 @@ import java.util.List;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
@@ -46,7 +48,7 @@ public class BinaryCleanupJobTest {
     tempDir.mkdirs();
     FileUtil.deltree(tempDir, false);
     // a clean start
-    assert (FileUtil.listFilesRecursively(tempDir).size() == 0);
+    assertTrue(FileUtil.listFilesRecursively(tempDir).size() == 0);
 
     for (int i = 0; i < 5; i++) {
       final File parent = new File(tempDir, "folder" + i);
@@ -66,10 +68,10 @@ public class BinaryCleanupJobTest {
     child.setLastModified(System.currentTimeMillis());
     parent.setLastModified(hours.get(4).getTime());
 
-    assert (FileUtil.listFilesRecursively(tempDir).size() == 12);
+    assertEquals(12,FileUtil.listFilesRecursively(tempDir).size());
 
     new BinaryCleanupJob().execute(null);
-    assert (FileUtil.listFilesRecursively(tempDir).size() == 8);
+    assertEquals(8,FileUtil.listFilesRecursively(tempDir).size());
 
   }
 
@@ -95,7 +97,7 @@ public class BinaryCleanupJobTest {
     tempDir.mkdirs();
     FileUtil.deltree(tempDir, false);
     // a clean start
-    assert (FileUtil.listFilesRecursively(tempDir).size() == 0);
+    assertEquals(0,FileUtil.listFilesRecursively(tempDir).size());
 
     for (int i = 0; i < 5; i++) {
       final File parent = new File(tempDir, "folder" + i);
@@ -115,10 +117,10 @@ public class BinaryCleanupJobTest {
     child.setLastModified(System.currentTimeMillis());
     parent.setLastModified(hours.get(4).getTime());
 
-    assert (FileUtil.listFilesRecursively(tempDir).size() == 12);
+    assertEquals(12,FileUtil.listFilesRecursively(tempDir).size());
 
     new BinaryCleanupJob().execute(null);
-    assert (FileUtil.listFilesRecursively(tempDir).size() == 8);
+    assertEquals(8,FileUtil.listFilesRecursively(tempDir).size());
 
   }
 }

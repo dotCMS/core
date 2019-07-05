@@ -13,16 +13,13 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import org.glassfish.jersey.media.multipart.BodyPart;
 import org.glassfish.jersey.media.multipart.ContentDisposition;
-import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
-import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.glassfish.jersey.server.JSONP;
 
 import com.dotcms.rest.InitDataObject;
@@ -64,7 +61,7 @@ public class TempFileResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     public final Response uploadTempResourceMulti(@Context final HttpServletRequest request,
-            @Context final HttpServletResponse response, FormDataMultiPart body) {
+            @Context final HttpServletResponse response, final FormDataMultiPart body) {
 
         try {
             if (!Config.getBooleanProperty(TempFileAPI.TEMP_RESOURCE_ENABLED, true)) {
@@ -97,7 +94,7 @@ public class TempFileResource {
                 if (in == null) {
                     continue;
                 }
-                ContentDisposition meta = part.getContentDisposition();
+                final ContentDisposition meta = part.getContentDisposition();
                 if (meta == null) {
                     continue;
                 }

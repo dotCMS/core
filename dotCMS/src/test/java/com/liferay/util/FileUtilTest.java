@@ -10,7 +10,7 @@ import java.util.List;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
-import com.liferay.util.FileUtil;
+import static org.junit.Assert.assertEquals;
 
 public class FileUtilTest {
 
@@ -33,12 +33,12 @@ public class FileUtilTest {
       tempDir.mkdirs();
       FileUtil.deltree(tempDir, false);
       // a clean start
-      assert(FileUtil.listFilesRecursively(tempDir).size()==0);
+      assertEquals(0,FileUtil.listFilesRecursively(tempDir).size());
       
       for(int i=0;i<5;i++) {
-        File parent = new File(tempDir,"folder" + i);
+        final File parent = new File(tempDir,"folder" + i);
         parent.mkdirs();
-        File child = new File(parent,"file" + i);
+        final File child = new File(parent,"file" + i);
         new FileOutputStream(child).close();
         child.setLastModified(hours.get(i).getTime());
         parent.setLastModified(hours.get(i).getTime());
@@ -53,19 +53,19 @@ public class FileUtilTest {
       child.setLastModified(System.currentTimeMillis());
       parent.setLastModified(hours.get(4).getTime());
       
-      assert(FileUtil.listFilesRecursively(tempDir).size()==12);
+      assertEquals(12,FileUtil.listFilesRecursively(tempDir).size());
       
       FileUtil.cleanTree(tempDir,hours.get(3));
       
-      assert(FileUtil.listFilesRecursively(tempDir).size()==10);
+      assertEquals(10,FileUtil.listFilesRecursively(tempDir).size());
     
       FileUtil.cleanTree(tempDir,hours.get(2));
-      
-      
-      assert(FileUtil.listFilesRecursively(tempDir).size()==8);
+
+
+      assertEquals(8,FileUtil.listFilesRecursively(tempDir).size());
       
       FileUtil.cleanTree(tempDir,hours.get(0));
-      assert(FileUtil.listFilesRecursively(tempDir).size()==4);
+      assertEquals(4,FileUtil.listFilesRecursively(tempDir).size());
       
     
   }

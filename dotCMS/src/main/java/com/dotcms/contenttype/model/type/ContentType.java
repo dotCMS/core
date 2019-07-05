@@ -1,7 +1,6 @@
 package com.dotcms.contenttype.model.type;
 
 import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.FieldType;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.dotcms.util.CollectionsUtils;

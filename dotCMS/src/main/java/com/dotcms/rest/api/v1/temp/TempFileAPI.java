@@ -63,10 +63,11 @@ public class TempFileAPI {
     if (uniqueKey != null) {
       allowList.add(uniqueKey);
     }
-    final String tempFileId = TEMP_RESOURCE_PREFIX + UUIDGenerator.shorty();
+
     if (incomingFileName == null) {
       throw new DotRuntimeException("Unable to create temp file without a name");
     }
+    final String tempFileId = TEMP_RESOURCE_PREFIX + UUIDGenerator.shorty();
     
     final String tempFileUri = File.separator + tempFileId + File.separator + incomingFileName;
     final File tempFile = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + tempFileUri);
@@ -197,7 +198,7 @@ public class TempFileAPI {
       return Optional.empty();
     }
 
-    int tempResourceMaxAgeSeconds = Config.getIntProperty(TEMP_RESOURCE_MAX_AGE_SECONDS, 1800);
+    final int tempResourceMaxAgeSeconds = Config.getIntProperty(TEMP_RESOURCE_MAX_AGE_SECONDS, 1800);
     final File testFile = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + File.separator + tempFileId);
     
 
@@ -242,7 +243,7 @@ public class TempFileAPI {
    * @param tempFileId
    * @return
    */
-  public Optional<DotTempFile> getTempFile(List<String> accessingList, final String tempFileId) {
+  public Optional<DotTempFile> getTempFile(final List<String> accessingList, final String tempFileId) {
     Optional<DotTempFile> tempFile = getTempFile(tempFileId);
     if (tempFile.isPresent() && canUseTempFile(accessingList, tempFile.get())) {
       return tempFile;
@@ -287,7 +288,7 @@ public class TempFileAPI {
 
   private final FileFilter tempFileFilter = new FileFilter() {
     @Override
-    public boolean accept(File pathname) {
+    public boolean accept(final File pathname) {
       return !pathname.getName().equalsIgnoreCase(WHO_CAN_USE_TEMP_FILE) &&
              !pathname.getName().startsWith(".")
           
