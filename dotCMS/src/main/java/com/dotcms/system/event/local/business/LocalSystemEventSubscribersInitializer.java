@@ -1,6 +1,7 @@
 package com.dotcms.system.event.local.business;
 
 import com.dotcms.config.DotInitializer;
+import com.dotcms.content.elasticsearch.business.event.ContentletCheckinEvent;
 import com.dotcms.graphql.listener.ContentTypeAndFieldsModsListeners;
 import com.dotcms.services.VanityUrlServices;
 import com.dotmarketing.beans.Host;
@@ -32,7 +33,7 @@ public class LocalSystemEventSubscribersInitializer implements DotInitializer {
 
         this.initApplicationContainerFolderListener();
 
-        APILocator.getLocalSystemEventsAPI().subscribe(CheckInUnAssignWorkflowStepCheckerListener.getInstance());
+        APILocator.getLocalSystemEventsAPI().subscribe(ContentletCheckinEvent.class, CheckInUnAssignWorkflowStepCheckerListener.getInstance());
     }
 
     public void initApplicationContainerFolderListener() {

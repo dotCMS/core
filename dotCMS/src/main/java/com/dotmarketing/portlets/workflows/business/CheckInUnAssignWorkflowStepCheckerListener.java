@@ -14,7 +14,6 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilHTML;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.Date;
 import java.util.List;
@@ -66,6 +65,7 @@ public class CheckInUnAssignWorkflowStepCheckerListener implements EventSubscrib
 
                     final AutoAssignWorkflowDelegate delegate = null != this.customAutoAssignWorkflowDelegate?
                             this.customAutoAssignWorkflowDelegate: this.autoAssignWorkflowDelegate;
+                    Logger.debug(this, "Using the auto assign workflow with the delegate: " + delegate.getName());
 
                     delegate.assign(event.getContentlet(), event.getUser());
                 }
@@ -111,7 +111,6 @@ public class CheckInUnAssignWorkflowStepCheckerListener implements EventSubscrib
         return createWorkflowTask(contentlet, user, workflowStep);
     }
 
-    @NotNull
     private static WorkflowTask createWorkflowTask(final Contentlet contentlet, final User user,
                                                    final WorkflowStep workflowStep) {
 
@@ -126,7 +125,7 @@ public class CheckInUnAssignWorkflowStepCheckerListener implements EventSubscrib
         task.setCreatedBy(user.getUserId());
         task.setStatus(workflowStep.getId());
         task.setDueDate(null);
-        task.setWebasset(contentlet.getInode());
+        task.setWebasset(contentlet.getIdentifier());
         task.setLanguageId(contentlet.getLanguageId());
 
         return task;

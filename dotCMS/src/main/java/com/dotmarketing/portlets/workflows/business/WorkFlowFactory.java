@@ -339,18 +339,18 @@ public interface WorkFlowFactory {
 	public WorkflowScheme findSystemWorkflow() throws DotDataException;
 
 	/**
-	 * Find the first step for the actionId, if the action is not associated to any action, returns the first step for the action scheme id
+	 * Finds the first step for the actionId, if the action is not associated to any action, returns the first step for the action scheme id
 	 * @param actionId {@link String} workflow action id
 	 * @param actionSchemeId {@link String} scheme id for the given action
 	 * @return WorkflowStep
-	 *  @throws DotDataException
+	 * @throws DotDataException
 	 */
 	Optional<WorkflowStep> findFirstStep(String actionId, String actionSchemeId)  throws DotDataException;
 
 	/**
-	 *
-	 * @param schemeId
-	 * @return
+	 * Finds the first step for a scheme (based on the my_order)
+	 * @param schemeId {@link String} scheme id
+	 * @return WorkflowStep
 	 * @throws DotDataException
 	 */
 	Optional<WorkflowStep> findFirstStep(final String schemeId) throws DotDataException;
