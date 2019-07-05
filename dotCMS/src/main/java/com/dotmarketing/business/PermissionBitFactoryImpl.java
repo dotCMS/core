@@ -1,22 +1,19 @@
 package com.dotmarketing.business;
 
 import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
-import static com.dotcms.exception.ExceptionUtil.bubbleUpException;
 
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.lock.IdentifierStripedLock;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImpl;
-import com.dotcms.content.elasticsearch.util.DotRestHighLevelClient;
-import com.dotcms.content.elasticsearch.util.ESClient;
+import com.dotcms.content.elasticsearch.util.DotRestClientProvider;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.rendering.velocity.viewtools.navigation.NavResult;
 
 import com.dotcms.system.SimpleMapAppContext;
-import com.dotcms.util.ReturnableDelegate;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -71,8 +68,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.elasticsearch.action.bulk.BulkRequest;
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
-import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.common.unit.TimeValue;
 
@@ -3039,7 +3034,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			    indexAPI.addContentToIndex(cont, false);
 			}
 			if(bulkRequest.numberOfActions()>0) {
-				Sneaky.sneak(()-> DotRestHighLevelClient.getClient()
+				Sneaky.sneak(()-> DotRestClientProvider.getInstance().getClient()
 						.bulk(bulkRequest, RequestOptions.DEFAULT));
 			}
 

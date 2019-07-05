@@ -7,7 +7,7 @@ import com.dotcms.cluster.ClusterUtils;
 import com.dotcms.cluster.business.ClusterAPI;
 import com.dotcms.cluster.business.ReplicasMode;
 import com.dotcms.cluster.business.ServerAPI;
-import com.dotcms.content.elasticsearch.util.DotRestHighLevelClient;
+import com.dotcms.content.elasticsearch.util.DotRestClientProvider;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.org.dts.spell.utils.FileUtils;
 import com.dotmarketing.business.APILocator;
@@ -37,7 +37,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -140,7 +139,7 @@ public class ESIndexAPI {
 	}
 
 	public ESIndexAPI(){
-		this.esclient = DotRestHighLevelClient.getClient();
+		this.esclient = DotRestClientProvider.getInstance().getClient();
 		this.iapi = new ContentletIndexAPIImpl();
 		this.esIndexHelper = ESIndexHelper.INSTANCE;
 		this.serverAPI = APILocator.getServerAPI();

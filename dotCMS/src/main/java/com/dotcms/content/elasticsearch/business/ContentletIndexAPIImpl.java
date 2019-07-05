@@ -4,7 +4,7 @@ import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATI
 import static com.dotmarketing.common.reindex.ReindexThread.ELASTICSEARCH_CONCURRENT_REQUESTS;
 import static com.dotmarketing.util.StringUtils.builder;
 
-import com.dotcms.content.elasticsearch.util.DotRestHighLevelClient;
+import com.dotcms.content.elasticsearch.util.DotRestClientProvider;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.common.reindex.BulkProcessorListener;
 import com.dotmarketing.util.DateUtil;
@@ -17,7 +17,6 @@ import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
@@ -33,35 +32,29 @@ import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.bulk.BulkProcessor;
 import org.elasticsearch.action.bulk.BulkRequest;
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.action.support.WriteRequest.RefreshPolicy;
-import org.elasticsearch.client.Client;
 import org.elasticsearch.client.Request;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.indices.CreateIndexResponse;
-import org.elasticsearch.client.indices.GetIndexRequest;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.reindex.BulkByScrollResponse;
-import org.elasticsearch.index.reindex.DeleteByQueryAction;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
-import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.reindex.ReindexEntry;
@@ -92,7 +85,6 @@ import com.rainerhahnekamp.sneakythrow.Sneaky;
 
 import io.vavr.control.Try;
 import org.elasticsearch.index.reindex.DeleteByQueryRequest;
-import org.elasticsearch.index.reindex.DeleteByQueryRequestBuilder;
 
 public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
@@ -526,9 +518,10 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             bulkRequest.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
 
             if (listener != null) {
-                DotRestHighLevelClient.getClient().bulkAsync(bulkRequest, RequestOptions.DEFAULT, listener);
+                DotRestClientProvider.getInstance()
+                        .getClient().bulkAsync(bulkRequest, RequestOptions.DEFAULT, listener);
             } else {
-                BulkResponse response = Sneaky.sneak(()->DotRestHighLevelClient.getClient()
+                BulkResponse response = Sneaky.sneak(() -> DotRestClientProvider.getInstance().getClient()
                         .bulk(bulkRequest, RequestOptions.DEFAULT));
 
                 if (response != null && response.hasFailures()) {
@@ -563,7 +556,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     public BulkProcessor createBulkProcessor(final BulkProcessorListener bulkProcessorListener) {
         BulkProcessor.Builder builder = BulkProcessor.builder(
                 (request, bulkListener) ->
-                        DotRestHighLevelClient.getClient()
+                        DotRestClientProvider.getInstance().getClient()
                                 .bulkAsync(request, RequestOptions.DEFAULT, bulkListener),
                 bulkProcessorListener);
 
@@ -898,7 +891,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         }
 
         bulkRequest.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
-        Sneaky.sneak(()->DotRestHighLevelClient.getClient()
+        Sneaky.sneak(() -> DotRestClientProvider.getInstance().getClient()
                 .bulk(bulkRequest, RequestOptions.DEFAULT));
     }
 
@@ -974,7 +967,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         request.setQuery(QueryBuilders.matchQuery("contenttype",structureName.toLowerCase()));
         request.setTimeout(new TimeValue(INDEX_OPERATIONS_TIMEOUT_IN_MS));
 
-        BulkByScrollResponse response = Sneaky.sneak(()->DotRestHighLevelClient.getClient()
+        BulkByScrollResponse response = Sneaky.sneak(() -> DotRestClientProvider.getInstance().getClient()
                 .deleteByQuery(request, RequestOptions.DEFAULT));
 
         Logger.info(this, "Records deleted: " +

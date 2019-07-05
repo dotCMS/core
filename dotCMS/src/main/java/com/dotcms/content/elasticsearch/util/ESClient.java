@@ -50,11 +50,11 @@ public class ESClient {
 	@VisibleForTesting static final String ES_NODE_DATA = "node.data";
 	@VisibleForTesting static final String ES_NODE_MASTER = "node.master";
 	@VisibleForTesting static final String ES_ZEN_UNICAST_HOSTS = "discovery.zen.ping.unicast.hosts";
-    private static final String ES_PATH_HOME_DEFAULT_VALUE = "WEB-INF/elasticsearch";
-    private static final String ES_CONFIG_DIR = "config";
+    public static final String ES_PATH_HOME_DEFAULT_VALUE = "WEB-INF/elasticsearch";
+    public static final String ES_CONFIG_DIR = "config";
     private static final String ES_YML_FILE = "elasticsearch.yml";
     private static final String ES_EXT_YML_FILE = "elasticsearch-override.yml";
-    private static final String ES_PATH_HOME = "es.path.home";
+    public static final String ES_PATH_HOME = "es.path.home";
 	private final ClusterAPI clusterAPI;
 
 	public ESClient() {

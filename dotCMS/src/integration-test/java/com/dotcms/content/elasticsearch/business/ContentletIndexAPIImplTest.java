@@ -7,8 +7,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.IntegrationTestBase;
-import com.dotcms.content.elasticsearch.util.DotRestHighLevelClient;
-import com.dotcms.content.elasticsearch.util.ESClient;
+import com.dotcms.content.elasticsearch.util.DotRestClientProvider;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.DateTimeField;
 import com.dotcms.contenttype.model.field.Field;
@@ -69,17 +68,12 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import org.apache.felix.framework.OSGIUtil;
 import org.elasticsearch.action.bulk.BulkRequest;
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
-import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.support.WriteRequest.RefreshPolicy;
-import org.elasticsearch.client.Client;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.query.QueryStringQueryBuilder;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.junit.BeforeClass;
@@ -1007,7 +1001,7 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
         searchRequest.source(searchSourceBuilder);
 
         final SearchResponse response = Sneaky.sneak(()->
-                DotRestHighLevelClient.getClient().search(searchRequest, RequestOptions.DEFAULT));
+                DotRestClientProvider.getInstance().getClient().search(searchRequest, RequestOptions.DEFAULT));
         return response.getHits();
     }
 

@@ -9,8 +9,7 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.business.ContentMappingAPI;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
-import com.dotcms.content.elasticsearch.util.DotRestHighLevelClient;
-import com.dotcms.content.elasticsearch.util.ESClient;
+import com.dotcms.content.elasticsearch.util.DotRestClientProvider;
 import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -121,7 +120,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 		request.setTimeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
 		request.source(mapping, XContentType.JSON);
 
-		AcknowledgedResponse putMappingResponse = DotRestHighLevelClient.getClient().indices()
+		AcknowledgedResponse putMappingResponse = DotRestClientProvider.getInstance().getClient().indices()
 				.putMapping(request, RequestOptions.DEFAULT);
 
 		return putMappingResponse.isAcknowledged();
@@ -140,7 +139,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 		final GetMappingsRequest request = new GetMappingsRequest();
 		request.indices(index);
 
-		GetMappingsResponse getMappingResponse = DotRestHighLevelClient.getClient()
+		GetMappingsResponse getMappingResponse = DotRestClientProvider.getInstance().getClient()
 				.indices().getMapping(request, RequestOptions.DEFAULT);
 
 		return getMappingResponse.mappings().get(index).source().string();

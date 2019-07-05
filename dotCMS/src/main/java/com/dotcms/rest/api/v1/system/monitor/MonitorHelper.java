@@ -3,8 +3,7 @@ package com.dotcms.rest.api.v1.system.monitor;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
-import com.dotcms.content.elasticsearch.util.DotRestHighLevelClient;
-import com.dotcms.content.elasticsearch.util.ESClient;
+import com.dotcms.content.elasticsearch.util.DotRestClientProvider;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import javax.ws.rs.InternalServerErrorException;
@@ -147,7 +146,7 @@ class MonitorHelper {
                         searchRequest.source(searchSourceBuilder);
 
                         final SearchResponse response = Sneaky.sneak(()->
-                                DotRestHighLevelClient.getClient().search(searchRequest,
+                                DotRestClientProvider.getInstance().getClient().search(searchRequest,
                                         RequestOptions.DEFAULT));
                         return response.getHits().getTotalHits()>0;
                     }finally{

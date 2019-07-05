@@ -62,7 +62,7 @@ public class ESMigrationUtil {
 
 			}
 
-			BulkResponse bulkResponse = Sneaky.sneak(()->DotRestHighLevelClient.getClient()
+			BulkResponse bulkResponse = Sneaky.sneak(() -> DotRestClientProvider.getInstance().getClient()
 					.bulk(request, RequestOptions.DEFAULT));
 
 			if (bulkResponse.hasFailures()) {

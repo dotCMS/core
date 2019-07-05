@@ -10,13 +10,11 @@ import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESIndexHelper;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
-import com.dotcms.content.elasticsearch.util.DotRestHighLevelClient;
-import com.dotcms.content.elasticsearch.util.ESClient;
+import com.dotcms.content.elasticsearch.util.DotRestClientProvider;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.com.google.common.io.ByteStreams;
-import com.dotcms.repackage.org.dts.spell.utils.FileUtils;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.MessageEntity;
 import com.dotcms.rest.ResourceResponse;
@@ -62,9 +60,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.StreamingOutput;
-import org.elasticsearch.action.admin.indices.stats.IndexStats;
-import org.elasticsearch.action.admin.indices.stats.IndicesStatsResponse;
-import org.elasticsearch.client.Client;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.core.CountRequest;
 import org.elasticsearch.client.core.CountResponse;
@@ -210,7 +205,7 @@ public class ESIndexResource {
         searchSourceBuilder.query(QueryBuilders.matchAllQuery());
         countRequest.source(searchSourceBuilder);
 
-        final CountResponse countResponse = Sneaky.sneak(()->DotRestHighLevelClient.getClient()
+        final CountResponse countResponse = Sneaky.sneak(() -> DotRestClientProvider.getInstance().getClient()
                 .count(countRequest, RequestOptions.DEFAULT));
 
         return countResponse.getCount();
