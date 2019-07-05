@@ -59,50 +59,6 @@ public class TempFileResource {
     }
 
     @POST
-    @Path("/upload")
-    @JSONP
-    @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Consumes(MediaType.MULTIPART_FORM_DATA)
-    public final Response uploadTempResource(@Context final HttpServletRequest request,
-            @Context final HttpServletResponse response,
-            @FormDataParam("file") final InputStream inputStream,
-            @FormDataParam("file") final FormDataContentDisposition fileMetaData) {
-
-        try {
-            if (!Config.getBooleanProperty(TempFileAPI.TEMP_RESOURCE_ENABLED, true)) {
-                final String message = "Temp Files Resource is not enabled, please change the TEMP_RESOURCE_ENABLED to true in your properties file";
-                Logger.error(this, message);
-                throw new DotSecurityException(message);
-            }
-
-            final boolean allowAnonToUseTempFiles = !Config
-                    .getBooleanProperty(TempFileAPI.TEMP_RESOURCE_ALLOW_ANONYMOUS, true);
-
-            final InitDataObject initDataObject = this.webResource
-                    .init(false, request, allowAnonToUseTempFiles);
-
-            final User user = initDataObject.getUser();
-            final String uniqueKey = request.getSession().getId();
-
-            if (!new SecurityUtils().validateReferer(request)) {
-                throw new BadRequestException("Invalid Origin or referer");
-            }
-
-            final List<DotTempFile> tempFiles = new ArrayList<DotTempFile>();
-            tempFiles.add(tempApi
-                    .createTempFile(fileMetaData.getFileName(), user, uniqueKey, inputStream));
-            return Response.ok(ImmutableMap.of("tempFiles", tempFiles)).build();
-
-        } catch (Exception e) {
-            Logger.warnAndDebug(this.getClass(), "unable to create temp file:" + e.getMessage(), e);
-            return ResponseUtil.mapExceptionResponse(e);
-        }
-
-    }
-
-    @POST
-    @Path("/multi")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
