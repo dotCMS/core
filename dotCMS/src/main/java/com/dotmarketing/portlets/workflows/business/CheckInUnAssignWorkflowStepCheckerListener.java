@@ -112,14 +112,15 @@ public class CheckInUnAssignWorkflowStepCheckerListener implements EventSubscrib
     }
 
     private static WorkflowTask createWorkflowTask(final Contentlet contentlet, final User user,
-                                                   final WorkflowStep workflowStep) {
+                                                   final WorkflowStep workflowStep) throws DotDataException {
 
         final WorkflowTask task                     = new WorkflowTask();
         final String stepName                       = UtilHTML.escapeHTMLSpecialChars(workflowStep.getName());
         task.setTitle("Auto assign to the step: " + stepName);
         task.setDescription("The content titled \"" + UtilHTML.escapeHTMLSpecialChars(contentlet.getTitle().trim()) +
                 "\" has been moved automatically to the step " + stepName);
-        task.setAssignedTo("Nobody");
+
+        task.setAssignedTo(APILocator.getRoleAPI().getUserRole(user).getId());
         task.setModDate(new Date());
         task.setCreationDate(new Date());
         task.setCreatedBy(user.getUserId());
