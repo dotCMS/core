@@ -136,6 +136,6 @@ public class CheckInUnAssignWorkflowStepCheckerListener implements EventSubscrib
 
         final WorkflowStep workflowStep = APILocator.getWorkflowAPI()
                 .findFirstStep(SystemWorkflowConstants.SYSTEM_WORKFLOW_ID).get();
-        APILocator.getWorkflowAPI().saveWorkflowTask(createWorkflowTask(contentlet, user, workflowStep));
+        APILocator.getWorkflowAPI().saveWorkflowTask(createWorkflowTask(contentlet, user, workflowStep)); // todo: here ask for the NEW step if workflowStep does not exists: the optional
     }
 } // E:O:F:CheckInUnAssignWorkflowStepCheckerListener.
