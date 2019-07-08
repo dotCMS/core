@@ -455,7 +455,7 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
         try {
 
             //And add it to the index
-            testContentlet.setIndexPolicy(IndexPolicy.FORCE);
+            testContentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
             indexAPI.addContentToIndex( testContentlet );
 
             //We are just making time in order to let it apply the index
