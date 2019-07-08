@@ -2709,7 +2709,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		if (null != processor.getContentlet()) {
 			processor.getContentlet().setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.FALSE);
 		}
-		
+
 		return processor.getContentlet();
 	} // fireContentWorkflow
 
