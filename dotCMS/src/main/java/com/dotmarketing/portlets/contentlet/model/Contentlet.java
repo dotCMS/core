@@ -574,7 +574,12 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 */
 	public long getLongProperty(String fieldVarName) throws DotRuntimeException {
 		try{
-			return (Long)map.get(fieldVarName);
+	    final Object test = map.get(fieldVarName);
+	    return test == null 
+	        ? 0 
+	            : test instanceof String 
+	            ? Long.parseLong((String) test)  
+	                : ((Number) test).longValue();
 		}catch (Exception e) {
 			 throw new DotRuntimeException("Unable to retrive field value", e);
 		}
@@ -847,7 +852,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * @return
 	 */
 	public long getSortOrder(){
-		return (Long)map.get(SORT_ORDER_KEY);
+	  return getLongProperty(SORT_ORDER_KEY);        
 	}
 
 	/**
