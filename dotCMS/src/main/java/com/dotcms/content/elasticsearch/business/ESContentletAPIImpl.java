@@ -164,6 +164,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private final TempFileAPI           tempApi ;
     private final ThreadContextUtil     threadContextUtil;
     private static final int MAX_LIMIT = 10000;
+    private static final boolean INCLUDE_DEPENDENCIES = true;
 
     private static final String backupPath = ConfigUtils.getBackupPath() + File.separator + "contentlets";
 
@@ -588,8 +589,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DotContentletStateException("Only the working version can be published");
         }
 
-        final boolean includeDependencies = true;
-        this.threadContextUtil.ifReindex(()->indexAPI.addContentToIndex(contentlet, includeDependencies, false), includeDependencies);
+        this.threadContextUtil.ifReindex(()->indexAPI.addContentToIndex(contentlet, INCLUDE_DEPENDENCIES, false), INCLUDE_DEPENDENCIES);
 
         // Publishes the files associated with the Contentlet
         final List<Field> fields = FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode());
