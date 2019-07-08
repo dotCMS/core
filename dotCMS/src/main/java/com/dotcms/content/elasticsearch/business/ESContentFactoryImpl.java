@@ -780,7 +780,17 @@ public class ESContentFactoryImpl extends ContentletFactory {
     @Override
     protected List<Contentlet> findAllCurrent ( int offset, int limit ) throws ElasticsearchException {
 
-        SearchRequest searchRequest = new SearchRequest();
+        String indexToHit;
+
+        try {
+            indexToHit = APILocator.getIndiciesAPI().loadIndicies().working;
+        }
+        catch(DotDataException ee) {
+            Logger.fatal(this, "Can't get indicies information",ee);
+            return null;
+        }
+
+        SearchRequest searchRequest = new SearchRequest(indexToHit);
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
         searchSourceBuilder.query(QueryBuilders.matchAllQuery());
         searchSourceBuilder.size(limit);
