@@ -24,6 +24,7 @@ package com.liferay.util;
 
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.io.filefilter.TrueFileFilter;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -51,8 +52,13 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
+import java.util.stream.Collectors;
+
 import javax.servlet.ServletContext;
 import org.apache.commons.codec.digest.DigestUtils;
 
@@ -256,6 +262,60 @@ public class FileUtil {
 		deltree(new File(directory));
 	}
 
+	/**
+   * This method takes a directory and will delete all files older than
+   * the passed in Date.  It will only delete directories older than the
+   * passed in Date if they are empty. It will not delete the directory passed in
+	 * @param directory
+	 * @param olderThan
+	 */
+  public static void cleanTree(File directory, Date olderThan) {
+    cleanTree(directory, olderThan.getTime()); 
+  }
+  
+  /**
+   * This method takes a directory and will delete all files older than
+   * the passed in time in millis.  It will only delete directories older than the
+   * passed in time if they are empty.  It will not delete the directory passed in
+   * @param directory
+   * @param deleteOlderTime
+   */
+	 public static void cleanTree(final File directory, final long deleteOlderTime) {
+
+	    if (directory==null || !directory.exists() ) {
+	      Logger.info(FileUtil.class, "cleanTree Directory " + directory + " not found exiting");
+	      return;
+	    }
+	    if(!directory.isDirectory()) {
+	      directory.delete();
+	      return;
+	    }
+
+	    final List<File> allOldFiles = com.liferay.util.FileUtil.listFilesRecursively(directory, new FileFilter() {
+	      @Override
+	      public boolean accept(File pathname) {
+	        return pathname.lastModified() < deleteOlderTime;
+	      }
+	    });
+
+	    // delete old files
+      allOldFiles.stream().filter(f -> f.isFile()).forEach(f->f.delete());
+      
+      //delete old directories (only empy directories will be deleted)
+	    allOldFiles.stream().filter(f -> f.exists() && f.isDirectory()).sorted(new Comparator<File>() {
+        @Override
+        public int compare(final File a, final File b) {
+          return a.getAbsolutePath().length() - b.getAbsolutePath().length();
+        }
+	    }).forEach(f->f.delete());
+
+
+	  }
+	
+	
+	
+	
+	
 	public static void deltree(File directory, boolean deleteTopDir) {
 		if (directory.exists() && directory.isDirectory()) {
 			File[] fileArray = directory.listFiles();
@@ -737,7 +797,7 @@ public class FileUtil {
 	  *
 	  * @param aStartingDir is a valid directory, which can be read.
 	  */
-	  static public List<File> listFilesRecursively(File aStartingDir) throws FileNotFoundException {
+	  static public List<File> listFilesRecursively(File aStartingDir)  {
 		    return listFilesRecursively(aStartingDir, null);
 	  }
 
@@ -749,7 +809,7 @@ public class FileUtil {
 	  *
 	  * @param aStartingDir is a valid directory, which can be read.
 	  */
-	  static public List<File> listFilesRecursively(File aStartingDir, FileFilter filter) throws FileNotFoundException {
+	  static public List<File> listFilesRecursively(File aStartingDir, FileFilter filter)  {
 		    validateDirectory(aStartingDir);
 		    List<File> result = getFileListingNoSort(aStartingDir, filter);
 		    Collections.sort(result);
@@ -758,7 +818,7 @@ public class FileUtil {
 
 
 	  // PRIVATE //
-	  static private List<File> getFileListingNoSort(File aStartingDir, FileFilter filter) throws FileNotFoundException {
+	  static private List<File> getFileListingNoSort(File aStartingDir, FileFilter filter) {
 	    List<File> result = new ArrayList<File>();
 
 	    File[] filesAndDirs = null;
@@ -784,18 +844,18 @@ public class FileUtil {
 	  /**
 	   * Directory is valid if it exists, does not represent a file, and can be read.
 	   */
-	   static private void validateDirectory (File aDirectory) throws FileNotFoundException {
+	   static private void validateDirectory (File aDirectory)  {
 	     if (aDirectory == null) {
-	       throw new IllegalArgumentException("Directory should not be null.");
+	       throw new DotStateException("Directory should not be null.");
 	     }
 	     if (!aDirectory.exists()) {
-	       throw new FileNotFoundException("Directory does not exist: " + aDirectory);
+	       throw new DotStateException("Directory does not exist: " + aDirectory);
 	     }
 	     if (!aDirectory.isDirectory()) {
-	       throw new IllegalArgumentException("Is not a directory: " + aDirectory);
+	       throw new DotStateException("Is not a directory: " + aDirectory);
 	     }
 	     if (!aDirectory.canRead()) {
-	       throw new IllegalArgumentException("Directory cannot be read: " + aDirectory);
+	       throw new DotStateException("Directory cannot be read: " + aDirectory);
 	     }
 	   }
 

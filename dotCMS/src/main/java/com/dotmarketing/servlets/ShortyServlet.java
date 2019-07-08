@@ -56,6 +56,7 @@ public class ShortyServlet extends HttpServlet {
 
   private static final String  JPEG                        = "jpeg";
   private static final String  JPEGP                       = "jpegp";
+  private static final String  WEBP                       = "webp";
   private static final String  FILE_ASSET_DEFAULT          = FileAssetAPI.BINARY_FIELD;
   public  static final String  SHORTY_SERVLET_FORWARD_PATH = "shorty.servlet.forward.path";
   private static final Pattern widthPattern                = Pattern.compile("/\\d+[w]");
@@ -151,7 +152,8 @@ public class ShortyServlet extends HttpServlet {
     final int      height  = this.getHeight(lowerUri, 0);
     final boolean  jpeg    = lowerUri.contains(JPEG);
     final boolean  jpegp   = jpeg && lowerUri.contains(JPEGP);
-    final boolean  isImage = jpeg || width+height > 0;
+    final boolean   webp   = lowerUri.contains(WEBP);
+    final boolean  isImage = webp || jpeg || width+height > 0;
     final ShortyId shorty  = shortOpt.get();
     final String   path    = isImage? "/contentAsset/image" : "/contentAsset/raw-data";
     final User systemUser  = APILocator.systemUser();
@@ -159,23 +161,27 @@ public class ShortyServlet extends HttpServlet {
     try {
 
         
-        
-        
-        final Optional<Contentlet> conOpt = (shorty.type == ShortType.IDENTIFIER)
-                    ? APILocator.getContentletAPI().findContentletByIdentifierOrFallback(shorty.longId, live, language.getId(), APILocator.systemUser(), false)
-                    : Optional.ofNullable(APILocator.getContentletAPI().find(shorty.longId, systemUser, false));
-                    
-        if(!conOpt.isPresent()) {
-            response.sendError(HttpServletResponse.SC_NOT_FOUND);
-            return;
+        String id = null;
+        if(shorty.type!= ShortType.TEMP_FILE) {
+          final Optional<Contentlet> conOpt = (shorty.type == ShortType.IDENTIFIER)
+                      ? APILocator.getContentletAPI().findContentletByIdentifierOrFallback(shorty.longId, live, language.getId(), APILocator.systemUser(), false)
+                      : Optional.ofNullable(APILocator.getContentletAPI().find(shorty.longId, systemUser, false));
+                      
+          if(!conOpt.isPresent()) {
+              response.sendError(HttpServletResponse.SC_NOT_FOUND);
+              return;
+          }
+          id=this.inodePath(conOpt.get(), fieldName, live);
+        }else {
+          id="/" + shorty.longId + "/temp";
         }
         
         
 
       final StringBuilder pathBuilder = new StringBuilder(path)
-              .append(this.inodePath(conOpt.get(), fieldName, live)).append("/byInode/true");
+              .append(id).append("/byInode/true");
 
-      this.addImagePath(width, height, jpeg, jpegp, isImage, pathBuilder);
+      this.addImagePath(width, height, jpeg, jpegp,webp, isImage, pathBuilder);
       this.doForward(request, response, pathBuilder.toString());
     } catch (DotContentletStateException e) {
 
@@ -203,14 +209,16 @@ public class ShortyServlet extends HttpServlet {
                             final int height,
                             final boolean jpeg,
                             final boolean jpegp,
+                            final boolean webp,
                             final boolean isImage,
                             final StringBuilder pathBuilder) {
       if(isImage) {
 
           pathBuilder.append("/filter/");
           pathBuilder.append(weight+height > 0? "Resize,"      : StringPool.BLANK);
-          pathBuilder.append(jpeg? "Jpeg/jpeg_q/75"            : StringPool.BLANK);
-          pathBuilder.append(jpeg && jpegp? "/jpeg_p/1"        : StringPool.BLANK);
+          pathBuilder.append(jpeg ? "Jpeg/jpeg_q/75"            : StringPool.BLANK);
+          pathBuilder.append(webp ? "WebP/webp_q/75"        : StringPool.BLANK);
+          pathBuilder.append(jpeg && jpegp ? "/jpeg_p/1"        : StringPool.BLANK);
           pathBuilder.append(weight > 0? "/resize_w/" + weight : StringPool.BLANK);
           pathBuilder.append(height > 0? "/resize_h/" + height : StringPool.BLANK);
       }
