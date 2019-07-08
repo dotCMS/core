@@ -140,7 +140,7 @@ public class DotRestHighLevelClient extends DotRestClientProvider {
         private static void loadTLSCertificates() throws IOException, GeneralSecurityException {
             String clientCertPath = getCertPath("ES_AUTH_TLS_CLIENT_CERT", "esnode.pem");
             String clientKeyPath = getCertPath("ES_AUTH_TLS_CLIENT_KEY", "esnode-key.pem");
-            String serverCertPath = getCertPath("ES_AUTH_TLS_SERVER_CERT", "root-ca.pem");
+            String serverCertPath = getCertPath("ES_AUTH_TLS_CA_CERT", "root-ca.pem");
 
             sslContextFromPem = SSLContexts
                     .custom()
