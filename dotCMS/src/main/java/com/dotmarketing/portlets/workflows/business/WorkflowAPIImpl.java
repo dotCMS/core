@@ -2014,9 +2014,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				this.saveWorkflowTask(processor);
 
 				if (UtilMethods.isSet(processor.getContentlet()) && processor.getContentlet().needsReindex()) {
-				    Contentlet content = processor.getContentlet();
+
+				    final Contentlet content = processor.getContentlet();
 				    content.setIndexPolicy(IndexPolicy.WAIT_FOR);
-					this.contentletIndexAPI.addContentToIndex(content, false);
+				    final ThreadContext threadContext = ThreadContextUtil.getInstance().getContext();
+					final boolean includeDependencies = null != threadContext && threadContext.isIncludeDependencies();
+					this.contentletIndexAPI.addContentToIndex(content, includeDependencies);
 				}
 			}
 		} catch(Exception e) {
@@ -2694,17 +2697,13 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		this.validateActionStepAndWorkflow(contentlet, dependencies.getModUser());
 		this.checkShorties (contentlet);
 
-		final ThreadContextUtil contextUtil   = ThreadContextUtil.getInstance();
-		final ThreadContext     threadContext = UtilMethods.get(contextUtil.getContext(), ()-> new ThreadContext());
-
-		threadContext.setReindex(false); // do not want to reindex on a workflow until the end
-		contextUtil.setContext(threadContext);
-		final WorkflowProcessor processor = this.fireWorkflowPreCheckin(contentlet, dependencies.getModUser());
+		final ThreadContextUtil contextUtil = ThreadContextUtil.getInstance();
+		final WorkflowProcessor processor   = contextUtil.wrapReturnNoReindex(()-> this.fireWorkflowPreCheckin(contentlet, dependencies.getModUser()));
 
 		processor.setContentletDependencies(dependencies);
 		processor.getContentlet().setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.TRUE);
 
-		this.fireWorkflowPostCheckin(processor);
+		contextUtil.wrapVoidNoReindex(() -> this.fireWorkflowPostCheckin(processor));
 
 		if (null != processor.getContentlet()) {
 			processor.getContentlet().setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.FALSE);

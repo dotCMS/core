@@ -588,7 +588,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DotContentletStateException("Only the working version can be published");
         }
 
-        this.threadContextUtil.ifReindex(()->indexAPI.addContentToIndex(contentlet, true, false));
+        final boolean includeDependencies = true;
+        this.threadContextUtil.ifReindex(()->indexAPI.addContentToIndex(contentlet, includeDependencies, false), includeDependencies);
 
         // Publishes the files associated with the Contentlet
         final List<Field> fields = FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode());

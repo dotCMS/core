@@ -61,6 +61,25 @@ public class ThreadContextUtil {
     }
 
     /**
+     * Executes the delegate if the reindex is set to true for the current thread
+     * @param delegate
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    public void ifReindex (final VoidDelegate delegate, final boolean includeDependencies) throws DotSecurityException, DotDataException {
+
+        if (isReindex()) {
+
+            delegate.execute();
+        } else {
+
+            final ThreadContext threadContext =
+                    UtilMethods.get(INSTANCE.getContext(), ()->new ThreadContext());
+            threadContext.setIncludeDependencies(includeDependencies);
+        }
+    }
+
+    /**
      * Wrap a void method into not reindex call
      * @param delegate {@link VoidDelegate}
      * @throws Exception
