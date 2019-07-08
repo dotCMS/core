@@ -183,85 +183,120 @@
 <div id="toolBar" >
 	<table id="controlTable">
 
-        <tr>
-            <td class="leftCol"><%= LanguageUtil.get(pageContext, "Flip") %> : </td>
-            <td class="rightCol"><input id="flip" dojoType="dijit.form.CheckBox" name="flip" type="checkbox" value="true" onchange="imageEditor.toggleFlip()"></td>
+         <tr>
+            <th colspan=2><%=LanguageUtil.get(pageContext, "image.editor.heading.file.settings")%></th>
+         </tr>
+         <tr>
+            <td class="leftCol"><%=LanguageUtil.get(pageContext, "Compress")%> :</td>
+            <td class="rightCol"><select dojoType="dijit.form.Select" name="compression" id="compression"
+               style="width: 70px; margin-left: 2.6px;" onchange="imageEditor.toggleCompression()" >
+                  <option value="none" selected>none</option>
+                  <option value="jpeg">jpeg</option>
+                  <option value="webp">webp</option>
+            </select></td>
+         </tr>
+         <tr>
+            <td class="leftCol"><%=LanguageUtil.get(pageContext, "image.editor.label.filesize")%> :</td>
+            <td class="rightCol">
+                <div id="fileSizeDiv" ></div>
+            </td>
         </tr>
+         <tr>
+            <td class="leftCol compressTd"><%=LanguageUtil.get(pageContext, "image.editor.label.quality")%> :</td>
+            <td class="rightCol compressTd"><span id="compressionValueSpan"></span></td>
+         </tr>
+         <tr>
+            <td colspan="2" class="compressTd">
+               <div id="compressionValue" dojoType="dijit.form.HorizontalSlider" 
+                    onMouseUp="imageEditor.toggleCompression();" 
+                    onKeyUp="imageEditor.toggleCompression();" 
+                    onChange="imageEditor.updateCompressionValue();"
+                    maximum="100" minimum="1" 
+                    discreteValues="100" 
+                    showButtons="true" 
+                    intermediateChanges="true">
 
+                  <div dojoType="dijit.form.HorizontalRule" container="bottomDecoration" count=11 style="height: 5px;"></div>
+                  <ol dojoType="dijit.form.HorizontalRuleLabels" container="bottomDecoration" style="height: 1em; font-size: 75%; color: gray;">
+                     <li>1%</li>
+                     <li>50%</li>
+                     <li>100%</li>
+                  </ol>
+               </div>
+
+            </td>
+         </tr>
+
+
+        
+        <tr><td colspan=2><hr style="height:1px; border:none;  background-color:silver; "></td></tr>
+    
+        <tr><th colspan=2 ><%=LanguageUtil.get(pageContext, "image.editor.heading.image-size" )%></th></tr>
 
          <tr>
-           <td class="leftCol">
-    			<%= LanguageUtil.get(pageContext, "Rotate") %> : 
-    		</td>
-           <td class="rightCol"><input id="rotate" class="textInputClass" type="text" dojoType="dijit.form.NumberTextBox" name="rotate"
-                    value="0" constraints="{min:-360,max:360,places:0}" required="false" maxlength="3" onchange="imageEditor.doRotate()"
-                    invalidMessage="Angle is between -360 and 360" style="width:55px;">
-           </td>
-		</tr>
-		<tr>
-			<td class="leftCol">
-				<label for="grayscale"><%=LanguageUtil.get(pageContext, "Grayscale") %></label> : 
+            <td class="leftCol"><%=LanguageUtil.get(pageContext, "size")%> :</td>
+            <td class="rightCol">
+               <div class="spacerDiv">
+                  <span id="baseImageWidth"></span>
+               </div>
+               <div class="spacerDiv" style="width: 20px">x</div>
+               <div class="spacerDiv">
+                  <span id="baseImageHeight"></span>
+               </div>
+               <div class="spacerDiv"><%=LanguageUtil.get(pageContext, "Original")%>
+               </div>
             </td>
-            <td class="rightCol">
-                <input name="grayscale" id="grayscale" dojoType="dijit.form.CheckBox" name="grayscale" type="checkbox" value="true" onchange="imageEditor.toggleGrayscale()">					
-			
-			</td>
-        </tr>
-        <tr>
-			<td class="leftCol"><%=LanguageUtil.get(pageContext, "Compress" )%> :</td>
-            <td class="rightCol">
+         </tr>
 
-				
-                    <select dojoType="dijit.form.Select" name="compression" id="compression" style="width:70px;margin-left:2.6px;" onchange="imageEditor.toggleCompression()">
-                        <option value="none" selected>none</option>
-                        <option value="jpeg">jpeg</option>
-                        <option value="webp">webp</option>
-                    </select>
-		
-	
-			</td>
-        </tr>
-        <tr>
-            <td class="leftCol" style="height:25px;vertical-align: middle;"><%= LanguageUtil.get(pageContext, "Color") %> : </td>
-            <td class="rightCol">
-
-
-                <div id="hsbButton"  onclick="imageEditor.toggleHSB()" style="cursor: pointer;border:1px solid #eeeeee;padding:10px;"  >
-                    
-                    Bright:<span id="brightSpan">0</span>&nbsp;
-                    Hue:<span id="hueSpan">0</span>&nbsp;
-                    Sat:<span id="satSpan">0</span>
-                </div>
-            </td>
-		</tr>
-        
-        
-        
-        
-         <tr><td colspan=2><hr style="height:1px; border:none;  background-color:silver; "></td></tr>
-         
          <tr>
+            <td class="leftCol"><%=LanguageUtil.get(pageContext, "Resize")%> :</td>
 
-            <td colspan="2" style="text-align: center">
-                <input type="text" value="150" id="cropWidth" name="cropWidth" maxlength="4" class="textInputClass" onchange="imageEditor.setCropHeightFromWidth()" onkeydown="return imageEditor.allowNumbers(event)"/> 
-                     x 
-                <input type="text" value="150" id="cropHeight" name="cropHeight" maxlength="4"  class="textInputClass"  onchange="imageEditor.setCropWidthFromHeight()" onkeydown="return imageEditor.allowNumbers(event)"/>
-                <div style="display:none">
-                
-                <label for="constrain"><%=LanguageUtil.get(pageContext, "Constrain") %></label>: <input name="constrain" id="constrain" dojoType="dijit.form.CheckBox" onclick="imageEditor.doConstrain()" type="checkbox" value="true">                    
-                </div>
-
-                <button id="cropBtn" dojoType="dijit.form.Button"  onclick="imageEditor.toggleCrop()" >
-                    <%= LanguageUtil.get(pageContext, "Crop") %>&nbsp;&nbsp;
-                </button>
+            <td class="rightCol">
+               <div class="spacerDiv">
+                  <input type="text" id="displayImageWidth" class="textInputClass" maxlength="4" onblur="imageEditor.setHieghtFromWidth()"
+                     onkeydown="return imageEditor.allowNumbers(event)">
+               </div>
+               <div class="spacerDiv" style="width: 20px">x</div>
+               <div class="spacerDiv">
+                  <input type="text" id="displayImageHeight" class="textInputClass" maxlength="4" onblur="imageEditor.setWidthFromHeight()"
+                     onkeydown="return imageEditor.allowNumbers(event)">
+               </div>
+               <div class="spacerDiv">
+                  <button dojoType="dijit.form.Button" id="resizeBtn" onclick="imageEditor.resizeBtnClick('resize')">
+                     <%=LanguageUtil.get(pageContext, "Resize")%>
+                  </button>
+               </div>
+            </td>
+         </tr>
+         <tr>
+            <td class="leftCol"><%=LanguageUtil.get(pageContext, "Crop")%> :</td>
+            <td class="rightCol">
+               <div class="spacerDiv">
+                  <input type="text" value="150" id="cropWidth" name="cropWidth" maxlength="4" class="textInputClass"
+                     onchange="imageEditor.setCropHeightFromWidth()" onkeydown="return imageEditor.allowNumbers(event)" />
+               </div>
+               <div class="spacerDiv" style="width: 20px;">x</div>
+               <div class="spacerDiv">
+                  <input type="text" value="150" id="cropHeight" name="cropHeight" maxlength="4" class="textInputClass"
+                     onchange="imageEditor.setCropWidthFromHeight()" onkeydown="return imageEditor.allowNumbers(event)" />
+               </div>
+               <div class="spacerDiv">
+                  <button id="cropBtn" dojoType="dijit.form.Button" onclick="imageEditor.toggleCrop()">
+                     <%=LanguageUtil.get(pageContext, "Crop")%>
+                  </button>
+               </div>
+            </td>
+         </tr>
+         <tr>
+            <td class="leftCol"><%=LanguageUtil.get(pageContext, "image.editor.label.scale")%> :</td>
+            <td class="rightCol">
+                <span id="zoomInfo"></span>
             </td>
         </tr>
-        
-       <tr><td colspan=2><hr style="height:1px; border:none;  background-color:silver; "></td></tr>
-       <tr>
+         <tr>
             <td colspan="2" id="zoomTd" >
                 
-                <div style="text-align:center;padding-left:30px;">zoom: <span id="zoomInfo"></span></div>
+
                 <div id="showScaleSlider" dojoType="dijit.form.HorizontalSlider" 
                         onChange="imageEditor.updateSlider()" 
                         onMouseUp="imageEditor.doSliderResize()"
@@ -280,44 +315,71 @@
                 
             </td>
         </tr>
-        <tr>
-            <td colspan="2" style="text-align: center">
-                
-                    <input type="text" id="displayImageWidth" class="textInputClass" maxlength="4" onblur="imageEditor.setHieghtFromWidth()" onkeydown="return imageEditor.allowNumbers(event)">
-                     x 
-                    <input type="text" id="displayImageHeight" class="textInputClass" maxlength="4" onblur="imageEditor.setWidthFromHeight()"  onkeydown="return imageEditor.allowNumbers(event)">
 
-                <button dojoType="dijit.form.Button" id="resizeBtn" onclick="imageEditor.resizeBtnClick('resize')">
-                    <%= LanguageUtil.get(pageContext, "Resize") %>
-                </button>
+
+
+         <tr>
+            <td colspan=2><hr style="height: 1px; border: none; background-color: silver;"></td>
+         </tr>
+
+         <tr>
+            <th colspan=2><%=LanguageUtil.get(pageContext, "image.editor.heading.transform")%></th>
+         </tr>
+
+         <tr>
+            <td class="leftCol"><%=LanguageUtil.get(pageContext, "Rotate")%> :</td>
+            <td class="rightCol"><input id="rotate" class="textInputClass" type="text" dojoType="dijit.form.NumberTextBox" name="rotate"
+               value="0" constraints="{min:-360,max:360,places:0}" required="false" maxlength="3" onchange="imageEditor.doRotate()"
+               invalidMessage="Angle is between -360 and 360" style="width: 55px;"></td>
+         </tr>
+
+         <tr>
+            <td class="leftCol"><%=LanguageUtil.get(pageContext, "Flip")%> :</td>
+            <td class="rightCol"><input id="flip" dojoType="dijit.form.CheckBox" name="flip" type="checkbox" value="true"
+               onchange="imageEditor.toggleFlip()"></td>
+         </tr>
+
+
+
+         <tr>
+            <td class="leftCol"><label for="grayscale"><%=LanguageUtil.get(pageContext, "Grayscale")%></label> :</td>
+            <td class="rightCol"><input name="grayscale" id="grayscale" dojoType="dijit.form.CheckBox" name="grayscale" type="checkbox"
+               value="true" onchange="imageEditor.toggleGrayscale()"></td>
+         </tr>
+
+
+
+         <tr>
+            <td class="leftCol" style="height: 25px; vertical-align: middle;"><%=LanguageUtil.get(pageContext, "Color")%> :</td>
+            <td class="rightCol">
+               <div id="hsbButton" onclick="imageEditor.toggleHSB()" style="cursor: pointer; border: 1px solid #eeeeee; padding: 10px;">
+                  Bright:<span id="brightSpan">0</span>&nbsp; Hue:<span id="hueSpan">0</span>&nbsp; Sat:<span id="satSpan">0</span>
+               </div>
             </td>
          </tr>
-            <td colspan="2" style="text-align: center">
-            <span id="baseImageWidth"></span> &nbsp; x &nbsp; <span id="baseImageHeight"></span> 
-            <%=LanguageUtil.get(pageContext, "Original")%>
-            
-            <div id="fileSizeDiv" style="text-align: center;padding:5px"></div>
-            
-            </td>
-        </tr>
-            
+
+
+
+
          <tr><td colspan=2><hr style="height:1px; border:none;  background-color:silver; "></td></tr>
-         
-            
-        <tr>
-          <td colspan="2">
-                <div id="filterListBox" >
-                    <div id="filtersUndoDiv">Filters:</div>
-                    <div id="filterListDiv" >
-                        <div id="filtersListContainer"></div>
-                    </div>
-                </div>
+
+
+
+
+         <tr>
+            <td colspan="2">
+               <div id="filterListBox">
+                  <div id="filtersUndoDiv">Filters:</div>
+                  <div id="filterListDiv">
+                     <div id="filtersListContainer"></div>
+                  </div>
+               </div>
             </td>
-        </tr>
+         </tr>
 
 
 
-        </table>
+      </table>
 </div>
 <!--  /toolBar -->
 
@@ -491,7 +553,12 @@
 			</tr>
 		</table>
 	</div>
-
+    <div style="position:absolute;left:-50000px">
+        <input type="file" name="hiddenFileUploader" id="hiddenFileUploader">
+    
+    
+    
+    </div>
 	 
 	 	<img src="<%=baseImage%>" style="position:absolute;left:-50000px" id="baseImage" />
 	 	<iframe id="actionJackson" src="/html/images/shim.gif" frameborder="0" width="0" height="0"></iframe>

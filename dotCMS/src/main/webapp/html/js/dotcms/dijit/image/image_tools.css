@@ -95,6 +95,21 @@ table {font-size:inherit;font-family:Roboto,sans-serif;}
 	height:20px;
 }
 
+#compressionValue{
+    margin:10px auto;
+    width:250px; 
+    height:20px;
+}
+#compressionValue td{
+    border:0px solid silver;
+    padding:0px;    
+}
+
+#compressionValue{
+    margin:10px auto;
+    width:250px; 
+    height:20px;
+}
 
 #saveAsDialog{
 	width:350px;
@@ -232,7 +247,13 @@ table {font-size:inherit;font-family:Roboto,sans-serif;}
 	white-space: nowrap;
 	vertical-align: middle;
 }
+#controlTable th{
+    padding:3px;    
+    padding-left:10px;
+    text-align:left;
+    white-space: nowrap;
 
+}
 #controlTable .leftCol{
   text-align: right;  
   width:30%;
@@ -241,6 +262,17 @@ table {font-size:inherit;font-family:Roboto,sans-serif;}
 #controlTable .rightCol{
   text-align: left;  
 }
+
+#controlTable .spacerDiv{
+    display:inline-block;
+    width:50px;
+    text-align: center;
+    
+}
+#controlTable .compressTd{
+    display:none;
+}
+
 #showScaleSlider td{
 	border:0px solid silver;
 	padding:0px;	
@@ -269,6 +301,45 @@ table {font-size:inherit;font-family:Roboto,sans-serif;}
 .colorSlider{
 	width:200px;	
 }
+
+#compressTd{
+    display:none;
+}
+
+#compressionValue{
+    width:100%;
+}
+
+.smallerThan {
+   animation-duration: 1000ms;
+   animation-name: smallerThanAnim;
+   animation-iteration-count: 1;
+
+}
+@keyframes smallerThanAnim {
+   from {
+     text-shadow: 0 0 10px green;
+   }
+   to {
+    text-shadow: 0 0 0px green;
+   }
+ }
+
+.biggerThan {
+   animation-duration: 1000ms;
+   animation-name: biggerThanAnim;
+   animation-iteration-count: 1;
+
+}
+@keyframes biggerThanAnim {
+   from {
+     text-shadow: 0 0 10px red;
+   }
+   to {
+     text-shadow: 0 0 0px red;
+   }
+ }
+
 
 .thumbnailDiv {
 	cursor:pointer;
