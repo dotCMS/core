@@ -75,17 +75,15 @@ public class DataSourcesForTesting {
       File root = findProjectRoot(new File("."), 0);
 
       List<File> files;
-      try {
-         files = FileUtil.listFilesRecursively(root, ff);
 
-         for (File f : files) {
-            if (f.isFile()) {
-               return f;
-            }
-         }
-      } catch (FileNotFoundException e) {
-         throw new DotStateException("cannot find context.xml");
-      }
+       files = FileUtil.listFilesRecursively(root, ff);
+
+       for (File f : files) {
+          if (f.isFile()) {
+             return f;
+          }
+       }
+
       throw new DotStateException("cannot find context.xml");
    }
 

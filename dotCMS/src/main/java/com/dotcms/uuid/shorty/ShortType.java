@@ -18,8 +18,8 @@ public enum ShortType {
     INODE("inode"),
     WORKFLOW_SCHEME("workflow_scheme"),
     WORKFLOW_STEP("workflow_step"),
-    WORKFLOW_ACTION("workflow_action");
-
+    WORKFLOW_ACTION("workflow_action"),
+    TEMP_FILE("temp_file");
     final String shortType;
 
     private ShortType(String type) {

@@ -55,6 +55,7 @@ import com.dotcms.publishing.PublisherAPIImpl;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.api.v1.system.websocket.WebSocketContainerAPI;
 import com.dotcms.rest.api.v1.system.websocket.WebSocketContainerAPIFactory;
+import com.dotcms.rest.api.v1.temp.TempFileAPI;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPIFactory;
 import com.dotcms.timemachine.business.TimeMachineAPI;
@@ -657,6 +658,11 @@ public class APILocator extends Locator<APIIndex>{
 		return (BundleAPI)getInstance(APIIndex.BUNDLE_API);
 	}
 
+	public static TempFileAPI getTempFileAPI() {
+	  return new TempFileAPI();
+	}
+	
+	
 	/**
 	 * Creates a single instance of the {@link PushedAssetsAPI} class.
 	 *
@@ -1081,6 +1087,7 @@ enum APIIndex
 	GRAPHQL_API,
 	URLMAP_API,
 	CONTENT_TYPE_FIELD_LAYOUT_API;
+
 
 
 

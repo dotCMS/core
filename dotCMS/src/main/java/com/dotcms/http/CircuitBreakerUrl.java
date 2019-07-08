@@ -1,6 +1,7 @@
 package com.dotcms.http;
 
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
@@ -52,6 +53,7 @@ public class CircuitBreakerUrl {
     private final HttpRequestBase request;
     private final boolean verbose;
     private final String rawData;
+    private int response=-1;
     /**
      * 
      * @param proxyUrl
@@ -161,6 +163,10 @@ public class CircuitBreakerUrl {
                                 .setSocketTimeout(Math.toIntExact(this.timeoutMs)).build();
                         try (CloseableHttpClient httpclient = HttpClientBuilder.create().setDefaultRequestConfig(config).build()) {
                             HttpResponse response = httpclient.execute(this.request);
+                            this.response = response.getStatusLine().getStatusCode();
+                            if(this.response!=200) {
+                              throw new DotRuntimeException("got invalid response for url:" +this.proxyUrl + " response:" + response.getStatusLine());
+                            }
                             IOUtils.copy(response.getEntity().getContent(), out);
                         }
                     });
@@ -169,6 +175,9 @@ public class CircuitBreakerUrl {
         }
     }
 
+    public int response() {
+      return this.response;
+    }
 
     public static CircuitBreakerUrlBuilder builder() {
         return new CircuitBreakerUrlBuilder();
