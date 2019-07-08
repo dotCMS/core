@@ -868,11 +868,11 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 break;
         }
 
-        bulkRequest.add(new DeleteRequest(info.live, "content", id));
+        bulkRequest.add(new DeleteRequest(info.live, "_doc", id));
 
         if (info.reindex_live != null) {
 
-            bulkRequest.add(new DeleteRequest(info.reindex_live, "content", id));
+            bulkRequest.add(new DeleteRequest(info.reindex_live, "_doc", id));
         }
 
         if (!onlyLive) {
@@ -884,9 +884,9 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 reindexDependenciesForDeletedContent(contentlet, relationships, indexPolicyDependencies);
             }
 
-            bulkRequest.add(new DeleteRequest(info.working, "content", id));
+            bulkRequest.add(new DeleteRequest(info.working, "_doc", id));
             if (info.reindex_working != null) {
-                bulkRequest.add(new DeleteRequest(info.reindex_working, "content", id));
+                bulkRequest.add(new DeleteRequest(info.reindex_working, "_doc", id));
             }
         }
 
