@@ -116,6 +116,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
             .subscribe(() => {
                 setTimeout(() => {
                     this.saveFields.emit(this.fieldRows);
+                    this.fieldDragDropService.endDraggedEvent();
                 }, 0);
             });
 
@@ -210,10 +211,12 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
      * @memberof ContentTypeFieldsDropZoneComponent
      */
     editFieldHandler(fieldToEdit: DotContentTypeField): void {
-        const fields = FieldUtil.getFieldsWithoutLayout(this.fieldRows);
-        this.currentField = fields.find((field: DotContentTypeField) => fieldToEdit.id === field.id);
-        this.currentFieldType = this.fieldPropertyService.getFieldType(this.currentField.clazz);
-        this.toggleDialog();
+        if (!this.fieldDragDropService.isDraggedEventStarted()) {
+            const fields = FieldUtil.getFieldsWithoutLayout(this.fieldRows);
+            this.currentField = fields.find((field: DotContentTypeField) => fieldToEdit.id === field.id);
+            this.currentFieldType = this.fieldPropertyService.getFieldType(this.currentField.clazz);
+            this.toggleDialog();
+        }
     }
 
     /**

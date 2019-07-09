@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { DragulaService } from 'ng2-dragula';
-import { filter, map } from 'rxjs/operators';
+import { filter, map, tap } from 'rxjs/operators';
 import { DotContentTypeLayoutDivider, DotContentTypeField } from '@portlets/content-types/fields/models';
 import * as _ from 'lodash';
 
@@ -17,6 +17,7 @@ export class FieldDragDropService {
     private _fieldDropFromSource: Observable<DropFieldData>;
     private _fieldDropFromTarget: Observable<DropFieldData>;
     private _fieldRowDropFromTarget: Observable<DotContentTypeLayoutDivider[]>;
+    private draggedEvent = false;
 
     private currentColumnOvered: Element;
 
@@ -69,6 +70,9 @@ export class FieldDragDropService {
         );
 
         this._fieldDropFromTarget = dragulaService.dropModel().pipe(
+            tap(() => {
+                this.draggedEvent = true;
+            }),
             filter((data: DragulaDropModel) => this.isDraggingExistingField(data)),
             map((data: DragulaDropModel) => this.getDroppedFieldData(data))
         );
@@ -77,6 +81,25 @@ export class FieldDragDropService {
             filter((data: DragulaDropModel) => this.isDraggingNewField(data)),
             map((data: DragulaDropModel) => this.getDroppedFieldData(data))
         );
+    }
+
+    /**
+     * Returns status if a field is being dragged
+     * @returns boolean
+     *
+     * @memberof FieldDragDropService
+     */
+    isDraggedEventStarted(): boolean {
+        return this.draggedEvent;
+    }
+
+    /**
+     * Set the flag of Drag event as false
+     *
+     * @memberof FieldDragDropService
+     */
+    endDraggedEvent(): void {
+        this.draggedEvent = false;
     }
 
     /**

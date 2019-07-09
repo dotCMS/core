@@ -596,6 +596,23 @@ describe('Load fields and drag and drop', () => {
         this.testFieldDragDropService._fieldRowDropFromTarget.next(fieldMoved);
     });
 
+    it('should not display Edit Dialog when drag & drop event happens', (done) => {
+        fixture.detectChanges();
+
+        const fieldMoved = [
+            _.cloneDeep(comp.fieldRows[1]),
+            _.cloneDeep(comp.fieldRows[0]),
+            _.cloneDeep(comp.fieldRows[2])
+        ];
+
+        comp.saveFields.subscribe(() => {
+            expect(comp.displayDialog).toBe(false);
+            done();
+        });
+
+        this.testFieldDragDropService._fieldRowDropFromTarget.next(fieldMoved);
+    });
+
     it('should save all the new fields', (done) => {
 
         becomeNewField(fakeFields[2].divider);
