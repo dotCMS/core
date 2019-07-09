@@ -332,6 +332,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     private getMessages(): void {
         this.dotMessageService
             .getMessages([
+                'dot.common.cancel',
                 'editpage.content.contentlet.remove.confirmation_message.message',
                 'editpage.content.contentlet.remove.confirmation_message.header',
                 'dot.common.message.saving',

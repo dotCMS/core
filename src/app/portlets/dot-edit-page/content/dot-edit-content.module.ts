@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 import { Routes, RouterModule } from '@angular/router';
 
-import { DialogModule, TooltipModule } from 'primeng/primeng';
+import { DialogModule, TooltipModule, ButtonModule } from 'primeng/primeng';
 
 import { DotContainerContentletService } from './services/dot-container-contentlet.service';
 import { DotDOMHtmlUtilService } from './services/html/dot-dom-html-util.service';
@@ -16,12 +16,12 @@ import { DotLoadingIndicatorModule } from '@components/_common/iframe/dot-loadin
 import { DotRenderHTMLService } from '@services/dot-render-html/dot-render-html.service';
 import { DotWorkflowService } from '@services/dot-workflow/dot-workflow.service';
 import { DotEditPageService } from '@services/dot-edit-page/dot-edit-page.service';
-import { DotEditContentViewAsToolbarModule } from './components/dot-edit-content-view-as-toolbar/dot-edit-content-view-as-toolbar.module';
 import { DotWhatsChangedModule } from './components/dot-whats-changed/dot-whats-changed.module';
 
 import { DotFormSelectorModule } from './components/dot-form-selector/dot-form-selector.module';
 import { DotContentletEditorModule } from '@components/dot-contentlet-editor/dot-contentlet-editor.module';
 import { DotEditPageInfoModule } from '../components/dot-edit-page-info/dot-edit-page-info.module';
+import { DotEditPageWorkflowsActionsModule } from './components/dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.module';
 
 const routes: Routes = [
     {
@@ -34,11 +34,12 @@ const routes: Routes = [
     declarations: [DotEditContentComponent],
     imports: [
         CommonModule,
+        ButtonModule,
         DialogModule,
         RouterModule.forChild(routes),
         DotContentletEditorModule,
         DotDirectivesModule,
-        DotEditContentViewAsToolbarModule,
+        DotEditPageWorkflowsActionsModule,
         DotWhatsChangedModule,
         DotFormSelectorModule,
         TooltipModule,

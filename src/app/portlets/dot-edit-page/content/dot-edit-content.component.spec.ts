@@ -6,7 +6,7 @@ import { By } from '@angular/platform-browser';
 import { ComponentFixture, fakeAsync, tick } from '@angular/core/testing';
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
 import { RouterTestingModule } from '@angular/router/testing';
-import { DialogModule } from 'primeng/primeng';
+import { DialogModule, ButtonModule } from 'primeng/primeng';
 import { LoginService, SiteService } from 'dotcms-js';
 import { DOTTestBed } from '../../../test/dot-test-bed';
 import { DotContainerContentletService } from './services/dot-container-contentlet.service';
@@ -35,7 +35,6 @@ import { PageMode } from '@portlets/dot-edit-page/shared/models/page-mode.enum';
 import { DotWorkflowService } from '@services/dot-workflow/dot-workflow.service';
 import { DotWorkflowServiceMock } from '../../../test/dot-workflow-service.mock';
 import { mockDotRenderedPage, mockDotPage } from '../../../test/dot-rendered-page.mock';
-import { DotEditPageViewAs } from '@shared/models/dot-edit-page-view-as/dot-edit-page-view-as.model';
 import { mockDotDevices } from '../../../test/dot-device.mock';
 import { mockDotEditPageViewAs } from '../../../test/dot-edit-page-view-as.mock';
 import { mockResponseView } from '../../../test/response-view.mock';
@@ -53,6 +52,7 @@ import { DotEditPageInfoComponent } from '../components/dot-edit-page-info/dot-e
 import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
 import * as _ from 'lodash';
 import { PageModelChangeEventType } from './services/dot-edit-content-html/models';
+import { DotEditPageWorkflowsActionsModule } from './components/dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.module';
 
 export const mockDotPageState: DotPageState = {
     mode: PageMode.PREVIEW,
@@ -64,17 +64,6 @@ export const mockDotPageState: DotPageState = {
     template: '<dot-edit-content></dot-edit-content>'
 })
 class HostTestComponent {}
-
-@Component({
-    selector: 'dot-edit-content-view-as-toolbar',
-    template: ''
-})
-class MockDotEditContentViewAsToolbarComponent {
-    @Input()
-    pageState: DotRenderedPageState;
-    @Output()
-    changeViewAs = new EventEmitter<DotEditPageViewAs>();
-}
 
 @Component({
     selector: 'dot-whats-changed',
@@ -127,6 +116,7 @@ describe('DotEditContentComponent', () => {
 
     beforeEach(() => {
         const messageServiceMock = new MockDotMessageService({
+            'dot.common.cancel': 'CANCEL',
             'dot.common.message.saving': 'Saving...',
             'dot.common.message.saved': 'Saved',
             'editpage.content.steal.lock.confirmation_message.header': 'Are you sure?',
@@ -143,18 +133,19 @@ describe('DotEditContentComponent', () => {
         DOTTestBed.configureTestingModule({
             declarations: [
                 DotEditContentComponent,
-                MockDotEditContentViewAsToolbarComponent,
                 MockDotWhatsChangedComponent,
                 MockDotFormSelectorComponent,
                 HostTestComponent
             ],
             imports: [
                 BrowserAnimationsModule,
+                ButtonModule,
                 DialogModule,
                 DotContentletEditorModule,
                 DotEditPageToolbarModule,
                 DotEditPageInfoModule,
                 DotLoadingIndicatorModule,
+                DotEditPageWorkflowsActionsModule,
                 RouterTestingModule.withRoutes([
                     {
                         component: DotEditContentComponent,
@@ -260,8 +251,9 @@ describe('DotEditContentComponent', () => {
         })
     );
 
-    it('should redirect to site browser on toolbar cancel', () => {
-        toolbarElement.triggerEventHandler('cancel', {});
+    it('should redirect to site browser onClick cancel button', () => {
+        const cancel: DebugElement = de.query(By.css('.edit-page-toolbar__cancel'));
+        cancel.triggerEventHandler('click', {});
 
         expect(dotRouterService.goToSiteBrowser).toHaveBeenCalledTimes(1);
     });
@@ -319,17 +311,36 @@ describe('DotEditContentComponent', () => {
         })
     );
 
-    it('should reload when toolbar emit actionFired event', () => {
+    it('should reload when editPageActionsComponent emit fired event', () => {
+        const editPageActionsComponent: DebugElement = de.query(By.css('dot-edit-page-workflows-actions'));
         spyOn(component, 'reload');
-        toolbarElement.triggerEventHandler('actionFired', '');
+        editPageActionsComponent.triggerEventHandler('fired', '');
         expect(component.reload).toHaveBeenCalledTimes(1);
     });
 
+    it('should have cancel button with correct label and workflow actions component', fakeAsync(() => {
+        waitForDetectChanges(fixture);
+        const cancelBtn = fixture.debugElement.query(By.css('.edit-page-toolbar__cancel'));
+        const workFlowActionsComponent = fixture.debugElement.query(By.css('dot-edit-page-workflows-actions'));
+        expect(cancelBtn === null).toBe(false);
+        expect(workFlowActionsComponent === null).toBe(false);
+        expect(cancelBtn.nativeElement.innerText).toBe('CANCEL');
+    }));
+
+    it('should have right inputs in WorkflowActions component', fakeAsync(() => {
+        component.pageState = new DotRenderedPageState(mockUser, mockDotRenderedPage);
+        waitForDetectChanges(fixture);
+        const actions = de.query(By.css('dot-edit-page-workflows-actions'));
+        expect(actions.componentInstance.page.workingInode).toEqual(
+            mockDotRenderedPage.page.workingInode
+        );
+    }));
+
     describe('what\'s change', () => {
-        let viewAsToolbar: DebugElement;
+        let editPageToolbar: DebugElement;
 
         beforeEach(() => {
-            viewAsToolbar = fixture.debugElement.query(By.css('dot-edit-content-view-as-toolbar'));
+            editPageToolbar = fixture.debugElement.query(By.css('dot-edit-page-toolbar'));
             component.pageState = new DotRenderedPageState(mockUser, mockDotRenderedPage);
         });
 
@@ -346,7 +357,7 @@ describe('DotEditContentComponent', () => {
             beforeEach(
                 fakeAsync(() => {
                     waitForDetectChanges(fixture);
-                    viewAsToolbar.triggerEventHandler('whatschange', true);
+                    editPageToolbar.triggerEventHandler('whatschange', true);
                     fixture.detectChanges();
                 })
             );
@@ -401,15 +412,9 @@ describe('DotEditContentComponent', () => {
     });
 
     describe('set new view as configuration', () => {
-        let viewAsToolbar: DebugElement;
 
         beforeEach(() => {
-            viewAsToolbar = fixture.debugElement.query(By.css('dot-edit-content-view-as-toolbar'));
             component.pageState = new DotRenderedPageState(mockUser, mockDotRenderedPage);
-        });
-
-        it('should have a View As toolbar', () => {
-            expect(viewAsToolbar).not.toBeNull();
         });
 
         it(
@@ -457,7 +462,8 @@ describe('DotEditContentComponent', () => {
             spyOn(component, 'changeViewAsHandler').and.callThrough();
             spyOn(dotPageStateService, 'reload');
 
-            viewAsToolbar.componentInstance.changeViewAs.emit(mockDotEditPageViewAs);
+            const editPageToolbar = fixture.debugElement.query(By.css('dot-edit-page-toolbar'));
+            editPageToolbar.componentInstance.changeViewAs.emit(mockDotEditPageViewAs);
 
             expect(component.changeViewAsHandler).toHaveBeenCalledWith(mockDotEditPageViewAs);
 
@@ -474,15 +480,6 @@ describe('DotEditContentComponent', () => {
             );
         });
 
-        it(
-            'should send the View As initial configuration to the toolbar',
-            fakeAsync(() => {
-                waitForDetectChanges(fixture);
-                expect(viewAsToolbar.componentInstance.pageState.viewAs).toEqual(
-                    mockDotRenderedPage.viewAs
-                );
-            })
-        );
     });
 
     describe('set default page state', () => {

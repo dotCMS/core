@@ -21,6 +21,8 @@ import { mockUser } from '../../../../../test/login-service.mock';
 import { DotWorkflowServiceMock } from '../../../../../test/dot-workflow-service.mock';
 import { DotWorkflowService } from '@services/dot-workflow/dot-workflow.service';
 import { mockDotPage, mockDotLayout } from '../../../../../test/dot-rendered-page.mock';
+import { DotLicenseService } from '@services/dot-license/dot-license.service';
+import { of } from 'rxjs';
 
 @Component({
     selector: 'dot-edit-page-workflows-actions',
@@ -47,8 +49,7 @@ describe('DotEditPageToolbarComponent', () => {
     let fixture: ComponentFixture<TestHostComponent>;
     let de: DebugElement;
     let dotDialogService: DotAlertConfirmService;
-    let actions: DebugElement;
-    let cancel: DebugElement;
+    let dotLicenseService: DotLicenseService;
 
     const states = {
         edit: 0,
@@ -72,6 +73,7 @@ describe('DotEditPageToolbarComponent', () => {
     }
 
     const messageServiceMock = new MockDotMessageService({
+        'dot.common.whats.changed': 'what',
         'dot.common.cancel': 'Cancel',
         'editpage.toolbar.edit.page': 'Edit',
         'editpage.toolbar.preview.page': 'Preview',
@@ -95,6 +97,7 @@ describe('DotEditPageToolbarComponent', () => {
                 BrowserAnimationsModule
             ],
             providers: [
+                DotLicenseService,
                 { provide: DotMessageService, useValue: messageServiceMock },
                 DotGlobalMessageService,
                 DotEventsService,
@@ -136,8 +139,7 @@ describe('DotEditPageToolbarComponent', () => {
         });
 
         dotDialogService = de.injector.get(DotAlertConfirmService);
-        actions = de.query(By.css('dot-edit-page-workflows-actions'));
-        cancel = de.query(By.css('.edit-page-toolbar__cancel'));
+        dotLicenseService = de.injector.get(DotLicenseService);
     });
 
     it('should have a toolbar element', () => {
@@ -214,7 +216,7 @@ describe('DotEditPageToolbarComponent', () => {
         expect(component.lockerModel).toBeFalsy();
     });
 
-    it("should have disabled edit button (user can't edit)", () => {
+    it('should have disabled edit button (user can\'t edit)', () => {
         fixture.componentInstance.pageState.page.canEdit = false;
         fixture.detectChanges();
 
@@ -243,29 +245,6 @@ describe('DotEditPageToolbarComponent', () => {
         const lockSwitch: DebugElement = de.query(By.css('.edit-page-toolbar__locker'));
         lockSwitch.triggerEventHandler('click', {});
         expect(component.pageLockInfo.blinkLockMessage).toHaveBeenCalledTimes(1);
-    });
-
-    it('should have cancel button and emit event', () => {
-        spyOn(component.cancel, 'emit');
-        expect(cancel === null).toBe(false);
-
-        cancel.triggerEventHandler('click', {});
-
-        expect(component.cancel.emit).toHaveBeenCalledTimes(1);
-    });
-
-    it('should have an action split button', () => {
-        expect(actions === null).toBe(false);
-    });
-
-    it('should have right inputs in WorkflowActions component', () => {
-        fixture.componentInstance.pageState.page.workingInode =
-            'cc2cdf9c-a20d-4862-9454-2a76c1132123';
-        fixture.detectChanges();
-
-        expect(actions.componentInstance.page.workingInode).toEqual(
-            component.pageState.page.workingInode
-        );
     });
 
     it('should have live button enabled', () => {
@@ -331,11 +310,36 @@ describe('DotEditPageToolbarComponent', () => {
         expect(component.lockerModel).toBe(true, 'locked page');
     });
 
-    describe('fired action', () => {
-        it('should emit', () => {
-            spyOn(component.actionFired, 'emit');
-            actions.triggerEventHandler('fired', '');
-            expect(component.actionFired.emit).toHaveBeenCalledTimes(1);
+    describe('what\'s change event', () => {
+        let whatsChanged: DebugElement;
+
+        beforeEach(() => {
+            spyOn(component.whatschange, 'emit');
+            fixture.componentInstance.pageState.state.mode = PageMode.PREVIEW;
+            spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(true));
+            fixture.detectChanges();
+
+            whatsChanged = de.query(By.css('p-checkbox'));
+        });
+
+        it('should have What is Changed selector', () => {
+            const whatsChangedElem = de.query(By.css('p-checkbox'));
+            expect(whatsChangedElem).toBeTruthy();
+            expect(whatsChangedElem.componentInstance.label).toBe('what');
+        });
+
+        describe('events', () => {
+            it('should emit what\'s change in true', () => {
+                whatsChanged.triggerEventHandler('onChange', true);
+                expect(component.whatschange.emit).toHaveBeenCalledTimes(1);
+                expect(component.whatschange.emit).toHaveBeenCalledWith(true);
+            });
+
+            it('should emit what\'s change in false', () => {
+                whatsChanged.triggerEventHandler('onChange', false);
+                expect(component.whatschange.emit).toHaveBeenCalledTimes(1);
+                expect(component.whatschange.emit).toHaveBeenCalledWith(false);
+            });
         });
     });
 
@@ -411,7 +415,7 @@ describe('DotEditPageToolbarComponent', () => {
 
             expect(component.lockerModel).toBe(false);
             expect(component.mode).toBe(PageMode.LIVE, 'The mode should be the same');
-            expect(pageStateResult).toEqual(undefined, "doesn't emit state");
+            expect(pageStateResult).toEqual(undefined, 'doesn\'t emit state');
         });
 
         it('should call confirmation service on edit attemp when page is locked by another user', () => {
@@ -459,7 +463,7 @@ describe('DotEditPageToolbarComponent', () => {
 
             clickStateButton('edit');
 
-            expect(pageStateResult).toEqual(undefined, "doesn't emit state");
+            expect(pageStateResult).toEqual(undefined, 'doesn\'t emit state');
             expect(component.lockerModel).toBe(false);
         });
 
@@ -516,7 +520,7 @@ describe('DotEditPageToolbarComponent', () => {
             expect(pageStateResult.locked).toBeUndefined();
         });
 
-        it("should edit tab don't be called twice", () => {
+        it('should edit tab don\'t be called twice', () => {
             spyOn(_, 'debounce').and.callFake(function(cb) {
                 return function() {
                     cb();

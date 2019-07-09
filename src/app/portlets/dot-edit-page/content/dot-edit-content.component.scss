@@ -17,12 +17,9 @@ dot-whats-changed,
     overflow: hidden;
 }
 
-.dot-edit__toolbar {
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-    flex-shrink: 0;
-}
-
 .dot-edit__page-actions {
+    background-color: $white;
+    border-bottom: solid 1px $gray-light;
     display: flex;
     justify-content: space-between;
     padding: $basic-padding * 2;
@@ -89,6 +86,10 @@ dot-whats-changed,
             filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#f2eff2', endColorstr='#ffffff', GradientType=1);
         }
     }
+}
+
+.edit-page-toolbar__cancel {
+    margin-right: $basic-padding;
 }
 
 /*

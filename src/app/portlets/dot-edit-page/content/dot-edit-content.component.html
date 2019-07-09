@@ -6,22 +6,22 @@
 <dot-reorder-menu [url]="reorderMenuUrl" (close)="onCloseReorderDialog()"></dot-reorder-menu>
 
 <dot-loading-indicator fullscreen="true"></dot-loading-indicator>
-<dot-edit-page-toolbar
-    (changeState)="statePageHandler($event)"
-    (actionFired)="reload()"
-    (cancel)="onCancelToolbar()"
-    [pageState]="pageState"
-    class="dot-edit__toolbar">
-</dot-edit-page-toolbar>
 
 <div class="dot-edit__page-actions">
     <dot-edit-page-info [pageState]="pageState"></dot-edit-page-info>
-    <dot-edit-content-view-as-toolbar
-        (whatschange)="showWhatsChanged = $event"
-        (changeViewAs)="changeViewAsHandler($event)"
-        [pageState]="pageState">
-    </dot-edit-content-view-as-toolbar>
+    <div>
+        <button pButton secondary tiny type="button" class="edit-page-toolbar__cancel" [label]="dotMessageService.get('dot.common.cancel')" (click)="onCancelToolbar()"></button>
+        <dot-edit-page-workflows-actions [page]="pageState.page" (fired)="reload()"></dot-edit-page-workflows-actions>
+    </div>    
 </div>
+
+<dot-edit-page-toolbar
+    (changeState)="statePageHandler($event)"
+    (changeViewAs)="changeViewAsHandler($event)"
+    (whatschange)="showWhatsChanged = $event"
+    [pageState]="pageState"
+    class="dot-edit__toolbar">
+</dot-edit-page-toolbar>
 
 <div class="dot-edit__page-wrapper" [class.dot-edit__page-wrapper--deviced]="pageState.viewAs.device">
     <div class="dot-edit__device-wrapper">

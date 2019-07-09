@@ -77,7 +77,6 @@ class MockDotLanguageSelectorComponent {
 }
 
 const messageServiceMock = new MockDotMessageService({
-    'dot.common.whats.changed': 'what',
     'editpage.viewas.previewing': 'Previewing'
 });
 
@@ -234,12 +233,6 @@ describe('DotEditContentViewAsToolbarComponent', () => {
             });
         });
 
-        it('should have What is Changed selector', () => {
-            const whatsChangedElem = de.query(By.css('p-checkbox'));
-            expect(whatsChangedElem).toBeTruthy();
-            expect(whatsChangedElem.componentInstance.label).toBe('what');
-        });
-
         it('should propagate the values to the selector components on init', () => {
             componentHost.pageState = new DotRenderedPageState(mockUser, {
                 ...mockDotRenderedPage,
@@ -262,36 +255,6 @@ describe('DotEditContentViewAsToolbarComponent', () => {
             const content = de.query(By.css('.device-info__content'));
             expect(label.nativeElement.textContent.trim()).toEqual('Previewing:');
             expect(content.nativeElement.textContent.trim()).toEqual('iphone - 200 x 100');
-        });
-    });
-
-    describe("what's change event", () => {
-        let whatsChanged: DebugElement;
-
-        describe('events', () => {
-            beforeEach(() => {
-                spyOn(component.whatschange, 'emit');
-                componentHost.pageState = new DotRenderedPageState(
-                    mockUser,
-                    JSON.parse(JSON.stringify(mockDotRenderedPage))
-                );
-                spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(true));
-                fixtureHost.detectChanges();
-
-                whatsChanged = de.query(By.css('p-checkbox'));
-            });
-
-            it("should emit what's change in true", () => {
-                whatsChanged.triggerEventHandler('onChange', true);
-                expect(component.whatschange.emit).toHaveBeenCalledTimes(1);
-                expect(component.whatschange.emit).toHaveBeenCalledWith(true);
-            });
-
-            it("should emit what's change in false", () => {
-                whatsChanged.triggerEventHandler('onChange', false);
-                expect(component.whatschange.emit).toHaveBeenCalledTimes(1);
-                expect(component.whatschange.emit).toHaveBeenCalledWith(false);
-            });
         });
     });
 });

@@ -12,5 +12,4 @@
 <ng-template [ngIf]="isEnterpriseLicense$ | async">
     <dot-device-selector (selected)="changeDeviceHandler($event)" [value]="pageState.viewAs.device"></dot-device-selector>
     <dot-persona-selector (selected)="changePersonaHandler($event)" [value]="pageState.viewAs.persona"></dot-persona-selector>
-    <p-checkbox [label]="messages['dot.common.whats.changed']" *ngIf="isPreview" (onChange)="whatschange.emit($event)"></p-checkbox>
 </ng-template>

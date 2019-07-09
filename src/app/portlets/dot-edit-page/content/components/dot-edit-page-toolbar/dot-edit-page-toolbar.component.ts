@@ -16,6 +16,9 @@ import { DotMessageService } from '@services/dot-messages-service';
 import { DotRenderedPageState } from '../../../shared/models/dot-rendered-page-state.model';
 import { PageMode } from '../../../shared/models/page-mode.enum';
 import { DotEditPageLockInfoComponent } from './components/dot-edit-page-lock-info/dot-edit-page-lock-info.component';
+import { DotEditPageViewAs } from '@shared/models/dot-edit-page-view-as/dot-edit-page-view-as.model';
+import { Observable } from 'rxjs';
+import { DotLicenseService } from '@services/dot-license/dot-license.service';
 
 @Component({
     selector: 'dot-edit-page-toolbar',
@@ -32,12 +35,16 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges {
     pageState: DotRenderedPageState;
 
     @Output()
+    changeViewAs = new EventEmitter<DotEditPageViewAs>();
+    @Output()
     changeState = new EventEmitter<DotEditPageState>();
     @Output()
     actionFired = new EventEmitter<any>();
     @Output()
-    cancel = new EventEmitter<any>();
+    whatschange = new EventEmitter<boolean>();
 
+    isEnterpriseLicense$: Observable<boolean>;
+    isPreview: boolean;
     states: SelectItem[] = [];
     lockerModel: boolean;
     mode: PageMode;
@@ -50,13 +57,15 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges {
 
     constructor(
         public dotMessageService: DotMessageService,
-        private dotDialogService: DotAlertConfirmService
+        private dotDialogService: DotAlertConfirmService,
+        private dotLicenseService: DotLicenseService
     ) {}
 
     ngOnInit() {
+        this.isEnterpriseLicense$ = this.dotLicenseService.isEnterprise();
         this.dotMessageService
             .getMessages([
-                'dot.common.cancel',
+                'dot.common.whats.changed',
                 'editpage.content.steal.lock.confirmation.message',
                 'editpage.content.steal.lock.confirmation.message.header',
                 'editpage.toolbar.edit.page',
@@ -72,15 +81,7 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges {
         if (changes.pageState && !changes.pageState.firstChange) {
             this.setFieldsModels(changes.pageState.currentValue);
         }
-    }
-
-    /**
-     * Habdle action fired from dot-edit-page-workflows-actions
-     *
-     * @memberof DotEditPageToolbarComponent
-     */
-    handleActionFired(): void {
-        this.actionFired.emit();
+        this.isPreview = this.pageState.state.mode === PageMode.PREVIEW;
     }
 
     /**

@@ -4,16 +4,13 @@
 $toolbar-height: 48px;
 
 :host {
-    background-color: $white;
     display: block;
     position: relative;
     z-index: 1;
 
     ::ng-deep {
         .ui-toolbar {
-            border-bottom: solid 1px $gray-bg;
             height: $toolbar-height;
-            padding-left: 0;
         }
     }
 }
@@ -41,6 +38,10 @@ $toolbar-height: 48px;
     margin-right: $basic-padding * 3;
 
     ::ng-deep {
+        .ui-selectbutton {
+            background-color: transparent;
+        }
+        
         .ui-button {
             height: $toolbar-height;
             display: inline-flex;
@@ -58,7 +59,7 @@ $toolbar-height: 48px;
 
     ::ng-deep {
         align-self: center;
-        margin-right: $basic-padding * 2;
+        margin-right: $basic-padding * 3;
 
         .ui-inputswitch-slider:after {
             @include md-icon;
@@ -82,8 +83,4 @@ $toolbar-height: 48px;
             color: rgba($black, 0.2);
         }
     }
-}
-
-.edit-page-toolbar__cancel {
-    margin-right: $basic-padding;
 }

@@ -1,21 +1,21 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DotEditPageToolbarComponent } from './dot-edit-page-toolbar.component';
-import { DotEditPageWorkflowsActionsModule } from '../dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.module';
 import {
     SelectButtonModule,
     InputSwitchModule,
-    ButtonModule,
+    CheckboxModule,
     ToolbarModule
 } from 'primeng/primeng';
 import { FormsModule } from '@angular/forms';
 import { DotEditPageLockInfoComponent } from './components/dot-edit-page-lock-info/dot-edit-page-lock-info.component';
+import { DotEditContentViewAsToolbarModule } from '../dot-edit-content-view-as-toolbar/dot-edit-content-view-as-toolbar.module';
 
 @NgModule({
     imports: [
-        ButtonModule,
         CommonModule,
-        DotEditPageWorkflowsActionsModule,
+        CheckboxModule,
+        DotEditContentViewAsToolbarModule,
         FormsModule,
         InputSwitchModule,
         SelectButtonModule,
