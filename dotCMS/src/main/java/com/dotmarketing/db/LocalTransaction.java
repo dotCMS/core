@@ -1,5 +1,9 @@
 package com.dotmarketing.db;
 
+
+import java.sql.Connection;
+
+import com.dotcms.util.CloseUtils;
 import com.dotcms.util.ReturnableDelegate;
 import com.dotcms.util.VoidDelegate;
 import com.dotmarketing.exception.DotDataException;
@@ -36,9 +40,14 @@ public class LocalTransaction {
         T result = null;
 
         try {
-
+            final Connection conn = DbConnectionFactory.getConnection();
             result= delegate.execute();
             if (isLocalTransaction) {
+                if(conn !=  DbConnectionFactory.getConnection()) {
+                  CloseUtils.closeQuietly(conn);
+                  throw new DotDataException("Connection that started the transaction is not the one who finished it");
+                }
+              
                 HibernateUtil.commitTransaction();
             }
         } catch (Throwable e) {
@@ -86,10 +95,14 @@ public class LocalTransaction {
         T result = null;
 
         try {
-
+            final Connection conn = DbConnectionFactory.getConnection();
             result= delegate.execute();
             if (isLocalTransaction) {
-                DbConnectionFactory.commit();
+              if(conn !=  DbConnectionFactory.getConnection()) {
+                CloseUtils.closeQuietly(conn);
+                throw new DotDataException("Connection that started the transaction is not the one who finished it");
+              }
+              DbConnectionFactory.commit();
             }
         } catch (Throwable e) {
 
@@ -129,10 +142,14 @@ public class LocalTransaction {
         final boolean isLocalTransaction = DbConnectionFactory.startTransactionIfNeeded();
         
         try {
-
+            final Connection conn = DbConnectionFactory.getConnection();
             delegate.execute();
 
             if (isLocalTransaction) {
+              if(conn !=  DbConnectionFactory.getConnection()) {
+                CloseUtils.closeQuietly(conn);
+                throw new DotDataException("Connection that started the transaction is not the one who finished it");
+              }
                 DbConnectionFactory.commit();
             }
         } catch (Exception e) {
