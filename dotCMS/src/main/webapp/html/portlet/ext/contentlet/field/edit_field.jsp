@@ -516,6 +516,24 @@
 
     }%>
 
+
+    <%
+       String accept="*/*"; 
+       List<FieldVariable> acceptTypes=APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, false);
+       for(FieldVariable fv : acceptTypes){
+           if("accept".equalsIgnoreCase(fv.getKey())){
+               accept = fv.getValue();
+               break;
+           }
+       }
+    
+    %>
+    
+    
+
+
+
+
     <%-- File uploader --%>
     <div
             id="<%=field.getVelocityVarName()%>"
@@ -530,7 +548,8 @@
             inodeShorty="<%=APILocator.getShortyAPI().shortify(contentlet.getInode())%>"
             idShorty="<%=APILocator.getShortyAPI().shortify(contentlet.getIdentifier())%>"
             onRemove="removeThumbnail('<%=field.getVelocityVarName()%>', '<%= binInode %>')"
-            dojoType="dotcms.dijit.form.FileAjaxUploader"
+            dojoType="dotcms.dijit.form.FileAjaxUploader" 
+            accept="<%=accept %>" 
             onUploadFinish="saveBinaryFileOnContent<%=field.getVelocityVarName()%>">
     </div>
     <script type="text/javascript">

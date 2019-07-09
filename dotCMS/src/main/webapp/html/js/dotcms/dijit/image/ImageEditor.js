@@ -421,7 +421,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
 
     saveBinaryImage: function(){
         console.log("saveBinaryImage")
-        // http://jira.dotmarketing.net/browse/DOTCMS-6191
+
         var field=this.binaryFieldId;
         if(this.fieldContentletId.length>0) {
             field=this.fieldContentletId;
@@ -431,7 +431,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
         url = (url.indexOf("?")>-1) ? url + "&"  : url + "?";
         url += (field.length > 0) ? "&binaryFieldId=" +field : "";
         url += "&_imageToolSaveFile=true";
-        console.log("this.ajaxUrl:" + this.ajaxUrl);
+        console.log("saving url:" + url);
         dojo.xhrGet({
             url:url,
             fileName:this.saveAsFileName,
@@ -441,21 +441,13 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
             binaryFieldId:field,
             ajaxUrl:this.ajaxUrl,
             load:function(data){
-                var url = this.ajaxUrl   + "?action=save&binaryFieldId=" + field + "&inode=" + this.inode + "&fileName=" + this.fileName+"&_imageToolSaveFile="+data;
-                console.log("saving:" + url);
-                dojo.xhrPost({
-                    sync:true,
-                    url:url,
-                    handle:function(data){
-                        console.log("field:" + field);
-                        console.log("field:" + field);
-                        window.parent.document.getElementById(field).value=this.fileName; 
-                    },
-                    preventCache:true,
-                    binaryFieldId:field,
-                    ajaxUrl:this.ajaxUrl,
-                    inode:this.inode
-                });
+                var dataJson = JSON.parse(data);
+                console.log("data!", dataJson);
+                console.log("this!", this);
+                console.log(this.binaryFieldId + "ValueField");
+                if(window.document.getElementById(this.binaryFieldId + "ValueField")){
+                    window.document.getElementById(this.binaryFieldId + "ValueField").value=dataJson.id; 
+                }
             },
             error:function(data){
                 alert(data);

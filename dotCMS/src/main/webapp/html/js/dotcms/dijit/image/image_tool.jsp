@@ -234,7 +234,7 @@
         <tr><th colspan=2 ><%=LanguageUtil.get(pageContext, "image.editor.heading.image-size" )%></th></tr>
 
          <tr>
-            <td class="leftCol"><%=LanguageUtil.get(pageContext, "size")%> :</td>
+            <td class="leftCol"><%=LanguageUtil.get(pageContext, "Original")%> :</td>
             <td class="rightCol">
                <div class="spacerDiv">
                   <span id="baseImageWidth"></span>
@@ -242,8 +242,6 @@
                <div class="spacerDiv" style="width: 20px">x</div>
                <div class="spacerDiv">
                   <span id="baseImageHeight"></span>
-               </div>
-               <div class="spacerDiv"><%=LanguageUtil.get(pageContext, "Original")%>
                </div>
             </td>
          </tr>

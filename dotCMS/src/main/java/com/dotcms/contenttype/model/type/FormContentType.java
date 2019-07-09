@@ -53,7 +53,7 @@ public abstract class FormContentType extends ContentType implements Expireable{
 				.name("Form Email")
 				.variable(FORM_EMAIL_FIELD_VAR)
 				.sortOrder(2)
-				.fixed(true)
+				.fixed(false)
 				.readOnly(true)
 				.searchable(true)
 				.build();
@@ -63,7 +63,7 @@ public abstract class FormContentType extends ContentType implements Expireable{
 				.name("Form Return Page")
 				.variable(FORM_RETURN_PAGE_FIELD_VAR)
 				.sortOrder(3)
-				.fixed(true)
+				.fixed(false)
 				.readOnly(true)
 				.searchable(true)
 				.build();
@@ -72,7 +72,7 @@ public abstract class FormContentType extends ContentType implements Expireable{
 				.name("Form Host")
 				.variable(FORM_HOST_FIELD_VAR)
 				.sortOrder(4)
-				.fixed(true)
+				.fixed(false)
 				.searchable(true)
 				.build();
 		
