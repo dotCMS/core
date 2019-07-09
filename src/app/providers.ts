@@ -15,7 +15,6 @@ import { DotMessageService } from '@services/dot-messages-service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotSaveOnDeactivateService } from './shared/dot-save-on-deactivate-service/dot-save-on-deactivate.service';
 import { FormatDateService } from '@services/format-date-service';
-import { GravatarService } from '@services/gravatar-service';
 import { IframeOverlayService } from './view/components/_common/iframe/service/iframe-overlay.service';
 import { MenuGuardService } from '@services/guards/menu-guard.service';
 import { NotLicensedService } from '@services/not-licensed-service';
@@ -53,7 +52,6 @@ const PROVIDERS: any[] = [
     DotSaveOnDeactivateService,
     DotUiColorsService,
     FormatDateService,
-    GravatarService,
     IframeOverlayService,
     MenuGuardService,
     NotLicensedService,

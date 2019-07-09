@@ -1,0 +1,23 @@
+import { CommonModule } from '@angular/common';
+import { ReactiveFormsModule } from '@angular/forms';
+
+import { NgModule } from '@angular/core';
+
+import { DotLoginAsComponent } from './dot-login-as.component';
+import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
+import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
+import { PasswordModule } from 'primeng/primeng';
+
+@NgModule({
+    imports: [
+        CommonModule,
+        DotDialogModule,
+        PasswordModule,
+        ReactiveFormsModule,
+        SearchableDropDownModule
+    ],
+    exports: [DotLoginAsComponent],
+    declarations: [DotLoginAsComponent],
+    providers: []
+})
+export class DotLoginAsModule {}

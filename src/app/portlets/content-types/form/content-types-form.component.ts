@@ -17,7 +17,6 @@ import * as _ from 'lodash';
 import { SelectItem } from 'primeng/primeng';
 
 import { DotMessageService } from '@services/dot-messages-service';
-import { SiteSelectorComponent } from '@components/_common/site-selector/site-selector.component';
 import { DotWorkflow } from '@models/dot-workflow/dot-workflow.model';
 import { DotWorkflowService } from '@services/dot-workflow/dot-workflow.service';
 import { DotLicenseService } from '@services/dot-license/dot-license.service';
@@ -32,7 +31,7 @@ import { FieldUtil } from '../fields/util/field-util';
  * @implements {OnInit}
  */
 @Component({
-    providers: [SiteSelectorComponent],
+    providers: [],
     selector: 'dot-content-types-form',
     styleUrls: ['./content-types-form.component.scss'],
     templateUrl: 'content-types-form.component.html'

@@ -10,7 +10,7 @@ import {
     InputTextModule
 } from 'primeng/primeng';
 import { FormsModule } from '@angular/forms';
-import { SiteSelectorModule } from '@components/_common/site-selector/site-selector.module';
+import { DotSiteSelectorModule } from '@components/_common/dot-site-selector/dot-site-selector.module';
 import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 
@@ -22,7 +22,7 @@ import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
         ButtonModule,
         FormsModule,
         DialogModule,
-        SiteSelectorModule,
+        DotSiteSelectorModule,
         InputTextModule,
         DataGridModule,
         DotDialogModule,

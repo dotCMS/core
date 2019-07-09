@@ -9,7 +9,7 @@ import { DotNavigationService } from '../dot-navigation/services/dot-navigation.
     styleUrls: ['./dot-toolbar.component.scss'],
     templateUrl: './dot-toolbar.component.html'
 })
-export class ToolbarComponent implements OnInit {
+export class DotToolbarComponent implements OnInit {
     @Input()
     collapsed: boolean;
 

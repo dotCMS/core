@@ -1,6 +1,6 @@
 import { fromEvent as observableFromEvent, Observable } from 'rxjs';
 
-import { debounceTime } from 'rxjs/operators';
+import { debounceTime, take } from 'rxjs/operators';
 import {
     Component,
     OnInit,
@@ -12,11 +12,11 @@ import {
 } from '@angular/core';
 import { DotMessageService } from '@services/dot-messages-service';
 import { DotTheme } from '../../../shared/models/dot-theme.model';
-import { PaginatorService } from '@services/paginator/paginator.service';
 import { DataGrid, LazyLoadEvent } from 'primeng/primeng';
 
 import { Site, SiteService } from 'dotcms-js';
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
+import { PaginatorService } from '@services/paginator';
 
 /**
  * The DotThemeSelectorComponent is modal that
@@ -59,6 +59,7 @@ export class DotThemeSelectorComponent implements OnInit {
         private siteService: SiteService
     ) {}
 
+
     ngOnInit() {
         this.dotMessageService
             .getMessages([
@@ -68,6 +69,7 @@ export class DotThemeSelectorComponent implements OnInit {
                 'dot.common.apply',
                 'dot.common.cancel'
             ])
+            .pipe(take(1))
             .subscribe(() => {
                 this.dialogActions = {
                     accept: {
@@ -85,7 +87,6 @@ export class DotThemeSelectorComponent implements OnInit {
         this.paginatorService.url = 'v1/themes';
         this.paginatorService.setExtraParams('hostId', this.siteService.currentSite.identifier);
         this.paginatorService.paginationPerPage = 8;
-
         this.current = this.value;
 
         observableFromEvent(this.searchInput.nativeElement, 'keyup')

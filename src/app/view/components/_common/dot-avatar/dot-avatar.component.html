@@ -1,0 +1,5 @@
+<img [src]="url" class="avatar__img" *ngIf="url" [ngStyle]="avatarStyles">
+<div class="avatar__placeholder" *ngIf="!url" [ngStyle]="avatarStyles">
+    {{ avatarPlaceholder }}
+</div>
+<span class="avatar__dot" *ngIf="showDot"></span>

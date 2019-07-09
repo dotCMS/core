@@ -11,7 +11,7 @@ import { DotIconButtonTooltipModule } from '@components/_common/dot-icon-button-
 import { ListingDataTableModule } from '@components/listing-data-table/listing-data-table.module';
 import { NgModule } from '@angular/core';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
-import { SiteSelectorFieldModule } from '@components/_common/site-selector-field/site-selector-field.module';
+import { SiteSelectorFieldModule } from '@components/_common/dot-site-selector-field/dot-site-selector-field.module';
 import { DragulaModule } from 'ng2-dragula';
 import { DragulaService } from 'ng2-dragula';
 import { FieldService, FieldDragDropService, FieldPropertyService } from './fields/service';
@@ -150,7 +150,7 @@ import { DotMaxlengthModule } from '@directives/dot-maxlength/dot-maxlength.modu
         SplitButtonModule,
         TabViewModule,
         DotFieldHelperModule,
-        DotMaxlengthModule
+        DotMaxlengthModule,
     ],
     providers: [
         ContentTypeEditResolver,
