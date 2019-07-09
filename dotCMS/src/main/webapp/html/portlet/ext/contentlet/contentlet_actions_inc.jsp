@@ -95,9 +95,9 @@ function editPage(url) {
 
 <div class="content-edit-actions">
 
-        <%if(contentlet.isHTMLPage() && contentlet.getIdentifier() != "") {%>
+        <%if(contentlet.isHTMLPage() && contentlet.getIdentifier() != "" && (canUserWriteToContentlet)) {%>
             <a onClick="editPage('<%= APILocator.getIdentifierAPI().find(contentlet.getIdentifier()).getURI() %>')">
-			    Edit Page 
+                <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "view-in-edit-mode")) %>
             </a>
         <%} %>
 
