@@ -6,6 +6,7 @@ import com.dotcms.util.ReturnableDelegate;
 import com.dotcms.util.VoidDelegate;
 import com.dotmarketing.util.Logger;
 import com.google.common.util.concurrent.Striped;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
@@ -127,7 +128,8 @@ public class StripedLockImpl<K> implements DotKeyLockManager<K> {
         }
     }
 
-    private synchronized Thread getOwnerThread(final ReentrantLock lock) throws Exception{
+    private Thread getOwnerThread(final ReentrantLock lock) throws NoSuchMethodException, IllegalAccessException, IllegalArgumentException,
+            InvocationTargetException {
             final Method method = lock.getClass().getDeclaredMethod("getOwner");
             if(!method.isAccessible()){
                 method.setAccessible(true);
@@ -143,7 +145,7 @@ public class StripedLockImpl<K> implements DotKeyLockManager<K> {
                 ExceptionUtil.getStackTraceAsString(thread.getStackTrace())
             );
             }catch (Exception e){
-               //Empty
+               //Empty suck it up.
             }
         return dumpString;
     }
