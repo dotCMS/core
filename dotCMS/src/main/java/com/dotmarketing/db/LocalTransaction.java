@@ -193,9 +193,9 @@ public class LocalTransaction {
     private static void handleTransactionInteruption(final Connection conn) throws DotDataException {
       if (DbConnectionFactory.getConnection() != conn) {
         final String action = Config.getStringProperty("LOCAL_TRANSACTION_INTERUPTED_ACTION", TransactionErrorEnum.LOG.name());
-        if (TransactionErrorEnum.LOG.name().equals(action)) {
+        if (TransactionErrorEnum.LOG.name().equalsIgnoreCase(action)) {
           Logger.warn(LocalTransaction.class, WARN_MESSAGE, new DotDataException(WARN_MESSAGE));
-        } else if (TransactionErrorEnum.THROW.name().equals(action)) {
+        } else if (TransactionErrorEnum.THROW.name().equalsIgnoreCase(action)) {
           throw new DotDataException(WARN_MESSAGE);
         }
       }
