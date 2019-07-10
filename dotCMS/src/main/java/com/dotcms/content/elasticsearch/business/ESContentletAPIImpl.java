@@ -1161,13 +1161,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     return contentlet.getFolder();
                 }
             } else if (theField instanceof CategoryField) {
-                final Category category = categoryAPI.find(theField.values(), currentUser, false);
+                final Category category = categoryAPI.find(theField.values(), currentUser, true);
                 // Get all the Contentlets Categories
                 final List<Category> selectedCategories = categoryAPI
-                        .getParents(contentlet, currentUser, false);
+                        .getParents(contentlet, currentUser, true);
                 final Set<Category> categoryList = new HashSet<Category>();
                 final List<Category> categoryTree = categoryAPI
-                        .getAllChildren(category, currentUser, false);
+                        .getAllChildren(category, currentUser, true);
                 if (selectedCategories.size() > 0 && categoryTree != null) {
                     for (int k = 0; k < categoryTree.size(); k++) {
                         final Category cat = categoryTree.get(k);
