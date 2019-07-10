@@ -54,7 +54,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     editForm = false;
     showIframe = true;
     reorderMenuUrl = '';
-    messagesKey: { [key: string]: string };
+    messagesKey: { [key: string]: string } = {};
 
     private readonly customEventsHandler;
     private destroy$: Subject<boolean> = new Subject<boolean>();
