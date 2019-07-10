@@ -2017,7 +2017,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 				    final Contentlet content = processor.getContentlet();
 				    content.setIndexPolicy(IndexPolicy.WAIT_FOR);
-				    final ThreadContext threadContext = ThreadContextUtil.getInstance().getContext();
+				    final ThreadContext threadContext = ThreadContextUtil.getOrCreateContext();
 					final boolean includeDependencies = null != threadContext && threadContext.isIncludeDependencies();
 					this.contentletIndexAPI.addContentToIndex(content, includeDependencies);
 				}
@@ -2697,13 +2697,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		this.validateActionStepAndWorkflow(contentlet, dependencies.getModUser());
 		this.checkShorties (contentlet);
 
-		final ThreadContextUtil contextUtil = ThreadContextUtil.getInstance();
-		final WorkflowProcessor processor   = contextUtil.wrapReturnNoReindex(()-> this.fireWorkflowPreCheckin(contentlet, dependencies.getModUser()));
+		final WorkflowProcessor processor   = ThreadContextUtil.wrapReturnNoReindex(()-> this.fireWorkflowPreCheckin(contentlet, dependencies.getModUser()));
 
 		processor.setContentletDependencies(dependencies);
 		processor.getContentlet().setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.TRUE);
 
-		contextUtil.wrapVoidNoReindex(() -> this.fireWorkflowPostCheckin(processor));
+		ThreadContextUtil.wrapVoidNoReindex(() -> this.fireWorkflowPostCheckin(processor));
 
 		if (null != processor.getContentlet()) {
 			processor.getContentlet().setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.FALSE);

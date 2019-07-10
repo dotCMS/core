@@ -12,38 +12,30 @@ import com.dotmarketing.util.UtilMethods;
 public class ThreadContextUtil {
 
     private static ThreadLocal<ThreadContext> contextLocal = new ThreadLocal<>();
-    private static final ThreadContextUtil     INSTANCE    = new ThreadContextUtil();
 
-    public static ThreadContextUtil getInstance () {
-
-        return INSTANCE;
-    }
     /**
      * Get the context from the current thread
      * @return {@link ThreadContext}
      */
-    public ThreadContext getContext () {
+    public static ThreadContext getOrCreateContext() {
 
-        return contextLocal.get();
+        return UtilMethods.get(contextLocal.get(), ()-> {
+
+            final ThreadContext context = new ThreadContext();
+            contextLocal.set(context);
+            return context;
+        });
     }
 
-
-    /**
-     * Set the current thread context
-     */
-    public void setContext (final ThreadContext  context) {
-
-        contextLocal.set(context);
-    }
 
     /**
      * Return true if the current thread is config to reindex things in the api calls, otherwise false.
      * @return Boolean
      */
-    public boolean isReindex () {
+    public static boolean isReindex () {
 
-        final ThreadContext context = INSTANCE.getContext();
-        return null == context || context.isReindex();
+        final ThreadContext context = getOrCreateContext();
+        return context.isReindex();
     }
 
     /**
@@ -52,7 +44,7 @@ public class ThreadContextUtil {
      * @throws DotSecurityException
      * @throws DotDataException
      */
-    public void ifReindex (final VoidDelegate delegate) throws DotSecurityException, DotDataException {
+    public static void ifReindex (final VoidDelegate delegate) throws DotSecurityException, DotDataException {
 
         if (isReindex()) {
 
@@ -66,16 +58,14 @@ public class ThreadContextUtil {
      * @throws DotSecurityException
      * @throws DotDataException
      */
-    public void ifReindex (final VoidDelegate delegate, final boolean includeDependencies) throws DotSecurityException, DotDataException {
+    public static void ifReindex (final VoidDelegate delegate, final boolean includeDependencies) throws DotSecurityException, DotDataException {
 
         if (isReindex()) {
 
             delegate.execute();
         } else {
 
-            final ThreadContext threadContext =
-                    UtilMethods.get(INSTANCE.getContext(), ()->new ThreadContext());
-            threadContext.setIncludeDependencies(includeDependencies);
+            getOrCreateContext().setIncludeDependencies(includeDependencies);
         }
     }
 
@@ -84,18 +74,16 @@ public class ThreadContextUtil {
      * @param delegate {@link VoidDelegate}
      * @throws Exception
      */
-    public void wrapVoidNoReindex (final VoidDelegate delegate) {
+    public static void wrapVoidNoReindex (final VoidDelegate delegate) {
 
-        final ThreadContext threadContext =
-                UtilMethods.get(INSTANCE.getContext(), ()->new ThreadContext());
-        boolean reindex = threadContext.isReindex();
+        final ThreadContext threadContext = getOrCreateContext();
+        final boolean reindex = threadContext.isReindex();
 
         try {
 
             threadContext.setReindex(false);
-            this.setContext(threadContext);
             delegate.execute();
-        } catch(Exception e) {
+        } catch(Throwable e) {
 
             throw new DotRuntimeException(e);
         } finally {
@@ -110,16 +98,14 @@ public class ThreadContextUtil {
      * @param delegate {@link VoidDelegate}
      * @throws Exception
      */
-    public  <T> T wrapReturnNoReindex (final ReturnableDelegate<T> delegate) {
+    public  static <T> T wrapReturnNoReindex (final ReturnableDelegate<T> delegate) {
 
-        final ThreadContext threadContext =
-                UtilMethods.get(INSTANCE.getContext(), ()->new ThreadContext());
-        boolean reindex = threadContext.isReindex();
+        final ThreadContext threadContext = getOrCreateContext();
+        final boolean reindex = threadContext.isReindex();
 
         try {
 
             threadContext.setReindex(false);
-            this.setContext(threadContext);
             return delegate.execute();
         } catch(Throwable e) {
 

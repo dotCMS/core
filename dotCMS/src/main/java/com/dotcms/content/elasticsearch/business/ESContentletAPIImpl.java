@@ -162,7 +162,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private final TagAPI                tagAPI;
     private final IdentifierStripedLock lockManager;
     private final TempFileAPI           tempApi ;
-    private final ThreadContextUtil     threadContextUtil;
     private static final int MAX_LIMIT = 10000;
     private static final boolean INCLUDE_DEPENDENCIES = true;
 
@@ -201,7 +200,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
         localSystemEventsAPI      = APILocator.getLocalSystemEventsAPI();
         lockManager = DotConcurrentFactory.getInstance().getIdentifierStripedLock();
         tempApi=  APILocator.getTempFileAPI();
-        threadContextUtil = ThreadContextUtil.getInstance();
     }
 
     @Override
@@ -589,7 +587,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DotContentletStateException("Only the working version can be published");
         }
 
-        this.threadContextUtil.ifReindex(()->indexAPI.addContentToIndex(contentlet, INCLUDE_DEPENDENCIES, false), INCLUDE_DEPENDENCIES);
+        ThreadContextUtil.ifReindex(()->indexAPI.addContentToIndex(contentlet, INCLUDE_DEPENDENCIES, false), INCLUDE_DEPENDENCIES);
 
         // Publishes the files associated with the Contentlet
         final List<Field> fields = FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode());
@@ -1325,7 +1323,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             if(contentlet.isLocked() ){
                 // persists the webasset
                 APILocator.getVersionableAPI().setLocked(contentlet, false, user);
-                this.threadContextUtil.ifReindex(()-> indexAPI.addContentToIndex(contentlet, false));
+                ThreadContextUtil.ifReindex(()-> indexAPI.addContentToIndex(contentlet, false));
             }
 
         } catch(DotDataException | DotStateException| DotSecurityException e) {
@@ -2331,7 +2329,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             // persists the webasset
             APILocator.getVersionableAPI().setLocked(contentlet, true, user);
-            this.threadContextUtil.ifReindex(()-> indexAPI.addContentToIndex(contentlet, false));
+            ThreadContextUtil.ifReindex(()-> indexAPI.addContentToIndex(contentlet, false));
         } catch(DotDataException | DotStateException| DotSecurityException e) {
             ActivityLogger.logInfo(getClass(), "Error Locking Content", "StartDate: " +contentPushPublishDate+ "; "
                     + "EndDate: " +contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown")
@@ -2468,7 +2466,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DotSecurityException("User: " + (user != null ? user.getUserId() : "Unknown") + " cannot unpublish Contentlet");
         }
 
-        unpublish(contentlet, user, this.threadContextUtil.isReindex()?-1:0);
+        unpublish(contentlet, user, ThreadContextUtil.isReindex()?-1:0);
     }
 
 
@@ -3910,7 +3908,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                 }
 
-                if (this.threadContextUtil.isReindex()) {
+                if (ThreadContextUtil.isReindex()) {
                     indexAPI.addContentToIndex(contentlet, false);
                 }
             }
