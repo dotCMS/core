@@ -1,4 +1,5 @@
 import { DotFieldStatus } from './dot-field-status.model';
+import { DotBinaryMessageError } from './dot-binary-message-error.model';
 
 export interface DotFieldEvent {
     name: string;
@@ -15,4 +16,9 @@ export interface DotInputCalendarStatusEvent extends DotFieldStatusEvent {
 export interface DotFieldValueEvent extends DotFieldEvent {
     fieldType?: string;
     value: string;
+}
+
+export interface DotBinaryFileEvent {
+    file: string | File;
+    errorType: DotBinaryMessageError;
 }

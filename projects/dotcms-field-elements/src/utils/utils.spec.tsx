@@ -9,6 +9,8 @@ import {
     getStringFromDotKeyArray,
     getTagError,
     getTagHint,
+    isFileAllowed,
+    isValidURL,
     updateStatus
 } from './utils';
 
@@ -171,5 +173,27 @@ describe('updateStatus', () => {
             dotTouched: true,
             dotPristine: true
         });
+    });
+});
+
+xdescribe('isValidURL', () => {
+    // new URL is not available in headless browser.
+});
+
+describe('isFileAllowed', () => {
+    it('should return true when file extension is valid', () => {
+        expect(isFileAllowed('file.pdf', ['.png', '.pdf'])).toBe(true);
+    });
+
+    it('should return true when allowedExtensions are any', () => {
+        expect(isFileAllowed('file.pdf', ['*'])).toBe(true);
+    });
+
+    it('should return true when allowedExtensions are empty', () => {
+        expect(isFileAllowed('file.pdf', [])).toBe(true);
+    });
+
+    it('should return false when file extension is not valid', () => {
+        expect(isFileAllowed('file.pdf', ['.png'])).toBe(false);
     });
 });
