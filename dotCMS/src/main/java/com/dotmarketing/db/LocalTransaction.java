@@ -1,12 +1,19 @@
 package com.dotmarketing.db;
 
+
+import java.sql.Connection;
+
 import com.dotcms.util.ReturnableDelegate;
 import com.dotcms.util.VoidDelegate;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.Logger;
 
 public class LocalTransaction {
 
+
+    private final static String WARN_MESSAGE = "Transaction broken - Connection that started the transaction is not the same as the one who is commiting";
+  
     /**
      *
      * @param delegate {@link ReturnableDelegate}
@@ -36,10 +43,14 @@ public class LocalTransaction {
         T result = null;
 
         try {
-
+            final Connection conn = DbConnectionFactory.getConnection();
             result= delegate.execute();
             if (isLocalTransaction) {
-                HibernateUtil.commitTransaction();
+               if(DbConnectionFactory.getConnection() != conn) {
+                 Logger.warn(LocalTransaction.class, WARN_MESSAGE, new DotDataException(WARN_MESSAGE));
+               }
+               HibernateUtil.commitTransaction();
+               
             }
         } catch (Throwable e) {
 
@@ -49,10 +60,11 @@ public class LocalTransaction {
 
             throwException(e);
         } finally {
-
+            
             if (isLocalTransaction && isNewConnection) {
                 HibernateUtil.closeSessionSilently();
             }
+            
         }
 
         return result;
@@ -86,16 +98,19 @@ public class LocalTransaction {
         T result = null;
 
         try {
-
+            final Connection conn = DbConnectionFactory.getConnection();
             result= delegate.execute();
             if (isLocalTransaction) {
-                DbConnectionFactory.commit();
+              if(DbConnectionFactory.getConnection() != conn) {
+                Logger.warn(LocalTransaction.class, WARN_MESSAGE, new DotDataException(WARN_MESSAGE));
+              }
+              DbConnectionFactory.commit();
             }
         } catch (Throwable e) {
 
             handleException(isLocalTransaction, e);
         } finally {
-
+            
             if (isLocalTransaction) {
                 DbConnectionFactory.setAutoCommit(true);
                 if (isNewConnection) {
@@ -129,18 +144,22 @@ public class LocalTransaction {
         final boolean isLocalTransaction = DbConnectionFactory.startTransactionIfNeeded();
         
         try {
-
+            final Connection conn = DbConnectionFactory.getConnection();
             delegate.execute();
 
             if (isLocalTransaction) {
-                DbConnectionFactory.commit();
+              if(DbConnectionFactory.getConnection() != conn) {
+                Logger.warn(LocalTransaction.class, WARN_MESSAGE, new DotDataException(WARN_MESSAGE));
+              }
+              DbConnectionFactory.commit();
             }
         } catch (Exception e) {
 
             handleException(isLocalTransaction, e);
         } finally {
-
+            
             if (isLocalTransaction) {
+
                 DbConnectionFactory.setAutoCommit(true);
                 if (isNewConnection) {
                     DbConnectionFactory.closeConnection();
