@@ -355,6 +355,7 @@ table {font-size:inherit;font-family:Roboto,sans-serif;}
 	padding:3px 15px 3px 15px;
 	border:blue 2px dotted;
 	position:relative;
+	min-width:120px;
 }
 .editImageText{
 	cursor:pointer;

@@ -1,13 +1,9 @@
 <%@ page import="com.liferay.portal.language.LanguageUtil" %>
 <div id="${id}" class="fileAjaxUploader">
-	<div id="${name}" class="fajaxUpName"></div>
 
 	<input name="${name}" id="${name}ValueField" dojoAttachPoint="fileNameField" type="text" value="${fileName}">
 	<div dojoAttachPoint="fileUploadForm" class="fileAjaxUploaderForm">
-		<form enctype="multipart/form-data" method="post" action="/servlets/ajax_file_upload?fieldName=${name}" 
-			dojoAttachPoint="form" target="${id}_target_upload" id="${name}_form">
 			<input name="${name}FileUpload" type="file"  accept="${accept}" dojoAttachEvent="onchange:_doFileUpload" dojoAttachPoint="fileInputField" class="form-text" size="30">
-		</form>
 	</div>
 	<div dojoAttachPoint="fileUploadStatus" class="fileAjaxUploaderStatus" style="display: none;">
 		<div dojoType="dijit.ProgressBar" dojoAttachPoint="progressBar"></div>
