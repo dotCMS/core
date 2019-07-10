@@ -6,6 +6,7 @@ import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.event.ContentTypeDeletedEvent;
 import com.dotcms.contenttype.model.event.ContentTypeSavedEvent;
@@ -23,6 +24,7 @@ import com.dotcms.util.ContentTypeUtil;
 import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.*;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -36,6 +38,7 @@ import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
 import org.elasticsearch.action.search.SearchResponse;
 
+import java.sql.Connection;
 import java.util.*;
 
 public class ContentTypeAPIImpl implements ContentTypeAPI {
@@ -446,6 +449,12 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
                                         final List<FieldVariable> newFieldVariables,
                                         final ContentType ctype) throws DotDataException, DotSecurityException {
 
+    
+    Connection conn = DbConnectionFactory.getConnection();
+    
+    
+    
+    
     ContentType contentTypeToSave = ctype;
 
     // set to system folder if on system host or the host id of the folder it is on
@@ -461,7 +470,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
                                                              // set the folder to System Folder
       contentTypeToSave = ContentTypeBuilder.builder(contentTypeToSave).folder(Folder.SYSTEM_FOLDER).build();
     }
-
+    Connection conn2 = DbConnectionFactory.getConnection();
     if (!ctype.fields().isEmpty()) {
       contentTypeToSave.constructWithFields(ctype.fields());
     }
@@ -474,24 +483,33 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     } catch (NotFoundInDbException notThere) {
       // not logging, expected when inserting new from separate environment
     }
-
+    Connection conn3 = DbConnectionFactory.getConnection();
     contentTypeToSave = this.contentTypeFactory.save(contentTypeToSave);
+    Connection conn35 = DbConnectionFactory.getConnection();
 
     if (oldType != null) {
+      final ContentType oldOldType = oldType;
       if (fireUpdateIdentifiers(oldType.expireDateVar(), contentTypeToSave.expireDateVar())) {
-
-        IdentifierDateJob.triggerJobImmediately(oldType, user);
+        
+        DotConcurrentFactory.getInstance().getSubmitter().submit(()->{
+          IdentifierDateJob.triggerJobImmediately(oldOldType, user);
+        });
       } else if (fireUpdateIdentifiers(oldType.publishDateVar(), contentTypeToSave.publishDateVar())) {
-
-        IdentifierDateJob.triggerJobImmediately(oldType, user);
+        DotConcurrentFactory.getInstance().getSubmitter().submit(()->{
+          IdentifierDateJob.triggerJobImmediately(oldOldType, user);
+        });
       }
       perms.resetPermissionReferences(contentTypeToSave);
+      Connection conn39 = DbConnectionFactory.getConnection();
+      String x = "12124";
+      
+      
     }
     ActivityLogger.logInfo(getClass(), "Save ContentType Action",
         "User " + user.getUserId() + "/" + user.getFullName() + " added ContentType " + contentTypeToSave.name()
             + " to host id:" + contentTypeToSave.host());
     AdminLogger.log(getClass(), "ContentType", "ContentType saved : " + contentTypeToSave.name(), user);
-
+    Connection conn4 = DbConnectionFactory.getConnection();
     // update the existing content type fields
     if (newFields != null) {
 
@@ -511,7 +529,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
           }
         }
       }
-
+      Connection conn5 = DbConnectionFactory.getConnection();
       // for each field in the content type lets create it if doesn't exists and update its
       // properties if it does
       for (Field field : newFields) {
@@ -546,13 +564,13 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
         }
       }
     }
-
+    Connection conn6 = DbConnectionFactory.getConnection();
     final ContentType savedContentType = find(contentTypeToSave.id());
 
     HibernateUtil.addCommitListener(()-> {
       localSystemEventsAPI.notify(new ContentTypeSavedEvent(savedContentType));
     });
-
+    Connection conn7 = DbConnectionFactory.getConnection();
     return savedContentType;
   }
 
