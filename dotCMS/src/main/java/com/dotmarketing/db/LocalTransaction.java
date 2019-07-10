@@ -7,10 +7,19 @@ import com.dotcms.util.ReturnableDelegate;
 import com.dotcms.util.VoidDelegate;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 
 public class LocalTransaction {
 
+  private static enum TransactionErrorEnum {
+    NOTHING,
+    LOG,
+    THROW;
+  }
+
+  
+  
 
     private final static String WARN_MESSAGE = "Transaction broken - Connection that started the transaction is not the same as the one who is commiting";
   
@@ -46,9 +55,7 @@ public class LocalTransaction {
             final Connection conn = DbConnectionFactory.getConnection();
             result= delegate.execute();
             if (isLocalTransaction) {
-               if(DbConnectionFactory.getConnection() != conn) {
-                 Logger.warn(LocalTransaction.class, WARN_MESSAGE, new DotDataException(WARN_MESSAGE));
-               }
+               handleTransactionInteruption(conn);
                HibernateUtil.commitTransaction();
                
             }
@@ -101,9 +108,7 @@ public class LocalTransaction {
             final Connection conn = DbConnectionFactory.getConnection();
             result= delegate.execute();
             if (isLocalTransaction) {
-              if(DbConnectionFactory.getConnection() != conn) {
-                Logger.warn(LocalTransaction.class, WARN_MESSAGE, new DotDataException(WARN_MESSAGE));
-              }
+              handleTransactionInteruption(conn);
               DbConnectionFactory.commit();
             }
         } catch (Throwable e) {
@@ -148,9 +153,7 @@ public class LocalTransaction {
             delegate.execute();
 
             if (isLocalTransaction) {
-              if(DbConnectionFactory.getConnection() != conn) {
-                Logger.warn(LocalTransaction.class, WARN_MESSAGE, new DotDataException(WARN_MESSAGE));
-              }
+              handleTransactionInteruption(conn);
               DbConnectionFactory.commit();
             }
         } catch (Exception e) {
@@ -186,6 +189,19 @@ public class LocalTransaction {
         throwException(e);
     } // handleException.
 
+    
+    private static void handleTransactionInteruption(final Connection conn) throws DotDataException {
+      if (DbConnectionFactory.getConnection() != conn) {
+        final String action = Config.getStringProperty("LOCAL_TRANSACTION_INTERUPTED_ACTION", TransactionErrorEnum.LOG.name());
+        if (TransactionErrorEnum.LOG.name().equals(action)) {
+          Logger.warn(LocalTransaction.class, WARN_MESSAGE, new DotDataException(WARN_MESSAGE));
+        } else if (TransactionErrorEnum.THROW.name().equals(action)) {
+          throw new DotDataException(WARN_MESSAGE);
+        }
+      }
+    }
+    
+    
     private static void throwException ( final Throwable  e) throws Exception {
 
         if (e instanceof Exception) {
