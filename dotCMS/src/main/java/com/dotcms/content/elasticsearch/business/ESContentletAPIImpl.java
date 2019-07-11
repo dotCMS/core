@@ -1149,10 +1149,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
             if (currentUser == null) {
                 currentUser = APILocator.getUserAPI().getSystemUser();
             }
-            boolean respectFrontendRoles = false;
-            if(currentUser.equals(APILocator.getUserAPI().getAnonymousUser())){
-                respectFrontendRoles = true;
-            }
+            //If the user have the CMSAnon Role we need to respectfrontendroles so it gets all the categories
+            //If the user does not have the CMSAnon Role should only get the categories he has permissions on
+            final boolean respectFrontendRoles = APILocator.getRoleAPI().doesUserHaveRole(currentUser,(APILocator.getRoleAPI().loadCMSAnonymousRole()));
             if (theField instanceof ConstantField) {
                 contentlet.getMap().put(theField.variable(), theField.values());
                 return theField.values();
