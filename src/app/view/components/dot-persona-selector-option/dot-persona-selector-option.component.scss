@@ -1,0 +1,32 @@
+@import "variables";
+
+:host {
+    align-items: center;
+    cursor: pointer;
+    display: flex;
+    height: $navigation-item-height;
+
+    &:hover {
+        background-color: $gray-bg;
+    }
+
+    dot-avatar {
+        margin-left: $basic-padding * 2;
+        margin-right: $basic-padding;
+    }
+
+    .dot-persona-selector-option__label {
+        color: $gray-light;
+        flex: 1;
+        font-size: $body-font-size-base;
+
+        &.dot-persona-selector-option__personalized {
+            color: $body-font-color;
+        }
+    }
+
+    button {
+        height: 20px;
+        margin-right: $basic-padding * 2;
+    }
+}

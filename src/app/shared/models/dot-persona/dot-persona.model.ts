@@ -14,6 +14,7 @@ export interface DotPersona {
     sortOrder?: number;
     stInode?: string;
     tags?: string;
+    personalized?: boolean;
     photo?: string;
     photoContentAsset?: string;
 }

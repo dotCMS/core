@@ -15,6 +15,12 @@
     <h1>Hello World</h1>
 </dot-dialog>
 
+<dot-persona-selector-option
+    [persona]="personaData"
+    (selected)="changePersona($event)"
+    (delete)="deletePersonalization($event)"
+></dot-persona-selector-option>
+
 <h3>Form Fields</h3>
 <div class="pl__forms">
     <p-dropdown [options]="dropdownOptions"></p-dropdown>

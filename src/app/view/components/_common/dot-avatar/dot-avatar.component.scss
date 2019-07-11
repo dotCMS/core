@@ -2,6 +2,7 @@
 
 :host {
     display: inline-block;
+    position: relative;
 }
 
 .avatar__img {
@@ -19,12 +20,13 @@
 }
 
 .avatar__dot {
-    height: 13px;
-    width: 13px;
+    background-color: $brand-primary;
+    bottom: -2px;
+    border: 1px solid $white;
     border-radius: 50%;
     display: inline-block;
+    height: 9px;
     position: absolute;
-    bottom: 2px;
-    right: 0px;
-    background-color: $brand-primary;
+    right: -1px;
+    width: 9px;
 }

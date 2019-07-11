@@ -88,6 +88,40 @@ export class PatternLibraryComponent implements OnInit {
 
     selectedCar1 = {brand: 'VW', year: 2012, color: 'Orange', vin: 'dsad231ff'};
 
+    personaData = {
+        archived: false,
+        baseType: 'PERSONA',
+        contentType: 'persona',
+        description:
+            'Individual 30 - 70 years of age, with a net worth in excess of $15,000,000 or an annual net income $750,000 or higher.',
+        folder: 'SYSTEM_FOLDER',
+        hasTitleImage: true,
+        host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
+        hostName: 'demo.dotcms.com',
+        identifier: 'd4ffa84f-8746-46f8-ac29-1f8ca2c7eaeb',
+        inode: 'd475422a-e9f0-4ef5-8797-147f630df47d',
+        keyTag: 'WealthyProspect',
+        languageId: 1,
+        live: true,
+        locked: false,
+        modDate: '2017-03-02 12:10:40.293',
+        modUser: 'dotcms.org.1',
+        modUserName: 'Admin User',
+        name: 'Wealthy Prospect',
+        owner: 'dotcms.org.1',
+        personalized: true,
+        photo: '/dA/d4ffa84f-8746-46f8-ac29-1f8ca2c7eaeb/photo/wealthy-man-with-jet.jpg',
+        photoContentAsset: 'd4ffa84f-8746-46f8-ac29-1f8ca2c7eaeb/photo',
+        photoVersion: '/dA/d475422a-e9f0-4ef5-8797-147f630df47d/photo/wealthy-man-with-jet.jpg',
+        sortOrder: 0,
+        stInode: 'c938b15f-bcb6-49ef-8651-14d455a97045',
+        tags: 'wealth management',
+        title: 'Wealthy Prospect',
+        titleImage: 'photo',
+        url: '/content.d2e60189-86a8-4c74-b49c-8b4702ffa6bb',
+        working: true
+    };
+
 
     constructor() {}
 
