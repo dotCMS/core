@@ -64,6 +64,7 @@ import org.elasticsearch.action.admin.cluster.settings.ClusterGetSettingsRequest
 import org.elasticsearch.action.admin.cluster.settings.ClusterGetSettingsResponse;
 import org.elasticsearch.action.admin.cluster.snapshots.create.CreateSnapshotRequest;
 import org.elasticsearch.action.admin.cluster.snapshots.create.CreateSnapshotResponse;
+import org.elasticsearch.action.admin.cluster.snapshots.delete.DeleteSnapshotRequest;
 import org.elasticsearch.action.admin.cluster.snapshots.get.GetSnapshotsRequest;
 import org.elasticsearch.action.admin.cluster.snapshots.get.GetSnapshotsResponse;
 import org.elasticsearch.action.admin.cluster.snapshots.restore.RestoreSnapshotRequest;
@@ -897,18 +898,8 @@ public class ESIndexAPI {
 		checkArgument(snapshotName!=null,"There is no valid snapshot name.");
 		checkArgument(indexName!=null,"There is no valid index name.");
 
-		String fileName = indexName + "_" + DateUtil.format(new Date(), "yyyy-MM-dd_hh-mm-ss");
-		File toFile = null;
-		// creates specific backup path (if it shouldn't exist)
-
-		final String REPO_PATH = getRepositoryPath();
-
-		toFile = new File(REPO_PATH);
-		if (!toFile.exists()) {
-			toFile.mkdirs();
-		}
 		// initial repository under the complete path
-		createRepository(toFile.getPath(), repositoryName, true);
+		createRepository(getESRepositoryPath(), repositoryName, true);
 		// if the snapshot exists on the repository
 		if (isSnapshotExist(repositoryName, snapshotName)) {
 			Logger.warn(this.getClass(), snapshotName + " snapshot already exists");
@@ -927,6 +918,13 @@ public class ESIndexAPI {
 			}
 		}
 		// this will be the zip file using the same name of the directory path
+
+		File toFile = new File(getDotCMSRepoPath());
+		if (!toFile.exists()) {
+			toFile.mkdirs();
+		}
+
+		String fileName = indexName + "_" + DateUtil.format(new Date(), "yyyy-MM-dd_hh-mm-ss");
 
 		File toZipFile = new File(toFile.getParent() + File.separator + fileName + ".zip");
 		try (ZipOutputStream zipOut = new ZipOutputStream(Files.newOutputStream(toZipFile.toPath()))) {
@@ -949,21 +947,22 @@ public class ESIndexAPI {
 	 * @throws ExecutionException
 	 *             if the computation threw an exception
 	 */
-	private boolean restoreSnapshot(String repositoryName, String snapshotName)
-			throws InterruptedException, ExecutionException {
-		if (!isSnapshotExist(repositoryName, snapshotName) && ESIndexAPI.BACKUP_REPOSITORY.equals(repositoryName)) {
+	private boolean restoreSnapshot(String repositoryName, String snapshotName) {
+		if (!isSnapshotExist(repositoryName, snapshotName)
+				&& ESIndexAPI.BACKUP_REPOSITORY.equals(repositoryName)) {
 			snapshotName = BACKUP_REPOSITORY; //When restoring a snapshot created straight from a live index, the snapshotName is also: backup
 		}
+
 		if (isRepositoryExist(repositoryName) && isSnapshotExist(repositoryName, snapshotName)) {
 			GetSnapshotsRequest getSnapshotsRequest = new GetSnapshotsRequest(repositoryName);
 			GetSnapshotsResponse getSnapshotsResponse = Sneaky.sneak(()->esclient.snapshot().
 					get(getSnapshotsRequest, RequestOptions.DEFAULT));
 
+
 			final List<SnapshotInfo> snapshots = getSnapshotsResponse.getSnapshots();
 			for(SnapshotInfo snapshot: snapshots){
 				List<String> indices = snapshot.indices();
 				for(String index: indices){
-					// TODO verify if index is closed
 					if(!isIndexClosed(index)){
 						throw new DotStateException("Index \"" + index + "\" is not closed and can not be restored");
 					}
@@ -1042,8 +1041,8 @@ public class ESIndexAPI {
 		File outFile = null;
 		AdminLogger.log(this.getClass(), "uploadSnapshot", "Trying to restore snapshot index");
 		// creates specific backup path (if it shouldn't exist)
-		final String REPO_PATH = getRepositoryPath();
-		File toDirectory = new File(REPO_PATH);
+		final String DOTCMS_REPO_PATH = getDotCMSRepoPath();
+		File toDirectory = new File(DOTCMS_REPO_PATH);
 		if (!toDirectory.exists()) {
 			toDirectory.mkdirs();
 		}
@@ -1088,7 +1087,7 @@ public class ESIndexAPI {
 			}
 			if (!isRepositoryExist(BACKUP_REPOSITORY)) {
 				// initial repository under the complete path
-				createRepository(toDirectory, BACKUP_REPOSITORY, true);
+				createRepository(getESRepositoryPath(), BACKUP_REPOSITORY, true);
 			}
 			return restoreSnapshot(BACKUP_REPOSITORY, snapshotName);
 		}finally{
@@ -1148,10 +1147,7 @@ public class ESIndexAPI {
 	private boolean createRepository(String path, String repositoryName, boolean compress)
 			throws IllegalArgumentException, DotStateException {
 		boolean result = false;
-		Path directory = Paths.get(path);
-		if (!Files.exists(directory)) {
-			throw new IllegalArgumentException("Invalid path to repository while creating the repository.");
-		}
+
 		if (!isRepositoryExist(repositoryName)) {
 			Settings settings = Settings.builder().put("location", path).put("compress", compress)
 					.build();
@@ -1188,8 +1184,7 @@ public class ESIndexAPI {
 	 */
 	private boolean isSnapshotExist(String repositoryName, String snapshotName) {
 		boolean result = false;
-		GetSnapshotsRequest request = new GetSnapshotsRequest();
-		request.repository(repositoryName);
+		GetSnapshotsRequest request = new GetSnapshotsRequest(repositoryName);
 		request.masterNodeTimeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
 
 		GetSnapshotsResponse response = Sneaky.sneak(()->esclient.snapshot()
@@ -1249,10 +1244,10 @@ public class ESIndexAPI {
 				Logger.error(this.getClass(), e.getMessage());
 			}
 			if (cleanUp) {
-				final String REPO_PATH = getRepositoryPath();
+				final String REPO_PATH = getDotCMSRepoPath();
 				File toDelete = new File(REPO_PATH);
 				try {
-					FileUtil.deleteDir(toDelete.getAbsolutePath());
+					org.apache.commons.io.FileUtils.cleanDirectory(toDelete);
 				} catch (IOException e) {
 					Logger.error(this.getClass(), "The files on " + toDelete.getAbsolutePath() + " were not deleted.");
 				}
@@ -1263,7 +1258,7 @@ public class ESIndexAPI {
 		return result;
 	}
 
-	public String getRepositoryPath(){
+	public String getESRepositoryPath(){
 		ClusterGetSettingsRequest clusterGetSettingsRequest = new ClusterGetSettingsRequest();
 		clusterGetSettingsRequest.includeDefaults(true);
 		ClusterGetSettingsResponse clusterGetSettingsResponse = Sneaky.sneak(()-> esclient
@@ -1271,6 +1266,11 @@ public class ESIndexAPI {
 
 		final String repoPathFromConfig = clusterGetSettingsResponse.getSetting(REPOSITORY_PATH);
 		return repoPathFromConfig.substring(1, repoPathFromConfig.length()-1);
+	}
+
+	public String getDotCMSRepoPath(){
+		return Config.getStringProperty("ES_REPO_PATH",
+				ConfigUtils.getDynamicContentPath() + File.separator + "esrepo");
 	}
 
 	@SuppressWarnings("unchecked")

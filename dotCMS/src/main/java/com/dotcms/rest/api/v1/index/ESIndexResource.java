@@ -249,7 +249,7 @@ public class ESIndexResource {
                     ByteStreams.copy(in, os);
                 } finally {
                     // clean up
-                    indexAPI.deleteRepository(ESIndexAPI.BACKUP_REPOSITORY, true);
+                    indexAPI.deleteRepository(ESIndexAPI.BACKUP_REPOSITORY);
                     snapshotFile.delete();
                 }
             };
