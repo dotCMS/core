@@ -1149,7 +1149,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
             if (currentUser == null) {
                 currentUser = APILocator.getUserAPI().getSystemUser();
             }
-
+            boolean respectFrontendRoles = false;
+            if(currentUser.equals(APILocator.getUserAPI().getAnonymousUser())){
+                respectFrontendRoles = true;
+            }
             if (theField instanceof ConstantField) {
                 contentlet.getMap().put(theField.variable(), theField.values());
                 return theField.values();
@@ -1161,13 +1164,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     return contentlet.getFolder();
                 }
             } else if (theField instanceof CategoryField) {
-                final Category category = categoryAPI.find(theField.values(), currentUser, true);
+                final Category category = categoryAPI.find(theField.values(), currentUser, respectFrontendRoles);
                 // Get all the Contentlets Categories
                 final List<Category> selectedCategories = categoryAPI
-                        .getParents(contentlet, currentUser, true);
+                        .getParents(contentlet, currentUser, respectFrontendRoles);
                 final Set<Category> categoryList = new HashSet<Category>();
                 final List<Category> categoryTree = categoryAPI
-                        .getAllChildren(category, currentUser, true);
+                        .getAllChildren(category, currentUser, respectFrontendRoles);
                 if (selectedCategories.size() > 0 && categoryTree != null) {
                     for (int k = 0; k < categoryTree.size(); k++) {
                         final Category cat = categoryTree.get(k);
