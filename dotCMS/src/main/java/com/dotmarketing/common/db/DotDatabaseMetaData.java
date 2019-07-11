@@ -322,7 +322,7 @@ public class DotDatabaseMetaData {
      * @return Boolean true if exists, otherwise false
      * @throws SQLException
      */
-    public boolean existsTable (final Connection connection, final String tableName) throws SQLException {
+    public boolean tableExists(final Connection connection, final String tableName) throws SQLException {
 
         boolean exists                        = false;
         DatabaseMetaData databaseMetaData     = null;

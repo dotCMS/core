@@ -30,7 +30,7 @@ public class Task05165CreateContentTypeWorkflowActionMappingTable extends Abstra
                                         "\n" +
                                         "   id varchar(36) not null,\n" +
                                         "   action varchar(36) not null,\n" +
-                                        "   workflow_action varchar(36) not null,\n" +
+                                        "   workflow_action varchar(255) not null,\n" +
                                         "   scheme_or_content_type  varchar(255) not null,\n" +
                                         "   primary key (id)\n" +
                                         ");",
@@ -39,7 +39,7 @@ public class Task05165CreateContentTypeWorkflowActionMappingTable extends Abstra
                                         "\n" +
                                         "   id varchar(36) not null,\n" +
                                         "   action varchar(36) not null,\n" +
-                                        "   workflow_action varchar(36) not null,\n" +
+                                        "   workflow_action varchar(255) not null,\n" +
                                         "   scheme_or_content_type  varchar(255) not null,\n" +
                                         "   primary key (id)\n" +
                                         ");",
@@ -47,7 +47,7 @@ public class Task05165CreateContentTypeWorkflowActionMappingTable extends Abstra
                                         "\n" +
                                         "   id varchar(36) not null,\n" +
                                         "   action varchar(36) not null,\n" +
-                                        "   workflow_action varchar(36) not null,\n" +
+                                        "   workflow_action varchar(255) not null,\n" +
                                         "   scheme_or_content_type  varchar(255) not null,\n" +
                                         "   primary key (id)\n" +
                                         ");",
@@ -55,14 +55,14 @@ public class Task05165CreateContentTypeWorkflowActionMappingTable extends Abstra
                                         "\n" +
                                         "   id varchar2(36) not null primary key ,\n" +
                                         "   action varchar2(36) not null,\n" +
-                                        "   workflow_action varchar2(36) not null,\n" +
+                                        "   workflow_action varchar2(255) not null,\n" +
                                         "   scheme_or_content_type  varchar2(255) not null\n" +
                                         ");",
             DbType.MSSQL,        "create table content_type_workflow_action_mapping (\n" +
                                         "\n" +
                                         "   id NVARCHAR(36) primary key,\n" +
                                         "   action NVARCHAR(36) not null,\n" +
-                                        "   workflow_action NVARCHAR(36) not null,\n" +
+                                        "   workflow_action NVARCHAR(255) not null,\n" +
                                         "   scheme_or_content_type  NVARCHAR(255) not null\n" +
                                         ");"
     );
@@ -81,7 +81,7 @@ public class Task05165CreateContentTypeWorkflowActionMappingTable extends Abstra
 
         try {
 
-            return !new DotDatabaseMetaData().existsTable(
+            return !new DotDatabaseMetaData().tableExists(
                     DbConnectionFactory.getConnection(), "content_type_workflow_action_mapping");
         } catch (SQLException e) {
 

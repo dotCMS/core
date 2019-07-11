@@ -1084,7 +1084,7 @@ create table content_type_workflow_action_mapping (
 
    id varchar(36) not null,
    action varchar(36) not null,
-   workflow_action varchar(36) not null,
+   workflow_action varchar(255) not null,
    scheme_or_content_type  varchar(255) not null,
    primary key (id)
 );
