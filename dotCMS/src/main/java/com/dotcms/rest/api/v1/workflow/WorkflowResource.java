@@ -30,22 +30,7 @@ import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.JsonArrayToLinkedSetConverter;
-import com.dotcms.workflow.form.BulkActionForm;
-import com.dotcms.workflow.form.FireActionByNameForm;
-import com.dotcms.workflow.form.FireActionForm;
-import com.dotcms.workflow.form.FireBulkActionsForm;
-import com.dotcms.workflow.form.WorkflowActionForm;
-import com.dotcms.workflow.form.WorkflowActionStepBean;
-import com.dotcms.workflow.form.WorkflowActionStepForm;
-import com.dotcms.workflow.form.WorkflowActionletActionBean;
-import com.dotcms.workflow.form.WorkflowActionletActionForm;
-import com.dotcms.workflow.form.WorkflowCopyForm;
-import com.dotcms.workflow.form.WorkflowReorderBean;
-import com.dotcms.workflow.form.WorkflowReorderWorkflowActionStepForm;
-import com.dotcms.workflow.form.WorkflowSchemeForm;
-import com.dotcms.workflow.form.WorkflowSchemeImportObjectForm;
-import com.dotcms.workflow.form.WorkflowStepAddForm;
-import com.dotcms.workflow.form.WorkflowStepUpdateForm;
+import com.dotcms.workflow.form.*;
 import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
@@ -63,10 +48,7 @@ import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
-import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
-import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
-import com.dotmarketing.portlets.workflows.model.WorkflowStep;
+import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
 import com.dotmarketing.portlets.workflows.util.WorkflowSchemeImportExportObject;
 import com.dotmarketing.util.Logger;
@@ -619,6 +601,46 @@ public class WorkflowResource {
             return ResponseUtil.mapExceptionResponse(e);
         }
     } // findActionsByScheme.
+
+    /**
+     * Saves an {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction}, by default the action is associated to the schema, however if the stepId is set will be automatically associated to the step too.
+     * @param request                     HttpServletRequest
+     * @param response                    HttpServletResponse
+     * @param workflowSystemActionForm    WorkflowActionForm
+     * @return Response
+     */
+    @POST
+    @Path("/system/action")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response saveSystemAction(@Context final HttpServletRequest request,
+                                     @Context final HttpServletResponse response,
+                                     final WorkflowSystemActionForm workflowSystemActionForm) {
+
+        final InitDataObject initDataObject = this.webResource.init
+                (null, request, response, true, null);
+        SystemActionWorkflowActionMapping newAction;
+
+        try {
+
+            DotPreconditions.notNull(workflowSystemActionForm,"Expected Request body was empty.");
+            Logger.debug(this, ()-> "Saving system action: " + workflowSystemActionForm.getSystemAction() +
+                                            ", map to action id: " + workflowSystemActionForm.getActionId() +
+                                            " and " + (UtilMethods.isSet(workflowSystemActionForm.getSchemeId())?
+                                            "scheme: " + workflowSystemActionForm.getSchemeId():
+                                            "var: "    + workflowSystemActionForm.getContentTypeVariable()));
+            newAction = this.workflowHelper.mapSystemActionToWorkflowAction(workflowSystemActionForm, initDataObject.getUser());
+            return Response.ok(new ResponseEntityView(newAction)).build(); // 200
+        }  catch (final Exception e) {
+
+            Logger.error(this.getClass(),
+                    "Exception on save, workflowActionForm: " + workflowSystemActionForm +
+                            ", exception message: " + e.getMessage(), e);
+            return ResponseUtil.mapExceptionResponse(e);
+        }
+
+    } // save
 
     /**
      * Saves an action, by default the action is associated to the schema, however if the stepId is set will be automatically associated to the step too.
@@ -1924,5 +1946,7 @@ public class WorkflowResource {
             asyncResponse.resume(ResponseUtil.mapExceptionResponse(e));
         }
     } // deleteScheme.
+
+
 
 } // E:O:F:WorkflowResource.

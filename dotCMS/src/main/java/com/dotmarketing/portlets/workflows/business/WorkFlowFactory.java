@@ -6,15 +6,7 @@ import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
-import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
-import com.dotmarketing.portlets.workflows.model.WorkflowComment;
-import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
-import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
-import com.dotmarketing.portlets.workflows.model.WorkflowSearcher;
-import com.dotmarketing.portlets.workflows.model.WorkflowStep;
-import com.dotmarketing.portlets.workflows.model.WorkflowTask;
+import com.dotmarketing.portlets.workflows.model.*;
 import com.liferay.portal.model.User;
 import java.util.List;
 import java.util.Map;
@@ -354,4 +346,43 @@ public interface WorkFlowFactory {
 	 * @throws DotDataException
 	 */
 	Optional<WorkflowStep> findFirstStep(final String schemeId) throws DotDataException;
+
+	/**
+	 * Saves a {@link SystemActionWorkflowActionMapping}
+	 * @param systemActionWorkflowActionMapping {@link SystemActionWorkflowActionMapping}
+	 * @throws DotDataException
+	 */
+    void saveSystemActionWorkflowActionMapping(SystemActionWorkflowActionMapping systemActionWorkflowActionMapping) throws DotDataException;
+
+	/**
+	 * Finds the {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction}'s by {@link ContentType}
+	 * @param contentType {@link ContentType}
+	 * @return List of Rows
+	 */
+	List<Map<String, Object>> findSystemActionsByContentType(ContentType contentType);
+
+	/**
+	 * Finds the {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction}'s by {@link WorkflowScheme}
+	 * @param workflowScheme {@link WorkflowScheme}
+	 * @return List of Rows
+	 */
+	List<Map<String, Object>> findSystemActionsByScheme(WorkflowScheme workflowScheme);
+
+	/**
+	 * Finds the {@link SystemActionWorkflowActionMapping}  associated to the {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction}
+	 * and {@link ContentType}
+	 * @param systemAction  {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction}
+	 * @param contentType   {@link ContentType}
+	 * @return Map<String, Object>
+	 */
+	Map<String, Object> findSystemActionByContentType(WorkflowAPI.SystemAction systemAction, ContentType contentType);
+
+	/**
+	 * Finds the list of {@link SystemActionWorkflowActionMapping}  associated to the {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction}
+	 * and {@link List} of {@link WorkflowScheme}'s
+	 * @param systemAction {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction}
+	 * @param schemes      {@link List} of {@link WorkflowScheme}'s
+	 * @return List<Map<String, Object>>
+	 */
+	List<Map<String, Object>> findSystemActionsBySchemes(WorkflowAPI.SystemAction systemAction, List<WorkflowScheme> schemes);
 }

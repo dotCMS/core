@@ -377,7 +377,6 @@ public class WorkflowHelper {
     }
 
 
-
     private static class SingletonHolder {
         private static final WorkflowHelper INSTANCE = new WorkflowHelper();
     }
@@ -1292,6 +1291,36 @@ public class WorkflowHelper {
             throw new DotWorkflowException(e.getMessage(), e);
         }
         return action;
+    }
+
+    /**
+     * Save the mapping between the System Action and the Workflow Action for a Content Type or Scheme
+     * @param workflowSystemActionForm {@link WorkflowSystemActionForm}
+     * @param user {@link User}
+     * @return SystemActionWorkflowActionMapping
+     */
+    @WrapInTransaction
+    public SystemActionWorkflowActionMapping mapSystemActionToWorkflowAction(
+            final WorkflowSystemActionForm workflowSystemActionForm, final User user) throws DotSecurityException, DotDataException {
+
+        SystemActionWorkflowActionMapping mapping = null;
+        final WorkflowAction workflowAction = this.workflowAPI.findAction(workflowSystemActionForm.getActionId(), user);
+
+        if (UtilMethods.isSet(workflowSystemActionForm.getSchemeId())) {
+
+            mapping = this.workflowAPI.mapSystemActionToWorkflowActionForWorkflowScheme(workflowSystemActionForm.getSystemAction(), workflowAction,
+                    this.workflowAPI.findScheme(workflowSystemActionForm.getSchemeId()));
+        } else if (UtilMethods.isSet(workflowSystemActionForm.getContentTypeVariable())) {
+
+            final ContentType contentType = APILocator.getContentTypeAPI(user).find(workflowSystemActionForm.getContentTypeVariable());
+            mapping = this.workflowAPI.mapSystemActionToWorkflowActionForContentType(workflowSystemActionForm.getSystemAction(),
+                    workflowAction, contentType);
+        } else {
+
+            throw new BadRequestException("SchemeId or Content Type Variable are required");
+        }
+
+        return mapping;
     }
 
     /**

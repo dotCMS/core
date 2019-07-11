@@ -1102,6 +1102,69 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	} // saveAction
 
 	@Override
+	public List<Map<String, Object>> findSystemActionsByContentType(final ContentType contentType) {
+
+		return Collections.emptyList();
+	}
+
+	/**
+	 * Finds the {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction}'s by {@link WorkflowScheme}
+	 * @param workflowScheme {@link WorkflowScheme}
+	 * @return List of Rows
+	 */
+	@Override
+	public List<Map<String, Object>> findSystemActionsByScheme(final WorkflowScheme workflowScheme) {
+		return Collections.emptyList();
+	}
+
+	/**
+	 * Finds the {@link SystemActionWorkflowActionMapping}  associated to the {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction}
+	 * and {@link ContentType}
+	 * @param systemAction  {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction}
+	 * @param contentType   {@link ContentType}
+	 * @return Map<String, Object>
+	 */
+	@Override
+	public Map<String, Object> findSystemActionByContentType(final WorkflowAPI.SystemAction systemAction, final ContentType contentType) {
+		return Collections.emptyMap();
+	}
+
+	/**
+	 * Finds the list of {@link SystemActionWorkflowActionMapping}  associated to the {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction}
+	 * and {@link List} of {@link WorkflowScheme}'s
+	 * @param systemAction {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction}
+	 * @param schemes      {@link List} of {@link WorkflowScheme}'s
+	 * @return List<Map<String, Object>>
+	 */
+	@Override
+	public List<Map<String, Object>> findSystemActionsBySchemes(final WorkflowAPI.SystemAction systemAction, final List<WorkflowScheme> schemes) {
+		return Collections.emptyList();
+	}
+
+
+	@Override
+	public void saveSystemActionWorkflowActionMapping(final SystemActionWorkflowActionMapping mapping) throws DotDataException  {
+
+		// todo: check if here would be better to do a upsert rather than insert
+		new DotConnect().setSQL(sql.INSERT_SYSTEM_ACTION_WORKFLOW_ACTION_MAPPING)
+				.addParam(mapping.getIdentifier())
+				.addParam(mapping.getSystemAction().name())
+				.addParam(mapping.getWorkflowAction().getId())
+				.addParam(this.getOwnerKey (mapping, mapping.getOwner()))
+				.loadResult();
+	}
+
+	/*
+	* The owner could be a ContentType (variable) or WorkflowScheme (identifier)
+	*/
+	private String getOwnerKey (final SystemActionWorkflowActionMapping mapping, final Object ownerContentTypeOrScheme) {
+
+		return mapping.isOwnerContentType()?
+			ContentType.class.cast(ownerContentTypeOrScheme).variable():
+			WorkflowScheme.class.cast(ownerContentTypeOrScheme).getId();
+	}
+
+	@Override
 	public void saveAction(final WorkflowAction workflowAction,
 						   final WorkflowStep workflowStep,
 						   final int order)  throws DotDataException,AlreadyExistException {

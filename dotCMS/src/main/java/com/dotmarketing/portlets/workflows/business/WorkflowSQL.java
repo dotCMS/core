@@ -70,6 +70,8 @@ abstract class WorkflowSQL {
 	 */
 	protected static String SELECT_STEPS_ID_BY_ACTION  = "select workflow_action_step.step_id as stepid from workflow_action_step  where workflow_action_step.action_id = ?";
 
+	protected static String INSERT_SYSTEM_ACTION_WORKFLOW_ACTION_MAPPING = "insert into content_type_workflow_action_mapping(id, action, workflow_action, scheme_or_content_type) values (?,?,?,?)";
+
 	protected static String INSERT_ACTION_FOR_STEP = "insert into workflow_action_step(action_id, step_id, action_order) values (?,?,?)";
 	protected static String UPDATE_ACTION_FOR_STEP_ORDER = "update workflow_action_step set action_order=? where action_id=? and step_id=?";
 	protected static String INSERT_ACTION= "insert into workflow_action (id, scheme_id, name, condition_to_progress, next_step_id, next_assign, my_order, assignable, commentable, icon, use_role_hierarchy_assign, requires_checkout, show_on) values (?, ?, ?, ?, ?, ?, ?,?, ?, ?,?,?,?)";
