@@ -72,6 +72,9 @@ export class FieldDragDropService {
         this._fieldDropFromTarget = dragulaService.dropModel().pipe(
             tap(() => {
                 this.draggedEvent = true;
+                setTimeout(() => {
+                    this.draggedEvent = false;
+                }, 100);
             }),
             filter((data: DragulaDropModel) => this.isDraggingExistingField(data)),
             map((data: DragulaDropModel) => this.getDroppedFieldData(data))
@@ -91,15 +94,6 @@ export class FieldDragDropService {
      */
     isDraggedEventStarted(): boolean {
         return this.draggedEvent;
-    }
-
-    /**
-     * Set the flag of Drag event as false
-     *
-     * @memberof FieldDragDropService
-     */
-    endDraggedEvent(): void {
-        this.draggedEvent = false;
     }
 
     /**

@@ -153,8 +153,6 @@ describe('FieldDragDropService', () => {
     });
 
     it('should emit fieldDropFromTarget and set draggedEvent as active/true', () => {
-        this.fieldDragDropService.endDraggedEvent();
-
         this.fieldDragDropService.fieldDropFromTarget$.subscribe(() => {
             this.fieldDropFromTarget = true;
         });

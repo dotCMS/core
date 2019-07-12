@@ -1,4 +1,4 @@
-import { async, ComponentFixture } from '@angular/core/testing';
+import { async, ComponentFixture, fakeAsync, tick } from '@angular/core/testing';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DebugElement, Component, Input, Output, EventEmitter, Injectable } from '@angular/core';
 import { ContentTypeFieldsDropZoneComponent } from './';
@@ -89,27 +89,34 @@ class TestFieldDragDropService {
     _fieldDropFromSource: Subject<any> = new Subject();
     _fieldDropFromTarget: Subject<any> = new Subject();
     _fieldRowDropFromTarget: Subject<any> = new Subject();
+    draggedEvent = false;
 
     get fieldDropFromSource$(): Observable<any> {
         return this._fieldDropFromSource.asObservable();
     }
 
     get fieldDropFromTarget$(): Observable<any> {
+        this.draggedEvent = true;
+        setTimeout(() => {
+            this.draggedEvent = false;
+        }, 100);
         return this._fieldDropFromTarget.asObservable();
     }
 
     get fieldRowDropFromTarget$(): Observable<any> {
         return this._fieldRowDropFromTarget.asObservable();
     }
+
+    isDraggedEventStarted(): boolean {
+        return this.draggedEvent;
+    }
 }
 
 @Injectable()
 class TestDotLoadingIndicatorService {
-    show(): void {
-    }
+    show(): void {}
 
-    hide(): void {
-    }
+    hide(): void {}
 }
 
 function becomeNewField(field) {
@@ -229,7 +236,6 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
 
         comp.removeFields.subscribe((removeFields) => (fieldsToRemove = removeFields));
 
-
         comp.removeField(field);
         expect([field]).toEqual(fieldsToRemove);
     });
@@ -270,7 +276,6 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
     });
 
     it('should cancel last drag and drop operation fields', () => {
-
         const fieldRow1: DotContentTypeLayoutDivider = FieldUtil.createFieldRow(1);
         const field = {
             clazz: 'classField',
@@ -321,6 +326,10 @@ class TestHostComponent {
 
     constructor() {}
 }
+
+// TODO: Upgrade tests to use FieldDragDropService (without mocking) and mocking DragulaService
+// Issue ref: dotCMS/core#16772 When you DnD a field (reorder) in the same column it shows up the edit field dialog
+// https://github.com/dotCMS/core-web/pull/1085
 
 describe('Load fields and drag and drop', () => {
     const dotLoadingIndicatorServiceMock: TestDotLoadingIndicatorService = new TestDotLoadingIndicatorService();
@@ -381,7 +390,7 @@ describe('Load fields and drag and drop', () => {
                 { provide: FieldDragDropService, useValue: this.testFieldDragDropService },
                 { provide: HotkeysService, useClass: TestHotkeysMock },
                 { provide: Router, useValue: mockRouter },
-                { provide: DotLoadingIndicatorService, useValue: dotLoadingIndicatorServiceMock },
+                { provide: DotLoadingIndicatorService, useValue: dotLoadingIndicatorServiceMock }
             ]
         });
 
@@ -418,7 +427,6 @@ describe('Load fields and drag and drop', () => {
                                 contentTypeId: '3b'
                             }
                         ]
-
                     },
                     {
                         columnDivider: {
@@ -437,7 +445,6 @@ describe('Load fields and drag and drop', () => {
                                 contentTypeId: '5b'
                             }
                         ]
-
                     }
                 ]
             },
@@ -460,7 +467,7 @@ describe('Load fields and drag and drop', () => {
                 },
                 columns: [
                     {
-                        columnDivider:             {
+                        columnDivider: {
                             clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
                             id: '8',
                             name: 'field 8',
@@ -499,10 +506,12 @@ describe('Load fields and drag and drop', () => {
         expect(spy).toHaveBeenCalledWith(field);
     });
 
-    it('should save all updated fields', () => {
+    it('should save all updated fields', fakeAsync(() => {
         const updatedField = fakeFields[2].columns[0].fields[0];
 
         fixture.detectChanges();
+
+        tick(100);
         comp.editFieldHandler(updatedField);
 
         spyOn(comp.editField, 'emit');
@@ -515,9 +524,10 @@ describe('Load fields and drag and drop', () => {
 
         comp.displayDialog = false;
         comp.saveFieldsHandler(fieldUpdated);
-
-        expect(comp.editField.emit).toHaveBeenCalledWith(Object.assign({}, updatedField, fieldUpdated));
-    });
+        expect(comp.editField.emit).toHaveBeenCalledWith(
+            Object.assign({}, updatedField, fieldUpdated)
+        );
+    }));
 
     it('should emit and create 2 columns', () => {
         spyOn(comp, 'addRow');
@@ -535,8 +545,9 @@ describe('Load fields and drag and drop', () => {
         dotEventsService.notify('add-tab-divider', {});
 
         expect(comp.fieldRows.length).toBe(4);
-        expect(comp.fieldRows[comp.fieldRows.length - 1].divider.clazz)
-            .toBe('com.dotcms.contenttype.model.field.ImmutableTabDividerField');
+        expect(comp.fieldRows[comp.fieldRows.length - 1].divider.clazz).toBe(
+            'com.dotcms.contenttype.model.field.ImmutableTabDividerField'
+        );
     });
 
     it('should have FieldRow and FieldColumn', () => {
@@ -566,7 +577,6 @@ describe('Load fields and drag and drop', () => {
             }
         });
 
-
         expect(dropField).toBe(comp.currentField);
     });
 
@@ -576,7 +586,6 @@ describe('Load fields and drag and drop', () => {
         fixture.detectChanges();
         expect(hostComp.loading).toBe(false);
     });
-
 
     it('should save all the fields (moving the last line to the top)', (done) => {
         fixture.detectChanges();
@@ -613,8 +622,7 @@ describe('Load fields and drag and drop', () => {
         this.testFieldDragDropService._fieldRowDropFromTarget.next(fieldMoved);
     });
 
-    it('should save all the new fields', (done) => {
-
+    it('should save all the new fields and at the end DraggedStarted event should be false', (done) => {
         becomeNewField(fakeFields[2].divider);
         becomeNewField(fakeFields[2].columns[0].columnDivider);
         becomeNewField(fakeFields[2].columns[0].fields[0]);
@@ -633,12 +641,15 @@ describe('Load fields and drag and drop', () => {
 
         comp.saveFields.subscribe((fields) => {
             expect(fakeFields).toEqual(fields);
+            setTimeout(() => {
+                expect(this.testFieldDragDropService.isDraggedEventStarted()).toBe(false);
+            }, 100);
             done();
         });
         comp.saveFieldsHandler(newlyField);
     });
 
-   it('should handler removeField event', () => {
+    it('should handler removeField event', () => {
         const field = {
             clazz: 'classField',
             name: 'nameField'
@@ -692,7 +703,6 @@ describe('Load fields and drag and drop', () => {
         }));
 
         it('should display dialog if a drop event happen from source', () => {
-
             expect(comp.displayDialog).toBe(true);
             const dialog = de.query(By.css('dot-dialog'));
             expect(dialog).not.toBeNull();
@@ -700,7 +710,7 @@ describe('Load fields and drag and drop', () => {
 
         it('should set hideButtons to true when change to variable tab', () => {
             const tabView = de.query(By.css('p-tabView'));
-            tabView.triggerEventHandler('onChange', {index: 1});
+            tabView.triggerEventHandler('onChange', { index: 1 });
 
             fixture.detectChanges();
             expect(de.query(By.css('dot-dialog')).componentInstance.hideButtons).toEqual(true);
@@ -733,4 +743,3 @@ describe('Load fields and drag and drop', () => {
         });
     });
 });
-
