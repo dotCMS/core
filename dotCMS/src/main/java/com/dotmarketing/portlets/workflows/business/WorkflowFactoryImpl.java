@@ -1130,8 +1130,13 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	 * @return Map<String, Object>
 	 */
 	@Override
-	public Map<String, Object> findSystemActionByContentType(final WorkflowAPI.SystemAction systemAction, final ContentType contentType) {
-		return Collections.emptyMap();
+	public Map<String, Object> findSystemActionByContentType(final WorkflowAPI.SystemAction systemAction, final ContentType contentType) throws DotDataException {
+
+		final List<Map<String, Object>> rows = new DotConnect().setSQL(sql.SELECT_SYSTEM_ACTION_BY_SYSTEM_ACTION_AND_SCHEME_OR_CONTENT_TYPE_MAPPING)
+				.addParam(systemAction.name())
+				.addParam(contentType.variable())
+				.loadObjectResults();
+		return UtilMethods.isSet(rows)?rows.get(0):Collections.emptyMap();
 	}
 
 	/**
@@ -1142,8 +1147,33 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	 * @return List<Map<String, Object>>
 	 */
 	@Override
-	public List<Map<String, Object>> findSystemActionsBySchemes(final WorkflowAPI.SystemAction systemAction, final List<WorkflowScheme> schemes) {
-		return Collections.emptyList();
+	public List<Map<String, Object>> findSystemActionsBySchemes(final WorkflowAPI.SystemAction systemAction, final List<WorkflowScheme> schemes) throws DotDataException {
+
+		final DotConnect dotConnect	= new DotConnect()
+				.setSQL(String.format(sql.SELECT_SYSTEM_ACTION_BY_SYSTEM_ACTION_AND_SCHEMES, this.createQueryIn(schemes)))
+				.addParam(systemAction.name());
+
+		for (final WorkflowScheme scheme : schemes) {
+			dotConnect.addParam(scheme.getId());
+		}
+
+		return dotConnect.loadObjectResults();
+	}
+
+	private String createQueryIn (final List<WorkflowScheme> schemes) {
+
+		final StringBuilder builder = new StringBuilder();
+
+		for (int i = 0; i < schemes.size(); ++i) {
+
+			builder.append(schemes.get(i).getId());
+			if (i < schemes.size() -1) {
+
+				builder.append(",");
+			}
+		}
+
+		return builder.toString();
 	}
 
 
