@@ -133,8 +133,7 @@ public class ContentMap {
 	
 	private Object get(String fieldVariableName, Boolean parseVelocity) {
 		try {
-			final boolean respectFrontEndRoles = UtilMethods.isSet(context.get("request")) ? PageMode.get(
-					Try.of(()->(HttpServletRequest)context.get("request")).getOrNull()).respectAnonPerms : false;
+			final boolean respectFrontEndRoles = PageMode.get(Try.of(()->(HttpServletRequest)context.get("request")).getOrNull()).respectAnonPerms;
 			Object ret = null;
 			Field f = retriveField(fieldVariableName);
 			if(f==null){
