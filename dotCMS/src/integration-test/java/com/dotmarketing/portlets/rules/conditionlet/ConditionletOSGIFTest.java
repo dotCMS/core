@@ -33,7 +33,7 @@ public class ConditionletOSGIFTest {
         IntegrationTestInitService.getInstance().init();
         LicenseTestUtil.getLicense();
 
-        Mockito.when(Config.CONTEXT.getRealPath("/WEB-INF/felix")).thenReturn(Config.getStringProperty("context.path.felix","/WEB-INF/felix"));
+        Mockito.when(Config.CONTEXT.getRealPath("/WEB-INF/felix")).thenReturn(Config.getStringProperty("felix.base.dir","/WEB-INF/felix"));
         final ServletConfig servletConfig = mock(ServletConfig.class);
         OSGIProxyServlet.servletConfig = servletConfig;
 

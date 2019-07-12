@@ -1,13 +1,26 @@
 package com.dotcms.util;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.business.FieldAPI;
-import com.dotcms.contenttype.model.field.*;
+import com.dotcms.contenttype.model.field.DataTypes;
+import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.HostFolderField;
+import com.dotcms.contenttype.model.field.ImmutableTextAreaField;
+import com.dotcms.contenttype.model.field.ImmutableTextField;
+import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.repackage.com.csvreader.CsvReader;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
@@ -37,7 +50,11 @@ import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionlet
 import com.dotmarketing.portlets.workflows.actionlet.UnpublishContentActionlet;
 import com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
-import com.dotmarketing.portlets.workflows.model.*;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.portlets.workflows.model.WorkflowState;
+import com.dotmarketing.portlets.workflows.model.WorkflowStep;
+import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.util.ImportUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
@@ -47,17 +64,23 @@ import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
-
-import java.io.*;
-import java.nio.charset.Charset;
-import java.util.*;
 import org.junit.runner.RunWith;
-
-import static org.junit.Assert.*;
 
 /**
  * Verifies that the Content Importer/Exporter feature is working as expected.
@@ -145,7 +168,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
         user = APILocator.getUserAPI().getSystemUser();
-        defaultSite = APILocator.getHostAPI().findDefaultHost(user, false);
+        defaultSite = APILocator.systemHost();  //getHostAPI().findDefaultHost(user, false);
         defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
         contentTypeApi = (ContentTypeAPIImpl) APILocator.getContentTypeAPI(user);
         fieldAPI = APILocator.getContentTypeFieldAPI();
@@ -164,9 +187,9 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         //Second Workflow
         final Role anyWhoCanEditRole = roleAPI.loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_EDIT_ROLE_KEY);
         final Role anyWhoCanPublishRole = roleAPI.loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_PUBLISH_ROLE_KEY);
-        publisherRole = roleAPI.findRoleByName("Publisher / Legal", null);
-        reviewerRole = roleAPI.findRoleByName("Reviewer", publisherRole);
-        contributorRole = roleAPI.findRoleByName("Contributor", reviewerRole);
+        publisherRole = TestUserUtils.getOrCreatePublisherRole();
+        reviewerRole =  TestUserUtils.getOrCreateReviewerRole();
+        contributorRole = TestUserUtils.getOrCreateContributorRole();
 
         schemeStepActionResult2 = createSchemeStepActionActionlet(
                 "ImportUtilScheme_2_" + UUIDGenerator.generateUuid(), "initialStep", "Save",
@@ -259,9 +282,9 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         rolesIds.remove(publisherRole.getId());
 
         //Special Users
-        joeContributor = APILocator.getUserAPI().loadUserById("dotcms.org.2789");
-        janeReviewer = APILocator.getUserAPI().loadUserById("dotcms.org.2787");
-        chrisPublisher = APILocator.getUserAPI().loadUserById("dotcms.org.2795");
+        joeContributor = TestUserUtils.getJoeContributorUser(); //APILocator.getUserAPI().loadUserById("dotcms.org.2789");
+        janeReviewer = TestUserUtils.getJaneReviewerUser(); //APILocator.getUserAPI().loadUserById("dotcms.org.2787");
+        chrisPublisher = TestUserUtils.getChrisPublisherUser();  //APILocator.getUserAPI().loadUserById("dotcms.org.2795");
 
     }
 

@@ -1040,7 +1040,15 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 
 		for (String key : keys) {
 			if (key.startsWith("rel_") && key.endsWith("_inodes")) {
-				final boolean hasParent = key.contains("_P_");
+				//When you click the option Relate New Content, it adds the relwith key with the id of the contentlet that you edited at first.
+				final boolean isRelatingNewContent =  contentletFormData.containsKey("relwith");
+				//This boolean determines if the contentletFormData is a parent or a child
+				//This is the proper behaviour of the boolean:
+				//if you are relating a new child should be false, because the contentletFormData is a child
+				//if you are relating a new parent should be true, because the contentletFormData is a parent
+				//if you are relating an existing child should be true, because the contentletFormData is a parent
+				//if you are relating an existing parent should be false, because the contentletFormData is a child
+				final boolean isContentletAParent = (key.contains("_P_")) ? !isRelatingNewContent : isRelatingNewContent;
 				final String inodesSt = (String) contentletFormData.get(key);
 				if(!UtilMethods.isSet(inodesSt)){
 					continue;
@@ -1055,7 +1063,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 					relationshipsData.setRelationshipsRecords(relationshipsRecords);
 				}
 				final ContentletRelationshipRecords records = relationshipsData.new ContentletRelationshipRecords(
-						relationship, hasParent);
+						relationship, isContentletAParent);
 				final ArrayList<Contentlet> cons = new ArrayList<>();
 				for (String inode : inodes) {
 					if(relationship.getInode().equalsIgnoreCase(inode)){

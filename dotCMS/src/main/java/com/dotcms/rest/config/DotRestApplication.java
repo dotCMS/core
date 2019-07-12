@@ -43,6 +43,7 @@ import com.dotcms.rest.api.v1.system.monitor.MonitorResource;
 import com.dotcms.rest.api.v1.system.role.RoleResource;
 import com.dotcms.rest.api.v1.system.ruleengine.actionlets.ActionletsResource;
 import com.dotcms.rest.api.v1.system.ruleengine.conditionlets.ConditionletsResource;
+import com.dotcms.rest.api.v1.temp.TempFileResource;
 import com.dotcms.rest.api.v1.theme.ThemeResource;
 import com.dotcms.rest.api.v1.user.UserResource;
 import com.dotcms.rest.api.v1.vtl.VTLResource;
@@ -153,6 +154,9 @@ public class DotRestApplication extends javax.ws.rs.core.Application {
 					REST_CLASSES.add(FileAssetsResource.class);
 
 					REST_CLASSES.add(PersonalizationResource.class);
+					REST_CLASSES.add(TempFileResource.class);
+					
+					
 				}
 			}
 		}

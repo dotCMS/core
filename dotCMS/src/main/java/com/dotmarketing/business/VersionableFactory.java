@@ -1,6 +1,7 @@
 package com.dotmarketing.business;
 
 import java.util.List;
+import java.util.Optional;
 
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.VersionInfo;
@@ -77,6 +78,16 @@ public abstract class VersionableFactory {
 	 * @throws DotStateException
 	 */
 	protected abstract List<Versionable> findAllVersions(String id) throws DotDataException, DotStateException;
+
+	/**
+	 * Find all versions limitated by the maxResults (if maxResults is present)
+	 * @param identifier {@link String}
+	 * @param maxResults {@link Integer}
+	 * @return List of Versionable
+	 * @throws DotDataException
+	 * @throws DotStateException
+	 */
+	protected abstract List<Versionable> findAllVersions(String identifier, Optional<Integer> maxResults) throws DotDataException, DotStateException;
 
 	/**
 	 * 

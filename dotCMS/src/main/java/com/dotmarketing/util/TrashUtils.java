@@ -74,23 +74,5 @@ public class TrashUtils {
 	}
 	
 
-	/**
-	 * Will delete folders from the configured bundle directory
-	 * older than what is configed here : trash.delete.bundles.older.than.milliseconds  (2 days by default)
-	 * @return
-	 */
-	public boolean deleteOldBundles(){
-		
-		long olderThan = System.currentTimeMillis() - Config.getIntProperty("trash.delete.bundles.older.than.milliseconds", 1000*60*60*24*2); // two days
-		File bundleFolder = new File(ConfigUtils.getDynamicContentPath() );
-		if(bundleFolder.exists()){
-			for(File file : bundleFolder.listFiles()){
-				if(file.lastModified()< olderThan){
-					FileUtil.deltree(file);
-				}
-			}
-		}
-		return true;
 
-	}
 }

@@ -2,7 +2,10 @@ package com.dotcms.rest.api.v1.page;
 
 import static com.dotcms.util.CollectionsUtils.list;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyString;
@@ -10,39 +13,61 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
-import com.dotcms.rest.EmptyHttpResponse;
-import com.dotcms.rest.InitDataObject;
-import com.dotcms.rest.ResponseEntityView;
-import com.dotcms.rest.RestUtilTest;
-import com.dotcms.rest.WebResource;
+import com.dotcms.datagen.ContainerDataGen;
+import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.StructureDataGen;
+import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.rest.*;
+import com.dotcms.rest.api.v1.personalization.PersonalizationPersonaPageView;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.factories.MultiTreeAPI;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPIImpl;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.PageView;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.personas.business.PersonaAPI;
+import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.PaginatedArrayList;
+import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.json.JSONException;
 import com.liferay.portal.model.User;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import javax.ws.rs.core.Response;
+import com.liferay.util.StringPool;
 import org.elasticsearch.action.search.SearchResponse;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import javax.ws.rs.core.Response;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import static com.dotcms.util.CollectionsUtils.list;
+import static org.junit.Assert.*;
+import static org.mockito.Matchers.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * {@link PageResource} test
@@ -54,6 +79,15 @@ public class PageResourceTest {
     private HttpServletRequest request;
     private HttpServletResponse response;
     private HttpSession session;
+    private Host host;
+    private final String pageName = "index" + System.currentTimeMillis();
+    private final String folderName = "about-us" + System.currentTimeMillis();
+    private final String hostName = "my.host.com" + System.currentTimeMillis();
+    private final String pagePath = String.format("/%s/%s",folderName,pageName);
+    private HTMLPageAsset pageAsset;
+    private Template template;
+    private Container container1;
+    private Container container2;
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -82,6 +116,70 @@ public class PageResourceTest {
         pageResource = new PageResource(pageResourceHelper, webResource, htmlPageAssetRenderedAPI, esapi);
 
         when(request.getSession()).thenReturn(session);
+
+        final Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
+        host = new SiteDataGen().name(hostName).nextPersisted();
+        APILocator.getVersionableAPI().setWorking(host);
+        APILocator.getVersionableAPI().setLive(host);
+        when(request.getParameter("host_id")).thenReturn(host.getIdentifier());
+
+        Folder aboutUs = APILocator.getFolderAPI().findFolderByPath(String.format("/%s/",folderName), host, APILocator.systemUser(), false);
+        if(null == aboutUs || !UtilMethods.isSet(aboutUs.getIdentifier())) {
+            aboutUs = new FolderDataGen().site(host).name(folderName).nextPersisted();
+        }
+        container1 = new ContainerDataGen().nextPersisted();
+        container2 = new ContainerDataGen().nextPersisted();
+        template = new TemplateDataGen().withContainer(container1.getIdentifier()).withContainer(container2.getIdentifier()).nextPersisted();
+        APILocator.getVersionableAPI().setWorking(template);
+        APILocator.getVersionableAPI().setLive(template);
+        pageAsset = new HTMLPageDataGen(aboutUs, template)
+                .languageId(defaultLang.getId()).friendlyName(pageName).pageURL(pageName)
+                .title(pageName).nextPersisted();
+        APILocator.getVersionableAPI().setWorking(pageAsset);
+        APILocator.getVersionableAPI().setLive(pageAsset);
+        pageAsset = HTMLPageAsset.class.cast(APILocator.getHTMLPageAssetAPI().getPageByPath(pagePath, host, defaultLang.getId(), true));
+        assertNotNull(pageAsset.getIdentifier());
+    }
+
+
+
+    /**
+     * Should return at least one persona personalized
+     *
+     * @throws JSONException
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test
+    public void testGetPersonalizedPersonasOnPage()
+            throws DotSecurityException, DotDataException {
+
+        final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
+        final String  htmlPage            = UUIDGenerator.generateUuid();
+        final String  container           = UUIDGenerator.generateUuid();
+        final String  content             = UUIDGenerator.generateUuid();
+        final Persona persona             = APILocator.getPersonaAPI().getPersonas
+                (APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false), true, false,
+                        APILocator.systemUser(), false).stream().findFirst().get();
+        final String personaTag           = persona.getKeyTag();
+        final String personalization      = Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + personaTag;
+
+        multiTreeAPI.saveMultiTree(new MultiTree(htmlPage, container, content, UUIDGenerator.generateUuid(), 1)); // dot:default
+        multiTreeAPI.saveMultiTree(new MultiTree(htmlPage, container, content, UUIDGenerator.generateUuid(), 2, personalization)); // dot:somepersona
+
+        when(request.getRequestURI()).thenReturn("/index");
+        final Response response = pageResource.getPersonalizedPersonasOnPage(request,  new EmptyHttpResponse(),
+                null, 0, 10, "title", "ASC", htmlPage);
+
+        final ResponseEntityView entityView = (ResponseEntityView)response.getEntity();
+        assertNotNull(entityView);
+
+        final PaginatedArrayList<PersonalizationPersonaPageView> paginatedArrayList = (PaginatedArrayList)entityView.getEntity();
+        assertNotNull(paginatedArrayList);
+
+        assertTrue(paginatedArrayList.stream().anyMatch(personalizationPersonaPageView ->
+                personalizationPersonaPageView.getPersona().get(PersonaAPI.KEY_TAG_FIELD).equals(personaTag) &&
+                Boolean.TRUE.equals(personalizationPersonaPageView.getPersona().get("personalized"))));
     }
 
     /**
@@ -94,12 +192,11 @@ public class PageResourceTest {
     @Test
     public void testPathParam()
             throws DotSecurityException, DotDataException {
-        final String path = "about-us/index";
+        final String path = pagePath;
 
         final SearchResponse searchResponse = mock(SearchResponse.class);
 
-        final Contentlet contentlet = APILocator.getContentletAPI()
-                .findContentletByIdentifierAnyLanguage("a9f30020-54ef-494e-92ed-645e757171c2");
+        final Contentlet contentlet = pageAsset;
 
         final List contentlets = list(contentlet);
         final ESSearchResults results = new ESSearchResults(searchResponse, contentlets);
@@ -135,23 +232,20 @@ public class PageResourceTest {
     @Test
     public void testPathParamWithHost()
             throws DotSecurityException, DotDataException {
-        final String path = "//demo.dotcms.com/about-us/index";
 
+        final String path = String.format("//%s/%s/%s", hostName, folderName, pageName);
         final SearchResponse searchResponse = mock(SearchResponse.class);
 
-        final Contentlet contentlet = APILocator.getContentletAPI()
-                .findContentletByIdentifierAnyLanguage("a9f30020-54ef-494e-92ed-645e757171c2");
-
-        final List contentlets = list(contentlet);
+        final List contentlets = list(pageAsset);
         final ESSearchResults results = new ESSearchResults(searchResponse, contentlets);
+        String preparedPagePath = String.format("%s/%s",folderName,pageName).replace("/", "\\\\/");
         final String query = String.format("{"
                 + "query: {"
                 + "query_string: {"
-                + "query: \"+basetype:5 +path:*%s* +conhostName:demo.dotcms.com languageid:1^10\""
+                + "query: \"+basetype:5 +path:*%s* +conhostName:%s languageid:1^10\""
                 + "}"
                 + "}"
-                + "}", "about-us/index".replace("/", "\\\\/"));
-
+                + "}", preparedPagePath, host.getHostname());
 
         when(esapi.esSearch(query, false, user, false)).thenReturn(results);
 
@@ -162,8 +256,8 @@ public class PageResourceTest {
         assertEquals(contentLetsResponse.size(), 1);
 
         final Map responseMap = (Map) contentLetsResponse.iterator().next();
-        assertEquals(responseMap.get("identifier"), contentlet.getIdentifier());
-        assertEquals(responseMap.get("inode"), contentlet.getInode());
+        assertEquals(responseMap.get("identifier"), pageAsset.getIdentifier());
+        assertEquals(responseMap.get("inode"), pageAsset.getInode());
     }
 
     /**
@@ -176,18 +270,22 @@ public class PageResourceTest {
     @Test
     public void testRender() throws DotDataException, DotSecurityException {
 
-        final String pageUri = "/about-us/index";
+        final String pageUri =  pagePath;
         final long languageId = 1;
 
         final User systemUser = APILocator.getUserAPI().getSystemUser();
-        final Host host = APILocator.getHostAPI().findByName("demo.dotcms.com", systemUser, false);
         final HTMLPageAsset pageByPath = (HTMLPageAsset) APILocator.getHTMLPageAssetAPI().getPageByPath(pageUri, host, languageId, false);
 
-        final Template template_Quest_2_Column_Left_Bar =
-                APILocator.getTemplateAPI().find("fe654925-f011-487c-b5db-d7cb4ed2553a", systemUser, false);
+        final Structure structure1 = new StructureDataGen().nextPersisted();
+        final Container localContainer1 = new ContainerDataGen().withStructure(structure1,"").friendlyName("container-1-friendly-name").title("container-1-title").nextPersisted();
+        final Structure structure2 = new StructureDataGen().nextPersisted();
+        final Container localContainer2 = new ContainerDataGen().withStructure(structure2,"").friendlyName("container-2-friendly-name").title("container-2-title").nextPersisted();
+        final Template newTemplate = new TemplateDataGen().withContainer(localContainer1.getIdentifier()).withContainer(localContainer2.getIdentifier()).nextPersisted();
+        APILocator.getVersionableAPI().setWorking(newTemplate);
+        APILocator.getVersionableAPI().setLive(newTemplate);
 
         final Contentlet checkout = APILocator.getContentletAPIImpl().checkout(pageByPath.getInode(), systemUser, false);
-        checkout.setStringProperty(HTMLPageAssetAPI.TEMPLATE_FIELD, template_Quest_2_Column_Left_Bar.getIdentifier());
+        checkout.setStringProperty(HTMLPageAssetAPI.TEMPLATE_FIELD, newTemplate.getIdentifier());
 
         final Contentlet checkin = APILocator.getContentletAPIImpl().checkin(checkout, systemUser, false);
         final Response response = pageResource
@@ -202,38 +300,25 @@ public class PageResourceTest {
                 .map((ContainerRaw containerRaw) -> containerRaw.getContainer().getIdentifier())
                 .collect(Collectors.toList());
 
-        assertTrue(containerIds.contains("fc193c82-8c32-4abe-ba8a-49522328c93e"));
-        assertTrue(containerIds.contains("5363c6c6-5ba0-4946-b7af-cf875188ac2e"));
-        assertTrue(containerIds.contains("a050073a-a31e-4aab-9307-86bfb248096a"));
+        assertTrue(containerIds.contains(localContainer1.getIdentifier()));
+        assertTrue(containerIds.contains(localContainer1.getIdentifier()));
+        assertFalse(containerIds.contains(container1.getIdentifier()));
+        assertFalse(containerIds.contains(container2.getIdentifier()));
 
         for (final ContainerRaw pageContainer : pageContainers) {
             final Map<String, List<Map<String, Object>>> contentlets = pageContainer.getContentlets();
-
-            switch (pageContainer.getContainer().getIdentifier()) {
-                case "fc193c82-8c32-4abe-ba8a-49522328c93e":
-                    assertEquals(contentlets.size(), 1);
-                    assertTrue(contentlets.containsKey("uuid-LEGACY_RELATION_TYPE"));
-                    assertTrue(contentlets.get("uuid-LEGACY_RELATION_TYPE").isEmpty());
-                    break;
-                case "5363c6c6-5ba0-4946-b7af-cf875188ac2e":
-                    assertEquals(contentlets.size(), 1);
-                    assertTrue(contentlets.containsKey("uuid-1"));
-                    assertEquals(contentlets.get("uuid-1").size(), 3);
-                    assertEquals(contentlets.get("uuid-1").get(0).get("inode").toString(),
-                            "55cda310-c503-44d9-b028-7bcaf7b66339");
-                    assertEquals(contentlets.get("uuid-1").get(1).get("inode").toString(),
-                            "25105f18-4d1a-4be6-a78a-c42ee4c00d61");
-                    assertEquals(contentlets.get("uuid-1").get(2).get("inode").toString(),
-                            "da45088c-0096-4300-8c25-1a2ff07c00ae");
-                    break;
-                case "a050073a-a31e-4aab-9307-86bfb248096a":
-                    assertEquals(contentlets.size(), 1);
-                    assertTrue(contentlets.containsKey("uuid-1"));
-                    assertEquals(contentlets.get("uuid-1").size(), 1);
-                    assertEquals(contentlets.get("uuid-1").get(0).get("inode").toString(),
-                            "f6406747-0220-41fb-86e4-32bce21a8822");
-                    break;
+            final Container container = pageContainer.getContainer();
+            final List<Structure> structures = APILocator.getContainerAPI().getStructuresInContainer(container);
+            if(container.getIdentifier().equals(localContainer1.getIdentifier())){
+                assertEquals(localContainer1.getTitle(),container.getTitle());
+                assertEquals(structures.size(),1);
+            } else if(container.getIdentifier().equals(localContainer2.getIdentifier())){
+                assertEquals(localContainer2.getTitle(),container.getTitle());
+                assertEquals(structures.size(),1);
+            } else {
+                fail("Unknown container with id "+container.getIdentifier());
             }
+            assertEquals(contentlets.size(), 1);
         }
     }
 }

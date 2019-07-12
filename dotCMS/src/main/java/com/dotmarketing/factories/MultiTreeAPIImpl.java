@@ -46,6 +46,7 @@ import org.apache.commons.lang.StringUtils;
 
 import java.sql.SQLException;
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -70,6 +71,8 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     private static final String DELETE_SQL = "delete from multi_tree where parent1=? and parent2=? and child=? and  relation_type = ? and personalization = ?";
     private static final String DELETE_SQL_PERSONALIZATION_PER_PAGE = "delete from multi_tree where parent1=? and personalization = ?";
     private static final String DELETE_ALL_MULTI_TREE_SQL = "delete from multi_tree where parent1=? AND relation_type != ?";
+    private static final String DELETE_ALL_MULTI_TREE_SQL_BY_RELATION_AND_PERSONALIZATION = "delete from multi_tree where parent1=? AND relation_type != ? and personalization = ?";
+    private static final String UPDATE_MULTI_TREE_PERSONALIZATION = "update multi_tree set personalization = ? where personalization = ?";
     private static final String SELECT_SQL = "select * from multi_tree where parent1 = ? and parent2 = ? and child = ? and  relation_type = ? and personalization = ?";
 
     private static final String INSERT_SQL = "insert into multi_tree (parent1, parent2, child, relation_type, tree_order, personalization) values (?,?,?,?,?,?)  ";
@@ -77,6 +80,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     private static final String SELECT_BY_PAGE = "select * from multi_tree where parent1 = ? order by tree_order";
     private static final String SELECT_BY_PAGE_AND_PERSONALIZATION = "select * from multi_tree where parent1 = ? and personalization = ? order by tree_order";
     private static final String SELECT_UNIQUE_PERSONALIZATION_PER_PAGE = "select distinct(personalization) from multi_tree where parent1 = ?";
+    private static final String SELECT_UNIQUE_PERSONALIZATION = "select distinct(personalization) from multi_tree";
     private static final String SELECT_BY_ONE_PARENT = "select * from multi_tree where parent1 = ? or parent2 = ? order by tree_order"; // search by page id or container id
     private static final String SELECT_BY_TWO_PARENTS = "select * from multi_tree where parent1 = ? and parent2 = ?  order by tree_order";
     private static final String SELECT_ALL = "select * from multi_tree  ";
@@ -238,6 +242,49 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         return personalizationSet;
     }
 
+    @CloseDBIfOpened
+    @Override
+    public Set<String> getPersonalizations () throws DotDataException {
+
+        final Set<String> personalizationSet = new HashSet<>();
+        final  List<Map<String, Object>>  personalizationMaps =
+                new DotConnect().setSQL(SELECT_UNIQUE_PERSONALIZATION).loadObjectResults();
+
+        for (final Map<String, Object> personalizationMap : personalizationMaps) {
+
+            personalizationSet.add(personalizationMap.values()
+                    .stream().findFirst().orElse(StringPool.BLANK).toString());
+        }
+
+        return personalizationSet;
+    }
+
+    @WrapInTransaction
+    @Override
+    public Set<String> cleanUpUnusedPersonalization(final Predicate<String> personalizationFilter) throws DotDataException {
+
+        final Set<Params> personalizationToRemoveParamsSet = new HashSet<>();
+        final Set<String> personalizationToRemoveSet       = new HashSet<>();
+        final Set<String> currentPersonalizationSet        = this.getPersonalizations();
+
+        currentPersonalizationSet.stream()
+                .filter(personalizationFilter)
+                .forEach(personalization -> {
+
+                    personalizationToRemoveParamsSet.add(new Params(personalization));
+                    personalizationToRemoveSet.add(personalization);
+                });
+
+        if (!personalizationToRemoveParamsSet.isEmpty()) {
+
+            new DotConnect().executeBatch(
+                    "DELETE FROM multi_tree where personalization = ?",
+                    personalizationToRemoveParamsSet);
+        }
+
+        return personalizationToRemoveSet;
+    }
+
     @WrapInTransaction
     @Override
     public List<MultiTree> copyPersonalizationForPage (final String pageId,
@@ -262,14 +309,21 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         return multiTrees;
     } // copyPersonalizationForPage.
 
+
     @WrapInTransaction
     @Override
     public void deletePersonalizationForPage(final String pageId, final String personalization) throws DotDataException {
+
+        Logger.debug(this, "Removing personalization for: " + pageId +
+                                ", personalization: " + personalization);
 
         new DotConnect().setSQL(DELETE_SQL_PERSONALIZATION_PER_PAGE)
                 .addParam(pageId)
                 .addParam(personalization)
                 .loadResult();
+
+        updateHTMLPageVersionTS(pageId);
+        refreshPageInCache(pageId);
     } // deletePersonalizationForPage.
 
     /**
@@ -440,6 +494,68 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
      * {@link MultiTree} linked previously with the page.
      *
      * @param pageId Page's identifier
+     * @param multiTrees
+     * @throws DotDataException
+     */
+    @Override
+    @WrapInTransaction
+    public void overridesMultitreesByPersonalization(final String pageId,
+                                                    final String personalization,
+                                                    final List<MultiTree> multiTrees) throws DotDataException {
+
+        Logger.info(this, String.format(
+                "Overriding MutiTrees: pageId -> %s personalization -> %s multiTrees-> %s ",
+                pageId, personalization, multiTrees));
+
+        if (multiTrees == null) {
+
+            throw new DotDataException("empty list passed in");
+        }
+
+        Logger.debug(MultiTreeAPIImpl.class, ()->String.format("Saving page's content: %s", multiTrees));
+
+        final DotConnect db = new DotConnect();
+        db.setSQL(DELETE_ALL_MULTI_TREE_SQL_BY_RELATION_AND_PERSONALIZATION)
+                .addParam(pageId)
+                .addParam(ContainerUUID.UUID_DEFAULT_VALUE)
+                .addParam(personalization).loadResult();
+
+        if (!multiTrees.isEmpty()) {
+
+            final List<Params> insertParams = Lists.newArrayList();
+            final Set<String> newContainers = new HashSet<>();
+
+            for (final MultiTree tree : multiTrees) {
+                insertParams
+                        .add(new Params(pageId, tree.getContainerAsID(), tree.getContentlet(),
+                                tree.getRelationType(), tree.getTreeOrder(), tree.getPersonalization()));
+                newContainers.add(tree.getContainer());
+            }
+
+            db.executeBatch(INSERT_SQL, insertParams);
+        }
+
+        updateHTMLPageVersionTS(pageId);
+        refreshPageInCache(pageId);
+    }
+
+    @Override
+    @WrapInTransaction
+    public void updatePersonalization(final String currentPersonalization, final String newPersonalization) throws DotDataException {
+
+        Logger.info(this, "Updating the personalization: " + currentPersonalization +
+                                        " to " + newPersonalization);
+
+        new DotConnect().setSQL(UPDATE_MULTI_TREE_PERSONALIZATION)
+                .addParam(newPersonalization)
+                .addParam(currentPersonalization).loadResult();
+    }
+
+    /**
+     * Save a collection of {@link MultiTree} and link them with a page, Also delete all the
+     * {@link MultiTree} linked previously with the page.
+     *
+     * @param pageId Page's identifier
      * @param mTrees
      * @throws DotDataException
      */
@@ -487,14 +603,21 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
     }
 
-    private void _reorder(final MultiTree tree) throws DotDataException {
+    private void _reorder(final MultiTree treeInput) throws DotDataException {
 
+        final MultiTree tree = this.checkPersonalization(treeInput);
         List<MultiTree> trees = getMultiTrees(tree.getHtmlPage(), tree.getContainerAsID(), tree.getRelationType(), tree.getPersonalization());
         trees = trees.stream().filter(rowTree -> !rowTree.equals(tree)).collect(Collectors.toList());
         int maxOrder = (tree.getTreeOrder() > trees.size()) ? trees.size() : tree.getTreeOrder();
         trees.add(maxOrder, tree);
 
         saveMultiTrees(trees);
+    }
+
+    private MultiTree checkPersonalization(final MultiTree tree) {
+
+        return null != tree && null != tree.getPersonalization()?
+                tree: MultiTree.personalized(tree, MultiTree.DOT_PERSONALIZATION_DEFAULT);
     }
 
     private void _dbInsert(final MultiTree multiTree) throws DotDataException {
@@ -518,8 +641,9 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
      * 
      */
     private void updateHTMLPageVersionTS(final String pageId) throws DotDataException {
-        final List<ContentletVersionInfo> infos = APILocator.getVersionableAPI().findContentletVersionInfos(pageId);
-        for (ContentletVersionInfo versionInfo : infos) {
+        final List<ContentletVersionInfo> contentletVersionInfos =
+                APILocator.getVersionableAPI().findContentletVersionInfos(pageId);
+        for (final ContentletVersionInfo versionInfo : contentletVersionInfos) {
             if (versionInfo != null) {
                 versionInfo.setVersionTs(new Date());
                 APILocator.getVersionableAPI().saveContentletVersionInfo(versionInfo);

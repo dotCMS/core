@@ -10,6 +10,7 @@ import com.google.common.collect.Table;
 
 import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
 
 /**
  * API for {@link com.dotmarketing.beans.MultiTree}
@@ -303,6 +304,21 @@ public interface MultiTreeAPI {
     Set<String> getPersonalizationsForPage(String pageId) throws DotDataException;
 
     /**
+     * Get all unique set of the personalization
+     * @return unique Set of personalization values
+     */
+    Set<String> getPersonalizations () throws DotDataException;
+
+    /**
+     * Clean up all unused personalization (based on the personalizationFilter)
+     * Returns the personalizations unused
+     * @param personalizationFilter {@link Predicate}
+     * @return Set
+     * @throws DotDataException
+     */
+    Set<String> cleanUpUnusedPersonalization(final Predicate<String> personalizationFilter) throws DotDataException;
+
+    /**
      * Take a set of containers with a based personalization and set to new personalization, for a page.
      * @param pageId String page id
      * @param basePersonalization String this personalization will use to get the containers and them apply a new personalization over a copy of the containers on the page.
@@ -328,4 +344,21 @@ public interface MultiTreeAPI {
      * @param personalization {@link String} personalization
      */
     void deletePersonalizationForPage(String pageId, String personalization) throws DotDataException;
+
+    /**
+     * Overrides: removes the current multitrees by page + personalization and adds the multiTress
+     * @param pageId {@link String}
+     * @param personalization {@link String}
+     * @param multiTrees {@link List}
+     * @throws DotDataException
+     */
+    void overridesMultitreesByPersonalization(String pageId, String personalization, List<MultiTree> multiTrees)  throws DotDataException ;
+
+    /**
+     * Updates the current personalization to a new personalization
+     *
+     * @param currentPersonalization {@link String}  current existing personalization
+     * @param newPersonalization     {@link String}  new personalization to replace the current one
+     */
+    void updatePersonalization(String currentPersonalization, String newPersonalization) throws DotDataException;
 }

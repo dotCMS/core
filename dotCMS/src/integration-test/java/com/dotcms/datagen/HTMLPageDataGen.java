@@ -167,7 +167,7 @@ public class HTMLPageDataGen extends ContentletDataGen {
         htmlPageAsset.setFolder(folder.getInode());
         htmlPageAsset.setHost(host.getIdentifier());
         htmlPageAsset.setLanguageId(languageId);
-        htmlPageAsset.setStructureInode(structureId);
+        htmlPageAsset.setContentTypeId(contentTypeId);
         htmlPageAsset.setCacheTTL(cacheTTL);
         htmlPageAsset.setSeoKeywords(seoKeywords);
         htmlPageAsset.setSeoDescription(seoDescription);
@@ -183,8 +183,9 @@ public class HTMLPageDataGen extends ContentletDataGen {
         htmlPageAsset.setModUser(modUser);
         htmlPageAsset.setInode(inode);
         htmlPageAsset.setIdentifier(identifier);
-        htmlPageAsset.setIndexPolicy(IndexPolicy.FORCE);
+        htmlPageAsset.setIndexPolicy(IndexPolicy.WAIT_FOR);
         htmlPageAsset.setBoolProperty(Contentlet.IS_TEST_MODE, true);
+        htmlPageAsset.setProperty("hostFolder", folder.getIdentifier());
 
         for (Map.Entry<String, Object> element : properties.entrySet()) {
             htmlPageAsset.setProperty(element.getKey(), element.getValue());
@@ -209,14 +210,14 @@ public class HTMLPageDataGen extends ContentletDataGen {
             throw new DotRuntimeException(msg);
         }
 
-        pageAsset.setIndexPolicy(IndexPolicy.FORCE);
-        pageAsset.setIndexPolicyDependencies(IndexPolicy.FORCE);
+        pageAsset.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        pageAsset.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
         pageAsset.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         Contentlet contentlet = persist(pageAsset);
         HTMLPageAsset htmlPageAsset = pageAssetAPI.fromContentlet(contentlet);
 
-        htmlPageAsset.setIndexPolicy(IndexPolicy.FORCE);
-        htmlPageAsset.setIndexPolicyDependencies(IndexPolicy.FORCE);
+        htmlPageAsset.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        htmlPageAsset.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
         htmlPageAsset.setBoolProperty(Contentlet.IS_TEST_MODE, true);
 
         return htmlPageAsset;

@@ -9,12 +9,14 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
-import com.dotmarketing.business.RoleAPI;
-import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -60,13 +62,14 @@ public class FourEyeApproverActionletTest extends BaseWorkflowIntegrationTest {
     private static ContentletAPI contentletAPI;
     private static LanguageAPI languageAPI;
     private static ContentTypeAPI contentTypeAPI;
-    private static UserAPI userAPI;
 
     private static User systemUser;
     private static CreateSchemeStepActionResult schemeStepActionResult = null;
     private static ContentType type = null;
     private static User publisher1;
     private static User publisher2;
+    private static User contributor1;
+    private static Host site;
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -78,13 +81,15 @@ public class FourEyeApproverActionletTest extends BaseWorkflowIntegrationTest {
         contentTypeAPI = APILocator.getContentTypeAPI(systemUser);
         contentletAPI = APILocator.getContentletAPI();
         languageAPI = APILocator.getLanguageAPI();
-        userAPI = APILocator.getUserAPI();
-        final RoleAPI roleAPI = APILocator.getRoleAPI();
 
+        site = new SiteDataGen().nextPersisted();
         // Get the test role and two users from such a role
-        final Role publisherRole = roleAPI.findRoleByName("Publisher / Legal", null);
-        publisher1 = userAPI.getUsersByNameOrEmailOrUserID("chris@dotcms.com", 0, 1).get(0);
-        publisher2 = userAPI.getUsersByNameOrEmailOrUserID("daniel@dotcms.com", 0, 1).get(0);
+        final Role publisherRole = TestUserUtils.getOrCreatePublisherRole(site);
+        publisher1 = TestUserUtils.getChrisPublisherUser(site);
+        publisher2 = TestUserUtils
+                .getUser(publisherRole, "daniel@dotcms.com", "Daniel", "dotCMS", "daniel");
+
+        contributor1 = TestUserUtils.getJoeContributorUser(site);
 
         // Create the scheme and actions. This method allows you to add just one sub-action
         // in the beginning
@@ -154,11 +159,19 @@ public class FourEyeApproverActionletTest extends BaseWorkflowIntegrationTest {
             cont.setLanguageId(languageId);
             cont.setStringProperty("title", "4-Eye Approval Test Title");
             cont.setStringProperty("txt", "4-Eye Approval Test Text");
-            cont.setHost("48190c8c-42c4-46af-8d1a-0cd5db894797");
-            cont.setFolder("b37bed19-b1fd-497d-be5e-f8cc33c3fb8d");
+            cont.setHost(site.getIdentifier());
             Contentlet contentlet1 = contentletAPI.checkin(cont, systemUser, false);
             Assert.assertFalse("The contentlet cannot be live, it has just been created.",
                     contentlet1.isLive());
+            //Assign permissions
+            final int contentPermissions = (PermissionAPI.PERMISSION_READ
+                    | PermissionAPI.PERMISSION_EDIT | PermissionAPI.PERMISSION_PUBLISH);
+
+            APILocator.getPermissionAPI().save(
+                    new Permission(contentlet1.getPermissionId(),
+                            TestUserUtils.getOrCreatePublisherRole().getId(),
+                            contentPermissions),
+                    contentlet1, APILocator.systemUser(), false);
 
             // Set the appropriate workflow action to the contentlet
             contentlet1.setActionId(
@@ -235,11 +248,19 @@ public class FourEyeApproverActionletTest extends BaseWorkflowIntegrationTest {
         cont.setLanguageId(languageId);
         cont.setStringProperty("title", "4-Eye Approval Test Title");
         cont.setStringProperty("txt", "4-Eye Approval Test Text");
-        cont.setHost("48190c8c-42c4-46af-8d1a-0cd5db894797");
-        cont.setFolder("b37bed19-b1fd-497d-be5e-f8cc33c3fb8d");
+        cont.setHost(site.getIdentifier());
         final Contentlet contentlet1 = contentletAPI.checkin(cont, systemUser, false);
         Assert.assertFalse("The contentlet cannot be live, it has just been created.",
                 contentlet1.isLive());
+        //Assign permissions
+        final int contentPermissions = (PermissionAPI.PERMISSION_READ
+                | PermissionAPI.PERMISSION_EDIT | PermissionAPI.PERMISSION_PUBLISH);
+
+        APILocator.getPermissionAPI().save(
+                new Permission(contentlet1.getPermissionId(),
+                        TestUserUtils.getOrCreatePublisherRole().getId(),
+                        contentPermissions),
+                contentlet1, APILocator.systemUser(), false);
 
         // Set the appropriate workflow action to the contentlet
         contentlet1.setActionId(
@@ -276,8 +297,7 @@ public class FourEyeApproverActionletTest extends BaseWorkflowIntegrationTest {
         cont.setLanguageId(languageId);
         cont.setStringProperty("title", "4-Eye Approval Test Title");
         cont.setStringProperty("txt", "4-Eye Approval Test Text");
-        cont.setHost("48190c8c-42c4-46af-8d1a-0cd5db894797");
-        cont.setFolder("b37bed19-b1fd-497d-be5e-f8cc33c3fb8d");
+        cont.setHost(site.getIdentifier());
         final Contentlet contentlet1 = contentletAPI.checkin(cont, systemUser, false);
         Assert.assertFalse("The contentlet cannot be live, it has just been created.",
                 contentlet1.isLive());
@@ -289,11 +309,13 @@ public class FourEyeApproverActionletTest extends BaseWorkflowIntegrationTest {
 
         // Expect the correct 'user cannot read' exception
         boolean isErrorExpected = false;
-        final String expectedErrorMsg = "User Joe Contributor [ID: dotcms.org.2789][email:joe@dotcms.com] cannot read action action1";
+        final String expectedErrorMsg = String
+                .format("User %s [ID: %s][email:%s] cannot read action action1",
+                        contributor1.getFirstName() + " " + contributor1.getLastName(),
+                        contributor1.getUserId(), contributor1.getEmailAddress());
         try {
             // Triggering the save content action with a non-authorized user
-            User incorrectUser = userAPI.getUsersByNameOrEmailOrUserID("joe@dotcms.com", 0, 1).get(0);
-            workflowAPI.fireWorkflowPreCheckin(contentlet1, incorrectUser);
+            workflowAPI.fireWorkflowPreCheckin(contentlet1, contributor1);
         } catch (Exception e) {
             // Get the expected error message that validates if user can use the workflow action
             final String errorMsg = e.getCause().getCause().getMessage();

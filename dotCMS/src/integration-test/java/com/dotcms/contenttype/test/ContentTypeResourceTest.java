@@ -6,6 +6,7 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.JsonContentTypeTransformer;
+import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequest;
@@ -14,6 +15,7 @@ import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.api.v1.contenttype.ContentTypeForm;
 import com.dotcms.rest.api.v1.contenttype.ContentTypeResource;
 import com.dotcms.util.ConfigTestHelper;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.tngtech.java.junit.dataprovider.DataProvider;
@@ -34,7 +36,18 @@ import org.junit.runner.RunWith;
 
 @RunWith(DataProviderRunner.class)
 public class ContentTypeResourceTest extends ContentTypeBaseTest {
+
 	final String base = "/com/dotcms/contenttype/test/";
+
+	private static final String TO_REPLACE_HOST_ID = "REPLACE_WITH_HOST_ID";
+	private static Host site;
+
+	public static void prepare() {
+
+		if (null == site) {
+			site = new SiteDataGen().nextPersisted();
+		}
+	}
 
 	@DataProvider
 	public static Object[] testCases() throws URISyntaxException {
@@ -58,12 +71,17 @@ public class ContentTypeResourceTest extends ContentTypeBaseTest {
 	@UseDataProvider("testCases")
 	@WrapInTransaction
 	public void testJson(String jsonFile) throws Exception {
+
+		//Preparing test data
+		prepare();
+
 		Logger.info(this.getClass(), "testing:" + jsonFile);
-
-
 		Logger.info(this.getClass(), "testing:" + base + jsonFile);
+
 		InputStream stream = this.getClass().getResourceAsStream(base + jsonFile);
 		String json = IOUtils.toString(stream);
+		json = json.replaceAll(TO_REPLACE_HOST_ID, site.getIdentifier());
+
 		stream.close();
 		List<ContentType> delTypes = new JsonContentTypeTransformer(json).asList();
 

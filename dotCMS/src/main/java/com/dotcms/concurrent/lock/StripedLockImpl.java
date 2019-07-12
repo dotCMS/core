@@ -1,11 +1,16 @@
 package com.dotcms.concurrent.lock;
 
 import com.dotcms.concurrent.DotConcurrentException;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.util.ReturnableDelegate;
 import com.dotcms.util.VoidDelegate;
+import com.dotmarketing.util.Logger;
 import com.google.common.util.concurrent.Striped;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 
 /**
@@ -69,16 +74,24 @@ public class StripedLockImpl<K> implements DotKeyLockManager<K> {
      */
     <R> R tryLock(final K key, final ReturnableDelegate<R> callback, final long time,
             final TimeUnit unit) throws Throwable {
-        final Lock lock = lockStripes.get(key);
-        if (!lock.tryLock(time, unit)) {
-            throw new DotConcurrentException(
-                    String.format("Unable to acquire Lock on key %s ", key)
-                    );
-        }
-        try {
+        final ReentrantLock lock = ReentrantLock.class.cast(lockStripes.get(key));
+        if (lock.isHeldByCurrentThread()) {
+            Logger.debug(StripedLockImpl.class,
+                    "Lock already held by current thread we can still proceed.");
             return callback.execute();
-        } finally {
-            lock.unlock();
+        } else {
+            if (!lock.tryLock(time, unit)) {
+                Logger.error(StripedLockImpl.class,dumpThread(lock, key));
+                throw new DotConcurrentException(
+                        String.format("Unable to acquire Lock on key `%s` and thread `%s` ", key,
+                                Thread.currentThread().getName())
+                );
+            }
+            try {
+                return callback.execute();
+            } finally {
+                lock.unlock();
+            }
         }
     }
 
@@ -94,16 +107,46 @@ public class StripedLockImpl<K> implements DotKeyLockManager<K> {
      */
     void tryLock(final K key, final VoidDelegate callback, final long time, final TimeUnit unit)
             throws Throwable {
-        final Lock lock = lockStripes.get(key);
-        if (!lock.tryLock(time, unit)) {
-            throw new DotConcurrentException(
-                    String.format("Unable to acquire Lock on key %s ", key)
-                    );
-        }
-        try {
+        final ReentrantLock lock = ReentrantLock.class.cast(lockStripes.get(key));
+        if (lock.isHeldByCurrentThread()) {
+            Logger.debug(StripedLockImpl.class,
+                    "Lock already held by current thread we can still proceed.");
             callback.execute();
-        } finally {
-            lock.unlock();
+        } else {
+            if (!lock.tryLock(time, unit)) {
+                Logger.error(StripedLockImpl.class,dumpThread(lock, key));
+                throw new DotConcurrentException(
+                        String.format("Unable to acquire Lock on key `%s` and thread `%s` ", key,
+                                Thread.currentThread().getName())
+                );
+            }
+            try {
+                callback.execute();
+            } finally {
+                lock.unlock();
+            }
         }
+    }
+
+    private Thread getOwnerThread(final ReentrantLock lock) throws NoSuchMethodException, IllegalAccessException, IllegalArgumentException,
+            InvocationTargetException {
+            final Method method = lock.getClass().getDeclaredMethod("getOwner");
+            if(!method.isAccessible()){
+                method.setAccessible(true);
+            }
+            return Thread.class.cast(method.invoke(lock));
+    }
+
+    private String dumpThread(final ReentrantLock lock, final K key){
+        String dumpString = "";
+          try{
+            final Thread thread = getOwnerThread(lock);
+            dumpString = String.format(" Key: `%s`, Thread: `%s`, Lock: `%s` \n %s",key, thread, lock,
+                ExceptionUtil.getStackTraceAsString(thread.getStackTrace())
+            );
+            }catch (Exception e){
+               //Empty suck it up.
+            }
+        return dumpString;
     }
 }

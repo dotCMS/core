@@ -1,9 +1,14 @@
 package com.dotcms.publishing;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
+import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.bundle.business.BundleAPI;
 import com.dotcms.publisher.business.DotPublisherException;
@@ -70,6 +75,8 @@ public class PublisherAPITest extends IntegrationTestBase {
     private static User systemUser;
     private static User adminUser;
 
+    private static Host site;
+
     @BeforeClass
     public static void prepare() throws Exception {
 
@@ -92,6 +99,12 @@ public class PublisherAPITest extends IntegrationTestBase {
         systemUser = userAPI.getSystemUser();
         adminUser = APILocator.getUserAPI()
                 .loadByUserByEmail("admin@dotcms.com", systemUser, false);
+
+        //Create test data
+        site = new SiteDataGen().nextPersisted();
+        new FolderDataGen().site(site).nextPersisted();
+        new FolderDataGen().site(site).nextPersisted();
+        new FolderDataGen().site(site).nextPersisted();
     }
 
     /**
@@ -148,9 +161,8 @@ public class PublisherAPITest extends IntegrationTestBase {
             publisherEndPointAPI.saveEndPoint(endpoint);
 
             /* Get a random folder from the default host. */
-            final Host defaultHost = hostAPI.findDefaultHost(systemUser, false);
             final List<Folder> folderList = folderAPI
-                    .findFoldersByHost(defaultHost, systemUser, false);
+                    .findFoldersByHost(site, systemUser, false);
             final Folder folder = folderList.get(0);
             Logger.info(this, "Using folder: " + folder.getName());
 
