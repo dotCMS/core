@@ -503,4 +503,18 @@ $finder-s-input: '.ui.input input';
     cw-modal-dialog .ui.dimmer {
         background-color: rgba(0, 0, 0, 0.55);
     }
+
+    .cw-rule-engine__empty {
+        margin-top: 5em;
+        text-align: center;
+
+        span {
+            display: block;
+        }
+
+        button {
+            margin-top: $basic-padding * 2;
+        }
+    }
+
 }
