@@ -1308,8 +1308,9 @@ public class WorkflowHelper {
 
         if (UtilMethods.isSet(workflowSystemActionForm.getSchemeId())) {
 
-            mapping = this.workflowAPI.mapSystemActionToWorkflowActionForWorkflowScheme(workflowSystemActionForm.getSystemAction(), workflowAction,
-                    this.workflowAPI.findScheme(workflowSystemActionForm.getSchemeId()));
+            final WorkflowScheme workflowScheme = this.workflowAPI.findScheme(workflowSystemActionForm.getSchemeId());
+            mapping = this.workflowAPI.mapSystemActionToWorkflowActionForWorkflowScheme(workflowSystemActionForm.getSystemAction(),
+                    workflowAction, workflowScheme);
         } else if (UtilMethods.isSet(workflowSystemActionForm.getContentTypeVariable())) {
 
             final ContentType contentType = APILocator.getContentTypeAPI(user).find(workflowSystemActionForm.getContentTypeVariable());

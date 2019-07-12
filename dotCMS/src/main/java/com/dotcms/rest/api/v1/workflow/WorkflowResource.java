@@ -7,6 +7,7 @@ import static com.dotcms.util.DotLambdas.not;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
@@ -603,7 +604,72 @@ public class WorkflowResource {
     } // findActionsByScheme.
 
     /**
-     * Saves an {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction}, by default the action is associated to the schema, however if the stepId is set will be automatically associated to the step too.
+     * Returns a set of {@link SystemActionWorkflowActionMapping} associated to the schemeId
+     * @param request  HttpServletRequest
+     * @param schemeId String
+     * @return Response
+     */
+    @GET
+    @Path("/schemes/{schemeId}/system/actions")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response findSystemActionsByScheme(@Context final HttpServletRequest request,
+                                              @Context final HttpServletResponse response,
+                                              @PathParam("schemeId") final String schemeId) {
+
+        final InitDataObject initDataObject = this.webResource.init
+                (null, request, response, true, null);
+        try {
+
+            Logger.debug(this, "Getting the system actions for the scheme: " + schemeId);
+            final List<SystemActionWorkflowActionMapping> systemActions =
+                    this.workflowAPI.findSystemActionsByScheme(this.workflowAPI.findScheme(schemeId), initDataObject.getUser());
+            return Response.ok(new ResponseEntityView(systemActions)).build(); // 200
+        } catch (Exception e) {
+            Logger.error(this.getClass(),
+                    "Exception on findSystemActionsByScheme, schemeId: " + schemeId +
+                            ", exception message: " + e.getMessage(), e);
+            return ResponseUtil.mapExceptionResponse(e);
+        }
+    } // findSystemActionsByScheme.
+
+    /**
+     * Returns a set of {@link SystemActionWorkflowActionMapping} associated to the content type
+     * @param request  HttpServletRequest
+     * @param contentTypeVarOrId String
+     * @return Response
+     */
+    @GET
+    @Path("/contenttypes/{contentTypeVarOrId}/system/actions")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response findSystemActionsByContentType(@Context final HttpServletRequest request,
+                                                    @Context final HttpServletResponse response,
+                                                    @PathParam("contentTypeVarOrId") final String contentTypeVarOrId) {
+
+        final InitDataObject initDataObject = this.webResource.init
+                (null, request, response, true, null);
+        try {
+
+            Logger.debug(this, "Getting the system actions for the content type: " + contentTypeVarOrId);
+            final User user = initDataObject.getUser();
+            final ContentType contentType = APILocator.getContentTypeAPI(user).find(contentTypeVarOrId);
+            final List<SystemActionWorkflowActionMapping> systemActions =
+                    this.workflowAPI.findSystemActionsByContentType(contentType, initDataObject.getUser());
+            return Response.ok(new ResponseEntityView(systemActions)).build(); // 200
+        } catch (Exception e) {
+            Logger.error(this.getClass(),
+                    "Exception on findSystemActionsByContentType, content type: " + contentTypeVarOrId +
+                            ", exception message: " + e.getMessage(), e);
+            return ResponseUtil.mapExceptionResponse(e);
+        }
+    } // findSystemActionsByScheme.
+
+    /**
+     * Saves an {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction}, by default the action is associated to the schema,
+     * however if the stepId is set will be automatically associated to the step too.
      * @param request                     HttpServletRequest
      * @param response                    HttpServletResponse
      * @param workflowSystemActionForm    WorkflowActionForm
@@ -620,7 +686,6 @@ public class WorkflowResource {
 
         final InitDataObject initDataObject = this.webResource.init
                 (null, request, response, true, null);
-        SystemActionWorkflowActionMapping newAction;
 
         try {
 
@@ -630,8 +695,10 @@ public class WorkflowResource {
                                             " and " + (UtilMethods.isSet(workflowSystemActionForm.getSchemeId())?
                                             "scheme: " + workflowSystemActionForm.getSchemeId():
                                             "var: "    + workflowSystemActionForm.getContentTypeVariable()));
-            newAction = this.workflowHelper.mapSystemActionToWorkflowAction(workflowSystemActionForm, initDataObject.getUser());
-            return Response.ok(new ResponseEntityView(newAction)).build(); // 200
+
+            return Response.ok(new ResponseEntityView(
+                    this.workflowHelper.mapSystemActionToWorkflowAction(workflowSystemActionForm, initDataObject.getUser())))
+                    .build(); // 200
         }  catch (final Exception e) {
 
             Logger.error(this.getClass(),
@@ -639,8 +706,7 @@ public class WorkflowResource {
                             ", exception message: " + e.getMessage(), e);
             return ResponseUtil.mapExceptionResponse(e);
         }
-
-    } // save
+    } // saveSystemAction
 
     /**
      * Saves an action, by default the action is associated to the schema, however if the stepId is set will be automatically associated to the step too.

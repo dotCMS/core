@@ -3319,8 +3319,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		final SystemActionWorkflowActionMapping mapping =
 				new SystemActionWorkflowActionMapping(UUIDGenerator.generateUuid(),
 						systemAction, workflowAction, contentType);
-		this.workFlowFactory.saveSystemActionWorkflowActionMapping(mapping);
-		return mapping;
+		return this.workFlowFactory.saveSystemActionWorkflowActionMapping(mapping);
 	}
 
 
@@ -3341,8 +3340,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				new SystemActionWorkflowActionMapping(UUIDGenerator.generateUuid(),
 						systemAction, workflowAction, workflowScheme);
 
-		this.workFlowFactory.saveSystemActionWorkflowActionMapping(mapping);
-		return mapping;
+		return this.workFlowFactory.saveSystemActionWorkflowActionMapping(mapping);
 	}
 
 	/**

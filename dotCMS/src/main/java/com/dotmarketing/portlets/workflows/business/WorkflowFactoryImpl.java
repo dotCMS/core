@@ -1102,9 +1102,11 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	} // saveAction
 
 	@Override
-	public List<Map<String, Object>> findSystemActionsByContentType(final ContentType contentType) {
+	public List<Map<String, Object>> findSystemActionsByContentType(final ContentType contentType) throws DotDataException {
 
-		return Collections.emptyList();
+		return new DotConnect().setSQL(sql.SELECT_SYSTEM_ACTION_BY_SCHEME_OR_CONTENT_TYPE_MAPPING)
+						.addParam(contentType.variable())
+						.loadObjectResults();
 	}
 
 	/**
@@ -1113,8 +1115,11 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	 * @return List of Rows
 	 */
 	@Override
-	public List<Map<String, Object>> findSystemActionsByScheme(final WorkflowScheme workflowScheme) {
-		return Collections.emptyList();
+	public List<Map<String, Object>> findSystemActionsByScheme(final WorkflowScheme workflowScheme) throws DotDataException {
+
+		return new DotConnect().setSQL(sql.SELECT_SYSTEM_ACTION_BY_SCHEME_OR_CONTENT_TYPE_MAPPING)
+				.addParam(workflowScheme.getId())
+				.loadObjectResults();
 	}
 
 	/**
@@ -1143,15 +1148,43 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 
 	@Override
-	public void saveSystemActionWorkflowActionMapping(final SystemActionWorkflowActionMapping mapping) throws DotDataException  {
+	public SystemActionWorkflowActionMapping saveSystemActionWorkflowActionMapping(final SystemActionWorkflowActionMapping mapping) throws DotDataException  {
 
-		// todo: check if here would be better to do a upsert rather than insert
-		new DotConnect().setSQL(sql.INSERT_SYSTEM_ACTION_WORKFLOW_ACTION_MAPPING)
-				.addParam(mapping.getIdentifier())
+		final String ownerKey = this.getOwnerKey (mapping, mapping.getOwner());
+		SystemActionWorkflowActionMapping toReturn = mapping;
+
+		final List<Map<String, Object>> existsRow =
+				new DotConnect().setSQL(sql.SELECT_SYSTEM_ACTION_BY_SYSTEM_ACTION_AND_SCHEME_OR_CONTENT_TYPE_MAPPING)
 				.addParam(mapping.getSystemAction().name())
-				.addParam(mapping.getWorkflowAction().getId())
-				.addParam(this.getOwnerKey (mapping, mapping.getOwner()))
-				.loadResult();
+				.addParam(ownerKey)
+				.loadObjectResults();
+
+		if (!UtilMethods.isSet(existsRow)) {
+
+			new DotConnect().setSQL(sql.INSERT_SYSTEM_ACTION_WORKFLOW_ACTION_MAPPING)
+					.addParam(mapping.getIdentifier())
+					.addParam(mapping.getSystemAction().name())
+					.addParam(mapping.getWorkflowAction().getId())
+					.addParam(ownerKey)
+					.loadResult();
+		} else {
+
+			// if exists, we override the id and update.
+			final String existingId = (String)existsRow.get(0).get("id");
+			toReturn = new SystemActionWorkflowActionMapping(existingId,
+					mapping.getSystemAction(),
+					mapping.getWorkflowAction(),
+					mapping.getOwner());
+
+			new DotConnect().setSQL(sql.UPDATE_SYSTEM_ACTION_WORKFLOW_ACTION_MAPPING)
+					.addParam(mapping.getSystemAction().name())
+					.addParam(mapping.getWorkflowAction().getId())
+					.addParam(ownerKey)
+					.addParam(existingId)
+					.loadResult();
+		}
+
+		return toReturn;
 	}
 
 	/*

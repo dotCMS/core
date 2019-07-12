@@ -350,23 +350,24 @@ public interface WorkFlowFactory {
 	/**
 	 * Saves a {@link SystemActionWorkflowActionMapping}
 	 * @param systemActionWorkflowActionMapping {@link SystemActionWorkflowActionMapping}
+	 * @return SystemActionWorkflowActionMapping
 	 * @throws DotDataException
 	 */
-    void saveSystemActionWorkflowActionMapping(SystemActionWorkflowActionMapping systemActionWorkflowActionMapping) throws DotDataException;
+	SystemActionWorkflowActionMapping saveSystemActionWorkflowActionMapping(SystemActionWorkflowActionMapping systemActionWorkflowActionMapping) throws DotDataException;
 
 	/**
 	 * Finds the {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction}'s by {@link ContentType}
 	 * @param contentType {@link ContentType}
 	 * @return List of Rows
 	 */
-	List<Map<String, Object>> findSystemActionsByContentType(ContentType contentType);
+	List<Map<String, Object>> findSystemActionsByContentType(ContentType contentType) throws DotDataException;
 
 	/**
 	 * Finds the {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction}'s by {@link WorkflowScheme}
 	 * @param workflowScheme {@link WorkflowScheme}
 	 * @return List of Rows
 	 */
-	List<Map<String, Object>> findSystemActionsByScheme(WorkflowScheme workflowScheme);
+	List<Map<String, Object>> findSystemActionsByScheme(WorkflowScheme workflowScheme) throws DotDataException;
 
 	/**
 	 * Finds the {@link SystemActionWorkflowActionMapping}  associated to the {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction}
