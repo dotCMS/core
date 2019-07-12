@@ -212,14 +212,17 @@ public class ESIndexResource {
     }
 
     /**
-     * Creates a compressed (zip) index snapshot file
+     * Creates a compressed (zip) index snapshot file.
+     *
      * @param httpServletRequest request
      * @param params optional parameters, such as "alias"
      * @return
+     * @deprecated Use ES Snapshot via ES REST API instead {@see <a href="https://www.elastic.co/guide/en/elasticsearch/reference/6.7/modules-snapshots.html">}.
      */
     @GET
     @Path("/snapshot/{params:.*}")
     @Produces({"application/zip", MediaType.APPLICATION_JSON})
+    @Deprecated
     public Response snapshotIndex(@Context HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, @PathParam("params") String params) {
 
     	try {
@@ -268,11 +271,13 @@ public class ESIndexResource {
      * @param inputFileDetail file stream details
      * @param params optional parameters
      * @return request status
+     * @deprecated Use ES Snapshot via ES REST API instead {@see <a href="https://www.elastic.co/guide/en/elasticsearch/reference/6.7/modules-snapshots.html">}.
      */
     @POST
     @Path("/restoresnapshot/{params:.*}")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Deprecated
     public void restoreSnapshotIndex(@Context final HttpServletRequest httpServletRequest,
                                          @Context final HttpServletResponse httpServletResponse,
                                          @Suspended final AsyncResponse asyncResponse,
