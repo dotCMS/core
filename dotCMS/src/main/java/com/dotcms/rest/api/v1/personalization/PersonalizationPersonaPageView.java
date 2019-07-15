@@ -1,6 +1,6 @@
 package com.dotcms.rest.api.v1.personalization;
 
-import com.dotmarketing.portlets.personas.model.Persona;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.io.Serializable;
 import java.util.Map;
@@ -20,7 +20,7 @@ public class PersonalizationPersonaPageView implements Serializable {
         this.persona      = persona;
     }
 
-
+    @JsonIgnore
     public String getPageId() {
         return pageId;
     }

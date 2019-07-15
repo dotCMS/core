@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 public class PersonalizationPersonaPageViewPaginator implements PaginatorOrdered<PersonalizationPersonaPageView> {
 
     public  static final String PAGE_ID        = "pageId";
-    private static final String PERSONAS_QUERY = "+contentType:persona +live:true +deleted:false +working:true";
+    private static final String PERSONAS_QUERY = "+contentType:persona +live:true +deleted:false +working:true +conhost:";
 
     private final PersonaAPI    personaAPI;
     private final MultiTreeAPI  multiTreeAPI;
@@ -53,6 +53,7 @@ public class PersonalizationPersonaPageViewPaginator implements PaginatorOrdered
         final boolean respectFrontendRoles = (Boolean)extraParams.get("respectFrontEndRoles");
         final String pageId  = extraParams.get(PAGE_ID).toString();
         String orderByString = UtilMethods.isSet(orderBy) ? orderBy : "title desc";
+        final String hostId  = extraParams.get("hostId").toString();
 
         orderByString =  orderByString.trim().toLowerCase().endsWith(" asc") ||
                 orderByString.trim().toLowerCase().endsWith(" desc")? orderByString:
@@ -61,7 +62,7 @@ public class PersonalizationPersonaPageViewPaginator implements PaginatorOrdered
         try {
 
             final List<Contentlet> contentlets  = this.contentletAPI.search
-                    (PERSONAS_QUERY, limit, offset, orderByString, user,respectFrontendRoles);
+                    (PERSONAS_QUERY + hostId, limit, offset, orderByString, user,respectFrontendRoles);
             final Set<String> personaTagPerPage = this.multiTreeAPI.getPersonalizationsForPage (pageId);
             final List<PersonalizationPersonaPageView> personalizationPersonaPageViews = new ArrayList<>();
 
@@ -78,7 +79,7 @@ public class PersonalizationPersonaPageViewPaginator implements PaginatorOrdered
 
             final PaginatedArrayList<PersonalizationPersonaPageView> result = new PaginatedArrayList<>();
             result.addAll(personalizationPersonaPageViews);
-            result.setTotalResults(this.contentletAPI.indexCount(PERSONAS_QUERY, user, respectFrontendRoles));
+            result.setTotalResults(this.contentletAPI.indexCount(PERSONAS_QUERY+ hostId, user, respectFrontendRoles));
 
             return result;
         } catch (DotDataException | IllegalAccessException | InvocationTargetException| DotSecurityException e) {
