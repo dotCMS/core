@@ -3,7 +3,9 @@ import { Response, ResponseOptions, ConnectionBackend } from '@angular/http';
 import { MockBackend } from '@angular/http/testing';
 import { FieldService } from './';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
-import { FieldType, DotContentTypeField } from '@portlets/content-types/fields';
+import { FieldType } from '@portlets/content-types/fields';
+import { DotCMSContentTypeField } from '@dotcms/models';
+import { dotcmsContentTypeFieldBasicMock } from '@tests/dot-content-types.mock';
 
 export const mockFieldType: FieldType = {
     clazz: 'TextField',
@@ -125,7 +127,8 @@ describe('FieldService', () => {
 
     describe('Update Field', () => {
         beforeEach(() => {
-            const field: DotContentTypeField = {
+            const field: DotCMSContentTypeField = {
+                ...dotcmsContentTypeFieldBasicMock,
                 name: 'test field',
                 id: '1',
                 sortOrder: 1
@@ -148,6 +151,7 @@ describe('FieldService', () => {
 
         it('should update field', () => {
             expect(this.lastConnection.request._body.field).toEqual({
+                ...dotcmsContentTypeFieldBasicMock,
                 name: 'test field',
                 id: '1',
                 sortOrder: 1

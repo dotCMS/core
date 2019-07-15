@@ -9,13 +9,13 @@ describe('DotApiContentType', () => {
     const expectedMsg = {
         entity: {
             name: 'content',
-            fields: [
+            layout: [
                 {
-                    name: 'field1',
+                    name: 'row1',
                     value: 'value1'
                 },
                 {
-                    name: 'field2',
+                    name: 'row1',
                     value: 'value2'
                 }
             ]
@@ -50,8 +50,8 @@ describe('DotApiContentType', () => {
         });
 
         it('should request a content type\'s fields', () => {
-            dotApiContentType.getFields('123').then((data) => {
-                expect(data).toEqual(expectedMsg.entity.fields);
+            dotApiContentType.getLayout('123').then((data) => {
+                expect(data).toEqual(expectedMsg.entity.layout);
             });
             expect(httpClient.request).toHaveBeenCalledWith({ url: '/api/v1/contenttype/id/123' });
         });
@@ -78,8 +78,8 @@ describe('DotApiContentType', () => {
             });
         });
 
-        it('should throw error GetFields()', () => {
-            dotApiContentType.getFields('123').catch((err: DotCMSError) => {
+        it('should throw error getLayout()', () => {
+            dotApiContentType.getLayout('123').catch((err: DotCMSError) => {
                 expect(err).toEqual({
                     status: 500,
                     message: 'Error'

@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { ContentType } from '../../../../../shared/content-type.model';
+import { DotCMSContentType } from '@dotcms/models';
 import * as _ from 'lodash';
 
 /**
@@ -10,26 +10,26 @@ import * as _ from 'lodash';
  */
 @Injectable()
 export class DotEditContentTypeCacheService {
-    private currentContentType: ContentType;
+    private currentContentType: DotCMSContentType;
 
 
     /**
      *Strore the current {@see ContentTye} in cache
      *
-     * @param {ContentType} contentType
+     * @param {DotCMSContentType} contentType
      * @memberof DotEditContentTypeCacheService
      */
-    set(contentType: ContentType): void {
+    set(contentType: DotCMSContentType): void {
         this.currentContentType = contentType;
     }
 
     /**
      *Return the current {@see ContentType} from cache
      *
-     * @returns {ContentType}
+     * @returns {DotCMSContentType}
      * @memberof DotEditContentTypeCacheService
      */
-    get(): ContentType {
+    get(): DotCMSContentType {
         return _.cloneDeep(this.currentContentType);
     }
 }

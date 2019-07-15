@@ -4,17 +4,18 @@
     "license": "MIT",
     "scripts": {
         "ng": "ng",
-        "build:dev": "ng build --configuration=development",
-        "build:prod": "ng build --configuration=production --prod dotcms-ui",
-        "build:libs": "ng build dotcms-js; ng build dot-rules; ng build dot-layout-grid",
-        "watch": "npm run build -w --no-delete-output-path --sourcemap",
         "lint": "ng lint",
         "e2e": "ng e2e",
         "test": "ng test",
         "createpackagejson": "node -e \"var data = require('./dist/package.json');var fs = require('fs');data.version = data.version + \"-\" + new Date().getTime();var {scripts, dependencies, devDependencies, ...res} = data;fs.writeFileSync('./dist/package.json', JSON.stringify(res, null, 4));\"",
         "publish:dev": "rm -rf dist;npm run build:prod;cp package.json ./dist/package.json;npm run createpackagejson;cd dist;npm publish",
         "publish:doc:docms": "typedoc projects/dotcms/src/lib/ --options projects/dotcms/typedoc.json; gh-pages --dist ./dist-docs/dotcms --dest ./docs/dotcms",
-        "dot-custom-elements": "cd ./projects/dot-custom-elements && npm run start",
+        "publish:doc:docms-models": "typedoc projects/dotcms-models/src/ --options projects/dotcms-models/typedoc.json; gh-pages --dist ./dist-docs/dotcms-models --dest ./docs/dotcms-models",
+        "publish:docs": "npm run publish:doc:docms;npm run publish:doc:docms-models",
+        "build:dev": "ng build --configuration=development",
+        "build:prod": "ng build --configuration=production --prod dotcms-ui",
+        "build:libs": "ng build dotcms-js; ng build dot-rules; ng build dot-layout-grid; npm run build:models",
+        "build:models": "ng build dotcms-models; cd dist-lib/dotcms-models; npm pack; cd ../../",
         "docker:test": "npm run docker:build;docker run --rm core-web npm test -- dotcms-ui --watch=false",
         "docker:build": "docker build -t core-web ."
     },
@@ -35,6 +36,7 @@
         "@angular/platform-browser-dynamic": "~7.2.0",
         "@angular/router": "~7.2.0",
         "@ctrl/tinycolor": "^2.0.0",
+        "@dotcms/models": "file:dist-lib/dotcms-models/dotcms-models-0.0.1.tgz",
         "angular2-hotkeys": "^2.1.2",
         "angular2-tinymce": "^2.1.2",
         "core-js": "^2.5.4",
@@ -49,7 +51,6 @@
         "primeng": "^7.0.3",
         "rxjs": "~6.3.3",
         "test": "^0.6.0",
-        "tslib": "^1.9.0",
         "zone.js": "~0.8.26"
     },
     "devDependencies": {
@@ -74,6 +75,7 @@
         "protractor": "~5.4.0",
         "ts-node": "~7.0.0",
         "tsickle": ">=0.31.0",
+        "tslib": "^1.9.0",
         "tslint": "~5.11.0",
         "tslint-angular": "^1.1.1",
         "typescript": "~3.1.6"

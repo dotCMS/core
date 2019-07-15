@@ -18,7 +18,7 @@ import { take, takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs/internal/Subject';
 import { Table } from 'primeng/table';
 import * as _ from 'lodash';
-import { DotContentTypeField } from '../models';
+import { DotCMSContentTypeField } from '@dotcms/models';
 
 @Component({
     selector: 'dot-content-type-fields-variables',
@@ -30,7 +30,7 @@ export class DotContentTypeFieldsVariablesComponent implements OnInit, OnChanges
     table: Table;
 
     @Input()
-    field: DotContentTypeField;
+    field: DotCMSContentTypeField;
 
     fieldVariables: DotFieldVariable[] = [];
     fieldVariablesBackup: DotFieldVariable[] = [];

@@ -7,7 +7,7 @@ import { Injectable } from '@angular/core';
 import { Resolve, ActivatedRouteSnapshot } from '@angular/router';
 import { CrudService } from '@services/crud';
 import { ContentTypesInfoService } from '@services/content-types-info';
-import { ContentType } from '../shared/content-type.model';
+import { DotCMSContentType } from '@dotcms/models';
 import { LoginService, ResponseView } from 'dotcms-js';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { take, map, catchError } from 'rxjs/operators';
@@ -20,7 +20,7 @@ import { take, map, catchError } from 'rxjs/operators';
  * @implements {Resolve<ContentType>}
  */
 @Injectable()
-export class ContentTypeEditResolver implements Resolve<ContentType> {
+export class ContentTypeEditResolver implements Resolve<DotCMSContentType> {
     constructor(
         private contentTypesInfoService: ContentTypesInfoService,
         private crudService: CrudService,
@@ -29,7 +29,7 @@ export class ContentTypeEditResolver implements Resolve<ContentType> {
         private loginService: LoginService
     ) {}
 
-    resolve(route: ActivatedRouteSnapshot): Observable<ContentType> {
+    resolve(route: ActivatedRouteSnapshot): Observable<DotCMSContentType> {
         if (route.paramMap.get('id')) {
             return this.getContentType(route.paramMap.get('id'));
         } else {
@@ -37,7 +37,7 @@ export class ContentTypeEditResolver implements Resolve<ContentType> {
         }
     }
 
-    private getContentType(id: string): Observable<ContentType> {
+    private getContentType(id: string): Observable<DotCMSContentType> {
         return this.crudService.getDataById('v1/contenttype', id).pipe(
             take(1),
             catchError((err: ResponseView) => {
@@ -54,7 +54,7 @@ export class ContentTypeEditResolver implements Resolve<ContentType> {
         );
     }
 
-    private getDefaultContentType(type: string): Observable<ContentType> {
+    private getDefaultContentType(type: string): Observable<DotCMSContentType> {
         return observableOf({
             owner: this.loginService.auth.user.userId,
             baseType: type.toUpperCase(),

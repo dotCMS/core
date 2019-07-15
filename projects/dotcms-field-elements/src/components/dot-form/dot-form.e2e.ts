@@ -1,97 +1,7 @@
 import { newE2EPage, E2EPage, E2EElement } from '@stencil/core/testing';
 import { EventSpy } from '@stencil/core/dist/declarations';
 import { dotTestUtil } from '../../utils';
-import { DotCMSContentTypeField, DotCMSContentTypeRow } from './models';
-
-const basicField: DotCMSContentTypeField = {
-    clazz: '',
-    contentTypeId: '',
-    dataType: '',
-    defaultValue: '',
-    fieldContentTypeProperties: [],
-    fieldType: '',
-    fieldTypeLabel: '',
-    fieldVariables: [],
-    fixed: true,
-    hint: '',
-    iDate: 100,
-    id: '',
-    indexed: true,
-    listed: true,
-    modDate: 100,
-    name: '',
-    readOnly: true,
-    regexCheck: '',
-    required: true,
-    searchable: true,
-    sortOrder: 100,
-    unique: true,
-    values: '',
-    variable: ''
-};
-
-const fieldsMock: DotCMSContentTypeRow[] = [
-    {
-        columns: [
-            {
-                fields: [
-                    {
-                        ...basicField,
-                        variable: 'textfield1',
-                        required: true,
-                        name: 'TexField',
-                        fieldType: 'Text'
-                    }
-                ]
-            }
-        ],
-    }, {
-        columns: [
-            {
-                fields: [
-                    {
-                        ...basicField,
-                        defaultValue: 'key|value,llave|valor',
-                        fieldType: 'Key-Value',
-                        name: 'Key Value:',
-                        required: false,
-                        variable: 'keyvalue2'
-                    }
-                ]
-            }, {
-                fields: [
-                    {
-                        ...basicField,
-                        defaultValue: '2',
-                        fieldType: 'Select',
-                        name: 'Dropdwon',
-                        required: false,
-                        values: '|,labelA|1,labelB|2,labelC|3',
-                        variable: 'dropdown3'
-                    }
-                ]
-            }
-        ],
-    }];
-
-const fieldMockNotRequired = [
-    {
-        columns: [
-            {
-                fields: [{
-                    ...basicField,
-                    defaultValue: 'key|value,llave|valor',
-                    fieldType: 'Key-Value',
-                    name: 'Key Value:',
-                    required: false,
-                    variable: 'keyvalue2'
-                }],
-                columnDivider: {}
-            }
-        ],
-        divider: {}
-    },
-];
+import { fieldMockNotRequired, dotFormLayoutMock } from '../../test';
 
 describe('dot-form', () => {
     let page: E2EPage;
@@ -181,7 +91,7 @@ describe('dot-form', () => {
 
     describe('rows', () => {
         beforeEach(async () => {
-            element.setProperty('layout', fieldsMock);
+            element.setProperty('layout', dotFormLayoutMock);
             element.setProperty('fieldsToShow', 'test');
             await page.waitForChanges();
         });
@@ -193,7 +103,7 @@ describe('dot-form', () => {
 
         it('should set values on dot-form-row', async () => {
             const firstRow = await element.find('dot-form-row');
-            expect(await firstRow.getProperty('row')).toEqual(fieldsMock[0]);
+            expect(await firstRow.getProperty('row')).toEqual(dotFormLayoutMock[0]);
             expect(await firstRow.getProperty('fieldsToShow')).toEqual('test');
         });
     });
@@ -201,7 +111,7 @@ describe('dot-form', () => {
     describe('@Props', () => {
         describe('fieldsToShow', () => {
             beforeEach(() => {
-                element.setProperty('layout', fieldsMock);
+                element.setProperty('layout', dotFormLayoutMock);
             });
 
             it('should render specified fields', async () => {
@@ -256,7 +166,7 @@ describe('dot-form', () => {
 
         describe('fields', () => {
             beforeEach(() => {
-                element.setProperty('layout', fieldsMock);
+                element.setProperty('layout', dotFormLayoutMock);
             });
 
             it('should render fields', async () => {
@@ -274,7 +184,7 @@ describe('dot-form', () => {
 
     describe('@Events', () => {
         beforeEach(async () => {
-            element.setProperty('layout', fieldsMock);
+            element.setProperty('layout', dotFormLayoutMock);
             await page.waitForChanges();
         });
 
@@ -320,9 +230,8 @@ describe('dot-form', () => {
 
     describe('actions', () => {
         beforeEach(async () => {
-            element.setProperty('layout', fieldsMock);
+            element.setProperty('layout', dotFormLayoutMock);
             await page.waitForChanges();
-
         });
 
         describe('click reset button', () => {

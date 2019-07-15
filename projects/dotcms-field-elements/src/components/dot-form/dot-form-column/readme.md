@@ -7,10 +7,10 @@
 
 ## Properties
 
-| Property       | Attribute        | Description                                                              | Type                      | Default     |
-| -------------- | ---------------- | ------------------------------------------------------------------------ | ------------------------- | ----------- |
-| `column`       | --               | Fields metada to be rendered                                             | `DotCMSContentTypeColumn` | `undefined` |
-| `fieldsToShow` | `fields-to-show` | (optional) List of fields (variableName) separated by comma, to be shown | `string`                  | `undefined` |
+| Property       | Attribute        | Description                                                              | Type                            | Default     |
+| -------------- | ---------------- | ------------------------------------------------------------------------ | ------------------------------- | ----------- |
+| `column`       | --               | Fields metada to be rendered                                             | `DotCMSContentTypeLayoutColumn` | `undefined` |
+| `fieldsToShow` | `fields-to-show` | (optional) List of fields (variableName) separated by comma, to be shown | `string`                        | `undefined` |
 
 
 ----------------------------------------------

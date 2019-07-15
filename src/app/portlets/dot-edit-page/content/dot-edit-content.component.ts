@@ -28,7 +28,7 @@ import { DotRenderedPage } from '../shared/models/dot-rendered-page.model';
 import { DotEditPageDataService } from '../shared/services/dot-edit-page-resolver/dot-edit-page-data.service';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
-import { ContentType } from '../../content-types/shared/content-type.model';
+import { DotCMSContentType } from '@dotcms/models';
 import { PageModelChangeEvent, PageModelChangeEventType } from './services/dot-edit-content-html/models';
 
 /**
@@ -226,7 +226,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
      * @param ContentType item
      * @memberof DotEditContentComponent
      */
-    onFormSelected(item: ContentType): void {
+    onFormSelected(item: DotCMSContentType): void {
         this.dotEditContentHtmlService.renderAddedForm(item).subscribe((model) => {
             if (model) {
                 this.dotEditPageService

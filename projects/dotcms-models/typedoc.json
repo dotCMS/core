@@ -1,0 +1,11 @@
+{
+    "name": "DotCMS Models",
+    "mode": "file",
+    "out": "./dist-docs/dotcms-models",
+    "module": "commonjs",
+    "target": "ES6",
+    "readme": "./projects/dotcms-models/README.md",
+    "excludePrivate": true,
+    "tsconfig": "./projects/dotcms-models/tsconfig.lib.json",
+    "excludeExternals": true
+}

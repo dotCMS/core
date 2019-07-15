@@ -1,5 +1,6 @@
 import { DotCMSHttpClient } from '../utils/DotCMSHttpClient';
-import { DotCMSContentType, DotCMSContentTypeField, DotCMSError } from '../models';
+import { DotCMSError } from '../models';
+import { DotCMSContentTypeLayoutRow, DotCMSContentType } from '@dotcms/models';
 
 /**
  * Get the information of DotCMS contentTypes
@@ -28,9 +29,9 @@ export class DotApiContentType {
         return data.entity;
     }
 
-    getFields(contentTypeId): Promise<DotCMSContentTypeField[]> {
+    getLayout(contentTypeId): Promise<DotCMSContentTypeLayoutRow[]> {
         return this.get(contentTypeId).then((contentType: DotCMSContentType) => {
-            return contentType.fields;
+            return contentType.layout;
         });
     }
 }

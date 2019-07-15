@@ -1,38 +1,26 @@
 # DotCMS UI
 This project was created using [angular-cli](https://cli.angular.io/) it means you can use `ng` with all the commands and params.
 
-## Minimum Requirements
-1. NodeJS v8.11.3
-2. NPM 6.3.0
-3. Angular CLI 6.1.2
-
 ## Before start
-Build the interal libraries (until we publish it to npm). `dotcms-js` needs to be build first, because is used by other libraries.
+1. Install node and npm
+2. Install angular-cli: `npm i @angular/cli`
+3. Build internal libraries: `npm run build:libs`
 
-```
-ng build dotcms-js
-ng build dot-layout-grid
-ng build dot-rules
-ng build dotcms
-```
-
-You should see now the folders:
-
-```
-dist-lib/dot-layout-grid
-dist-lib/dot-rules
-dist-lib/dotcms-js
-dist-lib/dotcms
-```
-
-## Run for DotCMS
-Watch and compile your files in development mode and copy it into ```dotAdmin``` folder in core.
+## Build and run in local DotCMS instance
+Watch and compile your files in development mode and copy it into ```dotAdmin``` folder in your `tomcat` folder.
 
 1. ```npm run build:dev -- --output-path your/path/to/dotadmin``` (ex. ~/dev/dotcms/tomcat8/webapps/ROOT/dotAdmin)
 2. Open http://localhost:8080/dotAdmin
 
-## Run tests
-`ng test`
+## Run unit tests
+To test `dotcms-ui` (main app):
+
+```ng test dotcms-ui --browsers=Chrome```
+
+To run tests for any internal library:
+
+```ng test {library-name} --browsers=Chrome```
+
 
 ## Publish to NPM
 **You need the credentials for dotcms npm account**
@@ -61,6 +49,27 @@ Edit the `package.json` to update manually the version of the module and finally
 ```
 $ npm publish
 ```
+
+## Internal Libraries
+
+### [dotcms](https://github.com/dotCMS/core-web/tree/master/projects/dotcms)
+A collection of Angular Services to connect our FE with the DotCMS APIs. [Full docs](https://dotcms.github.io/core-web/docs/dotcms/globals.html)
+
+### [dotcms-models](https://github.com/dotCMS/core-web/tree/master/projects/dotcms-models)
+A collection of DotCMS interfaces and types to be reused in all our libraries and main app. [Full docs](https://dotcms.github.io/core-web/docs/dotcms-models/globals.html)
+
+### [dotcms-field-elements](https://github.com/dotCMS/core-web/tree/master/projects/dotcms-field-elements)
+A [StencilJS](https://stenciljs.com/) Web Elements library of DotCMS form fields.
+
+### [dot-layout-grid](https://github.com/dotCMS/core-web/tree/master/projects/dot-layout-grid)
+For our page Layout Editor, allow us to create rows and columns on a page layout.
+
+### [dot-rules](https://github.com/dotCMS/core-web/tree/master/projects/dot-rules)
+Our DotCMS Rules portlet.
+
+### [dotcms-js](https://github.com/dotCMS/core-web/tree/master/projects/dotcms-js) _(deprecated)_
+This in a inherit collection of Angular Services.
+
 ------------------------
 
 # File structure
@@ -110,7 +119,6 @@ module-name/
 └── component-name-routing.module..ts
 ```
 
-
 ## Components and or directives
 Services, models and utils are *JUST* for this component and should be only use it for this component, if any of this needs to be shared between components in the module, it should live at module level
 
@@ -147,33 +155,3 @@ component-name/
 ├── component-name.component.html
 └── component-name.component.spec.ts
 ```
-
-## Libraries
-
-### Custom Elements for Form Builder
-We create a project to build a [Web Custom Element](https://developer.mozilla.org/en-US/docs/Web/Web_Components) for each DotCMS field in the system. We use [StencilJS](https://stenciljs.com/) to build them.
-
-This project live in the folder: `/projects/dotcms-field-elements` and to build the library into DotCMS:
-
-1. Edit the `projects/dotcms-field-elements/stencil.config.ts`
-
-```diff
-diff --git a/projects/dotcms-field-elements/stencil.config.ts b/projects/dotcms-field-elements/stencil.config.ts
-index c3cba78b..a2476cbc 100644
---- a/projects/dotcms-field-elements/stencil.config.ts
-+++ b/projects/dotcms-field-elements/stencil.config.ts
-@@ -8,6 +8,7 @@ export const config: Config = {
-     { type: 'docs' },
-     {
-       type: 'www',
-+      buildDir: '{path-to-dotcms-core}/dotCMS/src/main/webapp/custom-elements',
-       serviceWorker: null // disable service workers
-     }
-   ],
-
-```
-
-2. Go to `/projects/dotcms-field-elements/`
-3. Run `npm run build`
-
-Commit and push the files in DotCMS core repo. **DONT commit the changes in stencil.config.ts**.

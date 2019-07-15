@@ -6,6 +6,7 @@ import { DOTTestBed } from 'src/app/test/dot-test-bed';
 import { NgControl, FormGroup, FormControl } from '@angular/forms';
 import { DotMessageService } from '@services/dot-messages-service';
 import { By } from '@angular/platform-browser';
+import { dotcmsContentTypeFieldBasicMock } from '@tests/dot-content-types.mock';
 
 @Component({
     selector: 'dot-field-validation-message',
@@ -80,7 +81,9 @@ describe('DotRelationshipsPropertyComponent', () => {
         comp.property = {
             name: 'relationship',
             value: {},
-            field: {}
+            field: {
+                ...dotcmsContentTypeFieldBasicMock,
+            }
         };
 
         comp.group = new FormGroup({
@@ -146,7 +149,9 @@ describe('DotRelationshipsPropertyComponent', () => {
                     velocityVar: 'velocityVar',
                     cardinality: 1
                 },
-                field: {}
+                field: {
+                    ...dotcmsContentTypeFieldBasicMock
+                }
             };
 
             comp.group = new FormGroup({

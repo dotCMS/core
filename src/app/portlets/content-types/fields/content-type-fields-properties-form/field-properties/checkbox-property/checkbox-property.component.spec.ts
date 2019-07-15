@@ -7,6 +7,7 @@ import { DotMessageService } from '@services/dot-messages-service';
 import { By } from '@angular/platform-browser';
 import { MockDotMessageService } from '../../../../../../test/dot-message-service.mock';
 import { FormGroup, FormControl } from '@angular/forms';
+import { dotcmsContentTypeFieldBasicMock } from '@tests/dot-content-types.mock';
 
 describe('CheckboxPropertyComponent', () => {
     let comp: CheckboxPropertyComponent;
@@ -46,7 +47,9 @@ describe('CheckboxPropertyComponent', () => {
         comp.property = {
             name: 'indexed',
             value: 'value',
-            field: {}
+            field: {
+                ...dotcmsContentTypeFieldBasicMock,
+            }
         };
 
         fixture.detectChanges();

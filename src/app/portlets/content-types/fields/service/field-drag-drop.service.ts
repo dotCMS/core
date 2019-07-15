@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { DragulaService } from 'ng2-dragula';
 import { filter, map, tap } from 'rxjs/operators';
-import { DotContentTypeLayoutDivider, DotContentTypeField } from '@portlets/content-types/fields/models';
+import { DotCMSContentTypeLayoutRow, DotCMSContentTypeField } from '@dotcms/models';
 import * as _ from 'lodash';
 
 /**
@@ -16,7 +16,7 @@ export class FieldDragDropService {
 
     private _fieldDropFromSource: Observable<DropFieldData>;
     private _fieldDropFromTarget: Observable<DropFieldData>;
-    private _fieldRowDropFromTarget: Observable<DotContentTypeLayoutDivider[]>;
+    private _fieldRowDropFromTarget: Observable<DotCMSContentTypeLayoutRow[]>;
     private draggedEvent = false;
 
     private currentColumnOvered: Element;
@@ -255,13 +255,13 @@ interface DragulaDropModel {
 }
 
 export interface DropFieldData {
-    item: DotContentTypeField;
+    item: DotCMSContentTypeField;
     source?: {
         columnId: string;
-        model: DotContentTypeField[];
+        model: DotCMSContentTypeField[];
     };
     target: {
         columnId: string;
-        model: DotContentTypeField[];
+        model: DotCMSContentTypeField[];
     };
 }

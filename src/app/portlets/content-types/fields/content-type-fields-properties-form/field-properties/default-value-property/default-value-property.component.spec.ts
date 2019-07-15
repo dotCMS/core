@@ -7,6 +7,7 @@ import { DotMessageService } from '@services/dot-messages-service';
 import { FormGroup, FormControl, Validators } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { DotFieldValidationMessageComponent } from '@components/_common/dot-field-validation-message/dot-field-validation-message';
+import { dotcmsContentTypeFieldBasicMock } from '@tests/dot-content-types.mock';
 
 describe('DefaultValuePropertyComponent', () => {
     let comp: DefaultValuePropertyComponent;
@@ -36,7 +37,9 @@ describe('DefaultValuePropertyComponent', () => {
         comp.property = {
             name: 'name',
             value: 'value',
-            field: {}
+            field: {
+                ...dotcmsContentTypeFieldBasicMock
+            }
         };
     }));
 
@@ -92,7 +95,9 @@ describe('DefaultValuePropertyComponent', () => {
         comp.property = {
             name: 'name',
             value: null,
-            field: {}
+            field: {
+                ...dotcmsContentTypeFieldBasicMock
+            }
         };
         comp.group.get('name').markAsDirty();
         fixture.detectChanges();

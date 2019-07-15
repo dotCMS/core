@@ -7,6 +7,7 @@ import { DotMessageService } from '@services/dot-messages-service';
 import { FormGroup, FormControl, NgControl } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
+import { dotcmsContentTypeFieldBasicMock } from '@tests/dot-content-types.mock';
 
 @Component({
     selector: 'dot-field-validation-message',
@@ -42,7 +43,9 @@ describe('NamePropertyComponent', () => {
         comp.property = {
             name: 'name',
             value: 'value',
-            field: {}
+            field: {
+                ...dotcmsContentTypeFieldBasicMock
+            }
         };
     }));
 
@@ -96,6 +99,7 @@ describe('NamePropertyComponent', () => {
             name: 'name',
             value: 'value',
             field: {
+                ...dotcmsContentTypeFieldBasicMock,
                 variable: 'thisIsAVar'
             }
         };

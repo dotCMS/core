@@ -20,7 +20,7 @@ import { DotMessageService } from '@services/dot-messages-service';
 import { DotWorkflow } from '@models/dot-workflow/dot-workflow.model';
 import { DotWorkflowService } from '@services/dot-workflow/dot-workflow.service';
 import { DotLicenseService } from '@services/dot-license/dot-license.service';
-import { DotContentTypeField, DotContentTypeLayoutDivider } from '../fields';
+import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from '@dotcms/models';
 import { FieldUtil } from '../fields/util/field-util';
 
 /**
@@ -44,7 +44,7 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
     data: any;
 
     @Input()
-    layout: DotContentTypeLayoutDivider[];
+    layout: DotCMSContentTypeLayoutRow[];
 
     @Output()
     onSubmit: EventEmitter<any> = new EventEmitter();
@@ -175,7 +175,7 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
         this.valid.next(this.canSave);
     }
 
-    private getDateVarFieldOption(field: DotContentTypeField): SelectItem {
+    private getDateVarFieldOption(field: DotCMSContentTypeField): SelectItem {
         return {
             label: field.name,
             value: field.variable
@@ -184,8 +184,8 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
 
     private getDateVarOptions(): SelectItem[] {
         const dateVarOptions = FieldUtil.getFieldsWithoutLayout(this.layout)
-            .filter((field: DotContentTypeField) => this.isDateVarField(field))
-            .map((field: DotContentTypeField) => this.getDateVarFieldOption(field));
+            .filter((field: DotCMSContentTypeField) => this.isDateVarField(field))
+            .map((field: DotCMSContentTypeField) => this.getDateVarFieldOption(field));
 
         if (dateVarOptions.length) {
             dateVarOptions.unshift({
@@ -242,7 +242,7 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
         return this.data && this.data.baseType === 'CONTENT';
     }
 
-    private isDateVarField(field: DotContentTypeField): boolean {
+    private isDateVarField(field: DotCMSContentTypeField): boolean {
         return (
             field.clazz === 'com.dotcms.contenttype.model.field.ImmutableDateTimeField' &&
             field.indexed

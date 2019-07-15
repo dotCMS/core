@@ -8,6 +8,7 @@ import { FormGroup, FormControl, NgControl } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { DotTextareaContentModule } from '@components/_common/dot-textarea-content/dot-textarea-content.module';
 import { DotFieldHelperModule } from '@components/dot-field-helper/dot-field-helper.module';
+import { dotcmsContentTypeFieldBasicMock } from '@tests/dot-content-types.mock';
 
 @Component({
     selector: 'dot-field-validation-message',
@@ -44,7 +45,9 @@ describe('ValuesPropertyComponent', () => {
             comp.property = {
                 name: 'values',
                 value: 'value',
-                field: {}
+                field: {
+                    ...dotcmsContentTypeFieldBasicMock
+                }
             };
             comp.helpText = 'Helper Text';
         })

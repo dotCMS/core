@@ -3,7 +3,7 @@ export interface DotCMSFormConfig {
     contentType?: string;
     identifier: string;
     workflowtoSubmit?: string;
-    fields?: string[];
+    fieldsToShow?: string;
     labels?: {
         submit?: string,
         reset?: string

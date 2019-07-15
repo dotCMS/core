@@ -10,6 +10,7 @@ import { PaginationEvent } from '@components/_common/searchable-dropdown/compone
 import { NgControl, FormGroup } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { of } from 'rxjs';
+import { dotcmsContentTypeFieldBasicMock } from '@tests/dot-content-types.mock';
 
 @Component({
     selector: 'dot-searchable-dropdown',
@@ -98,7 +99,9 @@ describe('CategoriesPropertyComponent', () => {
 
     it('should set PaginatorService url & placeholder empty label', () => {
         comp.property = {
-            field: {},
+            field: {
+                ...dotcmsContentTypeFieldBasicMock,
+            },
             name: 'categories',
             value: ''
         };
@@ -109,7 +112,9 @@ describe('CategoriesPropertyComponent', () => {
 
     it('should set stored value in placeholder label', () => {
         comp.property = {
-            field: {},
+            field: {
+                ...dotcmsContentTypeFieldBasicMock,
+            },
             name: 'categories',
             value: {
                 categoryName: 'A-Z Index',

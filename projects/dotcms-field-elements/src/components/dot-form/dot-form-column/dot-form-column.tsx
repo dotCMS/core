@@ -1,6 +1,6 @@
 import { Component, Prop } from '@stencil/core';
-import { DotCMSContentTypeColumn, DotCMSContentTypeField } from '../models';
 import { fieldMap, shouldShowField } from '../utils';
+import { DotCMSContentTypeLayoutColumn, DotCMSContentTypeField } from '@dotcms/models';
 
 @Component({
     tag: 'dot-form-column',
@@ -8,7 +8,7 @@ import { fieldMap, shouldShowField } from '../utils';
 })
 export class DotFormColumnComponent {
     /** Fields metada to be rendered */
-    @Prop() column: DotCMSContentTypeColumn;
+    @Prop() column: DotCMSContentTypeLayoutColumn;
 
     /** (optional) List of fields (variableName) separated by comma, to be shown */
     @Prop({ reflectToAttr: true }) fieldsToShow: string;

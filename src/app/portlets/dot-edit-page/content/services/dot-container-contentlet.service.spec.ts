@@ -6,7 +6,7 @@ import { MockConnection } from '@angular/http/testing';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DotPageContainer } from '../../../dot-edit-page/shared/models/dot-page-container.model';
 import { DotPageContent } from '../../../dot-edit-page/shared/models/dot-page-content.model';
-import { ContentType } from '../../../content-types/shared/content-type.model';
+import { DotCMSContentType } from '@dotcms/models';
 
 describe('DotContainerContentletService', () => {
     let dotContainerContentletService: DotContainerContentletService;
@@ -51,7 +51,7 @@ describe('DotContainerContentletService', () => {
             uuid: '3'
         };
 
-        const form: ContentType = {
+        const form: DotCMSContentType = {
             clazz: 'clazz',
             defaultType: true,
             fixed: true,

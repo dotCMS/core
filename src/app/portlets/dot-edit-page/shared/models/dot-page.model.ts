@@ -1,4 +1,4 @@
-import { ContentType } from '../../../content-types/shared/content-type.model';
+import { DotCMSContentType } from '@dotcms/models';
 
 // TODO: we need to see why the endpoints are returning different "Pages" objects.
 export interface DotPage {
@@ -6,7 +6,7 @@ export interface DotPage {
     cacheTTL?: number;
     categoryId?: string;
     content?: boolean;
-    contentType: ContentType;
+    contentType: DotCMSContentType;
     contentTypeId?: string;
     disabledWysiwyg?: Array<boolean>;
     fileAsset: boolean;

@@ -18,6 +18,7 @@ import { DotFieldVariablesServiceMock, mockFieldVariables } from '@tests/field-v
 import { TableModule } from 'primeng/table';
 import { of } from 'rxjs';
 import * as _ from 'lodash';
+import { dotcmsContentTypeFieldBasicMock } from '@tests/dot-content-types.mock';
 
 describe('DotContentTypeFieldsVariablesComponent', () => {
     let comp: DotContentTypeFieldsVariablesComponent;
@@ -61,6 +62,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
         dotFieldVariableService = de.injector.get(DotFieldVariablesService);
 
         comp.field = {
+            ...dotcmsContentTypeFieldBasicMock,
             contentTypeId: 'ddf29c1e-babd-40a8-bfed-920fc9b8c77',
             id: mockFieldVariables[0].fieldId
         };

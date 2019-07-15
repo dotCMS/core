@@ -1,4 +1,4 @@
-import { ContentType } from '../../../../portlets/content-types/shared/content-type.model';
+import { DotCMSContentType } from '@dotcms/models';
 import { DotIconButtonTooltipModule } from '../dot-icon-button-tooltip/dot-icon-button-tooltip.module';
 import { ActionMenuButtonComponent } from './action-menu-button.component';
 import { ComponentFixture } from '@angular/core/testing';
@@ -86,7 +86,7 @@ describe('ActionMenuButtonComponent', () => {
                 }
             }
         ];
-        const mockContentType: ContentType = {
+        const mockContentType: DotCMSContentType = {
             clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
             id: '1234567890',
             name: 'Nuevo',
@@ -163,7 +163,7 @@ describe('ActionMenuButtonComponent', () => {
                 }
             }
         ];
-        const mockContentType: ContentType = {
+        const mockContentType: DotCMSContentType = {
             clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
             id: '1234567890',
             name: 'Nuevo',
@@ -209,7 +209,7 @@ describe('ActionMenuButtonComponent', () => {
                 }
             }
         ];
-        const mockContentType: ContentType = {
+        const mockContentType: DotCMSContentType = {
             clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
             id: '1234567890',
             name: 'Nuevo',

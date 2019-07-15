@@ -1,9 +1,9 @@
 import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
 
-import { DotContentTypeField, DotContentTypeLayoutDivider } from '../models';
+import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from '@dotcms/models';
 import { DotMessageService } from '@services/dot-messages-service';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm';
-import { DotContentTypeColumn } from '..';
+import { DotCMSContentTypeLayoutColumn } from '@dotcms/models';
 import { take } from 'rxjs/operators';
 
 /**
@@ -19,14 +19,14 @@ import { take } from 'rxjs/operators';
 })
 export class ContentTypeFieldsRowComponent implements OnInit {
     @Input()
-    fieldRow: DotContentTypeLayoutDivider;
+    fieldRow: DotCMSContentTypeLayoutRow;
 
     @Output()
-    editField: EventEmitter<DotContentTypeField> = new EventEmitter();
+    editField: EventEmitter<DotCMSContentTypeField> = new EventEmitter();
     @Output()
-    removeField: EventEmitter<DotContentTypeField> = new EventEmitter();
+    removeField: EventEmitter<DotCMSContentTypeField> = new EventEmitter();
     @Output()
-    removeRow: EventEmitter<DotContentTypeLayoutDivider> = new EventEmitter();
+    removeRow: EventEmitter<DotCMSContentTypeLayoutRow> = new EventEmitter();
 
     i18nMessages: any = {};
 
@@ -64,7 +64,7 @@ export class ContentTypeFieldsRowComponent implements OnInit {
      * @param DotContentTypeField field
      * @memberof ContentTypeFieldsRowComponent
      */
-    onRemoveField(field: DotContentTypeField): void {
+    onRemoveField(field: DotCMSContentTypeField): void {
         this.dotDialogService.confirm({
             accept: () => {
                 this.removeField.emit(field);
@@ -110,9 +110,9 @@ export class ContentTypeFieldsRowComponent implements OnInit {
      * @returns boolean
      * @memberof ContentTypeFieldsRowComponent
      */
-    rowHaveFields(row: DotContentTypeLayoutDivider): boolean {
+    rowHaveFields(row: DotCMSContentTypeLayoutRow): boolean {
         return row.columns
-            .map((column: DotContentTypeColumn) => column.fields.length)
+            .map((column: DotCMSContentTypeLayoutColumn) => column.fields.length)
             .every((fieldsNumber: number) => fieldsNumber === 0);
     }
 }

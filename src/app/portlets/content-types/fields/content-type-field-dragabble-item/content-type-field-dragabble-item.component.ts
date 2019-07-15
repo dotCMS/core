@@ -1,6 +1,6 @@
 import { Component, Input, Output, EventEmitter, HostListener, OnInit } from '@angular/core';
 
-import { DotContentTypeField } from '../models';
+import { DotCMSContentTypeField } from '@dotcms/models';
 import { DotMessageService } from '@services/dot-messages-service';
 import { FieldService } from '../service';
 import { take } from 'rxjs/operators';
@@ -17,11 +17,11 @@ import { take } from 'rxjs/operators';
 })
 export class ContentTypesFieldDragabbleItemComponent implements OnInit {
     @Input()
-    field: DotContentTypeField;
+    field: DotCMSContentTypeField;
     @Output()
-    remove: EventEmitter<DotContentTypeField> = new EventEmitter();
+    remove: EventEmitter<DotCMSContentTypeField> = new EventEmitter();
     @Output()
-    edit: EventEmitter<DotContentTypeField> = new EventEmitter();
+    edit: EventEmitter<DotCMSContentTypeField> = new EventEmitter();
     fieldAttributes: string;
     i18nMessages: {
         [key: string]: string;

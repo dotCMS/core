@@ -8,6 +8,7 @@ import { DebugElement } from '@angular/core';
 import { MockDotMessageService } from '../../../../../../test/dot-message-service.mock';
 import { DOTTestBed } from '../../../../../../test/dot-test-bed';
 import { DotMessageService } from '@services/dot-messages-service';
+import { dotcmsContentTypeFieldBasicMock } from '@tests/dot-content-types.mock';
 
 describe('RegexCheckPropertyComponent', () => {
     let comp: RegexCheckPropertyComponent;
@@ -41,7 +42,9 @@ describe('RegexCheckPropertyComponent', () => {
         comp.property = {
             name: 'regexCheck',
             value: 'value',
-            field: {}
+            field: {
+                ...dotcmsContentTypeFieldBasicMock
+            }
         };
     }));
 

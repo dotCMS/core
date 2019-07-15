@@ -6,6 +6,7 @@ import { DOTTestBed } from '../../../../../../test/dot-test-bed';
 import { DotMessageService } from '@services/dot-messages-service';
 import { FormGroup, FormControl } from '@angular/forms';
 import { By } from '@angular/platform-browser';
+import { dotcmsContentTypeFieldBasicMock } from '@tests/dot-content-types.mock';
 
 describe('HintPropertyComponent', () => {
     let comp: HintPropertyComponent;
@@ -41,7 +42,9 @@ describe('HintPropertyComponent', () => {
         comp.property = {
             name: 'name',
             value: 'value',
-            field: {}
+            field: {
+                ...dotcmsContentTypeFieldBasicMock
+            }
         };
 
         fixture.detectChanges();

@@ -1,14 +1,10 @@
-import {
-    DotCMSFormConfig,
-    DotCMSContentTypeField,
-    DotCMSContentType,
-    DotCMSError
-} from '../models';
+import { DotCMSFormConfig, DotCMSError } from '../models';
 import { DotApiContentType } from './DotApiContentType';
 import { DotApiContent } from './DotApiContent';
 
 // This import allow us to use the type for the form: HTMLDotFormElement
 import { Components as _Components } from 'projects/dotcms-field-elements/dist/types/components';
+import { DotCMSContentTypeLayoutRow, DotCMSContentType } from '@dotcms/models';
 
 /**
  * Creates and provide methods to render a DotCMS Form
@@ -16,7 +12,7 @@ import { Components as _Components } from 'projects/dotcms-field-elements/dist/t
  */
 export class DotApiForm {
     private contentType: DotCMSContentType;
-    private fields: DotCMSContentTypeField[];
+    private layout: DotCMSContentTypeLayoutRow[];
 
     constructor(
         private dotApiContentType: DotApiContentType,
@@ -29,15 +25,14 @@ export class DotApiForm {
 
     /**
      * Render form on provided html element
-     * @param {HTMLElement} container
      * @memberof DotApiForm
      */
     async render(container: HTMLElement) {
         this.contentType =
             this.contentType || (await this.dotApiContentType.get(this.formConfig.identifier));
-        this.fields = this.contentType.fields;
+        this.layout = this.contentType.layout;
 
-        const formTag = this.createForm(this.fields);
+        const formTag = this.createForm(this.layout);
         container.append(formTag);
     }
 
@@ -48,7 +43,7 @@ export class DotApiForm {
         return !!(labelConfig && labelConfig[label]);
     }
 
-    private createForm(fields: DotCMSContentTypeField[]): HTMLElement {
+    private createForm(layout: DotCMSContentTypeLayoutRow[]): HTMLElement {
         const dotFormEl: HTMLDotFormElement = document.createElement('dot-form');
 
         ['submit', 'reset'].forEach((label: string) => {
@@ -57,8 +52,8 @@ export class DotApiForm {
             }
         });
 
-        dotFormEl.fields = fields;
-        dotFormEl.fieldsToShow = this.formConfig.fields;
+        dotFormEl.layout = layout;
+        dotFormEl.fieldsToShow = this.formConfig.fieldsToShow;
 
         dotFormEl.addEventListener('onSubmit', (e: CustomEvent) => {
             e.preventDefault();

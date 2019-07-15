@@ -4,7 +4,7 @@ import { CoreWebService } from 'dotcms-js';
 import { RequestMethod } from '@angular/http';
 import { pluck } from 'rxjs/operators';
 import { DotFieldVariable } from '../models/dot-field-variable.interface';
-import { DotContentTypeField } from '../../models';
+import { DotCMSContentTypeField } from '@dotcms/models';
 
 /**
  * Provide method to handle with the Field Variables
@@ -15,11 +15,11 @@ export class DotFieldVariablesService {
 
     /**
      * Load Field Variables.
-     * @param {DotContentTypeField} field field to get variables
+     * @param {DotCMSContentTypeField} field field to get variables
      * @returns {Observable<DotFieldVariable[]>}
      * @memberof FieldVariablesService
      */
-    load(field: DotContentTypeField): Observable<DotFieldVariable[]> {
+    load(field: DotCMSContentTypeField): Observable<DotFieldVariable[]> {
         return this.coreWebService
             .requestView({
                 method: RequestMethod.Get,
@@ -31,12 +31,12 @@ export class DotFieldVariablesService {
     /**
      * Save Field Variables.
      *
-     * @param {DotContentTypeField} field field where the variable is added
+     * @param {DotCMSContentTypeField} field field where the variable is added
      * @param {DotFieldVariable} variable variable to be save
      * @returns {Observable<DotFieldVariable>}
      * @memberof DotFieldVariablesService
      */
-    save(field: DotContentTypeField, variable: DotFieldVariable): Observable<DotFieldVariable> {
+    save(field: DotCMSContentTypeField, variable: DotFieldVariable): Observable<DotFieldVariable> {
         return this.coreWebService
             .requestView({
                 body: {
@@ -54,12 +54,12 @@ export class DotFieldVariablesService {
     /**
      * Delete Field Variables.
      *
-     * @param {DotContentTypeField} field where the variable is removed
+     * @param {DotCMSContentTypeField} field where the variable is removed
      * @param {DotFieldVariable} variable variable to delete
      * @returns {Observable<DotFieldVariable>}
      * @memberof DotFieldVariablesService
      */
-    delete(field: DotContentTypeField, variable: DotFieldVariable): Observable<DotFieldVariable> {
+    delete(field: DotCMSContentTypeField, variable: DotFieldVariable): Observable<DotFieldVariable> {
         return this.coreWebService
             .requestView({
                 method: RequestMethod.Delete,

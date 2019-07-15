@@ -3,7 +3,8 @@ import { MockBackend } from '@angular/http/testing';
 import { DotFieldVariablesService } from './dot-field-variables.service';
 import { DOTTestBed } from '../../../../../test/dot-test-bed';
 import { DotFieldVariable } from '../models/dot-field-variable.interface';
-import { DotContentTypeField } from '../../models';
+import { DotCMSContentTypeField } from '@dotcms/models';
+import { dotcmsContentTypeFieldBasicMock } from '@tests/dot-content-types.mock';
 
 describe('DotFieldVariablesService', () => {
     beforeEach(() => {
@@ -33,7 +34,8 @@ describe('DotFieldVariablesService', () => {
             ]
         };
 
-        const field: DotContentTypeField = {
+        const field: DotCMSContentTypeField = {
+            ...dotcmsContentTypeFieldBasicMock,
             contentTypeId: '1b',
             id: '1'
         };
@@ -65,7 +67,8 @@ describe('DotFieldVariablesService', () => {
                 }
         };
 
-        const field: DotContentTypeField = {
+        const field: DotCMSContentTypeField = {
+            ...dotcmsContentTypeFieldBasicMock,
             contentTypeId: '1b',
             id: '1'
         };
@@ -97,7 +100,8 @@ describe('DotFieldVariablesService', () => {
             entity: []
         };
 
-        const field: DotContentTypeField = {
+        const field: DotCMSContentTypeField = {
+            ...dotcmsContentTypeFieldBasicMock,
             contentTypeId: '1b',
             id: '1'
         };

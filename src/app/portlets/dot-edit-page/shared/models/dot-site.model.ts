@@ -1,9 +1,9 @@
-import { ContentType } from '../../../content-types/shared/content-type.model';
+import { DotCMSContentType } from '@dotcms/models';
 
 export interface DotSite {
     archived?: string;
     categoryId?: string;
-    contentType: ContentType;
+    contentType: DotCMSContentType;
     contentTypeId?: string;
     host?: string;
     hostname: string;

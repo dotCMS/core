@@ -1,6 +1,10 @@
-import { DotCMSContentTypeField, DotCMSContentTypeRow, DotCMSContentTypeColumn } from '../models';
 import { DotFormFields } from './fields';
 import { getStringFromDotKeyArray, isStringType } from '../../../utils';
+import {
+    DotCMSContentTypeField,
+    DotCMSContentTypeLayoutRow,
+    DotCMSContentTypeLayoutColumn
+} from '@dotcms/models';
 
 /**
  * Given a string formatted value "key|value,llave|valor" return an object.
@@ -30,13 +34,15 @@ export const shouldShowField = (field: DotCMSContentTypeField, fieldsToShow: str
 
 /**
  * Given a layout Object of fields, it returns a flat list of fields
- * @param DotCMSContentTypeRow[] layout
+ * @param DotCMSContentTypeLayoutRow[] layout
  * @returns DotCMSContentTypeField[]
  */
-export const getFieldsFromLayout = (layout: DotCMSContentTypeRow[]): DotCMSContentTypeField[] => {
+export const getFieldsFromLayout = (
+    layout: DotCMSContentTypeLayoutRow[]
+): DotCMSContentTypeField[] => {
     return layout.reduce(
-        (acc: DotCMSContentTypeField[], { columns }: DotCMSContentTypeRow) =>
-            acc.concat(...columns.map((col: DotCMSContentTypeColumn) => col.fields)),
+        (acc: DotCMSContentTypeField[], { columns }: DotCMSContentTypeLayoutRow) =>
+            acc.concat(...columns.map((col: DotCMSContentTypeLayoutColumn) => col.fields)),
         []
     );
 };
@@ -58,16 +64,16 @@ export const fieldParamsConversionToBE = {
 };
 
 export const fieldMap = {
-    'Time': DotFormFields.Time,
-    'Textarea': DotFormFields.Textarea,
-    'Text': DotFormFields.Text,
-    'Tag': DotFormFields.Tag,
-    'Select': DotFormFields.Select,
-    'Radio': DotFormFields.Radio,
+    Time: DotFormFields.Time,
+    Textarea: DotFormFields.Textarea,
+    Text: DotFormFields.Text,
+    Tag: DotFormFields.Tag,
+    Select: DotFormFields.Select,
+    Radio: DotFormFields.Radio,
     'Multi-Select': DotFormFields['Multi-Select'],
     'Key-Value': fieldParamsConversionFromBE['Key-Value'],
     'Date-and-Time': DotFormFields['Date-and-Time'],
     'Date-Range': DotFormFields['Date-Range'],
-    'Date': DotFormFields.Date,
-    'Checkbox': DotFormFields.Checkbox
+    Date: DotFormFields.Date,
+    Checkbox: DotFormFields.Checkbox
 };

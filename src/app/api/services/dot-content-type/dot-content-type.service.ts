@@ -4,7 +4,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { RequestMethod } from '@angular/http';
 import { StructureTypeView, ContentTypeView } from '@models/contentlet';
-import { ContentType } from '@portlets/content-types/shared/content-type.model';
+import { DotCMSContentType } from '@dotcms/models';
 
 @Injectable()
 export class DotContentTypeService {
@@ -15,7 +15,7 @@ export class DotContentTypeService {
      * @param idOrVar content type's id or variable name
      * @returns Content Type
      */
-    getContentType(idOrVar: string): Observable<ContentType> {
+    getContentType(idOrVar: string): Observable<DotCMSContentType> {
         return this.coreWebService
             .requestView({
                 method: RequestMethod.Get,

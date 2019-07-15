@@ -13,10 +13,12 @@ import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { FormBuilder, FormGroup, ValidationErrors, Validators } from '@angular/forms';
 import { FieldPropertyService } from '../service';
 import { DotMessageService } from '@services/dot-messages-service';
-import { DotContentTypeField } from '../index';
+import { DotCMSContentTypeField } from '@dotcms/models';
 import { By } from '@angular/platform-browser';
+import { dotcmsContentTypeFieldBasicMock } from '@tests/dot-content-types.mock';
 
 const mockDFormFieldData = {
+    ...dotcmsContentTypeFieldBasicMock,
     clazz: 'field.class',
     name: 'fieldName'
 };
@@ -27,7 +29,9 @@ const mockDFormFieldData = {
         '<dot-content-type-fields-properties-form [formFieldData]="mockDFormFieldData"></dot-content-type-fields-properties-form>'
 })
 class DotHostTesterComponent {
-    mockDFormFieldData: DotContentTypeField = {};
+    mockDFormFieldData: DotCMSContentTypeField = {
+        ...dotcmsContentTypeFieldBasicMock,
+    };
 
     constructor() {}
 }
@@ -39,7 +43,7 @@ class TestDynamicFieldPropertyDirective {
     @Input()
     propertyName: string;
     @Input()
-    field: DotContentTypeField;
+    field: DotCMSContentTypeField;
     @Input()
     group: FormGroup;
 }

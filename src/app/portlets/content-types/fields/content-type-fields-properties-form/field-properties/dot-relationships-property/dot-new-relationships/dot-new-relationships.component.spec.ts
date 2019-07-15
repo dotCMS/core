@@ -1,4 +1,4 @@
-import { ContentType } from '@portlets/content-types/shared/content-type.model';
+import { DotCMSContentType } from '@dotcms/models';
 import { DotNewRelationshipsComponent } from './dot-new-relationships.component';
 import { ComponentFixture, async } from '@angular/core/testing';
 import {
@@ -35,7 +35,7 @@ const cardinalities = [
     }
 ];
 
-const contentTypeMock: ContentType = {
+const contentTypeMock: DotCMSContentType = {
     clazz: 'clazz',
     defaultType: false,
     fixed: false,
@@ -127,7 +127,7 @@ class MockRelationshipService {
 
 @Injectable()
 class MockDotContentTypeService {
-    getContentType(): Observable<ContentType> {
+    getContentType(): Observable<DotCMSContentType> {
         return of(contentTypeMock);
     }
 }

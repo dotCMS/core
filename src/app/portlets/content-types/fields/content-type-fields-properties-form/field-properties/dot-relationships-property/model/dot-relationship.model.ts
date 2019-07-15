@@ -1,4 +1,4 @@
-import { ContentType } from '@portlets/content-types/shared/content-type.model';
+import { DotCMSContentType } from '@dotcms/models';
 
 export interface DotRelationship {
     archived: boolean;
@@ -6,7 +6,7 @@ export interface DotRelationship {
     categoryId: string;
     childRelationName: string;
     childRequired: boolean;
-    childStructure: ContentType;
+    childStructure: DotCMSContentType;
     childStructureInode: string;
     fixed: boolean;
     identifier: string;
@@ -19,7 +19,7 @@ export interface DotRelationship {
     owner: string;
     parentRelationName: string;
     parentRequired: boolean;
-    parentStructure: ContentType;
+    parentStructure: DotCMSContentType;
     parentStructureInode: string;
     permissionId: string;
     permissionType: string;

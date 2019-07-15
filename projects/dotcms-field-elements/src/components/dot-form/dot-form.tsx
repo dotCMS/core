@@ -1,8 +1,8 @@
 import { Component, Element, Event, EventEmitter, Listen, Prop, State, Watch } from '@stencil/core';
-import { DotCMSContentTypeField, DotCMSContentTypeRow } from './models';
 import { DotFieldStatus } from '../../models';
 import { fieldParamsConversionToBE, getFieldsFromLayout } from './utils';
 import { getClassNames, getOriginalStatus, updateStatus } from '../../utils';
+import { DotCMSContentTypeLayoutRow, DotCMSContentTypeField } from '@dotcms/models';
 
 @Component({
     tag: 'dot-form',
@@ -23,7 +23,7 @@ export class DotFormComponent {
     @Prop({ reflectToAttr: true }) submitLabel = 'Submit';
 
     /** Layout metada to be rendered */
-    @Prop({ mutable: true, reflectToAttr: true }) layout: DotCMSContentTypeRow[] = [];
+    @Prop({ mutable: true, reflectToAttr: true }) layout: DotCMSContentTypeLayoutRow[] = [];
 
     @State() status: DotFieldStatus = getOriginalStatus();
 
@@ -84,7 +84,7 @@ export class DotFormComponent {
     render() {
         return (
             <form onSubmit={this.handleSubmit.bind(this)}>
-                {this.layout.map((row: DotCMSContentTypeRow) => (
+                {this.layout.map((row: DotCMSContentTypeLayoutRow) => (
                     <dot-form-row row={row} fields-to-show={this.fieldsToShow} />
                 ))}
                 <div class="dot-form__buttons">
@@ -132,10 +132,7 @@ export class DotFormComponent {
 
     private getUpdateValue(): { [key: string]: string } {
         return getFieldsFromLayout(this.layout).reduce(
-            (
-                acc: { [key: string]: string },
-                { variable, defaultValue }: DotCMSContentTypeField
-            ) => {
+            (acc: { [key: string]: string }, { variable, defaultValue }: DotCMSContentTypeField) => {
                 return {
                     ...acc,
                     [variable]: defaultValue

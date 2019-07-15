@@ -1,7 +1,7 @@
 import { Component, OnInit, Input, Output, EventEmitter, SimpleChanges, OnChanges } from '@angular/core';
 import { DotMessageService } from '@services/dot-messages-service';
 import { PaginatorService } from '@services/paginator';
-import { ContentType } from '@portlets/content-types/shared/content-type.model';
+import { DotCMSContentType } from '@dotcms/models';
 import { Observable } from 'rxjs';
 import { DotContentTypeService } from '@services/dot-content-type/dot-content-type.service';
 import { take } from 'rxjs/operators';
@@ -26,9 +26,9 @@ export class DotNewRelationshipsComponent implements OnInit, OnChanges {
     @Output()
     change: EventEmitter<DotRelationshipsPropertyValue> = new EventEmitter();
 
-    contentTypeCurrentPage: Observable<ContentType[]>;
+    contentTypeCurrentPage: Observable<DotCMSContentType[]>;
 
-    contentType: ContentType;
+    contentType: DotCMSContentType;
     currentCardinalityIndex: number;
 
     i18nMessages: {

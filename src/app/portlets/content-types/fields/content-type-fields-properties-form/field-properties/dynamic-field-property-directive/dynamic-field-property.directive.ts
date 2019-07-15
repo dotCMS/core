@@ -7,7 +7,7 @@ import {
     SimpleChanges,
     OnChanges
 } from '@angular/core';
-import { DotContentTypeField } from '../../../index';
+import { DotCMSContentTypeField } from '@dotcms/models';
 import { FormGroup } from '@angular/forms';
 import { FieldPropertyService } from '../../../service';
 
@@ -16,7 +16,7 @@ import { FieldPropertyService } from '../../../service';
 })
 export class DynamicFieldPropertyDirective implements OnChanges {
     @Input() propertyName: string;
-    @Input() field: DotContentTypeField;
+    @Input() field: DotCMSContentTypeField;
     @Input() group: FormGroup;
 
     constructor(

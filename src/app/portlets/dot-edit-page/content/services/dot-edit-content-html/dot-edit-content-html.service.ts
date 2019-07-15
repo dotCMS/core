@@ -25,7 +25,7 @@ import { DotPageContent } from '../../../shared/models/dot-page-content.model';
 import { getEditPageCss } from '../../shared/iframe-edit-mode.css';
 import { GOOGLE_FONTS } from '../html/iframe-edit-mode.js';
 import { MODEL_VAR_NAME } from '../html/iframe-edit-mode.js';
-import { ContentType } from '../../../../content-types/shared/content-type.model';
+import { DotCMSContentType } from '@dotcms/models';
 import { DotRenderedPageState } from '../../../shared/models/dot-rendered-page-state.model';
 import { PageModelChangeEvent, PageModelChangeEventType } from './models';
 import {
@@ -237,7 +237,7 @@ export class DotEditContentHtmlService {
      * @param ContentType form
      * @memberof DotEditContentHtmlService
      */
-    renderAddedForm(form: ContentType): Observable<DotPageContainer[]> {
+    renderAddedForm(form: DotCMSContentType): Observable<DotPageContainer[]> {
         const doc = this.getEditPageDocument();
         const containerEl: HTMLElement = doc.querySelector(
             [
@@ -469,7 +469,7 @@ export class DotEditContentHtmlService {
         );
     }
 
-    private isFormExistInContainer(form: ContentType, containerEL: HTMLElement): boolean {
+    private isFormExistInContainer(form: DotCMSContentType, containerEL: HTMLElement): boolean {
         const contentsSelector = `div[data-dot-object="contentlet"]`;
         const currentContentlets: HTMLElement[] = <HTMLElement[]>(
             Array.from(containerEL.querySelectorAll(contentsSelector).values())

@@ -1,6 +1,6 @@
 import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
 import { PaginatorService } from '@services/paginator';
-import { ContentType } from '../../../../content-types/shared/content-type.model';
+import { DotCMSContentType } from '@dotcms/models';
 import { DotMessageService } from '@services/dot-messages-service';
 import { LazyLoadEvent } from 'primeng/primeng';
 import { take } from 'rxjs/operators';
@@ -16,12 +16,12 @@ export class DotFormSelectorComponent implements OnInit {
     show = false;
 
     @Output()
-    select = new EventEmitter<ContentType>();
+    select = new EventEmitter<DotCMSContentType>();
 
     @Output()
     close = new EventEmitter<any>();
 
-    items: ContentType[];
+    items: DotCMSContentType[];
     messages: {
         [key: string]: string;
     } = {};
@@ -52,7 +52,7 @@ export class DotFormSelectorComponent implements OnInit {
         this.paginatorService
             .getWithOffset(event.first)
             .pipe(take(1))
-            .subscribe((items: ContentType[]) => {
+            .subscribe((items: DotCMSContentType[]) => {
                 this.items = items;
             });
     }

@@ -3,11 +3,9 @@ import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DebugElement, Component, Input, Output, EventEmitter, Injectable } from '@angular/core';
 import { ContentTypeFieldsDropZoneComponent } from './';
 import { By } from '@angular/platform-browser';
-import {
-    DotContentTypeField,
-    ContentTypeFieldsAddRowModule,
-    DotContentTypeLayoutDivider
-} from '../';
+import { ContentTypeFieldsAddRowModule } from '../';
+
+import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from '@dotcms/models';
 import { ReactiveFormsModule } from '@angular/forms';
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
@@ -35,6 +33,7 @@ import { DotLoadingIndicatorService } from '@components/_common/iframe/dot-loadi
 import { FieldUtil } from '../util/field-util';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
+import { dotcmsContentTypeFieldBasicMock } from '@tests/dot-content-types.mock';
 
 @Component({
     selector: 'dot-content-type-fields-row',
@@ -42,11 +41,11 @@ import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component'
 })
 class TestContentTypeFieldsRowComponent {
     @Input()
-    fieldRow: DotContentTypeLayoutDivider;
+    fieldRow: DotCMSContentTypeLayoutRow;
     @Output()
-    editField: EventEmitter<DotContentTypeField> = new EventEmitter();
+    editField: EventEmitter<DotCMSContentTypeField> = new EventEmitter();
     @Output()
-    removeField: EventEmitter<DotContentTypeField> = new EventEmitter();
+    removeField: EventEmitter<DotCMSContentTypeField> = new EventEmitter();
 }
 
 @Component({
@@ -57,7 +56,7 @@ class TestContentTypeFieldsPropertiesFormComponent {
     @Output()
     saveField: EventEmitter<any> = new EventEmitter();
     @Input()
-    formFieldData: DotContentTypeField;
+    formFieldData: DotCMSContentTypeField;
 
     public destroy(): void {}
 }
@@ -68,12 +67,12 @@ class TestContentTypeFieldsPropertiesFormComponent {
 })
 class TestDotContentTypeFieldsTabComponent {
     @Input()
-    fieldTab: DotContentTypeLayoutDivider;
+    fieldTab: DotCMSContentTypeLayoutRow;
 
     @Output()
-    editTab: EventEmitter<DotContentTypeField> = new EventEmitter();
+    editTab: EventEmitter<DotCMSContentTypeField> = new EventEmitter();
     @Output()
-    removeTab: EventEmitter<DotContentTypeLayoutDivider> = new EventEmitter();
+    removeTab: EventEmitter<DotCMSContentTypeLayoutRow> = new EventEmitter();
 }
 
 @Component({
@@ -210,7 +209,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
     });
 
     it('should reset values when close dialog', () => {
-        const fieldRow: DotContentTypeLayoutDivider = FieldUtil.createFieldRow(1);
+        const fieldRow: DotCMSContentTypeLayoutRow = FieldUtil.createFieldRow(1);
         comp.fieldRows = [fieldRow];
 
         comp.displayDialog = true;
@@ -230,6 +229,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         let fieldsToRemove;
 
         const field = {
+            ...dotcmsContentTypeFieldBasicMock,
             clazz: 'classField',
             name: 'nameField'
         };
@@ -241,10 +241,11 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
     });
 
     it('should emit removeFields event when a Row is removed', () => {
-        let fieldsToRemove: DotContentTypeField[];
+        let fieldsToRemove: DotCMSContentTypeField[];
 
-        const fieldRow: DotContentTypeLayoutDivider = FieldUtil.createFieldRow(1);
+        const fieldRow: DotCMSContentTypeLayoutRow = FieldUtil.createFieldRow(1);
         const field = {
+            ...dotcmsContentTypeFieldBasicMock,
             clazz: 'classField',
             name: 'nameField'
         };
@@ -276,8 +277,9 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
     });
 
     it('should cancel last drag and drop operation fields', () => {
-        const fieldRow1: DotContentTypeLayoutDivider = FieldUtil.createFieldRow(1);
+        const fieldRow1: DotCMSContentTypeLayoutRow = FieldUtil.createFieldRow(1);
         const field = {
+            ...dotcmsContentTypeFieldBasicMock,
             clazz: 'classField',
             name: 'nameField'
         };
@@ -313,7 +315,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
     });
 });
 
-let fakeFields: DotContentTypeLayoutDivider[];
+let fakeFields: DotCMSContentTypeLayoutRow[];
 
 @Component({
     selector: 'dot-test-host-component',
@@ -321,7 +323,7 @@ let fakeFields: DotContentTypeLayoutDivider[];
         '<dot-content-type-fields-drop-zone [layout]="layout" [loading]="loading"></dot-content-type-fields-drop-zone>'
 })
 class TestHostComponent {
-    layout: DotContentTypeLayoutDivider[];
+    layout: DotCMSContentTypeLayoutRow[];
     loading: boolean;
 
     constructor() {}
@@ -403,6 +405,7 @@ describe('Load fields and drag and drop', () => {
         fakeFields = [
             {
                 divider: {
+                    ...dotcmsContentTypeFieldBasicMock,
                     name: 'field 1',
                     id: '1',
                     clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField',
@@ -412,6 +415,7 @@ describe('Load fields and drag and drop', () => {
                 columns: [
                     {
                         columnDivider: {
+                            ...dotcmsContentTypeFieldBasicMock,
                             name: 'field 2',
                             id: '2',
                             clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
@@ -420,6 +424,7 @@ describe('Load fields and drag and drop', () => {
                         },
                         fields: [
                             {
+                                ...dotcmsContentTypeFieldBasicMock,
                                 clazz: 'text',
                                 id: '3',
                                 name: 'field 3',
@@ -430,6 +435,7 @@ describe('Load fields and drag and drop', () => {
                     },
                     {
                         columnDivider: {
+                            ...dotcmsContentTypeFieldBasicMock,
                             clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
                             id: '4',
                             name: 'field 4',
@@ -438,6 +444,7 @@ describe('Load fields and drag and drop', () => {
                         },
                         fields: [
                             {
+                                ...dotcmsContentTypeFieldBasicMock,
                                 clazz: 'text',
                                 id: '5',
                                 name: 'field 5',
@@ -450,6 +457,7 @@ describe('Load fields and drag and drop', () => {
             },
             {
                 divider: {
+                    ...dotcmsContentTypeFieldBasicMock,
                     clazz: 'com.dotcms.contenttype.model.field.ImmutableTabDividerField',
                     id: '6',
                     name: 'field 6',
@@ -459,6 +467,7 @@ describe('Load fields and drag and drop', () => {
             },
             {
                 divider: {
+                    ...dotcmsContentTypeFieldBasicMock,
                     clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField',
                     id: '7',
                     name: 'field 7',
@@ -468,6 +477,7 @@ describe('Load fields and drag and drop', () => {
                 columns: [
                     {
                         columnDivider: {
+                            ...dotcmsContentTypeFieldBasicMock,
                             clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
                             id: '8',
                             name: 'field 8',
@@ -476,6 +486,7 @@ describe('Load fields and drag and drop', () => {
                         },
                         fields: [
                             {
+                                ...dotcmsContentTypeFieldBasicMock,
                                 clazz: 'text',
                                 id: '9',
                                 name: 'field 9',
@@ -517,6 +528,7 @@ describe('Load fields and drag and drop', () => {
         spyOn(comp.editField, 'emit');
 
         const fieldUpdated = {
+            ...dotcmsContentTypeFieldBasicMock,
             id: '1',
             fixed: true,
             indexed: true
@@ -524,6 +536,7 @@ describe('Load fields and drag and drop', () => {
 
         comp.displayDialog = false;
         comp.saveFieldsHandler(fieldUpdated);
+
         expect(comp.editField.emit).toHaveBeenCalledWith(
             Object.assign({}, updatedField, fieldUpdated)
         );
@@ -667,7 +680,9 @@ describe('Load fields and drag and drop', () => {
     });
 
     it('should disable field variable tab', () => {
-        comp.currentField = {};
+        comp.currentField = {
+            ...dotcmsContentTypeFieldBasicMock
+        };
         comp.displayDialog = true;
         fixture.detectChanges();
 
@@ -677,6 +692,7 @@ describe('Load fields and drag and drop', () => {
 
     it('should NOT disable field variable tab', () => {
         comp.currentField = {
+            ...dotcmsContentTypeFieldBasicMock,
             id: '123'
         };
         comp.displayDialog = true;
@@ -690,7 +706,7 @@ describe('Load fields and drag and drop', () => {
         beforeEach(async(() => {
             fixture.detectChanges();
 
-            const fieldToEdit: DotContentTypeField = fakeFields[2].columns[0].fields[0];
+            const fieldToEdit: DotCMSContentTypeField = fakeFields[2].columns[0].fields[0];
             this.testFieldDragDropService._fieldDropFromSource.next({
                 item: fieldToEdit,
                 target: {
