@@ -1,6 +1,3 @@
-/**
- *
- */
 package com.dotmarketing.business;
 
 import com.dotmarketing.business.RoleCache.UserRoleCacheHelper;
@@ -35,19 +32,23 @@ public class RoleFactoryImpl extends RoleFactory {
 	private RoleCache rc = CacheLocator.getCmsRoleCache();
 
 	@Override
-	protected List<Role> findAllAssignableRoles(boolean showSystemRoles) throws DotDataException {
-		HibernateUtil hu = new HibernateUtil(Role.class);
+	protected List<Role> findAllAssignableRoles(final boolean showSystemRoles) throws DotDataException {
+		final HibernateUtil hu = new HibernateUtil(Role.class);
 		String query = "from com.dotmarketing.business.Role where edit_permissions = ?";
 		if(!showSystemRoles){
 			query = query + " and system = ?";
 		}
 
 		hu.setQuery(query);
-		hu.setParam(true);
+		hu.setParam(Boolean.TRUE);
 		if(!showSystemRoles){
-			hu.setParam(false);
+			hu.setParam(Boolean.FALSE);
 		}
-		return hu.list();
+		final List<Role> roles = hu.list();
+		for (final Role role : roles) {
+			translateFQNFromDB(role);
+		}
+		return roles;
 	}
 
 	@Override
