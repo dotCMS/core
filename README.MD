@@ -4,7 +4,7 @@ This project was created using [angular-cli](https://cli.angular.io/) it means y
 ## Before start
 1. Install node and npm
 2. Install angular-cli: `npm i @angular/cli`
-3. Build internal libraries: `npm run build:libs`
+3. `npm install`
 
 ## Build and run in local DotCMS instance
 Watch and compile your files in development mode and copy it into ```dotAdmin``` folder in your `tomcat` folder.
