@@ -14,10 +14,13 @@ $foreground-active: #848484;
 $text-emphasis: #fc7e1c;
 $warn: #cb3927;
 $brand-primary-one: #209021;
+$gray: #7e7a86;
+$gray-light: #b3b1b8;
 $gray-bg: #f1f3f4;
 $md-shadow-4: 0 2px 4px 0 rgba(0, 0, 0, 0.1);
 
 $basic-padding: 8px;
+$font-size-xx-large: 24px;
 
 
 // generic transform
@@ -505,8 +508,22 @@ $finder-s-input: '.ui.input input';
     }
 
     .cw-rule-engine__empty {
-        margin-top: 5em;
+        margin-top: 7em;
         text-align: center;
+
+        i {
+            font-size: 120px;
+            color: $gray-light;
+            border: 7px solid;
+            border-radius: 10px;
+            margin-bottom: $basic-padding * 3;
+        }
+
+        h2 {
+            font-size: $font-size-xx-large;
+            margin: 0;
+            color: $gray;
+        }
 
         span {
             display: block;
