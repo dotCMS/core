@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { DragulaService } from 'ng2-dragula';
 import { filter, map, tap } from 'rxjs/operators';
-import { DotCMSContentTypeLayoutRow, DotCMSContentTypeField } from '@dotcms/models';
+import { DotCMSContentTypeLayoutRow, DotCMSContentTypeField } from 'dotcms-models';
 import * as _ from 'lodash';
 
 /**

@@ -28,7 +28,7 @@ import { DotRenderedPage } from '../shared/models/dot-rendered-page.model';
 import { DotEditPageDataService } from '../shared/services/dot-edit-page-resolver/dot-edit-page-data.service';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
-import { DotCMSContentType } from '@dotcms/models';
+import { DotCMSContentType } from 'dotcms-models';
 import { PageModelChangeEvent, PageModelChangeEventType } from './services/dot-edit-content-html/models';
 
 /**

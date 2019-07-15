@@ -4,7 +4,7 @@ import { MockBackend } from '@angular/http/testing';
 import { mockDotContentlet } from '../../../test/dot-contentlet.mock';
 import { StructureTypeView } from '@models/contentlet/structure-type-view.model';
 import { DotContentTypeService } from './dot-content-type.service';
-import { DotCMSContentType } from '@dotcms/models';
+import { DotCMSContentType } from 'dotcms-models';
 
 let lastConnection: any;
 

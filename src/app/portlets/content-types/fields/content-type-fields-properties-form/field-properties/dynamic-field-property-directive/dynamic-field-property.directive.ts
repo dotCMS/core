@@ -7,7 +7,7 @@ import {
     SimpleChanges,
     OnChanges
 } from '@angular/core';
-import { DotCMSContentTypeField } from '@dotcms/models';
+import { DotCMSContentTypeField } from 'dotcms-models';
 import { FormGroup } from '@angular/forms';
 import { FieldPropertyService } from '../../../service';
 

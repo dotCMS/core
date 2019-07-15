@@ -1,4 +1,4 @@
-import { DotCMSContentTypeField } from '@dotcms/models';
+import { DotCMSContentTypeField } from 'dotcms-models';
 
 export interface FieldProperty {
     name: string;

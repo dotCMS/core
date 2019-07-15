@@ -4,7 +4,7 @@ import { FieldProperty } from '../field-properties.model';
 import { PaginatorService } from '@services/paginator';
 import { FormGroup } from '@angular/forms';
 import { take } from 'rxjs/operators';
-import { DotCMSContentTypeFieldCategories } from '@dotcms/models';
+import { DotCMSContentTypeFieldCategories } from 'dotcms-models';
 
 /**
  * List all the categories and allow select one.

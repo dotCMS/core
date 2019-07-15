@@ -11,7 +11,7 @@ import {
 } from '@angular/core';
 import { FieldDragDropService, DropFieldData } from '../service';
 import { FieldType } from '../models';
-import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from '@dotcms/models';
+import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from 'dotcms-models';
 import { ContentTypeFieldsPropertiesFormComponent } from '../content-type-fields-properties-form';
 import { DotMessageService } from '@services/dot-messages-service';
 import { FieldUtil } from '../util/field-util';

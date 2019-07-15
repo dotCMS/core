@@ -2,7 +2,7 @@ import { pluck } from 'rxjs/operators';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { FieldType } from '../models';
-import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from '@dotcms/models';
+import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from 'dotcms-models';
 import { CoreWebService } from 'dotcms-js';
 import { RequestMethod } from '@angular/http';
 import { FIELD_ICONS } from '../content-types-fields-list/content-types-fields-icon-map';

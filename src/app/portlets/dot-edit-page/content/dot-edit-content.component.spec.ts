@@ -45,7 +45,7 @@ import { DotEditPageToolbarComponent } from './components/dot-edit-page-toolbar/
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotPageContainer } from '@portlets/dot-edit-page/shared/models/dot-page-container.model';
 import { DotEditContentComponent } from './dot-edit-content.component';
-import { DotCMSContentType } from '@dotcms/models';
+import { DotCMSContentType } from 'dotcms-models';
 import { DotContentletEditorModule } from '@components/dot-contentlet-editor/dot-contentlet-editor.module';
 import { DotEditPageInfoModule } from '../components/dot-edit-page-info/dot-edit-page-info.module';
 import { DotEditPageInfoComponent } from '../components/dot-edit-page-info/dot-edit-page-info.component';

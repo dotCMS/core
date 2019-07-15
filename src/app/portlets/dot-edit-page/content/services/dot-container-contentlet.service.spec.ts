@@ -6,7 +6,7 @@ import { MockConnection } from '@angular/http/testing';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DotPageContainer } from '../../../dot-edit-page/shared/models/dot-page-container.model';
 import { DotPageContent } from '../../../dot-edit-page/shared/models/dot-page-content.model';
-import { DotCMSContentType } from '@dotcms/models';
+import { DotCMSContentType } from 'dotcms-models';
 
 describe('DotContainerContentletService', () => {
     let dotContainerContentletService: DotContainerContentletService;

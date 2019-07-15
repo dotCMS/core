@@ -11,7 +11,7 @@ import {
 } from '@angular/core';
 import { FormGroup, FormBuilder, AbstractControl } from '@angular/forms';
 import { DotMessageService } from '@services/dot-messages-service';
-import { DotCMSContentTypeField } from '@dotcms/models';
+import { DotCMSContentTypeField } from 'dotcms-models';
 import { FieldPropertyService } from '../service/';
 import { take, takeUntil } from 'rxjs/operators';
 import * as _ from 'lodash';

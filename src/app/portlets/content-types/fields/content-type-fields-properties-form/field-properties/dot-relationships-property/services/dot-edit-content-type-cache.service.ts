@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { DotCMSContentType } from '@dotcms/models';
+import { DotCMSContentType } from 'dotcms-models';
 import * as _ from 'lodash';
 
 /**

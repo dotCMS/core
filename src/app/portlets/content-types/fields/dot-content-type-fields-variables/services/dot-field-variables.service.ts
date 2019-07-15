@@ -4,7 +4,7 @@ import { CoreWebService } from 'dotcms-js';
 import { RequestMethod } from '@angular/http';
 import { pluck } from 'rxjs/operators';
 import { DotFieldVariable } from '../models/dot-field-variable.interface';
-import { DotCMSContentTypeField } from '@dotcms/models';
+import { DotCMSContentTypeField } from 'dotcms-models';
 
 /**
  * Provide method to handle with the Field Variables

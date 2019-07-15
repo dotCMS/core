@@ -4,7 +4,7 @@ import { MockBackend } from '@angular/http/testing';
 import { FieldService } from './';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { FieldType } from '@portlets/content-types/fields';
-import { DotCMSContentTypeField } from '@dotcms/models';
+import { DotCMSContentTypeField } from 'dotcms-models';
 import { dotcmsContentTypeFieldBasicMock } from '@tests/dot-content-types.mock';
 
 export const mockFieldType: FieldType = {

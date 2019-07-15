@@ -7,7 +7,7 @@ import { Injectable } from '@angular/core';
 import { Resolve, ActivatedRouteSnapshot } from '@angular/router';
 import { CrudService } from '@services/crud';
 import { ContentTypesInfoService } from '@services/content-types-info';
-import { DotCMSContentType } from '@dotcms/models';
+import { DotCMSContentType } from 'dotcms-models';
 import { LoginService, ResponseView } from 'dotcms-js';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { take, map, catchError } from 'rxjs/operators';
@@ -56,15 +56,24 @@ export class ContentTypeEditResolver implements Resolve<DotCMSContentType> {
 
     private getDefaultContentType(type: string): Observable<DotCMSContentType> {
         return observableOf({
-            owner: this.loginService.auth.user.userId,
-            baseType: type.toUpperCase(),
+            baseType: type,
             clazz: this.contentTypesInfoService.getClazz(type),
             defaultType: false,
+            fields: [],
             fixed: false,
             folder: 'SYSTEM_FOLDER',
             host: null,
+            iDate: null,
+            id: null,
+            layout: [],
+            modDate: null,
+            multilingualable: false,
             name: null,
-            system: false
+            owner: this.loginService.auth.user.userId,
+            system: false,
+            variable: null,
+            versionable: false,
+            workflows: []
         });
     }
 }

@@ -2,7 +2,7 @@ import { Component, Element, Event, EventEmitter, Listen, Prop, State, Watch } f
 import { DotFieldStatus } from '../../models';
 import { fieldParamsConversionToBE, getFieldsFromLayout } from './utils';
 import { getClassNames, getOriginalStatus, updateStatus } from '../../utils';
-import { DotCMSContentTypeLayoutRow, DotCMSContentTypeField } from '@dotcms/models';
+import { DotCMSContentTypeLayoutRow, DotCMSContentTypeField } from 'dotcms-models';
 
 @Component({
     tag: 'dot-form',

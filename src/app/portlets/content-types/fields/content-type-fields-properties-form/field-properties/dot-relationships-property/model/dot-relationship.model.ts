@@ -1,4 +1,4 @@
-import { DotCMSContentType } from '@dotcms/models';
+import { DotCMSContentType } from 'dotcms-models';
 
 export interface DotRelationship {
     archived: boolean;

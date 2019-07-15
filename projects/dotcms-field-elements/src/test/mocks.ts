@@ -1,4 +1,4 @@
-import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from '@dotcms/models';
+import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from 'dotcms-models';
 
 const basicField: DotCMSContentTypeField = {
     clazz: '',

@@ -2,7 +2,7 @@ import {
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutRow,
     DotCMSContentTypeLayoutColumn
-} from '@dotcms/models';
+} from 'dotcms-models';
 
 const EMPTY_FIELD = {
     contentTypeId: null,

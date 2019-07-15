@@ -4,7 +4,7 @@ import {
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutRow,
     DotCMSContentTypeLayoutColumn
-} from '@dotcms/models';
+} from 'dotcms-models';
 
 /**
  * Given a string formatted value "key|value,llave|valor" return an object.

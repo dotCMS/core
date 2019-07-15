@@ -1,4 +1,4 @@
-import { DotCMSContentType } from '@dotcms/models';
+import { DotCMSContentType } from 'dotcms-models';
 
 // TODO: we need to see why the endpoints are returning different "Pages" objects.
 export interface DotPage {

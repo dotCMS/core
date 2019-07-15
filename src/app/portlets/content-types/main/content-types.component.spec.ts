@@ -23,7 +23,7 @@ import {
     DotHttpErrorHandled,
     DotHttpErrorManagerService
 } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotCMSContentType } from '@dotcms/models';
+import { DotCMSContentType } from 'dotcms-models';
 import { DotContentTypeService } from '@services/dot-content-type/dot-content-type.service';
 
 @Injectable()

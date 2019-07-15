@@ -4,7 +4,7 @@ import { DotApiContent } from './DotApiContent';
 
 // This import allow us to use the type for the form: HTMLDotFormElement
 import { Components as _Components } from 'projects/dotcms-field-elements/dist/types/components';
-import { DotCMSContentTypeLayoutRow, DotCMSContentType } from '@dotcms/models';
+import { DotCMSContentTypeLayoutRow, DotCMSContentType } from 'dotcms-models';
 
 /**
  * Creates and provide methods to render a DotCMS Form

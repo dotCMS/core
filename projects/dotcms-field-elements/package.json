@@ -1,6 +1,6 @@
 {
     "name": "dotcms-field-elements",
-    "version": "0.0.4",
+    "version": "0.0.5",
     "description": "Stencil Component Starter",
     "module": "dist/esm/index.js",
     "main": "dist/index.js",
@@ -18,7 +18,7 @@
         "test.watch": "stencil test --spec --e2e --watchAll"
     },
     "dependencies": {
-        "@dotcms/models": "file:../../dist-lib/dotcms-models/dotcms-models-0.0.1.tgz",
+        "dotcms-models": "~0.0.2",
         "@tarekraafat/autocomplete.js": "^4.0.0",
         "flatpickr": "^4.5.7",
         "stencil-fragment": "^1.0.1"

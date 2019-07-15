@@ -1,4 +1,4 @@
-import { DotCMSContentTypeField } from '@dotcms/models';
+import { DotCMSContentTypeField } from 'dotcms-models';
 
 export const DotFormFields = {
     Text: (field: DotCMSContentTypeField) => (

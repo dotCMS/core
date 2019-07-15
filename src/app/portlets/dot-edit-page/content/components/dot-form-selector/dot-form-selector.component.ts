@@ -1,6 +1,6 @@
 import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
 import { PaginatorService } from '@services/paginator';
-import { DotCMSContentType } from '@dotcms/models';
+import { DotCMSContentType } from 'dotcms-models';
 import { DotMessageService } from '@services/dot-messages-service';
 import { LazyLoadEvent } from 'primeng/primeng';
 import { take } from 'rxjs/operators';

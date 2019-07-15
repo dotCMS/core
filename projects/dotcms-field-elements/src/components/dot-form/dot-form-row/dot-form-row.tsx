@@ -1,5 +1,5 @@
 import { Component, Prop } from '@stencil/core';
-import { DotCMSContentTypeLayoutColumn, DotCMSContentTypeLayoutRow } from '@dotcms/models';
+import { DotCMSContentTypeLayoutColumn, DotCMSContentTypeLayoutRow } from 'dotcms-models';
 
 @Component({
     tag: 'dot-form-row',

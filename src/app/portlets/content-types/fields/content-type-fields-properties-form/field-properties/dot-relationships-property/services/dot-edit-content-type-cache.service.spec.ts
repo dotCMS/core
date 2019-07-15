@@ -1,6 +1,6 @@
 import { DOTTestBed } from 'src/app/test/dot-test-bed';
 import { DotEditContentTypeCacheService } from './dot-edit-content-type-cache.service';
-import { DotCMSContentType } from '@dotcms/models';
+import { DotCMSContentType } from 'dotcms-models';
 
 const contentTypeMock: DotCMSContentType = {
     clazz: 'clazz',
