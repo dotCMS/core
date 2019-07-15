@@ -116,11 +116,14 @@ describe('DotContentletWrapperComponent', () => {
                 dotIframeDialog.triggerEventHandler('custom', {
                     detail: {
                         name: 'edit-page',
-                        data: 'some/fake/url'
+                        data: {
+                            url: 'some/fake/url',
+                            language_id: '1'
+                        }
                     }
                 });
 
-                expect(dotRouterService.goToEditPage).toHaveBeenCalledWith('some/fake/url');
+                expect(dotRouterService.goToEditPage).toHaveBeenCalledWith('some/fake/url', '1');
             })
 
             describe('beforeClose', () => {
