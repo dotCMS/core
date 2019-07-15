@@ -13,23 +13,11 @@ public class IdentifierStripedLock implements DotKeyLockManager<String> {
 
     @Override
     public <R> R tryLock(final String key, final ReturnableDelegate<R> callback) throws Throwable {
-        final String threadName = Thread.currentThread().getName();
-        Thread.currentThread().setName(threadName + " : " + key);
-        try {
-            return instance.tryLock(key, callback);
-        }finally {
-            Thread.currentThread().setName(threadName);
-        }
+          return instance.tryLock(key, callback);
     }
 
     @Override
     public void tryLock(final String key, final VoidDelegate callback) throws Throwable {
-        final String threadName = Thread.currentThread().getName();
-        Thread.currentThread().setName(threadName + " : " + key);
-        try {
-            instance.tryLock(key, callback);
-        }finally {
-            Thread.currentThread().setName(threadName);
-        }
+          instance.tryLock(key, callback);
     }
 }

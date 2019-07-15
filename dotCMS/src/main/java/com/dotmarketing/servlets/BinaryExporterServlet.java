@@ -5,7 +5,10 @@ import static com.liferay.util.HttpHeaders.EXPIRES;
 
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.rest.api.v1.temp.TempFileAPI;
+import com.dotcms.util.CloseUtils;
 import com.dotcms.util.DownloadUtil;
+import com.dotcms.util.SecurityUtils;
 import com.dotcms.uuid.shorty.ShortType;
 import com.dotcms.uuid.shorty.ShortyException;
 import com.dotcms.uuid.shorty.ShortyId;
@@ -355,6 +358,18 @@ public class BinaryExporterServlet extends HttpServlet {
 
 			}
 			
+			// if this is file uploaded by the tempResource
+      if (shorty.type == ShortType.TEMP_FILE) {
+        if (!Config.getBooleanProperty(TempFileAPI.TEMP_RESOURCE_ALLOW_NO_REFERER, false) && !new SecurityUtils().validateReferer(req)) {
+          resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+          DbConnectionFactory.closeSilently();
+          return;
+        }
+        inputFile = APILocator.getTempFileAPI().getTempFile(user, req.getSession().getId(), shorty.longId).get().file;
+      }
+			
+			
+			
 			
 			//DOTCMS-5674
 			if(UtilMethods.isSet(fieldVarName)){
@@ -623,32 +638,7 @@ public class BinaryExporterServlet extends HttpServlet {
 		// close our resources no matter what
 		finally{
 			
-			if(input!=null){
-				try{
-					input.close();
-				}
-				catch(Exception e){
-					Logger.debug(BinaryExporterServlet.class, e.getMessage());
-				}
-			}
-			
-			if(is!=null){
-				try{
-					is.close();
-				}
-				catch(Exception e){
-					Logger.debug(BinaryExporterServlet.class, e.getMessage());
-				}
-			}
-			
-			if(out!=null){
-				try{
-					out.close();
-				}
-				catch(Exception e){
-					Logger.debug(BinaryExporterServlet.class, e.getMessage());
-				}
-			}
+		  CloseUtils.closeQuietly(input, is, out);
 
 		}
 		

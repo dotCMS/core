@@ -73,8 +73,8 @@ public class WebDavCleanupJob implements Job {
 					if(deleteFolder){
 						FileUtil.deltree(file);
 					}
-				} catch (FileNotFoundException e) {
-					Logger.error(this, "Temp dir not found unable to list files for " + file.getPath(),e);
+				} catch (Exception e) {
+					Logger.warn(this, "Temp dir not found unable to list files for " + file.getPath(),e);
 					continue;
 				}
 			}else{

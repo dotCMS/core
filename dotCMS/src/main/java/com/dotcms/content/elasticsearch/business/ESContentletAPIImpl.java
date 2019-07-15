@@ -6,6 +6,7 @@ import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
 
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.DotConcurrentFactory;
@@ -19,14 +20,17 @@ import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeIf;
+import com.dotcms.contenttype.model.type.FileAssetContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.publisher.business.DotPublisherException;
@@ -39,6 +43,8 @@ import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotcms.repackage.com.google.common.collect.Sets;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
+import com.dotcms.rest.api.v1.temp.DotTempFile;
+import com.dotcms.rest.api.v1.temp.TempFileAPI;
 import com.dotcms.services.VanityUrlServices;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.type.content.CommitListenerEvent;
@@ -142,11 +148,15 @@ import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import com.liferay.portal.util.PortalUtil;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.DomDriver;
+
+import io.vavr.control.Try;
+
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -174,6 +184,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import javax.servlet.http.HttpServletRequest;
+
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchResponse;
@@ -206,10 +219,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private final RelationshipAPI       relationshipAPI;
     private final FieldAPI              fieldAPI;
     private final LanguageAPI           languageAPI;
-    private final ReindexQueueAPI reindexQueueAPI;
+    private final ReindexQueueAPI       reindexQueueAPI;
     private final TagAPI                tagAPI;
     private final IdentifierStripedLock lockManager;
-
+    private final TempFileAPI           tempApi ;
     private static final int MAX_LIMIT = 10000;
 
     private static final String backupPath = ConfigUtils.getBackupPath() + File.separator + "contentlets";
@@ -244,6 +257,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         contentletSystemEventUtil = ContentletSystemEventUtil.getInstance();
         localSystemEventsAPI      = APILocator.getLocalSystemEventsAPI();
         lockManager = DotConcurrentFactory.getInstance().getIdentifierStripedLock();
+        tempApi=  APILocator.getTempFileAPI();
 
     }
 
@@ -1123,19 +1137,18 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @Override
     public Object getFieldValue(final Contentlet contentlet,
             final com.dotcms.contenttype.model.field.Field theField) {
-        return getFieldValue(contentlet, theField, null);
+        return getFieldValue(contentlet, theField, null, false);
     }
 
     @CloseDBIfOpened
     @Override
     public Object getFieldValue(final Contentlet contentlet,
-            final com.dotcms.contenttype.model.field.Field theField, final User user) {
+            final com.dotcms.contenttype.model.field.Field theField, final User user, final boolean respectFrontEndRoles) {
         try {
             User currentUser = user;
             if (currentUser == null) {
                 currentUser = APILocator.getUserAPI().getSystemUser();
             }
-
             if (theField instanceof ConstantField) {
                 contentlet.getMap().put(theField.variable(), theField.values());
                 return theField.values();
@@ -1147,13 +1160,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     return contentlet.getFolder();
                 }
             } else if (theField instanceof CategoryField) {
-                final Category category = categoryAPI.find(theField.values(), currentUser, false);
+                final Category category = categoryAPI.find(theField.values(), currentUser, respectFrontEndRoles);
                 // Get all the Contentlets Categories
                 final List<Category> selectedCategories = categoryAPI
-                        .getParents(contentlet, currentUser, false);
+                        .getParents(contentlet, currentUser, respectFrontEndRoles);
                 final Set<Category> categoryList = new HashSet<Category>();
                 final List<Category> categoryTree = categoryAPI
-                        .getAllChildren(category, currentUser, false);
+                        .getAllChildren(category, currentUser, respectFrontEndRoles);
                 if (selectedCategories.size() > 0 && categoryTree != null) {
                     for (int k = 0; k < categoryTree.size(); k++) {
                         final Category cat = categoryTree.get(k);
@@ -3305,7 +3318,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final boolean respectFrontendRoles,
             boolean createNewVersion
     ) throws DotDataException, DotSecurityException {
-
+        
         final boolean validateEmptyFile =
                 contentlet.getMap().get("_validateEmptyFile_") == null;
 
@@ -3322,13 +3335,29 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if(cats == null) {
             cats = getExistingContentCategories(contentlet);
         }
-
+        final ContentType contentType = contentlet.getContentType();
         boolean saveWithExistingID = false;
         String existingInode = null, existingIdentifier = null;
         boolean changedURI = false;
-
+        
         Contentlet workingContentlet = contentlet;
         try {
+          
+          
+          // if we have incoming temp files set as binaryFields, lets populate the contentlet with them
+          for ( com.dotcms.contenttype.model.field.Field field : contentType.fields(BinaryField.class) ) {
+            final Object fileObject = contentlet.get(field.variable());
+            if(fileObject instanceof String && tempApi.isTempResource(contentlet.getStringProperty(field.variable()))) {
+
+              final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+              // we use the session 
+              final String sessionId = (request!=null && request.getSession(false)!=null) ? request.getSession().getId() : null;
+              final DotTempFile tempFile = tempApi.getTempFile(user, sessionId, contentlet.getStringProperty(field.variable())).get();
+              contentlet.setBinary(field, tempFile.file);
+            }
+          }
+          
+          
             if (createNewVersion && contentlet != null && InodeUtils.isSet(contentlet.getInode())) {
                 // maybe the user want to save new content with existing inode & identifier comming from somewhere
                 // we need to check that the inode doesn't exists
@@ -3485,40 +3514,41 @@ public class ESContentletAPIImpl implements ContentletAPI {
             HashMap<String, String> tagsValues = new HashMap<>();
             String tagsHost = Host.SYSTEM_HOST;
 
-            List<Field> fields = FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode());
-            for ( Field field : fields ) {
-                if ( field.getFieldType().equals(Field.FieldType.TAG.toString()) ) {
 
-                    String value = null;
-                    if ( contentlet.getStringProperty(field.getVelocityVarName()) != null ) {
-                        value = contentlet.getStringProperty(field.getVelocityVarName()).trim();
-                    }
+            
+            
 
-                    if ( UtilMethods.isSet(value) ) {
+            for ( com.dotcms.contenttype.model.field.Field field : contentType.fields(TagField.class) ) {
+                String value = null;
+                if ( contentlet.getStringProperty(field.variable()) != null ) {
+                    value = contentlet.getStringProperty(field.variable()).trim();
+                }
 
-                        if ( structureHasAHostField || UtilMethods.isSet(contentlet.getHost())) {
-                            Host host = null;
-                            try {
-                                host = APILocator.getHostAPI().find(contentlet.getHost(), user, true);
-                            } catch ( Exception e ) {
-                                Logger.error(this, "Unable to get contentlet host", e);
-                            }
-                            if ( (!UtilMethods.isSet(host) || !UtilMethods.isSet(host.getInode()))
-                                    || host.getIdentifier().equals(Host.SYSTEM_HOST) ) {
-                                tagsHost = Host.SYSTEM_HOST;
-                            } else {
-                                tagsHost = host.getIdentifier();
-                            }
+                if ( UtilMethods.isSet(value) ) {
+
+                    if ( structureHasAHostField || UtilMethods.isSet(contentlet.getHost())) {
+                        Host host = null;
+                        try {
+                            host = APILocator.getHostAPI().find(contentlet.getHost(), user, true);
+                        } catch ( Exception e ) {
+                            Logger.error(this, "Unable to get contentlet host", e);
                         }
-
-                        //Add these tags to a temporal list in order to relate them later to this contentlet
-                        tagsValues.put(field.getVelocityVarName(), value);
-
-                        //We should not store the tags inside the field, the relation must only exist on the tag_inode table
-                        contentlet.setStringProperty(field.getVelocityVarName(), "");
+                        if ( (!UtilMethods.isSet(host) || !UtilMethods.isSet(host.getInode()))
+                                || host.getIdentifier().equals(Host.SYSTEM_HOST) ) {
+                            tagsHost = Host.SYSTEM_HOST;
+                        } else {
+                            tagsHost = host.getIdentifier();
+                        }
                     }
+
+                    //Add these tags to a temporal list in order to relate them later to this contentlet
+                    tagsValues.put(field.variable(), value);
+
+                    //We should not store the tags inside the field, the relation must only exist on the tag_inode table
+                    contentlet.setStringProperty(field.variable(), "");
                 }
             }
+            
 
             final IndexPolicy indexPolicy             = contentlet.getIndexPolicy();
             final IndexPolicy indexPolicyDependencies = contentlet.getIndexPolicyDependencies();
@@ -3687,103 +3717,99 @@ public class ESContentletAPIImpl implements ContentletAPI {
             // loop over the new field values
             // if we have a new temp file or a deleted file
             // do it to the new inode directory
-            final List<Field> structFields = FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode());
-            for (final Field field : structFields) {
+            for ( com.dotcms.contenttype.model.field.Field field : contentType.fields(BinaryField.class) ) {
+                try {
 
-                if(Field.FieldType.BINARY.toString().equals(field.getFieldType())) {
-                    try {
 
-                        final String velocityVarNm = field.getVelocityVarName();
-                        File incomingFile = contentletRaw.getBinary(velocityVarNm);
-                        if(validateEmptyFile && incomingFile!=null && incomingFile.length()==0 && !Config.getBooleanProperty("CONTENT_ALLOW_ZERO_LENGTH_FILES", false)){
-                            throw new DotContentletStateException("Cannot checkin 0 length file: " + incomingFile );
-                        }
-                        final File binaryFieldFolder = new File(newDir.getAbsolutePath() + File.separator + velocityVarNm);
-
-                        File metadata=null;
-                        if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
-                            metadata=APILocator.getFileAssetAPI().getContentMetadataFile(contentlet.getInode());
-                        }
-
-                        // if the user has removed this  file via the ui
-                        if (incomingFile == null  || incomingFile.getAbsolutePath().contains("-removed-")){
-                            FileUtil.deltree(binaryFieldFolder);
-                            contentlet.setBinary(velocityVarNm, null);
-                            if(metadata!=null && metadata.exists())
-                                metadata.delete();
-                            continue;
-                        }
-
-                        // if we have an incoming file
-                        else if (incomingFile.exists() ){
-                            //The physical file name is preserved across versions.
-                            //No need to update the name. We will only reference the file through the logical asset-name
-                            final String oldFileName  = incomingFile.getName();
-
-                            File oldFile = null;
-                            if(UtilMethods.isSet(oldInode)) {
-                                //get old file
-                                oldFile = new File(oldDir.getAbsolutePath()  + File.separator + velocityVarNm + File.separator +  oldFileName);
-
-                                // do we have an inline edited file, if so use that
-                                File editedFile = new File(tmpDir.getAbsolutePath()  + File.separator + velocityVarNm + File.separator + WebKeys.TEMP_FILE_PREFIX + oldFileName);
-                                if(editedFile.exists()){
-                                    incomingFile = editedFile;
-                                }
-                            }
-
-                            //The file name must be preserved so it remains the same across versions.
-                            File newFile = new File(newDir.getAbsolutePath()  + File.separator + velocityVarNm + File.separator +  oldFileName);
-                            binaryFieldFolder.mkdirs();
-
-                            // we move files that have been newly uploaded or edited
-                            if(oldFile==null || !oldFile.equals(incomingFile)){
-                                if(!createNewVersion){
-                                    // If we're calling a checkinWithoutVersioning method,
-                                    // then folder needs to be cleaned up in order to add the new file in it.
-                                    // Otherwise we will have the old file and incoming file at the same time
-                                    FileUtil.deltree(binaryFieldFolder);
-                                    binaryFieldFolder.mkdirs();
-                                }
-                                // We want to copy (not move) cause the same file could be in
-                                // another field and we don't want to delete it in the first time.
-                                final boolean content_version_hard_link = Config
-                                        .getBooleanProperty("CONTENT_VERSION_HARD_LINK", true);
-                                FileUtil.copyFile(incomingFile, newFile, content_version_hard_link, validateEmptyFile);
-                                // add the incomingFile to a list of files that will be deleted
-                                // after we iterate over all the fields.
-                                fileListToDelete.add(incomingFile);
-
-                                // delete old content metadata if exists
-                                if(metadata!=null && metadata.exists()){
-                                    metadata.delete();
-                                }
-
-                            } else if (oldFile.exists()) {
-                                // otherwise, we copy the files as hardlinks
-                                FileUtil.copyFile(oldFile, newFile);
-
-                                // try to get the content metadata from the old version
-                                if (metadata != null) {
-                                    File oldMeta = APILocator.getFileAssetAPI()
-                                            .getContentMetadataFile(oldInode);
-                                    if (oldMeta.exists() && !oldMeta.equals(metadata)) {
-                                        if (metadata
-                                                .exists()) {// unlikely to happend. deleting just in case
-                                            metadata.delete();
-                                        }
-                                        metadata.getParentFile().mkdirs();
-                                        FileUtil.copyFile(oldMeta, metadata);
-                                    }
-                                }
-                            }
-                            contentlet.setBinary(velocityVarNm, newFile);
-                        }
-                    } catch (FileNotFoundException e) {
-                        throw new DotContentletValidationException("Error occurred while processing the file:" + e.getMessage(),e);
-                    } catch (IOException e) {
-                        throw new DotContentletValidationException("Error occurred while processing the file:" + e.getMessage(),e);
+                    final String velocityVarNm = field.variable();
+                    File incomingFile = contentletRaw.getBinary(velocityVarNm);
+                    if(validateEmptyFile && incomingFile!=null && incomingFile.length()==0 && !Config.getBooleanProperty("CONTENT_ALLOW_ZERO_LENGTH_FILES", false)){
+                        throw new DotContentletStateException("Cannot checkin 0 length file: " + incomingFile );
                     }
+                    final File binaryFieldFolder = new File(newDir.getAbsolutePath() + File.separator + velocityVarNm);
+
+                    final File metadata=(contentType instanceof FileAssetContentType) ? 
+                        APILocator.getFileAssetAPI().getContentMetadataFile(contentlet.getInode()) : null;
+                    
+
+                    // if the user has removed this  file via the ui
+                    if (incomingFile == null  || incomingFile.getAbsolutePath().contains("-removed-")){
+                        FileUtil.deltree(binaryFieldFolder);
+                        contentlet.setBinary(velocityVarNm, null);
+                        if(metadata!=null && metadata.exists())
+                            metadata.delete();
+                        continue;
+                    }
+
+                    // if we have an incoming file
+                    else if (incomingFile.exists() ){
+                        //The physical file name is preserved across versions.
+                        //No need to update the name. We will only reference the file through the logical asset-name
+                        final String oldFileName  = incomingFile.getName();
+
+                        File oldFile = null;
+                        if(UtilMethods.isSet(oldInode)) {
+                            //get old file
+                            oldFile = new File(oldDir.getAbsolutePath()  + File.separator + velocityVarNm + File.separator +  oldFileName);
+
+                            // do we have an inline edited file, if so use that
+                            File editedFile = new File(tmpDir.getAbsolutePath()  + File.separator + velocityVarNm + File.separator + WebKeys.TEMP_FILE_PREFIX + oldFileName);
+                            if(editedFile.exists()){
+                                incomingFile = editedFile;
+                            }
+                        }
+
+                        //The file name must be preserved so it remains the same across versions.
+                        File newFile = new File(newDir.getAbsolutePath()  + File.separator + velocityVarNm + File.separator +  oldFileName);
+                        binaryFieldFolder.mkdirs();
+
+                        // we move files that have been newly uploaded or edited
+                        if(oldFile==null || !oldFile.equals(incomingFile)){
+                            if(!createNewVersion){
+                                // If we're calling a checkinWithoutVersioning method,
+                                // then folder needs to be cleaned up in order to add the new file in it.
+                                // Otherwise we will have the old file and incoming file at the same time
+                                FileUtil.deltree(binaryFieldFolder);
+                                binaryFieldFolder.mkdirs();
+                            }
+                            // We want to copy (not move) cause the same file could be in
+                            // another field and we don't want to delete it in the first time.
+                            final boolean content_version_hard_link = Config
+                                    .getBooleanProperty("CONTENT_VERSION_HARD_LINK", true);
+                            FileUtil.copyFile(incomingFile, newFile, content_version_hard_link, validateEmptyFile);
+                            // add the incomingFile to a list of files that will be deleted
+                            // after we iterate over all the fields.
+                            fileListToDelete.add(incomingFile);
+
+                            // delete old content metadata if exists
+                            if(metadata!=null && metadata.exists()){
+                                metadata.delete();
+                            }
+
+                        } else if (oldFile.exists()) {
+                            // otherwise, we copy the files as hardlinks
+                            FileUtil.copyFile(oldFile, newFile);
+
+                            // try to get the content metadata from the old version
+                            if (metadata != null) {
+                                File oldMeta = APILocator.getFileAssetAPI()
+                                        .getContentMetadataFile(oldInode);
+                                if (oldMeta.exists() && !oldMeta.equals(metadata)) {
+                                    if (metadata
+                                            .exists()) {// unlikely to happend. deleting just in case
+                                        metadata.delete();
+                                    }
+                                    metadata.getParentFile().mkdirs();
+                                    FileUtil.copyFile(oldMeta, metadata);
+                                }
+                            }
+                        }
+                        contentlet.setBinary(velocityVarNm, newFile);
+                    }
+                } catch (FileNotFoundException e) {
+                    throw new DotContentletValidationException("Error occurred while processing the file:" + e.getMessage(),e);
+                } catch (IOException e) {
+                    throw new DotContentletValidationException("Error occurred while processing the file:" + e.getMessage(),e);
                 }
             }
 
@@ -4820,9 +4846,22 @@ public class ESContentletAPIImpl implements ContentletAPI {
             // setBinary
         }else if(Field.FieldType.BINARY.toString().equals(field.getFieldType())){
             try{
-                // only if the value is a file
+
+           
+                // only if the value is a file or a tempFile
                 if(value.getClass()==File.class){
                     contentlet.setBinary(field.getVelocityVarName(), (java.io.File) value);
+                }
+                // if this value is a String and a temp resource, use it to populate the 
+                // binary field
+                else if(value instanceof String && tempApi.isTempResource((String) value)) {
+                  final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+                  // we use the session to verify access to the temp resource
+                  final String sessionId = (request!=null && request.getSession(false)!=null) ? request.getSession().getId() : null;
+                  final User user = Try.of(()->PortalUtil.getUser(request)).getOrNull();
+                  final DotTempFile tempFile = tempApi.getTempFile(user, sessionId, (String) value).get();
+                  contentlet.setBinary(field.getVelocityVarName(), tempFile.file);
+
                 }
             }catch (Exception e) {
                 throw new DotContentletStateException("Unable to set binary file Object",e);
