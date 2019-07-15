@@ -63,11 +63,14 @@ function setMyWorkflowScheme(){
 	});
 }
 
-function editPage(url) {
+function editPage(url, language_id) {
     var customEvent = document.createEvent("CustomEvent");
     customEvent.initCustomEvent("ng-event", false, false,  {
         name: 'edit-page',
-		data: url
+		data: {
+            url,
+            language_id
+        }
     });
     document.dispatchEvent(customEvent);
 }
@@ -96,7 +99,7 @@ function editPage(url) {
 <div class="content-edit-actions">
 
         <%if(contentlet.isHTMLPage() && contentlet.getIdentifier() != "" && (canUserWriteToContentlet)) {%>
-            <a onClick="editPage('<%= APILocator.getIdentifierAPI().find(contentlet.getIdentifier()).getURI() %>')">
+            <a onClick="editPage('<%= APILocator.getIdentifierAPI().find(contentlet.getIdentifier()).getURI() %>', '<%= contentlet.getLanguageId() %>')">
                 <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "view-in-edit-mode")) %>
             </a>
         <%} %>
