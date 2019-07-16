@@ -172,8 +172,16 @@ public class ContentletLoader implements DotLoader {
                     try {
                         contFieldValueObject = conAPI.getFieldValue(content, field);
                         contFieldValue = contFieldValueObject == null ? "" : contFieldValueObject.toString();
-                    } catch (Exception e) {
-                        Logger.error(this.getClass(), "writeContentletToFile: " + e.getMessage());
+                    } catch (final Exception e) {
+                      try {
+                        Logger.warnAndDebug(this.getClass(), "writeContentletToFile error: "+ e.getMessage() , e);
+                        Logger.warn(this.getClass(), "writeContentletToFile error: "+ e.getStackTrace()[1].toString());
+                        Logger.warn(this.getClass(), "writeContentletToFile error: values:" + content.getIdentifier() +  "/" + content.getTitle() + " : " + contField + " field:" + field + " contFieldValueObject:" + contFieldValueObject + " "  );
+                      }
+                      catch(Exception ex) {
+                        Logger.error(this.getClass(), e.getMessage(), e);
+                      }
+                        continue;
                     }
                     if (!(field instanceof DateTimeField || field instanceof DateField || field instanceof TimeField)) {
                         if (contFieldValue.contains("$") || contFieldValue.contains("#")) {

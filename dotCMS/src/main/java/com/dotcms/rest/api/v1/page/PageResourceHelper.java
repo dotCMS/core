@@ -84,22 +84,26 @@ public class PageResourceHelper implements Serializable {
         for (final PageContainerForm.ContainerEntry containerEntry : containerEntries) {
             int i = 0;
             final  List<String> contentIds = containerEntry.getContentIds();
+            final String personalization = UtilMethods.isSet(containerEntry.getPersonaTag()) ?
+                    Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + containerEntry.getPersonaTag() :
+                    MultiTree.DOT_PERSONALIZATION_DEFAULT;
 
-            for (final String contentletId : contentIds) {
-                final MultiTree multiTree = new MultiTree().setContainer(containerEntry.getContainerId())
-                        .setContentlet(contentletId)
-                        .setInstanceId(containerEntry.getContainerUUID())
-                        .setTreeOrder(i++)
-                        .setHtmlPage(pageId);
+            if (UtilMethods.isSet(contentIds)) {
+                for (final String contentletId : contentIds) {
+                    final MultiTree multiTree = new MultiTree().setContainer(containerEntry.getContainerId())
+                            .setContentlet(contentletId)
+                            .setInstanceId(containerEntry.getContainerUUID())
+                            .setTreeOrder(i++)
+                            .setHtmlPage(pageId);
 
-                final String personalization = UtilMethods.isSet(containerEntry.getPersonaTag())?
-                        Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + containerEntry.getPersonaTag():
-                        MultiTree.DOT_PERSONALIZATION_DEFAULT;
+                    CollectionsUtils.computeSubValueIfAbsent(
+                            multiTreesMap, personalization, MultiTree.personalized(multiTree, personalization),
+                            CollectionsUtils::add,
+                            (String key, MultiTree multitree) -> CollectionsUtils.list(multitree));
+                }
+            } else {
 
-                CollectionsUtils.computeSubValueIfAbsent(
-                        multiTreesMap, personalization, MultiTree.personalized(multiTree, personalization),
-                        CollectionsUtils::add,
-                        (String key, MultiTree multitree)-> CollectionsUtils.list(multitree));
+                multiTreesMap.computeIfAbsent(personalization, key -> new ArrayList<>());
             }
         }
 

@@ -733,7 +733,7 @@
             if(result==0) {
                 dojo.byId("warningDiv").innerHTML = '';
             }  else if (result==1) {
-                dojo.byId("warningDiv").innerHTML = '<%= LanguageUtil.get(pageContext, "message.category.delete.failed.has.dependencies") %>';
+                dojo.byId("warningDiv").innerHTML = `<%= LanguageUtil.get(pageContext, "message.category.delete.failed.has.dependencies") %>`;
                 var t = new dojox.timing.Timer();
                 t.setInterval(5000);
                 t.onTick = function() {

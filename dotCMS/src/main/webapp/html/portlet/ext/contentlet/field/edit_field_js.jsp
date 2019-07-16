@@ -673,7 +673,7 @@ var cmsfile=null;
 			}
 		}
 		if(duplicateKey){
-			 alert('<%= LanguageUtil.get(pageContext, "key-already-exists") %>');
+			 alert('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "key-already-exists")) %>');
 		}else{
 			var newRow = table.insertRow(table.rows.length);
 			newRow.id = fieldId+'_'+key;
