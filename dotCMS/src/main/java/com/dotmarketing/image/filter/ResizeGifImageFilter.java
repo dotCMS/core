@@ -72,7 +72,7 @@ public class ResizeGifImageFilter extends ImageFilter {
       final int height = (int) h;
 
       final ImageReader reader = ImageIO.getImageReadersByFormatName("gif").next();
-      final BufferedImageOp resampler = new ResampleOp(width, height, ResampleOp.FILTER_LANCZOS); // A good default filter, see class
+      final BufferedImageOp resampler = new ResampleOp(width, height, ResampleOp.FILTER_TRIANGLE); // A good default filter, see class
       try(ImageInputStream stream = ImageIO.createImageInputStream(file)){
         reader.setInput(stream);
         try(ImageOutputStream output = new FileImageOutputStream(resultFile)){

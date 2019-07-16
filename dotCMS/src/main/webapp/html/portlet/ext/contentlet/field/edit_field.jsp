@@ -549,8 +549,7 @@
             idShorty="<%=APILocator.getShortyAPI().shortify(contentlet.getIdentifier())%>"
             onRemove="removeThumbnail('<%=field.getVelocityVarName()%>', '<%= binInode %>')"
             dojoType="dotcms.dijit.form.FileAjaxUploader" 
-            accept="<%=accept %>" 
-            onUploadFinish="saveBinaryFileOnContent<%=field.getVelocityVarName()%>">
+            accept="<%=accept %>" >
     </div>
     <script type="text/javascript">
         function saveBinaryFileOnContent<%=field.getVelocityVarName()%>(fileName, dijitReference){

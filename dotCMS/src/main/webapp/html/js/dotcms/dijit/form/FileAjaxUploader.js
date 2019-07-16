@@ -267,7 +267,7 @@ dojo.declare("dotcms.dijit.form.FileAjaxUploader", [dijit._Widget, dijit._Templa
             dojo.style("fileTextEditorDiv", { display: 'none' });
         }
         
-
+		this.onRemove(this);
 
     },
     
@@ -385,9 +385,21 @@ dojo.declare("dotcms.dijit.form.FileAjaxUploader", [dijit._Widget, dijit._Templa
             newImageEditor.placeAt(thumbnailParentDiv);
 
         }
+        this.onUploadFinish(this.fileName, this);
+    },
+    
+    onUploadStart: function (fileName, dijitReference) {
+    },
+
+    onUploadFinish: function (fileName, dijitReference) {       
+    },
+
+    onRemove: function (dijitReference) {
+    },
+
+    uninitialize : function (event) {
     }
-    
-    
+
     
     
     
