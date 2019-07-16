@@ -1,0 +1,52 @@
+# https://docs.docker.com/compose/compose-file/compose-versioning/
+version: "3.7"
+
+# https://docs.docker.com/compose/compose-file/
+
+#volumes:
+#  db:
+#  reports:
+#  logs:
+
+networks:
+  db_net:
+
+services:
+
+  integration-tests:
+    build:
+      context: .
+      args:
+        BUILD_FROM: COMMIT
+        BUILD_ID: origin/master
+        DB_TYPE: postgres
+    depends_on:
+      - database
+    volumes:
+#      - reports:/custom/reports
+#      - logs:/custom/logs
+      - type: bind
+        source: /Users/jonathan/Projects/dotCMS/repository/git/assets/tmp/reports
+        target: /custom/reports
+      - type: bind
+        source: /Users/jonathan/Projects/dotCMS/repository/git/assets/tmp/logs
+        target: /custom/logs
+    networks:
+      - db_net
+
+  # https://hub.docker.com/_/postgres
+  database:
+    image: "postgres:9-alpine"
+    container_name: db
+#    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: dotcms
+    ports:
+      - "5432:5432"
+    volumes:
+#      - db:/var/lib/postgresql/data
+      - ./setup/init-scripts/postgres:/docker-entrypoint-initdb.d/
+    networks:
+      - db_net
