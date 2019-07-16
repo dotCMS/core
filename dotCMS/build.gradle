@@ -223,6 +223,40 @@ ext {
     }
 }
 
+ext.prepareFelixExternalFolder = { felixExternalFolder ->
+
+    println "Configuring felix in folder [" + felixExternalFolder + "]"
+
+    if (felixExternalFolder.startsWith("/")) {// We need an absolute path here
+
+        copy {
+            from configurations.felix
+            into felixExternalFolder.concat("/bundle")
+        }
+
+        copy {
+            from 'src/main/webapp/WEB-INF/felix/osgi-extra-generated.conf'
+            into felixExternalFolder
+        }
+
+        copy {
+            from configurations.compile
+            into felixExternalFolder.concat("/bundle")
+            include '**/org.apache.felix.http.api*.jar'
+        }
+
+        copy {
+            from configurations.compile
+            into felixExternalFolder.concat("/bundle")
+            include '**/org.apache.felix.http.bundle*.jar'
+        }
+
+    } else {
+        // For integration tests we need an absolute path for the felix folder
+        throw new GradleException('For integration tests we need an absolute path for the felix folder')
+    }
+
+}
 
 if (project.hasProperty('jarBaseName')) {
     archivesBaseName = "$jarBaseName"
@@ -313,29 +347,8 @@ war {
     } else { //Outside the war
 
         doLast {
+            prepareFelixExternalFolder(felixFolder)
             exclude 'WEB-INF/felix'
-
-            copy {
-                from configurations.felix
-                into felixFolder.concat("/bundle")
-            }
-
-            copy {
-                from 'src/main/webapp/WEB-INF/felix/osgi-extra-generated.conf'
-                into felixFolder
-            }
-
-            copy {
-                from configurations.compile
-                into felixFolder.concat("/bundle")
-                include '**/org.apache.felix.http.api*.jar'
-            }
-
-            copy {
-                from configurations.compile
-                into felixFolder.concat("/bundle")
-                include '**/org.apache.felix.http.bundle*.jar'
-            }
         }
     }
 
@@ -395,27 +408,7 @@ task prepareFelixForTests {
         if (project.hasProperty("integrationTestFelixFolder")
                 && integrationTestFelixFolder?.trim()) {
 
-            copy {
-                from configurations.felix
-                into integrationTestFelixFolder.concat("/bundle")
-            }
-
-            copy {
-                from 'src/main/webapp/WEB-INF/felix/osgi-extra-generated.conf'
-                into integrationTestFelixFolder
-            }
-
-            copy {
-                from configurations.compile
-                into integrationTestFelixFolder.concat("/bundle")
-                include '**/org.apache.felix.http.api*.jar'
-            }
-
-            copy {
-                from configurations.compile
-                into integrationTestFelixFolder.concat("/bundle")
-                include '**/org.apache.felix.http.bundle*.jar'
-            }
+            prepareFelixExternalFolder(integrationTestFelixFolder)
         }
     }
 
@@ -1019,6 +1012,18 @@ task copyNodeModules(type: Copy) {
 }
 
 task downloadDependencies(type: Exec) {
+
+    // configurations.each { println it.name }
+    // ./gradlew --console plain dependencies
+
+    configurations.ajtools.files
+    configurations.compileOnly.files
+    configurations.default.files
+    configurations.functionalTestCompile.files
+    configurations.individualTestCompile.files
+    configurations.integrationTestCompile.files
+    configurations.testCompile.files
+    configurations.testsStarter.files
     configurations.compile.files
     configurations.buildlibs.files
     configurations.starter.files
