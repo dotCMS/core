@@ -148,60 +148,60 @@
 
 		tableEditRowMenuTemplate:
 					'<div dojoType="dijit.MenuItem" iconClass="editIcon" onClick="editContentletEvent(\'{inode}\')">\
-                        <%= LanguageUtil.get(pageContext, "Edit") %>\
+                        <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Edit")) %>\
                      </div>\
                      <div dojoType="dijit.MenuItem" iconClass="editScriptIcon" onClick="hostAdmin.editHostVariables(\'{identifier}\', \'{inode}\')">\
-                     <%= LanguageUtil.get(pageContext, "Edit-Host-Variables") %>\
+                        <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Edit-Host-Variables")) %>\
                   	 </div>',
 
 		tablePublishRowMenuTemplate:
 					'<div dojoType="dijit.MenuItem" iconClass="hostIcon" onClick="hostAdmin.publishHost(\'{identifier}\', \'{inode}\')">\
-                        <%= LanguageUtil.get(pageContext, "Start-Host") %>\
+                        <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Start-Host")) %>\
                     </div>',
 
 		tableUnpublishRowMenuTemplate:
 					'<div dojoType="dijit.MenuItem" iconClass="unpublishIcon" onClick="hostAdmin.unpublishHost(\'{identifier}\', \'{inode}\')">\
-                        <%= LanguageUtil.get(pageContext, "Stop-Host") %>\
+                        <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Stop-Host")) %>\
                     </div>',
 
 		tableMakeDefaultRowMenuTemplate:
 					'<div dojoType="dijit.MenuItem" iconClass="hostDefaultIcon" onClick="hostAdmin.makeDefault(\'{identifier}\', \'{inode}\')">\
-                        <%= LanguageUtil.get(pageContext, "Make-Default") %>\
+                        <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Make-Default")) %>\
                     </div>',
 
 		tableArchiveRowMenuTemplate:
 					'<div dojoType="dijit.MenuItem" iconClass="archiveIcon" onClick="hostAdmin.archiveHost(\'{identifier}\', \'{inode}\')">\
-                        <%= LanguageUtil.get(pageContext, "Archive-Host") %>\
+                        <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Archive-Host")) %>\
                     </div>',
 
 		tableUnarchiveRowMenuTemplate:
 					'<div dojoType="dijit.MenuItem" iconClass="unarchiveIcon" onClick="hostAdmin.unarchiveHost(\'{identifier}\', \'{inode}\')">\
-                        <%= LanguageUtil.get(pageContext, "Unarchive-Host") %>\
+                        <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unarchive-Host")) %>\
                     </div>',
 
 		tableDeleteRowMenuTemplate:
 					'<div dojoType="dijit.MenuItem" iconClass="deleteIcon" onClick="hostAdmin.deleteHost(\'{identifier}\', \'{inode}\')">\
-                        <%= LanguageUtil.get(pageContext, "Delete-Host") %>\
+                        <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Delete-Host")) %>\
                     </div>',
 
-        tableResultSummaryTemplate: '<%= LanguageUtil.get(pageContext, "Viewing-Results") %> {startRecord} <%= LanguageUtil.get(pageContext, "to") %> \
-            {endRecord} <%= LanguageUtil.get(pageContext, "of") %> {total}',
+        tableResultSummaryTemplate: '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Viewing-Results")) %> {startRecord} <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "to")) %> \
+            {endRecord} <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "of")) %> {total}',
 
 
         tableLoadingTemplate:
                  '<div id="loadingContentListing" name="loadingContentListing" align="center" style=""> <br /><br /><font class="bg" size="2"> <b>\
-                 <%= LanguageUtil.get(pageContext, "Loading") %>\
+                 <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Loading")) %>\
                  </b> <br /><img src="/html/images/icons/processing.gif" /></font> <br /> <br />\
 	              </div>',
 
          tablePushPublishRowMenuTemplate:
 					'<div dojoType="dijit.MenuItem" iconClass="sServerIcon" onClick="hostAdmin.remotePublish(\'{identifier}\', \'{inode}\')">\
-	                   <%= LanguageUtil.get(pageContext, "Remote-Publish") %>\
+	                   <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>\
 	               </div>',
 
          tableAddToBundleRowMenuTemplate:
 					'<div dojoType="dijit.MenuItem" iconClass="bundleIcon" onClick="hostAdmin.addToBundle(\'{identifier}\', \'{inode}\')">\
-	                   <%= LanguageUtil.get(pageContext, "Add-To-Bundle") %>\
+	                   <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-To-Bundle")) %>\
 	               </div>',
 
         constructor: function(){
