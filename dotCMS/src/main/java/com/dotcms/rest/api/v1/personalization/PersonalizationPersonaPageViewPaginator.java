@@ -10,6 +10,7 @@ import com.dotmarketing.factories.MultiTreeAPI;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.transform.ContentletToMapTransformer;
+import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.personas.business.PersonaAPI;
 import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.util.Logger;
@@ -18,6 +19,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
@@ -72,11 +74,10 @@ public class PersonalizationPersonaPageViewPaginator implements PaginatorOrdered
 
             for (final Contentlet contentlet : contentlets) {
 
-                final Persona persona = this.personaAPI.fromContentlet(contentlet);
-                final ContentletToMapTransformer transformer = new ContentletToMapTransformer(persona);
-                final Map<String, Object> contentletMap = transformer.toMaps().stream().findFirst().orElse(Collections.EMPTY_MAP);
+                final Map<String, Object> contentletMap = ContentletUtil.getContentPrintableMap(user, contentlet);
                 contentletMap.put("personalized",
-                        personaTagPerPage.contains(Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + persona.getKeyTag()));
+                        personaTagPerPage.contains(Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON +
+                                contentlet.getStringProperty(PersonaAPI.KEY_TAG_FIELD)));
 
                 personalizationPersonaPageViews.add(new PersonalizationPersonaPageView(pageId, contentletMap));
             }
@@ -86,7 +87,8 @@ public class PersonalizationPersonaPageViewPaginator implements PaginatorOrdered
             result.setTotalResults(this.contentletAPI.indexCount(query.toString(), user, respectFrontendRoles));
 
             return result;
-        } catch (DotDataException | IllegalAccessException | InvocationTargetException| DotSecurityException e) {
+        } catch (Exception e) {
+
             Logger.error(this, e.getMessage(), e);
             throw new DotRuntimeException(e);
         }
