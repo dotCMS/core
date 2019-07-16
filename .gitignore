@@ -45,6 +45,7 @@ dotCMS/starter.zip
 .gradle/
 /*.local.*
 dotCMS/src/main/webapp/dotAdmin
+dotCMS/src/main/webapp/custom-elements
 dotCMS/bin/*
 dotCMS/classes
 

@@ -899,7 +899,8 @@ class DeployWarTomcatTask extends DefaultTask{
 task initNpm(type: NpmTask) {
     args = ['init', '--yes']
 
-    finalizedBy 'installDotcmsUI'
+    dependsOn 'installDotcmsUI', 'installDotcmsFieldElements'
+    finalizedBy 'cleanNodeModules'
 }
 
 task installDotcmsUI(type: NpmTask) {
@@ -909,7 +910,13 @@ task installDotcmsUI(type: NpmTask) {
         args = ['install', 'dotcms-ui@' + coreWebReleaseVersion]
     }
 
-    finalizedBy 'copyNodeModules'
+    finalizedBy 'copyDotcmsUI'
+}
+
+task installDotcmsFieldElements(type: NpmTask) {
+
+    args = ['install', 'dotcms-field-elements']
+    finalizedBy 'copyCustomElements'
 }
 
 task makeDotAdminFolder(type: DefaultTask) {
@@ -924,14 +931,20 @@ task cleanNodeModules(type: Delete) {
     followSymlinks = true
 }
 
-task copyNodeModules(type: Copy) {
+task copyDotcmsUI(type: Copy) {
     dependsOn 'makeDotAdminFolder'
 
     delete "./src/main/webapp/$angularFolder"
     from (file("./node_modules/dotcms-ui"))
     into("./src/main/webapp/$angularFolder")
+}
 
-    finalizedBy 'cleanNodeModules'
+task copyCustomElements(type: Copy) {
+
+    from "./node_modules/dotcms-field-elements/dist/"
+    into "./src/main/webapp/custom-elements/"
+    include 'dotcmsfields.js'
+    include 'dotcmsfields/*'
 }
 
 task downloadDependencies(type: Exec) {
