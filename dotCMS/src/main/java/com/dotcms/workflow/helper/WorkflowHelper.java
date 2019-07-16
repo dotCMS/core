@@ -3,12 +3,14 @@ package com.dotcms.workflow.helper;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.rest.api.v1.workflow.*;
 import com.dotcms.rest.exception.BadRequestException;
+import com.dotcms.rest.exception.InternalServerException;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.workflow.form.*;
@@ -374,6 +376,25 @@ public class WorkflowHelper {
 
             throw new BadRequestException(message);
         }
+    }
+
+    @WrapInTransaction
+    public SystemActionWorkflowActionMapping deleteSystemAction(final String identifier, final User user) throws DotDataException, DotSecurityException {
+
+        final Optional<SystemActionWorkflowActionMapping> mapping = this.workflowAPI.findSystemActionByIdentifier(identifier, user);
+
+        if (mapping.isPresent()) {
+            if (!this.workflowAPI.deleteSystemAction(mapping.get()).isPresent()) {
+
+                throw new InternalServerException("Could not delete the system action: " + identifier +
+                        ", it may not exists");
+            }
+        } else {
+
+            throw new NotFoundInDbException("Could not delete the system action: " + identifier + ", because it does not exists");
+        }
+
+        return mapping.get();
     }
 
 

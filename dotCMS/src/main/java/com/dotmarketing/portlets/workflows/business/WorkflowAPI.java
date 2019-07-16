@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.workflows.business;
 
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rest.api.v1.workflow.BulkActionsResultView;
+import com.dotcms.util.OptionalBoolean;
 import com.dotcms.workflow.form.AdditionalParamsBean;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.DotStateException;
@@ -898,6 +899,21 @@ public interface WorkflowAPI {
 	 * @return Optional WorkflowAction, present if exists action associated to the search criterias
 	 */
 	Optional<WorkflowAction> findActionMappedBySystemActionContentlet (final Contentlet contentlet, final SystemAction systemAction, final User user) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Tries to find the system action by identifier
+	 * @param identifier {@link String}
+	 * @param user       {@link User}
+	 * @return Optional of SystemActionWorkflowActionMapping
+	 */
+	Optional<SystemActionWorkflowActionMapping> findSystemActionByIdentifier(String identifier, User user) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Deletes a system action
+	 * @param mapping {@link SystemActionWorkflowActionMapping}
+	 * @return Optional of SystemActionWorkflowActionMapping
+	 */
+	Optional<SystemActionWorkflowActionMapping> deleteSystemAction(SystemActionWorkflowActionMapping mapping);
 
 	/**
 	 * Render mode for the available actions

@@ -1160,6 +1160,25 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		return dotConnect.loadObjectResults();
 	}
 
+	@Override
+	public Map<String, Object> findSystemActionByIdentifier(final String identifier) throws DotDataException {
+
+		final List<Map<String, Object>> rows = new DotConnect().setSQL(sql.SELECT_SYSTEM_ACTION_BY_IDENTIFIER)
+				.addParam(identifier)
+				.loadObjectResults();
+		return UtilMethods.isSet(rows)?rows.get(0):Collections.emptyMap();
+	}
+
+	@Override
+	public boolean deleteSystemAction(final SystemActionWorkflowActionMapping mapping) throws DotDataException {
+
+		new DotConnect().setSQL(sql.DELETE_SYSTEM_ACTION_BY_IDENTIFIER)
+				.addParam(mapping.getIdentifier())
+				.loadResult();
+
+		return true; //  todo: if rows affected 0 -> false
+	}
+
 	private String createQueryIn (final List<WorkflowScheme> schemes) {
 
 		final StringBuilder builder = new StringBuilder();

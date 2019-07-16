@@ -709,6 +709,42 @@ public class WorkflowResource {
     } // saveSystemAction
 
     /**
+     * Deletes an {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction}, by default the action is associated to the schema,
+     * however if the stepId is set will be automatically associated to the step too.
+     * @param request                     HttpServletRequest
+     * @param response                    HttpServletResponse
+     * @param identifier                  String
+     * @return Response
+     */
+    @DELETE
+    @Path("/system/action/{identifier}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response deletesSystemAction(@Context final HttpServletRequest request,
+                                              @Context final HttpServletResponse response,
+                                              @PathParam("identifier") final String identifier) {
+
+        final InitDataObject initDataObject = this.webResource.init
+                (null, request, response, true, null);
+
+        try {
+
+            Logger.debug(this, ()-> "Deleting system action: " + identifier);
+
+            return Response.ok(new ResponseEntityView(
+                    this.workflowHelper.deleteSystemAction(identifier, initDataObject.getUser())))
+                    .build(); // 200
+        }  catch (final Exception e) {
+
+            Logger.error(this.getClass(),
+                    "Exception on delete System Action, identifier: " + identifier +
+                            ", exception message: " + e.getMessage(), e);
+            return ResponseUtil.mapExceptionResponse(e);
+        }
+    } // saveSystemAction
+
+    /**
      * Saves an action, by default the action is associated to the schema, however if the stepId is set will be automatically associated to the step too.
      * @param request               HttpServletRequest
      * @param workflowActionForm    WorkflowActionForm

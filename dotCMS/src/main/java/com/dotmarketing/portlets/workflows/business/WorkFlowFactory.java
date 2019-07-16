@@ -366,6 +366,7 @@ public interface WorkFlowFactory {
 	 * Finds the {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction}'s by {@link WorkflowScheme}
 	 * @param workflowScheme {@link WorkflowScheme}
 	 * @return List of Rows
+	 * @throws DotDataException
 	 */
 	List<Map<String, Object>> findSystemActionsByScheme(WorkflowScheme workflowScheme) throws DotDataException;
 
@@ -375,6 +376,7 @@ public interface WorkFlowFactory {
 	 * @param systemAction  {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction}
 	 * @param contentType   {@link ContentType}
 	 * @return Map<String, Object>
+	 * @throws DotDataException
 	 */
 	Map<String, Object> findSystemActionByContentType(WorkflowAPI.SystemAction systemAction, ContentType contentType) throws DotDataException;
 
@@ -386,4 +388,20 @@ public interface WorkFlowFactory {
 	 * @return List<Map<String, Object>>
 	 */
 	List<Map<String, Object>> findSystemActionsBySchemes(WorkflowAPI.SystemAction systemAction, List<WorkflowScheme> schemes) throws DotDataException;
+
+	/**
+	 * Returns not empty map if the System Action Mapping exists by identifier
+	 * @param identifier {@link String}
+	 * @return Map
+	 * @throws DotDataException
+	 */
+	Map<String, Object>  findSystemActionByIdentifier(String identifier) throws DotDataException;
+
+	/**
+	 * Returns true if the system action is successfully deleted.
+	 * @param mapping {@link SystemActionWorkflowActionMapping}
+	 * @return boolean
+	 * @throws DotDataException
+	 */
+	boolean deleteSystemAction(SystemActionWorkflowActionMapping mapping) throws DotDataException ;
 }

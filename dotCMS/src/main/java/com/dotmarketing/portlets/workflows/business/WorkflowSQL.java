@@ -71,6 +71,8 @@ abstract class WorkflowSQL {
 	 */
 	protected static String SELECT_STEPS_ID_BY_ACTION  = "select workflow_action_step.step_id as stepid from workflow_action_step  where workflow_action_step.action_id = ?";
 
+	protected static String DELETE_SYSTEM_ACTION_BY_IDENTIFIER = "delete from content_type_workflow_action_mapping where id=?";
+	protected static String SELECT_SYSTEM_ACTION_BY_IDENTIFIER = "select * from content_type_workflow_action_mapping where id=?";
 	protected static String SELECT_SYSTEM_ACTION_BY_SCHEME_OR_CONTENT_TYPE_MAPPING = "select * from content_type_workflow_action_mapping where scheme_or_content_type=?";
 	protected static String SELECT_SYSTEM_ACTION_BY_SYSTEM_ACTION_AND_SCHEMES      = "select * from content_type_workflow_action_mapping where action=? and scheme_or_content_type in (%s)";
 	protected static String SELECT_SYSTEM_ACTION_BY_SYSTEM_ACTION_AND_SCHEME_OR_CONTENT_TYPE_MAPPING = "select * from content_type_workflow_action_mapping where action=? and scheme_or_content_type=?";

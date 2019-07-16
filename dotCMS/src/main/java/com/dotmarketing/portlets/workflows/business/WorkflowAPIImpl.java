@@ -3419,6 +3419,32 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
                 Optional.empty();
 	}
 
+	@Override
+	@CloseDBIfOpened
+	public Optional<SystemActionWorkflowActionMapping> findSystemActionByIdentifier(final String identifier, final User user)
+			throws DotDataException, DotSecurityException {
+
+		final Map<String, Object> mapping =
+				this.workFlowFactory.findSystemActionByIdentifier (identifier);
+
+		return null != mapping?
+				Optional.ofNullable(toSystemActionWorkflowActionMapping(
+						mapping, this.toOwner((String)mapping.get("scheme_or_content_type")), user))
+				:Optional.empty();
+	}
+
+	@Override
+	@WrapInTransaction
+	public Optional<SystemActionWorkflowActionMapping> deleteSystemAction(final SystemActionWorkflowActionMapping mapping) {
+
+		return this.workFlowFactory.deleteSystemAction(mapping)?Optional.ofNullable(mapping):Optional.empty();
+	}
+
+	private Object toOwner(final String schemeOrContentType) throws DotSecurityException, DotDataException {
+
+		return UUIDUtil.isUUID(schemeOrContentType)?
+				this.findScheme(schemeOrContentType):this.contentTypeAPI.find(schemeOrContentType);
+	}
 
 	private SystemActionWorkflowActionMapping toSystemActionWorkflowActionMapping(final Map<String, Object> rowMap, final Object owner, final User user)
             throws DotSecurityException, DotDataException {
