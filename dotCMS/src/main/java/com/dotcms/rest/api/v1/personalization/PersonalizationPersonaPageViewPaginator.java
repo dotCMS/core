@@ -2,7 +2,6 @@ package com.dotcms.rest.api.v1.personalization;
 
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.util.pagination.PaginatorOrdered;
-import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -21,7 +20,6 @@ import com.liferay.util.StringPool;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class PersonalizationPersonaPageViewPaginator implements PaginatorOrdered<PersonalizationPersonaPageView> {
 
@@ -54,6 +52,12 @@ public class PersonalizationPersonaPageViewPaginator implements PaginatorOrdered
         final String pageId  = extraParams.get(PAGE_ID).toString();
         String orderByString = UtilMethods.isSet(orderBy) ? orderBy : "title desc";
         final String hostId  = extraParams.get("hostId").toString();
+        final StringBuilder query = new StringBuilder(PERSONAS_QUERY).append(hostId);
+
+        if (UtilMethods.isSet(filter)) {
+
+            query.append(" +persona.name:").append(filter).append("*");
+        }
 
         orderByString =  orderByString.trim().toLowerCase().endsWith(" asc") ||
                 orderByString.trim().toLowerCase().endsWith(" desc")? orderByString:
@@ -62,7 +66,7 @@ public class PersonalizationPersonaPageViewPaginator implements PaginatorOrdered
         try {
 
             final List<Contentlet> contentlets  = this.contentletAPI.search
-                    (PERSONAS_QUERY + hostId, limit, offset, orderByString, user,respectFrontendRoles);
+                    (query.toString(), limit, offset, orderByString, user,respectFrontendRoles);
             final Set<String> personaTagPerPage = this.multiTreeAPI.getPersonalizationsForPage (pageId);
             final List<PersonalizationPersonaPageView> personalizationPersonaPageViews = new ArrayList<>();
 
@@ -79,7 +83,7 @@ public class PersonalizationPersonaPageViewPaginator implements PaginatorOrdered
 
             final PaginatedArrayList<PersonalizationPersonaPageView> result = new PaginatedArrayList<>();
             result.addAll(personalizationPersonaPageViews);
-            result.setTotalResults(this.contentletAPI.indexCount(PERSONAS_QUERY+ hostId, user, respectFrontendRoles));
+            result.setTotalResults(this.contentletAPI.indexCount(query.toString(), user, respectFrontendRoles));
 
             return result;
         } catch (DotDataException | IllegalAccessException | InvocationTargetException| DotSecurityException e) {
