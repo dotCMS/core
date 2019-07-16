@@ -1007,6 +1007,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	}
 
 	@Override
+	@WrapInTransaction
 	protected List<Permission> getPermissions(Permissionable permissionable, boolean bitPermissions, boolean onlyIndividualPermissions, boolean forceLoadFromDB) throws DotDataException {
 
 
