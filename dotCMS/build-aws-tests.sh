@@ -126,10 +126,6 @@ sed -i "s,^VELOCITY_ROOT *=.*$,VELOCITY_ROOT=$PWD/dotserver/tomcat/webapps/ROOT/
 echo "
 TOOLBOX_MANAGER_PATH=$PWD/dotserver/tomcat/webapps/ROOT/WEB-INF/toolbox.xml
 " >> core/dotCMS/src/integration-test/resources/it-dotmarketing-config.properties
-echo "
-context.path.felix=$PWD/dotserver/tomcat/webapps/ROOT/WEB-INF/felix
-" >> core/dotCMS/src/integration-test/resources/it-dotmarketing-config.properties
-
 
 # Create output directory
 mkdir tests

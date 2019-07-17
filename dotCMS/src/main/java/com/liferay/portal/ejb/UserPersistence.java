@@ -23,6 +23,7 @@
 package com.liferay.portal.ejb;
 
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.util.user.LiferayUserTransformer;
 import com.dotcms.util.user.UserTransformer;
 import com.dotmarketing.business.APILocator;
@@ -60,6 +61,7 @@ public class UserPersistence extends BasePersistence {
 		return new com.liferay.portal.model.User(userId);
 	}
 
+	@WrapInTransaction
 	protected com.liferay.portal.model.User remove(String userId)
 			throws NoSuchUserException, SystemException {
 		Session session = null;
@@ -96,11 +98,9 @@ public class UserPersistence extends BasePersistence {
 				throw new SystemException(he);
 			}
 		}
-		finally {
-			HibernateUtil.closeSession(session);
-		}
-	}
 
+	}
+	@WrapInTransaction
 	protected com.liferay.portal.model.User update(
 			com.liferay.portal.model.User user) throws SystemException {
 		Session session = null;
@@ -233,9 +233,7 @@ public class UserPersistence extends BasePersistence {
 		catch (HibernateException he) {
 			throw new SystemException(he);
 		}
-		finally {
-			HibernateUtil.closeSession(session);
-		}
+
 	}
 
 	@CloseDBIfOpened
@@ -264,6 +262,7 @@ public class UserPersistence extends BasePersistence {
 		}
 	}
 
+	@CloseDBIfOpened
 	protected List findByCompanyId(String companyId) throws SystemException {
 		Session session = null;
 
@@ -300,16 +299,14 @@ public class UserPersistence extends BasePersistence {
 		catch (HibernateException he) {
 			throw new SystemException(he);
 		}
-		finally {
-			HibernateUtil.closeSession(session);
-		}
+
 	}
 
 	protected List findByCompanyId(String companyId, int begin, int end)
 			throws SystemException {
 		return findByCompanyId(companyId, begin, end, null);
 	}
-
+	@CloseDBIfOpened
 	protected List findByCompanyId(String companyId, int begin, int end,
 			OrderByComparator obc) throws SystemException {
 		Session session = null;
@@ -372,9 +369,7 @@ public class UserPersistence extends BasePersistence {
 		catch (HibernateException he) {
 			throw new SystemException(he);
 		}
-		finally {
-			HibernateUtil.closeSession(session);
-		}
+
 	}
 
 	protected com.liferay.portal.model.User findByCompanyId_First(
@@ -404,6 +399,7 @@ public class UserPersistence extends BasePersistence {
 		}
 	}
 
+	@CloseDBIfOpened
 	protected com.liferay.portal.model.User[] findByCompanyId_PrevAndNext(
 			String userId, String companyId, OrderByComparator obc)
 			throws NoSuchUserException, SystemException {
@@ -494,11 +490,9 @@ public class UserPersistence extends BasePersistence {
 		catch (HibernateException he) {
 			throw new SystemException(he);
 		}
-		finally {
-			HibernateUtil.closeSession(session);
-		}
-	}
 
+	}
+	@CloseDBIfOpened
 	protected com.liferay.portal.model.User findByC_U(String companyId,
 			String userId) throws NoSuchUserException, SystemException {
 		Session session = null;
@@ -548,11 +542,9 @@ public class UserPersistence extends BasePersistence {
 				throw new SystemException(he);
 			}
 		}
-		finally {
-			HibernateUtil.closeSession(session);
-		}
-	}
 
+	}
+	@CloseDBIfOpened
 	protected List findByC_P(String companyId, String password)
 			throws SystemException {
 		Session session = null;
@@ -591,16 +583,14 @@ public class UserPersistence extends BasePersistence {
 		catch (HibernateException he) {
 			throw new SystemException(he);
 		}
-		finally {
-			HibernateUtil.closeSession(session);
-		}
+
 	}
 
 	protected List findByC_P(String companyId, String password, int begin,
 			int end) throws SystemException {
 		return findByC_P(companyId, password, begin, end, null);
 	}
-
+	@CloseDBIfOpened
 	protected List findByC_P(String companyId, String password, int begin,
 			int end, OrderByComparator obc) throws SystemException {
 		Session session = null;
@@ -666,9 +656,7 @@ public class UserPersistence extends BasePersistence {
 		catch (HibernateException he) {
 			throw new SystemException(he);
 		}
-		finally {
-			HibernateUtil.closeSession(session);
-		}
+
 	}
 
 	protected com.liferay.portal.model.User findByC_P_First(String companyId,
@@ -697,7 +685,7 @@ public class UserPersistence extends BasePersistence {
 			return (com.liferay.portal.model.User)list.get(0);
 		}
 	}
-
+	@CloseDBIfOpened
 	protected com.liferay.portal.model.User[] findByC_P_PrevAndNext(
 			String userId, String companyId, String password, OrderByComparator obc)
 			throws NoSuchUserException, SystemException {
@@ -790,11 +778,9 @@ public class UserPersistence extends BasePersistence {
 		catch (HibernateException he) {
 			throw new SystemException(he);
 		}
-		finally {
-			HibernateUtil.closeSession(session);
-		}
-	}
 
+	}
+	@CloseDBIfOpened
 	protected com.liferay.portal.model.User findByC_EA(String companyId,
 			String emailAddress) throws NoSuchUserException, SystemException {
 		Session session = null;
@@ -839,11 +825,9 @@ public class UserPersistence extends BasePersistence {
 				throw new SystemException(he);
 			}
 		}
-		finally {
-			HibernateUtil.closeSession(session);
-		}
-	}
 
+	}
+	@CloseDBIfOpened
 	protected List findAll() throws SystemException {
 		Session session = null;
 
@@ -872,11 +856,9 @@ public class UserPersistence extends BasePersistence {
 		catch (HibernateException he) {
 			throw new SystemException(he);
 		}
-		finally {
-			HibernateUtil.closeSession(session);
-		}
-	}
 
+	}
+	@WrapInTransaction
 	protected void removeByCompanyId(String companyId)
 			throws SystemException {
 		Session session = null;
@@ -912,11 +894,9 @@ public class UserPersistence extends BasePersistence {
 		catch (HibernateException he) {
 			throw new SystemException(he);
 		}
-		finally {
-			HibernateUtil.closeSession(session);
-		}
-	}
 
+	}
+	@WrapInTransaction
 	protected void removeByC_U(String companyId, String userId)
 			throws NoSuchUserException, SystemException {
 		Session session = null;
@@ -968,11 +948,9 @@ public class UserPersistence extends BasePersistence {
 				throw new SystemException(he);
 			}
 		}
-		finally {
-			HibernateUtil.closeSession(session);
-		}
-	}
 
+	}
+	@WrapInTransaction
 	protected void removeByC_P(String companyId, String password)
 			throws SystemException {
 		Session session = null;
@@ -1020,11 +998,9 @@ public class UserPersistence extends BasePersistence {
 		catch (HibernateException he) {
 			throw new SystemException(he);
 		}
-		finally {
-			HibernateUtil.closeSession(session);
-		}
-	}
 
+	}
+	@WrapInTransaction
 	protected void removeByC_EA(String companyId, String emailAddress)
 			throws NoSuchUserException, SystemException {
 		Session session = null;
@@ -1078,11 +1054,9 @@ public class UserPersistence extends BasePersistence {
 				throw new SystemException(he);
 			}
 		}
-		finally {
-			HibernateUtil.closeSession(session);
-		}
-	}
 
+	}
+	@CloseDBIfOpened
 	protected int countByCompanyId(String companyId) throws SystemException {
 		Session session = null;
 
@@ -1116,11 +1090,9 @@ public class UserPersistence extends BasePersistence {
 		catch (HibernateException he) {
 			throw new SystemException(he);
 		}
-		finally {
-			HibernateUtil.closeSession(session);
-		}
-	}
 
+	}
+	@CloseDBIfOpened
 	protected int countByC_U(String companyId, String userId)
 			throws SystemException {
 		Session session = null;
@@ -1158,11 +1130,9 @@ public class UserPersistence extends BasePersistence {
 		catch (HibernateException he) {
 			throw new SystemException(he);
 		}
-		finally {
-			HibernateUtil.closeSession(session);
-		}
-	}
 
+	}
+	@CloseDBIfOpened
 	protected int countByC_P(String companyId, String password)
 			throws SystemException {
 		Session session = null;
@@ -1202,11 +1172,9 @@ public class UserPersistence extends BasePersistence {
 		catch (HibernateException he) {
 			throw new SystemException(he);
 		}
-		finally {
-			HibernateUtil.closeSession(session);
-		}
-	}
 
+	}
+	@CloseDBIfOpened
 	protected int countByC_EA(String companyId, String emailAddress)
 			throws SystemException {
 		Session session = null;
@@ -1244,11 +1212,9 @@ public class UserPersistence extends BasePersistence {
 		catch (HibernateException he) {
 			throw new SystemException(he);
 		}
-		finally {
-			HibernateUtil.closeSession(session);
-		}
-	}
 
+	}
+	@CloseDBIfOpened
 	private String getPasswordCriteria(){
 		if (DbConnectionFactory.isOracle()){
 			return "dbms_lob.compare(password_, ?) = 0";

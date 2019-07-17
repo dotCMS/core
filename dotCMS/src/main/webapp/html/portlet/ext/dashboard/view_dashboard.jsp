@@ -296,7 +296,7 @@ int periodData = dAPI.checkPeriodData(0,0);
    	   	}
    	}
 
-   	var noRecordsHostTemplate = '<tr class="alternate_1" id="rowNoResults"><td colspan="${fields}"><div class="noResultsMessage"><%= LanguageUtil.get(pageContext, "No-Records-Found") %></div></td></tr>';
+   	var noRecordsHostTemplate = '<tr class="alternate_1" id="rowNoResults"><td colspan="${fields}"><div class="noResultsMessage"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "No-Records-Found")) %></div></td></tr>';
    	var hostTemplate1 = '<tr id="${inode}" onmouseover="changeBgOver(\'${inode}\');" style="cursor:pointer" onclick="viewHostReport(\'${hostId}\');" onmouseout="changeBgOut(\'${inode}\');"><td><a href="javascript:viewHostReport(\'${hostId}\');">${name}</a></td><td>${status}</td>';
     var hostTemplate2 = '<td>${pageViews}</td></tr>';
     var hostTemplate3 = '<td>${vfield}</td>';
@@ -304,9 +304,9 @@ int periodData = dAPI.checkPeriodData(0,0);
                                ${menuesHTML}\
                              </div>';
    
-    var contextMenuTemplate2 =  '<div dojoType="dijit.MenuItem" iconClass="appMonitorIcon" onClick="javascript:viewHostReport(\'${hostId}\');">\<%= LanguageUtil.get(pageContext, "Host-Report") %>\</div>';
-    var contextMenuTemplate3 =  '<div dojoType="dijit.MenuItem" iconClass="bowserIcon" onClick="javascript:viewBrowser(\'${hostId}\');">\<%= LanguageUtil.get(pageContext, "View-Host-Browser") %>\</div>';
-    var contextMenuTemplate4 =  '<div dojoType="dijit.MenuItem" iconClass="workStreamIcon" onClick="javascript:viewWorkStream(\'${hostId}\');">\<%= LanguageUtil.get(pageContext, "View-Activity-Stream") %>\</div>';
+    var contextMenuTemplate2 =  '<div dojoType="dijit.MenuItem" iconClass="appMonitorIcon" onClick="javascript:viewHostReport(\'${hostId}\');">\<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Host-Report")) %>\</div>';
+    var contextMenuTemplate3 =  '<div dojoType="dijit.MenuItem" iconClass="bowserIcon" onClick="javascript:viewBrowser(\'${hostId}\');">\<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "View-Host-Browser")) %>\</div>';
+    var contextMenuTemplate4 =  '<div dojoType="dijit.MenuItem" iconClass="workStreamIcon" onClick="javascript:viewWorkStream(\'${hostId}\');">\<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "View-Activity-Stream")) %>\</div>';
 
 
    	function fillHostsTable(data){
