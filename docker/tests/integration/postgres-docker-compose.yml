@@ -19,36 +19,34 @@ services:
       args:
         BUILD_FROM: COMMIT
         BUILD_ID: origin/master
-        DB_TYPE: mysql
+        DB_TYPE: postgres
     depends_on:
       - database
     volumes:
 #      - reports:/custom/reports
 #      - logs:/custom/logs
       - type: bind
-        source: /Users/jonathan/Projects/dotCMS/repository/git/assets/tmp/reports
+        source: ./reports
         target: /custom/reports
       - type: bind
-        source: /Users/jonathan/Projects/dotCMS/repository/git/assets/tmp/logs
+        source: ./logs
         target: /custom/logs
     networks:
       - db_net
 
-  # https://hub.docker.com/_/mysql
+  # https://hub.docker.com/_/postgres
   database:
-    image: "mysql:5.7"
+    image: "postgres:9-alpine"
     container_name: db
-    command: --default-authentication-plugin=mysql_native_password
 #    restart: always
     environment:
-      MYSQL_USER: mysql
-      MYSQL_PASSWORD: mysql
-      MYSQL_ROOT_PASSWORD: mysql
-      MYSQL_DATABASE: dotcms
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: dotcms
     ports:
-      - "3306:3306"
+      - "15432:5432"
     volumes:
-#      - db:/var/lib/mysql
-      - ./setup/init-scripts/mysql:/docker-entrypoint-initdb.d/
+#      - db:/var/lib/postgresql/data
+      - ./setup/init-scripts/postgres:/docker-entrypoint-initdb.d/
     networks:
       - db_net
