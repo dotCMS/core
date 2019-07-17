@@ -8,6 +8,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
+import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.api.v1.workflow.*;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.InternalServerException;
@@ -395,6 +396,37 @@ public class WorkflowHelper {
         }
 
         return mapping.get();
+    }
+
+    @CloseDBIfOpened
+    public List<WorkflowAction> findActions(final Set<String> schemes, final WorkflowAPI.SystemAction systemAction, final User user)
+            throws DotDataException, DotSecurityException {
+
+        switch (systemAction) {
+
+            case NEW:
+                return findActionsOnNew (schemes, user);
+            default:
+                // todo: implement rest of them here
+                break;
+        }
+
+        return Collections.emptyList();
+    }
+
+    private List<WorkflowAction> findActionsOnNew(final Set<String> schemes, final User user) throws DotDataException, DotSecurityException {
+
+        final ImmutableList.Builder<WorkflowAction> actions = new ImmutableList.Builder<>();
+
+        for (final String schemeId : schemes) {
+
+            final Optional<WorkflowStep> workflowStep = this.workflowAPI.findFirstStep(schemeId);
+            if (workflowStep.isPresent()) {
+                actions.addAll(this.workflowAPI.findActions(workflowStep.get(), user));
+            }
+        }
+
+        return actions.build();
     }
 
 

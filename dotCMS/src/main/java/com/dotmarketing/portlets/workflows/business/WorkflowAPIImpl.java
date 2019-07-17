@@ -779,7 +779,10 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	@CloseDBIfOpened
 	public Optional<WorkflowStep> findFirstStep(final String schemeId) throws DotDataException {
 
-		return workFlowFactory.findFirstStep (schemeId);
+		DotPreconditions.isTrue(UtilMethods.isSet(schemeId),
+				()-> "Scheme is required", DotStateException.class);
+
+		return workFlowFactory.findFirstStep (this.getLongIdForScheme(schemeId));
 	}
 
 	@WrapInTransaction
@@ -3435,7 +3438,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	@Override
 	@WrapInTransaction
-	public Optional<SystemActionWorkflowActionMapping> deleteSystemAction(final SystemActionWorkflowActionMapping mapping) {
+	public Optional<SystemActionWorkflowActionMapping> deleteSystemAction(final SystemActionWorkflowActionMapping mapping)  throws DotDataException  {
 
 		return this.workFlowFactory.deleteSystemAction(mapping)?Optional.ofNullable(mapping):Optional.empty();
 	}

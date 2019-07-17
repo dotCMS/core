@@ -604,6 +604,44 @@ public class WorkflowResource {
     } // findActionsByScheme.
 
     /**
+     * Returns a set of {@link WorkflowAction} associated to a set to schemes Id and {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction}
+     * @param request  HttpServletRequest
+     * @param response {@link HttpServletResponse}
+     * @param systemAction {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction}
+     * @return Response
+     */
+    @POST
+    @Path("/schemes/actions/{systemAction}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response findActionsBySchemesAndSystemAction(@Context final HttpServletRequest request,
+                                                    @Context final HttpServletResponse response,
+                                                    @PathParam("systemAction") final WorkflowAPI.SystemAction systemAction,
+                                                    final WorkflowSchemesForm workflowSchemesForm) {
+
+        final InitDataObject initDataObject = this.webResource.init
+                (null, request, response, true, null);
+
+        DotPreconditions.notNull(workflowSchemesForm,"Expected Request body was empty.");
+        try {
+
+            Logger.debug(this, ()->"Getting the actions for the schemes: " + workflowSchemesForm.getSchemes()
+                    + " and system action: " + systemAction);
+
+            return Response.ok(new ResponseEntityView(
+                    this.workflowHelper.findActions(
+                            workflowSchemesForm.getSchemes(), systemAction, initDataObject.getUser())))
+                    .build(); // 200
+        } catch (Exception e) {
+            Logger.error(this.getClass(),
+                    "Exception on findActionsBySchemesAndSystemAction, schemes: " + workflowSchemesForm.getSchemes() +
+                            ", exception message: " + e.getMessage(), e);
+            return ResponseUtil.mapExceptionResponse(e);
+        }
+    } // findSystemActionsByScheme.
+
+    /**
      * Returns a set of {@link SystemActionWorkflowActionMapping} associated to the schemeId
      * @param request  HttpServletRequest
      * @param schemeId String

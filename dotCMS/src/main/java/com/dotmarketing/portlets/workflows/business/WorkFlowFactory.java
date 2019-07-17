@@ -403,5 +403,5 @@ public interface WorkFlowFactory {
 	 * @return boolean
 	 * @throws DotDataException
 	 */
-	boolean deleteSystemAction(SystemActionWorkflowActionMapping mapping) throws DotDataException ;
+	boolean deleteSystemAction(SystemActionWorkflowActionMapping mapping) throws DotDataException;
 }

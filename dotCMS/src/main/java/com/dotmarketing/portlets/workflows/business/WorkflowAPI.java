@@ -913,7 +913,7 @@ public interface WorkflowAPI {
 	 * @param mapping {@link SystemActionWorkflowActionMapping}
 	 * @return Optional of SystemActionWorkflowActionMapping
 	 */
-	Optional<SystemActionWorkflowActionMapping> deleteSystemAction(SystemActionWorkflowActionMapping mapping);
+	Optional<SystemActionWorkflowActionMapping> deleteSystemAction(SystemActionWorkflowActionMapping mapping)  throws DotDataException ;
 
 	/**
 	 * Render mode for the available actions
