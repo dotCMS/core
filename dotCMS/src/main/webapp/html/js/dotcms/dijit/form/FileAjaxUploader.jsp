@@ -1,7 +1,7 @@
 <%@ page import="com.liferay.portal.language.LanguageUtil" %>
 <div id="${id}" class="fileAjaxUploader">
 
-	<input name="${name}" id="${name}ValueField" dojoAttachPoint="fileNameField" type="text" value="${fileName}">
+	<input name="${name}" id="${name}ValueField" dojoAttachPoint="fileNameField" type="hidden" value="${fileName}">
 	<div dojoAttachPoint="fileUploadForm" class="fileAjaxUploaderForm">
 			<input name="${name}FileUpload" type="file"  accept="${accept}" dojoAttachEvent="onchange:_doFileUpload" dojoAttachPoint="fileInputField" class="form-text" size="30">
 	</div>

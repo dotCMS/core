@@ -54,7 +54,7 @@ require(["dojo/dnd/Moveable", "dojo/dom", "dojo/on", "dojo/domReady!"],
 		postCreate: function(){
 			this.ie = window.top._dotImageEditor ;
 
-			this.fixedAspect = this.ie.iframe.dijit.byId("constrain").checked;
+			this.fixedAspect = false;
 			//border adds 2px each side
 			if(!dojo.isIE){
 				this.cropWidth = parseInt(this.ie.iframe.dojo.byId("cropWidth").value) -4;

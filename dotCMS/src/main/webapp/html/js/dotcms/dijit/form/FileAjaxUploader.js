@@ -176,7 +176,11 @@ dojo.declare("dotcms.dijit.form.FileAjaxUploader", [dijit._Widget, dijit._Templa
                 self.progressBar.update({ progress: percentComplete });
             };
         })(this);
-
+        
+        xhr.onerror = function() {
+            alert("Error! Upload failed. Can not connect to server.");
+            console.log("xhr error:", xhr);
+        };
         
         xhr.onload = (self => {
             return () => {
@@ -190,14 +194,7 @@ dojo.declare("dotcms.dijit.form.FileAjaxUploader", [dijit._Widget, dijit._Templa
                     
                     
                     self._postUploadCallback(data.tempFiles[0]);
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
+
                     
                 } else {
                     alert("Error! Upload failed");
@@ -206,10 +203,6 @@ dojo.declare("dotcms.dijit.form.FileAjaxUploader", [dijit._Widget, dijit._Templa
             };
         })(this);
         
-        xhr.onerror = function() {
-            alert("Error! Upload failed. Can not connect to server.");
-            console.log("xhr error:", xhr);
-        };
 
 
         if(this.fileNameExpression != '') {
@@ -305,9 +298,7 @@ dojo.declare("dotcms.dijit.form.FileAjaxUploader", [dijit._Widget, dijit._Templa
 
     _postUploadCallback : function(fileData){
 
-        
-        console.log("this", this)
-        console.log("fileData", fileData)
+
         
         var fieldRelatedData = {"fieldContentlet" : this.name,
                 "fieldVarName" : this.id,
@@ -315,7 +306,13 @@ dojo.declare("dotcms.dijit.form.FileAjaxUploader", [dijit._Widget, dijit._Templa
                 "fileId"   : fileData.id};
         
         
-        
+        if(this.fileNameVisible){
+            dojo.style(this.fileNameDisplayField, { display: '' });
+         }
+         dojo.style(this.fileUploadForm, { display: 'none' });
+         dojo.style(this.fileUploadStatus, { display: 'none' });
+         dojo.style(this.fileUploadRemoveButton, { display: '' });   
+
         
         var elements = document.getElementsByName(fieldRelatedData['fieldContentlet']);
 
@@ -334,9 +331,17 @@ dojo.declare("dotcms.dijit.form.FileAjaxUploader", [dijit._Widget, dijit._Templa
             fieldDiv.appendChild(thumbnailParentDiv);
         }
 
+        this.onUploadFinish(this.fileName, this);
+        
+        
+        
+        if(!fileData.image){
+            return;
+        }
+        
+        
 
-        var licenseLevelStandard = 200;
-        if ( this.licenseLevel < licenseLevelStandard ){
+        if ( this.licenseLevel < 200 ){
             var newFileDialogTitle = "";
 
             var newFileDialogContent = '<div style="text-align:center;margin:auto;overflow:auto;width:700px;height:400px;">'
@@ -372,20 +377,21 @@ dojo.declare("dotcms.dijit.form.FileAjaxUploader", [dijit._Widget, dijit._Templa
 
         } else {
 
+            
             var newImageEditor = new dotcms.dijit.image.ImageEditor({
                 editImageText : "",
-                inode : data["contentletInode"],
-                fieldName : "fileAsset",
-                binaryFieldId : "binary1",
-                fieldContentletId : "binary1",
-                saveAsFileName : fieldRelatedData['fileName']
+                inode : fileData.id,
+                fieldName : this.id,
+                binaryFieldId : this.name,
+                fieldContentletId : this.name,
+                editImageText : "Edit Image",
                 //class : "thumbnailDiv"+fieldRelatedData['fieldVarName'],
                 //parentNode: thumbnailParentDiv
             });
             newImageEditor.placeAt(thumbnailParentDiv);
 
         }
-        this.onUploadFinish(this.fileName, this);
+        
     },
     
     onUploadStart: function (fileName, dijitReference) {

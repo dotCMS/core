@@ -34,15 +34,21 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
     compression:'none',
     compressionValue:65,
     fileSize:0,
+    isTemp:false,
     
-/*
- * _loadCss:function () { var e = dojo.create("link"); e.href = this.cssUrl;
- * e.type = "text/css"; e.rel = "stylesheet"; e.media = "screen";
- * document.getElementsByTagName("head")[0].appendChild(e); },
- */
+
     _initBaseFilterUrl: function() {
         console.log("_initBaseFilterUrl")
-        var shorty = (this.inode && this.inode != '0') ? this.inode.replace("-","").substr(0,12) : this.identifier.replace("-","").substr(0,12)
+        var shorty = (this.inode && this.inode != '0') ? this.inode  : this.identifier;
+        
+        shorty = shorty.indexOf("temp_") == 0 
+                ? shorty 
+                : shorty.substr(0,12).replace("-","");
+
+        this.isTemp = shorty.indexOf("temp_") == 0 ;
+        
+        
+        
         this.baseFilterUrl+= "/" + shorty;
 
     	if(this.fieldName != undefined){
@@ -63,7 +69,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
         // create divs
 
         this.thumbnailDiv = dojo.create('div' ,{
-            style:"margin-bottom:5px;max-width:1040px;display:inline-block;height:" + (this.thumbnailHeight+4) +"px"},where);
+            style:"margin-bottom:5px;max-width:1040px;min-width:150px;display:inline-block;height:" + (this.thumbnailHeight+4) +"px"},where);
 
             dojo.attr(this.thumbnailDiv, "class", "thumbnailDiv");
 
@@ -84,8 +90,6 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
         this._initBaseFilterUrl();
         this.setThumbnail();
 
-        dojo.connect(this.thumbnailDiv , "onmouseover", this, "setDivHover");
-        dojo.connect(this.thumbnailDiv , "onmouseout", this, "setDivOut");
         dojo.connect(this.thumbnailDiv , "onclick", this, "createImageWindow");
 
         // this.createImageWindow();
@@ -101,14 +105,6 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
      **************************************************************************/
 
 
-
-    setDivHover:function(){
-        dojo.attr(this.thumbnailDiv, "class", "thumbnailDivHover");
-
-    },
-    setDivOut:function(){
-        dojo.attr(this.thumbnailDiv, "class", "thumbnailDiv");
-    },
 
 
     /****

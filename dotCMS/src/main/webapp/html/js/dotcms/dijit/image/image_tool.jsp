@@ -16,7 +16,7 @@
 	
 	String fieldName = (UtilMethods.isSet(request.getParameter("fieldName"))) ? request.getParameter("fieldName") : "fileAsset";
 
-	String baseImage =  (inode != null) ? "/contentAsset/image/" + inode + "/" + fieldName +"/?byInode=true" : "/contentAsset/image/" + id + "/" + fieldName ;
+	String baseImage =  (inode != null) ? "/contentAsset/image/" + inode + "/" + fieldName +"/" : "/contentAsset/image/" + id + "/" + fieldName ;
 
 
 

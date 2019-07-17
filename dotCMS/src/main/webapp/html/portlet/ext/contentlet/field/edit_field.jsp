@@ -416,6 +416,9 @@
         <%
             //END FILE Field
 
+
+            
+            
             //BINARY kind of field rendering  http://jira.dotmarketing.net/browse/DOTCMS-1073
         } else if (field.getFieldType().equals(Field.FieldType.BINARY.toString())) {
             String fileName = "";
@@ -458,44 +461,44 @@
         <%int imageEditors=0; %>
         <!--  If you are not enterprise -->
         <%if(LicenseUtil.getLevel() <= LicenseLevel.STANDARD.level ){ %>
-        <div id="thumbnailParent<%=field.getVelocityVarName()%>">
-            <%
-                String src = String.format("/contentAsset/image/%s/%s/?filter=Thumbnail&thumbnail_w=%d&thumbnail_h=%d&language_id=%s&r=%d", contentlet.getIdentifier(), field.getVelocityVarName(), showDim, showDim, contentlet.getLanguageId(), System.currentTimeMillis());
-
-            %>
-            <img src="<%=src%>"
-                 class="thumbnailDiv thumbnailDiv<%=field.getVelocityVarName()%>"
-                 onmouseover="dojo.attr(this, 'className', 'thumbnailDiv thumbnailDivHover');"
-                 onmouseout="dojo.attr(this, 'className', 'thumbnailDiv');"
-                 onclick="dijit.byId('fileDia<%=field.getVelocityVarName()%>').show()">
-        </div>
-
-        <div dojoType="dijit.Dialog" id="fileDia<%=field.getVelocityVarName()%>" title="<%=LanguageUtil.get(pageContext,"Image") %>"  style="width:90%;height:80%;display:none;"">
-        <div style="text-align:center;margin:auto;overflow:auto;width:700px;height:400px;">
-            <img src="/contentAsset/image/<%=binInode %>/<%=field.getVelocityVarName() %>/?byInode=true" />
-        </div>
-        <div class="callOutBox">
-            <%=LanguageUtil.get(pageContext,"dotCMS-Enterprise-comes-with-an-advanced-Image-Editor-tool") %>
-        </div>
-    </div>
+           <div id="thumbnailParent<%=field.getVelocityVarName()%>">
+               <%
+                   String src = String.format("/contentAsset/image/%s/%s/?filter=Thumbnail&thumbnail_w=%d&thumbnail_h=%d&language_id=%s&r=%d", contentlet.getIdentifier(), field.getVelocityVarName(), showDim, showDim, contentlet.getLanguageId(), System.currentTimeMillis());
+   
+               %>
+               <img src="<%=src%>"
+                    class="thumbnailDiv thumbnailDiv<%=field.getVelocityVarName()%>"
+                    onmouseover="dojo.attr(this, 'className', 'thumbnailDiv thumbnailDivHover');"
+                    onmouseout="dojo.attr(this, 'className', 'thumbnailDiv');"
+                    onclick="dijit.byId('fileDia<%=field.getVelocityVarName()%>').show()">
+           </div>
+   
+           <div dojoType="dijit.Dialog" id="fileDia<%=field.getVelocityVarName()%>" title="<%=LanguageUtil.get(pageContext,"Image") %>"  style="width:90%;height:80%;display:none;"">
+           <div style="text-align:center;margin:auto;overflow:auto;width:700px;height:400px;">
+               <img src="/contentAsset/image/<%=binInode %>/<%=field.getVelocityVarName() %>/" />
+           </div>
+           <div class="callOutBox">
+               <%=LanguageUtil.get(pageContext,"dotCMS-Enterprise-comes-with-an-advanced-Image-Editor-tool") %>
+           </div>
+       </div>
 
 
 
 
     <%}else{ %>
-    <div id="thumbnailParent<%=field.getVelocityVarName()%>">
-        <div dojoType="dotcms.dijit.image.ImageEditor"
-             editImageText="<%= LanguageUtil.get(pageContext, "Edit-Image") %>"
-             inode="<%= binInode%>"
-             identifier="<%=contentlet.getIdentifier()%>"
-             fieldName="<%=field.getVelocityVarName()%>"
-             binaryFieldId="<%=field.getFieldContentlet()%>"
-             fieldContentletId="<%=field.getFieldContentlet()%>"
-             saveAsFileName="<%=fileName %>"
-             class="thumbnailDiv<%=field.getVelocityVarName()%>"
-        >
-        </div>
-    </div>
+       <div id="thumbnailParent<%=field.getVelocityVarName()%>">
+           <div dojoType="dotcms.dijit.image.ImageEditor"
+                editImageText="<%= LanguageUtil.get(pageContext, "Edit-Image") %>"
+                inode="<%= binInode%>"
+                identifier="<%=contentlet.getIdentifier()%>"
+                fieldName="<%=field.getVelocityVarName()%>"
+                binaryFieldId="<%=field.getFieldContentlet()%>"
+                fieldContentletId="<%=field.getFieldContentlet()%>"
+                saveAsFileName="<%=fileName %>"
+                class="thumbnailDiv<%=field.getVelocityVarName()%>"
+           >
+           </div>
+       </div>
     <%} %>
 
 
@@ -549,6 +552,7 @@
             idShorty="<%=APILocator.getShortyAPI().shortify(contentlet.getIdentifier())%>"
             onRemove="removeThumbnail('<%=field.getVelocityVarName()%>', '<%= binInode %>')"
             dojoType="dotcms.dijit.form.FileAjaxUploader" 
+            licenseLevel="<%=LicenseUtil.getLevel() %>" 
             accept="<%=accept %>" >
     </div>
     <script type="text/javascript">
@@ -611,16 +615,15 @@
         function serveFile(doStuff,conInode,velVarNm){
 
             if(doStuff != ''){
-                window.open('/contentAsset/' + doStuff + '/' + conInode + '/' + velVarNm + "?byInode=true",'fileWin','toolbar=no,resizable=yes,width=400,height=300');
+                window.open('/contentAsset/' + doStuff + '/' + conInode + '/' + velVarNm ,'fileWin','toolbar=no,resizable=yes,width=400,height=300');
             }else{
-                window.open('/contentAsset/raw-data/' + conInode + '/' + velVarNm + "?byInode=true",'fileWin','toolbar=no,resizable=yes,width=400,height=300');
             }
         }
 
         function change<%=field.getFieldContentlet()%>ThumbnailSize(newValue) {
             <%=field.getFieldContentlet()%>ThumbSize = newValue;
             $('<%=field.getFieldContentlet()%>Thumbnail').src =
-                "/contentAsset/image-thumbnail/<%=inode+"/"+field.getVelocityVarName()%>?byInode=true&w=" + newValue + "&rand=" + Math.random();
+                "/contentAsset/image-thumbnail/<%=inode+"/"+field.getVelocityVarName()%>?w=" + newValue + "&rand=" + Math.random();
             dojo.cookie('<%=field.getStructureInode()%>-<%=field.getFieldContentlet()%>ThumbSize', new String(newValue));
         }
 
