@@ -12,6 +12,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.util.HttpRequestDataUtil;
 import com.dotmarketing.beans.BrowserSniffer;
 import com.dotmarketing.beans.Clickstream;
@@ -194,6 +196,7 @@ public class ClickstreamFactory {
 	 *
 	 * @param stream
 	 */
+	@WrapInTransaction
 	public static void flushClickStream(Clickstream stream) {
 		if(Config.getBooleanProperty("ENABLE_CLICKSTREAM_TRACKING", false)){
 			
@@ -212,7 +215,7 @@ public class ClickstreamFactory {
 		}
 
 	}
-
+	@WrapInTransaction
 	public static void save(Clickstream clickstream) {
 		try {
 			HibernateUtil.saveOrUpdate(clickstream);
@@ -220,7 +223,7 @@ public class ClickstreamFactory {
 			Logger.error(ClickstreamFactory.class, "Save Failed:" + e, e);
 		}
 	}
-
+	@CloseDBIfOpened
 	public static Clickstream getClickstream(String clickstreamId) {
 		HibernateUtil dh = new HibernateUtil(Clickstream.class);
 		Clickstream clickStream = new Clickstream();
@@ -236,7 +239,7 @@ public class ClickstreamFactory {
 		return clickStream;
 
 	}
-
+	@CloseDBIfOpened
 	@SuppressWarnings("unchecked")
 	public static List<Clickstream> getClickstreamsByCookieId(String cookieId) {
 		HibernateUtil dh = new HibernateUtil(Clickstream.class);
@@ -332,6 +335,7 @@ public class ClickstreamFactory {
 
 	}
 
+	@WrapInTransaction
 	public static void save404(Clickstream404 clickstream404) {
 		try{
 	    	HibernateUtil.saveOrUpdate(clickstream404);
