@@ -9,8 +9,11 @@ import { MockDotMessageService } from '../../../../../test/dot-message-service.m
 import { DotMessageService } from '@services/dot-messages-service';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { dotcmsContentTypeBasicMock } from '@tests/dot-content-types.mock';
+import { DotCMSContentType } from 'dotcms-models';
 
-const mockContentType = {
+const mockContentType: DotCMSContentType = {
+    ...dotcmsContentTypeBasicMock,
     clazz: 'com.dotcms.contenttype.model.type.ImmutableWidgetContentType',
     defaultType: false,
     fixed: false,

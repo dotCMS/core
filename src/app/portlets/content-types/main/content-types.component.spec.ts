@@ -25,6 +25,7 @@ import {
 } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotCMSContentType } from 'dotcms-models';
 import { DotContentTypeService } from '@services/dot-content-type/dot-content-type.service';
+import { dotcmsContentTypeBasicMock } from '@tests/dot-content-types.mock';
 
 @Injectable()
 class MockDotContentTypeService {
@@ -188,6 +189,7 @@ describe('ContentTypesPortletComponent', () => {
         fixture.detectChanges();
 
         const mockContentType: DotCMSContentType = {
+            ...dotcmsContentTypeBasicMock,
             clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
             id: '1234567890',
             name: 'Nuevo',
@@ -254,6 +256,7 @@ describe('ContentTypesPortletComponent', () => {
     it('should open push publish dialog', () => {
         fixture.detectChanges();
         const mockContentType: DotCMSContentType = {
+            ...dotcmsContentTypeBasicMock,
             clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
             id: '1234567890',
             name: 'Nuevo',
@@ -278,6 +281,7 @@ describe('ContentTypesPortletComponent', () => {
     it('should open add to bundle dialog', () => {
         fixture.detectChanges();
         const mockContentType: DotCMSContentType = {
+            ...dotcmsContentTypeBasicMock,
             clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
             id: '1234567890',
             name: 'Nuevo',
@@ -331,6 +335,7 @@ describe('ContentTypesPortletComponent', () => {
         fixture.detectChanges();
 
         const mockContentType: DotCMSContentType = {
+            ...dotcmsContentTypeBasicMock,
             clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
             id: '1234567890',
             name: 'Nuevo',

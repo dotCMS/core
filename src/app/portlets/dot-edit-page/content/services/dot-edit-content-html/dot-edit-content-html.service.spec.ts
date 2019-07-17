@@ -22,6 +22,7 @@ import { Injectable } from '@angular/core';
 import { DotRenderedPageState } from '@portlets/dot-edit-page/shared/models/dot-rendered-page-state.model';
 import { mockUser } from '../../../../../test/login-service.mock';
 import { PageModelChangeEventType } from './models';
+import { dotcmsContentTypeBasicMock } from '@tests/dot-content-types.mock';
 
 @Injectable()
 class MockDotLicenseService {
@@ -802,6 +803,7 @@ describe('DotEditContentHtmlService', () => {
 
     describe('render Form', () => {
         const form: DotCMSContentType = {
+            ...dotcmsContentTypeBasicMock,
             clazz: 'clazz',
             defaultType: true,
             fixed: true,

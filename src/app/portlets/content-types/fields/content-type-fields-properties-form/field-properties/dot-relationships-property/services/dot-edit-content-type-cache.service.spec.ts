@@ -1,8 +1,10 @@
 import { DOTTestBed } from 'src/app/test/dot-test-bed';
 import { DotEditContentTypeCacheService } from './dot-edit-content-type-cache.service';
 import { DotCMSContentType } from 'dotcms-models';
+import { dotcmsContentTypeBasicMock } from '@tests/dot-content-types.mock';
 
 const contentTypeMock: DotCMSContentType = {
+    ...dotcmsContentTypeBasicMock,
     clazz: 'clazz',
     defaultType: false,
     fixed: false,

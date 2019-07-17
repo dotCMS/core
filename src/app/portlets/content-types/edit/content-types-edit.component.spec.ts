@@ -37,7 +37,7 @@ import { DotApiLinkModule } from '@components/dot-api-link/dot-api-link.module';
 import { SiteServiceMock } from 'src/app/test/site-service.mock';
 import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
 import * as _ from 'lodash';
-import { dotcmsContentTypeFieldBasicMock } from '@tests/dot-content-types.mock';
+import { dotcmsContentTypeFieldBasicMock, dotcmsContentTypeBasicMock } from '@tests/dot-content-types.mock';
 
 @Component({
     selector: 'dot-content-type-fields-drop-zone',
@@ -256,13 +256,13 @@ describe('ContentTypesEditComponent', () => {
 
             beforeEach(() => {
                 mockContentType = {
+                    ...dotcmsContentTypeBasicMock,
                     clazz: 'com.dotcms.contenttype.model.type.ImmutableWidgetContentType',
                     defaultType: false,
                     fixed: false,
                     folder: 'SYSTEM_FOLDER',
                     host: null,
                     name: 'Hello World',
-                    owner: '123',
                     system: false
                 };
 
@@ -388,6 +388,7 @@ describe('ContentTypesEditComponent', () => {
     ];
 
     const fakeContentType: DotCMSContentType = {
+        ...dotcmsContentTypeBasicMock,
         baseType: 'CONTENT',
         id: '1234567890',
         clazz: 'com.dotcms.contenttype.model.type.ImmutableWidgetContentType',

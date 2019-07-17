@@ -12,6 +12,7 @@ import { By } from '@angular/platform-browser';
 import { Observable, of } from 'rxjs';
 import { DotRelationshipCardinality } from '@portlets/content-types/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/model/dot-relationship-cardinality.model';
 import { DotCMSContentType } from 'dotcms-models';
+import { dotcmsContentTypeBasicMock } from '@tests/dot-content-types.mock';
 
 const mockRelationships = [
     {
@@ -89,6 +90,7 @@ class MockRelationshipService {
 
 describe('DotEditRelationshipsComponent', () => {
     const contentTypeMock: DotCMSContentType = {
+        ...dotcmsContentTypeBasicMock,
         clazz: 'clazz',
         defaultType: false,
         fixed: false,

@@ -1,4 +1,31 @@
-import { DotCMSContentTypeField } from 'dotcms-models';
+import { DotCMSContentTypeField, DotCMSContentType } from 'dotcms-models';
+
+export const dotcmsContentTypeBasicMock: DotCMSContentType = {
+    baseType: '',
+    clazz: '',
+    defaultType: false,
+    description: '',
+    detailPage: '',
+    expireDateVar: '',
+    fields: [],
+    fixed: false,
+    folder: '',
+    host: '',
+    iDate: null,
+    id: '',
+    layout: [],
+    modDate: null,
+    multilingualable: false,
+    nEntries: null,
+    name: '',
+    owner: '',
+    publishDateVar: '',
+    system: false,
+    urlMapPattern: '',
+    variable: '',
+    versionable: false,
+    workflows: [],
+};
 
 export const dotcmsContentTypeFieldBasicMock: DotCMSContentTypeField = {
     clazz: '',

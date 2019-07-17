@@ -1,21 +1,28 @@
 export interface DotCMSContentType {
-    multilingualable: boolean;
+    baseType: string;
+    clazz: string;
+    defaultType: boolean;
+    description?: string;
+    detailPage?: string;
+    expireDateVar?: string;
+    fields: DotCMSContentTypeField[];
+    fixed: boolean;
+    folder: string;
+    host: string;
+    iDate: number;
+    id: string;
+    layout: DotCMSContentTypeLayoutRow[];
     modDate: number;
+    multilingualable: boolean;
+    nEntries: number;
+    name: string;
+    owner?: string;
+    publishDateVar?: string;
+    system: boolean;
+    urlMapPattern?: string;
+    variable: string;
     versionable: boolean;
     workflows: Workflow[];
-    defaultType: boolean;
-    baseType: string;
-    layout: DotCMSContentTypeLayoutRow[];
-    system: boolean;
-    folder: string;
-    name: string;
-    variable: string;
-    host: string;
-    fixed: boolean;
-    id: string;
-    fields: DotCMSContentTypeField[];
-    clazz: string;
-    iDate: number;
 }
 export interface DotCMSContentTypeField {
     categories?: DotCMSContentTypeFieldCategories;

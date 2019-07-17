@@ -7,6 +7,7 @@ import { DebugElement } from '@angular/core';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DotDataTableAction } from '@models/data-table/dot-data-table-action';
 import { DotMenuModule } from '../dot-menu/dot-menu.module';
+import { dotcmsContentTypeBasicMock } from '@tests/dot-content-types.mock';
 
 describe('ActionMenuButtonComponent', () => {
     let comp: ActionMenuButtonComponent;
@@ -87,6 +88,7 @@ describe('ActionMenuButtonComponent', () => {
             }
         ];
         const mockContentType: DotCMSContentType = {
+            ...dotcmsContentTypeBasicMock,
             clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
             id: '1234567890',
             name: 'Nuevo',
@@ -164,6 +166,7 @@ describe('ActionMenuButtonComponent', () => {
             }
         ];
         const mockContentType: DotCMSContentType = {
+            ...dotcmsContentTypeBasicMock,
             clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
             id: '1234567890',
             name: 'Nuevo',
@@ -210,6 +213,7 @@ describe('ActionMenuButtonComponent', () => {
             }
         ];
         const mockContentType: DotCMSContentType = {
+            ...dotcmsContentTypeBasicMock,
             clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
             id: '1234567890',
             name: 'Nuevo',

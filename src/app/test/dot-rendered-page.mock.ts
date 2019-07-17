@@ -5,6 +5,7 @@ import { DotLayout } from '@portlets/dot-edit-page/shared/models/dot-layout.mode
 import { mockDotLanguage } from './dot-language.mock';
 import { PageMode } from '@portlets/dot-edit-page/shared/models/page-mode.enum';
 import { CONTAINER_SOURCE } from '@models/container/dot-container.model';
+import { dotcmsContentTypeBasicMock } from './dot-content-types.mock';
 
 export const mockDotPage: DotPage = {
     canEdit: true,
@@ -23,13 +24,9 @@ export const mockDotPage: DotPage = {
     title: 'A title',
     workingInode: '999',
     contentType: {
-        clazz: '',
+        ...dotcmsContentTypeBasicMock,
         defaultType: true,
         fixed: true,
-        folder: '',
-        host: '',
-        name: '',
-        owner: '',
         system: true
     },
     fileAsset: true,
