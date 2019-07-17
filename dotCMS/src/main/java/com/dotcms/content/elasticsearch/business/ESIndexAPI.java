@@ -892,7 +892,11 @@ public class ESIndexAPI {
 	 *            for invalid repository and snapshot names
 	 * @throws IOException
 	 *            for problems writing the files to the repository path
+     *
+     * @deprecated Use ES Snapshot via ES REST API instead {@see <a href="https://www.elastic.co/guide/en/elasticsearch/reference/6.7/modules-snapshots.html">}.
 	 */
+
+	@Deprecated
 	public File createSnapshot(String repositoryName, String snapshotName, String indexName)
 			throws IOException, IllegalArgumentException, DotStateException, ElasticsearchException {
 		checkArgument(snapshotName!=null,"There is no valid snapshot name.");
@@ -1006,7 +1010,10 @@ public class ESIndexAPI {
 	 * 			   for problems during the zip extraction process
 	 * @throws IOException
 	 *             for problems writing the temporal zip file or the temporal zip contents
+     *
+     * @deprecated Use ES Snapshot via ES REST API instead {@see <a href="https://www.elastic.co/guide/en/elasticsearch/reference/6.7/modules-snapshots.html">}.
 	 */
+	@Deprecated
 	public boolean uploadSnapshot(InputStream inputFile)
 			throws InterruptedException, ExecutionException, ZipException, IOException {
 		return uploadSnapshot(inputFile, true);
@@ -1035,7 +1042,11 @@ public class ESIndexAPI {
 	 * 			   for problems during the zip extraction process
 	 * @throws IOException
 	 *             for problems writing the temporal zip file or the temporal zip contents
+     *
+     * @deprecated Use ES Snapshot via ES REST API instead {@see <a href="https://www.elastic.co/guide/en/elasticsearch/reference/6.7/modules-snapshots.html">}.
 	 */
+
+	@Deprecated
 	public boolean uploadSnapshot(InputStream inputFile, boolean cleanRepository)
 			throws InterruptedException, ExecutionException, ZipException, IOException {
 		File outFile = null;
@@ -1073,7 +1084,11 @@ public class ESIndexAPI {
 	 * 			   for problems during the zip extraction process
 	 * @throws IOException
 	 *             for problems writing the temporal zip file or the temporal zip contents
+     *
+     * @deprecated Use ES Snapshot via ES REST API instead {@see <a href="https://www.elastic.co/guide/en/elasticsearch/reference/6.7/modules-snapshots.html">}.
 	 */
+
+	@Deprecated
 	public boolean uploadSnapshot(ZipFile zip, String toDirectory, boolean cleanRepository)
 			throws InterruptedException, ExecutionException, ZipException, IOException {
 		ZipUtil.extract(zip, new File(toDirectory));
