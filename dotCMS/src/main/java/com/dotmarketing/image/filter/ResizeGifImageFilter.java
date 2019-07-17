@@ -35,20 +35,22 @@ import io.vavr.control.Try;
 
 public class ResizeGifImageFilter extends ImageFilter {
   public String[] getAcceptedParameters() {
-    return new String[] {"w (int) specifies width", "h (int) specifies height",};
+    return new String[] {"w (int) specifies width", "h (int) specifies height, loop=true|false, maxFrames (int)",};
   }
 
-  public File runFilter(File file, Map<String, String[]> parameters) {
-    double w = parameters.get(getPrefix() + "w") != null ? Integer.parseInt(parameters.get(getPrefix() + "w")[0])
-        : parameters.get("resize_" + "w") != null ? Integer.parseInt(parameters.get("resize_" + "w")[0]) : 0;
-    double h = parameters.get(getPrefix() + "h") != null ? Integer.parseInt(parameters.get(getPrefix() + "h")[0])
-        : parameters.get("resize_" + "h") != null ? Integer.parseInt(parameters.get("resize_" + "h")[0]) : 0;
-    final boolean loop = parameters.get(getPrefix() + "loop") != null
-        ? Try.of(() -> Boolean.parseBoolean(parameters.get(getPrefix() + "loop")[0])).getOrElse(true)
-        : parameters.get("resize_" + "loop") != null
-            ? Try.of(() -> Boolean.parseBoolean(parameters.get("resize_" + "loop")[0])).getOrElse(true)
-            : true;
+  @Override
+  protected String getPrefix() {
+    // TODO Auto-generated method stub
+    return "resize_";
+  }
 
+  public File runFilter(final File file, final Map<String, String[]> parameters) {
+    double w = Try.of(() -> Integer.parseInt(parameters.get(getPrefix() + "w")[0])).getOrElse(0);
+    double h = Try.of(() -> Integer.parseInt(parameters.get(getPrefix() + "h")[0])).getOrElse(0);
+    
+    final boolean loop = Try.of(() -> Boolean.parseBoolean(parameters.get(getPrefix() + "loop")[0])).getOrElse(true);    
+    final int maxFrames = Try.of(() -> Integer.parseInt(parameters.get(getPrefix() + "frames")[0])).getOrElse(-1);
+    
     final File resultFile = getResultsFile(file, parameters);
 
     if (!overwrite(resultFile, parameters)) {
@@ -76,7 +78,7 @@ public class ResizeGifImageFilter extends ImageFilter {
       try(ImageInputStream stream = ImageIO.createImageInputStream(file)){
         reader.setInput(stream);
         try(ImageOutputStream output = new FileImageOutputStream(resultFile)){
-          final ImageFrame[] frames = readGIF(reader);
+          final ImageFrame[] frames = readGIF(reader, maxFrames);
           final int delay = frames[0].delay < 1 ? 100 : frames[0].delay < 30 ? frames[0].delay * 10 : frames[0].delay;
           final GifSequenceWriter writer = new GifSequenceWriter(output, frames[0].image.getType(), delay, loop);
           for (ImageFrame frame : frames) {
@@ -93,7 +95,7 @@ public class ResizeGifImageFilter extends ImageFilter {
     return resultFile;
   }
 
-  private ImageFrame[] readGIF(ImageReader reader) throws IOException {
+  private ImageFrame[] readGIF(final ImageReader reader, final int maxFrames) throws IOException {
     ArrayList<ImageFrame> frames = new ArrayList<ImageFrame>(2);
 
     int width = -1;
@@ -120,6 +122,9 @@ public class ResizeGifImageFilter extends ImageFilter {
 
     for (int frameIndex = 0;; frameIndex++) {
       BufferedImage image;
+      if(maxFrames>0 && frameIndex>maxFrames) {
+        break;
+      }
       try {
         image = reader.read(frameIndex);
       } catch (IndexOutOfBoundsException io) {
@@ -208,8 +213,9 @@ public class ResizeGifImageFilter extends ImageFilter {
      * @throws IIOException if no gif ImageWriters are found
      *
      * @author Elliot Kroo (elliot[at]kroo[dot]net)
+     * and licensed under https://creativecommons.org/licenses/by/3.0/
      */
-    public GifSequenceWriter(ImageOutputStream outputStream, int imageType, int timeBetweenFramesMS, boolean loopContinuously)
+    public GifSequenceWriter(final ImageOutputStream outputStream, final int imageType, final int timeBetweenFramesMS, final boolean loopContinuously)
         throws IIOException, IOException {
       // my method to create a writer
       gifWriter = getWriter();
