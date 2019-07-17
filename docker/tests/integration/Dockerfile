@@ -1,6 +1,6 @@
 # OpenJDK distributed under GPLv2+Oracle Classpath Exception license (http://openjdk.java.net/legal/gplv2+ce.html)
 # Alpine Linux packages distributed under various licenses including GPL-3.0+ (https://pkgs.alpinelinux.org/packages)
-FROM jgamba/dotcms-checkout as prepare-integration
+FROM dotcms/tests-seed as prepare-integration
 
 LABEL com.dotcms.contact = "support@dotcms.com"
 LABEL com.dotcms.vendor = "dotCMS LLC"
