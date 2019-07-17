@@ -36,11 +36,11 @@
 	var cascadePermissionsConfirm = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cascade-permissions-confirm-msg")) %>'
 	var dontHavePermissionsMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "dont-have-permissions-msg")) %>'
 	var unexpectedErrorOcurredMsg =  '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "an-unexpected-system-error-occurred")) %>';
-	var cascadePermissionsHint = '<%= LanguageUtil.get(pageContext, "Cascade-Permissions-Hint") %>';
-	var permissionBreakInheritance='<%=LanguageUtil.get(pageContext, "role-manager-applying-inheritable-permissions") %>';
-	var permissionBreakInheritanceWarnIcon='<%=LanguageUtil.get(pageContext, "role-manager-object-inherits-permissions") %>';
-	var cascadePermissionsChangesConfirm = '<%= LanguageUtil.get(pageContext, "Cascade-Permissions-Changes-Confirm") %>';
-	var cascadePermissionsTasksRunningConfirm ='<%= LanguageUtil.get(pageContext, "Cascade-Permissions-Tasks-Running-Proceed-Confirm") %>';
+	var cascadePermissionsHint = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Cascade-Permissions-Hint")) %>';
+	var permissionBreakInheritance='<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "role-manager-applying-inheritable-permissions")) %>';
+	var permissionBreakInheritanceWarnIcon='<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "role-manager-object-inherits-permissions")) %>';
+	var cascadePermissionsChangesConfirm = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Cascade-Permissions-Changes-Confirm")) %>';
+	var cascadePermissionsTasksRunningConfirm ='<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Cascade-Permissions-Tasks-Running-Proceed-Confirm")) %>';
 	var permissionsOnChildrenMsg1 = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Permissions-on-Children1")) %>';
 	var permissionsOnChildrenMsg2 = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Permissions-on-Children2")) %>';
 	var categoriesWillInheritMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Category")) %>';
