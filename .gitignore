@@ -69,3 +69,4 @@ dotCMS/src/main/generated/
 ###############################
 docker/tests/integration/logs
 docker/tests/integration/reports
+docker/tests/integration/license

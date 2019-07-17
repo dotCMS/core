@@ -21,6 +21,9 @@ ARG BUILD_FROM=COMMIT
 #  Value resolved in the context of $BUILD_FROM
 ARG BUILD_ID=origin/master
 
+#  In order to run the integration test a license must be provided
+ARG LICENSE_KEY
+
 #  One of ["postgres", "mysql", "oracle", "mssql"]
 ARG DB_TYPE=postgres
 ENV DB_TYPE_ENV=${DB_TYPE}
@@ -37,8 +40,8 @@ RUN chmod 500 /build/overrideProperties.sh && /build/overrideProperties.sh
 COPY setup/build-src/prepareIntegrationTests.sh /build/prepareIntegrationTests.sh
 RUN chmod 500 /build/prepareIntegrationTests.sh && /build/prepareIntegrationTests.sh
 
-COPY setup/build-src/generateLicense.sh /build/generateLicense.sh
-RUN chmod 500 /build/generateLicense.sh && /build/generateLicense.sh
+COPY setup/build-src/prepareLicense.sh /build/prepareLicense.sh
+RUN chmod 500 /build/prepareLicense.sh && /build/prepareLicense.sh ${LICENSE_KEY}
 
 # ===========================================
 #  Copy our custom data to the source code  #

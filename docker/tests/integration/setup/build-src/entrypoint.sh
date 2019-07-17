@@ -6,6 +6,16 @@ rm -rf /custom/reports/*
 
 if [[ "${1}" == "dotcms" || -z "${1}" ]]; then
 
+    # Validating we have a license file
+    if [ ! -s "/custom/dotsecure/license/license.dat" ]
+    then
+       echo ""
+       echo "================================================================"
+       echo " >>> Valid [/custom/dotsecure/license/license.dat] NOT FOUND <<<"
+       echo "================================================================"
+       exit 1
+    fi
+
     echo "Running for database: [${DB_TYPE_ENV}]"
     export databaseType=${DB_TYPE_ENV}
 
