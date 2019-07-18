@@ -6,6 +6,7 @@ bin/*.sh
 .settings/*
 .project
 .idea/
+.vscode
 *.iml
 *.ipr
 *.iws
