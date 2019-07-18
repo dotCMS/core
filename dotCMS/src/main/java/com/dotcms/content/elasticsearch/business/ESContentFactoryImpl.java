@@ -904,6 +904,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 			IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
 
 			final  SearchRequest searchRequest = new SearchRequest();
+			searchRequest.source(searchSourceBuilder);
 			searchRequest.indices((live ? info.live : info.working));
 
             final SearchResponse response = Sneaky.sneak(()->

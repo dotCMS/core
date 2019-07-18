@@ -443,7 +443,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 (includeDependencies) ? ImmutableList.<Contentlet>builder().add(parentContenlet).addAll(loadDeps(parentContenlet)).build()
                         : ImmutableList.of(parentContenlet);
 
-        if (indexBeforeCommit == false && DbConnectionFactory.inTransaction()) {
+        if (!indexBeforeCommit && DbConnectionFactory.inTransaction()) {
             queueApi.addContentletsReindex(contentToIndex);
         }
 
