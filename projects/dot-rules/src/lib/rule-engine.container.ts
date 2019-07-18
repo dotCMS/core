@@ -96,6 +96,7 @@ export interface ConditionActionEvent extends RuleActionEvent {
       [conditionTypes]="_ruleService._conditionTypes"
       [loading]="state.loading"
       [showRules]="state.showRules"
+      [pageId]="pageId"
       [globalError]="state.globalError"
       (createRule)="onCreateRule($event)"
       (deleteRule)="onDeleteRule($event)"
@@ -129,6 +130,7 @@ export class RuleEngineContainer {
   ruleActions$: EventEmitter<ActionModel[]> = new EventEmitter();
   conditionGroups$: EventEmitter<ConditionGroupModel[]> = new EventEmitter();
   globalError: string;
+  pageId: string;
 
   constructor(
     public _ruleService: RuleService,
@@ -626,16 +628,16 @@ export class RuleEngineContainer {
   private initRules(): void {
     this.state.loading = true;
 
-    let pageId = '';
+    this.pageId = '';
 
     const pageIdParams = this.route.params.pipe(map((params: Params) => params.pageId));
     const queryParams = this.route.queryParams.pipe(map((params: Params) => params.realmId));
 
     merge(pageIdParams, queryParams).pipe(filter(res => !!res), take(1)).subscribe((id: string) => {
-        pageId = id;
+        this.pageId = id;
     });
 
-    this._ruleService.requestRules(pageId);
+    this._ruleService.requestRules(this.pageId);
     this._ruleService.loadRules().pipe(take(1)).subscribe((rules: RuleModel[]) => {
       this.loadRules(rules);
     });

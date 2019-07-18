@@ -31,7 +31,9 @@ const I8N_BASE = 'api.sites.ruleengine';
       <input pInputText placeholder="{{rsrc('inputs.filter.placeholder') | async}}"
         [value]="filterText" (keyup)="filterText = $event.target.value"/>
       <div flex="2"></div>
-      <button pButton label="{{rsrc('inputs.addRule.label') | async}}" (click)="addRule()" icon="fa fa-plus"></button>
+      <button class="dot-icon-button" (click)="addRule()" >
+          <i class="material-icons">add</i>
+      </button>
     </div>
     <div class="cw-filter-links">
       <span>{{rsrc('inputs.filter.status.show.label') | async}}:</span>
@@ -47,8 +49,8 @@ const I8N_BASE = 'api.sites.ruleengine';
   </div>
   <div class="cw-rule-engine__empty" *ngIf="!rules.length">
       <i class="material-icons">tune</i>
-      <h2>{{rsrc('inputs.want.to.add.rules') | async}}</h2>
-      <span>{{rsrc('inputs.page.rules.fired.every.time') | async}}</span>
+      <h2>{{rsrc('inputs.no.rules') | async }} {{rsrc(pageId ? 'inputs.on.page' : 'inputs.on.site') | async}} {{rsrc('inputs.add.one.now') | async}}</h2>
+      <span *ngIf="pageId">{{rsrc('inputs.page.rules.fired.every.time') | async}}</span>
       <button pButton label="{{rsrc('inputs.addRule.label') | async}}" (click)="addRule()" icon="fa fa-plus"></button>
   </div>
   <rule *ngFor="let rule of rules" [rule]="rule" [hidden]="isFiltered(rule) == true"
@@ -88,6 +90,7 @@ export class RuleEngineComponent {
     @Input() loading: boolean;
     @Input() globalError: string;
     @Input() showRules: boolean;
+    @Input() pageId: string;
     @Input() conditionTypes: { [key: string]: ServerSideTypeModel } = {};
     @Input() environmentStores: IPublishEnvironment[];
 
@@ -184,3 +187,4 @@ export class RuleEngineComponent {
         return CwFilter.isFiltered(rule, this.filterText);
     }
 }
+

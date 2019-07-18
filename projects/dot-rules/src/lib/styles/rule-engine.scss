@@ -14,14 +14,25 @@ $foreground-active: #848484;
 $text-emphasis: #fc7e1c;
 $warn: #cb3927;
 $brand-primary-one: #209021;
+$black: #0a0725;
 $gray: #7e7a86;
 $gray-light: #b3b1b8;
 $gray-bg: #f1f3f4;
+$white: #fff;
 $md-shadow-4: 0 2px 4px 0 rgba(0, 0, 0, 0.1);
 
 $basic-padding: 8px;
-$font-size-xx-large: 24px;
 
+$font-size-xx-large: 24px;
+$font-size-x-large: 18px;
+
+$action-button-height: 48px;
+
+$brand-primary: var(--color-main);
+$brand-primary_mod: var(--color-main_mod);
+
+$md-shadow-1: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+$md-shadow-3: 0 10px 24px 0 rgba(0, 0, 0, 0.2);
 
 // generic transform
 @mixin transform($transforms) {
@@ -58,6 +69,7 @@ $finder-s-input: '.ui.input input';
 .rules__engine-container{
     background-color: $gray-bg;
     display: flex;
+    flex-grow: 1;
     min-height: 100%;
     padding: $basic-padding * 3;
 
@@ -531,6 +543,34 @@ $finder-s-input: '.ui.input input';
 
         button {
             margin-top: $basic-padding * 2;
+        }
+    }
+
+    .dot-icon-button {
+        border-radius: 50%;
+        height: $action-button-height;
+        width: $action-button-height;
+        display: inline-flex;
+        justify-content: center;
+        border: none;
+        background-color: $brand-primary;
+        box-shadow: $md-shadow-1;
+        outline: none;
+        align-items: center;
+
+        &:hover {
+            background: $brand-primary_mod;
+            box-shadow: $md-shadow-3;
+        }
+
+        &:active,
+        &:focus {
+            background: $brand-primary_mod;
+        }
+
+        i {
+            color: $white;
+            font-size: $font-size-x-large;
         }
     }
 
