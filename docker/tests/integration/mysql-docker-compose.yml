@@ -39,9 +39,7 @@ services:
   # https://hub.docker.com/_/mysql
   database:
     image: "mysql:5.7"
-    container_name: db
     command: --default-authentication-plugin=mysql_native_password
-#    restart: always
     environment:
       MYSQL_USER: mysql
       MYSQL_PASSWORD: mysql

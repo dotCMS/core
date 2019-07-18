@@ -39,8 +39,6 @@ services:
   # https://hub.docker.com/_/postgres
   database:
     image: "postgres:9-alpine"
-    container_name: db
-#    restart: always
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
