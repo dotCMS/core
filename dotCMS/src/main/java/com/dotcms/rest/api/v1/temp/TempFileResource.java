@@ -1,7 +1,7 @@
 package com.dotcms.rest.api.v1.temp;
 
 import com.dotcms.rest.exception.BadRequestException;
-import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.DoesNotExistException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
@@ -67,7 +67,7 @@ public class TempFileResource {
             if (!Config.getBooleanProperty(TempFileAPI.TEMP_RESOURCE_ENABLED, true)) {
                 final String message = "Temp Files Resource is not enabled, please change the TEMP_RESOURCE_ENABLED to true in your properties file";
                 Logger.error(this, message);
-                throw new DotSecurityException(message);
+                throw new DoesNotExistException(message);
             }
 
             final boolean allowAnonToUseTempFiles = !Config
@@ -127,7 +127,7 @@ public class TempFileResource {
             if (!Config.getBooleanProperty(TempFileAPI.TEMP_RESOURCE_ENABLED, true)) {
                 final String message = "Temp Files Resource is not enabled, please change the TEMP_RESOURCE_ENABLED to true in your properties file";
                 Logger.error(this, message);
-                throw new DotSecurityException(message);
+                throw new DoesNotExistException(message);
             }
 
             final boolean allowAnonToUseTempFiles = !Config
