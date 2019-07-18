@@ -1,5 +1,31 @@
 # Compose files
 
+## License set up
+The integration tests require a valid license to run.
+There are two ways to set up a license
+
+##### 1. Using an environment variable you can export before to build the image
+
+Example:
+```
+export LICENSE_KEY=...4isycnXe8nsiO...
+docker-compose -f postgres-docker-compose.yml build
+```
+
+##### 2. Binding a license file (license.dat) to the docker image
+1. Inside this folder create a **license** folder (docker/tests/integration/license)
+2. Add a valid **license.dat** file inside the created folder
+3. Uncomment the **bind** folder instructions in the **\*-docker-compose.yml** files:
+    ```
+    - type: bind
+      source: ./license/license.dat
+      target: /custom/dotsecure/license/license.dat
+    ```
+4. Run the build command. Example: 
+    ```
+    docker-compose -f postgres-docker-compose.yml build
+    ```
+
 ## How to run
 
 ### postgres

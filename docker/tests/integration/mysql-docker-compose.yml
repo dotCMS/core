@@ -20,7 +20,7 @@ services:
         BUILD_FROM: COMMIT
         BUILD_ID: origin/master
         DB_TYPE: mysql
-#        LICENSE_KEY: YOUR_LICENSE_HERE
+        LICENSE_KEY: ${LICENSE_KEY}
     depends_on:
       - database
     volumes:
