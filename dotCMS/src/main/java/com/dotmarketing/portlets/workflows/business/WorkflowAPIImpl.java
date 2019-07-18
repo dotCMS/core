@@ -63,6 +63,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -3430,10 +3431,82 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		final Map<String, Object> mapping =
 				this.workFlowFactory.findSystemActionByIdentifier (identifier);
 
-		return null != mapping?
+		return UtilMethods.isSet(mapping)?
 				Optional.ofNullable(toSystemActionWorkflowActionMapping(
 						mapping, this.toOwner((String)mapping.get("scheme_or_content_type")), user))
 				:Optional.empty();
+	}
+
+	@Override
+	@CloseDBIfOpened
+	public boolean hasSaveActionlet(final WorkflowAction action) {
+
+		return this.hasActionlet(action, Actionlet::save);
+	}
+
+	@Override
+	@CloseDBIfOpened
+	public boolean hasPublishActionlet(final WorkflowAction action) {
+
+		return this.hasActionlet(action, Actionlet::publish);
+	}
+
+	@Override
+	@CloseDBIfOpened
+	public boolean hasUnpublishActionlet(final WorkflowAction action) {
+
+		return this.hasActionlet(action, Actionlet::unpublish);
+	}
+
+	@Override
+	@CloseDBIfOpened
+	public boolean hasArchiveActionlet(final WorkflowAction action) {
+
+		return this.hasActionlet(action, Actionlet::archive);
+	}
+
+	@Override
+	@CloseDBIfOpened
+	public boolean hasUnarchiveActionlet(final WorkflowAction action) {
+
+		return this.hasActionlet(action, Actionlet::unarchive);
+	}
+
+	@Override
+	@CloseDBIfOpened
+	public boolean hasDeleteActionlet(final WorkflowAction action) {
+
+		return this.hasActionlet(action, Actionlet::delete);
+	}
+
+	@Override
+	@CloseDBIfOpened
+	public boolean hasDestroyActionlet(final WorkflowAction action) {
+
+		return this.hasActionlet(action, Actionlet::destroy);
+	}
+
+	private boolean hasActionlet(final WorkflowAction action, final Predicate<Actionlet> successFilter) {
+
+		try {
+
+			final List<WorkflowActionClass> actionClasses = this.workFlowFactory.findActionClasses(action);
+			if (UtilMethods.isSet(actionClasses)) {
+
+				for (final WorkflowActionClass actionClass : actionClasses) {
+
+					final Actionlet actionlet = AnnotationUtils.
+							getBeanAnnotation(this.getActionletClass(actionClass.getClazz()), Actionlet.class);
+					if (null != actionlet && successFilter.test(actionlet)) {
+						return true;
+					}
+				}
+			}
+		} catch (DotDataException e) {
+			return false;
+		}
+
+		return false;
 	}
 
 	@Override

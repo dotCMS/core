@@ -179,6 +179,8 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
         contentletAPI = APILocator.getContentletAPI();
         roleAPI = APILocator.getRoleAPI();
         ContentHelper contentHelper = ContentHelper.getInstance();
+        SystemActionApiFireCommandFactory systemActionApiFireCommandFactory =
+                SystemActionApiFireCommandFactory.getInstance();
         PermissionAPI permissionAPI = APILocator.getPermissionAPI();
         WorkflowImportExportUtil workflowImportExportUtil = getInstance();
         WorkflowHelper workflowHelper = new WorkflowHelper(workflowAPI, roleAPI, contentletAPI, permissionAPI,
@@ -199,7 +201,8 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                         anyString())).thenReturn(dataObject);
 
         workflowResource = new WorkflowResource(workflowHelper, contentHelper, workflowAPI,
-                contentletAPI, responseUtil, permissionAPI, workflowImportExportUtil, new MultiPartUtils(), webResource);
+                contentletAPI, responseUtil, permissionAPI, workflowImportExportUtil, new MultiPartUtils(), webResource,
+                systemActionApiFireCommandFactory);
 
         contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
         systemUser = APILocator.systemUser();

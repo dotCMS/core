@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.workflows.business;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rest.api.v1.workflow.BulkActionsResultView;
 import com.dotcms.util.OptionalBoolean;
@@ -16,6 +17,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.workflows.actionlet.Actionlet;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
 import com.dotmarketing.portlets.workflows.model.*;
 import com.liferay.portal.model.User;
@@ -914,6 +916,56 @@ public interface WorkflowAPI {
 	 * @return Optional of SystemActionWorkflowActionMapping
 	 */
 	Optional<SystemActionWorkflowActionMapping> deleteSystemAction(SystemActionWorkflowActionMapping mapping)  throws DotDataException ;
+
+	/**
+	 * Returns true if the action has at least one action let that saves
+	 * @param action {@link WorkflowAction}
+	 * @return Boolean true if has save action
+	 */
+	boolean hasSaveActionlet(final WorkflowAction action);
+
+	/**
+	 * Returns true if the action has at least one action let that publish
+	 * @param action {@link WorkflowAction}
+	 * @return Boolean true if has save action
+	 */
+	boolean hasPublishActionlet(final WorkflowAction action);
+
+	/**
+	 * Returns true if the action has at least one action let that unpublish
+	 * @param action {@link WorkflowAction}
+	 * @return Boolean true if has save action
+	 */
+	boolean hasUnpublishActionlet(final WorkflowAction action);
+
+	/**
+	 * Returns true if the action has at least one action let that archive
+	 * @param action {@link WorkflowAction}
+	 * @return Boolean true if has save action
+	 */
+	boolean hasArchiveActionlet(final WorkflowAction action);
+
+
+	/**
+	 * Returns true if the action has at least one action let that unarchive
+	 * @param action {@link WorkflowAction}
+	 * @return Boolean true if has save action
+	 */
+	boolean hasUnarchiveActionlet(final WorkflowAction action);
+
+	/**
+	 * Returns true if the action has at least one action let that delete
+	 * @param action {@link WorkflowAction}
+	 * @return Boolean true if has save action
+	 */
+	boolean hasDeleteActionlet(final WorkflowAction action);
+
+	/**
+	 * Returns true if the action has at least one action let that destroy
+	 * @param action {@link WorkflowAction}
+	 * @return Boolean true if has save action
+	 */
+	boolean hasDestroyActionlet(final WorkflowAction action);
 
 	/**
 	 * Render mode for the available actions

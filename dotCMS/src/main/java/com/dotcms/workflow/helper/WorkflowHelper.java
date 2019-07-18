@@ -8,7 +8,6 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
-import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.api.v1.workflow.*;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.InternalServerException;
@@ -428,7 +427,6 @@ public class WorkflowHelper {
 
         return actions.build();
     }
-
 
     private static class SingletonHolder {
         private static final WorkflowHelper INSTANCE = new WorkflowHelper();

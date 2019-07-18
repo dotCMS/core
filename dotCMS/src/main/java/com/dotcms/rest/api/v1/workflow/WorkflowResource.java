@@ -138,6 +138,7 @@ public class WorkflowResource {
     private final PermissionAPI    permissionAPI;
     private final WorkflowImportExportUtil workflowImportExportUtil;
     private final MultiPartUtils   multiPartUtils;
+    private final SystemActionApiFireCommandFactory systemActionApiFireCommandProvider;
     private final Set<String> validRenderModeSet = ImmutableSet.of(LISTING, EDITING);
 
 
@@ -153,7 +154,8 @@ public class WorkflowResource {
                 APILocator.getPermissionAPI(),
                 WorkflowImportExportUtil.getInstance(),
                 new MultiPartUtils(),
-                new WebResource());
+                new WebResource(),
+                SystemActionApiFireCommandFactory.getInstance());
     }
 
     @VisibleForTesting
@@ -165,7 +167,8 @@ public class WorkflowResource {
                      final PermissionAPI    permissionAPI,
                      final WorkflowImportExportUtil workflowImportExportUtil,
                      final MultiPartUtils   multiPartUtils,
-                     final WebResource webResource) {
+                     final WebResource webResource,
+                     final SystemActionApiFireCommandFactory systemActionApiFireCommandProvider) {
 
         this.workflowHelper           = workflowHelper;
         this.contentHelper            = contentHelper;
@@ -176,6 +179,8 @@ public class WorkflowResource {
         this.contentletAPI            = contentletAPI;
         this.multiPartUtils           = multiPartUtils;
         this.workflowImportExportUtil = workflowImportExportUtil;
+        this.systemActionApiFireCommandProvider =
+                systemActionApiFireCommandProvider;
 
     }
 
@@ -713,8 +718,8 @@ public class WorkflowResource {
      * @param workflowSystemActionForm    WorkflowActionForm
      * @return Response
      */
-    @POST
-    @Path("/system/action")
+    @PUT
+    @Path("/system/actions")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
@@ -755,7 +760,7 @@ public class WorkflowResource {
      * @return Response
      */
     @DELETE
-    @Path("/system/action/{identifier}")
+    @Path("/system/actions/{identifier}")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
@@ -1221,7 +1226,7 @@ public class WorkflowResource {
                     (fireActionForm.getActionName(), contentlet, initDataObject.getUser());
 
             Logger.debug(this, "fire ActionByName Multipart with the actionid: " + actionId);
-            return fireAction(request, fireActionForm, initDataObject.getUser(), contentlet, actionId);
+            return fireAction(request, fireActionForm, initDataObject.getUser(), contentlet, actionId, Optional.empty());
         } catch (Exception e) {
 
             Logger.error(this.getClass(),
@@ -1277,7 +1282,7 @@ public class WorkflowResource {
                     "Unable-to-execute-workflows-InvalidActionName", fireActionForm.getActionName())),
                     DotContentletValidationException.class);
 
-            return fireAction(request, fireActionForm, initDataObject.getUser(), contentlet, actionId);
+            return fireAction(request, fireActionForm, initDataObject.getUser(), contentlet, actionId, Optional.empty());
         } catch (Exception e) {
 
             Logger.error(this.getClass(),
@@ -1292,7 +1297,8 @@ public class WorkflowResource {
                                 final FireActionForm fireActionForm,
                                 final User user,
                                 final Contentlet contentlet,
-                                final String actionId) throws DotDataException, DotSecurityException {
+                                final String actionId,
+                                final Optional<SystemActionApiFireCommand> fireCommandOpt) throws DotDataException, DotSecurityException {
 
         Logger.debug(this, ()-> "Firing workflow action: " + actionId);
 
@@ -1332,12 +1338,80 @@ public class WorkflowResource {
 
         return Response.ok(
                 new ResponseEntityView(
-                        this.workflowHelper.contentletToMap
-                                (this.workflowAPI.fireContentWorkflow(contentlet, formBuilder.build()))
+                        this.workflowHelper.contentletToMap(
+                                fireCommandOpt.isPresent()?
+                                        fireCommandOpt.get().fire(contentlet, formBuilder.build()):
+                                        this.workflowAPI.fireContentWorkflow(contentlet, formBuilder.build()))
                 )
         ).build(); // 200
     }
 
+    /**
+     * Fires a workflow with default action, if the contentlet exists could use inode or identifier and optional language.
+     * @param request    {@link HttpServletRequest}
+     * @param inode      {@link String} (Optional) to fire an action over the existing inode.
+     * @param identifier {@link String} (Optional) to fire an action over the existing identifier (in combination of language).
+     * @param language   {@link Long}   (Optional) to fire an action over the existing language (in combination of identifier).
+     * @param fireActionForm {@link FireActionForm} Fire Action Form
+     * (if an inode is set, this param is not ignored).
+     * @param systemAction {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction} system action to determine the default action
+     * @return Response
+     */
+    @PUT
+    @Path("/actions/default/fire/{systemAction}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response fireActionDefault(@Context final HttpServletRequest request,
+                                     @Context final HttpServletResponse response,
+                                     @QueryParam("inode")            final String inode,
+                                     @QueryParam("identifier")       final String identifier,
+                                     @DefaultValue("-1") @QueryParam("language") final long   language,
+                                     @PathParam("systemAction") final WorkflowAPI.SystemAction systemAction,
+                                     final FireActionForm fireActionForm) {
+
+        final InitDataObject initDataObject = this.webResource.init
+                (null, request, response, true, null);
+
+        try {
+
+            Logger.debug(this, ()-> "On Fire Action: systemAction = " + systemAction + ", inode = " + inode +
+                    ", identifier = " + identifier + ", language = " + language);
+
+            final PageMode mode = PageMode.get(request);
+            //if inode is set we use it to look up a contentlet
+            final Contentlet contentlet = this.getContentlet
+                    (inode, identifier, language,
+                            ()->WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(),
+                            fireActionForm, initDataObject, mode);
+
+            final Optional<WorkflowAction> workflowActionOpt =
+                    this.workflowAPI.findActionMappedBySystemActionContentlet
+                            (contentlet, systemAction, initDataObject.getUser());
+
+            if (workflowActionOpt.isPresent()) {
+
+                final WorkflowAction workflowAction = workflowActionOpt.get();
+                final String actionId = workflowAction.getId();
+                final Optional<SystemActionApiFireCommand> fireCommandOpt =
+                        this.systemActionApiFireCommandProvider.get(workflowAction, systemAction);
+
+                return this.fireAction(request, fireActionForm, initDataObject.getUser(), contentlet, actionId, fireCommandOpt);
+            } else {
+
+                final ContentType contentType = contentlet.getContentType();
+                throw new DoesNotExistException("For the contentType: " + (null != contentType?contentType.variable():"unknown") +
+                        " systemAction = " + systemAction);
+            }
+        } catch (Exception e) {
+
+            Logger.error(this.getClass(),
+                    "Exception on firing, systemAction: " + systemAction +
+                            ", inode: " + inode, e);
+
+            return ResponseUtil.mapExceptionResponse(e);
+        }
+    } // fireAction.
 
     /**
      * Fires a workflow action by action id, if the contentlet exists could use inode or identifier and optional language.
@@ -1378,7 +1452,7 @@ public class WorkflowResource {
                             ()->WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(),
                             fireActionForm, initDataObject, mode);
 
-            return fireAction(request, fireActionForm, initDataObject.getUser(), contentlet, actionId);
+            return fireAction(request, fireActionForm, initDataObject.getUser(), contentlet, actionId, Optional.empty());
         } catch (Exception e) {
 
             Logger.error(this.getClass(),
@@ -1387,8 +1461,76 @@ public class WorkflowResource {
 
             return ResponseUtil.mapExceptionResponse(e);
         }
-    } // fire.
+    } // fireAction.
 
+    /**
+     * Fires a workflow with default action with multi part body
+     * @param request    {@link HttpServletRequest}
+     * @param inode      {@link String} (Optional) to fire an action over the existing inode.
+     * @param identifier {@link String} (Optional) to fire an action over the existing identifier (in combination of language).
+     * @param language   {@link Long}   (Optional) to fire an action over the existing language (in combination of identifier).
+     * @param systemAction {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction} system action to determine the default action
+     * (if an inode is set, this param is not ignored).
+     * @return Response
+     */
+    @PUT
+    @Path("/actions/default/fire/{systemAction}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    public final Response fireActionDefaultMultipart(
+                                              @Context final HttpServletRequest request,
+                                              @Context final HttpServletResponse response,
+                                              @QueryParam("inode")       final String inode,
+                                              @QueryParam("identifier")  final String identifier,
+                                              @DefaultValue("-1") @QueryParam("language") final long   language,
+                                              @PathParam("systemAction") final WorkflowAPI.SystemAction systemAction,
+                                              final FormDataMultiPart multipart) {
+
+        final InitDataObject initDataObject = this.webResource.init
+                (null, request, response, true, null);
+
+        try {
+
+            Logger.debug(this, ()-> "On Fire Action Multipart: systemAction = " + systemAction + ", inode = " + inode +
+                    ", identifier = " + identifier + ", language = " + language);
+
+            final PageMode mode = PageMode.get(request);
+            final FireActionForm fireActionForm = this.processForm (multipart);
+            //if inode is set we use it to look up a contentlet
+            final Contentlet contentlet = this.getContentlet
+                    (inode, identifier, language,
+                            ()->WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(),
+                            fireActionForm, initDataObject, mode);
+
+            final Optional<WorkflowAction> workflowActionOpt =
+                    this.workflowAPI.findActionMappedBySystemActionContentlet
+                        (contentlet, systemAction, initDataObject.getUser());
+
+            if (workflowActionOpt.isPresent()) {
+
+                final WorkflowAction workflowAction = workflowActionOpt.get();
+                final String actionId = workflowAction.getId();
+                final Optional<SystemActionApiFireCommand> fireCommandOpt =
+                        this.systemActionApiFireCommandProvider.get(workflowAction, systemAction);
+
+                return this.fireAction(request, fireActionForm, initDataObject.getUser(), contentlet, actionId, fireCommandOpt);
+            } else {
+
+                final ContentType contentType = contentlet.getContentType();
+                throw new DoesNotExistException("For the contentType: " + (null != contentType?contentType.variable():"unknown") +
+                        " systemAction = " + systemAction);
+            }
+        } catch (Exception e) {
+
+            Logger.error(this.getClass(),
+                    "Exception on firing, systemAction: " + systemAction +
+                            ", inode: " + inode, e);
+
+            return ResponseUtil.mapExceptionResponse(e);
+        }
+    } // fire.
 
     /**
      * Fires a workflow action with multi part body
@@ -1430,7 +1572,7 @@ public class WorkflowResource {
                             ()->WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(),
                             fireActionForm, initDataObject, mode);
 
-            return fireAction(request, fireActionForm, initDataObject.getUser(), contentlet, actionId);
+            return fireAction(request, fireActionForm, initDataObject.getUser(), contentlet, actionId, Optional.empty());
         } catch (Exception e) {
 
             Logger.error(this.getClass(),
