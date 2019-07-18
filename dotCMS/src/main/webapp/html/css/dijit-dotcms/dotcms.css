@@ -6840,7 +6840,9 @@ select[multiple]:hover {
 .dotCMSHostFileFilteringSelect .dijitTextBox {
   width: auto;
 }
-
+.dijitHostFoldersTreeWrapper{
+   min-width:250px;
+}
 /* NAV SUB STYLES 2.0 */
 #admin-banner-logo-div {
   position: absolute;

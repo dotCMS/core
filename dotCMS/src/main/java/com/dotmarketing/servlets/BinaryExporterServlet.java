@@ -391,6 +391,29 @@ public class BinaryExporterServlet extends HttpServlet {
         return;
       }
 
+      if(req.getParameter(WebKeys.IMAGE_TOOL_CLIPBOARD) != null && user!=null && !user.equals(APILocator.getUserAPI().getAnonymousUser())) {
+        List<String> list = (List<String>) req.getSession().getAttribute(WebKeys.IMAGE_TOOL_CLIPBOARD);
+        if (list == null) {
+          list = new ArrayList<String>();
+        }
+        // we only show nine images in clipboard
+        if (list.size() > 8) {
+          list = list.subList(0, 8);
+        }
+  
+        if (list.contains(req.getRequestURI())) {
+          list.remove(req.getRequestURI());
+        }
+        list.add(0, req.getRequestURI());
+  
+        req.getSession().setAttribute(WebKeys.IMAGE_TOOL_CLIPBOARD, list);
+  
+        resp.getWriter().println("success");
+        resp.getWriter().println(req.getRequestURI());
+        return;
+      }
+      
+
 			/*******************************
 			 *
 			 *  Start serving the data

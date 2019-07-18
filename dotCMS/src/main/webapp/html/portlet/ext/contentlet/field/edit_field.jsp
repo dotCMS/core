@@ -490,7 +490,6 @@
            <div dojoType="dotcms.dijit.image.ImageEditor"
                 editImageText="<%= LanguageUtil.get(pageContext, "Edit-Image") %>"
                 inode="<%= binInode%>"
-                identifier="<%=contentlet.getIdentifier()%>"
                 fieldName="<%=field.getVelocityVarName()%>"
                 binaryFieldId="<%=field.getFieldContentlet()%>"
                 fieldContentletId="<%=field.getFieldContentlet()%>"

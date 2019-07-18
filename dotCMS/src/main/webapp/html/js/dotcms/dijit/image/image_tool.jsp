@@ -11,12 +11,12 @@
 <%@page import="java.util.Enumeration"%>
 <%	
 	String dojoPath = Config.getStringProperty("path.to.dojo");
-	String id = request.getParameter("identifier");
-	String inode = request.getParameter("inode");
+
+	String id = request.getParameter("id");
 	
 	String fieldName = (UtilMethods.isSet(request.getParameter("fieldName"))) ? request.getParameter("fieldName") : "fileAsset";
 
-	String baseImage =  (inode != null) ? "/contentAsset/image/" + inode + "/" + fieldName +"/" : "/contentAsset/image/" + id + "/" + fieldName ;
+	String baseImage =  "/contentAsset/image/" + id + "/" + fieldName + "/" ;
 
 
 
@@ -64,7 +64,7 @@
 		var baseImage="<%=baseImage%>";
 
 		var id="<%=id%>";
-		var inode="<%=inode%>";
+
    	</script>
 	<script type="text/javascript" src="<%=dojoPath%>/dojo/dojo.js"></script>
 
@@ -131,7 +131,7 @@
 					<%= LanguageUtil.get(pageContext, "download") %>
 				</button>
 				&nbsp; &nbsp;
-				<button dojoType="dijit.form.Button" id="clipBoard"  <% if(id == null) { %>disabled<% } %> onclick="imageEditor.addToClipboard()">
+				<button dojoType="dijit.form.Button" id="clipBoard"  <% if(id == null || id.startsWith("temp_")) { %>disabled<% } %> onclick="imageEditor.addToClipboard()">
 					<%= LanguageUtil.get(pageContext, "Clip") %>
 				</button>
 				

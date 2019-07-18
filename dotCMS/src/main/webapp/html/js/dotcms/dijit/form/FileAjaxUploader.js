@@ -380,7 +380,7 @@ dojo.declare("dotcms.dijit.form.FileAjaxUploader", [dijit._Widget, dijit._Templa
             
             var newImageEditor = new dotcms.dijit.image.ImageEditor({
                 editImageText : "",
-                inode : fileData.id,
+                tempId: fileData.id,
                 fieldName : this.id,
                 binaryFieldId : this.name,
                 fieldContentletId : this.name,

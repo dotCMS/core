@@ -19,7 +19,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
     resizeFilter:false,
     zoomValue:0,
     inode:'0',
-    identifier:'0',
+    tempId:null,
     inited: false,
     painting : false,
     thumbnailWidth:500,
@@ -34,29 +34,9 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
     compression:'none',
     compressionValue:65,
     fileSize:0,
-    isTemp:false,
     
 
-    _initBaseFilterUrl: function() {
-        console.log("_initBaseFilterUrl")
-        var shorty = (this.inode && this.inode != '0') ? this.inode  : this.identifier;
-        
-        shorty = shorty.indexOf("temp_") == 0 
-                ? shorty 
-                : shorty.substr(0,12).replace("-","");
 
-        this.isTemp = shorty.indexOf("temp_") == 0 ;
-        
-        
-        
-        this.baseFilterUrl+= "/" + shorty;
-
-    	if(this.fieldName != undefined){
-    		this.baseFilterUrl+= "/" + this.fieldName;
-    	}
-
-        this.currentUrl = this.baseFilterUrl;
-    },
 
 
     postCreate: function(){
@@ -96,7 +76,72 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
         // console.log(this);
     },
 
+    _initBaseFilterUrl: function() {
+        console.log("_initBaseFilterUrl")
+        var shorty = this.inode  ;
 
+        if(this.tempId){
+            shorty=this.tempId;
+        }
+        
+        
+        
+        this.baseFilterUrl+= "/" + shorty;
+
+        if(this.fieldName != undefined){
+            this.baseFilterUrl+= "/" + this.fieldName;
+        }
+
+        this.currentUrl = this.baseFilterUrl;
+    },
+    
+    createImageWindow: function(){
+        console.log("createImageWindow")
+        this.tabindex = 0;
+        this.thumbnailDiv.tabindex=0;
+
+
+        var newerInode = window.contentAdmin.contentletInode;
+        console.log("this.inode:"+ this.inode)
+        console.log("newerInode:"+ newerInode)
+        console.log("this.tempId:"+ this.tempId)
+        var id=this.inode;
+        if(newerInode && newerInode!= this.inode){
+            this.inode = newerInode;
+            id=newerInode;
+            this.tempId=null;
+        }else if(this.tempId){
+            id = this.tempId;
+        }
+        
+        
+        console.log("id:"+ id)
+
+        this.baseFilterUrl= "/contentAsset/image/" + id;
+        if(this.fieldName != undefined){
+            this.baseFilterUrl+= "/" + this.fieldName;
+        }
+        this.currentUrl = this.baseFilterUrl;
+        
+
+
+
+        // clean up any old image editors laying around
+        this._cleanUpImageEditor();
+        window.top._dotImageEditor = this;
+        var url = this.imageToolJsp + "?id=" + id;
+    
+        url = url + "&fieldName="+ this.fieldName;
+        console.log("url=" + url);
+        
+        
+        this.imageEditor = document.createElement('div');
+        this.imageEditor.id = 'dotImageDialog';
+        this.imageEditor.innerHTML="<iframe scrolling='no' src='" + url+ "' id='imageToolIframe' frameborder='0' style='width:100%;height:100%;overflow:hidden;box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.3), 0 6px 20px 0 rgba(0, 0, 0, 0.19);'></iframe>";
+        this.imageEditor.style="position:absolute;top:10px;bottom:20px;left:20px;right:20px;padding:0;margin:0;border:1px silver solid;background:white;z-index: 99999;";
+        document.body.insertBefore(this.imageEditor, document.body.firstChild);
+
+    },
 
     /***************************************************************************
      *
@@ -166,35 +211,6 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
 
 
 
-    createImageWindow: function(){
-        console.log("createImageWindow")
-        this.tabindex = 0;
-        this.thumbnailDiv.tabindex=0;
-
-
-
-
-
-        // clean up any old image editors laying around
-        this._cleanUpImageEditor();
-        window.top._dotImageEditor = this;
-        var url = this.imageToolJsp;
-        if(this.identifier != '' && this.identifier != "0") {
-            url = url + "?identifier=" + this.identifier;
-        } else {
-            url = url + "?inode=" + this.inode;
-        }
-        url = url + "&fieldName="+ this.fieldName;
-        console.log("url=" + url);
-        
-        
-        this.imageEditor = document.createElement('div');
-        this.imageEditor.id = 'dotImageDialog';
-        this.imageEditor.innerHTML="<iframe scrolling='no' src='" + url+ "' id='imageToolIframe' frameborder='0' style='width:100%;height:100%;overflow:hidden;box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.3), 0 6px 20px 0 rgba(0, 0, 0, 0.19);'></iframe>";
-        this.imageEditor.style="position:absolute;top:10px;bottom:20px;left:20px;right:20px;padding:0;margin:0;border:1px silver solid;background:white;z-index: 99999;";
-        document.body.insertBefore(this.imageEditor, document.body.firstChild);
-
-    },
 
     /**
      * This function runs on pageload from the image_tool.jsp page. It loads the
@@ -215,11 +231,6 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
             this.iframe.dojo.style(this.iframe.dojo.byId("saveAsSpan"), "display", "inline");
 
         }
-
-
-
-
-
 
 
         if(this.inited) return;
@@ -303,17 +314,8 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
 
     closeImageWindow : function(e){
         console.log("closeImageWindow")
-        if(dojo.isIE){
-            if(this.imageEditor){
-                try{
-                    this.imageEditor.destroy();
-                }catch(e){
-                    console.log(e);
-                }
-            }
-        }else{
-            this._cleanUpImageEditor();
-        }
+        this._cleanUpImageEditor();
+        
     },
 
 
@@ -323,7 +325,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
     _cleanUpImageEditor : function (e){
         console.log("_cleanUpImageEditor")
         window.top._dotImageEditor = null;
-        
+        window.parent._dotImageEditor = null;
         
         var myEditor = (this.imageEditor) ? this.imageEditor : document.getElementById("dotImageDialog");
         
@@ -362,9 +364,12 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
 
 
     addToClipboard : function(){
-        console.log("addToClipboard")
+        if(this.currentUrl.indexOf("/temp_")>-1){
+            alert("You cannot clip a temp or altered file.  Please save the content and reopen the image editor to clip it");
+            return;
+        }
         var fileUrl = this.cleanUrl(this.currentUrl);
-        var url = (this.ajaxUrl.indexOf("?")>-1) ? this.ajaxUrl + "&"  : this.ajaxUrl + "?action=setClipboard&fileUrl=" + fileUrl + "&";
+        var url = (fileUrl.indexOf("?")>-1) ? fileUrl + "&"  : fileUrl + "?_imageToolClipboard=true";
         //alert(url);
         var target = this.iframe.dojo.byId('me');
         dojo.style(target, "opacity", 0);
@@ -428,32 +433,31 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
         url += (field.length > 0) ? "&binaryFieldId=" +field : "";
         url += "&_imageToolSaveFile=true";
         console.log("saving url:" + url);
-        dojo.xhrGet({
-            url:url,
-            fileName:this.saveAsFileName,
-            inode:this.inode,
-            preventCache:true,
-            sync:true,
-            binaryFieldId:field,
-            ajaxUrl:this.ajaxUrl,
-            load:function(data){
-                var dataJson = JSON.parse(data);
-                console.log("data!", dataJson);
-                console.log("this!", this);
-                console.log(this.binaryFieldId + "ValueField");
-                if(window.document.getElementById(this.binaryFieldId + "ValueField")){
-                    window.document.getElementById(this.binaryFieldId + "ValueField").value=dataJson.id; 
+        
+        
+        var xhr = new XMLHttpRequest();
+        xhr.onload = (self => {
+            return () => {
+                if (xhr.status == 200) {
+                    var dataJson = JSON.parse(xhr.responseText);
+                    self.tempId=dataJson.id;
+                    if(window.document.getElementById(self.binaryFieldId + "ValueField")){
+                        window.document.getElementById(self.binaryFieldId + "ValueField").value=dataJson.id; 
+                    }
+                    
+                } else {
+                    alert("Error! Upload failed");
+                    console.log("xhr error:", xhr);
                 }
-            },
-            error:function(data){
-                alert(data);
-
-            }
-
-        });
+            };
+        })(this);
+        xhr.open("GET", url, true);
+        xhr.send();
+        
 
 
         this.setThumbnail();
+        
 
         // close without wiping out the saved value
         this.closeImageWindow();
@@ -464,63 +468,6 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
 
 
 
-
-
-
-    /**
-     * Save as passes a var:_imageToolSaveFile to the binary servlet wit// http://jira.dotmarketing.net/browse/DOTCMS-6191
-        var field=this.binaryFieldId;
-        if(this.fieldContentletId.length>0) {
-            field=this.fieldContentletId;
-        }h all the other
-     * params.  This saves the file handle in the users session.  We look for this
-     * file and save it when the user checks the file or content in
-     */
-    saveFileImage: function(){
-        this.painting = false;
-
-        //if this is not a png
-        if(this.saveAsFileName.toLowerCase().indexOf(".jpg") >-1){
-            this.iframe.dijit.byId("compression").setValue("jpeg");
-            this._removeFilter("Gif");
-            this._removeFilter("WebP");
-            this._addFilter("Jpeg", "/jpeg_q/" + this.compressionValue);
-            this._redrawImage();
-        }
-        else if(this.saveAsFileName.toLowerCase().indexOf(".gif") >-1){
-            this.iframe.dijit.byId("compression").setValue("none");
-            this._removeFilter("Jpeg");
-            this._removeFilter("WebP");
-            this._addFilter("Gif", "/gif/2");
-            this._redrawImage();
-        }
-        else if(this.saveAsFileName.toLowerCase().indexOf(".png") >-1){
-            this.iframe.dijit.byId("compression").setValue("none");
-            this._removeFilter("Jpeg");
-            this._removeFilter("WebP");
-            this._addFilter("Png", "/png/2");
-            this._redrawImage();
-        }
-        var x = this.cleanUrl(this.currentUrl);
-
-        var url = x + "?_imageToolSaveFile=true";
-        console.log(url);
-        //console.log(url);
-        //console.log(url);
-        dojo.xhrGet({
-            url:url,
-             preventCache:true,
-             sync:true,
-             load:function(data){
-                 var ctx = window.top._dotImageEditor ;
-                 window.top.dojo.byId("_imageToolSaveFile").value = data;
-             }
-        });
-        this.setThumbnail();
-
-        // close without wiping out the saved value
-        setTimeout("window.top._dotImageEditor.closeEditorWhenRedrawFinish()", 500);
-    },
 
     closeEditorWhenRedrawFinish: function() {
         if (this.painting) {
