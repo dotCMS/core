@@ -65,6 +65,10 @@ docker-compose -f mysql-docker-compose.yml down
 ```
 
 ## Useful commands
+
+#### --no-cache
+`docker-compose -f postgres-docker-compose.yml build --no-cache`
+
 #### Building a given compose file
 
 `docker-compose -f postgres-docker-compose.yml build`
@@ -75,7 +79,13 @@ docker-compose -f mysql-docker-compose.yml down
 
 *Detach mode:*
 
-`docker-compose -f postgres-docker-compose.yml up -d` 
+`docker-compose -f postgres-docker-compose.yml up -d`
+
+#### Logging
+You can run containers detached with the `-d` flag and tail 
+the container logs manually with `docker-compose logs --follow [SERVICE…]`
+
+`docker-compose -f postgres-docker-compose.yml logs --follow integration_integration-tests_1` 
 
 #### Checking the status of the containers for a given compose file
 
@@ -94,13 +104,6 @@ docker-compose -f mysql-docker-compose.yml down
 * Select one to explore with bash [using the container name] 
 
     `docker exec -t -i integration_integration-tests_1 /bin/bash`
-
-## Tip [-d]
-The standard output of _docker-compose_ up may hang occasionally, leaving you to think that the 
-application is not responding. Hence, you can run containers detached with the `-d` flag and tail 
-the container logs manually with `docker-compose logs --follow [SERVICE…]`
-
-`docker-compose -f postgres-docker-compose.yml logs --follow integration_integration-tests_1`
 
 ---
 ---
