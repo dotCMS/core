@@ -3777,9 +3777,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             final boolean content_version_hard_link = Config
                                     .getBooleanProperty("CONTENT_VERSION_HARD_LINK", true);
                             FileUtil.copyFile(incomingFile, newFile, content_version_hard_link, validateEmptyFile);
-                            // add the incomingFile to a list of files that will be deleted
-                            // after we iterate over all the fields.
-                            fileListToDelete.add(incomingFile);
+
 
                             // delete old content metadata if exists
                             if(metadata!=null && metadata.exists()){
