@@ -1,0 +1,54 @@
+# https://docs.docker.com/compose/compose-file/compose-versioning/
+version: "3.7"
+
+# https://docs.docker.com/compose/compose-file/
+
+#volumes:
+#  db:
+#  reports:
+#  logs:
+
+networks:
+  db_net:
+
+services:
+
+  integration-tests:
+    build:
+      context: .
+      args:
+        BUILD_FROM: COMMIT
+        BUILD_ID: origin/master
+        DB_TYPE: mysql
+        LICENSE_KEY: ${LICENSE_KEY}
+    depends_on:
+      - database
+    volumes:
+      - type: bind
+        source: ./reports
+        target: /custom/reports
+      - type: bind
+        source: ./logs
+        target: /custom/logs
+#      - type: bind
+#        source: ./license/license.dat
+#        target: /custom/dotsecure/license/license.dat
+    networks:
+      - db_net
+
+  # https://hub.docker.com/_/mysql
+  database:
+    image: "mysql:5.7"
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_USER: mysql
+      MYSQL_PASSWORD: mysql
+      MYSQL_ROOT_PASSWORD: mysql
+      MYSQL_DATABASE: dotcms
+    ports:
+      - "13306:3306"
+    volumes:
+#      - db:/var/lib/mysql
+      - ./setup/init-scripts/mysql:/docker-entrypoint-initdb.d/
+    networks:
+      - db_net
