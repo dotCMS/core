@@ -64,11 +64,7 @@ public class TempFileResource {
             @Context final HttpServletResponse response, final FormDataMultiPart body) {
 
         try {
-            if (!Config.getBooleanProperty(TempFileAPI.TEMP_RESOURCE_ENABLED, true)) {
-                final String message = "Temp Files Resource is not enabled, please change the TEMP_RESOURCE_ENABLED to true in your properties file";
-                Logger.error(this, message);
-                throw new DoesNotExistException(message);
-            }
+            verifyTempResourceEnabled();
 
             final boolean allowAnonToUseTempFiles = !Config
                     .getBooleanProperty(TempFileAPI.TEMP_RESOURCE_ALLOW_ANONYMOUS, true);
@@ -124,11 +120,8 @@ public class TempFileResource {
             final RemoteUrlForm form) {
 
         try {
-            if (!Config.getBooleanProperty(TempFileAPI.TEMP_RESOURCE_ENABLED, true)) {
-                final String message = "Temp Files Resource is not enabled, please change the TEMP_RESOURCE_ENABLED to true in your properties file";
-                Logger.error(this, message);
-                throw new DoesNotExistException(message);
-            }
+
+            verifyTempResourceEnabled();
 
             final boolean allowAnonToUseTempFiles = !Config
                     .getBooleanProperty(TempFileAPI.TEMP_RESOURCE_ALLOW_ANONYMOUS, true);
@@ -152,6 +145,14 @@ public class TempFileResource {
         } catch (Exception e) {
             Logger.warnAndDebug(this.getClass(), e);
             return ResponseUtil.mapExceptionResponse(e);
+        }
+    }
+
+    private void verifyTempResourceEnabled(){
+        if (!Config.getBooleanProperty(TempFileAPI.TEMP_RESOURCE_ENABLED, true)) {
+            final String message = "Temp Files Resource is not enabled, please change the TEMP_RESOURCE_ENABLED to true in your properties file";
+            Logger.error(this, message);
+            throw new DoesNotExistException(message);
         }
     }
 
