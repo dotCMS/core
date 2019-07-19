@@ -6,6 +6,7 @@ import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.event.ContentTypeDeletedEvent;
 import com.dotcms.contenttype.model.event.ContentTypeSavedEvent;
@@ -478,12 +479,15 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     contentTypeToSave = this.contentTypeFactory.save(contentTypeToSave);
 
     if (oldType != null) {
+      final ContentType oldOldType = oldType;
       if (fireUpdateIdentifiers(oldType.expireDateVar(), contentTypeToSave.expireDateVar())) {
-
-        IdentifierDateJob.triggerJobImmediately(oldType, user);
+        DotConcurrentFactory.getInstance().getSubmitter().submit(()->{
+          IdentifierDateJob.triggerJobImmediately(oldOldType, user);
+        });
       } else if (fireUpdateIdentifiers(oldType.publishDateVar(), contentTypeToSave.publishDateVar())) {
-
-        IdentifierDateJob.triggerJobImmediately(oldType, user);
+        DotConcurrentFactory.getInstance().getSubmitter().submit(()->{
+          IdentifierDateJob.triggerJobImmediately(oldOldType, user);
+        });
       }
       perms.resetPermissionReferences(contentTypeToSave);
     }

@@ -44,16 +44,16 @@
 	var changesMadeToPermissions = false;
 
 	//I18n messages
-	var roleAlreadyInListMesg = '<%= LanguageUtil.get(pageContext, "role-already-in-list") %>';
-	var globalPath = '<%= LanguageUtil.get(pageContext, "global-permission-path") %>';
-	var permissionsSavedMsg = '<%= LanguageUtil.get(pageContext, "permissions-saved") %>'
+	var roleAlreadyInListMesg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "role-already-in-list")) %>';
+	var globalPath = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "global-permission-path")) %>';
+	var permissionsSavedMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "permissions-saved")) %>'
     var noPermissionsSavedMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "no-permissions-saved")) %>'
-	var removeIndividualPermissionConfirm = '<%= LanguageUtil.get(pageContext, "remove-individual-permissions-confirm") %>'
-	var newAssetPermissionsMsg = '<%= LanguageUtil.get(pageContext, "new-asset-permissions-message") %>'
-	var noPermissionsMsg = '<%= LanguageUtil.get(pageContext, "no-permissions-message") %>'
-	var roleLockedForPermissions = '<%= LanguageUtil.get(pageContext, "role-locked-to-permissions") %>'
-	var roleNotRequiredPermissions = '<%= LanguageUtil.get(pageContext, "role-pageContext-lacks-permission") %>'
-	var cascadePermissionsConfirm = '<%= LanguageUtil.get(pageContext, "cascade-permissions-confirm-msg") %>'
+	var removeIndividualPermissionConfirm = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "remove-individual-permissions-confirm")) %>'
+	var newAssetPermissionsMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "new-asset-permissions-message")) %>'
+	var noPermissionsMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "no-permissions-message")) %>'
+	var roleLockedForPermissions = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "role-locked-to-permissions")) %>'
+	var roleNotRequiredPermissions = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "role-pageContext-lacks-permission")) %>'
+	var cascadePermissionsConfirm = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cascade-permissions-confirm-msg")) %>'
 	var hostsWillInheritMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Hosts")) %>';
 	var foldersWillInheritMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Folders")) %>';
 	var containersWillInheritMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Containers")) %>';

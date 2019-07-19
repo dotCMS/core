@@ -17,11 +17,10 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.ThreadUtils;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.model.User;
-
 import io.vavr.control.Try;
-
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -29,7 +28,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-
 import org.elasticsearch.action.bulk.BulkProcessor;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 
@@ -101,7 +99,9 @@ public class ReindexThread {
             .getIntProperty("BULK_PROCESSOR_AWAIT_TIMEOUT", 20);
     private ThreadState STATE = ThreadState.RUNNING;
     private Future<?>  threadRunning;
-    private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private final ExecutorService executor = Executors.newSingleThreadExecutor(
+            new ThreadFactoryBuilder().setNameFormat("reindex-thread-%d").build()
+    );
 
     
     private final static AtomicBoolean rebuildBulkIndexer=new AtomicBoolean(false);

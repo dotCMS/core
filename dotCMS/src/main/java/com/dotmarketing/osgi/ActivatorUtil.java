@@ -125,7 +125,7 @@ class ActivatorUtil {
 
         //Find all the resources under that folder
         Enumeration<URL> entries = context.getBundle().findEntries( containerFolder, "*.*", true );
-        while ( entries.hasMoreElements() ) {
+        while ( entries != null && entries.hasMoreElements() ) {
 
             URL entryUrl = entries.nextElement();
             String entryPath = entryUrl.getPath();
