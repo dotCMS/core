@@ -1,5 +1,6 @@
 package com.dotmarketing.image.filter;
 
+import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.awt.image.BufferedImageOp;
 import java.io.File;
@@ -67,16 +68,20 @@ public class ResizeGifImageFilter extends ImageFilter {
       throws IOException {
     final BufferedImageOp resampler = new ResampleOp(width, height, ResampleOp.FILTER_TRIANGLE);
     final GifDecoder decoder = new GifDecoder();
-    decoder.read(inputFile);
+    decoder.read(inputFile.getAbsolutePath());
+
+    
+    
+    
     int frames = Math.min(maxFrames, decoder.getFrameCount());
 
-    try (AnimatedGifEncoder animatedGif = new AnimatedGifEncoder()) {
-      animatedGif.start(outputFile);
+      AnimatedGifEncoder animatedGif = new AnimatedGifEncoder();
+      animatedGif.start(outputFile.getAbsolutePath());
       animatedGif.setDelay(decoder.getDelay(0));
       animatedGif.setRepeat(loop);
       animatedGif.setSize(width, height);
       animatedGif.setQuality(20);
-
+      animatedGif.setTransparent(Color.WHITE, false);
       for (int i = 0; i < frames; i++) {
 
         BufferedImage frame = decoder.getFrame(i); // frame i
@@ -84,7 +89,8 @@ public class ResizeGifImageFilter extends ImageFilter {
         animatedGif.addFrame(resampler.filter(frame, null));
         // animatedGif.addFrame(frame);
       }
-    }
+      animatedGif.finish();
+    
   }
 
 }
