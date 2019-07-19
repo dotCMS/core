@@ -1,13 +1,28 @@
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, merge } from 'rxjs';
 import { DragulaService } from 'ng2-dragula';
-import { filter, map, tap } from 'rxjs/operators';
+import { filter, map, tap, take } from 'rxjs/operators';
 import { DotCMSContentTypeLayoutRow, DotCMSContentTypeField } from 'dotcms-models';
 import * as _ from 'lodash';
+import { FieldUtil } from '../util/field-util';
+import { DotAlertConfirmService } from '@services/dot-alert-confirm';
+import { DotMessageService } from '@services/dot-messages-service';
+
+const MAX_COLS_PER_ROW = 4;
 
 /**
  * Provide method to handle with the Field Types
  */
+
+interface DragulaCustomEvent {
+    container?: Element;
+    el: Element;
+    name: string;
+    sibling?: Element;
+    source: Element;
+    target?: Element;
+}
+
 @Injectable()
 export class FieldDragDropService {
     private static readonly FIELD_BAG_NAME = 'fields-bag';
@@ -18,12 +33,49 @@ export class FieldDragDropService {
     private _fieldDropFromTarget: Observable<DropFieldData>;
     private _fieldRowDropFromTarget: Observable<DotCMSContentTypeLayoutRow[]>;
     private draggedEvent = false;
-
+    private currentFullRowEl: HTMLElement = null;
     private currentColumnOvered: Element;
+    private i18nMessages: { [key: string]: string } = {};
 
-    constructor(private dragulaService: DragulaService) {
-        dragulaService
-            .over()
+    constructor(
+        private dragulaService: DragulaService,
+        private dotAlertConfirmService: DotAlertConfirmService,
+        private dotMessageService: DotMessageService
+    ) {
+        this.dotMessageService
+            .getMessages([
+                'contenttypes.fullrow.dialog.header',
+                'contenttypes.fullrow.dialog.message',
+                'contenttypes.fullrow.dialog.accept'
+            ])
+            .pipe(take(1))
+            .subscribe((messages: { [key: string]: string }) => {
+                this.i18nMessages = messages;
+            });
+
+        const dragulaOver$ = dragulaService.over();
+        const dragulaDropModel$ = dragulaService.dropModel();
+
+        const isRowFull = () => !!this.currentFullRowEl;
+        const wasDrop = (target) => target === null;
+
+        merge(dragulaService.drop(), dragulaOver$)
+            .pipe(filter(isRowFull))
+            .subscribe(({ target }: DragulaCustomEvent) => {
+                this.clearCurrentFullRowEl();
+
+                if (wasDrop(target)) {
+                    this.dotAlertConfirmService.alert({
+                        header: this.i18nMessages['contenttypes.fullrow.dialog.header'],
+                        message: this.i18nMessages['contenttypes.fullrow.dialog.message'],
+                        footerLabel: {
+                            accept: this.i18nMessages['contenttypes.fullrow.dialog.accept']
+                        }
+                    });
+                }
+            });
+
+        dragulaOver$
             .pipe(
                 filter(
                     (group: { name: string; el: Element; container: Element; source: Element }) =>
@@ -64,12 +116,12 @@ export class FieldDragDropService {
                 );
             });
 
-        this._fieldRowDropFromTarget = dragulaService.dropModel().pipe(
+        this._fieldRowDropFromTarget = dragulaDropModel$.pipe(
             filter((data: DragulaDropModel) => this.isFieldBeingDragFromColumns(data)),
             map((data: DragulaDropModel) => data.targetModel)
         );
 
-        this._fieldDropFromTarget = dragulaService.dropModel().pipe(
+        this._fieldDropFromTarget = dragulaDropModel$.pipe(
             tap(() => {
                 this.draggedEvent = true;
                 setTimeout(() => {
@@ -80,7 +132,7 @@ export class FieldDragDropService {
             map((data: DragulaDropModel) => this.getDroppedFieldData(data))
         );
 
-        this._fieldDropFromSource = dragulaService.dropModel().pipe(
+        this._fieldDropFromSource = dragulaDropModel$.pipe(
             filter((data: DragulaDropModel) => this.isDraggingNewField(data)),
             map((data: DragulaDropModel) => this.getDroppedFieldData(data))
         );
@@ -115,11 +167,9 @@ export class FieldDragDropService {
         if (!fieldBagOpts) {
             this.dragulaService.createGroup(FieldDragDropService.FIELD_BAG_NAME, {
                 copy: this.shouldCopy.bind(this),
-                accepts: this.shouldAccepts,
+                accepts: this.shouldAccepts.bind(this),
                 moves: this.shouldMovesField,
-                copyItem: (item: any) => {
-                    return _.cloneDeep(item);
-                }
+                copyItem: (item: any) => _.cloneDeep(item)
             });
         }
     }
@@ -216,19 +266,29 @@ export class FieldDragDropService {
     }
 
     private shouldAccepts(
-        _el: HTMLElement,
-        source: HTMLElement,
-        _handle: HTMLElement,
+        el: HTMLElement,
+        target: HTMLElement,
+        _source: HTMLElement,
         _sibling: HTMLElement
     ): boolean {
-        return source.dataset.dragType !== 'source';
+        const columnsCount = target.parentElement.querySelectorAll('.row-columns__item').length;
+        const isColumnField = FieldUtil.isColumnBreak(el.dataset.clazz);
+        const cantAddColumn = isColumnField && columnsCount >= MAX_COLS_PER_ROW;
+
+        if (cantAddColumn) {
+            this.clearCurrentFullRowEl();
+            this.disableRowElement(target.parentElement.parentElement);
+            return false;
+        }
+
+        return true;
     }
 
     private shouldMovesField(
         el: HTMLElement,
-        _source: HTMLElement,
-        _handle: HTMLElement,
-        _sibling: HTMLElement
+        _container: Element,
+        _handle: Element,
+        _sibling: Element
     ): boolean {
         return el.dataset.dragType !== 'not_field';
     }
@@ -238,6 +298,20 @@ export class FieldDragDropService {
         source: HTMLElement
     ): boolean {
         return this.isANewColumnContainer(container) || this.isDraggingFromSource(source);
+    }
+
+    private disableRowElement(el: HTMLElement): void {
+        this.currentFullRowEl = el;
+        this.currentFullRowEl.style.opacity = '0.4';
+        this.currentFullRowEl.style.cursor = 'not-allowed';
+    }
+
+    private clearCurrentFullRowEl(): void {
+        if (this.currentFullRowEl && this.currentFullRowEl.style.opacity) {
+            this.currentFullRowEl.style.opacity = null;
+            this.currentFullRowEl.style.cursor = null;
+            this.currentFullRowEl = null;
+        }
     }
 }
 

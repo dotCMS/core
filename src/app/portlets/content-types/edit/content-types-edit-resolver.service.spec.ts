@@ -10,6 +10,7 @@ import { LoginServiceMock } from '../../../test/login-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DOTTestBed } from '../../../test/dot-test-bed';
+import { DotCMSContentType } from 'dotcms-models';
 
 class CrudServiceMock {
     getDataById() {}
@@ -68,7 +69,7 @@ describe('ContentTypeEditResolver', () => {
         expect(crudService.getDataById).toHaveBeenCalledWith('v1/contenttype', '123');
     });
 
-    it('should redirect to content-types if content type it\'s not found', () => {
+    it("should redirect to content-types if content type it's not found", () => {
         activatedRouteSnapshotMock.paramMap.get = () => 'invalid-id';
 
         spyOn(dotHttpErrorManagerService, 'handle').and.returnValue(
@@ -123,19 +124,32 @@ describe('ContentTypeEditResolver', () => {
         activatedRouteSnapshotMock.paramMap.get = (param) => {
             return param === 'type' ? 'content' : false;
         };
+
         spyOn(crudService, 'getDataById').and.returnValue(observableOf(false));
-        contentTypeEditResolver.resolve(activatedRouteSnapshotMock).subscribe((res: any) => {
-            expect(res).toEqual({
-                clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
-                defaultType: false,
-                fixed: false,
-                folder: 'SYSTEM_FOLDER',
-                host: null,
-                name: null,
-                owner: '123',
-                system: false,
-                baseType: 'CONTENT'
+        contentTypeEditResolver
+            .resolve(activatedRouteSnapshotMock)
+            .subscribe((res: DotCMSContentType) => {
+                expect(res).toEqual({
+                    baseType: 'content',
+                    clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
+                    defaultType: false,
+                    fields: [],
+                    fixed: false,
+                    folder: 'SYSTEM_FOLDER',
+                    host: null,
+                    iDate: null,
+                    id: null,
+                    layout: [],
+                    modDate: null,
+                    multilingualable: false,
+                    nEntries: 0,
+                    name: null,
+                    owner: '123',
+                    system: false,
+                    variable: null,
+                    versionable: false,
+                    workflows: []
+                });
             });
-        });
     });
 });

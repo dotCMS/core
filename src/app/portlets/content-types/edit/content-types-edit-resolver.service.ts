@@ -11,7 +11,6 @@ import { DotCMSContentType } from 'dotcms-models';
 import { LoginService, ResponseView } from 'dotcms-js';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { take, map, catchError } from 'rxjs/operators';
-import { dotcmsContentTypeBasicMock } from '@tests/dot-content-types.mock';
 
 /**
  * With the url return a content type by id or a default content type
@@ -57,7 +56,6 @@ export class ContentTypeEditResolver implements Resolve<DotCMSContentType> {
 
     private getDefaultContentType(type: string): Observable<DotCMSContentType> {
         return observableOf({
-            ...dotcmsContentTypeBasicMock,
             baseType: type,
             clazz: this.contentTypesInfoService.getClazz(type),
             defaultType: false,
@@ -70,6 +68,7 @@ export class ContentTypeEditResolver implements Resolve<DotCMSContentType> {
             layout: [],
             modDate: null,
             multilingualable: false,
+            nEntries: 0,
             name: null,
             owner: this.loginService.auth.user.userId,
             system: false,

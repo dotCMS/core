@@ -31,7 +31,6 @@ export class ContentTypesLayoutComponent implements OnChanges, OnInit {
         this.fieldDragDropService.setBagOptions();
         this.dotMessageService
             .getMessages([
-                'contenttypes.sidebar.components.title',
                 'contenttypes.tab.fields.header',
                 'contenttypes.sidebar.layouts.title',
                 'contenttypes.tab.permissions.header',

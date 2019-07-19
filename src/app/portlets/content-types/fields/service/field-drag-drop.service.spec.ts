@@ -3,6 +3,10 @@ import { FieldDragDropService } from './field-drag-drop.service';
 import { DragulaService } from 'ng2-dragula';
 import { Subject, Observable } from 'rxjs';
 import { filter, map } from 'rxjs/operators';
+import { FieldUtil } from '../util/field-util';
+import { DotAlertConfirmService } from '@services/dot-alert-confirm';
+import { MockDotMessageService } from '@tests/dot-message-service.mock';
+import { DotMessageService } from '@services/dot-messages-service';
 
 const by = (opt: string) => (source: Observable<any>) => {
     return source.pipe(
@@ -10,6 +14,8 @@ const by = (opt: string) => (source: Observable<any>) => {
         map((data: any) => data.payload)
     );
 };
+
+const COLUMN_BREAK_FIELD = FieldUtil.createColumnBreak();
 
 class MockDragulaService {
     name: string;
@@ -21,6 +27,7 @@ class MockDragulaService {
     removeModel = () => this.mock.asObservable().pipe(by('removeModel'));
     over = () => this.mock.asObservable().pipe(by('over'));
     out = () => this.mock.asObservable().pipe(by('out'));
+    drop = () => this.mock.asObservable().pipe(by('drop'));
 
     find(): any {
         return null;
@@ -37,14 +44,35 @@ class MockDragulaService {
 }
 
 describe('FieldDragDropService', () => {
+    let dotAlertConfirmService: DotAlertConfirmService;
+
     beforeEach(() => {
         this.injector = DOTTestBed.resolveAndCreate([
             FieldDragDropService,
-            { provide: DragulaService, useClass: MockDragulaService }
+            {
+                provide: DragulaService,
+                useClass: MockDragulaService
+            },
+            {
+                provide: DotAlertConfirmService,
+                useValue: {
+                    alert: jasmine.createSpy('alert')
+                }
+            },
+            {
+                provide: DotMessageService,
+                useValue: new MockDotMessageService({
+                    'contenttypes.fullrow.dialog.header': 'This row is full',
+                    'contenttypes.fullrow.dialog.message':
+                        'The maximum number of columns per row is limited to four.',
+                    'contenttypes.fullrow.dialog.accept': 'Dismiss'
+                })
+            }
         ]);
 
         this.fieldDragDropService = this.injector.get(FieldDragDropService);
         this.dragulaService = this.injector.get(DragulaService);
+        dotAlertConfirmService = this.injector.get(DotAlertConfirmService);
     });
 
     describe('Setting FieldBagOptions', () => {
@@ -73,20 +101,127 @@ describe('FieldDragDropService', () => {
             expect(false).toBe(copyFunc(null, source, null, null));
         });
 
-        it('should set shouldAccepts', () => {
-            this.fieldDragDropService.setFieldBagOptions();
+        describe('shouldAccepts', () => {
+            let acceptsFunc;
+            beforeEach(() => {
+                this.fieldDragDropService.setFieldBagOptions();
+                acceptsFunc = this.dragulaService.options.accepts;
+            });
 
-            const acceptsFunc = this.dragulaService.options.accepts;
-            const source = {
-                dataset: {
-                    dragType: 'source'
-                }
-            };
+            it('should return true for any field', () => {
+                const target = {
+                    parentElement: { querySelectorAll: () => [] }
+                };
 
-            expect(false).toBe(acceptsFunc(null, source, null, null));
+                const el = {
+                    dataset: {
+                        clazz: 'whats'
+                    }
+                };
 
-            source.dataset.dragType = 'target';
-            expect(true).toBe(acceptsFunc(null, source, null, null));
+                expect(acceptsFunc(el, target, null, null)).toBe(true);
+            });
+
+            it('should return true for break column field', () => {
+                const target = {
+                    parentElement: { querySelectorAll: () => [] }
+                };
+
+                const el = {
+                    dataset: {
+                        clazz: COLUMN_BREAK_FIELD.clazz
+                    }
+                };
+
+                expect(acceptsFunc(el, target, null, null)).toBe(true);
+            });
+
+            it('should return false when for break column when row have 4 colums', () => {
+                const target = {
+                    parentElement: {
+                        querySelectorAll: () => [1, 2, 3, 4],
+                        parentElement: {
+                            style: {}
+                        }
+                    }
+                };
+
+                const el = {
+                    dataset: {
+                        clazz: COLUMN_BREAK_FIELD.clazz
+                    }
+                };
+
+                expect(acceptsFunc(el, target, null, null)).toBe(false);
+            });
+
+            describe('style row', () => {
+                let target;
+                let el;
+
+                beforeEach(() => {
+                    target = {
+                        parentElement: {
+                            querySelectorAll: () => [1, 2, 3, 4],
+                            parentElement: {
+                                style: {}
+                            }
+                        }
+                    };
+
+                    el = {
+                        dataset: {
+                            clazz: COLUMN_BREAK_FIELD.clazz
+                        }
+                    };
+                });
+
+                it('should add custom style to row when cant add column', () => {
+                    acceptsFunc(el, target, null, null);
+
+                    expect(target.parentElement.parentElement.style).toEqual({
+                        opacity: '0.4',
+                        cursor: 'not-allowed'
+                    });
+                });
+
+                it('should remove custom style to row on drop', () => {
+                    acceptsFunc(el, target, null, null);
+
+                    this.dragulaService.emit({
+                        val: 'drop',
+                        payload: {
+                            target: null
+                        }
+                    });
+
+                    expect(target.parentElement.parentElement.style).toEqual({
+                        opacity: null,
+                        cursor: null
+                    });
+                });
+
+                it('should show alert when cant add column', () => {
+                    acceptsFunc(el, target, null, null);
+                    this.dragulaService.emit({
+                        val: 'drop',
+                        payload: {
+                            target: null
+                        }
+                    });
+
+                    expect(dotAlertConfirmService.alert).toHaveBeenCalledTimes(1);
+                    expect(dotAlertConfirmService.alert).toHaveBeenCalledWith(
+                        jasmine.objectContaining({
+                            header: 'This row is full',
+                            message: 'The maximum number of columns per row is limited to four.',
+                            footerLabel: {
+                                accept: 'Dismiss'
+                            }
+                        })
+                    );
+                });
+            });
         });
     });
 
@@ -227,7 +362,6 @@ describe('FieldDragDropService', () => {
 
         const container2 = document.createElement('div');
         container2.classList.add('row-columns__item');
-
 
         this.dragulaService.emit({
             val: 'over',

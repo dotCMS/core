@@ -8,23 +8,29 @@ $icon-size: $basic-padding * 3;
 }
 
 .content-types-fields-list__item {
+    align-items: center;
     cursor: move;
+    display: flex;
+    line-height: $basic-padding * 4;
     padding: $basic-padding $basic-padding * 2;
     touch-action: none;
-    display: flex;
-    align-items: center;
-    line-height: $basic-padding * 4;
+    transition: background-color $basic-speed;
+
+    dot-icon {
+        color: $gray;
+        margin-right: $basic-padding * 2;
+        transition: color $basic-speed;
+    }
 
     &:hover {
         background-color: $gray-bg;
+
+        dot-icon {
+            color: $body-font-color;
+        }
     }
-}
 
-dot-icon {
-    color: $gray;
-    margin-right: $basic-padding * 2;
-
-    .content-types-fields-list__item:hover & {
-        color: $body-font-color;
+    &:nth-child(2) {
+        border-bottom: solid 1px $gray-light;
     }
 }

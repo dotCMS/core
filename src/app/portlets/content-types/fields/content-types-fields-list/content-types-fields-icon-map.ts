@@ -1,3 +1,7 @@
+import { FieldUtil } from '../util/field-util';
+
+const COLUMN_BREAK = FieldUtil.createColumnBreak();
+
 export const FIELD_ICONS = {
     'com.dotcms.contenttype.model.field.ImmutableBinaryField': 'note',
     'com.dotcms.contenttype.model.field.ImmutableCategoryField': 'format_list_bulleted',
@@ -23,5 +27,6 @@ export const FIELD_ICONS = {
     'com.dotcms.contenttype.model.field.ImmutableWysiwygField': 'visibility',
     'com.dotcms.contenttype.model.field.ImmutableTabDividerField': 'folder',
     'com.dotcms.contenttype.model.field.ImmutableLineDividerField': 'more_horiz',
-    'com.dotcms.contenttype.model.field.ImmutableRelationshipField': 'merge_type'
+    'com.dotcms.contenttype.model.field.ImmutableRelationshipField': 'merge_type',
+    [COLUMN_BREAK.clazz]: 'view_column'
 };

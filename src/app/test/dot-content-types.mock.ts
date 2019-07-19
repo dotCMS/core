@@ -1,54 +1,94 @@
-import { DotCMSContentTypeField, DotCMSContentType } from 'dotcms-models';
+import { DotCMSContentTypeField, DotCMSContentType, DotCMSContentTypeLayoutRow } from 'dotcms-models';
+import { EMPTY_FIELD } from '@portlets/content-types/fields/util/field-util';
 
 export const dotcmsContentTypeBasicMock: DotCMSContentType = {
-    baseType: '',
-    clazz: '',
+    baseType: null,
+    clazz: null,
     defaultType: false,
-    description: '',
-    detailPage: '',
-    expireDateVar: '',
+    description: null,
+    detailPage: null,
+    expireDateVar: null,
     fields: [],
     fixed: false,
-    folder: '',
-    host: '',
+    folder: null,
+    host: null,
     iDate: null,
-    id: '',
+    id: null,
     layout: [],
     modDate: null,
     multilingualable: false,
     nEntries: null,
-    name: '',
-    owner: '',
-    publishDateVar: '',
+    name: null,
+    owner: null,
+    publishDateVar: null,
     system: false,
-    urlMapPattern: '',
-    variable: '',
+    urlMapPattern: null,
+    variable: null,
     versionable: false,
-    workflows: [],
+    workflows: []
 };
 
 export const dotcmsContentTypeFieldBasicMock: DotCMSContentTypeField = {
-    clazz: '',
-    contentTypeId: '',
-    dataType: '',
-    defaultValue: '',
-    fieldType: '',
-    fieldTypeLabel: '',
-    fieldVariables: [],
-    fixed: true,
-    hint: '',
-    iDate: 100,
-    id: '',
-    indexed: true,
-    listed: true,
-    modDate: 100,
-    name: '',
-    readOnly: true,
-    regexCheck: '',
-    required: true,
-    searchable: true,
-    sortOrder: 100,
-    unique: true,
-    values: '',
-    variable: ''
+    ...EMPTY_FIELD
 };
+
+export const fieldsWithBreakColumn: DotCMSContentTypeLayoutRow[] = [
+    {
+        divider: {
+            ...dotcmsContentTypeFieldBasicMock,
+        },
+        columns: [
+            {
+                columnDivider: {
+                    ...dotcmsContentTypeFieldBasicMock,
+                    clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField'
+                },
+                fields: [
+                    {
+                        ...dotcmsContentTypeFieldBasicMock
+                    },
+                    {
+                        ...dotcmsContentTypeFieldBasicMock,
+                        clazz: 'contenttype.column.break',
+                        name: 'Column'
+                    },
+                    {
+                        ...dotcmsContentTypeFieldBasicMock
+                    }
+                ]
+            }
+        ]
+    }
+];
+
+export const fieldsBrokenWithColumns: DotCMSContentTypeLayoutRow[] = [
+    {
+        divider: {
+            ...dotcmsContentTypeFieldBasicMock
+        },
+        columns: [
+            {
+                columnDivider: {
+                    ...dotcmsContentTypeFieldBasicMock,
+                    clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField'
+                },
+                fields: [
+                    {
+                        ...dotcmsContentTypeFieldBasicMock
+                    }
+                ]
+            },
+            {
+                columnDivider: {
+                    ...dotcmsContentTypeFieldBasicMock,
+                    clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField'
+                },
+                fields: [
+                    {
+                        ...dotcmsContentTypeFieldBasicMock
+                    }
+                ]
+            }
+        ]
+    }
+];

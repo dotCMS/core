@@ -1,10 +1,20 @@
-<p-confirmDialog #cd
-    *ngIf="dotAlertConfirmService.confirmModel"
-    [closable]="false"
-    width="400">
+<p-confirmDialog #cd *ngIf="dotAlertConfirmService.confirmModel" [closable]="false" width="400">
     <p-footer>
-        <button type="button" pButton secondary tabindex="-1" [label]="dotAlertConfirmService.confirmModel.footerLabel.reject" (click)="onClickConfirm('reject')"></button>
-        <button type="button" pButton #confirmBtn [label]="dotAlertConfirmService.confirmModel.footerLabel.accept" (click)="onClickConfirm('accept')"></button>
+        <button
+            type="button"
+            pButton
+            secondary
+            tabindex="-1"
+            [label]="dotAlertConfirmService.confirmModel.footerLabel.reject"
+            (click)="onClickConfirm('reject')"
+        ></button>
+        <button
+            type="button"
+            pButton
+            #confirmBtn
+            [label]="dotAlertConfirmService.confirmModel.footerLabel.accept"
+            (click)="onClickConfirm('accept')"
+        ></button>
     </p-footer>
 </p-confirmDialog>
 
@@ -16,11 +26,24 @@
     [responsive]="true"
     [visible]="true"
     modal="modal"
-    width="400">
-    <p [innerHTML]="dotAlertConfirmService.alertModel.message"></p>
+    width="400"
+>
+    {{ dotAlertConfirmService.alertModel.message }}
 
     <p-footer>
-        <button *ngIf="dotAlertConfirmService.alertModel.footerLabel.reject" type="button" pButton secondary (click)="dotAlertConfirmService.alertReject($event)" [label]="dotAlertConfirmService.alertModel.footerLabel.reject"></button>
-        <button type="button" pButton (click)="dotAlertConfirmService.alertAccept($event)" [label]="dotAlertConfirmService.alertModel.footerLabel.accept"></button>
+        <button
+            *ngIf="dotAlertConfirmService.alertModel.footerLabel.reject"
+            type="button"
+            pButton
+            secondary
+            (click)="dotAlertConfirmService.alertReject($event)"
+            [label]="dotAlertConfirmService.alertModel.footerLabel.reject"
+        ></button>
+        <button
+            type="button"
+            pButton
+            (click)="dotAlertConfirmService.alertAccept($event)"
+            [label]="dotAlertConfirmService.alertModel.footerLabel.accept"
+        ></button>
     </p-footer>
 </p-dialog>

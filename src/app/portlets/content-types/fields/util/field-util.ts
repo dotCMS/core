@@ -4,7 +4,7 @@ import {
     DotCMSContentTypeLayoutColumn
 } from 'dotcms-models';
 
-const EMPTY_FIELD = {
+export const EMPTY_FIELD: DotCMSContentTypeField = {
     contentTypeId: null,
     dataType: null,
     fieldType: null,
@@ -22,7 +22,12 @@ const EMPTY_FIELD = {
     searchable: null,
     sortOrder: null,
     unique: null,
-    variable: null
+    variable: null,
+    clazz: null,
+    defaultValue: null,
+    hint: null,
+    regexCheck: null,
+    values: null
 };
 
 const COLUMN_FIELD = {
@@ -35,9 +40,14 @@ const ROW_FIELD = {
     clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField'
 };
 
-export const TAB_FIELD = {
+const TAB_FIELD = {
     ...EMPTY_FIELD,
     clazz: 'com.dotcms.contenttype.model.field.ImmutableTabDividerField'
+};
+
+const COLUMN_BREAK_FIELD = {
+    clazz: 'contenttype.column.break',
+    name: 'Column'
 };
 
 export class FieldUtil {
@@ -111,13 +121,14 @@ export class FieldUtil {
      * Create a new column
      *
      * @static
-     * @returns {FieldColumn}
+     * @param {DotCMSContentTypeField[]} [fields]
+     * @returns {DotCMSContentTypeLayoutColumn}
      * @memberof FieldUtil
      */
-    static createFieldColumn(): DotCMSContentTypeLayoutColumn {
+    static createFieldColumn(fields?: DotCMSContentTypeField[]): DotCMSContentTypeLayoutColumn {
         return {
             columnDivider: { ...COLUMN_FIELD },
-            fields: []
+            fields: fields || []
         };
     }
 
@@ -247,5 +258,21 @@ export class FieldUtil {
         return layout
             .map((row) => row.divider)
             .filter((field: DotCMSContentTypeField) => FieldUtil.isTabDivider(field));
+    }
+
+    /**
+     * Return true if the clazz is a column break field
+     *
+     * @static
+     * @param {string} clazz
+     * @returns {boolean}
+     * @memberof FieldUtil
+     */
+    static isColumnBreak(clazz: string): boolean {
+        return clazz === COLUMN_BREAK_FIELD.clazz;
+    }
+
+    static createColumnBreak(): { clazz: string; name: string } {
+        return { ...COLUMN_BREAK_FIELD };
     }
 }

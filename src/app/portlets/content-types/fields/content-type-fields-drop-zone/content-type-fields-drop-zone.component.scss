@@ -10,6 +10,10 @@
         margin-left: -$basic-padding * 4;
         margin-right: -$basic-padding * 4;
     }
+
+    dot-content-type-fields-row {
+        transition: opacity $basic-speed;
+    }
 }
 
 .content-type-fields-drop-zone {

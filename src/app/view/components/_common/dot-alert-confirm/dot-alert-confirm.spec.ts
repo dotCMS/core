@@ -171,8 +171,8 @@ describe('DotAlertConfirmComponent', () => {
             });
 
             fixture.detectChanges();
-            const message = de.query(By.css('.ui-dialog-content p'));
-            expect(message.nativeElement.textContent).toEqual('Hello world message');
+            const message = de.query(By.css('.ui-dialog-content'));
+            expect(message.nativeElement.textContent.trim()).toEqual('Hello world message');
         });
 
         it('should show only accept button', () => {

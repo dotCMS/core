@@ -33,7 +33,13 @@ import { DotLoadingIndicatorService } from '@components/_common/iframe/dot-loadi
 import { FieldUtil } from '../util/field-util';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
-import { dotcmsContentTypeFieldBasicMock } from '@tests/dot-content-types.mock';
+import {
+    dotcmsContentTypeFieldBasicMock,
+    fieldsWithBreakColumn,
+    fieldsBrokenWithColumns
+} from '@tests/dot-content-types.mock';
+
+const COLUMN_BREAK_FIELD = FieldUtil.createColumnBreak();
 
 @Component({
     selector: 'dot-content-type-fields-row',
@@ -577,7 +583,7 @@ describe('Load fields and drag and drop', () => {
         expect(1).toEqual(fieldRows[1].componentInstance.fieldRow.columns[0].fields.length);
     });
 
-    it('should set dropped field if a drop event happen from source', () => {
+    it('should set dropped field if a drop event happen from source', async(() => {
         const dropField = fakeFields[2].columns[0].fields[0];
         becomeNewField(dropField);
         fixture.detectChanges();
@@ -590,8 +596,10 @@ describe('Load fields and drag and drop', () => {
             }
         });
 
-        expect(dropField).toBe(comp.currentField);
-    });
+        setTimeout(() => {
+            expect(comp.currentField).toBe(dropField);
+        }, 10);
+    }));
 
     it('should do drag and drop without throwing error', () => {
         fixture.detectChanges();
@@ -616,6 +624,22 @@ describe('Load fields and drag and drop', () => {
         });
 
         this.testFieldDragDropService._fieldRowDropFromTarget.next(fieldMoved);
+    });
+
+    it('should break columns and emit save', (done) => {
+        fixture.detectChanges();
+        comp.fieldRows = fieldsWithBreakColumn;
+
+        comp.saveFields.subscribe((data) => {
+            expect(data).toEqual(fieldsBrokenWithColumns);
+            done();
+        });
+
+        this.testFieldDragDropService._fieldDropFromSource.next({
+            item: {
+                clazz: COLUMN_BREAK_FIELD.clazz
+            }
+        });
     });
 
     it('should not display Edit Dialog when drag & drop event happens', (done) => {
@@ -656,7 +680,7 @@ describe('Load fields and drag and drop', () => {
             expect(fakeFields).toEqual(fields);
             setTimeout(() => {
                 expect(this.testFieldDragDropService.isDraggedEventStarted()).toBe(false);
-            }, 100);
+            }, 10);
             done();
         });
         comp.saveFieldsHandler(newlyField);
