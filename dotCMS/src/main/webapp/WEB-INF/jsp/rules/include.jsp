@@ -4,9 +4,10 @@
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="org.apache.struts.Globals"%>
 <%@ page import="com.dotmarketing.util.PortletURLUtil" %>
+<%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
 <%@ include file="/html/common/init.jsp" %>
 
-
+<% Contentlet contentlet =  (Contentlet) APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(request.getParameter("id"));  %>
 
 
 
@@ -47,10 +48,10 @@
   var siteParam="realmId=<%=request.getParameter("id")%>";
   var hideFireOnParam = "hideFireOn=true"; 
   var hideRulePushOptions = "hideRulePushOptions=<%=request.getParameter("hideRulePushOptions")%>";
-  
+  var isContentletHost = "isContentletHost=<%=contentlet.isHost()%>"
 	
   //Add param to the rules engine iframe.
-  document.getElementById("rulesIframe").src = "/<%=PortletURLUtil.URL_ADMIN_PREFIX%>/index.html#/fromCore/rules?" + localeParam + "&" + siteParam + "&" + hideFireOnParam+ "&" +hideRulePushOptions;
+  document.getElementById("rulesIframe").src = "/<%=PortletURLUtil.URL_ADMIN_PREFIX%>/index.html#/fromCore/rules?" + localeParam + "&" + siteParam + "&" + hideFireOnParam+ "&" +hideRulePushOptions + "&" + isContentletHost ;
   
   
 
