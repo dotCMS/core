@@ -3,6 +3,7 @@ package com.dotcms.languagevariable.business;
 import com.dotcms.keyvalue.model.KeyValue;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.PageMode;
 import com.liferay.portal.model.User;
 import java.util.List;
 
@@ -47,6 +48,8 @@ public interface LanguageVariableAPI {
      */
     public String get(final String key, final long languageId, final User user, final boolean respectFrontendRoles);
 
+
+    public String get(final String key, final long languageId, final User user, final boolean live, final boolean respectFrontendRoles);
 
     /**
      * Returns the Language Variable value associated to the specified key and language ID. This
@@ -95,7 +98,12 @@ public interface LanguageVariableAPI {
      */
     public default String getLanguageVariable(final String key, final long languageId, final User user) {
 
-        return this.get(key, languageId, user, Boolean.FALSE);
+        return this.getLanguageVariable(key, languageId, user, true);
+    }
+
+    public default String getLanguageVariable(final String key, final long languageId, final User user, final boolean live) {
+
+        return this.get(key, languageId, user, live, Boolean.FALSE);
     }
 
     /**

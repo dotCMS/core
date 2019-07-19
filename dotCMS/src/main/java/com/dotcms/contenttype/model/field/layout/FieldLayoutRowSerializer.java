@@ -1,12 +1,20 @@
 package com.dotcms.contenttype.model.field.layout;
 
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalization;
 import com.dotcms.contenttype.transform.field.JsonFieldTransformer;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static com.dotcms.util.CollectionsUtils.map;
 
 /**
  * {@link FieldLayoutRow} serializer, it serialize a json with the follow format:
@@ -44,10 +52,16 @@ public class FieldLayoutRowSerializer extends JsonSerializer<FieldLayoutRow> {
 
         jsonGenerator.writeStartObject();
 
-        final JsonFieldTransformer jsonFieldDividerTransformer =
-                new JsonFieldTransformer(fieldLayoutRow.getDivider());
+        final JsonFieldTransformer jsonFieldDividerTransformer = new JsonFieldTransformer(fieldLayoutRow.getDivider());
         jsonGenerator.writeObjectField("divider", jsonFieldDividerTransformer.mapObject());
-        jsonGenerator.writeObjectField("columns", fieldLayoutRow.getColumns());
+
+        jsonGenerator.writeFieldName("columns");
+
+        final ObjectMapper MAPPER = new ObjectMapper();
+        MAPPER.writer()
+                .withAttribute("type", serializerProvider.getAttribute("type"))
+                .withAttribute("internationalization", serializerProvider.getAttribute("internationalization"))
+                .writeValue(jsonGenerator, fieldLayoutRow.getColumns());
 
         jsonGenerator.writeEndObject();
         jsonGenerator.flush();

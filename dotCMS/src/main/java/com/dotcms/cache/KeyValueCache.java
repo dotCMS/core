@@ -57,6 +57,10 @@ public interface KeyValueCache extends Cachable {
      */
     public void addByLanguageAndContentType(final long languageId, final String contentTypeId, final KeyValue keyValue);
 
+    public void add(final long languageId,
+                    final String contentTypeId,
+                    final boolean live,
+                    final KeyValue keyValue);
     /**
      * Retrieves the list of {@link KeyValue} contents associated to the specified key.
      * 
@@ -96,6 +100,12 @@ public interface KeyValueCache extends Cachable {
      *         Content Type ID.
      */
     public KeyValue getByLanguageAndContentType(final String key, final long languageId, final String contentTypeId);
+
+    public KeyValue get(
+            final String key,
+            final long languageId,
+            final String contentTypeId,
+            final boolean  live);
 
     /**
      * Removes all entries from every group of this cache structure.

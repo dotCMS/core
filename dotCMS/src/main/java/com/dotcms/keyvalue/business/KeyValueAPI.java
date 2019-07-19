@@ -16,6 +16,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
@@ -163,6 +164,8 @@ public interface KeyValueAPI {
     public KeyValue get(final String key, final long languageId, final ContentType contentType, final User user,
                     final boolean respectFrontendRoles);
 
+    public KeyValue get(final String key, final long languageId, final ContentType contentType, final User user, final boolean live,
+                        final boolean respectFrontendRoles);
     /**
      *
      * Returns a list of {@link KeyValue} whose keys start with the provided key, language and content type.

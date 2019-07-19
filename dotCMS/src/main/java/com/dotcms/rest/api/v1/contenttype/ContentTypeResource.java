@@ -1,9 +1,15 @@
 package com.dotcms.rest.api.v1.contenttype;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.layout.FieldLayoutRow;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalization;
 import com.dotcms.contenttype.transform.contenttype.JsonContentTypeTransformer;
+import com.dotcms.contenttype.transform.field.JsonFieldTransformer;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
@@ -24,6 +30,7 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONException;
@@ -31,14 +38,8 @@ import com.dotmarketing.util.json.JSONObject;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -55,7 +56,10 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
+import io.vavr.control.Try;
 import org.glassfish.jersey.server.JSONP;
+import sun.reflect.generics.tree.BaseType;
 
 @Path("/v1/contenttype")
 public class ContentTypeResource implements Serializable {
@@ -262,7 +266,12 @@ public class ContentTypeResource implements Serializable {
 	@JSONP
 	@NoCache
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-	public Response getType(@PathParam("idOrVar") final String idOrVar, @Context final HttpServletRequest req, @Context final HttpServletResponse res)
+	public Response getType(
+			@PathParam("idOrVar") final String idOrVar,
+			@Context final HttpServletRequest req,
+			@Context final HttpServletResponse res,
+			@QueryParam("language_id") final Long languageId,
+			@QueryParam("live") final Boolean paramLive)
 			throws DotDataException {
 
 		final InitDataObject initData = this.webResource.init(null, req, res, false, null);
@@ -281,8 +290,15 @@ public class ContentTypeResource implements Serializable {
 				session.setAttribute(SELECTED_STRUCTURE_KEY, type.inode());
 			}
 
-			resultMap.putAll(new JsonContentTypeTransformer(type).mapObject());
-			resultMap.put("workflows", 		 this.workflowHelper.findSchemesByContentType(type.id(), initData.getUser()));
+			final boolean live = paramLive == null ?
+					(PageMode.get(Try.of(() -> HttpServletRequestThreadLocal.INSTANCE.getRequest()).getOrNull())).showLive
+					: paramLive;
+
+			final ContentTypeInternationalization contentTypeInternationalization = languageId != null ?
+					new ContentTypeInternationalization(languageId, live, user) : null;
+			resultMap.putAll(new JsonContentTypeTransformer(type, contentTypeInternationalization).mapObject());
+
+			resultMap.put("workflows", this.workflowHelper.findSchemesByContentType(type.id(), initData.getUser()));
 
 			response = ("true".equalsIgnoreCase(req.getParameter("include_permissions")))?
 					Response.ok(new ResponseEntityView(resultMap, PermissionsUtil.getInstance().getPermissionsArray(type, initData.getUser()))).build():

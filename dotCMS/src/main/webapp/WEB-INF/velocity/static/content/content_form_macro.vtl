@@ -107,12 +107,15 @@
 </div>
 
 #elseif(($structures.haveEditPermision($structure, null) || ($UtilMethods.isSet($user) && $structures.haveEditPermision($structure, $user))) && $_hasEditPermissionOnContent)
+    #set($formId = "form_" + $date.getSystemDate().getTime())
 
-	<dot-form></dot-form>
+	<dot-form id="$formId"></dot-form>
     <!-- This file will depend of where you build this custom elementa -->
     <script src="/custom-elements/dotcmsfields.js"></script>
     <script type="text/javascript">
-        function submitContent(event) {
+
+        document.getElementById('$formId').layout = $structures.getLayoutAsJson($structure, $user);
+        document.getElementById('$formId').addEventListener('onSubmit', function (event) {
             event.preventDefault();
             fetch('/api/content/save/1', {
                 method: 'POST',
@@ -128,12 +131,7 @@
             .then((data) => {
                 console.log(data);
             });
-        }
-
-        const layout = $structures.getLayoutAsJson($structure, $user);
-        const dotFormEl = document.querySelector('dot-form');
-        dotFormEl.layout = layout;
-        dotFormEl.addEventListener('onSubmit', submitContent);
+        });
     </script>
 
 #elseif($UtilMethods.isSet($user) && !$structures.haveEditPermision($structure, $user))
