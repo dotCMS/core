@@ -1185,7 +1185,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 		for (int i = 0; i < schemes.size(); ++i) {
 
-			builder.append(schemes.get(i).getId());
+			builder.append("?");
 			if (i < schemes.size() -1) {
 
 				builder.append(",");
