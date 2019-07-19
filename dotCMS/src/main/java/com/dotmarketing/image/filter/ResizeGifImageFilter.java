@@ -69,7 +69,12 @@ public class ResizeGifImageFilter extends ImageFilter {
     final BufferedImageOp resampler = new ResampleOp(width, height, ResampleOp.FILTER_TRIANGLE);
     final GifDecoder decoder = new GifDecoder();
     decoder.read(inputFile.getAbsolutePath());
-
+    if(decoder.getFrameCount()==1) {
+      BufferedImage output = resampler.filter(ImageIO.read(inputFile), null);
+      ImageIO.write(output, "png", outputFile);
+      return;
+    }
+    
     
     
     
@@ -81,7 +86,7 @@ public class ResizeGifImageFilter extends ImageFilter {
       animatedGif.setRepeat(loop);
       animatedGif.setSize(width, height);
       animatedGif.setQuality(20);
-      animatedGif.setTransparent(Color.WHITE, false);
+      //animatedGif.setTransparent(Color.WHITE, false);
       for (int i = 0; i < frames; i++) {
 
         BufferedImage frame = decoder.getFrame(i); // frame i
