@@ -1,14 +1,26 @@
 package com.dotmarketing.portlets.containers.business;
 
+import static com.dotcms.util.FunctionUtils.ifOrElse;
+import static com.dotmarketing.util.StringUtils.builder;
+
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.google.common.collect.ImmutableList;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.transform.TransformerLocator;
-import com.dotmarketing.beans.*;
+import com.dotmarketing.beans.ContainerStructure;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.Inode.Type;
-import com.dotmarketing.business.*;
+import com.dotmarketing.beans.VersionInfo;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.IdentifierAPI;
+import com.dotmarketing.business.IdentifierCache;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -26,15 +38,23 @@ import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.Constants;
+import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PaginatedArrayList;
+import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
-
-import static com.dotcms.util.FunctionUtils.ifOrElse;
-import static com.dotmarketing.util.StringUtils.builder;
 
 public class ContainerFactoryImpl implements ContainerFactory {
 
@@ -318,11 +338,10 @@ public class ContainerFactoryImpl implements ContainerFactory {
 
 	private boolean containsContentType (final FileAssetContainer fileAssetContainer, final String velocityVarName) {
 
-		return UtilMethods.isSet(fileAssetContainer.getContainerStructuresAssets())?
-				fileAssetContainer.getContainerStructuresAssets().stream()
-						.filter(fileAsset -> null != fileAsset.getFileName())
-						.anyMatch(fileAsset -> fileAsset.getFileName().equalsIgnoreCase(velocityVarName)):
-				false;
+		return UtilMethods.isSet(fileAssetContainer.getContainerStructuresAssets())
+				&& fileAssetContainer.getContainerStructuresAssets().stream()
+				.filter(fileAsset -> null != fileAsset.getFileName())
+				.anyMatch(fileAsset -> fileAsset.getFileName().equalsIgnoreCase(velocityVarName));
 	}
 
 	private List<Container> filterFileAssetContainersByContentType (final List<Container> containers, final String contentTypeId, final User user) throws DotDataException, DotSecurityException {

@@ -1,0 +1,52 @@
+# https://docs.docker.com/compose/compose-file/compose-versioning/
+version: "3.7"
+
+# https://docs.docker.com/compose/compose-file/
+
+#volumes:
+#  db:
+#  reports:
+#  logs:
+
+networks:
+  db_net:
+
+services:
+
+  integration-tests:
+    build:
+      context: .
+      args:
+        BUILD_FROM: COMMIT
+        BUILD_ID: origin/master
+        DB_TYPE: postgres
+        LICENSE_KEY: ${LICENSE_KEY}
+    depends_on:
+      - database
+    volumes:
+      - type: bind
+        source: ./reports
+        target: /custom/reports
+      - type: bind
+        source: ./logs
+        target: /custom/logs
+#      - type: bind
+#        source: ./license/license.dat
+#        target: /custom/dotsecure/license/license.dat
+    networks:
+      - db_net
+
+  # https://hub.docker.com/_/postgres
+  database:
+    image: "postgres:9-alpine"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: dotcms
+    ports:
+      - "15432:5432"
+    volumes:
+#      - db:/var/lib/postgresql/data
+      - ./setup/init-scripts/postgres:/docker-entrypoint-initdb.d/
+    networks:
+      - db_net
