@@ -1,14 +1,16 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render.page;
 
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
-import com.dotmarketing.portlets.personas.model.Persona;
 import com.google.common.collect.ImmutableMap;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -23,9 +25,16 @@ public class ViewAsPageStatusSerializer extends JsonSerializer<ViewAsPageStatus>
 
         if (viewAsPageStatus.getPersona() != null) {
 
-            final Map personaMap = new HashMap(Persona.class.cast(viewAsPageStatus.getPersona()).getMap());
-            personaMap.put("personalized", viewAsPageStatus.isPersonalized());
-            viewAsMapBuilder.put("persona", personaMap);
+            try {
+
+                final Map personaMap = ContentletUtil.getContentPrintableMap(APILocator.systemUser(),
+                        (Contentlet)viewAsPageStatus.getPersona());
+                personaMap.put("personalized", viewAsPageStatus.isPersonalized());
+                viewAsMapBuilder.put("persona", personaMap);
+            } catch (DotDataException e) {
+
+                throw new IOException(e);
+            }
         }
 
         viewAsMapBuilder.put("language", viewAsPageStatus.getLanguage());
