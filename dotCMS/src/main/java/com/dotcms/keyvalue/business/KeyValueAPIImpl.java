@@ -137,9 +137,6 @@ public class KeyValueAPIImpl implements KeyValueAPI {
 
         final List<KeyValue> result = queryKeyValues(key, languageId, contentType, user, live, respectFrontendRoles);
         result.stream().forEach((KeyValue keyValue) -> this.cache.add(languageId, contentType.id(), live, keyValue));
-        //if(result.isEmpty()) {
-          //  this.cache.add404ByLanguageAndContentType(languageId, contentType.id(), key);
-        //}
         return (!result.isEmpty()) ? result.get(0) : null;
     }
 
