@@ -114,10 +114,7 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.structure.transform.ContentletRelationshipsTransformer;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
-import com.dotmarketing.portlets.workflows.model.WorkflowComment;
-import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
-import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
-import com.dotmarketing.portlets.workflows.model.WorkflowTask;
+import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.tag.business.TagAPI;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.ActivityLogger;
@@ -3261,6 +3258,18 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final String lockKey =
                     "ContentletIdentifier:" + (UtilMethods.isSet(contentletIn.getIdentifier()) ? contentletIn.getIdentifier() : UUIDGenerator.generateUuid());
             try {
+
+                final Optional<Contentlet> workflowContentletOpt =
+                        this.checkAndRunAsWorkflow(contentletIn, contentRelationships,
+                                categories, user, respectFrontendRoles, createNewVersion, generateSystemEvent);
+
+                if (workflowContentletOpt.isPresent()) {
+
+                    Logger.info(this, "A Workflow has been ran instead of checkin the contentlet: " +
+                            workflowContentletOpt.get().getIdentifier());
+                    return workflowContentletOpt.get();
+                }
+
                 contentletOut = lockManager.tryLock(lockKey,
                                 () -> internalCheckin(
                                         contentletIn, contentRelationships, categories, user,
@@ -3298,6 +3307,60 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
+    private Optional<Contentlet> checkAndRunAsWorkflow(final Contentlet contentletIn,      final ContentletRelationships contentRelationships,
+                                                       final List<Category> categories,    final User user,
+                                                       final boolean respectFrontendRoles, final boolean createNewVersion,
+                                                       boolean generateSystemEvent) throws DotSecurityException, DotDataException {
+
+        // if already on workflow or has an actionid skip this method.
+        if (this.isWorkflowInProgress(contentletIn) || UtilMethods.isSet(contentletIn.getActionId())) {
+
+            return Optional.empty();
+        }
+
+        final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
+        // note: by now we are just using the new system action, even if the contentlet already exists.
+        // in the future if the contentlet exist, EDIT should be catch
+        final Optional<WorkflowAction> workflowActionOpt =
+                workflowAPI.findActionMappedBySystemActionContentlet
+                        (contentletIn, WorkflowAPI.SystemAction.NEW, user);
+
+        if (workflowActionOpt.isPresent()) {
+
+            final String title    = contentletIn.getTitle();
+            final String actionId = workflowActionOpt.get().getId();
+            Logger.info(this, ()->"The contentlet: " + title + " hasn't action id set"
+                            + " using the default action: " + actionId);
+
+            // if the action has a save action, we skip the current checkin
+            if (workflowAPI.hasSaveActionlet(workflowActionOpt.get())) {
+
+                Logger.info(this, ()->"The action: " + actionId + " has a save contentlet actionlet"
+                        + " so firing a workflow and skipping the current checkin for the contentlet: " + title);
+
+                return Optional.ofNullable(workflowAPI.fireContentWorkflow(contentletIn,
+                        new ContentletDependencies.Builder().workflowActionId(actionId)
+                            .modUser(user).categories(categories).relationships(contentRelationships)
+                            .respectAnonymousPermissions(respectFrontendRoles)
+                            .generateSystemEvent(generateSystemEvent)
+                        .build()
+                ));
+            }
+
+            Logger.info(this, ()->"The action: " + actionId + " hasn't a save contentlet actionlet"
+                    + " so including just the action to the contentlet: " + title);
+
+            contentletIn.setActionId(actionId);
+        }
+
+        return Optional.empty();
+    }
+
+    private boolean isWorkflowInProgress (final Contentlet contentlet) {
+
+        return null != contentlet.getMap().get(Contentlet.WORKFLOW_IN_PROGRESS) &&
+                Boolean.TRUE.equals(contentlet.getMap().get(Contentlet.WORKFLOW_IN_PROGRESS));
+    }
 
     private Contentlet internalCheckin(Contentlet contentlet,
             ContentletRelationships contentRelationships, List<Category> cats,
