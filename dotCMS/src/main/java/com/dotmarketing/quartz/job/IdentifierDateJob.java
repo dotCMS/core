@@ -156,7 +156,7 @@ public class IdentifierDateJob implements Job {
 	/**
 	 * Setup the job and trigger it immediately
 	 * 
-	 * @param ContentType {@link ContentType}
+	 * @param type {@link ContentType}
 	 * @param user      {@link User}
 
 	 */

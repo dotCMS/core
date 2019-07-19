@@ -55,6 +55,7 @@ import java.util.NoSuchElementException;
 import java.util.Random;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -309,6 +310,18 @@ public class UtilMethods {
 
         return (x.length() > 0);
 
+    }
+
+    /**
+     * If argument instance is set, returns it otherwise will invoke the supplier to get the default value
+     * @param instance
+     * @param supplier
+     * @param <T>
+     * @return T
+     */
+    public static <T> T get(final T instance, final Supplier<T> supplier) {
+
+        return isSet(instance)? instance : supplier.get();
     }
 
     public static final boolean isSet(java.util.Date x) {
