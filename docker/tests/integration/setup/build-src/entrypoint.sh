@@ -16,11 +16,16 @@ if [[ "${1}" == "dotcms" || -z "${1}" ]]; then
        exit 1
     fi
 
+    if [ ! -z "${TEST_PARAMS_ENV}" ]
+    then
+        echo "Running integration tests with extra parameters [${TEST_PARAMS_ENV}]"
+    fi
+
     echo "Running for database: [${DB_TYPE_ENV}]"
     export databaseType=${DB_TYPE_ENV}
 
     cd /build/src/core/dotCMS \
-    && ./gradlew integrationTest
+    && ./gradlew integrationTest ${TEST_PARAMS_ENV}
 
     # Required code, without it gradle will exit 1 killing the docker container
     if [ $? -eq 0 ]
