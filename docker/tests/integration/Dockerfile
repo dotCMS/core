@@ -24,6 +24,10 @@ ARG BUILD_ID=origin/master
 #  In order to run the integration test a license must be provided
 ARG LICENSE_KEY
 
+#  Disabled the gradle debug by default
+ARG TEST_PARAMS=""
+ENV TEST_PARAMS_ENV=${TEST_PARAMS}
+
 #  One of ["postgres", "mysql", "oracle", "mssql"]
 ARG DB_TYPE=postgres
 ENV DB_TYPE_ENV=${DB_TYPE}
