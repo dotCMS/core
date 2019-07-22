@@ -268,6 +268,7 @@ public class TaskLocatorUtil {
 		ret.add(Task05080RecreateIdentifierIndex.class);
 		ret.add(Task05150CreateIndicesForContentVersionInfoMSSQL.class);
 		ret.add(Task05160MultiTreeAddPersonalizationColumnAndChangingPK.class);
+		ret.add(Task05170DefineFrontEndAndBackEndRoles.class);
 
 		return ret;
 	}
