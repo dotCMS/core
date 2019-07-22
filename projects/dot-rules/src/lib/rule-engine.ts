@@ -49,8 +49,8 @@ const I8N_BASE = 'api.sites.ruleengine';
   </div>
   <div class="cw-rule-engine__empty" *ngIf="!rules.length">
       <i class="material-icons">tune</i>
-      <h2>{{rsrc('inputs.no.rules') | async }} {{rsrc(pageId ? 'inputs.on.page' : 'inputs.on.site') | async}} {{rsrc('inputs.add.one.now') | async}}</h2>
-      <span *ngIf="pageId">{{rsrc('inputs.page.rules.fired.every.time') | async}}</span>
+      <h2>{{rsrc('inputs.no.rules') | async }} {{rsrc((pageId && !isContentletHost) ? 'inputs.on.page' : 'inputs.on.site') | async}}{{rsrc('inputs.add.one.now') | async}}</h2>
+      <span *ngIf="pageId && !isContentletHost">{{rsrc('inputs.page.rules.fired.every.time') | async}}</span>
       <button pButton label="{{rsrc('inputs.addRule.label') | async}}" (click)="addRule()" icon="fa fa-plus"></button>
   </div>
   <rule *ngFor="let rule of rules" [rule]="rule" [hidden]="isFiltered(rule) == true"
@@ -91,6 +91,7 @@ export class RuleEngineComponent {
     @Input() globalError: string;
     @Input() showRules: boolean;
     @Input() pageId: string;
+    @Input() isContentletHost: boolean;
     @Input() conditionTypes: { [key: string]: ServerSideTypeModel } = {};
     @Input() environmentStores: IPublishEnvironment[];
 
