@@ -7,7 +7,7 @@ import com.dotcms.cluster.ClusterUtils;
 import com.dotcms.cluster.business.ClusterAPI;
 import com.dotcms.cluster.business.ReplicasMode;
 import com.dotcms.cluster.business.ServerAPI;
-import com.dotcms.content.elasticsearch.util.DotRestClientProvider;
+import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.org.dts.spell.utils.FileUtils;
 import com.dotmarketing.business.APILocator;
@@ -18,7 +18,6 @@ import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.DateUtil;
-import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.ZipUtil;
@@ -33,8 +32,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -64,7 +61,6 @@ import org.elasticsearch.action.admin.cluster.settings.ClusterGetSettingsRequest
 import org.elasticsearch.action.admin.cluster.settings.ClusterGetSettingsResponse;
 import org.elasticsearch.action.admin.cluster.snapshots.create.CreateSnapshotRequest;
 import org.elasticsearch.action.admin.cluster.snapshots.create.CreateSnapshotResponse;
-import org.elasticsearch.action.admin.cluster.snapshots.delete.DeleteSnapshotRequest;
 import org.elasticsearch.action.admin.cluster.snapshots.get.GetSnapshotsRequest;
 import org.elasticsearch.action.admin.cluster.snapshots.get.GetSnapshotsResponse;
 import org.elasticsearch.action.admin.cluster.snapshots.restore.RestoreSnapshotRequest;
@@ -140,7 +136,7 @@ public class ESIndexAPI {
 	}
 
 	public ESIndexAPI(){
-		this.esclient = DotRestClientProvider.getInstance().getClient();
+		this.esclient = RestHighLevelClientProvider.getInstance().getClient();
 		this.iapi = new ContentletIndexAPIImpl();
 		this.esIndexHelper = ESIndexHelper.INSTANCE;
 		this.serverAPI = APILocator.getServerAPI();

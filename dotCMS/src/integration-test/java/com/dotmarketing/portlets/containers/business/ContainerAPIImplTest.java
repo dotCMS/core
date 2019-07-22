@@ -157,7 +157,6 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
     @Test
     public void test_find_all_containers_success() throws DotDataException, DotSecurityException {
 
-        final Host defaultHost  = APILocator.getHostAPI().findDefaultHost( APILocator.systemUser(), false );
         final ContainerAPI containerAPI = APILocator.getContainerAPI();
         final List<Container> containers = containerAPI.findAllContainers(APILocator.systemUser(), false);
 
@@ -449,7 +448,7 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
                     "</div>\n" +
                     "\n" +
                     "<hr>"));
-            fileAsset.setFileName(title+".vtl");
+            fileAsset.setUnderlyingFileName(title+".vtl");
 
             return workflowAPI.fireContentWorkflow(fileAsset,
                     new ContentletDependencies.Builder()
@@ -494,7 +493,7 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
                     "</div>\n" +
                     "\n" +
                     "<hr>"));
-            fileAsset.setFileName(title+".vtl");
+            fileAsset.setUnderlyingFileName(title+".vtl");
 
             return workflowAPI.fireContentWorkflow(fileAsset,
                     new ContentletDependencies.Builder()
@@ -540,7 +539,7 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
                     "</div>\n" +
                     "\n" +
                     "<hr>"));
-            fileAsset.setFileName(title+".vtl");
+            fileAsset.setUnderlyingFileName(title+".vtl");
 
             return workflowAPI.fireContentWorkflow(fileAsset,
                     new ContentletDependencies.Builder()

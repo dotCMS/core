@@ -296,7 +296,7 @@ public class TempFileResourceTest {
 
       final Response jsonResponse = resource.uploadTempResourceMulti(request, response, (FormDataMultiPart) multipartEntity);
 
-      assertEquals(Status.FORBIDDEN.getStatusCode(), jsonResponse.getStatus());
+      assertEquals(Status.NOT_FOUND.getStatusCode(), jsonResponse.getStatus());
     }finally {
       Config.setProperty(TempFileAPI.TEMP_RESOURCE_ENABLED, tempResourceEnabledOriginalValue);
     }

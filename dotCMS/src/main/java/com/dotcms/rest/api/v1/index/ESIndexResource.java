@@ -1,6 +1,5 @@
 package com.dotcms.rest.api.v1.index;
 
-import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
 import static com.dotcms.util.DotPreconditions.checkArgument;
 
 import com.dotcms.business.CloseDBIfOpened;
@@ -10,7 +9,7 @@ import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESIndexHelper;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
-import com.dotcms.content.elasticsearch.util.DotRestClientProvider;
+import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
@@ -205,7 +204,7 @@ public class ESIndexResource {
         searchSourceBuilder.query(QueryBuilders.matchAllQuery());
         countRequest.source(searchSourceBuilder);
 
-        final CountResponse countResponse = Sneaky.sneak(() -> DotRestClientProvider.getInstance().getClient()
+        final CountResponse countResponse = Sneaky.sneak(() -> RestHighLevelClientProvider.getInstance().getClient()
                 .count(countRequest, RequestOptions.DEFAULT));
 
         return countResponse.getCount();

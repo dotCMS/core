@@ -7,7 +7,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.IntegrationTestBase;
-import com.dotcms.content.elasticsearch.util.DotRestClientProvider;
+import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.DateTimeField;
 import com.dotcms.contenttype.model.field.Field;
@@ -1020,7 +1020,8 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
         searchRequest.source(searchSourceBuilder);
 
         final SearchResponse response = Sneaky.sneak(()->
-                DotRestClientProvider.getInstance().getClient().search(searchRequest, RequestOptions.DEFAULT));
+                RestHighLevelClientProvider
+                        .getInstance().getClient().search(searchRequest, RequestOptions.DEFAULT));
         return response.getHits();
     }
 

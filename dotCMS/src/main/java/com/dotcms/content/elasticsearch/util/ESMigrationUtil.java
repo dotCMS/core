@@ -4,9 +4,7 @@ import com.rainerhahnekamp.sneakythrow.Sneaky;
 import java.util.List;
 
 import org.elasticsearch.action.bulk.BulkRequest;
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
-import org.elasticsearch.client.Client;
 
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImpl;
@@ -62,7 +60,7 @@ public class ESMigrationUtil {
 
 			}
 
-			BulkResponse bulkResponse = Sneaky.sneak(() -> DotRestClientProvider.getInstance().getClient()
+			BulkResponse bulkResponse = Sneaky.sneak(() -> RestHighLevelClientProvider.getInstance().getClient()
 					.bulk(request, RequestOptions.DEFAULT));
 
 			if (bulkResponse.hasFailures()) {

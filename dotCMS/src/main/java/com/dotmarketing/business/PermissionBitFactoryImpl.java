@@ -7,7 +7,7 @@ import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.lock.IdentifierStripedLock;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImpl;
-import com.dotcms.content.elasticsearch.util.DotRestClientProvider;
+import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
@@ -3035,7 +3035,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			    indexAPI.addContentToIndex(cont, false);
 			}
 			if(bulkRequest.numberOfActions()>0) {
-				Sneaky.sneak(()-> DotRestClientProvider.getInstance().getClient()
+				Sneaky.sneak(()-> RestHighLevelClientProvider.getInstance().getClient()
 						.bulk(bulkRequest, RequestOptions.DEFAULT));
 			}
 

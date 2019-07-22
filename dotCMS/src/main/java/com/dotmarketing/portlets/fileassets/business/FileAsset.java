@@ -8,11 +8,13 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.ImageUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import java.awt.Dimension;
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -76,7 +78,7 @@ public class FileAsset extends Contentlet implements IFileAsset {
 	}
 
 	public String getParent() {
-		if ("SYSTEM_FOLDER".equals(getFolder())) {
+		if (FolderAPI.SYSTEM_FOLDER.equals(getFolder())) {
 			return getHost();
 		} else {
 			return getFolder();
@@ -118,18 +120,40 @@ public class FileAsset extends Contentlet implements IFileAsset {
         return fileDimension.width;
     }
 
-	public void setFileName(String name) {
+	/**
+	 * This access the physical file on disk
+	 * @param name
+	 */
+	public void setUnderlyingFileName(String name) {
 	    File ff=getFileAsset();
 	    ff.renameTo(new File(ff.getParent(),name));
 	}
 
+	/**
+	 * This access the physical file on disk
+	 * @return
+	 */
+	public String getUnderlyingFileName() {
+		final File fileAsset = getFileAsset();
+		return fileAsset != null ? fileAsset.getName(): null;
+	}
+
+	/***
+	 * This access the logical file name stored on the table Identifier
+	 * @return
+	 */
 	public String getFileName() {
-		File f = getFileAsset();
-		return (f!=null)?f.getName(): null;
+		try {
+			return UtilMethods.isSet(getIdentifier()) ?
+			  APILocator.getIdentifierAPI().find(getIdentifier()).getAssetName()
+			  : StringPool.BLANK;
+		} catch (DotDataException e) {
+		   throw new DotRuntimeException(e);
+		}
 	}
 
 	public String getMimeType() {
-		String mimeType = APILocator.getFileAssetAPI().getMimeType(getFileName());
+		String mimeType = APILocator.getFileAssetAPI().getMimeType(getUnderlyingFileName());
 
 
 		if (mimeType == null || UNKNOWN_MIME_TYPE.equals(mimeType)){
@@ -230,7 +254,7 @@ public class FileAsset extends Contentlet implements IFileAsset {
 	}
 
 	 public String getExtension(){
-		 return UtilMethods.getFileExtension(getFileName());
+		 return UtilMethods.getFileExtension(getUnderlyingFileName());
 
 	 }
 
@@ -280,7 +304,7 @@ public class FileAsset extends Contentlet implements IFileAsset {
 	public String getURI() throws DotDataException {
 		return UtilMethods.isSet(getIdentifier()) ?
 		        APILocator.getIdentifierAPI().find(getIdentifier()).getURI()
-		       : "";
+		       : StringPool.BLANK;
 
 	}
 

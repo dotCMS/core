@@ -393,7 +393,7 @@ public class WebAPI implements ViewTool {
 		  String conInode = (PREVIEW_MODE && EDIT_MODE) ? cvi.getWorkingInode() : cvi.getLiveInode();
 		  FileAsset file  = APILocator.getFileAssetAPI().fromContentlet(APILocator.getContentletAPI().find(conInode,  user, true));
 		  
-		  return APILocator.getFileAssetAPI().getRealAssetPath(conInode, file.getFileName());
+		  return APILocator.getFileAssetAPI().getRealAssetPath(conInode, file.getUnderlyingFileName());
 
 		}catch (Exception e) {
 			Logger.warn(this, e.getMessage());

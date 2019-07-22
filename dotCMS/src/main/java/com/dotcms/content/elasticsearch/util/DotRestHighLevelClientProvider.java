@@ -60,9 +60,9 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Default high level client to handle API requests in Elastic
  */
-public class DotRestHighLevelClient extends DotRestClientProvider {
+public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider {
 
-    public DotRestHighLevelClient() {
+    public DotRestHighLevelClientProvider() {
         super();
     }
 
@@ -83,7 +83,7 @@ public class DotRestHighLevelClient extends DotRestClientProvider {
                 loadCredentials();
 
             } catch (IOException | GeneralSecurityException e) {
-                Logger.error(DotRestHighLevelClient.class,
+                Logger.error(DotRestHighLevelClientProvider.class,
                         "Error setting credentials for Elastic RestHighLevel Client", e);
             }
         }
@@ -104,7 +104,7 @@ public class DotRestHighLevelClient extends DotRestClientProvider {
                         new UsernamePasswordCredentials(
                                 Config.getStringProperty("ES_AUTH_BASIC_USER", null),
                                 Config.getStringProperty("ES_AUTH_BASIC_PASSWORD", null)));
-                Logger.info(DotRestHighLevelClient.class,
+                Logger.info(DotRestHighLevelClientProvider.class,
                         "Initializing Elastic RestHighLevelClient using Basic authentication");
             }
 
@@ -132,7 +132,7 @@ public class DotRestHighLevelClient extends DotRestClientProvider {
             if (esAuthType.equals(JWT_AUTH_TYPE)) {
                 clientBuilder.setDefaultHeaders(new Header[]{new BasicHeader("Authorization",
                         "Bearer " + Config.getStringProperty("ES_AUTH_JWT_TOKEN", null))});
-                Logger.info(DotRestHighLevelClient.class,
+                Logger.info(DotRestHighLevelClientProvider.class,
                         "Initializing Elastic RestHighLevelClient using JWT authentication");
             }
         }
@@ -152,7 +152,7 @@ public class DotRestHighLevelClient extends DotRestClientProvider {
                     .loadTrustMaterial(PemReader.loadTrustStore(
                             Paths.get(serverCertPath).toFile()), null)
                     .build();
-            Logger.info(DotRestHighLevelClient.class,
+            Logger.info(DotRestHighLevelClientProvider.class,
                     "Initializing Elastic RestHighLevelClient using TLS certificates");
         }
 

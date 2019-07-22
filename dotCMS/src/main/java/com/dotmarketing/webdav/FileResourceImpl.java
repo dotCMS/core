@@ -122,7 +122,7 @@ public class FileResourceImpl implements FileResource, LockableResource {
 	}
 
 	public String getContentType(String accepts) {
-		return fileAssetAPI.getMimeType(file.getFileName());
+		return fileAssetAPI.getMimeType(file.getUnderlyingFileName());
 	}
 
 	public Date getModifiedDate() {

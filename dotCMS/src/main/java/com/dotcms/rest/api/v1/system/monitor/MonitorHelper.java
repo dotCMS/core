@@ -3,7 +3,7 @@ package com.dotcms.rest.api.v1.system.monitor;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
-import com.dotcms.content.elasticsearch.util.DotRestClientProvider;
+import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import javax.ws.rs.InternalServerErrorException;
@@ -19,7 +19,6 @@ import com.dotmarketing.util.*;
 import com.liferay.util.StringPool;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.client.Client;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -146,7 +145,7 @@ class MonitorHelper {
                         searchRequest.source(searchSourceBuilder);
 
                         final SearchResponse response = Sneaky.sneak(()->
-                                DotRestClientProvider.getInstance().getClient().search(searchRequest,
+                                RestHighLevelClientProvider.getInstance().getClient().search(searchRequest,
                                         RequestOptions.DEFAULT));
                         return response.getHits().getTotalHits()>0;
                     }finally{

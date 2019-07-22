@@ -4,7 +4,7 @@ import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATI
 import static com.dotmarketing.common.reindex.ReindexThread.ELASTICSEARCH_CONCURRENT_REQUESTS;
 import static com.dotmarketing.util.StringUtils.builder;
 
-import com.dotcms.content.elasticsearch.util.DotRestClientProvider;
+import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.common.reindex.BulkProcessorListener;
 import com.dotmarketing.util.DateUtil;
@@ -518,10 +518,10 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             bulkRequest.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
 
             if (listener != null) {
-                DotRestClientProvider.getInstance()
+                RestHighLevelClientProvider.getInstance()
                         .getClient().bulkAsync(bulkRequest, RequestOptions.DEFAULT, listener);
             } else {
-                BulkResponse response = Sneaky.sneak(() -> DotRestClientProvider.getInstance().getClient()
+                BulkResponse response = Sneaky.sneak(() -> RestHighLevelClientProvider.getInstance().getClient()
                         .bulk(bulkRequest, RequestOptions.DEFAULT));
 
                 if (response != null && response.hasFailures()) {
@@ -556,7 +556,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     public BulkProcessor createBulkProcessor(final BulkProcessorListener bulkProcessorListener) {
         BulkProcessor.Builder builder = BulkProcessor.builder(
                 (request, bulkListener) ->
-                        DotRestClientProvider.getInstance().getClient()
+                        RestHighLevelClientProvider.getInstance().getClient()
                                 .bulkAsync(request, RequestOptions.DEFAULT, bulkListener),
                 bulkProcessorListener);
 
@@ -891,7 +891,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         }
 
         bulkRequest.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
-        Sneaky.sneak(() -> DotRestClientProvider.getInstance().getClient()
+        Sneaky.sneak(() -> RestHighLevelClientProvider.getInstance().getClient()
                 .bulk(bulkRequest, RequestOptions.DEFAULT));
     }
 
@@ -967,7 +967,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         request.setQuery(QueryBuilders.matchQuery("contenttype",structureName.toLowerCase()));
         request.setTimeout(new TimeValue(INDEX_OPERATIONS_TIMEOUT_IN_MS));
 
-        BulkByScrollResponse response = Sneaky.sneak(() -> DotRestClientProvider.getInstance().getClient()
+        BulkByScrollResponse response = Sneaky.sneak(() -> RestHighLevelClientProvider.getInstance().getClient()
                 .deleteByQuery(request, RequestOptions.DEFAULT));
 
         Logger.info(this, "Records deleted: " +
