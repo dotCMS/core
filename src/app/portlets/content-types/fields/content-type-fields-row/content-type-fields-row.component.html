@@ -2,28 +2,30 @@
     <span class="row-header__drag"></span>
 </div>
 <div class="row-columns">
-    <span
-        *ngFor="let column of fieldRow.columns"
+    <div
+        *ngFor="let column of fieldRow.columns; let i = index"
         [class.empty]="!column.fields.length"
         [(dragulaModel)]="column.fields"
-        [style.width]="getColumnWidth()"
         class="row-columns__item"
         data-drag-type="target"
-        dragula="fields-bag">
+        dragula="fields-bag"
+    >
+        <dot-icon-button-tooltip
+            tiny
+            *ngIf="!column.fields.length"
+            class="row-header__remove"
+            icon="delete"
+            [tooltipText]="i18nMessages['contenttypes.action.delete']"
+            (click)="remove(i)"
+        >
+        </dot-icon-button-tooltip>
 
         <dot-content-type-field-dragabble-item
             *ngFor="let field of column.fields"
             [field]="field"
             (remove)="onRemoveField($event)"
-            (edit)="this.editField.emit(field)">
+            (edit)="this.editField.emit(field)"
+        >
         </dot-content-type-field-dragabble-item>
-    </span>
-    <dot-icon-button-tooltip
-        tiny
-        *ngIf="rowHaveFields(fieldRow)"
-        class="row-header__remove"
-        icon="delete"
-        [tooltipText]="i18nMessages['contenttypes.action.delete']"
-        (click)="onRemoveFieldRow()">
-    </dot-icon-button-tooltip>
+    </div>
 </div>

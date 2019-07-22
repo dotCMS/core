@@ -36,8 +36,6 @@ mockFieldRow.columns[1].fields = [
     }
 ];
 
-const mockFieldRowFieldEmpty: DotCMSContentTypeLayoutRow = FieldUtil.createFieldRow(2);
-
 @Component({
     selector: 'dot-content-type-field-dragabble-item',
     template: ''
@@ -149,35 +147,81 @@ describe('ContentTypeFieldsRowComponent', () => {
         });
 
         it('should not show the remove row button', () => {
-            const removeRowButon = de.query(By.css('.row-header__remove'));
-            expect(removeRowButon === null).toBe(true);
+            const removeButon = de.query(By.css('.row-header__remove'));
+            expect(removeButon === null).toBe(true);
         });
     });
 
-    describe('remove rows', () => {
-        beforeEach(() => {
-            hostComp.setData(mockFieldRowFieldEmpty);
-            hostFixture.detectChanges();
-        });
-
-        it('should show remove row button', () => {
-            const removeRowButon = de.query(By.css('.row-header__remove'));
-            expect(removeRowButon !== null).toBe(true);
-        });
-
-        it('should emit row remove event with no confirmation dialog', () => {
-            spyOn(dotDialogService, 'confirm');
-
-            let result;
-            comp.removeRow.subscribe((rowToRemove: DotCMSContentTypeLayoutRow) => {
-                result = rowToRemove;
+    describe('remove', () => {
+        describe('row', () => {
+            beforeEach(() => {
+                const mock: DotCMSContentTypeLayoutRow = FieldUtil.createFieldRow(1);
+                hostComp.setData(mock);
+                hostFixture.detectChanges();
+                spyOn(dotDialogService, 'confirm');
             });
 
-            const removeRowButon = de.query(By.css('.row-header__remove'));
-            removeRowButon.nativeElement.click();
+            it('should show 1 remove button', () => {
+                const removeButon = de.queryAll(By.css('.row-header__remove'));
+                expect(removeButon.length).toBe(1);
+            });
 
-            expect(comp.fieldRow).toEqual(result);
-            expect(dotDialogService.confirm).not.toHaveBeenCalled();
+            it('should emit row remove event with no confirmation dialog', () => {
+                let result;
+                comp.removeRow.subscribe((rowToRemove: DotCMSContentTypeLayoutRow) => {
+                    result = rowToRemove;
+                });
+
+                const removeRowButon = de.query(By.css('.row-header__remove'));
+                removeRowButon.nativeElement.click();
+
+                expect(result).toEqual(comp.fieldRow);
+                expect(dotDialogService.confirm).not.toHaveBeenCalled();
+            });
+        });
+
+        describe('columns', () => {
+            beforeEach(() => {
+                const mock: DotCMSContentTypeLayoutRow = FieldUtil.createFieldRow(2);
+                hostComp.setData(mock);
+                hostFixture.detectChanges();
+            });
+
+            it('should show 2 remove button', () => {
+                const removeButon = de.queryAll(By.css('.row-header__remove'));
+                expect(removeButon.length).toBe(2);
+            });
+
+            it('should emit remove field event', () => {
+                comp.fieldRow.columns[0].columnDivider.id = 'test';
+
+                let result;
+                comp.removeField.subscribe((col: DotCMSContentTypeField) => {
+                    result = col;
+                });
+
+                const removeRowButon = de.query(By.css('.row-header__remove'));
+                removeRowButon.nativeElement.click();
+
+                expect(result.clazz).toEqual(
+                    'com.dotcms.contenttype.model.field.ImmutableColumnField'
+                );
+            });
+
+            it('should remove column from local row and no emit', () => {
+                let result;
+                comp.removeField.subscribe((col: DotCMSContentTypeField) => {
+                    result = col;
+                });
+
+                expect(comp.fieldRow.columns.length).toBe(2);
+
+                const removeRowButon = de.query(By.css('.row-header__remove'));
+                removeRowButon.nativeElement.click();
+
+                expect(comp.fieldRow.columns.length).toBe(1);
+                expect(result).toBeUndefined();
+            });
         });
     });
 });

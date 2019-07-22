@@ -3,8 +3,8 @@ import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
 import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from 'dotcms-models';
 import { DotMessageService } from '@services/dot-messages-service';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm';
-import { DotCMSContentTypeLayoutColumn } from 'dotcms-models';
 import { take } from 'rxjs/operators';
+import { FieldUtil } from '../util/field-util';
 
 /**
  * Display all the Field Types
@@ -23,8 +23,10 @@ export class ContentTypeFieldsRowComponent implements OnInit {
 
     @Output()
     editField: EventEmitter<DotCMSContentTypeField> = new EventEmitter();
+
     @Output()
     removeField: EventEmitter<DotCMSContentTypeField> = new EventEmitter();
+
     @Output()
     removeRow: EventEmitter<DotCMSContentTypeLayoutRow> = new EventEmitter();
 
@@ -84,35 +86,34 @@ export class ContentTypeFieldsRowComponent implements OnInit {
     }
 
     /**
-     * Return the width for each column
+     * Handle remove row event or remove column
      *
-     * @returns string Return the column's width width '%', for example, '30%'
+     * @param {DotCMSContentTypeLayoutColumn} [column]
      * @memberof ContentTypeFieldsRowComponent
      */
-    getColumnWidth(): string {
-        const nColumns = this.fieldRow.columns.length;
-        return `${100 / nColumns}%`;
+    remove(index: number): void {
+        if (this.hasMoreThanOneColumn()) {
+            this.removeColumn(index);
+        } else {
+            this.removeRow.emit(this.fieldRow);
+        }
     }
 
-    /**
-     * Tigger the removeRow event whit the current FieldRow
-     *
-     * @memberof ContentTypeFieldsRowComponent
-     */
-    onRemoveFieldRow(): void {
-        this.removeRow.emit(this.fieldRow);
+    private removeColumn(index: number): void {
+        const field = this.fieldRow.columns[index].columnDivider;
+
+        if (FieldUtil.isNewField(field)) {
+            this.removeLocalColumn(index);
+        } else {
+            this.removeField.emit(field);
+        }
     }
 
-    /**
-     * Check if a given row have fields in any of the columns
-     *
-     * @param DotContentTypeLayoutDivider row
-     * @returns boolean
-     * @memberof ContentTypeFieldsRowComponent
-     */
-    rowHaveFields(row: DotCMSContentTypeLayoutRow): boolean {
-        return row.columns
-            .map((column: DotCMSContentTypeLayoutColumn) => column.fields.length)
-            .every((fieldsNumber: number) => fieldsNumber === 0);
+    private removeLocalColumn(index: number): void {
+        this.fieldRow.columns.splice(index, 1);
+    }
+
+    private hasMoreThanOneColumn(): boolean {
+        return this.fieldRow.columns.length > 1;
     }
 }

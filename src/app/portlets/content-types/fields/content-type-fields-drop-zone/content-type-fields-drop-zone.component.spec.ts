@@ -262,7 +262,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
 
         comp.removeFields.subscribe((removeFields) => (fieldsToRemove = removeFields));
 
-        comp.removeFieldRow(fieldRow);
+        comp.removeFieldRow(fieldRow, 0);
 
         expect([fieldRow.divider, fieldRow.columns[0].columnDivider, field]).toEqual(
             fieldsToRemove
@@ -276,7 +276,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         comp.fieldRows = [fieldRow1, fieldRow2];
 
         spyOn(comp.removeFields, 'emit');
-        comp.removeFieldRow(fieldRow2);
+        comp.removeFieldRow(fieldRow2, 1);
 
         expect(comp.removeFields.emit).toHaveBeenCalledTimes(0);
         expect(comp.fieldRows).toEqual([fieldRow1]);

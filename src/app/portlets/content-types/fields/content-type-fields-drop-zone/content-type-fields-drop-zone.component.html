@@ -5,13 +5,13 @@
         dragula="fields-row-bag"
         [attr.disabled]="loading"
     >
-        <ng-template ngFor let-row [ngForOf]="fieldRows">
+        <ng-template ngFor let-row let-i="index" [ngForOf]="fieldRows">
             <dot-content-type-fields-row
                 *ngIf="row.columns && row.columns.length;else tab_container"
                 [fieldRow]="row"
                 (editField)="editFieldHandler($event)"
                 (removeField)="removeField($event)"
-                (removeRow)="removeFieldRow($event)"
+                (removeRow)="removeFieldRow($event, i)"
             >
             </dot-content-type-fields-row>
 
@@ -20,7 +20,7 @@
                     class="row-header__drag"
                     [fieldTab]="row"
                     (editTab)="saveFieldsHandler($event)"
-                    (removeTab)="removeTab($event)"
+                    (removeTab)="removeTab($event, i)"
                 >
                 </dot-content-type-fields-tab>
             </ng-template>

@@ -56,8 +56,10 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
 
     @Output()
     saveFields = new EventEmitter<DotCMSContentTypeLayoutRow[]>();
+
     @Output()
     editField = new EventEmitter<DotCMSContentTypeField>();
+
     @Output()
     removeFields = new EventEmitter<DotCMSContentTypeField[]>();
 
@@ -318,13 +320,13 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
      * @param {DotCMSContentTypeLayoutRow} fieldRow
      * @memberof ContentTypeFieldsDropZoneComponent
      */
-    removeFieldRow(fieldRow: DotCMSContentTypeLayoutRow): void {
-        this.fieldRows.splice(this.fieldRows.indexOf(fieldRow), 1);
+    removeFieldRow(fieldRow: DotCMSContentTypeLayoutRow, index: number): void {
+        this.fieldRows.splice(index, 1);
         const fieldsToDelete: DotCMSContentTypeField[] = [];
 
         if (!FieldUtil.isNewField(fieldRow.divider)) {
             fieldsToDelete.push(fieldRow.divider);
-            fieldRow.columns.forEach((fieldColumn) => {
+            fieldRow.columns.forEach((fieldColumn: DotCMSContentTypeLayoutColumn) => {
                 fieldsToDelete.push(fieldColumn.columnDivider);
                 fieldColumn.fields.forEach((field) => fieldsToDelete.push(field));
             });
@@ -337,8 +339,8 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
      * @param {DotCMSContentTypeLayoutRow} fieldTab
      * @memberof ContentTypeFieldsDropZoneComponent
      */
-    removeTab(fieldTab: DotCMSContentTypeLayoutRow): void {
-        this.fieldRows.splice(this.fieldRows.indexOf(fieldTab), 1);
+    removeTab(fieldTab: DotCMSContentTypeLayoutRow, index: number): void {
+        this.fieldRows.splice(index, 1);
         this.removeFields.emit([fieldTab.divider]);
     }
 
