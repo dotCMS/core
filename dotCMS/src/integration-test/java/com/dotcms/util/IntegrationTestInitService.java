@@ -54,8 +54,6 @@ public class IntegrationTestInitService {
 
             initCompleted.set(true);
         }
-
-        mockStrutsActionModule();
     }
     
     public void mockStrutsActionModule() {
