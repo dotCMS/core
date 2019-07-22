@@ -13,13 +13,7 @@
 | `layout`       | --               | Layout metada to be rendered                                             | `DotCMSContentTypeLayoutRow[]` | `[]`        |
 | `resetLabel`   | `reset-label`    | (optional) Text to be rendered on Reset button                           | `string`                       | `'Reset'`   |
 | `submitLabel`  | `submit-label`   | (optional) Text to be rendered on Submit button                          | `string`                       | `'Submit'`  |
-
-
-## Events
-
-| Event      | Description | Type                |
-| ---------- | ----------- | ------------------- |
-| `onSubmit` |             | `CustomEvent<void>` |
+| `variable`     | `variable`       | Content type variable name                                               | `string`                       | `''`        |
 
 
 ----------------------------------------------

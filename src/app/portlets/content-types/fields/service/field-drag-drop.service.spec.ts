@@ -23,11 +23,11 @@ class MockDragulaService {
     mock: Subject<any> = new Subject();
 
     dropModel = () => this.mock.asObservable().pipe(by('dropModel'));
+    drop = () => this.mock.asObservable().pipe(by('drop'));
     dragend = () => this.mock.asObservable().pipe(by('dragend'));
     removeModel = () => this.mock.asObservable().pipe(by('removeModel'));
     over = () => this.mock.asObservable().pipe(by('over'));
     out = () => this.mock.asObservable().pipe(by('out'));
-    drop = () => this.mock.asObservable().pipe(by('drop'));
 
     find(): any {
         return null;

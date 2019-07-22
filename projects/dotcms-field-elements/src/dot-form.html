@@ -28,11 +28,6 @@
         <script src="/build/dotcmsfields.js"></script>
         <script>
             const dotFormEl = document.querySelector('dot-form');
-            dotFormEl.addEventListener('onSubmit', (e) => {
-                e.preventDefault();
-                console.log(e);
-            });
-
             const dataFields = [
                 {
                     columns: [
@@ -428,7 +423,6 @@
             ];
 
             dotFormEl.layout = dataFields;
-            // dotFormEl.fieldsToShow = 'state,zipCode';
         </script>
     </body>
 </html>
