@@ -5,7 +5,6 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalization;
 import com.dotcms.contenttype.transform.field.JsonFieldTransformer;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.json.JSONException;
@@ -247,7 +246,7 @@ public class FieldUtil {
         final boolean live = contentTypeInternationalization.isLive();
         final User user = contentTypeInternationalization.getUser();
 
-        for (String propertyName : fieldMap.keySet()) {
+        for (final String propertyName : fieldMap.keySet()) {
             final String key = String.format("%s.%s.%s", contentType.variable(), fieldMap.get("variable"), propertyName);
             final String i18nValue = APILocator.getLanguageVariableAPI().getLanguageVariable(
                     key, languageId, user, live);

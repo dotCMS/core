@@ -256,7 +256,7 @@ public class FieldLayout {
         return contentTypeInternationalization;
     }
 
-    public void setContentTypeInternationalization(ContentTypeInternationalization contentTypeInternationalization) {
+    public void setContentTypeInternationalization(final ContentTypeInternationalization contentTypeInternationalization) {
         this.contentTypeInternationalization = contentTypeInternationalization;
     }
 }

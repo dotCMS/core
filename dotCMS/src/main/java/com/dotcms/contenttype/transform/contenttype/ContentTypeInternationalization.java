@@ -1,12 +1,11 @@
 package com.dotcms.contenttype.transform.contenttype;
 
-import com.dotcms.contenttype.model.type.ContentType;
 import com.liferay.portal.model.User;
 
 public class ContentTypeInternationalization {
-    private long languageId;
-    private boolean live;
-    private User user;
+    private final long languageId;
+    private final boolean live;
+    private final User user;
 
     public ContentTypeInternationalization(
             final long languageId,

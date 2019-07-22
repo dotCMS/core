@@ -3,13 +3,9 @@ package com.dotcms.rest.api.v1.contenttype;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
-import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.layout.FieldLayoutRow;
-import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalization;
 import com.dotcms.contenttype.transform.contenttype.JsonContentTypeTransformer;
-import com.dotcms.contenttype.transform.field.JsonFieldTransformer;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
@@ -39,7 +35,6 @@ import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import java.io.Serializable;
 import java.util.*;
-import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -59,7 +54,6 @@ import javax.ws.rs.core.Response;
 
 import io.vavr.control.Try;
 import org.glassfish.jersey.server.JSONP;
-import sun.reflect.generics.tree.BaseType;
 
 @Path("/v1/contenttype")
 public class ContentTypeResource implements Serializable {

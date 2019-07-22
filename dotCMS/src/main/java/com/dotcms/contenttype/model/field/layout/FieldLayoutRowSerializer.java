@@ -1,8 +1,5 @@
 package com.dotcms.contenttype.model.field.layout;
 
-import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalization;
 import com.dotcms.contenttype.transform.field.JsonFieldTransformer;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
@@ -10,11 +7,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import static com.dotcms.util.CollectionsUtils.map;
 
 /**
  * {@link FieldLayoutRow} serializer, it serialize a json with the follow format:

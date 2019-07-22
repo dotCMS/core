@@ -4,9 +4,6 @@ import static com.dotcms.util.CollectionsUtils.map;
 
 import com.dotcms.contenttype.model.field.ContentTypeFieldProperties;
 import com.dotcms.contenttype.model.field.ImmutableRelationshipField;
-import com.dotcms.contenttype.model.field.layout.FieldUtil;
-import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalization;
 import com.dotmarketing.util.UtilMethods;
 import java.io.IOException;
 import java.util.ArrayList;

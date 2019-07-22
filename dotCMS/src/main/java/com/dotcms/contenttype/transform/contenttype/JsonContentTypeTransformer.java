@@ -2,14 +2,10 @@ package com.dotcms.contenttype.transform.contenttype;
 
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.layout.FieldLayout;
-import com.dotcms.contenttype.model.field.layout.FieldLayoutRow;
 import com.dotcms.contenttype.model.field.layout.FieldUtil;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.JsonTransformer;
 import com.dotcms.contenttype.transform.field.JsonFieldTransformer;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableList;
 import com.dotmarketing.business.DotStateException;
