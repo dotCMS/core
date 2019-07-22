@@ -11,10 +11,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.dotcms.csspreproc.CachedCSS.ImportedAsset;
-import com.dotcms.enterprise.csspreproc.CSSCompiler;
-import com.dotcms.enterprise.csspreproc.DotLibSassCompiler;
-import com.dotcms.enterprise.csspreproc.LessCompiler;
-import com.dotcms.enterprise.csspreproc.SassCompiler;
 import com.dotcms.util.DownloadUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -35,10 +31,7 @@ import com.liferay.portal.model.User;
 public class CSSPreProcessServlet extends HttpServlet {
     private static final long serialVersionUID = -3315180323197314439L;
 
-    private final Class<? extends CSSCompiler> DEFAULT_SASS_COMPILER =  Config.getBooleanProperty("USE_LIBSASS_FOR_SASS_COMPILATION", true) ? DotLibSassCompiler.class :  SassCompiler.class;
-    
-    
-    
+
     
     @Override
     public void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -49,14 +42,11 @@ public class CSSPreProcessServlet extends HttpServlet {
             final User user = WebAPILocator.getUserWebAPI().getLoggedInUser(req);
             final String origURI=req.getRequestURI();
             //final String uri = (origURI.endsWith(".dotsass"))  ? origURI : origURI.replace("/DOTSASS", "").replace("/DOTLESS","");
-            final String fileUri = origURI.replace("/DOTSASS","").replace("/DOTLESS","");
+            final String fileUri = origURI.replace("/DOTSASS","");
 
 
-            // choose compiler based on the request URI
-            final Class<? extends CSSCompiler> compilerClass =  (origURI.startsWith("/DOTLESS/")) ? LessCompiler.class : DEFAULT_SASS_COMPILER;
             
-            
-            CSSCompiler compiler = compilerClass.getConstructor(Host.class,String.class,boolean.class).newInstance(host,fileUri,live);
+            DotLibSassCompiler compiler = new DotLibSassCompiler(host,fileUri,live);
             
             // check if the asset exists
             String actualUri =  fileUri.substring(0, fileUri.lastIndexOf('.')) + "." + compiler.getDefaultExtension();
