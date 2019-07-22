@@ -104,16 +104,17 @@ public class CSSPreProcessServlet extends HttpServlet {
                             compiler.compile();
                         }
                         catch (Throwable ex) {
-                            Logger.error(this, "Error compiling " + host.getHostname() + ":" + fileUri, ex);
-                            if (Config.getBooleanProperty("SHOW_SASS_ERRORS_ON_FRONTEND", true)) {
-                                String err = ex.getMessage();
-                                if (err != null) {
-                                    err = err.replaceAll("io.bit3.jsass.CompilationException: ", "");
-                                    resp.getWriter().println(err);
-                                }
+                          Logger.error(this, "Error compiling " + host.getHostname() + ":" + fileUri, ex);
+                          if (Config.getBooleanProperty("SHOW_SASS_ERRORS_ON_FRONTEND", true)) {
+                            if(userHasEditPerms) {
+                              ex = (ex.getCause()!=null) ? ex.getCause() : ex;
+                              resp.getWriter().print("<html><body><h2>Error compiling sass</h2><p>(this only shows if you are an editor in dotCMS)</p><pre>");
+                              ex.printStackTrace(resp.getWriter());
+                              resp.getWriter().print("</pre></body></html>");
                             }
-                            throw new Exception(ex);
-                        }
+                          }
+                          throw new Exception(ex);
+                      }
                         
                         // build cache object
                         ContentletVersionInfo vinfo = APILocator.getVersionableAPI().getContentletVersionInfo(ident.getId(), defLang);
