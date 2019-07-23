@@ -11,14 +11,26 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-language: java
-sudo: false
 git:
   submodules: false
 
 branches:
   only:
    - /^test-16881.*$/
+
+env:
+  global:
+    - GCLOUD_DIR=${HOME}/gcloud
+    - PATH=${GCLOUD_DIR}/google-cloud-sdk/bin:${PATH}
+    - GOOGLE_CREDENTIALS=${TRAVIS_BUILD_DIR}/credentials.json
+    - CLOUDSDK_CORE_DISABLE_PROMPTS=1
+  matrix:
+    - DB_TYPE=postgres
+    - DB_TYPE=mysql
+
+before_install:
+  - chmod +x travis/environment_vars.sh
+  - chmod +x travis/install_gcloud.sh
 
 install:
   - travis/environment_vars.sh
