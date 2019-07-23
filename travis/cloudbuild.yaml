@@ -1,14 +1,17 @@
 steps:
   # Build the new docker image.
-  - name: 'gcr.io/$GCB_PROJECT_ID/docker-compose'
+  - name: 'gcr.io/$GOOGLE_PROJECT_ID/docker-compose'
     env:
       - 'BUILD_FROM=COMMIT'
       - 'BUILD_ID=$BRANCH_NAME'
       - 'DB_TYPE=$DB_TYPE'
       - 'COMMIT_SHA=$COMMIT_SHA'
+      - 'PROJECT_ID=$GOOGLE_PROJECT_ID'
     args: ['build', '-f', 'postgres-docker-compose.yml', '.']
 
-  - name: 'gcr.io/$GCB_PROJECT_ID/docker-compose'
+  - name: 'gcr.io/$GOOGLE_PROJECT_ID/docker-compose'
+    env:
+      - 'PROJECT_ID=$GOOGLE_PROJECT_ID'
     args: ['up', '-f', 'postgres-docker-compose.yml', '.']
 
 #  - name: 'gcr.io/cloud-builders/docker'
