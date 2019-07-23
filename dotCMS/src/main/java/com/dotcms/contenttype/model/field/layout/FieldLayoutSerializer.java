@@ -1,7 +1,7 @@
 package com.dotcms.contenttype.model.field.layout;
 
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
@@ -10,14 +10,23 @@ import java.io.IOException;
 
 public class FieldLayoutSerializer extends JsonSerializer<FieldLayout> {
 
+    final ObjectMapper MAPPER;
+
+    public FieldLayoutSerializer(){
+        MAPPER = new ObjectMapper();
+    }
+
+    @VisibleForTesting
+    FieldLayoutSerializer(final ObjectMapper mapper){
+        this.MAPPER = mapper;
+    }
+
     @Override
     public void serialize(
             final FieldLayout value,
             final JsonGenerator jsonGenerator,
             final SerializerProvider serializers)
             throws IOException {
-
-        final ObjectMapper MAPPER = new ObjectMapper();
 
         MAPPER.writer()
                 .withAttribute("type", value.getContentType())

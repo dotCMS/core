@@ -11,6 +11,7 @@ import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalizat
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.PageMode;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -277,19 +278,15 @@ public class StructuresWebAPI implements ViewTool {
 	 */
 	public String getLayoutAsJson(final Structure structure, final User user) {
 		try {
-			String languageId = request.getParameter("languageId");
-			if (languageId == null) {
-				languageId = (String) request.getSession().getAttribute(
-						com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE);
-			}
+			final Language language = WebAPILocator.getLanguageWebAPI().getLanguage(request);
 
 			final StructureTransformer transformer = new StructureTransformer(structure);
 			final ContentType contentType = transformer.from();
 
 			final boolean live = (PageMode.get(Try.of(() -> HttpServletRequestThreadLocal.INSTANCE.getRequest()).getOrNull())).showLive;
 
-			final ContentTypeInternationalization contentTypeInternationalization = languageId != null ?
-					new ContentTypeInternationalization(Long.parseLong(languageId), live, user) : null;
+			final ContentTypeInternationalization contentTypeInternationalization = language != null ?
+					new ContentTypeInternationalization(language.getId(), live, user) : null;
 
 			final FieldLayout layout = APILocator.getContentTypeFieldLayoutAPI().getLayout(contentType.id(), user);
 			layout.setContentTypeInternationalization(contentTypeInternationalization);

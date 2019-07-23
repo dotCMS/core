@@ -100,7 +100,7 @@ public interface LanguageVariableAPI {
         return this.getLanguageVariable(key, languageId, user, true);
     }
 
-    public default String getLanguageVariable(final String key, final long languageId, final User user, final boolean live) {
+    default String getLanguageVariable(final String key, final long languageId, final User user, final boolean live) {
 
         return this.get(key, languageId, user, live, Boolean.FALSE);
     }

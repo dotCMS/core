@@ -174,7 +174,7 @@ public class KeyValueAPIImpl implements KeyValueAPI {
             }
 
             query.append((languageId >= 0) ? " +languageId:" + languageId : StringPool.BLANK);
-            query.append(live ? " +live:true" : " +working:true");
+            //query.append(live ? " +live:true" : " +working:true");
             query.append(" +deleted:false");
             List<Contentlet> contentResults =
                             contentletAPI.search(query.toString(), limit, offset, StringPool.BLANK, user, respectFrontendRoles);

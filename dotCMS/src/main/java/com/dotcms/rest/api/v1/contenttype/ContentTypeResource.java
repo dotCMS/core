@@ -264,7 +264,7 @@ public class ContentTypeResource implements Serializable {
 			@PathParam("idOrVar") final String idOrVar,
 			@Context final HttpServletRequest req,
 			@Context final HttpServletResponse res,
-			@QueryParam("language_id") final Long languageId,
+			@QueryParam("languageId") final Long languageId,
 			@QueryParam("live") final Boolean paramLive)
 			throws DotDataException {
 

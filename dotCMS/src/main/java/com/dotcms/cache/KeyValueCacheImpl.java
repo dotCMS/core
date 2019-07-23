@@ -158,7 +158,7 @@ public class KeyValueCacheImpl implements KeyValueCache {
 
         KeyValue keyValue = null;
 
-        try {
+       try {
 
             @SuppressWarnings("unchecked")
             final Map<Long, Map<String, Map<String, KeyValue>>> cachedValues = Map.class.cast(this.cache.get(key, BY_LANGUAGE_CONTENT_TYPE_LIVE_GROUP));

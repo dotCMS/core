@@ -1,7 +1,11 @@
 package com.dotcms.contenttype.transform.contenttype;
 
+import com.dotcms.contenttype.model.type.ContentType;
 import com.liferay.portal.model.User;
 
+/**
+ * Represent the parameters to internationalize {@link ContentType#fields()}
+ */
 public class ContentTypeInternationalization {
     private final long languageId;
     private final boolean live;
