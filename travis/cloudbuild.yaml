@@ -1,0 +1,20 @@
+steps:
+  # Build the new docker image.
+  - name: 'gcr.io/$GCB_PROJECT_ID/docker-compose'
+    env:
+      - 'BUILD_FROM=COMMIT'
+      - 'BUILD_ID=$BRANCH_NAME'
+      - 'DB_TYPE=$DB_TYPE'
+      - 'COMMIT_SHA=$COMMIT_SHA'
+    args: ['build', '-f', 'postgres-docker-compose.yml', '.']
+
+  - name: 'gcr.io/$GCB_PROJECT_ID/docker-compose'
+    args: ['up', '-f', 'postgres-docker-compose.yml', '.']
+
+#  - name: 'gcr.io/cloud-builders/docker'
+#    env:
+#      - 'BRANCH_NAME=$BRANCH_NAME'
+#      - 'COMMIT_SHA=$COMMIT_SHA'
+#    args: [ 'build', '-t', "gcr.io/cicd-246518/dotcms-$BRANCH_NAME-$COMMIT_SHA", '--build-arg', 'BUILD_FROM=COMMIT', '--build-arg', "BUILD_ID=$COMMIT_SHA", '.' ]
+
+timeout: 1800s
