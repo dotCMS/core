@@ -19,10 +19,7 @@ git:
 
 branches:
   only:
-#    - master
-#    - /^test-.*$/
-#    - /^deploy-.*$/
-    - /^test-16881.*$/
+   - /^test-16881.*$/
 
 env:
   - DB_TYPE=postgres
