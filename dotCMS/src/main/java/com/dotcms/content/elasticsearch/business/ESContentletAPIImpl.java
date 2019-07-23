@@ -514,7 +514,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
-    // note: is not annotated with WrapInTransaction b/c it handles his own transaction locally in the methodok
+    // note: is not annotated with WrapInTransaction b/c it handles his own transaction locally in the method
     @WrapInTransaction
     @Override
     public void publish(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException, DotStateException {
@@ -3313,7 +3313,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                                        boolean generateSystemEvent) throws DotSecurityException, DotDataException {
 
         // if already on workflow or has an actionid skip this method.
-        if (this.isWorkflowInProgress(contentletIn) || UtilMethods.isSet(contentletIn.getActionId())) {
+        if (this.disableWorkflow(contentletIn) || this.isWorkflowInProgress(contentletIn) || UtilMethods.isSet(contentletIn.getActionId())) {
 
             return Optional.empty();
         }
@@ -3323,37 +3323,42 @@ public class ESContentletAPIImpl implements ContentletAPI {
         // in the future if the contentlet exist, EDIT should be catch
         final Optional<WorkflowAction> workflowActionOpt =
                 workflowAPI.findActionMappedBySystemActionContentlet
-                        (contentletIn, WorkflowAPI.SystemAction.NEW, user);
+                        (contentletIn, UtilMethods.isSet(contentletIn.getIdentifier())?WorkflowAPI.SystemAction.NEW:WorkflowAPI.SystemAction.EDIT, user);
 
         if (workflowActionOpt.isPresent()) {
 
-            final String title    = contentletIn.getTitle();
+            final String title = contentletIn.getTitle();
             final String actionId = workflowActionOpt.get().getId();
-            Logger.info(this, ()->"The contentlet: " + title + " hasn't action id set"
-                            + " using the default action: " + actionId);
+            Logger.info(this, () -> "The contentlet: " + title + " hasn't action id set"
+                    + " using the default action: " + actionId);
 
             // if the action has a save action, we skip the current checkin
             if (workflowAPI.hasSaveActionlet(workflowActionOpt.get())) {
 
-                Logger.info(this, ()->"The action: " + actionId + " has a save contentlet actionlet"
+                Logger.info(this, () -> "The action: " + actionId + " has a save contentlet actionlet"
                         + " so firing a workflow and skipping the current checkin for the contentlet: " + title);
 
                 return Optional.ofNullable(workflowAPI.fireContentWorkflow(contentletIn,
                         new ContentletDependencies.Builder().workflowActionId(actionId)
-                            .modUser(user).categories(categories).relationships(contentRelationships)
-                            .respectAnonymousPermissions(respectFrontendRoles)
-                            .generateSystemEvent(generateSystemEvent)
-                        .build()
+                                .modUser(user).categories(categories).relationships(contentRelationships)
+                                .respectAnonymousPermissions(respectFrontendRoles)
+                                .generateSystemEvent(generateSystemEvent)
+                                .build()
                 ));
             }
 
-            Logger.info(this, ()->"The action: " + actionId + " hasn't a save contentlet actionlet"
+            Logger.info(this, () -> "The action: " + actionId + " hasn't a save contentlet actionlet"
                     + " so including just the action to the contentlet: " + title);
 
             contentletIn.setActionId(actionId);
         }
 
         return Optional.empty();
+    }
+
+    private boolean disableWorkflow(final Contentlet contentlet) {
+        return null != contentlet.getMap().get(Contentlet.DISABLE_WORKFLOW) &&
+                Boolean.TRUE.equals(contentlet.getMap().get(Contentlet.DISABLE_WORKFLOW));
     }
 
     private boolean isWorkflowInProgress (final Contentlet contentlet) {

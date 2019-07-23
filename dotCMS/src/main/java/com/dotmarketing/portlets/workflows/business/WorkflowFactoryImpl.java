@@ -1139,6 +1139,15 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		return UtilMethods.isSet(rows)?rows.get(0):Collections.emptyMap();
 	}
 
+	@Override
+	public List<Map<String, Object>> findSystemActionsByWorkflowAction(WorkflowAction workflowAction) throws DotDataException {
+
+		final List<Map<String, Object>> rows = new DotConnect().setSQL(sql.SELECT_SYSTEM_ACTION_BY_WORKFLOW_ACTION)
+				.addParam(workflowAction.getId())
+				.loadObjectResults();
+		return UtilMethods.isSet(rows)?rows:Collections.emptyList();
+	}
+
 	/**
 	 * Finds the list of {@link SystemActionWorkflowActionMapping}  associated to the {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction}
 	 * and {@link List} of {@link WorkflowScheme}'s

@@ -760,7 +760,6 @@ public class DotWebdavHelper {
 				fileAsset.setBinary(FileAssetAPI.BINARY_FIELD, fileData);
 				fileAsset.setHost(host.getIdentifier());
 				fileAsset.setLanguageId(defaultLang);
-				fileAsset.setProperty(Contentlet.DISABLE_WORKFLOW, true);
 				if(!HttpManager.request().getUserAgentHeader().contains("Cyberduck")){
 					fileAsset.getMap().put("_validateEmptyFile_", false);
 				}
@@ -807,7 +806,6 @@ public class DotWebdavHelper {
 				fileAssetCont.setFolder(parent.getInode());
 				fileAssetCont.setBinary(FileAssetAPI.BINARY_FIELD, fileData);
 				fileAssetCont.setLanguageId(defaultLang);
-				fileAssetCont.setProperty(Contentlet.DISABLE_WORKFLOW, true);
 				fileAssetCont = conAPI.checkin(fileAssetCont, user, false);
 				if(isAutoPub && perAPI.doesUserHavePermission(fileAssetCont, PermissionAPI.PERMISSION_PUBLISH, user))
 					conAPI.publish(fileAssetCont, user, false);

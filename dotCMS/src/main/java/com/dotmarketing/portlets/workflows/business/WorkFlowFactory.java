@@ -381,6 +381,14 @@ public interface WorkFlowFactory {
 	Map<String, Object> findSystemActionByContentType(WorkflowAPI.SystemAction systemAction, ContentType contentType) throws DotDataException;
 
 	/**
+	 * Finds the {@link SystemActionWorkflowActionMapping}'s  associated to the {@link WorkflowAction}
+	 * @param workflowAction  {@link WorkflowAction}
+	 * @return Map<String, Object>
+	 * @throws DotDataException
+	 */
+	List<Map<String, Object>> findSystemActionsByWorkflowAction(WorkflowAction workflowAction) throws DotDataException;
+
+	/**
 	 * Finds the list of {@link SystemActionWorkflowActionMapping}  associated to the {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction}
 	 * and {@link List} of {@link WorkflowScheme}'s
 	 * @param systemAction {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction}
@@ -404,4 +412,6 @@ public interface WorkFlowFactory {
 	 * @throws DotDataException
 	 */
 	boolean deleteSystemAction(SystemActionWorkflowActionMapping mapping) throws DotDataException;
+
+
 }

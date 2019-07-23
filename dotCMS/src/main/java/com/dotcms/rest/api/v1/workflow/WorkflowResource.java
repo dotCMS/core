@@ -711,6 +711,40 @@ public class WorkflowResource {
     } // findSystemActionsByScheme.
 
     /**
+     * Will retrieve the references as a default {@link WorkflowAction}
+     * @param request  HttpServletRequest
+     * @param workflowActionId String
+     * @return Response
+     */
+    @GET
+    @Path("/system/actions/{workflowActionId}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response getSystemActionsReferredByWorkflowAction(@Context final HttpServletRequest request,
+                                                         @Context final HttpServletResponse response,
+                                                         @PathParam("workflowActionId") final String workflowActionId) {
+
+        final InitDataObject initDataObject = this.webResource.init
+                (null, request, response, true, null);
+        try {
+
+            Logger.debug(this, "Getting the system actions for the workflow action id: " + workflowActionId);
+            final User user = initDataObject.getUser();
+            final WorkflowAction workflowAction = this.workflowHelper.findAction(workflowActionId, user);
+            final List<SystemActionWorkflowActionMapping> systemActions =
+                    this.workflowAPI.findSystemActionsByWorkflowAction(workflowAction, user);
+            return Response.ok(new ResponseEntityView(systemActions)).build(); // 200
+        } catch (Exception e) {
+            Logger.error(this.getClass(),
+                    "Exception on getSystemActionsReferredByWorkflowAction, workflowActionId: " + workflowActionId +
+                            ", exception message: " + e.getMessage(), e);
+            return ResponseUtil.mapExceptionResponse(e);
+        }
+    } // getSystemActionsReferredByWorkflowAction.
+
+
+    /**
      * Saves an {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction}, by default the action is associated to the schema,
      * however if the stepId is set will be automatically associated to the step too.
      * @param request                     HttpServletRequest
@@ -750,6 +784,7 @@ public class WorkflowResource {
             return ResponseUtil.mapExceptionResponse(e);
         }
     } // saveSystemAction
+
 
     /**
      * Deletes an {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction}, by default the action is associated to the schema,

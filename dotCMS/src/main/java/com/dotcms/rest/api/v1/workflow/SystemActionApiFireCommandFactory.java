@@ -66,8 +66,8 @@ public class SystemActionApiFireCommandFactory {
 
         final SystemActionApiFireCommand saveFireCommand = new SaveSystemActionApiFireCommandImpl();
         this.commandMap.put(NEW,  saveFireCommand);
-        this.commandMap.put(EDIT, saveFireCommand);
-        /*this.commandMap.put(PUBLISH,   new PublishSystemActionApiFireCommandImpl());
+        /*this.commandMap.put(EDIT, saveFireCommand);
+        this.commandMap.put(PUBLISH,   new PublishSystemActionApiFireCommandImpl());
         this.commandMap.put(UNPUBLISH, new UnPublishSystemActionApiFireCommandImpl());
         this.commandMap.put(ARCHIVE,   new ArchiveSystemActionApiFireCommandImpl());
         this.commandMap.put(UNARCHIVE, new UnArchiveSystemActionApiFireCommandImpl());

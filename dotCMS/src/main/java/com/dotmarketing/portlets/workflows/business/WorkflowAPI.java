@@ -911,6 +911,14 @@ public interface WorkflowAPI {
 	Optional<SystemActionWorkflowActionMapping> findSystemActionByIdentifier(String identifier, User user) throws DotDataException, DotSecurityException;
 
 	/**
+	 * Finds all system action associated to the workflow action
+	 * @param workflowAction {@link WorkflowAction}
+	 * @param user {@link User}
+	 * @return List of SystemActionWorkflowActionMapping
+	 */
+	List<SystemActionWorkflowActionMapping> findSystemActionsByWorkflowAction(WorkflowAction workflowAction, User user) throws DotDataException, DotSecurityException;
+
+	/**
 	 * Deletes a system action
 	 * @param mapping {@link SystemActionWorkflowActionMapping}
 	 * @return Optional of SystemActionWorkflowActionMapping
@@ -966,6 +974,7 @@ public interface WorkflowAPI {
 	 * @return Boolean true if has save action
 	 */
 	boolean hasDestroyActionlet(final WorkflowAction action);
+
 
 	/**
 	 * Render mode for the available actions

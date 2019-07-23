@@ -3320,6 +3320,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	public SystemActionWorkflowActionMapping mapSystemActionToWorkflowActionForContentType (final SystemAction systemAction, final WorkflowAction workflowAction,
 														final ContentType contentType) throws DotDataException {
 
+		// todo: double check if the params are not null.
 		final SystemActionWorkflowActionMapping mapping =
 				new SystemActionWorkflowActionMapping(UUIDGenerator.generateUuid(),
 						systemAction, workflowAction, contentType);
@@ -3411,7 +3412,15 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
                 this.workFlowFactory.findSystemActionByContentType(systemAction, contentType);
         if (UtilMethods.isSet(mappingRow)) {
 
-            return Optional.ofNullable(this.findAction((String)mappingRow.get("workflow_action"), user));
+        	final String workflowActionId       = (String)mappingRow.get("workflow_action");
+			final WorkflowAction workflowAction = this.findAction(workflowActionId, user);
+			if (null != workflowAction) {
+				return Optional.of(workflowAction);
+			} else {
+
+				Logger.warn(this, "The Workflow Action Id: " + workflowActionId +
+						", used as default for: " + contentType.variable() + " does not exists");
+			}
         }
 
         final List<WorkflowScheme> schemes   = this.findSchemesForContentType(contentType);
@@ -3435,6 +3444,33 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				Optional.ofNullable(toSystemActionWorkflowActionMapping(
 						mapping, this.toOwner((String)mapping.get("scheme_or_content_type")), user))
 				:Optional.empty();
+	}
+
+	@Override
+	@CloseDBIfOpened
+	public List<SystemActionWorkflowActionMapping> findSystemActionsByWorkflowAction(final WorkflowAction workflowAction, final User user)
+			throws DotDataException, DotSecurityException {
+
+		final ImmutableList.Builder<SystemActionWorkflowActionMapping> mappingBuilder =
+				new ImmutableList.Builder<>();
+		final List<Map<String, Object>> mappings =
+				this.workFlowFactory.findSystemActionsByWorkflowAction (workflowAction);
+
+		if(UtilMethods.isSet(mappings)) {
+
+			for (final Map<String, Object> mappingRow : mappings) {
+
+				final SystemActionWorkflowActionMapping mapping = toSystemActionWorkflowActionMapping(
+						mappingRow, this.toOwner((String) mappingRow.get("scheme_or_content_type")), user);
+
+				if (null != mapping) {
+
+					mappingBuilder.add(mapping);
+				}
+			}
+		}
+
+		return mappingBuilder.build();
 	}
 
 	@Override
