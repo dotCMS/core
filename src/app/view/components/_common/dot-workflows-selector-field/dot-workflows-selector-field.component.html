@@ -1,7 +1,7 @@
 <p-multiSelect
     [options]="options | async"
     [defaultLabel]="dotMessageService.get('dot.common.select.workflows')"
-    [maxSelectedLabels]="1"
+    [maxSelectedLabels]="3"
     (onChange)="handleChange($event.value)"
     [(ngModel)]="value" [disabled]="disabled"
     appendTo="body">

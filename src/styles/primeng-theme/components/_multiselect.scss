@@ -51,6 +51,9 @@
         line-height: $multiselect-height;
         padding: 0 $multiselect-height + $basic-padding 0 0;
         max-height: $multiselect-height;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 }
 

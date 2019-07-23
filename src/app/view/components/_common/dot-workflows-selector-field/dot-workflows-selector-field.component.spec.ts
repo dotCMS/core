@@ -88,7 +88,7 @@ describe('DotWorkflowsSelectorFieldComponent', () => {
             });
 
             it('should have maxSelectedLabels set correctly', () => {
-                expect(multiselect.maxSelectedLabels).toBe(1);
+                expect(multiselect.maxSelectedLabels).toBe(3);
             });
 
             it('should have default label', () => {
