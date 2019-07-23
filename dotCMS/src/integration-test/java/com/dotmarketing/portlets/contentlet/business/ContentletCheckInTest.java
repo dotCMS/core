@@ -1,5 +1,8 @@
 package com.dotmarketing.portlets.contentlet.business;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.RelationshipField;
@@ -27,10 +30,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.util.List;
 import java.util.Map;
-
 import org.junit.Test;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 
 /**
  * Created by Jonathan Gamba.
@@ -72,7 +72,7 @@ public class ContentletCheckInTest extends ContentletBaseTest{
           asset.setLanguageId(lang.getId());
           asset.setBinary("fileAsset", file);
           asset.setTitle(file.getName());
-          asset.setFileName(file.getName());
+          asset.setUnderlyingFileName(file.getName());
           asset.setContentTypeId(fileTypeId);
           asset.setHost(host.getIdentifier());
           asset.setFolder(folder1.getIdentifier());

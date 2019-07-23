@@ -38,6 +38,7 @@ configurations {
     compile
     buildlibs
     starter
+    testsStarter
     profiler
     profilerDependencies
     provided
@@ -95,6 +96,7 @@ tasks.matching {it instanceof Test}.all {
 project.integrationTest {
     outputs.upToDateWhen { false }
 }
+integrationTest.dependsOn('prepareIntegrationTests')
 
 //Avoid skipping running tests when the test task is invoked
 project.test {
@@ -157,7 +159,8 @@ dependencies {
     compile fileTree("src/main/plugins/com.dotcms.config/build/jar").include('plugin-com.dotcms.config.jar')
 
     starter group: 'com.dotcms', name: 'starter', version: '20190425', ext: 'zip'
-
+    testsStarter group: 'com.dotcms', name: 'starter', version: 'empty_20190409', ext: 'zip'
+    
     profiler group: 'glowroot-custom', name: 'glowroot-agent', version: '0.13.1'
     profilerDependencies group: 'glowroot-custom', name: 'collector-https-linux', version: '0.13.1'
     profilerDependencies group: 'glowroot-custom', name: 'collector-https-osx', version: '0.13.1'
@@ -220,6 +223,40 @@ ext {
     }
 }
 
+ext.prepareFelixExternalFolder = { felixExternalFolder ->
+
+    println "Configuring felix in folder [" + felixExternalFolder + "]"
+
+    if (felixExternalFolder.startsWith("/")) {// We need an absolute path here
+
+        copy {
+            from configurations.felix
+            into felixExternalFolder.concat("/bundle")
+        }
+
+        copy {
+            from 'src/main/webapp/WEB-INF/felix/osgi-extra-generated.conf'
+            into felixExternalFolder
+        }
+
+        copy {
+            from configurations.compile
+            into felixExternalFolder.concat("/bundle")
+            include '**/org.apache.felix.http.api*.jar'
+        }
+
+        copy {
+            from configurations.compile
+            into felixExternalFolder.concat("/bundle")
+            include '**/org.apache.felix.http.bundle*.jar'
+        }
+
+    } else {
+        // For integration tests we need an absolute path for the felix folder
+        throw new GradleException('For integration tests we need an absolute path for the felix folder')
+    }
+
+}
 
 if (project.hasProperty('jarBaseName')) {
     archivesBaseName = "$jarBaseName"
@@ -292,18 +329,27 @@ war {
         into 'WEB-INF/lib'
     }
 
-    from (configurations.felix) {
-        into felixFolder
-    }
+    // Verify if the felix folder is outside the war
+    if (!felixFolder.startsWith("/")) { // Relative to the war
+        from(configurations.felix) {
+            into felixFolder.concat("/bundle")
+        }
 
-    from(configurations.compile) {
-        into felixFolder
-        include '**/org.apache.felix.http.api*.jar'
-    }
+        from(configurations.compile) {
+            into felixFolder.concat("/bundle")
+            include '**/org.apache.felix.http.api*.jar'
+        }
 
-    from(configurations.compile) {
-        into felixFolder
-        include '**/org.apache.felix.http.bundle*.jar'
+        from(configurations.compile) {
+            into felixFolder.concat("/bundle")
+            include '**/org.apache.felix.http.bundle*.jar'
+        }
+    } else { //Outside the war
+
+        doLast {
+            prepareFelixExternalFolder(felixFolder)
+            exclude 'WEB-INF/felix'
+        }
     }
 
     from (configurations.starter) {
@@ -330,7 +376,7 @@ task testDev(type: Test) {
     reports.html.setDestination(file("$buildDir/test-results/unit-tests/html"))
 }
 
-integrationTest{
+integrationTest {
     doFirst
             {
                 if (project.hasProperty('databaseType')){
@@ -338,6 +384,37 @@ integrationTest{
                 }
             }
 }
+integrationTest.group='dotCMS tests'
+
+task prepareIntegrationTests(dependsOn: ['dowloadStarterForTests', 'prepareFelixForTests']) {}
+prepareIntegrationTests.group='dotCMS tests'
+
+task dowloadStarterForTests {
+
+    copy {
+        from configurations.testsStarter
+        into integrationTestResourcesFolder
+        rename(/starter(.+)\.zip/, "starter.zip")
+    }
+}
+dowloadStarterForTests.group = 'dotCMS tests'
+dowloadStarterForTests.description = 'Downloads the test starter zip to the integration tests resources folder'
+
+task prepareFelixForTests {
+
+    doLast {
+
+        //If we want the felix folder to live in a custom folder
+        if (project.hasProperty("integrationTestFelixFolder")
+                && integrationTestFelixFolder?.trim()) {
+
+            prepareFelixExternalFolder(integrationTestFelixFolder)
+        }
+    }
+
+}
+prepareFelixForTests.group='dotCMS tests'
+prepareFelixForTests.description='Copies the felix bundle jars and the osgi-extra-generated.conf file to the specified felix home location'
 
 // Delete ROOT under tomcat8/webapps
 task undeployWarTomcat(type: Delete) {
@@ -899,7 +976,8 @@ class DeployWarTomcatTask extends DefaultTask{
 task initNpm(type: NpmTask) {
     args = ['init', '--yes']
 
-    finalizedBy 'installDotcmsUI'
+    dependsOn 'installDotcmsUI', 'installDotcmsFieldElements'
+    finalizedBy 'cleanNodeModules'
 }
 
 task installDotcmsUI(type: NpmTask) {
@@ -909,7 +987,13 @@ task installDotcmsUI(type: NpmTask) {
         args = ['install', 'dotcms-ui@' + coreWebReleaseVersion]
     }
 
-    finalizedBy 'copyNodeModules'
+    finalizedBy 'copyDotcmsUI'
+}
+
+task installDotcmsFieldElements(type: NpmTask) {
+
+    args = ['install', 'dotcms-field-elements']
+    finalizedBy 'copyCustomElements'
 }
 
 task makeDotAdminFolder(type: DefaultTask) {
@@ -924,17 +1008,35 @@ task cleanNodeModules(type: Delete) {
     followSymlinks = true
 }
 
-task copyNodeModules(type: Copy) {
+task copyDotcmsUI(type: Copy) {
     dependsOn 'makeDotAdminFolder'
 
     delete "./src/main/webapp/$angularFolder"
     from (file("./node_modules/dotcms-ui"))
     into("./src/main/webapp/$angularFolder")
+}
 
-    finalizedBy 'cleanNodeModules'
+task copyCustomElements(type: Copy) {
+
+    from "./node_modules/dotcms-field-elements/dist/"
+    into "./src/main/webapp/custom-elements/"
+    include 'dotcmsfields.js'
+    include 'dotcmsfields/*'
 }
 
 task downloadDependencies(type: Exec) {
+
+    // configurations.each { println it.name }
+    // ./gradlew --console plain dependencies
+
+    configurations.ajtools.files
+    configurations.compileOnly.files
+    configurations.default.files
+    configurations.functionalTestCompile.files
+    configurations.individualTestCompile.files
+    configurations.integrationTestCompile.files
+    configurations.testCompile.files
+    configurations.testsStarter.files
     configurations.compile.files
     configurations.buildlibs.files
     configurations.starter.files

@@ -292,7 +292,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 			// if we're looking at a folder or the fileAssetIdentifier wasn't found. It doesn't exist for sure.
 			return false;
 		}
-		//Beyond this point we know something matches that path for that host.
+		//Beyond this point we know something matches the path for that host.
 		if (!UtilMethods.isSet(identifier)) {
 			//it's a brand new contentlet we're dealing with
 			//At this point we know it DOES exist, and since we're dealing with a fresh contentlet that hasn't even been inserted yet (We don't need to worry about lang).
@@ -364,7 +364,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 
 	public String getRelativeAssetPath(FileAsset fa) {
 		String _inode = fa.getInode();
-		return getRelativeAssetPath(_inode, fa.getFileName());
+		return getRelativeAssetPath(_inode, fa.getUnderlyingFileName());
 	}
 
 	private  String getRelativeAssetPath(String inode, String fileName) {
@@ -534,6 +534,13 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 
     }
 
+	/**
+	 * Returns the file on the filesystem that backup the fileAsset
+	 * @param inode
+	 * @param fileName generally speaking this method is expected to be called using the Underlying File Name property
+	 * e.g.   getRealAssetPath(inode, fileAsset.getUnderlyingFileName())
+	 * @return
+	 */
 	@Override
 	public String getRealAssetPath(String inode, String fileName) {
 
@@ -746,15 +753,12 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 	}
 
 	public String getRealAssetPathTmpBinary() {
-		String assetpath=getRealAssetsRootPath();
-		java.io.File adir=new java.io.File(assetpath);
+
+		java.io.File adir=new java.io.File(getRealAssetsRootPath() +java.io.File.separator+"tmp_upload");
 		if(!adir.isDirectory())
-			adir.mkdir();
-		String path=assetpath+java.io.File.separator+"tmp_upload";
-		java.io.File dir=new java.io.File(path);
-		if(!dir.isDirectory())
-			dir.mkdir();
-		return path;
+			adir.mkdirs();
+
+		return adir.getPath();
 	}
 
 }

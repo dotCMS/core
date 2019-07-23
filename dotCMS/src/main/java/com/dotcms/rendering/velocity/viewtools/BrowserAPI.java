@@ -15,7 +15,6 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.comparators.WebAssetMapComparator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.browser.ajax.BrowserAjax;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
@@ -196,7 +195,7 @@ public class BrowserAPI {
 			roles = com.dotmarketing.business.APILocator.getRoleAPI()
 					.loadRolesForUser(user.getUserId()).toArray(new Role[0]);
 		} catch (DotDataException e1) {
-			Logger.error(BrowserAjax.class, e1.getMessage(), e1);
+			Logger.error(BrowserAPI.class, e1.getMessage(), e1);
 		}
 
 		// gets folder parent
@@ -405,7 +404,7 @@ public class BrowserAPI {
 
 			fileMap.put("permissions", permissions);
 			fileMap.put("mimeType", APILocator.getFileAssetAPI()
-					.getMimeType(fileAsset.getFileName()));
+					.getMimeType(fileAsset.getUnderlyingFileName()));
 			fileMap.put("name", ident.getAssetName());
 			fileMap.put("fileName", ident.getAssetName());
 			fileMap.put("title", fileAsset.getFriendlyName());
@@ -413,7 +412,7 @@ public class BrowserAPI {
 			                           ((Contentlet)fileAsset).getStringProperty(FileAssetAPI.DESCRIPTION)
 			                           : "");
 			fileMap.put("extension", UtilMethods
-					.getFileExtension(fileAsset.getFileName()));
+					.getFileExtension(fileAsset.getUnderlyingFileName()));
 			fileMap.put("path", fileAsset.getPath());
 			fileMap.put("type", fileAsset.getType());
 			Host hoster = APILocator.getHostAPI().find(ident.getHostId(), APILocator.systemUser(), false);

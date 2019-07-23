@@ -27,6 +27,7 @@ import org.immutables.value.Value.Default;
 
 import java.io.Serializable;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @JsonTypeInfo(
         use = Id.CLASS,
@@ -163,6 +164,23 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
       }
     }
     return innerFields;
+  }
+
+  
+  /**
+   * This method will return a list of fields that are of a specific Field class
+   * e.g. <code>contentType.fields(BinaryField.class);</code> will return all the binary fields
+   * on that content type;
+   * @param clazz
+   * @return
+   */
+  @JsonIgnore
+  @Value.Lazy
+  public List<Field> fields(final Class<? extends Field> clazz) {
+    return this.fields()
+    .stream()
+    .filter(field -> clazz.isInstance(field))
+    .collect(Collectors.toList());
   }
 
   @JsonIgnore

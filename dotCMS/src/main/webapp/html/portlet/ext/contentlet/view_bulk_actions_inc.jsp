@@ -106,7 +106,7 @@
     }
 
     function emptyActionsMarkup() {
-        var emptyLabel = ```<%=LanguageUtil.get(pageContext, "No-Available-Actions")%>```;
+        var emptyLabel = `<%=LanguageUtil.get(pageContext, "No-Available-Actions")%>`;
         var empty
             = '<table class="sTypeTable" style="width:90%; border-collapse: separate; border-spacing: 10px 15px;margin-bottom:10px;">'
             + '  <tr>'
@@ -120,7 +120,7 @@
     }
 
     function errorMarkup() {
-        var errorMessage= ```<%=LanguageUtil.get(pageContext, "Available-actions-error")%>```;
+        var errorMessage= `<%=LanguageUtil.get(pageContext, "Available-actions-error")%>`;
         var empty
             = '<table class="sTypeTable" style="width:90%; border-collapse: separate; border-spacing: 10px 15px;margin-bottom:10px;">'
             + '  <tr>'
@@ -134,7 +134,7 @@
     }
 
     function noFailsMarkup() {
-        var emptyLabel = ```<%=LanguageUtil.get(pageContext, "No-Failed-Actions")%>```;
+        var emptyLabel = `<%=LanguageUtil.get(pageContext, "No-Failed-Actions")%>`;
         var empty
             = '<table class="sTypeTable" style="width:90%; border-collapse: separate; border-spacing: 10px 15px;margin-bottom:10px;">'
             + '  <tr>'
@@ -348,7 +348,7 @@
                     var summary = actionsExecutionSummarytMarkup(data.entity);
                     dojo.byId('bulkActionsContainer').innerHTML = summary;
                 } else {
-                    showDotCMSSystemMessage(```<%=LanguageUtil.get(pageContext, "Available-actions-error")%>```, true);
+                    showDotCMSSystemMessage(`<%=LanguageUtil.get(pageContext, "Available-actions-error")%>`, true);
                 }
             },
             error: function(error){

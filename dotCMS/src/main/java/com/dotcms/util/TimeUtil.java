@@ -1,6 +1,5 @@
 package com.dotcms.util;
 
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 
 import java.util.function.Supplier;

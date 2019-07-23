@@ -6,6 +6,7 @@ bin/*.sh
 .settings/*
 .project
 .idea/
+.vscode
 *.iml
 *.ipr
 *.iws
@@ -41,10 +42,12 @@ dotCMS/src/main/webapp/WEB-INF/lib/*.jar
 dotCMS/src/main/webapp/WEB-INF/felix/bundle/dot.*.jar
 dotCMS/src/main/webapp/WEB-INF/lib/plugin-*.jar
 dotCMS/starter.zip
+dotCMS/src/integration-test/resources/starter.zip
 .ant-targets-build.xml
 .gradle/
 /*.local.*
 dotCMS/src/main/webapp/dotAdmin
+dotCMS/src/main/webapp/custom-elements
 dotCMS/bin/*
 dotCMS/classes
 
@@ -63,3 +66,9 @@ dotCMS/src/main/webapp/html/plugins/
 # immutables.github.io generated folder#
 ###############################
 dotCMS/src/main/generated/
+
+# integration tests reports and logs
+###############################
+docker/tests/integration/logs
+docker/tests/integration/reports
+docker/tests/integration/license

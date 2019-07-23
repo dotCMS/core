@@ -137,7 +137,7 @@ function stopBrowing() {
             dijit.byId('flang').required=false;
             
             dojo.create("div", {
-                "innerHTML": '<div ><span class="clockIcon"></span><%= LanguageUtil.get(pageContext, "TIMEMACHINE-SELECT-HOST-TIME") %>',
+                "innerHTML": '<div ><span class="clockIcon"></span><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "TIMEMACHINE-SELECT-HOST-TIME")) %>',
                 "style": "padding:40px;text-align:center;white-space: nowrap;line-height: 20px;"
             }, dojo.byId('iframeWrapper'));
             

@@ -11,6 +11,7 @@ import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.DateTimeField;
 import com.dotcms.contenttype.model.field.Field;
@@ -22,6 +23,7 @@ import com.dotcms.contenttype.model.field.ImmutableTextAreaField;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.field.OnePerContentType;
 import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.SelectField;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.field.WysiwygField;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -60,6 +62,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
@@ -1635,4 +1638,46 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 			}
 		}
 	}
+	
+	
+	 @Test
+	  public void test_get_fields_filtered_by_class() throws Exception{
+	
+	   ContentType newType = ContentTypeBuilder.builder(BaseContentType.FILEASSET.immutableClass())
+	        .description("description").folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
+	        .name("ContentTypeTesting"+System.currentTimeMillis()).owner("owner").variable("velocityVarNameTesting"+System.currentTimeMillis()).build();
+	    newType = contentTypeApi.save(newType);
+
+	    
+	    List<Field> fields = newType.fields(BinaryField.class);
+	    assert(fields.size()==1);
+	    
+	    fields = newType.fields(TextField.class);
+	    assert(fields.size()==3);
+	     
+      //Add Field.
+      fields = new ArrayList<>( newType.fields() );
+
+      Field fieldToSave = FieldBuilder.builder( TextField.class )
+              .name( "test"+System.currentTimeMillis() )
+              .variable( "test"+System.currentTimeMillis() )
+              .contentTypeId( newType.id() )
+              .dataType( DataTypes.TEXT )
+              .fixed( true )
+              .id( UUIDGenerator.generateUuid() )
+              .build();
+
+      fields.add( fieldToSave );
+
+      newType = contentTypeApi.save( newType, fields );
+	    
+	    
+      fields = newType.fields(TextField.class);
+      assert(fields.size()==4);
+	     
+      fields = newType.fields(SelectField.class);
+      assert(fields.size()==0);
+	 }
+	
+	
 }
