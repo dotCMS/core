@@ -23,7 +23,7 @@ env:
   global:
     - GCLOUD_DIR=${HOME}/gcloud
     - PATH=${GCLOUD_DIR}/google-cloud-sdk/bin:${PATH}
-    - GOOGLE_CREDENTIALS=${TRAVIS_BUILD_DIR}/travis/credentials.json
+    - GOOGLE_CREDENTIALS=${TRAVIS_BUILD_DIR}/credentials.json
     - CLOUDSDK_CORE_DISABLE_PROMPTS=1
   matrix:
     - DB_TYPE=postgres
