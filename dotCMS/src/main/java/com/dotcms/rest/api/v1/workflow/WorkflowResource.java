@@ -729,7 +729,7 @@ public class WorkflowResource {
                 (null, request, response, true, null);
         try {
 
-            Logger.debug(this, "Getting the system actions for the workflow action id: " + workflowActionId);
+            Logger.debug(this, ()->"Getting the system actions for the workflow action id: " + workflowActionId);
             final User user = initDataObject.getUser();
             final WorkflowAction workflowAction = this.workflowHelper.findAction(workflowActionId, user);
             final List<SystemActionWorkflowActionMapping> systemActions =
