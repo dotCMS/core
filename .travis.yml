@@ -20,15 +20,6 @@ branches:
   only:
    - /^test-16881.*$/
 
-env:
-  - DB_TYPE=postgres
-  - DB_TYPE=mysql
-  global:
-    - GCLOUD_DIR=${HOME}/gcloud
-    - PATH=${GCLOUD_DIR}/google-cloud-sdk/bin:${PATH}
-    - GOOGLE_CREDENTIALS=${TRAVIS_BUILD_DIR}/credentials.json
-    - CLOUDSDK_CORE_DISABLE_PROMPTS=1
-
 install:
   - travis/environment_vars.sh
   - travis/install_gcloud.sh
