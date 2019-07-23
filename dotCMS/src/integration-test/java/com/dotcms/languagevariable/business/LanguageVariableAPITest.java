@@ -287,8 +287,6 @@ public class LanguageVariableAPITest extends IntegrationTestBase {
             Assert.assertNotEquals(key, languageVariable);
             Assert.assertEquals(VALUE_1, languageVariable);
         } finally {
-            //Clean up
-            Config.setProperty(MULTILINGUABLE_FALLBACK_KEY, Boolean.FALSE);
             if (null != contentlet) {
                 deleteContentlets(systemUser, contentlet);
             }
@@ -322,7 +320,6 @@ public class LanguageVariableAPITest extends IntegrationTestBase {
             Assert.assertEquals(newValue, languageVariable);
         } finally {
             //Clean up
-            Config.setProperty(MULTILINGUABLE_FALLBACK_KEY, Boolean.FALSE);
             if (null != contentlet) {
                 deleteContentlets(systemUser, contentlet);
             }
