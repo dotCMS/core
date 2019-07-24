@@ -152,7 +152,7 @@ public class PageResourceTest {
      */
     @Test
     public void testGetPersonalizedPersonasOnPage()
-            throws DotSecurityException, DotDataException {
+            throws Exception {
 
         final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
         final String  htmlPage            = UUIDGenerator.generateUuid();
@@ -169,7 +169,7 @@ public class PageResourceTest {
 
         when(request.getRequestURI()).thenReturn("/index");
         final Response response = pageResource.getPersonalizedPersonasOnPage(request,  new EmptyHttpResponse(),
-                null, 0, 10, "title", "ASC", htmlPage);
+                null, 0, 10, "title", "ASC", null, htmlPage);
 
         final ResponseEntityView entityView = (ResponseEntityView)response.getEntity();
         assertNotNull(entityView);

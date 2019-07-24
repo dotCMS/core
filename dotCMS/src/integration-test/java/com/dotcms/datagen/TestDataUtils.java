@@ -29,6 +29,7 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.util.UtilMethods;
 import com.google.common.io.Files;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
@@ -331,34 +332,39 @@ public class TestDataUtils {
     }
 
     public static ContentType getNewsLikeContentType() {
-        return getNewsLikeContentType("News" + System.currentTimeMillis(), null, null, null, null);
+        return getNewsLikeContentType("News" + System.currentTimeMillis(), null, null, null, null,null);
     }
 
     public static ContentType getNewsLikeContentType(final String contentTypeName) {
-        return getNewsLikeContentType(contentTypeName, null, null, null, null);
+        return getNewsLikeContentType(contentTypeName, null, null, null, null,null);
+    }
+
+    public static ContentType getNewsLikeContentType(final String contentTypeName, final String parentCategoryInode) {
+        return getNewsLikeContentType(contentTypeName, null, null, null, null,parentCategoryInode);
     }
 
     public static ContentType getNewsLikeContentType(final String contentTypeName,
             final Host site) {
-        return getNewsLikeContentType(contentTypeName, site, null, null, null);
+        return getNewsLikeContentType(contentTypeName, site, null, null, null,null);
     }
 
     public static ContentType getNewsLikeContentType(final Host site) {
-        return getNewsLikeContentType("News" + System.currentTimeMillis(), site, null, null, null);
+        return getNewsLikeContentType("News" + System.currentTimeMillis(), site, null, null, null,null);
     }
 
     public static ContentType getNewsLikeContentType(final String contentTypeName,
             final Host site,
             final String detailPageIdentifier,
             final String urlMapPattern) {
-        return getNewsLikeContentType(contentTypeName, site, detailPageIdentifier, urlMapPattern, null);
+        return getNewsLikeContentType(contentTypeName, site, detailPageIdentifier, urlMapPattern, null,null);
     }
 
     public static ContentType getNewsLikeContentType(final String contentTypeName,
             final Host site,
             final String detailPageIdentifier,
             final String urlMapPattern,
-            final Set<String> workflowIds) {
+            final Set<String> workflowIds,
+            String parentCategoryInode) {
 
         ContentType newsType = null;
         try {
@@ -430,15 +436,16 @@ public class TestDataUtils {
                                 .indexed(true)
                                 .next()
                 );
-
-                Category parentCategory = new CategoryDataGen().nextPersisted();
+                if(!UtilMethods.isSet(parentCategoryInode)) {
+                    parentCategoryInode = new CategoryDataGen().nextPersisted().getInode();
+                }
                 fields.add(
                         new FieldDataGen()
                                 .name("Categories")
                                 .velocityVarName("categories")
                                 .type(CategoryField.class)
                                 .defaultValue(null)
-                                .values(parentCategory.getInode())
+                                .values(parentCategoryInode)
                                 .next()
                 );
 

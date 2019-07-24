@@ -39,7 +39,7 @@ public class SiteDataGen extends AbstractDataGen<Host> {
 
             return newSite;
         } catch (Exception e) {
-            throw new RuntimeException("Unable to persist Role.", e);
+            throw new RuntimeException("Unable to persist Host.", e);
         }
     }
 
