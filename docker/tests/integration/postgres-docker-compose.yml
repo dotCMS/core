@@ -20,9 +20,13 @@ services:
         BUILD_FROM: COMMIT
         BUILD_ID: origin/master
         DB_TYPE: postgres
+#        TEST_PARAMS: "--debug-jvm"
+#        TEST_PARAMS: "--tests *HTMLPageAssetRenderedTest"
         LICENSE_KEY: ${LICENSE_KEY}
     depends_on:
       - database
+    ports:
+      - "15005:5005"
     volumes:
       - type: bind
         source: ./reports
@@ -46,7 +50,6 @@ services:
     ports:
       - "15432:5432"
     volumes:
-#      - db:/var/lib/postgresql/data
-      - ./setup/init-scripts/postgres:/docker-entrypoint-initdb.d/
+      - ./setup/db/postgres/init-scripts:/docker-entrypoint-initdb.d/
     networks:
       - db_net
