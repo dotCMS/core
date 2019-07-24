@@ -85,27 +85,26 @@ public class ContentTypeForm  {
         }
 
         private List<Tuple2<WorkflowAPI.SystemAction, String>> systemActionWorkflowActionIdMapFromJson(final String json) {
-            final List<Tuple2<WorkflowAPI.SystemAction, String>> systemActionWorkflowActionIdMap = new ArrayList<>();
+            final List<Tuple2<WorkflowAPI.SystemAction, String>> systemActionWorkflowActionIdMapList = new ArrayList<>();
 
             try {
+
                 final JSONArray jsonArray = new JSONArray(json);
 
                 for (int i = 0; i < jsonArray.size(); i++) {
                     final JSONObject fieldJsonObject = (JSONObject) jsonArray.get(i);
-                    final Tuple2<WorkflowAPI.SystemAction, String>  systemActionWorkflowActionIdTuple = systemActionWorkflowActionId(fieldJsonObject);
-                    systemActionWorkflowActionIdMap.add(systemActionWorkflowActionIdTuple);
+                    systemActionWorkflowActionIdMapList.addAll(this.systemActionWorkflowActionId(fieldJsonObject));
                 }
             } catch (JSONException e) {
 
                 try {
                     final JSONObject  fieldJsonObject = new JSONObject(json);
-                    final Tuple2<WorkflowAPI.SystemAction, String>  systemActionWorkflowActionIdTuple = systemActionWorkflowActionId(fieldJsonObject);
-                    systemActionWorkflowActionIdMap.add(systemActionWorkflowActionIdTuple);
+                    systemActionWorkflowActionIdMapList.addAll(this.systemActionWorkflowActionId(fieldJsonObject));
                 } catch (JSONException e1) {
                     throw new DotRuntimeException(e1);
                 }
             }
-            return systemActionWorkflowActionIdMap;
+            return systemActionWorkflowActionIdMapList;
         }
 
         private List<ContentTypeFormEntry> getContentTypeFormEntries(final List<ContentType> typesToSave,
@@ -165,26 +164,27 @@ public class ContentTypeForm  {
             return worflowsArray;
         }
 
-        private static Tuple2<WorkflowAPI.SystemAction, String> systemActionWorkflowActionId(final JSONObject fieldJsonObject) throws JSONException {
+        private static List<Tuple2<WorkflowAPI.SystemAction, String>> systemActionWorkflowActionId(final JSONObject fieldJsonObject) throws JSONException {
+
             WorkflowAPI.SystemAction systemAction = null;
-            String workflowActionId = null;
+            String workflowActionId               = null;
+            final List<Tuple2<WorkflowAPI.SystemAction, String>> tuple2List = new ArrayList<>();
 
             if (fieldJsonObject.has(SYSTEM_ACTION_ATTRIBUTE_NAME)) {
 
                 final JSONObject systemActionWorkflowActionIdJSONObject = (JSONObject) fieldJsonObject.get(SYSTEM_ACTION_ATTRIBUTE_NAME);
+                final Iterator keys = systemActionWorkflowActionIdJSONObject.keys();
 
-                if (systemActionWorkflowActionIdJSONObject.has("systemAction")) {
+                while(keys.hasNext())  {
 
-                    systemAction = WorkflowAPI.SystemAction.valueOf(systemActionWorkflowActionIdJSONObject.getString("systemAction"));
-                }
-
-                if (systemActionWorkflowActionIdJSONObject.has("workflowActionId")) {
-
-                    workflowActionId = systemActionWorkflowActionIdJSONObject.getString("workflowActionId");
+                    final String systemActionName = keys.next().toString();
+                    systemAction     = WorkflowAPI.SystemAction.valueOf(systemActionName);
+                    workflowActionId = systemActionWorkflowActionIdJSONObject.getString(systemActionName);
+                    tuple2List.add(Tuple.of(systemAction, workflowActionId));
                 }
             }
 
-            return Tuple.of(systemAction, workflowActionId);
+            return tuple2List;
         }
     }
 
