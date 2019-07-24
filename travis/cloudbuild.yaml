@@ -19,4 +19,4 @@ steps:
   - name: 'docker/compose:1.24.1'
     args: ['-f', './docker/tests/integration/$_DB_TYPE-docker-compose.yml', 'down']
 
-timeout: 2400s
+timeout: 3600s

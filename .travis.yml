@@ -41,6 +41,7 @@ install:
   - travis/environment_vars.sh
   - travis/install_gcloud.sh
   - travis/prepare.sh
+  - travis_wait 50 mvn install
 
 script:
   - >
