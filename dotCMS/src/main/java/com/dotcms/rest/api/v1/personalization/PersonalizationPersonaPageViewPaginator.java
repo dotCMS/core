@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.personalization;
 
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.util.pagination.PaginatorOrdered;
 import com.dotmarketing.business.APILocator;
@@ -16,8 +17,12 @@ import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+
+import io.vavr.API;
+import io.vavr.control.Try;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -31,10 +36,11 @@ public class PersonalizationPersonaPageViewPaginator implements PaginatorOrdered
     private final PersonaAPI    personaAPI;
     private final MultiTreeAPI  multiTreeAPI;
     private final ContentletAPI contentletAPI;
-
+    private final Persona defaultPersona;
     public PersonalizationPersonaPageViewPaginator() {
         this(APILocator.getPersonaAPI(), APILocator.getMultiTreeAPI(),
                 APILocator.getContentletAPI());
+
     }
 
     public PersonalizationPersonaPageViewPaginator(final PersonaAPI personaAPI,
@@ -44,10 +50,22 @@ public class PersonalizationPersonaPageViewPaginator implements PaginatorOrdered
         this.personaAPI = personaAPI;
         this.multiTreeAPI = multiTreeAPI;
         this.contentletAPI = contentletAPI;
+        
+        final Map<String, Object> map = new HashMap<>();
+        map.put("stInode", Try.of(()->  APILocator.getContentTypeAPI(APILocator.systemUser()).find("persona").id()).getOrNull());
+        map.put("hostFolder",  APILocator.systemHost().getIdentifier());
+        map.put("modUser",  APILocator.systemUser().getUserId());
+        map.put("personalized", Boolean.FALSE);
+        map.put("name", "Default Persona");
+        this.defaultPersona = Try.of(()->  APILocator.getPersonaAPI().fromContentlet( new Contentlet(map))).getOrNull();
     }
 
+    
+
+        
+    
     @Override
-    public PaginatedArrayList<PersonalizationPersonaPageView> getItems(final User user, final String filter, final int limit, final int offset, final String orderBy,
+    public PaginatedArrayList<PersonalizationPersonaPageView> getItems(final User user, final String filter, final int realLimit, final int realOffset, final String orderBy,
                                                             final OrderDirection direction, final Map<String, Object> extraParams) {
 
         final boolean respectFrontendRoles = (Boolean)extraParams.get("respectFrontEndRoles");
@@ -56,6 +74,10 @@ public class PersonalizationPersonaPageViewPaginator implements PaginatorOrdered
         final String hostId  = extraParams.get("hostId").toString();
         final StringBuilder query = new StringBuilder(PERSONAS_QUERY).append(hostId);
 
+
+        final int offset = (realOffset <= 0) ? 0 : realOffset-1;
+        final int limit  = (offset == 0) ? realLimit-1  : realLimit;
+        
         if (UtilMethods.isSet(filter)) {
 
             query.append(" +persona.name:").append(filter).append("*");
@@ -65,13 +87,18 @@ public class PersonalizationPersonaPageViewPaginator implements PaginatorOrdered
                 orderByString.trim().toLowerCase().endsWith(" desc")? orderByString:
                 orderByString + " " + (UtilMethods.isSet(direction) ? direction.toString().toLowerCase(): OrderDirection.ASC.name());
 
+
         try {
 
             final List<Contentlet> contentlets  = this.contentletAPI.search
                     (query.toString(), limit, offset, orderByString, user,respectFrontendRoles);
             final Set<String> personaTagPerPage = this.multiTreeAPI.getPersonalizationsForPage (pageId);
             final List<PersonalizationPersonaPageView> personalizationPersonaPageViews = new ArrayList<>();
-
+            
+            if (offset == 0) {
+              final Map<String, Object> contentletMap = ContentletUtil.getContentPrintableMap(user, this.defaultPersona);
+              personalizationPersonaPageViews.add(new PersonalizationPersonaPageView(pageId, contentletMap));
+            }
             for (final Contentlet contentlet : contentlets) {
 
                 final Map<String, Object> contentletMap = ContentletUtil.getContentPrintableMap(user, contentlet);
