@@ -44,7 +44,7 @@ install:
 #  - travis_wait mvn install
 
 script:
-  - travis_wait 50
+  - "travis_wait 30 &"
   - >
     gcloud builds submit
     --config=travis/cloudbuild.yaml
