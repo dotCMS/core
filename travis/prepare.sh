@@ -1,62 +1,23 @@
 #!/bin/bash
 
-RELATIVE_MY_PATH="`dirname \"$0\"`"              # relative
-MY_PATH="`( cd \"$RELATIVE_MY_PATH\" && pwd )`"  # absolutized and normalized
-if [ -z "$MY_PATH" ] ; then
-  # error; for some reason, the path is not accessible
-  # to the script (e.g. permissions re-evaled after suid)
-  exit 1  # fail
-fi
-
-echo ""
-echo "***************************"
-echo "***************************"
-echo "Running from: ${MY_PATH}"
-echo "Running from ${RELATIVE_MY_PATH}"
-echo "***************************"
-echo "***************************"
-echo ""
-
-dockerFolder="/home/travis/build/dotCMS/core/docker/tests/integration"
-
-echo "Elements in /home/travis/build/dotCMS/core"
-for entry in "/home/travis/build/dotCMS/core/"/*
-do
-  echo "$entry"
-done
-
-echo "Elements in /home/travis/build/dotCMS/core/docker"
-for entry in "/home/travis/build/dotCMS/core/docker/"/*
-do
-  echo "$entry"
-done
-
-echo "Elements in /home/travis/build/dotCMS/core/docker/tests"
-for entry in "/home/travis/build/dotCMS/core/docker/tests/"/*
-do
-  echo "$entry"
-done
-
-echo "Elements in /home/travis/build/dotCMS/core/docker/tests/integration"
-for entry in "/home/travis/build/dotCMS/core/docker/tests/integration/"/*
-do
-  echo "$entry"
-done
+dockerFolder="../docker/tests/integration"
+postgresCompose="${dockerFolder}/postgres-docker-compose.yml"
+mysqlCompose="${dockerFolder}/mysql-docker-compose.yml"
 
 # postgres-docker-compose.yml
-sed -e '30s/.*/#&/' -i '' ${dockerFolder}/postgres-docker-compose.yml
-sed -e '31s/.*/#&/' -i '' ${dockerFolder}/postgres-docker-compose.yml
-sed -e '32s/.*/#&/' -i '' ${dockerFolder}/postgres-docker-compose.yml
-sed -e '33s/.*/#&/' -i '' ${dockerFolder}/postgres-docker-compose.yml
-sed -e '34s/.*/#&/' -i '' ${dockerFolder}/postgres-docker-compose.yml
-sed -e '35s/.*/#&/' -i '' ${dockerFolder}/postgres-docker-compose.yml
-sed -e '36s/.*/#&/' -i '' ${dockerFolder}/postgres-docker-compose.yml
+sed -e "30s/.*/#&/" ${postgresCompose} >tmpfile && mv tmpfile ${postgresCompose}
+sed -e "31s/.*/#&/" ${postgresCompose} >tmpfile && mv tmpfile ${postgresCompose}
+sed -e "32s/.*/#&/" ${postgresCompose} >tmpfile && mv tmpfile ${postgresCompose}
+sed -e "33s/.*/#&/" ${postgresCompose} >tmpfile && mv tmpfile ${postgresCompose}
+sed -e "34s/.*/#&/" ${postgresCompose} >tmpfile && mv tmpfile ${postgresCompose}
+sed -e "35s/.*/#&/" ${postgresCompose} >tmpfile && mv tmpfile ${postgresCompose}
+sed -e "36s/.*/#&/" ${postgresCompose} >tmpfile && mv tmpfile ${postgresCompose}
 
 # mysql-docker-compose.yml
-sed -e '30s/.*/#&/' -i '' ${dockerFolder}/mysql-docker-compose.yml
-sed -e '31s/.*/#&/' -i '' ${dockerFolder}/mysql-docker-compose.yml
-sed -e '32s/.*/#&/' -i '' ${dockerFolder}/mysql-docker-compose.yml
-sed -e '33s/.*/#&/' -i '' ${dockerFolder}/mysql-docker-compose.yml
-sed -e '34s/.*/#&/' -i '' ${dockerFolder}/mysql-docker-compose.yml
-sed -e '35s/.*/#&/' -i '' ${dockerFolder}/mysql-docker-compose.yml
-sed -e '36s/.*/#&/' -i '' ${dockerFolder}/mysql-docker-compose.yml
+sed -e "30s/.*/#&/" ${mysqlCompose} >tmpfile && mv tmpfile ${mysqlCompose}
+sed -e "31s/.*/#&/" ${mysqlCompose} >tmpfile && mv tmpfile ${mysqlCompose}
+sed -e "32s/.*/#&/" ${mysqlCompose} >tmpfile && mv tmpfile ${mysqlCompose}
+sed -e "33s/.*/#&/" ${mysqlCompose} >tmpfile && mv tmpfile ${mysqlCompose}
+sed -e "34s/.*/#&/" ${mysqlCompose} >tmpfile && mv tmpfile ${mysqlCompose}
+sed -e "35s/.*/#&/" ${mysqlCompose} >tmpfile && mv tmpfile ${mysqlCompose}
+sed -e "36s/.*/#&/" ${mysqlCompose} >tmpfile && mv tmpfile ${mysqlCompose}
