@@ -298,7 +298,7 @@ public class CreateAccountAction extends SecureAction {
 		}        
 
 
-		Role defaultRole = com.dotmarketing.business.APILocator.getRoleAPI().loadRoleByKey(Config.getStringProperty("CMS_VIEWER_ROLE"));
+		Role defaultRole = com.dotmarketing.business.APILocator.getRoleAPI().loadRoleByKey(Role.DOTCMS_FRONT_END_USER);
 		String roleId = defaultRole.getId();
 		if (InodeUtils.isSet(roleId)) {
 			com.dotmarketing.business.APILocator.getRoleAPI().addRoleToUser(roleId, user);
