@@ -93,13 +93,13 @@ public class ContentTypeForm  {
 
                 for (int i = 0; i < jsonArray.size(); i++) {
                     final JSONObject fieldJsonObject = (JSONObject) jsonArray.get(i);
-                    systemActionWorkflowActionIdMapList.addAll(this.systemActionWorkflowActionId(fieldJsonObject));
+                    systemActionWorkflowActionIdMapList.addAll(this.getSystemActionsWorkflowActionIds(fieldJsonObject));
                 }
             } catch (JSONException e) {
 
                 try {
                     final JSONObject  fieldJsonObject = new JSONObject(json);
-                    systemActionWorkflowActionIdMapList.addAll(this.systemActionWorkflowActionId(fieldJsonObject));
+                    systemActionWorkflowActionIdMapList.addAll(this.getSystemActionsWorkflowActionIds(fieldJsonObject));
                 } catch (JSONException e1) {
                     throw new DotRuntimeException(e1);
                 }
@@ -164,7 +164,7 @@ public class ContentTypeForm  {
             return worflowsArray;
         }
 
-        private static List<Tuple2<WorkflowAPI.SystemAction, String>> systemActionWorkflowActionId(final JSONObject fieldJsonObject) throws JSONException {
+        private static List<Tuple2<WorkflowAPI.SystemAction, String>> getSystemActionsWorkflowActionIds(final JSONObject fieldJsonObject) throws JSONException {
 
             WorkflowAPI.SystemAction systemAction = null;
             String workflowActionId               = null;

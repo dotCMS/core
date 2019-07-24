@@ -1,30 +1,17 @@
 package com.dotcms.rest.api.v1.workflow;
 
-import com.dotcms.rest.MapToContentletPopulator;
-import com.dotcms.rest.ResponseEntityView;
-import com.dotcms.workflow.form.FireActionForm;
-import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
-import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
-import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableMap;
-import com.liferay.portal.model.User;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.core.Response;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;

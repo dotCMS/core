@@ -186,14 +186,13 @@ public class ContentTypeResource implements Serializable {
 
 			} else {
 
-				ContentType currentContentType = contentTypeAPI.find(idOrVar);
+				final ContentType currentContentType = contentTypeAPI.find(idOrVar);
 
 				if (!currentContentType.id().equals(contentType.id())) {
 
 					response = ExceptionMapperUtil.createResponse(null, "Field id '"+ idOrVar +"' does not match a content-type with id '"+ contentType.id() +"'");
 
 				} else {
-
 
 					final Tuple2<ContentType, SystemActionWorkflowActionMapping> tuple2 = this.saveContentTypeAndDependencies(contentType, user,
 							new HashSet<>(form.getWorkflowsIds()), form.getSystemAction(),

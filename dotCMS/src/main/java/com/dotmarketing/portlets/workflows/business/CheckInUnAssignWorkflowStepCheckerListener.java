@@ -59,16 +59,14 @@ public class CheckInUnAssignWorkflowStepCheckerListener implements EventSubscrib
 
         try {
 
-            if (!APILocator.getWorkflowAPI().findCurrentStep(event.getContentlet()).isPresent()) {
+            if (Config.getBooleanProperty("AUTO_ASSIGN_WORKFLOW", true) &&
+                    !APILocator.getWorkflowAPI().findCurrentStep(event.getContentlet()).isPresent()) {
 
-                if (Config.getBooleanProperty("AUTO_ASSIGN_WORKFLOW", true)) {
+                final AutoAssignWorkflowDelegate delegate = null != this.customAutoAssignWorkflowDelegate?
+                        this.customAutoAssignWorkflowDelegate: this.autoAssignWorkflowDelegate;
+                Logger.debug(this, "Using the auto assign workflow with the delegate: " + delegate.getName());
 
-                    final AutoAssignWorkflowDelegate delegate = null != this.customAutoAssignWorkflowDelegate?
-                            this.customAutoAssignWorkflowDelegate: this.autoAssignWorkflowDelegate;
-                    Logger.debug(this, "Using the auto assign workflow with the delegate: " + delegate.getName());
-
-                    delegate.assign(event.getContentlet(), event.getUser());
-                }
+                delegate.assign(event.getContentlet(), event.getUser());
             }
         } catch (DotDataException e) {
 
@@ -85,7 +83,7 @@ public class CheckInUnAssignWorkflowStepCheckerListener implements EventSubscrib
             workflowActions = APILocator.getWorkflowAPI()
                     .findAvailableDefaultActionsByContentType(contentlet.getContentType(), user);
 
-            if (UtilMethods.isSet(workflowActions) && workflowActions.size() > 0) {
+            if (UtilMethods.isSet(workflowActions)) {
 
                 APILocator.getWorkflowAPI().saveWorkflowTask(
                         createWorkflowTask(contentlet, user, workflowActions));
