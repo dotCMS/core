@@ -428,6 +428,10 @@ public class WorkflowHelper {
         return actions.build();
     }
 
+    public List<SystemActionWorkflowActionMapping> findSystemActionsByContentType(final ContentType contentType, final User user) throws DotDataException, DotSecurityException {
+        return this.workflowAPI.findSystemActionsByContentType(contentType, user);
+    }
+
     private static class SingletonHolder {
         private static final WorkflowHelper INSTANCE = new WorkflowHelper();
     }

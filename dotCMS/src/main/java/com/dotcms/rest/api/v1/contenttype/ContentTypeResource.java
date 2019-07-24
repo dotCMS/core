@@ -310,6 +310,8 @@ public class ContentTypeResource implements Serializable {
 
 			resultMap.putAll(new JsonContentTypeTransformer(type).mapObject());
 			resultMap.put("workflows", 		 this.workflowHelper.findSchemesByContentType(type.id(), initData.getUser()));
+			resultMap.put("systemActionMappings",
+					this.workflowHelper.findSystemActionsByContentType(type, initData.getUser()));
 
 			response = ("true".equalsIgnoreCase(req.getParameter("include_permissions")))?
 					Response.ok(new ResponseEntityView(resultMap, PermissionsUtil.getInstance().getPermissionsArray(type, initData.getUser()))).build():

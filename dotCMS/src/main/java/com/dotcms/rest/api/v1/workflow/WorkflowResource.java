@@ -700,7 +700,7 @@ public class WorkflowResource {
             final User user = initDataObject.getUser();
             final ContentType contentType = APILocator.getContentTypeAPI(user).find(contentTypeVarOrId);
             final List<SystemActionWorkflowActionMapping> systemActions =
-                    this.workflowAPI.findSystemActionsByContentType(contentType, initDataObject.getUser());
+                    this.workflowHelper.findSystemActionsByContentType(contentType, initDataObject.getUser());
             return Response.ok(new ResponseEntityView(systemActions)).build(); // 200
         } catch (Exception e) {
             Logger.error(this.getClass(),
