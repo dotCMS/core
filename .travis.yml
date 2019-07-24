@@ -34,6 +34,8 @@ before_install:
   - chmod +x travis/environment_vars.sh
   - chmod +x travis/install_gcloud.sh
   - chmod +x travis/prepare.sh
+  - chmod +rwx docker/tests/integration/postgres-docker-compose.yml
+  - chmod +rwx docker/tests/integration/mysql-docker-compose.yml
 
 install:
   - travis/environment_vars.sh
