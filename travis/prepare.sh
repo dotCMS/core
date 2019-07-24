@@ -1,6 +1,6 @@
 #!/bin/bash
 
-dockerFolder="../docker/tests/integration"
+dockerFolder="/home/travis/build/dotCMS/core/docker/tests/integration"
 postgresCompose="${dockerFolder}/postgres-docker-compose.yml"
 mysqlCompose="${dockerFolder}/mysql-docker-compose.yml"
 
