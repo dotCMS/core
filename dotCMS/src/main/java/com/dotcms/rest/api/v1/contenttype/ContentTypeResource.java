@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.contenttype;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -17,12 +18,16 @@ import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.ContentTypesPaginator;
 import com.dotcms.util.pagination.OrderDirection;
+import com.dotcms.workflow.form.WorkflowSystemActionForm;
 import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
+import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
@@ -55,6 +60,9 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
+import io.vavr.Tuple;
+import io.vavr.Tuple2;
 import org.glassfish.jersey.server.JSONP;
 
 @Path("/v1/contenttype")
@@ -163,7 +171,7 @@ public class ContentTypeResource implements Serializable {
 
 		final InitDataObject initData = this.webResource.init(null, req, res, false, null);
 		final User user = initData.getUser();
-		final ContentTypeAPI capi = APILocator.getContentTypeAPI(user, true);
+		final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user, true);
 
 		Response response = null;
 
@@ -178,7 +186,7 @@ public class ContentTypeResource implements Serializable {
 
 			} else {
 
-				ContentType currentContentType = capi.find(idOrVar);
+				ContentType currentContentType = contentTypeAPI.find(idOrVar);
 
 				if (!currentContentType.id().equals(contentType.id())) {
 
@@ -186,13 +194,13 @@ public class ContentTypeResource implements Serializable {
 
 				} else {
 
-					contentType = capi.save(contentType);
 
-					final Set<String> workflowsIds = new HashSet<>(form.getWorkflowsIds());
-					workflowHelper.saveSchemesByContentType(contentType.id(), user, workflowsIds);
-
-					ImmutableMap<Object, Object> responseMap = ImmutableMap.builder()
-							.putAll(new JsonContentTypeTransformer(contentType).mapObject())
+					final Tuple2<ContentType, SystemActionWorkflowActionMapping> tuple2 = this.saveContentTypeAndDependencies(contentType, user,
+							new HashSet<>(form.getWorkflowsIds()), form.getSystemAction(),
+							form.getWorkflowActionId(), contentTypeAPI);
+					final ImmutableMap<Object, Object> responseMap = ImmutableMap.builder()
+							.putAll(new JsonContentTypeTransformer(tuple2._1).mapObject())
+							.put("systemActionMapping", null!=tuple2._2?tuple2._2:"NULL")
 							.put("workflows", this.workflowHelper.findSchemesByContentType(contentType.id(), initData.getUser()))
 							.build();
 
@@ -218,6 +226,25 @@ public class ContentTypeResource implements Serializable {
 		return response;
 	}
 
+	@WrapInTransaction
+	private Tuple2<ContentType, SystemActionWorkflowActionMapping> saveContentTypeAndDependencies (final ContentType contentType,
+																								   final User user,
+																								   final Set<String> workflowsIds,
+																								   final WorkflowAPI.SystemAction systemAction,
+																								   final String workflowActionId,
+																								   final ContentTypeAPI contentTypeAPI) throws DotSecurityException, DotDataException {
+		SystemActionWorkflowActionMapping mapping = null;
+		final ContentType contentTypeSaved = contentTypeAPI.save(contentType);
+		this.workflowHelper.saveSchemesByContentType(contentType.id(), user, workflowsIds);
+		if (UtilMethods.isSet(systemAction) && UtilMethods.isSet(workflowActionId)) {
+
+			mapping = this.workflowHelper.mapSystemActionToWorkflowAction(new WorkflowSystemActionForm.Builder()
+					.systemAction(systemAction).actionId(workflowActionId)
+					.contentTypeVariable(contentTypeSaved.variable()).build(), user);
+		}
+
+		return Tuple.of(contentType, mapping);
+	}
 
 	@DELETE
 	@Path("/id/{idOrVar}")
