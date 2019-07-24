@@ -14,10 +14,9 @@ steps:
   - name: 'docker/compose:1.24.1'
     args: ['-f', './docker/tests/integration/$_DB_TYPE-docker-compose.yml', 'up',
            '--abort-on-container-exit']
-    timeout: 2400s
 
   # Shutdown the images
   - name: 'docker/compose:1.24.1'
     args: ['-f', './docker/tests/integration/$_DB_TYPE-docker-compose.yml', 'down']
 
-timeout: 1800s
+timeout: 2400s
