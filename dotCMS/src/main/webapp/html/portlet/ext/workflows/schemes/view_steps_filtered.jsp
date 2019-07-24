@@ -37,6 +37,7 @@
 
 <%
     int stepIndex = 0;
+    boolean isFirst = true;
     for(WorkflowStep step : steps){
 
     final List<WorkflowAction> actions = (
@@ -46,7 +47,7 @@
     );
 
 %>
-<div class="list-wrapper wfStepInDrag" id="stepID<%=step.getId()%>">
+<div class="list-wrapper wfStepInDrag" id="stepID<%=step.getId()%>" data-first="<%=isFirst%>">
     <div class="list-item"  onmouseout="colorMeNot()">
         <div class="wfStepTitle">
             <div class="showPointer wfStepTitleDivs handle" onClick="stepAdmin.showStepEdit('<%=step.getId()%>')">
@@ -72,7 +73,13 @@
         </div>
 
         <div class="btn-flat-wrapper">
+            <%
+                if (stepIndex > 0){
+            %>
             <div class="btn-flat showPointer" onclick="stepAdmin.deleteStep('<%=step.getId()%>')">Delete</div>
+            <%
+                }
+            %>
             <div class="btn-flat btn-primary showPointer" onclick="actionAdmin.addOrAssociatedAction('<%=scheme.getId()%>', '<%=step.getId()%>', 'step-action-<%=step.getId()%>');">
                 <i class="fa fa-plus" aria-hidden="true"></i> Add
             </div>
@@ -80,7 +87,8 @@
     </div>
 </div>
 <%
-  stepIndex++;
+        isFirst = false;
+        stepIndex++;
 }
 %>
 <div class="list-wrapper showPointer ghostAddDiv" onclick="stepAdmin.schemeId='<%=schemeId%>';stepAdmin.showAddNewStep();" >

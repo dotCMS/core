@@ -1188,6 +1188,15 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		return true; //  todo: if rows affected 0 -> false
 	}
 
+	@Override
+	public void deleteSystemActionsByWorkflowAction(final WorkflowAction action) throws DotDataException {
+
+		Logger.debug(this, ()->"Removing system action mappings associated to the action: " + action.getId());
+		new DotConnect().setSQL(sql.DELETE_SYSTEM_ACTION_BY_WORKFLOW_ACTION_ID)
+				.addParam(action.getId())
+				.loadResult();
+	}
+
 	private String createQueryIn (final List<WorkflowScheme> schemes) {
 
 		final StringBuilder builder = new StringBuilder();

@@ -1049,8 +1049,8 @@ public class WorkflowHelper {
      * @return WorkflowStep
      */
     @WrapInTransaction
-    public WorkflowStep deleteAction(final @NotNull String actionId,
-                                     final @NotNull String stepId,
+    public WorkflowStep deleteAction(final String actionId,
+                                     final String stepId,
                                      final User user) {
 
         if (!UtilMethods.isSet(actionId)) {

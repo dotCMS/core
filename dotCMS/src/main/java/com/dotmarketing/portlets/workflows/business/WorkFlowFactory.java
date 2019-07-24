@@ -413,5 +413,10 @@ public interface WorkFlowFactory {
 	 */
 	boolean deleteSystemAction(SystemActionWorkflowActionMapping mapping) throws DotDataException;
 
-
+	/**
+	 * Deletes the system actions associated to the workflow action
+	 * @param action {@link WorkflowAction}
+	 * @throws DotDataException
+	 */
+	void deleteSystemActionsByWorkflowAction(WorkflowAction action) throws DotDataException;
 }

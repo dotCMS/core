@@ -1691,6 +1691,11 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		}
 
 		Logger.debug(this,
+				() -> "Removing the System Action Mappings, for action: " + action.getId() + ", name:"
+						+ action.getName());
+		this.workFlowFactory.deleteSystemActionsByWorkflowAction(action);
+
+		Logger.debug(this,
 				() -> "Removing the WorkflowAction and Step Dependencies, for action: " + action
 						.getId() + ", name:" + action.getName());
 		this.workFlowFactory.deleteAction(action);

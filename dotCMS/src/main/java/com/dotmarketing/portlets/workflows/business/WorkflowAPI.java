@@ -585,7 +585,7 @@ public interface WorkflowAPI {
 	public boolean isSystemStep (String stepId);
 
 	/**
-	 * Deletes the action associated to the scheme
+	 * Deletes the action associated to the scheme and references
 	 * @param action WorkflowAction
 	 * @param user   User
 	 * @throws DotDataException
