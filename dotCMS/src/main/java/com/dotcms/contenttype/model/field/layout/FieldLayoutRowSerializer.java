@@ -39,11 +39,12 @@ public class FieldLayoutRowSerializer extends JsonSerializer<FieldLayoutRow> {
     final ObjectMapper MAPPER;
 
     public FieldLayoutRowSerializer(){
-        MAPPER = new ObjectMapper();
+        this(new ObjectMapper());
     }
 
     @VisibleForTesting
     FieldLayoutRowSerializer(final ObjectMapper mapper){
+        super();
         this.MAPPER = mapper;
     }
 

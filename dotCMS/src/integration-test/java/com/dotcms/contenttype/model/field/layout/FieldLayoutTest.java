@@ -603,9 +603,7 @@ public class FieldLayoutTest {
                         .build()
         );
         when(contentType.fields()).thenReturn(fields);
-
-        final ContentTypeInternationalization contentTypeInternationalization = mock(ContentTypeInternationalization.class);
-
+        
         final FieldLayout fieldLayout = new FieldLayout(contentType);
 
         assertNull(fieldLayout.getContentTypeInternationalization());

@@ -170,7 +170,7 @@ public class KeyValueCacheImplTest {
         keyValue.setKey(key);
         keyValue.setValue(value);
 
-        KeyValueCache keyValueCache = new KeyValueCacheImpl();
+        final KeyValueCache keyValueCache = new KeyValueCacheImpl();
         keyValueCache.add(languageId, contentTypeId, live, keyValue);
 
         final KeyValue keyValueReturned = keyValueCache.get(key, languageId, "2", live);

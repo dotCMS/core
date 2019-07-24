@@ -13,11 +13,12 @@ public class FieldLayoutSerializer extends JsonSerializer<FieldLayout> {
     final ObjectMapper MAPPER;
 
     public FieldLayoutSerializer(){
-        MAPPER = new ObjectMapper();
+        this(new ObjectMapper());
     }
 
     @VisibleForTesting
     FieldLayoutSerializer(final ObjectMapper mapper){
+        super();
         this.MAPPER = mapper;
     }
 
