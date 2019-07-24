@@ -17,7 +17,7 @@ echo "***************************"
 echo "***************************"
 echo ""
 
-dockerFolder="./../docker/tests/integration"
+dockerFolder="/home/travis/build/dotCMS/core/docker/tests/integration"
 
 # postgres-docker-compose.yml
 sed -e '30s/.*/#&/' -i '' ${dockerFolder}/postgres-docker-compose.yml
