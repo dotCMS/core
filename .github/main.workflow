@@ -1,6 +1,6 @@
 workflow "Run tests" {
-  on = "pull_request"
   resolves = ["Run Angular Tests in dotcms-ui"]
+  on = "pull_request_review_comment"
 }
 
 action "Install dependencies" {
