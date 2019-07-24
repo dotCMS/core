@@ -34,6 +34,7 @@ before_install:
   - chmod +x travis/environment_vars.sh
   - chmod +x travis/install_gcloud.sh
   - chmod +x travis/prepare.sh
+  - chmod +x travis/submit.sh
   - chmod +rwx docker/tests/integration/postgres-docker-compose.yml
   - chmod +rwx docker/tests/integration/mysql-docker-compose.yml
 
@@ -41,11 +42,10 @@ install:
   - travis/environment_vars.sh
   - travis/install_gcloud.sh
   - travis/prepare.sh
-#  - travis_wait mvn install
 
 script:
-  - "travis_wait 30 &"
-  - >
-    gcloud builds submit
-    --config=travis/cloudbuild.yaml
-    --substitutions=_GIT_BRANCH_COMMIT=$TRAVIS_BRANCH,COMMIT_SHA=$TRAVIS_COMMIT,_LICENSE_KEY=$LICENSE,_DB_TYPE=$DB_TYPE .
+  - bash travis/submit.sh
+#  - >
+#    gcloud builds submit
+#    --config=travis/cloudbuild.yaml
+#    --substitutions=_GIT_BRANCH_COMMIT=$TRAVIS_BRANCH,COMMIT_SHA=$TRAVIS_COMMIT,_LICENSE_KEY=$LICENSE,_DB_TYPE=$DB_TYPE .
