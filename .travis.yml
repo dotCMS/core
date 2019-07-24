@@ -25,17 +25,23 @@ env:
     - PATH=${GCLOUD_DIR}/google-cloud-sdk/bin:${PATH}
     - GOOGLE_CREDENTIALS=${TRAVIS_BUILD_DIR}/credentials.json
     - CLOUDSDK_CORE_DISABLE_PROMPTS=1
+    - LICENSE=${DOTCMS_LICENSE}
   matrix:
-#    - DB_TYPE=postgres
+    - DB_TYPE=postgres
     - DB_TYPE=mysql
 
 before_install:
   - chmod +x travis/environment_vars.sh
   - chmod +x travis/install_gcloud.sh
+  - chmod +x travis/prepare.sh
 
 install:
   - travis/environment_vars.sh
   - travis/install_gcloud.sh
+  - travis/prepare.sh
 
 script:
-  - gcloud builds submit --config=travis/cloudbuild.yaml --substitutions=BRANCH_NAME=$TRAVIS_BRANCH  --substitutions=COMMIT_SHA=$TRAVIS_COMMIT .
+  - >
+    gcloud builds submit
+    --config=travis/cloudbuild.yaml
+    --substitutions=_GIT_BRANCH_COMMIT=$TRAVIS_BRANCH,COMMIT_SHA=$TRAVIS_COMMIT,_LICENSE_KEY=$LICENSE,_DB_TYPE=$DB_TYPE .

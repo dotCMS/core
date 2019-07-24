@@ -1,23 +1,23 @@
 steps:
+
+  # https://docs.docker.com/release-notes/docker-compose/
   # Build the new docker image.
-  - name: 'gcr.io/$GOOGLE_PROJECT_ID/docker-compose'
+  - name: 'docker/compose:1.24.1'
     env:
       - 'BUILD_FROM=COMMIT'
-      - 'BUILD_ID=$BRANCH_NAME'
-      - 'DB_TYPE=$DB_TYPE'
       - 'COMMIT_SHA=$COMMIT_SHA'
-      - 'PROJECT_ID=$GOOGLE_PROJECT_ID'
-    args: ['build', '-f', 'postgres-docker-compose.yml', '.']
+      - 'LICENSE_KEY=$_LICENSE_KEY'
+    args: ['-f', './docker/tests/integration/$_DB_TYPE-docker-compose.yml', 'build',
+           '--build-arg', 'BUILD_ID=$_GIT_BRANCH_COMMIT']
 
-  - name: 'gcr.io/$GOOGLE_PROJECT_ID/docker-compose'
-    env:
-      - 'PROJECT_ID=$GOOGLE_PROJECT_ID'
-    args: ['up', '-f', 'postgres-docker-compose.yml', '.']
+  # Run the integration tests image
+  - name: 'docker/compose:1.24.1'
+    args: ['-f', './docker/tests/integration/$_DB_TYPE-docker-compose.yml', 'up',
+           '--abort-on-container-exit']
+    timeout: 2400s
 
-#  - name: 'gcr.io/cloud-builders/docker'
-#    env:
-#      - 'BRANCH_NAME=$BRANCH_NAME'
-#      - 'COMMIT_SHA=$COMMIT_SHA'
-#    args: [ 'build', '-t', "gcr.io/cicd-246518/dotcms-$BRANCH_NAME-$COMMIT_SHA", '--build-arg', 'BUILD_FROM=COMMIT', '--build-arg', "BUILD_ID=$COMMIT_SHA", '.' ]
+  # Shutdown the images
+  - name: 'docker/compose:1.24.1'
+    args: ['-f', './docker/tests/integration/$_DB_TYPE-docker-compose.yml', 'down']
 
 timeout: 1800s
