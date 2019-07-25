@@ -2893,7 +2893,7 @@ public class ContentletAPITest extends ContentletBaseTest {
     }
 
     /**
-     * Testing {@link ContentletAPI#getRelatedContent(com.dotmarketing.portlets.contentlet.model.Contentlet, com.dotmarketing.portlets.structure.model.Relationship, boolean, com.liferay.portal.model.User, boolean)}
+     * Testing {@link ContentletAPI#getRelatedContent(Contentlet, Relationship, User, boolean)}
      *
      * @throws DotSecurityException
      * @throws DotDataException
@@ -4182,6 +4182,85 @@ public class ContentletAPITest extends ContentletBaseTest {
             contentlet3.setIndexPolicy(IndexPolicy.FORCE);
             contentlet3 = contentletAPI.checkin(contentlet3, user, false);
 
+
+        }finally{
+            if(contentType != null) contentTypeAPI.delete(contentType);
+        }
+    }
+
+    @Test(expected = DotContentletValidationException.class)
+    public void testUniqueTextFieldContentletsWithSpecialChars()
+            throws DotDataException, DotSecurityException {
+        final String contentTypeName = "contentTypeTxtField" + System.currentTimeMillis();
+        final String fieldValue = "\"A+\" Student";
+        ContentType contentType = null;
+        try{
+            contentType = createContentType(contentTypeName, BaseContentType.CONTENT);
+            com.dotcms.contenttype.model.field.Field field =  ImmutableTextField.builder()
+                    .name("Text Unique")
+                    .contentTypeId(contentType.id())
+                    .dataType(DataTypes.TEXT)
+                    .unique(true)
+                    .build();
+            field = fieldAPI.save(field, user);
+
+            //Contentlet in English
+            Contentlet contentlet = new Contentlet();
+            contentlet.setContentTypeId(contentType.inode());
+            contentlet.setLanguageId(languageAPI.getDefaultLanguage().getId());
+            contentlet.setStringProperty(field.variable(),fieldValue);
+            contentlet.setIndexPolicy(IndexPolicy.FORCE);
+            contentlet = contentletAPI.checkin(contentlet, user, false);
+            contentlet = contentletAPI.find(contentlet.getInode(), user, false);
+
+            Assert.assertEquals(fieldValue, contentlet.getStringProperty(field.variable()));
+
+            //Contentlet in English (throws the error)
+            Contentlet contentlet3 = new Contentlet();
+            contentlet3.setContentTypeId(contentType.inode());
+            contentlet3.setLanguageId(languageAPI.getDefaultLanguage().getId());
+            contentlet3.setStringProperty(field.variable(),fieldValue);
+            contentlet3.setIndexPolicy(IndexPolicy.FORCE);
+            contentlet3 = contentletAPI.checkin(contentlet3, user, false);
+
+        }finally{
+            if(contentType != null) contentTypeAPI.delete(contentType);
+        }
+    }
+
+    @Test(expected = DotContentletValidationException.class)
+    public void testUniqueTextFieldContentletsCaseInsensitive()
+            throws DotDataException, DotSecurityException {
+        final String contentTypeName = "contentTypeTxtField" + System.currentTimeMillis();
+        ContentType contentType = null;
+        try{
+            contentType = createContentType(contentTypeName, BaseContentType.CONTENT);
+            com.dotcms.contenttype.model.field.Field field =  ImmutableTextField.builder()
+                    .name("Text Unique")
+                    .contentTypeId(contentType.id())
+                    .dataType(DataTypes.TEXT)
+                    .unique(true)
+                    .build();
+            field = fieldAPI.save(field, user);
+
+            //Contentlet in English
+            Contentlet contentlet = new Contentlet();
+            contentlet.setContentTypeId(contentType.inode());
+            contentlet.setLanguageId(languageAPI.getDefaultLanguage().getId());
+            contentlet.setStringProperty(field.variable(),"\"A+\" STUDENT");
+            contentlet.setIndexPolicy(IndexPolicy.FORCE);
+            contentlet = contentletAPI.checkin(contentlet, user, false);
+            contentlet = contentletAPI.find(contentlet.getInode(), user, false);
+
+            Assert.assertEquals("\"A+\" STUDENT", contentlet.getStringProperty(field.variable()));
+
+            //Contentlet in English (throws the error)
+            Contentlet contentlet3 = new Contentlet();
+            contentlet3.setContentTypeId(contentType.inode());
+            contentlet3.setLanguageId(languageAPI.getDefaultLanguage().getId());
+            contentlet3.setStringProperty(field.variable(),"\"A+\" student");
+            contentlet3.setIndexPolicy(IndexPolicy.FORCE);
+            contentlet3 = contentletAPI.checkin(contentlet3, user, false);
 
         }finally{
             if(contentType != null) contentTypeAPI.delete(contentType);
