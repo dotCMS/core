@@ -44,15 +44,9 @@ public class ContentTypeForm  {
         return entries.get(0).workflowsIds;
     }
 
-    public WorkflowAPI.SystemAction getSystemAction() {
-        return entries.get(0).systemAction;
+    public List<Tuple2<WorkflowAPI.SystemAction,String>> getSystemActions() {
+        return entries.get(0).systemActions;
     }
-
-    public String getWorkflowActionId() {
-        return entries.get(0).workflowActionId;
-    }
-
-
 
     public Object getRequestJson() {
         return requestJson;
@@ -77,15 +71,16 @@ public class ContentTypeForm  {
 
             final List<ContentType> typesToSave = new JsonContentTypeTransformer(json).asList();
             final List<List<String>> workflows = getWorkflowIdsFromJson(json);
-            final List<Tuple2<WorkflowAPI.SystemAction, String>> systemActionWorkflowActionIds = systemActionWorkflowActionIdMapFromJson(json);
+            final List<List<Tuple2<WorkflowAPI.SystemAction, String>>> systemActionWorkflowActionIds = systemActionWorkflowActionIdMapFromJson(json);
 
             final List<ContentTypeFormEntry> entries = getContentTypeFormEntries(typesToSave, workflows, systemActionWorkflowActionIds);
 
             return new ContentTypeForm(entries, json);
         }
 
-        private List<Tuple2<WorkflowAPI.SystemAction, String>> systemActionWorkflowActionIdMapFromJson(final String json) {
-            final List<Tuple2<WorkflowAPI.SystemAction, String>> systemActionWorkflowActionIdMapList = new ArrayList<>();
+        private List<List<Tuple2<WorkflowAPI.SystemAction, String>>> systemActionWorkflowActionIdMapFromJson(final String json) {
+
+            final List<List<Tuple2<WorkflowAPI.SystemAction, String>>> systemActionWorkflowActionIdMapList = new ArrayList<>();
 
             try {
 
@@ -93,13 +88,13 @@ public class ContentTypeForm  {
 
                 for (int i = 0; i < jsonArray.size(); i++) {
                     final JSONObject fieldJsonObject = (JSONObject) jsonArray.get(i);
-                    systemActionWorkflowActionIdMapList.addAll(this.getSystemActionsWorkflowActionIds(fieldJsonObject));
+                    systemActionWorkflowActionIdMapList.add(this.getSystemActionsWorkflowActionIds(fieldJsonObject));
                 }
             } catch (JSONException e) {
 
                 try {
                     final JSONObject  fieldJsonObject = new JSONObject(json);
-                    systemActionWorkflowActionIdMapList.addAll(this.getSystemActionsWorkflowActionIds(fieldJsonObject));
+                    systemActionWorkflowActionIdMapList.add(this.getSystemActionsWorkflowActionIds(fieldJsonObject));
                 } catch (JSONException e1) {
                     throw new DotRuntimeException(e1);
                 }
@@ -109,18 +104,18 @@ public class ContentTypeForm  {
 
         private List<ContentTypeFormEntry> getContentTypeFormEntries(final List<ContentType> typesToSave,
                                                                      final List<List<String>> workflows,
-                                                                     final List<Tuple2<WorkflowAPI.SystemAction, String>> systemActionWorkflowActionIds) {
+                                                                     final List<List<Tuple2<WorkflowAPI.SystemAction, String>>> systemActionWorkflowActionIds) {
 
             final List<ContentTypeFormEntry> entries = new ArrayList<>();
 
             for (int i = 0; i < workflows.size(); i++) {
                 final List<String> worflows = workflows.get(i);
                 final ContentType contentType = typesToSave.get(i);
-                final Tuple2<WorkflowAPI.SystemAction, String> systemActionWorkflowAction =
-                        i < systemActionWorkflowActionIds.size()?systemActionWorkflowActionIds.get(i):Tuple.of(null, null);
+                final List<Tuple2<WorkflowAPI.SystemAction, String>> systemActionWorkflowActions =
+                        i < systemActionWorkflowActionIds.size()?systemActionWorkflowActionIds.get(i):Collections.emptyList();
 
                 final ContentTypeFormEntry entry = new ContentTypeFormEntry(contentType, worflows,
-                        systemActionWorkflowAction._2, systemActionWorkflowAction._1);
+                        systemActionWorkflowActions);
                 entries.add(entry);
             }
             return entries;
@@ -191,16 +186,14 @@ public class ContentTypeForm  {
     public static class ContentTypeFormEntry {
         ContentType  contentType;
         List<String> workflowsIds;
-        String       workflowActionId;
-        WorkflowAPI.SystemAction systemAction;
+        List<Tuple2<WorkflowAPI.SystemAction,String>> systemActions;
 
         ContentTypeFormEntry(final ContentType contentType, final List<String> workflowsIds,
-                             final String workflowActionId, final WorkflowAPI.SystemAction systemAction) {
+                             final List<Tuple2<WorkflowAPI.SystemAction,String>> systemActions) {
 
-            this.workflowActionId = workflowActionId;
-            this.systemAction = systemAction;
-            this.contentType  = contentType;
-            this.workflowsIds = workflowsIds;
+            this.systemActions = systemActions;
+            this.contentType   = contentType;
+            this.workflowsIds  = workflowsIds;
         }
     }
 }

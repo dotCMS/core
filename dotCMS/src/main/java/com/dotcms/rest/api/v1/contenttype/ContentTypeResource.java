@@ -179,21 +179,16 @@ public class ContentTypeResource implements Serializable {
 
 				} else {
 
-					final Tuple2<ContentType, SystemActionWorkflowActionMapping> tuple2 = this.saveContentTypeAndDependencies(contentType, user,
-							new HashSet<>(form.getWorkflowsIds()), form.getSystemAction(),
-							form.getWorkflowActionId(), contentTypeAPI);
+					final Tuple2<ContentType, List<SystemActionWorkflowActionMapping>> tuple2 = this.saveContentTypeAndDependencies(contentType, user,
+							new HashSet<>(form.getWorkflowsIds()), form.getSystemActions(), contentTypeAPI);
 					final ImmutableMap.Builder<Object, Object> builderMap =
 							ImmutableMap.builder()
 							.putAll(new JsonContentTypeTransformer(tuple2._1).mapObject())
-							.put("workflows", this.workflowHelper.findSchemesByContentType(contentType.id(), initData.getUser()));
+							.put("workflows", this.workflowHelper.findSchemesByContentType(contentType.id(), initData.getUser()))
+							.put("systemActionMappings", tuple2._2.stream()
+									.collect(Collectors.toMap(mapping-> mapping.getSystemAction(), mapping->mapping)));
 
-					if (null!=tuple2._2) {
-
-						builderMap.put("systemActionMappings", CollectionsUtils.map(tuple2._2.getSystemAction(), tuple2._2));
-					}
-
-					final ImmutableMap<Object, Object> responseMap = builderMap.build();
-					response = Response.ok(new ResponseEntityView(responseMap)).build();
+					response = Response.ok(new ResponseEntityView(builderMap.build())).build();
 				}
 			}
 		} catch (NotFoundInDbException e) {
@@ -216,23 +211,28 @@ public class ContentTypeResource implements Serializable {
 	}
 
 	@WrapInTransaction
-	private Tuple2<ContentType, SystemActionWorkflowActionMapping> saveContentTypeAndDependencies (final ContentType contentType,
+	private Tuple2<ContentType, List<SystemActionWorkflowActionMapping>> saveContentTypeAndDependencies (final ContentType contentType,
 																								   final User user,
 																								   final Set<String> workflowsIds,
-																								   final WorkflowAPI.SystemAction systemAction,
-																								   final String workflowActionId,
+																								   final List<Tuple2<WorkflowAPI.SystemAction,String>> systemActionMappings,
 																								   final ContentTypeAPI contentTypeAPI) throws DotSecurityException, DotDataException {
-		SystemActionWorkflowActionMapping mapping = null;
+
+		final List<SystemActionWorkflowActionMapping> systemActionWorkflowActionMappings = new ArrayList<>();
 		final ContentType contentTypeSaved = contentTypeAPI.save(contentType);
 		this.workflowHelper.saveSchemesByContentType(contentType.id(), user, workflowsIds);
-		if (UtilMethods.isSet(systemAction) && UtilMethods.isSet(workflowActionId)) {
+		if (UtilMethods.isSet(systemActionMappings)) {
 
-			mapping = this.workflowHelper.mapSystemActionToWorkflowAction(new WorkflowSystemActionForm.Builder()
-					.systemAction(systemAction).actionId(workflowActionId)
-					.contentTypeVariable(contentTypeSaved.variable()).build(), user);
+			for (final Tuple2<WorkflowAPI.SystemAction,String> tuple2 : systemActionMappings) {
+
+				final WorkflowAPI.SystemAction systemAction = tuple2._1;
+				final String workflowActionId               = tuple2._2;
+				systemActionWorkflowActionMappings.add(this.workflowHelper.mapSystemActionToWorkflowAction(new WorkflowSystemActionForm.Builder()
+						.systemAction(systemAction).actionId(workflowActionId)
+						.contentTypeVariable(contentTypeSaved.variable()).build(), user));
+			}
 		}
 
-		return Tuple.of(contentType, mapping);
+		return Tuple.of(contentType, systemActionWorkflowActionMappings);
 	}
 
 	@DELETE
