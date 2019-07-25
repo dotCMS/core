@@ -47,6 +47,7 @@ import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.util.CollectionsUtils;
+import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotcms.uuid.shorty.ShortyIdCache;
@@ -4142,8 +4143,34 @@ public class ContentletAPITest extends ContentletBaseTest {
         }
     }
 
+    private static class testCaseUniqueTextField{
+        String fieldValue1;
+
+        testCaseUniqueTextField(final String fieldValue1){
+            this.fieldValue1 = fieldValue1;
+        }
+    }
+
+    @DataProvider
+    public static Object[] testCasesUniqueTextField() throws Exception{
+        return new Object[]{
+                new testCaseUniqueTextField("diffLang"),//test for same value diff lang
+                new testCaseUniqueTextField("\"A+\" Student"),//test for special chars
+                new testCaseUniqueTextField("CASEINSENSITIVE")//test for case insensitive
+        };
+    }
+
+    /**
+     * This test is for the unique feature of a text field.
+     * It creates a content type with a text field marked as unique,
+     * and creates a contentlet in English, then a contentlet in Spanish
+     * (unique value does not matter the lang)
+     * and finally another contentlet in English and this is when it throws the exception
+     * (value it's in lowercase because needs to be case insentitive)
+     */
     @Test(expected = DotContentletValidationException.class)
-    public void testUniqueTextFieldContentletsWithDiffLanguages()
+    @UseDataProvider("testCasesUniqueTextField")
+    public void testUniqueTextFieldContentlets(final testCaseUniqueTextField testCase)
             throws DotDataException, DotSecurityException {
         String contentTypeName = "contentTypeTxtField" + System.currentTimeMillis();
         ContentType contentType = null;
@@ -4161,7 +4188,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             Contentlet contentlet = new Contentlet();
             contentlet.setContentTypeId(contentType.inode());
             contentlet.setLanguageId(languageAPI.getDefaultLanguage().getId());
-            contentlet.setStringProperty(field.variable(),"test");
+            contentlet.setStringProperty(field.variable(),testCase.fieldValue1);
             contentlet.setIndexPolicy(IndexPolicy.FORCE);
             contentlet = contentletAPI.checkin(contentlet, user, false);
             contentlet = contentletAPI.find(contentlet.getInode(), user, false);
@@ -4170,7 +4197,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             Contentlet contentlet2 = new Contentlet();
             contentlet2.setContentTypeId(contentType.inode());
             contentlet2.setLanguageId(spanishLanguage.getId());
-            contentlet2.setStringProperty(field.variable(),"test");
+            contentlet2.setStringProperty(field.variable(),testCase.fieldValue1);
             contentlet2.setIndexPolicy(IndexPolicy.FORCE);
             contentlet2 = contentletAPI.checkin(contentlet2, user, false);
 
@@ -4178,7 +4205,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             Contentlet contentlet3 = new Contentlet();
             contentlet3.setContentTypeId(contentType.inode());
             contentlet3.setLanguageId(languageAPI.getDefaultLanguage().getId());
-            contentlet3.setStringProperty(field.variable(),"test");
+            contentlet3.setStringProperty(field.variable(),testCase.fieldValue1.toLowerCase());
             contentlet3.setIndexPolicy(IndexPolicy.FORCE);
             contentlet3 = contentletAPI.checkin(contentlet3, user, false);
 
@@ -4187,7 +4214,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             if(contentType != null) contentTypeAPI.delete(contentType);
         }
     }
-
+/*
     @Test(expected = DotContentletValidationException.class)
     public void testUniqueTextFieldContentletsWithSpecialChars()
             throws DotDataException, DotSecurityException {
@@ -4266,7 +4293,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             if(contentType != null) contentTypeAPI.delete(contentType);
         }
     }
-
+*/
     /**
      * This one tests the ContentletAPI.checkin with the following signature:
      *
