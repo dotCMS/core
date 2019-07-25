@@ -1,9 +1,11 @@
 package com.dotcms.rest.api.v1.personalization;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.util.pagination.PaginatorOrdered;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -12,6 +14,7 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.transform.ContentletToMapTransformer;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.personas.business.PersonaAPI;
 import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.util.Logger;
@@ -33,10 +36,10 @@ public class PersonalizationPersonaPageViewPaginator implements PaginatorOrdered
     public  static final String PAGE_ID        = "pageId";
     private static final String PERSONAS_QUERY = "+contentType:persona +live:true +deleted:false +working:true +conhost:";
 
-    private final PersonaAPI    personaAPI;
+
     private final MultiTreeAPI  multiTreeAPI;
     private final ContentletAPI contentletAPI;
-    private final Persona defaultPersona;
+    private final Map<String,Object> defaultPersona;
     public PersonalizationPersonaPageViewPaginator() {
         this(APILocator.getPersonaAPI(), APILocator.getMultiTreeAPI(),
                 APILocator.getContentletAPI());
@@ -47,17 +50,25 @@ public class PersonalizationPersonaPageViewPaginator implements PaginatorOrdered
                                                    final MultiTreeAPI multiTreeAPI,
                                                    final ContentletAPI contentletAPI) {
 
-        this.personaAPI = personaAPI;
+
         this.multiTreeAPI = multiTreeAPI;
         this.contentletAPI = contentletAPI;
         
         final Map<String, Object> map = new HashMap<>();
-        map.put("stInode", Try.of(()->  APILocator.getContentTypeAPI(APILocator.systemUser()).find("persona").id()).getOrNull());
+        map.put("stInode", PersonaAPI.DEFAULT_PERSONAS_STRUCTURE_INODE);
         map.put("hostFolder",  APILocator.systemHost().getIdentifier());
         map.put("modUser",  APILocator.systemUser().getUserId());
+        map.put("working",true);
+        map.put("name", "modes.persona.no.persona");
         map.put("personalized", Boolean.FALSE);
-        map.put("name", "Default Persona");
-        this.defaultPersona = Try.of(()->  APILocator.getPersonaAPI().fromContentlet( new Contentlet(map))).getOrNull();
+        map.put("hostName", "SYSTEM_HOST");
+        map.put("host", "SYSTEM_HOST");
+        map.put("contentType", "persona");
+        map.put("archived", false);
+        map.put("baseType", "PERSONA");
+        map.put("keyTag", Persona.DOT_PERSONA_PREFIX_SCHEME);
+        map.put("hasTitleImage", false);
+        this.defaultPersona = ImmutableMap.copyOf(map);
     }
 
     
@@ -65,7 +76,7 @@ public class PersonalizationPersonaPageViewPaginator implements PaginatorOrdered
         
     
     @Override
-    public PaginatedArrayList<PersonalizationPersonaPageView> getItems(final User user, final String filter, final int realLimit, final int realOffset, final String orderBy,
+    public PaginatedArrayList<PersonalizationPersonaPageView> getItems(final User user, final String filter,  int limit,  int offset, final String orderBy,
                                                             final OrderDirection direction, final Map<String, Object> extraParams) {
 
         final boolean respectFrontendRoles = (Boolean)extraParams.get("respectFrontEndRoles");
@@ -73,12 +84,12 @@ public class PersonalizationPersonaPageViewPaginator implements PaginatorOrdered
         String orderByString = UtilMethods.isSet(orderBy) ? orderBy : "title desc";
         final String hostId  = extraParams.get("hostId").toString();
         final StringBuilder query = new StringBuilder(PERSONAS_QUERY).append(hostId);
-
-
-        final int offset = (realOffset <= 0) ? 0 : realOffset-1;
-        final int limit  = (offset == 0) ? realLimit-1  : realLimit;
-        
-        if (UtilMethods.isSet(filter)) {
+        final boolean noFilter = !UtilMethods.isSet(filter);
+        if(noFilter) {
+          offset = (offset <= 0) ? 0 : offset-1;
+          limit  = (offset == 0) ? limit-1  : limit;
+        }
+        else {
 
             query.append(" +persona.name:").append(filter).append("*");
         }
@@ -95,8 +106,15 @@ public class PersonalizationPersonaPageViewPaginator implements PaginatorOrdered
             final Set<String> personaTagPerPage = this.multiTreeAPI.getPersonalizationsForPage (pageId);
             final List<PersonalizationPersonaPageView> personalizationPersonaPageViews = new ArrayList<>();
             
-            if (offset == 0) {
-              final Map<String, Object> contentletMap = ContentletUtil.getContentPrintableMap(user, this.defaultPersona);
+            if (offset == 0 && noFilter) {
+              
+              
+              Language foundLanguage = WebAPILocator.getLanguageWebAPI().getLanguage(HttpServletRequestThreadLocal.INSTANCE.getRequest());
+              Map<String,Object> contentletMap= new HashMap<>(this.defaultPersona);
+              contentletMap.put("name",APILocator.getLanguageAPI().getStringKey(foundLanguage, "modes.persona.no.persona"));
+              contentletMap.put("title",APILocator.getLanguageAPI().getStringKey(foundLanguage, "modes.persona.no.persona"));
+              contentletMap.put("languageId",foundLanguage.getId());
+
               personalizationPersonaPageViews.add(new PersonalizationPersonaPageView(pageId, contentletMap));
             }
             for (final Contentlet contentlet : contentlets) {
