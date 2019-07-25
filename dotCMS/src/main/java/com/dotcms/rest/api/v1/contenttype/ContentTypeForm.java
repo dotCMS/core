@@ -117,7 +117,7 @@ public class ContentTypeForm  {
                 final List<String> worflows = workflows.get(i);
                 final ContentType contentType = typesToSave.get(i);
                 final Tuple2<WorkflowAPI.SystemAction, String> systemActionWorkflowAction =
-                        systemActionWorkflowActionIds.get(i);
+                        i < systemActionWorkflowActionIds.size()?systemActionWorkflowActionIds.get(i):Tuple.of(null, null);
 
                 final ContentTypeFormEntry entry = new ContentTypeFormEntry(contentType, worflows,
                         systemActionWorkflowAction._2, systemActionWorkflowAction._1);

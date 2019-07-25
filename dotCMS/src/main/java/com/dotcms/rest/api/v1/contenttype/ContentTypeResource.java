@@ -189,7 +189,7 @@ public class ContentTypeResource implements Serializable {
 
 					if (null!=tuple2._2) {
 
-						builderMap.put("systemActionMapping", CollectionsUtils.map(tuple2._2.getSystemAction(), tuple2._2));
+						builderMap.put("systemActionMappings", CollectionsUtils.map(tuple2._2.getSystemAction(), tuple2._2));
 					}
 
 					final ImmutableMap<Object, Object> responseMap = builderMap.build();
