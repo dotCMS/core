@@ -15,6 +15,7 @@ import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.annotation.PermissionsUtil;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
+import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.ContentTypesPaginator;
 import com.dotcms.util.pagination.OrderDirection;
@@ -27,7 +28,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
-import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
@@ -35,35 +35,20 @@ import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import org.glassfish.jersey.server.JSONP;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import javax.ws.rs.*;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import java.io.Serializable;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Path("/v1/contenttype")
 public class ContentTypeResource implements Serializable {
@@ -197,12 +182,17 @@ public class ContentTypeResource implements Serializable {
 					final Tuple2<ContentType, SystemActionWorkflowActionMapping> tuple2 = this.saveContentTypeAndDependencies(contentType, user,
 							new HashSet<>(form.getWorkflowsIds()), form.getSystemAction(),
 							form.getWorkflowActionId(), contentTypeAPI);
-					final ImmutableMap<Object, Object> responseMap = ImmutableMap.builder()
+					final ImmutableMap.Builder<Object, Object> builderMap =
+							ImmutableMap.builder()
 							.putAll(new JsonContentTypeTransformer(tuple2._1).mapObject())
-							.put("systemActionMapping", null!=tuple2._2?tuple2._2:"NULL")
-							.put("workflows", this.workflowHelper.findSchemesByContentType(contentType.id(), initData.getUser()))
-							.build();
+							.put("workflows", this.workflowHelper.findSchemesByContentType(contentType.id(), initData.getUser()));
 
+					if (null!=tuple2._2) {
+
+						builderMap.put("systemActionMapping", CollectionsUtils.map(tuple2._2.getSystemAction(), tuple2._2));
+					}
+
+					final ImmutableMap<Object, Object> responseMap = builderMap.build();
 					response = Response.ok(new ResponseEntityView(responseMap)).build();
 				}
 			}
@@ -310,7 +300,8 @@ public class ContentTypeResource implements Serializable {
 			resultMap.putAll(new JsonContentTypeTransformer(type).mapObject());
 			resultMap.put("workflows", 		 this.workflowHelper.findSchemesByContentType(type.id(), initData.getUser()));
 			resultMap.put("systemActionMappings",
-					this.workflowHelper.findSystemActionsByContentType(type, initData.getUser()));
+					this.workflowHelper.findSystemActionsByContentType(type, initData.getUser())
+							.stream().collect(Collectors.toMap(mapping -> mapping.getSystemAction(),mapping -> mapping)));
 
 			response = ("true".equalsIgnoreCase(req.getParameter("include_permissions")))?
 					Response.ok(new ResponseEntityView(resultMap, PermissionsUtil.getInstance().getPermissionsArray(type, initData.getUser()))).build():
