@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Using this approach in order to avoid travis timeouts waithing for log movement
+
 function bell() {
   while true; do
     echo -e "\a"
