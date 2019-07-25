@@ -284,7 +284,7 @@ public class RoleAPIImpl implements RoleAPI {
 	@Override
 	public Role loadLoggedinSiteRole() throws DotDataException {
 		if(LOGGEDIN_SITE_USER == null){
-			LOGGEDIN_SITE_USER =  roleFactory.loadRoleByKey(Config.getStringProperty("CMS_LOGGED_IN_SITE_USER_ROLE"));
+			LOGGEDIN_SITE_USER =  roleFactory.loadRoleByKey(Role.DOTCMS_FRONT_END_USER);
 		}
 		return LOGGEDIN_SITE_USER;
 	}
