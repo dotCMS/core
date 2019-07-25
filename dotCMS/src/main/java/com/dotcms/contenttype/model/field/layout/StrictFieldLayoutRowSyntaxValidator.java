@@ -4,6 +4,7 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.TabDividerField;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  *  Strict Field Layout Validator, throw a {@link FieldLayoutValidationException} when a {@link FieldLayout} is not valid
@@ -21,7 +22,7 @@ public class StrictFieldLayoutRowSyntaxValidator extends FieldLayoutRowSyntaxVal
             throws FieldLayoutValidationException {
 
         throw new FieldLayoutValidationException(
-                String.format("Max columns by rows exceeded: %s", columns));
+                String.format("Max columns by rows exceeded"));
     }
 
     @Override
@@ -32,7 +33,8 @@ public class StrictFieldLayoutRowSyntaxValidator extends FieldLayoutRowSyntaxVal
 
         if (firstField == null || !FieldUtil.isRowDivider(firstField)) {
             throw new FieldLayoutValidationException(
-                    String.format("Expected RowField or TabField before: %s %s", fragmentFields, firstField));
+                    String.format("Expected RowField or TabField before: %s %s",
+                            toString(fragmentFields), firstField.name()));
         }
     }
 
@@ -47,7 +49,7 @@ public class StrictFieldLayoutRowSyntaxValidator extends FieldLayoutRowSyntaxVal
         final Field firstField = columnFields.isEmpty() ? null : columnFields.get(0);
 
         if (firstField == null || !FieldUtil.isColumnField(firstField)) {
-            throw new FieldLayoutValidationException(String.format("Expected ColumnField before: %s", columnFields));
+            throw new FieldLayoutValidationException(String.format("Expected ColumnField before: %s", toString(columnFields)));
         }
     }
 
@@ -62,7 +64,7 @@ public class StrictFieldLayoutRowSyntaxValidator extends FieldLayoutRowSyntaxVal
             final Field field = fields.get(i);
 
             if (field.sortOrder() != i) {
-                throw new FieldLayoutValidationException(String.format("sortOrder is not right for %s", field));
+                throw new FieldLayoutValidationException(String.format("sortOrder is not right for %s", field.name()));
             }
         }
     }
@@ -70,5 +72,11 @@ public class StrictFieldLayoutRowSyntaxValidator extends FieldLayoutRowSyntaxVal
     @Override
     protected void processEmptyFields() {
         // DO nothing
+    }
+
+    private String toString(final List<Field> fields) {
+        return fields.stream()
+                .map(field -> field.name())
+                .collect(Collectors.joining(","));
     }
 }
