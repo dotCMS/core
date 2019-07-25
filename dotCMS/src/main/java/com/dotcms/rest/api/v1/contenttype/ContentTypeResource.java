@@ -95,6 +95,7 @@ public class ContentTypeResource implements Serializable {
 		Response response = null;
 
 		try {
+
 			Logger.debug(this, ()->String.format("Saving new content type '%s' ", form.getRequestJson()));
 			final HttpSession session = req.getSession(false);
 			final Iterable<ContentTypeForm.ContentTypeFormEntry> typesToSave = form.getIterable();
@@ -102,29 +103,34 @@ public class ContentTypeResource implements Serializable {
 
 			// Validate input
 			for (final ContentTypeForm.ContentTypeFormEntry entry : typesToSave) {
+
 				final ContentType type = entry.contentType;
 				final Set<String> workflowsIds = new HashSet<>(entry.workflowsIds);
 
 				if (UtilMethods.isSet(type.id()) && !UUIDUtil.isUUID(type.id())) {
 					return ExceptionMapperUtil.createResponse(null, "ContentType 'id' if set, should be a uuid");
 				}
-				final ContentType contentTypeSaved = APILocator.getContentTypeAPI(user, true).save(type);
-				this.workflowHelper.saveSchemesByContentType(contentTypeSaved.id(), user, workflowsIds);
+
+				final Tuple2<ContentType, List<SystemActionWorkflowActionMapping>>  tuple2 =
+						this.saveContentTypeAndDependencies(type, initData.getUser(), workflowsIds,
+							form.getSystemActions(), APILocator.getContentTypeAPI(user, true));
+				final ContentType contentTypeSaved = tuple2._1;
 
 				ImmutableMap<Object, Object> responseMap = ImmutableMap.builder()
 						.putAll(new JsonContentTypeTransformer(contentTypeSaved).mapObject())
 						.put("workflows", this.workflowHelper.findSchemesByContentType(contentTypeSaved.id(), initData.getUser()))
+						.put("systemActionMappings", tuple2._2.stream()
+								.collect(Collectors.toMap(mapping-> mapping.getSystemAction(), mapping->mapping)))
 						.build();
 				retTypes.add(responseMap);
+
 				// save the last one to the session to be compliant with #13719
 				if(null != session){
                   session.removeAttribute(SELECTED_STRUCTURE_KEY);
 				}
 			}
 
-
 			response = Response.ok(new ResponseEntityView(retTypes)).build();
-
 		} catch (IllegalArgumentException e) {
 			Logger.error(this, e.getMessage());
 			response = ExceptionMapperUtil
@@ -219,7 +225,7 @@ public class ContentTypeResource implements Serializable {
 
 		final List<SystemActionWorkflowActionMapping> systemActionWorkflowActionMappings = new ArrayList<>();
 		final ContentType contentTypeSaved = contentTypeAPI.save(contentType);
-		this.workflowHelper.saveSchemesByContentType(contentType.id(), user, workflowsIds);
+		this.workflowHelper.saveSchemesByContentType(contentTypeSaved.id(), user, workflowsIds);
 		if (UtilMethods.isSet(systemActionMappings)) {
 
 			for (final Tuple2<WorkflowAPI.SystemAction,String> tuple2 : systemActionMappings) {
@@ -232,7 +238,7 @@ public class ContentTypeResource implements Serializable {
 			}
 		}
 
-		return Tuple.of(contentType, systemActionWorkflowActionMappings);
+		return Tuple.of(contentTypeSaved, systemActionWorkflowActionMappings);
 	}
 
 	@DELETE
