@@ -5180,7 +5180,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                     buffy.append(" +(live:true working:true)");
                     buffy.append(" +structureInode:" + contentlet.getStructureInode());
-                    buffy.append(" +(working:true live:true)");
                     if(UtilMethods.isSet(contentlet.getIdentifier())){
                         buffy.append(" -(identifier:" + contentlet.getIdentifier() + ")");
                     }
@@ -5188,11 +5187,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     buffy.append(" +languageId:" + contentlet.getLanguageId());
 
                     buffy.append(" +" + contentlet.getContentType().variable() + "." + field
-                            .getVelocityVarName() + ESUtils.SHA_256 + ":");
-                    buffy.append(ESUtils.sha256(contentlet.getContentType().variable()
-                                    + "." + field.getVelocityVarName(),
-                            getFieldValue(contentlet, new LegacyFieldTransformer(field).from()),
-                            contentlet.getLanguageId()));
+                            .getVelocityVarName() + ":");
+                    buffy.append(getFieldValue(contentlet, new LegacyFieldTransformer(field).from()));
+
                     List<ContentletSearch> contentlets = new ArrayList<ContentletSearch>();
                     try {
                         contentlets = searchIndex(buffy.toString(), -1, 0, "inode", APILocator.getUserAPI().getSystemUser(), false);
