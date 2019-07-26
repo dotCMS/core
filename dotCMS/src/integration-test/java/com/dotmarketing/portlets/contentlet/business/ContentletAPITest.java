@@ -5943,4 +5943,50 @@ public class ContentletAPITest extends ContentletBaseTest {
         }
     }
 
+    @Test
+    public void testRemoveContentFromIndexMultilingualContent()
+            throws DotDataException, DotSecurityException, InterruptedException {
+        ContentType contentType = null;
+
+        try {
+            contentType = new ContentTypeDataGen()
+                    .name("testRemoveContentFromIndexMultilingualContent"+System.currentTimeMillis())
+                    .fields(ImmutableList
+                            .of(ImmutableTextField.builder().name("Title").variable("title")
+                                    .build()))
+                    .nextPersisted();
+
+            final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType.id());
+            final Contentlet contentInEnglish = contentletDataGen.languageId(languageAPI.getDefaultLanguage().getId()).nextPersisted();
+            Contentlet contentInSpanish = contentletDataGen.checkout(contentInEnglish);
+            contentInSpanish.setLanguageId(spanishLanguage.getId());
+            contentInSpanish.setIndexPolicy(IndexPolicy.FORCE);
+            contentInSpanish = contentletDataGen.checkin(contentInSpanish);
+
+            assertEquals(2,
+                    contentletAPI.searchIndex("+identifier:"+contentInEnglish.getIdentifier(),-1,0,"",user,true).size());
+
+            contentletDataGen.archive(contentInSpanish);
+            contentletDataGen.delete(contentInSpanish);
+            Thread.sleep(1000);//give a sec so index refresh
+
+            assertEquals(1,
+                    contentletAPI.searchIndex("+identifier:"+contentInEnglish.getIdentifier(),-1,0,"",user,true).size());
+
+            contentletDataGen.archive(contentInEnglish);
+            contentletDataGen.delete(contentInEnglish);
+            Thread.sleep(1000);//give a sec so index refresh
+
+            assertEquals(0,
+                    contentletAPI.searchIndex("+identifier:"+contentInEnglish.getIdentifier(),-1,0,"",user,true).size());
+
+
+
+        } finally {
+            if (contentType != null) {
+                contentTypeAPI.delete(contentType);
+            }
+        }
+    }
+
 }
