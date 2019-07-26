@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-language: java
 git:
   submodules: false
 
@@ -36,20 +35,19 @@ before_install:
   - chmod +rwx docker/tests/integration/postgres-docker-compose.yml
   - chmod +rwx docker/tests/integration/mysql-docker-compose.yml
 
+cache: bundler
+
 # https://docs.travis-ci.com/user/build-stages
 jobs:
   include:
     - stage: build image
       script: bash travis/submit.sh
-#      install: skip # bundle install is not required
     - stage: integration tests
-      env: DB_TYPE=postgres
-      name: postgres
+      env:
+        - DB_TYPE=postgres
+        - DB_TYPE=mysql
+      name: ${DB_TYPE}
       script: bash travis/run.sh
-      install: skip # bundle install is not required
-    - script: bash travis/run.sh
-      env: DB_TYPE=mysql
-      name: mysql
       install: skip # bundle install is not required
 
 install:
