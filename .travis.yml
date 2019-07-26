@@ -4,8 +4,8 @@ git:
 
 cache:
   directories:
-    - "${HOME}/gcloud/google-cloud-sdk/"
-    -
+    - ${HOME}/gcloud/
+
 branches:
   only:
    - /^test-16881.*$/
