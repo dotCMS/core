@@ -1,19 +1,24 @@
 package com.dotcms.rest.api.v1.personalization;
 
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
-import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.util.pagination.PaginatorOrdered;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeAPI;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.contentlet.transform.ContentletToMapTransformer;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.personas.business.PersonaAPI;
 import com.dotmarketing.portlets.personas.model.Persona;
@@ -24,119 +29,77 @@ import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 
-import io.vavr.API;
+import io.vavr.Tuple2;
 import io.vavr.control.Try;
-
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.util.*;
 
 public class PersonalizationPersonaPageViewPaginator implements PaginatorOrdered<PersonalizationPersonaPageView> {
 
-    public  static final String PAGE_ID        = "pageId";
-    private static final String PERSONAS_QUERY = "+contentType:persona +live:true +deleted:false +working:true +conhost:";
+  public static final String PAGE_ID = "pageId";
 
+  private final MultiTreeAPI multiTreeAPI;
+  private final PersonaAPI personaAPI;
 
-    private final MultiTreeAPI  multiTreeAPI;
-    private final ContentletAPI contentletAPI;
-    private final Map<String,Object> defaultPersona;
-    public PersonalizationPersonaPageViewPaginator() {
-        this(APILocator.getPersonaAPI(), APILocator.getMultiTreeAPI(),
-                APILocator.getContentletAPI());
+  public PersonalizationPersonaPageViewPaginator() {
+    this(APILocator.getPersonaAPI(), APILocator.getMultiTreeAPI());
 
-    }
+  }
 
-    public PersonalizationPersonaPageViewPaginator(final PersonaAPI personaAPI,
-                                                   final MultiTreeAPI multiTreeAPI,
-                                                   final ContentletAPI contentletAPI) {
+  public PersonalizationPersonaPageViewPaginator(final PersonaAPI personaAPI, final MultiTreeAPI multiTreeAPI) {
 
+    this.multiTreeAPI = multiTreeAPI;
+    this.personaAPI = personaAPI;
 
-        this.multiTreeAPI = multiTreeAPI;
-        this.contentletAPI = contentletAPI;
-        
-        final Map<String, Object> map = new HashMap<>();
-        map.put("stInode", PersonaAPI.DEFAULT_PERSONAS_STRUCTURE_INODE);
-        map.put("hostFolder",  APILocator.systemHost().getIdentifier());
-        map.put("modUser",  APILocator.systemUser().getUserId());
-        map.put("working",true);
-        map.put("name", "modes.persona.no.persona");
-        map.put("personalized", Boolean.FALSE);
-        map.put("hostName", "SYSTEM_HOST");
-        map.put("host", "SYSTEM_HOST");
-        map.put("contentType", "persona");
-        map.put("archived", false);
-        map.put("baseType", "PERSONA");
-        map.put("keyTag", Persona.DOT_PERSONA_PREFIX_SCHEME);
-        map.put("hasTitleImage", false);
-        this.defaultPersona = ImmutableMap.copyOf(map);
-    }
+  }
 
-    
+  @Override
+  public PaginatedArrayList<PersonalizationPersonaPageView> getItems(final User user, final String filter, int limit, int offset,
+      final String orderBy, final OrderDirection direction, final Map<String, Object> extraParams) {
 
-        
-    
-    @Override
-    public PaginatedArrayList<PersonalizationPersonaPageView> getItems(final User user, final String filter,  int limit,  int offset, final String orderBy,
-                                                            final OrderDirection direction, final Map<String, Object> extraParams) {
+    final boolean respectFrontEndRoles = (Boolean) extraParams.get("respectFrontEndRoles");
+    final String pageId = extraParams.get(PAGE_ID).toString();
+    String orderByString = UtilMethods.isSet(orderBy) ? orderBy : "title desc";
+    orderByString =
+        orderByString.trim().toLowerCase().endsWith(" asc") || orderByString.trim().toLowerCase().endsWith(" desc") ? orderByString
+            : orderByString + " " + (UtilMethods.isSet(direction) ? direction.toString().toLowerCase() : OrderDirection.ASC.name());
 
-        final boolean respectFrontendRoles = (Boolean)extraParams.get("respectFrontEndRoles");
-        final String pageId  = extraParams.get(PAGE_ID).toString();
-        String orderByString = UtilMethods.isSet(orderBy) ? orderBy : "title desc";
-        final String hostId  = extraParams.get("hostId").toString();
-        final StringBuilder query = new StringBuilder(PERSONAS_QUERY).append(hostId);
-        final boolean noFilter = !UtilMethods.isSet(filter);
-        if(noFilter) {
-          offset = (offset <= 0) ? 0 : offset-1;
-          limit  = (offset == 0) ? limit-1  : limit;
-        }
-        else {
+    final Host host = Try.of(() -> APILocator.getHostAPI().find(extraParams.get("hostId").toString(), user, respectFrontEndRoles))
+        .getOrElse(APILocator.systemHost());
 
-            query.append(" +persona.name:").append(filter).append("*");
+    try {
+      Tuple2<List<Persona>, Integer> personas = personaAPI.getPersonasIncludingDefaultPersona(host, filter, respectFrontEndRoles, limit,
+          offset, orderByString, user, respectFrontEndRoles);
+
+      final Set<String> personaTagPerPage = this.multiTreeAPI.getPersonalizationsForPage(pageId);
+      final List<PersonalizationPersonaPageView> personalizationPersonaPageViews = new ArrayList<>();
+
+      Language foundLanguage =
+          Try.of(() -> WebAPILocator.getLanguageWebAPI().getLanguage(HttpServletRequestThreadLocal.INSTANCE.getRequest()))
+              .getOrElse(APILocator.getLanguageAPI().getDefaultLanguage());
+
+      for (final Persona persona : personas._1) {
+
+        final Map<String, Object> personaMap = ContentletUtil.getContentPrintableMap(user, persona);
+        personaMap.put("personalized",
+            personaTagPerPage.contains(Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + persona.getKeyTag()));
+        if (PersonaAPI.DEFAULT_PERSONA_NAME_KEY.equals(persona.getName())) {
+          personaMap.put("name", APILocator.getLanguageAPI().getStringKey(foundLanguage, "modes.persona.no.persona"));
+          personaMap.put("title", APILocator.getLanguageAPI().getStringKey(foundLanguage, "modes.persona.no.persona"));
+          personaMap.put("languageId", foundLanguage.getId());
         }
 
-        orderByString =  orderByString.trim().toLowerCase().endsWith(" asc") ||
-                orderByString.trim().toLowerCase().endsWith(" desc")? orderByString:
-                orderByString + " " + (UtilMethods.isSet(direction) ? direction.toString().toLowerCase(): OrderDirection.ASC.name());
+        personalizationPersonaPageViews.add(new PersonalizationPersonaPageView(pageId, personaMap));
+      }
 
+      final PaginatedArrayList<PersonalizationPersonaPageView> result = new PaginatedArrayList<>();
+      result.addAll(personalizationPersonaPageViews);
+      result.setTotalResults(personas._2);
 
-        try {
+      return result;
+    } catch (Exception e) {
 
-            final List<Contentlet> contentlets  = this.contentletAPI.search
-                    (query.toString(), limit, offset, orderByString, user,respectFrontendRoles);
-            final Set<String> personaTagPerPage = this.multiTreeAPI.getPersonalizationsForPage (pageId);
-            final List<PersonalizationPersonaPageView> personalizationPersonaPageViews = new ArrayList<>();
-            
-            if (offset == 0 && noFilter) {
-              
-              
-              Language foundLanguage = WebAPILocator.getLanguageWebAPI().getLanguage(HttpServletRequestThreadLocal.INSTANCE.getRequest());
-              Map<String,Object> contentletMap= new HashMap<>(this.defaultPersona);
-              contentletMap.put("name",APILocator.getLanguageAPI().getStringKey(foundLanguage, "modes.persona.no.persona"));
-              contentletMap.put("title",APILocator.getLanguageAPI().getStringKey(foundLanguage, "modes.persona.no.persona"));
-              contentletMap.put("languageId",foundLanguage.getId());
-
-              personalizationPersonaPageViews.add(new PersonalizationPersonaPageView(pageId, contentletMap));
-            }
-            for (final Contentlet contentlet : contentlets) {
-
-                final Map<String, Object> contentletMap = ContentletUtil.getContentPrintableMap(user, contentlet);
-                contentletMap.put("personalized",
-                        personaTagPerPage.contains(Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON +
-                                contentlet.getStringProperty(PersonaAPI.KEY_TAG_FIELD)));
-
-                personalizationPersonaPageViews.add(new PersonalizationPersonaPageView(pageId, contentletMap));
-            }
-
-            final PaginatedArrayList<PersonalizationPersonaPageView> result = new PaginatedArrayList<>();
-            result.addAll(personalizationPersonaPageViews);
-            result.setTotalResults(this.contentletAPI.indexCount(query.toString(), user, respectFrontendRoles));
-
-            return result;
-        } catch (Exception e) {
-
-            Logger.error(this, e.getMessage(), e);
-            throw new DotRuntimeException(e);
-        }
+      Logger.error(this, e.getMessage(), e);
+      throw new DotRuntimeException(e);
     }
+  }
 
 }
