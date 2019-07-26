@@ -41,7 +41,7 @@ jobs:
   include:
     - stage: build image
       script: bash travis/submit.sh
-      install: skip # bundle install is not required
+#      install: skip # bundle install is not required
     - stage: integration tests
       env: DB_TYPE=postgres
       name: postgres
