@@ -15,6 +15,12 @@
 
 set -ex
 
+if [ ! -d ${HOME}/gcloud/google-cloud-sdk/bin ]; then
+    # The install script errors if this directory already exists,
+    # but Travis already creates it when we mark it as cached.
+    rm -rf ${HOME}/gcloud;
+fi
+
 if [ ! -d ${HOME}/gcloud/google-cloud-sdk ]; then
     mkdir -p ${HOME}/gcloud
     wget https://dl.google.com/dl/cloudsdk/release/google-cloud-sdk.tar.gz \
@@ -24,6 +30,9 @@ if [ ! -d ${HOME}/gcloud/google-cloud-sdk ]; then
     ./google-cloud-sdk/install.sh --usage-reporting false \
         --path-update false --command-completion false
     popd
+
+else
+    source ${HOME}/gcloud/google-cloud-sdk/path.bash.inc
 fi
 ${HOME}/gcloud/google-cloud-sdk/bin/gcloud -q components update beta
 
