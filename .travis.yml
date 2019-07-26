@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+language: java
 git:
   submodules: false
 
@@ -35,7 +36,9 @@ before_install:
   - chmod +rwx docker/tests/integration/postgres-docker-compose.yml
   - chmod +rwx docker/tests/integration/mysql-docker-compose.yml
 
-cache: bundler
+cache:
+  directories:
+    - "${HOME}/gcloud/google-cloud-sdk/"
 
 # https://docs.travis-ci.com/user/build-stages
 jobs:
@@ -56,9 +59,3 @@ install:
   - travis/environment_vars.sh
   - travis/install_gcloud.sh
   - travis/prepare.sh
-
-#script:
-#  - >
-#    gcloud builds submit
-#    --config=travis/cloudbuild.yaml
-#    --substitutions=_GIT_BRANCH_COMMIT=$TRAVIS_BRANCH,COMMIT_SHA=$TRAVIS_COMMIT,_LICENSE_KEY=$LICENSE,_DB_TYPE=$DB_TYPE .

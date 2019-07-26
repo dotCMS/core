@@ -15,26 +15,17 @@
 
 set -ex
 
-if [ "${CIRCLECI}" == "true" ]; then
-    # Need sudo on circleci:
-    # https://discuss.circleci.com/t/gcloud-components-update-version-restriction/3725
-    # They also overrides the PATH to use
-    # /opt/google-cloud-sdk/bin/gcloud so we can not easily use our
-    # own gcloud
-    sudo /opt/google-cloud-sdk/bin/gcloud -q components update beta
-else
-    if [ ! -d ${HOME}/gcloud/google-cloud-sdk ]; then
-        mkdir -p ${HOME}/gcloud
-        wget https://dl.google.com/dl/cloudsdk/release/google-cloud-sdk.tar.gz \
-             --directory-prefix=${HOME}/gcloud
-        pushd "${HOME}/gcloud"
-        tar xzf google-cloud-sdk.tar.gz
-        ./google-cloud-sdk/install.sh --usage-reporting false \
-            --path-update false --command-completion false
-        popd
-    fi
-    ${HOME}/gcloud/google-cloud-sdk/bin/gcloud -q components update beta
+if [ ! -d ${HOME}/gcloud/google-cloud-sdk ]; then
+    mkdir -p ${HOME}/gcloud
+    wget https://dl.google.com/dl/cloudsdk/release/google-cloud-sdk.tar.gz \
+         --directory-prefix=${HOME}/gcloud
+    pushd "${HOME}/gcloud"
+    tar xzf google-cloud-sdk.tar.gz
+    ./google-cloud-sdk/install.sh --usage-reporting false \
+        --path-update false --command-completion false
+    popd
 fi
+${HOME}/gcloud/google-cloud-sdk/bin/gcloud -q components update beta
 
 gcloud auth activate-service-account --key-file="${GOOGLE_CREDENTIALS}"
 gcloud config set project "${GOOGLE_PROJECT_ID}"
