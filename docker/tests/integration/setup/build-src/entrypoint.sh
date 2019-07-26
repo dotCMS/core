@@ -45,10 +45,12 @@ if [[ "${1}" == "dotcms" || -z "${1}" ]]; then
     cd /build/src/core/dotCMS \
     && ./gradlew integrationTest ${TESTS_PARAMS}
 
+    failingTests=true
     # Required code, without it gradle will exit 1 killing the docker container
     if [ $? -eq 0 ]
     then
       echo "Integration tests executed successfully"
+      failingTests=false
     else
       echo "Integration tests failed" >&2
     fi
@@ -59,6 +61,12 @@ if [[ "${1}" == "dotcms" || -z "${1}" ]]; then
 
     # Copying gradle report
     cp -R /build/src/core/dotCMS/build/reports/tests/integrationTest/ /custom/reports/
+
+    if [ "${failingTests}" = true ]; then
+      exit 1
+    else
+      exit 0
+    fi
 else
 
     echo "Running user CMD..."

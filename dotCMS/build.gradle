@@ -378,12 +378,12 @@ task testDev(type: Test) {
 
 integrationTest {
 
+    // https://docs.gradle.org/current/dsl/org.gradle.api.tasks.testing.logging.TestLoggingContainer.html
     // show standard out and standard error of the test JVM(s) on the console
     //testLogging.showStandardStreams = true
-    testLogging {
-        events "skipped", "failed"
-        exceptionFormat "full"
-    }
+    //testLogging.events = ["failed", "passed", "skipped"]
+    testLogging.events = ["failed", "skipped"]
+    testLogging.exceptionFormat = 'full'
 
     doFirst
             {
