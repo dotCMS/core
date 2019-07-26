@@ -21,6 +21,14 @@ public class ResizeImageFilter extends ImageFilter {
 		double w = parameters.get(getPrefix() +"w") != null?Integer.parseInt(parameters.get(getPrefix() +"w")[0]):0;
 		double h = parameters.get(getPrefix() +"h") != null?Integer.parseInt(parameters.get(getPrefix() +"h")[0]):0;
 		
+		
+		if(file.getName().endsWith(".gif")) {
+		  return new ResizeGifImageFilter().runFilter(file, parameters);
+		}
+		
+		
+		
+		
 		File resultFile = getResultsFile(file, parameters);
 		
 		if(!overwrite(resultFile,parameters)){
