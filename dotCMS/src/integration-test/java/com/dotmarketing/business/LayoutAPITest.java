@@ -77,27 +77,35 @@ public class LayoutAPITest extends IntegrationTestBase {
     }
     
     
-    @Test
-    public void test_resolveLayout() throws DotDataException {
-        Layout layout1, layout2 = null;
- 
-            layout1 = createNewLayout("testNewLayout" + UUIDGenerator.generateUuid(), "", 0);
-            layout2 = createNewLayout("testNewLayout2"+ UUIDGenerator.generateUuid(), "", 1);
-      
+  @Test
+  public void test_resolveLayout() throws DotDataException {
+    Layout layout1, layout2 = null;
 
-            String uri ="/c/portal/layout";
-            String referer ="/c/portal/layout?p_l_id=" + layout2.getId() + "&p_p_id=content&p_p_action=0&&dm_rlout=1&r=1563999037622&in_frame=true&frame=detailFrame&container=true&angularCurrentPortlet=content";
-            
-            
-            HttpServletRequest request = new MockHttpRequest("localhost",uri).request();
-            HttpServletRequest headerRequest = new MockHeaderRequest(request, "referer", referer).request();
-            HttpServletRequest paramRequest = new MockParameterRequest(request,ImmutableMap.of("p_l_id", layout1.getId())).request();
-            
-            Assert.assertEquals(layout1, layoutAPI.resolveLayout(paramRequest).get());
-            Assert.assertEquals(layout2, layoutAPI.resolveLayout(headerRequest).get());
-            Assert.assertFalse(layoutAPI.resolveLayout(request).isPresent());
+    layout1 = createNewLayout("testNewLayout" + UUIDGenerator.generateUuid(), "", 0);
+    layout2 = createNewLayout("testNewLayout2" + UUIDGenerator.generateUuid(), "", 1);
+
+    String uri = "/c/portal/layout";
+    String referer = "/c/portal/layout?p_l_id=" + layout2.getId()
+        + "&p_p_id=content&p_p_action=0&&dm_rlout=1&r=1563999037622&in_frame=true&frame=detailFrame&container=true&angularCurrentPortlet=content";
+
+    HttpServletRequest request = new MockHttpRequest("localhost", uri).request();
+    HttpServletRequest headerRequest = new MockHeaderRequest(request, "referer", referer).request();
+    HttpServletRequest paramRequest = new MockParameterRequest(request, ImmutableMap.of("p_l_id", layout1.getId())).request();
+
+    // getting layout from url param
+    Assert.assertEquals(layout1, layoutAPI.resolveLayout(paramRequest).get());
     
-    }
+    // no url param, fall back to the layout specified on the referer
+    Assert.assertEquals(layout2, layoutAPI.resolveLayout(headerRequest).get());
+    
+    // if neither of those, return the last layout visited (from session)
+    Assert.assertEquals(layout2, layoutAPI.resolveLayout(request).get());
+    
+    
+    // if there is nothing specified (no param, referer or session, you get nothing)
+    Assert.assertFalse(layoutAPI.resolveLayout(new MockHttpRequest("localhost", uri).request()).isPresent());
+
+  }
     
     
     
