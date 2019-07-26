@@ -42,13 +42,14 @@ jobs:
   include:
     - stage: build image
       script: bash travis/submit.sh
-    - stage: integration tests
-      env:
-        - DB_TYPE=postgres
-        - DB_TYPE=mysql
-      name: ${DB_TYPE}
+    - &integration
+      stage: integration tests
       script: bash travis/run.sh
       install: skip # bundle install is not required
+    - <<: *integration
+      env: DB_TYPE=postgres
+    - <<: *integration
+      env: DB_TYPE=mysql
 
 install:
   - travis/environment_vars.sh
