@@ -1827,12 +1827,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         // Delete all the versions of the contentlets to delete
         contentFactory.delete(contentletsVersion);
         // Remove the contentlets from the Elastic index and cache
-        for (Contentlet contentlet : contentlets) {
-            indexAPI.removeContentFromIndex(contentlet);
-            CacheLocator.getIdentifierCache().removeFromCacheByVersionable(contentlet);
-        }
         for (Contentlet contentlet : contentletsVersion) {
-            indexAPI.removeContentFromIndex(contentlet);
             CacheLocator.getIdentifierCache().removeFromCacheByVersionable(contentlet);
         }
         deleteBinaryFiles(contentletsVersion, null);
