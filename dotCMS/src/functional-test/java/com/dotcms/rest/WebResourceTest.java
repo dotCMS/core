@@ -4,6 +4,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.Base64;
+
 import com.liferay.portal.util.WebKeys;
 import javax.servlet.http.HttpServletRequest;
 
@@ -14,7 +16,7 @@ import org.junit.Test;
 import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.WebTarget;
-import com.dotcms.repackage.org.codehaus.cargo.util.Base64;
+
 import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 import com.dotcms.rest.config.RestServiceUtil;
 import com.dotcms.rest.exception.SecurityException;
@@ -78,12 +80,12 @@ public class WebResourceTest {
 
     @Test(expected = NotAuthorizedException.class)
     public void testAuthenticateInvalidUserHeaderAuth() {
-        webTarget.path("/loadchildren/").request().header("DOTAUTH", Base64.encode("wrong@user.com:123456")).get(String.class);
+        webTarget.path("/loadchildren/").request().header("DOTAUTH", Base64.getEncoder().encodeToString("wrong@user.com:123456".getBytes())).get(String.class);
     }
 
     @Test
     public void testAuthenticateValidUserHeaderAuth() {
-        String response = webTarget.path("/loadchildren/").request().header("DOTAUTH", Base64.encode("admin@dotcms.com:admin")).get(String.class);
+        String response = webTarget.path("/loadchildren/").request().header("DOTAUTH", Base64.getEncoder().encodeToString("admin@dotcms.com:admin".getBytes())).get(String.class);
         assertNotNull(response);
     }
 
@@ -93,7 +95,7 @@ public class WebResourceTest {
         LayoutAPI mockLayoutAPI = mock(LayoutAPI.class);
         User user = APILocator.getUserAPI().getUsersByName("Admin User", 0, 0, APILocator.getUserAPI().getSystemUser(), false).get(0);
         HttpServletRequest request = mock(HttpServletRequest.class);
-        when(request.getHeader("DOTAUTH")).thenReturn(Base64.encode("admin@dotcms.com:admin"));
+        when(request.getHeader("DOTAUTH")).thenReturn(Base64.getEncoder().encodeToString("admin@dotcms.com:admin".getBytes()));
         when(mockLayoutAPI.doesUserHaveAccessToPortlet(requiredPortlet, user)).thenReturn(false);
 
         ApiProvider mockProvider = mock(ApiProvider.class);
@@ -111,7 +113,7 @@ public class WebResourceTest {
         final HttpSession session = mock(HttpSession.class);
         User user = APILocator.getUserAPI().getUsersByName("Admin User", 0, 0, APILocator.getUserAPI().getSystemUser(), false).get(0);
         HttpServletRequest request = mock(HttpServletRequest.class);
-        when(request.getHeader("DOTAUTH")).thenReturn(Base64.encode("admin@dotcms.com:admin"));
+        when(request.getHeader("DOTAUTH")).thenReturn(Base64.getEncoder().encodeToString("admin@dotcms.com:admin".getBytes()));
         when(mockLayoutAPI.doesUserHaveAccessToPortlet(requiredPortlet, user)).thenReturn(true);
         when(session.getAttribute(WebKeys.COMPANY_ID)).thenReturn("dotcms.org");
         when(session.getId()).thenReturn("1");

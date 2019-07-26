@@ -9,7 +9,6 @@ import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
 import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
-import com.dotcms.repackage.org.dts.spell.utils.FileUtils;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotmarketing.business.APILocator;
@@ -22,8 +21,10 @@ import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.gson.Gson;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Date;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
@@ -39,6 +40,8 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+
+import org.apache.commons.io.IOUtils;
 import org.elasticsearch.action.admin.indices.stats.IndexStats;
 import org.elasticsearch.action.admin.indices.stats.IndicesStatsResponse;
 import org.elasticsearch.client.Client;
@@ -180,7 +183,9 @@ public class ESIndexResource {
             final boolean clear=init.getParamsMap().containsKey("clear") ? Boolean.parseBoolean(init.getParamsMap().get("clear")) : false;
             
             File file=File.createTempFile("restore", ".json");
-            FileUtils.copyStreamToFile(file, inputFile, null);
+            try(OutputStream out = new FileOutputStream(file)){
+              IOUtils.copy(inputFile, out);
+            }
             
             restoreIndex(file,alias,index,clear);
             

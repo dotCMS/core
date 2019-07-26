@@ -162,7 +162,7 @@ public class DotWebdavHelper {
 		try {
 			if (PRE_AUTHENTICATOR != null && !PRE_AUTHENTICATOR.equals("")) {
 				Authenticator authenticator;
-				authenticator = (Authenticator) new com.dotcms.repackage.bsh.Interpreter().eval("new " + PRE_AUTHENTICATOR + "()");
+				authenticator = (Authenticator) Class.forName(PRE_AUTHENTICATOR).newInstance() ;
 				if (useEmailAsLogin) {
 					authenticator.authenticateByEmailAddress(comp.getCompanyId(), username, passwd);
 				} else {

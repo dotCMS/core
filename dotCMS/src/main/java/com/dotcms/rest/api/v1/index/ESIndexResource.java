@@ -15,7 +15,6 @@ import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.com.google.common.io.ByteStreams;
-import com.dotcms.repackage.org.dts.spell.utils.FileUtils;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.MessageEntity;
 import com.dotcms.rest.ResourceResponse;
@@ -38,8 +37,10 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.util.Date;
 import java.util.concurrent.ExecutionException;
@@ -60,6 +61,8 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.StreamingOutput;
+
+import org.apache.commons.io.IOUtils;
 import org.elasticsearch.action.admin.indices.stats.IndexStats;
 import org.elasticsearch.action.admin.indices.stats.IndicesStatsResponse;
 import org.elasticsearch.client.Client;
@@ -227,7 +230,12 @@ public class ESIndexResource {
             final boolean clear=init.getParamsMap().containsKey("clear") ? Boolean.parseBoolean(init.getParamsMap().get("clear")) : false;
 
             File file=File.createTempFile("restore", ".json");
-            FileUtils.copyStreamToFile(file, inputFile, null);
+            
+
+            try(OutputStream out = new FileOutputStream(file)){
+              IOUtils.copy(inputFile, out);
+            }
+
 
             restoreIndex(file,alias,index,clear);
 

@@ -2,7 +2,6 @@ package com.dotcms.util;
 
 import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableList;
-import org.apache.poi.ss.formula.functions.T;
 import org.elasticsearch.common.collect.MapBuilder;
 
 import java.io.Serializable;

@@ -9,7 +9,7 @@ import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.repackage.com.google.common.collect.Lists;
-import com.dotcms.repackage.com.ibm.icu.text.SimpleDateFormat;
+import java.text.SimpleDateFormat;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;

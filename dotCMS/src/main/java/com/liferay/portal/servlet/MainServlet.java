@@ -24,7 +24,6 @@ package com.liferay.portal.servlet;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.config.DotInitializationService;
-import com.dotcms.repackage.com.httpbridge.webproxy.http.TaskController;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
@@ -217,13 +216,6 @@ public class MainServlet extends ActionServlet {
 
 			WebAppPool.put(_companyId, WebKeys.CURRENT_USERS, new TreeMap());
 
-			// HttpBridge
-
-			TaskController.bridgeUserServicePath = "/httpbridge/home";
-			TaskController.bridgeHttpServicePath = "/httpbridge/http";
-			TaskController.bridgeGotoTag = "(goto)";
-			TaskController.bridgeThenTag = "(then)";
-			TaskController.bridgePostTag = "(post)";
 
 			// Process startup events
 

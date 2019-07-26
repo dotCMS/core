@@ -7,7 +7,7 @@ import com.dotcms.enterprise.cluster.action.model.ServerActionBean;
 import com.dotcms.enterprise.license.DotLicenseRepoEntry;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.license.LicenseManager;
-import com.dotcms.repackage.com.ibm.icu.text.SimpleDateFormat;
+import java.text.SimpleDateFormat;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.json.JSONArray;
 import com.dotcms.repackage.org.json.JSONObject;

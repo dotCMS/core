@@ -8,7 +8,6 @@ import com.dotcms.repackage.com.bradmcevoy.http.Resource;
 import com.dotcms.repackage.com.bradmcevoy.http.exceptions.BadRequestException;
 import com.dotcms.repackage.com.bradmcevoy.http.exceptions.NotAuthorizedException;
 import com.dotcms.repackage.com.bradmcevoy.http.exceptions.NotFoundException;
-import com.dotcms.repackage.org.dts.spell.utils.FileUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -16,10 +15,13 @@ import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Map;
+
+import org.apache.commons.io.IOUtils;
 
 public abstract class BasicFolderResourceImpl implements FolderResource {
     
@@ -80,7 +82,9 @@ public abstract class BasicFolderResourceImpl implements FolderResource {
             try {
                 originalPath = (!originalPath.endsWith("/"))?originalPath + "/":originalPath;
                 final File tempFile = dotDavHelper.createTempFile("/" + host.getHostname() + originalPath + newName);
-                FileUtils.copyStreamToFile(tempFile, in, null);
+                try(OutputStream out =new FileOutputStream(tempFile) ){
+                  IOUtils.copy(in, out);
+                }
                 final Resource tempFileResource = new TempFileResourceImpl(tempFile, originalPath + newName, isAutoPub);
                 return tempFileResource;
             } catch (Exception e){

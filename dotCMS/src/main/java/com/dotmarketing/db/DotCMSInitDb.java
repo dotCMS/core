@@ -111,6 +111,11 @@ public class DotCMSInitDb {
 			String zipPath = FileUtil.getRealPath(starterSitePath);
 			starterZip = new File(zipPath); 
 		 }
+		if(starterZip==null) {
+		  
+		  
+		  
+		}
 		
 		ImportExportUtil ieu = new ImportExportUtil();
 		if(ieu.validateZipFile(starterZip)){

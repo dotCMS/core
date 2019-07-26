@@ -1,6 +1,6 @@
 package com.liferay.portal.ejb;
 
-import com.dotcms.repackage.com.ibm.icu.util.GregorianCalendar;
+import java.util.GregorianCalendar;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;

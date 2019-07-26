@@ -8,7 +8,6 @@ import javax.servlet.http.HttpSession;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
-import com.dotcms.repackage.bsh.util.Util;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -20,7 +19,6 @@ import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;

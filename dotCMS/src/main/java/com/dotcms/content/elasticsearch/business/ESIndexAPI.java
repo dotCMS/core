@@ -10,7 +10,6 @@ import com.dotcms.cluster.business.ReplicasMode;
 import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.org.dts.spell.utils.FileUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
@@ -28,9 +27,11 @@ import com.google.common.collect.ImmutableMap;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -49,6 +50,8 @@ import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
+
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.tools.zip.ZipEntry;
 import org.elasticsearch.ElasticsearchException;
@@ -1047,7 +1050,10 @@ public class ESIndexAPI {
 		// zip file extraction
 		outFile = File.createTempFile("snapshot", null, toDirectory.getParentFile());
 		//File outFile = new File(toDirectory.getParent() + File.separator + snapshotName);
-		FileUtils.copyStreamToFile(outFile, inputFile, null);
+    try(OutputStream out = new FileOutputStream(outFile)){
+      IOUtils.copy(inputFile, out);
+    }
+
 		ZipFile zipIn = new ZipFile(outFile);
 		return uploadSnapshot(zipIn, toDirectory.getAbsolutePath(), cleanRepository);
 	}
