@@ -56,7 +56,7 @@ public class ContentTypeForm  {
     public static final class ContentTypeFormDeserialize extends JsonDeserializer<ContentTypeForm> {
 
         public static final String WORKFLOW_ATTRIBUTE_NAME = "workflow";
-        public static final String SYSTEM_ACTION_ATTRIBUTE_NAME = "systemActionMap";
+        public static final String SYSTEM_ACTION_ATTRIBUTE_NAME = "systemActionMappings";
 
         @Override
         public ContentTypeForm deserialize(final JsonParser jsonParser, final DeserializationContext deserializationContext)
