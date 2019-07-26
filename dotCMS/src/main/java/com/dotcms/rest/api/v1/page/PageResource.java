@@ -11,7 +11,11 @@ import javax.ws.rs.core.Response;
 import com.dotcms.rest.api.v1.personalization.PersonalizationPersonaPageViewPaginator;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.OrderDirection;
+import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableMap;
+import com.liferay.portal.PortalException;
+import com.liferay.portal.SystemException;
 import org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
@@ -547,7 +551,8 @@ public class PageResource {
                                                    @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
                                                    @DefaultValue("title") @QueryParam(PaginationUtil.ORDER_BY) final String orderbyParam,
                                                    @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION)  final String direction,
-                                                   @PathParam("pageId") final String  pageId) {
+                                                   @QueryParam("hostId") final String  hostId,
+                                                   @PathParam("pageId")  final String  pageId) throws SystemException, PortalException, DotDataException, DotSecurityException {
 
         final User user = this.webResource.init(request, response, true).getUser();
         final boolean respectFrontEndRoles = PageMode.get(request).respectAnonPerms;
@@ -557,7 +562,9 @@ public class PageResource {
         final Map<String, Object> extraParams =
                 ImmutableMap.<String, Object>builder()
                         .put(PersonalizationPersonaPageViewPaginator.PAGE_ID, pageId)
+                        .put("hostId", UtilMethods.isSet(hostId)?hostId: WebAPILocator.getHostWebAPI().getCurrentHost(request).getIdentifier())
                         .put("respectFrontEndRoles",respectFrontEndRoles).build();
+
 
         final PaginationUtil paginationUtil = new PaginationUtil(new PersonalizationPersonaPageViewPaginator());
 
