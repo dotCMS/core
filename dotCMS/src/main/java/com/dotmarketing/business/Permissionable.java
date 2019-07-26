@@ -3,6 +3,7 @@ package com.dotmarketing.business;
 import java.util.List;
 
 import com.dotmarketing.exception.DotDataException;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public interface Permissionable {
 
@@ -31,7 +32,10 @@ public interface Permissionable {
 	 * @param requiredPermission
 	 * @return
 	 */
-	List<RelatedPermissionableGroup> permissionDependencies(int requiredPermission);
+	@JsonIgnore
+	default List<RelatedPermissionableGroup> permissionDependencies(int requiredPermission){
+	  return null;
+	}
 	
 	/**
 	 * Retrieves the parent permissionable in the chain of permissions inheritance 
