@@ -17,20 +17,14 @@ RUN mkdir -p /custom \
 
 #  One of ["COMMIT", "TAG" ]
 ARG BUILD_FROM=COMMIT
+ENV BUILD_FROM_ENV=${BUILD_FROM}
 
 #  Value resolved in the context of $BUILD_FROM
 ARG BUILD_ID=origin/master
+ENV BUILD_ID_ENV=${BUILD_ID}
 
 #  In order to run the integration test a license must be provided
 ARG LICENSE_KEY
-
-#  Disabled the gradle debug by default
-ARG TEST_PARAMS=""
-ENV TEST_PARAMS_ENV=${TEST_PARAMS}
-
-#  One of ["postgres", "mysql", "oracle", "mssql"]
-ARG DB_TYPE=postgres
-ENV DB_TYPE_ENV=${DB_TYPE}
 
 WORKDIR /srv
 

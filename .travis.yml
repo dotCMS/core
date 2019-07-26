@@ -26,25 +26,38 @@ env:
     - GOOGLE_CREDENTIALS=${TRAVIS_BUILD_DIR}/credentials.json
     - CLOUDSDK_CORE_DISABLE_PROMPTS=1
     - LICENSE=${DOTCMS_LICENSE}
-  matrix:
-    - DB_TYPE=postgres
-    - DB_TYPE=mysql
 
 before_install:
   - chmod +x travis/environment_vars.sh
   - chmod +x travis/install_gcloud.sh
   - chmod +x travis/prepare.sh
   - chmod +x travis/submit.sh
+  - chmod +x travis/run.sh
   - chmod +rwx docker/tests/integration/postgres-docker-compose.yml
   - chmod +rwx docker/tests/integration/mysql-docker-compose.yml
+
+# https://docs.travis-ci.com/user/build-stages
+jobs:
+  include:
+    - stage: build image
+      script: bash travis/submit.sh
+      install: skip # bundle install is not required
+    - stage: integration tests
+      env: DB_TYPE=postgres
+      name: postgres
+      script: bash travis/run.sh
+      install: skip # bundle install is not required
+    - script: bash travis/run.sh
+      env: DB_TYPE=mysql
+      name: mysql
+      install: skip # bundle install is not required
 
 install:
   - travis/environment_vars.sh
   - travis/install_gcloud.sh
   - travis/prepare.sh
 
-script:
-  - bash travis/submit.sh
+#script:
 #  - >
 #    gcloud builds submit
 #    --config=travis/cloudbuild.yaml

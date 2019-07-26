@@ -15,6 +15,15 @@ then
     echo ""
     exit
 else
+
+    echo ""
+    echo ""
+    echo "================================================================================"
+    echo ">>>                     LICENSE_KEY parameter provided                       <<<"
+    echo "================================================================================"
+    echo ""
+    echo ""
+
     mkdir -p /custom/dotsecure/license
     touch /custom/dotsecure/license/license.dat
     chmod 777 /custom/dotsecure/license/license.dat

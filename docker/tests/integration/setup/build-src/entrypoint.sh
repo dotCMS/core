@@ -16,16 +16,34 @@ if [[ "${1}" == "dotcms" || -z "${1}" ]]; then
        exit 1
     fi
 
-    if [ ! -z "${TEST_PARAMS_ENV}" ]
+    if [ ! -z "${TESTS_PARAMS}" ]
     then
-        echo "Running integration tests with extra parameters [${TEST_PARAMS_ENV}]"
+        echo "Running integration tests with extra parameters [${TESTS_PARAMS}]"
     fi
 
-    echo "Running for database: [${DB_TYPE_ENV}]"
-    export databaseType=${DB_TYPE_ENV}
+    #  One of ["postgres", "mysql", "oracle", "mssql"]
+    if [ -z "${databaseType}" ]
+    then
+        echo ""
+        echo "======================================================================================"
+        echo " >>> 'databaseType' environment variable NOT FOUND, setting postgres as default DB <<<"
+        echo "======================================================================================"
+        export databaseType=postgres
+    fi
+
+    echo ""
+    echo "================================================================================"
+    echo "================================================================================"
+    echo "                      >>>   DB: ${databaseType}"
+    echo "                      >>>   TEST PARAMETERS: ${TESTS_PARAMS}"
+    echo "                      >>>   BUILD FROM: ${BUILD_FROM_ENV}"
+    echo "                      >>>   BUILD ID: ${BUILD_ID_ENV}"
+    echo "================================================================================"
+    echo "================================================================================"
+    echo ""
 
     cd /build/src/core/dotCMS \
-    && ./gradlew integrationTest ${TEST_PARAMS_ENV}
+    && ./gradlew integrationTest ${TESTS_PARAMS}
 
     # Required code, without it gradle will exit 1 killing the docker container
     if [ $? -eq 0 ]
