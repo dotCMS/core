@@ -1,7 +1,9 @@
 package com;
 
+import org.junit.runner.RunWith;
+import org.junit.runners.Suite;
+
 import com.dotcms.csspreproc.CSSPreProcessServletTest;
-import com.dotcms.csspreproc.LessCompilerTest;
 import com.dotcms.csspreproc.SassCompilerTest;
 import com.dotcms.publisher.ajax.RemotePublishAjaxActionTest;
 import com.dotcms.rendering.velocity.viewtools.JSONToolFTest;
@@ -31,9 +33,6 @@ import com.dotmarketing.portlets.structure.business.URLMapTest;
 import com.dotmarketing.sitesearch.ajax.SiteSearchAjaxActionTest;
 import com.dotmarketing.webdav.WebDavTest;
 
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
-
 /**
  * @author Jonathan Gamba.
  *         Date: 3/7/12
@@ -45,7 +44,6 @@ import org.junit.runners.Suite;
      *      e2e tests         *
      **************************/
     CSSPreProcessServletTest.class, //Needs Enterprise License
-    LessCompilerTest.class,
     SassCompilerTest.class,
     RemotePublishAjaxActionTest.class, //Needs Enterprise License
     ActionResourceFTest.class,
