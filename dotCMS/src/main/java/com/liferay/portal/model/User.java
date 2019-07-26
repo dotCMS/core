@@ -22,6 +22,10 @@
 
 package com.liferay.portal.model;
 
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Date;
 import java.util.HashMap;
@@ -296,6 +300,23 @@ public class User extends UserModel implements Recipient {
         setModified(true);
     }
 
+    public boolean isBackendUser(){
+		try {
+			return(APILocator.getRoleAPI().doesUserHaveRole(this,APILocator.getRoleAPI().loadRoleByKey(Role.DOTCMS_BACK_END_USER)));
+		} catch (DotDataException e) {
+			throw new DotRuntimeException(e);
+		}
+	}
+
+	public boolean isFrontendUser(){
+		try {
+			return(APILocator.getRoleAPI().doesUserHaveRole(this,APILocator.getRoleAPI().loadRoleByKey(Role.DOTCMS_FRONT_END_USER)));
+		} catch (DotDataException e) {
+			throw new DotRuntimeException(e);
+		}
+	}
+
+
     public Map<String, Object> toMap() throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
         Map<String, Object> map = new HashMap<String, Object>();
         map.put("active", this.getActive());
@@ -319,18 +340,16 @@ public class User extends UserModel implements Recipient {
         map.put("middleName", this.getMiddleName());
         map.put("female", this.getFemale());
         map.put("nickname", this.getNickName());
-        map.put("userId", this.getUserId());
         map.put("timeZoneId", this.getTimeZoneId());
         map.put("deleteInProgress", getDeleteInProgress());
         map.put("deleteDate", getDeleteDate());
-        map.put("userId", getUserId());
         map.put("passwordExpirationDate", getPasswordExpirationDate());
         map.put("passwordExpired", isPasswordExpired());
         map.put("passwordReset", isPasswordReset());
         map.put("userId", getUserId());
-        map.put("id", getUserId());
-        map.put("name", getFullName());
-        map.put("id", getUserId());
+        map.put("backendUser", isBackendUser());
+		map.put("frontendUser", isFrontendUser());
+		map.put("id", getUserId());
         map.put("type", UserAjax.USER_TYPE_VALUE);
 
 

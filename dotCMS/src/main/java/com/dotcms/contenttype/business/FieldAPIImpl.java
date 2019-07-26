@@ -134,7 +134,11 @@ public class FieldAPIImpl implements FieldAPI {
 	    if (UtilMethods.isSet(field.id())) {
 	    	try {
 	    		oldField = fieldFactory.byId(field.id());
-
+	        final Field newFieldCopy = FieldBuilder.builder(field).modDate(oldField.modDate()).build();
+	        if(newFieldCopy.equals(oldField)) {
+	          Logger.info(this, "No changes made to field: " + field.variable() + ", returning");
+	          return field;
+	        }
                 if(!oldField.variable().equals(field.variable())){
                     throw new DotDataValidationException("Field variable can not be modified, please use the following: " + oldField.variable());
                 }

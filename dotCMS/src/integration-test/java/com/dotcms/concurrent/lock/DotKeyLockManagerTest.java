@@ -16,10 +16,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 
-@Ignore
 public class DotKeyLockManagerTest {
 
     private static final int SLEEP = 25;

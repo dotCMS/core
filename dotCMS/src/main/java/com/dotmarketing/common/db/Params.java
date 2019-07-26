@@ -4,6 +4,7 @@ package com.dotmarketing.common.db;
 import java.io.Serializable;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -98,5 +99,12 @@ public class Params implements Serializable {
 
             return new Params(this);
         }
+    }
+
+    @Override
+    public String toString() {
+        return "Params{" +
+                "params=" + Arrays.toString(params) +
+                '}';
     }
 } // E:O:F:Params.
