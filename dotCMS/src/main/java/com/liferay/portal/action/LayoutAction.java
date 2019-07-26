@@ -64,7 +64,7 @@ public class LayoutAction extends Action {
 
   public ActionForward execute(ActionMapping mapping, ActionForm form, HttpServletRequest req, HttpServletResponse res) throws Exception {
 
-    if (req.getParameter("p_l_id") != null) {
+    if (req.getParameter("p_p_id") != null) {
       try {
         String action = req.getParameter("p_p_action");
 

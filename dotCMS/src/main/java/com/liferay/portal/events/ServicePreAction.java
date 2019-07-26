@@ -24,6 +24,7 @@ package com.liferay.portal.events;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Layout;
+import com.google.common.base.Splitter;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
@@ -36,12 +37,18 @@ import com.liferay.util.GetterUtil;
 import com.liferay.util.ListUtil;
 import com.liferay.util.ParamUtil;
 import com.liferay.util.Validator;
+
+import io.vavr.control.Try;
+
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+
+import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.struts.Globals;
 
 /**
@@ -110,16 +117,10 @@ public class ServicePreAction extends Action {
 				ses.setAttribute(Globals.LOCALE_KEY, locale);
 			}
 
-			Layout layout = APILocator.getLayoutAPI().loadLayout(ParamUtil.getString(req, "p_l_id"));
+			Layout layout = APILocator.getLayoutAPI().resolveLayout(req).get();
 
-//			if ((layout != null) && layout.isGroup()) {
-//
-//				// Updates to group layouts are not reflected until the next
-//				// time the user logs in because group layouts are cached in
-//				// the session
-//
-//				layout = LayoutClonePool.clone(req, layout);
-//			}
+			
+
 
 			
 			List layouts = APILocator.getLayoutAPI().loadLayoutsForUser(user);
@@ -133,5 +134,10 @@ public class ServicePreAction extends Action {
 			throw new ActionException(e);
 		}
 	}
+	
+	
+
+	
+	
 
 }

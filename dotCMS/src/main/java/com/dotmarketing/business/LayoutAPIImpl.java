@@ -9,14 +9,21 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+
+import javax.servlet.http.HttpServletRequest;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.base.Splitter;
 import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.User;
+
+import io.vavr.control.Try;
 
 /**
  * @author jasontesser
@@ -47,6 +54,30 @@ public class LayoutAPIImpl implements LayoutAPI {
 	public Layout loadLayout(final String layoutId) throws DotDataException {
 		return layoutFactory.loadLayout(layoutId);
 	}
+	
+	
+  @Override
+  @CloseDBIfOpened
+  public Optional<Layout> resolveLayout(final HttpServletRequest request) {
+
+    Layout layout = Try.of(() -> loadLayout(request.getParameter("p_l_id"))).getOrNull();
+    if (layout == null || UtilMethods.isNotSet(layout.getId())) {
+      final String referer = request.getHeader("referer");
+      if (referer != null && referer.indexOf("?") > -1) {
+        for (String x : Splitter.on('&').trimResults().split(referer.split("\\?")[1])) {
+          if (x.startsWith("p_l_id=")) {
+            layout = Try.of(() -> loadLayout(x.replace("p_l_id=", ""))).getOrNull();
+            break;
+          }
+        }
+      }
+    }
+
+    return Optional.ofNullable(layout);
+
+  }
+	
+	
 	
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.business.LayoutAPI#loadLayout(java.lang.String)
@@ -111,6 +142,7 @@ public class LayoutAPIImpl implements LayoutAPI {
 
 	@Override
 	public boolean doesUserHaveAccessToPortlet(final String portletId, final User user) throws DotDataException {
+	  
 		if(loadLayoutsForUser(user).stream(). anyMatch(layout -> layout.getPortletIds().contains(portletId))){
 			return true;
 		}
