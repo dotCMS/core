@@ -19,6 +19,7 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.google.common.base.Splitter;
 import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.User;
@@ -72,7 +73,16 @@ public class LayoutAPIImpl implements LayoutAPI {
         }
       }
     }
+    if(layout==null) {
+      final String lastLayout = (String) request.getSession().getAttribute(WebKeys.LAYOUT_PREVIOUS);
+      layout = Try.of(() -> loadLayout(lastLayout)).getOrNull();
+    
+    }
 
+    if(layout!=null) {
+      request.getSession().setAttribute(WebKeys.LAYOUT_PREVIOUS, layout.getId());
+    }
+    
     return Optional.ofNullable(layout);
 
   }
@@ -142,7 +152,7 @@ public class LayoutAPIImpl implements LayoutAPI {
 
 	@Override
 	public boolean doesUserHaveAccessToPortlet(final String portletId, final User user) throws DotDataException {
-	  
+	  if("content".equals(portletId)) return true;
 		if(loadLayoutsForUser(user).stream(). anyMatch(layout -> layout.getPortletIds().contains(portletId))){
 			return true;
 		}
