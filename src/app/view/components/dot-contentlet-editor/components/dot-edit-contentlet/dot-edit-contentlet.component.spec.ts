@@ -85,8 +85,7 @@ describe('DotEditContentletComponent', () => {
             expect(dotEditContentletWrapperComponent.url).toEqual(
                 [
                     '/c/portal/layout',
-                    '?p_l_id=999',
-                    '&p_p_id=content',
+                    '?p_p_id=content',
                     '&p_p_action=1',
                     '&p_p_state=maximized',
                     '&p_p_mode=view',

@@ -1,8 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Subject, Observable, of } from 'rxjs';
 import { mergeMap, map, filter } from 'rxjs/operators';
-import { DotMenuService } from '@services/dot-menu.service';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
 
 interface DotAddEditEvents {
     load?: ($event: any) => void;
@@ -33,8 +31,6 @@ export class DotContentletEditorService {
     private _keyDown: ($event: KeyboardEvent) => void;
 
     constructor(
-        private dotMenuService: DotMenuService,
-        private dotRouterService: DotRouterService
     ) {}
 
     get addUrl$(): Observable<string> {
@@ -47,7 +43,7 @@ export class DotContentletEditorService {
     get editUrl$(): Observable<string> {
         return this.data.pipe(
             filter((action: DotEditorAction) => this.isEditUrl(action)),
-            mergeMap((action: DotEditorAction) => this.getEditUrl(action))
+            mergeMap((action: DotEditorAction) => of(this.getEditUrl(action)))
         );
     }
 
@@ -157,27 +153,17 @@ export class DotContentletEditorService {
         return action === null ? '' : action.data.url;
     }
 
-    private getEditUrl(action: DotEditorAction): Observable<string> {
-        const name = this.dotRouterService.isCurrentPortletCustom()
-            ? this.dotRouterService.currentPortlet.url.split('/')[2]
-            : 'content';
-
-        return action === null
-            ? of('')
-            : this.dotMenuService.getDotMenuId(name).pipe(
-                  map((portletId: string) => {
-                      return [
-                          `/c/portal/layout`,
-                          `?p_l_id=${portletId}`,
-                          `&p_p_id=${name}`,
-                          `&p_p_action=1`,
-                          `&p_p_state=maximized`,
-                          `&p_p_mode=view`,
-                          `&_${name}_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet`,
-                          `&_${name}_cmd=edit&inode=${action.data.inode}`
-                      ].join('');
-                  })
-              );
+    private getEditUrl(action: DotEditorAction): string {
+        return action === null ? '' :
+            [
+                `/c/portal/layout`,
+                `?p_p_id=content`,
+                `&p_p_action=1`,
+                `&p_p_state=maximized`,
+                `&p_p_mode=view`,
+                `&_content_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet`,
+                `&_content_cmd=edit&inode=${action.data.inode}`
+            ].join('');
     }
 
     private isAddUrl(action: DotEditorAction): boolean {
