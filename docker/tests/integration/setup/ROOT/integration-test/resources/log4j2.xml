@@ -30,7 +30,7 @@
     <Loggers>
         <Root level="info">
             <!--<AppenderRef ref="Console"/>-->
-            <!--<AppenderRef ref="generic"/>-->
+            <AppenderRef ref="generic"/>
         </Root>
     </Loggers>
 </Configuration>
