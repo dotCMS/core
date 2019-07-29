@@ -4,6 +4,9 @@
 package com.dotmarketing.business;
 
 import java.util.List;
+import java.util.Optional;
+
+import javax.servlet.http.HttpServletRequest;
 
 import com.dotmarketing.exception.DotDataException;
 import com.liferay.portal.model.Portlet;
@@ -89,4 +92,12 @@ public interface LayoutAPI {
 	 * @throws DotDataException throw when a error occur
 	 */
 	public Layout findLayoutByName(String name) throws DotDataException;
+
+	/**
+	 * will return the requests layout or if not present, the layout from the
+	 * referer
+	 * @param request
+	 * @return
+	 */
+  public Optional<Layout> resolveLayout(HttpServletRequest request);
 }
