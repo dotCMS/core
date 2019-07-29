@@ -15,7 +15,9 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.ResponseBuilder;
 
 import org.glassfish.jersey.media.multipart.BodyPart;
 import org.glassfish.jersey.media.multipart.ContentDisposition;
@@ -69,11 +71,10 @@ public class TempFileResource {
             final boolean allowAnonToUseTempFiles = !Config
                     .getBooleanProperty(TempFileAPI.TEMP_RESOURCE_ALLOW_ANONYMOUS, true);
 
-            final InitDataObject initDataObject = this.webResource
+            this.webResource
                     .init(false, request, allowAnonToUseTempFiles);
 
-            final User user = initDataObject.getUser();
-            final String uniqueKey = request.getSession().getId();
+
 
             if (!new SecurityUtils().validateReferer(request)) {
                 throw new BadRequestException("Invalid Origin or referer");
@@ -98,10 +99,16 @@ public class TempFileResource {
                 if (fileName == null || fileName.startsWith(".") || fileName.contains("/.")) {
                     continue;
                 }
-                tempFiles.add(tempApi.createTempFile(fileName, user, uniqueKey, in));
+                tempFiles.add(tempApi.createTempFile(fileName, request, in));
             }
 
             return Response.ok(ImmutableMap.of("tempFiles", tempFiles)).build();
+            /*
+            ResponseBuilder responseBuilder = Response.ok(ImmutableMap.of("tempFiles", tempFiles));
+            
+            NewCookie sessionCookie = new NewCookie("JSESSIONID", uniqueKey);
+            return responseBuilder.cookie(sessionCookie).build();
+            */
 
         } catch (Exception e) {
             Logger.warnAndDebug(this.getClass(), e);
@@ -137,7 +144,7 @@ public class TempFileResource {
 
             final List<DotTempFile> tempFiles = new ArrayList<DotTempFile>();
             tempFiles.add(tempApi
-                    .createTempFileFromUrl(form.fileName, user, uniqueKey, new URL(form.remoteUrl),
+                    .createTempFileFromUrl(form.fileName, request, new URL(form.remoteUrl),
                             form.urlTimeoutSeconds));
 
             return Response.ok(ImmutableMap.of("tempFiles", tempFiles)).build();

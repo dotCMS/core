@@ -24,6 +24,7 @@ import org.glassfish.jersey.media.multipart.file.StreamDataBodyPart;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
@@ -47,7 +48,7 @@ import com.liferay.portal.util.WebKeys;
 
 public class TempFileResourceTest {
 
-  static HttpServletRequest request;
+
   static HttpServletResponse response;
   static TempFileResource resource;
 
@@ -57,7 +58,7 @@ public class TempFileResourceTest {
     IntegrationTestInitService.getInstance().init();
 
     resource = new TempFileResource();
-    request = mockRequest();
+
     response = new MockHttpResponse();
   }
 
@@ -69,7 +70,7 @@ public class TempFileResourceTest {
     return this.getClass().getResourceAsStream("/images/SqcP9KgFqruagXJfe7CES.png");
   }
 
-  private DotTempFile saveTempFile_usingTempResource(final String fileName){
+  private DotTempFile saveTempFile_usingTempResource(final String fileName, final HttpServletRequest request){
     final BodyPart filePart1 = new StreamDataBodyPart(fileName, inputStream());
 
     final MultiPart multipartEntity = new FormDataMultiPart()
@@ -84,7 +85,7 @@ public class TempFileResourceTest {
   @Test
   public void test_temp_resource_upload(){
     final String fileName = "test.file";
-    final DotTempFile dotTempFile = saveTempFile_usingTempResource(fileName);
+    final DotTempFile dotTempFile = saveTempFile_usingTempResource(fileName, mockRequest());
   // its not an image because we set the filename to "test.file"
     assertFalse((Boolean) dotTempFile.image);
 
@@ -107,7 +108,7 @@ public class TempFileResourceTest {
             .bodyPart(filePart1)
             .bodyPart(filePart2);
     
-    final Response jsonResponse = resource.uploadTempResourceMulti(request, response, (FormDataMultiPart) multipartEntity);
+    final Response jsonResponse = resource.uploadTempResourceMulti(mockRequest(), response, (FormDataMultiPart) multipartEntity);
     assertNotNull(jsonResponse);
 
     final Map<String,List<DotTempFile>> dotTempFile = (Map) jsonResponse.getEntity();
@@ -130,14 +131,15 @@ public class TempFileResourceTest {
   public void test_tempResourceAPI_who_can_use_via_session(){
 
     final String fileName = "test.file";
-    final DotTempFile dotTempFile = saveTempFile_usingTempResource(fileName);
+    HttpServletRequest request = mockRequest();
+    final DotTempFile dotTempFile = saveTempFile_usingTempResource(fileName,request);
 
     // we can get the file because we have the same sessionId as the request
-    Optional<DotTempFile> file = new TempFileAPI().getTempFile(null, request.getSession().getId(), dotTempFile.id);
+    Optional<DotTempFile> file = new TempFileAPI().getTempFile(request, dotTempFile.id);
     assertTrue(file.isPresent() && !file.get().file.isDirectory());
 
     // we CANNOT get the file again because we have a new session ID in the request
-    file = new TempFileAPI().getTempFile(null, mockRequest().getSession().getId(), dotTempFile.id);
+    file = new TempFileAPI().getTempFile(mockRequest(), dotTempFile.id);
     assertFalse(file.isPresent());
 
   }
@@ -146,28 +148,31 @@ public class TempFileResourceTest {
   public void test_tempResourceAPI_who_can_use_via_userID(){
 
     final User user = new UserDataGen().nextPersisted();
+    HttpServletRequest request = mockRequest();
     request.setAttribute(WebKeys.USER, user);
 
     final String fileName = "test.png";
-    final DotTempFile dotTempFile = saveTempFile_usingTempResource(fileName);
+    final DotTempFile dotTempFile = saveTempFile_usingTempResource(fileName,request);
 
     // CANNOT get the file again because we have a new session ID in the new mock request
-    Optional<DotTempFile> file = new TempFileAPI().getTempFile(null, mockRequest().getSession().getId(), dotTempFile.id);
+    Optional<DotTempFile> file = new TempFileAPI().getTempFile(mockRequest(), dotTempFile.id);
     assertFalse(file.isPresent());
 
+    request.setAttribute(WebKeys.USER, user);
+    request.setAttribute(WebKeys.USER_ID, user.getUserId());
     // CAN get the file again because we are the user who uploaded it
-    file = new TempFileAPI().getTempFile(user, mockRequest().getSession().getId(), dotTempFile.id);
+    file = new TempFileAPI().getTempFile(request, dotTempFile.id);
     assertTrue(file.isPresent() && !file.get().file.isDirectory());
   }
 
   @Test
   public void test_tempResourceapi_max_age(){
-
+    HttpServletRequest request = mockRequest();
     final String fileName = "test.png";
 
-    final DotTempFile dotTempFile = saveTempFile_usingTempResource(fileName);
+    final DotTempFile dotTempFile = saveTempFile_usingTempResource(fileName,request);
 
-    Optional<DotTempFile> file = new TempFileAPI().getTempFile(null, request.getSession().getId(), dotTempFile.id);
+    Optional<DotTempFile> file = new TempFileAPI().getTempFile(request, dotTempFile.id);
 
     assertTrue(file.isPresent());
 
@@ -175,12 +180,12 @@ public class TempFileResourceTest {
 
     // this works becuase we set the file age to newer than max age
     file.get().file.setLastModified(System.currentTimeMillis() - 60 * 10 * 1000);
-    file = new TempFileAPI().getTempFile(null, request.getSession().getId(), dotTempFile.id);
+    file = new TempFileAPI().getTempFile(request, dotTempFile.id);
     assertTrue(file.isPresent());
 
     // Setting the file to older than max age makes the file inaccessable
     file.get().file.setLastModified(System.currentTimeMillis() - (tempResourceMaxAgeSeconds * 1000) - 1);
-    file = new TempFileAPI().getTempFile(null, request.getSession().getId(), dotTempFile.id);
+    file = new TempFileAPI().getTempFile(request, dotTempFile.id);
     assertFalse(file.isPresent());
   }
   
@@ -189,7 +194,7 @@ public class TempFileResourceTest {
   public void test_tempResourceapi_test_anonymous_access(){
 
     final String fileName = "test.png";
-
+    HttpServletRequest request = mockRequest();
     Config.setProperty(TempFileAPI.TEMP_RESOURCE_ALLOW_ANONYMOUS, false);
     final BodyPart filePart1 = new StreamDataBodyPart(fileName, inputStream());
 
@@ -212,7 +217,7 @@ public class TempFileResourceTest {
 
     final User user = APILocator.systemUser();
     final Host host = APILocator.getHostAPI().findDefaultHost(user, true);
-
+    HttpServletRequest request = mockRequest();
     // set user to system user
     request.setAttribute(WebKeys.USER, user);
 
@@ -239,7 +244,7 @@ public class TempFileResourceTest {
 
     final String fileName1 = "testFileName1" + UUIDGenerator.shorty() + ".png";
     final String fileName2 = "testFileName2" + UUIDGenerator.shorty() + ".gif";
-    final DotTempFile dotTempFile1 = saveTempFile_usingTempResource(fileName1);
+    final DotTempFile dotTempFile1 = saveTempFile_usingTempResource(fileName1, request);
     
     final RemoteUrlForm form = new RemoteUrlForm(
         "https://raw.githubusercontent.com/dotCMS/core/master/dotCMS/src/main/webapp/html/images/skin/logo.gif", fileName2, null);
@@ -248,6 +253,8 @@ public class TempFileResourceTest {
     final Map<String,List<DotTempFile>> dotTempFiles = (Map) jsonResponse.getEntity();
     final DotTempFile dotTempFile2 = dotTempFiles.get("tempFiles").get(0);
 
+    
+    HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
     final Map<String, Object> m = new HashMap<String, Object>();
     m.put("stInode", contentType.id());
     m.put("hostFolder", host.getIdentifier());
@@ -285,7 +292,7 @@ public class TempFileResourceTest {
   public void test_TempResourceAPI_TempResourceEnabledProperty(){
     final boolean tempResourceEnabledOriginalValue = Config.getBooleanProperty(TempFileAPI.TEMP_RESOURCE_ENABLED, true);
     try {
-
+      HttpServletRequest request = mockRequest();
       final String fileName = "test.png";
 
       Config.setProperty(TempFileAPI.TEMP_RESOURCE_ENABLED, false);
