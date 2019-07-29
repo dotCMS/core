@@ -5172,25 +5172,21 @@ public class ESContentletAPIImpl implements ContentletAPI {
             if(field.isUnique()){
                 try{
                     StringBuilder buffy = new StringBuilder();
-
-                    buffy.append(" +(live:true working:true)");
                     buffy.append(" +structureInode:" + contentlet.getStructureInode());
-                    buffy.append(" +(working:true live:true)");
                     if(UtilMethods.isSet(contentlet.getIdentifier())){
                         buffy.append(" -(identifier:" + contentlet.getIdentifier() + ")");
                     }
 
                     buffy.append(" +languageId:" + contentlet.getLanguageId());
 
-                    buffy.append(" +" + contentlet.getContentType().variable() + "." + field
-                            .getVelocityVarName() + ESUtils.SHA_256 + ":");
-                    buffy.append(ESUtils.sha256(contentlet.getContentType().variable()
-                                    + "." + field.getVelocityVarName(),
-                            getFieldValue(contentlet, new LegacyFieldTransformer(field).from()),
-                            contentlet.getLanguageId()));
+                    buffy.append(" +" + contentlet.getContentType().variable() + StringPool.PERIOD + field
+                            .getVelocityVarName() + StringPool.COLON);
+                    buffy.append(getFieldValue(contentlet, new LegacyFieldTransformer(field).from()));
+
                     List<ContentletSearch> contentlets = new ArrayList<ContentletSearch>();
                     try {
-                        contentlets = searchIndex(buffy.toString(), -1, 0, "inode", APILocator.getUserAPI().getSystemUser(), false);
+                        contentlets.addAll(searchIndex(buffy.toString() + " +working:true", -1, 0, "inode", APILocator.getUserAPI().getSystemUser(), false));
+                        contentlets.addAll(searchIndex(buffy.toString() + " +live:true", -1, 0, "inode", APILocator.getUserAPI().getSystemUser(), false));
                     } catch (Exception e) {
                     	final String errorMsg = "Unique field [" + field.getVelocityVarName() + "] could not be validated: " + e.getMessage();
                         Logger.warn(this, errorMsg, e);
