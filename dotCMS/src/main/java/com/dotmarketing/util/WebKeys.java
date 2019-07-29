@@ -390,9 +390,10 @@ public final class WebKeys {
     public static final String USER_FILTER_LIST_INODE = "com.dotmarketing.userfilter.inode";
 
     //DIRECTOR VARIABLES FOR PORTLET URL
-	public static final String JAVAX_PORTLET_REQUEST = "com.dotmarketing.javax.portlet.request";
-	public static final String JAVAX_PORTLET_CONFIG = "com.dotmarketing.javax.portlet.config";
-	public static final String LAYOUT = "com.dotmarketing.LAYOUT";
+    public static final String JAVAX_PORTLET_REQUEST = "com.dotmarketing.javax.portlet.request";
+    public static final String JAVAX_PORTLET_CONFIG = "com.dotmarketing.javax.portlet.config";
+    public static final String LAYOUT = "com.dotmarketing.LAYOUT";
+    public static final String LAYOUT_PREVIOUS = "com.dotmarketing.LAYOUT.previous";
     public static final String SESSION_MESSAGES = "com.dotmarketing.session.messages";
 
     //LANGUAGE MANAGER

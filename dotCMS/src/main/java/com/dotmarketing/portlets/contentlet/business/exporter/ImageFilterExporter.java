@@ -56,7 +56,7 @@ public class ImageFilterExporter implements BinaryContentExporter {
 
 	       else if(filters.size()== 0 ){
 	         filters.remove("Png");
-	         filters.add(0, "Png");
+	         //filters.add(0, "Png");
 	       }
 
 

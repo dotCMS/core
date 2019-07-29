@@ -614,6 +614,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 }
 
             }
+            //Removes content from index
+            APILocator.getContentletIndexAPI().removeContentFromIndex(con);
         }
         if (deleteIdentifier) {
 	        for (Contentlet c : contentlets) {

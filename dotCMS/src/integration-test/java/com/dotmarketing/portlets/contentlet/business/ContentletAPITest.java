@@ -5943,4 +5943,54 @@ public class ContentletAPITest extends ContentletBaseTest {
         }
     }
 
+    /**
+     * This test creates one content with versions in English and Spanish
+     * when one of these versions is deleted should be removed from the index.
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws InterruptedException
+     */
+    @Test
+    public void testRemoveContentFromIndexMultilingualContent()
+            throws DotDataException, DotSecurityException, InterruptedException {
+        ContentType contentType = null;
+
+        try {
+            contentType = new ContentTypeDataGen()
+                    .name("testRemoveContentFromIndexMultilingualContent"+System.currentTimeMillis())
+                    .fields(ImmutableList
+                            .of(ImmutableTextField.builder().name("Title").variable("title")
+                                    .build()))
+                    .nextPersisted();
+
+            final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType.id());
+            final Contentlet contentInEnglish = contentletDataGen.languageId(languageAPI.getDefaultLanguage().getId()).nextPersisted();
+            Contentlet contentInSpanish = contentletDataGen.checkout(contentInEnglish);
+            contentInSpanish.setLanguageId(spanishLanguage.getId());
+            contentInSpanish.setIndexPolicy(IndexPolicy.WAIT_FOR);
+            contentInSpanish = contentletDataGen.checkin(contentInSpanish);
+
+            assertEquals(2,
+                    contentletAPI.searchIndex("+identifier:"+contentInEnglish.getIdentifier(),-1,0,"",user,true).size());
+
+            contentletDataGen.archive(contentInSpanish);
+            contentletDataGen.delete(contentInSpanish);
+
+            assertEquals(1,
+                    contentletAPI.searchIndex("+identifier:"+contentInEnglish.getIdentifier(),-1,0,"",user,true).size());
+
+            contentletDataGen.archive(contentInEnglish);
+            contentletDataGen.delete(contentInEnglish);
+
+            assertEquals(0,
+                    contentletAPI.searchIndex("+identifier:"+contentInEnglish.getIdentifier(),-1,0,"",user,true).size());
+
+        } finally {
+            if (contentType != null) {
+                contentTypeAPI.delete(contentType);
+            }
+        }
+    }
+
 }

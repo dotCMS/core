@@ -10,6 +10,7 @@ import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.LinkDataGen;
 import com.dotcms.datagen.RelationshipDataGen;
 import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -22,6 +23,13 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.UUIDGenerator;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
+import com.liferay.portal.model.User;
+
+import static org.junit.Assert.assertEquals;
+
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -532,5 +540,26 @@ public class ShortyIdApiTest {
             }
         }
     }
+    
+    @Test
+    public void testTempShorties() throws DotSecurityException, FileNotFoundException, IOException {
+
+        ShortyIdAPI api = APILocator.getShortyAPI();
+        User systemUser = APILocator.systemUser();
+        String testingFileName = "TESTING.PNG";
+        DotTempFile temp =  APILocator.getTempFileAPI().createEmptyTempFile(testingFileName, systemUser, "noKey");
+
+        new FileOutputStream(temp.file).close();
+        assertEquals(temp.id, api.shortify(temp.id));
+        
+        
+        ShortyId shorty = api.getShorty(temp.id).get();
+        assertEquals(temp.id, shorty.longId);
+        assertEquals(temp.id, shorty.shortId);
+        assert(ShortType.TEMP_FILE == shorty.type);
+        assert(ShortType.TEMP_FILE == shorty.subType);
+    }
+    
+    
 
 }

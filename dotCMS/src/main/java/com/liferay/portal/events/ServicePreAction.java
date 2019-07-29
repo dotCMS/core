@@ -24,6 +24,7 @@ package com.liferay.portal.events;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Layout;
+import com.google.common.base.Splitter;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
@@ -36,12 +37,20 @@ import com.liferay.util.GetterUtil;
 import com.liferay.util.ListUtil;
 import com.liferay.util.ParamUtil;
 import com.liferay.util.Validator;
+
+import io.vavr.control.Try;
+
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+
+import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.struts.Globals;
 
 /**
@@ -54,84 +63,73 @@ import org.apache.struts.Globals;
  */
 public class ServicePreAction extends Action {
 
-	public void run(HttpServletRequest req, HttpServletResponse res)
-		throws ActionException {
+  public void run(HttpServletRequest req, HttpServletResponse res) throws ActionException {
 
-		try {
-			HttpSession ses = req.getSession();
+    try {
+      HttpSession ses = req.getSession();
 
-			User user = null;
+      User user = null;
+
+      user = PortalUtil.getUser(req);
+
+      boolean signedIn = false;
+
+      if (user == null) {
+        user = PortalUtil.getCompany(req).getDefaultUser();
+      } else {
+        signedIn = true;
+      }
+
+      Locale locale = (Locale) ses.getAttribute(Globals.LOCALE_KEY);
+
+      if (locale == null) {
+        if (signedIn) {
+          locale = user.getLocale();
+        } else {
+          if (GetterUtil.getBoolean(PropsUtil.get(PropsUtil.LOCALE_DEFAULT_REQUEST))) {
+
+            locale = req.getLocale();
+          }
+
+          if (locale == null) {
+            locale = user.getLocale();
+          }
+
+          if (Validator.isNull(locale.getCountry())) {
+
+            // Locales must contain the country code
+
+            locale = LanguageUtil.getLocale(locale.getLanguage());
+          }
+
+          List availableLocales = ListUtil.fromArray(LanguageUtil.getAvailableLocales());
+
+          if (!availableLocales.contains(locale)) {
+            locale = user.getLocale();
+          }
+        }
+
+        ses.setAttribute(Globals.LOCALE_KEY, locale);
+      }
+      List<Layout> layouts = APILocator.getLayoutAPI().loadLayoutsForUser(user);
+      
+      Layout layout=Try.of(()-> APILocator.getLayoutAPI().resolveLayout(req).get()).getOrElse(()->layouts.get(0));
+
+
+
+      Layout[] ls = new Layout[layouts.size()];
+      ((ArrayList) layouts).toArray(ls);
+
+      req.setAttribute(WebKeys.LAYOUT, layout);
+      req.setAttribute(WebKeys.LAYOUTS, ls);
+    } catch (Exception e) {
+      throw new ActionException(e);
+    }
+  }
+	
+	
 
 	
-				user = PortalUtil.getUser(req);
-
-
-			boolean signedIn = false;
-
-			if (user == null) {
-				user = PortalUtil.getCompany(req).getDefaultUser();
-			}
-			else {
-				signedIn = true;
-			}
-
-			Locale locale = (Locale)ses.getAttribute(Globals.LOCALE_KEY);
-
-			if (locale == null) {
-				if (signedIn) {
-					locale = user.getLocale();
-				}
-				else {
-					if (GetterUtil.getBoolean(
-							PropsUtil.get(PropsUtil.LOCALE_DEFAULT_REQUEST))) {
-
-						locale = req.getLocale();
-					}
-
-					if (locale == null) {
-						locale = user.getLocale();
-					}
-
-					if (Validator.isNull(locale.getCountry())) {
-
-						// Locales must contain the country code
-
-						locale = LanguageUtil.getLocale(locale.getLanguage());
-					}
-
-					List availableLocales = ListUtil.fromArray(
-						LanguageUtil.getAvailableLocales());
-
-					if (!availableLocales.contains(locale)) {
-						locale = user.getLocale();
-					}
-				}
-
-				ses.setAttribute(Globals.LOCALE_KEY, locale);
-			}
-
-			Layout layout = APILocator.getLayoutAPI().loadLayout(ParamUtil.getString(req, "p_l_id"));
-
-//			if ((layout != null) && layout.isGroup()) {
-//
-//				// Updates to group layouts are not reflected until the next
-//				// time the user logs in because group layouts are cached in
-//				// the session
-//
-//				layout = LayoutClonePool.clone(req, layout);
-//			}
-
-			
-			List layouts = APILocator.getLayoutAPI().loadLayoutsForUser(user);
-			Layout[] ls = new Layout[layouts.size()];
-			((ArrayList)layouts).toArray(ls);
-			
-			req.setAttribute(WebKeys.LAYOUT, layout);
-			req.setAttribute(WebKeys.LAYOUTS, ls);
-		}
-		catch (Exception e) {
-			throw new ActionException(e);
-		}
-	}
+	
 
 }
