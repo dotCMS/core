@@ -467,6 +467,22 @@ public class RoleAPIImpl implements RoleAPI {
     }
 
 	@Override
+	public boolean isSiblingRole(Role roleA, Role roleB)
+			throws DotSecurityException, DotDataException {
+
+		// findRoleHierarchy return the hierarchy INCLUDING same role
+		// so we need to remove it from the list before checking.
+
+		final List<Role> roleAHierarchy = findRoleHierarchy(roleA);
+		roleAHierarchy.remove(roleA);
+
+		final List<Role> roleBHierarchy = findRoleHierarchy(roleB);
+		roleBHierarchy.remove(roleB);
+
+		return roleAHierarchy.equals(roleBHierarchy);
+	}
+
+	@Override
 	public List<Role> findWorkflowSpecialRoles() throws DotSecurityException, DotDataException {
 		ImmutableList.Builder<Role> roleList = new ImmutableList.Builder<>();
 

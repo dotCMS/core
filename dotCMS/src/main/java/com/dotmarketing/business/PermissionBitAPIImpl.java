@@ -1516,7 +1516,8 @@ public class PermissionBitAPIImpl implements PermissionAPI {
         for (Permission newPermission : newSetOfPermissions) {
             Role newPermissionRole = APILocator.getRoleAPI().loadRoleById(newPermission.getRoleId());
 
-            if (!APILocator.getRoleAPI().isParentRole(role, newPermissionRole)) {
+            if (!APILocator.getRoleAPI().isParentRole(role, newPermissionRole)
+				&& !APILocator.getRoleAPI().isSiblingRole(role, newPermissionRole)) {
                 immutablePermissionsFiltered.add(newPermission);
             }
         }
