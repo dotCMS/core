@@ -8,7 +8,7 @@ There are two ways to set up a license
 
 Example:
 ```
-export LICENSE_KEY=...4isycnXe8nsiO...
+export LICENSE_KEY=$(<./dotcms/license.txt)
 ./run.sh
 ```
 
