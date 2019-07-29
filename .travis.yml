@@ -6,10 +6,6 @@ cache:
   directories:
     - ${HOME}/gcloud/
 
-branches:
-  only:
-   - /^test-16881.*$/
-
 # https://docs.travis-ci.com/user/environment-variables/
 env:
   global:
