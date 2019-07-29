@@ -110,7 +110,7 @@ public class WorkflowResourceLicenseIntegrationTest {
         ContentletAPI contentletAPI = APILocator.getContentletAPI();
         roleAPI = APILocator.getRoleAPI();
         ContentHelper contentHelper = ContentHelper.getInstance();
-        SystemActionApiFireCommandFactory systemActionApiFireCommandFactory =
+        final SystemActionApiFireCommandFactory systemActionApiFireCommandFactory =
                 SystemActionApiFireCommandFactory.getInstance();
         PermissionAPI permissionAPI = APILocator.getPermissionAPI();
         WorkflowImportExportUtil workflowImportExportUtil = WorkflowImportExportUtil.getInstance();

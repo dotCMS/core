@@ -903,6 +903,16 @@ public interface WorkflowAPI {
 	Optional<WorkflowAction> findActionMappedBySystemActionContentlet (final Contentlet contentlet, final SystemAction systemAction, final User user) throws DotDataException, DotSecurityException;
 
 	/**
+	 * Tries to find a {@link SystemActionWorkflowActionMapping} based on {@link SystemAction} and {@link ContentType}
+	 * @param systemAction {@link SystemAction}
+	 * @param contentType  {@link ContentType} to be processed
+	 * @param user         {@link User}
+	 * @return             Optional of SystemActionWorkflowActionMapping
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	Optional<SystemActionWorkflowActionMapping> findSystemActionByContentType(final WorkflowAPI.SystemAction systemAction, final ContentType contentType, final User user) throws DotDataException, DotSecurityException;
+	/**
 	 * Tries to find the system action by identifier
 	 * @param identifier {@link String}
 	 * @param user       {@link User}

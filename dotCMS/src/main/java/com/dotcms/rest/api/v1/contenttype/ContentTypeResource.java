@@ -232,9 +232,28 @@ public class ContentTypeResource implements Serializable {
 
 				final WorkflowAPI.SystemAction systemAction = tuple2._1;
 				final String workflowActionId               = tuple2._2;
-				systemActionWorkflowActionMappings.add(this.workflowHelper.mapSystemActionToWorkflowAction(new WorkflowSystemActionForm.Builder()
-						.systemAction(systemAction).actionId(workflowActionId)
-						.contentTypeVariable(contentTypeSaved.variable()).build(), user));
+				if (UtilMethods.isSet(workflowActionId)) {
+
+					Logger.warn(this, "Saving the system action: " + systemAction +
+							", for content type: " + contentTypeSaved.variable() + ", with the workflow action: "
+							+ workflowActionId );
+
+					systemActionWorkflowActionMappings.add(this.workflowHelper.mapSystemActionToWorkflowAction(new WorkflowSystemActionForm.Builder()
+							.systemAction(systemAction).actionId(workflowActionId)
+							.contentTypeVariable(contentTypeSaved.variable()).build(), user));
+				} else if (UtilMethods.isSet(systemAction)) {
+
+					Logger.warn(this, "Deleting the system action: " + systemAction +
+							", for content type: " + contentTypeSaved.variable());
+
+					final SystemActionWorkflowActionMapping mappingDeleted =
+							this.workflowHelper.deleteSystemAction(systemAction, contentTypeSaved, user);
+
+					Logger.warn(this, "Deleted the system action mapping: " + mappingDeleted);
+				} else {
+
+					throw new IllegalArgumentException("On SYstem Action Mappings, a system action has been sent null or empty");
+				}
 			}
 		}
 

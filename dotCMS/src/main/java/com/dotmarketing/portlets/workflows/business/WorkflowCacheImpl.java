@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.workflows.business;
 
+import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
@@ -7,8 +8,13 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableList;
+import com.liferay.util.StringPool;
+import org.apache.commons.lang3.StringUtils;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 //This interface should have default package access
 public class WorkflowCacheImpl extends WorkflowCache {
@@ -327,5 +333,380 @@ public class WorkflowCacheImpl extends WorkflowCache {
 			Logger.debug(WorkflowCacheImpl.class,e.getMessage(),e);
 		}
 		return null;
+	}
+
+	private static final String SYSTEM_ACTION_KEY_MAIN = "MAIN";
+	private static final String SYSTEM_ACTION_KEY_REFERENCES = "REFERENCES";
+
+	/*
+	The system action mapping cache is indexed by system action mapping id, but there are also other approaches to get the
+	system action mappings, such as, by workflow id, content type variable, workflow scheme id, system action name + scheme id list, system action name + content type variable
+	the most of them has an list of them, so when some of the is being removed, the references on the MAIN cache should be also removed. In viceversa, if some of the elements on
+	the MAIN cache is being removed, the references to it are not longer valid, so they have to be removed too.
+	The following method encapsulate the logic to remove and add MAIN objects and the reference lists
+	 */
+
+	@Override
+	public Map<String, Object> findSystemActionByIdentifier(final String identifier) {
+
+		if (UtilMethods.isSet(identifier)) {
+
+			try {
+				return (Map<String, Object>) cache.get(SYSTEM_ACTION_KEY_MAIN+identifier, SYSTEM_ACTION_GROUP);
+			} catch (DotCacheException e) {
+				Logger.debug(WorkflowCacheImpl.class,e.getMessage(),e);
+			}
+		}
+
+		return null;
+	}
+
+	@Override
+	public Map<String, Object> findSystemActionByContentType(final String systemActionName, final String variable) {
+
+		Map<String, Object> mappingRow = null;
+
+		try {
+			final String systemMappingId = (String)this.cache.get(
+					SystemActionMappingReferenceCache.TYPE.SYSTEMACTION_CONTENTTYPE.name()
+							+ StringUtils.join(new String[]{systemActionName, variable}, StringPool.COMMA), SYSTEM_ACTION_GROUP);
+
+			if (UtilMethods.isSet(systemMappingId)) {
+
+				mappingRow = this.findSystemActionByIdentifier(systemMappingId);
+
+			}
+		} catch (DotCacheException e) {
+			Logger.debug(WorkflowCacheImpl.class,e.getMessage(), e);
+		}
+
+		return mappingRow;
+	}
+
+	@Override
+	public List<Map<String, Object>> findSystemActionsByContentType(final String variable) {
+
+		List<Map<String, Object>> mappingRows = null;
+
+		try {
+			final List<String> systemMappingIds = (List<String>)this.cache.get(
+					SystemActionMappingReferenceCache.TYPE.CONTENTTYPE.name()+variable, SYSTEM_ACTION_GROUP);
+
+			if (UtilMethods.isSet(systemMappingIds)) {
+
+				mappingRows = new ArrayList<>();
+				for (final String mappingId : systemMappingIds) {
+
+					final Map<String, Object> row = this.findSystemActionByIdentifier(mappingId);
+					mappingRows.add(row);
+				}
+			}
+		} catch (DotCacheException e) {
+			Logger.debug(WorkflowCacheImpl.class,e.getMessage(), e);
+		}
+
+		return mappingRows;
+	}
+
+	@Override
+	public List<Map<String, Object>> findSystemActionsByScheme(final String schemeId) {
+
+		List<Map<String, Object>> mappingRows = null;
+
+		try {
+			final List<String> systemMappingIds = (List<String>)this.cache.get(
+					SystemActionMappingReferenceCache.TYPE.SCHEME.name()+schemeId, SYSTEM_ACTION_GROUP);
+
+			if (UtilMethods.isSet(systemMappingIds)) {
+
+				mappingRows = new ArrayList<>();
+				for (final String mappingId : systemMappingIds) {
+
+					final Map<String, Object> row = this.findSystemActionByIdentifier(mappingId);
+					mappingRows.add(row);
+				}
+			}
+		} catch (DotCacheException e) {
+			Logger.debug(WorkflowCacheImpl.class,e.getMessage(), e);
+		}
+
+		return mappingRows;
+	}
+
+	@Override
+	public List<Map<String, Object>> findSystemActionsByWorkflowAction(final String workflowActionId) {
+
+		List<Map<String, Object>> mappingRows = null;
+
+		try {
+			final List<String> systemMappingIds = (List<String>)this.cache.get(
+					SystemActionMappingReferenceCache.TYPE.WORKFLOW.name()+workflowActionId, SYSTEM_ACTION_GROUP);
+
+			if (UtilMethods.isSet(systemMappingIds)) {
+
+				mappingRows = new ArrayList<>();
+				for (final String mappingId : systemMappingIds) {
+
+					final Map<String, Object> row = this.findSystemActionByIdentifier(mappingId);
+					mappingRows.add(row);
+				}
+			}
+		} catch (DotCacheException e) {
+			Logger.debug(WorkflowCacheImpl.class,e.getMessage(), e);
+		}
+
+		return mappingRows;
+	}
+
+	@Override
+	public  List<Map<String, Object>> findSystemActionsBySchemes(final String systemActionName, final List<String> schemeIdList) {
+
+		List<Map<String, Object>> mappingRows = null;
+
+		try {
+			final List<String> systemMappingIds = (List<String>)this.cache.get(
+					SystemActionMappingReferenceCache.TYPE.SYSTEMACTION_SCHEMES.name()
+							+ CollectionsUtils.join(StringPool.COMMA, systemActionName, schemeIdList), SYSTEM_ACTION_GROUP);
+
+			if (UtilMethods.isSet(systemMappingIds)) {
+
+				mappingRows = new ArrayList<>();
+				for (final String mappingId : systemMappingIds) {
+
+					final Map<String, Object> row = this.findSystemActionByIdentifier(mappingId);
+					mappingRows.add(row);
+				}
+			}
+		} catch (DotCacheException e) {
+			Logger.debug(WorkflowCacheImpl.class,e.getMessage(), e);
+		}
+
+		return mappingRows;
+	}
+
+	@Override
+	public void addSystemActionByIdentifier(final String identifier, final Map<String, Object> systemActionMap) {
+
+		if(UtilMethods.isSet(identifier) && UtilMethods.isSet(systemActionMap)) {
+
+			cache.put(SYSTEM_ACTION_KEY_MAIN+identifier, systemActionMap, SYSTEM_ACTION_GROUP);
+		}
+	}
+
+	@Override
+	public void addSystemActionBySystemActionNameAndContentTypeVariable(final String systemActionName,
+																		final String variable,
+																		final Map<String, Object> mappingRow) {
+
+		try {
+
+			final String mappingIdentifier = (String)mappingRow.get("id");
+			this.addSystemActionByIdentifier(mappingIdentifier, mappingRow);
+			this.addSystemActionReference(mappingIdentifier, new SystemActionMappingReferenceCache.Builder()
+					.systemActionByContentType(systemActionName, variable).build());
+
+			this.cache.put(
+			SystemActionMappingReferenceCache.TYPE.SYSTEMACTION_CONTENTTYPE.name()
+					+ StringUtils.join(new String[]{systemActionName, variable}, StringPool.COMMA), mappingIdentifier, SYSTEM_ACTION_GROUP);
+
+		} catch (DotCacheException e) {
+			Logger.debug(WorkflowCacheImpl.class,e.getMessage(), e);
+		}
+	}
+
+	private void addSystemActionReference (final String mappingIdentifier, final SystemActionMappingReferenceCache referenceCache) throws DotCacheException {
+
+		final String reverseReferenceKey = SYSTEM_ACTION_KEY_REFERENCES + mappingIdentifier;
+		List<SystemActionMappingReferenceCache> referenceCaches =
+				(List<SystemActionMappingReferenceCache>)this.cache.get(reverseReferenceKey, SYSTEM_ACTION_GROUP);
+		if (!UtilMethods.isSet(referenceCaches)) {
+			referenceCaches = new ArrayList<>();
+		}
+		referenceCaches.add(referenceCache);
+		this.cache.put(reverseReferenceKey, referenceCaches, SYSTEM_ACTION_GROUP);
+	}
+
+	@Override
+	public void addSystemActionsByWorkflowAction(final String workflowActionId, final List<Map<String, Object>> results) {
+
+		try {
+
+			final ImmutableList.Builder<String> systemActionMappingIdentifierListBuilder =
+					new ImmutableList.Builder<>();
+
+			// adding one by one
+			for (final Map<String, Object> mappingRow : results) {
+
+				final String mappingIdentifier = (String)mappingRow.get("id");
+				this.addSystemActionByIdentifier(mappingIdentifier, mappingRow);
+
+				// adding scheme reverse reference to the row
+				this.addSystemActionReference(mappingIdentifier, new SystemActionMappingReferenceCache.Builder()
+						.workflowId(workflowActionId).build());
+			}
+
+			// now the reference id list for this search criteria
+			this.cache.put(
+					SystemActionMappingReferenceCache.TYPE.WORKFLOW.name()	+ workflowActionId,
+							systemActionMappingIdentifierListBuilder.build(), SYSTEM_ACTION_GROUP);
+		} catch (DotCacheException e) {
+			Logger.debug(WorkflowCacheImpl.class,e.getMessage(), e);
+		}
+	}
+
+	@Override
+	public void addSystemActionsByContentType(final String variable, final List<Map<String, Object>> results) {
+
+		try {
+
+			final ImmutableList.Builder<String> systemActionMappingIdentifierListBuilder =
+					new ImmutableList.Builder<>();
+
+			// adding one by one
+			for (final Map<String, Object> mappingRow : results) {
+
+				final String mappingIdentifier = (String)mappingRow.get("id");
+				this.addSystemActionByIdentifier(mappingIdentifier, mappingRow);
+
+				// adding scheme reverse reference to the row
+				this.addSystemActionReference(mappingIdentifier, new SystemActionMappingReferenceCache.Builder()
+						.contentTypeVar(variable).build());
+			}
+
+			// now the reference id list for this search criteria
+			this.cache.put(
+					SystemActionMappingReferenceCache.TYPE.CONTENTTYPE.name() + variable,
+						 systemActionMappingIdentifierListBuilder.build(), SYSTEM_ACTION_GROUP);
+		} catch (DotCacheException e) {
+			Logger.debug(WorkflowCacheImpl.class,e.getMessage(), e);
+		}
+	}
+
+	@Override
+	public void addSystemActionsByScheme(final String schemeId, final List<Map<String, Object>> results) {
+
+		try {
+
+			final ImmutableList.Builder<String> systemActionMappingIdentifierListBuilder =
+					new ImmutableList.Builder<>();
+
+			// adding one by one
+			for (final Map<String, Object> mappingRow : results) {
+
+				final String mappingIdentifier = (String)mappingRow.get("id");
+				this.addSystemActionByIdentifier(mappingIdentifier, mappingRow);
+
+				// adding scheme reverse reference to the row
+				this.addSystemActionReference(mappingIdentifier,
+						new SystemActionMappingReferenceCache.Builder()
+						.schemeId(schemeId).build());
+			}
+
+			// now the reference id list for this search criteria
+			this.cache.put(
+					SystemActionMappingReferenceCache.TYPE.SCHEME.name() + schemeId,
+							systemActionMappingIdentifierListBuilder.build(), SYSTEM_ACTION_GROUP);
+		} catch (DotCacheException e) {
+			Logger.debug(WorkflowCacheImpl.class,e.getMessage(), e);
+		}
+	}
+
+	@Override
+	public void addSystemActionsBySystemActionNameAndSchemeIds(final String systemActionName,
+															   final List<String> schemeIdList,
+															   final List<Map<String, Object>> results) {
+
+		try {
+
+			final ImmutableList.Builder<String> systemActionMappingIdentifierListBuilder =
+								new ImmutableList.Builder<>();
+
+			// adding one by one
+			for (final Map<String, Object> mappingRow : results) {
+
+				final String mappingIdentifier = (String)mappingRow.get("id");
+				this.addSystemActionByIdentifier(mappingIdentifier, mappingRow);
+
+				// adding scheme reverse reference to the row
+				this.addSystemActionReference(mappingIdentifier, new SystemActionMappingReferenceCache.Builder()
+						.systemActionBySchemeIds(systemActionName, schemeIdList).build());
+			}
+
+			// now the reference id list for this search criteria
+			this.cache.put(SystemActionMappingReferenceCache.TYPE.SYSTEMACTION_SCHEMES.name()
+					+ CollectionsUtils.join(StringPool.COMMA, systemActionName, schemeIdList),
+					systemActionMappingIdentifierListBuilder.build(), SYSTEM_ACTION_GROUP);
+		} catch (DotCacheException e) {
+			Logger.debug(WorkflowCacheImpl.class,e.getMessage(), e);
+		}
+	}
+
+	@Override
+	public void removeSystemActionByIdentifier(final String identifier) {
+
+		try {
+
+			final List<SystemActionMappingReferenceCache> referenceCaches =
+					(List<SystemActionMappingReferenceCache>)this.cache.get(SYSTEM_ACTION_KEY_REFERENCES+identifier, SYSTEM_ACTION_GROUP);
+
+			if (UtilMethods.isSet(referenceCaches)) {
+				// remove all keys where the system action mapping is being referrer.
+				removeSystemActionReferences (referenceCaches);
+			}
+
+			cache.remove(SYSTEM_ACTION_KEY_REFERENCES + identifier, SYSTEM_ACTION_GROUP);
+			cache.remove(SYSTEM_ACTION_KEY_MAIN       + identifier, SYSTEM_ACTION_GROUP);
+		} catch (DotCacheException e) {
+			Logger.debug(WorkflowCacheImpl.class,e.getMessage(), e);
+		}
+	}
+
+	@Override
+	public void removeSystemActionsByWorkflowAction(final String workflowActionId) {
+
+		try {
+
+			final String workflowReferenceId      = SystemActionMappingReferenceCache.TYPE.WORKFLOW.name()+workflowActionId;
+			final List<String> systemActionIdList = (List<String>)this.cache.get(workflowReferenceId, SYSTEM_ACTION_GROUP);
+			if (UtilMethods.isSet(systemActionIdList)) {
+
+				for (final String systemActionMappingIdentifier : systemActionIdList) {
+
+					cache.remove(SYSTEM_ACTION_KEY_MAIN + systemActionMappingIdentifier, SYSTEM_ACTION_GROUP);
+				}
+			}
+
+			this.cache.remove(workflowReferenceId, SYSTEM_ACTION_GROUP);
+		} catch (DotCacheException e) {
+			Logger.debug(WorkflowCacheImpl.class,e.getMessage(), e);
+		}
+	}
+
+	private void removeSystemActionReferences(final List<SystemActionMappingReferenceCache> referenceCaches) {
+
+		for (final SystemActionMappingReferenceCache referenceCache : referenceCaches) {
+
+			final SystemActionMappingReferenceCache.TYPE type = referenceCache.getType();
+			switch (type) {
+
+				case SCHEME:
+					this.cache.remove(SystemActionMappingReferenceCache.TYPE.SCHEME.name()+referenceCache.getKey(),      SYSTEM_ACTION_GROUP);
+					break;
+				case CONTENTTYPE:
+					this.cache.remove(SystemActionMappingReferenceCache.TYPE.CONTENTTYPE.name()+referenceCache.getKey(), SYSTEM_ACTION_GROUP);
+					break;
+				case WORKFLOW:
+					this.cache.remove(SystemActionMappingReferenceCache.TYPE.WORKFLOW.name()+referenceCache.getKey(),    SYSTEM_ACTION_GROUP);
+					break;
+				case SYSTEMACTION_CONTENTTYPE:
+					this.cache.remove(SystemActionMappingReferenceCache.TYPE.SYSTEMACTION_CONTENTTYPE.name()
+							+ StringUtils.join(referenceCache.getKeys(), StringPool.COMMA), SYSTEM_ACTION_GROUP);
+					break;
+				case SYSTEMACTION_SCHEMES:
+					this.cache.remove(SystemActionMappingReferenceCache.TYPE.SYSTEMACTION_SCHEMES.name()
+							+ StringUtils.join(referenceCache.getKeys(), StringPool.COMMA), SYSTEM_ACTION_GROUP);
+					break;
+			}
+		}
 	}
 }

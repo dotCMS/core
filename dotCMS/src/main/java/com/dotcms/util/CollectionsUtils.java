@@ -2,6 +2,7 @@ package com.dotcms.util;
 
 import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableList;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.formula.functions.T;
 import org.elasticsearch.common.collect.MapBuilder;
 
@@ -961,6 +962,17 @@ public class CollectionsUtils implements Serializable {
 
         return ImmutableList.copyOf(result);
     }
+
+    public static String join (final String separator, final String firstString, final List<String> list) {
+
+	    final List<String> listJoin = new ArrayList<>(list.size()+1);
+	    listJoin.add(firstString);
+	    listJoin.addAll(list);
+
+        return StringUtils.join(listJoin, separator);
+    }
+
+
 
     public static List join (final List ...lists) {
 

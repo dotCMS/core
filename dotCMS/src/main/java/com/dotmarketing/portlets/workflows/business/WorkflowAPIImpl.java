@@ -3406,6 +3406,16 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
         return actionsBuilder.build();
 	}
 
+	@Override
+	@CloseDBIfOpened
+	public Optional<SystemActionWorkflowActionMapping> findSystemActionByContentType(final WorkflowAPI.SystemAction systemAction,
+																			  final ContentType contentType, final User user)
+			throws DotDataException, DotSecurityException {
+
+		final Map<String, Object> mappingRow = this.workFlowFactory.findSystemActionByContentType(systemAction, contentType);
+		return Optional.ofNullable(this.toSystemActionWorkflowActionMapping(mappingRow, contentType, user));
+	}
+
 	/**
 	 * Tries to find a {@link WorkflowAction} based on a {@link Contentlet} and {@link SystemAction}, first will find a workflow action
 	 * associated to the {@link Contentlet} {@link ContentType}, if there is not any match, will tries to find by {@link WorkflowScheme}

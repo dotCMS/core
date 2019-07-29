@@ -397,6 +397,26 @@ public class WorkflowHelper {
         return mapping.get();
     }
 
+    @WrapInTransaction
+    public SystemActionWorkflowActionMapping deleteSystemAction(final WorkflowAPI.SystemAction systemAction, final ContentType contentType, final User user) throws DotDataException, DotSecurityException {
+
+        final Optional<SystemActionWorkflowActionMapping> mapping = this.workflowAPI.findSystemActionByContentType(systemAction, contentType, user);
+
+        if (mapping.isPresent()) {
+            if (!this.workflowAPI.deleteSystemAction(mapping.get()).isPresent()) {
+
+                throw new InternalServerException("Could not delete the system action associated to the content type: "
+                        + contentType.variable() + ", system action: " + systemAction + ", it may not exists");
+            }
+        } else {
+
+            throw new NotFoundInDbException("Could not delete the system action associated to the content type: "
+                    + contentType.variable() + ", system action: " + systemAction +  ", because it does not exists");
+        }
+
+        return mapping.get();
+    }
+
     @CloseDBIfOpened
     public List<WorkflowAction> findActions(final Set<String> schemes, final WorkflowAPI.SystemAction systemAction, final User user)
             throws DotDataException, DotSecurityException {
@@ -1361,20 +1381,26 @@ public class WorkflowHelper {
         SystemActionWorkflowActionMapping mapping = null;
         final WorkflowAction workflowAction = this.workflowAPI.findAction(workflowSystemActionForm.getActionId(), user);
 
-        if (UtilMethods.isSet(workflowSystemActionForm.getSchemeId())) {
+        if (null != workflowAction) {
+            if (UtilMethods.isSet(workflowSystemActionForm.getSchemeId())) {
 
-            final WorkflowScheme workflowScheme = this.workflowAPI.findScheme(workflowSystemActionForm.getSchemeId());
-            mapping = this.workflowAPI.mapSystemActionToWorkflowActionForWorkflowScheme(workflowSystemActionForm.getSystemAction(),
-                    workflowAction, workflowScheme);
-        } else if (UtilMethods.isSet(workflowSystemActionForm.getContentTypeVariable())) {
+                final WorkflowScheme workflowScheme = this.workflowAPI.findScheme(workflowSystemActionForm.getSchemeId());
+                mapping = this.workflowAPI.mapSystemActionToWorkflowActionForWorkflowScheme(workflowSystemActionForm.getSystemAction(),
+                        workflowAction, workflowScheme);
+            } else if (UtilMethods.isSet(workflowSystemActionForm.getContentTypeVariable())) {
 
-            final ContentType contentType = APILocator.getContentTypeAPI(user).find(workflowSystemActionForm.getContentTypeVariable());
-            mapping = this.workflowAPI.mapSystemActionToWorkflowActionForContentType(workflowSystemActionForm.getSystemAction(),
-                    workflowAction, contentType);
+                final ContentType contentType = APILocator.getContentTypeAPI(user).find(workflowSystemActionForm.getContentTypeVariable());
+                mapping = this.workflowAPI.mapSystemActionToWorkflowActionForContentType(workflowSystemActionForm.getSystemAction(),
+                        workflowAction, contentType);
+            } else {
+
+                throw new BadRequestException("SchemeId or Content Type Variable are required");
+            }
         } else {
 
-            throw new BadRequestException("SchemeId or Content Type Variable are required");
+            throw new DoesNotExistException("The workflow id: " + workflowSystemActionForm.getActionId() + " does not exists");
         }
+
 
         return mapping;
     }

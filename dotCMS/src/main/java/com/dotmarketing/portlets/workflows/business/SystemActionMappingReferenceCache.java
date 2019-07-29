@@ -1,14 +1,15 @@
 package com.dotmarketing.portlets.workflows.business;
 
-import org.apache.commons.collections.keyvalue.MultiKey;
+import java.util.Collection;
+import java.util.Iterator;
 
-public class SystemActionMappingReferenceCacheKey  {
+public class SystemActionMappingReferenceCache {
 
     private final TYPE type;
     private final String [] keys;
 
-    private SystemActionMappingReferenceCacheKey(final Builder builder) {
-        super(builder.keys);
+    private SystemActionMappingReferenceCache(final Builder builder) {
+        this.keys = builder.keys;
         this.type = builder.type;
     }
 
@@ -16,49 +17,77 @@ public class SystemActionMappingReferenceCacheKey  {
         return type;
     }
 
+    public String getKey() {
+
+        return null != keys && keys.length > 0? keys[0]:null;
+    }
+    public String[] getKeys() {
+        return keys;
+    }
+
     public static final class Builder {
 
         TYPE type;
-        Object[] keys;
+        String[] keys;
 
         public Builder workflowId (final String workflowId) {
 
             this.type = TYPE.WORKFLOW;
-            keys      = new Object[] {workflowId};
+            keys      = new String[] {workflowId};
             return this;
         }
 
         public Builder contentTypeVar (final String variable) {
 
             this.type = TYPE.CONTENTTYPE;
-            keys      = new Object[] {variable};
+            keys      = new String[] {variable};
             return this;
         }
 
         public Builder schemeId (final String schemeId) {
 
             this.type = TYPE.SCHEME;
-            keys      = new Object[] {schemeId};
+            keys      = new String[] {schemeId};
             return this;
         }
 
         public Builder systemActionByContentType (final String systemActionName, final String variable) {
 
             this.type = TYPE.SYSTEMACTION_CONTENTTYPE;
-            keys      = new Object[] {systemActionName, variable};
+            keys      = new String[] {systemActionName, variable};
             return this;
         }
 
-        public Builder systemActionByContentType (final String systemActionName, final String... schemeIds) {
+        public Builder systemActionBySchemeIds (final String systemActionName, final String... schemeIds) {
 
             this.type = TYPE.SYSTEMACTION_SCHEMES;
-            keys      = schemeIds;
+            keys      = new String[schemeIds.length+1];
+            keys[0]   = systemActionName;
+            for (int i = 0; i < schemeIds.length; ++i) {
+
+                keys[i+1] = schemeIds[i];
+            }
             return this;
         }
 
-        public SystemActionMappingReferenceCacheKey build() {
+        public Builder systemActionBySchemeIds (final String systemActionName, final Collection<String> schemeIds) {
 
-            return new SystemActionMappingReferenceCacheKey(this);
+            this.type = TYPE.SYSTEMACTION_SCHEMES;
+            keys      = new String[schemeIds.size()+1];
+            keys[0]   = systemActionName;
+            int i = 1;
+            final Iterator<String> iterator = schemeIds.iterator();
+            while (iterator.hasNext()) {
+
+                keys[i++] = iterator.next();
+            }
+
+            return this;
+        }
+
+        public SystemActionMappingReferenceCache build() {
+
+            return new SystemActionMappingReferenceCache(this);
         }
     }
 
