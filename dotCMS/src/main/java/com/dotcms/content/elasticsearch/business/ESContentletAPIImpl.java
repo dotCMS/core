@@ -1762,6 +1762,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
             contentletsVersion.addAll(findAllVersions(APILocator.getIdentifierAPI().find(con.getIdentifier()), user,
                     respectFrontendRoles));
+            contentletsVersion.forEach(contentletLanguage -> contentletLanguage.setIndexPolicy(con.getIndexPolicy()));
             // Remove page contents (if the content is a Content Page)
             List<MultiTree> mts = APILocator.getMultiTreeAPI().getMultiTreesByChild(con.getIdentifier());
 
@@ -1827,12 +1828,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         // Delete all the versions of the contentlets to delete
         contentFactory.delete(contentletsVersion);
         // Remove the contentlets from the Elastic index and cache
-        for (Contentlet contentlet : contentlets) {
-            indexAPI.removeContentFromIndex(contentlet);
-            CacheLocator.getIdentifierCache().removeFromCacheByVersionable(contentlet);
-        }
         for (Contentlet contentlet : contentletsVersion) {
-            indexAPI.removeContentFromIndex(contentlet);
             CacheLocator.getIdentifierCache().removeFromCacheByVersionable(contentlet);
         }
         deleteBinaryFiles(contentletsVersion, null);
@@ -1961,6 +1957,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     List<Contentlet> allVersionsList = findAllVersions(identifier,user,false);
                     List <Contentlet> contentletsLanguageList  = allVersionsList.stream().
                             filter(contentlet -> contentlet.getLanguageId()==con.getLanguageId()).collect(Collectors.toList());
+                    contentletsLanguageList.forEach(contentletLanguage -> contentletLanguage.setIndexPolicy(con.getIndexPolicy()));
                     contentFactory.delete(contentletsLanguageList, false);
 
                     for (Contentlet contentlet : contentlets) {
