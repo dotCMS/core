@@ -9,3 +9,5 @@ steps:
             './docker/tests/integration/' ]
 images:
   - 'gcr.io/$PROJECT_ID/integration-tests-image:$_CUSTOM_RUN_ID'
+
+timeout: 1200s
