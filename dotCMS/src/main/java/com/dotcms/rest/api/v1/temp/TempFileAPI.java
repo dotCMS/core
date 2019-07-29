@@ -18,6 +18,7 @@ import javax.servlet.http.HttpServletRequest;
 import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.http.CircuitBreakerUrl.Method;
 import com.dotcms.util.CloseUtils;
+import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DoesNotExistException;
@@ -333,7 +334,7 @@ public class TempFileAPI {
     uniqList.add("getRemoteAddr:" + request.getRemoteAddr());
     
     final String incomingReferer = (request.getHeader("Origin")!=null) ? request.getHeader("Origin") :  request.getHeader("referer");
-    uniqList.add("incomingReferer:" + request.getHeader(incomingReferer));
+    uniqList.add("incomingReferer:" + new SecurityUtils().hostFromUrl(incomingReferer));
 
     uniqList.add("userId:" + PortalUtil.getUserId(request));
 
