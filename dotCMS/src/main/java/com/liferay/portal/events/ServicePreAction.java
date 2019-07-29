@@ -102,7 +102,9 @@ public class ServicePreAction extends Action {
       }
       final List<Layout> layouts = APILocator.getLayoutAPI().loadLayoutsForUser(user);
       final Layout layout = APILocator.getLayoutAPI().resolveLayout(req)
-              .orElseGet(() -> UtilMethods.isSet(layouts) ? layouts.get(0) : null);
+              .orElseGet(
+                  () -> UtilMethods.isSet(layouts) ? layouts.get(0) : null
+              );
       final Layout[] layoutsArray = layouts.stream().toArray(Layout[]::new);
 
       req.setAttribute(WebKeys.LAYOUT, layout);
