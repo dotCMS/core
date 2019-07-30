@@ -1512,7 +1512,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
         ImmutableList.Builder<Permission> immutablePermissionsFiltered = new Builder<>();
 
         // We need to make sure that newSetOfPermissions doesn't contain
-        // a child of the role we are assigning permissions.
+        // a child or sibling of the role we are assigning permissions.
         for (Permission newPermission : newSetOfPermissions) {
             Role newPermissionRole = APILocator.getRoleAPI().loadRoleById(newPermission.getRoleId());
 

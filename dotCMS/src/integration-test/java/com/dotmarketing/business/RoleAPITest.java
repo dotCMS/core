@@ -1,10 +1,15 @@
 package com.dotmarketing.business;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.util.IntegrationTestInitService;
-
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.google.common.collect.Lists;
@@ -18,6 +23,7 @@ import org.junit.Test;
  * @author Jonathan Gamba
  *         Date: 6/20/13
  */
+
 public class RoleAPITest extends IntegrationTestBase {
 
     private static DotCacheAdministrator cache;
@@ -368,6 +374,50 @@ public class RoleAPITest extends IntegrationTestBase {
                     .newArrayList(grandChildRole, childRole, parentRole, secondChildRole,
                             secondParentRole);
             cleanRoles(rolesToDelete);
+        }
+    }
+
+    /**
+     * Tests API method isSiblingRole with sibling and non-sibling roles
+     */
+
+    @Test
+    public void testIsSiblingRole() throws DotDataException, DotSecurityException {
+
+        Role parentA = null;
+        Role childA = null;
+        Role childB = null;
+        Role grandchildA = null;
+        Role parentB = null;
+        final RoleAPI roleAPI = APILocator.getRoleAPI();
+        final long time = System.currentTimeMillis();
+
+        try {
+            // create parent role
+            parentA = new RoleDataGen().name("parentA"+time).nextPersisted();
+            // create child role
+            childA = new RoleDataGen().name("childA"+time).parent(parentA.getId()).nextPersisted();
+            // another child
+            childB = new RoleDataGen().name("childB"+time).parent(parentA.getId()).nextPersisted();
+            // grand child
+            grandchildA = new RoleDataGen().name("grandchildA"+time).parent(childA.getId())
+                    .nextPersisted();
+            // parent's sibling
+            parentB = new RoleDataGen().name("parentB"+time).nextPersisted();
+
+            assertTrue(roleAPI.isSiblingRole(childA, childB));
+
+            assertTrue(roleAPI.isSiblingRole(parentA, parentB));
+
+            assertFalse(roleAPI.isSiblingRole(parentA, childA));
+
+            assertFalse(roleAPI.isSiblingRole(grandchildA, childB));
+        } finally {
+            roleAPI.delete(grandchildA);
+            roleAPI.delete(childA);
+            roleAPI.delete(childB);
+            roleAPI.delete(parentA);
+            roleAPI.delete(parentB);
         }
     }
 

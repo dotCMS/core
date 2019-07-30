@@ -1,8 +1,12 @@
 package com.dotmarketing.business;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.RoleDataGen;
+import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
+import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
@@ -899,6 +903,93 @@ public class PermissionAPITest extends IntegrationTestBase {
         assertTrue(users.size() == 0);
 
         APILocator.getFolderAPI().delete(f, sysuser, false);
+    }
+
+    /**
+     * Tests that assigning permissions to a role on a folder does not also assign permissions on
+     * the same folder to sibling roles who have individual permissions on the parent of the
+     * mentioned folder.
+     */
+
+    @Test
+    public void testPermissionIndividuallyByRole() throws DotDataException, DotSecurityException {
+
+        final RoleAPI roleAPI = APILocator.getRoleAPI();
+        final long time = System.currentTimeMillis();
+        final User systemUser = APILocator.systemUser();
+        Role parentRole = null;
+        Role childRole = null;
+        Role childSiblingRole = null;
+        Host testSite = null;
+
+        try {
+            testSite = new SiteDataGen().nextPersisted();
+
+            parentRole = new RoleDataGen().name("parent"+time).nextPersisted();
+
+            // let's give view permissions to parent role on testSite
+            List<Permission> sitePermissionsForParentRole = CollectionsUtils.list(
+                    new Permission(testSite.getIdentifier(), parentRole.getId(),
+                            3, true));
+
+            permissionAPI.assignPermissions(sitePermissionsForParentRole, testSite, systemUser,
+                    false);
+
+            // create child role
+            childRole = new RoleDataGen().name("child"+time).parent(parentRole.getId())
+                    .nextPersisted();
+
+            // give child role permissions on testSite
+            List<Permission> sitePermissionsForChildRole = CollectionsUtils.list(
+                    new Permission(testSite.getIdentifier(), childRole.getId(),
+                            3, true));
+
+            permissionAPI.assignPermissions(sitePermissionsForChildRole, testSite, systemUser,
+                    false);
+
+            // create test folder under test site
+            final Folder testFolder = new FolderDataGen().site(testSite).nextPersisted();
+
+            // create child-sibling role
+            childSiblingRole = new RoleDataGen().name("childSibling"+time).parent(parentRole.getId())
+                    .nextPersisted();
+
+            // give child-sibling role permissions to testFolder
+            List<Permission> folderPermissionsForSiblingRole = CollectionsUtils.list(
+                    new Permission(testFolder.getIdentifier(), childRole.getId(),
+                            3, true));
+
+            permissionAPI.assignPermissions(folderPermissionsForSiblingRole, testFolder, systemUser,
+                    false);
+
+            // assert parent has view permissions on testFolder
+            List<Permission> parentRolePermissions = permissionAPI
+                    .getPermissionsByRole(parentRole, false);
+
+            final boolean doesParentHavePermissionOnTestFolder = parentRolePermissions.stream()
+                    .anyMatch(permission -> permission.getInode().equals(
+                            testFolder.getIdentifier()) && permission.getPermission()==3);
+
+            assertTrue(doesParentHavePermissionOnTestFolder);
+
+            // assert that child does not have permissions on testFolder
+            List<Permission> childRolePermissions = permissionAPI
+                    .getPermissionsByRole(childRole, false);
+
+            final boolean doesChildHavePermissionOnTestFolder = childRolePermissions.stream()
+                    .noneMatch(permission -> permission.getInode().equals(
+                            testFolder.getIdentifier()) && permission.getPermission()==3);
+
+            assertFalse(doesChildHavePermissionOnTestFolder);
+
+
+        } finally {
+            roleAPI.delete(childRole);
+            roleAPI.delete(childSiblingRole);
+            roleAPI.delete(parentRole);
+            APILocator.getContentletAPI().delete(testSite, systemUser, false);
+        }
+
     }
 
     /**
