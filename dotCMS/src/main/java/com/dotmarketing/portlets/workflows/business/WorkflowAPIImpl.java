@@ -42,6 +42,7 @@ import com.dotmarketing.portlets.workflows.actionlet.*;
 import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.util.*;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
@@ -3327,14 +3328,16 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	 * @param workflowAction {@link WorkflowAction} Workflow Action to map to the SystemAction
 	 * @param contentType    {@link ContentType}    The Map is associated to a content type
 	 * @throws DotDataException
-	 * @throws DotSecurityException
 	 */
 	@Override
 	@WrapInTransaction
 	public SystemActionWorkflowActionMapping mapSystemActionToWorkflowActionForContentType (final SystemAction systemAction, final WorkflowAction workflowAction,
 														final ContentType contentType) throws DotDataException {
 
-		// todo: double check if the params are not null.
+		DotPreconditions.checkArgument(null != systemAction, "System Action can not be null");
+		DotPreconditions.checkArgument(null != contentType, "Content Type can not be null");
+		DotPreconditions.checkArgument(null != workflowAction, "Workflow Action can not be null");
+
 		final SystemActionWorkflowActionMapping mapping =
 				new SystemActionWorkflowActionMapping(UUIDGenerator.generateUuid(),
 						systemAction, workflowAction, contentType);
@@ -3382,6 +3385,51 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		}
 
 		return actionsBuilder.build();
+	}
+
+	@Override
+	@CloseDBIfOpened
+	public Map<String, List<WorkflowScheme>> findSchemesMapForContentType(final List<ContentType> contentTypes)  throws DotDataException {
+
+		final ImmutableMap.Builder<String, List<WorkflowScheme>> schemesMapBuilder =
+				new ImmutableMap.Builder<>();
+
+		for (final ContentType contentType : contentTypes) {
+
+			schemesMapBuilder.put(contentType.variable(), this.findSchemesForContentType(contentType));
+		}
+
+		return schemesMapBuilder.build();
+	}
+
+	@Override
+	@CloseDBIfOpened
+	public Map<String, List<SystemActionWorkflowActionMapping>> findSystemActionsMapByContentType(final List<ContentType> contentTypes,
+																								  final User user)
+			throws DotDataException, DotSecurityException {
+
+		final Map<String, List<Map<String, Object>>> mappingsMap =
+				this.workFlowFactory.findSystemActionsMapByContentType (contentTypes);
+		final ImmutableMap.Builder<String, List<SystemActionWorkflowActionMapping>> actionsMapBuilder =
+				new ImmutableMap.Builder<>();
+		final Map<String, ContentType> contentTypeMap = contentTypes.stream()
+				.collect(Collectors.toMap(contentType->contentType.variable(), contentType -> contentType));
+
+		for (final Map.Entry<String, List<Map<String, Object>>> entry : mappingsMap.entrySet()) {
+
+			final ImmutableList.Builder<SystemActionWorkflowActionMapping> mappingListBuilder =
+					new ImmutableList.Builder<>();
+
+			for (final Map<String, Object> rowMap : entry.getValue()) {
+
+				mappingListBuilder.add(this.toSystemActionWorkflowActionMapping(
+						rowMap, contentTypeMap.get(entry.getKey()), user));
+			}
+
+			actionsMapBuilder.put(entry.getKey(), mappingListBuilder.build());
+		}
+
+		return actionsMapBuilder.build();
 	}
 
 	/**

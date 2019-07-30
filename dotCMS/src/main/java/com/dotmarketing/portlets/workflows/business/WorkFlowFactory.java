@@ -419,4 +419,12 @@ public interface WorkFlowFactory {
 	 * @throws DotDataException
 	 */
 	void deleteSystemActionsByWorkflowAction(WorkflowAction action) throws DotDataException;
+
+	/**
+	 * Based on a list of a content types, returns the list of system actions associated, indexed by content type variable
+	 * @param contentTypes {@link List} of ContentType
+	 * @return Map of rows, indexed by variable
+	 * @throws DotDataException
+	 */
+	Map<String, List<Map<String, Object>>> findSystemActionsMapByContentType(List<ContentType> contentTypes) throws DotDataException;
 }

@@ -4,6 +4,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.DbContentTypeTransformer;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
+import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -23,6 +24,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import org.apache.commons.beanutils.BeanUtils;
 
@@ -1120,6 +1122,52 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		return results;
 	}
 
+	@Override
+	public Map<String, List<Map<String, Object>>> findSystemActionsMapByContentType(final List<ContentType> contentTypes)  throws DotDataException {
+
+		final ImmutableMap.Builder<String ,List<Map<String, Object>>> mappingMapBuilder = new ImmutableMap.Builder<>();
+		final String selectQueryTemplate = sql.SELECT_SYSTEM_ACTION_BY_CONTENT_TYPES;
+		final Set<String> notFoundContentTypes = new HashSet<>();
+
+		for (final ContentType contentType: contentTypes) {
+
+			final String variable = contentType.variable();
+			final List<Map<String, Object>> results = this.cache.findSystemActionsByContentType(contentType.variable());
+			if (null != results) {
+
+				mappingMapBuilder.put(variable, results);
+			} else {
+
+				notFoundContentTypes.add(variable);
+			}
+		}
+
+		if (!notFoundContentTypes.isEmpty()) {
+
+			final DotConnect dotConnect = new DotConnect()
+					.setSQL(String.format(selectQueryTemplate, this.createQueryIn(notFoundContentTypes)));
+
+			notFoundContentTypes.stream().forEach(dotConnect::addObject);
+
+			final List<Map<String, Object>> mappingRows = dotConnect.loadObjectResults();
+
+			if (!mappingRows.isEmpty()) {
+
+				final Map<String, List<Map<String, Object>>> dbMappingMap = new HashMap<>();
+
+				for (final Map<String, Object> rowMap : mappingRows) {
+
+					final String variable = (String)rowMap.get("scheme_or_content_type");
+					dbMappingMap.computeIfAbsent(variable, key -> new ArrayList<>()).add(rowMap);
+				}
+
+				mappingMapBuilder.putAll(dbMappingMap);
+			}
+		}
+
+		return mappingMapBuilder.build();
+	}
+
 	/**
 	 * Finds the {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction}'s by {@link WorkflowScheme}
 	 * @param workflowScheme {@link WorkflowScheme}
@@ -1268,14 +1316,14 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		this.cache.removeSystemActionsByWorkflowAction(action.getId());
 	}
 
-	private String createQueryIn (final List<WorkflowScheme> schemes) {
+	private String createQueryIn (final Collection list) {
 
 		final StringBuilder builder = new StringBuilder();
 
-		for (int i = 0; i < schemes.size(); ++i) {
+		for (int i = 0; i < list.size(); ++i) {
 
 			builder.append("?");
-			if (i < schemes.size() -1) {
+			if (i < list.size() -1) {
 
 				builder.append(",");
 			}

@@ -985,6 +985,21 @@ public interface WorkflowAPI {
 	 */
 	boolean hasDestroyActionlet(final WorkflowAction action);
 
+	/**
+	 * Based on a list of content types, returns the list of system action mappings associated for each of them, indexed by content type variable
+	 * @param contentTypes {@link List}
+	 * @param user         {@link User}
+	 * @return Map variable -> List of SystemActionWorkflowActionMapping
+	 */
+	Map<String, List<SystemActionWorkflowActionMapping>> findSystemActionsMapByContentType(List<ContentType> contentTypes, User user) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Based on a list of content types, returns the list of workflow schemes associated for each of them, indexed by content type variable
+	 * @param contentTypes {@link List}
+	 * @return Map variable -> List of WorkflowScheme
+	 */
+	Map<String, List<WorkflowScheme>> findSchemesMapForContentType(List<ContentType> contentTypes)  throws DotDataException;
+
 
 	/**
 	 * Render mode for the available actions
