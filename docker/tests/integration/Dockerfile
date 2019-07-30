@@ -26,6 +26,10 @@ ENV BUILD_ID_ENV=${BUILD_ID}
 #  In order to run the integration test a license must be provided
 ARG LICENSE_KEY
 
+# Extra parameters like debug options
+ARG TESTS_PARAMS
+ENV TESTS_PARAMS=${TESTS_PARAMS}
+
 WORKDIR /srv
 
 # dotCMS core distributed under GPLv3 license (https://github.com/dotCMS/core/blob/master/license.txt)
