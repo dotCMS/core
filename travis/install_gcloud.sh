@@ -34,7 +34,7 @@ if [ ! -d ${HOME}/gcloud/google-cloud-sdk ]; then
 else
     source ${HOME}/gcloud/google-cloud-sdk/path.bash.inc
 fi
-${HOME}/gcloud/google-cloud-sdk/bin/gcloud -q components update beta
+${HOME}/gcloud/google-cloud-sdk/bin/gcloud -q components update
 
 gcloud auth activate-service-account --key-file="${GOOGLE_CREDENTIALS}"
 gcloud config set project "${GOOGLE_PROJECT_ID}"
