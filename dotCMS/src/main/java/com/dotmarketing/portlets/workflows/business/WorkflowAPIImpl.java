@@ -7,12 +7,15 @@ import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.model.event.ContentTypeDeletedEvent;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.api.v1.workflow.ActionFail;
 import com.dotcms.rest.api.v1.workflow.BulkActionsResultView;
+import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
+import com.dotcms.system.event.local.model.Subscriber;
 import com.dotcms.util.*;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
@@ -84,6 +87,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	private final RoleAPI roleAPI				  = APILocator.getRoleAPI();
 
 	private final ShortyIdAPI shortyIdAPI		  = APILocator.getShortyAPI();
+
+	private final LocalSystemEventsAPI localSystemEventsAPI =
+			APILocator.getLocalSystemEventsAPI();
 
 	private final WorkflowStateFilter workflowStatusFilter =
 			new WorkflowStateFilter();
@@ -173,6 +179,25 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		} catch (DotDataException e) {
 			throw new DotRuntimeException(e);
 		}
+
+		this.localSystemEventsAPI.subscribe(this);
+	}
+
+	@Subscriber
+	@WrapInTransaction
+	public void onDeleteContentType (final ContentTypeDeletedEvent contentTypeDeletedEvent) {
+
+		try {
+
+			Logger.debug(this, ()-> "Deleting system mapping actions associated to the content type: "
+					+ contentTypeDeletedEvent.getContentTypeVar() );
+
+			this.workFlowFactory.deleteSystemActionsByContentType(contentTypeDeletedEvent.getContentTypeVar());
+		} catch (DotDataException e) {
+
+			Logger.error(this, "Can not delete the system mapping actions associated to the content type: "
+					+ contentTypeDeletedEvent.getContentTypeVar() + ", msg: " + e.getMessage(), e);
+		}
 	}
 
 	/**
@@ -183,6 +208,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	public WorkflowAPIImpl(final LicenseValiditySupplier licenseValiditySupplierSupplier) {
 		this();
 		this.licenseValiditySupplierSupplier = licenseValiditySupplierSupplier;
+
 	}
 
 	public boolean hasValidLicense(){

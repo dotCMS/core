@@ -2289,11 +2289,39 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			if (null != actions) {
 				actions.stream().forEach(action -> this.cache.remove(action));
 			}
+
+			this.deleteSystemActionsByScheme(scheme);
 			this.cache.remove(scheme);
 		} catch (DotDataException e) {
 			Logger.error(WorkFlowFactory.class,e.getMessage(),e);
 			throw new DotDataException(e.getMessage(), e);
 		}
+	}
+
+	@Override
+	public void deleteSystemActionsByScheme(final WorkflowScheme scheme) throws DotDataException {
+
+		Logger.debug(this,
+				()-> "Deleting the system action mappings associated to the scheme: " + scheme.getId());
+
+		new DotConnect()
+				.setSQL(sql.DELETE_SYSTEM_ACTION_BY_SCHEME_OR_CONTENT_TYPE)
+				.addParam(scheme.getId())
+				.loadResult();
+		this.cache.removeSystemActionsByScheme(scheme.getId());
+	}
+
+	@Override
+	public void deleteSystemActionsByContentType(final String contentTypeVariable) throws DotDataException {
+
+		Logger.debug(this,
+				()-> "Deleting the system action mappings associated to the content type: " + contentTypeVariable);
+
+		new DotConnect()
+				.setSQL(sql.DELETE_SYSTEM_ACTION_BY_SCHEME_OR_CONTENT_TYPE)
+				.addParam(contentTypeVariable)
+				.loadResult();
+		this.cache.removeSystemActionsByContentType(contentTypeVariable);
 	}
 
 	@Override

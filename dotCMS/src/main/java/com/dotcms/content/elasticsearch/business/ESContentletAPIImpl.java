@@ -3176,10 +3176,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @throws DotContentletValidationException
      */
     @WrapInTransaction
-    private Contentlet checkin(final Contentlet contentletIn, ContentletRelationships contentRelationships,
-            final List<Category> categories,
-            final User user, boolean respectFrontendRoles, boolean createNewVersion,
-            boolean generateSystemEvent) throws DotDataException, DotSecurityException {
+    private Contentlet checkin(final Contentlet contentletIn, final ContentletRelationships contentRelationships,
+            final List<Category> categories, final User user, boolean respectFrontendRoles,
+            final boolean createNewVersion,  final boolean generateSystemEvent) throws DotDataException, DotSecurityException {
 
         Contentlet contentletOut = null;
         try {
@@ -7004,7 +7003,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             contentlet.setIndexPolicyDependencies(contentletDependencies.getIndexPolicyDependencies());
         }
 
-        return checkin(contentlet, contentletDependencies.getRelationships(), contentletDependencies.getCategories(), null, contentletDependencies.getModUser(),
+        return checkin(contentlet, contentletDependencies.getRelationships(), contentletDependencies.getCategories(), contentletDependencies.getPermissions(), contentletDependencies.getModUser(),
                 contentletDependencies.isRespectAnonymousPermissions(), contentletDependencies.isGenerateSystemEvent());
     }
 

@@ -1,9 +1,7 @@
 package com.dotmarketing.portlets.workflows.business;
 
-import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rest.api.v1.workflow.BulkActionsResultView;
-import com.dotcms.util.OptionalBoolean;
 import com.dotcms.workflow.form.AdditionalParamsBean;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.DotStateException;
@@ -17,18 +15,11 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.portlets.workflows.actionlet.Actionlet;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
 import com.dotmarketing.portlets.workflows.model.*;
 import com.liferay.portal.model.User;
 
-import javax.ws.rs.DELETE;
-import java.util.Collection;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Future;
 
 /**

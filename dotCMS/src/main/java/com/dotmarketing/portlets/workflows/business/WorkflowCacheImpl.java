@@ -666,6 +666,7 @@ public class WorkflowCacheImpl extends WorkflowCache {
 
 		try {
 
+			// removing by just workflow id
 			final String workflowReferenceId      = SystemActionMappingReferenceCache.TYPE.WORKFLOW.name()+workflowActionId;
 			final List<String> systemActionIdList = (List<String>)this.cache.get(workflowReferenceId, SYSTEM_ACTION_GROUP);
 			if (UtilMethods.isSet(systemActionIdList)) {
@@ -677,6 +678,84 @@ public class WorkflowCacheImpl extends WorkflowCache {
 			}
 
 			this.cache.remove(workflowReferenceId, SYSTEM_ACTION_GROUP);
+		} catch (DotCacheException e) {
+			Logger.debug(WorkflowCacheImpl.class,e.getMessage(), e);
+		}
+	}
+
+	@Override
+	public void removeSystemActionsByScheme(final String schemeId) {
+
+		try {
+
+			// removing just by scheme
+			final String schemeReferenceId      = SystemActionMappingReferenceCache.TYPE.SCHEME.name()+schemeId;
+			List<String> systemActionIdList = (List<String>)this.cache.get(schemeReferenceId, SYSTEM_ACTION_GROUP);
+			if (UtilMethods.isSet(systemActionIdList)) {
+
+				for (final String systemActionMappingIdentifier : systemActionIdList) {
+
+					cache.remove(SYSTEM_ACTION_KEY_MAIN + systemActionMappingIdentifier, SYSTEM_ACTION_GROUP);
+				}
+			}
+
+			this.cache.remove(schemeReferenceId, SYSTEM_ACTION_GROUP);
+
+			// removing system action + scheme
+			for (final WorkflowAPI.SystemAction systemAction : WorkflowAPI.SystemAction.values()) {
+
+				final String actionSchemeReferenceId = SystemActionMappingReferenceCache.TYPE.SYSTEMACTION_SCHEMES.name() +
+						StringUtils.join(new String[] {systemAction.name(), schemeId}, StringPool.COMMA);
+				systemActionIdList = (List<String>) this.cache.get(actionSchemeReferenceId, SYSTEM_ACTION_GROUP);
+				if (UtilMethods.isSet(systemActionIdList)) {
+
+					for (final String systemActionMappingIdentifier : systemActionIdList) {
+
+						cache.remove(SYSTEM_ACTION_KEY_MAIN + systemActionMappingIdentifier, SYSTEM_ACTION_GROUP);
+					}
+				}
+
+				this.cache.remove(actionSchemeReferenceId, SYSTEM_ACTION_GROUP);
+			}
+		} catch (DotCacheException e) {
+			Logger.debug(WorkflowCacheImpl.class,e.getMessage(), e);
+		}
+	}
+
+	@Override
+	public void removeSystemActionsByContentType(final String variable) {
+
+		try {
+
+			// removing just by content type
+			final String schemeReferenceId      = SystemActionMappingReferenceCache.TYPE.CONTENTTYPE.name()+variable;
+			List<String> systemActionIdList = (List<String>)this.cache.get(schemeReferenceId, SYSTEM_ACTION_GROUP);
+			if (UtilMethods.isSet(systemActionIdList)) {
+
+				for (final String systemActionMappingIdentifier : systemActionIdList) {
+
+					cache.remove(SYSTEM_ACTION_KEY_MAIN + systemActionMappingIdentifier, SYSTEM_ACTION_GROUP);
+				}
+			}
+
+			this.cache.remove(schemeReferenceId, SYSTEM_ACTION_GROUP);
+
+			// removing system action + scheme
+			for (final WorkflowAPI.SystemAction systemAction : WorkflowAPI.SystemAction.values()) {
+
+				final String actionSchemeReferenceId = SystemActionMappingReferenceCache.TYPE.SYSTEMACTION_CONTENTTYPE.name() +
+						StringUtils.join(new String[] {systemAction.name(), variable}, StringPool.COMMA);
+				systemActionIdList = (List<String>) this.cache.get(actionSchemeReferenceId, SYSTEM_ACTION_GROUP);
+				if (UtilMethods.isSet(systemActionIdList)) {
+
+					for (final String systemActionMappingIdentifier : systemActionIdList) {
+
+						cache.remove(SYSTEM_ACTION_KEY_MAIN + systemActionMappingIdentifier, SYSTEM_ACTION_GROUP);
+					}
+				}
+
+				this.cache.remove(actionSchemeReferenceId, SYSTEM_ACTION_GROUP);
+			}
 		} catch (DotCacheException e) {
 			Logger.debug(WorkflowCacheImpl.class,e.getMessage(), e);
 		}

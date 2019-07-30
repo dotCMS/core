@@ -95,6 +95,18 @@ public abstract class WorkflowCache implements Cachable {
 	public abstract void removeSystemActionsByWorkflowAction(String workflowActionId);
 
 	/**
+	 * Removes system actions referrer by workflow action id
+	 * @param schemeId {@link String}
+	 */
+	public abstract void removeSystemActionsByScheme(String schemeId);
+
+	/**
+	 * Removes the system actions referrer by content type variable
+	 * @param variable {@link String}
+	 */
+	public abstract void removeSystemActionsByContentType(String variable);
+
+	/**
 	 * Adds the list of system actions by system action name
 	 * @param systemActionName {@link String}
  	 * @param schemeIdList     {@link List}
@@ -167,4 +179,6 @@ public abstract class WorkflowCache implements Cachable {
 	 * @param results  {@link List}
 	 */
 	public abstract void addSystemActionsByContentType(String variable, List<Map<String, Object>> results);
+
+
 }

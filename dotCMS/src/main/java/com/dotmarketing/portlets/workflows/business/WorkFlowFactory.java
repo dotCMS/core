@@ -315,6 +315,19 @@ public interface WorkFlowFactory {
 	public void deleteScheme(WorkflowScheme scheme) throws DotDataException, DotSecurityException;
 
 	/**
+	 * Deletes the system actions associated to the scheme
+	 * @param scheme {@link WorkflowScheme}
+	 * @throws DotDataException
+	 */
+	public void deleteSystemActionsByScheme(final WorkflowScheme scheme) throws DotDataException;
+
+	/**
+	 * Deletes the system actions associated to the content type
+	 * @param contentTypeVariable {@link ContentType}
+	 * @throws DotDataException
+	 */
+	public void deleteSystemActionsByContentType(final String contentTypeVariable) throws DotDataException;
+	/**
 	 * finds all contentlets with a null task for a specific Workflow
 	 * In other words all contents on which a workflow has been reset or hasn't been kicked off.
 	 * @param workflowSchemeId
