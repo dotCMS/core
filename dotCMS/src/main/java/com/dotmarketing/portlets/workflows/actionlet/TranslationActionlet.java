@@ -218,7 +218,7 @@ public class TranslationActionlet extends WorkFlowActionlet {
                         .relationships(contentletRelationships).categories(categories)
                         .permissions(permissions).modUser(user).build());
 
-                return live?
+                return live && !workflowAPI.hasPublishActionlet(workflowActionSaveOpt.get())?
                         runWorkflowPublishIfCould(contentletAPI, contentletRelationships,
                                 categories, permissions, user, workflowAPI, saveTranslatedContent):
                         saveTranslatedContent;
