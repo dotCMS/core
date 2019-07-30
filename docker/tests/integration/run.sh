@@ -1,15 +1,17 @@
 printUsage () {
   echo ""
   echo "Usage:"
-  echo '-d      database (postgres as default) -> One of ["postgres", "mysql", "oracle", "mssql"]'
-  echo '-b      branch (current branch as default)'
-  echo '-e      extra parameters -> Must be send inside quotes "'
+  echo '-d      database: (postgres as default) -> One of ["postgres", "mysql", "oracle", "mssql"]'
+  echo '-b      branch: (current branch as default)'
+  echo '-r      run only: Will not executed a build of the image, use the -r option if an image was already generated'
+  echo '-e      extra parameters: Must be send inside quotes "'
   echo ""
   echo "============================================================================"
   echo "============================================================================"
   echo "         Examples:"
   echo ""
   echo "         ./run.sh"
+  echo "         ./run.sh -r"
   echo "         ./run.sh -d mysql"
   echo "         ./run.sh -d mysql -b origin/master"
   echo "         ./run.sh -d mysql -b myBranchName"
@@ -24,12 +26,15 @@ printUsage () {
   echo "If -b argument is not use current branch will be use."
 }
 
-while getopts "d:b:e:h" option; do
+buildImage=true
+
+while getopts "d:b:e:rh" option; do
   case ${option} in
 
   d) database=${OPTARG} ;;
   b) branchOrCommit=${OPTARG} ;;
   e) extra=${OPTARG} ;;
+  r) buildImage=false ;;
   h) printUsage
     exit 1
     ;;
@@ -70,13 +75,15 @@ echo ""
 mkdir -p logs
 mkdir -p reports
 
-# Building the docker image for a given branch
-docker build --pull --no-cache \
---build-arg BUILD_FROM=COMMIT \
---build-arg BUILD_ID=${branchOrCommit} \
---build-arg TESTS_PARAMS=${TESTS_PARAMS} \
---build-arg LICENSE_KEY=${LICENSE_KEY} \
--t ${BUILD_IMAGE_TAG} .
+if [ "$buildImage" = true ]; then
+  # Building the docker image for a given branch
+  docker build --pull --no-cache \
+  --build-arg BUILD_FROM=COMMIT \
+  --build-arg BUILD_ID=${branchOrCommit} \
+  --build-arg TESTS_PARAMS=${TESTS_PARAMS} \
+  --build-arg LICENSE_KEY=${LICENSE_KEY} \
+  -t ${BUILD_IMAGE_TAG} .
+fi
 
 # Starting the container for the build image
 export databaseType=${database}

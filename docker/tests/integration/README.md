@@ -30,15 +30,17 @@ export LICENSE_KEY=$(<./dotcms/license.txt)
 
 #### Arguments
 ```
-  -d      [OPTIONAL]    database (postgres as default) -> One of ["postgres", "mysql", "oracle", "mssql"]
-  -b      [OPTIONAL]    branch (current branch as default)
-  -e      [OPTIONAL]    extra parameters -> Must be send inside quotes "
+  -d      [OPTIONAL]    database: (postgres as default) -> One of ["postgres", "mysql", "oracle", "mssql"]
+  -b      [OPTIONAL]    branch: (current branch as default)
+  -r      [OPTIONAL]    run only: Will not executed a build of the image, use the -r option if an image was already generated
+  -e      [OPTIONAL]    extra parameters: Must be send inside quotes "
 ```
 
 #### Examples
 
 ```
   ./run.sh
+  ./run.sh -r
   ./run.sh -d mysql
   ./run.sh -d mysql -b origin/master
   ./run.sh -d mysql -b myBranchName
@@ -47,3 +49,9 @@ export LICENSE_KEY=$(<./dotcms/license.txt)
   ./run.sh -e "--debug-jvm --tests *HTMLPageAssetRenderedTest"
   ./run.sh -d mysql -b origin/master -e "--debug-jvm --tests *HTMLPageAssetRenderedTest"
 ```
+## Debug
+
+Run:
+`./run.sh -e "--debug-jvm"`
+
+And wait for the integration tests to start running, then you can attach a remote debugger on port `15005`.
