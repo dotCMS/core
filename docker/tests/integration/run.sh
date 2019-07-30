@@ -71,7 +71,12 @@ mkdir -p logs
 mkdir -p reports
 
 # Building the docker image for a given branch
-docker build --pull --no-cache --build-arg BUILD_FROM=COMMIT --build-arg BUILD_ID=${branchOrCommit} --build-arg LICENSE_KEY=${LICENSE_KEY} -t ${BUILD_IMAGE_TAG} .
+docker build --pull --no-cache \
+--build-arg BUILD_FROM=COMMIT \
+--build-arg BUILD_ID=${branchOrCommit} \
+--build-arg TESTS_PARAMS=${TESTS_PARAMS} \
+--build-arg LICENSE_KEY=${LICENSE_KEY} \
+-t ${BUILD_IMAGE_TAG} .
 
 # Starting the container for the build image
 export databaseType=${database}
