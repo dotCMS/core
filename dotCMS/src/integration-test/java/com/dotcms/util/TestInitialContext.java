@@ -3,11 +3,8 @@ package com.dotcms.util;
 import com.dotcms.repackage.org.apache.commons.dbcp.BasicDataSource;
 import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.Logger;
-
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
-
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 
@@ -39,11 +36,19 @@ public class TestInitialContext extends InitialContext {
         dataSource.setUsername(prop.getProperty(dbType + "db.username"));
         dataSource.setPassword(prop.getProperty(dbType + "db.password"));
         dataSource.setRemoveAbandoned(true);
+        dataSource.setRemoveAbandonedTimeout(10);
         dataSource.setLogAbandoned(true);
         dataSource.setMaxIdle(Integer.parseInt(prop.getProperty(dbType + "db.max.idle")));
         dataSource.setMaxActive(Integer.parseInt(prop.getProperty(dbType + "db.max.total")));
-        dataSource.setMaxWait(300000);
-        
+        dataSource.setMaxWait(60000);
+        dataSource.setValidationQuery(prop.getProperty(dbType + "db.validation.query"));
+        dataSource.setTimeBetweenEvictionRunsMillis(30000);
+        dataSource.setTestOnBorrow(Boolean.TRUE);
+        dataSource.setTestWhileIdle(Boolean.TRUE);
+        dataSource.addConnectionProperty("abandonWhenPercentageFull", "50");
+        dataSource.setDefaultTransactionIsolation(
+                Integer.parseInt(prop.getProperty(dbType + "db.default.transaction.isolation")));
+
     }
 
     public static TestInitialContext getInstance() throws NamingException {
