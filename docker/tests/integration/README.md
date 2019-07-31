@@ -30,10 +30,11 @@ export LICENSE_KEY=$(<./dotcms/license.txt)
 
 #### Arguments
 ```
-  -d      [OPTIONAL]    database: (postgres as default) -> One of ["postgres", "mysql", "oracle", "mssql"]
-  -b      [OPTIONAL]    branch: (current branch as default)
-  -r      [OPTIONAL]    run only: Will not executed a build of the image, use the -r option if an image was already generated
-  -e      [OPTIONAL]    extra parameters: Must be send inside quotes "
+  -d      [OPTIONAL]                   database: (postgres as default) -> One of ["postgres", "mysql", "oracle", "mssql"]
+  -b      [OPTIONAL]                   branch: (current branch as default)
+  -e      [OPTIONAL]                   extra parameters: Must be send inside quotes "
+  -r      [OPTIONAL][no arguments]     run only: Will not executed a build of the image, use the -r option if an image was already generated
+  -c      [OPTIONAL][no arguments]     cache: allows to use the docker cache otherwhise "--no-cache" will be use when building the image  
 ```
 
 #### Examples
@@ -41,6 +42,7 @@ export LICENSE_KEY=$(<./dotcms/license.txt)
 ```
   ./run.sh
   ./run.sh -r
+  ./run.sh -c
   ./run.sh -d mysql
   ./run.sh -d mysql -b origin/master
   ./run.sh -d mysql -b myBranchName
