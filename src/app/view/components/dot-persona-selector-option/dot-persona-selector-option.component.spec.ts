@@ -43,7 +43,7 @@ describe('DotPersonaSelectorOptionComponent', () => {
         expect(avatar.componentInstance.label).toBe(mockDotPersona.name);
         expect(avatar.componentInstance.showDot).toBe(mockDotPersona.personalized);
         expect(avatar.componentInstance.url).toBe(mockDotPersona.photo);
-        expect(avatar.componentInstance.size).toBe(24);
+        expect(avatar.componentInstance.size).toBe(32);
     });
 
     it('should label set personalized class', () => {
@@ -88,10 +88,10 @@ describe('DotPersonaSelectorOptionComponent', () => {
     });
 
     it('should emit persona when field clicked', () => {
-        spyOn(component.selected, 'emit');
+        spyOn(component.change, 'emit');
         de.triggerEventHandler('click', {
             stopPropagation: () => {}
         });
-        expect(component.selected.emit).toHaveBeenCalledWith(mockDotPersona);
+        expect(component.change.emit).toHaveBeenCalledWith(mockDotPersona);
     });
 });

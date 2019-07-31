@@ -5,28 +5,39 @@
     cursor: pointer;
     display: flex;
     height: $navigation-item-height;
+    width: 100%;
 
     &:hover {
         background-color: $gray-bg;
     }
 
     dot-avatar {
-        margin-left: $basic-padding * 2;
-        margin-right: $basic-padding;
+        margin: 0 $basic-padding * 2;
     }
 
     .dot-persona-selector-option__label {
-        color: $gray-light;
+        color: $gray;
+        display: -webkit-box;
+        display: -moz-box;
         flex: 1;
-        font-size: $body-font-size-base;
+        max-height: 42px;
+        -webkit-line-clamp: 2;
+        overflow: hidden;
 
         &.dot-persona-selector-option__personalized {
             color: $body-font-color;
         }
+
+        &.dot-persona-selector-option__selected {
+            color: $black;
+            font-weight: $font-weight-semi-bold;
+        }
+    
     }
 
     button {
-        height: 20px;
+        margin-left: $basic-padding * 3;
         margin-right: $basic-padding * 2;
     }
+
 }

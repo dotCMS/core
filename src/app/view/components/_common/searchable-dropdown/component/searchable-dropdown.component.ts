@@ -11,12 +11,16 @@ import {
     SimpleChanges,
     OnChanges,
     OnInit,
-    SimpleChange
+    SimpleChange,
+    TemplateRef,
+    ContentChildren,
+    QueryList,
+    AfterContentInit
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { DotMessageService } from '@services/dot-messages-service';
 import { fromEvent } from 'rxjs';
-import { OverlayPanel } from 'primeng/primeng';
+import { OverlayPanel, PrimeTemplate } from 'primeng/primeng';
 import * as _ from 'lodash';
 
 /**
@@ -38,9 +42,12 @@ import * as _ from 'lodash';
     styleUrls: ['./searchable-dropdown.component.scss'],
     templateUrl: './searchable-dropdown.component.html'
 })
-export class SearchableDropdownComponent implements ControlValueAccessor, OnChanges, OnInit {
+export class SearchableDropdownComponent
+    implements ControlValueAccessor, OnChanges, OnInit, AfterContentInit {
     @Input()
     data: any[];
+
+    @Input() action: (action: any) => void;
 
     @Input()
     labelPropertyName: string | string[];
@@ -55,6 +62,9 @@ export class SearchableDropdownComponent implements ControlValueAccessor, OnChan
     rows: number;
 
     @Input()
+    cssClass: string;
+
+    @Input()
     totalRecords: number;
 
     @Input()
@@ -64,7 +74,10 @@ export class SearchableDropdownComponent implements ControlValueAccessor, OnChan
     persistentPlaceholder: boolean;
 
     @Input()
-    width: string;
+    width = '300';
+
+    @Input()
+    optionsWidth = '300';
 
     @Input()
     multiple: boolean;
@@ -93,16 +106,19 @@ export class SearchableDropdownComponent implements ControlValueAccessor, OnChan
     @ViewChild('button')
     button: ElementRef;
 
-    options: any[];
+    @ContentChildren(PrimeTemplate) templates: QueryList<any>;
 
-    value: any;
-    valueString = '';
-
-    label: string;
     disabled = false;
+    externalSelectTemplate: TemplateRef<any>;
+    externalItemListTemplate: TemplateRef<any>;
     i18nMessages: {
         [key: string]: string;
     } = {};
+    label: string;
+    overlayPanelMinHeight: string;
+    options: any[];
+    value: any;
+    valueString = '';
 
     constructor(private dotMessageService: DotMessageService) {}
 
@@ -112,7 +128,6 @@ export class SearchableDropdownComponent implements ControlValueAccessor, OnChan
         if (this.usePlaceholder(change.placeholder) || change.persistentPlaceholder) {
             this.setLabel();
         }
-
         this.setOptions(change);
     }
 
@@ -120,7 +135,6 @@ export class SearchableDropdownComponent implements ControlValueAccessor, OnChan
         this.dotMessageService.getMessages(['search']).subscribe((res) => {
             this.i18nMessages = res;
         });
-
         fromEvent(this.searchInput.nativeElement, 'keyup')
             .pipe(debounceTime(500))
             .subscribe((keyboardEvent: Event) => {
@@ -128,12 +142,42 @@ export class SearchableDropdownComponent implements ControlValueAccessor, OnChan
             });
     }
 
+    ngAfterContentInit() {
+        this.templates.forEach((item: PrimeTemplate) => {
+            if (item.getType() === 'listItem') {
+                this.externalItemListTemplate = item.template;
+            } else if (item.getType() === 'select') {
+                this.externalSelectTemplate = item.template;
+            }
+        });
+    }
+
+    /**
+     * Emits Hide event and clears any value on filter's input
+     * @memberof SearchableDropdownComponent
+     */
     hideDialogHandler(): void {
         if (this.searchInput.nativeElement.value.length) {
             this.searchInput.nativeElement.value = '';
             this.paginate({});
         }
         this.hide.emit();
+    }
+
+    /**
+     * Emits Show event, sets min Height of overlay panel based on content and add css class if paginator present
+     * @memberof SearchableDropdownComponent
+     */
+    showDialogHandler(): void {
+        this.cssClass += this.totalRecords > this.rows ? ' paginator' : '';
+        setTimeout(() => {
+            if (!this.overlayPanelMinHeight) {
+                this.overlayPanelMinHeight = this.searchPanelRef.container
+                    .getBoundingClientRect()
+                    .height.toString();
+            }
+        }, 0);
+        this.show.emit();
     }
 
     /**
@@ -200,8 +244,7 @@ export class SearchableDropdownComponent implements ControlValueAccessor, OnChan
     /**
      * Call when a option is clicked, if this option is not the same of the current value then
      * the change events is emitted. If multiple is true allow to emit the same value.
-     * @private
-     * @param * item
+     * @param any item
      * @memberof SearchableDropdownComponent
      */
     handleClick(item: any): void {
@@ -211,7 +254,16 @@ export class SearchableDropdownComponent implements ControlValueAccessor, OnChan
             this.change.emit(Object.assign({}, this.value));
         }
 
-        this.searchPanelRef.hide();
+        this.toggleOverlayPanel();
+    }
+
+    /**
+     * Shows or hide the list of options.
+     * @param MouseEvent event
+     * @memberof SearchableDropdownComponent
+     */
+    toggleOverlayPanel($event?: MouseEvent): void {
+        $event ? this.searchPanelRef.toggle($event) : this.searchPanelRef.hide();
     }
 
     /**
@@ -226,19 +278,21 @@ export class SearchableDropdownComponent implements ControlValueAccessor, OnChan
     }
 
     /**
-     *Return the component's label
+     * Return the component's label
      *
      * @returns {string} compoenent's label
      * @memberof SearchableDropdownComponent
      */
     setLabel(): void {
-        this.valueString = this.value ? this.value[this.getValueLabelPropertyName()] : this.placeholder;
+        this.valueString = this.value
+            ? this.value[this.getValueLabelPropertyName()]
+            : this.placeholder;
         this.label = this.persistentPlaceholder ? this.placeholder : this.valueString;
     }
 
     private setOptions(change: SimpleChanges): void {
         if (change.data && change.data.currentValue) {
-            this.options = _.cloneDeep(change.data.currentValue).map(item => {
+            this.options = _.cloneDeep(change.data.currentValue).map((item) => {
                 item.label = this.getItemLabel(item);
                 return item;
             });
@@ -256,7 +310,9 @@ export class SearchableDropdownComponent implements ControlValueAccessor, OnChan
     }
 
     private getValueLabelPropertyName(): string {
-        return Array.isArray(this.labelPropertyName) ? this.labelPropertyName[0] : this.labelPropertyName;
+        return Array.isArray(this.labelPropertyName)
+            ? this.labelPropertyName[0]
+            : this.labelPropertyName;
     }
 
     private getValueToPropagate(): string {

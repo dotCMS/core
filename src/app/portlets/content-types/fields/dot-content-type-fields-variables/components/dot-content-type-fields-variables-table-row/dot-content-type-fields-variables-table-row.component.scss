@@ -1,4 +1,5 @@
 @import "variables";
+@import "mixins";
 
 :host {
     display: contents;
@@ -19,8 +20,7 @@
         span {
             display: block;
             height: $basic-padding * 4;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            @include truncate-text;
         }
         input {
             height: $basic-padding * 3;

@@ -43,8 +43,7 @@ dot-icon {
 
 .field__name {
     margin-right: $basic-padding / 2;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    @include truncate-text;
 }
 
 .field__name-inner {

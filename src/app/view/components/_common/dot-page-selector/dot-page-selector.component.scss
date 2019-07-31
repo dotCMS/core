@@ -27,9 +27,7 @@
     max-width: 380px;
 
     span {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+        @include truncate-text;
         text-align: left;
     }
 

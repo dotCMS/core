@@ -32,11 +32,9 @@
         color: $table-head-color;
         font-size: $font-size-small;
         font-weight: normal;
-        overflow: hidden;
         padding: $table-header-cell-padding;
         position: relative;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+        @include truncate-text;
 
         a:focus {
             outline: 0;

@@ -46,6 +46,8 @@ class DotTestHostComponent implements OnInit {
 })
 class MockDotPersonaSelectorComponent {
     @Input()
+    pageId: string;
+    @Input()
     value: DotPersona;
     @Output()
     selected = new EventEmitter<DotPersona>();
@@ -243,6 +245,7 @@ describe('DotEditContentViewAsToolbarComponent', () => {
             expect(languageSelector.value).toEqual(<DotLanguage>mockDotEditPageViewAs.language);
             expect(deviceSelector.value).toEqual(mockDotEditPageViewAs.device);
             expect(personaSelector.value).toEqual(mockDotEditPageViewAs.persona);
+            expect(personaSelector.pageId).toEqual(mockDotRenderedPage.page.identifier);
         });
 
         it('should show device information', () => {

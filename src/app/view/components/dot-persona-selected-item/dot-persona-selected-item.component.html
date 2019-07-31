@@ -1,0 +1,17 @@
+<div class="dot-persona-selector__container" *ngIf="persona">
+    <dot-avatar
+        [label]="persona.name"
+        [showDot]="persona.personalized"
+        [size]="32"
+        [url]="persona.photo || ''"
+    ></dot-avatar>
+    <div class="dot-persona-selector__label-container">
+        <span class="dot-persona-selector__label"
+            >{{ label }}
+        </span>
+        <span class="dot-persona-selector__name">
+            {{ persona.name }}
+        </span>
+    </div>
+    <dot-icon name="arrow_drop_down"></dot-icon>
+</div>

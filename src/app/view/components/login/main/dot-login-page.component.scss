@@ -9,9 +9,7 @@
     ::ng-deep {
         .error-message {
             min-height: $line-height;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
+            @include truncate-text;
         }
     }
 }

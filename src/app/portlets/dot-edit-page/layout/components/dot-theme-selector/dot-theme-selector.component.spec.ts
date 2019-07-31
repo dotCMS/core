@@ -91,7 +91,6 @@ describe('DotThemeSelectorComponent', () => {
         it('should set url, the page size and hostid for the pagination service', () => {
             spyOn(paginatorService, 'setExtraParams');
             fixture.detectChanges();
-            console.log('test', paginatorService.url);
             expect(paginatorService.paginationPerPage).toBe(8);
             expect(paginatorService.url).toBe('v1/themes');
             expect(paginatorService.setExtraParams).toHaveBeenCalledWith(

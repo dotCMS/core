@@ -18,8 +18,7 @@
     font-size: $font-size-medium;
     overflow: hidden;
     padding: $basic-padding / 2 0;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    @include truncate-text;
 
     &:first-child {
         border-top: none;

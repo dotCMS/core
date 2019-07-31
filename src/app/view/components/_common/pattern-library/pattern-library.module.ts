@@ -10,6 +10,7 @@ import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { ListingDataTableModule } from '@components/listing-data-table/listing-data-table.module';
 import { TableModule } from 'primeng/table';
 import { DotPersonaSelectorOptionModule } from '@components/dot-persona-selector-option/dot-persona-selector-option.module';
+import { DotPersonaSelectorModule } from '@components/dot-persona-selector/dot-persona.selector.module';
 
 const routes: Routes = [
     {
@@ -26,6 +27,7 @@ const routes: Routes = [
         RouterModule.forChild(routes),
         DotIconButtonModule,
         DotDialogModule,
+        DotPersonaSelectorModule,
         DotPersonaSelectorOptionModule,
         MultiSelectModule,
         TableModule,

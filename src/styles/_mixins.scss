@@ -108,3 +108,15 @@
     top: 19px;
     z-index: 1;
 }
+
+@mixin form-field-secondary {
+    border: 1px solid $gray-light;
+    border-radius: $border-radius;
+    box-shadow: none;
+}
+
+@mixin truncate-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}

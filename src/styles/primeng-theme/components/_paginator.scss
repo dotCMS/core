@@ -1,3 +1,5 @@
+@import "variables";
+
 .ui-paginator {
     padding: 0;
 
@@ -6,7 +8,9 @@
         display: inline-flex;
         height: $paginator-page-size;
         justify-content: center;
+        margin-left: $basic-padding;
         min-width: $paginator-page-size;
+        outline: none;
     }
 
     .ui-paginator-page.ui-state-active {

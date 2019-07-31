@@ -45,7 +45,6 @@
             <dot-loading-indicator></dot-loading-indicator>
             <button
                 [disabled]="!loginForm.valid"
-                dotMdRipple
                 pButton
                 *ngIf="loginForm.enabled"
                 (click)="logInUser()"

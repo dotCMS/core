@@ -1,10 +1,30 @@
-<p-dropdown
-    tiny
-    (onChange)="change($event.value)"
+<dot-searchable-dropdown
+    #searchableDropdown
+    cssClass="dot-persona-selector"
+    (change)="personaChange($event)"
+    (filterChange)="handleFilterChange($event)"
+    (pageChange)="handlePageChange($event)"
+    [action]="addAction"
+    [data]="personas"
     [(ngModel)]="value"
-    [options]="options"
-    [style]="{'width': '100px'}"
-    dataKey="identifier"
-    optionLabel="name"
-    [disabled]="!options || options.length === 1">
-</p-dropdown>
+    [rows]="paginationPerPage"
+    [totalRecords]="paginationService.totalRecords"
+    [optionsWidth]="448"
+    labelPropertyName="name"
+>
+    <ng-template let-personaData="item" pTemplate="listItem">
+        <dot-persona-selector-option
+            [persona]="personaData"
+            [selected]="value ? value.name === personaData.name : false"
+            (change)="personaChange($event)"
+            (delete)="deletePersonalization($event)"
+        ></dot-persona-selector-option>
+    </ng-template>
+    <ng-template let-persona="item" pTemplate="select">
+        <dot-persona-selected-item
+            [label]="messagesKey['modes.persona.selector.title']"
+            [persona]="persona"
+            (selected)="searchableDropdown.toggleOverlayPanel($event)"
+        ></dot-persona-selected-item>
+    </ng-template>
+</dot-searchable-dropdown>

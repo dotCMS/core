@@ -1,4 +1,24 @@
 @import "primeng-theme/utils/extends";
+@import "mixins";
+
+.ui-overlaypanel {
+    min-height: 300px;
+
+    &.paginator .ui-dataview-content{
+        margin-bottom: $basic-padding * 4;
+    }
+}
+
+.ui-overlaypanel-content {
+    padding: $basic-padding * 2 0;
+}
+
+.ui-paginator-bottom {
+    bottom: 0;
+    padding-bottom: $basic-padding * 2;
+    position: absolute;
+    width: 100%;
+}
 
 dot-searchable-dropdown {
     .ui-button {
@@ -41,53 +61,68 @@ dot-searchable-dropdown {
 }
 
 .searchable-dropdown__data-list {
-    .ui-datalist {
-        min-height: 321px;
+    .ui-dataview {
+        position: unset;
     }
 
-    .ui-datalist-content {
-        width: 300px;
-    }
+    .ui-dataview-content {
+        width: 100%;
 
-    .ui-datalist-emptymessage {
-        padding: 1em;
-    }
+        .ui-g {
+            margin: 0;
 
-    .ui-datalist-data {
-        margin: $basic-padding 0;
+            .searchable-dropdown__data-list-item {
+                color: $gray;
+                cursor: pointer;
+                display: block;
+                font-weight: $font-weight-semi-bold;
+                line-height: normal;
+                padding: $basic-padding $basic-padding * 2;
+                transition: background-color $basic-speed ease-in;
+                width: 100%;
+                @include truncate-text;
 
-        span {
-            cursor: pointer;
-            display: block;
-            padding: $basic-padding / 2;
-            transition: background-color $basic-speed ease-in;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-
-            &.selected {
-                font-weight: bold;
-            }
-
-            &:hover {
-                background-color: $gray-bg;
+                &.selected {
+                    font-weight: bold;
+                }
+    
+                &:hover {
+                    background-color: $gray-bg;
+                }
             }
         }
+        
+    }
+
+    .ui-dataview-emptymessage {
+        padding: 1em;
     }
 }
 
-.searchable-dropdown__search-field {
-    padding-right: $basic-padding * 3;
-    width: 100%;
+.searchable-dropdown__search-section {
+    flex-grow: 1;
+    position: relative;
+
+    input.searchable-dropdown__search-inputfield {
+        @include form-field-secondary;
+        padding: 0 $basic-padding * 4 0 $basic-padding * 2;
+        width: 100%;
+    }
 }
 
 .searchable-dropdown__search {
+    display: flex;
+    margin: 0 $basic-padding * 2;
     position: relative;
 }
 
 .searchable-dropdown__search-icon {
     color: $gray;
     position: absolute;
-    right: 0;
+    right: $basic-padding;
     top: 9px;
+}
+
+.searchable-dropdown__search-action {
+    margin-left: $basic-padding * 2;
 }

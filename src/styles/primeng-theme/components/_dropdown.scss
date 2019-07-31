@@ -73,7 +73,7 @@
     .ui-dropdown-label {
         border: 0;
         line-height: $dropdown-height;
-        text-overflow: ellipsis;
+        @include truncate-text;
     }
 }
 

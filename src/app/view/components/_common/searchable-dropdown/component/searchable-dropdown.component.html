@@ -1,35 +1,73 @@
+<ng-template let-item="item" pTemplate="listItem" #defaultItemListTemplate>
+    <span
+        class="searchable-dropdown__data-list-item"
+        [class.selected]="item[labelPropertyName] === valueString"
+        (click)="handleClick(item)"
+        >{{ item.label }}</span
+    >
+</ng-template>
+
+<ng-template let-item="item" #defaultSelectTemplate>
+    <button
+        #button
+        pButton
+        *ngIf="label"
+        (click)="searchPanel.toggle($event)"
+        [label]="label"
+        icon="fa fa-caret-down"
+        iconPos="right"
+        type="button"
+        [ngStyle]="{ 'width': width }"
+        [disabled]="disabled"
+    ></button>
+</ng-template>
+
 <p-overlayPanel
     #searchPanel
     appendTo="body"
-    (onAfterShow)="show.emit()"
-    (onAfterHide)="hideDialogHandler()">
+    [style]="{ 'min-height': overlayPanelMinHeight + 'px' }"
+    [styleClass]="cssClass"
+    (onShow)="showDialogHandler()"
+    (onHide)="hideDialogHandler()"
+>
     <header class="searchable-dropdown__search">
-        <dot-icon class="searchable-dropdown__search-icon" name="search"></dot-icon>
-        <input #searchInput pInputText [placeholder]="i18nMessages['search']" type="text" class="searchable-dropdown__search-field" (click)="$event.stopPropagation()" />
+        <div class="searchable-dropdown__search-section">
+            <dot-icon class="searchable-dropdown__search-icon" name="search"></dot-icon>
+            <input
+                #searchInput
+                pInputText
+                [placeholder]="i18nMessages['search']"
+                type="text"
+                class="searchable-dropdown__search-inputfield"
+                (click)="$event.stopPropagation()"
+            />
+        </div>
+        <div *ngIf="action" class="searchable-dropdown__search-action">
+            <dot-icon-button secondary size="36" square icon="add" big (click)="action()"></dot-icon-button>
+        </div>
     </header>
-    <p-dataList
+    <p-dataView
         (click)="$event.stopPropagation()"
         (onLazyLoad)="paginate($event)"
         [lazy]="true"
         [pageLinks]="pageLinkSize"
         [paginator]="totalRecords > rows"
         [rows]="rows"
+        [style]="{ 'width': optionsWidth + 'px' }"
         [totalRecords]="totalRecords"
         [value]="options"
-        class="searchable-dropdown__data-list">
-        <ng-template let-item pTemplate="item">
-            <span [class.selected]="item[labelPropertyName] === valueString" (click)="handleClick(item)">{{ item.label }}</span>
+        class="searchable-dropdown__data-list"
+    >
+        <ng-template let-item pTemplate="listItem">
+            <ng-container
+                [ngTemplateOutlet]="externalItemListTemplate || defaultItemListTemplate"
+                [ngTemplateOutletContext]="{ item: item }"
+            ></ng-container>
         </ng-template>
-    </p-dataList>
+    </p-dataView>
 </p-overlayPanel>
 
-<button #button dotMdRipple pButton
-    *ngIf="label"
-    (click)="searchPanel.toggle($event)"
-    [label]="label"
-    icon="fa fa-caret-down"
-    iconPos="right"
-    type="button"
-    [ngStyle]="{ 'width': width }"
-    [disabled]="disabled">
-</button>
+<ng-container
+    [ngTemplateOutlet]="externalSelectTemplate || defaultSelectTemplate"
+    [ngTemplateOutletContext]="{ item: value }"
+></ng-container>

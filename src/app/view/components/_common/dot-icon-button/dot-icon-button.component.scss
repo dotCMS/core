@@ -1,5 +1,7 @@
 @import "primeng-theme/utils/theme-variables";
+@import "primeng-theme/utils/mixins";
 @import "mixins";
+
 
 #icon-button-tiny {
     height: 24px;
@@ -57,6 +59,40 @@
         ::ng-deep i {
             @include dot_icon_inverted;
         }
+    }
+
+    &[secondary] {
+        button {
+            @each $label, $props in $button-sec {
+                @include button-properties($label, $props);
+            }
+
+            &:active ::ng-deep i {
+                color: $brand-primary;
+            }
+
+            &:hover ::ng-deep i {
+                color: $brand-primary;
+            }
+            
+            ::ng-deep i {
+                font-size: $md-icon-size-big;
+            }
+        }
+
+        &[disabled] {
+            button {
+                border-color: $field-disabled-bgcolor;
+    
+                ::ng-deep i {
+                    color: $field-disabled-bgcolor;
+                }
+            }
+        }
+    }
+
+    &[square] button { 
+        border-radius: $border-radius;
     }
 
     &[disabled] {

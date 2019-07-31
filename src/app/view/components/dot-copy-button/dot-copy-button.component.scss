@@ -1,4 +1,5 @@
 @import "variables";
+@import "mixins";
 
 :host {
     position: relative;
@@ -10,9 +11,8 @@
 
 .label {
     cursor: pointer;
-    overflow: hidden;
-    text-overflow: ellipsis;
     display: block;
+    @include truncate-text;
 }
 
 .label:hover,
