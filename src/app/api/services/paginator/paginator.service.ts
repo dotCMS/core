@@ -140,12 +140,6 @@ export class PaginatorService {
             params.appendAll(this.extraParams);
         }
 
-        // REMOVE BEGIN
-        if (typeof url === 'string') {
-            url = url.replace('/api/', '');
-        }
-        // REMOVE END
-
         return this.coreWebService
             .requestView({
                 method: RequestMethod.Get,
