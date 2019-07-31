@@ -234,7 +234,7 @@ public class TranslationActionlet extends WorkFlowActionlet {
 
     private Contentlet runWorkflowPublishIfCould(final ContentletAPI contentletAPI,
                                                  final ContentletRelationships contentletRelationships,
-                                                 final List<Category> categories,
+                                                 final List<Category>   categories,
                                                  final List<Permission> permissions,
                                                  final User user,
                                                  final WorkflowAPI workflowAPI,
