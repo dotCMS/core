@@ -909,6 +909,8 @@ public class PermissionAPITest extends IntegrationTestBase {
      * Tests that assigning permissions to a role on a folder does not also assign permissions on
      * the same folder to sibling roles who have individual permissions on the parent of the
      * mentioned folder.
+     *
+     * Reported on https://github.com/dotCMS/core/issues/16922
      */
 
     @Test
