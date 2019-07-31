@@ -3085,7 +3085,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return checkin(contentlet, contentRelationships, cats, user, respectFrontendRoles, false);
     }
 
-    @WrapInTransaction
+    @CloseDBIfOpened
     @Override
     public Contentlet checkin(Contentlet contentlet,Map<Relationship, List<Contentlet>> contentRelationships,User user,
                               boolean respectFrontendRoles)
@@ -3093,7 +3093,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return checkin(contentlet, contentRelationships, null, user, respectFrontendRoles);
     }
 
-    @WrapInTransaction
+    @CloseDBIfOpened
     @Override
     public Contentlet checkin(Contentlet contentlet, User user,boolean respectFrontendRoles)
             throws IllegalArgumentException,DotDataException, DotSecurityException {
@@ -3101,14 +3101,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
             respectFrontendRoles, false);
     }
 
-    @WrapInTransaction
+    @CloseDBIfOpened
     @Override
     public Contentlet checkin(Contentlet contentlet, User user,boolean respectFrontendRoles, List<Category> cats)
         throws IllegalArgumentException, DotDataException,DotSecurityException {
         return checkin(contentlet, null, cats, user, respectFrontendRoles);
     }
 
-    @WrapInTransaction
     @Override
     public Contentlet checkin(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships,
                               List<Category> cats , List<Permission> permissions, User user,
@@ -3131,7 +3130,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @throws DotContentletStateException
      * @throws DotContentletValidationException
      */
-    @WrapInTransaction
+    @CloseDBIfOpened
     private Contentlet checkin(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships,
                                List<Category> cats, User user, boolean respectFrontendRoles,
                                boolean generateSystemEvent)
@@ -3142,7 +3141,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return checkin(contentlet, relationshipsData, cats, user, respectFrontendRoles, true, generateSystemEvent);
     }
 
-    @WrapInTransaction
     @Override
     public Contentlet checkin(Contentlet contentlet, ContentletRelationships contentRelationships, List<Category> cats,
                               List<Permission> permissions, User user,boolean respectFrontendRoles)
@@ -6908,7 +6906,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
-    @WrapInTransaction
     @Override
     public Contentlet checkin(Contentlet contentlet, ContentletRelationships contentRelationships,
                               List<Category> cats, List<Permission> selectedPermissions, User user,
@@ -6917,7 +6914,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return checkin(contentlet, contentRelationships, cats, user, respectFrontendRoles, true, generateSystemEvent);
     }
 
-    @WrapInTransaction
     @Override
     public Contentlet checkin(final Contentlet contentlet, final ContentletDependencies contentletDependencies) throws DotSecurityException, DotDataException {
 
