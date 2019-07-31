@@ -70,7 +70,7 @@ public class ContentMapTest extends IntegrationTestBase {
                 .setKey("Bikes").setKeywords("Bikes").setCategoryVelocityVarName("bikes").children(categoryChild1,categoryChild2).nextPersisted();
 
         // Get "News" content-type
-        final ContentType contentType = TestDataUtils.getNewsLikeContentType("NewsCategoriesTest-"+System.currentTimeMillis(),rootCategory.getInode());
+        final ContentType contentType = TestDataUtils.getNewsLikeContentType("newsCategoriesTest"+System.currentTimeMillis(),rootCategory.getInode());
 
         // Create dummy "News" content
         final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType.inode())
