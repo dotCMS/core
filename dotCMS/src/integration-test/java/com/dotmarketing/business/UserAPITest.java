@@ -1,12 +1,25 @@
 package com.dotmarketing.business;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.datagen.TestUserUtils;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.notifications.bean.Notification;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.TimeUtil;
-import com.dotmarketing.beans.*;
+import com.dotmarketing.beans.ContainerStructure;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.MultiTree;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
@@ -39,28 +52,26 @@ import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
-import com.dotmarketing.portlets.workflows.model.*;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.portlets.workflows.model.WorkflowComment;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.portlets.workflows.model.WorkflowStep;
+import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.ejb.UserTestUtil;
-import com.liferay.portal.language.LanguageException;
-import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
-
-import static org.junit.Assert.*;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 /**
  *
@@ -972,4 +983,31 @@ public class UserAPITest extends IntegrationTestBase {
 
 		userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
 	}
+
+	@Test
+	public void testFrontendAndBackendUser()throws DotDataException, DotSecurityException {
+
+		final User backendUser = new UserDataGen().roles(TestUserUtils.getBackendRole()).nextPersisted();
+
+        assertTrue(backendUser.isBackendUser());
+		assertFalse(backendUser.isFrontendUser());
+
+		final User frontendUser = new UserDataGen().roles(TestUserUtils.getFrontendRole()).nextPersisted();
+
+		assertTrue(frontendUser.isFrontendUser());
+		assertFalse(frontendUser.isBackendUser());
+
+		final User frontendAndBackendUser = new UserDataGen().roles(TestUserUtils.getFrontendRole()).nextPersisted();
+
+		assertTrue(frontendAndBackendUser.isFrontendUser());
+		assertFalse(frontendAndBackendUser.isBackendUser());
+
+        APILocator.getRoleAPI().removeRoleFromUser(TestUserUtils.getBackendRole(),backendUser);
+		assertFalse(backendUser.isBackendUser());
+
+		APILocator.getRoleAPI().removeRoleFromUser(TestUserUtils.getFrontendRole(),frontendUser);
+		assertFalse(frontendUser.isFrontendUser());
+
+	}
+
 }

@@ -95,14 +95,20 @@ function editPage(url, language_id) {
 <%--check permissions to display the save and publish button or not--%>
 <%boolean canUserWriteToContentlet = conPerAPI.doesUserHavePermission(contentlet,PermissionAPI.PERMISSION_WRITE,user);%>
 
+<%if(!"edit-page".equals(request.getParameter("angularCurrentPortlet")) && contentlet.isHTMLPage() && contentlet.getIdentifier() != "" && (canUserWriteToContentlet)) {%>
+   <div class="content-edit-actions" >
+       <a style="border:0px;" onClick="editPage('<%= APILocator.getIdentifierAPI().find(contentlet.getIdentifier()).getURI() %>', '<%= contentlet.getLanguageId() %>')">
+           <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "editpage.toolbar.preview.page")) %>
+           <div style="display:inline-block;float:right;">&rarr;</div>
+       </a>
+   </div>
+<%} %>
+
+
+
+
 
 <div class="content-edit-actions">
-
-        <%if(contentlet.isHTMLPage() && contentlet.getIdentifier() != "" && (canUserWriteToContentlet)) {%>
-            <a onClick="editPage('<%= APILocator.getIdentifierAPI().find(contentlet.getIdentifier()).getURI() %>', '<%= contentlet.getLanguageId() %>')">
-                <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "view-in-edit-mode")) %>
-            </a>
-        <%} %>
 
 		<%if(isContLocked && (contentEditable || isUserCMSAdmin)) {%>
 			<%if(contentEditable){ %>

@@ -614,6 +614,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 }
 
             }
+            //Removes content from index
+            APILocator.getContentletIndexAPI().removeContentFromIndex(con);
         }
         if (deleteIdentifier) {
 	        for (Contentlet c : contentlets) {
@@ -741,7 +743,18 @@ public class ESContentFactoryImpl extends ContentletFactory {
         //Checking contentlet exists inode > 0
         if(InodeUtils.isSet(c.getInode())){
             HibernateUtil.delete(c);
-            APILocator.getPermissionAPI().removePermissions(contentlet);
+            Contentlet anyVersionContentlet = null;
+            try {
+                anyVersionContentlet = findContentletByIdentifierAnyLanguage(
+                        contentlet.getIdentifier());
+            } catch(DotSecurityException e) {
+                Logger.debug(this,"Unable to find content in any version", e);
+            }
+
+            if(!UtilMethods.isSet(anyVersionContentlet) ||
+                    !UtilMethods.isSet(anyVersionContentlet.getIdentifier())) {
+                APILocator.getPermissionAPI().removePermissions(contentlet);
+            }
         }
 	}
 

@@ -42,8 +42,8 @@ path.logs: $logsFolder
 http.port: 9200
 transport.tcp.port: 9309
 
-http.enabled: true
-http.cors.enabled: true
+http.enabled: false
+http.cors.enabled: false
 
 http.host: localhost
 

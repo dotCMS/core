@@ -5,6 +5,8 @@ import static com.liferay.util.HttpHeaders.EXPIRES;
 
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
+import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
 import com.dotcms.util.CloseUtils;
 import com.dotcms.util.DownloadUtil;
@@ -378,29 +380,39 @@ public class BinaryExporterServlet extends HttpServlet {
 			}
 			data = exporter.exportContent(inputFile, params);
 
-			// THIS IS WHERE THE MAGIC HAPPENS
-			// save to session if user looking to edit a file
-			if (req.getParameter(WebKeys.IMAGE_TOOL_SAVE_FILES) != null) {
-                Map<String, String> files;
-                if ( session != null && session.getAttribute( WebKeys.IMAGE_TOOL_SAVE_FILES ) != null ) {
-                    files = (Map<String, String>) session.getAttribute( WebKeys.IMAGE_TOOL_SAVE_FILES );
-                } else {
-                    files = new HashMap<>();
-                }
-                String ext = UtilMethods.getFileExtension(data.getDataFile().getName());
-		    	File tmp = File.createTempFile("binaryexporter", "." +ext);
-		    	FileUtil.copyFile(data.getDataFile(), tmp);
-		    	tmp.deleteOnExit();
-		    	if (req.getParameter("binaryFieldId") != null) {
-		    		files.put(req.getParameter("binaryFieldId"), tmp.getCanonicalPath());
-		    	} else {
-		    		files.put(fieldVarName, tmp.getCanonicalPath());
-		    	}
-		    	resp.getWriter().println(UtilMethods.encodeURIComponent(PublicEncryptionFactory.encryptString(tmp.getAbsolutePath())));
-		    	resp.getWriter().close();
-		    	resp.flushBuffer();
-		    	return;
-			}
+      // THIS IS WHERE THE MAGIC HAPPENS
+      // this creates a temp resource using the altered file
+      if (req.getParameter(WebKeys.IMAGE_TOOL_SAVE_FILES) != null && user!=null && !user.equals(APILocator.getUserAPI().getAnonymousUser())) {
+        final DotTempFile temp = APILocator.getTempFileAPI().createEmptyTempFile(inputFile.getName(), user, req.getSession().getId());
+        FileUtil.copyFile(data.getDataFile(), temp.file);
+        resp.getWriter().println(DotObjectMapperProvider.getInstance().getDefaultObjectMapper().writeValueAsString(temp));
+        resp.getWriter().close();
+        resp.flushBuffer();
+        return;
+      }
+
+      if(req.getParameter(WebKeys.IMAGE_TOOL_CLIPBOARD) != null && user!=null && !user.equals(APILocator.getUserAPI().getAnonymousUser())) {
+        List<String> list = (List<String>) req.getSession().getAttribute(WebKeys.IMAGE_TOOL_CLIPBOARD);
+        if (list == null) {
+          list = new ArrayList<String>();
+        }
+        // we only show nine images in clipboard
+        if (list.size() > 8) {
+          list = list.subList(0, 8);
+        }
+  
+        if (list.contains(req.getRequestURI())) {
+          list.remove(req.getRequestURI());
+        }
+        list.add(0, req.getRequestURI());
+  
+        req.getSession().setAttribute(WebKeys.IMAGE_TOOL_CLIPBOARD, list);
+  
+        resp.getWriter().println("success");
+        resp.getWriter().println(req.getRequestURI());
+        return;
+      }
+      
 
 			/*******************************
 			 *

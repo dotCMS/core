@@ -98,7 +98,7 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
         final String trimmedShortStr = shortStr.trim().replaceAll("-", "");
         final int    min             = Math.min(trimmedShortStr.length(), MINIMUM_SHORTY_ID_LENGTH);
 
-        return
+        return (trimmedShortStr.startsWith(TempFileAPI.TEMP_RESOURCE_PREFIX)) ? trimmedShortStr : 
                 trimmedShortStr.substring(0, min);
       }
 
