@@ -928,24 +928,14 @@ public class PermissionAPITest extends IntegrationTestBase {
             parentRole = new RoleDataGen().name("parent"+time).nextPersisted();
 
             // let's give view permissions to parent role on testSite
-            List<Permission> sitePermissionsForParentRole = CollectionsUtils.list(
-                    new Permission(testSite.getIdentifier(), parentRole.getId(),
-                            3, true));
-
-            permissionAPI.assignPermissions(sitePermissionsForParentRole, testSite, systemUser,
-                    false);
+            assignPermissions(systemUser, parentRole, testSite);
 
             // create child role
             childRole = new RoleDataGen().name("child"+time).parent(parentRole.getId())
                     .nextPersisted();
 
             // give child role permissions on testSite
-            List<Permission> sitePermissionsForChildRole = CollectionsUtils.list(
-                    new Permission(testSite.getIdentifier(), childRole.getId(),
-                            3, true));
-
-            permissionAPI.assignPermissions(sitePermissionsForChildRole, testSite, systemUser,
-                    false);
+            assignPermissions(systemUser, childRole, testSite);
 
             // create test folder under test site
             final Folder testFolder = new FolderDataGen().site(testSite).nextPersisted();
@@ -955,12 +945,7 @@ public class PermissionAPITest extends IntegrationTestBase {
                     .nextPersisted();
 
             // give child-sibling role permissions to testFolder
-            List<Permission> folderPermissionsForSiblingRole = CollectionsUtils.list(
-                    new Permission(testFolder.getIdentifier(), childRole.getId(),
-                            3, true));
-
-            permissionAPI.assignPermissions(folderPermissionsForSiblingRole, testFolder, systemUser,
-                    false);
+            assignPermissions(systemUser, childSiblingRole, testFolder);
 
             // assert parent has view permissions on testFolder
             List<Permission> parentRolePermissions = permissionAPI
@@ -968,7 +953,7 @@ public class PermissionAPITest extends IntegrationTestBase {
 
             final boolean doesParentHavePermissionOnTestFolder = parentRolePermissions.stream()
                     .anyMatch(permission -> permission.getInode().equals(
-                            testFolder.getIdentifier()) && permission.getPermission()==3);
+                            testFolder.getInode()));
 
             assertTrue(doesParentHavePermissionOnTestFolder);
 
@@ -978,18 +963,36 @@ public class PermissionAPITest extends IntegrationTestBase {
 
             final boolean doesChildHavePermissionOnTestFolder = childRolePermissions.stream()
                     .noneMatch(permission -> permission.getInode().equals(
-                            testFolder.getIdentifier()) && permission.getPermission()==3);
+                            testFolder.getInode()));
 
-            assertFalse(doesChildHavePermissionOnTestFolder);
+            assertTrue(doesChildHavePermissionOnTestFolder);
 
 
         } finally {
             roleAPI.delete(childRole);
             roleAPI.delete(childSiblingRole);
             roleAPI.delete(parentRole);
-            APILocator.getContentletAPI().delete(testSite, systemUser, false);
+            APILocator.getHostAPI().archive(testSite, systemUser, false);
+            APILocator.getHostAPI().delete(testSite, systemUser, false);
         }
 
+    }
+
+    private void assignPermissions(User systemUser, Role parentRole, Permissionable permissionable)
+            throws DotDataException, DotSecurityException {
+        List<Permission> sitePermissionsForParentRole = CollectionsUtils.list(
+                new Permission(permissionable.getPermissionId(), parentRole.getId(),
+                        3, true));
+
+        if (APILocator.getPermissionAPI().isInheritingPermissions(permissionable)) {
+            Permissionable parentPermissionable = permissionAPI.
+                    findParentPermissionable(permissionable);
+            permissionAPI.permissionIndividuallyByRole(parentPermissionable,
+                    permissionable, systemUser, parentRole);
+        }
+
+        permissionAPI.assignPermissions(sitePermissionsForParentRole, permissionable, systemUser,
+                false);
     }
 
     /**
