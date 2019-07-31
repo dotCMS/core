@@ -206,6 +206,10 @@ public class NotificationAPIImpl implements NotificationAPI {
         if ( visibility.equals(Visibility.ROLE) ) {
             //Search for all the users in the given role
             Collection<User> foundUsers = getRoleAPI().findUsersForRole(visibilityId);
+            //Add user who is sending the notification if does not have the role
+            if(foundUsers.stream().noneMatch(foundUser -> foundUser.getUserId().equals(userId))){
+                foundUsers.add(APILocator.getUserAPI().loadUserById(userId));
+            }
             if ( foundUsers != null && !foundUsers.isEmpty() ) {
                 this.notificationFactory.saveNotificationsForUsers(dto, foundUsers);
             }

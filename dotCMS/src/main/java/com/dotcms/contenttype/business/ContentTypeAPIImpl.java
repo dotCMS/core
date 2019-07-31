@@ -18,6 +18,9 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.UrlMapable;
 import com.dotcms.exception.BaseRuntimeInternationalizationException;
+import com.dotcms.notifications.bean.NotificationLevel;
+import com.dotcms.notifications.bean.NotificationType;
+import com.dotcms.util.I18NMessage;
 import com.google.common.collect.ImmutableList;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.util.ContentTypeUtil;
@@ -96,6 +99,16 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     HibernateUtil.addCommitListener(()-> {
       localSystemEventsAPI.notify(new ContentTypeDeletedEvent(type.variable()));
     });
+
+
+    ActivityLogger.logInfo(ActivityLogger.class, "Delete Content Type",
+            String.format("User %s/%s deleted Content Type %s with id %s", user.getUserId(), user.getFirstName(),type.variable(),type.id()));
+
+    APILocator.getNotificationAPI().generateNotification(new I18NMessage("message.structure.notification.title","Content Type Notification"),
+            new I18NMessage("message.structure.deletestructure",
+                    "The Content Type "+ type.variable() + " has been deleted",
+                    type.variable()), null, NotificationLevel.INFO, NotificationType.GENERIC, Visibility.ROLE,
+            APILocator.getRoleAPI().loadCMSAdminRole().getId(), user.getUserId(), user.getLocale());
 
   }
 
