@@ -86,7 +86,7 @@ public class ContentMapTest extends IntegrationTestBase {
 
         // Persist dummy "News" contents to ensure at least one result will be returned
         final Contentlet contentlet = contentletDataGen.nextPersisted();
-        contentletAPI.publish(contentlet,user,false);
+        ContentletDataGen.publish(contentlet);
 
         final Context velocityContext = mock(Context.class);
 
