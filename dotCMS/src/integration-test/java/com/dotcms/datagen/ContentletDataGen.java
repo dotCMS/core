@@ -150,8 +150,8 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
         for(Entry<String, Object> element:properties.entrySet()){
             contentlet.setProperty(element.getKey(), element.getValue());
         }
-        contentlet.setIndexPolicy(IndexPolicy.FORCE);
-        contentlet.setIndexPolicyDependencies(IndexPolicy.FORCE);
+        contentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        contentlet.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
         if(skipValidation){
             contentlet.setBoolProperty(Contentlet.DONT_VALIDATE_ME, true);
         }
@@ -267,7 +267,7 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
 
     public static Contentlet publish(Contentlet contentlet) {
         try {
-            contentlet.setIndexPolicy(IndexPolicy.FORCE);
+            contentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
             contentlet.setBoolProperty(Contentlet.IS_TEST_MODE, true);
             contentletAPI.publish(contentlet, user, false);
         } catch (Exception e) {

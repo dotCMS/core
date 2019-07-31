@@ -26,7 +26,7 @@ public class SiteDataGen extends AbstractDataGen<Host> {
         site.setHostname(name);
         site.setDefault(false);
         site.setLanguageId(language.getId());
-        site.setIndexPolicy(IndexPolicy.FORCE);
+        site.setIndexPolicy(IndexPolicy.WAIT_FOR);
         site.setBoolProperty(Contentlet.IS_TEST_MODE, true);
 
         return site;
@@ -36,7 +36,7 @@ public class SiteDataGen extends AbstractDataGen<Host> {
         try {
             final Host newSite = APILocator.getHostAPI().save(site, user, false);
             if (publish) {
-                newSite.setIndexPolicy(IndexPolicy.FORCE);
+                newSite.setIndexPolicy(IndexPolicy.WAIT_FOR);
                 newSite.setBoolProperty(Contentlet.IS_TEST_MODE, true);
                 APILocator.getHostAPI().publish(newSite, user, false);
             }
