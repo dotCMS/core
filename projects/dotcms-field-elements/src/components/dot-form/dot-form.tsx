@@ -1,10 +1,13 @@
 import { Component, Element, Listen, Prop, State, Watch } from '@stencil/core';
 import Fragment from 'stencil-fragment';
 
-import { DotFieldStatus } from '../../models';
-import { fieldParamsConversionToBE, getFieldsFromLayout } from './utils';
+import { DotFieldStatus, DotTempFile } from '../../models';
+import { fieldCustomProcess, getFieldsFromLayout } from './utils';
 import { getClassNames, getOriginalStatus, updateStatus } from '../../utils';
 import { DotCMSContentTypeLayoutRow, DotCMSContentTypeField } from 'dotcms-models';
+import { DotUploadService } from './services/dot-upload.service';
+import { DotHttpErrorResponse } from '../../models/dot-http-error-response.model';
+import { DotBinaryFileComponent } from '../dot-binary-file/dot-binary-file';
 
 const SUBMIT_FORM_API_URL = '/api/content/save/1';
 const fallbackErrorMessages = {
@@ -12,11 +15,6 @@ const fallbackErrorMessages = {
     400: '400 Bad Request',
     401: '401 Unauthorized Error'
 };
-
-interface DotCMSFormSubmitError {
-    message: string;
-    status: number;
-}
 
 @Component({
     tag: 'dot-form',
@@ -29,23 +27,27 @@ export class DotFormComponent {
     @Prop() fieldsToShow: string;
 
     /** (optional) Text to be rendered on Reset button */
-    @Prop({ reflectToAttr: true }) resetLabel = 'Reset';
+    @Prop({ reflectToAttr: true })
+    resetLabel = 'Reset';
 
     /** (optional) Text to be rendered on Submit button */
-    @Prop({ reflectToAttr: true }) submitLabel = 'Submit';
+    @Prop({ reflectToAttr: true })
+    submitLabel = 'Submit';
 
     /** Layout metada to be rendered */
-    @Prop({ reflectToAttr: true }) layout: DotCMSContentTypeLayoutRow[] = [];
+    @Prop({ reflectToAttr: true })
+    layout: DotCMSContentTypeLayoutRow[] = [];
 
     /** Content type variable name */
-    @Prop({ reflectToAttr: true }) variable = '';
+    @Prop({ reflectToAttr: true })
+    variable = '';
 
     @State() status: DotFieldStatus = getOriginalStatus();
     @State() errorMessage = '';
+    @State() uploadFileInProgress = false;
 
     private fieldsStatus: { [key: string]: { [key: string]: boolean } } = {};
     private value = {};
-
     /**
      * Update the form value when valueChange in any of the child fields.
      *
@@ -56,8 +58,14 @@ export class DotFormComponent {
     onValueChange(event: CustomEvent): void {
         const { tagName } = event.target as HTMLElement;
         const { name, value } = event.detail;
-        const transform = fieldParamsConversionToBE[tagName];
-        this.value[name] = transform ? transform(value) : value;
+        const process = fieldCustomProcess[tagName];
+        if (tagName === 'DOT-BINARY-FILE' && value) {
+            this.uploadFile(event).then(tempFile => {
+                this.value[name] = tempFile.id;
+            });
+        } else {
+            this.value[name] = process ? process(value) : value;
+        }
     }
 
     /**
@@ -109,7 +117,10 @@ export class DotFormComponent {
                         <button type="reset" onClick={() => this.resetForm()}>
                             {this.resetLabel}
                         </button>
-                        <button type="submit" disabled={!this.status.dotValid}>
+                        <button
+                            type="submit"
+                            disabled={!this.status.dotValid || this.uploadFileInProgress}
+                        >
                             {this.submitLabel}
                         </button>
                     </div>
@@ -145,7 +156,7 @@ export class DotFormComponent {
         })
             .then(async (response: Response) => {
                 if (response.status !== 200) {
-                    const error: DotCMSFormSubmitError = {
+                    const error: DotHttpErrorResponse = {
                         message: await response.text(),
                         status: response.status
                     };
@@ -156,7 +167,7 @@ export class DotFormComponent {
             .then((_text: string) => {
                 // Go to success page
             })
-            .catch(({ message, status }: DotCMSFormSubmitError) => {
+            .catch(({ message, status }: DotHttpErrorResponse) => {
                 this.errorMessage = message || fallbackErrorMessages[status];
             });
     }
@@ -174,7 +185,9 @@ export class DotFormComponent {
     }
 
     private getUpdateValue(): { [key: string]: string } {
-        return getFieldsFromLayout(this.layout).reduce(
+        return getFieldsFromLayout(
+            this.layout
+        ).reduce(
             (
                 acc: { [key: string]: string },
                 { variable, defaultValue }: DotCMSContentTypeField
@@ -186,5 +199,27 @@ export class DotFormComponent {
             },
             {}
         );
+    }
+
+    private uploadFile(event: CustomEvent): Promise<DotTempFile> {
+        const uploadService = new DotUploadService();
+        const value = event.detail.value;
+        const binary: DotBinaryFileComponent = (event.target as unknown) as DotBinaryFileComponent;
+        this.uploadFileInProgress = true;
+        return uploadService
+            .uploadFile(value)
+            .then((tempFile: DotTempFile) => {
+                this.errorMessage = '';
+                binary.previewImageUrl = tempFile.thumbnailUrl;
+                binary.previewImageName = tempFile.fileName;
+                this.uploadFileInProgress = false;
+                return tempFile;
+            })
+            .catch(({ message, status }: DotHttpErrorResponse) => {
+                binary.clearValue();
+                this.uploadFileInProgress = false;
+                this.errorMessage = message || fallbackErrorMessages[status];
+                return null;
+            });
     }
 }

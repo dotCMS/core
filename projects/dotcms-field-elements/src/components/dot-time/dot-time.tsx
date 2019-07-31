@@ -102,7 +102,7 @@ export class DotTimeComponent {
     emitValueChange(event: CustomEvent) {
         event.stopImmediatePropagation();
         const valueEvent: DotFieldValueEvent = event.detail;
-        this.value = valueEvent.value;
+        this.value = valueEvent.value as string;
         this.valueChange.emit(valueEvent);
     }
 

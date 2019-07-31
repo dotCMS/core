@@ -236,9 +236,9 @@ export class DotDateTimeComponent {
 
     private formatValue(event: DotFieldValueEvent) {
         if (event.name.indexOf(DATE_SUFFIX) >= 0) {
-            this._value.date = event.value;
+            this._value.date = event.value as string;
         } else {
-            this._value.time = event.value;
+            this._value.time = event.value as string;
         }
     }
 

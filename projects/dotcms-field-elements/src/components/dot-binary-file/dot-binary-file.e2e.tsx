@@ -8,6 +8,7 @@ describe('dot-binary-file', () => {
     let element: E2EElement;
     let dotBinaryText: E2EElement;
     let dotBinaryButton: E2EElement;
+    let dotBinaryPreview: E2EElement;
     let spyStatusChangeEvent: EventSpy;
     let spyValueChangeEvent: EventSpy;
 
@@ -19,6 +20,7 @@ describe('dot-binary-file', () => {
         element = await page.find('dot-binary-file');
         dotBinaryText = await page.find('dot-binary-text-field');
         dotBinaryButton = await page.find('dot-binary-upload-button');
+        dotBinaryPreview = await page.find('dot-binary-file-preview');
     });
 
     describe('render CSS classes', () => {
@@ -314,6 +316,33 @@ describe('dot-binary-file', () => {
                 expect(await dotBinaryButton.getProperty('buttonLabel')).toEqual('Buscar');
             });
         });
+
+        describe('previewImageName', () => {
+            it('should show the preview component and hide others', async () => {
+                element.setProperty('previewImageName', 'image.png');
+                await page.waitForChanges();
+
+                dotBinaryText = await page.find('dot-binary-text-field');
+                dotBinaryButton = await page.find('dot-binary-upload-button');
+                dotBinaryPreview = await page.find('dot-binary-file-preview');
+
+                expect(dotBinaryButton).toBeNull();
+                expect(dotBinaryText).toBeNull();
+                expect(dotBinaryPreview.getAttribute('file-name')).toEqual('image.png');
+            });
+        });
+
+        describe('previewImageUrl', () => {
+            it('should set the attribute correctly on DotBinaryPreview', async () => {
+                element.setProperty('previewImageName', 'image.png');
+                element.setProperty('previewImageUrl', 'url/image.png');
+                await page.waitForChanges();
+
+                dotBinaryPreview = await page.find('dot-binary-file-preview');
+
+                expect(dotBinaryPreview.getAttribute('preview-url')).toEqual('url/image.png');
+            });
+        });
     });
 
     describe('@Events', () => {
@@ -419,6 +448,39 @@ describe('dot-binary-file', () => {
                     value: ''
                 });
                 expect(await dotBinaryText.getProperty('value')).toEqual('');
+            });
+            it('should emit status, value and clear value on clearValue', async () => {
+                await element.callMethod('clearValue');
+                expect(spyStatusChangeEvent).toHaveReceivedEventDetail({
+                    name: '',
+                    status: {
+                        dotPristine: false,
+                        dotTouched: true,
+                        dotValid: true
+                    }
+                });
+                expect(spyValueChangeEvent).toHaveReceivedEventDetail({
+                    name: '',
+                    value: ''
+                });
+                expect(await dotBinaryText.getProperty('value')).toEqual('');
+            });
+        });
+
+        describe('clearValue', () => {
+            it('should display required message clear preview data on clearValue', async () => {
+                element.setProperty('previewImageName', 'test.png');
+                element.setProperty('previewImageUrl', 'url/test.png');
+                element.setProperty('required', true);
+                await element.callMethod('clearValue');
+                await page.waitForChanges();
+
+                expect((await dotTestUtil.getErrorMessage(page)).innerText).toBe(
+                    'This field is required'
+                );
+                expect(await dotBinaryText.getProperty('value')).toEqual('');
+                expect(element.getAttribute('preview-image-name')).toEqual('');
+                expect(element.getAttribute('preview-image-url')).toEqual('');
             });
         });
     });

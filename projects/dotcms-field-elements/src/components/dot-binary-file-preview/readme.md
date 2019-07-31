@@ -7,10 +7,11 @@
 
 ## Properties
 
-| Property      | Attribute      | Description                      | Type          | Default    |
-| ------------- | -------------- | -------------------------------- | ------------- | ---------- |
-| `deleteLabel` | `delete-label` | (optional) Delete button's label | `string`      | `'Delete'` |
-| `file`        | --             | (optional) file to be displayed  | `DotTempFile` | `null`     |
+| Property      | Attribute      | Description                         | Type     | Default    |
+| ------------- | -------------- | ----------------------------------- | -------- | ---------- |
+| `deleteLabel` | `delete-label` | (optional) Delete button's label    | `string` | `'Delete'` |
+| `fileName`    | `file-name`    | file name to be displayed           | `string` | `''`       |
+| `previewUrl`  | `preview-url`  | (optional) file URL to be displayed | `string` | `''`       |
 
 
 ## Events

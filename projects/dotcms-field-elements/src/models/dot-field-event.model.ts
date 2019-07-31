@@ -15,7 +15,7 @@ export interface DotInputCalendarStatusEvent extends DotFieldStatusEvent {
 
 export interface DotFieldValueEvent extends DotFieldEvent {
     fieldType?: string;
-    value: string;
+    value: string | File;
 }
 
 export interface DotBinaryFileEvent {

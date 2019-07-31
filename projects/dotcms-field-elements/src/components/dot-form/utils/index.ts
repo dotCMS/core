@@ -59,7 +59,7 @@ const fieldParamsConversionFromBE = {
     }
 };
 
-export const fieldParamsConversionToBE = {
+export const fieldCustomProcess = {
     'DOT-KEY-VALUE': pipedValuesToObject
 };
 
@@ -75,5 +75,6 @@ export const fieldMap = {
     'Date-and-Time': DotFormFields['Date-and-Time'],
     'Date-Range': DotFormFields['Date-Range'],
     Date: DotFormFields.Date,
-    Checkbox: DotFormFields.Checkbox
+    Checkbox: DotFormFields.Checkbox,
+    Binary: DotFormFields.Binary
 };

@@ -2,16 +2,9 @@ dot-binary-file-preview {
     display: flex;
 
     img,
-    .dot-file-preview__extention {
+    .dot-file-preview__extension {
         width: 100px;
         height: 100px;
-
-        span {
-            overflow: hidden;
-            padding: 0.5rem;
-            text-overflow: ellipsis;
-            font-size: 2rem;
-        }
     }
 
     .dot-file-preview__info {
@@ -39,5 +32,12 @@ dot-binary-file-preview {
         align-items: center;
         justify-content: center;
         background-color: lightgray;
+
+        span {
+            overflow: hidden;
+            padding: 0.5rem;
+            text-overflow: ellipsis;
+            font-size: 2rem;
+        }
     }
 }
