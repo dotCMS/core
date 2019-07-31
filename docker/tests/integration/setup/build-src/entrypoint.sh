@@ -16,9 +16,9 @@ if [[ "${1}" == "dotcms" || -z "${1}" ]]; then
        exit 1
     fi
 
-    if [ ! -z "${TESTS_PARAMS}" ]
+    if [ ! -z "${EXTRA_PARAMS}" ]
     then
-        echo "Running integration tests with extra parameters [${TESTS_PARAMS}]"
+        echo "Running integration tests with extra parameters [${EXTRA_PARAMS}]"
     fi
 
     #  One of ["postgres", "mysql", "oracle", "mssql"]
@@ -35,7 +35,7 @@ if [[ "${1}" == "dotcms" || -z "${1}" ]]; then
     echo "================================================================================"
     echo "================================================================================"
     echo "                      >>>   DB: ${databaseType}"
-    echo "                      >>>   TEST PARAMETERS: ${TESTS_PARAMS}"
+    echo "                      >>>   TEST PARAMETERS: ${EXTRA_PARAMS}"
     echo "                      >>>   BUILD FROM: ${BUILD_FROM_ENV}"
     echo "                      >>>   BUILD ID: ${BUILD_ID_ENV}"
     echo "================================================================================"
@@ -43,7 +43,7 @@ if [[ "${1}" == "dotcms" || -z "${1}" ]]; then
     echo ""
 
     cd /build/src/core/dotCMS \
-    && ./gradlew integrationTest ${TESTS_PARAMS}
+    && ./gradlew integrationTest ${EXTRA_PARAMS}
 
     # Required code, without it gradle will exit 1 killing the docker container
     gradlewReturnCode=$?

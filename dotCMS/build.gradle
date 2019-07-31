@@ -159,7 +159,7 @@ dependencies {
     compile fileTree("src/main/plugins/com.dotcms.config/build/jar").include('plugin-com.dotcms.config.jar')
 
     starter group: 'com.dotcms', name: 'starter', version: '20190725', ext: 'zip'
-    testsStarter group: 'com.dotcms', name: 'starter', version: 'empty_20190725', ext: 'zip'
+    testsStarter group: 'com.dotcms', name: 'starter', version: 'empty_20190730', ext: 'zip'
     
     profiler group: 'glowroot-custom', name: 'glowroot-agent', version: '0.13.1'
     profilerDependencies group: 'glowroot-custom', name: 'collector-https-linux', version: '0.13.1'

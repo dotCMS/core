@@ -9,6 +9,7 @@ import static org.junit.Assert.fail;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.datagen.RoleDataGen;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -65,28 +66,28 @@ public class RoleAPITest extends IntegrationTestBase {
         RoleAPI roleAPI = APILocator.getRoleAPI();
         UserAPI userAPI = APILocator.getUserAPI();
 
+        // Creating test roles
+        final Role parentRole1 = new RoleDataGen().name("parentRole1_" + System.currentTimeMillis()).nextPersisted();
+        final Role parentRole2 = new RoleDataGen().name("parentRole2_" + System.currentTimeMillis()).parent(parentRole1.getId()).nextPersisted();
+        final Role childTestRole1 = new RoleDataGen().name("childTestRole1_" + System.currentTimeMillis()).parent(parentRole2.getId()).nextPersisted();
+
+        // Creating test users
+        new UserDataGen().roles(parentRole1).nextPersisted();
+        new UserDataGen().roles(parentRole1).nextPersisted();
+
         //Search for the current root roles
         List<Role> originalRootRoles = roleAPI.findRootRoles();
         assertTrue( originalRootRoles != null && !originalRootRoles.isEmpty() );
 
-        //Get a test role
-        Role multipleLevelsRole = null;
-        for ( Role role : originalRootRoles ) {
-            if ( role.getName().equals( "Publisher / Legal" ) ) {
-                multipleLevelsRole = role;
-            }
-        }
-        assertNotNull( multipleLevelsRole );
-
         //Search for a user associated with our test role
-        List<User> foundUsers = roleAPI.findUsersForRole( multipleLevelsRole );
+        List<User> foundUsers = roleAPI.findUsersForRole( parentRole1 );
         assertTrue( foundUsers != null && !foundUsers.isEmpty() );
         User testUser = foundUsers.get( 0 );
 
         //Verify if we find the implicit roles
         List<Role> foundRoles = roleAPI.loadRolesForUser( testUser.getUserId(), true );
         assertTrue( foundRoles != null && !foundRoles.isEmpty() );
-        assertTrue( foundRoles.size() == 4 );//We know we have 3 levels here: "Publisher/Legal" -> "Reviewer" -> "Contributor" + User role
+        assertTrue( foundRoles.size() == 4 );// 3 roles + User role
 
         //Cache validations
         List<Role> originalCachedRootRoles = CacheLocator.getRoleCache().getRootRoles();
@@ -191,7 +192,7 @@ public class RoleAPITest extends IntegrationTestBase {
         assertTrue( does );
         does = roleAPI.doesUserHaveRole( newUser, childRole2.getId() );
         assertTrue( does );
-        does = roleAPI.doesUserHaveRole( newUser, multipleLevelsRole.getId() );
+        does = roleAPI.doesUserHaveRole( newUser, childTestRole1.getId() );
         assertFalse( does );
 
         //-----------------------------------------------
