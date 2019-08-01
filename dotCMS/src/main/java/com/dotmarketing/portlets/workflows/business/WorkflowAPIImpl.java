@@ -3363,6 +3363,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		DotPreconditions.checkArgument(null != systemAction, "System Action can not be null");
 		DotPreconditions.checkArgument(null != contentType, "Content Type can not be null");
 		DotPreconditions.checkArgument(null != workflowAction, "Workflow Action can not be null");
+		DotPreconditions.checkArgument(!Host.HOST_VELOCITY_VAR_NAME.equals(contentType.variable()), "The Content Type can not be a Host");
 
 		final SystemActionWorkflowActionMapping mapping =
 				new SystemActionWorkflowActionMapping(UUIDGenerator.generateUuid(),
