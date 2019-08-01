@@ -447,6 +447,7 @@ public class RoleAPIImpl implements RoleAPI {
 		return false;
 	}
 
+	@CloseDBIfOpened
     @Override
     public boolean isParentRole(Role parent, Role child)
             throws DotSecurityException, DotDataException {
@@ -466,6 +467,7 @@ public class RoleAPIImpl implements RoleAPI {
         return false;
     }
 
+	@CloseDBIfOpened
 	@Override
 	public boolean isSiblingRole(Role roleA, Role roleB)
 			throws DotSecurityException, DotDataException {
