@@ -1,14 +1,4 @@
 
-<%@page import="com.dotmarketing.util.Config"%>
-<%@page import="org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest"%>
-<%@page import="java.util.List"%>
-<%@page import="org.elasticsearch.action.admin.cluster.health.ClusterHealthRequestBuilder"%>
-<%@page import="java.util.Map"%>
-<%@page import="org.elasticsearch.action.admin.cluster.node.stats.NodesStatsResponse"%>
-<%@page import="org.elasticsearch.action.admin.cluster.node.stats.NodesStatsRequest"%>
-<%@page import="com.dotcms.content.elasticsearch.util.ESClient"%>
-<%@ page
-        import="static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS" %>
 <%@ page import="com.dotcms.content.elasticsearch.business.ESIndexAPI" %>
 <%@ page import="com.dotcms.content.elasticsearch.business.ClusterStats" %>
 <%@ page import="com.dotcms.content.elasticsearch.business.NodeStats" %>

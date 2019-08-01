@@ -5,7 +5,6 @@ import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
 import com.dotcms.cluster.ClusterUtils;
 import com.dotcms.cluster.business.ClusterAPI;
-import com.dotcms.cluster.business.ReplicasMode;
 import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
@@ -588,22 +587,11 @@ public class ESIndexAPI {
     public void moveIndexBackToCluster(final String index) throws IOException {
 		final XContentBuilder builder = jsonBuilder().startObject().startObject("index");
 
-		setReplicasFields(builder);
-
 		UpdateSettingsRequest request = new UpdateSettingsRequest(index);
 		request.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
 		request.settings(builder.endObject().endObject().toString(), XContentType.JSON);
 		esclient.indices().putSettings(request, RequestOptions.DEFAULT);
     }
-
-	private void setReplicasFields(XContentBuilder builder) throws IOException {
-		final ReplicasMode replicasMode = clusterAPI.getReplicasMode();
-		if(replicasMode.getNumberOfReplicas()>-1) {
-			builder.field("number_of_replicas", replicasMode.getNumberOfReplicas());
-		}
-		builder.field("auto_expand_replicas",replicasMode.getAutoExpandReplicas());
-		builder.field("routing.allocation.include._name","*");
-	}
 
 	/**
      * Creates a new index.  If settings is null, the getDefaultIndexSettings() will be applied,
@@ -617,8 +605,6 @@ public class ESIndexAPI {
      */
 	public synchronized CreateIndexResponse createIndex(final String indexName, String settings,
 			int shards) throws ElasticsearchException, IOException {
-
-		final ReplicasMode replicasMode = clusterAPI.getReplicasMode();
 
 		AdminLogger.log(this.getClass(), "createIndex",
 			"Trying to create index: " + indexName + " with shards: " + shards);
@@ -640,11 +626,6 @@ public class ESIndexAPI {
         /*map.put("index.mapping.nested_objects.limit",
                 Config.getIntProperty("ES_INDEX_MAPPING_NESTED_OBJECTS_LIMITS", 25000));*/
 
-
-		if(replicasMode.getNumberOfReplicas()>-1) {
-			map.put("number_of_replicas", replicasMode.getNumberOfReplicas());
-		}
-		map.put("auto_expand_replicas",replicasMode.getAutoExpandReplicas());
 
 		final CreateIndexRequest request = new CreateIndexRequest(indexName);
 		request.settings(map);

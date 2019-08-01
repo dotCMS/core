@@ -1,8 +1,5 @@
 package com.dotcms.content.elasticsearch.util;
 
-import static com.dotcms.content.elasticsearch.util.ESClient.ES_CONFIG_DIR;
-import static com.dotcms.content.elasticsearch.util.ESClient.ES_PATH_HOME;
-import static com.dotcms.content.elasticsearch.util.ESClient.ES_PATH_HOME_DEFAULT_VALUE;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.util.regex.Pattern.CASE_INSENSITIVE;
 import static javax.crypto.Cipher.DECRYPT_MODE;
@@ -61,6 +58,10 @@ import org.jetbrains.annotations.NotNull;
  * Default high level client to handle API requests in Elastic
  */
 public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider {
+
+    public static final String ES_CONFIG_DIR = "config";
+    public static final String ES_PATH_HOME = "es.path.home";
+    public static final String ES_PATH_HOME_DEFAULT_VALUE = "WEB-INF/elasticsearch";
 
     public DotRestHighLevelClientProvider() {
         super();
