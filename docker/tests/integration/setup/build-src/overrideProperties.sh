@@ -31,6 +31,9 @@ felix.felix.fileinstall.dir=$felixFolder/load
 echo "
 felix.felix.undeployed.dir=$felixFolder/undeploy
 " >> $resourcesFolder/it-dotmarketing-config.properties
+echo "
+dotcms.concurrent.locks.disable=true
+" >> $resourcesFolder/it-dotmarketing-config.properties
 
 ## ------------------
 # /build/src/core/dotCMS/src/main/webapp/WEB-INF/elasticsearch/config/elasticsearch-override.yml
