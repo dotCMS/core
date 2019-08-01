@@ -1,7 +1,5 @@
 package com.dotcms.util;
 
-import org.apache.log4j.Level;
-
 import java.lang.annotation.*;
 
 /**

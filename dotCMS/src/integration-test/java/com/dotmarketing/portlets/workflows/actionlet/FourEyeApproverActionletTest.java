@@ -23,6 +23,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest;
@@ -160,6 +161,8 @@ public class FourEyeApproverActionletTest extends BaseWorkflowIntegrationTest {
             cont.setStringProperty("title", "4-Eye Approval Test Title");
             cont.setStringProperty("txt", "4-Eye Approval Test Text");
             cont.setHost(site.getIdentifier());
+            cont.setIndexPolicy(IndexPolicy.WAIT_FOR);
+            cont.setBoolProperty(Contentlet.IS_TEST_MODE, true);
             Contentlet contentlet1 = contentletAPI.checkin(cont, systemUser, false);
             Assert.assertFalse("The contentlet cannot be live, it has just been created.",
                     contentlet1.isLive());

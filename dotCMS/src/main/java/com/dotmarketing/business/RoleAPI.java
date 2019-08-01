@@ -368,6 +368,15 @@ public interface RoleAPI {
     boolean isParentRole(Role parent, Role child) throws DotSecurityException, DotDataException;
 
 	/**
+	 * Checks whether the first role parameter is indeed a sibling of the second role parameter, by
+	 * checheking if they have the same role hierarchy.
+	 *
+	 * @return true is first parameter is sibling of second.
+	 */
+	boolean isSiblingRole(Role roleA, Role roleB)
+			throws DotSecurityException, DotDataException;
+
+	/**
 	 * Get the list of roles exclusive for workflows
 	 * (Any who can view, Any who can Edit, Any who can Publish and Any who canEdit Permissions)
 	 * @return List of workflows

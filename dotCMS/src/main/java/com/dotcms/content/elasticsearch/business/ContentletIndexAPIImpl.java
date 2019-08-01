@@ -438,6 +438,9 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         if (null == parentContenlet || !UtilMethods.isSet(parentContenlet.getIdentifier())) {
             return;
         }
+
+        Logger.info(this, "Indexing: " + parentContenlet.getIdentifier() + ", includeDependencies: " + includeDependencies);
+
         // parentContenlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
         final List<Contentlet> contentToIndex =
                 (includeDependencies) ? ImmutableList.<Contentlet>builder().add(parentContenlet).addAll(loadDeps(parentContenlet)).build()

@@ -129,6 +129,8 @@ public class ReindexQueueAPIImpl implements ReindexQueueAPI {
     @Override
     public void addIdentifierReindex(final String id) throws DotDataException {
 
+        Logger.info(this, "addIdentifierReindex: " + id);
+
         this.reindexQueueFactory.addIdentifierReindex(id);
     }
 

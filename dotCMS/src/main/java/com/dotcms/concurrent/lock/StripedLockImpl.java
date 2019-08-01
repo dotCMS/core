@@ -4,6 +4,7 @@ import com.dotcms.concurrent.DotConcurrentException;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.util.ReturnableDelegate;
 import com.dotcms.util.VoidDelegate;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.google.common.util.concurrent.Striped;
 import java.lang.reflect.InvocationTargetException;
@@ -31,6 +32,8 @@ public class StripedLockImpl<K> implements DotKeyLockManager<K> {
     //This is a collection like struct that holds references the Lock implementation of choice.
     //It'll allocate locks based upon a key.
     private final Striped<Lock> lockStripes;
+
+    private static final String DOTCMS_CONCURRENT_LOCK_DISABLE = "dotcms.concurrent.locks.disable";
 
     /**
      * Constructor 2 takes the number of strips to be allocated + a time specification to instruct
@@ -74,6 +77,12 @@ public class StripedLockImpl<K> implements DotKeyLockManager<K> {
      */
     <R> R tryLock(final K key, final ReturnableDelegate<R> callback, final long time,
             final TimeUnit unit) throws Throwable {
+
+        if (Config
+                .getBooleanProperty(DOTCMS_CONCURRENT_LOCK_DISABLE, Boolean.FALSE)) {
+            return callback.execute();
+        }
+
         final ReentrantLock lock = ReentrantLock.class.cast(lockStripes.get(key));
         if (lock.isHeldByCurrentThread()) {
             Logger.debug(StripedLockImpl.class,
@@ -107,6 +116,13 @@ public class StripedLockImpl<K> implements DotKeyLockManager<K> {
      */
     void tryLock(final K key, final VoidDelegate callback, final long time, final TimeUnit unit)
             throws Throwable {
+
+        if (Config
+                .getBooleanProperty(DOTCMS_CONCURRENT_LOCK_DISABLE, Boolean.FALSE)) {
+            callback.execute();
+            return;
+        }
+
         final ReentrantLock lock = ReentrantLock.class.cast(lockStripes.get(key));
         if (lock.isHeldByCurrentThread()) {
             Logger.debug(StripedLockImpl.class,

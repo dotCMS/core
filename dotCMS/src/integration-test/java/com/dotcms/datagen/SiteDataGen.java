@@ -2,6 +2,7 @@ package com.dotcms.datagen;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 
 /**
@@ -26,6 +27,7 @@ public class SiteDataGen extends AbstractDataGen<Host> {
         site.setDefault(false);
         site.setLanguageId(language.getId());
         site.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        site.setBoolProperty(Contentlet.IS_TEST_MODE, true);
 
         return site;
     }
@@ -34,12 +36,14 @@ public class SiteDataGen extends AbstractDataGen<Host> {
         try {
             final Host newSite = APILocator.getHostAPI().save(site, user, false);
             if (publish) {
+                newSite.setIndexPolicy(IndexPolicy.WAIT_FOR);
+                newSite.setBoolProperty(Contentlet.IS_TEST_MODE, true);
                 APILocator.getHostAPI().publish(newSite, user, false);
             }
 
             return newSite;
         } catch (Exception e) {
-            throw new RuntimeException("Unable to persist Role.", e);
+            throw new RuntimeException("Unable to persist Host.", e);
         }
     }
 

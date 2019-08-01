@@ -1,6 +1,8 @@
 package com.dotcms.rest.api.v1.personalization;
 
-import com.dotmarketing.portlets.personas.model.Persona;
+import com.dotmarketing.portlets.htmlpageasset.business.render.page.PageViewSerializer;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import java.io.Serializable;
 import java.util.Map;
@@ -9,6 +11,7 @@ import java.util.Map;
  * Encapsulates the personalization for personas per page, if the persona
  * @author jsanca
  */
+@JsonSerialize(using = PersonalizationPersonaPageViewSerializer.class)
 public class PersonalizationPersonaPageView implements Serializable {
 
     private final String pageId;
@@ -19,7 +22,6 @@ public class PersonalizationPersonaPageView implements Serializable {
         this.pageId       = pageId;
         this.persona      = persona;
     }
-
 
     public String getPageId() {
         return pageId;

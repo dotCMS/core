@@ -1,10 +1,6 @@
 package com.dotcms.content.elasticsearch.business;
 
 
-import static com.dotcms.exception.ExceptionUtil.bubbleUpException;
-import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
-
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
@@ -20,13 +16,7 @@ import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
-import com.dotcms.contenttype.model.field.BinaryField;
-import com.dotcms.contenttype.model.field.CategoryField;
-import com.dotcms.contenttype.model.field.ConstantField;
-import com.dotcms.contenttype.model.field.DataTypes;
-import com.dotcms.contenttype.model.field.HostFolderField;
-import com.dotcms.contenttype.model.field.RelationshipField;
-import com.dotcms.contenttype.model.field.TagField;
+import com.dotcms.contenttype.model.field.*;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeIf;
@@ -49,21 +39,9 @@ import com.dotcms.services.VanityUrlServices;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.type.content.CommitListenerEvent;
 import com.dotcms.util.CollectionsUtils;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.beans.MultiTree;
-import com.dotmarketing.beans.Permission;
-import com.dotmarketing.beans.Tree;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotCacheException;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.RelationshipAPI;
-import com.dotmarketing.business.Role;
-import com.dotmarketing.business.Treeable;
-import com.dotmarketing.business.UserAPI;
+import com.dotcms.util.ThreadContextUtil;
+import com.dotmarketing.beans.*;
+import com.dotmarketing.business.*;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.QueryUtil;
 import com.dotmarketing.business.query.ValidationException;
@@ -75,11 +53,7 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.db.LocalTransaction;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.exception.InvalidLicenseException;
+import com.dotmarketing.exception.*;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.factories.TreeFactory;
@@ -87,14 +61,7 @@ import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.contentlet.business.BinaryFileFilter;
-import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.contentlet.business.ContentletCache;
-import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
-import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
-import com.dotmarketing.portlets.contentlet.business.DotLockException;
-import com.dotmarketing.portlets.contentlet.business.DotReindexStateException;
-import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.contentlet.business.*;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
@@ -126,21 +93,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.tag.business.TagAPI;
 import com.dotmarketing.tag.model.Tag;
-import com.dotmarketing.util.ActivityLogger;
-import com.dotmarketing.util.AdminLogger;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.ConfigUtils;
-import com.dotmarketing.util.DateUtil;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PageMode;
-import com.dotmarketing.util.PaginatedArrayList;
-import com.dotmarketing.util.RegEX;
-import com.dotmarketing.util.RegExMatch;
-import com.dotmarketing.util.TrashUtils;
-import com.dotmarketing.util.UUIDGenerator;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
+import com.dotmarketing.util.*;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -154,39 +107,7 @@ import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.DomDriver;
-
 import io.vavr.control.Try;
-
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.Serializable;
-import java.math.BigDecimal;
-import java.nio.file.Files;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
-import javax.servlet.http.HttpServletRequest;
-
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchResponse;
@@ -195,6 +116,24 @@ import org.elasticsearch.search.SearchHits;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.BeanUtils;
+
+import javax.servlet.http.HttpServletRequest;
+import java.io.*;
+import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+import static com.dotcms.exception.ExceptionUtil.bubbleUpException;
+import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
 
 /**
  * Implementation class for the {@link ContentletAPI} interface.
@@ -224,6 +163,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private final IdentifierStripedLock lockManager;
     private final TempFileAPI           tempApi ;
     private static final int MAX_LIMIT = 10000;
+    private static final boolean INCLUDE_DEPENDENCIES = true;
 
     private static final String backupPath = ConfigUtils.getBackupPath() + File.separator + "contentlets";
 
@@ -240,6 +180,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
     public static enum QueryType {
         search, suggest, moreLike, Facets
     };
+
+    private static final Supplier<String> ND_SUPPLIER = ()->"N/D";
 
     /**
      * Default class constructor.
@@ -258,7 +200,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
         localSystemEventsAPI      = APILocator.getLocalSystemEventsAPI();
         lockManager = DotConcurrentFactory.getInstance().getIdentifierStripedLock();
         tempApi=  APILocator.getTempFileAPI();
-
     }
 
     @Override
@@ -638,20 +579,22 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @WrapInTransaction
     @Override
-    public void publishAssociated(Contentlet contentlet, boolean isNew, boolean isNewVersion) throws
+    public void publishAssociated(final Contentlet contentlet, final boolean isNew, final boolean isNewVersion) throws
             DotSecurityException, DotDataException, DotStateException {
 
-        if (!contentlet.isWorking())
-            throw new DotContentletStateException("Only the working version can be published");
+        if (!contentlet.isWorking()) {
 
-        indexAPI.addContentToIndex(contentlet, true, false);
+            throw new DotContentletStateException("Only the working version can be published");
+        }
+
+        ThreadContextUtil.ifReindex(()->indexAPI.addContentToIndex(contentlet, INCLUDE_DEPENDENCIES, false), INCLUDE_DEPENDENCIES);
 
         // Publishes the files associated with the Contentlet
-        List<Field> fields = FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode());
-        Language defaultLang = languageAPI.getDefaultLanguage();
-        User systemUser = APILocator.getUserAPI().getSystemUser();
+        final List<Field> fields = FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode());
+        final Language defaultLang = languageAPI.getDefaultLanguage();
+        final User systemUser = APILocator.getUserAPI().getSystemUser();
 
-        for (Field field : fields) {
+        for (final Field field : fields) {
             if (Field.FieldType.IMAGE.toString().equals(field.getFieldType()) ||
                     Field.FieldType.FILE.toString().equals(field.getFieldType())) {
 
@@ -659,7 +602,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 // default lang (DEFAULT_FILE_TO_DEFAULT_LANGUAGE=true)
                 try {
                     // We need to get the Identifier from the field. (Image or File)
-                    String fieldValue = UtilMethods.isSet(getFieldValue(contentlet, field)) ?
+                    final String fieldValue = UtilMethods.isSet(getFieldValue(contentlet, field)) ?
                             getFieldValue(contentlet, field).toString() : StringUtils.EMPTY;
                     Identifier id = APILocator.getIdentifierAPI().find(fieldValue);
 
@@ -1359,21 +1302,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @WrapInTransaction
     @Override
-    public void unlock(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-        if(contentlet == null){
+    public void unlock(final Contentlet contentlet, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+
+        if(contentlet == null) {
+
             throw new DotContentletStateException("The contentlet cannot Be null");
         }
 
-        String contentPushPublishDate = contentlet.getStringProperty("wfPublishDate");
-        String contentPushPublishTime = contentlet.getStringProperty("wfPublishTime");
-        String contentPushExpireDate = contentlet.getStringProperty("wfExpireDate");
-        String contentPushExpireTime = contentlet.getStringProperty("wfExpireTime");
-
-        contentPushPublishDate = UtilMethods.isSet(contentPushPublishDate)?contentPushPublishDate:"N/D";
-        contentPushPublishTime = UtilMethods.isSet(contentPushPublishTime)?contentPushPublishTime:"N/D";
-        contentPushExpireDate = UtilMethods.isSet(contentPushExpireDate)?contentPushExpireDate:"N/D";
-        contentPushExpireTime = UtilMethods.isSet(contentPushExpireTime)?contentPushExpireTime:"N/D";
-
+        final String contentPushPublishDate = UtilMethods.get(contentlet.getStringProperty("wfPublishDate"), ND_SUPPLIER);
+        final String contentPushExpireDate  = UtilMethods.get(contentlet.getStringProperty("wfExpireDate"),  ND_SUPPLIER);
 
         ActivityLogger.logInfo(getClass(), "Unlocking Content", "StartDate: " +contentPushPublishDate+ "; "
                 + "EndDate: " +contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown")
@@ -1385,10 +1322,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
             if(contentlet.isLocked() ){
                 // persists the webasset
                 APILocator.getVersionableAPI().setLocked(contentlet, false, user);
-                indexAPI.addContentToIndex(contentlet,false);
+                ThreadContextUtil.ifReindex(()-> indexAPI.addContentToIndex(contentlet, false));
             }
 
         } catch(DotDataException | DotStateException| DotSecurityException e) {
+
             ActivityLogger.logInfo(getClass(), "Error Unlocking Content", "StartDate: " +contentPushPublishDate+ "; "
                     + "EndDate: " +contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown")
                     + "; ContentIdentifier: " + (contentlet != null ? contentlet.getIdentifier() : "Unknown"), contentlet.getHost());
@@ -1824,6 +1762,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
             contentletsVersion.addAll(findAllVersions(APILocator.getIdentifierAPI().find(con.getIdentifier()), user,
                     respectFrontendRoles));
+            contentletsVersion.forEach(contentletLanguage -> contentletLanguage.setIndexPolicy(con.getIndexPolicy()));
             // Remove page contents (if the content is a Content Page)
             List<MultiTree> mts = APILocator.getMultiTreeAPI().getMultiTreesByChild(con.getIdentifier());
 
@@ -1889,12 +1828,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         // Delete all the versions of the contentlets to delete
         contentFactory.delete(contentletsVersion);
         // Remove the contentlets from the Elastic index and cache
-        for (Contentlet contentlet : contentlets) {
-            indexAPI.removeContentFromIndex(contentlet);
-            CacheLocator.getIdentifierCache().removeFromCacheByVersionable(contentlet);
-        }
         for (Contentlet contentlet : contentletsVersion) {
-            indexAPI.removeContentFromIndex(contentlet);
             CacheLocator.getIdentifierCache().removeFromCacheByVersionable(contentlet);
         }
         deleteBinaryFiles(contentletsVersion, null);
@@ -2023,6 +1957,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     List<Contentlet> allVersionsList = findAllVersions(identifier,user,false);
                     List <Contentlet> contentletsLanguageList  = allVersionsList.stream().
                             filter(contentlet -> contentlet.getLanguageId()==con.getLanguageId()).collect(Collectors.toList());
+                    contentletsLanguageList.forEach(contentletLanguage -> contentletLanguage.setIndexPolicy(con.getIndexPolicy()));
                     contentFactory.delete(contentletsLanguageList, false);
 
                     for (Contentlet contentlet : contentlets) {
@@ -2359,32 +2294,30 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @WrapInTransaction
     @Override
-    public void lock(Contentlet contentlet, User user,  boolean respectFrontendRoles) throws DotContentletStateException, DotDataException,DotSecurityException {
-        if(contentlet == null){
+    public void lock(final Contentlet contentlet, final User user,  boolean respectFrontendRoles) throws DotContentletStateException, DotDataException,DotSecurityException {
+
+        if(contentlet == null) {
+
             throw new DotContentletStateException("The contentlet cannot Be null");
         }
 
 
-        String contentPushPublishDate = contentlet.getStringProperty("wfPublishDate");
-        String contentPushPublishTime = contentlet.getStringProperty("wfPublishTime");
-        String contentPushExpireDate = contentlet.getStringProperty("wfExpireDate");
-        String contentPushExpireTime = contentlet.getStringProperty("wfExpireTime");
-
-        contentPushPublishDate = UtilMethods.isSet(contentPushPublishDate)?contentPushPublishDate:"N/D";
-        contentPushPublishTime = UtilMethods.isSet(contentPushPublishTime)?contentPushPublishTime:"N/D";
-        contentPushExpireDate = UtilMethods.isSet(contentPushExpireDate)?contentPushExpireDate:"N/D";
-        contentPushExpireTime = UtilMethods.isSet(contentPushExpireTime)?contentPushExpireTime:"N/D";
+        final String contentPushPublishDate = UtilMethods.get(contentlet.getStringProperty("wfPublishDate"), ND_SUPPLIER);
+        final String contentPushExpireDate  = UtilMethods.get(contentlet.getStringProperty("wfExpireDate"),  ND_SUPPLIER);
 
         ActivityLogger.logInfo(getClass(), "Locking Content", "StartDate: " +contentPushPublishDate+ "; "
                 + "EndDate: " +contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown")
                 + "; ContentIdentifier: " + (contentlet != null ? contentlet.getIdentifier() : "Unknown"), contentlet.getHost());
 
-
         try {
 
-            if(contentlet.getInode().equals(""))
+            if(StringPool.BLANK.equals(contentlet.getInode())) {
+
                 throw new DotContentletStateException(CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT);
-            if(!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)){
+            }
+
+            if(!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
+
                 throw new DotSecurityException("User cannot edit Contentlet");
             }
 
@@ -2392,8 +2325,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             // persists the webasset
             APILocator.getVersionableAPI().setLocked(contentlet, true, user);
-            indexAPI.addContentToIndex(contentlet,false);
-
+            ThreadContextUtil.ifReindex(()-> indexAPI.addContentToIndex(contentlet, false));
         } catch(DotDataException | DotStateException| DotSecurityException e) {
             ActivityLogger.logInfo(getClass(), "Error Locking Content", "StartDate: " +contentPushPublishDate+ "; "
                     + "EndDate: " +contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown")
@@ -2520,41 +2452,36 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @Override
     public void unpublish(Contentlet contentlet, User user,boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException {
 
-        if(contentlet.getInode().equals("")) {
+        if(StringPool.BLANK.equals(contentlet.getInode())) {
+
             throw new DotContentletStateException(CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT);
         }
 
         if(!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_PUBLISH, user, respectFrontendRoles)) {
+
             throw new DotSecurityException("User: " + (user != null ? user.getUserId() : "Unknown") + " cannot unpublish Contentlet");
         }
 
-        unpublish(contentlet, user, -1);
+        unpublish(contentlet, user, ThreadContextUtil.isReindex()?-1:0);
     }
 
 
-    private void unpublish(final Contentlet contentlet, final User user, int reindex) throws DotDataException,DotSecurityException, DotContentletStateException {
+    private void unpublish(final Contentlet contentlet, final User user, final int reindex) throws DotDataException,DotSecurityException, DotContentletStateException {
 
         if(contentlet == null || !UtilMethods.isSet(contentlet.getInode())) {
 
             throw new DotContentletStateException(CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT);
         }
 
-        String contentPushPublishDate = contentlet.getStringProperty("wfPublishDate");
-        String contentPushPublishTime = contentlet.getStringProperty("wfPublishTime");
-        String contentPushExpireDate = contentlet.getStringProperty("wfExpireDate");
-        String contentPushExpireTime = contentlet.getStringProperty("wfExpireTime");
-
-        contentPushPublishDate = UtilMethods.isSet(contentPushPublishDate)?contentPushPublishDate:"N/D";
-        contentPushPublishTime = UtilMethods.isSet(contentPushPublishTime)?contentPushPublishTime:"N/D";
-        contentPushExpireDate = UtilMethods.isSet(contentPushExpireDate)?contentPushExpireDate:"N/D";
-        contentPushExpireTime = UtilMethods.isSet(contentPushExpireTime)?contentPushExpireTime:"N/D";
-
+        final String contentPushPublishDate = UtilMethods.get(contentlet.getStringProperty("wfPublishDate"), ND_SUPPLIER);
+        final String contentPushExpireDate  = UtilMethods.get(contentlet.getStringProperty("wfExpireDate"),  ND_SUPPLIER);
 
         ActivityLogger.logInfo(getClass(), "Unpublishing Content", "StartDate: " +contentPushPublishDate+ "; "
                 + "EndDate: " +contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown")
                 + "; ContentIdentifier: " + (contentlet != null ? contentlet.getIdentifier() : "Unknown"), contentlet.getHost());
 
         try {
+
             canLock(contentlet, user);
 
             APILocator.getVersionableAPI().removeLive(contentlet);
@@ -2568,6 +2495,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             if (reindex == -1) {
                 indexAPI.addContentToIndex(contentlet);
             }
+
             indexAPI.removeContentFromLiveIndex(contentlet);
 
             if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
@@ -2633,16 +2561,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @Override
     public void unarchive(final Contentlet contentlet, final User user, final boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException {
 
-        String contentPushPublishDate = contentlet.getStringProperty("wfPublishDate");
-        String contentPushPublishTime = contentlet.getStringProperty("wfPublishTime");
-        String contentPushExpireDate = contentlet.getStringProperty("wfExpireDate");
-        String contentPushExpireTime = contentlet.getStringProperty("wfExpireTime");
-
-        contentPushPublishDate = UtilMethods.isSet(contentPushPublishDate)?contentPushPublishDate:"N/D";
-        contentPushPublishTime = UtilMethods.isSet(contentPushPublishTime)?contentPushPublishTime:"N/D";
-        contentPushExpireDate = UtilMethods.isSet(contentPushExpireDate)?contentPushExpireDate:"N/D";
-        contentPushExpireTime = UtilMethods.isSet(contentPushExpireTime)?contentPushExpireTime:"N/D";
-
+        final String contentPushPublishDate = UtilMethods.get(contentlet.getStringProperty("wfPublishDate"), ND_SUPPLIER);
+        final String contentPushExpireDate  = UtilMethods.get(contentlet.getStringProperty("wfExpireDate"),  ND_SUPPLIER);
 
         ActivityLogger.logInfo(getClass(), "Unarchiving Content", "StartDate: " +contentPushPublishDate+ "; "
                 + "EndDate: " +contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown")
@@ -2650,11 +2570,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         try {
 
-            if(contentlet.getInode().equals(""))
+            if(StringPool.BLANK.equals(contentlet.getInode())) {
+
                 throw new DotContentletStateException(CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT);
-            if(!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_PUBLISH, user, respectFrontendRoles)){
+            }
+
+            if(!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_PUBLISH, user, respectFrontendRoles)) {
+
                 throw new DotSecurityException("User: " + (user != null ? user.getUserId() : "Unknown") + " cannot unpublish Contentlet");
             }
+
             Contentlet workingContentlet = findContentletByIdentifier(contentlet.getIdentifier(), false, contentlet.getLanguageId(), user, respectFrontendRoles);
             Contentlet liveContentlet = null;
             canLock(contentlet, user);
@@ -2663,8 +2588,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }catch (DotContentletStateException ce) {
                 Logger.debug(this,"No live contentlet found for identifier = " + contentlet.getIdentifier());
             }
-            if(liveContentlet != null && liveContentlet.getInode().equalsIgnoreCase(workingContentlet.getInode()) && !workingContentlet.isArchived())
+            if(liveContentlet != null && liveContentlet.getInode().equalsIgnoreCase(workingContentlet.getInode()) && !workingContentlet.isArchived()) {
                 throw new DotContentletStateException("Contentlet is unarchivable");
+            }
 
             APILocator.getVersionableAPI().setDeleted(workingContentlet, false);
 
@@ -3777,9 +3703,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             final boolean content_version_hard_link = Config
                                     .getBooleanProperty("CONTENT_VERSION_HARD_LINK", true);
                             FileUtil.copyFile(incomingFile, newFile, content_version_hard_link, validateEmptyFile);
-                            // add the incomingFile to a list of files that will be deleted
-                            // after we iterate over all the fields.
-                            fileListToDelete.add(incomingFile);
+
 
                             // delete old content metadata if exists
                             if(metadata!=null && metadata.exists()){
@@ -3978,7 +3902,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                 }
 
-                indexAPI.addContentToIndex(contentlet, false);
+                if (ThreadContextUtil.isReindex()) {
+                    indexAPI.addContentToIndex(contentlet, false);
+                }
             }
 
             if(contentlet != null && contentlet.isVanityUrl()){
@@ -4228,13 +4154,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @WrapInTransaction
     @Override
-    public Contentlet checkout(String contentletInode, User user,boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException {
+    public Contentlet checkout(final String contentletInode, final User user, final boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException {
         //return new version
-        Contentlet contentlet = find(contentletInode, user, respectFrontendRoles);
+        final Contentlet contentlet = find(contentletInode, user, respectFrontendRoles);
 
         canLock(contentlet, user);
         lock(contentlet, user, respectFrontendRoles);
-        Contentlet workingContentlet = new Contentlet();
+        final Contentlet workingContentlet = new Contentlet();
         Map<String, Object> cmap = contentlet.getMap();
         workingContentlet.setStructureInode(contentlet.getStructureInode());
         workingContentlet.setInode(contentletInode);
@@ -5246,25 +5172,21 @@ public class ESContentletAPIImpl implements ContentletAPI {
             if(field.isUnique()){
                 try{
                     StringBuilder buffy = new StringBuilder();
-
-                    buffy.append(" +(live:true working:true)");
                     buffy.append(" +structureInode:" + contentlet.getStructureInode());
-                    buffy.append(" +(working:true live:true)");
                     if(UtilMethods.isSet(contentlet.getIdentifier())){
                         buffy.append(" -(identifier:" + contentlet.getIdentifier() + ")");
                     }
 
                     buffy.append(" +languageId:" + contentlet.getLanguageId());
 
-                    buffy.append(" +" + contentlet.getContentType().variable() + "." + field
-                            .getVelocityVarName() + ESUtils.SHA_256 + ":");
-                    buffy.append(ESUtils.sha256(contentlet.getContentType().variable()
-                                    + "." + field.getVelocityVarName(),
-                            getFieldValue(contentlet, new LegacyFieldTransformer(field).from()),
-                            contentlet.getLanguageId()));
+                    buffy.append(" +" + contentlet.getContentType().variable() + StringPool.PERIOD + field
+                            .getVelocityVarName() + StringPool.COLON);
+                    buffy.append(getFieldValue(contentlet, new LegacyFieldTransformer(field).from()));
+
                     List<ContentletSearch> contentlets = new ArrayList<ContentletSearch>();
                     try {
-                        contentlets = searchIndex(buffy.toString(), -1, 0, "inode", APILocator.getUserAPI().getSystemUser(), false);
+                        contentlets.addAll(searchIndex(buffy.toString() + " +working:true", -1, 0, "inode", APILocator.getUserAPI().getSystemUser(), false));
+                        contentlets.addAll(searchIndex(buffy.toString() + " +live:true", -1, 0, "inode", APILocator.getUserAPI().getSystemUser(), false));
                     } catch (Exception e) {
                     	final String errorMsg = "Unique field [" + field.getVelocityVarName() + "] could not be validated: " + e.getMessage();
                         Logger.warn(this, errorMsg, e);

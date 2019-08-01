@@ -1,12 +1,11 @@
 package com.dotmarketing.business;
 
-import com.dotcms.system.AppContext;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.system.AppContext;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
-import jnr.ffi.Runtime;
 
 /**
  * Default implementation of {@link LoginAsAPI}

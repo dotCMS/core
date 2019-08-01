@@ -8,19 +8,26 @@ import static org.junit.Assert.fail;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.model.User;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
@@ -211,6 +218,73 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
         }
 
         return maxScore;
+    }
+
+    /**
+     * Tests that after removing a particular version of a content, previously assigned permissions
+     * are maintained.
+     */
+
+    @Test
+    public void testDeleteVersion_KeepPermissions() throws DotSecurityException, DotDataException {
+        final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+        final User systemUser  = APILocator.systemUser();
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        Contentlet firstVersion;
+        Contentlet secondVersion = null;
+        Role reviewerRole;
+        try {
+            // create test contentlet
+            firstVersion = TestDataUtils.getBlogContent(true, 1);
+
+            final String contentletIdentifier = firstVersion.getIdentifier();
+
+            // create reviewer role
+            reviewerRole = TestUserUtils.getOrCreateReviewerRole();
+
+            // asign publish permissions on contentlet for reviewer role
+            List<Permission> newSetOfPermissions = new ArrayList<>();
+
+            newSetOfPermissions.add(
+                    new Permission(contentletIdentifier, reviewerRole.getId(),
+                            3, true));
+
+
+            permissionAPI.assignPermissions(newSetOfPermissions, firstVersion, systemUser,
+                            false);
+
+            // create new version of contentlet
+            secondVersion = contentletAPI.checkout(firstVersion.getInode(),
+                            APILocator.systemUser(), false);
+
+            secondVersion = contentletAPI.checkin(secondVersion, systemUser,
+                    false );
+
+            contentletAPI.publish(secondVersion, systemUser, false);
+
+            // delete old version of contentlet
+            contentletAPI.deleteVersion(firstVersion,
+                    APILocator.systemUser(), false);
+
+
+            // verify peremissions are ok
+            final String reviewerRoleId = reviewerRole.getId();
+            List<Permission> permissions = permissionAPI.getPermissionsByRole(reviewerRole, false);
+            final boolean doesPermissionStillExist = permissions.stream()
+                    .anyMatch(permission -> permission.getInode().equals(
+                            contentletIdentifier) && permission.getRoleId()
+                            .equals(reviewerRoleId));
+
+            assertTrue(doesPermissionStillExist);
+
+
+        } finally {
+            // clean up
+            if(secondVersion!=null) {
+                APILocator.getContentTypeAPI(APILocator.systemUser())
+                        .delete(secondVersion.getContentType());
+            }
+        }
     }
 
 }

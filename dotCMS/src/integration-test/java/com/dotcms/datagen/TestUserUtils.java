@@ -1,6 +1,8 @@
 package com.dotcms.datagen;
 
 import static com.dotmarketing.business.Role.ADMINISTRATOR;
+import static com.dotmarketing.business.Role.DOTCMS_BACK_END_USER;
+import static com.dotmarketing.business.Role.DOTCMS_FRONT_END_USER;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
@@ -288,6 +290,14 @@ public class TestUserUtils {
             adminRole = new RoleDataGen().key(ADMINISTRATOR).nextPersisted();
         }
         return adminRole;
+    }
+
+    public static Role getBackendRole() throws DotDataException {
+         return APILocator.getRoleAPI().loadRoleByKey(DOTCMS_BACK_END_USER);
+    }
+
+    public static Role getFrontendRole() throws DotDataException {
+        return APILocator.getRoleAPI().loadRoleByKey(DOTCMS_FRONT_END_USER);
     }
 
 }

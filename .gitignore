@@ -6,6 +6,7 @@ bin/*.sh
 .settings/*
 .project
 .idea/
+.vscode
 *.iml
 *.ipr
 *.iws
@@ -65,3 +66,10 @@ dotCMS/src/main/webapp/html/plugins/
 # immutables.github.io generated folder#
 ###############################
 dotCMS/src/main/generated/
+
+# integration tests reports and logs
+###############################
+docker/tests/integration/logs
+docker/tests/integration/reports
+docker/tests/integration/license
+docker/tests/integration/backup

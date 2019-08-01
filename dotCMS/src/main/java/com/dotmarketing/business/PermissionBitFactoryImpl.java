@@ -2396,7 +2396,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 
 		StringBuilder query = new StringBuilder();
-		query.append("select {permission.*} from permission ");
+		query.append("select distinct {permission.*} from permission ");
 		if(onlyFoldersAndHosts) {
 		    query.append("  join contentlet on (contentlet.identifier=permission.inode_id and structure_inode=?) ")
 		         .append("  where permission.roleid =? ")
