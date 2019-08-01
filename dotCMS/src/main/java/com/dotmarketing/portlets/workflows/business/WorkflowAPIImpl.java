@@ -3385,6 +3385,10 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	public SystemActionWorkflowActionMapping mapSystemActionToWorkflowActionForWorkflowScheme (final SystemAction systemAction, final WorkflowAction workflowAction,
 														   final WorkflowScheme workflowScheme) throws DotDataException {
 
+		DotPreconditions.checkArgument(null != systemAction, "System Action can not be null");
+		DotPreconditions.checkArgument(null != workflowScheme, "Workflow Scheme can not be null");
+		DotPreconditions.checkArgument(null != workflowAction, "Workflow Action can not be null");
+		DotPreconditions.checkArgument(workflowAction.getSchemeId().equals(workflowScheme.getId()), "The Workflow Action has to belong the workflow Scheme");
 		final SystemActionWorkflowActionMapping mapping =
 				new SystemActionWorkflowActionMapping(UUIDGenerator.generateUuid(),
 						systemAction, workflowAction, workflowScheme);
