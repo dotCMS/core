@@ -32,7 +32,7 @@ echo "
 felix.felix.undeployed.dir=$felixFolder/undeploy
 " >> $resourcesFolder/it-dotmarketing-config.properties
 echo "
-dotcms.concurrent.locks.disable=true
+dotcms.concurrent.locks.disable=false
 " >> $resourcesFolder/it-dotmarketing-config.properties
 
 ## ------------------

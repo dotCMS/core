@@ -42,9 +42,9 @@ public class TestInitialContext extends InitialContext {
         properties.setPassword(prop.getProperty(dbType + "db.password"));
         properties.setMaxActive(Integer.parseInt(prop.getProperty(dbType + "db.max.total")));
         properties.setMaxIdle(Integer.parseInt(prop.getProperty(dbType + "db.max.idle")));
-        properties.setMaxWait(120000);
+        properties.setMaxWait(60000);
         properties.setRemoveAbandoned(true);
-        properties.setRemoveAbandonedTimeout(60);
+        properties.setRemoveAbandonedTimeout(10);
         properties.setLogAbandoned(true);
         properties
                 .setJdbcInterceptors("org.apache.tomcat.jdbc.pool.interceptor.ResetAbandonedTimer");
@@ -52,7 +52,7 @@ public class TestInitialContext extends InitialContext {
         properties.setValidationQuery(prop.getProperty(dbType + "db.validation.query"));
         properties.setTestOnBorrow(Boolean.TRUE);
         properties.setTestWhileIdle(Boolean.TRUE);
-        properties.setAbandonWhenPercentageFull(70);
+        properties.setAbandonWhenPercentageFull(50);
         properties.setDefaultTransactionIsolation(
                 Integer.parseInt(prop.getProperty(dbType + "db.default.transaction.isolation")));
 
