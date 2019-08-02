@@ -3,6 +3,10 @@
 # fists we need to do some clean up
 rm -rf /custom/output/*
 
+mkdir -p /custom/output/logs
+mkdir -p /custom/output/reports/html
+mkdir -p /custom/output/reports/xml
+
 if [[ "${1}" == "dotcms" || -z "${1}" ]]; then
 
     # Validating we have a license file
@@ -58,11 +62,11 @@ if [[ "${1}" == "dotcms" || -z "${1}" ]]; then
 
     echo "----"
     echo "----"
-    echo "Copying gradle report to [/custom/output/reports/]"
+    echo "Copying gradle reports to [/custom/output/reports/]"
 
     # Copying gradle report
     cp -R /build/src/core/dotCMS/build/reports/tests/integrationTest/ /custom/output/reports/html/
-    cp -R /build/src/core/dotCMS/build/reports/tests-results/integrationTest/ /custom/output/reports/xml/
+    cp -R /build/src/core/dotCMS/build/test-results/integrationTest/ /custom/output/reports/xml/
 
     if [ ${gradlewReturnCode} == 0 ]
     then

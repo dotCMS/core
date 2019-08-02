@@ -12,10 +12,7 @@ RUN mkdir -p /custom \
     && mkdir -p /custom/dotsecure \
     && mkdir -p /custom/esdata \
     && mkdir -p /custom/felix \
-    && mkdir -p /custom/output \
-    && mkdir -p /custom/output/logs \
-    && mkdir -p /custom/output/reports/html \
-    && mkdir -p /custom/output/reports/xml
+    && mkdir -p /custom/output
 
 #  One of ["COMMIT", "TAG" ]
 ARG BUILD_FROM=COMMIT
@@ -53,10 +50,6 @@ COPY setup/ROOT/ /build/src/core/dotCMS/src/
 
 VOLUME /db
 VOLUME /custom/output
-
-## Ports
-# Java Debugging - must be configured via CMS_JAVA_OPTS
-#EXPOSE 8000
 
 COPY setup/build-src/entrypoint.sh /build/entrypoint.sh
 RUN chmod 500 /build/entrypoint.sh
