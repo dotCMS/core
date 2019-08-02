@@ -24,11 +24,8 @@ services:
       - "15005:5005"
     volumes:
       - type: bind
-        source: ./reports
-        target: /custom/reports
-      - type: bind
-        source: ./logs
-        target: /custom/logs
+        source: ./output
+        target: /custom/output
 #      - type: bind
 #        source: ./license/license.dat
 #        target: /custom/dotsecure/license/license.dat

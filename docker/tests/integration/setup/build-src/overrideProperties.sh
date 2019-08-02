@@ -3,7 +3,7 @@
 assetsFolder="/custom/assets"
 dotsecureFolder="/custom/dotsecure"
 esdataFolder="/custom/esdata"
-logsFolder="/custom/logs"
+logsFolder="/custom/output/logs"
 felixFolder="/custom/felix"
 dotCMSFolder="/build/src/core/dotCMS"
 resourcesFolder="$dotCMSFolder/src/integration-test/resources"

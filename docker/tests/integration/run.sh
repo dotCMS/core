@@ -71,8 +71,7 @@ fi
 echo ""
 
 # Creating required folders
-mkdir -p logs
-mkdir -p reports
+mkdir -p output
 
 if [ "$buildImage" = true ]; then
 

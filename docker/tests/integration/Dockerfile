@@ -12,8 +12,10 @@ RUN mkdir -p /custom \
     && mkdir -p /custom/dotsecure \
     && mkdir -p /custom/esdata \
     && mkdir -p /custom/felix \
-    && mkdir -p /custom/logs \
-    && mkdir -p /custom/reports
+    && mkdir -p /custom/output \
+    && mkdir -p /custom/output/logs \
+    && mkdir -p /custom/output/reports/html \
+    && mkdir -p /custom/output/reports/xml
 
 #  One of ["COMMIT", "TAG" ]
 ARG BUILD_FROM=COMMIT
@@ -50,8 +52,7 @@ COPY setup/ROOT/ /build/src/core/dotCMS/src/
 # ===========================================
 
 VOLUME /db
-VOLUME /custom/reports
-VOLUME /custom/logs
+VOLUME /custom/output
 
 ## Ports
 # Java Debugging - must be configured via CMS_JAVA_OPTS
