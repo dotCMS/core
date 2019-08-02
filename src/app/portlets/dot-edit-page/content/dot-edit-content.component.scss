@@ -23,6 +23,11 @@ dot-whats-changed,
     display: flex;
     justify-content: space-between;
     padding: $basic-padding * 2;
+
+    & > div {
+        display: flex;
+        align-items: center;
+    }
 }
 
 .dot-edit__page-wrapper {

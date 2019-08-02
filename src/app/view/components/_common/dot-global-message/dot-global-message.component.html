@@ -1,2 +1,5 @@
-<span class="dot-global-message__icon {{ message.type }}"></span>
+<dot-spinner  [size]="'18px'" [borderSize]="'3px'" *ngIf="this.message.type === 'loading' else iconTemplate"></dot-spinner>
+<ng-template #iconTemplate>
+    <dot-icon  name="{{ message.type }}"></dot-icon>
+</ng-template>
 <span class="dot-global-message__text">{{ message.value }}</span>

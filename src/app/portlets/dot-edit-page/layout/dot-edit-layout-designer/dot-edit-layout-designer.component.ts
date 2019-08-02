@@ -177,7 +177,7 @@ export class DotEditLayoutDesignerComponent implements OnInit, OnDestroy {
             .pipe(take(1))
             .subscribe(
                 (updatedPage: DotRenderedPage) => {
-                    this.dotGlobalMessageService.display(
+                    this.dotGlobalMessageService.success(
                         this.dotMessageService.get('dot.common.message.saved')
                     );
                     this.setupLayout(

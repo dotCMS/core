@@ -53,7 +53,7 @@ export class DotEditLayoutAdvancedComponent implements OnInit {
             (event: CustomEvent) => {
                 this.ngZone.run(() => {
                     if (event.detail.name === 'advanced-template-saved') {
-                        this.dotGlobalMessageService.display(
+                        this.dotGlobalMessageService.success(
                             this.dotMessageService.get('dot.common.message.saved')
                         );
 

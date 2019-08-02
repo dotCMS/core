@@ -1,24 +1,47 @@
 @import "primeng-theme/utils/theme-variables";
 
 :host {
-    display: flex;
     opacity: 0;
     transition: $basic-speed * 2;
     border-right: solid 1px $gray-bg;
-    padding-right: $basic-padding * 2;
+    padding-right: $basic-padding * 3;
+    display: flex;
+
+    dot-icon,
+    dot-spinner {
+        margin-right: $basic-padding;
+        align-self: center;
+    }
+
+    &.loading {
+        .dot-global-message__text {
+            color: $brand-primary;
+        }
+    }
+
+    &.check_circle {
+        dot-icon {
+            color: $success;
+        }
+    }
+
+    &.warning {
+        dot-icon {
+            color: $warn;
+        }
+    }
+
+    &.error {
+        dot-icon {
+            color: $error;
+        }
+    }
 }
 
 :host(.dot-global-message--visible) {
     opacity: 1;
 }
 
-.dot-global-message__icon {
-    margin: 0 $basic-padding / 2;
-    font-size: 19px;
-}
-
 .dot-global-message__text {
-    line-height: 19px;
-    vertical-align: top;
     color: $gray;
 }

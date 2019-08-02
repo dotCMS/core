@@ -16,12 +16,19 @@ import { DotEvent } from '@models/dot-event/dot-event';
     styleUrls: ['./dot-global-message.component.scss']
 })
 export class DotGlobalMessageComponent implements OnInit {
-    @HostBinding('class.dot-global-message--visible')
-    visibility = false;
+    @HostBinding('class')
+    get classes(): string {
+        return `${this.visibility ? 'dot-global-message--visible' : ''} ${this.message.type}`;
+    }
+
     message: DotGlobalMessage = { value: '' };
 
+    private visibility = false;
     private icons = {
-        loading: 'fa fa-spinner fa-spin'
+        loading: 'loading',
+        success: 'check_circle',
+        error: 'error',
+        warning: 'warning'
     };
 
     constructor(private dotEventsService: DotEventsService) {}
@@ -29,7 +36,7 @@ export class DotGlobalMessageComponent implements OnInit {
     ngOnInit() {
         this.dotEventsService
             .listen('dot-global-message')
-            .pipe(filter((event) => !!event.data))
+            .pipe(filter((event: DotEvent) => !!event.data))
             .subscribe((event: DotEvent) => {
                 this.message = event.data;
                 this.visibility = true;

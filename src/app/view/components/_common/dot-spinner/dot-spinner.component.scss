@@ -1,0 +1,40 @@
+@import "variables";
+
+$size: $field-height;
+$border-size: $size / 5;
+
+div {
+    border-radius: 50%;
+    width: $size;
+    height: $size;
+    display: inline-block;
+    vertical-align: middle;
+    font-size: 10px;
+    position: relative;
+    text-indent: -9999em;
+    border: $border-size solid rgba($brand-primary_rgb, 0.2);
+    border-left-color: $brand-primary;
+    transform: translateZ(0);
+    animation: load8 1.1s infinite linear;
+    overflow: hidden;
+}
+@-webkit-keyframes load8 {
+    0% {
+        -webkit-transform: rotate(0deg);
+        transform: rotate(0deg);
+    }
+    100% {
+        -webkit-transform: rotate(360deg);
+        transform: rotate(360deg);
+    }
+}
+@keyframes load8 {
+    0% {
+        -webkit-transform: rotate(0deg);
+        transform: rotate(0deg);
+    }
+    100% {
+        -webkit-transform: rotate(360deg);
+        transform: rotate(360deg);
+    }
+}

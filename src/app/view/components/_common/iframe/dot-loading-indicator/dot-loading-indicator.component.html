@@ -1,5 +1,5 @@
-<div class="loader" *ngIf="!fullscreen && dotLoadingIndicatorService.display">Loading...</div>
+<dot-spinner *ngIf="!fullscreen && dotLoadingIndicatorService.display" ></dot-spinner>
 
 <div class="loader__overlay" *ngIf="fullscreen && dotLoadingIndicatorService.display">
-    <div class="loader">Loading...</div>
+    <dot-spinner></dot-spinner>
 </div>

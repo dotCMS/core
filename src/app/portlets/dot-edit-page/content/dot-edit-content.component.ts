@@ -233,7 +233,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
                     .save(this.pageState.page.identifier, model)
                     .pipe(take(1))
                     .subscribe(() => {
-                        this.dotGlobalMessageService.display(
+                        this.dotGlobalMessageService.success(
                             this.dotMessageService.get('dot.common.message.saved')
                         );
                         this.reload();
@@ -271,7 +271,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
             .save(this.pageState.page.identifier, event.model)
             .pipe(take(1))
             .subscribe(() => {
-                this.dotGlobalMessageService.display(
+                this.dotGlobalMessageService.success(
                     this.dotMessageService.get('dot.common.message.saved')
                 );
                 if (event.type !== PageModelChangeEventType.MOVE_CONTENT && this.pageState.page.remoteRendered) {

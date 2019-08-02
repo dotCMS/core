@@ -49,11 +49,6 @@ class MockSiteSelectorComponent {
     system = true;
 }
 
-@Component({
-    selector: 'dot-global-message',
-    template: ''
-})
-class MockGlobalMessageComponent {}
 
 @Component({
     selector: 'dot-toolbar-notifications',
@@ -94,7 +89,6 @@ describe('DotToolbarComponent', () => {
             declarations: [
                 DotToolbarComponent,
                 MockSiteSelectorComponent,
-                MockGlobalMessageComponent,
                 MockToolbarNotificationsComponent,
                 MockToolbarUsersComponent,
                 MockToolbarAddContentletComponent,

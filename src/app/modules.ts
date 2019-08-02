@@ -33,7 +33,6 @@ import {
 import { DotIconModule } from './view/components/_common/dot-icon/dot-icon.module';
 import { DotIconButtonModule } from './view/components/_common/dot-icon-button/dot-icon-button.module';
 import { DotTextareaContentModule } from './view/components/_common/dot-textarea-content/dot-textarea-content.module';
-import { DotGlobalMessageModule } from './view/components/_common/dot-global-message/dot-global-message.module';
 import { DotContentletEditorModule } from './view/components/dot-contentlet-editor/dot-contentlet-editor.module';
 import { DotWorkflowTaskDetailModule } from './view/components/dot-workflow-task-detail/dot-workflow-task-detail.module';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
@@ -45,7 +44,6 @@ export const CUSTOM_MODULES = [
     DotActionButtonModule,
     DotContentletEditorModule,
     DotDialogModule,
-    DotGlobalMessageModule,
     DotIconButtonModule,
     DotIconModule,
     DotTextareaContentModule,

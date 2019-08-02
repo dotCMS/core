@@ -10,6 +10,7 @@
 <div class="dot-edit__page-actions">
     <dot-edit-page-info [pageState]="pageState"></dot-edit-page-info>
     <div>
+        <dot-global-message></dot-global-message>
         <button pButton secondary tiny type="button" class="edit-page-toolbar__cancel" [label]="messagesKey['dot.common.cancel']" (click)="onCancelToolbar()"></button>
         <dot-edit-page-workflows-actions [page]="pageState.page" (fired)="reload()"></dot-edit-page-workflows-actions>
     </div>

@@ -9,6 +9,8 @@ import { DotEventsService } from '@services/dot-events/dot-events.service';
  */
 @Injectable()
 export class DotGlobalMessageService {
+    private messageLife = 3000;
+
     constructor(
         public dotMessageService: DotMessageService,
         private dotEventsService: DotEventsService
@@ -29,7 +31,7 @@ export class DotGlobalMessageService {
     display(message?: string): void {
         this.dotEventsService.notify('dot-global-message', {
             value: message ? message : this.dotMessageService.get('dot.common.message.loaded'),
-            life: 3000
+            life: this.messageLife
         });
     }
 
@@ -45,6 +47,18 @@ export class DotGlobalMessageService {
     }
 
     /**
+     * Display text messages with success configuration.
+     * @param string message
+     */
+    success(message?: string): void {
+        this.dotEventsService.notify('dot-global-message', {
+            value: message ? message : this.dotMessageService.get('dot.common.message.saved'),
+            type: 'success',
+            life: this.messageLife
+        });
+    }
+
+    /**
      * Display text messages with error configuration.
      * @param string message
      */
@@ -52,7 +66,8 @@ export class DotGlobalMessageService {
         // TODO: Define the behaior of error messages.
         this.dotEventsService.notify('dot-global-message', {
             value: message ? message : this.dotMessageService.get('dot.common.message.error'),
-            life: 3000
+            type: 'error',
+            life: this.messageLife
         });
     }
 }

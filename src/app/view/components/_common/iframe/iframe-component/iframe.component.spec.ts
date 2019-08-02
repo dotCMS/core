@@ -1,9 +1,8 @@
 import { RouterTestingModule } from '@angular/router/testing';
 import { IframeOverlayService } from './../service/iframe-overlay.service';
 import { DotLoadingIndicatorService } from './../dot-loading-indicator/dot-loading-indicator.service';
-import { DotLoadingIndicatorComponent } from './../dot-loading-indicator/dot-loading-indicator.component';
 import { ComponentFixture, async } from '@angular/core/testing';
-import { DebugElement } from '@angular/core';
+import {Component, DebugElement} from '@angular/core';
 import { By } from '@angular/platform-browser';
 
 import { SafePipe } from './../../../../pipes/safe-url.pipe';
@@ -13,6 +12,12 @@ import { LoginService } from 'dotcms-js';
 import { LoginServiceMock } from '../../../../../test/login-service.mock';
 import { DotIframeService } from '../service/dot-iframe/dot-iframe.service';
 import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
+
+@Component({
+    selector: 'dot-loading-indicator',
+    template: ''
+})
+class MockDotLoadingIndicatorComponent {}
 
 describe('IframeComponent', () => {
     let comp: IframeComponent;
@@ -25,7 +30,7 @@ describe('IframeComponent', () => {
 
     beforeEach(async(() => {
         DOTTestBed.configureTestingModule({
-            declarations: [IframeComponent, DotLoadingIndicatorComponent, SafePipe],
+            declarations: [IframeComponent, MockDotLoadingIndicatorComponent, SafePipe],
             imports: [RouterTestingModule],
             providers: [
                 DotLoadingIndicatorService,

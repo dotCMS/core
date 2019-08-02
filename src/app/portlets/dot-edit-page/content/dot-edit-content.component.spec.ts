@@ -60,6 +60,12 @@ export const mockDotPageState: DotPageState = {
 };
 
 @Component({
+    selector: 'dot-global-message',
+    template: ''
+})
+class MockGlobalMessageComponent {}
+
+@Component({
     selector: 'dot-test',
     template: '<dot-edit-content></dot-edit-content>'
 })
@@ -135,7 +141,8 @@ describe('DotEditContentComponent', () => {
                 DotEditContentComponent,
                 MockDotWhatsChangedComponent,
                 MockDotFormSelectorComponent,
-                HostTestComponent
+                HostTestComponent,
+                MockGlobalMessageComponent
             ],
             imports: [
                 BrowserAnimationsModule,

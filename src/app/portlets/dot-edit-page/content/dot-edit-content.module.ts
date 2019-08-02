@@ -22,6 +22,7 @@ import { DotFormSelectorModule } from './components/dot-form-selector/dot-form-s
 import { DotContentletEditorModule } from '@components/dot-contentlet-editor/dot-contentlet-editor.module';
 import { DotEditPageInfoModule } from '../components/dot-edit-page-info/dot-edit-page-info.module';
 import { DotEditPageWorkflowsActionsModule } from './components/dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.module';
+import { DotGlobalMessageModule } from '@components/_common/dot-global-message/dot-global-message.module';
 
 const routes: Routes = [
     {
@@ -46,7 +47,8 @@ const routes: Routes = [
         DotContentletEditorModule,
         DotEditPageInfoModule,
         DotEditPageToolbarModule,
-        DotLoadingIndicatorModule
+        DotLoadingIndicatorModule,
+        DotGlobalMessageModule
     ],
     exports: [DotEditContentComponent],
     providers: [
