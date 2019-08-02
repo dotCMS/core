@@ -94,6 +94,10 @@ import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants;
+import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
@@ -160,16 +164,88 @@ import org.junit.runner.RunWith;
 @RunWith(DataProviderRunner.class)
 public class ContentletAPITest extends ContentletBaseTest {
 
-    /**
-     * Testing {@link ContentletAPI#findAllContent(int, int)}
-     *
-     * @throws com.dotmarketing.exception.DotDataException
-     *
-     * @throws com.dotmarketing.exception.DotSecurityException
-     *
-     * @see ContentletAPI
-     * @see Contentlet
-     */
+    @Test
+    public void testDefaultActions () throws DotDataException, DotSecurityException {
+
+
+
+        final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
+        Contentlet contentletToDestroy = null;
+        ContentType type = null;
+
+        try {
+
+            //1) create a content type
+            final String velocityContentTypeName = "DefaultActionContentType";
+            type = contentTypeAPI.save(
+                    ContentTypeBuilder.builder(BaseContentType.CONTENT.immutableClass())
+                            .expireDateVar(null).folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
+                            .name("DefaultActionContentType").owner(APILocator.systemUser().toString())
+                            .variable(velocityContentTypeName).build());
+
+            final List<com.dotcms.contenttype.model.field.Field> fields = new ArrayList<>(type.fields());
+
+            fields.add(FieldBuilder.builder(TextField.class).name("title").variable("title")
+                    .contentTypeId(type.id()).dataType(DataTypes.TEXT).indexed(true).build());
+            fields.add(FieldBuilder.builder(TextField.class).name("txt").variable("txt")
+                    .contentTypeId(type.id()).dataType(DataTypes.TEXT).indexed(true).build());
+
+            contentTypeAPI.save(type, fields);
+
+            //2) associated system workflow to the scheme
+            final WorkflowAction saveWorkflowAction = workflowAPI.findAction(SystemWorkflowConstants.WORKFLOW_SAVE_ACTION_ID, APILocator.systemUser());
+            workflowAPI.mapSystemActionToWorkflowActionForContentType(WorkflowAPI.SystemAction.NEW, saveWorkflowAction, type);
+
+            //3) map the save content to the new
+            final Contentlet contentlet = new Contentlet();
+            final User user = APILocator.systemUser();
+            contentlet.setContentTypeId(type.id());
+            contentlet.setOwner(APILocator.systemUser().toString());
+            contentlet.setModDate(new Date());
+            contentlet.setLanguageId(1);
+            contentlet.setStringProperty("title", "Test Save");
+            contentlet.setStringProperty("txt", "Test Save Text");
+            contentlet.setHost(Host.SYSTEM_HOST);
+            contentlet.setFolder(FolderAPI.SYSTEM_FOLDER);
+            contentlet.setIndexPolicy(IndexPolicy.FORCE);
+
+            // save
+            final Contentlet contentlet1 = contentletAPI.checkin(contentlet, user, false);
+            contentletToDestroy = contentlet1;
+
+            //4) check the contentlet is on the step unpublish
+            final WorkflowStep unpublishStep = workflowAPI.findStepByContentlet(contentlet1);
+            Assert.assertTrue (SystemWorkflowConstants.WORKFLOW_UNPUBLISHED_STEP_ID.equals(unpublishStep.getId()));
+        } finally {
+
+            if (null != contentletToDestroy) {
+                try {
+                    this.contentletAPI.destroy(contentletToDestroy, user, false);
+                } catch (Exception e) {
+                    // quiet
+                }
+            }
+
+            if (null != type) {
+                try {
+                    contentTypeAPI.delete(type);
+                } catch (Exception e) {
+                    // quiet
+                }
+            }
+        }
+    }
+
+        /**
+         * Testing {@link ContentletAPI#findAllContent(int, int)}
+         *
+         * @throws com.dotmarketing.exception.DotDataException
+         *
+         * @throws com.dotmarketing.exception.DotSecurityException
+         *
+         * @see ContentletAPI
+         * @see Contentlet
+         */
     @Ignore ( "Not Ready to Run." )
     @Test
     public void findAllContent () throws DotDataException, DotSecurityException {
