@@ -1256,19 +1256,22 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 		if (null == results) {
 
-			final DotConnect dotConnect = new DotConnect()
-					.setSQL(String.format(sql.SELECT_SYSTEM_ACTION_BY_SYSTEM_ACTION_AND_SCHEMES, this.createQueryIn(schemes)))
-					.addParam(systemAction.name());
+			if (UtilMethods.isSet(schemes)) {
 
-			for (final WorkflowScheme scheme : schemes) {
+				final DotConnect dotConnect = new DotConnect()
+						.setSQL(String.format(sql.SELECT_SYSTEM_ACTION_BY_SYSTEM_ACTION_AND_SCHEMES, this.createQueryIn(schemes)))
+						.addParam(systemAction.name());
 
-				dotConnect.addParam(scheme.getId());
-			}
+				for (final WorkflowScheme scheme : schemes) {
 
-			results = dotConnect.loadObjectResults();
-			if (UtilMethods.isSet(results)) {
-				this.cache.addSystemActionsBySystemActionNameAndSchemeIds(
-						systemAction.name(), schemeIdList, results);
+					dotConnect.addParam(scheme.getId());
+				}
+
+				results = dotConnect.loadObjectResults();
+				if (UtilMethods.isSet(results)) {
+					this.cache.addSystemActionsBySystemActionNameAndSchemeIds(
+							systemAction.name(), schemeIdList, results);
+				}
 			}
 		}
 

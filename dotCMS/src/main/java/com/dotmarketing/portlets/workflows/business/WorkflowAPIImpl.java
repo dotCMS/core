@@ -3365,6 +3365,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		DotPreconditions.checkArgument(null != workflowAction, "Workflow Action can not be null");
 		DotPreconditions.checkArgument(!Host.HOST_VELOCITY_VAR_NAME.equals(contentType.variable()), "The Content Type can not be a Host");
 
+		Logger.info(this, "Mapping the systemAction: " + systemAction +
+				", workflowAction: " + workflowAction.getName() + " and contentType: " + contentType.variable());
+
 		final SystemActionWorkflowActionMapping mapping =
 				new SystemActionWorkflowActionMapping(UUIDGenerator.generateUuid(),
 						systemAction, workflowAction, contentType);
@@ -3527,6 +3530,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
         }
 
         final List<WorkflowScheme> schemes   = this.findSchemesForContentType(contentType);
+
         final List<Map<String, Object>> mappingRows =
                 this.workFlowFactory.findSystemActionsBySchemes(systemAction, schemes);
 
