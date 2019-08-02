@@ -69,11 +69,6 @@
 			<td><%= LanguageUtil.get(pageContext, "configuration_cluster_active_primary_shards") %></td>
 			<td align="right">{es.activePrimaryShards}</td>
 		</tr>
-		<tr>
-			<td></td>
-			<td><%= LanguageUtil.get(pageContext, "configuration_cluster_es_port") %></td>
-			<td align="right" nowrap>{es.port}</td>
-		</tr>
 	</table>
 	<table class="network-action__list">
 		<tr>
