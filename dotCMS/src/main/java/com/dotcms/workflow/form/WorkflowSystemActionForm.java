@@ -46,7 +46,7 @@ public class WorkflowSystemActionForm extends Validated {
     }
 
     public WorkflowSystemActionForm(final Builder builder) {
-
+        super();
         this.actionId = builder.actionId;
         this.schemeId = builder.schemeId;
         this.contentTypeVariable = builder.contentTypeVariable;

@@ -2,6 +2,7 @@ package com.dotcms.util;
 
 import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableList;
+import com.liferay.util.StringPool;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.formula.functions.T;
 import org.elasticsearch.common.collect.MapBuilder;
@@ -964,6 +965,11 @@ public class CollectionsUtils implements Serializable {
     }
 
     public static String join (final String separator, final String firstString, final List<String> list) {
+
+	    if (null == separator || null == firstString || null == list) {
+
+	        return StringPool.BLANK;
+        }
 
 	    final List<String> listJoin = new ArrayList<>(list.size()+1);
 	    listJoin.add(firstString);

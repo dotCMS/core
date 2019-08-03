@@ -79,7 +79,7 @@ public class DotDatabaseMetaData {
         ForeignKey foundForeignKey = null;
         final List<ForeignKey> foreignKeys = this.getForeignKeys(connection, foreignKeyTableName);
 
-        for (ForeignKey foreignKey : foreignKeys) {
+        for (final ForeignKey foreignKey : foreignKeys) {
 
             if (primaryKeyTableName.equalsIgnoreCase(foreignKey.getPrimaryKeyTableName()) &&
                     foreignKeyTableName.equalsIgnoreCase(foreignKey.getForeignKeyTableName()) &&
