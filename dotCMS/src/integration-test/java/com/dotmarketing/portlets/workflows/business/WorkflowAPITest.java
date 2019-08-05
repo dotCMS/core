@@ -72,6 +72,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -561,6 +562,38 @@ public class WorkflowAPITest extends IntegrationTestBase {
 
     }
 
+    @Test(expected = DoesNotExistException.class)
+    public void findFirstStepForActionNonExistingTest () throws DotDataException {
+
+        final WorkflowAction workflowAction       = new WorkflowAction();
+        workflowAction.setId("non-existing");
+        final Optional<WorkflowStep> workflowStep = workflowAPI.findFirstStepForAction(workflowAction);
+        Assert.assertFalse(workflowStep.isPresent());
+    }
+
+    @Test()
+    public void findFirstStepForActionExistingTest () throws DotDataException, DotSecurityException {
+
+        final WorkflowAction workflowAction       = workflowAPI.findAction(SystemWorkflowConstants.WORKFLOW_SAVE_ACTION_ID, APILocator.systemUser());
+        final Optional<WorkflowStep> workflowStep = workflowAPI.findFirstStepForAction(workflowAction);
+        Assert.assertTrue(workflowStep.isPresent());
+        Assert.assertEquals(SystemWorkflowConstants.WORKFLOW_NEW_STEP_ID, workflowStep.get().getId());
+    }
+
+    @Test(expected = DoesNotExistException.class)
+    public void findFirstStepNonExistingTest () throws DotDataException {
+
+        final Optional<WorkflowStep> workflowStep = workflowAPI.findFirstStep("xxxx");
+        Assert.assertFalse(workflowStep.isPresent());
+    }
+
+    @Test()
+    public void findFirstStepExistingTest () throws DotDataException {
+
+        final Optional<WorkflowStep> workflowStep = workflowAPI.findFirstStep(SystemWorkflowConstants.SYSTEM_WORKFLOW_ID);
+        Assert.assertTrue(workflowStep.isPresent());
+        Assert.assertEquals(SystemWorkflowConstants.WORKFLOW_NEW_STEP_ID, workflowStep.get().getId());
+    }
     /**
      * This method test the saveSchemesForStruct method
      */
@@ -2544,6 +2577,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
                 .description("description")
                 .expireDateVar(null).folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
                 .name(contentTypeName).owner("owner")
+                .defaultType(false)
                 .variable("velocityVarName" + contentTypeName);
 
         ContentType type = builder.build();
@@ -2699,29 +2733,47 @@ public class WorkflowAPITest extends IntegrationTestBase {
     public static void cleanup()
             throws DotDataException, DotSecurityException, InterruptedException, ExecutionException, AlreadyExistException {
 
-        contentTypeAPI.delete(contentType);
-        contentTypeAPI.delete(contentType2);
-        contentTypeAPI.delete(contentType3);
+        if (null != contentType) {
+            contentTypeAPI.delete(contentType);
+        }
+
+        if (null != contentType2) {
+            contentTypeAPI.delete(contentType2);
+        }
+
+        if (null != contentType3) {
+            contentTypeAPI.delete(contentType3);
+        }
 
         //Deleting workflow 1
-        workflowAPI.archive(workflowScheme1, user);
-        workflowAPI.deleteScheme(workflowScheme1, user).get();
+        if (null != workflowScheme1) {
+            workflowAPI.archive(workflowScheme1, user);
+            workflowAPI.deleteScheme(workflowScheme1, user).get();
+        }
 
         //Deleting workflow 2
-        workflowAPI.archive(workflowScheme2, user);
-        workflowAPI.deleteScheme(workflowScheme2, user).get();
+        if (null != workflowScheme2) {
+            workflowAPI.archive(workflowScheme2, user);
+            workflowAPI.deleteScheme(workflowScheme2, user).get();
+        }
 
         //Deleting workflow 3
-        workflowAPI.archive(workflowScheme3, user);
-        workflowAPI.deleteScheme(workflowScheme3, user).get();
+        if (null != workflowScheme3) {
+            workflowAPI.archive(workflowScheme3, user);
+            workflowAPI.deleteScheme(workflowScheme3, user).get();
+        }
 
         //Deleting workflow 4
-        workflowAPI.archive(workflowScheme4, user);
-        workflowAPI.deleteScheme(workflowScheme4, user).get();
+        if (null != workflowScheme4) {
+            workflowAPI.archive(workflowScheme4, user);
+            workflowAPI.deleteScheme(workflowScheme4, user).get();
+        }
 
         //Deleting workflow 5
-        workflowAPI.archive(workflowScheme5, user);
-        workflowAPI.deleteScheme(workflowScheme5, user).get();
+        if (null != workflowScheme5) {
+            workflowAPI.archive(workflowScheme5, user);
+            workflowAPI.deleteScheme(workflowScheme5, user).get();
+        }
     }
 
     /**

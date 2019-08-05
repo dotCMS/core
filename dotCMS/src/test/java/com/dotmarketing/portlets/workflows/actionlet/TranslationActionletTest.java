@@ -63,7 +63,7 @@ public class TranslationActionletTest extends UnitTestBase {
         when(processor.getContentlet()).thenReturn(unpersisted);
         when(processor.getUser()).thenReturn(systemUser);
 
-        TranslationActionlet actionlet = new TranslationActionlet(apiProvider, null, null, workflowAPI);
+        TranslationActionlet actionlet = new TranslationActionlet(apiProvider, null, null, ()->workflowAPI);
         actionlet.executeAction(processor, getParams());
     }
 
@@ -94,7 +94,7 @@ public class TranslationActionletTest extends UnitTestBase {
         List<Category> cats = apiProvider.categoryAPI().getParents(englishContent, systemUser, false);
         List<Permission> perms = apiProvider.permissionAPI().getPermissions(englishContent, false, true);
 
-        TranslationActionlet actionlet = spy(new TranslationActionlet(apiProvider, translationUtil, translationService, workflowAPI));
+        TranslationActionlet actionlet = spy(new TranslationActionlet(apiProvider, translationUtil, translationService, ()->workflowAPI));
 
         doNothing().when(actionlet).copyBinariesAndTags(any(User.class), any(Contentlet.class), any(Contentlet.class));
 
@@ -144,7 +144,7 @@ public class TranslationActionletTest extends UnitTestBase {
         List<Category> cats = apiProvider.categoryAPI().getParents(englishContent, systemUser, false);
         List<Permission> perms = apiProvider.permissionAPI().getPermissions(englishContent, false, true);
 
-        TranslationActionlet actionlet = spy(new TranslationActionlet(apiProvider, translationUtil, translationService, workflowAPI));
+        TranslationActionlet actionlet = spy(new TranslationActionlet(apiProvider, translationUtil, translationService, ()->workflowAPI));
 
         doNothing().when(actionlet).copyBinariesAndTags(any(User.class), any(Contentlet.class), any(Contentlet.class));
 
