@@ -2,7 +2,7 @@
 
 outputFolder="/custom/output"
 credentialsFile="/build/credentials.json"
-buckedPath="gs://cicd-246518-tests/integration/"
+buckedPath="gs://cicd-246518-tests/integration/${databaseType}/"
 folderId="${BUILD_HASH}"
 
 # Do we have service account permissions
