@@ -55,6 +55,8 @@ public class TranslationActionlet extends WorkFlowActionlet {
     @VisibleForTesting
     protected TranslationActionlet(final ApiProvider apiProvider, final TranslationUtil translationUtil,
                                    final TranslationService translationService, final WorkflowAPI   workflowAPI) {
+
+        super ();
         this.apiProvider        = apiProvider;
         this.translationUtil    = translationUtil;
         this.translationService = translationService;
@@ -108,11 +110,11 @@ public class TranslationActionlet extends WorkFlowActionlet {
     public void executeAction(final WorkflowProcessor processor, final Map<String, WorkflowActionClassParameter> params)
         throws WorkflowActionFailureException {
 
+        Preconditions.checkNotNull(params, "Workflow Action Params can't be null.");
+
         final ContentletAPI contentletAPI = this.apiProvider.contentletAPI();
         final PermissionAPI permissionAPI = this.apiProvider.permissionAPI();
         final CategoryAPI   categoryAPI   = this.apiProvider.categoryAPI();
-
-        Preconditions.checkNotNull(params, "Workflow Action Params can't be null.");
 
         final String translateToStr =
             params.get("translateTo") != null ? params.get("translateTo").getValue() : TRANSLATE_TO_DEFAULT;

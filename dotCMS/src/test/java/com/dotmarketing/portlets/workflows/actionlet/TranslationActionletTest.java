@@ -24,26 +24,14 @@ import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.liferay.portal.model.User;
-
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.*;
 
-import static com.dotcms.translate.TranslateTestUtil.getEnglishContent;
-import static com.dotcms.translate.TranslateTestUtil.getFieldsForContent;
-import static com.dotcms.translate.TranslateTestUtil.getTranslateToAsList;
+import static com.dotcms.translate.TranslateTestUtil.*;
 import static org.mockito.Matchers.anyObject;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyBoolean;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 public class TranslationActionletTest extends UnitTestBase {
 

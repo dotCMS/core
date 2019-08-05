@@ -977,6 +977,21 @@ public interface WorkflowAPI {
 	boolean hasDestroyActionlet(final WorkflowAction action);
 
 	/**
+	 * This method creates a WorkflowTask (does not persists it) based on the information on the contentlet (id + lang),
+	 * user (role to assign, and created by), workflowStep (status 'current step'), title and description
+	 *
+	 * @param contentlet   {@link Contentlet}
+	 * @param user         {@link User}
+	 * @param workflowStep {@link WorkflowStep}
+	 * @param title        {@link String}
+	 * @param description  {@link String}
+	 * @return WorkflowTask
+	 * @throws DotDataException
+	 */
+	WorkflowTask createWorkflowTask(final Contentlet contentlet, final User user,
+												   final WorkflowStep workflowStep, final String title, String description) throws DotDataException;
+
+	/**
 	 * Based on a list of content types, returns the list of system action mappings associated for each of them, indexed by content type variable
 	 * @param contentTypes {@link List}
 	 * @param user         {@link User}

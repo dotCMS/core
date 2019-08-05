@@ -112,28 +112,18 @@ public class CheckInUnAssignWorkflowStepCheckerListener implements EventSubscrib
     private static WorkflowTask createWorkflowTask(final Contentlet contentlet, final User user,
                                                    final WorkflowStep workflowStep) throws DotDataException {
 
-        final WorkflowTask task                     = new WorkflowTask();
-        final String stepName                       = UtilHTML.escapeHTMLSpecialChars(workflowStep.getName());
-        task.setTitle("Auto assign to the step: " + stepName);
-        task.setDescription("The content titled \"" + UtilHTML.escapeHTMLSpecialChars(contentlet.getTitle().trim()) +
-                "\" has been moved automatically to the step " + stepName);
+        final String stepName    = UtilHTML.escapeHTMLSpecialChars(workflowStep.getName());
+        final String title       = "Auto assign to the step: " + stepName;
+        final String description = "The content titled \"" + UtilHTML.escapeHTMLSpecialChars(contentlet.getTitle().trim()) +
+                "\" has been moved automatically to the step " + stepName;
 
-        task.setAssignedTo(APILocator.getRoleAPI().getUserRole(user).getId());
-        task.setModDate(new Date());
-        task.setCreationDate(new Date());
-        task.setCreatedBy(user.getUserId());
-        task.setStatus(workflowStep.getId());
-        task.setDueDate(null);
-        task.setWebasset(contentlet.getIdentifier());
-        task.setLanguageId(contentlet.getLanguageId());
-
-        return task;
+        return APILocator.getWorkflowAPI().createWorkflowTask(contentlet, user, workflowStep, title, description);
     }
 
     private static void setToFirstSystemWorkflowStep(final Contentlet contentlet, final User user) throws DotDataException {
 
         final WorkflowStep workflowStep = APILocator.getWorkflowAPI()
                 .findFirstStep(SystemWorkflowConstants.SYSTEM_WORKFLOW_ID).get();
-        APILocator.getWorkflowAPI().saveWorkflowTask(createWorkflowTask(contentlet, user, workflowStep)); // todo: here ask for the NEW step if workflowStep does not exists: the optional
+        APILocator.getWorkflowAPI().saveWorkflowTask(createWorkflowTask(contentlet, user, workflowStep));
     }
 } // E:O:F:CheckInUnAssignWorkflowStepCheckerListener.
