@@ -117,7 +117,7 @@ public class Task05170DefineFrontEndAndBackEndRoles implements StartupTask {
             final String parentRoleId) throws DotDataException {
         final String uuid = UUIDUtil.uuid();
         dotConnect.setSQL(INSERT_CREATE_ROLE);
-        dotConnect.addObject(UUIDUtil.uuid()); //id
+        dotConnect.addObject(uuid); //id
         dotConnect.addObject(roleLabel);  //role_name
         dotConnect.addObject(roleLabel);  //description
         dotConnect.addObject(roleLabel);  //role_key
