@@ -57,6 +57,16 @@ public class DotDatabaseMetaDataTest extends BaseWorkflowIntegrationTest {
     }
 
     @Test
+    public void tableNotExistsTest() throws DotDataException, DotSecurityException, SQLException {
+
+        //alter table contentlet add constraint FK_structure_inode foreign key (structure_inode) references structure(inode);
+        try (final Connection connection = DbConnectionFactory.getConnection()) {
+            Assert.assertFalse(new DotDatabaseMetaData().tableExists(connection, "xxx"));
+            Assert.assertTrue(new DotDatabaseMetaData().tableExists(connection, "contentlet"));
+        }
+    }
+
+    @Test
     public void getColumnNames() throws DotDataException, DotSecurityException, SQLException {
 
         //alter table contentlet add constraint FK_structure_inode foreign key (structure_inode) references structure(inode);
