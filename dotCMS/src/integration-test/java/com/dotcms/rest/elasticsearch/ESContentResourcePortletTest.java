@@ -104,88 +104,82 @@ public class ESContentResourcePortletTest extends IntegrationTestBase {
     @UseDataProvider("testCases")
     public void testSearch(final TestCase testCase) throws Exception {
 
-        ContentType contentType = null;
+        final long time = System.currentTimeMillis();
 
-        try {
+        //creates content type
+        ContentType contentType = contentTypeAPI
+                .save(ContentTypeBuilder.builder(SimpleContentType.class).folder(
+                        FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
+                        .name("testContentType" + time)
+                        .owner(user.getUserId()).build());
 
-            final long time = System.currentTimeMillis();
+        //creates contentlets
+        final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType.id());
 
-            //creates content type
-            contentType = contentTypeAPI.save(ContentTypeBuilder.builder(SimpleContentType.class).folder(
-                    FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name("testContentType" + time)
-                    .owner(user.getUserId()).build());
+        final long language = languageAPI.getDefaultLanguage().getId();
+        final Contentlet workingContentlet = contentletDataGen.languageId(language).nextPersisted();
+        final Contentlet liveContentlet = contentletDataGen.languageId(language).nextPersisted();
 
-            //creates contentlets
-            final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType.id());
+        if (testCase.anonymous) {
+            final Role anonymous = TestUserUtils.getOrCreateAnonymousRole();
+            permissionAPI
+                    .save(new Permission(workingContentlet.getPermissionId(), anonymous.getId(),
+                            PermissionAPI.PERMISSION_READ, true), workingContentlet, user, false);
+            permissionAPI.save(new Permission(liveContentlet.getPermissionId(), anonymous.getId(),
+                    PermissionAPI.PERMISSION_READ, true), liveContentlet, user, false);
+        }
+        contentletAPI.publish(liveContentlet, user, false);
 
-            final long language = languageAPI.getDefaultLanguage().getId();
-            final Contentlet workingContentlet = contentletDataGen.languageId(language).nextPersisted();
-            final Contentlet liveContentlet = contentletDataGen.languageId(language).nextPersisted();
+        //calls endpoint
+        final ESContentResourcePortlet esContentResourcePortlet = new ESContentResourcePortlet();
+        final HttpServletRequest request = createHttpRequest(testCase.anonymous);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
 
-            if(testCase.anonymous) {
-                final Role anonymous = TestUserUtils.getOrCreateAnonymousRole();
-                permissionAPI.save(new Permission(workingContentlet.getPermissionId(), anonymous.getId(),
-                        PermissionAPI.PERMISSION_READ, true), workingContentlet, user, false);
-                permissionAPI.save(new Permission(liveContentlet.getPermissionId(), anonymous.getId(),
-                        PermissionAPI.PERMISSION_READ, true), liveContentlet, user, false);
-            }
-            contentletAPI.publish(liveContentlet, user, false);
+        final String jsonQuery = "{\n"
+                + "    \"query\": {\n"
+                + "        \"bool\": {\n"
+                + "            \"must\": {\n"
+                + "                \"term\": {\n"
+                + "                    \"contenttype\": " + contentType.variable() + "\n"
+                + "                }\n"
+                + "            }\n"
+                + "        }\n"
+                + "    }\n"
+                + "}";
 
-            //calls endpoint
-            final ESContentResourcePortlet esContentResourcePortlet = new ESContentResourcePortlet();
-            final HttpServletRequest request = createHttpRequest(testCase.anonymous);
-            final HttpServletResponse response = mock(HttpServletResponse.class);
+        final Response endpointResponse = esContentResourcePortlet
+                .search(request, response, jsonQuery, testCase.depth, testCase.live);
 
-            final String jsonQuery = "{\n"
-                    + "    \"query\": {\n"
-                    + "        \"bool\": {\n"
-                    + "            \"must\": {\n"
-                    + "                \"term\": {\n"
-                    + "                    \"contenttype\": " + contentType.variable() +"\n"
-                    + "                }\n"
-                    + "            }\n"
-                    + "        }\n"
-                    + "    }\n"
-                    + "}";
+        assertEquals(testCase.statusCode, endpointResponse.getStatus());
 
-            final Response endpointResponse = esContentResourcePortlet
-                    .search(request, response, jsonQuery, testCase.depth, testCase.live);
+        if (testCase.statusCode == Status.OK.getStatusCode()) {
 
-            assertEquals(testCase.statusCode, endpointResponse.getStatus());
+            final JSONObject json = new JSONObject(endpointResponse.getEntity().toString());
+            final JSONArray contentlets = json.getJSONArray("contentlets");
+            final JSONObject contentletResult = (JSONObject) contentlets.get(0);
 
-            if(testCase.statusCode == Status.OK.getStatusCode()) {
+            if (testCase.anonymous || testCase.live) {
+                assertEquals(1, contentlets.length());
+                assertEquals(liveContentlet.getIdentifier(),
+                        contentletResult.get("identifier"));
+            } else {
+                assertEquals(2, contentlets.length());
 
-                final JSONObject json = new JSONObject(endpointResponse.getEntity().toString());
-                final JSONArray contentlets = json.getJSONArray("contentlets");
-                final JSONObject contentletResult = (JSONObject) contentlets.get(0);
-
-                if (testCase.anonymous || testCase.live) {
-                    assertEquals(1, contentlets.length());
-                    assertEquals(liveContentlet.getIdentifier(),
-                            contentletResult.get("identifier"));
-                } else {
-                    assertEquals(2, contentlets.length());
-
-                    assertTrue(
-                            CollectionsUtils.list(contentlets.get(0), contentlets.get(1)).stream()
-                                    .map(
-                                            elem -> {
-                                                try {
-                                                    return ((JSONObject) elem).get("identifier");
-                                                } catch (JSONException e) {
-                                                    e.printStackTrace();
-                                                    return Optional.empty();
-                                                }
-                                            })
-                                    .allMatch(identifier ->
-                                            workingContentlet.getIdentifier().equals(identifier)
-                                                    || liveContentlet.getIdentifier()
-                                                    .equals(identifier)));
-                }
-            }
-        }finally{
-            if (contentType != null && contentType.id() != null) {
-                contentTypeAPI.delete(contentType);
+                assertTrue(
+                        CollectionsUtils.list(contentlets.get(0), contentlets.get(1)).stream()
+                                .map(
+                                        elem -> {
+                                            try {
+                                                return ((JSONObject) elem).get("identifier");
+                                            } catch (JSONException e) {
+                                                e.printStackTrace();
+                                                return Optional.empty();
+                                            }
+                                        })
+                                .allMatch(identifier ->
+                                        workingContentlet.getIdentifier().equals(identifier)
+                                                || liveContentlet.getIdentifier()
+                                                .equals(identifier)));
             }
         }
     }

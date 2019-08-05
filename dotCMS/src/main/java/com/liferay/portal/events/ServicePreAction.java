@@ -100,7 +100,6 @@ public class ServicePreAction extends Action {
 
         ses.setAttribute(Globals.LOCALE_KEY, locale);
       }
-
       final List<Layout> layouts = APILocator.getLayoutAPI().loadLayoutsForUser(user);
       final Layout layout = APILocator.getLayoutAPI().resolveLayout(req)
               .orElseGet(
@@ -109,7 +108,6 @@ public class ServicePreAction extends Action {
       final Layout[] layoutsArray = layouts.stream().toArray(Layout[]::new);
       req.setAttribute(WebKeys.LAYOUT, layout);
       req.setAttribute(WebKeys.LAYOUTS, layoutsArray);
-
     } catch (Exception e) {
       throw new ActionException(e);
     }

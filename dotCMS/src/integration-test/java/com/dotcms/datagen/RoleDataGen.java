@@ -25,6 +25,9 @@ public class RoleDataGen extends AbstractDataGen<Role> {
     private List<Layout> layouts = new ArrayList<>();
 
     @SuppressWarnings("unused")
+    /**
+     * @param parent Identifier of parent role
+     */
     public RoleDataGen parent(final String parent) {
         this.parent = parent;
         return this;
