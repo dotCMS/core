@@ -77,6 +77,7 @@ if [[ "${1}" == "dotcms" || -z "${1}" ]]; then
       if $exportReports ;
       then
         bash /build/publish.sh
+        ignoring_return_value=$?
       fi
     fi
 
