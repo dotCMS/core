@@ -40,6 +40,7 @@ import java.util.stream.Collectors;
 public class TranslationActionlet extends WorkFlowActionlet {
 
     private static final long serialVersionUID = 1L;
+    private final WorkflowAPI   workflowAPI;
     private final ApiProvider apiProvider;
     private final TranslationUtil translationUtil;
     private final TranslationService translationService;
@@ -48,15 +49,16 @@ public class TranslationActionlet extends WorkFlowActionlet {
     private static final String IGNORE_FIELDS_DEFAULT = "";
 
     public TranslationActionlet() {
-        this(new ApiProvider(), TranslationUtil.getUtil(), TranslationUtil.getService());
+        this(new ApiProvider(), TranslationUtil.getUtil(), TranslationUtil.getService(), APILocator.getWorkflowAPI());
     }
 
     @VisibleForTesting
     protected TranslationActionlet(final ApiProvider apiProvider, final TranslationUtil translationUtil,
-                                   final TranslationService translationService) {
+                                   final TranslationService translationService, final WorkflowAPI   workflowAPI) {
         this.apiProvider        = apiProvider;
         this.translationUtil    = translationUtil;
         this.translationService = translationService;
+        this.workflowAPI        = workflowAPI;
     }
 
     @Override
@@ -198,7 +200,6 @@ public class TranslationActionlet extends WorkFlowActionlet {
                                  final ContentletRelationships contentletRelationships, final List<Category> categories,
                                  final List<Permission> permissions, final User user, final boolean live) throws DotSecurityException, DotDataException {
 
-        final WorkflowAPI   workflowAPI   = APILocator.getWorkflowAPI();
         final Optional<WorkflowAction> workflowActionSaveOpt =
                 workflowAPI.findActionMappedBySystemActionContentlet
                         (translatedContent, WorkflowAPI.SystemAction.NEW, user);
@@ -220,7 +221,7 @@ public class TranslationActionlet extends WorkFlowActionlet {
 
                 return live && !workflowAPI.hasPublishActionlet(workflowActionSaveOpt.get())?
                         runWorkflowPublishIfCould(contentletAPI, contentletRelationships,
-                                categories, permissions, user, workflowAPI, saveTranslatedContent):
+                                categories, permissions, user, saveTranslatedContent):
                         saveTranslatedContent;
             } else if (noRecursive) {
 
@@ -237,7 +238,6 @@ public class TranslationActionlet extends WorkFlowActionlet {
                                                  final List<Category>   categories,
                                                  final List<Permission> permissions,
                                                  final User user,
-                                                 final WorkflowAPI workflowAPI,
                                                  final Contentlet saveTranslatedContent) throws DotDataException, DotSecurityException {
 
         final Optional<WorkflowAction> workflowActionPublishOpt =
