@@ -41,4 +41,4 @@ echo "  >>> Pushing reports and logs to [${buckedPath}${folderId}] <<<"
 echo ""
 
 gcloud auth activate-service-account --key-file="${credentialsFile}"
-gsutil -m cp -a public-read -r ${outputFolder} ${buckedPath}${folderId}
+gsutil -m -q cp -a public-read -r ${outputFolder} ${buckedPath}${folderId}
