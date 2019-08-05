@@ -103,8 +103,6 @@ public class NotificationResource {
                                       @HeaderParam("Range") final String range ) throws DotStateException, DotDataException, DotSecurityException, JSONException {
 
 
-        //final InitDataObject initData = webResource.init(params, request, response, true, null);
-
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
            .allowBackendUser(true)
            .allowFrontendUser(false)
@@ -189,16 +187,14 @@ public class NotificationResource {
     public Response getNewNotificationsCount ( @Context final HttpServletRequest httpServletRequest,
                                                @Context final HttpServletResponse httpServletResponse,
                                                @PathParam ("params") final String params ) throws DotStateException, DotDataException, DotSecurityException, JSONException {
-
-        InitDataObject initData = webResource.init(params, httpServletRequest, httpServletResponse, true, null);
-/*
+        
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .allowBackendUser(true)
                 .allowFrontendUser(false)
                 .params(params)
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .rejectWhenNoUser(true).init();
-*/
+
 
         Long newNotificationsCount = 0l;
         User user;
