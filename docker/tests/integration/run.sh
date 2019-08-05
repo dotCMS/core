@@ -32,11 +32,12 @@ printUsage () {
 buildImage=true
 useCache=false
 
-while getopts "d:b:e:rch" option; do
+while getopts "d:b:e:g:rch" option; do
   case ${option} in
 
   d) database=${OPTARG} ;;
   b) branchOrCommit=${OPTARG} ;;
+  g) gitHash=${OPTARG} ;;
   e) extra=${OPTARG} ;;
   r) buildImage=false ;;
   c) useCache=true ;;
@@ -57,6 +58,11 @@ BUILD_IMAGE_TAG="integration-tests"
 if [ -z "${database}" ]; then
   echo " >>> database parameter NOT FOUND, setting [postgres] as default DB"
   database=postgres
+fi
+
+if [ -z "${gitHash}" ]; then
+  gitHash=$(git rev-parse HEAD)
+  echo " >>> git hash parameter NOT FOUND, using current git commit hash [${gitHash}]"
 fi
 
 if [ -z "${branchOrCommit}" ]; then
@@ -80,12 +86,14 @@ if [ "$buildImage" = true ]; then
     docker build --pull \
       --build-arg BUILD_FROM=COMMIT \
       --build-arg BUILD_ID=${branchOrCommit} \
+      --build-arg BUILD_HASH=${gitHash} \
       --build-arg LICENSE_KEY=${LICENSE_KEY} \
       -t ${BUILD_IMAGE_TAG} .
   else
     docker build --pull --no-cache \
       --build-arg BUILD_FROM=COMMIT \
       --build-arg BUILD_ID=${branchOrCommit} \
+      --build-arg BUILD_HASH=${gitHash} \
       --build-arg LICENSE_KEY=${LICENSE_KEY} \
       -t ${BUILD_IMAGE_TAG} .
   fi

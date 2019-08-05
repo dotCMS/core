@@ -18,6 +18,8 @@ services:
     environment:
       databaseType: postgres
       EXTRA_PARAMS:
+      GOOGLE_CREDENTIALS_BASE64:
+      exportReports:
     depends_on:
       - database
     ports:
