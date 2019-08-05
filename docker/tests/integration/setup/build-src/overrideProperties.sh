@@ -42,13 +42,13 @@ cluster.name: dotCMSContentIndex_docker
 path.data: $esdataFolder
 path.repo: $esdataFolder/essnapshot/snapshots
 path.logs: $logsFolder
-http.port: 9200
-transport.tcp.port: 9309
+# http.port: 9200
+# transport.tcp.port: 9309
 
 http.enabled: false
 http.cors.enabled: false
 
-http.host: localhost
+# http.host: localhost
 
 cluster.routing.allocation.disk.threshold_enabled: false
 " >> $dotCMSFolder/src/main/webapp/WEB-INF/elasticsearch/config/elasticsearch-override.yml
