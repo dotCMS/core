@@ -6,6 +6,7 @@ steps:
       - 'IMAGE_BASE_NAME=gcr.io/$PROJECT_ID/integration-tests-image:$_CUSTOM_RUN_ID'
       - 'databaseType=$_DB_TYPE'
       - 'exportReports=true'
+      - 'GOOGLE_CREDENTIALS_BASE64=$_GOOGLE_CREDENTIALS_BASE64'
     args: ['-f', './docker/tests/integration/$_DB_TYPE-docker-compose.yml', 'up',
            '--abort-on-container-exit']
 
