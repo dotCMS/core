@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.workflows.actionlet;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.dotcms.repackage.com.google.common.base.Strings;
+import com.dotcms.repackage.com.google.common.base.Supplier;
 import com.dotcms.translate.ServiceParameter;
 import com.dotcms.translate.TranslationException;
 import com.dotcms.translate.TranslationService;
@@ -40,7 +41,7 @@ import java.util.stream.Collectors;
 public class TranslationActionlet extends WorkFlowActionlet {
 
     private static final long serialVersionUID = 1L;
-    private final WorkflowAPI   workflowAPI;
+    private final Supplier<WorkflowAPI>   workflowAPI;
     private final ApiProvider apiProvider;
     private final TranslationUtil translationUtil;
     private final TranslationService translationService;
@@ -49,12 +50,12 @@ public class TranslationActionlet extends WorkFlowActionlet {
     private static final String IGNORE_FIELDS_DEFAULT = "";
 
     public TranslationActionlet() {
-        this(new ApiProvider(), TranslationUtil.getUtil(), TranslationUtil.getService(), APILocator.getWorkflowAPI());
+        this(new ApiProvider(), TranslationUtil.getUtil(), TranslationUtil.getService(), ()->APILocator.getWorkflowAPI());
     }
 
     @VisibleForTesting
     protected TranslationActionlet(final ApiProvider apiProvider, final TranslationUtil translationUtil,
-                                   final TranslationService translationService, final WorkflowAPI   workflowAPI) {
+                                   final TranslationService translationService, final Supplier<WorkflowAPI> workflowAPI) {
 
         super ();
         this.apiProvider        = apiProvider;
@@ -203,25 +204,25 @@ public class TranslationActionlet extends WorkFlowActionlet {
                                  final List<Permission> permissions, final User user, final boolean live) throws DotSecurityException, DotDataException {
 
         final Optional<WorkflowAction> workflowActionSaveOpt =
-                workflowAPI.findActionMappedBySystemActionContentlet
+                workflowAPI.get().findActionMappedBySystemActionContentlet
                         (translatedContent, WorkflowAPI.SystemAction.NEW, user);
 
         if (workflowActionSaveOpt.isPresent()) {
 
-            final boolean hasSave     = workflowAPI.hasSaveActionlet(workflowActionSaveOpt.get());
+            final boolean hasSave     = workflowAPI.get().hasSaveActionlet(workflowActionSaveOpt.get());
             final boolean noRecursive = !this.hasTranslationActionlet(workflowActionSaveOpt.get());
 
             if (hasSave && noRecursive) {
 
                 Logger.debug(this, ()-> "Translating a contentlet with the save action: "
                         + workflowActionSaveOpt.get().getName());
-                final Contentlet saveTranslatedContent = workflowAPI.fireContentWorkflow
+                final Contentlet saveTranslatedContent = workflowAPI.get().fireContentWorkflow
                         (translatedContent, new ContentletDependencies.Builder()
                         .workflowActionId(workflowActionSaveOpt.get().getId())
                         .relationships(contentletRelationships).categories(categories)
                         .permissions(permissions).modUser(user).build());
 
-                return live && !workflowAPI.hasPublishActionlet(workflowActionSaveOpt.get())?
+                return live && !workflowAPI.get().hasPublishActionlet(workflowActionSaveOpt.get())?
                         runWorkflowPublishIfCould(contentletAPI, contentletRelationships,
                                 categories, permissions, user, saveTranslatedContent):
                         saveTranslatedContent;
@@ -243,18 +244,18 @@ public class TranslationActionlet extends WorkFlowActionlet {
                                                  final Contentlet saveTranslatedContent) throws DotDataException, DotSecurityException {
 
         final Optional<WorkflowAction> workflowActionPublishOpt =
-                workflowAPI.findActionMappedBySystemActionContentlet
+                workflowAPI.get().findActionMappedBySystemActionContentlet
                         (saveTranslatedContent, WorkflowAPI.SystemAction.PUBLISH, user);
 
         if (workflowActionPublishOpt.isPresent()) {
 
             final boolean noRecursive = !this.hasTranslationActionlet(workflowActionPublishOpt.get());
 
-            if (workflowAPI.hasPublishActionlet(workflowActionPublishOpt.get()) && noRecursive) {
+            if (workflowAPI.get().hasPublishActionlet(workflowActionPublishOpt.get()) && noRecursive) {
 
                 Logger.debug(this, () -> "Translating a contentlet with the publish action: "
                         + workflowActionPublishOpt.get().getName());
-                return workflowAPI.fireContentWorkflow
+                return workflowAPI.get().fireContentWorkflow
                         (saveTranslatedContent, new ContentletDependencies.Builder()
                                 .workflowActionId(workflowActionPublishOpt.get().getId())
                                 .relationships(contentletRelationships).categories(categories)
