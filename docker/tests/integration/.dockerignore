@@ -1,6 +1,5 @@
 setup/init-scripts
-reports
-logs
+output
 license
 README.md
 *.yml
