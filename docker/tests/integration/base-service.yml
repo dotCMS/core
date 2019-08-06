@@ -23,8 +23,8 @@ services:
       - type: bind
         source: ./output
         target: /custom/output
-    #      - type: bind
-    #        source: ./license/license.dat
-    #        target: /custom/dotsecure/license/license.dat
+#      - type: bind
+#        source: ./license/license.dat
+#        target: /custom/dotsecure/license/license.dat
     networks:
       - db_net
