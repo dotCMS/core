@@ -1,8 +1,6 @@
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { IframeOverlayService } from '../../../_common/iframe/service/iframe-overlay.service';
-import { DataListModule, OverlayPanelModule } from 'primeng/primeng';
 import { MaterialDesignTextfieldDirective } from '../../../../directives/md-inputtext/md-input-text.directive';
-import { SearchableDropdownComponent } from '../../../_common/searchable-dropdown/component/searchable-dropdown.component';
 import { DotDropdownComponent } from '../../../_common/dot-dropdown-component/dot-dropdown.component';
 import { DotMyAccountComponent } from '../dot-my-account/dot-my-account.component';
 import { DotLoginAsComponent } from '../dot-login-as/dot-login-as.component';
@@ -25,6 +23,7 @@ import { LOCATION_TOKEN } from 'src/app/providers';
 import { DotMenuService } from '@services/dot-menu.service';
 import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
 import { DotGravatarModule } from '../dot-gravatar/dot-gravatar.module';
+import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
 
 describe('DotToolbarUserComponent', () => {
     let comp: DotToolbarUserComponent;
@@ -41,7 +40,6 @@ describe('DotToolbarUserComponent', () => {
                 DotDropdownComponent,
                 DotLoginAsComponent,
                 DotMyAccountComponent,
-                SearchableDropdownComponent,
                 DotToolbarUserComponent,
                 MaterialDesignTextfieldDirective
             ],
@@ -60,13 +58,12 @@ describe('DotToolbarUserComponent', () => {
             ],
             imports: [
                 BrowserAnimationsModule,
-                DataListModule,
                 DotDialogModule,
                 DotGravatarModule,
                 DotIconButtonModule,
                 DotIconModule,
-                OverlayPanelModule,
-                RouterTestingModule
+                SearchableDropDownModule,
+                RouterTestingModule,
             ]
         });
 
