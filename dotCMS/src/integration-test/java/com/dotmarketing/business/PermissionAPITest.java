@@ -1,8 +1,12 @@
 package com.dotmarketing.business;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.RoleDataGen;
+import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
+import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
@@ -899,6 +903,98 @@ public class PermissionAPITest extends IntegrationTestBase {
         assertTrue(users.size() == 0);
 
         APILocator.getFolderAPI().delete(f, sysuser, false);
+    }
+
+    /**
+     * Tests that assigning permissions to a role on a folder does not also assign permissions on
+     * the same folder to sibling roles who have individual permissions on the parent of the
+     * mentioned folder.
+     *
+     * Reported on https://github.com/dotCMS/core/issues/16922
+     */
+
+    @Test
+    public void testPermissionIndividuallyByRole() throws DotDataException, DotSecurityException {
+
+        final RoleAPI roleAPI = APILocator.getRoleAPI();
+        final long time = System.currentTimeMillis();
+        final User systemUser = APILocator.systemUser();
+        Role parentRole = null;
+        Role childRole = null;
+        Role childSiblingRole = null;
+        Host testSite = null;
+
+        try {
+            testSite = new SiteDataGen().nextPersisted();
+
+            parentRole = new RoleDataGen().name("parent"+time).nextPersisted();
+
+            // let's give view permissions to parent role on testSite
+            assignPermissions(systemUser, parentRole, testSite);
+
+            // create child role
+            childRole = new RoleDataGen().name("child"+time).parent(parentRole.getId())
+                    .nextPersisted();
+
+            // give child role permissions on testSite
+            assignPermissions(systemUser, childRole, testSite);
+
+            // create test folder under test site
+            final Folder testFolder = new FolderDataGen().site(testSite).nextPersisted();
+
+            // create child-sibling role
+            childSiblingRole = new RoleDataGen().name("childSibling"+time).parent(parentRole.getId())
+                    .nextPersisted();
+
+            // give child-sibling role permissions to testFolder
+            assignPermissions(systemUser, childSiblingRole, testFolder);
+
+            // assert parent has view permissions on testFolder
+            List<Permission> parentRolePermissions = permissionAPI
+                    .getPermissionsByRole(parentRole, false);
+
+            final boolean doesParentHavePermissionOnTestFolder = parentRolePermissions.stream()
+                    .anyMatch(permission -> permission.getInode().equals(
+                            testFolder.getInode()));
+
+            assertTrue(doesParentHavePermissionOnTestFolder);
+
+            // assert that child does not have permissions on testFolder
+            List<Permission> childRolePermissions = permissionAPI
+                    .getPermissionsByRole(childRole, false);
+
+            final boolean doesChildHavePermissionOnTestFolder = childRolePermissions.stream()
+                    .noneMatch(permission -> permission.getInode().equals(
+                            testFolder.getInode()));
+
+            assertTrue(doesChildHavePermissionOnTestFolder);
+
+
+        } finally {
+            roleAPI.delete(childRole);
+            roleAPI.delete(childSiblingRole);
+            roleAPI.delete(parentRole);
+            APILocator.getHostAPI().archive(testSite, systemUser, false);
+            APILocator.getHostAPI().delete(testSite, systemUser, false);
+        }
+
+    }
+
+    private void assignPermissions(User systemUser, Role parentRole, Permissionable permissionable)
+            throws DotDataException, DotSecurityException {
+        List<Permission> sitePermissionsForParentRole = CollectionsUtils.list(
+                new Permission(permissionable.getPermissionId(), parentRole.getId(),
+                        3, true));
+
+        if (APILocator.getPermissionAPI().isInheritingPermissions(permissionable)) {
+            Permissionable parentPermissionable = permissionAPI.
+                    findParentPermissionable(permissionable);
+            permissionAPI.permissionIndividuallyByRole(parentPermissionable,
+                    permissionable, systemUser, parentRole);
+        }
+
+        permissionAPI.assignPermissions(sitePermissionsForParentRole, permissionable, systemUser,
+                false);
     }
 
     /**

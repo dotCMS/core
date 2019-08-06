@@ -69,7 +69,6 @@ dotCMS/src/main/generated/
 
 # integration tests reports and logs
 ###############################
-docker/tests/integration/logs
-docker/tests/integration/reports
+docker/tests/integration/output
 docker/tests/integration/license
 docker/tests/integration/backup

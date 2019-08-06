@@ -3,7 +3,7 @@
 assetsFolder="/custom/assets"
 dotsecureFolder="/custom/dotsecure"
 esdataFolder="/custom/esdata"
-logsFolder="/custom/logs"
+logsFolder="/custom/output/logs"
 felixFolder="/custom/felix"
 dotCMSFolder="/build/src/core/dotCMS"
 resourcesFolder="$dotCMSFolder/src/integration-test/resources"
@@ -31,6 +31,9 @@ felix.felix.fileinstall.dir=$felixFolder/load
 echo "
 felix.felix.undeployed.dir=$felixFolder/undeploy
 " >> $resourcesFolder/it-dotmarketing-config.properties
+echo "
+dotcms.concurrent.locks.disable=false
+" >> $resourcesFolder/it-dotmarketing-config.properties
 
 ## ------------------
 # /build/src/core/dotCMS/src/main/webapp/WEB-INF/elasticsearch/config/elasticsearch-override.yml
@@ -39,13 +42,13 @@ cluster.name: dotCMSContentIndex_docker
 path.data: $esdataFolder
 path.repo: $esdataFolder/essnapshot/snapshots
 path.logs: $logsFolder
-http.port: 9200
-transport.tcp.port: 9309
+# http.port: 9200
+# transport.tcp.port: 9309
 
 http.enabled: false
 http.cors.enabled: false
 
-http.host: localhost
+# http.host: localhost
 
 cluster.routing.allocation.disk.threshold_enabled: false
 " >> $dotCMSFolder/src/main/webapp/WEB-INF/elasticsearch/config/elasticsearch-override.yml

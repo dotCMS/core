@@ -1,6 +1,10 @@
 package com.dotmarketing.startup.runonce;
 
+import static junit.framework.TestCase.assertTrue;
+import static org.junit.Assert.assertFalse;
+
 import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.util.IntegrationTestInitService;
@@ -8,14 +12,10 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import java.util.List;
 import java.util.stream.Collectors;
-
-import static junit.framework.TestCase.assertTrue;
-import static org.junit.Assert.assertFalse;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 public class Task05030UpdateSystemContentTypesHostTest {
 
@@ -31,9 +31,19 @@ public class Task05030UpdateSystemContentTypesHostTest {
         ContentType commentsContentType = null;
 
         try {
-            // Creating a Comments content type just to make sure the task is working
-            commentsContentType = new ContentTypeDataGen().fixed(Boolean.TRUE)
-                    .name("Comments").velocityVarName("Comments").nextPersisted();
+
+            try {
+                commentsContentType = APILocator.getContentTypeAPI(APILocator.systemUser())
+                        .find("Comments");
+            } catch (NotFoundInDbException e) {
+                //Do nothing...
+            }
+            if (null == commentsContentType) {
+
+                // Creating a Comments content type just to make sure the task is working
+                commentsContentType = new ContentTypeDataGen().fixed(Boolean.TRUE)
+                        .name("Comments").velocityVarName("Comments").nextPersisted();
+            }
 
             final Task05030UpdateSystemContentTypesHost updateTypesHost = new Task05030UpdateSystemContentTypesHost();
 

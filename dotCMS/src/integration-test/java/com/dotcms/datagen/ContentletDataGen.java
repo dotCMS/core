@@ -267,6 +267,8 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
 
     public static Contentlet publish(Contentlet contentlet) {
         try {
+            contentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
+            contentlet.setBoolProperty(Contentlet.IS_TEST_MODE, true);
             contentletAPI.publish(contentlet, user, false);
         } catch (Exception e) {
             throw new RuntimeException(e);
