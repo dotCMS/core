@@ -147,7 +147,6 @@ public interface WorkflowAPI {
 	 * deletes a specific comment on a workflow item
 	 *
 	 * @param comment
-	 * @param user
 	 * @throws DotDataException
 	 */
 	public void deleteComment(WorkflowComment comment) throws DotDataException;
@@ -165,7 +164,6 @@ public interface WorkflowAPI {
 	 * Saves a new history item for a workflow
 	 *
 	 * @param history
-	 * @param user
 	 * @throws DotDataException
 	 */
 	public void saveWorkflowHistory(WorkflowHistory history) throws DotDataException;
@@ -174,7 +172,6 @@ public interface WorkflowAPI {
 	 * deletes a history item from a workflow
 	 *
 	 * @param history
-	 * @param user
 	 * @throws DotDataException
 	 */
 	public void deleteWorkflowHistory(WorkflowHistory history) throws DotDataException;

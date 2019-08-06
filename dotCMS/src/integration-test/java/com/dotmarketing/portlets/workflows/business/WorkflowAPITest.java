@@ -19,6 +19,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.datagen.TestUserUtils;
+import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
@@ -48,14 +49,7 @@ import com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.UnarchiveContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.UnpublishContentActionlet;
-import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
-import com.dotmarketing.portlets.workflows.model.WorkflowComment;
-import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
-import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
-import com.dotmarketing.portlets.workflows.model.WorkflowState;
-import com.dotmarketing.portlets.workflows.model.WorkflowStep;
-import com.dotmarketing.portlets.workflows.model.WorkflowTask;
+import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
@@ -560,6 +554,67 @@ public class WorkflowAPITest extends IntegrationTestBase {
                 com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet.class, 1);
 
 
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void mapSystemActionToWorkflowActionForContentType_Null_SystemAction_Test() throws DotDataException {
+
+        workflowAPI.mapSystemActionToWorkflowActionForContentType(null, null, null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void mapSystemActionToWorkflowActionForContentType_Null_WFAction_Test() throws DotDataException {
+
+        workflowAPI.mapSystemActionToWorkflowActionForContentType(WorkflowAPI.SystemAction.NEW, null, null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void mapSystemActionToWorkflowActionForContentType_Null_ContentType_Test() throws DotDataException, DotSecurityException {
+
+        workflowAPI.mapSystemActionToWorkflowActionForContentType(WorkflowAPI.SystemAction.NEW, workflowAPI.findAction(
+                SystemWorkflowConstants.WORKFLOW_SAVE_ACTION_ID, APILocator.systemUser()), null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void mapSystemActionToWorkflowActionForContentType_InvalidHost_ContentType_Test() throws DotDataException, DotSecurityException {
+
+        workflowAPI.mapSystemActionToWorkflowActionForContentType(WorkflowAPI.SystemAction.NEW, workflowAPI.findAction(
+                SystemWorkflowConstants.WORKFLOW_SAVE_ACTION_ID, APILocator.systemUser()), APILocator.systemHost().getContentType());
+    }
+
+    @Test()
+    public void mapSystemActionToWorkflowActionForContentType_Test() throws DotDataException, DotSecurityException {
+
+        final WorkflowAction saveAction =
+                workflowAPI.findAction(SystemWorkflowConstants.WORKFLOW_SAVE_ACTION_ID, APILocator.systemUser());
+
+        workflowAPI.saveSchemeIdsForContentType(contentType, CollectionsUtils.set(SystemWorkflowConstants.SYSTEM_WORKFLOW_ID));
+
+        final SystemActionWorkflowActionMapping mapping =
+                workflowAPI.mapSystemActionToWorkflowActionForContentType
+                    (WorkflowAPI.SystemAction.NEW, saveAction, contentType);
+
+        assertNotNull(mapping);
+        assertEquals(WorkflowAPI.SystemAction.NEW, mapping.getSystemAction());
+        assertEquals(saveAction,  mapping.getWorkflowAction());
+        assertEquals(contentType, mapping.getOwner());
+
+        final Optional<SystemActionWorkflowActionMapping> systemActionByContentTypeOpt = workflowAPI.findSystemActionByContentType
+                (WorkflowAPI.SystemAction.NEW, contentType, APILocator.systemUser());
+
+        assertNotNull(systemActionByContentTypeOpt);
+        assertTrue(systemActionByContentTypeOpt.isPresent());
+        assertEquals(WorkflowAPI.SystemAction.NEW, systemActionByContentTypeOpt.get().getSystemAction());
+        assertEquals(saveAction, systemActionByContentTypeOpt.get().getWorkflowAction());
+        assertEquals(contentType, systemActionByContentTypeOpt.get().getOwner());
+
+        workflowAPI.deleteSystemAction(systemActionByContentTypeOpt.get());
+
+        final Optional<SystemActionWorkflowActionMapping> systemActionByContentTypeDeletedOpt = workflowAPI.findSystemActionByContentType
+                (WorkflowAPI.SystemAction.NEW, contentType, APILocator.systemUser());
+
+        assertNotNull(systemActionByContentTypeDeletedOpt);
+        assertFalse(systemActionByContentTypeDeletedOpt.isPresent());
     }
 
     @Test(expected = DoesNotExistException.class)

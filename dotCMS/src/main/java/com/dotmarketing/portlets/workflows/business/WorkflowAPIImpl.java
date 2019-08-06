@@ -3689,11 +3689,16 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	private SystemActionWorkflowActionMapping toSystemActionWorkflowActionMapping(final Map<String, Object> rowMap, final Object owner, final User user)
             throws DotSecurityException, DotDataException {
 
-        final String         identifier     = (String)rowMap.get("id");
-        final SystemAction   systemAction   = SystemAction.valueOf((String)rowMap.get("action"));
-        final WorkflowAction workflowAction = this.findAction((String)rowMap.get("workflow_action"), user);
+		if (UtilMethods.isSet(rowMap)) {
 
-        return new SystemActionWorkflowActionMapping(identifier, systemAction, workflowAction, owner);
+			final String identifier = (String) rowMap.get("id");
+			final SystemAction systemAction = SystemAction.valueOf((String) rowMap.get("action"));
+			final WorkflowAction workflowAction = this.findAction((String) rowMap.get("workflow_action"), user);
+
+			return new SystemActionWorkflowActionMapping(identifier, systemAction, workflowAction, owner);
+		}
+
+		return null;
     }
 
 }

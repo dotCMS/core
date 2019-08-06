@@ -728,7 +728,7 @@ public class WorkflowCacheImpl extends WorkflowCache {
 		try {
 
 			// removing just by content type
-			final String schemeReferenceId      = SystemActionMappingReferenceCache.TYPE.CONTENTTYPE.name()+variable;
+			final String schemeReferenceId  = SystemActionMappingReferenceCache.TYPE.CONTENTTYPE.name()+variable;
 			List<String> systemActionIdList = (List<String>)this.cache.get(schemeReferenceId, SYSTEM_ACTION_GROUP);
 			if (UtilMethods.isSet(systemActionIdList)) {
 
@@ -745,13 +745,10 @@ public class WorkflowCacheImpl extends WorkflowCache {
 
 				final String actionSchemeReferenceId = SystemActionMappingReferenceCache.TYPE.SYSTEMACTION_CONTENTTYPE.name() +
 						StringUtils.join(new String[] {systemAction.name(), variable}, StringPool.COMMA);
-				systemActionIdList = (List<String>) this.cache.get(actionSchemeReferenceId, SYSTEM_ACTION_GROUP);
-				if (UtilMethods.isSet(systemActionIdList)) {
+				final String mappingIdentifier = (String) this.cache.get(actionSchemeReferenceId, SYSTEM_ACTION_GROUP);
+				if (UtilMethods.isSet(mappingIdentifier)) {
 
-					for (final String systemActionMappingIdentifier : systemActionIdList) {
-
-						cache.remove(SYSTEM_ACTION_KEY_MAIN + systemActionMappingIdentifier, SYSTEM_ACTION_GROUP);
-					}
+					cache.remove(SYSTEM_ACTION_KEY_MAIN + mappingIdentifier, SYSTEM_ACTION_GROUP);
 				}
 
 				this.cache.remove(actionSchemeReferenceId, SYSTEM_ACTION_GROUP);
