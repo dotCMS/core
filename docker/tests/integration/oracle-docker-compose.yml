@@ -7,18 +7,17 @@ services:
 
   integration-tests:
     environment:
-      databaseType: postgres
+      databaseType: oracle
 
   # https://hub.docker.com/_/postgres
   database:
-    image: "postgres:9-alpine"
+    image: "store/oracle/database-enterprise:12.2.0.1-slim"
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: dotcms
+      ORACLE_SID: XE
+      ORACLE_PWD: oracle
     ports:
-      - "15432:5432"
+      - "11521:1521"
     volumes:
-      - ./setup/db/postgres/init-scripts:/docker-entrypoint-initdb.d/
+      - ./setup/db/oracle/init-scripts:/docker-entrypoint-initdb.d/startup
     networks:
       - db_net

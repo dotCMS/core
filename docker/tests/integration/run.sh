@@ -110,13 +110,16 @@ fi
 # Starting the container for the build image
 export databaseType=${database}
 export IMAGE_BASE_NAME=${BUILD_IMAGE_TAG}
-docker-compose -f ${database}-docker-compose.yml up --abort-on-container-exit
+docker-compose -f base-service.yml \
+  -f ${database}-docker-compose.yml \
+  up \
+  --abort-on-container-exit
 
 # Required code, without it the script will exit and won't be able to down the containers properly
 testsReturnCode=$?
 
 # Cleaning up
-docker-compose -f ${database}-docker-compose.yml down
+docker-compose -f base-service.yml -f ${database}-docker-compose.yml down
 
 if [ ${testsReturnCode} == 0 ]
 then
