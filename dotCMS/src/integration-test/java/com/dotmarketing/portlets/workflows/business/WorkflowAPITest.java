@@ -599,6 +599,26 @@ public class WorkflowAPITest extends IntegrationTestBase {
         assertEquals(saveAction,  mapping.getWorkflowAction());
         assertEquals(contentType, mapping.getOwner());
 
+        final Optional<SystemActionWorkflowActionMapping> savedMapping =
+                workflowAPI.findSystemActionByIdentifier(mapping.getIdentifier(), APILocator.systemUser());
+
+        assertNotNull(savedMapping);
+        assertTrue(savedMapping.isPresent());
+        assertEquals(WorkflowAPI.SystemAction.NEW, savedMapping.get().getSystemAction());
+        assertEquals(saveAction,  savedMapping.get().getWorkflowAction());
+        assertEquals(contentType, savedMapping.get().getOwner());
+
+        final SystemActionWorkflowActionMapping mappingEdit =
+                workflowAPI.mapSystemActionToWorkflowActionForContentType
+                        (WorkflowAPI.SystemAction.EDIT, saveAction, contentType);
+
+        assertNotNull(mappingEdit);
+        assertEquals(WorkflowAPI.SystemAction.EDIT, mappingEdit.getSystemAction());
+        assertEquals(saveAction,  mappingEdit.getWorkflowAction());
+        assertEquals(contentType, mappingEdit.getOwner());
+
+        /////
+
         final Optional<SystemActionWorkflowActionMapping> systemActionByContentTypeOpt = workflowAPI.findSystemActionByContentType
                 (WorkflowAPI.SystemAction.NEW, contentType, APILocator.systemUser());
 
@@ -608,7 +628,39 @@ public class WorkflowAPITest extends IntegrationTestBase {
         assertEquals(saveAction, systemActionByContentTypeOpt.get().getWorkflowAction());
         assertEquals(contentType, systemActionByContentTypeOpt.get().getOwner());
 
-        workflowAPI.deleteSystemAction(systemActionByContentTypeOpt.get());
+        final Optional<SystemActionWorkflowActionMapping> systemActionByContentTypeEditOpt = workflowAPI.findSystemActionByContentType
+                (WorkflowAPI.SystemAction.EDIT, contentType, APILocator.systemUser());
+
+        assertNotNull(systemActionByContentTypeEditOpt);
+        assertTrue(systemActionByContentTypeEditOpt.isPresent());
+        assertEquals(WorkflowAPI.SystemAction.EDIT, systemActionByContentTypeEditOpt.get().getSystemAction());
+        assertEquals(saveAction, systemActionByContentTypeEditOpt.get().getWorkflowAction());
+        assertEquals(contentType, systemActionByContentTypeEditOpt.get().getOwner());
+
+        final List<SystemActionWorkflowActionMapping> mappings = workflowAPI.findSystemActionsByContentType(contentType, APILocator.systemUser());
+
+        assertTrue(UtilMethods.isSet(mappings));
+        assertTrue(mappings.size() >= 2);
+
+        final Contentlet contentlet = new Contentlet();
+        contentlet.setContentType(contentType);
+
+        final Optional<WorkflowAction> newAction = workflowAPI.findActionMappedBySystemActionContentlet
+                (contentlet, WorkflowAPI.SystemAction.NEW, APILocator.systemUser());
+
+        assertTrue(newAction.isPresent());
+        assertEquals(saveAction, newAction.get());
+
+        /////
+        final List<SystemActionWorkflowActionMapping> systemActionsByWorkflowActionList =
+                workflowAPI.findSystemActionsByWorkflowAction(saveAction, APILocator.systemUser());
+
+        assertTrue(UtilMethods.isSet(systemActionsByWorkflowActionList));
+        assertTrue(systemActionsByWorkflowActionList.stream().anyMatch(aMapping -> aMapping.getSystemAction() == WorkflowAPI.SystemAction.NEW));
+
+        for (final SystemActionWorkflowActionMapping systemActionWorkflowActionMapping : mappings) {
+            workflowAPI.deleteSystemAction(systemActionWorkflowActionMapping);
+        }
 
         final Optional<SystemActionWorkflowActionMapping> systemActionByContentTypeDeletedOpt = workflowAPI.findSystemActionByContentType
                 (WorkflowAPI.SystemAction.NEW, contentType, APILocator.systemUser());
@@ -657,6 +709,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
                 workflowAPI.findAction(SystemWorkflowConstants.WORKFLOW_SAVE_ACTION_ID, APILocator.systemUser());
 
         workflowAPI.saveSchemeIdsForContentType(contentType, CollectionsUtils.set(SystemWorkflowConstants.SYSTEM_WORKFLOW_ID));
+        workflowAPI.saveSchemeIdsForContentType(contentType2, CollectionsUtils.set(SystemWorkflowConstants.SYSTEM_WORKFLOW_ID));
         final WorkflowScheme systemWorkflow = workflowAPI.findSystemWorkflowScheme();
         final SystemActionWorkflowActionMapping mapping =
                 workflowAPI.mapSystemActionToWorkflowActionForWorkflowScheme
@@ -674,6 +727,14 @@ public class WorkflowAPITest extends IntegrationTestBase {
         assertTrue(UtilMethods.isSet(systemActionsByScheme));
         assertTrue(systemActionsByScheme.stream().anyMatch(systemMapping ->
                 systemMapping.getSystemAction() == WorkflowAPI.SystemAction.NEW && systemMapping.getWorkflowAction().equals(saveAction)));
+
+        final Contentlet contentlet = new Contentlet();
+        contentlet.setContentType(contentType2); // content type without default actions
+        final Optional<WorkflowAction> newAction = workflowAPI.findActionMappedBySystemActionContentlet
+                (contentlet, WorkflowAPI.SystemAction.NEW, APILocator.systemUser());
+
+        assertTrue(newAction.isPresent());
+        assertEquals(saveAction, newAction.get());
 
         for (final SystemActionWorkflowActionMapping systemActionWorkflowActionMapping: systemActionsByScheme) {
 
