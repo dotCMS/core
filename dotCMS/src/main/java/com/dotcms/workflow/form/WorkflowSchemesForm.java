@@ -19,6 +19,7 @@ public class WorkflowSchemesForm extends Validated {
 
     public WorkflowSchemesForm(final Builder builder) {
 
+        super();
         this.schemes           = builder.schemes;
         this.checkValid();
     }

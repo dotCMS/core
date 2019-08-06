@@ -728,8 +728,8 @@ public class WorkflowCacheImpl extends WorkflowCache {
 		try {
 
 			// removing just by content type
-			final String schemeReferenceId  = SystemActionMappingReferenceCache.TYPE.CONTENTTYPE.name()+variable;
-			List<String> systemActionIdList = (List<String>)this.cache.get(schemeReferenceId, SYSTEM_ACTION_GROUP);
+			final String schemeReferenceId        = SystemActionMappingReferenceCache.TYPE.CONTENTTYPE.name()+variable;
+			final List<String> systemActionIdList = (List<String>)this.cache.get(schemeReferenceId, SYSTEM_ACTION_GROUP);
 			if (UtilMethods.isSet(systemActionIdList)) {
 
 				for (final String systemActionMappingIdentifier : systemActionIdList) {

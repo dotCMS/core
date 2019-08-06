@@ -53,16 +53,16 @@ public class WorkflowResourceResponseCodeIntegrationTest {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
         workflowAPI =  APILocator.getWorkflowAPI();
-        ContentletAPI contentletAPI = APILocator.getContentletAPI();
+        final ContentletAPI contentletAPI = APILocator.getContentletAPI();
         roleAPI = APILocator.getRoleAPI();
-        ContentHelper contentHelper = ContentHelper.getInstance();
-        SystemActionApiFireCommandFactory systemActionApiFireCommandFactory =
+        final ContentHelper contentHelper = ContentHelper.getInstance();
+        final SystemActionApiFireCommandFactory systemActionApiFireCommandFactory =
                 SystemActionApiFireCommandFactory.getInstance();
-        PermissionAPI permissionAPI = APILocator.getPermissionAPI();
-        WorkflowImportExportUtil workflowImportExportUtil = WorkflowImportExportUtil.getInstance();
-        WorkflowHelper workflowHelper = new WorkflowHelper(workflowAPI, roleAPI, contentletAPI, permissionAPI,
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        final WorkflowImportExportUtil workflowImportExportUtil = WorkflowImportExportUtil.getInstance();
+        final WorkflowHelper workflowHelper = new WorkflowHelper(workflowAPI, roleAPI, contentletAPI, permissionAPI,
                 workflowImportExportUtil);
-        ResponseUtil responseUtil = ResponseUtil.INSTANCE;
+        final ResponseUtil responseUtil = ResponseUtil.INSTANCE;
 
         final User admin = APILocator.systemUser();
         final WebResource webResource = mock(WebResource.class);

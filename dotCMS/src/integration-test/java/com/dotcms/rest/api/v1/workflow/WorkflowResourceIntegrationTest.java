@@ -99,14 +99,14 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
         workflowAPI =  APILocator.getWorkflowAPI();
         contentletAPI = APILocator.getContentletAPI();
         roleAPI = APILocator.getRoleAPI();
-        ContentHelper contentHelper = ContentHelper.getInstance();
-        SystemActionApiFireCommandFactory systemActionApiFireCommandFactory =
+        final ContentHelper contentHelper = ContentHelper.getInstance();
+        final SystemActionApiFireCommandFactory systemActionApiFireCommandFactory =
                 SystemActionApiFireCommandFactory.getInstance();
-        PermissionAPI permissionAPI = APILocator.getPermissionAPI();
-        WorkflowImportExportUtil workflowImportExportUtil = getInstance();
-        WorkflowHelper workflowHelper = new WorkflowHelper(workflowAPI, roleAPI, contentletAPI, permissionAPI,
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        final WorkflowImportExportUtil workflowImportExportUtil = getInstance();
+        final WorkflowHelper workflowHelper = new WorkflowHelper(workflowAPI, roleAPI, contentletAPI, permissionAPI,
                 workflowImportExportUtil);
-        ResponseUtil responseUtil = ResponseUtil.INSTANCE;
+        final ResponseUtil responseUtil = ResponseUtil.INSTANCE;
 
         final User user = mock(User.class);
         when(user.getUserId()).thenReturn(ADMIN_DEFAULT_ID);
