@@ -3,7 +3,8 @@
 outputFolder="/custom/output"
 credentialsFile="/build/credentials.json"
 buckedBasePath="gs://cicd-246518-tests/integration/"
-folderId="${BUILD_HASH}/${databaseType}"
+NOW=$(date +"%y-%m-%d")
+folderId="${NOW}/${BUILD_HASH}/${databaseType}"
 buckedPath="${buckedBasePath}${folderId}"
 
 # Do we have service account permissions
