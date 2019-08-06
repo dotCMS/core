@@ -1,11 +1,27 @@
 package com.dotcms.exception;
 
+import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_BADTYPE;
+import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_BAD_CARDINALITY;
+import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_BAD_REL;
+import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_INVALID_REL_CONTENT;
+import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_MAXLENGTH;
+import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_PATTERN;
+import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_REQUIRED;
+import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_REQUIRED_REL;
+import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_UNIQUE;
+
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ValidationException;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.exception.*;
+import com.dotmarketing.exception.AlreadyExistException;
+import com.dotmarketing.exception.DoesNotExistException;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotDataValidationException;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -16,17 +32,22 @@ import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
 import com.dotmarketing.portlets.workflows.business.WorkflowPortletAccessException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-
-import javax.servlet.http.HttpServletRequest;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
-
-import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.*;
+import java.util.Optional;
+import java.util.Set;
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * Exception Utils
@@ -351,14 +372,7 @@ public class ExceptionUtil {
         }
     }
 
-    /**
-     * Get the current thread stack trace as a simple string
-     * @return String
-     */
-    public static String getCurrentStackTraceAsString () {
-        final StackTraceElement [] traces = Thread.currentThread().getStackTrace();
-        return getStackTraceAsString(traces);
-    }
+
 
     public static String getStackTraceAsString (final StackTraceElement... traces) {
         final StringBuilder builder = new StringBuilder();
@@ -370,20 +384,44 @@ public class ExceptionUtil {
 
     /**
      * Get the current thread stack trace as a simple string
+     * @return String
+     */
+    public static String getCurrentStackTraceAsString () {
+        final StackTraceElement [] traces = Thread.currentThread().getStackTrace();
+        return getStackTraceAsString(traces);
+    }
+
+    public static String exceptionAsString(final Exception e, int limit){
+        final String exceptionName = e.toString();
+        StringBuilder stringBuilder = new StringBuilder(exceptionName).append("\n");
+        StackTraceElement[] elements = e.getStackTrace();
+        if(UtilMethods.isSet(elements)){
+          stringBuilder.append( getStackTraceAsString(limit, elements) );
+        }
+        return stringBuilder.toString();
+    }
+
+
+    public static String getStackTraceAsString (final int limit, final StackTraceElement... traces) {
+        final StringBuilder builder = new StringBuilder();
+        int count = 1;
+        for (final StackTraceElement traceElement : traces) {
+            if(count <= limit) {
+                builder.append("\tat " + traceElement + "\n");
+            }
+            count++;
+        }
+        return builder.toString();
+    }
+
+    /**
+     * Get the current thread stack trace as a simple string
      * @param limit {@link Integer} limit for the stack trace to attach
      * @return String
      */
     public static String getCurrentStackTraceAsString (final int limit) {
-        final StringBuilder builder = new StringBuilder();
         final StackTraceElement [] traces = Thread.currentThread().getStackTrace();
-        int count = limit;
-        for (final StackTraceElement traceElement : traces) {
-            builder.append("\tat " + traceElement + "\n");
-            if (count-- < 0) {
-                break;
-            }
-        }
-        return builder.toString();
+        return getStackTraceAsString(limit, traces);
     }
 
     /**
