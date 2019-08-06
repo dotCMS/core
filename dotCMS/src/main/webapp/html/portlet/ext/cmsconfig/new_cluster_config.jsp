@@ -163,7 +163,7 @@
                             numberOfNodes: nodeStatus.esNumberOfNodes,
                             activeShards: nodeStatus.esActiveShards,
                             activePrimaryShards: nodeStatus.esActivePrimaryShards,
-                            port: nodeStatus.esPort
+                            unassignedShards: nodeStatus.esUnassignedShards
                           },
 
                           assets: {

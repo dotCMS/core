@@ -61,6 +61,11 @@
 		</tr>
 		<tr>
 			<td></td>
+			<td><%= LanguageUtil.get(pageContext, "configuration_cluster_number_of_data_nodes") %></td>
+			<td align="right">{es.numberOfNodes}</td>
+		</tr>
+		<tr>
+			<td></td>
 			<td><%= LanguageUtil.get(pageContext, "configuration_cluster_active_shards") %></td>
 			<td align="right">{es.activeShards}</td>
 		</tr>
@@ -69,7 +74,12 @@
 			<td><%= LanguageUtil.get(pageContext, "configuration_cluster_active_primary_shards") %></td>
 			<td align="right">{es.activePrimaryShards}</td>
 		</tr>
-	</table>
+		<tr>
+			<td></td>
+			<td><%= LanguageUtil.get(pageContext, "configuration_cluster_unassigned_shards") %></td>
+			<td align="right">{es.unassignedShards}</td>
+		</tr>
+		</table>
 	<table class="network-action__list">
 		<tr>
 			<td><i class="statusIcon {assets.status}"></i></td>
