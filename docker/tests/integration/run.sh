@@ -32,11 +32,12 @@ printUsage () {
 buildImage=true
 useCache=false
 
-while getopts "d:b:e:rch" option; do
+while getopts "d:b:e:g:rch" option; do
   case ${option} in
 
   d) database=${OPTARG} ;;
   b) branchOrCommit=${OPTARG} ;;
+  g) gitHash=${OPTARG} ;;
   e) extra=${OPTARG} ;;
   r) buildImage=false ;;
   c) useCache=true ;;
@@ -59,6 +60,11 @@ if [ -z "${database}" ]; then
   database=postgres
 fi
 
+if [ -z "${gitHash}" ]; then
+  gitHash=$(git rev-parse HEAD)
+  echo " >>> git hash parameter NOT FOUND, using current git commit hash [${gitHash}]"
+fi
+
 if [ -z "${branchOrCommit}" ]; then
 
   foundBranchName=$(git symbolic-ref -q HEAD)
@@ -71,8 +77,7 @@ fi
 echo ""
 
 # Creating required folders
-mkdir -p logs
-mkdir -p reports
+mkdir -p output
 
 if [ "$buildImage" = true ]; then
 
@@ -81,12 +86,14 @@ if [ "$buildImage" = true ]; then
     docker build --pull \
       --build-arg BUILD_FROM=COMMIT \
       --build-arg BUILD_ID=${branchOrCommit} \
+      --build-arg BUILD_HASH=${gitHash} \
       --build-arg LICENSE_KEY=${LICENSE_KEY} \
       -t ${BUILD_IMAGE_TAG} .
   else
     docker build --pull --no-cache \
       --build-arg BUILD_FROM=COMMIT \
       --build-arg BUILD_ID=${branchOrCommit} \
+      --build-arg BUILD_HASH=${gitHash} \
       --build-arg LICENSE_KEY=${LICENSE_KEY} \
       -t ${BUILD_IMAGE_TAG} .
   fi

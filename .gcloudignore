@@ -5,8 +5,7 @@ docs
 dotCMS
 libs
 docker/tests/integration/backup
-docker/tests/integration/reports
-docker/tests/integration/logs
+docker/tests/integration/output
 docker/tests/integration/license
 docker/tests/integration/.setup
 .gitignore

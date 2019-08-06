@@ -11,5 +11,5 @@ function bell() {
 bell &
 gcloud builds submit \
   --config=travis/cloudrun.yaml \
-  --substitutions=_DB_TYPE=$DB_TYPE,_CUSTOM_RUN_ID=$TRAVIS_COMMIT .
+  --substitutions=_DB_TYPE=$DB_TYPE,_CUSTOM_RUN_ID=$TRAVIS_COMMIT,_GOOGLE_CREDENTIALS_BASE64=$GOOGLE_CREDENTIALS_BASE64 .
 exit $?
