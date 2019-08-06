@@ -617,6 +617,76 @@ public class WorkflowAPITest extends IntegrationTestBase {
         assertFalse(systemActionByContentTypeDeletedOpt.isPresent());
     }
 
+    /////
+    @Test(expected = IllegalArgumentException.class)
+    public void mapSystemActionToWorkflowActionForWorkflowScheme_Null_SystemAction_Test() throws DotDataException {
+
+        workflowAPI.mapSystemActionToWorkflowActionForWorkflowScheme(null, null, null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void mapSystemActionToWorkflowActionForWorkflowScheme_Null_WFAction_Test() throws DotDataException {
+
+        workflowAPI.mapSystemActionToWorkflowActionForWorkflowScheme(WorkflowAPI.SystemAction.NEW, null, null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void mapSystemActionToWorkflowActionForWorkflowScheme_Null_Workflow_Scheme_Test() throws DotDataException, DotSecurityException {
+
+        workflowAPI.mapSystemActionToWorkflowActionForWorkflowScheme(WorkflowAPI.SystemAction.NEW, workflowAPI.findAction(
+                SystemWorkflowConstants.WORKFLOW_SAVE_ACTION_ID, APILocator.systemUser()), null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void mapSystemActionToWorkflowActionForWorkflowScheme_InvalidScheme_Test() throws DotDataException, DotSecurityException {
+
+        final Optional<WorkflowScheme> foundSchemeOpt = workflowAPI.findSchemes(false).stream().filter(workflowScheme ->
+                !SystemWorkflowConstants.SYSTEM_WORKFLOW_ID.equals(workflowScheme.getId())).findFirst();
+
+        if (foundSchemeOpt.isPresent()) {
+
+            workflowAPI.mapSystemActionToWorkflowActionForWorkflowScheme(WorkflowAPI.SystemAction.NEW, workflowAPI.findAction(
+                    SystemWorkflowConstants.WORKFLOW_SAVE_ACTION_ID, APILocator.systemUser()), foundSchemeOpt.get());
+        }
+    }
+
+    @Test()
+    public void mapSystemActionToWorkflowActionForWorkflowScheme_Test() throws DotDataException, DotSecurityException {
+
+        final WorkflowAction saveAction =
+                workflowAPI.findAction(SystemWorkflowConstants.WORKFLOW_SAVE_ACTION_ID, APILocator.systemUser());
+
+        workflowAPI.saveSchemeIdsForContentType(contentType, CollectionsUtils.set(SystemWorkflowConstants.SYSTEM_WORKFLOW_ID));
+        final WorkflowScheme systemWorkflow = workflowAPI.findSystemWorkflowScheme();
+        final SystemActionWorkflowActionMapping mapping =
+                workflowAPI.mapSystemActionToWorkflowActionForWorkflowScheme
+                        (WorkflowAPI.SystemAction.NEW, saveAction, systemWorkflow);
+
+        assertNotNull(mapping);
+        assertEquals(WorkflowAPI.SystemAction.NEW, mapping.getSystemAction());
+        assertEquals(saveAction,  mapping.getWorkflowAction());
+        assertEquals(systemWorkflow, mapping.getOwner());
+
+        final List<SystemActionWorkflowActionMapping> systemActionsByScheme = workflowAPI.findSystemActionsByScheme
+                (systemWorkflow, APILocator.systemUser());
+
+        assertNotNull(systemActionsByScheme);
+        assertTrue(UtilMethods.isSet(systemActionsByScheme));
+        assertTrue(systemActionsByScheme.stream().anyMatch(systemMapping ->
+                systemMapping.getSystemAction() == WorkflowAPI.SystemAction.NEW && systemMapping.getWorkflowAction().equals(saveAction)));
+
+        for (final SystemActionWorkflowActionMapping systemActionWorkflowActionMapping: systemActionsByScheme) {
+
+            workflowAPI.deleteSystemAction(systemActionWorkflowActionMapping);
+        }
+
+        final List<SystemActionWorkflowActionMapping> systemActionsBySchemeDeleted = workflowAPI.findSystemActionsByScheme
+                (systemWorkflow, APILocator.systemUser());
+
+        assertFalse(UtilMethods.isSet(systemActionsBySchemeDeleted));
+    }
+    /////
+
     @Test(expected = DoesNotExistException.class)
     public void findFirstStepForActionNonExistingTest () throws DotDataException {
 
