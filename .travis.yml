@@ -1,0 +1,42 @@
+language: java
+git:
+  submodules: false
+
+cache:
+  directories:
+    - ${HOME}/gcloud/
+
+# https://docs.travis-ci.com/user/environment-variables/
+env:
+  global:
+    - GCLOUD_DIR=${HOME}/gcloud
+    - PATH=${GCLOUD_DIR}/google-cloud-sdk/bin:${PATH}
+    - GOOGLE_CREDENTIALS=${TRAVIS_BUILD_DIR}/credentials.json
+    - CLOUDSDK_CORE_DISABLE_PROMPTS=1
+    - LICENSE=${DOTCMS_LICENSE}
+
+before_install:
+  - chmod +x travis/environment_vars.sh
+  - chmod +x travis/install_gcloud.sh
+  - chmod +x travis/submit.sh
+  - chmod +x travis/run.sh
+
+# https://docs.travis-ci.com/user/build-stages
+jobs:
+  include:
+    - stage: build image
+      script: bash travis/submit.sh
+    - stage: integration tests
+      env: DB_TYPE=postgres
+      name: postgres
+      script: bash travis/run.sh
+    - script: bash travis/run.sh
+      env: DB_TYPE=mysql
+      name: mysql
+    - script: bash travis/run.sh
+      env: DB_TYPE=oracle
+      name: oracle
+
+install:
+  - travis/environment_vars.sh
+  - travis/install_gcloud.sh

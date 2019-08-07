@@ -12,6 +12,7 @@ import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
@@ -63,15 +64,10 @@ public class ContainerWebAPIIntegrationTest extends IntegrationTestBase {
     }
 
     private static User createUser() throws DotDataException, DotSecurityException {
-        HibernateUtil.startTransaction();
-        final User user = APILocator.getUserAPI().createUser("new.user@test.com", "new.user@test.com");
-        user.setFirstName("Test-11962");
-        user.setLastName("User-11962");
 
-        APILocator.getUserAPI().save(user, adminUser, false);
+        final User user = new UserDataGen().nextPersisted();
         assertNotNull(user.getUserId());
 
-        HibernateUtil.closeAndCommitTransaction();
         return APILocator.getUserAPI().getUsersByNameOrEmailOrUserID(user.getEmailAddress(), 0, 1).get(0);
     }
 

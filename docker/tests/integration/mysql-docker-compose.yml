@@ -3,42 +3,11 @@ version: "3.7"
 
 # https://docs.docker.com/compose/compose-file/
 
-#volumes:
-#  db:
-#  reports:
-#  logs:
-
-networks:
-  db_net:
-
 services:
 
   integration-tests:
-    build:
-      context: .
-      args:
-        BUILD_FROM: COMMIT
-        BUILD_ID: origin/master
-        DB_TYPE: mysql
-#        TEST_PARAMS: "--debug-jvm"
-#        TEST_PARAMS: "--tests *HTMLPageAssetRenderedTest"
-        LICENSE_KEY: ${LICENSE_KEY}
-    depends_on:
-      - database
-    ports:
-      - "15005:5005"
-    volumes:
-      - type: bind
-        source: ./reports
-        target: /custom/reports
-      - type: bind
-        source: ./logs
-        target: /custom/logs
-#      - type: bind
-#        source: ./license/license.dat
-#        target: /custom/dotsecure/license/license.dat
-    networks:
-      - db_net
+    environment:
+      databaseType: mysql
 
   # https://hub.docker.com/_/mysql
   database:

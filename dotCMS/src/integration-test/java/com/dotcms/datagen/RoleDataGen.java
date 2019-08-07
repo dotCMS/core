@@ -20,6 +20,9 @@ public class RoleDataGen extends AbstractDataGen<Role> {
     private Boolean editLayouts = Boolean.TRUE;
 
     @SuppressWarnings("unused")
+    /**
+     * @param parent Identifier of parent role
+     */
     public RoleDataGen parent(final String parent) {
         this.parent = parent;
         return this;

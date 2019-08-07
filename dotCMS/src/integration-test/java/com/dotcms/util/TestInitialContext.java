@@ -1,15 +1,14 @@
 package com.dotcms.util;
 
-import com.dotcms.repackage.org.apache.commons.dbcp.BasicDataSource;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.Logger;
-
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
-
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
+import org.apache.tomcat.jdbc.pool.DataSource;
+import org.apache.tomcat.jdbc.pool.PoolProperties;
 
 /**
  * Singleton that defines a context that provides a datasource for testing purpose
@@ -18,7 +17,7 @@ import javax.naming.NamingException;
  */
 public class TestInitialContext extends InitialContext {
 
-    private BasicDataSource dataSource;
+    private DataSource dataSource;
     private Properties prop;
     private static TestInitialContext context;
 
@@ -32,18 +31,39 @@ public class TestInitialContext extends InitialContext {
         }
 
         loadProperties();
-        dataSource = new BasicDataSource();
+
         System.out.println("dbType = " + dbType);
-        dataSource.setDriverClassName(prop.getProperty(dbType + "db.driver"));
-        dataSource.setUrl(prop.getProperty(dbType + "db.base.url"));
-        dataSource.setUsername(prop.getProperty(dbType + "db.username"));
-        dataSource.setPassword(prop.getProperty(dbType + "db.password"));
-        dataSource.setRemoveAbandoned(true);
-        dataSource.setLogAbandoned(true);
-        dataSource.setMaxIdle(Integer.parseInt(prop.getProperty(dbType + "db.max.idle")));
-        dataSource.setMaxActive(Integer.parseInt(prop.getProperty(dbType + "db.max.total")));
-        dataSource.setMaxWait(300000);
-        
+
+        PoolProperties properties = new PoolProperties();
+        properties.setName("jdbc/dotCMSPool");
+        properties.setDriverClassName(prop.getProperty(dbType + "db.driver"));
+        properties.setUrl(prop.getProperty(dbType + "db.base.url"));
+        properties.setUsername(prop.getProperty(dbType + "db.username"));
+        properties.setPassword(prop.getProperty(dbType + "db.password"));
+        properties.setMaxActive(Integer.parseInt(prop.getProperty(dbType + "db.max.total")));
+        properties.setMaxIdle(Integer.parseInt(prop.getProperty(dbType + "db.max.idle")));
+        properties.setMaxWait(60000);
+        properties.setRemoveAbandoned(true);
+        properties.setRemoveAbandonedTimeout(10);
+        properties.setLogAbandoned(true);
+        properties
+                .setJdbcInterceptors("org.apache.tomcat.jdbc.pool.interceptor.ResetAbandonedTimer");
+        properties.setTimeBetweenEvictionRunsMillis(30000);
+        properties.setValidationQuery(prop.getProperty(dbType + "db.validation.query"));
+        properties.setTestOnBorrow(Boolean.TRUE);
+        properties.setTestWhileIdle(Boolean.TRUE);
+        properties.setAbandonWhenPercentageFull(50);
+        properties.setDefaultTransactionIsolation(
+                Integer.parseInt(prop.getProperty(dbType + "db.default.transaction.isolation")));
+
+        try {
+            dataSource = new DataSource(properties);
+            //initialise the pool itself
+            dataSource.createPool();
+        } catch (Exception e) {
+            throw new DotRuntimeException("Error creating tests data source", e);
+        }
+
     }
 
     public static TestInitialContext getInstance() throws NamingException {

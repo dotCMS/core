@@ -611,7 +611,7 @@ public class FieldAPIImpl implements FieldAPI {
     }
 
 
-    @CloseDBIfOpened
+  @CloseDBIfOpened
   @Override
   public List<Field> byContentTypeId(final String typeId) throws DotDataException {
     return fieldFactory.byContentTypeId(typeId);

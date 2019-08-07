@@ -23,8 +23,8 @@ public class Task04375UpdateColorsTest extends BaseWorkflowIntegrationTest {
             final Task04375UpdateColors updateColors = new Task04375UpdateColors();
             updateColors.executeUpgrade();
             final Company company = APILocator.getCompanyAPI().getDefaultCompany();
-            Assert.assertEquals(updateColors.PRIMARY_COLOR,company.getType());
-            Assert.assertEquals(updateColors.SECONDARY_COLOR,company.getStreet());
+            Assert.assertEquals(updateColors.PRIMARY_COLOR.toLowerCase(),company.getType().toLowerCase());
+            Assert.assertEquals(updateColors.SECONDARY_COLOR.toLowerCase(),company.getStreet().toLowerCase());
     }
 
 }

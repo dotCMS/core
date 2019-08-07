@@ -1,0 +1,17 @@
+.github
+.git
+bin
+docs
+dotCMS
+libs
+docker/tests/integration/backup
+docker/tests/integration/output
+docker/tests/integration/license
+docker/tests/integration/.setup
+.gitignore
+.gitmodules
+build.xml
+Install_dotCMS_Release.md
+license.txt
+private.xml
+README.md

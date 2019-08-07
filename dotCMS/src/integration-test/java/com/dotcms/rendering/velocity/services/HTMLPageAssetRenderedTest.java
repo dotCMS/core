@@ -51,6 +51,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -83,6 +84,7 @@ public class HTMLPageAssetRenderedTest {
         contentletAPI = APILocator.getContentletAPI();
         createTestPage();
 
+        IntegrationTestInitService.getInstance().mockStrutsActionModule();
     }
 
     private static void createTestPage() throws Exception{

@@ -24,8 +24,7 @@ package com.liferay.portal.events;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Layout;
-import com.google.common.base.Splitter;
-import com.liferay.portal.NoSuchUserException;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.portal.struts.Action;
@@ -35,22 +34,12 @@ import com.liferay.portal.util.PropsUtil;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.GetterUtil;
 import com.liferay.util.ListUtil;
-import com.liferay.util.ParamUtil;
 import com.liferay.util.Validator;
-
-import io.vavr.control.Try;
-
-import java.nio.charset.Charset;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Optional;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-
-import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.struts.Globals;
 
 /**
@@ -111,17 +100,15 @@ public class ServicePreAction extends Action {
 
         ses.setAttribute(Globals.LOCALE_KEY, locale);
       }
-      List<Layout> layouts = APILocator.getLayoutAPI().loadLayoutsForUser(user);
-      
-      Layout layout=Try.of(()-> APILocator.getLayoutAPI().resolveLayout(req).get()).getOrElse(()->layouts.get(0));
-
-
-
-      Layout[] ls = new Layout[layouts.size()];
-      ((ArrayList) layouts).toArray(ls);
+      final List<Layout> layouts = APILocator.getLayoutAPI().loadLayoutsForUser(user);
+      final Layout layout = APILocator.getLayoutAPI().resolveLayout(req)
+              .orElseGet(
+                  () -> UtilMethods.isSet(layouts) ? layouts.get(0) : null
+              );
+      final Layout[] layoutsArray = layouts.stream().toArray(Layout[]::new);
 
       req.setAttribute(WebKeys.LAYOUT, layout);
-      req.setAttribute(WebKeys.LAYOUTS, ls);
+      req.setAttribute(WebKeys.LAYOUTS, layoutsArray);
     } catch (Exception e) {
       throw new ActionException(e);
     }
