@@ -230,7 +230,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     public Set<String> getPersonalizationsForPage(final String pageId) throws DotDataException {
 
         final Set<String> personalizationSet = new HashSet<>();
-        final  List<Map<String, Object>>  personalizationMaps =
+        final List<Map<String, Object>>  personalizationMaps =
                  new DotConnect().setSQL(SELECT_UNIQUE_PERSONALIZATION_PER_PAGE).addParam(pageId).loadObjectResults();
 
         for (final Map<String, Object> personalizationMap : personalizationMaps) {

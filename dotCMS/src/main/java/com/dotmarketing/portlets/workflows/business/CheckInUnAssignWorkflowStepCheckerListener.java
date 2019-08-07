@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.workflows.business;
 
 import com.dotcms.content.elasticsearch.business.event.ContentletCheckinEvent;
 import com.dotcms.system.event.local.model.EventSubscriber;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -76,20 +77,28 @@ public class CheckInUnAssignWorkflowStepCheckerListener implements EventSubscrib
 
     private static void assign (final Contentlet contentlet, final User user) {
 
-        List<WorkflowAction> workflowActions = null;
-
         try {
 
-            workflowActions = APILocator.getWorkflowAPI()
-                    .findAvailableDefaultActionsByContentType(contentlet.getContentType(), user);
+            if (null != contentlet &&
+                    UtilMethods.isSet(contentlet.getIdentifier())) {
 
-            if (UtilMethods.isSet(workflowActions)) {
+                final Identifier identifier = APILocator.getIdentifierAPI()
+                        .find(contentlet.getIdentifier());
 
-                APILocator.getWorkflowAPI().saveWorkflowTask(
-                        createWorkflowTask(contentlet, user, workflowActions));
-            } else {
+                if (null != identifier && UtilMethods.isSet(identifier.getId())) {
 
-                setToFirstSystemWorkflowStep (contentlet, user);
+                    final List<WorkflowAction> workflowActions = APILocator.getWorkflowAPI()
+                            .findAvailableDefaultActionsByContentType(contentlet.getContentType(), user);
+
+                    if (UtilMethods.isSet(workflowActions)) {
+
+                        APILocator.getWorkflowAPI().saveWorkflowTask(
+                                createWorkflowTask(contentlet, user, workflowActions));
+                    } else {
+
+                        setToFirstSystemWorkflowStep(contentlet, user);
+                    }
+                }
             }
         } catch (DotDataException | DotSecurityException e) {
 
@@ -114,10 +123,15 @@ public class CheckInUnAssignWorkflowStepCheckerListener implements EventSubscrib
 
         final String stepName    = UtilHTML.escapeHTMLSpecialChars(workflowStep.getName());
         final String title       = "Auto assign to the step: " + stepName;
-        final String description = "The content titled \"" + UtilHTML.escapeHTMLSpecialChars(contentlet.getTitle().trim()) +
+        final String description = "The content titled \"" + UtilHTML.escapeHTMLSpecialChars(getTitle(contentlet)) +
                 "\" has been moved automatically to the step " + stepName;
 
         return APILocator.getWorkflowAPI().createWorkflowTask(contentlet, user, workflowStep, title, description);
+    }
+
+    private static String getTitle (final Contentlet contentlet) {
+
+        return null != contentlet && null != contentlet.getTitle()? contentlet.getTitle().trim(): "unknown";
     }
 
     private static void setToFirstSystemWorkflowStep(final Contentlet contentlet, final User user) throws DotDataException {

@@ -1,24 +1,7 @@
 package com.dotcms.rest.api.v1.page;
 
-import static com.dotcms.util.CollectionsUtils.list;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
-import com.dotcms.datagen.ContainerDataGen;
-import com.dotcms.datagen.FolderDataGen;
-import com.dotcms.datagen.HTMLPageDataGen;
-import com.dotcms.datagen.SiteDataGen;
-import com.dotcms.datagen.StructureDataGen;
-import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.datagen.*;
 import com.dotcms.rest.*;
 import com.dotcms.rest.api.v1.personalization.PersonalizationPersonaPageView;
 import com.dotcms.util.IntegrationTestInitService;
@@ -27,8 +10,8 @@ import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.factories.MultiTreeAPI;
+import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -39,20 +22,23 @@ import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRend
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.PageView;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.personas.business.PersonaAPI;
 import com.dotmarketing.portlets.personas.model.Persona;
+import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONException;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import io.vavr.Tuple;
 import org.elasticsearch.action.search.SearchResponse;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.jvnet.hk2.internal.Collector;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -154,13 +140,15 @@ public class PageResourceTest {
     public void testGetPersonalizedPersonasOnPage()
             throws Exception {
 
+        final Host  host = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
         final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
         final String  htmlPage            = UUIDGenerator.generateUuid();
         final String  container           = UUIDGenerator.generateUuid();
         final String  content             = UUIDGenerator.generateUuid();
-        final Persona persona             = APILocator.getPersonaAPI().getPersonas
-                (APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false), true, false,
-                        APILocator.systemUser(), false).stream().findFirst().get();
+        final List<Contentlet> contentlets  = APILocator.getContentletAPI().search
+                (new StringBuilder("+contentType:persona +live:true +deleted:false +working:true +conhost:" + host.getIdentifier()).toString(),
+                        -1, 0, "title desc", APILocator.systemUser(), false);
+        final Persona persona             = APILocator.getPersonaAPI().fromContentlet(contentlets.stream().findFirst().get());
         final String personaTag           = persona.getKeyTag();
         final String personalization      = Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + personaTag;
 
@@ -169,13 +157,17 @@ public class PageResourceTest {
 
         when(request.getRequestURI()).thenReturn("/index");
         final Response response = pageResource.getPersonalizedPersonasOnPage(request,  new EmptyHttpResponse(),
-                null, 0, 10, "title", "ASC", null, htmlPage);
+                null, 0, 10, "title", "ASC", host.getIdentifier(), htmlPage);
 
         final ResponseEntityView entityView = (ResponseEntityView)response.getEntity();
         assertNotNull(entityView);
 
         final PaginatedArrayList<PersonalizationPersonaPageView> paginatedArrayList = (PaginatedArrayList)entityView.getEntity();
         assertNotNull(paginatedArrayList);
+
+        Logger.info(this, "************ htmlPage: " + htmlPage + ", container: " + container + ", personaTag: " + personaTag);
+        Logger.info(this, "************ PaginatedArrayList: " + paginatedArrayList.stream()
+                .map(p-> Tuple.of(p.getPersona().get(PersonaAPI.KEY_TAG_FIELD),p.getPersona().get("personalized"))).collect(Collectors.toList()));
 
         assertTrue(paginatedArrayList.stream().anyMatch(personalizationPersonaPageView ->
                 personalizationPersonaPageView.getPersona().get(PersonaAPI.KEY_TAG_FIELD).equals(personaTag) &&
