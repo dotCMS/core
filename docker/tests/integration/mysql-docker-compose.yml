@@ -3,36 +3,11 @@ version: "3.7"
 
 # https://docs.docker.com/compose/compose-file/
 
-#volumes:
-#  db:
-#  reports:
-#  logs:
-
-networks:
-  db_net:
-
 services:
 
   integration-tests:
-    image: "${IMAGE_BASE_NAME}"
     environment:
       databaseType: mysql
-      EXTRA_PARAMS:
-      GOOGLE_CREDENTIALS_BASE64:
-      exportReports:
-    depends_on:
-      - database
-    ports:
-      - "15005:5005"
-    volumes:
-      - type: bind
-        source: ./output
-        target: /custom/output
-#      - type: bind
-#        source: ./license/license.dat
-#        target: /custom/dotsecure/license/license.dat
-    networks:
-      - db_net
 
   # https://hub.docker.com/_/mysql
   database:

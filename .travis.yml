@@ -18,11 +18,8 @@ env:
 before_install:
   - chmod +x travis/environment_vars.sh
   - chmod +x travis/install_gcloud.sh
-  - chmod +x travis/comment_volumes.sh
   - chmod +x travis/submit.sh
   - chmod +x travis/run.sh
-  - chmod +rwx docker/tests/integration/postgres-docker-compose.yml
-  - chmod +rwx docker/tests/integration/mysql-docker-compose.yml
 
 # https://docs.travis-ci.com/user/build-stages
 jobs:
@@ -36,8 +33,10 @@ jobs:
     - script: bash travis/run.sh
       env: DB_TYPE=mysql
       name: mysql
+    - script: bash travis/run.sh
+      env: DB_TYPE=oracle
+      name: oracle
 
 install:
   - travis/environment_vars.sh
   - travis/install_gcloud.sh
-  - travis/comment_volumes.sh
