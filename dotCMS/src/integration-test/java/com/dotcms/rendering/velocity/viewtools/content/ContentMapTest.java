@@ -70,7 +70,7 @@ public class ContentMapTest extends IntegrationTestBase {
                 .setKey("Bikes").setKeywords("Bikes").setCategoryVelocityVarName("bikes").children(categoryChild1,categoryChild2).nextPersisted();
 
         // Get "News" content-type
-        final ContentType contentType = TestDataUtils.getNewsLikeContentType("NewsCategoriesTest-"+System.currentTimeMillis(),rootCategory.getInode());
+        final ContentType contentType = TestDataUtils.getNewsLikeContentType("newsCategoriesTest"+System.currentTimeMillis(),rootCategory.getInode());
 
         // Create dummy "News" content
         final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType.inode())
@@ -86,7 +86,7 @@ public class ContentMapTest extends IntegrationTestBase {
 
         // Persist dummy "News" contents to ensure at least one result will be returned
         final Contentlet contentlet = contentletDataGen.nextPersisted();
-        contentletAPI.publish(contentlet,user,false);
+        ContentletDataGen.publish(contentlet);
 
         final Context velocityContext = mock(Context.class);
 

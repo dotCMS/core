@@ -38,6 +38,7 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.quartz.job.DeleteFieldJob;
 import com.dotmarketing.quartz.job.TestJobExecutor;
 import java.util.ArrayList;
@@ -580,7 +581,10 @@ public class DeleteFieldJobTest extends ContentTypeBaseTest {
             contentlet.setStructureInode(contentType.inode());
             contentlet.setHost(site.getIdentifier());
             contentlet.setLanguageId(langId);
-			
+
+            contentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
+            contentlet.setBoolProperty(Contentlet.IS_TEST_MODE, true);
+
 			contentletAPI.setContentletProperty(contentlet, oldCheckboxField, checkboxValue);
 			contentletAPI.setContentletProperty(contentlet, oldDateField, dateValue);
 			contentletAPI.setContentletProperty(contentlet, oldTimeField, timeValue);

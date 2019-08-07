@@ -47,6 +47,7 @@ import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.util.CollectionsUtils;
+import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotcms.uuid.shorty.ShortyIdCache;
@@ -2893,7 +2894,7 @@ public class ContentletAPITest extends ContentletBaseTest {
     }
 
     /**
-     * Testing {@link ContentletAPI#getRelatedContent(com.dotmarketing.portlets.contentlet.model.Contentlet, com.dotmarketing.portlets.structure.model.Relationship, boolean, com.liferay.portal.model.User, boolean)}
+     * Testing {@link ContentletAPI#getRelatedContent(Contentlet, Relationship, User, boolean)}
      *
      * @throws DotSecurityException
      * @throws DotDataException
@@ -4142,8 +4143,34 @@ public class ContentletAPITest extends ContentletBaseTest {
         }
     }
 
+    private static class testCaseUniqueTextField{
+        String fieldValue1;
+
+        testCaseUniqueTextField(final String fieldValue1){
+            this.fieldValue1 = fieldValue1;
+        }
+    }
+
+    @DataProvider
+    public static Object[] testCasesUniqueTextField() throws Exception{
+        return new Object[]{
+                new testCaseUniqueTextField("diffLang"),//test for same value diff lang
+                new testCaseUniqueTextField("\"A+\" Student"),//test for special chars
+                new testCaseUniqueTextField("CASEINSENSITIVE")//test for case insensitive
+        };
+    }
+
+    /**
+     * This test is for the unique feature of a text field.
+     * It creates a content type with a text field marked as unique,
+     * and creates a contentlet in English, then a contentlet in Spanish
+     * (unique value does not matter the lang)
+     * and finally another contentlet in English and this is when it throws the exception
+     * (value it's in lowercase because needs to be case insentitive)
+     */
     @Test(expected = DotContentletValidationException.class)
-    public void testUniqueTextFieldContentletsWithDiffLanguages()
+    @UseDataProvider("testCasesUniqueTextField")
+    public void testUniqueTextFieldContentlets(final testCaseUniqueTextField testCase)
             throws DotDataException, DotSecurityException {
         String contentTypeName = "contentTypeTxtField" + System.currentTimeMillis();
         ContentType contentType = null;
@@ -4161,7 +4188,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             Contentlet contentlet = new Contentlet();
             contentlet.setContentTypeId(contentType.inode());
             contentlet.setLanguageId(languageAPI.getDefaultLanguage().getId());
-            contentlet.setStringProperty(field.variable(),"test");
+            contentlet.setStringProperty(field.variable(),testCase.fieldValue1);
             contentlet.setIndexPolicy(IndexPolicy.FORCE);
             contentlet = contentletAPI.checkin(contentlet, user, false);
             contentlet = contentletAPI.find(contentlet.getInode(), user, false);
@@ -4170,7 +4197,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             Contentlet contentlet2 = new Contentlet();
             contentlet2.setContentTypeId(contentType.inode());
             contentlet2.setLanguageId(spanishLanguage.getId());
-            contentlet2.setStringProperty(field.variable(),"test");
+            contentlet2.setStringProperty(field.variable(),testCase.fieldValue1);
             contentlet2.setIndexPolicy(IndexPolicy.FORCE);
             contentlet2 = contentletAPI.checkin(contentlet2, user, false);
 
@@ -4178,10 +4205,64 @@ public class ContentletAPITest extends ContentletBaseTest {
             Contentlet contentlet3 = new Contentlet();
             contentlet3.setContentTypeId(contentType.inode());
             contentlet3.setLanguageId(languageAPI.getDefaultLanguage().getId());
-            contentlet3.setStringProperty(field.variable(),"test");
+            contentlet3.setStringProperty(field.variable(),testCase.fieldValue1.toLowerCase());
             contentlet3.setIndexPolicy(IndexPolicy.FORCE);
             contentlet3 = contentletAPI.checkin(contentlet3, user, false);
 
+
+        }finally{
+            if(contentType != null) contentTypeAPI.delete(contentType);
+        }
+    }
+
+    /**
+     * Creates a contentlet with a working and a live version with diff values,
+     * and tries to create another contentlet with the live value this throws
+     * the exception (before we were only checking on the working index).
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test(expected = DotContentletValidationException.class)
+    public void testUniqueTextFieldLiveAndWorkingWithDiffValues()
+            throws DotDataException, DotSecurityException {
+        final String contentTypeName = "contentTypeTxtField" + System.currentTimeMillis();
+        final String fieldValueLive = "Live Value";
+        final String fieldValueWorking = "Working Value";
+        ContentType contentType = null;
+        try{
+            contentType = createContentType(contentTypeName, BaseContentType.CONTENT);
+            com.dotcms.contenttype.model.field.Field field =  ImmutableTextField.builder()
+                    .name("Text Unique")
+                    .contentTypeId(contentType.id())
+                    .dataType(DataTypes.TEXT)
+                    .unique(true)
+                    .build();
+            field = fieldAPI.save(field, user);
+
+            //Contentlet in English
+            Contentlet contentlet = new Contentlet();
+            contentlet.setContentTypeId(contentType.inode());
+            contentlet.setLanguageId(languageAPI.getDefaultLanguage().getId());
+            contentlet.setStringProperty(field.variable(),fieldValueLive);
+            contentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
+            contentlet = contentletAPI.checkin(contentlet, user, false);
+            contentletAPI.publish(contentlet,user,false);
+
+
+            contentlet = contentletAPI.checkout(contentlet.getInode(),user,false);
+            contentlet.setInode("");
+            contentlet.setStringProperty(field.variable(),fieldValueWorking);
+            contentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
+            contentletAPI.checkin(contentlet, user, false);
+
+            //Contentlet in English (throws the error)
+            Contentlet contentlet3 = new Contentlet();
+            contentlet3.setContentTypeId(contentType.inode());
+            contentlet3.setLanguageId(languageAPI.getDefaultLanguage().getId());
+            contentlet3.setStringProperty(field.variable(),fieldValueLive);
+            contentlet3.setIndexPolicy(IndexPolicy.WAIT_FOR);
+            contentletAPI.checkin(contentlet3, user, false);
 
         }finally{
             if(contentType != null) contentTypeAPI.delete(contentType);
@@ -5938,6 +6019,56 @@ public class ContentletAPITest extends ContentletBaseTest {
             assertEquals(contentType.host(), contentlet.getHost());
         }finally {
             if (contentType != null){
+                contentTypeAPI.delete(contentType);
+            }
+        }
+    }
+
+    /**
+     * This test creates one content with versions in English and Spanish
+     * when one of these versions is deleted should be removed from the index.
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws InterruptedException
+     */
+    @Test
+    public void testRemoveContentFromIndexMultilingualContent()
+            throws DotDataException, DotSecurityException, InterruptedException {
+        ContentType contentType = null;
+
+        try {
+            contentType = new ContentTypeDataGen()
+                    .name("testRemoveContentFromIndexMultilingualContent"+System.currentTimeMillis())
+                    .fields(ImmutableList
+                            .of(ImmutableTextField.builder().name("Title").variable("title")
+                                    .build()))
+                    .nextPersisted();
+
+            final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType.id());
+            final Contentlet contentInEnglish = contentletDataGen.languageId(languageAPI.getDefaultLanguage().getId()).nextPersisted();
+            Contentlet contentInSpanish = contentletDataGen.checkout(contentInEnglish);
+            contentInSpanish.setLanguageId(spanishLanguage.getId());
+            contentInSpanish.setIndexPolicy(IndexPolicy.WAIT_FOR);
+            contentInSpanish = contentletDataGen.checkin(contentInSpanish);
+
+            assertEquals(2,
+                    contentletAPI.searchIndex("+identifier:"+contentInEnglish.getIdentifier(),-1,0,"",user,true).size());
+
+            contentletDataGen.archive(contentInSpanish);
+            contentletDataGen.delete(contentInSpanish);
+
+            assertEquals(1,
+                    contentletAPI.searchIndex("+identifier:"+contentInEnglish.getIdentifier(),-1,0,"",user,true).size());
+
+            contentletDataGen.archive(contentInEnglish);
+            contentletDataGen.delete(contentInEnglish);
+
+            assertEquals(0,
+                    contentletAPI.searchIndex("+identifier:"+contentInEnglish.getIdentifier(),-1,0,"",user,true).size());
+
+        } finally {
+            if (contentType != null) {
                 contentTypeAPI.delete(contentType);
             }
         }

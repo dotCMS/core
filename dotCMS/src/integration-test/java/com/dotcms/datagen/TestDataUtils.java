@@ -835,6 +835,10 @@ public class TestDataUtils {
         }
     }
 
+    public static Contentlet getBlogContent(Boolean persist, long languageId) {
+        return getBlogContent(persist, languageId, null, null);
+    }
+
     public static Contentlet getBlogContent(Boolean persist, long languageId,
             String contentTypeId) {
         return getBlogContent(persist, languageId, contentTypeId, null);

@@ -1,145 +1,59 @@
-# Compose files
+# Running integration tests
 
 ## License set up
 The integration tests require a valid license to run.
 There are two ways to set up a license
 
-##### 1. Using an environment variable you can export before to build the image
+##### 1. Using an environment variable you can export before to run the script
 
 Example:
 ```
-export LICENSE_KEY=...4isycnXe8nsiO...
-docker-compose -f postgres-docker-compose.yml build
+export LICENSE_KEY=$(<./dotcms/license.txt)
+./run.sh
 ```
 
 ##### 2. Binding a license file (license.dat) to the docker image
 1. Inside this folder create a **license** folder (docker/tests/integration/license)
 2. Add a valid **license.dat** file inside the created folder
-3. Uncomment the **bind** folder instructions in the **\*-docker-compose.yml** files:
+3. Uncomment the **bind** folder instructions in the **base-service.yml** files:
     ```
     - type: bind
       source: ./license/license.dat
       target: /custom/dotsecure/license/license.dat
     ```
-4. Run the build command. Example: 
+4. Run the script. Example: 
     ```
-    docker-compose -f postgres-docker-compose.yml build
+    ./run.sh
     ```
 
-## How to run
+## How to run using the run script (run.sh)
 
-### postgres
+#### Arguments
 ```
-docker-compose -f postgres-docker-compose.yml build
-docker-compose -f postgres-docker-compose.yml up
-```
-
-##### Running with options to shutdown other services (db) as soon as the tests finished to run
-```
-docker-compose -f postgres-docker-compose.yml up \
-    --abort-on-container-exit \
-    --exit-code-from integration-tests
+  -d      [OPTIONAL]                   database: (postgres as default) -> One of ["postgres", "mysql", "oracle", "mssql"]
+  -b      [OPTIONAL]                   branch: (current branch as default)
+  -e      [OPTIONAL]                   extra parameters: Must be send inside quotes "
+  -r      [OPTIONAL][no arguments]     run only: Will not executed a build of the image, use the -r option if an image was already generated
+  -c      [OPTIONAL][no arguments]     cache: allows to use the docker cache otherwhise "--no-cache" will be use when building the image  
 ```
 
-##### Shutdown (it is recommended to always execute the down command when the test finished to run)
+#### Examples
+
 ```
-docker-compose -f postgres-docker-compose.yml down
+  ./run.sh
+  ./run.sh -r
+  ./run.sh -c
+  ./run.sh -d mysql
+  ./run.sh -d mysql -b origin/master
+  ./run.sh -d mysql -b myBranchName
+  ./run.sh -e "--debug-jvm"
+  ./run.sh -e "--tests *HTMLPageAssetRenderedTest"
+  ./run.sh -e "--debug-jvm --tests *HTMLPageAssetRenderedTest"
+  ./run.sh -d mysql -b origin/master -e "--debug-jvm --tests *HTMLPageAssetRenderedTest"
 ```
+## Debug
 
-### mysql
-```
-docker-compose -f mysql-docker-compose.yml build
-docker-compose -f mysql-docker-compose.yml up
-```
+Run:
+`./run.sh -e "--debug-jvm"`
 
-##### Running with options to shutdown other services (db) as soon as the tests finished to run
-```
-docker-compose -f mysql-docker-compose.yml up \
-    --abort-on-container-exit \
-    --exit-code-from integration-tests
-```
-
-##### Shutdown (it is recommended to always execute the down command when the test finished to run)
-```
-docker-compose -f mysql-docker-compose.yml down
-```
-
-## Useful commands
-
-#### --no-cache
-`docker-compose -f postgres-docker-compose.yml build --no-cache`
-
-#### Building a given compose file
-
-`docker-compose -f postgres-docker-compose.yml build`
-
-#### Running a given compose file
-
-`docker-compose -f postgres-docker-compose.yml up`
-
-*Detach mode:*
-
-`docker-compose -f postgres-docker-compose.yml up -d`
-
-#### Logging
-You can run containers detached with the `-d` flag and tail 
-the container logs manually with `docker-compose logs --follow [SERVICE…]`
-
-`docker-compose -f postgres-docker-compose.yml logs --follow integration_integration-tests_1` 
-
-#### Checking the status of the containers for a given compose file
-
-`docker-compose -f postgres-docker-compose.yml ps`
-
-#### Shutting down the containers of a given compose file
-
-`docker-compose -f postgres-docker-compose.yml down`
-
-#### Explore a container internal content executing bash on the container
-
-* Check the running containers for a given compose file
-
-    `docker-compose -f postgres-docker-compose.yml ps`
-
-* Select one to explore with bash [using the container name] 
-
-    `docker exec -t -i integration_integration-tests_1 /bin/bash`
-
----
----
----
-
-## Using the docker Image
-
-#### Arguments for building dotCMS docker image: 
-
-|  BUILD_FROM  | BUILD_ID                     | DB_TYPE |
-| ------------ | ---------------              | --------------- |
-| COMMIT       | Commit hash or branch name to use for build | One of 4 options ["postgres", "mysql", "oracle", "mssql"] |
-| TAG          | Tag to use for build         | |
-
-
-### Examples 
-
-#### BRANCH Example 
-Where your branch name is `my-branch-name`.  In this case, becuase a branch is a movable pointer, you need to prune your
-images before building in order to purge your image cache and get a clean build.
-```
-docker build --pull --no-cache --build-arg DB_TYPE=postgres --build-arg BUILD_FROM=COMMIT --build-arg BUILD_ID=origin/my-branch-name -t integration-tests .
-
-docker run -it integration-tests
-```
-
-#### COMMIT Example 
-```
-docker build --pull --no-cache --build-arg DB_TYPE=postgres --build-arg BUILD_FROM=COMMIT --build-arg BUILD_ID=c4e97b3 -t integration-tests .
-
-docker run -it integration-tests
-```
-
-#### TAG Example 
-```
-docker build --pull --no-cache --build-arg DB_TYPE=postgres --build-arg BUILD_FROM=TAG --build-arg BUILD_ID=5.1.6 -t integration-tests .
-
-docker run -it integration-tests
-```
+And wait for the integration tests to start running, then you can attach a remote debugger on port `15005`.
