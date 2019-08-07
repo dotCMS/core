@@ -46,13 +46,13 @@ if [[ "${1}" == "dotcms" || -z "${1}" ]]; then
     echo "================================================================================"
     echo ""
 
-    if [ ! -z "${SLEEP_LENGTH}" ]
+    if [ ! -z "${WAIT_DB_FOR}" ]
     then
         echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-        echo "            Requested sleep of [${SLEEP_LENGTH}]", waiting for the db?
+        echo "            Requested sleep of [${WAIT_DB_FOR}]", waiting for the db?
         echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
         echo ""
-        sleep ${SLEEP_LENGTH}
+        sleep ${WAIT_DB_FOR}
     fi
 
     cd /build/src/core/dotCMS \
