@@ -15,6 +15,7 @@ services:
       EXTRA_PARAMS:
       GOOGLE_CREDENTIALS_BASE64:
       exportReports:
+      WAIT_DB_FOR: 2m
     depends_on:
       - database
     ports:
