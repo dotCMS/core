@@ -49,7 +49,7 @@ if [[ "${1}" == "dotcms" || -z "${1}" ]]; then
     if [ ! -z "${SLEEP_LENGTH}" ]
     then
         echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-        echo "            Requested sleep of [${SLEEP_LENGTH}]", waithing for the db?
+        echo "            Requested sleep of [${SLEEP_LENGTH}]", waiting for the db?
         echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
         echo ""
         sleep ${SLEEP_LENGTH}
