@@ -4,6 +4,8 @@
 	#set($contentFormReferer = "${VTLSERVLET_URI}")
 #end
 
+<script src="/custom-elements/dotcmsfields.js"></script>
+
 <script>
     var tabCounterCalls = [];
 
@@ -109,29 +111,9 @@
 #elseif(($structures.haveEditPermision($structure, null) || ($UtilMethods.isSet($user) && $structures.haveEditPermision($structure, $user))) && $_hasEditPermissionOnContent)
     #set($formId = "form_" + $date.getSystemDate().getTime())
 
-	<dot-form id="$formId"></dot-form>
-    <!-- This file will depend of where you build this custom elementa -->
-    <script src="/custom-elements/dotcmsfields.js"></script>
+	<dot-form id="$formId" variable='${structure.velocityVarName}''></dot-form>
     <script type="text/javascript">
-
         document.getElementById('$formId').layout = $structures.getLayoutAsJson($structure, $user);
-        document.getElementById('$formId').addEventListener('onSubmit', function (event) {
-            event.preventDefault();
-            fetch('/api/content/save/1', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    stName: '${structure.velocityVarName}',
-                    ...event.detail
-                })
-            })
-            .then((response) => response.json())
-            .then((data) => {
-                console.log(data);
-            });
-        });
     </script>
 
 #elseif($UtilMethods.isSet($user) && !$structures.haveEditPermision($structure, $user))
