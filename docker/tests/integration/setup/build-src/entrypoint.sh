@@ -46,6 +46,15 @@ if [[ "${1}" == "dotcms" || -z "${1}" ]]; then
     echo "================================================================================"
     echo ""
 
+    if [ ! -z "${SLEEP_LENGTH}" ]
+    then
+        echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+        echo "            Requested sleep of [${SLEEP_LENGTH}]", waithing for the db?
+        echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+        echo ""
+        sleep ${SLEEP_LENGTH}
+    fi
+
     cd /build/src/core/dotCMS \
     && ./gradlew integrationTest ${EXTRA_PARAMS}
 
