@@ -36,6 +36,9 @@ jobs:
     - script: bash travis/run.sh
       env: DB_TYPE=oracle
       name: oracle
+    - script: bash travis/run.sh
+      env: DB_TYPE=mssql
+      name: mssql
 
 install:
   - travis/environment_vars.sh
