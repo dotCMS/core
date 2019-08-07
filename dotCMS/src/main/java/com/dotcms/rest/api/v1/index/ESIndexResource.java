@@ -104,8 +104,6 @@ public class ESIndexResource {
                                   final HttpServletRequest httpServletRequest,
                                   final HttpServletResponse httpServletResponse) throws DotSecurityException, DotDataException {
 
-        //final InitDataObject init = webResource.init(params, httpServletRequest, httpServletResponse, true, null);
-
         final InitDataObject init = new WebResource.InitBuilder(webResource)
                 .allowBackendUser(true)
                 .allowFrontendUser(false)
