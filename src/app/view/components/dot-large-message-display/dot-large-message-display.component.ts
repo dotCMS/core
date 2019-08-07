@@ -67,7 +67,7 @@ export class DotLargeMessageDisplayComponent implements OnInit, OnDestroy, After
         placeholder.innerHTML = content.body;
 
         const body = dialogComponent.dialog.nativeElement.querySelector('.dialog-message__body');
-        Array.from(placeholder.children).forEach((el: HTMLElement) => {
+        Array.from(placeholder.childNodes).forEach((el: HTMLElement) => {
             const parsedEl = this.isScriptElement(el.tagName)
                 ? this.createScriptEl(el.innerHTML)
                 : el;

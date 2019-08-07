@@ -68,7 +68,7 @@ describe('DotLargeMessageDisplayComponent', () => {
             title: 'title Test',
             height: '200',
             width: '1000',
-            body: '<h1>Hello World</h1>',
+            body: 'Hello World',
             code: { lang: 'eng', content: 'codeTest' }
         });
 
@@ -85,7 +85,7 @@ describe('DotLargeMessageDisplayComponent', () => {
         expect(dotLargeMessageDisplayServiceMock.sub).toHaveBeenCalledTimes(1);
 
         setTimeout(() => {
-            expect(bodyElem.nativeElement.innerHTML.trim()).toBe('<h1>Hello World</h1>');
+            expect(bodyElem.nativeElement.innerHTML.trim()).toBe('Hello World');
             done();
         }, 0);
     });
