@@ -42,28 +42,28 @@ public class Task05170DefineFrontEndAndBackEndRoles implements StartupTask {
     private static final String FRONTEND_ROLE_SANITY_CHECK = "SELECT count(*) as c FROM cms_role r JOIN layouts_cms_roles lr ON r.id = lr.role_id  where r.role_key = 'LoggedIn Site User'";
 
     private static final String POSTGRES_RENAME_ROLE_KEY_FRONT_END_USER
-            = "UPDATE cms_role SET role_key = 'DOTCMS_FRONT_END_USER' , edit_layouts = 'false' , system = 'true' WHERE role_key = 'LoggedIn Site User' ";
+            = "UPDATE cms_role SET role_key = 'DOTCMS_FRONT_END_USER', edit_layouts = 'false', system = 'true',  locked = 'true'  WHERE role_key = 'LoggedIn Site User' ";
 
     private static final String POSTGRES_RENAME_ROLE_KEY_BACK_END_USER
-            = "UPDATE cms_role SET role_key = 'DOTCMS_BACK_END_USER' WHERE role_key = 'CMS User' ";
+            = "UPDATE cms_role SET role_key = 'DOTCMS_BACK_END_USER', system = 'true', locked = 'true'  WHERE role_key = 'CMS User' ";
 
     private static final String ORACLE_RENAME_ROLE_KEY_FRONT_END_USER
-            = "UPDATE cms_role SET role_key = 'DOTCMS_FRONT_END_USER' , edit_layouts = 0, system = 1 WHERE role_key = 'LoggedIn Site User' ";
+            = "UPDATE cms_role SET role_key = 'DOTCMS_FRONT_END_USER', edit_layouts = 0, system = 1, locked = 1  WHERE role_key = 'LoggedIn Site User' ";
 
     private static final String ORACLE_RENAME_ROLE_KEY_BACK_END_USER
-            = "UPDATE cms_role SET role_key = 'DOTCMS_BACK_END_USER' WHERE role_key = 'CMS User' ";
+            = "UPDATE cms_role SET role_key = 'DOTCMS_BACK_END_USER', system = 1, locked = 1  WHERE role_key = 'CMS User' ";
 
     private static final String MSSQL_RENAME_ROLE_KEY_FRONT_END_USER
-            = "UPDATE cms_role SET role_key = 'DOTCMS_FRONT_END_USER' , edit_layouts = 0, system = 1 WHERE role_key = 'LoggedIn Site User' ";
+            = "UPDATE cms_role SET role_key = 'DOTCMS_FRONT_END_USER', edit_layouts = 0, system = 1, locked = 1 WHERE role_key = 'LoggedIn Site User' ";
 
     private static final String MSSQL_RENAME_ROLE_KEY_BACK_END_USER
-            = "UPDATE cms_role SET role_key = 'DOTCMS_BACK_END_USER' WHERE role_key = 'CMS User' ";
+            = "UPDATE cms_role SET role_key = 'DOTCMS_BACK_END_USER', system = 1, locked = 1 WHERE role_key = 'CMS User' ";
 
     private static final String MYSQL_RENAME_ROLE_KEY_FRONT_END_USER
-            = "UPDATE cms_role SET role_key = 'DOTCMS_FRONT_END_USER' , edit_layouts = 0, system = 1 WHERE role_key = 'LoggedIn Site User' ";
+            = "UPDATE cms_role SET role_key = 'DOTCMS_FRONT_END_USER', edit_layouts = 0, system = 1, locked = 1 WHERE role_key = 'LoggedIn Site User' ";
 
     private static final String MYSQL_RENAME_ROLE_KEY_BACK_END_USER
-            = "UPDATE cms_role SET role_key = 'DOTCMS_BACK_END_USER' WHERE role_key = 'CMS User' ";
+            = "UPDATE cms_role SET role_key = 'DOTCMS_BACK_END_USER', system = 1, locked = 1 WHERE role_key = 'CMS User' ";
 
     //These statements are good to apply after having updated the role keys.
     private static final String FIND_NEW_BACKEND_ROLE = "SELECT id FROM cms_role WHERE role_key = 'DOTCMS_BACK_END_USER'";
@@ -123,10 +123,10 @@ public class Task05170DefineFrontEndAndBackEndRoles implements StartupTask {
         dotConnect.addObject(roleLabel);  //role_key
         dotConnect.addObject(String.format(DB_FQN_MASK, parentRoleId, uuid));  //db_fqn
         dotConnect.addObject(parentRoleId);  //parent
-        dotConnect.addObject(true); //edit_permissions
+        dotConnect.addObject(false); //edit_permissions
         dotConnect.addObject(true); //edit_users
-        dotConnect.addObject(true); //edit_layouts
-        dotConnect.addObject(false); //locked
+        dotConnect.addObject(false); //edit_layouts
+        dotConnect.addObject(true); //locked
         dotConnect.addObject(true); //system
         dotConnect.loadResult();
     }
