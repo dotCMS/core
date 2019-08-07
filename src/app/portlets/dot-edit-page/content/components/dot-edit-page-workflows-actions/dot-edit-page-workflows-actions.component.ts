@@ -9,7 +9,7 @@ import {
     EventEmitter
 } from '@angular/core';
 import { MenuItem } from 'primeng/primeng';
-import { DotWorkflowAction } from '@models/dot-workflow-action/dot-workflow-action.model';
+import { DotCMSWorkflowAction } from 'dotcms-models';
 import { DotWorkflowService } from '@services/dot-workflow/dot-workflow.service';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
@@ -17,6 +17,7 @@ import { DotPage } from '../../../shared/models/dot-page.model';
 import { DotMessageService } from '@services/dot-messages-service';
 
 import { tap, map, mergeMap, catchError, pluck } from 'rxjs/operators';
+import { DotWorkflowsActionsService } from '@services/dot-workflows-actions/dot-workflows-actions.service';
 
 @Component({
     selector: 'dot-edit-page-workflows-actions',
@@ -35,6 +36,7 @@ export class DotEditPageWorkflowsActionsComponent implements OnInit, OnChanges {
 
     constructor(
         private workflowsService: DotWorkflowService,
+        private dotWorkflowsActionsService: DotWorkflowsActionsService,
         private dotMessageService: DotMessageService,
         private httpErrorManagerService: DotHttpErrorManagerService,
         private dotGlobalMessageService: DotGlobalMessageService
@@ -51,18 +53,18 @@ export class DotEditPageWorkflowsActionsComponent implements OnInit, OnChanges {
     }
 
     private getWorkflowActions(inode: string): Observable<MenuItem[]> {
-        return this.workflowsService.getContentWorkflowActions(inode).pipe(
-            tap((workflows: DotWorkflowAction[]) => {
+        return this.dotWorkflowsActionsService.getByInode(inode).pipe(
+            tap((workflows: DotCMSWorkflowAction[]) => {
                 this.actionsAvailable = !!workflows.length;
             }),
-            map((newWorkflows: DotWorkflowAction[]) => {
+            map((newWorkflows: DotCMSWorkflowAction[]) => {
                 return newWorkflows.length !== 0 ? this.getWorkflowOptions(newWorkflows) : [];
             })
         );
     }
 
-    private getWorkflowOptions(workflows: DotWorkflowAction[]): MenuItem[] {
-        return workflows.map((workflow: DotWorkflowAction) => {
+    private getWorkflowOptions(workflows: DotCMSWorkflowAction[]): MenuItem[] {
+        return workflows.map((workflow: DotCMSWorkflowAction) => {
             return {
                 label: workflow.name,
                 command: () => {

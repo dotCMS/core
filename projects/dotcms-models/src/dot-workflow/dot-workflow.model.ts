@@ -1,4 +1,4 @@
-export interface DotWorkflow {
+export interface DotCMSWorkflow {
     archived: boolean;
     creationDate: Date;
     defaultScheme: boolean;

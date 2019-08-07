@@ -3,18 +3,16 @@ import { ComponentFixture } from '@angular/core/testing';
 import { DebugElement, Component } from '@angular/core';
 import { async } from '@angular/core/testing';
 
-import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DotWorkflowsSelectorFieldComponent } from './dot-workflows-selector-field.component';
-import {
-    DotWorkflowServiceMock,
-    mockWorkflows
-} from './../../../../test/dot-workflow-service.mock';
+
 import { DotWorkflowService } from './../../../../api/services/dot-workflow/dot-workflow.service';
 import { MultiSelect } from 'primeng/primeng';
-import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
 import { DotMessageService } from '@services/dot-messages-service';
 import { FormGroup, FormBuilder } from '@angular/forms';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { MockDotMessageService } from '@tests/dot-message-service.mock';
+import { mockWorkflows, DotWorkflowServiceMock } from '@tests/dot-workflow-service.mock';
+import { DOTTestBed } from '@tests/dot-test-bed';
 
 const messageServiceMock = new MockDotMessageService({
     'dot.common.select.workflows': 'Pick it up',
@@ -39,7 +37,7 @@ class FakeFormComponent {
             this fake test component
         */
         this.form = this.fb.group({
-            workflows: [{ value: ['567', '890'], disabled: false }]
+            workflows: [{ value: mockWorkflows, disabled: false }]
         });
     }
 }
@@ -160,7 +158,7 @@ describe('DotWorkflowsSelectorFieldComponent', () => {
 
         it('should get value', () => {
             fixtureHost.detectChanges();
-            expect(component.value).toEqual(['567', '890']);
+            expect(component.value).toEqual(mockWorkflows);
         });
 
         it('should propagate value', () => {

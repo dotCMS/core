@@ -11,16 +11,22 @@ import {
 import { FormGroup, FormBuilder, Validators, FormControl } from '@angular/forms';
 
 import { Observable, Subject } from 'rxjs';
-import { map, take, takeUntil } from 'rxjs/operators';
+import { map, take, takeUntil, filter } from 'rxjs/operators';
 
 import * as _ from 'lodash';
 import { SelectItem } from 'primeng/primeng';
 
 import { DotMessageService } from '@services/dot-messages-service';
-import { DotWorkflow } from '@models/dot-workflow/dot-workflow.model';
 import { DotWorkflowService } from '@services/dot-workflow/dot-workflow.service';
 import { DotLicenseService } from '@services/dot-license/dot-license.service';
-import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from 'dotcms-models';
+import {
+    DotCMSContentType,
+    DotCMSContentTypeField,
+    DotCMSContentTypeLayoutRow,
+    DotCMSSystemActionMappings,
+    DotCMSSystemActionType,
+    DotCMSWorkflow
+} from 'dotcms-models';
 import { FieldUtil } from '../fields/util/field-util';
 
 /**
@@ -41,13 +47,13 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
     name: ElementRef;
 
     @Input()
-    data: any;
+    data: DotCMSContentType;
 
     @Input()
     layout: DotCMSContentTypeLayoutRow[];
 
     @Output()
-    onSubmit: EventEmitter<any> = new EventEmitter();
+    onSubmit: EventEmitter<DotCMSContentType> = new EventEmitter();
 
     @Output()
     valid: EventEmitter<boolean> = new EventEmitter();
@@ -56,8 +62,10 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
     dateVarOptions: SelectItem[] = [];
     form: FormGroup;
     nameFieldLabel: Observable<string>;
+    workflowsSelected$: Observable<string[]>;
+    messagesKey: { [key: string]: string } = {};
 
-    private originalValue: any;
+    private originalValue: DotCMSContentType;
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
@@ -83,13 +91,16 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
                 'contenttypes.form.label.description',
                 'contenttypes.form.label.publish.date.field',
                 'contenttypes.form.label.workflow',
+                'contenttypes.form.label.workflow.actions',
                 'contenttypes.form.message.no.date.fields.defined',
                 'contenttypes.form.name',
                 'contenttypes.hint.URL.map.pattern.hint1',
                 'dot.common.message.field.required'
             ])
             .pipe(take(1))
-            .subscribe();
+            .subscribe((messages: { [key: string]: string }) => {
+                this.messagesKey = messages;
+            });
     }
 
     ngOnInit(): void {
@@ -99,12 +110,6 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
 
         this.nameFieldLabel = this.setNameFieldLabel();
         this.name.nativeElement.focus();
-
-        if (!this.isEditMode()) {
-            this.dotWorkflowService.getSystem().pipe(take(1)).subscribe((workflow: DotWorkflow) => {
-                this.form.get('workflow').setValue([workflow.id]);
-            });
-        }
     }
 
     ngOnDestroy(): void {
@@ -144,10 +149,7 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
      */
     submitForm(): void {
         if (this.canSave) {
-            this.onSubmit.emit({
-                ...this.form.value,
-                workflow: this.form.getRawValue().workflow
-            });
+            this.onSubmit.emit(this.form.value);
         }
     }
 
@@ -194,48 +196,86 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
             });
         }
 
-        return dateVarOptions;
+        return this.isNewDateVarFields(dateVarOptions) ? dateVarOptions : [];
     }
 
     private initFormGroup(): void {
         this.form = this.fb.group({
-            clazz: this.data.clazz || '',
-            description: this.data.description || '',
-            expireDateVar: [{ value: this.data.expireDateVar || '', disabled: true }],
-            host: this.data.host || '',
-            name: [this.data.name || '', [Validators.required]],
-            publishDateVar: [{ value: this.data.publishDateVar || '', disabled: true }],
-            workflow: [
+            defaultType: this.data.defaultType,
+            fixed: this.data.fixed,
+            system: this.data.system,
+            clazz: this.getProp(this.data.clazz),
+            description: this.getProp(this.data.description),
+            host: this.getProp(this.data.host),
+            folder: this.getProp(this.data.folder),
+            expireDateVar: [{ value: this.getProp(this.data.expireDateVar), disabled: true }],
+            name: [this.getProp(this.data.name), [Validators.required]],
+            publishDateVar: [{ value: this.getProp(this.data.publishDateVar), disabled: true }],
+            workflows: [
                 {
-                    value: this.data.workflows
-                        ? this.data.workflows.map((workflow) => workflow.id)
-                        : [],
+                    value: this.data.workflows || [],
                     disabled: true
                 }
             ],
-            defaultType: this.data.defaultType,
-            fixed: this.data.fixed,
-            folder: this.data.folder,
-            system: this.data.system
+            systemActionMappings: this.fb.group({
+                [DotCMSSystemActionType.NEW]: [
+                    {
+                        value: this.data.systemActionMappings
+                            ? this.getActionIdentifier(this.data.systemActionMappings)
+                            : '',
+                        disabled: true
+                    }
+                ]
+            })
         });
 
-        if (this.isBaseTypeContent()) {
-            this.setBaseTypeContentSpecificFields();
+        this.setBaseTypeContentSpecificFields();
+        this.setOriginalValue();
+        this.setDateVarFieldsState();
+        this.setSystemWorkflow();
+        this.workflowsSelected$ = this.form.get('workflows').valueChanges;
+    }
+
+    private getActionIdentifier(actionMap: DotCMSSystemActionMappings): string {
+        if (Object.keys(actionMap).length) {
+            const item = actionMap[DotCMSSystemActionType.NEW];
+            return typeof item !== 'string' ? item.workflowAction.id : '';
         }
 
+        return '';
+    }
+
+    private getProp(item: string): string {
+        return item || '';
+    }
+
+    private setSystemWorkflow(): void {
+        if (!this.isEditMode()) {
+            this.dotWorkflowService
+                .getSystem()
+                .pipe(take(1))
+                .subscribe((workflow: DotCMSWorkflow) => {
+                    this.form.get('workflows').setValue([workflow]);
+                });
+        }
+    }
+
+    private setOriginalValue(): void {
         if (this.isEditMode() && !this.originalValue) {
             this.originalValue = this.form.value;
-        }
-
-        if (this.layout && this.layout.length) {
-            this.setDateVarFieldsState();
         }
     }
 
     private initWorkflowField(): void {
-        this.dotLicenseService.isEnterprise().pipe(take(1)).subscribe((isEnterpriseLicense: boolean) => {
-            this.updateWorkflowFormControl(isEnterpriseLicense);
-        });
+        this.dotLicenseService
+            .isEnterprise()
+            .pipe(
+                take(1),
+                filter((isEnterpriseLicense: boolean) => isEnterpriseLicense)
+            )
+            .subscribe(() => {
+                this.enableWorkflowFormControls();
+            });
     }
 
     private isBaseTypeContent(): boolean {
@@ -258,55 +298,56 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
     }
 
     private setBaseTypeContentSpecificFields(): void {
-        this.form.addControl('detailPage', new FormControl(this.data.detailPage || ''));
-        this.form.addControl(
-            'urlMapPattern',
-            new FormControl((this.data && this.data.urlMapPattern) || '')
-        );
+        if (this.isBaseTypeContent()) {
+            this.form.addControl('detailPage', new FormControl(this.getProp(this.data.detailPage)));
+            this.form.addControl(
+                'urlMapPattern',
+                new FormControl(this.getProp(this.data.urlMapPattern))
+            );
+        }
     }
 
     private setDateVarFieldsState(): void {
-        const dateVarNewOptions = this.getDateVarOptions();
+        if (this.isLayoutSet()) {
+            this.dateVarOptions = this.getDateVarOptions();
 
-        if (this.isNewDateVarFields(dateVarNewOptions)) {
-            this.dateVarOptions = dateVarNewOptions;
-        }
+            const publishDateVar = this.form.get('publishDateVar');
+            const expireDateVar = this.form.get('expireDateVar');
 
-        const publishDateVar = this.form.get('publishDateVar');
-        const expireDateVar = this.form.get('expireDateVar');
+            if (this.dateVarOptions.length) {
+                publishDateVar.enable();
+                expireDateVar.enable();
 
-        if (this.dateVarOptions.length) {
-            publishDateVar.enable();
-            expireDateVar.enable();
-
-            if (this.originalValue) {
-                this.originalValue.publishDateVar = publishDateVar.value;
-                this.originalValue.expireDateVar = expireDateVar.value;
+                if (this.originalValue) {
+                    this.originalValue.publishDateVar = publishDateVar.value;
+                    this.originalValue.expireDateVar = expireDateVar.value;
+                }
             }
-        } else {
-            publishDateVar.disable();
-            expireDateVar.disable();
 
-            if (this.originalValue) {
-                delete this.originalValue.publishDateVar;
-                delete this.originalValue.expireDateVar;
-            }
-        }
-
-        this.setSaveState();
-    }
-
-    private updateWorkflowFormControl(isEnterpriseLicense: boolean): void {
-        if (isEnterpriseLicense) {
-            const workflowControl = this.form.get('workflow');
-
-            workflowControl.enable();
-
-            if (this.originalValue) {
-                this.originalValue.workflow = workflowControl.value;
-            }
             this.setSaveState();
         }
+    }
+
+    private isLayoutSet(): boolean {
+        return !!(this.layout && this.layout.length);
+    }
+
+    private enableWorkflowFormControls(): void {
+        const workflowControl = this.form.get('workflows');
+        const workflowActionControl = this.form
+            .get('systemActionMappings')
+            .get(DotCMSSystemActionType.NEW);
+
+        workflowControl.enable();
+        workflowActionControl.enable();
+
+        if (this.originalValue) {
+            this.originalValue.workflows = workflowControl.value;
+            this.originalValue.systemActionMappings = {};
+            this.originalValue.systemActionMappings[DotCMSSystemActionType.NEW] =
+                workflowActionControl.value;
+        }
+        this.setSaveState();
     }
 
     private updateExpireDateVar(value: string): void {

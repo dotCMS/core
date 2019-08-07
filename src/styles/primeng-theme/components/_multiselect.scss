@@ -34,26 +34,16 @@
     }
 
     .ui-multiselect-trigger {
-        align-items: center;
-        display: flex;
-        justify-content: center;
-        width: $multiselect-height;
+        @extend #ui-trigger;
 
-        .fa {
-            margin: 0;
-            position: absolute;
-            right: 0;
+        .ui-multiselect-trigger-icon {
+            @extend #ui-trigger-icon;
         }
     }
 
     .ui-multiselect-label {
-        border: 0;
-        line-height: $multiselect-height;
-        padding: 0 $multiselect-height + $basic-padding 0 0;
-        max-height: $multiselect-height;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        @include truncate-text;
+        @extend #ui-field-selectable-label;
     }
 }
 

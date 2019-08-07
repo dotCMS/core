@@ -74,6 +74,7 @@ import { DotApiLinkModule } from '@components/dot-api-link/dot-api-link.module';
 import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
 import { DotFieldHelperModule } from '@components/dot-field-helper/dot-field-helper.module';
 import { DotMaxlengthModule } from '@directives/dot-maxlength/dot-maxlength.module';
+import { DotWorkflowsActionsSelectorFieldModule } from '@components/_common/dot-workflows-actions-selector-field/dot-workflows-actions-selector-field.module';
 
 @NgModule({
     declarations: [
@@ -151,6 +152,7 @@ import { DotMaxlengthModule } from '@directives/dot-maxlength/dot-maxlength.modu
         TabViewModule,
         DotFieldHelperModule,
         DotMaxlengthModule,
+        DotWorkflowsActionsSelectorFieldModule
     ],
     providers: [
         ContentTypeEditResolver,

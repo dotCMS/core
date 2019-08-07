@@ -8,6 +8,7 @@ $field-border-radius: $border-radius;
 $field-border-size: 1px;
 $field-padding: $basic-padding;
 $field-placeholder-color: $label-color;
+$ui-trigger-width: $basic-padding * 3;
 
 // FIELDS
 $field-normal-bgcolor: $field-bgcolor;
@@ -115,13 +116,11 @@ $selectbutton-button-active-color: $white;
 // DROPDOWN
 $dropdown-active-color: $field-active-color;
 $dropdown-disabled-color: $field-disabled-color;
-$dropdown-height: $field-height;
 $dropdown-tiny-height: $field-tiny-height;
 
-//MULTISELECT
+// MULTISELECT
 $multiselect-active-color: $dropdown-active-color;
 $multiselect-disabled-color: $dropdown-disabled-color;
-$multiselect-height: $dropdown-height;
 
 // AUTOCOMPLETE
 $autocomplete-height: $field-height;

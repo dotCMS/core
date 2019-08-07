@@ -2,11 +2,17 @@ import { take, mergeMap, pluck, takeUntil } from 'rxjs/operators';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Component, ViewChild, OnInit, OnDestroy } from '@angular/core';
 
-import { DotCMSContentType } from 'dotcms-models';
+import {
+    DotCMSContentType,
+    DotCMSSystemActionType,
+    DotCMSSystemActionMappings,
+    DotCMSContentTypeField,
+    DotCMSContentTypeLayoutRow,
+    DotCMSWorkflow
+} from 'dotcms-models';
 import { ContentTypesFormComponent } from '../form';
 import { CrudService } from '@services/crud';
 import { ContentTypeFieldsDropZoneComponent } from '../fields/index';
-import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from 'dotcms-models';
 import { FieldService } from '../fields/service';
 import { DotMessageService } from '@services/dot-messages-service';
 import { ContentTypesInfoService } from '@services/content-types-info';
@@ -198,10 +204,10 @@ export class ContentTypesEditComponent implements OnInit, OnDestroy {
     /**
      * Check if we need to update or create a content type
      *
-     * @param * value;
+     * @param {DotCMSContentType} value
      * @memberof ContentTypesEditComponent
      */
-    handleFormSubmit(value: any): void {
+    handleFormSubmit(value: DotCMSContentType): void {
         this.isEditMode() ? this.updateContentType(value) : this.createContentType(value);
     }
 
@@ -321,8 +327,12 @@ export class ContentTypesEditComponent implements OnInit, OnDestroy {
     }
 
     private createContentType(value: DotCMSContentType): void {
+        const createdContentType = this.cleanUpFormValue({
+            ...value
+        });
+
         this.crudService
-            .postData('v1/contenttype', value)
+            .postData('v1/contenttype', createdContentType)
             .pipe(
                 mergeMap((contentTypes: DotCMSContentType[]) => contentTypes),
                 take(1)
@@ -349,11 +359,14 @@ export class ContentTypesEditComponent implements OnInit, OnDestroy {
             });
     }
 
-    private updateContentType(value: any): void {
-        const data = Object.assign({}, value, { id: this.data.id });
+    private updateContentType(value: DotCMSContentType): void {
+        const updatedContentType = this.cleanUpFormValue({
+            ...value,
+            id: this.data.id
+        });
 
         this.crudService
-            .putData(`v1/contenttype/id/${this.data.id}`, data)
+            .putData(`v1/contenttype/id/${this.data.id}`, updatedContentType)
             .pipe(take(1))
             .subscribe(
                 (contentType: DotCMSContentType) => {
@@ -364,5 +377,29 @@ export class ContentTypesEditComponent implements OnInit, OnDestroy {
                     this.handleHttpError(err);
                 }
             );
+    }
+
+    // The Content Types endpoint returns workflows (plural) but receive workflow (singular)
+    private cleanUpFormValue(value: DotCMSContentType): { [key: string]: any } {
+        if (value.workflows) {
+            value['workflow'] = this.getWorkflowsIds(value.workflows);
+            delete value.workflows;
+        }
+
+        if (this.isSystemActionsMappingsEmpty(value.systemActionMappings)) {
+            delete value.systemActionMappings;
+        }
+
+        return value;
+    }
+
+    private isSystemActionsMappingsEmpty(
+        systemActionMappings: DotCMSSystemActionMappings
+    ): boolean {
+        return systemActionMappings && systemActionMappings[DotCMSSystemActionType.NEW] === '';
+    }
+
+    private getWorkflowsIds(workflows: DotCMSWorkflow[]): string[] {
+        return workflows.map((workflow: DotCMSWorkflow) => workflow.id);
     }
 }
