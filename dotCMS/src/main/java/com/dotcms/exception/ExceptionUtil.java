@@ -391,10 +391,10 @@ public class ExceptionUtil {
         return getStackTraceAsString(traces);
     }
 
-    public static String exceptionAsString(final Exception e, int limit){
-        final String exceptionName = e.toString();
-        StringBuilder stringBuilder = new StringBuilder(exceptionName).append("\n");
-        StackTraceElement[] elements = e.getStackTrace();
+    public static String exceptionAsString(final Exception exception, final int limit){
+        final String exceptionName = exception.toString();
+        final StringBuilder stringBuilder = new StringBuilder(exceptionName).append("\n");
+        final StackTraceElement[] elements = exception.getStackTrace();
         if(UtilMethods.isSet(elements)){
           stringBuilder.append( getStackTraceAsString(limit, elements) );
         }

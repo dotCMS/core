@@ -61,7 +61,7 @@ public class MethodExceptionEventHandlerImpl implements org.apache.velocity.app.
 		return x;
 	}
 
-	private String notifyStateException(final Exception e) {
+	private String notifyStateException(final Exception exception) {
 		String messageAsString = BLANK;
 		final String userId = PrincipalThreadLocal.getName();
 		if (UtilMethods.isSet(userId)) {
@@ -70,7 +70,7 @@ public class MethodExceptionEventHandlerImpl implements org.apache.velocity.app.
 			final StringBuilder message = new StringBuilder();
 
 			message.append(Html.h3("Velocity Error")).append(NEW_LINE)
-					.append(Html.pre(exceptionAsString(e, EXCEPTION_MAX_LINES)));
+					.append(Html.pre(exceptionAsString(exception, EXCEPTION_MAX_LINES)));
 
 			messageAsString = message.toString();
 			systemMessageBuilder.setMessage(messageAsString)
@@ -79,22 +79,22 @@ public class MethodExceptionEventHandlerImpl implements org.apache.velocity.app.
 					.setSeverity(MessageSeverity.ERROR);
 
 			SystemMessageEventUtil.getInstance().
-					pushMessage(e.getMessage(), systemMessageBuilder.create(),
+					pushMessage(exception.getMessage(), systemMessageBuilder.create(),
 							Collections.singletonList(userId));
 		}
 		return messageAsString;
 	}
 
-	private String handleParseErrorException(final org.apache.lucene.queryparser.classic.ParseException e){
+	private String handleParseErrorException(final org.apache.lucene.queryparser.classic.ParseException exception){
 		final SystemMessageBuilder systemMessageBuilder = new SystemMessageBuilder();
 		final StringBuilder message = new StringBuilder();
 		final String errorMessage = WordUtils.wrap
-				( UtilMethods.isSet(e.getMessage()) ? e.getMessage() : e.toString()  , 15, Html.br(), false);
+				( UtilMethods.isSet(exception.getMessage()) ? exception.getMessage() : exception.toString()  , 15, Html.br(), false);
 
-		if(null != e.currentToken) {
+		if(null != exception.currentToken) {
 			message.append(Html.h3("Lucene Query Parsing Error"))
 					.append(Html.b("Current Token")).append(NEW_LINE)
-					.append(e.currentToken).append(Html.br())
+					.append(exception.currentToken).append(Html.br())
 					.append(Html.pre(errorMessage));
 		} else {
 			message.append(Html.h3("Lucene Query Parsing Error."))
@@ -115,7 +115,7 @@ public class MethodExceptionEventHandlerImpl implements org.apache.velocity.app.
 		return messageAsString;
 	}
 
-	private boolean isEditMode(final Exception e) {
+	private boolean isEditMode(final Exception exception) {
 
 		boolean ret = false;
 
@@ -126,7 +126,7 @@ public class MethodExceptionEventHandlerImpl implements org.apache.velocity.app.
 			final PageMode pageMode = PageMode.get(request);
 			ret = PageMode.EDIT_MODE == pageMode;
 		} else {
-			for (StackTraceElement ste : e.getStackTrace()) {
+			for (StackTraceElement ste : exception.getStackTrace()) {
 				if (ste.getMethodName().contains("EditMode")) {
 					ret = true;
 					break;

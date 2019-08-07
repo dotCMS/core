@@ -25,45 +25,45 @@ public class ExceptionHandlerParseErrorException implements ExceptionHandler<Par
     private static final String NEW_LINE = Html.br() + Html.space(2);
 
     @Override
-    public void handle(final ParseErrorException e) {
+    public void handle(final ParseErrorException exception) {
 
-        if (isPreviewOrEditMode(e)) {
+        if (isPreviewOrEditMode(exception)) {
             try {
-                   handleParseErrorException(e);
+                   handleParseErrorException(exception);
             } catch (Exception ex) {
-                Logger.error(VelocityModeHandler.class, "Parsing error on: " + e.getTemplateName() + ", msg: " + ex.getMessage(), ex);
+                Logger.error(VelocityModeHandler.class, "Parsing error on: " + exception.getTemplateName() + ", msg: " + ex.getMessage(), ex);
             }
 
-            throw new PreviewEditParseErrorException(e);
+            throw new PreviewEditParseErrorException(exception);
         }
 
-        throw e;
+        throw exception;
     }
 
-    private boolean isPreviewOrEditMode(final Exception e) {
-        return ExceptionUtil.isPreviewOrEditMode(e, HttpServletRequestThreadLocal.INSTANCE.getRequest());
+    private boolean isPreviewOrEditMode(final Exception exception) {
+        return ExceptionUtil.isPreviewOrEditMode(exception, HttpServletRequestThreadLocal.INSTANCE.getRequest());
     }
 
 
-    static String handleParseErrorException(final ParseErrorException e) {
+    static String handleParseErrorException(final ParseErrorException exception) {
         final SystemMessageBuilder systemMessageBuilder = new SystemMessageBuilder();
         final StringBuilder message = new StringBuilder();
         final String errorMessage = WordUtils.wrap
-                (e.getMessage(), 15, Html.br(), false);
+                (exception.getMessage(), 15, Html.br(), false);
 
         message.append(Html.h3("Parsing Error"))
 
                 .append(Html.b("Template")).append(NEW_LINE)
-                .append(e.getTemplateName()).append(Html.br())
+                .append(exception.getTemplateName()).append(Html.br())
 
                 .append(Html.b("Invalid Syntax")).append(NEW_LINE)
-                .append(e.getInvalidSyntax()).append(Html.br())
+                .append(exception.getInvalidSyntax()).append(Html.br())
 
                 .append(Html.b("Column Number")).append(NEW_LINE)
-                .append(e.getColumnNumber()).append(Html.br())
+                .append(exception.getColumnNumber()).append(Html.br())
 
                 .append(Html.b("Line Number")).append(NEW_LINE)
-                .append(e.getLineNumber()).append(Html.br())
+                .append(exception.getLineNumber()).append(Html.br())
 
                 .append(Html.pre(errorMessage));
         final String messageAsString = message.toString();
@@ -75,7 +75,7 @@ public class ExceptionHandlerParseErrorException implements ExceptionHandler<Par
         final String userId = PrincipalThreadLocal.getName();
         if (UtilMethods.isSet(userId)) {
             SystemMessageEventUtil.getInstance().
-                    pushMessage(e.getTemplateName(),
+                    pushMessage(exception.getTemplateName(),
                             systemMessageBuilder.create(), Collections.singletonList(userId));
         }
         return messageAsString;
