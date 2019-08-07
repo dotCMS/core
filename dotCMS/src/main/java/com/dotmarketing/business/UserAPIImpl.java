@@ -591,4 +591,13 @@ public class UserAPIImpl implements UserAPI {
 		return userFactory.getUnDeletedUsers();
 	}
 
+	@CloseDBIfOpened
+	@Override
+	public boolean hasConsole(final String userId) throws DotDataException {
+		final RoleAPI roleAPI = APILocator.getRoleAPI();
+		return (!roleAPI.loadRolesForUser(userId).isEmpty()
+				&& userFactory.hasConsole(userId)
+		);
+	}
+
 }

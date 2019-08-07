@@ -307,5 +307,11 @@ public abstract class UserFactory {
      */
     protected abstract List<User> getUnDeletedUsers() throws DotDataException;
 
+	/**
+	 * Verifies if the given user has assigned layouts on its present roles
+	 * @param userId
+	 * @return true if the user has anyLayouts false otherwise
+	 */
+	protected abstract boolean hasConsole(String userId);
 
 }

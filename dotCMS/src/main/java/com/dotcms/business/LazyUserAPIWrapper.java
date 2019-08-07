@@ -200,4 +200,9 @@ public class LazyUserAPIWrapper implements UserAPI {
     public List<User> getUnDeletedUsers() throws DotDataException {
         return this.getUserAPI().getUnDeletedUsers();
     }
+
+    @Override
+    public boolean hasConsole(String userId) throws DotDataException {
+        return this.getUserAPI().hasConsole(userId);
+    }
 } // E:O:F:LazyUserAPIWrapper.

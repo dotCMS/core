@@ -407,4 +407,11 @@ public interface UserAPI {
      */
 	public List<User> getUnDeletedUsers() throws DotDataException;
 
+	/**
+	 * Verifies if the given user has assigned layouts on its present roles
+	 * @param userId
+	 * @return true if the user has any Layouts. false otherwise.
+	 */
+	public boolean hasConsole(final String userId) throws DotDataException;
+
 }

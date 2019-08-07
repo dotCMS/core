@@ -15,6 +15,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portal.struts.DotCustomLoginPostAction;
 import com.dotmarketing.util.*;
 import com.liferay.portal.NoSuchUserException;
+import com.liferay.portal.RequiredLayoutException;
 import com.liferay.portal.auth.AuthException;
 import com.liferay.portal.auth.Authenticator;
 import com.liferay.portal.model.Company;
@@ -60,6 +61,7 @@ public class LoginFactory {
                 if (comp.getAuthType().equals(Company.AUTH_TYPE_ID)) {
                 	userName = user.getUserId();
                 }
+
                 return doLogin(userName, null, true, request, response, true);
             } catch (Exception e) { // $codepro.audit.disable logExceptions
         		SecurityLogger.logInfo(LoginFactory.class,"An invalid attempt to login (No user found) from IP: " + request.getRemoteAddr() + " :  " + e );
@@ -171,6 +173,11 @@ public class LoginFactory {
 	            } else {
 	            	user = APILocator.getUserAPI().loadUserById(userName, APILocator.getUserAPI().getSystemUser(), false);
 	            }
+
+				final boolean userHasConsole = APILocator.getUserAPI().hasConsole(user.getUserId());
+				if(!userHasConsole){
+					throw new RequiredLayoutException(String.format("User `%s` has no console access.",user.getUserId()));
+				}
 
 				// if we do not get the user from LDAP, does not make sense to sync the password.
 				if (!skipPasswordCheck) {

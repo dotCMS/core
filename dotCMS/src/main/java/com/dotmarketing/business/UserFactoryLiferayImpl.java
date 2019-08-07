@@ -606,4 +606,19 @@ public class UserFactoryLiferayImpl extends UserFactory {
 		}
 	}
 
+    @Override
+	protected boolean hasConsole(final String userId){
+	    final String sql =
+	           "SELECT COUNT(*) as c FROM users_cms_roles r \n"
+				+ "JOIN layouts_cms_roles l ON l.role_id = r.role_id\n"
+				+ "WHERE r.user_id = ?";
+
+		final DotConnect dotConnect = new DotConnect();
+		dotConnect.setSQL(sql);
+		dotConnect.addParam(userId);
+		final int count = dotConnect.getInt("c");
+		Logger.debug(this,()->String.format("User `%s` has %d assigned layouts ",userId, count));
+		return count > 0;
+	}
+
 }

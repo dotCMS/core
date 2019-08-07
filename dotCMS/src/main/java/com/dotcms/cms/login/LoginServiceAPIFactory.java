@@ -26,6 +26,7 @@ import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.PortalException;
+import com.liferay.portal.RequiredLayoutException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.auth.AuthException;
 import com.liferay.portal.auth.Authenticator;
@@ -294,6 +295,10 @@ public class LoginServiceAPIFactory implements Serializable {
 
             final HttpSession session = request.getSession();
             final User user = UserLocalManagerUtil.getUserById(userId);
+            final boolean userHasConsole = APILocator.getUserAPI().hasConsole(userId);
+            if(!userHasConsole){
+               throw new RequiredLayoutException(String.format("User `%s` has no console access.",userId));
+            }
 
             //DOTCMS-4943
             final UserAPI userAPI = APILocator.getUserAPI();
@@ -437,6 +442,7 @@ public class LoginServiceAPIFactory implements Serializable {
         @Override
         public boolean doCookieLogin(final String encryptedId, final HttpServletRequest request, final HttpServletResponse response) {
             // note: keep in mind we are doing BE and FE login, not sure if this is right
+
             final boolean doCookieLogin = LoginServiceAPI.super.doCookieLogin(encryptedId, request, response);
 
             if (doCookieLogin) {

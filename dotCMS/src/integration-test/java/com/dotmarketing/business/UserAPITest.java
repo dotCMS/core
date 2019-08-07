@@ -10,6 +10,8 @@ import static org.junit.Assert.fail;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.datagen.LayoutDataGen;
+import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.notifications.bean.Notification;
@@ -985,7 +987,7 @@ public class UserAPITest extends IntegrationTestBase {
 	}
 
 	@Test
-	public void testFrontendAndBackendUser()throws DotDataException, DotSecurityException {
+	public void Test_Frontend_And_Backend_User()throws DotDataException, DotSecurityException {
 
 		final User backendUser = new UserDataGen().roles(TestUserUtils.getBackendRole()).nextPersisted();
 
@@ -1009,6 +1011,19 @@ public class UserAPITest extends IntegrationTestBase {
 
 		APILocator.getRoleAPI().removeRoleFromUser(frontEndRole,frontendUser);
 		assertFalse(frontendUser.isFrontendUser());
+
+	}
+
+	@Test
+	public void Test_User_Has_Console()throws DotDataException, DotSecurityException{
+		final User rolelessUser = new UserDataGen().nextPersisted();
+		assertFalse(APILocator.getUserAPI().hasConsole(rolelessUser.getUserId()));
+
+		final User userWithRoleNoLayouts = new UserDataGen().roles(new RoleDataGen().nextPersisted()).nextPersisted();
+		assertFalse(APILocator.getUserAPI().hasConsole(userWithRoleNoLayouts.getUserId()));
+
+		final User userWithRoleAndLayouts = new UserDataGen().roles(new RoleDataGen().layout(new LayoutDataGen().nextPersisted()).nextPersisted()).nextPersisted();
+		assertTrue(APILocator.getUserAPI().hasConsole(userWithRoleAndLayouts.getUserId()));
 
 	}
 
