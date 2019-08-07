@@ -12,4 +12,7 @@ steps:
            'up',
            '--abort-on-container-exit']
 
+    options:
+      machineType: 'N1_HIGHCPU_8'
+
 timeout: 3600s
