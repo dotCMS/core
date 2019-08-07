@@ -297,6 +297,7 @@ public class LoginServiceAPIFactory implements Serializable {
             final User user = UserLocalManagerUtil.getUserById(userId);
             final boolean userHasConsole = APILocator.getUserAPI().hasConsole(userId);
             if(!userHasConsole){
+               SecurityLogger.logInfo(LoginServiceImpl.class,String.format("User with id `%s` has successfully logged-in but lacks console access (No Layouts) Therefore it has been rejected.", userId) );
                throw new RequiredLayoutException(String.format("User `%s` has no console access.",userId));
             }
 

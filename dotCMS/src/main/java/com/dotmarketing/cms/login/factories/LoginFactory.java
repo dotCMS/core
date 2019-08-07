@@ -13,7 +13,11 @@ import com.dotmarketing.cms.login.struts.LoginForm;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portal.struts.DotCustomLoginPostAction;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityLogger;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.RequiredLayoutException;
 import com.liferay.portal.auth.AuthException;
@@ -61,7 +65,6 @@ public class LoginFactory {
                 if (comp.getAuthType().equals(Company.AUTH_TYPE_ID)) {
                 	userName = user.getUserId();
                 }
-
                 return doLogin(userName, null, true, request, response, true);
             } catch (Exception e) { // $codepro.audit.disable logExceptions
         		SecurityLogger.logInfo(LoginFactory.class,"An invalid attempt to login (No user found) from IP: " + request.getRemoteAddr() + " :  " + e );
@@ -174,11 +177,6 @@ public class LoginFactory {
 	            	user = APILocator.getUserAPI().loadUserById(userName, APILocator.getUserAPI().getSystemUser(), false);
 	            }
 
-				final boolean userHasConsole = APILocator.getUserAPI().hasConsole(user.getUserId());
-				if(!userHasConsole){
-					throw new RequiredLayoutException(String.format("User `%s` has no console access.",user.getUserId()));
-				}
-
 				// if we do not get the user from LDAP, does not make sense to sync the password.
 				if (!skipPasswordCheck) {
 
@@ -246,6 +244,16 @@ public class LoginFactory {
 
             // if passwords match
             if (match) {
+
+				if (null != user) { //This should never be null at this point but..
+					final boolean userHasConsole = APILocator.getUserAPI().hasConsole(user.getUserId());
+					if (!userHasConsole) {
+						SecurityLogger.logInfo(LoginFactory.class,"User " + userName + " has successfully logged-in but lacks console access (No Layouts) Therefore it has been rejected." );
+						throw new RequiredLayoutException(
+								String.format("User `%s` has no console access.", user.getUserId())
+						);
+					}
+				}
 
             	final HttpSession session = PreventSessionFixationUtil.getInstance().preventSessionFixation(request, true);
             	session.removeAttribute(com.dotmarketing.util.WebKeys.VISITOR);
