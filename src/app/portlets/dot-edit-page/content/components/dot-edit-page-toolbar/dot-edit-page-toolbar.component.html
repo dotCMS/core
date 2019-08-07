@@ -1,15 +1,16 @@
 <p-toolbar>
     <div class="ui-toolbar-group-left">
-        <p-selectButton secondary class="edit-page-toolbar__state-selector" [(ngModel)]="mode" (onChange)="stateSelectorHandler($event.value)" [options]="states"></p-selectButton>
-        <p-inputSwitch #locker class="edit-page-toolbar__locker" [class.warn]="pageState.page.canLock && pageState.state.lockedByAnotherUser" [disabled]="!pageState.page.canLock" [(ngModel)]="lockerModel" (onChange)="lockPageHandler($event)" (click)="onLockerClick($event)"></p-inputSwitch>
-        <dot-edit-page-lock-info [pageState]="pageState" #pageLockInfo></dot-edit-page-lock-info>
-        <p-checkbox [label]="dotMessageService.get('dot.common.whats.changed')" *ngIf="isPreview && isEnterpriseLicense$ | async" (onChange)="whatschange.emit($event)"></p-checkbox>
+        <dot-edit-page-state-controller [pageState]="pageState"></dot-edit-page-state-controller>
+
+        <p-checkbox
+            [label]="whatschangeLabel$ | async"
+            *ngIf="showWhatsChanged && isEnterpriseLicense$ | async"
+            (onChange)="whatschange.emit($event)"
+        ></p-checkbox>
     </div>
 
     <div class="ui-toolbar-group-right">
-        <dot-edit-content-view-as-toolbar
-            (changeViewAs)="changeViewAs.emit($event)"
-            [pageState]="pageState">
-        </dot-edit-content-view-as-toolbar>
+        <dot-edit-page-view-as-controller [pageState]="pageState">
+        </dot-edit-page-view-as-controller>
     </div>
 </p-toolbar>

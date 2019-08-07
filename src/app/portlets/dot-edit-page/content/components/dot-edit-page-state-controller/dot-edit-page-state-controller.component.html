@@ -1,0 +1,15 @@
+<p-selectButton
+    secondary
+    [(ngModel)]="mode"
+    (onChange)="stateSelectorHandler($event.value)"
+    [options]="options$ | async"
+></p-selectButton>
+<p-inputSwitch
+    #locker
+    [class.warn]="pageState.page.canLock && pageState.state.lockedByAnotherUser"
+    [disabled]="!pageState.page.canLock"
+    [(ngModel)]="lock"
+    (onChange)="lockPageHandler()"
+    (click)="onLockerClick()"
+></p-inputSwitch>
+<dot-edit-page-lock-info [pageState]="pageState" #pageLockInfo></dot-edit-page-lock-info>

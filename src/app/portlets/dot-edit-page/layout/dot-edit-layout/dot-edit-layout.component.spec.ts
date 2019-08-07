@@ -1,5 +1,5 @@
 import { of as observableOf } from 'rxjs';
-import { DotRenderedPage } from './../../shared/models/dot-rendered-page.model';
+import { DotPageRender } from './../../shared/models/dot-rendered-page.model';
 import { async, ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
@@ -18,7 +18,7 @@ import { DotPageStateServiceMock } from '../../../../test/dot-page-state.service
 import { DotPageStateService } from '../../content/services/dot-page-state/dot-page-state.service';
 import { SiteServiceMock } from '../../../../test/site-service.mock';
 
-const getTestingModule = (dotRenderedPage?: DotRenderedPage) => {
+const getTestingModule = (dotRenderedPage?: DotPageRender) => {
     return {
         declarations: [DotEditLayoutComponent],
         imports: [

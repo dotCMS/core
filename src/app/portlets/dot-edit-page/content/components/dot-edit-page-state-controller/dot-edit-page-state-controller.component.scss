@@ -1,0 +1,55 @@
+@import "variables";
+@import "mixins";
+
+:host {
+    display: flex;
+    align-items: center;
+    height: 100%;
+}
+
+dot-edit-page-lock-info {
+    margin-left: $basic-padding;
+}
+
+p-selectButton {
+    margin-right: $basic-padding * 3;
+
+    ::ng-deep .ui-selectbutton {
+        background: none;
+        height: auto;
+
+        .ui-button {
+            height: auto;
+        }
+    }
+}
+
+p-inputSwitch {
+    ::ng-deep {
+        .ui-inputswitch-slider:after {
+            @include md-icon;
+            color: $brand-primary;
+            content: "lock_open";
+            font-size: 13px;
+            left: 4px;
+            position: absolute;
+            text-rendering: auto;
+            top: 5px;
+            transition: transform $basic-speed ease-in, color $basic-speed ease-in;
+        }
+
+        .ui-inputswitch-checked .ui-inputswitch-slider:after {
+            color: $white;
+            content: "lock";
+            transform: translateX(1.65em);
+        }
+
+        .ui-state-disabled .ui-inputswitch-slider:after {
+            color: rgba($black, 0.2);
+        }
+    }
+
+    &.warn ::ng-deep .ui-inputswitch-slider:after {
+        color: $orange;
+    }
+}

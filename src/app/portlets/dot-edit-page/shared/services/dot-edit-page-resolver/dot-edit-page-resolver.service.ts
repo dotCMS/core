@@ -14,6 +14,7 @@ import {
 } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotEditPageDataService } from './dot-edit-page-data.service';
 import { take, switchMap, tap, catchError, map } from 'rxjs/operators';
+import { DotPageRenderOptions } from '@services/dot-page-render/dot-page-render.service';
 
 /**
  * With the url return a string of the edit page html
@@ -36,27 +37,32 @@ export class DotEditPageResolver implements Resolve<DotRenderedPageState> {
         if (data) {
             return of(data);
         } else {
-            return this.dotPageStateService
-                .get({
-                    url: route.queryParams.url,
-                    ...(route.queryParams.language_id ? { viewAs: {language_id: route.queryParams.language_id}} : {})
-                })
-                .pipe(
-                    take(1),
-                    switchMap((dotRenderedPageState: DotRenderedPageState) => {
-                        const currentSection = route.children[0].url[0].path;
-                        const isLayout = currentSection === 'layout';
+            const options: DotPageRenderOptions = {
+                url: route.queryParams.url,
+                ...(route.queryParams.language_id
+                    ? {
+                          viewAs: {
+                              language: route.queryParams.language_id
+                          }
+                      }
+                    : {})
+            };
+            return this.dotPageStateService.requestPage(options).pipe(
+                take(1),
+                switchMap((dotRenderedPageState: DotRenderedPageState) => {
+                    const currentSection = route.children[0].url[0].path;
+                    const isLayout = currentSection === 'layout';
 
-                        if (isLayout) {
-                            return this.checkUserCanGoToLayout(dotRenderedPageState);
-                        } else {
-                            return of(dotRenderedPageState);
-                        }
-                    }),
-                    catchError((err: ResponseView) => {
-                        return this.errorHandler(err).pipe(map(() => null));
-                    })
-                );
+                    if (isLayout) {
+                        return this.checkUserCanGoToLayout(dotRenderedPageState);
+                    } else {
+                        return of(dotRenderedPageState);
+                    }
+                }),
+                catchError((err: ResponseView) => {
+                    return this.errorHandler(err).pipe(map(() => null));
+                })
+            );
         }
     }
 

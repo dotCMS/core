@@ -21,11 +21,12 @@ import { DotLayoutPropertiesModule } from '../components/dot-layout-properties/d
 import { DotSidebarPropertiesModule } from '../components/dot-sidebar-properties/dot-sidebar-properties.module';
 import { DotTemplateAdditionalActionsModule } from '../components/dot-template-additional-actions/dot-template-additional-actions.module';
 import { TemplateContainersCacheService } from '../../template-containers-cache.service';
-import { PageViewService } from '@services/page-view/page-view.service';
+import { DotPageLayoutService } from '@services/dot-page-layout/dot-page-layout.service';
 import { DotLayoutDesignerComponent } from './components/dot-layout-designer/dot-layout-designer.component';
 import { DotContainerSelectorModule } from '@components/dot-container-selector/dot-container-selector.module';
 import { DotEditPageInfoModule } from '../../components/dot-edit-page-info/dot-edit-page-info.module';
 import { DotThemeSelectorModule } from '../components/dot-theme-selector/dot-theme-selector.module';
+import { DotGlobalMessageModule } from '@components/_common/dot-global-message/dot-global-message.module';
 
 @NgModule({
     declarations: [DotEditLayoutDesignerComponent, DotLayoutDesignerComponent],
@@ -33,28 +34,28 @@ import { DotThemeSelectorModule } from '../components/dot-theme-selector/dot-the
         ButtonModule,
         CheckboxModule,
         CommonModule,
+        DialogModule,
         DotActionButtonModule,
+        DotContainerSelectorModule,
         DotEditLayoutGridModule,
         DotEditLayoutSidebarModule,
-        DotTemplateAdditionalActionsModule,
-        FormsModule,
-        ReactiveFormsModule,
-        InputTextModule,
-        DotLayoutPropertiesModule,
-        DialogModule,
-        DotSidebarPropertiesModule,
-        DotContainerSelectorModule,
         DotEditPageInfoModule,
+        DotGlobalMessageModule,
+        DotIconButtonModule,
+        DotLayoutPropertiesModule,
+        DotSidebarPropertiesModule,
+        DotTemplateAdditionalActionsModule,
         DotThemeSelectorModule,
+        FormsModule,
+        InputTextModule,
+        ReactiveFormsModule,
         ToolbarModule,
-        TooltipModule,
-        DotIconButtonModule
+        TooltipModule
     ],
     exports: [DotEditLayoutDesignerComponent],
     providers: [
         DotEditLayoutService,
-        DotEditLayoutService,
-        PageViewService,
+        DotPageLayoutService,
         TemplateContainersCacheService
     ]
 })

@@ -38,6 +38,7 @@
     border-right: solid 1px $gray;
     margin-right: $basic-padding;
     padding-right: $basic-padding * 2;
+    white-space: nowrap;
 
     &__label {
         color: $gray;

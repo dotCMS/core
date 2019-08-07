@@ -6,14 +6,14 @@ import { DotRenderedPageState } from './../../shared/models/dot-rendered-page-st
 import { DotAlertConfirmService } from './../../../../api/services/dot-alert-confirm/dot-alert-confirm.service';
 import { FormGroup, FormBuilder, Validators } from '@angular/forms';
 import { Component, OnInit, ViewChild, ElementRef, Input, OnDestroy } from '@angular/core';
-import { PageViewService } from '@services/page-view/page-view.service';
+import { DotPageLayoutService } from '@services/dot-page-layout/dot-page-layout.service';
 import { DotMessageService } from '@services/dot-messages-service';
 import { TemplateContainersCacheService } from '../../template-containers-cache.service';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { ResponseView } from 'dotcms-js';
 import * as _ from 'lodash';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
-import { DotRenderedPage } from '../../shared/models/dot-rendered-page.model';
+import { DotPageRender } from '../../shared/models/dot-rendered-page.model';
 import { LoginService } from 'dotcms-js';
 import { DotLayoutSideBar } from '../../shared/models/dot-layout-sidebar.model';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
@@ -61,7 +61,7 @@ export class DotEditLayoutDesignerComponent implements OnInit, OnDestroy {
         private dotThemesService: DotThemesService,
         private fb: FormBuilder,
         private loginService: LoginService,
-        private pageViewService: PageViewService,
+        private dotPageLayoutService: DotPageLayoutService,
         private templateContainersCacheService: TemplateContainersCacheService,
         public dotMessageService: DotMessageService
     ) {}
@@ -172,11 +172,11 @@ export class DotEditLayoutDesignerComponent implements OnInit, OnDestroy {
             this.dotMessageService.get('dot.common.message.saving')
         );
 
-        this.pageViewService
+        this.dotPageLayoutService
             .save(this.pageState.page.identifier, this.form.value)
             .pipe(take(1))
             .subscribe(
-                (updatedPage: DotRenderedPage) => {
+                (updatedPage: DotPageRender) => {
                     this.dotGlobalMessageService.success(
                         this.dotMessageService.get('dot.common.message.saved')
                     );

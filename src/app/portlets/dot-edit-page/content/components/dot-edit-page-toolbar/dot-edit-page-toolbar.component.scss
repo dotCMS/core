@@ -1,7 +1,7 @@
 @import "variables";
 @import "mixins";
 
-$toolbar-height: 48px;
+$toolbar-height: 52px;
 
 :host {
     display: block;
@@ -15,72 +15,7 @@ $toolbar-height: 48px;
     }
 }
 
-::ng-deep [secondary] .ui-selectbutton {
-    .edit-page-toolbar__state-selector-item--disabled,
-    .edit-page-toolbar__state-selector-item--disabled:hover {
-        background: none;
-        pointer-events: none;
 
-        .ui-button-text {
-            color: $gray;
-        }
-    }
-}
-
-.ui-toolbar-group-left {
-    display: flex;
-}
-
-.edit-page-toolbar__state-selector {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    margin-right: $basic-padding * 3;
-
-    ::ng-deep {
-        .ui-selectbutton {
-            background-color: transparent;
-        }
-        
-        .ui-button {
-            height: $toolbar-height;
-            display: inline-flex;
-            align-items: center;
-        }
-    }
-}
-
-.edit-page-toolbar__locker {
-    &.warn ::ng-deep {
-        .ui-inputswitch-slider:after {
-            color: $orange;
-        }
-    }
-
-    ::ng-deep {
-        align-self: center;
-        margin-right: $basic-padding * 3;
-
-        .ui-inputswitch-slider:after {
-            @include md-icon;
-            color: $brand-primary;
-            content: "lock_open";
-            font-size: 13px;
-            left: 4px;
-            position: absolute;
-            text-rendering: auto;
-            top: 5px;
-            transition: transform $basic-speed ease-in;
-        }
-
-        .ui-inputswitch-checked .ui-inputswitch-slider:after {
-            content: "lock";
-            color: $white;
-            transform: translateX(1.65em);
-        }
-
-        .ui-state-disabled .ui-inputswitch-slider:after {
-            color: rgba($black, 0.2);
-        }
-    }
+p-checkbox {
+    margin-left: $basic-padding * 3;
 }

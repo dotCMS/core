@@ -9,7 +9,7 @@ import { DotEditLayoutGridModule } from '../components/dot-edit-layout-grid/dot-
 import { LoginService, DotEventsSocket, SiteService } from 'dotcms-js';
 import { DotMessageService } from '@services/dot-messages-service';
 import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
-import { PageViewService } from '@services/page-view/page-view.service';
+import { DotPageLayoutService } from '@services/dot-page-layout/dot-page-layout.service';
 import { PaginatorService } from '@services/paginator';
 import { RouterTestingModule } from '@angular/router/testing';
 import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
@@ -108,7 +108,7 @@ const testConfigObject = {
     providers: [
         DotAlertConfirmService,
         LoginService,
-        PageViewService,
+        DotPageLayoutService,
         PaginatorService,
         DotEventsSocket,
         DotEditLayoutService,

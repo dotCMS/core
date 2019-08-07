@@ -7,3 +7,7 @@ export interface DotPageContainer {
     contentletsId?: string[];
     path?: string;
 }
+
+export interface DotPageContainerPersonalized extends DotPageContainer {
+    personaTag?: string;
+}

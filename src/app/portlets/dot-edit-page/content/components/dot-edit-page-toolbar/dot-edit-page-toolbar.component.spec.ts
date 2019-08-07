@@ -16,7 +16,7 @@ import { DotGlobalMessageService } from '@components/_common/dot-global-message/
 import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { DOTTestBed } from '../../../../../test/dot-test-bed';
 import { DotRenderedPageState } from '@portlets/dot-edit-page/shared/models/dot-rendered-page-state.model';
-import { PageMode } from '@portlets/dot-edit-page/shared/models/page-mode.enum';
+import { DotPageMode } from '@portlets/dot-edit-page/shared/models/dot-page-mode.enum';
 import { mockUser } from '../../../../../test/login-service.mock';
 import { DotWorkflowServiceMock } from '../../../../../test/dot-workflow-service.mock';
 import { DotWorkflowService } from '@services/dot-workflow/dot-workflow.service';
@@ -134,7 +134,7 @@ describe('DotEditPageToolbarComponent', () => {
             layout: mockDotLayout,
             canCreateTemplate: true,
             viewAs: {
-                mode: PageMode[PageMode.EDIT]
+                mode: DotPageMode[DotPageMode.EDIT]
             }
         });
 
@@ -148,7 +148,7 @@ describe('DotEditPageToolbarComponent', () => {
 
     it('should have lockerModel in true when the page state is LIVE and the page is locked', () => {
         fixture.componentInstance.pageState.state.locked = true;
-        fixture.componentInstance.pageState.state.mode = PageMode.LIVE;
+        fixture.componentInstance.pageState.state.mode = DotPageMode.LIVE;
 
         fixture.detectChanges();
 
@@ -157,7 +157,7 @@ describe('DotEditPageToolbarComponent', () => {
 
     it('should have lockerModel in true when the page state is PREVIEW and the page is locked', () => {
         fixture.componentInstance.pageState.state.locked = true;
-        fixture.componentInstance.pageState.state.mode = PageMode.PREVIEW;
+        fixture.componentInstance.pageState.state.mode = DotPageMode.PREVIEW;
 
         fixture.detectChanges();
 
@@ -166,7 +166,7 @@ describe('DotEditPageToolbarComponent', () => {
 
     it('should have lockerModel in false when the page state is LIVE and the page is unlocked', () => {
         fixture.componentInstance.pageState.state.locked = false;
-        fixture.componentInstance.pageState.state.mode = PageMode.LIVE;
+        fixture.componentInstance.pageState.state.mode = DotPageMode.LIVE;
 
         fixture.detectChanges();
 
@@ -175,7 +175,7 @@ describe('DotEditPageToolbarComponent', () => {
 
     it('should have lockerModel in false when the page state is PREVIEW and the page is unlocked', () => {
         fixture.componentInstance.pageState.state.locked = false;
-        fixture.componentInstance.pageState.state.mode = PageMode.PREVIEW;
+        fixture.componentInstance.pageState.state.mode = DotPageMode.PREVIEW;
 
         fixture.detectChanges();
 
@@ -261,7 +261,7 @@ describe('DotEditPageToolbarComponent', () => {
             layout: mockDotLayout,
             canCreateTemplate: true,
             viewAs: {
-                mode: PageMode[PageMode.LIVE]
+                mode: DotPageMode[DotPageMode.LIVE]
             }
         });
 
@@ -285,13 +285,13 @@ describe('DotEditPageToolbarComponent', () => {
 
         expect(component.lockerModel).toBe(true, 'lock page');
         expect(pageStateResult).toEqual(
-            { mode: PageMode.EDIT, locked: true },
+            { mode: DotPageMode.EDIT, locked: true },
             'page state output emitted'
         );
     });
 
     it('should go to preview if user unlock the page while is in edit', () => {
-        fixture.componentInstance.pageState.state.mode = PageMode.PREVIEW;
+        fixture.componentInstance.pageState.state.mode = DotPageMode.PREVIEW;
         fixture.detectChanges();
 
         // Set the page locked and in edit mode
@@ -303,7 +303,7 @@ describe('DotEditPageToolbarComponent', () => {
     });
 
     it('should go to edit if user lock the while is in preview', () => {
-        fixture.componentInstance.pageState.state.mode = PageMode.PREVIEW;
+        fixture.componentInstance.pageState.state.mode = DotPageMode.PREVIEW;
         fixture.detectChanges();
 
         clickLocker();
@@ -315,7 +315,7 @@ describe('DotEditPageToolbarComponent', () => {
 
         beforeEach(() => {
             spyOn(component.whatschange, 'emit');
-            fixture.componentInstance.pageState.state.mode = PageMode.PREVIEW;
+            fixture.componentInstance.pageState.state.mode = DotPageMode.PREVIEW;
             spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(true));
             fixture.detectChanges();
 
@@ -355,14 +355,14 @@ describe('DotEditPageToolbarComponent', () => {
         });
 
         it('should emit preview page state and lock in true', () => {
-            fixture.componentInstance.pageState.state.mode = PageMode.PREVIEW;
+            fixture.componentInstance.pageState.state.mode = DotPageMode.PREVIEW;
             fixture.detectChanges();
 
             clickLocker();
             expect(pageStateResult).toEqual(
                 {
                     locked: true,
-                    mode: PageMode.PREVIEW
+                    mode: DotPageMode.PREVIEW
                 },
                 'emit correct state'
             );
@@ -372,7 +372,7 @@ describe('DotEditPageToolbarComponent', () => {
             spyOn(dotDialogService, 'confirm');
             fixture.componentInstance.pageState.state.locked = false;
             fixture.componentInstance.pageState.state.lockedByAnotherUser = true;
-            fixture.componentInstance.pageState.state.mode = PageMode.LIVE;
+            fixture.componentInstance.pageState.state.mode = DotPageMode.LIVE;
 
             fixture.detectChanges();
 
@@ -386,7 +386,7 @@ describe('DotEditPageToolbarComponent', () => {
             });
 
             fixture.componentInstance.pageState.state.lockedByAnotherUser = true;
-            fixture.componentInstance.pageState.state.mode = PageMode.LIVE;
+            fixture.componentInstance.pageState.state.mode = DotPageMode.LIVE;
 
             fixture.detectChanges();
 
@@ -395,7 +395,7 @@ describe('DotEditPageToolbarComponent', () => {
             expect(pageStateResult).toEqual(
                 {
                     locked: true,
-                    mode: PageMode.LIVE
+                    mode: DotPageMode.LIVE
                 },
                 'emit correct state'
             );
@@ -407,21 +407,21 @@ describe('DotEditPageToolbarComponent', () => {
             });
 
             fixture.componentInstance.pageState.state.lockedByAnotherUser = true;
-            fixture.componentInstance.pageState.state.mode = PageMode.LIVE;
+            fixture.componentInstance.pageState.state.mode = DotPageMode.LIVE;
 
             fixture.detectChanges();
 
             clickLocker();
 
             expect(component.lockerModel).toBe(false);
-            expect(component.mode).toBe(PageMode.LIVE, 'The mode should be the same');
+            expect(component.mode).toBe(DotPageMode.LIVE, 'The mode should be the same');
             expect(pageStateResult).toEqual(undefined, 'doesn\'t emit state');
         });
 
         it('should call confirmation service on edit attemp when page is locked by another user', () => {
             spyOn(dotDialogService, 'confirm');
             fixture.componentInstance.pageState.state.lockedByAnotherUser = true;
-            fixture.componentInstance.pageState.state.mode = PageMode.PREVIEW;
+            fixture.componentInstance.pageState.state.mode = DotPageMode.PREVIEW;
 
             fixture.detectChanges();
 
@@ -436,7 +436,7 @@ describe('DotEditPageToolbarComponent', () => {
 
             fixture.componentInstance.pageState.state.locked = true;
             fixture.componentInstance.pageState.state.lockedByAnotherUser = true;
-            fixture.componentInstance.pageState.state.mode = PageMode.PREVIEW;
+            fixture.componentInstance.pageState.state.mode = DotPageMode.PREVIEW;
 
             fixture.detectChanges();
 
@@ -445,7 +445,7 @@ describe('DotEditPageToolbarComponent', () => {
             expect(pageStateResult).toEqual(
                 {
                     locked: true,
-                    mode: PageMode.EDIT
+                    mode: DotPageMode.EDIT
                 },
                 'emit correct state'
             );
@@ -457,7 +457,7 @@ describe('DotEditPageToolbarComponent', () => {
             });
 
             fixture.componentInstance.pageState.state.lockedByAnotherUser = true;
-            fixture.componentInstance.pageState.state.mode = PageMode.PREVIEW;
+            fixture.componentInstance.pageState.state.mode = DotPageMode.PREVIEW;
 
             fixture.detectChanges();
 
@@ -473,16 +473,16 @@ describe('DotEditPageToolbarComponent', () => {
             });
 
             fixture.componentInstance.pageState.state.lockedByAnotherUser = true;
-            fixture.componentInstance.pageState.state.mode = PageMode.LIVE;
+            fixture.componentInstance.pageState.state.mode = DotPageMode.LIVE;
 
             fixture.detectChanges();
             clickStateButton('edit');
 
-            expect(component.mode).toEqual(PageMode.LIVE);
+            expect(component.mode).toEqual(DotPageMode.LIVE);
         });
 
         it('should set the locker true from preview to edit', () => {
-            fixture.componentInstance.pageState.state.mode = PageMode.PREVIEW;
+            fixture.componentInstance.pageState.state.mode = DotPageMode.PREVIEW;
             fixture.componentInstance.pageState.state.locked = false;
             fixture.detectChanges();
 
@@ -491,7 +491,7 @@ describe('DotEditPageToolbarComponent', () => {
         });
 
         it('should keep the locker true from edit to live', () => {
-            fixture.componentInstance.pageState.state.mode = PageMode.EDIT;
+            fixture.componentInstance.pageState.state.mode = DotPageMode.EDIT;
             fixture.componentInstance.pageState.state.locked = true;
             fixture.detectChanges();
 
@@ -501,7 +501,7 @@ describe('DotEditPageToolbarComponent', () => {
         });
 
         it('should keep the locker true from edit to preview', () => {
-            fixture.componentInstance.pageState.state.mode = PageMode.EDIT;
+            fixture.componentInstance.pageState.state.mode = DotPageMode.EDIT;
             fixture.componentInstance.pageState.state.locked = true;
             fixture.detectChanges();
 
@@ -511,7 +511,7 @@ describe('DotEditPageToolbarComponent', () => {
         });
 
         it('should not change locker when change from preview to live mode', () => {
-            fixture.componentInstance.pageState.state.mode = PageMode.PREVIEW;
+            fixture.componentInstance.pageState.state.mode = DotPageMode.PREVIEW;
             fixture.componentInstance.pageState.state.locked = false;
             fixture.detectChanges();
 
@@ -548,7 +548,7 @@ describe('DotEditPageToolbarComponent', () => {
         it('should not show locker confirm dialog when change from preview to live mode and the page is locked by another user', () => {
             spyOn(dotDialogService, 'confirm');
 
-            fixture.componentInstance.pageState.state.mode = PageMode.PREVIEW;
+            fixture.componentInstance.pageState.state.mode = DotPageMode.PREVIEW;
             fixture.componentInstance.pageState.state.locked = true;
             fixture.componentInstance.pageState.page.lockedBy = 'someone';
             fixture.componentInstance.pageState.state.lockedByAnotherUser = true;

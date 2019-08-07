@@ -24,19 +24,21 @@
 
 <p-overlayPanel
     #searchPanel
-    appendTo="body"
-    [style]="{ 'min-height': overlayPanelMinHeight + 'px' }"
+    (onHide)="hideOverlayHandler()"
+    (onShow)="showOverlayHandler()"
+    [dismissable]="true"
     [styleClass]="cssClass"
-    (onShow)="showDialogHandler()"
-    (onHide)="hideDialogHandler()"
+    [style]="{ 'min-height': overlayPanelMinHeight + 'px' }"
+    appendTo="body"
 >
     <header class="searchable-dropdown__search">
+
         <div class="searchable-dropdown__search-section">
             <dot-icon class="searchable-dropdown__search-icon" name="search"></dot-icon>
             <input
                 #searchInput
                 pInputText
-                [placeholder]="i18nMessages['search']"
+                [placeholder]="searchPlaceholder$ | async"
                 type="text"
                 class="searchable-dropdown__search-inputfield"
                 (click)="$event.stopPropagation()"

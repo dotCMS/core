@@ -17,12 +17,12 @@
 </span>
 
 <button
+    (click)="deletePersonalized($event)"
+    *ngIf="persona.personalized"
+    icon="fa fa-times"
+    iconPos="right"
+    label="{{deleteLabel$ | async}}"
     pButton
     secondary
     tiny
-    *ngIf="persona.personalized"
-    (click)="deletePersonalized($event)"
-    label="{{ messagesKey['modes.persona.personalized'] }}"
-    iconPos="right"
-    icon="fa fa-times"
 ></button>

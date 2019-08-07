@@ -1,30 +1,29 @@
 <dot-searchable-dropdown
     #searchableDropdown
-    cssClass="dot-persona-selector"
     (change)="personaChange($event)"
     (filterChange)="handleFilterChange($event)"
     (pageChange)="handlePageChange($event)"
+    [(ngModel)]="value"
     [action]="addAction"
     [data]="personas"
-    [(ngModel)]="value"
+    [optionsWidth]="448"
     [rows]="paginationPerPage"
     [totalRecords]="paginationService.totalRecords"
-    [optionsWidth]="448"
+    cssClass="dot-persona-selector"
     labelPropertyName="name"
 >
-    <ng-template let-personaData="item" pTemplate="listItem">
-        <dot-persona-selector-option
-            [persona]="personaData"
-            [selected]="value ? value.name === personaData.name : false"
-            (change)="personaChange($event)"
-            (delete)="deletePersonalization($event)"
-        ></dot-persona-selector-option>
-    </ng-template>
     <ng-template let-persona="item" pTemplate="select">
         <dot-persona-selected-item
-            [label]="messagesKey['modes.persona.selector.title']"
             [persona]="persona"
             (selected)="searchableDropdown.toggleOverlayPanel($event)"
         ></dot-persona-selected-item>
+    </ng-template>
+    <ng-template let-personaData="item" pTemplate="listItem">
+        <dot-persona-selector-option
+            [persona]="personaData"
+            [selected]="value && value.identifier === personaData.identifier"
+            (change)="personaChange($event)"
+            (delete)="delete.emit(personaData)"
+        ></dot-persona-selector-option>
     </ng-template>
 </dot-searchable-dropdown>

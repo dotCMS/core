@@ -9,6 +9,7 @@
 <form [formGroup]="form" (ngSubmit)="saveLayout()" novalidate>
     <p-toolbar class="dot-edit-layout__toolbar">
         <div class="ui-toolbar-group-right">
+            <dot-global-message></dot-global-message>
             <input
                 #templateName
                 pInputText

@@ -2,7 +2,6 @@
 @import "mixins";
 
 .ui-overlaypanel {
-    min-height: 300px;
 
     &.paginator .ui-dataview-content{
         margin-bottom: $basic-padding * 4;
@@ -72,10 +71,8 @@ dot-searchable-dropdown {
             margin: 0;
 
             .searchable-dropdown__data-list-item {
-                color: $gray;
                 cursor: pointer;
                 display: block;
-                font-weight: $font-weight-semi-bold;
                 line-height: normal;
                 padding: $basic-padding $basic-padding * 2;
                 transition: background-color $basic-speed ease-in;
@@ -85,13 +82,13 @@ dot-searchable-dropdown {
                 &.selected {
                     font-weight: bold;
                 }
-    
+
                 &:hover {
                     background-color: $gray-bg;
                 }
             }
         }
-        
+
     }
 
     .ui-dataview-emptymessage {

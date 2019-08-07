@@ -5,7 +5,11 @@
 .ui-selectbutton {
     @extend #button-basic;
     @extend #button-main;
-    @include button-base($selectbutton-normal-bgcolor, $selectbutton-normal-border, $selectbutton-normal-shadow);
+    @include button-base(
+        $selectbutton-normal-bgcolor,
+        $selectbutton-normal-border,
+        $selectbutton-normal-shadow
+    );
     height: 48px;
 
     [secondary] & {
@@ -54,6 +58,16 @@
 
             .ui-button-text {
                 color: $selectbutton-button-active-color;
+            }
+        }
+
+        &.ui-state-disabled,
+        &.ui-state-disabled:hover {
+            background: none;
+            pointer-events: none;
+
+            .ui-button-text {
+                color: $gray-light;
             }
         }
 

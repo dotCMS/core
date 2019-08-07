@@ -1,17 +1,17 @@
-<div class="dot-persona-selector__container" *ngIf="persona">
+<div class="dot-persona-selector__container">
     <dot-avatar
-        [label]="persona.name"
-        [showDot]="persona.personalized"
+        [label]="persona?.name || messages['modes.persona.no.persona']"
+        [showDot]="persona?.personalized || false"
         [size]="32"
-        [url]="persona.photo || ''"
+        [url]="persona?.photo || ''"
     ></dot-avatar>
     <div class="dot-persona-selector__label-container">
-        <span class="dot-persona-selector__label"
-            >{{ label }}
-        </span>
-        <span class="dot-persona-selector__name">
-            {{ persona.name }}
-        </span>
+        <span class="dot-persona-selector__label">{{
+            messages['modes.persona.selector.title']
+        }}</span>
+        <span class="dot-persona-selector__name">{{
+            persona?.name || messages['modes.persona.no.persona']
+        }}</span>
     </div>
     <dot-icon name="arrow_drop_down"></dot-icon>
 </div>

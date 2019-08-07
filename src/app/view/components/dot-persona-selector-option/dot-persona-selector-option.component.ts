@@ -1,7 +1,8 @@
 import { Component, EventEmitter, Input, OnInit, Output, HostListener } from '@angular/core';
 import { DotPersona } from '@models/dot-persona/dot-persona.model';
 import { DotMessageService } from '@services/dot-messages-service';
-import { take } from 'rxjs/operators';
+import { take, map } from 'rxjs/operators';
+import { Observable } from 'rxjs';
 
 @Component({
     selector: 'dot-persona-selector-option',
@@ -11,29 +12,40 @@ import { take } from 'rxjs/operators';
 export class DotPersonaSelectorOptionComponent implements OnInit {
     @Input()
     persona: DotPersona;
+
     @Input()
     selected: boolean;
+
     @Output()
     change = new EventEmitter<DotPersona>();
+
     @Output()
     delete = new EventEmitter<DotPersona>();
 
-    messagesKey: { [key: string]: string } = {};
+    deleteLabel$: Observable<string>;
 
     constructor(private dotMessageService: DotMessageService) {}
 
     ngOnInit() {
-        this.dotMessageService
-            .getMessages(['modes.persona.personalized'])
-            .pipe(take(1))
-            .subscribe((messages: { [key: string]: string }) => {
-                this.messagesKey = messages;
-            });
+        /*
+            Looks like because we're passing this as a template the requets to get
+            the message key is not happening as expected, setTimeout hack it to work.
+        */
+        setTimeout(() => {
+            this.deleteLabel$ = this.dotMessageService
+                .getMessages(['modes.persona.personalized'])
+                .pipe(
+                    take(1),
+                    map(
+                        (messages: { [key: string]: string }) =>
+                            messages['modes.persona.personalized']
+                    )
+                );
+        }, 0);
     }
 
     @HostListener('click', ['$event'])
-    onClick($event: MouseEvent) {
-        $event.stopPropagation();
+    onClick(_$event: MouseEvent) {
         this.change.emit(this.persona);
     }
 

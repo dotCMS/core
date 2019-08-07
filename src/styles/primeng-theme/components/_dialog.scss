@@ -46,6 +46,20 @@
             span {
                 @extend #warn;
             }
+
+            p {
+                &:first-child {
+                    margin-top: 0;
+                }
+
+                &:last-child {
+                    margin-bottom: 0;
+                }
+
+                &.note b {
+                    color: $brand-primary
+                }
+            }
         }
     }
 

@@ -1,7 +1,7 @@
 import { throwError as observableThrowError, of as observableOf } from 'rxjs';
 import { mockDotRenderedPage } from './../../../../../test/dot-rendered-page.mock';
 import { DotContentletLockerService } from '@services/dot-contentlet-locker/dot-contentlet-locker.service';
-import { DotRenderHTMLService } from '@services/dot-render-html/dot-render-html.service';
+import { DotPageRenderService } from '@services/dot-page-render/dot-page-render.service';
 import { DOTTestBed } from '../../../../../test/dot-test-bed';
 import { DotEditPageResolver } from './dot-edit-page-resolver.service';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
@@ -35,7 +35,7 @@ describe('DotEditPageResolver', () => {
                 DotHttpErrorManagerService,
                 DotPageStateService,
                 DotEditPageResolver,
-                DotRenderHTMLService,
+                DotPageRenderService,
                 DotContentletLockerService,
                 {
                     provide: ActivatedRouteSnapshot,

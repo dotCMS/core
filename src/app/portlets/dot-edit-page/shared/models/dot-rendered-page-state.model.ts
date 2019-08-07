@@ -1,31 +1,29 @@
-import { DotRenderedPage } from './dot-rendered-page.model';
-import { PageMode } from './page-mode.enum';
+import { DotPageRender } from './dot-rendered-page.model';
+import { DotPageMode } from './dot-page-mode.enum';
 import { User } from 'dotcms-js';
 import { DotPage } from './dot-page.model';
 import { DotLayout } from './dot-layout.model';
 import { DotTemplate } from './dot-template.model';
 import { DotEditPageViewAs } from '@models/dot-edit-page-view-as/dot-edit-page-view-as.model';
 
-export interface DotPageState {
+interface DotPageState {
     locked?: boolean;
     lockedByAnotherUser?: boolean;
-    mode: PageMode;
+    mode: DotPageMode;
 }
 
 export class DotRenderedPageState {
     private _state: DotPageState;
 
-    constructor(private _user: User, private dotRenderedPage: DotRenderedPage) {
+    constructor(private _user: User, private dotRenderedPage: DotPageRender) {
         const locked = !!dotRenderedPage.page.lockedBy;
         const lockedByAnotherUser = locked ? dotRenderedPage.page.lockedBy !== _user.userId : false;
 
-        const ngModeName = dotRenderedPage.viewAs.mode.replace('_MODE', '');
-        const mode = ngModeName === 'ADMIN' ? PageMode.LIVE : PageMode[ngModeName];
 
         this._state = {
             locked: locked,
             lockedByAnotherUser: lockedByAnotherUser,
-            mode: mode
+            mode: dotRenderedPage.viewAs.mode
         };
     }
 

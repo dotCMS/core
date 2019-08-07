@@ -9,7 +9,7 @@ export class DotEditPageDataService {
     private dotRenderedPageState: DotRenderedPageState;
 
     /**
-     * Out dotRenderedPageState into cache to be used by DotEditPageResolver
+     * Set dotRenderedPageState into cache to be used by DotEditPageResolver
      *
      * @param dotRenderedPageState
      */

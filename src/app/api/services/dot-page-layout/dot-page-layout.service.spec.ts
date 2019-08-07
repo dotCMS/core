@@ -1,16 +1,16 @@
 import { MockBackend } from '@angular/http/testing';
 import { ConnectionBackend, Response, ResponseOptions } from '@angular/http';
 import { fakeAsync, tick } from '@angular/core/testing';
-import { PageViewService } from './page-view.service';
+import { DotPageLayoutService } from './dot-page-layout.service';
 import { DOTTestBed } from '../../../test/dot-test-bed';
 import { mockDotLayout } from '../../../test/dot-rendered-page.mock';
 
 describe('PageViewService', () => {
-    let service: PageViewService;
+    let service: DotPageLayoutService;
     beforeEach(() => {
-        this.injector = DOTTestBed.resolveAndCreate([PageViewService]);
+        this.injector = DOTTestBed.resolveAndCreate([DotPageLayoutService]);
 
-        service = this.injector.get(PageViewService);
+        service = this.injector.get(DotPageLayoutService);
         this.backend = this.injector.get(ConnectionBackend) as MockBackend;
         this.backend.connections.subscribe((connection: any) => (this.lastConnection = connection));
     });

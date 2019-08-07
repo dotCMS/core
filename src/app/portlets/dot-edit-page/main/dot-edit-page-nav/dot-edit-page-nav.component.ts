@@ -4,7 +4,7 @@ import { DotRenderedPageState } from './../../shared/models/dot-rendered-page-st
 import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { DotMessageService } from '@services/dot-messages-service';
-import { DotRenderedPage } from '../../shared/models/dot-rendered-page.model';
+import { DotPageRender } from '../../shared/models/dot-rendered-page.model';
 import { DotLicenseService } from '@services/dot-license/dot-license.service';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { map, mergeMap } from 'rxjs/operators';
@@ -81,14 +81,14 @@ export class DotEditPageNavComponent implements OnChanges {
             );
     }
 
-    private canGoToLayout(dotRenderedPage: DotRenderedPage): boolean {
+    private canGoToLayout(dotRenderedPage: DotPageRender): boolean {
         // Right now we only allowing users to edit layout, so no templates or advanced template can be edit from here.
         // https://github.com/dotCMS/core-web/pull/589
         return dotRenderedPage.page.canEdit && dotRenderedPage.template.drawed;
     }
 
     private getNavItems(
-        dotRenderedPage: DotRenderedPage,
+        dotRenderedPage: DotPageRender,
         enterpriselicense: boolean
     ): DotEditPageNavItem[] {
         return [
@@ -118,7 +118,7 @@ export class DotEditPageNavComponent implements OnChanges {
     }
 
     private getLayoutNavItem(
-        dotRenderedPage: DotRenderedPage,
+        dotRenderedPage: DotPageRender,
         enterpriselicense: boolean
     ): DotEditPageNavItem {
         // Right now we only allowing users to edit layout, so no templates or advanced template can be edit from here.
@@ -136,7 +136,7 @@ export class DotEditPageNavComponent implements OnChanges {
     }
 
     private getRulesNavItem(
-        dotRenderedPage: DotRenderedPage,
+        dotRenderedPage: DotPageRender,
         enterpriselicense: boolean
     ): DotEditPageNavItem {
         // Right now we only allowing users to edit layout, so no templates or advanced template can be edit from here.

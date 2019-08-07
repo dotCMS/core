@@ -1,35 +1,36 @@
-import { empty as observableEmpty, Observable, Subject, fromEvent } from 'rxjs';
+import { Observable, Subject, fromEvent, merge } from 'rxjs';
 
-import { concatMap, catchError, filter, takeUntil, pluck, take } from 'rxjs/operators';
+import { filter, takeUntil, pluck, take, tap } from 'rxjs/operators';
 import { ActivatedRoute } from '@angular/router';
 import { Component, OnInit, ViewChild, ElementRef, NgZone, OnDestroy } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
-import { SiteService, ResponseView } from 'dotcms-js';
+import { SiteService } from 'dotcms-js';
 
 import { DotAlertConfirmService } from '@services/dot-alert-confirm';
 import { DotEditContentHtmlService } from './services/dot-edit-content-html/dot-edit-content-html.service';
 import { DotEditPageService } from '@services/dot-edit-page/dot-edit-page.service';
-import { DotEditPageViewAs } from '@models/dot-edit-page-view-as/dot-edit-page-view-as.model';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
-import {
-    DotHttpErrorManagerService,
-    DotHttpErrorHandled
-} from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotLoadingIndicatorService } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.service';
 import { DotMessageService } from '@services/dot-messages-service';
-import { DotPageContainer } from '../shared/models/dot-page-container.model';
+import {
+    DotPageContainer,
+    DotPageContainerPersonalized
+} from '../shared/models/dot-page-container.model';
 import { DotPageContent } from '../shared/models/dot-page-content.model';
-import { DotPageState, DotRenderedPageState } from '../shared/models/dot-rendered-page-state.model';
+import { DotRenderedPageState } from '../shared/models/dot-rendered-page-state.model';
 import { DotPageStateService } from './services/dot-page-state/dot-page-state.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
-import { PageMode } from '../shared/models/page-mode.enum';
-import { DotRenderedPage } from '../shared/models/dot-rendered-page.model';
+import { DotPageMode } from '../shared/models/dot-page-mode.enum';
+import { DotPageRender } from '../shared/models/dot-rendered-page.model';
 import { DotEditPageDataService } from '../shared/services/dot-edit-page-resolver/dot-edit-page-data.service';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
 import { DotCMSContentType } from 'dotcms-models';
-import { PageModelChangeEvent, PageModelChangeEventType } from './services/dot-edit-content-html/models';
+import {
+    PageModelChangeEvent,
+    PageModelChangeEventType
+} from './services/dot-edit-content-html/models';
 
 /**
  * Edit content page component, render the html of a page and bind all events to make it ediable.
@@ -49,7 +50,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     iframe: ElementRef;
 
     contentletActionsUrl: SafeResourceUrl;
-    pageState: DotRenderedPageState;
+    pageState$: Observable<DotRenderedPageState>;
     showWhatsChanged = false;
     editForm = false;
     showIframe = true;
@@ -58,6 +59,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
 
     private readonly customEventsHandler;
     private destroy$: Subject<boolean> = new Subject<boolean>();
+    private pageStateInternal: DotRenderedPageState;
 
     constructor(
         private dotContentletEditorService: DotContentletEditorService,
@@ -65,7 +67,6 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         private dotEditPageDataService: DotEditPageDataService,
         private dotEditPageService: DotEditPageService,
         private dotGlobalMessageService: DotGlobalMessageService,
-        private dotHttpErrorManagerService: DotHttpErrorManagerService,
         private dotMessageService: DotMessageService,
         private dotPageStateService: DotPageStateService,
         private dotRouterService: DotRouterService,
@@ -82,14 +83,14 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
                 'remote-render-edit': ({ pathname }) => {
                     this.dotRouterService.goToEditPage(pathname.slice(1));
                 },
-                'load-edit-mode-page': (pageRendered: DotRenderedPage) => {
+                'load-edit-mode-page': (pageRendered: DotPageRender) => {
                     const dotRenderedPageState = new DotRenderedPageState(
-                        this.pageState.user,
+                        this.pageStateInternal.user,
                         pageRendered
                     );
 
                     if (this.route.snapshot.queryParams.url === pageRendered.page.pageURI) {
-                        this.setPageState(dotRenderedPageState);
+                        this.dotPageStateService.setLocalState(dotRenderedPageState);
                     } else {
                         this.dotEditPageDataService.set(dotRenderedPageState);
                         this.dotRouterService.goToEditPage(pageRendered.page.pageURI);
@@ -107,7 +108,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
                 },
                 'error-saving-menu-order': () => {
                     this.reorderMenuUrl = '';
-                    this.dotGlobalMessageService.display(
+                    this.dotGlobalMessageService.error(
                         this.dotMessageService.get('an-unexpected-system-error-occurred')
                     );
                 },
@@ -155,7 +156,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
             $event.currentTarget.contentDocument.body.innerHTML
         ) {
             this.dotEditContentHtmlService.setContaintersChangeHeightListener(
-                this.pageState.layout
+                this.pageStateInternal.layout
             );
         }
 
@@ -164,60 +165,12 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Handle the changes of the state gf the page
-     *
-     * @param DotPageState newState
-     * @memberof DotEditContentComponent
-     */
-    statePageHandler(newState: DotPageState): void {
-        if (this.shouldHideWhatsChanged(newState.mode)) {
-            this.showWhatsChanged = false;
-        }
-
-        this.dotPageStateService
-            .set(this.pageState.page, newState)
-            .pipe(takeUntil(this.destroy$))
-            .subscribe(
-                (pageState: DotRenderedPageState) => {
-                    this.setPageState(pageState);
-                },
-                (err: ResponseView) => {
-                    this.handleSetPageStateFailed(err);
-                }
-            );
-    }
-
-    /**
-     * Handle changes in the configuration of "View As" toolbar
-     *
-     * @param DotEditPageViewAs viewAsConfig
-     * @memberof DotEditContentComponent
-     */
-    changeViewAsHandler(viewAsConfig: DotEditPageViewAs): void {
-        this.dotPageStateService.reload({
-            url: this.route.snapshot.queryParams.url,
-            mode: this.pageState.state.mode,
-            viewAs: {
-                persona_id: viewAsConfig.persona ? viewAsConfig.persona.identifier : null,
-                language_id: viewAsConfig.language.id,
-                device_inode: viewAsConfig.device ? viewAsConfig.device.inode : null
-            }
-        });
-    }
-
-    /**
      * Reload the edit page
      *
      * @memberof DotEditContentComponent
      */
     reload(): void {
-        this.dotPageStateService
-            .get(this.route.snapshot.queryParams.url)
-            .pipe(catchError((err: ResponseView) => this.errorHandler(err)))
-            .pipe(takeUntil(this.destroy$))
-            .subscribe((pageState: DotRenderedPageState) => {
-                this.setPageState(pageState);
-            });
+        this.dotPageStateService.reload();
     }
 
     /**
@@ -230,7 +183,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         this.dotEditContentHtmlService.renderAddedForm(item).subscribe((model) => {
             if (model) {
                 this.dotEditPageService
-                    .save(this.pageState.page.identifier, model)
+                    .save(this.pageStateInternal.page.identifier, model)
                     .pipe(take(1))
                     .subscribe(() => {
                         this.dotGlobalMessageService.success(
@@ -255,29 +208,66 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
 
     private shouldSetContainersHeight() {
         return (
-            this.pageState && this.pageState.layout && this.pageState.state.mode === PageMode.EDIT
+            this.pageStateInternal &&
+            this.pageStateInternal.layout &&
+            this.pageStateInternal.state.mode === DotPageMode.EDIT
         );
-    }
-
-    private shouldHideWhatsChanged(mode: PageMode): boolean {
-        return (this.showWhatsChanged && mode === PageMode.EDIT) || mode === PageMode.LIVE;
     }
 
     private saveContent(event: PageModelChangeEvent): void {
         this.dotGlobalMessageService.loading(
             this.dotMessageService.get('dot.common.message.saving')
         );
-        this.dotEditPageService
-            .save(this.pageState.page.identifier, event.model)
-            .pipe(take(1))
+        this.saveToPage(event.model)
+            .pipe(filter(() => this.shouldReload(event.type)))
             .subscribe(() => {
                 this.dotGlobalMessageService.success(
                     this.dotMessageService.get('dot.common.message.saved')
                 );
-                if (event.type !== PageModelChangeEventType.MOVE_CONTENT && this.pageState.page.remoteRendered) {
+                if (
+                    event.type !== PageModelChangeEventType.MOVE_CONTENT &&
+                    this.pageStateInternal.page.remoteRendered
+                ) {
                     this.reload();
                 }
             });
+    }
+
+    private shouldReload(type: PageModelChangeEventType): boolean {
+        return (
+            type !== PageModelChangeEventType.MOVE_CONTENT &&
+            this.pageStateInternal.page.remoteRendered
+        );
+    }
+
+    private saveToPage(model: DotPageContainer[]): Observable<string> {
+        this.dotGlobalMessageService.loading(
+            this.dotMessageService.get('dot.common.message.saving')
+        );
+        return this.dotEditPageService
+            .save(this.pageStateInternal.page.identifier, this.getPersonalizedModel(model) || model)
+            .pipe(
+                take(1),
+                tap(() => {
+                    this.dotGlobalMessageService.success(
+                        this.dotMessageService.get('dot.common.message.saved')
+                    );
+                })
+            );
+    }
+
+    private getPersonalizedModel(model: DotPageContainer[]): DotPageContainerPersonalized[] {
+        const persona = this.pageStateInternal.viewAs.persona;
+
+        if (persona && persona.personalized) {
+            return model.map((container: DotPageContainer) => {
+                return {
+                    ...container,
+                    personaTag: persona.keyTag
+                };
+            });
+        }
+        return null;
     }
 
     private addContentlet($event: any): void {
@@ -318,17 +308,17 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         });
     }
 
-    private errorHandler(err: ResponseView): Observable<DotRenderedPageState> {
-        this.dotHttpErrorManagerService
-            .handle(err)
-            .pipe(takeUntil(this.destroy$))
-            .subscribe((res: DotHttpErrorHandled) => {
-                if (!res.redirected) {
-                    this.dotRouterService.goToSiteBrowser();
-                }
-            });
-        return observableEmpty();
-    }
+    // private errorHandler(err: ResponseView): Observable<DotRenderedPageState> {
+    //     this.dotHttpErrorManagerService
+    //         .handle(err)
+    //         .pipe(takeUntil(this.destroy$))
+    //         .subscribe((res: DotHttpErrorHandled) => {
+    //             if (!res.redirected) {
+    //                 this.dotRouterService.goToSiteBrowser();
+    //             }
+    //         });
+    //     return observableEmpty();
+    // }
 
     private getMessages(): void {
         this.dotMessageService
@@ -364,28 +354,6 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         };
 
         return eventsHandlerMap[event];
-    }
-
-    // TODO: this whole method need testing.
-    private handleSetPageStateFailed(err: ResponseView): void {
-        this.dotHttpErrorManagerService
-            .handle(err)
-            .pipe(takeUntil(this.destroy$))
-            .subscribe((res: any) => {
-                if (res.forbidden) {
-                    this.dotRouterService.goToSiteBrowser();
-                } else {
-                    this.route.queryParams
-                        .pipe(
-                            pluck('url'),
-                            concatMap((url: string) => this.dotPageStateService.get(url)),
-                            takeUntil(this.destroy$)
-                        )
-                        .subscribe((pageState: DotRenderedPageState) => {
-                            this.setPageState(pageState);
-                        });
-                }
-            });
     }
 
     private subscribeIframeCustomEvents(): void {
@@ -444,41 +412,34 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     }
 
     private setInitalData(): void {
-        this.route.parent.parent.data
-            .pipe(
-                pluck('content'),
-                takeUntil(this.destroy$)
-            )
-            .subscribe((pageState: DotRenderedPageState) => {
-                this.setPageState(pageState);
-            });
+        const content$ = merge(
+            this.route.parent.parent.data.pipe(pluck('content')),
+            this.dotPageStateService.state$
+        ).pipe(takeUntil(this.destroy$));
 
-        this.dotPageStateService.reload$
-            .pipe(takeUntil(this.destroy$))
-            .subscribe((pageState: DotRenderedPageState) => {
-                this.setPageState(pageState);
-            });
-    }
+        this.pageState$ = content$.pipe(
+            takeUntil(this.destroy$),
+            tap((pageState: DotRenderedPageState) => {
+                this.pageStateInternal = pageState;
+                this.showIframe = false;
 
-    private setPageState(pageState: DotRenderedPageState): void {
-        this.pageState = pageState;
-        this.showIframe = false;
+                // In order to get the iframe clean up we need to remove it and then re-add it to the DOM
+                setTimeout(() => {
+                    this.showIframe = true;
 
-        // In order to get the iframe clean up we need to remove it and then re-add it to the DOM
-        setTimeout(() => {
-            this.showIframe = true;
-
-            const intervalId = setInterval(() => {
-                if (this.iframe) {
-                    this.renderPage(pageState);
-                    clearInterval(intervalId);
-                }
-            }, 1);
-        }, 0);
+                    const intervalId = setInterval(() => {
+                        if (this.iframe) {
+                            this.renderPage(pageState);
+                            clearInterval(intervalId);
+                        }
+                    }, 1);
+                }, 0);
+            })
+        );
     }
 
     private shouldEditMode(pageState: DotRenderedPageState): boolean {
-        return pageState.state.mode === PageMode.EDIT && !pageState.state.lockedByAnotherUser;
+        return pageState.state.mode === DotPageMode.EDIT && !pageState.state.lockedByAnotherUser;
     }
 
     private subscribePageModelChange(): void {
@@ -490,9 +451,10 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
             .subscribe((event: PageModelChangeEvent) => {
                 this.ngZone.run(() => {
                     this.saveContent(event);
+
                     if (this.shouldSetContainersHeight()) {
                         this.dotEditContentHtmlService.setContaintersSameHeight(
-                            this.pageState.layout
+                            this.pageStateInternal.layout
                         );
                     }
                 });

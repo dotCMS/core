@@ -5,14 +5,14 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { LoginService } from 'dotcms-js';
 
 import { DOTTestBed } from '../../../test/dot-test-bed';
-import { DotRenderHTMLService, DotRenderPageOptions } from './dot-render-html.service';
-import { DotRenderedPage } from '../../../portlets/dot-edit-page/shared/models/dot-rendered-page.model';
+import { DotPageRenderService, DotPageRenderOptions } from './dot-page-render.service';
+import { DotPageRender } from '../../../portlets/dot-edit-page/shared/models/dot-rendered-page.model';
 import { LoginServiceMock } from '../../../test/login-service.mock';
 import { mockDotRenderedPage } from '../../../test/dot-rendered-page.mock';
-import { PageMode } from '../../../portlets/dot-edit-page/shared/models/page-mode.enum';
+import { DotPageMode } from '../../../portlets/dot-edit-page/shared/models/dot-page-mode.enum';
 
-describe('DotRenderHTMLService', () => {
-    let editPageService: DotRenderHTMLService;
+describe('DotPageRenderService', () => {
+    let editPageService: DotPageRenderService;
     let backend: MockBackend;
     let lastConnection;
     let injector;
@@ -22,7 +22,7 @@ describe('DotRenderHTMLService', () => {
 
         injector = DOTTestBed.configureTestingModule({
             providers: [
-                DotRenderHTMLService,
+                DotPageRenderService,
                 {
                     provide: LoginService,
                     useClass: LoginServiceMock
@@ -31,7 +31,7 @@ describe('DotRenderHTMLService', () => {
             imports: [RouterTestingModule]
         });
 
-        editPageService = injector.get(DotRenderHTMLService);
+        editPageService = injector.get(DotPageRenderService);
 
         backend = injector.get(ConnectionBackend) as MockBackend;
         backend.connections.subscribe((connection: any) => {
@@ -40,7 +40,7 @@ describe('DotRenderHTMLService', () => {
     });
 
     it('should get a rendered page in edit mode with ViewAs params', () => {
-        let result: DotRenderedPage;
+        let result: DotPageRender;
         spyOn(editPageService, 'get').and.callThrough();
 
         const viewAs = {
@@ -56,7 +56,7 @@ describe('DotRenderHTMLService', () => {
 
         editPageService
             .getEdit('about-us', viewAs)
-            .subscribe((renderedPage: DotRenderedPage) => (result = renderedPage));
+            .subscribe((renderedPage: DotPageRender) => (result = renderedPage));
 
         lastConnection[0].mockRespond(
             new Response(
@@ -86,10 +86,10 @@ describe('DotRenderHTMLService', () => {
     });
 
     it('should get a rendered page in preview mode', () => {
-        let result: DotRenderedPage;
+        let result: DotPageRender;
         editPageService
             .getPreview('about-us')
-            .subscribe((renderedPage: DotRenderedPage) => (result = renderedPage));
+            .subscribe((renderedPage: DotPageRender) => (result = renderedPage));
 
         lastConnection[0].mockRespond(
             new Response(
@@ -107,10 +107,10 @@ describe('DotRenderHTMLService', () => {
     });
 
     it('should get a rendered page in live mode', () => {
-        let result: DotRenderedPage;
+        let result: DotPageRender;
         editPageService
             .getLive('about-us')
-            .subscribe((renderedPage: DotRenderedPage) => (result = renderedPage));
+            .subscribe((renderedPage: DotPageRender) => (result = renderedPage));
 
         lastConnection[0].mockRespond(
             new Response(
@@ -128,14 +128,14 @@ describe('DotRenderHTMLService', () => {
     });
 
     it('should get a rendered page in specific mode', () => {
-        let result: DotRenderedPage;
-        const param: DotRenderPageOptions = {
+        let result: DotPageRender;
+        const param: DotPageRenderOptions = {
             url: 'about-us',
-            mode: PageMode.EDIT
+            mode: DotPageMode.EDIT
         };
         editPageService
             .get(param)
-            .subscribe((renderedPage: DotRenderedPage) => (result = renderedPage));
+            .subscribe((renderedPage: DotPageRender) => (result = renderedPage));
 
         lastConnection[0].mockRespond(
             new Response(
@@ -153,15 +153,15 @@ describe('DotRenderHTMLService', () => {
     });
 
     it('should not crash when view as attribute is empty', () => {
-        let result: DotRenderedPage;
-        const param: DotRenderPageOptions = {
+        let result: DotPageRender;
+        const param: DotPageRenderOptions = {
             url: 'about-us',
             viewAs: {
             }
         };
         editPageService
             .get(param)
-            .subscribe((renderedPage: DotRenderedPage) => (result = renderedPage));
+            .subscribe((renderedPage: DotPageRender) => (result = renderedPage));
 
         lastConnection[0].mockRespond(
             new Response(
@@ -179,8 +179,8 @@ describe('DotRenderHTMLService', () => {
     });
 
     it('should get a rendered page in default mode', () => {
-        let result: DotRenderedPage;
-        const param: DotRenderPageOptions = {
+        let result: DotPageRender;
+        const param: DotPageRenderOptions = {
             url: 'about-us',
             viewAs: {
                 language_id: 2
@@ -188,7 +188,7 @@ describe('DotRenderHTMLService', () => {
         };
         editPageService
             .get(param)
-            .subscribe((renderedPage: DotRenderedPage) => (result = renderedPage));
+            .subscribe((renderedPage: DotPageRender) => (result = renderedPage));
 
         lastConnection[0].mockRespond(
             new Response(
@@ -206,17 +206,17 @@ describe('DotRenderHTMLService', () => {
     });
 
     it('should get a rendered page in specific mode and language', () => {
-        let result: DotRenderedPage;
-        const param: DotRenderPageOptions = {
+        let result: DotPageRender;
+        const param: DotPageRenderOptions = {
             url: 'about-us',
             viewAs: {
                 language_id: 2
             },
-            mode: PageMode.EDIT
+            mode: DotPageMode.EDIT
         };
         editPageService
             .get(param)
-            .subscribe((renderedPage: DotRenderedPage) => (result = renderedPage));
+            .subscribe((renderedPage: DotPageRender) => (result = renderedPage));
 
         lastConnection[0].mockRespond(
             new Response(

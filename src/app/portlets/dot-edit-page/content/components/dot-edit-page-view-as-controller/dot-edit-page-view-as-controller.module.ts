@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { DotEditContentViewAsToolbarComponent } from './dot-edit-content-view-as-toolbar.component';
+import { DotEditPageViewAsControllerComponent } from './dot-edit-page-view-as-controller.component';
 import { DropdownModule } from 'primeng/primeng';
 import { FormsModule } from '@angular/forms';
 import { DotLanguageSelectorModule } from '@components/dot-language-selector/dot-language-selector.module';
@@ -9,6 +9,7 @@ import { DotPersonasService } from '@services/dot-personas/dot-personas.service'
 import { DotLanguagesService } from '@services/dot-languages/dot-languages.service';
 import { DotDevicesService } from '@services/dot-devices/dot-devices.service';
 import { DotPersonaSelectorModule } from '@components/dot-persona-selector/dot-persona.selector.module';
+
 
 @NgModule({
     imports: [
@@ -20,7 +21,7 @@ import { DotPersonaSelectorModule } from '@components/dot-persona-selector/dot-p
         DotDeviceSelectorModule
     ],
     providers: [DotDevicesService, DotLanguagesService, DotPersonasService],
-    declarations: [DotEditContentViewAsToolbarComponent],
-    exports: [DotEditContentViewAsToolbarComponent]
+    declarations: [DotEditPageViewAsControllerComponent],
+    exports: [DotEditPageViewAsControllerComponent]
 })
-export class DotEditContentViewAsToolbarModule {}
+export class DotEditPageViewAsControllerModule {}

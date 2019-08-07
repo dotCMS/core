@@ -1,9 +1,9 @@
 import { DotTemplate } from './../portlets/dot-edit-page/shared/models/dot-template.model';
 import { DotPage } from './../portlets/dot-edit-page/shared/models/dot-page.model';
-import { DotRenderedPage } from '@portlets/dot-edit-page/shared/models/dot-rendered-page.model';
+import { DotPageRender } from '@portlets/dot-edit-page/shared/models/dot-rendered-page.model';
 import { DotLayout } from '@portlets/dot-edit-page/shared/models/dot-layout.model';
 import { mockDotLanguage } from './dot-language.mock';
-import { PageMode } from '@portlets/dot-edit-page/shared/models/page-mode.enum';
+import { DotPageMode } from '@portlets/dot-edit-page/shared/models/dot-page-mode.enum';
 import { CONTAINER_SOURCE } from '@models/container/dot-container.model';
 import { dotcmsContentTypeBasicMock } from './dot-content-types.mock';
 
@@ -102,7 +102,7 @@ export const mockDotTemplateLayout: DotTemplate = {
     title: 'anonymous_layout_1511798005268'
 };
 
-export const mockDotRenderedPage: DotRenderedPage = {
+export const mockDotRenderedPage: DotPageRender = {
     containers: mockDotContainers,
     layout: mockDotLayout,
     page: mockDotPage,
@@ -110,6 +110,6 @@ export const mockDotRenderedPage: DotRenderedPage = {
     canCreateTemplate: true,
     viewAs: {
         language: mockDotLanguage,
-        mode: PageMode[PageMode.PREVIEW]
+        mode: DotPageMode[DotPageMode.PREVIEW]
     }
 };

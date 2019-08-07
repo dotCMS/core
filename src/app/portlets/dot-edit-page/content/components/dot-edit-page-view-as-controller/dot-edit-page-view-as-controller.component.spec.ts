@@ -1,5 +1,5 @@
 import { ComponentFixture, async } from '@angular/core/testing';
-import { DotEditContentViewAsToolbarComponent } from './dot-edit-content-view-as-toolbar.component';
+import { DotEditContentViewAsControllerComponent } from './dot-edit-content-view-as-controller.component';
 import { DotDevicesService } from '@services/dot-devices/dot-devices.service';
 import { DotLanguagesService } from '@services/dot-languages/dot-languages.service';
 import { DotPersonasService } from '@services/dot-personas/dot-personas.service';
@@ -82,11 +82,11 @@ const messageServiceMock = new MockDotMessageService({
     'editpage.viewas.previewing': 'Previewing'
 });
 
-describe('DotEditContentViewAsToolbarComponent', () => {
+describe('DotEditContentViewAsControllerComponent', () => {
     let componentHost: DotTestHostComponent;
     let fixtureHost: ComponentFixture<DotTestHostComponent>;
 
-    let component: DotEditContentViewAsToolbarComponent;
+    let component: DotEditContentViewAsControllerComponent;
     let de: DebugElement;
     let languageSelector: DotLanguageSelectorComponent;
     let deviceSelector: DotDeviceSelectorComponent;
@@ -97,7 +97,7 @@ describe('DotEditContentViewAsToolbarComponent', () => {
         DOTTestBed.configureTestingModule({
             declarations: [
                 DotTestHostComponent,
-                DotEditContentViewAsToolbarComponent,
+                DotEditContentViewAsControllerComponent,
                 MockDotPersonaSelectorComponent,
                 MockDotDeviceSelectorComponent,
                 MockDotLanguageSelectorComponent
