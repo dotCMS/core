@@ -1,7 +1,7 @@
 package com.dotcms.rendering.velocity.viewtools.navigation;
 
 
-import com.dotmarketing.beans.Inode;
+
 import com.dotmarketing.portlets.browser.ajax.BrowserAjax;
 import com.google.common.annotations.VisibleForTesting;
 
@@ -172,7 +172,7 @@ public class NavTool implements ViewTool {
                         nav.setType("htmlpage");
                         nav.setPermissionId(itemPage.getPermissionId());
                         nav.setShowOnMenu(itemPage.isShowOnMenu());
-                        nav = new NavResultHydrated(nav, this.context);
+                        //nav = new NavResultHydrated(nav, this.context);
                         children.add(nav);
                     }
                 } else if (item instanceof Link) {
@@ -191,7 +191,7 @@ public class NavTool implements ViewTool {
                     nav.setTarget(itemLink.getTarget());
                     nav.setPermissionId(itemLink.getPermissionId());
                     nav.setShowOnMenu(itemLink.isShowOnMenu());
-                    nav = new NavResultHydrated(nav, this.context);
+                    //nav = new NavResultHydrated(nav, this.context);
                     children.add(nav);
                 } else if (item instanceof IFileAsset) {
                     IFileAsset itemFile = (IFileAsset) item;
@@ -207,7 +207,7 @@ public class NavTool implements ViewTool {
                         nav.setType("file");
                         nav.setPermissionId(itemFile.getPermissionId());
                         nav.setShowOnMenu(itemFile.isShowOnMenu());
-                        nav = new NavResultHydrated(nav, this.context);
+                        //nav = new NavResultHydrated(nav, this.context);
                         children.add(nav);
                     }
                 }
@@ -237,7 +237,7 @@ public class NavTool implements ViewTool {
 
         // it will load lazily its children
         folderIds.add(itemFolder.getInode());
-        nav = new NavResultHydrated(nav, this.context);
+        //nav = new NavResultHydrated(nav, this.context);
         children.add(nav);
     }
 
