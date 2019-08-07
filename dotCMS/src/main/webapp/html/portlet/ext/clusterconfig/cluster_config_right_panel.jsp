@@ -46,12 +46,17 @@
 	<table class="network-action__list">
 		<tr>
 			<td><i class="statusIcon {es.status}"></i></td>
-			<td><b>Index</b></td>
+			<td><b><%= LanguageUtil.get(pageContext, "configuration_cluster_es_health") %></b></td>
 			<td></td>
 		</tr>
 		<tr>
 			<td></td>
 			<td><%= LanguageUtil.get(pageContext, "configuration_cluster_name") %></td>
+			<td align="right">{es.clusterName}</td>
+		</tr>
+		<tr>
+			<td></td>
+			<td><%= LanguageUtil.get(pageContext, "configuration_cluster_timedout") %></td>
 			<td align="right">{es.clusterName}</td>
 		</tr>
 		<tr>
@@ -66,20 +71,57 @@
 		</tr>
 		<tr>
 			<td></td>
+			<td><%= LanguageUtil.get(pageContext, "configuration_cluster_active_primary_shards") %></td>
+			<td align="right">{es.activePrimaryShards}</td>
+		</tr>
+		<tr>
+			<td></td>
 			<td><%= LanguageUtil.get(pageContext, "configuration_cluster_active_shards") %></td>
 			<td align="right">{es.activeShards}</td>
 		</tr>
 		<tr>
 			<td></td>
-			<td><%= LanguageUtil.get(pageContext, "configuration_cluster_active_primary_shards") %></td>
-			<td align="right">{es.activePrimaryShards}</td>
+			<td><%= LanguageUtil.get(pageContext, "configuration_cluster_relocating_shards") %></td>
+			<td align="right">{es.relocatingShards}</td>
+		</tr>
+		<tr>
+			<td></td>
+			<td><%= LanguageUtil.get(pageContext, "configuration_cluster_initializing_shards") %></td>
+			<td align="right">{es.initializingShards}</td>
 		</tr>
 		<tr>
 			<td></td>
 			<td><%= LanguageUtil.get(pageContext, "configuration_cluster_unassigned_shards") %></td>
 			<td align="right">{es.unassignedShards}</td>
 		</tr>
-		</table>
+		<tr>
+			<td></td>
+			<td><%= LanguageUtil.get(pageContext, "configuration_cluster_delayed_unassigned_shards") %></td>
+			<td align="right">{es.delayedUnasignedShards}</td>
+		</tr>
+		<tr>
+			<td></td>
+			<td><%= LanguageUtil.get(pageContext, "configuration_cluster_number_of_pending_tasks") %></td>
+			<td align="right">{es.numberOfPendingTasks}</td>
+		</tr>
+		<tr>
+			<td></td>
+			<td><%= LanguageUtil.get(pageContext, "configuration_cluster_number_of_in_flight_fetch") %></td>
+			<td align="right">{es.numberOfInFlightFetch}</td>
+		</tr>
+		<tr>
+			<td></td>
+			<td><%= LanguageUtil.get(pageContext, "configuration_cluster_task_max_waiting_in_queue_millis") %></td>
+			<td align="right">{es.taskMaxWaitingInQueueMillis}</td>
+		</tr>
+		<tr>
+			<td></td>
+			<td><%= LanguageUtil.get(pageContext, "configuration_cluster_active_shards_percent_as_number") %></td>
+			<td align="right">{es.activeShardsPercentAsNumber}</td>
+		</tr>
+
+
+	</table>
 	<table class="network-action__list">
 		<tr>
 			<td><i class="statusIcon {assets.status}"></i></td>

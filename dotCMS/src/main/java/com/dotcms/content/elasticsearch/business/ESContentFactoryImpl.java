@@ -1516,6 +1516,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         try {
 
             final SearchSourceBuilder searchSourceBuilder = createSearchSourceBuilder(qq, sortBy);
+            searchSourceBuilder.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
             searchRequest.indices(indexToHit);
 
             if(limit>0)

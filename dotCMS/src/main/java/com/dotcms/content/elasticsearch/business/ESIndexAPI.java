@@ -163,7 +163,7 @@ public class ESIndexAPI {
 
 		indices.forEach((key, value)-> {
 			Map<String, Object> indexStats = (Map<String, Object>) ((Map<String, Object>)
-					indices.get(key)).get("total");
+					indices.get(key)).get("primaries");
 
 			int numOfDocs = (int) ((Map<String, Object>) indexStats.get("docs"))
 					.get("count");
