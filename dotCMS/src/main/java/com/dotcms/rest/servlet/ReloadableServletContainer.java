@@ -176,18 +176,17 @@ public class ReloadableServletContainer extends HttpServlet implements Filter {
                 .register(JsonMappingExceptionMapper.class)
                 .register(UnrecognizedPropertyExceptionMapper.class)
                 .register(InvalidLicenseExceptionMapper.class)
-                .register(DotSecurityExceptionMapper.class)
                 .register(WorkflowPortletAccessExceptionMapper.class)
                 .register(NotFoundInDbExceptionMapper.class)
                 .register(DoesNotExistExceptionMapper.class)
-                .register(DotDataExceptionMapper.class)
                 .register((new DotBadRequestExceptionMapper<AlreadyExistException>(){}).getClass())
                 .register((new DotBadRequestExceptionMapper<IllegalArgumentException>(){}).getClass())
                 .register((new DotBadRequestExceptionMapper<DotStateException>(){}).getClass())
-                .register(DotDataValidationExceptionMapper.class)
                 .register(DefaultDotBadRequestExceptionMapper.class)
                 .register((new DotBadRequestExceptionMapper<JsonProcessingException>(){}).getClass())
-                .register((new DotBadRequestExceptionMapper<NumberFormatException>(){}).getClass());
+                .register((new DotBadRequestExceptionMapper<NumberFormatException>(){}).getClass())
+                .register(DotSecurityExceptionMapper.class)
+                .register(DotDataExceptionMapper.class);
                 //.register(ExceptionMapper.class); // temporaly unregister since some services are expecting just a plain message as an error instead of a json, so to keep the compatibility we won't apply this change yet.
     }
 }
