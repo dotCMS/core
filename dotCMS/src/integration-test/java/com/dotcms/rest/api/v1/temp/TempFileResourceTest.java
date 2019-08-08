@@ -5,6 +5,10 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -45,7 +49,9 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
+import org.junit.runner.RunWith;
 
+@RunWith(DataProviderRunner.class)
 public class TempFileResourceTest {
 
 
@@ -307,6 +313,51 @@ public class TempFileResourceTest {
     }finally {
       Config.setProperty(TempFileAPI.TEMP_RESOURCE_ENABLED, tempResourceEnabledOriginalValue);
     }
+  }
+
+
+
+  @Test
+  @UseDataProvider("testCasesChangeFingerPrint")
+  public void testGetTempFile_fileIsNotReturned_fingerprintIsDifferent(final testCaseChangeFingerPrint testCase){
+
+    final User user = new UserDataGen().nextPersisted();
+    HttpServletRequest request = mockRequest();
+    request.setAttribute(WebKeys.USER, user);
+
+    final String fileName = "test.png";
+    final DotTempFile dotTempFile = saveTempFile_usingTempResource(fileName,request);
+
+    // CAN get the file again because it is the same request
+    Optional<DotTempFile> file = new TempFileAPI().getTempFile(request, dotTempFile.id);
+    assertTrue(file.isPresent() && !file.get().file.isDirectory());
+
+    // CANNOT get the file again because the request header changed
+    HttpServletRequest newRequest = new MockSessionRequest(
+            new MockHeaderRequest(request, testCase.headerName, "newValue")
+                    .request());
+    file = new TempFileAPI().getTempFile(newRequest, dotTempFile.id);
+    assertFalse(file.isPresent());
+  }
+
+  private static class testCaseChangeFingerPrint{
+    String headerName;
+
+    testCaseChangeFingerPrint(final String headerName){
+      this.headerName = headerName;
+    }
+  }
+
+  @DataProvider
+  public static Object[] testCasesChangeFingerPrint(){
+    return new Object[] {
+            new testCaseChangeFingerPrint("User-Agent"),
+            new testCaseChangeFingerPrint("Host"),
+            new testCaseChangeFingerPrint("Accept-Language"),
+            new testCaseChangeFingerPrint("Accept-Encoding"),
+            new testCaseChangeFingerPrint("X-Forwarded-For"),
+            new testCaseChangeFingerPrint("referer")
+    };
   }
 
 }
