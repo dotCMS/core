@@ -2153,10 +2153,18 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
     final String permissionKey = Try.of(() -> permissionable.getPermissionId())
         .getOrElseThrow(() -> new DotDataException("Invalid Permissionable passed in. permissionable:" + permissionable));
 
+    // Step 1. cache lookup first
     List<Permission> permissionList = permissionCache.getPermissionsFromCache(permissionKey);
     if (permissionList != null) {
       return permissionList;
     }
+
+    /*
+     * Step 2. check the permission_reference table 
+     * In this step, we try to find our entries in the
+     * permission_reference table We lock to lookup, check if cache has been loaded while we have been
+     * waiting, and if so, use it, otherwise we query the permission_reference table
+     */
 
     permissionList = Try.of(() -> lockManager.tryLock(LOCK_PREFIX + permissionKey, () -> {
       List<Permission> bitPermissionsList = permissionCache.getPermissionsFromCache(permissionKey);
@@ -2169,44 +2177,54 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
       persistenceService.setParam(permissionable.getPermissionId());
       bitPermissionsList = (List<Permission>) persistenceService.list();
 
-      for (final Permission p : bitPermissionsList) {
-        p.setBitPermission(true);
+      bitPermissionsList.forEach(p -> p.setBitPermission(true));
+      // adding to cache if found
+      if (!bitPermissionsList.isEmpty()) {
+        permissionCache.addToPermissionCache(permissionKey, bitPermissionsList);
       }
-
       return bitPermissionsList;
 
     })).getOrElseThrow(e -> new DotDataException(e));
 
-    // if set, add to cache and return
+    // if we've found permissions, return'em
     if (!permissionList.isEmpty()) {
-      permissionCache.addToPermissionCache(permissionKey, permissionList);
       return permissionList;
     }
+
+    /*
+     * Step 3. Recursive calls to find our "parent permissionable" 
+     * If we don't have any permissions in
+     * cache or entries in the permission_reference table, we need to find our "parent permissionable"
+     * and store that in the permission_reference table for a faster lookup in Step 2.
+     */
 
     final String type = resolvePermissionType(permissionable);
 
     Permissionable parentPermissionable = permissionable.getParentPermissionable();
-    Permissionable newReference = null;
 
     while (parentPermissionable != null) {
-      newReference = parentPermissionable;
       permissionList = getInheritablePermissions(parentPermissionable, type);
-      if (permissionList.size() > 0) {
-        permissionCache.addToPermissionCache(permissionKey, permissionList);
+      if (!permissionList.isEmpty()) {
         break;
       }
       parentPermissionable = parentPermissionable.getParentPermissionable();
     }
-    HostAPI hostAPI = APILocator.getHostAPI();
-    if (newReference == null) {
-      newReference = hostAPI.findSystemHost();
-    }
-    final String finalType = type;
-    final Permissionable finalNewReference = newReference;
+
+    final Permissionable finalNewReference = (parentPermissionable == null) ? APILocator.systemHost() : parentPermissionable;
+
+    /*
+     * Step 4. Upsert into the permission_reference table 
+     * We have found our "parent permissionable", now
+     * we have to lock again in order to UPSERT our parent permissionable in the permission_reference
+     * table
+     */
+
     Try.run(() -> lockManager.tryLock(LOCK_PREFIX + permissionKey, () -> {
-      deleteInsertPermission(permissionable, finalType, finalNewReference);
-    })).onFailure(e->{throw new DotRuntimeException(e);});
-    
+      deleteInsertPermission(permissionable, type, finalNewReference);
+    })).onFailure(e -> {
+      throw new DotRuntimeException(e);
+    });
+
     return permissionList;
 
   }
