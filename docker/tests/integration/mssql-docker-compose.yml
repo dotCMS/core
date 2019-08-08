@@ -5,10 +5,6 @@ version: "3.7"
 
 services:
 
-  integration-tests:
-    environment:
-      databaseType: mssql
-
   # https://docs.microsoft.com/en-us/sql/linux/quickstart-install-connect-docker?view=sql-server-2017&pivots=cs1-bash
   # https://github.com/microsoft/mssql-docker
   database:
@@ -26,5 +22,3 @@ services:
     working_dir: /usr/src/app
     # run the entrypoint.sh that will import the data AND sqlserver
     command: sh -c ' chmod +x ./entrypoint.sh; ./entrypoint.sh & /opt/mssql/bin/sqlservr;'
-    networks:
-      - db_net

@@ -12,6 +12,7 @@ services:
   integration-tests:
     image: "${IMAGE_BASE_NAME}"
     environment:
+      databaseType:
       EXTRA_PARAMS:
       GOOGLE_CREDENTIALS_BASE64:
       exportReports:
@@ -27,5 +28,9 @@ services:
 #      - type: bind
 #        source: ./license/license.dat
 #        target: /custom/dotsecure/license/license.dat
+    networks:
+      - db_net
+
+  database:
     networks:
       - db_net
