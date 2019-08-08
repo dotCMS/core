@@ -1,8 +1,9 @@
 package com.dotcms.rest;
 
+import static com.liferay.util.StringPool.BLANK;
+
 import com.dotcms.auth.providers.jwt.JsonWebTokenAuthCredentialProcessor;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenAuthCredentialProcessorImpl;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
@@ -12,6 +13,8 @@ import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.LayoutAPI;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.exception.DotDataException;
@@ -20,6 +23,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.auth.PrincipalThreadLocal;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
@@ -30,10 +34,13 @@ import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -182,7 +189,7 @@ public  class WebResource {
 
         checkForceSSL(request);
 
-        final Map<String, String> paramsMap = buildParamsMap(!UtilMethods.isSet(params)?StringPool.BLANK:params);
+        final Map<String, String> paramsMap = buildParamsMap(!UtilMethods.isSet(params)?BLANK:params);
         return initWithMap(paramsMap, request, response, rejectWhenNoUser, requiredPortlet);
     }
 
@@ -220,7 +227,7 @@ public  class WebResource {
         checkForceSSL(request);
 
         if(!UtilMethods.isSet(params)) {
-            params = StringPool.BLANK;
+            params = BLANK;
         }
 
         final Map<String, String> paramsMap = buildParamsMap(params);
@@ -304,6 +311,71 @@ public  class WebResource {
     }
 
     /**
+     *
+     * @param builder
+     * @return
+     * @throws SecurityException
+     */
+    private InitDataObject init(final InitBuilder builder) throws SecurityException {
+
+        checkForceSSL(builder.request);
+
+        final InitDataObject initData = new InitDataObject();
+        final Map<String, String> paramsMap = new HashMap<>(
+                buildParamsMap(
+                        UtilMethods.isSet(builder.params) ? builder.params : BLANK
+                )
+        );
+
+        if (UtilMethods.isSet(builder.userId) && UtilMethods.isSet(builder.password)) {
+            paramsMap.putAll(CollectionsUtils
+                    .map("userid", builder.userId, "pwd", builder.password));
+        }
+        final User user = getCurrentUser(builder.request, builder.response, paramsMap,
+                builder.rejectWhenNoUser);
+
+        if (UtilMethods.isSet(builder.requiredRolesSet)) {
+            final RoleAPI roleAPI = APILocator.getRoleAPI();
+            for (final String requiredRole : builder.requiredRolesSet) {
+                try {
+                    final Role role = roleAPI.loadRoleByKey(requiredRole);
+                    if (!roleAPI.doesUserHaveRole(user, role)) {
+                        throw new SecurityException(
+                                String.format("User lacks required role %s", role),
+                                Response.Status.UNAUTHORIZED);
+                    }
+                } catch (DotDataException dde) {
+                    throw new SecurityException("User lacks required role",
+                            Response.Status.UNAUTHORIZED);
+                }
+            }
+        }
+
+        if (UtilMethods.isSet(builder.requiredPortlet)) {
+            for (final String requiredPortlet : builder.requiredPortlet) {
+                try {
+                    if (!layoutAPI.doesUserHaveAccessToPortlet(requiredPortlet, user)) {
+                        throw new SecurityException(
+                                String.format(
+                                        "User does not have access to required Portlet %s",
+                                        requiredPortlet),
+                                Response.Status.UNAUTHORIZED);
+                    }
+                } catch (DotDataException e) {
+                    throw new SecurityException("User does not have access to required Portlet",
+                            Response.Status.UNAUTHORIZED);
+                }
+            }
+        }
+
+
+        initData.setUser(user);
+        initData.setParamsMap(paramsMap);
+
+        return initData;
+    }
+
+    /**
      * Return the current login user.<br>
      * if exist a user login by login as then return this user not the principal user
      *
@@ -318,12 +390,8 @@ public  class WebResource {
                                final HttpServletResponse response,
                                final Map<String, String> paramsMap, final boolean rejectWhenNoUser) {
 
-        User user = null;
-        final HttpSession session = request.getSession();
+        User user = PortalUtil.getUser(request);
 
-        if (session!=null && this.isLoggedAsUser(session)){
-            user = Try.of(()->PortalUtil.getUser(request)).getOrNull();
-        }
         if(user==null) {
             user = authenticate(request, response, paramsMap, rejectWhenNoUser);
         }
@@ -525,7 +593,7 @@ public  class WebResource {
                                  final HttpServletResponse response,
                                  final UserAPI userAPI) throws SecurityException {
         User user       = null;
-        final String ip = request != null ? request.getRemoteAddr() : StringPool.BLANK;
+        final String ip = request != null ? request.getRemoteAddr() : BLANK;
 
         if(StringUtils.isNotEmpty(username) && StringUtils.isNotEmpty(password)) { // providing login and password so let's try to authenticate
 
@@ -676,6 +744,128 @@ public  class WebResource {
             this.username = username;
             this.password = password;
         }
+    }
+
+   public static class InitBuilder {
+
+        private WebResource webResource;
+
+        private String userId = null;
+        private String password = null;
+        private String params = BLANK;
+        private HttpServletRequest request = null;
+        private HttpServletResponse response = null;
+        private String[] requiredPortlet = null;
+        private Set<String> requiredRolesSet = new HashSet<>(
+                Arrays.asList(Role.DOTCMS_FRONT_END_USER, Role.DOTCMS_BACK_END_USER)
+                );
+        private boolean rejectWhenNoUser = true;
+
+        public InitBuilder() {
+            this(new WebResource());
+        }
+
+        @VisibleForTesting
+        public InitBuilder(final WebResource webResource) {
+            this.webResource = webResource;
+        }
+
+        public InitBuilder credentials(final String userId, final String password) {
+            this.userId = userId;
+            this.password = password;
+            return this;
+        }
+
+        public InitBuilder params(final String params) {
+            this.params = params;
+            return this;
+        }
+
+        public InitBuilder requestAndResponse(final HttpServletRequest request,
+                final HttpServletResponse response) {
+            this.request = request;
+            this.response = response;
+            return this;
+        }
+
+        public InitBuilder allowBackendUser(final boolean allowBackendUser) {
+            if (allowBackendUser) {
+                requiredRolesSet.add(Role.DOTCMS_BACK_END_USER);
+            } else {
+                requiredRolesSet.remove(Role.DOTCMS_BACK_END_USER);
+            }
+            return this;
+        }
+
+        public InitBuilder allowFrontendUser(final boolean allowFrontendUser) {
+            if (allowFrontendUser) {
+                requiredRolesSet.add(Role.DOTCMS_FRONT_END_USER);
+            } else {
+                requiredRolesSet.remove(Role.DOTCMS_FRONT_END_USER);
+            }
+            return this;
+        }
+
+        public InitBuilder requiredRoles(final String... requiredRoles) {
+            requiredRolesSet.addAll(Arrays.asList(requiredRoles));
+            return this;
+        }
+
+        public InitBuilder rejectWhenNoUser(final boolean rejectWhenNoUser) {
+            this.rejectWhenNoUser = rejectWhenNoUser;
+            return this;
+        }
+
+        public InitBuilder requiredPortlet(final String... requiredPortlet) {
+            this.requiredPortlet = requiredPortlet;
+            return this;
+        }
+
+        public InitDataObject init() {
+
+            response = (response == null ? new EmptyHttpResponse() : response);
+
+            if (UtilMethods.isSet(userId) || UtilMethods.isSet(params)) {
+                if (!UtilMethods.isSet(userId) && !UtilMethods.isSet(params)) {
+                    throw new IllegalArgumentException(
+                            "Missing required value building credentials you need to specify both `user` and `password` or none of them.");
+                }
+            }
+
+            if (!UtilMethods.isSet(request)) {
+                throw new IllegalArgumentException(
+                        "A request is always required and it hasn't been set.");
+            }
+
+            if (!UtilMethods.isSet(requiredRolesSet)) {
+                Logger.warn(InitBuilder.class,
+                        () -> "No required role has been set calling the webResource.init(..) ");
+            }
+
+            if (!UtilMethods.isSet(requiredPortlet)) {
+                Logger.warn(InitBuilder.class,
+                        () -> "No required portlet has been set calling the webResource.init(..) ");
+            }
+
+            if (!rejectWhenNoUser) {
+
+                if(UtilMethods.isSet(requiredPortlet) || UtilMethods.isSet(requiredRolesSet)){
+                    Logger.warn(InitBuilder.class,
+                            "Setting the flag `rejectWhenNoUser` to `false` implies that neither a portlet is required nor a set of roles.");
+                }
+
+                Logger.warn(InitBuilder.class,
+                        () -> "webResource.init(..) has been set to be called without rejecting authentication fails.");
+            }
+
+            try {
+                return webResource.init(this);
+            } catch (final Exception e) {
+                 Logger.error(WebResource.class,"Error building an initDataObject",e);
+                 throw e;
+            }
+        }
+
     }
 
 }
