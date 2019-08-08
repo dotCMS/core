@@ -106,9 +106,28 @@ public class FolderAPITest {//24 contentlets
 
 	@Rule
 	public TemporaryFolder testFolder = new TemporaryFolder();
-
-
-
+	
+	// pull request #16967
+  @Test
+  public void test_get_by_path_does_not_throw_NPE() throws Exception {
+    
+    
+    String testFolder = "/folderMoveSourceTest"+System.currentTimeMillis();
+    //create folders and assets
+    final Folder test = folderAPI
+        .createFolders(testFolder, host, user, false);
+    
+    
+    Assert.assertEquals(test, folderAPI.findFolderByPath(testFolder, host, user, false));
+    
+    Assert.assertNull(folderAPI.findFolderByPath(null, host, user, false));
+    
+    Assert.assertNull(folderAPI.findFolderByPath(testFolder, (String) null, user, false));
+  }
+  
+  
+  
+  
 	@Test
 	public void renameFolder() throws Exception {
 
