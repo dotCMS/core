@@ -782,8 +782,10 @@ public class ESIndexAPI {
 		Map<String,String> alias=new HashMap<>();
 
 		response.getAliases().forEach((indexName, value) -> {
-			final String aliasName = value.iterator().next().alias();
-			alias.put(indexName, aliasName);
+			if(UtilMethods.isSet(value)) {
+				final String aliasName = value.iterator().next().alias();
+				alias.put(indexName, aliasName);
+			}
 		});
 
 		return alias;

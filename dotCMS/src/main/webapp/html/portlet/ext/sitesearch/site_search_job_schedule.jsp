@@ -7,8 +7,6 @@
 <%@page import="com.dotcms.content.elasticsearch.business.ContentletIndexAPI"%>
 <%@page import="com.dotmarketing.util.Logger"%>
 <%@page import="com.dotmarketing.exception.DotSecurityException"%>
-<%@page import="org.elasticsearch.cluster.health.ClusterIndexHealth"%>
-<%@page import="com.dotcms.content.elasticsearch.util.ESClient"%>
 <%@page import="org.elasticsearch.action.admin.indices.stats.IndexStats"%>
 <%@page import="com.dotcms.content.elasticsearch.util.ESUtils"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
