@@ -65,7 +65,7 @@ public class TempFileAPI {
     
     
     final User user = PortalUtil.getUser(request);
-    final String sessionId = (request.getSession(false)!=null && !request.getSession().isNew()) ? request.getSession().getId() : null;
+    final String sessionId = (request.getSession(false)!=null) ? request.getSession().getId() : null;
     final String requestFingerprint = this.getRequestFingerprint(request);
     
     
@@ -286,7 +286,7 @@ public class TempFileAPI {
   public Optional<DotTempFile> getTempFile(final HttpServletRequest request, final String tempFileId) {
     final String anon = Try.of(() -> APILocator.getUserAPI().getAnonymousUser().getUserId()).getOrElse("anonymous");
     final User user = PortalUtil.getUser(request);
-    final String sessionId = (request!=null && request.getSession(false)!=null && !request.getSession().isNew()) ? request.getSession().getId() : null;
+    final String sessionId = (request!=null && request.getSession(false)!=null) ? request.getSession().getId() : null;
     final String requestFingerprint = this.getRequestFingerprint(request);
     
     
@@ -338,7 +338,7 @@ public class TempFileAPI {
 
     uniqList.add("userId:" + PortalUtil.getUserId(request));
 
-    if(request.getSession(false)!=null && !request.getSession().isNew()) {
+    if(request.getSession(false)!=null) {
       uniqList.add("getSession:" + request.getSession().getId());
     }
     uniqList.removeIf(Objects::isNull);
