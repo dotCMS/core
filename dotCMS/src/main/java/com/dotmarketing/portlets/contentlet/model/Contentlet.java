@@ -57,6 +57,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -225,15 +226,18 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     	return getInode();
     }
 
-    /**
-     * Create a contentlet based on a map (makes a copy of it)
-     * @param map
-     */
-    public Contentlet(final Map<String, Object> map) {
-		this.map = new ContentletHashMap();
-    	this.map.putAll(map);
-		this.indexPolicy = IndexPolicy.DEFER;
-    }
+  /**
+   * Create a contentlet based on a map (makes a copy of it)
+   * 
+   * @param map
+   */
+  public Contentlet(final Map<String, Object> mapIn) {
+
+    mapIn.values().removeIf(Objects::isNull);
+    this.map = new ContentletHashMap();
+    this.map.putAll(mapIn);
+    this.indexPolicy = IndexPolicy.DEFER;
+  }
 
 	/**
 	 * Create a contentlet based on a map (makes a copy of it)
