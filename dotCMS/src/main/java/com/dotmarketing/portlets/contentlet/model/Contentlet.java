@@ -44,6 +44,9 @@ import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
+
+import io.vavr.control.Try;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -960,11 +963,11 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 			FolderAPI fAPI = APILocator.getFolderAPI();
 			HostAPI hostAPI = APILocator.getHostAPI();
 			Host systemHost = hostAPI.findSystemHost(systemUser, false);
-			Structure st = getStructure();
+			ContentType type = Try.of(()->getContentType()).getOrNull();
 
 
 
-			if(st != null && st.getVelocityVarName() != null && st.getVelocityVarName().equals("Host")) {
+			if(type != null && "Host".equalsIgnoreCase(type.variable())) {
 				Host hProxy = new Host(this);
 				return hProxy.getParentPermissionable();
 			}
@@ -981,8 +984,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 			}
 
 			// if this contentlet has a structure, inherit from that
-			if(st != null && InodeUtils.isSet(st.getInode())){
-				return st;
+			if(type != null && InodeUtils.isSet(type.inode())){
+				return type;
 			}
 			return null;
 

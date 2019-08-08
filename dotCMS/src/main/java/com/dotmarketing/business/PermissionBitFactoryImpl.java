@@ -3,6 +3,7 @@ package com.dotmarketing.business;
 import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
 import static com.dotcms.exception.ExceptionUtil.bubbleUpException;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.lock.IdentifierStripedLock;
@@ -59,6 +60,9 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
 import com.liferay.portal.model.User;
+
+import io.vavr.control.Try;
+
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -1007,7 +1011,6 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	}
 
 	@Override
-	@WrapInTransaction
 	protected List<Permission> getPermissions(Permissionable permissionable, boolean bitPermissions, boolean onlyIndividualPermissions, boolean forceLoadFromDB) throws DotDataException {
 
 
@@ -1024,27 +1027,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 		//No permissions in cache have to look for individual permissions or inherited permissions
 		if (bitPermissionsList == null) {
-			try {
-				bitPermissionsList = lockManager
-						.tryLock(LOCK_PREFIX + permissionable.getPermissionId(),
-						() -> {
-							List<Permission> permissionsList = null;
-							if (!forceLoadFromDB) {
-								permissionsList = permissionCache.getPermissionsFromCache(permissionable.getPermissionId());
-							}
-							//Checking individual permissions
-							if (permissionsList == null) {
-								permissionsList = loadPermissions(permissionable);
-								permissionCache.addToPermissionCache(permissionable.getPermissionId(), permissionsList);
-							}
-							return permissionsList;
-						});
-			} catch (final Throwable throwable) {
-				if (throwable instanceof DotDataException) {
-					throw (DotDataException) throwable;
-				}
-				throw new DotDataException(throwable);
-			}
+
+				bitPermissionsList = loadPermissions(permissionable);
 		}
 		bitPermissionsList = filterOnlyNonInheritablePermissions(bitPermissionsList, permissionable.getPermissionId());
 
@@ -2162,109 +2146,122 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
-	private List<Permission> loadPermissions(Permissionable permissionable) throws DotDataException {
+  @CloseDBIfOpened
+  @SuppressWarnings("unchecked")
+  private List<Permission> loadPermissions(final Permissionable permissionable) throws DotDataException {
 
-		if(permissionable == null || ! UtilMethods.isSet(permissionable.getPermissionId())){
-			throw new DotDataException("Invalid Permissionable passed in. permissionable:" + permissionable.getPermissionId());
-		}
+    final String permissionKey = Try.of(() -> permissionable.getPermissionId())
+        .getOrElseThrow(() -> new DotDataException("Invalid Permissionable passed in. permissionable:" + permissionable));
 
-		HibernateUtil persistenceService = new HibernateUtil(Permission.class);
-		persistenceService.setSQLQuery(LOAD_PERMISSION_SQL);
-		persistenceService.setParam(permissionable.getPermissionId());
-		persistenceService.setParam(permissionable.getPermissionId());
-		List<Permission> bitPermissionsList = (List<Permission>) persistenceService.list();
+    List<Permission> permissionList = permissionCache.getPermissionsFromCache(permissionKey);
+    if (permissionList != null) {
+      return permissionList;
+    }
 
-		for(final Permission p : bitPermissionsList) {
-			p.setBitPermission(true);
-		}
-		//Check permission reference
-		if(bitPermissionsList.isEmpty()) {
+    permissionList = Try.of(() -> lockManager.tryLock(LOCK_PREFIX + permissionKey, () -> {
+      List<Permission> bitPermissionsList = permissionCache.getPermissionsFromCache(permissionKey);
+      if (bitPermissionsList != null) {
+        return bitPermissionsList;
+      }
+      HibernateUtil persistenceService = new HibernateUtil(Permission.class);
+      persistenceService.setSQLQuery(LOAD_PERMISSION_SQL);
+      persistenceService.setParam(permissionable.getPermissionId());
+      persistenceService.setParam(permissionable.getPermissionId());
+      bitPermissionsList = (List<Permission>) persistenceService.list();
 
-				try {
-					bitPermissionsList = lockManager
-							.tryLock(LOCK_PREFIX + permissionable.getPermissionId(), () -> {
+      for (final Permission p : bitPermissionsList) {
+        p.setBitPermission(true);
+      }
 
-							//Need to determine who this asset should inherit from
-							String type = permissionable.getPermissionType();
-							if(permissionable instanceof Host ||
-									(permissionable instanceof Contentlet &&
-											((Contentlet)permissionable).getStructure() != null &&
-											((Contentlet)permissionable).getStructure().getVelocityVarName() != null &&
-											((Contentlet)permissionable).getStructure().getVelocityVarName().equals("Host"))){
-								type = Host.class.getCanonicalName();
-							} else if ( permissionable instanceof Contentlet &&
-									BaseContentType.FILEASSET.getType() == ((Contentlet) permissionable).getStructure().getStructureType()) {
-								type = Contentlet.class.getCanonicalName();
-							} else if ( permissionable instanceof IHTMLPage ||
-									(permissionable instanceof Contentlet && BaseContentType.HTMLPAGE.getType() == ((Contentlet) permissionable).getStructure().getStructureType())) {
-								type = IHTMLPage.class.getCanonicalName();
-							}else if(permissionable instanceof Event){
-								type = Contentlet.class.getCanonicalName();
-							}else if(permissionable instanceof Identifier){
-								Permissionable perm = InodeFactory.getInode(permissionable.getPermissionId(), Inode.class);
-								Logger.error(this, "PermissionBitFactoryImpl :  loadPermissions Method : was passed an identifier. This is a problem. We will get inode as a fallback but this should be reported");
-								if(perm!=null){
-									if ( perm instanceof IHTMLPage ||
-											(perm instanceof Contentlet && BaseContentType.HTMLPAGE.getType() == ((Contentlet) perm).getStructure().getStructureType())) {
-										type = IHTMLPage.class.getCanonicalName();
-									}else if(perm instanceof Container){
-										type = Container.class.getCanonicalName();
-									}else if(perm instanceof Folder){
-										type = Folder.class.getCanonicalName();
-									}else if(perm instanceof Link){
-										type = Link.class.getCanonicalName();
-									}else if(perm instanceof Template){
-										type = Template.class.getCanonicalName();
-									} else if (perm instanceof Structure || perm instanceof ContentType) {
-										type = Structure.class.getCanonicalName();
-									}else if(perm instanceof Contentlet || perm instanceof Event){
-										type = Contentlet.class.getCanonicalName();
-									}
-								}
-							}
+      return bitPermissionsList;
 
-							if(permissionable instanceof Template && UtilMethods.isSet(((Template) permissionable).isDrawed()) && ((Template) permissionable).isDrawed()) {
-								type = TemplateLayout.class.getCanonicalName();
-							}
+    })).getOrElseThrow(e -> new DotDataException(e));
 
-							if(permissionable instanceof NavResult) {
-								type = ((NavResult)permissionable).getEnclosingPermissionClassName();
-							}
+    // if set, add to cache and return
+    if (!permissionList.isEmpty()) {
+      permissionCache.addToPermissionCache(permissionKey, permissionList);
+      return permissionList;
+    }
 
-							Permissionable parentPermissionable = permissionable.getParentPermissionable();
-							Permissionable newReference = null;
-							List<Permission> inheritedPermissions = new ArrayList<Permission>();
-							while(parentPermissionable != null) {
-								newReference = parentPermissionable;
-								inheritedPermissions = getInheritablePermissions(parentPermissionable, type);
-								if(inheritedPermissions.size() > 0) {
-									break;
-								}
-								parentPermissionable = parentPermissionable.getParentPermissionable();
-							}
-							HostAPI hostAPI = APILocator.getHostAPI();
-							if(newReference == null)
-								newReference = hostAPI.findSystemHost();
+    final String type = resolvePermissionType(permissionable);
 
-							deleteInsertPermission(permissionable, type, newReference);
+    Permissionable parentPermissionable = permissionable.getParentPermissionable();
+    Permissionable newReference = null;
 
-							return inheritedPermissions;
+    while (parentPermissionable != null) {
+      newReference = parentPermissionable;
+      permissionList = getInheritablePermissions(parentPermissionable, type);
+      if (permissionList.size() > 0) {
+        permissionCache.addToPermissionCache(permissionKey, permissionList);
+        break;
+      }
+      parentPermissionable = parentPermissionable.getParentPermissionable();
+    }
+    HostAPI hostAPI = APILocator.getHostAPI();
+    if (newReference == null) {
+      newReference = hostAPI.findSystemHost();
+    }
+    final String finalType = type;
+    final Permissionable finalNewReference = newReference;
+    Try.run(() -> lockManager.tryLock(LOCK_PREFIX + permissionKey, () -> {
+      deleteInsertPermission(permissionable, finalType, finalNewReference);
+    })).onFailure(e->{throw new DotRuntimeException(e);});
+    
+    return permissionList;
 
-					});
-				} catch (final Throwable throwable) {
-					if (throwable instanceof DotDataException) {
-						throw (DotDataException) throwable;
-					}
-					throw new DotDataException(throwable);
-				}
+  }
+
+  private String resolvePermissionType(final Permissionable permissionable) {
+    // Need to determine who this asset should inherit from
+    String type = permissionable.getPermissionType();
+    if (permissionable instanceof Host || (permissionable instanceof Contentlet && ((Contentlet) permissionable).getStructure() != null
+        && ((Contentlet) permissionable).getStructure().getVelocityVarName() != null
+        && ((Contentlet) permissionable).getStructure().getVelocityVarName().equals("Host"))) {
+      type = Host.class.getCanonicalName();
+    } else if (permissionable instanceof Contentlet
+        && BaseContentType.FILEASSET.getType() == ((Contentlet) permissionable).getStructure().getStructureType()) {
+      type = Contentlet.class.getCanonicalName();
+    } else if (permissionable instanceof IHTMLPage || (permissionable instanceof Contentlet
+        && BaseContentType.HTMLPAGE.getType() == ((Contentlet) permissionable).getStructure().getStructureType())) {
+      type = IHTMLPage.class.getCanonicalName();
+    } else if (permissionable instanceof Event) {
+      type = Contentlet.class.getCanonicalName();
+    } else if (permissionable instanceof Identifier) {
+      Permissionable perm = InodeFactory.getInode(permissionable.getPermissionId(), Inode.class);
+      Logger.error(this,
+          "PermissionBitFactoryImpl :  loadPermissions Method : was passed an identifier. This is a problem. We will get inode as a fallback but this should be reported");
+      if (perm != null) {
+        if (perm instanceof IHTMLPage || (perm instanceof Contentlet
+            && BaseContentType.HTMLPAGE.getType() == ((Contentlet) perm).getStructure().getStructureType())) {
+          type = IHTMLPage.class.getCanonicalName();
+        } else if (perm instanceof Container) {
+          type = Container.class.getCanonicalName();
+        } else if (perm instanceof Folder) {
+          type = Folder.class.getCanonicalName();
+        } else if (perm instanceof Link) {
+          type = Link.class.getCanonicalName();
+        } else if (perm instanceof Template) {
+          type = Template.class.getCanonicalName();
+        } else if (perm instanceof Structure || perm instanceof ContentType) {
+          type = Structure.class.getCanonicalName();
+        } else if (perm instanceof Contentlet || perm instanceof Event) {
+          type = Contentlet.class.getCanonicalName();
+        }
+      }
+    }
+
+    if (permissionable instanceof Template && UtilMethods.isSet(((Template) permissionable).isDrawed())
+        && ((Template) permissionable).isDrawed()) {
+      type = TemplateLayout.class.getCanonicalName();
+    }
+
+    if (permissionable instanceof NavResult) {
+      type = ((NavResult) permissionable).getEnclosingPermissionClassName();
+    }
+    return type;
+  }
 
 
-		}
-
-		return bitPermissionsList;
-
-	}
 
 
 	protected static final String PERMISSION_REFERENCE = "permission_reference";
@@ -2273,7 +2270,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	protected static final String PERMISSION_TYPE = "permission_type";
 	protected static final String ID = "id";
 
-    @WrapInTransaction
+  @WrapInTransaction
 	private void deleteInsertPermission(Permissionable permissionable, String type,
             Permissionable newReference) throws DotDataException {
 
