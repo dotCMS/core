@@ -11,7 +11,8 @@ steps:
            '-f', './docker/tests/integration/$_DB_TYPE-docker-compose.yml',
            'up',
            '--abort-on-container-exit']
-    options:
-      machineType: 'N1_HIGHCPU_8'
+
+options:
+  machineType: 'N1_HIGHCPU_8'
 
 timeout: 3600s
