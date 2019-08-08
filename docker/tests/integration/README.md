@@ -57,3 +57,22 @@ Run:
 `./run.sh -e "--debug-jvm"`
 
 And wait for the integration tests to start running, then you can attach a remote debugger on port `15005`.
+
+# Running individually db images
+
+## How to run using the run script (db.sh)
+
+#### Arguments
+```
+  -d      [OPTIONAL]                   database: (postgres as default) -> One of ["postgres", "mysql", "oracle", "mssql"]
+```
+
+#### Examples
+
+```
+  ./db.sh
+  ./db.sh -d postgres
+  ./db.sh -d mysql
+  ./db.sh -d oracle
+  ./db.sh -d mssql
+```
