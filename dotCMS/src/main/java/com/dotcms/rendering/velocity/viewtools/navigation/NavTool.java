@@ -47,12 +47,8 @@ public class NavTool implements ViewTool {
     final long defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage().getId();
     static {
 
-        try {
-            systemUser = APILocator.getUserAPI()
-                .getSystemUser();
-        } catch (DotDataException e) {
-            Logger.error(NavTool.class, e.getMessage(), e);
-        }
+      systemUser = APILocator.systemUser();
+
     }
 
     @Override
