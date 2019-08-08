@@ -14,15 +14,14 @@ env:
     - GOOGLE_CREDENTIALS=${TRAVIS_BUILD_DIR}/credentials.json
     - CLOUDSDK_CORE_DISABLE_PROMPTS=1
     - LICENSE=${DOTCMS_LICENSE}
+    - TRAVIS_WORKER_HARD_TIMEOUT=80m
+    - TRAVIS_WORKER_MAX_LOG_LENGTH=20000000
 
 before_install:
   - chmod +x travis/environment_vars.sh
   - chmod +x travis/install_gcloud.sh
-  - chmod +x travis/comment_volumes.sh
   - chmod +x travis/submit.sh
   - chmod +x travis/run.sh
-  - chmod +rwx docker/tests/integration/postgres-docker-compose.yml
-  - chmod +rwx docker/tests/integration/mysql-docker-compose.yml
 
 # https://docs.travis-ci.com/user/build-stages
 jobs:
@@ -36,8 +35,13 @@ jobs:
     - script: bash travis/run.sh
       env: DB_TYPE=mysql
       name: mysql
+    - script: bash travis/run.sh
+      env: DB_TYPE=oracle
+      name: oracle
+    - script: bash travis/run.sh
+      env: DB_TYPE=mssql
+      name: mssql
 
 install:
   - travis/environment_vars.sh
   - travis/install_gcloud.sh
-  - travis/comment_volumes.sh

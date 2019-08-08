@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.workflows.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonSetter;
+import com.google.common.collect.ImmutableList;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionSummary;
 import com.dotmarketing.business.Permissionable;
@@ -167,13 +168,11 @@ public class WorkflowAction implements Permissionable, Serializable{
 	public String toString() {
 		return "WorkflowAction [id=" + id + ", name=" + name + ", stepId=" + stepId + ", nextStep=" + nextStep + "]";
 	}
-
-	@JsonIgnore
+  private static final List<PermissionSummary> acceptedPermissions = ImmutableList.of(new PermissionSummary("use","use-permission-description", PermissionAPI.PERMISSION_USE));
+	
+  @JsonIgnore
 	public List<PermissionSummary> acceptedPermissions() {
-		List<PermissionSummary> accepted = new ArrayList<PermissionSummary>();
-		accepted.add(new PermissionSummary("use",
-				"use-permission-description", PermissionAPI.PERMISSION_USE));
-		return accepted;
+		return acceptedPermissions;
 	}
 
     public boolean hasSaveActionlet() {

@@ -15,7 +15,7 @@ export LICENSE_KEY=$(<./dotcms/license.txt)
 ##### 2. Binding a license file (license.dat) to the docker image
 1. Inside this folder create a **license** folder (docker/tests/integration/license)
 2. Add a valid **license.dat** file inside the created folder
-3. Uncomment the **bind** folder instructions in the **\*-docker-compose.yml** files:
+3. Uncomment the **bind** folder instructions in the **base-service.yml** files:
     ```
     - type: bind
       source: ./license/license.dat
@@ -57,3 +57,22 @@ Run:
 `./run.sh -e "--debug-jvm"`
 
 And wait for the integration tests to start running, then you can attach a remote debugger on port `15005`.
+
+# Running individually db images
+
+## How to run using the run script (db.sh)
+
+#### Arguments
+```
+  -d      [OPTIONAL]                   database: (postgres as default) -> One of ["postgres", "mysql", "oracle", "mssql"]
+```
+
+#### Examples
+
+```
+  ./db.sh
+  ./db.sh -d postgres
+  ./db.sh -d mysql
+  ./db.sh -d oracle
+  ./db.sh -d mssql
+```
