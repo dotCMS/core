@@ -198,8 +198,7 @@ public class FolderFactoryImpl extends FolderFactory {
 		Folder folder=null;
 		List<Folder> result;
 
-		if(host == null || path==null){
-
+		if(host == null || path == null){
 			return null;
 		}
 
