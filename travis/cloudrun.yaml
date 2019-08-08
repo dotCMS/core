@@ -15,4 +15,4 @@ steps:
 options:
   machineType: 'N1_HIGHCPU_8'
 
-timeout: 3600s
+timeout: 4800s
