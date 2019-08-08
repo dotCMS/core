@@ -25,7 +25,6 @@ import { PaginatorService } from '@services/paginator';
  * @class DotThemeSelectorComponent
  */
 @Component({
-    providers: [PaginatorService],
     selector: 'dot-theme-selector',
     templateUrl: './dot-theme-selector.component.html',
     styleUrls: ['./dot-theme-selector.component.scss']

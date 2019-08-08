@@ -30,6 +30,10 @@ $dialog-padding: $basic-padding * 4;
     position: absolute;
     top: 5vh;
     transform: translate(-50%, 0);
+
+    &.paginator ::ng-deep .ui-datatable{
+        padding-bottom: $basic-padding * 7;
+    }
 }
 
 .dialog__content {

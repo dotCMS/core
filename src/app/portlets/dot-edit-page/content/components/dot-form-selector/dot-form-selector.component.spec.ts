@@ -1,5 +1,5 @@
 import { of as observableOf } from 'rxjs';
-import { DebugElement, Injectable } from '@angular/core';
+import { DebugElement, Component } from '@angular/core';
 import { DotFormSelectorComponent } from './dot-form-selector.component';
 import { ComponentFixture, TestBed, async } from '@angular/core/testing';
 import { DOTTestBed } from '../../../../../test/dot-test-bed';
@@ -11,6 +11,7 @@ import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { dotcmsContentTypeBasicMock } from '@tests/dot-content-types.mock';
 import { DotCMSContentType } from 'dotcms-models';
+import { delay } from 'rxjs/operators';
 
 const mockContentType: DotCMSContentType = {
     ...dotcmsContentTypeBasicMock,
@@ -24,9 +25,13 @@ const mockContentType: DotCMSContentType = {
     system: false
 };
 
-@Injectable()
-class PaginatorServiceMock {
-    url = '';
+@Component({
+    template: `
+        <dot-form-selector [show]="show"></dot-form-selector>
+    `
+})
+class TestHostComponent {
+    show = false;
 }
 
 const messageServiceMock = new MockDotMessageService({
@@ -35,20 +40,17 @@ const messageServiceMock = new MockDotMessageService({
     'modes.Add-Form': 'Add Form'
 });
 
-xdescribe('DotFormSelectorComponent', () => {
+describe('DotFormSelectorComponent', () => {
     let component: DotFormSelectorComponent;
-    let fixture: ComponentFixture<DotFormSelectorComponent>;
+    let fixture: ComponentFixture<TestHostComponent>;
     let de: DebugElement;
     let paginatorService: PaginatorService;
 
     beforeEach(async(() => {
         DOTTestBed.configureTestingModule({
-            declarations: [DotFormSelectorComponent],
+            declarations: [DotFormSelectorComponent, TestHostComponent],
             providers: [
-                {
-                    provide: PaginatorService,
-                    useClass: PaginatorServiceMock
-                },
+                PaginatorService,
                 {
                     provide: DotMessageService,
                     useValue: messageServiceMock
@@ -59,10 +61,10 @@ xdescribe('DotFormSelectorComponent', () => {
     }));
 
     beforeEach(() => {
-        fixture = TestBed.createComponent(DotFormSelectorComponent);
-        component = fixture.componentInstance;
+        fixture = TestBed.createComponent(TestHostComponent);
+        component = fixture.debugElement.query(By.css('dot-form-selector')).componentInstance;
         de = fixture.debugElement;
-        paginatorService = fixture.debugElement.injector.get(PaginatorService);
+        paginatorService = component.paginatorService;
     });
 
     describe('hidden dialog', () => {
@@ -72,7 +74,7 @@ xdescribe('DotFormSelectorComponent', () => {
 
         it('should have dot-dialog hidden', () => {
             const dialog: DebugElement = de.query(By.css('dot-dialog'));
-            expect(dialog.componentInstance.show).toBe(false);
+            expect(dialog.componentInstance.visible).toBe(false);
             expect(dialog.componentInstance.header).toBe('Add Form');
         });
     });
@@ -80,10 +82,10 @@ xdescribe('DotFormSelectorComponent', () => {
     describe('show dialog', () => {
         beforeEach(() => {
             spyOn(paginatorService, 'getWithOffset').and.callFake(() => {
-                return observableOf([mockContentType]);
+                return observableOf([mockContentType]).pipe(delay(10));
             });
 
-            component.show = true;
+            fixture.componentInstance.show = true;
             fixture.detectChanges();
         });
 
@@ -91,7 +93,6 @@ xdescribe('DotFormSelectorComponent', () => {
             let pTableComponent: DebugElement;
 
             beforeEach(() => {
-                fixture.detectChanges();
                 pTableComponent = de.query(By.css('p-dataTable'));
             });
 
@@ -101,56 +102,32 @@ xdescribe('DotFormSelectorComponent', () => {
         });
 
         describe('data', () => {
-            beforeEach(() => {
-                fixture.detectChanges();
-            });
-
             describe('pagination', () => {
                 it('should set the url', () => {
                     expect(paginatorService.url).toBe('v1/contenttype?type=FORM');
                 });
 
-                it('should load first page', () => {
-                    expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
-                    expect(component.items).toEqual([mockContentType]);
-                });
-            });
-
-            describe('data/columns', () => {
-                it('should have two columns and two rows', () => {
-                    const headRows = de.queryAll(By.css('table thead tr'));
-                    expect(headRows.length).toBe(1, 'must have one row head');
-
-                    const firstRowColumns = headRows[0].queryAll(By.css('th'));
-                    expect(firstRowColumns.length).toBe(2, 'must have two columns in head');
-
-                    const bodyRow = de.queryAll(By.css('table tbody tr'));
-                    expect(bodyRow.length).toBe(1, 'must have one row into body');
-
-                    const secondRowColumns = bodyRow[0].queryAll(By.css('td'));
-                    expect(secondRowColumns.length).toBe(2, 'must have two columns into body');
+                it('should load first page and add paginator CSS class', (done) => {
+                    fixture.whenStable().then(() => {
+                        paginatorService.totalRecords = 12;
+                        paginatorService.paginationPerPage = 5;
+                        fixture.detectChanges();
+                        expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
+                        expect(component.items).toEqual([mockContentType]);
+                        expect(component.dotDialog.dialog.nativeElement.classList).toContain(
+                            'paginator'
+                        );
+                        done();
+                    });
                 });
 
-                it('first column should have the right header and content', () => {
-                    const label = de.query(By.css('table thead tr:first-child th:first-child span'))
-                        .nativeElement.innerHTML;
-                    expect(label).toBe('Name');
-
-                    const content = de.query(
-                        By.css('table tbody tr:first-child td:first-child span')
-                    ).nativeElement.innerHTML;
-                    expect(content).toBe('Hello World');
-                });
-
-                it('second column should have the right header and select button', () => {
-                    const label = de.query(
-                        By.css('table thead tr:first-child th:nth-child(2n) span')
-                    ).nativeElement.innerHTML;
-                    expect(label).toBe('');
-
-                    const link = de.query(By.css('.form-selector__button'));
-                    expect(link).not.toBeNull();
-                    expect(link.nativeElement.innerText).toBe('Select');
+                it('should set height css to datatable container', (done) => {
+                    fixture.whenStable().then(() => {
+                        fixture.detectChanges();
+                        const pTableComponent = de.query(By.css('.ui-datatable'));
+                        expect(pTableComponent.styles.height).toBeDefined();
+                        done();
+                    });
                 });
             });
 
@@ -158,20 +135,27 @@ xdescribe('DotFormSelectorComponent', () => {
                 beforeEach(() => {
                     spyOn(component.select, 'emit');
                     spyOn(component.close, 'emit');
+
+                    fixture.componentInstance.show = true;
+                    fixture.detectChanges();
                 });
 
                 it('should emit close', () => {
                     const dialog: DebugElement = de.query(By.css('dot-dialog'));
-                    dialog.triggerEventHandler('close', {});
+                    dialog.triggerEventHandler('hide', {});
 
                     expect(component.close.emit).toHaveBeenCalledWith({});
                 });
 
-                it('tigger event when click select button', () => {
-                    const button = de.query(By.css('.form-selector__button'));
-                    button.triggerEventHandler('click', null);
+                it('trigger event when click select button', (done) => {
+                    fixture.whenStable().then(() => {
+                        fixture.detectChanges();
+                        const button = de.query(By.css('.form-selector__button'));
+                        button.triggerEventHandler('click', null);
 
-                    expect(component.select.emit).toHaveBeenCalledWith(mockContentType);
+                        expect(component.select.emit).toHaveBeenCalledWith(mockContentType);
+                        done();
+                    });
                 });
             });
         });

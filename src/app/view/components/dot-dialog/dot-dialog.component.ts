@@ -35,6 +35,9 @@ export class DotDialogComponent implements OnChanges {
     closeable = true;
 
     @Input()
+    cssClass: string;
+
+    @Input()
     contentStyle: {
         [key: string]: string;
     };

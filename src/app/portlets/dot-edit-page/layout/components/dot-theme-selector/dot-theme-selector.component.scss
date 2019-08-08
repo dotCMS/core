@@ -36,11 +36,17 @@ $theme-item-dimension: 240px;
         font-size: $font-size-large;
         margin-top: $basic-padding * 5;
     }
+
+    .paginator .dot-theme-container {
+        .ui-datagrid {
+            padding-bottom: 56px;
+            position: relative;
+        }
+    }
 }
 
 .dot-theme-container {
     margin-top: $basic-padding;
-    min-height: 550px;
 }
 
 .dot-theme-search-box {

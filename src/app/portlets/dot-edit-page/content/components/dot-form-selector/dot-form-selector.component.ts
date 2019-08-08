@@ -1,17 +1,28 @@
-import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
-import { PaginatorService } from '@services/paginator';
+import {
+    Component,
+    OnInit,
+    Input,
+    Output,
+    EventEmitter,
+    ViewChild,
+    OnChanges,
+    SimpleChanges
+} from '@angular/core';
 import { DotCMSContentType } from 'dotcms-models';
 import { DotMessageService } from '@services/dot-messages-service';
-import { LazyLoadEvent } from 'primeng/primeng';
+import { LazyLoadEvent, DataTable } from 'primeng/primeng';
 import { take } from 'rxjs/operators';
+import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
+import { PaginatorService } from '@services/paginator';
 
 @Component({
-    providers: [PaginatorService],
     selector: 'dot-form-selector',
     templateUrl: './dot-form-selector.component.html',
-    styleUrls: ['./dot-form-selector.component.scss']
+    styleUrls: ['./dot-form-selector.component.scss'],
+    providers: [PaginatorService]
+
 })
-export class DotFormSelectorComponent implements OnInit {
+export class DotFormSelectorComponent implements OnInit, OnChanges {
     @Input()
     show = false;
 
@@ -21,7 +32,14 @@ export class DotFormSelectorComponent implements OnInit {
     @Output()
     close = new EventEmitter<any>();
 
+    @ViewChild('datatable')
+    datatable: DataTable;
+
+    @ViewChild('dialog')
+    dotDialog: DotDialogComponent;
+
     items: DotCMSContentType[];
+    contentMinHeight: string;
     messages: {
         [key: string]: string;
     } = {};
@@ -39,7 +57,22 @@ export class DotFormSelectorComponent implements OnInit {
                 this.messages = messages;
             });
 
+        this.paginatorService.paginationPerPage = 5;
         this.paginatorService.url = 'v1/contenttype?type=FORM';
+    }
+    ngOnChanges(changes: SimpleChanges) {
+        setTimeout(() => {
+            if (changes.show.currentValue) {
+                this.contentMinHeight =
+                    this.paginatorService.totalRecords > this.paginatorService.paginationPerPage
+                        ? `${
+                              this.dotDialog.dialog.nativeElement
+                                  .querySelector('.ui-datatable')
+                                  .getBoundingClientRect().height
+                          }px`
+                        : '';
+            }
+        }, 0);
     }
 
     /**

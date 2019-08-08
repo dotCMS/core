@@ -13,6 +13,7 @@ import { FormsModule } from '@angular/forms';
 import { DotSiteSelectorModule } from '@components/_common/dot-site-selector/dot-site-selector.module';
 import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
+import { PaginatorService } from '@services/paginator';
 
 @NgModule({
     declarations: [DotThemeSelectorComponent],
@@ -29,6 +30,6 @@ import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
         DotIconModule
     ],
     exports: [DotThemeSelectorComponent],
-    providers: [DotThemesService]
+    providers: [DotThemesService, PaginatorService]
 })
 export class DotThemeSelectorModule {}

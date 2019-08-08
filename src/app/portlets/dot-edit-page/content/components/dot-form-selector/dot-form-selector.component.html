@@ -1,21 +1,32 @@
-<dot-dialog [(visible)]="show" [contentStyle]="{'padding': '0'}" (hide)="close.emit($event)" [header]="messages['modes.Add-Form']">
+<dot-dialog
+    #dialog
+    [(visible)]="show"
+    [contentStyle]="{ padding: '0' }"
+    [cssClass]="paginatorService.totalRecords > paginatorService.paginationPerPage ? 'paginator' : ''"
+    (hide)="close.emit($event)"
+    [header]="messages['modes.Add-Form']"
+>
     <p-dataTable
+        #datatable
         (onLazyLoad)="loadData($event)"
         [lazy]="true"
+        [style]="{ 'height': contentMinHeight } "
         [pageLinks]="paginatorService.maxLinksPage"
-        [paginator]="true"
+        [paginator]="paginatorService.totalRecords > paginatorService.paginationPerPage"
         [rows]="paginatorService.paginationPerPage"
         [totalRecords]="paginatorService.totalRecords"
-        [value]="items">
+        [value]="items"
+    >
         <p-column [header]="messages['contenttypes.form.name']" field="name"></p-column>
-        <p-column [style]="{'text-align': 'right'}">
+        <p-column [style]="{ 'text-align': 'right' }">
             <ng-template let-item="rowData" pTemplate="body">
                 <button
                     pButton
                     flat
                     class="form-selector__button"
                     [label]="messages['Select']"
-                    (click)="select.emit(item)"></button>
+                    (click)="select.emit(item)"
+                ></button>
             </ng-template>
         </p-column>
     </p-dataTable>

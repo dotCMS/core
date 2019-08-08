@@ -3,7 +3,7 @@
 
 .ui-overlaypanel {
 
-    &.paginator .ui-dataview-content{
+    &.paginator .ui-dataview-content {
         margin-bottom: $basic-padding * 4;
     }
 }
@@ -30,7 +30,7 @@ dot-searchable-dropdown {
         text-transform: none;
         width: auto;
 
-        &:not([disabled]){
+        &:not([disabled]) {
             &:hover,
             &:active,
             &:focus {
@@ -88,7 +88,6 @@ dot-searchable-dropdown {
                 }
             }
         }
-
     }
 
     .ui-dataview-emptymessage {

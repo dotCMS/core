@@ -25,6 +25,7 @@ const dispatchKeydownEvent = (key: string) => {
             width="100px"
             height="100px"
             [actions]="actions"
+            [cssClass]="cssClass"
             [headerStyle]="{'margin': '0'}"
             [contentStyle]="{'padding': '0'}"
             [header]="header"
@@ -37,6 +38,7 @@ const dispatchKeydownEvent = (key: string) => {
 })
 class TestHostComponent {
     header: string;
+    cssClass: string;
     show = false;
     closeable = false;
     actions: DotDialogActions;
@@ -171,6 +173,13 @@ describe('DotDialogComponent', () => {
             it('should show footer', () => {
                 const footer: DebugElement = de.query(By.css('.dialog__footer'));
                 expect(footer === null).toBe(false);
+            });
+
+            it('should add CSS class', () => {
+                hostComponent.cssClass = 'paginator';
+                hostFixture.detectChanges();
+                const dialog: DebugElement = de.query(By.css('.dialog'));
+                expect(dialog.nativeElement.classList.contains('paginator')).toBe(true);
             });
 
             it('should show action buttons', () => {
