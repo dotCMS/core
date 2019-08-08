@@ -58,6 +58,19 @@ public interface KeyValueCache extends Cachable {
     public void addByLanguageAndContentType(final long languageId, final String contentTypeId, final KeyValue keyValue);
 
     /**
+     * Adds/updates the {@link KeyValue} content associated to a given language ID, Content Type
+     * ID and live or working mode to the Key/Value cache.
+     *
+     * @param languageId - The ID of the language that the Key/Value object was created for.
+     * @param contentTypeId - The ID of the Content Type that the Key/Value content belongs to.
+     * @param live true if is live mode, false if it is working mode
+     * @param keyValue - The {@link KeyValue} content.
+     */
+    void add(final long languageId,
+                final String contentTypeId,
+                final boolean live,
+                final KeyValue keyValue);
+    /**
      * Retrieves the list of {@link KeyValue} contents associated to the specified key.
      * 
      * @param key - The key.
@@ -96,6 +109,24 @@ public interface KeyValueCache extends Cachable {
      *         Content Type ID.
      */
     public KeyValue getByLanguageAndContentType(final String key, final long languageId, final String contentTypeId);
+
+    /**
+     * Retrieves the list of {@link KeyValue} contents associated to the specified key, language ID,
+     * and Content Type ID.
+     *
+     * @param key - The key.
+     * @param languageId - The ID of the language that the Key/Value object was created for.
+     * @param contentTypeId - The ID of the Content Type that the Key/Value content belongs to.
+     * @return The list of all the Key/Value contents matching the same key, language ID, and
+     *         Content Type ID.
+     * @param live true if is live mode, false if it is working mode
+     * @return
+     */
+    KeyValue get(
+        final String key,
+        final long languageId,
+        final String contentTypeId,
+        final boolean  live);
 
     /**
      * Removes all entries from every group of this cache structure.
