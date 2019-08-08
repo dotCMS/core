@@ -60,7 +60,7 @@ export class DotFormComponent {
         const { name, value } = event.detail;
         const process = fieldCustomProcess[tagName];
         if (tagName === 'DOT-BINARY-FILE' && value) {
-            this.uploadFile(event).then(tempFile => {
+            this.uploadFile(event).then((tempFile: DotTempFile) => {
                 this.value[name] = tempFile.id;
             });
         } else {
@@ -165,11 +165,25 @@ export class DotFormComponent {
                 return response.text();
             })
             .then((_text: string) => {
-                // Go to success page
+                this.goToSuccessPage();
             })
             .catch(({ message, status }: DotHttpErrorResponse) => {
                 this.errorMessage = message || fallbackErrorMessages[status];
             });
+    }
+
+    private goToSuccessPage(): void {
+        const formReturnUrl = this.getFormReturnUrl();
+        if (formReturnUrl) {
+            window.location.href = formReturnUrl;
+        }
+    }
+
+    private getFormReturnUrl(): string {
+        const fieldFormReturn = getFieldsFromLayout(this.layout).filter(
+            (field: DotCMSContentTypeField) => field.variable === 'formReturnPage'
+        )[0];
+        return fieldFormReturn.values;
     }
 
     private resetForm(): void {
@@ -185,20 +199,20 @@ export class DotFormComponent {
     }
 
     private getUpdateValue(): { [key: string]: string } {
-        return getFieldsFromLayout(
-            this.layout
-        ).reduce(
-            (
-                acc: { [key: string]: string },
-                { variable, defaultValue }: DotCMSContentTypeField
-            ) => {
-                return {
-                    ...acc,
-                    [variable]: defaultValue
-                };
-            },
-            {}
-        );
+        return getFieldsFromLayout(this.layout)
+            .filter((field: DotCMSContentTypeField) => field.fixed === false)
+            .reduce(
+                (
+                    acc: { [key: string]: string },
+                    { variable, defaultValue, dataType, values }: DotCMSContentTypeField
+                ) => {
+                    return {
+                        ...acc,
+                        [variable]: defaultValue || (dataType !== 'TEXT' ? values : null)
+                    };
+                },
+                {}
+            );
     }
 
     private uploadFile(event: CustomEvent): Promise<DotTempFile> {
