@@ -53,9 +53,9 @@ public class SystemActionApiFireCommandFactory {
 
         final SystemActionApiFireCommand saveFireCommand = new SaveSystemActionApiFireCommandImpl();
         this.commandMap.put(NEW,  saveFireCommand);
-        /*this.commandMap.put(EDIT, saveFireCommand);
+        this.commandMap.put(EDIT, saveFireCommand);
         this.commandMap.put(PUBLISH,   new PublishSystemActionApiFireCommandImpl());
-        this.commandMap.put(UNPUBLISH, new UnPublishSystemActionApiFireCommandImpl());
+        /*this.commandMap.put(UNPUBLISH, new UnPublishSystemActionApiFireCommandImpl());
         this.commandMap.put(ARCHIVE,   new ArchiveSystemActionApiFireCommandImpl());
         this.commandMap.put(UNARCHIVE, new UnArchiveSystemActionApiFireCommandImpl());
         this.commandMap.put(DELETE,    new DeleteSystemActionApiFireCommandImpl());
@@ -122,6 +122,34 @@ public class SystemActionApiFireCommandFactory {
             }
 
             return contentletAPI.checkin(contentlet, dependencies);
+        }
+    }
+
+    private class PublishSystemActionApiFireCommandImpl implements SystemActionApiFireCommand {
+
+        @Override
+        public Contentlet fire(final Contentlet contentlet, final ContentletDependencies dependencies)
+                throws DotDataException, DotSecurityException {
+
+            Logger.info(this, "The contentlet : " + contentlet.getTitle()
+                    + ", was fired by default action: " + dependencies.getWorkflowActionId() +
+                    ", however this action has not any publish content actionlet, so the publish api call is being triggered as part of the request");
+
+            if(UtilMethods.isSet(dependencies.getWorkflowActionId())){
+                contentlet.setActionId(dependencies.getWorkflowActionId());
+            }
+
+            if(UtilMethods.isSet(dependencies.getWorkflowActionComments())){
+                contentlet.setStringProperty(Contentlet.WORKFLOW_COMMENTS_KEY, dependencies.getWorkflowActionComments());
+            }
+
+            if(UtilMethods.isSet(dependencies.getWorkflowAssignKey())){
+                contentlet.setStringProperty(Contentlet.WORKFLOW_ASSIGN_KEY, dependencies.getWorkflowAssignKey());
+            }
+
+            // todo: create a method publish with dependencies that supports running workflows
+            //return contentletAPI.publish(contentlet, dependencies);
+            return contentlet;
         }
     }
 }
