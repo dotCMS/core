@@ -472,7 +472,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     // note: is not annotated with WrapInTransaction b/c it handles his own transaction locally in the method
     @WrapInTransaction
     @Override
-    public void publish(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException, DotStateException {
+    public void publish(final Contentlet contentlet, final User user, final boolean respectFrontendRoles) throws DotSecurityException, DotDataException, DotStateException {
 
             String contentPushPublishDate = contentlet.getStringProperty("wfPublishDate");
             String contentPushExpireDate = contentlet.getStringProperty("wfExpireDate");
@@ -486,58 +486,71 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             try {
 
-                if(contentlet.getInode().equals(""))
-                    throw new DotContentletStateException(CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT);
+                if(StringPool.BLANK.equals(contentlet.getInode())) {
 
-                if(!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_PUBLISH, user, respectFrontendRoles)){
+                    throw new DotContentletStateException(CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT);
+                }
+
+                if(!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_PUBLISH, user, respectFrontendRoles)) {
+
                     Logger.debug(PublishFactory.class, ()-> "publishAsset: user = " + (user != null ? user.getEmailAddress() : "Unknown")
                             + ", don't have permissions to publish: " + (contentlet != null ? contentlet.getInode() : "Unknown"));
 
                     //If the contentlet has CMS Owner Publish permission on it, the user creating the new contentlet is allowed to publish
-                    List<Role> roles = permissionAPI.getRoles(contentlet.getPermissionId(), PermissionAPI.PERMISSION_PUBLISH, "CMS Owner", 0, -1);
-                    Role cmsOwner = APILocator.getRoleAPI().loadCMSOwnerRole();
-                    boolean isCMSOwner = false;
+                    final List<Role> roles = permissionAPI.getRoles(contentlet.getPermissionId(),
+                            PermissionAPI.PERMISSION_PUBLISH, "CMS Owner", 0, -1);
+                    final Role cmsOwner = APILocator.getRoleAPI().loadCMSOwnerRole();
 
                     if(roles.size() > 0){
-                        for (Role role : roles) {
-                            if(role == cmsOwner){
-                                isCMSOwner = true;
-                                break;
-                            }
-                        }
+                        final boolean isCMSOwner = roles.stream().anyMatch(role-> role == cmsOwner); // todo shouldn't be equals??
 
-                        if(!isCMSOwner){
+
+                        if(!isCMSOwner) {
+
                             throw new DotSecurityException("User " + (user != null ? user.getUserId() : "Unknown")
                                     + "does not have permission to publish contentlet with inode "
                                     + (contentlet != null ? contentlet.getInode() : "Unknown"));
                         }
-                    }else{
+                    } else {
                         throw new DotSecurityException("User " + (user != null ? user.getUserId() : "Unknown")
                                 + "does not have permission to publish contentlet with inode "
                                 + (contentlet != null ? contentlet.getInode() : "Unknown"));
                     }
                 }
 
+                WorkflowProcessor workflow = null;
+                if(contentlet.getMap().get(Contentlet.DISABLE_WORKFLOW)==null &&
+                        (null == contentlet.getMap().get(Contentlet.WORKFLOW_IN_PROGRESS) ||
+                                Boolean.FALSE.equals(contentlet.getMap().get(Contentlet.WORKFLOW_IN_PROGRESS))
+                        ))  {
+                    workflow = APILocator.getWorkflowAPI().fireWorkflowPreCheckin(contentlet, user);
+                }
+
+
                 canLock(contentlet, user, respectFrontendRoles);
 
+                Logger.debug(this, () -> "*****I'm a Contentlet -- Publishing");
 
-                    Logger.debug(this, () -> "*****I'm a Contentlet -- Publishing");
+                //Set contentlet to live and unlocked
+                APILocator.getVersionableAPI().setLive(contentlet);
 
-                    //Set contentlet to live and unlocked
-                    APILocator.getVersionableAPI().setLive(contentlet);
+                publishAssociated(contentlet, false);
 
-                    publishAssociated(contentlet, false);
+                //wapi.
+                if(workflow!=null) {
+                    workflow.setContentlet(contentlet);
+                    APILocator.getWorkflowAPI().fireWorkflowPostCheckin(workflow);
+                }
 
-                    if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
-                        cleanFileAssetCache(contentlet, user, respectFrontendRoles);
-                    }
+                if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
+                    cleanFileAssetCache(contentlet, user, respectFrontendRoles);
+                }
 
-                    //"Enable" and/or create a tag for this Persona key tag
-                    if ( Structure.STRUCTURE_TYPE_PERSONA == contentlet.getStructure().getStructureType() ) {
-                        //If not exist create a tag based on this persona key tag
-                        APILocator.getPersonaAPI().enableDisablePersonaTag(contentlet, true);
-                    }
-
+                //"Enable" and/or create a tag for this Persona key tag
+                if ( Structure.STRUCTURE_TYPE_PERSONA == contentlet.getStructure().getStructureType() ) {
+                    //If not exist create a tag based on this persona key tag
+                    APILocator.getPersonaAPI().enableDisablePersonaTag(contentlet, true);
+                }
 
                 /*
                 Triggers a local system event when this contentlet commit listener is executed,
@@ -563,8 +576,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
             //Generate a System Event for this publish operation
             HibernateUtil.addCommitListener(
                     () -> this.contentletSystemEventUtil.pushPublishEvent(contentlet), 1000);
-
-
     }
 
     @Override
