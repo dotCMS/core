@@ -9,7 +9,7 @@ services:
   # https://docs.microsoft.com/en-us/sql/linux/quickstart-install-connect-docker?view=sql-server-2017&pivots=cs1-bash
   # https://github.com/microsoft/mssql-docker
   database:
-    image: "mcr.microsoft.com/mssql/server:2017-latest-ubuntu"
+    image: "mcr.microsoft.com/mssql/server:2017-latest"
     environment:
       ACCEPT_EULA: Y
       MSSQL_PID: 'Developer'
