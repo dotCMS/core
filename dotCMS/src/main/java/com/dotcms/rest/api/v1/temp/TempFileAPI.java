@@ -50,12 +50,11 @@ public class TempFileAPI {
 
   /**
    * Returns an empty TempFile of a unique id and file handle that can be used to write and access a
-   * temp file. The userId and uniqueKey (e.g. session id) will be written to the "allowList" and can
+   * temp file. The request will be used to create a fingerprint that will be written to the "allowList" and can
    * be used to retreive the temp resource in other requests
    * 
    * @param incomingFileName
-   * @param user
-   * @param uniqueKey
+   * @param request
    * @return
    * @throws DotSecurityException
    */
@@ -105,12 +104,12 @@ public class TempFileAPI {
 
   /**
    * Writes an InputStream to a temp file and returns the tempFile with a unique id and file handle
-   * that can be used to access the temp file. The userId and uniqueKey (e.g. session id) will be
-   * written to the "allowList" and can be used to retreive the temp resource in other requests
+   * that can be used to access the temp file. The request will be used to create a fingerprint
+   * that will be written to the "allowList" and can
+   * be used to retreive the temp resource in other requests
    * 
    * @param incomingFileName
-   * @param user
-   * @param uniqueKey
+   * @param request
    * @param inputStream
    * @return
    * @throws DotSecurityException
@@ -138,13 +137,11 @@ public class TempFileAPI {
 
   /**
    * Takes a url, downloads it and the returns the resulting file as tempFile with a unique id and
-   * file handle that can be used to access the temp file. The userId and uniqueKey (e.g. session id)
-   * will be written to the "allowList" and can be used to retreive the temp resource in other
-   * requests
+   * file handle that can be used to access the temp file. The request will be used to create a fingerprint
+   * that will be written to the "allowList" and can be used to retreive the temp resource in other requests
    * 
    * @param incomingFileName
-   * @param user
-   * @param uniqueKey
+   * @param request
    * @return
    * @throws DotSecurityException
    */
@@ -196,7 +193,7 @@ public class TempFileAPI {
   
   
   
-  private File createTempPermissionFile(final File parentFolder, List<String> incomingAccessingList) {
+  private File createTempPermissionFile(final File parentFolder, final List<String> incomingAccessingList) {
     List<String> accessingList = new ArrayList<>(incomingAccessingList);
     accessingList.removeIf(Objects::isNull);
     parentFolder.mkdirs();
@@ -234,9 +231,9 @@ public class TempFileAPI {
 
   }
 
-  private boolean canUseTempFile(List<String> incomingAccessingList, final DotTempFile dotTempFile) {
+  private boolean canUseTempFile(final List<String> incomingAccessingList, final DotTempFile dotTempFile) {
     final File tempFile = dotTempFile.file;
-    List<String> accessingList = new ArrayList<>(incomingAccessingList);
+    final List<String> accessingList = new ArrayList<>(incomingAccessingList);
     accessingList.removeIf(Objects::isNull);
     if (tempFile == null || !tempFile.exists() || accessingList == null) {
       return false;
@@ -272,21 +269,20 @@ public class TempFileAPI {
   }
 
   /**
-   * Optionally retreives the Temp Resource using the userId and/or a unique key (sessionId). The temp
-   * resource will only be returned if 1) the userId or uniqueKey is contained in the whoCanUse.tmp
+   * Optionally retreives the Temp Resource using the request. The temp
+   * resource will only be returned if 1) the fingerprint or sessionId is contained in the whoCanUse.tmp
    * file that was created when the temp resource was written and 2) that the file modification time
    * on the temp resource is newer than the value configured by TEMP_RESOURCE_MAX_AGE_SECONDS, which
    * defaults to 30m.
    * 
-   * @param user
-   * @param uniqueKey
+   * @param request
    * @param tempFileId
    * @return
    */
   public Optional<DotTempFile> getTempFile(final HttpServletRequest request, final String tempFileId) {
     final String anon = Try.of(() -> APILocator.getUserAPI().getAnonymousUser().getUserId()).getOrElse("anonymous");
     final User user = PortalUtil.getUser(request);
-    final String sessionId = (request!=null && request.getSession(false)!=null) ? request.getSession().getId() : null;
+    final String sessionId = request!=null && request.getSession(false)!=null ? request.getSession().getId() : null;
     final String requestFingerprint = this.getRequestFingerprint(request);
     
     
@@ -322,7 +318,7 @@ public class TempFileAPI {
   
   public String getRequestFingerprint(final HttpServletRequest request) {
     
-    List<String> uniqList = new ArrayList<String>();
+    final List<String> uniqList = new ArrayList<String>();
     uniqList.add("User-Agent:" + request.getHeader("User-Agent"));
     uniqList.add("Host:" + request.getHeader("Host"));
     uniqList.add("Accept-Language:" + request.getHeader("Accept-Language"));
@@ -330,7 +326,7 @@ public class TempFileAPI {
     uniqList.add("Accept-Encoding:" + request.getHeader("Accept-Encoding"));
     uniqList.add("X-Forwarded-For:" + request.getHeader("X-Forwarded-For"));
     uniqList.add("getRemoteHost:" + request.getRemoteHost());
-    uniqList.add("isSecure:" + String.valueOf(request.isSecure()));
+    uniqList.add("isSecure:" + request.isSecure());
     uniqList.add("getRemoteAddr:" + request.getRemoteAddr());
     
     final String incomingReferer = (request.getHeader("Origin")!=null) ? request.getHeader("Origin") :  request.getHeader("referer");
@@ -342,7 +338,7 @@ public class TempFileAPI {
       uniqList.add("getSession:" + request.getSession().getId());
     }
     uniqList.removeIf(Objects::isNull);
-    if(uniqList.size()==0) {
+    if(uniqList.isEmpty()) {
       throw new DotRuntimeException("Invalid request - no unique identifiers passed in");
     }
     

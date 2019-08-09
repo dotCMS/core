@@ -15,9 +15,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.ResponseBuilder;
 
 import org.glassfish.jersey.media.multipart.BodyPart;
 import org.glassfish.jersey.media.multipart.ContentDisposition;
@@ -103,12 +101,6 @@ public class TempFileResource {
             }
 
             return Response.ok(ImmutableMap.of("tempFiles", tempFiles)).build();
-            /*
-            ResponseBuilder responseBuilder = Response.ok(ImmutableMap.of("tempFiles", tempFiles));
-            
-            NewCookie sessionCookie = new NewCookie("JSESSIONID", uniqueKey);
-            return responseBuilder.cookie(sessionCookie).build();
-            */
 
         } catch (Exception e) {
             Logger.warnAndDebug(this.getClass(), e);
