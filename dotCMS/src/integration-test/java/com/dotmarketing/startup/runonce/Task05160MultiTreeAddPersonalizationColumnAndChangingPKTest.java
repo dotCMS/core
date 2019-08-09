@@ -54,6 +54,7 @@ public class Task05160MultiTreeAddPersonalizationColumnAndChangingPKTest {
         }
         // setting the old key
         new DotConnect().executeStatement("ALTER TABLE multi_tree ADD CONSTRAINT idx_multitree_index1 PRIMARY KEY (parent1, parent2, child, relation_type)");
+        new DotConnect().executeStatement("ALTER TABLE multi_tree DROP COLUMN personalization");
     }
 
 }

@@ -101,14 +101,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.tag.model.Tag;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.DateUtil;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PageMode;
-import com.dotmarketing.util.UUIDGenerator;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
+import com.dotmarketing.util.*;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -176,7 +169,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         try {
 
             //1) create a content type
-            final String velocityContentTypeName = "DefaultActionContentTypeSkip";
+            final String velocityContentTypeName = "DefaultActionContentTypeSkip" + System.currentTimeMillis();
             type = contentTypeAPI.save(
                     ContentTypeBuilder.builder(BaseContentType.CONTENT.immutableClass())
                             .expireDateVar(null).folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
@@ -259,7 +252,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         try {
 
             //1) create a content type
-            final String velocityContentTypeName = "DefaultActionContentTypeSkip";
+            final String velocityContentTypeName = "DefaultActionContentTypeSkip" + System.currentTimeMillis();
             type = contentTypeAPI.save(
                     ContentTypeBuilder.builder(BaseContentType.CONTENT.immutableClass())
                             .expireDateVar(null).folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)

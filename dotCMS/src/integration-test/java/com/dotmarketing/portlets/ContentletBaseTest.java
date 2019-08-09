@@ -18,6 +18,7 @@ import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -227,6 +228,7 @@ public class ContentletBaseTest extends IntegrationTestBase {
 
         //Delete the contentles
         for ( Contentlet contentlet : contentlets ) {
+            APILocator.getWorkflowAPI().deleteWorkflowTaskByWebAsset(contentlet.getIdentifier(), APILocator.systemUser());
             contentletAPI.archive(contentlet,user, false);
             contentletAPI.delete( contentlet, user, false );
             contentlets.remove(contentlet);

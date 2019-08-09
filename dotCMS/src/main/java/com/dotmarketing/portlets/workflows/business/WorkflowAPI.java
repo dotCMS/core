@@ -213,6 +213,14 @@ public interface WorkflowAPI {
 	public void deleteWorkflowTask(WorkflowTask task, User user) throws DotDataException;
 
 	/**
+	 * Deletes (reset) a workflow tasks associated to the webAsset
+	 * @param webAsset {@link String}
+	 * @param user {@link User}
+	 * @throws DotDataException
+	 */
+	public void deleteWorkflowTaskByWebAsset(String webAsset, User user) throws DotDataException;
+
+	/**
 	 *
 	 * @param task
 	 * @throws DotDataException

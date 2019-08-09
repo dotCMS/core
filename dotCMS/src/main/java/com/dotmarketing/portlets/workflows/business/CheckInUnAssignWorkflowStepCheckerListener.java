@@ -1,7 +1,9 @@
 package com.dotmarketing.portlets.workflows.business;
 
 import com.dotcms.content.elasticsearch.business.event.ContentletCheckinEvent;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.system.event.local.model.EventSubscriber;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -61,6 +63,7 @@ public class CheckInUnAssignWorkflowStepCheckerListener implements EventSubscrib
         try {
 
             if (Config.getBooleanProperty("AUTO_ASSIGN_WORKFLOW", true) &&
+                    this.validContentType(event.getContentlet()) &&
                     !APILocator.getWorkflowAPI().findCurrentStep(event.getContentlet()).isPresent()) {
 
                 final AutoAssignWorkflowDelegate delegate = null != this.customAutoAssignWorkflowDelegate?
@@ -74,6 +77,12 @@ public class CheckInUnAssignWorkflowStepCheckerListener implements EventSubscrib
             Logger.error(this, e.getMessage(), e);
         }
     } // notify.
+
+    private boolean validContentType(final Contentlet contentlet) {
+
+        final ContentType contentType = contentlet.getContentType();
+        return null != contentType && !Host.HOST_VELOCITY_VAR_NAME.equals(contentType.variable());
+    }
 
     private static void assign (final Contentlet contentlet, final User user) {
 

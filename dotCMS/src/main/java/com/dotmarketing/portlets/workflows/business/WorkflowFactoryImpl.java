@@ -469,6 +469,21 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		db.loadResult();
 	}
 
+	public void deleteWorkflowTaskByWebAsset(final String webAsset) throws DotDataException {
+
+		new DotConnect().setSQL("delete from workflow_comment where workflowtask_id   in (select id from workflow_task where webasset = ?)")
+				.addParam(webAsset).loadResult();
+
+		new DotConnect().setSQL("delete from workflow_history where workflowtask_id   in (select id from workflow_task where webasset = ?)")
+				.addParam(webAsset).loadResult();
+
+		new DotConnect().setSQL("delete from workflowtask_files where workflowtask_id in (select id from workflow_task where webasset = ?)")
+				.addParam(webAsset).loadResult();
+
+		new DotConnect().setSQL("delete from workflow_task where webasset = ?")
+				.addParam(webAsset).loadResult();
+	}
+
 	@Override
 	public void deleteWorkflowTask(WorkflowTask task) throws DotDataException {
 		final DotConnect db = new DotConnect();

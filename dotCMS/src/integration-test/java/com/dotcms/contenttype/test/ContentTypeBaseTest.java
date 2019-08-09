@@ -70,6 +70,7 @@ public class ContentTypeBaseTest extends IntegrationTestBase {
 
 		DotConnect dc = new DotConnect();
 		String structsToDelete = "(select inode from structure where structure.velocity_var_name like 'velocityVarNameTesting%' )";
+		String contentsStructsToDelete = "(select identifier from contentlet c inner join structure s on c.structure_inode = s.inode where s.velocity_var_name like 'velocityVarNameTesting%')";
 
 		dc.setSQL("delete from field where structure_inode in " + structsToDelete);
 		dc.loadResult();
@@ -80,6 +81,22 @@ public class ContentTypeBaseTest extends IntegrationTestBase {
 		dc.setSQL("delete from contentlet_version_info where identifier in (select identifier from contentlet where structure_inode in "
 				+ structsToDelete + ")");
 		dc.loadResult();
+
+		new DotConnect()
+				.setSQL("delete from workflow_comment where workflowtask_id   in " + contentsStructsToDelete)
+				.loadResult();
+
+		new DotConnect()
+				.setSQL("delete from workflow_history where workflowtask_id   in " + contentsStructsToDelete)
+				.loadResult();
+
+		new DotConnect()
+				.setSQL("delete from workflowtask_files where workflowtask_id in " + contentsStructsToDelete)
+				.loadResult();
+
+		dc.setSQL("delete from workflow_task where webasset in " + contentsStructsToDelete);
+		dc.loadResult();
+
 
 		dc.setSQL("delete from contentlet where structure_inode in " + structsToDelete);
 		dc.loadResult();

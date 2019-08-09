@@ -31,7 +31,19 @@ public interface WorkFlowFactory {
 
 	public void deleteWorkflowHistory(WorkflowHistory history) throws DotDataException;
 
+	/**
+	 * Deletes the workflow task
+	 * @param task {@link WorkflowTask}
+	 * @throws DotDataException
+	 */
 	public void deleteWorkflowTask(WorkflowTask task) throws DotDataException;
+
+	/**
+	 * Deletes the workflow task associated to a web asset and workflow task dependencies
+	 * @param webAsset {@link String}
+	 * @throws DotDataException
+	 */
+	void deleteWorkflowTaskByWebAsset(String webAsset) throws DotDataException;
 
 	public WorkflowTask findTaskByContentlet(Contentlet contentlet) throws DotDataException;
 

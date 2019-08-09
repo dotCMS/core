@@ -18,6 +18,8 @@ import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -144,18 +146,21 @@ public class LanguageWebAPITest extends IntegrationTestBase {
 	}
 
 	@AfterClass
-	public static void cleanUpData() throws DotSecurityException, DotDataException {
+	public static void cleanUpData() throws Exception {
 		ContentletAPI contentletAPI = APILocator.getContentletAPI();
 		User user = APILocator.systemUser();
 		if(keyValueContentlet != null){
+			APILocator.getWorkflowAPI().deleteWorkflowTaskByWebAsset(keyValueContentlet.getIdentifier(), APILocator.systemUser());
 			contentletAPI.archive(keyValueContentlet,user, false);
 			contentletAPI.delete(keyValueContentlet,user, false);
 		}
-		if(keyValueContentlet1 != null){
+		if(keyValueContentlet1 != null) {
+			APILocator.getWorkflowAPI().deleteWorkflowTaskByWebAsset(keyValueContentlet1.getIdentifier(), APILocator.systemUser());
 			contentletAPI.archive(keyValueContentlet1,user, false);
 			contentletAPI.delete(keyValueContentlet1,user, false);
 		}
 		if(keyValueContentlet2 != null){
+			APILocator.getWorkflowAPI().deleteWorkflowTaskByWebAsset(keyValueContentlet2.getIdentifier(), APILocator.systemUser());
 			contentletAPI.archive(keyValueContentlet2,user, false);
 			contentletAPI.delete(keyValueContentlet2,user, false);
 		}

@@ -611,7 +611,9 @@ public class UserAPITest extends IntegrationTestBase {
 
 			task = workflowAPI.findTaskByContentlet(content);
 			assertTrue(task.getAssignedTo().equals(replacementUserUserRole.getId()));
-			assertTrue(task.getCreatedBy().equals(replacementUserUserRole.getId()));
+			Logger.info(this, "task.getCreatedBy() = " + task.getCreatedBy());
+			Logger.info(this, "replacementUserUserRole.getId() = " + replacementUserUserRole.getId());
+			assertEquals(task.getCreatedBy(),replacementUserUserRole.getId());
 
 			step = workflowAPI.findStepByContentlet(content);
 			assertNotNull(step);

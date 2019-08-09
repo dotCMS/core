@@ -47,6 +47,7 @@ import javax.ws.rs.core.Response;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static com.dotcms.util.CollectionsUtils.list;
@@ -148,30 +149,33 @@ public class PageResourceTest {
         final List<Contentlet> contentlets  = APILocator.getContentletAPI().search
                 (new StringBuilder("+contentType:persona +live:true +deleted:false +working:true +conhost:" + host.getIdentifier()).toString(),
                         -1, 0, "title desc", APILocator.systemUser(), false);
-        final Persona persona             = APILocator.getPersonaAPI().fromContentlet(contentlets.stream().findFirst().get());
-        final String personaTag           = persona.getKeyTag();
-        final String personalization      = Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + personaTag;
+        final Optional<Contentlet> personaOpt = contentlets.stream().findFirst();
+        if (personaOpt.isPresent()) {
+            final Persona persona = APILocator.getPersonaAPI().fromContentlet(personaOpt.get());
+            final String personaTag = persona.getKeyTag();
+            final String personalization = Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + personaTag;
 
-        multiTreeAPI.saveMultiTree(new MultiTree(htmlPage, container, content, UUIDGenerator.generateUuid(), 1)); // dot:default
-        multiTreeAPI.saveMultiTree(new MultiTree(htmlPage, container, content, UUIDGenerator.generateUuid(), 2, personalization)); // dot:somepersona
+            multiTreeAPI.saveMultiTree(new MultiTree(htmlPage, container, content, UUIDGenerator.generateUuid(), 1)); // dot:default
+            multiTreeAPI.saveMultiTree(new MultiTree(htmlPage, container, content, UUIDGenerator.generateUuid(), 2, personalization)); // dot:somepersona
 
-        when(request.getRequestURI()).thenReturn("/index");
-        final Response response = pageResource.getPersonalizedPersonasOnPage(request,  new EmptyHttpResponse(),
-                null, 0, 10, "title", "ASC", host.getIdentifier(), htmlPage);
+            when(request.getRequestURI()).thenReturn("/index");
+            final Response response = pageResource.getPersonalizedPersonasOnPage(request, new EmptyHttpResponse(),
+                    null, 0, 10, "title", "ASC", host.getIdentifier(), htmlPage);
 
-        final ResponseEntityView entityView = (ResponseEntityView)response.getEntity();
-        assertNotNull(entityView);
+            final ResponseEntityView entityView = (ResponseEntityView) response.getEntity();
+            assertNotNull(entityView);
 
-        final PaginatedArrayList<PersonalizationPersonaPageView> paginatedArrayList = (PaginatedArrayList)entityView.getEntity();
-        assertNotNull(paginatedArrayList);
+            final PaginatedArrayList<PersonalizationPersonaPageView> paginatedArrayList = (PaginatedArrayList) entityView.getEntity();
+            assertNotNull(paginatedArrayList);
 
-        Logger.info(this, "************ htmlPage: " + htmlPage + ", container: " + container + ", personaTag: " + personaTag);
-        Logger.info(this, "************ PaginatedArrayList: " + paginatedArrayList.stream()
-                .map(p-> Tuple.of(p.getPersona().get(PersonaAPI.KEY_TAG_FIELD),p.getPersona().get("personalized"))).collect(Collectors.toList()));
+            Logger.info(this, "************ htmlPage: " + htmlPage + ", container: " + container + ", personaTag: " + personaTag);
+            Logger.info(this, "************ PaginatedArrayList: " + paginatedArrayList.stream()
+                    .map(p -> Tuple.of(p.getPersona().get(PersonaAPI.KEY_TAG_FIELD), p.getPersona().get("personalized"))).collect(Collectors.toList()));
 
-        assertTrue(paginatedArrayList.stream().anyMatch(personalizationPersonaPageView ->
-                personalizationPersonaPageView.getPersona().get(PersonaAPI.KEY_TAG_FIELD).equals(personaTag) &&
-                Boolean.TRUE.equals(personalizationPersonaPageView.getPersona().get("personalized"))));
+            assertTrue(paginatedArrayList.stream().anyMatch(personalizationPersonaPageView ->
+                    personalizationPersonaPageView.getPersona().get(PersonaAPI.KEY_TAG_FIELD).equals(personaTag) &&
+                            Boolean.TRUE.equals(personalizationPersonaPageView.getPersona().get("personalized"))));
+        }
     }
 
     /**
