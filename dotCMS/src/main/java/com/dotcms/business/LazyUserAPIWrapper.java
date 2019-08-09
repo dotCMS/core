@@ -200,4 +200,10 @@ public class LazyUserAPIWrapper implements UserAPI {
     public List<User> getUnDeletedUsers() throws DotDataException {
         return this.getUserAPI().getUnDeletedUsers();
     }
+
+    @Override
+    public User getAnonymousUserNoThrow() {
+      // TODO Auto-generated method stub
+      return null;
+    }
 } // E:O:F:LazyUserAPIWrapper.
