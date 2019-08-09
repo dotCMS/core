@@ -192,13 +192,13 @@ public class FolderFactoryImpl extends FolderFactory {
 	}
 
 	@Override
-	protected Folder findFolderByPath(String path, Host host) throws DotDataException {
-
-		String originalPath = path;
-		Folder folder;
+	protected Folder findFolderByPath(String path, final Host host) throws DotDataException {
+	  
+		final String originalPath = path;
+		Folder folder=null;
 		List<Folder> result;
 
-		if(host == null){
+		if(host == null || path == null){
 			return null;
 		}
 

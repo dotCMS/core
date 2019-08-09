@@ -114,12 +114,12 @@ public class ContentTypeResourceTest {
 
 			// Test Content Type Retrieval by ID
 			RestUtilTest.verifySuccessResponse(
-					response = resource.getType((String) fieldMap.get("id"), getHttpRequest(),  new EmptyHttpResponse())
+					response = resource.getType((String) fieldMap.get("id"), getHttpRequest(),  new EmptyHttpResponse(), null, null)
 			);
 
 			// Test Content Type Retrieval by Var
 			RestUtilTest.verifySuccessResponse(
-				response = resource.getType((String) fieldMap.get("variable"), getHttpRequest(),  new EmptyHttpResponse())
+				response = resource.getType((String) fieldMap.get("variable"), getHttpRequest(),  new EmptyHttpResponse(), null, null)
 			);
 
 			assertContentTypeCreate(
@@ -156,7 +156,7 @@ public class ContentTypeResourceTest {
 
 			// Test Content Type Retrieval
 			RestUtilTest.verifySuccessResponse(
-					response = resource.getType((String) fieldMap.get("id"), getHttpRequest(),  new EmptyHttpResponse())
+					response = resource.getType((String) fieldMap.get("id"), getHttpRequest(),  new EmptyHttpResponse(), null, null)
 			);
 
 			assertContentTypeUpdate(
@@ -175,7 +175,7 @@ public class ContentTypeResourceTest {
 
 			assertResponse_NOT_FOUND(
 					response = resource.getType(
-							(String) fieldMap.get("id"), getHttpRequest(),  new EmptyHttpResponse()
+							(String) fieldMap.get("id"), getHttpRequest(),  new EmptyHttpResponse(),null, null
 					)
 			);
 		}
@@ -203,7 +203,7 @@ public class ContentTypeResourceTest {
 
             // Test Content Type Retrieval by Var
 			RestUtilTest.verifySuccessResponse(
-					resource.getType((String) fieldMap.get("variable"), getHttpRequest(),  new EmptyHttpResponse())
+					resource.getType((String) fieldMap.get("variable"), getHttpRequest(),  new EmptyHttpResponse(), null, null)
 			);
 
             // Test Content Type Update
@@ -227,7 +227,7 @@ public class ContentTypeResourceTest {
 
 			assertResponse_NOT_FOUND(
 					resource.getType(
-							(String) fieldMap.get("variable"), getHttpRequest(),  new EmptyHttpResponse()
+							(String) fieldMap.get("variable"), getHttpRequest(),  new EmptyHttpResponse(), null, null
 					)
 			);
 		}

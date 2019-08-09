@@ -1,9 +1,11 @@
 package com.dotcms.rest.api.v1.contenttype;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalization;
 import com.dotcms.contenttype.transform.contenttype.JsonContentTypeTransformer;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
@@ -28,6 +30,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONException;
@@ -36,6 +39,7 @@ import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
+import io.vavr.control.Try;
 import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
@@ -302,7 +306,12 @@ public class ContentTypeResource implements Serializable {
 	@JSONP
 	@NoCache
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-	public Response getType(@PathParam("idOrVar") final String idOrVar, @Context final HttpServletRequest req, @Context final HttpServletResponse res)
+	public Response getType(
+			@PathParam("idOrVar") final String idOrVar,
+			@Context final HttpServletRequest req,
+			@Context final HttpServletResponse res,
+			@QueryParam("languageId") final Long languageId,
+			@QueryParam("live") final Boolean paramLive)
 			throws DotDataException {
 
 		final InitDataObject initData = this.webResource.init(null, req, res, false, null);
@@ -321,8 +330,15 @@ public class ContentTypeResource implements Serializable {
 				session.setAttribute(SELECTED_STRUCTURE_KEY, type.inode());
 			}
 
-			resultMap.putAll(new JsonContentTypeTransformer(type).mapObject());
-			resultMap.put("workflows", 		 this.workflowHelper.findSchemesByContentType(type.id(), initData.getUser()));
+			final boolean live = paramLive == null ?
+					(PageMode.get(Try.of(() -> HttpServletRequestThreadLocal.INSTANCE.getRequest()).getOrNull())).showLive
+					: paramLive;
+
+			final ContentTypeInternationalization contentTypeInternationalization = languageId != null ?
+					new ContentTypeInternationalization(languageId, live, user) : null;
+			resultMap.putAll(new JsonContentTypeTransformer(type, contentTypeInternationalization).mapObject());
+
+			resultMap.put("workflows", this.workflowHelper.findSchemesByContentType(type.id(), initData.getUser()));
 			resultMap.put("systemActionMappings",
 					this.workflowHelper.findSystemActionsByContentType(type, initData.getUser())
 							.stream().collect(Collectors.toMap(mapping -> mapping.getSystemAction(),mapping -> mapping)));

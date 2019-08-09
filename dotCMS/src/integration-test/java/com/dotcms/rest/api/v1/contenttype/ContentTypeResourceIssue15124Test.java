@@ -546,7 +546,7 @@ public class ContentTypeResourceIssue15124Test {
 
             identifier = (String)resultMap.get("id");
             final HttpServletRequest request2 = getHttpRequest();
-            final Response getTypeResponse = resource.getType(identifier, request2,  new EmptyHttpResponse());
+            final Response getTypeResponse = resource.getType(identifier, request2,  new EmptyHttpResponse(), null, null);
             RestUtilTest.verifySuccessResponse(getTypeResponse);
 
         }finally{

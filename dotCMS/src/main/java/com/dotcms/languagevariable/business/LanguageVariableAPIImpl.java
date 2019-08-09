@@ -47,6 +47,12 @@ public class LanguageVariableAPIImpl implements LanguageVariableAPI {
   @Override
   public String get(final String key, final long languageId, final User user, final boolean respectFrontendRoles) {
 
+    return this.get(key, languageId, user, true, respectFrontendRoles);
+  }
+
+  @Override
+  public String get(final String key, final long languageId, final User user, final boolean live, final boolean respectFrontendRoles) {
+
     if (!UtilMethods.isSet(key)) {
       return null;
     }
@@ -57,14 +63,14 @@ public class LanguageVariableAPIImpl implements LanguageVariableAPI {
       // get the content type LANGUAGEVARIABLE
       final ContentType languageVariableContentType = APILocator.getContentTypeAPI(user).find(LANGUAGEVARIABLE);
 
-      languageValue = this.getValueFromUserLanguage(key, languageId, user, respectFrontendRoles, languageVariableContentType);
+      languageValue = this.getValueFromUserLanguage(key, languageId, user, respectFrontendRoles, languageVariableContentType, live);
 
       if (null == languageValue) {
 
         languageValue = this.getValueFromUserFallbackLanguage(key, languageId, user, respectFrontendRoles, languageVariableContentType);
 
         if (null == languageValue && languageVariableContentType instanceof MultilinguableFallback
-            && MultilinguableFallback.class.cast(languageVariableContentType).fallback()) {
+                && MultilinguableFallback.class.cast(languageVariableContentType).fallback()) {
 
           languageValue = this.getValueFromDefaultLanguage(key, user, respectFrontendRoles, languageVariableContentType);
         }
@@ -85,9 +91,9 @@ public class LanguageVariableAPIImpl implements LanguageVariableAPI {
   }
 
   private String getValueFromUserLanguage(final String key, long languageId, final User user, final boolean respectFrontendRoles,
-      final ContentType languageVariableContentType) {
+                                             final ContentType languageVariableContentType, final boolean live) {
 
-    final KeyValue keyValue = this.keyValueAPI.get(key, languageId, languageVariableContentType, user, respectFrontendRoles);
+    final KeyValue keyValue = this.keyValueAPI.get(key, languageId, languageVariableContentType, user, live, respectFrontendRoles);
     return (null != keyValue) ? keyValue.getValue() : null;
   }
 

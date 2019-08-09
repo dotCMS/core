@@ -1,8 +1,12 @@
 package com.dotcms.datagen;
 
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.Layout;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.util.Logger;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * @author Jonathan Gamba 2019-04-04
@@ -18,6 +22,7 @@ public class RoleDataGen extends AbstractDataGen<Role> {
     private Boolean editUsers = Boolean.TRUE;
     private Boolean editPermissions = Boolean.TRUE;
     private Boolean editLayouts = Boolean.TRUE;
+    private List<Layout> layouts = new ArrayList<>();
 
     @SuppressWarnings("unused")
     /**
@@ -64,6 +69,12 @@ public class RoleDataGen extends AbstractDataGen<Role> {
         return this;
     }
 
+    @SuppressWarnings("unused")
+    public RoleDataGen layout(final Layout... layouts) {
+        this.layouts.addAll(Arrays.asList(layouts));
+        return this;
+    }
+
     @Override
     public Role next() {
         final Role role = new Role();
@@ -81,7 +92,11 @@ public class RoleDataGen extends AbstractDataGen<Role> {
     @Override
     public Role persist(final Role role) {
         try {
-            return APILocator.getRoleAPI().save(role);
+            final Role savedRole = APILocator.getRoleAPI().save(role);
+             for(final Layout layout : layouts){
+                APILocator.getRoleAPI().addLayoutToRole(layout, savedRole);
+             }
+            return savedRole;
         } catch (Exception e) {
             throw new RuntimeException("Unable to persist Role.", e);
         }
