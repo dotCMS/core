@@ -71,6 +71,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -661,10 +662,14 @@ public class WorkflowAPITest extends IntegrationTestBase {
             assertEqualsActions(actions, actionsCopied, scheme, schemeCopied);
         } finally {
 
-            // remove the copied scheme
-            if (null != schemeCopied) {
-                workflowAPI.archive(schemeCopied, user);
-                workflowAPI.deleteScheme(schemeCopied, user).get();
+            try {
+                // remove the copied scheme
+                if (null != schemeCopied) {
+                    workflowAPI.archive(schemeCopied, user);
+                    workflowAPI.deleteScheme(schemeCopied, user).get(5L, TimeUnit.SECONDS);
+                }
+            } catch (Exception e) {
+                // Do nothing...
             }
         }
     }
@@ -1430,14 +1435,18 @@ public class WorkflowAPITest extends IntegrationTestBase {
             assertTrue(steps.get(0).getId().equals(step2.getId()));
 
         } finally {
-		    /*
-		     * Clean test
-		     */
-            contentTypeAPI.delete(st);
-            ws.setArchived(true);
-            workflowAPI.saveScheme(ws, user);
-            workflowAPI.deleteStep(step2, user).get();
-            workflowAPI.deleteScheme(ws, user).get();
+            try {
+                /*
+                 * Clean test
+                 */
+                contentTypeAPI.delete(st);
+                ws.setArchived(true);
+                workflowAPI.saveScheme(ws, user);
+                workflowAPI.deleteStep(step2, user).get(5L, TimeUnit.SECONDS);
+                workflowAPI.deleteScheme(ws, user).get(5L, TimeUnit.SECONDS);
+            } catch (Exception e) {
+                // Do nothing...
+            }
         }
     }
 
@@ -1638,9 +1647,13 @@ public class WorkflowAPITest extends IntegrationTestBase {
             //delete content type
             contentTypeAPI.delete(contentType4);
 
-            //Deleting workflow 6
-            workflowAPI.archive(workflowScheme6, user);
-            workflowAPI.deleteScheme(workflowScheme6, user).get();
+            try {
+                //Deleting workflow 6
+                workflowAPI.archive(workflowScheme6, user);
+                workflowAPI.deleteScheme(workflowScheme6, user).get(5L, TimeUnit.SECONDS);
+            } catch (Exception e) {
+                // Do nothing...
+            }
         }
     }
 
@@ -2179,31 +2192,24 @@ public class WorkflowAPITest extends IntegrationTestBase {
     public void validatingNoObligatorieContentTypeWorkflow()
             throws DotDataException, IOException, DotSecurityException, AlreadyExistException {
 
-        ContentType contentType6 = null;
-        try {
-            contentType6 = insertContentType(
-                    "NoObligatoryWf" + UtilMethods.dateToHTMLDate(new Date(), DATE_FORMAT),
-                    BaseContentType.CONTENT);
-            final int editPermission =
-                    PermissionAPI.PERMISSION_READ + PermissionAPI.PERMISSION_EDIT;
+        ContentType contentType6 = insertContentType(
+                "NoObligatoryWf" + UtilMethods.dateToHTMLDate(new Date(), DATE_FORMAT),
+                BaseContentType.CONTENT);
+        final int editPermission =
+                PermissionAPI.PERMISSION_READ + PermissionAPI.PERMISSION_EDIT;
 
-            Permission p = new Permission(contentType6.getPermissionId(), contributor.getId(),
-                    editPermission, true);
-            permissionAPI.save(p, contentType6, user, true);
+        Permission p = new Permission(contentType6.getPermissionId(), contributor.getId(),
+                editPermission, true);
+        permissionAPI.save(p, contentType6, user, true);
 
-            p = new Permission(Contentlet.class.getCanonicalName(), contentType6.getPermissionId(),
-                    contributor.getId(), editPermission, true);
-            permissionAPI.save(p, contentType6, user, true);
+        p = new Permission(Contentlet.class.getCanonicalName(), contentType6.getPermissionId(),
+                contributor.getId(), editPermission, true);
+        permissionAPI.save(p, contentType6, user, true);
 
-            final List<WorkflowScheme> results = workflowAPI
-                    .findSchemesForContentType(contentType6);
-            assertNotNull(results);
-            assertTrue(results.isEmpty());
-        } finally {
-            //clean test
-            //delete content type
-            contentTypeAPI.delete(contentType6);
-        }
+        final List<WorkflowScheme> results = workflowAPI
+                .findSchemesForContentType(contentType6);
+        assertNotNull(results);
+        assertTrue(results.isEmpty());
     }
 
     /**
@@ -2298,13 +2304,26 @@ public class WorkflowAPITest extends IntegrationTestBase {
         } finally {
             //clean test
             //delete content type
-            contentTypeAPI.delete(keepWfTaskStatusContentType);
+            try {
+                contentTypeAPI.delete(keepWfTaskStatusContentType);
+            } catch (Exception e) {
+                // Do nothing...
+            }
 
-            workflowAPI.archive(workflowSchemeA, user);
-            workflowAPI.deleteScheme(workflowSchemeA, user).get();
+            try {
+                workflowAPI.archive(workflowSchemeA, user);
+                workflowAPI.deleteScheme(workflowSchemeA, user).get(5L, TimeUnit.SECONDS);
+            } catch (Exception e) {
+                // Do nothing...
+            }
 
-            workflowAPI.archive(workflowSchemeB, user);
-            workflowAPI.deleteScheme(workflowSchemeB, user).get();
+            try {
+                workflowAPI.archive(workflowSchemeB, user);
+                workflowAPI.deleteScheme(workflowSchemeB, user).get(5L, TimeUnit.SECONDS);
+            } catch (Exception e) {
+                // Do nothing...
+            }
+
         }
     }
 
@@ -2421,11 +2440,15 @@ public class WorkflowAPITest extends IntegrationTestBase {
             //delete content type
             contentTypeAPI.delete(contentType);
 
-            workflowAPI.archive(workflowSchemeC, user);
-            workflowAPI.deleteScheme(workflowSchemeC, user).get();
+            try {
+                workflowAPI.archive(workflowSchemeC, user);
+                workflowAPI.deleteScheme(workflowSchemeC, user).get(5L, TimeUnit.SECONDS);
 
-            workflowAPI.archive(workflowSchemeD, user);
-            workflowAPI.deleteScheme(workflowSchemeD, user).get();
+                workflowAPI.archive(workflowSchemeD, user);
+                workflowAPI.deleteScheme(workflowSchemeD, user).get(5L, TimeUnit.SECONDS);
+            } catch (Exception e) {
+                // Do nothing...
+            }
         }
     }
 
@@ -2485,9 +2508,13 @@ public class WorkflowAPITest extends IntegrationTestBase {
             //delete content type
             contentTypeAPI.delete(contentType);
 
-            workflowScheme.setArchived(true);
-            workflowAPI.saveScheme(workflowScheme, user);
-            workflowAPI.deleteScheme(workflowScheme, user).get();
+            try {
+                workflowScheme.setArchived(true);
+                workflowAPI.saveScheme(workflowScheme, user);
+                workflowAPI.deleteScheme(workflowScheme, user).get(5L, TimeUnit.SECONDS);
+            } catch (Exception e) {
+                // Do nothing...
+            }
         }
     }
 
@@ -2512,7 +2539,11 @@ public class WorkflowAPITest extends IntegrationTestBase {
             assertTrue(workflowScheme.isArchived());
 
         } finally {
-            workflowAPI.deleteScheme(workflowScheme, user).get();
+            try {
+                workflowAPI.deleteScheme(workflowScheme, user).get(5L, TimeUnit.SECONDS);
+            } catch (Exception e) {
+                // Do nothing...
+            }
         }
     }
 
@@ -2703,25 +2734,46 @@ public class WorkflowAPITest extends IntegrationTestBase {
         contentTypeAPI.delete(contentType2);
         contentTypeAPI.delete(contentType3);
 
-        //Deleting workflow 1
-        workflowAPI.archive(workflowScheme1, user);
-        workflowAPI.deleteScheme(workflowScheme1, user).get();
+        try {
+            //Deleting workflow 1
+            workflowAPI.archive(workflowScheme1, user);
+            workflowAPI.deleteScheme(workflowScheme1, user).get(5L, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            // Do nothing...
+        }
 
-        //Deleting workflow 2
-        workflowAPI.archive(workflowScheme2, user);
-        workflowAPI.deleteScheme(workflowScheme2, user).get();
+        try {
+            //Deleting workflow 2
+            workflowAPI.archive(workflowScheme2, user);
+            workflowAPI.deleteScheme(workflowScheme2, user).get(5L, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            // Do nothing...
+        }
 
-        //Deleting workflow 3
-        workflowAPI.archive(workflowScheme3, user);
-        workflowAPI.deleteScheme(workflowScheme3, user).get();
+        try {
+            //Deleting workflow 3
+            workflowAPI.archive(workflowScheme3, user);
+            workflowAPI.deleteScheme(workflowScheme3, user).get(5L, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            // Do nothing...
+        }
 
-        //Deleting workflow 4
-        workflowAPI.archive(workflowScheme4, user);
-        workflowAPI.deleteScheme(workflowScheme4, user).get();
+        try {
+            //Deleting workflow 4
+            workflowAPI.archive(workflowScheme4, user);
+            workflowAPI.deleteScheme(workflowScheme4, user).get(5L, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            // Do nothing...
+        }
 
-        //Deleting workflow 5
-        workflowAPI.archive(workflowScheme5, user);
-        workflowAPI.deleteScheme(workflowScheme5, user).get();
+        try {
+            //Deleting workflow 5
+            workflowAPI.archive(workflowScheme5, user);
+            workflowAPI.deleteScheme(workflowScheme5, user).get(5L, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            // Do nothing...
+        }
+
     }
 
     /**
