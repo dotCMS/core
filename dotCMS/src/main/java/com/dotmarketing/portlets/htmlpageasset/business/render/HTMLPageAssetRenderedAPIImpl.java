@@ -213,7 +213,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                     PageContextBuilder.builder()
                         .setPageMode(PageMode.PREVIEW_MODE)
                         .setPageUri(pageUri)
-                        .setUser(user)
+                        .setUser(systemUser)
                         .build(),
                     host,
                     request
