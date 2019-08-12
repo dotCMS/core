@@ -996,21 +996,23 @@ public class UserAPITest extends IntegrationTestBase {
 
         assertTrue(backendUser.isBackendUser());
 		assertFalse(backendUser.isFrontendUser());
+		final Role frontEndRole = TestUserUtils.getFrontendRole();
+		final Role backendRole = TestUserUtils.getBackendRole();
 
-		final User frontendUser = new UserDataGen().roles(TestUserUtils.getFrontendRole()).nextPersisted();
+		final User frontendUser = new UserDataGen().roles(frontEndRole).nextPersisted();
 
 		assertTrue(frontendUser.isFrontendUser());
 		assertFalse(frontendUser.isBackendUser());
 
-		final User frontendAndBackendUser = new UserDataGen().roles(TestUserUtils.getFrontendRole()).nextPersisted();
+		final User frontendAndBackendUser = new UserDataGen().roles(frontEndRole).nextPersisted();
 
 		assertTrue(frontendAndBackendUser.isFrontendUser());
 		assertFalse(frontendAndBackendUser.isBackendUser());
 
-        APILocator.getRoleAPI().removeRoleFromUser(TestUserUtils.getBackendRole(),backendUser);
+        APILocator.getRoleAPI().removeRoleFromUser(backendRole,backendUser);
 		assertFalse(backendUser.isBackendUser());
 
-		APILocator.getRoleAPI().removeRoleFromUser(TestUserUtils.getFrontendRole(),frontendUser);
+		APILocator.getRoleAPI().removeRoleFromUser(frontEndRole,frontendUser);
 		assertFalse(frontendUser.isFrontendUser());
 
 	}

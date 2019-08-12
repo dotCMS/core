@@ -2,11 +2,10 @@ package com.dotcms.contenttype.transform.contenttype;
 
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.layout.FieldLayout;
-import com.dotcms.contenttype.model.field.layout.FieldLayoutRow;
+import com.dotcms.contenttype.model.field.layout.FieldUtil;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.JsonTransformer;
 import com.dotcms.contenttype.transform.field.JsonFieldTransformer;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableList;
 import com.dotmarketing.business.DotStateException;
@@ -23,9 +22,18 @@ import java.util.Map;
 public class JsonContentTypeTransformer implements ContentTypeTransformer, JsonTransformer {
   public static final String LAYOUT_PROPERTY_NAME = "layout";
   final List<ContentType> list;
+  private ContentTypeInternationalization contentTypeInternationalization;
+
+  public JsonContentTypeTransformer(
+          final ContentType type,
+          final ContentTypeInternationalization contentTypeInternationalization) {
+
+    this.list = ImmutableList.of(type);
+    this.contentTypeInternationalization = contentTypeInternationalization;
+  }
 
   public JsonContentTypeTransformer(ContentType type) {
-    this.list = ImmutableList.of(type);
+    this(type, null);
   }
 
 
@@ -55,6 +63,7 @@ public class JsonContentTypeTransformer implements ContentTypeTransformer, JsonT
     ContentType type = from();
     JSONObject jsonObject;
     try {
+
       jsonObject =
           new JSONObject(mapper.writeValueAsString(type));
 
@@ -146,7 +155,7 @@ public class JsonContentTypeTransformer implements ContentTypeTransformer, JsonT
     try {
       ContentType type = from();
       Map<String, Object> typeMap = mapper.convertValue(type, HashMap.class);
-      typeMap.put("fields", new JsonFieldTransformer(type.fields()).mapList());
+      typeMap.put("fields", this.getFields(type));
       typeMap.put(LAYOUT_PROPERTY_NAME, this.getLayout(type));
       typeMap.put("baseType", type.baseType());
       typeMap.remove("acceptedDataTypes");
@@ -158,21 +167,28 @@ public class JsonContentTypeTransformer implements ContentTypeTransformer, JsonT
     }
   }
 
-  private List<FieldLayoutRow> getLayout(final ContentType type) {
+  private List<Map<String, Object>> getFields(final ContentType type) {
+    final List<Map<String, Object>> fieldsMap = new JsonFieldTransformer(type.fields()).mapList();
+
+    if (contentTypeInternationalization != null) {
+      for (final Map<String, Object> fieldMap : fieldsMap) {
+        FieldUtil.setFieldInternationalization(type, contentTypeInternationalization, fieldMap);
+      }
+    }
+
+    return fieldsMap;
+  }
+
+  private FieldLayout getLayout(final ContentType type){
     final FieldLayout fieldLayout = new FieldLayout(type);
-    return fieldLayout.getRows();
+    fieldLayout.setContentTypeInternationalization(contentTypeInternationalization);
+    return fieldLayout;
   }
 
   private JSONArray getLayoutAsJsonArray(final ContentType type) {
-    final List<FieldLayoutRow> layout = getLayout(type);
-    final JSONArray jsonArray = new JSONArray();
-
-    for (final FieldLayoutRow fieldLayoutRow : layout) {
-      final JSONObject jsonObject = new JSONObject(fieldLayoutRow);
-      jsonArray.add(jsonObject);
-    }
-
-    return jsonArray;
+    return new JSONArray(getLayout(type).getRows());
   }
+
 }
+
 

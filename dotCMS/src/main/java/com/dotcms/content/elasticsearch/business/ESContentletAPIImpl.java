@@ -3343,9 +3343,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
             if(fileObject instanceof String && tempApi.isTempResource(contentlet.getStringProperty(field.variable()))) {
 
               final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
-              // we use the session 
-              final String sessionId = (request!=null && request.getSession(false)!=null) ? request.getSession().getId() : null;
-              final DotTempFile tempFile = tempApi.getTempFile(user, sessionId, contentlet.getStringProperty(field.variable())).get();
+
+              final DotTempFile tempFile = tempApi.getTempFile(request, contentlet.getStringProperty(field.variable())).get();
               contentlet.setBinary(field, tempFile.file);
             }
           }
@@ -4850,9 +4849,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 else if(value instanceof String && tempApi.isTempResource((String) value)) {
                   final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
                   // we use the session to verify access to the temp resource
-                  final String sessionId = (request!=null && request.getSession(false)!=null) ? request.getSession().getId() : null;
-                  final User user = Try.of(()->PortalUtil.getUser(request)).getOrNull();
-                  final DotTempFile tempFile = tempApi.getTempFile(user, sessionId, (String) value).get();
+                  final DotTempFile tempFile = tempApi.getTempFile(request, (String) value).get();
                   contentlet.setBinary(field.getVelocityVarName(), tempFile.file);
 
                 }
