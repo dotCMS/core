@@ -12,6 +12,7 @@ services:
   integration-tests:
     image: "${IMAGE_BASE_NAME}"
     environment:
+      databaseType:
       EXTRA_PARAMS:
       GOOGLE_CREDENTIALS_BASE64:
       exportReports:
@@ -20,5 +21,9 @@ services:
       - database
     ports:
       - "15005:5005"
+    networks:
+      - db_net
+
+  database:
     networks:
       - db_net

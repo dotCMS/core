@@ -788,6 +788,16 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         return pageContents;
     }
 
+    /**
+     * Returns the list of Containers from the drawn layout of a given Template.
+     *
+     * @param page The {@link IHTMLPage} object using the {@link Template} which holds the Containers.
+     *
+     * @return The list of {@link ContainerUUID} objects.
+     *
+     * @throws DotSecurityException The internal APIs are not allowed to return data for the specified user.
+     * @throws DotDataException     The information for the Template could not be accessed.
+     */
     private List<ContainerUUID> getDrawedLayoutContainerUUIDs (final IHTMLPage page) throws DotSecurityException, DotDataException {
 
         final TemplateLayout layout =
@@ -795,6 +805,18 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         return APILocator.getTemplateAPI().getContainersUUID(layout);
     }
 
+    /**
+     * Traverses the {@link Template} from an HTML Page and retrieves the Containers that are currently empty, i.e.,
+     * Containers that have no content in them.
+     *
+     * @param page         The {@link IHTMLPage} object that will be inspected.
+     * @param pageContents The parts that make up the {@link IHTMLPage} object.
+     * @param liveMode     If set to {@code true}, only the live version of the Containers will be retrieved. If set to
+     *                     {@code} false, only the working version will be retrieved.
+     *
+     * @throws DotDataException     An error occurred qhen retrieving the required information from the data source.
+     * @throws DotSecurityException The internal APIs are not allowed to return data for the specified user.
+     */
     private void addEmptyContainers(final IHTMLPage page,
                                     final Table<String, String, Set<PersonalizedContentlet>> pageContents,
                                     final boolean liveMode)
@@ -809,8 +831,9 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                 containersUUID = template.isDrawed()?
                         this.getDrawedLayoutContainerUUIDs(page):
                         APILocator.getTemplateAPI().getContainersUUIDFromDrawTemplateBody(template.getBody());
-            } catch (Exception e) {
-                Logger.error(this, e.getMessage(), e);
+            } catch (final Exception e) {
+                Logger.error(this, String.format("An error occurred when retrieving empty Containers from page with " +
+                        "ID '%s' in liveMode '%s': %s", page.getIdentifier(), liveMode, e.getMessage()), e);
                 return;
             }
 
@@ -825,7 +848,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                     if (container == null && !liveMode) {
                         continue;
                     }
-                } catch (NotFoundInDbException| DotRuntimeException e) {
+                } catch (final NotFoundInDbException| DotRuntimeException e) {
                     Logger.debug(this, e.getMessage(), e);
                     continue;
                 }
@@ -834,8 +857,9 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                     pageContents.put(container.getIdentifier(), containerUUID.getUUID(), new LinkedHashSet<>());
                 }
             }
-        } catch (RuntimeException e) {
-            Logger.error(this, e.getMessage(), e);
+        } catch (final RuntimeException e) {
+            Logger.error(this, String.format("An error occurred when retrieving empty Containers from page with ID " +
+                    "'%s' in liveMode '%s': %s", page.getIdentifier(), liveMode, e.getMessage()), e);
         }
     }
 

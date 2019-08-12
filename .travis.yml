@@ -14,6 +14,8 @@ env:
     - GOOGLE_CREDENTIALS=${TRAVIS_BUILD_DIR}/credentials.json
     - CLOUDSDK_CORE_DISABLE_PROMPTS=1
     - LICENSE=${DOTCMS_LICENSE}
+    - TRAVIS_WORKER_HARD_TIMEOUT=80m
+    - TRAVIS_WORKER_MAX_LOG_LENGTH=20000000
 
 before_install:
   - chmod +x travis/environment_vars.sh
