@@ -56,6 +56,7 @@ export class DotPersonaSelectorComponent implements OnInit, OnChanges {
         this.paginationService.url = `v1/page/${this.pageId}/personas`;
 
         if (
+            changes.value &&
             this.isPersonalizeStateUpdated(changes.value.previousValue, changes.value.currentValue)
         ) {
             this.reloadPersonasListCurrentPage();

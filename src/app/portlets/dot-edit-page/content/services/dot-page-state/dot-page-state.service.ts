@@ -57,7 +57,12 @@ export class DotPageStateService {
      * @memberof DotPageStateService
      */
     getInternalNavigationState(): DotRenderedPageState {
-        return this.isInternalNavigation ? this.currentState : null;
+        if (this.isInternalNavigation) {
+            this.isInternalNavigation = false;
+            return this.currentState;
+        }
+
+        return null;
     }
 
     /**
