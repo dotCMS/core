@@ -9,7 +9,7 @@ import { DotUploadService } from './services/dot-upload.service';
 import { DotHttpErrorResponse } from '../../models/dot-http-error-response.model';
 import { DotBinaryFileComponent } from '../dot-binary-file/dot-binary-file';
 
-const SUBMIT_FORM_API_URL = '/api/content/save/1';
+const SUBMIT_FORM_API_URL = '/api/v1/workflow/actions/default/fire/NEW';
 const fallbackErrorMessages = {
     500: '500 Internal Server Error',
     400: '400 Bad Request',
@@ -145,13 +145,15 @@ export class DotFormComponent {
         event.preventDefault();
 
         fetch(SUBMIT_FORM_API_URL, {
-            method: 'POST',
+            method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                stName: this.variable,
-                ...this.value
+                contentlet: {
+                    contentType: this.variable,
+                    ...this.value
+                }
             })
         })
             .then(async (response: Response) => {
@@ -162,20 +164,21 @@ export class DotFormComponent {
                     };
                     throw error;
                 }
-                return response.text();
+                return response.json();
             })
-            .then((_text: string) => {
-                this.goToSuccessPage();
+            .then((jsonResponse) => {
+                const {inode, identifier } = jsonResponse.entity;
+                this.goToSuccessPage(inode, identifier);
             })
             .catch(({ message, status }: DotHttpErrorResponse) => {
                 this.errorMessage = message || fallbackErrorMessages[status];
             });
     }
 
-    private goToSuccessPage(): void {
+    private goToSuccessPage(inode: string, identifier: string): void {
         const formReturnUrl = this.getFormReturnUrl();
         if (formReturnUrl) {
-            window.location.href = formReturnUrl;
+            window.location.href = `${formReturnUrl}?inode=${inode}&identifier=${identifier}`;
         }
     }
 
