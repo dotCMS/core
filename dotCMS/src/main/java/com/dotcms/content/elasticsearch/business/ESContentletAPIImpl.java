@@ -474,108 +474,118 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @Override
     public void publish(final Contentlet contentlet, final User user, final boolean respectFrontendRoles) throws DotSecurityException, DotDataException, DotStateException {
 
-            String contentPushPublishDate = contentlet.getStringProperty("wfPublishDate");
-            String contentPushExpireDate = contentlet.getStringProperty("wfExpireDate");
+        String contentPushPublishDate = contentlet.getStringProperty("wfPublishDate");
+        String contentPushExpireDate  = contentlet.getStringProperty("wfExpireDate");
 
-            contentPushPublishDate = UtilMethods.isSet(contentPushPublishDate)?contentPushPublishDate:"N/D";
-            contentPushExpireDate = UtilMethods.isSet(contentPushExpireDate)?contentPushExpireDate:"N/D";
+        contentPushPublishDate = UtilMethods.isSet(contentPushPublishDate)?contentPushPublishDate:"N/D";
+        contentPushExpireDate  = UtilMethods.isSet(contentPushExpireDate)?contentPushExpireDate:  "N/D";
 
-            ActivityLogger.logInfo(getClass(), "Publishing Content", "StartDate: " +contentPushPublishDate+ "; "
-                    + "EndDate: " +contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown")
-                    + "; ContentIdentifier: " + (contentlet != null ? contentlet.getIdentifier() : "Unknown"), contentlet.getHost());
+        ActivityLogger.logInfo(getClass(), "Publishing Content", "StartDate: " +contentPushPublishDate+ "; "
+                + "EndDate: " +contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown")
+                + "; ContentIdentifier: " + (contentlet != null ? contentlet.getIdentifier() : "Unknown"), contentlet.getHost());
 
-            try {
+        try {
 
-                if(StringPool.BLANK.equals(contentlet.getInode())) {
+            if (this.checkAndRunPublishAsWorkflow(contentlet, user, respectFrontendRoles).isPresent()) {
 
-                    throw new DotContentletStateException(CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT);
-                }
-
-                if(!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_PUBLISH, user, respectFrontendRoles)) {
-
-                    Logger.debug(PublishFactory.class, ()-> "publishAsset: user = " + (user != null ? user.getEmailAddress() : "Unknown")
-                            + ", don't have permissions to publish: " + (contentlet != null ? contentlet.getInode() : "Unknown"));
-
-                    //If the contentlet has CMS Owner Publish permission on it, the user creating the new contentlet is allowed to publish
-                    final List<Role> roles = permissionAPI.getRoles(contentlet.getPermissionId(),
-                            PermissionAPI.PERMISSION_PUBLISH, "CMS Owner", 0, -1);
-                    final Role cmsOwner = APILocator.getRoleAPI().loadCMSOwnerRole();
-
-                    if(roles.size() > 0){
-                        final boolean isCMSOwner = roles.stream().anyMatch(role-> role == cmsOwner); // todo shouldn't be equals??
-
-
-                        if(!isCMSOwner) {
-
-                            throw new DotSecurityException("User " + (user != null ? user.getUserId() : "Unknown")
-                                    + "does not have permission to publish contentlet with inode "
-                                    + (contentlet != null ? contentlet.getInode() : "Unknown"));
-                        }
-                    } else {
-                        throw new DotSecurityException("User " + (user != null ? user.getUserId() : "Unknown")
-                                + "does not have permission to publish contentlet with inode "
-                                + (contentlet != null ? contentlet.getInode() : "Unknown"));
-                    }
-                }
-
-                WorkflowProcessor workflow = null;
-                if(contentlet.getMap().get(Contentlet.DISABLE_WORKFLOW)==null &&
-                        (null == contentlet.getMap().get(Contentlet.WORKFLOW_IN_PROGRESS) ||
-                                Boolean.FALSE.equals(contentlet.getMap().get(Contentlet.WORKFLOW_IN_PROGRESS))
-                        ))  {
-                    workflow = APILocator.getWorkflowAPI().fireWorkflowPreCheckin(contentlet, user);
-                }
-
-
-                canLock(contentlet, user, respectFrontendRoles);
-
-                Logger.debug(this, () -> "*****I'm a Contentlet -- Publishing");
-
-                //Set contentlet to live and unlocked
-                APILocator.getVersionableAPI().setLive(contentlet);
-
-                publishAssociated(contentlet, false);
-
-                //wapi.
-                if(workflow!=null) {
-                    workflow.setContentlet(contentlet);
-                    APILocator.getWorkflowAPI().fireWorkflowPostCheckin(workflow);
-                }
-
-                if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
-                    cleanFileAssetCache(contentlet, user, respectFrontendRoles);
-                }
-
-                //"Enable" and/or create a tag for this Persona key tag
-                if ( Structure.STRUCTURE_TYPE_PERSONA == contentlet.getStructure().getStructureType() ) {
-                    //If not exist create a tag based on this persona key tag
-                    APILocator.getPersonaAPI().enableDisablePersonaTag(contentlet, true);
-                }
-
-                /*
-                Triggers a local system event when this contentlet commit listener is executed,
-                anyone who need it can subscribed to this commit listener event, on this case will be
-                mostly use it in order to invalidate this contentlet cache.
-                 */
-                triggerCommitListenerEvent(contentlet, user, true);
-
-                // by now, the publish event is making a duplicate reload events on the site browser
-                // so we decided to comment it out by now, and
-                //contentletSystemEventUtil.pushPublishEvent(contentlet);
-            } catch(DotDataException | DotStateException | DotSecurityException e) {
-                ActivityLogger.logInfo(getClass(), "Error Publishing Content", "StartDate: " +contentPushPublishDate+ "; "
-                        + "EndDate: " +contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown")
-                        + "; ContentIdentifier: " + (contentlet != null ? contentlet.getIdentifier() : "Unknown"), contentlet.getHost());
-                throw e;
+                Logger.info(this, "A Workflow has been ran instead of publish the contentlet: " +
+                        contentlet.getIdentifier());
+                return;
             }
 
-            ActivityLogger.logInfo(getClass(), "Content Published", "StartDate: " + contentPushPublishDate + "; "
-                    + "EndDate: " + contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown")
-                    + "; ContentIdentifier: " + (contentlet != null ? contentlet.getIdentifier() : "Unknown"), contentlet.getHost());
+            this.internalPublish(contentlet, user, respectFrontendRoles);
+        } catch(DotDataException | DotStateException | DotSecurityException e) {
 
-            //Generate a System Event for this publish operation
-            HibernateUtil.addCommitListener(
-                    () -> this.contentletSystemEventUtil.pushPublishEvent(contentlet), 1000);
+            ActivityLogger.logInfo(getClass(), "Error Publishing Content", "StartDate: " +contentPushPublishDate+ "; "
+                    + "EndDate: " +contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown")
+                    + "; ContentIdentifier: " + (contentlet != null ? contentlet.getIdentifier() : "Unknown"), contentlet.getHost());
+            throw e;
+        }
+
+        ActivityLogger.logInfo(getClass(), "Content Published", "StartDate: " + contentPushPublishDate + "; "
+                + "EndDate: " + contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown")
+                + "; ContentIdentifier: " + (contentlet != null ? contentlet.getIdentifier() : "Unknown"), contentlet.getHost());
+
+        //Generate a System Event for this publish operation
+        HibernateUtil.addCommitListener(
+                () -> this.contentletSystemEventUtil.pushPublishEvent(contentlet), 1000);
+    }
+
+    private void internalPublish(final Contentlet contentlet, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+
+        if(StringPool.BLANK.equals(contentlet.getInode())) {
+
+            throw new DotContentletStateException(CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT);
+        }
+
+        if(!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_PUBLISH, user, respectFrontendRoles)) {
+
+            Logger.debug(PublishFactory.class, ()-> "publishAsset: user = " + (user != null ? user.getEmailAddress() : "Unknown")
+                    + ", don't have permissions to publish: " + (contentlet != null ? contentlet.getInode() : "Unknown"));
+
+            //If the contentlet has CMS Owner Publish permission on it, the user creating the new contentlet is allowed to publish
+            final List<Role> roles = permissionAPI.getRoles(contentlet.getPermissionId(),
+                    PermissionAPI.PERMISSION_PUBLISH, "CMS Owner", 0, -1);
+            final Role cmsOwner = APILocator.getRoleAPI().loadCMSOwnerRole();
+
+            if(roles.size() > 0){
+                final boolean isCMSOwner = roles.stream().anyMatch(cmsOwner::equals);
+
+                if(!isCMSOwner) {
+
+                    throw new DotSecurityException("User " + (user != null ? user.getUserId() : "Unknown")
+                            + "does not have permission to publish contentlet with inode "
+                            + (contentlet != null ? contentlet.getInode() : "Unknown"));
+                }
+            } else {
+                throw new DotSecurityException("User " + (user != null ? user.getUserId() : "Unknown")
+                        + "does not have permission to publish contentlet with inode "
+                        + (contentlet != null ? contentlet.getInode() : "Unknown"));
+            }
+        }
+
+        WorkflowProcessor workflow = null;
+        if(contentlet.getMap().get(Contentlet.DISABLE_WORKFLOW)==null &&
+                (null == contentlet.getMap().get(Contentlet.WORKFLOW_IN_PROGRESS) ||
+                        Boolean.FALSE.equals(contentlet.getMap().get(Contentlet.WORKFLOW_IN_PROGRESS))
+                ))  {
+            workflow = APILocator.getWorkflowAPI().fireWorkflowPreCheckin(contentlet, user);
+        }
+
+        canLock(contentlet, user, respectFrontendRoles);
+
+        //Set contentlet to live and unlocked
+        APILocator.getVersionableAPI().setLive(contentlet);
+
+        publishAssociated(contentlet, false);
+
+        if(null != workflow) {
+
+            workflow.setContentlet(contentlet);
+            APILocator.getWorkflowAPI().fireWorkflowPostCheckin(workflow);
+        }
+
+        if(contentlet.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET) {
+
+            cleanFileAssetCache(contentlet, user, respectFrontendRoles);
+        }
+
+        //"Enable" and/or create a tag for this Persona key tag
+        if ( Structure.STRUCTURE_TYPE_PERSONA == contentlet.getStructure().getStructureType() ) {
+            //If not exist create a tag based on this persona key tag
+            APILocator.getPersonaAPI().enableDisablePersonaTag(contentlet, true);
+        }
+
+        /*
+        Triggers a local system event when this contentlet commit listener is executed,
+        anyone who need it can subscribed to this commit listener event, on this case will be
+        mostly use it in order to invalidate this contentlet cache.
+         */
+        triggerCommitListenerEvent(contentlet, user, true);
+
+        // by now, the publish event is making a duplicate reload events on the site browser
+        // so we decided to comment it out by now, and
+        //contentletSystemEventUtil.pushPublishEvent(contentlet);
     }
 
     @Override
@@ -3254,6 +3264,51 @@ public class ESContentletAPIImpl implements ContentletAPI {
         } finally {
             this.cleanup(contentletOut);
         }
+    }
+
+    private Optional<Contentlet> checkAndRunPublishAsWorkflow(final Contentlet contentletIn, final User user,
+                                                       final boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
+
+        // if already on workflow or has an actionid skip this method.
+        if (this.disableWorkflow(contentletIn) || this.isWorkflowInProgress(contentletIn) || UtilMethods.isSet(contentletIn.getActionId())) {
+
+            return Optional.empty();
+        }
+
+        final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
+        final Optional<WorkflowAction> workflowActionOpt =
+                workflowAPI.findActionMappedBySystemActionContentlet
+                        (contentletIn, WorkflowAPI.SystemAction.PUBLISH, user);
+
+        if (workflowActionOpt.isPresent()) {
+
+            final String title    = contentletIn.getTitle();
+            final String actionId = workflowActionOpt.get().getId();
+
+            Logger.info(this, () -> "The contentlet: " + title + " hasn't action id set"
+                    + " using the default action: " + actionId);
+
+            // if the action has a save action, we skip the current checkin
+            if (workflowAPI.hasPublishActionlet(workflowActionOpt.get())) {
+
+                Logger.info(this, () -> "The action: " + actionId + " has a publish contentlet actionlet"
+                        + " so firing a workflow and skipping the current publish for the contentlet: " + title);
+
+                return Optional.ofNullable(workflowAPI.fireContentWorkflow(contentletIn,
+                        new ContentletDependencies.Builder().workflowActionId(actionId)
+                                .modUser(user)
+                                .respectAnonymousPermissions(respectFrontendRoles)
+                                .build()
+                ));
+            }
+
+            Logger.info(this, () -> "The action: " + actionId + " hasn't a publish contentlet actionlet"
+                    + " so including just the action to the contentlet: " + title);
+
+            contentletIn.setActionId(actionId);
+        }
+
+        return Optional.empty();
     }
 
     private Optional<Contentlet> checkAndRunAsWorkflow(final Contentlet contentletIn,      final ContentletRelationships contentRelationships,
