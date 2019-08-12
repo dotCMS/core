@@ -219,11 +219,8 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                     request
             );
 
-            final ContentletVersionInfo info = this.versionableAPI.
-                    getContentletVersionInfo(htmlPageAsset.getIdentifier(), htmlPageAsset.getLanguageId());
-
-            return user.getUserId().equals(info.getLockedBy()) ? PageMode.EDIT_MODE
-                    : getNotLockDefaultPageMode(htmlPageAsset, user);
+            return this.permissionAPI.doesUserHavePermission(htmlPageAsset, PermissionLevel.READ.getType(), user, false)
+                    ? PageMode.PREVIEW_MODE : PageMode.ADMIN_MODE;
         } catch (DotDataException | DotSecurityException e) {
             throw new DotRuntimeException(e);
         }
@@ -245,14 +242,6 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                 .setResponse(response)
                 .setSite(host)
                 .getPageHTML();
-    }
-
-    private PageMode getNotLockDefaultPageMode(
-            final IHTMLPage htmlPageAsset,
-            final User user
-    ) throws DotDataException {
-        return this.permissionAPI.doesUserHavePermission(htmlPageAsset, PermissionLevel.READ.getType(), user, false)
-                ? PageMode.PREVIEW_MODE : PageMode.ADMIN_MODE;
     }
 
     private IHTMLPage getHtmlPageAsset(

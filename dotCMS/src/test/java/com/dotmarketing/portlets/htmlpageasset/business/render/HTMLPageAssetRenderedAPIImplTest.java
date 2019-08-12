@@ -177,7 +177,7 @@ public class HTMLPageAssetRenderedAPIImplTest {
         final PageMode defaultEditPageMode =
                 hTMLPageAssetRenderedAPIImpl.getDefaultEditPageMode(user, request, pageUri);
 
-        assertEquals(PageMode.EDIT_MODE,defaultEditPageMode);
+        assertEquals(PageMode.PREVIEW_MODE,defaultEditPageMode);
     }
 
     @Test
@@ -222,6 +222,9 @@ public class HTMLPageAssetRenderedAPIImplTest {
 
         when(language.getId()).thenReturn(1l);
 
+        when(permissionAPI.doesUserHavePermission(htmlPage, PermissionLevel.READ.getType(), user,
+                false)).thenReturn(true);
+
         final UrlMapContext urlMapContext = UrlMapContextBuilder.builder()
                 .setMode(PageMode.PREVIEW_MODE)
                 .setUri(pageUri)
@@ -236,6 +239,6 @@ public class HTMLPageAssetRenderedAPIImplTest {
         final PageMode defaultEditPageMode =
                 hTMLPageAssetRenderedAPIImpl.getDefaultEditPageMode(user, request, pageUri);
 
-        assertEquals(PageMode.EDIT_MODE,defaultEditPageMode);
+        assertEquals(PageMode.PREVIEW_MODE, defaultEditPageMode);
     }
 }
