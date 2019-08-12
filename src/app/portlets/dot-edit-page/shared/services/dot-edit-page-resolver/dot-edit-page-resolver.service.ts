@@ -4,6 +4,7 @@ import { Resolve, ActivatedRouteSnapshot } from '@angular/router';
 import { Response, Headers } from '@angular/http';
 
 import { ResponseView, HttpCode } from 'dotcms-js';
+import { take, switchMap, tap, catchError, map } from 'rxjs/operators';
 
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotRenderedPageState } from '../../models/dot-rendered-page-state.model';
@@ -12,8 +13,6 @@ import {
     DotHttpErrorManagerService,
     DotHttpErrorHandled
 } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotEditPageDataService } from './dot-edit-page-data.service';
-import { take, switchMap, tap, catchError, map } from 'rxjs/operators';
 import { DotPageRenderOptions } from '@services/dot-page-render/dot-page-render.service';
 
 /**
@@ -28,12 +27,12 @@ export class DotEditPageResolver implements Resolve<DotRenderedPageState> {
     constructor(
         private dotHttpErrorManagerService: DotHttpErrorManagerService,
         private dotPageStateService: DotPageStateService,
-        private dotRouterService: DotRouterService,
-        private dotEditPageDataService: DotEditPageDataService
+        private dotRouterService: DotRouterService
     ) {}
 
     resolve(route: ActivatedRouteSnapshot): Observable<DotRenderedPageState> {
-        const data = this.dotEditPageDataService.getAndClean();
+        const data = this.dotPageStateService.getInternalNavigationState();
+
         if (data) {
             return of(data);
         } else {

@@ -9,7 +9,10 @@ import {
     SimpleChanges
 } from '@angular/core';
 import { PaginatorService } from '@services/paginator';
-import { SearchableDropdownComponent, PaginationEvent } from '@components/_common/searchable-dropdown/component';
+import {
+    SearchableDropdownComponent,
+    PaginationEvent
+} from '@components/_common/searchable-dropdown/component';
 import { DotPersona } from '@shared/models/dot-persona/dot-persona.model';
 import { take } from 'rxjs/operators';
 
@@ -50,8 +53,12 @@ export class DotPersonaSelectorComponent implements OnInit, OnChanges {
     constructor(public paginationService: PaginatorService) {}
 
     ngOnChanges(changes: SimpleChanges): void {
-        if (!changes.value.firstChange) {
-            this.getPersonasList();
+        this.paginationService.url = `v1/page/${this.pageId}/personas`;
+
+        if (
+            this.isPersonalizeStateUpdated(changes.value.previousValue, changes.value.currentValue)
+        ) {
+            this.reloadPersonasListCurrentPage();
         }
     }
 
@@ -59,9 +66,7 @@ export class DotPersonaSelectorComponent implements OnInit, OnChanges {
         this.addAction = () => {
             // TODO Implement + action
         };
-        this.paginationService.url = `v1/page/${this.pageId}/personas`;
         this.paginationService.paginationPerPage = this.paginationPerPage;
-        this.getPersonasList();
     }
 
     /**
@@ -85,32 +90,57 @@ export class DotPersonaSelectorComponent implements OnInit, OnChanges {
     }
 
     /**
-     * Call to load a new page.
-     *
-     * @param {string} [filter='']
-     * @param {number} [offset=0]
-     * @memberof DotPersonaSelectorComponent
-     */
-    getPersonasList(filter = '', offset = 0): void {
-        // Set filter if undefined
-        this.paginationService.filter = filter;
-        this.paginationService
-            .getWithOffset(offset)
-            .pipe(take(1))
-            .subscribe((items: DotPersona[]) => {
-                this.personas = items;
-                this.totalRecords = this.totalRecords || this.paginationService.totalRecords;
-            });
-    }
-
-    /**
      * Call when the selected persona changed and the change event is emmited
      *
      * @param {DotPersona} persona
      * @memberof DotPersonaSelectorComponent
      */
     personaChange(persona: DotPersona): void {
-        this.selected.emit(persona);
+        if (!this.value || this.value.identifier !== persona.identifier) {
+            this.selected.emit(persona);
+        }
         this.searchableDropdown.toggleOverlayPanel();
+    }
+
+    /**
+     * Refresh the current page in the persona list option
+     *
+     * @memberof DotPersonaSelectorComponent
+     */
+    reloadPersonasListCurrentPage(): void {
+        this.paginationService
+            .getCurrentPage()
+            .pipe(take(1))
+            .subscribe(this.setList.bind(this));
+    }
+
+    /**
+     * Replace the persona receive in the current page list of personas
+     *
+     * @param {DotPersona} persona
+     * @memberof DotPersonaSelectorComponent
+     */
+    updatePersonaInCurrentList(persona: DotPersona): void {
+        this.personas = this.personas.map((currentPersona: DotPersona) => {
+            return currentPersona.identifier === persona.identifier ? persona : currentPersona;
+        });
+    }
+
+    private getPersonasList(filter = '', offset = 0): void {
+        // Set filter if undefined
+        this.paginationService.filter = filter;
+        this.paginationService
+            .getWithOffset(offset)
+            .pipe(take(1))
+            .subscribe(this.setList.bind(this));
+    }
+
+    private isPersonalizeStateUpdated(prev: DotPersona, current: DotPersona): boolean {
+        return prev && current && prev.personalized !== current.personalized;
+    }
+
+    private setList(items: DotPersona[]): void {
+        this.personas = items;
+        this.totalRecords = this.totalRecords || this.paginationService.totalRecords;
     }
 }

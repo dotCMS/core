@@ -41,7 +41,7 @@ export class DotPersonaSelectorOptionComponent implements OnInit {
                             messages['modes.persona.personalized']
                     )
                 );
-        }, 0);
+        }, 10);
     }
 
     @HostListener('click', ['$event'])

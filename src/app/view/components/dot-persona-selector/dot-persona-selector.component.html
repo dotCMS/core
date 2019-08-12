@@ -20,7 +20,7 @@
     </ng-template>
     <ng-template let-personaData="item" pTemplate="listItem">
         <dot-persona-selector-option
-            [persona]="personaData"
+            [persona]="value && value.identifier === personaData.identifier ? value : personaData"
             [selected]="value && value.identifier === personaData.identifier"
             (change)="personaChange($event)"
             (delete)="delete.emit(personaData)"

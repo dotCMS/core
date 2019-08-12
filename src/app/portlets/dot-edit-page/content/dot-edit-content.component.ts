@@ -23,7 +23,6 @@ import { DotPageStateService } from './services/dot-page-state/dot-page-state.se
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotPageMode } from '../shared/models/dot-page-mode.enum';
 import { DotPageRender } from '../shared/models/dot-rendered-page.model';
-import { DotEditPageDataService } from '../shared/services/dot-edit-page-resolver/dot-edit-page-data.service';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
 import { DotCMSContentType } from 'dotcms-models';
@@ -64,7 +63,6 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     constructor(
         private dotContentletEditorService: DotContentletEditorService,
         private dotDialogService: DotAlertConfirmService,
-        private dotEditPageDataService: DotEditPageDataService,
         private dotEditPageService: DotEditPageService,
         private dotGlobalMessageService: DotGlobalMessageService,
         private dotMessageService: DotMessageService,
@@ -84,15 +82,20 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
                     this.dotRouterService.goToEditPage(pathname.slice(1));
                 },
                 'load-edit-mode-page': (pageRendered: DotPageRender) => {
+                    /*
+                        This is the events that gets emitted from the backend when the user
+                        browse from the page internal links
+                    */
+
                     const dotRenderedPageState = new DotRenderedPageState(
                         this.pageStateInternal.user,
                         pageRendered
                     );
 
-                    if (this.route.snapshot.queryParams.url === pageRendered.page.pageURI) {
+                    if (this.isInternallyNavigatingToSamePage(pageRendered.page.pageURI)) {
                         this.dotPageStateService.setLocalState(dotRenderedPageState);
                     } else {
-                        this.dotEditPageDataService.set(dotRenderedPageState);
+                        this.dotPageStateService.setInternalNavigationState(dotRenderedPageState);
                         this.dotRouterService.goToEditPage(pageRendered.page.pageURI);
                     }
                 },
@@ -204,6 +207,10 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
      */
     onCancelToolbar() {
         this.dotRouterService.goToSiteBrowser();
+    }
+
+    private isInternallyNavigatingToSamePage(url: string): boolean {
+        return this.route.snapshot.queryParams.url === url;
     }
 
     private shouldSetContainersHeight() {
