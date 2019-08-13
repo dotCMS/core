@@ -25,7 +25,7 @@ export class DotLanguageSelectorComponent implements OnInit {
             .get(this.contentInode)
             .pipe(take(1))
             .subscribe((languages: DotLanguage[]) => {
-                this.languagesOptions = languages;
+                this.languagesOptions = this.decorateLabels(languages);
             });
     }
 
@@ -35,5 +35,12 @@ export class DotLanguageSelectorComponent implements OnInit {
      */
     change(language: DotLanguage): void {
         this.selected.emit(language);
+    }
+
+    private decorateLabels(languages: DotLanguage[]): any {
+        return languages.map((language: DotLanguage) => {
+            const countryCodeLabel = language.countryCode ? ` (${language.countryCode})` : '';
+            return { ...language, language: `${language.language}${countryCodeLabel}` };
+         });
     }
 }

@@ -33,7 +33,11 @@ describe('DotLanguageSelectorComponent', () => {
 
     it('should load languages in the dropdown', () => {
         fixture.detectChanges();
-        expect(component.languagesOptions).toEqual([mockDotLanguage]);
+        const decoratedLanguage = {
+            ...mockDotLanguage,
+            language: `${mockDotLanguage.language} (${mockDotLanguage.countryCode})`
+        };
+        expect(component.languagesOptions).toEqual([decoratedLanguage]);
     });
 
     it('should emit the selected language', () => {
