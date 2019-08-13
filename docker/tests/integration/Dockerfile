@@ -15,9 +15,9 @@ RUN mkdir -p /custom \
     && mkdir -p /custom/output
 
 #  One of ["COMMIT", "TAG" ]
-ARG BUILD_FROM=COMMIT
+ARG BUILD_FROM
 ENV BUILD_FROM=${BUILD_FROM}
-ARG BUILD_ID=origin/master
+ARG BUILD_ID
 ENV BUILD_ID=${BUILD_ID}
 ARG BUILD_HASH
 ENV BUILD_HASH=${BUILD_HASH}
