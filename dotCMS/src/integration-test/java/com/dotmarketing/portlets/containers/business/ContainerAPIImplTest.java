@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.containers.business;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -58,16 +59,36 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
 
     private static final String TEST_CONTAINER = "/testcontainer" + System.currentTimeMillis();
     private static ContentType newsLikeContentType,documentLikeContentType,productLikeContentType;
-
+    private static Host defaultHost  = null;
     @BeforeClass
     public static void prepare() throws Exception {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
         OSGIUtil.getInstance().initializeFramework(Config.CONTEXT);
-        final Host defaultHost  = APILocator.getHostAPI().findDefaultHost( APILocator.systemUser(), false );
+        defaultHost  = APILocator.getHostAPI().findDefaultHost( APILocator.systemUser(), false );
         checkApplicationContainerFolder(defaultHost);
     }
 
+    
+    @Test
+    public void test_containerapi_find_by_inode() throws DotDataException, DotSecurityException {
+      String title = "myContainer" + System.currentTimeMillis();
+      Container container =  new ContainerDataGen().site(defaultHost).title(title).nextPersisted();
+      
+      assertNotNull(container);
+      assertNotNull(container.getInode());
+      Container containerFromDB = APILocator.getContainerAPI().find(container.getInode(), APILocator.systemUser(), false);
+      assertEquals(containerFromDB.getTitle(), container.getTitle());
+      assertEquals(containerFromDB.getInode(), container.getInode());
+      
+      Container nullContainer = APILocator.getContainerAPI().find("nope", APILocator.systemUser(), false);
+      assertNull(nullContainer);
+
+    }
+    
+    
+    
+    
     @Test
     public void getContentTypesInContainer() throws DotDataException, DotSecurityException {
         Container container = null;
