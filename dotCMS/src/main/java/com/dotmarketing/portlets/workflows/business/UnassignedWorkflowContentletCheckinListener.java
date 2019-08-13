@@ -18,7 +18,6 @@ import com.dotmarketing.util.UtilHTML;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
-import java.util.Date;
 import java.util.List;
 
 /**

@@ -213,12 +213,21 @@ public interface WorkflowAPI {
 	public void deleteWorkflowTask(WorkflowTask task, User user) throws DotDataException;
 
 	/**
-	 * Deletes (reset) a workflow tasks associated to the webAsset
+	 * Deletes (reset) a workflow tasks associated to the webAsset by any language
 	 * @param webAsset {@link String}
 	 * @param user {@link User}
 	 * @throws DotDataException
 	 */
-	public void deleteWorkflowTaskByWebAsset(String webAsset, User user) throws DotDataException;
+	public void deleteWorkflowTaskByContentletIdAnyLanguage(String webAsset, User user) throws DotDataException;
+
+	/**
+	 * Deletes (reset) a workflow tasks associated to the webAsset + language id by any language
+	 * @param webAsset {@link String}
+	 * @param languageId {@link Long}
+	 * @param user {@link User}
+	 * @throws DotDataException
+	 */
+	public void deleteWorkflowTaskByContentletId(String webAsset, long languageId, User user) throws DotDataException;
 
 	/**
 	 *

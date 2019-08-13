@@ -1634,4 +1634,26 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
             throw new DotStateException(e);
         }
     }
+
+	/**
+	 * Determine if the workflow is disable for this contentlet
+	 * @return boolean true if is disable
+	 */
+	@JsonIgnore
+	public boolean isDisableWorkflow() {
+
+		return null != this.getMap().get(Contentlet.DISABLE_WORKFLOW) &&
+				Boolean.TRUE.equals(this.getMap().get(Contentlet.DISABLE_WORKFLOW));
+	}
+
+	/**
+	 * Determine if the workflow is in progress for this contentlet
+	 * @return
+	 */
+	@JsonIgnore
+	public boolean isWorkflowInProgress () {
+
+		return null != this.getMap().get(Contentlet.WORKFLOW_IN_PROGRESS) &&
+				Boolean.TRUE.equals(this.getMap().get(Contentlet.WORKFLOW_IN_PROGRESS));
+	}
 }

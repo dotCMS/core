@@ -18,10 +18,6 @@ import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.db.LocalTransaction;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -150,17 +146,17 @@ public class LanguageWebAPITest extends IntegrationTestBase {
 		ContentletAPI contentletAPI = APILocator.getContentletAPI();
 		User user = APILocator.systemUser();
 		if(keyValueContentlet != null){
-			APILocator.getWorkflowAPI().deleteWorkflowTaskByWebAsset(keyValueContentlet.getIdentifier(), APILocator.systemUser());
+			APILocator.getWorkflowAPI().deleteWorkflowTaskByContentletIdAnyLanguage(keyValueContentlet.getIdentifier(), APILocator.systemUser());
 			contentletAPI.archive(keyValueContentlet,user, false);
 			contentletAPI.delete(keyValueContentlet,user, false);
 		}
 		if(keyValueContentlet1 != null) {
-			APILocator.getWorkflowAPI().deleteWorkflowTaskByWebAsset(keyValueContentlet1.getIdentifier(), APILocator.systemUser());
+			APILocator.getWorkflowAPI().deleteWorkflowTaskByContentletIdAnyLanguage(keyValueContentlet1.getIdentifier(), APILocator.systemUser());
 			contentletAPI.archive(keyValueContentlet1,user, false);
 			contentletAPI.delete(keyValueContentlet1,user, false);
 		}
 		if(keyValueContentlet2 != null){
-			APILocator.getWorkflowAPI().deleteWorkflowTaskByWebAsset(keyValueContentlet2.getIdentifier(), APILocator.systemUser());
+			APILocator.getWorkflowAPI().deleteWorkflowTaskByContentletIdAnyLanguage(keyValueContentlet2.getIdentifier(), APILocator.systemUser());
 			contentletAPI.archive(keyValueContentlet2,user, false);
 			contentletAPI.delete(keyValueContentlet2,user, false);
 		}

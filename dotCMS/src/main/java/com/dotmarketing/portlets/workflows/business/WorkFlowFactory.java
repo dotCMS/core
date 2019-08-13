@@ -43,7 +43,15 @@ public interface WorkFlowFactory {
 	 * @param webAsset {@link String}
 	 * @throws DotDataException
 	 */
-	void deleteWorkflowTaskByWebAsset(String webAsset) throws DotDataException;
+	void deleteWorkflowTaskByContentletIdAnyLanguage(String webAsset) throws DotDataException;
+
+	/**
+	 * Deletes the workflow task associated to a web asset + language and workflow task dependencies
+	 * @param webAsset    {@link String}
+	 * @param languageId  {@link Long}
+	 * @throws DotDataException
+	 */
+	void deleteWorkflowTaskByContentletIdAndLanguage(final String webAsset, final long languageId) throws DotDataException;
 
 	public WorkflowTask findTaskByContentlet(Contentlet contentlet) throws DotDataException;
 

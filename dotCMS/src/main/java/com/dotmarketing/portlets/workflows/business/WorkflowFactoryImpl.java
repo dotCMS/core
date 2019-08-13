@@ -469,7 +469,8 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		db.loadResult();
 	}
 
-	public void deleteWorkflowTaskByWebAsset(final String webAsset) throws DotDataException {
+	@Override
+	public void deleteWorkflowTaskByContentletIdAnyLanguage(final String webAsset) throws DotDataException {
 
 		new DotConnect().setSQL("delete from workflow_comment where workflowtask_id   in (select id from workflow_task where webasset = ?)")
 				.addParam(webAsset).loadResult();
@@ -482,6 +483,22 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 		new DotConnect().setSQL("delete from workflow_task where webasset = ?")
 				.addParam(webAsset).loadResult();
+	}
+
+	@Override
+	public void deleteWorkflowTaskByContentletIdAndLanguage(final String webAsset, final long languageId) throws DotDataException {
+
+		new DotConnect().setSQL("delete from workflow_comment where workflowtask_id   in (select id from workflow_task where webasset = ? and language_id=?)")
+				.addParam(webAsset).addParam(languageId).loadResult();
+
+		new DotConnect().setSQL("delete from workflow_history where workflowtask_id   in (select id from workflow_task where webasset = ? and language_id=?)")
+				.addParam(webAsset).addParam(languageId).loadResult();
+
+		new DotConnect().setSQL("delete from workflowtask_files where workflowtask_id in (select id from workflow_task where webasset = ? and language_id=?)")
+				.addParam(webAsset).addParam(languageId).loadResult();
+
+		new DotConnect().setSQL("delete from workflow_task where webasset = ? and language_id=?")
+				.addParam(webAsset).addParam(languageId).loadResult();
 	}
 
 	@Override

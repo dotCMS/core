@@ -1133,12 +1133,39 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	@Override
 	@WrapInTransaction
-	public void deleteWorkflowTaskByWebAsset(final String webAsset, final User user) throws DotDataException {
+	public void deleteWorkflowTaskByContentletIdAnyLanguage(final String webAsset, final User user) throws DotDataException {
 
 		SecurityLogger.logInfo(this.getClass(),
 				"The Removing Workflow Tasks with the webasset:" + webAsset);
 
-		this.workFlowFactory.deleteWorkflowTaskByWebAsset(webAsset);
+		this.workFlowFactory.deleteWorkflowTaskByContentletIdAnyLanguage(webAsset);
+
+		try {
+			if (UtilMethods.isSet(webAsset)) {
+				HibernateUtil.addCommitListener(() -> {
+					try {
+						this.reindexQueueAPI.addIdentifierReindex(webAsset);
+					} catch (DotDataException e) {
+						Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
+					}
+				});
+			}
+		} catch (Exception e) {
+			Logger.error(this, e.getMessage(), e);
+		}
+
+		SecurityLogger.logInfo(this.getClass(), ()-> "The Removed the tasks with the webasset" + webAsset
+				+ " has been deleted by the user: " + user.getUserId());
+	}
+
+	@Override
+	@WrapInTransaction
+	public void deleteWorkflowTaskByContentletId(final String webAsset, final long languageId, final User user) throws DotDataException {
+
+		SecurityLogger.logInfo(this.getClass(),
+				"The Removing Workflow Tasks with the webasset:" + webAsset);
+
+		this.workFlowFactory.deleteWorkflowTaskByContentletIdAndLanguage(webAsset, languageId);
 
 		try {
 			if (UtilMethods.isSet(webAsset)) {
