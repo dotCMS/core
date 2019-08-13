@@ -6,7 +6,6 @@ import {
     Input,
     Output,
     ViewChild,
-    ViewEncapsulation,
     forwardRef,
     SimpleChanges,
     OnChanges,
@@ -30,7 +29,6 @@ import * as _ from 'lodash';
  * @implements {ControlValueAccessor}
  */
 @Component({
-    encapsulation: ViewEncapsulation.None,
     providers: [
         {
             multi: true,

@@ -1,65 +1,62 @@
 @import "primeng-theme/utils/extends";
 @import "mixins";
 
-.ui-overlaypanel {
-
-    &.paginator .ui-dataview-content {
-        margin-bottom: $basic-padding * 4;
+::ng-deep {
+    .ui-overlaypanel.paginator {
+        .ui-dataview-content {
+            margin-bottom: $basic-padding * 4;
+        }
+        .ui-paginator-bottom {
+            @include paginator-bottom-absolute;
+        }
     }
-}
-
-.ui-overlaypanel-content {
-    padding: $basic-padding * 2 0;
-}
-
-.ui-paginator-bottom {
-    bottom: 0;
-    padding-bottom: $basic-padding * 2;
-    position: absolute;
-    width: 100%;
-}
-
-dot-searchable-dropdown {
-    .ui-button {
-        @extend #inputtext-normal-border;
-        background: none;
-        border: 0;
-        border-radius: 0;
-        padding-right: $basic-padding * 2;
-        text-align: left;
-        text-transform: none;
-        width: auto;
-
-        &:not([disabled]) {
-            &:hover,
-            &:active,
-            &:focus {
-                @extend #field-hover-state;
-                @extend #inputtext-normal-border;
-                border: 0;
-
-                .ui-button-text,
-                [class^="ui-button-icon"] {
-                    color: $body-font-color;
+    
+    .ui-overlaypanel-content {
+        padding: $basic-padding * 2 0;
+    }
+    
+    dot-searchable-dropdown {
+        .ui-button {
+            @extend #inputtext-normal-border;
+            background: none;
+            border: 0;
+            border-radius: 0;
+            padding-right: $basic-padding * 2;
+            text-align: left;
+            text-transform: none;
+            width: auto;
+    
+            &:not([disabled]) {
+                &:hover,
+                &:active,
+                &:focus {
+                    @extend #field-hover-state;
+                    @extend #inputtext-normal-border;
+                    border: 0;
+    
+                    .ui-button-text,
+                    [class^="ui-button-icon"] {
+                        color: $body-font-color;
+                    }
                 }
             }
-        }
-
-        .ui-button-text,
-        [class^="ui-button-icon"] {
-            color: $body-font-color;
-        }
-
-        .ui-button-text {
-            font-size: $font-size-large;
-            font-weight: normal;
-            padding: 0;
-            text-transform: none;
+    
+            .ui-button-text,
+            [class^="ui-button-icon"] {
+                color: $body-font-color;
+            }
+    
+            .ui-button-text {
+                font-size: $font-size-large;
+                font-weight: normal;
+                padding: 0;
+                text-transform: none;
+            }
         }
     }
 }
 
-.searchable-dropdown__data-list {
+.searchable-dropdown__data-list ::ng-deep  {
     .ui-dataview {
         position: unset;
     }

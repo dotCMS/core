@@ -120,3 +120,10 @@
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+
+@mixin paginator-bottom-absolute {
+    bottom: 0;
+    padding-bottom: $basic-padding * 2;
+    position: absolute;
+    width: 100%;
+}

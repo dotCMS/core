@@ -14,5 +14,9 @@
                 height: 665px !important;
             }
         }
+
+        .ui-paginator-bottom {
+            @include paginator-bottom-absolute;
+        }
     }
 }
