@@ -11,9 +11,6 @@ import org.elasticsearch.client.RestHighLevelClient;
  */
 public abstract class RestHighLevelClientProvider {
 
-    protected RestHighLevelClientProvider() {
-    }
-
     private static RestHighLevelClientProvider INSTANCE;
 
     public static RestHighLevelClientProvider getInstance() {
@@ -38,4 +35,6 @@ public abstract class RestHighLevelClientProvider {
     }
 
     public abstract RestHighLevelClient getClient();
+
+    public abstract void setClient(final RestHighLevelClient client);
 }

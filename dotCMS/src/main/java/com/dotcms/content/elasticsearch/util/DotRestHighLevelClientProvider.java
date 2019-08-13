@@ -45,7 +45,6 @@ import org.apache.http.Header;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.client.CredentialsProvider;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.ssl.SSLContexts;
@@ -59,132 +58,128 @@ import org.jetbrains.annotations.NotNull;
  */
 public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider {
 
-    public static final String ES_CONFIG_DIR = "config";
-    public static final String ES_PATH_HOME = "es.path.home";
-    public static final String ES_PATH_HOME_DEFAULT_VALUE = "WEB-INF/elasticsearch";
-
-    public DotRestHighLevelClientProvider() {
-        super();
-    }
+    private static final String ES_CONFIG_DIR = "config";
+    private static final String ES_PATH_HOME = "es.path.home";
+    private static final String ES_PATH_HOME_DEFAULT_VALUE = "WEB-INF/elasticsearch";
 
     private static final String BASIC_AUTH_TYPE = "BASIC";
 
     private static final String JWT_AUTH_TYPE = "JWT";
 
-    private static class LazyHolder {
+    private RestHighLevelClient client;
 
-        static SSLContext sslContextFromPem;
+    private static SSLContext sslContextFromPem;
 
-        static CredentialsProvider credentialsProvider;
-
-        static RestClientBuilder clientBuilder;
-
-        static {
-            try {
-                loadCredentials();
-
-            } catch (IOException | GeneralSecurityException e) {
-                Logger.error(DotRestHighLevelClientProvider.class,
-                        "Error setting credentials for Elastic RestHighLevel Client", e);
-            }
+    DotRestHighLevelClientProvider() {
+        try {
+            final RestClientBuilder clientBuilder = getClientBuilder(getCredentialsProvider());
+            client = new RestHighLevelClient(clientBuilder);
+        } catch (IOException | GeneralSecurityException e) {
+            Logger.error(DotRestHighLevelClientProvider.class,
+                    "Error setting credentials for Elastic RestHighLevel Client", e);
         }
-
-        private static void loadCredentials() throws IOException, GeneralSecurityException {
-            final String esAuthType = Config.getStringProperty("ES_AUTH_TYPE", BASIC_AUTH_TYPE);
-
-            //Loading TLS certificates
-            if (Config.getBooleanProperty("ES_TLS_ENABLED", true)) {
-                loadTLSCertificates();
-            }
-
-            credentialsProvider = new BasicCredentialsProvider();
-
-            //Loading basic credentials if set
-            if (esAuthType.equals(BASIC_AUTH_TYPE)) {
-                credentialsProvider.setCredentials(AuthScope.ANY,
-                        new UsernamePasswordCredentials(
-                                Config.getStringProperty("ES_AUTH_BASIC_USER", null),
-                                Config.getStringProperty("ES_AUTH_BASIC_PASSWORD", null)));
-                Logger.info(DotRestHighLevelClientProvider.class,
-                        "Initializing Elastic RestHighLevelClient using Basic authentication");
-            }
-
-            initClientBuilder(esAuthType);
-
-        }
-
-        static final RestHighLevelClient INSTANCE = new RestHighLevelClient(clientBuilder);
-
-        private static void initClientBuilder(String esAuthType) {
-            clientBuilder = RestClient
-                    .builder(new HttpHost(Config.getStringProperty("ES_HOSTNAME", "127.0.0.1"),
-                            Config.getIntProperty("ES_PORT", 9200), "https"))
-                    .setHttpClientConfigCallback((httpClientBuilder) -> {
-                        if (LazyHolder.sslContextFromPem != null) {
-                            httpClientBuilder
-                                    .setSSLContext(LazyHolder.sslContextFromPem);
-                        }
-                        httpClientBuilder
-                                .setDefaultCredentialsProvider(LazyHolder.credentialsProvider);
-                        return httpClientBuilder;
-                    });
-
-            //Loading token if JWT authentication is set
-            if (esAuthType.equals(JWT_AUTH_TYPE)) {
-                clientBuilder.setDefaultHeaders(new Header[]{new BasicHeader("Authorization",
-                        "Bearer " + Config.getStringProperty("ES_AUTH_JWT_TOKEN", null))});
-                Logger.info(DotRestHighLevelClientProvider.class,
-                        "Initializing Elastic RestHighLevelClient using JWT authentication");
-            }
-        }
-
-        private static void loadTLSCertificates() throws IOException, GeneralSecurityException {
-            String clientCertPath = getCertPath("ES_AUTH_TLS_CLIENT_CERT", "esnode.pem");
-            String clientKeyPath = getCertPath("ES_AUTH_TLS_CLIENT_KEY", "esnode-key.pem");
-            String serverCertPath = getCertPath("ES_AUTH_TLS_CA_CERT", "root-ca.pem");
-
-            sslContextFromPem = SSLContexts
-                    .custom()
-                    .loadKeyMaterial(PemReader
-                            .loadKeyStore(
-                                    Paths.get(clientCertPath).toFile(),
-                                    Paths.get(clientKeyPath).toFile(),
-                                    Optional.empty()), "".toCharArray())
-                    .loadTrustMaterial(PemReader.loadTrustStore(
-                            Paths.get(serverCertPath).toFile()), null)
-                    .build();
-            Logger.info(DotRestHighLevelClientProvider.class,
-                    "Initializing Elastic RestHighLevelClient using TLS certificates");
-        }
-
-        @NotNull
-        private static String getCertPath(final String propertyName, final String fileName) throws IOException {
-            String clientCertPath = Config.getStringProperty(propertyName, null);
-            if (clientCertPath == null || !Files.exists(Paths.get(clientCertPath))) {
-
-                String assetsRealPath = Config.getStringProperty("ASSET_REAL_PATH",
-                        FileUtil.getRealPath(Config.getStringProperty("ASSET_PATH", "/assets")));
-
-                clientCertPath = assetsRealPath + File.separator + "certs" + File.separator + fileName;
-
-                if (!Files.exists(Paths.get(clientCertPath))) {
-                    File directory = new File(assetsRealPath + File.separator + "certs");
-                    if (!directory.exists()){
-                        directory.mkdirs();
-                    }
-
-                    Files.copy(Paths.get(getESPathHome() + File.separator + ES_CONFIG_DIR
-                                    + File.separator + fileName), Paths.get(clientCertPath),
-                            StandardCopyOption.COPY_ATTRIBUTES);
-                }
-            }
-            return clientCertPath;
-        }
-
-
     }
 
-    private static String getESPathHome() {
+    private BasicCredentialsProvider getCredentialsProvider() throws IOException, GeneralSecurityException {
+        final String esAuthType = getESAuthType();
+
+        //Loading TLS certificates
+        if (Config.getBooleanProperty("ES_TLS_ENABLED", true)) {
+            loadTLSCertificates();
+        }
+
+        final BasicCredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+
+        //Loading basic credentials if set
+        if (esAuthType.equals(BASIC_AUTH_TYPE)) {
+            credentialsProvider.setCredentials(AuthScope.ANY,
+                    new UsernamePasswordCredentials(
+                            Config.getStringProperty("ES_AUTH_BASIC_USER", null),
+                            Config.getStringProperty("ES_AUTH_BASIC_PASSWORD", null)));
+            Logger.info(DotRestHighLevelClientProvider.class,
+                    "Initializing Elastic RestHighLevelClient using Basic authentication");
+        }
+
+        return credentialsProvider;
+    }
+
+    private RestClientBuilder getClientBuilder(final BasicCredentialsProvider credentialsProvider) {
+        final String esAuthType = getESAuthType();
+
+        final RestClientBuilder clientBuilder = RestClient
+                .builder(new HttpHost(Config.getStringProperty("ES_HOSTNAME", "127.0.0.1"),
+                        Config.getIntProperty("ES_PORT", 9200), "https"))
+                .setHttpClientConfigCallback((httpClientBuilder) -> {
+                    if (sslContextFromPem != null) {
+                        httpClientBuilder
+                                .setSSLContext(sslContextFromPem);
+                    }
+                    httpClientBuilder
+                            .setDefaultCredentialsProvider(credentialsProvider);
+                    return httpClientBuilder;
+                });
+
+        //Loading token if JWT authentication is set
+        if (esAuthType.equals(JWT_AUTH_TYPE)) {
+            clientBuilder.setDefaultHeaders(new Header[]{new BasicHeader("Authorization",
+                    "Bearer " + Config.getStringProperty("ES_AUTH_JWT_TOKEN", null))});
+            Logger.info(DotRestHighLevelClientProvider.class,
+                    "Initializing Elastic RestHighLevelClient using JWT authentication");
+        }
+
+        return clientBuilder;
+    }
+
+    private String getESAuthType() {
+        return Config.getStringProperty("ES_AUTH_TYPE", BASIC_AUTH_TYPE);
+    }
+
+    private void loadTLSCertificates() throws IOException, GeneralSecurityException {
+        String clientCertPath = getCertPath("ES_AUTH_TLS_CLIENT_CERT", "esnode.pem");
+        String clientKeyPath = getCertPath("ES_AUTH_TLS_CLIENT_KEY", "esnode-key.pem");
+        String serverCertPath = getCertPath("ES_AUTH_TLS_CA_CERT", "root-ca.pem");
+
+        sslContextFromPem = SSLContexts
+                .custom()
+                .loadKeyMaterial(PemReader
+                        .loadKeyStore(
+                                Paths.get(clientCertPath).toFile(),
+                                Paths.get(clientKeyPath).toFile(),
+                                Optional.empty()), "".toCharArray())
+                .loadTrustMaterial(PemReader.loadTrustStore(
+                        Paths.get(serverCertPath).toFile()), null)
+                .build();
+        Logger.info(DotRestHighLevelClientProvider.class,
+                "Initializing Elastic RestHighLevelClient using TLS certificates");
+    }
+
+    @NotNull
+    private String getCertPath(final String propertyName, final String fileName) throws IOException {
+        String clientCertPath = Config.getStringProperty(propertyName, null);
+        if (clientCertPath == null || !Files.exists(Paths.get(clientCertPath))) {
+
+            String assetsRealPath = Config.getStringProperty("ASSET_REAL_PATH",
+                    FileUtil.getRealPath(Config.getStringProperty("ASSET_PATH", "/assets")));
+
+            clientCertPath = assetsRealPath + File.separator + "certs" + File.separator + fileName;
+
+            if (!Files.exists(Paths.get(clientCertPath))) {
+                File directory = new File(assetsRealPath + File.separator + "certs");
+                if (!directory.exists()){
+                    directory.mkdirs();
+                }
+
+                Files.copy(Paths.get(getESPathHome() + File.separator + ES_CONFIG_DIR
+                                + File.separator + fileName), Paths.get(clientCertPath),
+                        StandardCopyOption.COPY_ATTRIBUTES);
+            }
+        }
+        return clientCertPath;
+    }
+
+
+
+    private String getESPathHome() {
         String esPathHome = Config
                 .getStringProperty(ES_PATH_HOME, ES_PATH_HOME_DEFAULT_VALUE);
 
@@ -195,11 +190,19 @@ public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider 
     }
 
     public RestHighLevelClient getClient() {
-        return LazyHolder.INSTANCE;
+        return client;
     }
 
-    public static void close() throws IOException {
-        LazyHolder.INSTANCE.close();
+    public void setClient(final RestHighLevelClient theClient) {
+        if(theClient!=null) {
+            client = theClient;
+        }
+    }
+
+    public void close() throws IOException {
+        if(client!=null) {
+            client.close();
+        }
     }
 
     /*

@@ -85,7 +85,6 @@ import org.elasticsearch.client.Request;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.RestClient;
-import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.elasticsearch.client.indices.CreateIndexResponse;
 import org.elasticsearch.client.indices.GetIndexRequest;
@@ -116,7 +115,6 @@ public class ESIndexAPI {
 	public static final int INDEX_OPERATIONS_TIMEOUT_IN_MS =
 			Config.getIntProperty("ES_INDEX_OPERATIONS_TIMEOUT", 15000);
 
-	final private RestHighLevelClient esclient;
 	final private ContentletIndexAPI iapi;
 	final private ESIndexHelper esIndexHelper;
 	private final ServerAPI serverAPI;
@@ -135,7 +133,6 @@ public class ESIndexAPI {
 	}
 
 	public ESIndexAPI(){
-		this.esclient = RestHighLevelClientProvider.getInstance().getClient();
 		this.iapi = new ContentletIndexAPIImpl();
 		this.esIndexHelper = ESIndexHelper.INSTANCE;
 		this.serverAPI = APILocator.getServerAPI();
@@ -143,9 +140,8 @@ public class ESIndexAPI {
 	}
 
 	@VisibleForTesting
-	protected ESIndexAPI(final RestHighLevelClient esclient, final ContentletIndexAPIImpl iapi, final ESIndexHelper esIndexHelper,
+	protected ESIndexAPI(final ContentletIndexAPIImpl iapi, final ESIndexHelper esIndexHelper,
 						 final ServerAPI serverAPI, final ClusterAPI clusterAPI){
-		this.esclient = esclient;
 		this.iapi = iapi;
 		this.esIndexHelper = esIndexHelper;
 		this.serverAPI = serverAPI;
@@ -195,7 +191,8 @@ public class ESIndexAPI {
 		ClearIndicesCacheRequest request = new ClearIndicesCacheRequest(
 				indexNames.toArray(new String[0]));
 
-		ClearIndicesCacheResponse clearCacheResponse = Sneaky.sneak(()->(esclient.indices()
+		ClearIndicesCacheResponse clearCacheResponse = Sneaky.sneak(()->(
+				RestHighLevelClientProvider.getInstance().getClient().indices()
 				.clearCache(request, RequestOptions.DEFAULT)));
 
 
@@ -273,7 +270,8 @@ public class ESIndexAPI {
 			searchRequest.source(searchSourceBuilder);
 
 			final SearchResponse searchResponse = Sneaky.sneak(()->
-					esclient.search(searchRequest, RequestOptions.DEFAULT));
+					RestHighLevelClientProvider.getInstance().getClient().search(searchRequest,
+							RequestOptions.DEFAULT));
 
 			String scrollId = searchResponse.getScrollId();
 
@@ -282,8 +280,8 @@ public class ESIndexAPI {
 				// new way
 				SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId);
 				scrollRequest.scroll(TimeValue.timeValueMinutes(2));
-				SearchResponse searchScrollResponse = esclient
-						.scroll(scrollRequest, RequestOptions.DEFAULT);
+				SearchResponse searchScrollResponse = RestHighLevelClientProvider.getInstance()
+						.getClient().scroll(scrollRequest, RequestOptions.DEFAULT);
 
 				scrollId = searchResponse.getScrollId();
 
@@ -313,7 +311,8 @@ public class ESIndexAPI {
             final ForceMergeRequest forceMergeRequest = new ForceMergeRequest(indexNames.toArray(
 					new String[0]));
             final ForceMergeResponse forceMergeResponse =
-                esclient.indices().forcemerge(forceMergeRequest, RequestOptions.DEFAULT);
+					RestHighLevelClientProvider.getInstance().getClient()
+							.indices().forcemerge(forceMergeRequest, RequestOptions.DEFAULT);
 
             Logger.info(this.getClass(),
                 "Optimizing " + indexNames + " :" + forceMergeResponse.getSuccessfulShards()
@@ -335,8 +334,9 @@ public class ESIndexAPI {
             AdminLogger.log(this.getClass(), "delete", "Trying to delete index: " + indexName);
 			DeleteIndexRequest request = new DeleteIndexRequest(indexName);
 			request.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
-			AcknowledgedResponse deleteIndexResponse = esclient.indices()
-					.delete(request, RequestOptions.DEFAULT);
+			AcknowledgedResponse deleteIndexResponse =
+					RestHighLevelClientProvider.getInstance().getClient()
+							.indices().delete(request, RequestOptions.DEFAULT);
 
             AdminLogger.log(this.getClass(), "delete", "Index: " + indexName + " deleted.");
 
@@ -434,7 +434,8 @@ public class ESIndexAPI {
                                     }
                                 }
                                 if (request.numberOfActions() > 0) {
-                                	esclient.bulk(request, RequestOptions.DEFAULT);
+                                	RestHighLevelClientProvider.getInstance().getClient()
+											.bulk(request, RequestOptions.DEFAULT);
                                 }
                             } finally {
                                 jsons = new ArrayList<>();
@@ -469,7 +470,8 @@ public class ESIndexAPI {
 	public  Set<String> listIndices() {
 		final GetIndexRequest request = new GetIndexRequest("*");
 		final GetIndexResponse response = Sneaky.sneak(()->(
-				esclient.indices().get(request, RequestOptions.DEFAULT)));
+				RestHighLevelClientProvider.getInstance().getClient()
+						.indices().get(request, RequestOptions.DEFAULT)));
 
 		return new HashSet<>(Arrays.asList(response.getIndices()));
 	}
@@ -576,7 +578,8 @@ public class ESIndexAPI {
 				.endObject()
 				.endObject().toString(), XContentType.JSON);
 
-		esclient.indices().putSettings(request, RequestOptions.DEFAULT);
+		RestHighLevelClientProvider.getInstance().getClient()
+				.indices().putSettings(request, RequestOptions.DEFAULT);
     }
 
 	/**
@@ -590,7 +593,8 @@ public class ESIndexAPI {
 		UpdateSettingsRequest request = new UpdateSettingsRequest(index);
 		request.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
 		request.settings(builder.endObject().endObject().toString(), XContentType.JSON);
-		esclient.indices().putSettings(request, RequestOptions.DEFAULT);
+		RestHighLevelClientProvider.getInstance().getClient()
+				.indices().putSettings(request, RequestOptions.DEFAULT);
     }
 
 	/**
@@ -630,8 +634,9 @@ public class ESIndexAPI {
 		final CreateIndexRequest request = new CreateIndexRequest(indexName);
 		request.settings(map);
 		request.setTimeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
-		final CreateIndexResponse createIndexResponse = esclient.indices().
-				create(request, RequestOptions.DEFAULT);
+		final CreateIndexResponse createIndexResponse =
+				RestHighLevelClientProvider.getInstance().getClient()
+						.indices().create(request, RequestOptions.DEFAULT);
 
 		AdminLogger.log(this.getClass(), "createIndex",
 			"Index created: " + indexName + " with shards: " + shards);
@@ -691,7 +696,8 @@ public class ESIndexAPI {
 		ClusterHealthRequest request = new ClusterHealthRequest();
 		request.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
 		ClusterHealthResponse response = Sneaky.sneak(()->
-				esclient.cluster().health(request,RequestOptions.DEFAULT));
+				RestHighLevelClientProvider.getInstance().getClient()
+						.cluster().health(request,RequestOptions.DEFAULT));
 
 		return response.getIndices();
     }
@@ -729,7 +735,8 @@ public class ESIndexAPI {
 			UpdateSettingsRequest request = new UpdateSettingsRequest(indexName);
 			request.settings(newSettings);
 			request.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
-			Sneaky.sneak(()->esclient.indices().putSettings(request, RequestOptions.DEFAULT));
+			Sneaky.sneak(()->RestHighLevelClientProvider.getInstance().getClient()
+					.indices().putSettings(request, RequestOptions.DEFAULT));
 		}
 
 		AdminLogger.log(this.getClass(), "updateReplicas", "Replicas updated to index: " + indexName);
@@ -737,7 +744,7 @@ public class ESIndexAPI {
 
 //    public void putToIndex(String idx, String json, String id){
 //	   try{
-//		   Client client=new ESClient().getClient();
+//		   Client client=new RestHighLevelClientProvider.getInstance().getClient()().getClient();
 //
 //		   IndexResponse response = client.prepareIndex(idx, SiteSearchAPI.ES_SITE_SEARCH_MAPPING, id)
 //			        .setSource(json)
@@ -760,7 +767,8 @@ public class ESIndexAPI {
 				request.addAliasAction(IndicesAliasesRequest.AliasActions.add().alias(alias)
 						.index(indexName));
 				request.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
-				esclient.indices().updateAliases(request, RequestOptions.DEFAULT);
+				RestHighLevelClientProvider.getInstance().getClient().indices()
+						.updateAliases(request, RequestOptions.DEFAULT);
             }
          } catch (Exception e) {
              Logger.error(ESIndexAPI.class, e.getMessage(), e);
@@ -776,8 +784,9 @@ public class ESIndexAPI {
 
     	GetAliasesRequest request = new GetAliasesRequest();
 		request.indices(indexNames);
-		GetAliasesResponse response = Sneaky.sneak(()->esclient.indices()
-				.getAlias(request, RequestOptions.DEFAULT));
+		GetAliasesResponse response = Sneaky.sneak(()->
+				RestHighLevelClientProvider.getInstance().getClient()
+						.indices().getAlias(request, RequestOptions.DEFAULT));
 
 		Map<String,String> alias=new HashMap<>();
 
@@ -808,7 +817,8 @@ public class ESIndexAPI {
 
 		final CloseIndexRequest request = new CloseIndexRequest(indexName);
 		request.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
-        Sneaky.sneak(()->esclient.indices().close(request, RequestOptions.DEFAULT));
+        Sneaky.sneak(()->RestHighLevelClientProvider.getInstance().getClient()
+				.indices().close(request, RequestOptions.DEFAULT));
 
         AdminLogger.log(this.getClass(), "closeIndex", "Index: " + indexName + " closed");
     }
@@ -818,7 +828,8 @@ public class ESIndexAPI {
 
         final OpenIndexRequest request = new OpenIndexRequest(indexName);
 		request.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
-		Sneaky.sneak(()->esclient.indices().open(new OpenIndexRequest(indexName)));
+		Sneaky.sneak(()->RestHighLevelClientProvider.getInstance().getClient()
+				.indices().open(new OpenIndexRequest(indexName)));
 
         AdminLogger.log(this.getClass(), "openIndex", "Index: " + indexName + " opened");
     }
@@ -891,8 +902,8 @@ public class ESIndexAPI {
 			request.waitForCompletion(true);
 			request.indices(indexName);
 
-			CreateSnapshotResponse response = esclient.snapshot()
-					.create(request, RequestOptions.DEFAULT);
+			CreateSnapshotResponse response = RestHighLevelClientProvider.getInstance().getClient()
+					.snapshot().create(request, RequestOptions.DEFAULT);
 			if (response.status().equals(RestStatus.OK)) {
 				Logger.debug(this.getClass(), "Snapshot was created:" + snapshotName);
 			} else {
@@ -938,7 +949,8 @@ public class ESIndexAPI {
 
 		if (isRepositoryExist(repositoryName) && isSnapshotExist(repositoryName, snapshotName)) {
 			GetSnapshotsRequest getSnapshotsRequest = new GetSnapshotsRequest(repositoryName);
-			GetSnapshotsResponse getSnapshotsResponse = Sneaky.sneak(()->esclient.snapshot().
+			GetSnapshotsResponse getSnapshotsResponse = Sneaky.sneak(()->
+					RestHighLevelClientProvider.getInstance().getClient().snapshot().
 					get(getSnapshotsRequest, RequestOptions.DEFAULT));
 
 
@@ -951,9 +963,11 @@ public class ESIndexAPI {
 					}
 				}
 			}
-			RestoreSnapshotRequest restoreSnapshotRequest = new RestoreSnapshotRequest(repositoryName, snapshotName).waitForCompletion(true);
-			RestoreSnapshotResponse response = Sneaky.sneak(()->esclient.snapshot().restore(restoreSnapshotRequest,
-					RequestOptions.DEFAULT));
+			RestoreSnapshotRequest restoreSnapshotRequest =
+					new RestoreSnapshotRequest(repositoryName, snapshotName).waitForCompletion(true);
+			RestoreSnapshotResponse response = Sneaky.sneak(()->
+					RestHighLevelClientProvider.getInstance().getClient()
+							.snapshot().restore(restoreSnapshotRequest, RequestOptions.DEFAULT));
 
 			if (response.status() != RestStatus.OK) {
 				Logger.error(this.getClass(),
@@ -1107,7 +1121,8 @@ public class ESIndexAPI {
 		boolean result = false;
 
 		GetRepositoriesRequest request = new GetRepositoriesRequest();
-		GetRepositoriesResponse response = Sneaky.sneak(()->esclient.snapshot()
+		GetRepositoriesResponse response = Sneaky.sneak(()->
+				RestHighLevelClientProvider.getInstance().getClient().snapshot()
 				.getRepository(request, RequestOptions.DEFAULT));
 
 		List<RepositoryMetaData> repositories = response.repositories();
@@ -1152,7 +1167,8 @@ public class ESIndexAPI {
 			request.name(repositoryName);
 			request.type(FsRepository.TYPE);
 
-			AcknowledgedResponse response = Sneaky.sneak(()->esclient.snapshot()
+			AcknowledgedResponse response = Sneaky.sneak(()->
+					RestHighLevelClientProvider.getInstance().getClient().snapshot()
 					.createRepository(request, RequestOptions.DEFAULT));
 
 			if(result = response.isAcknowledged()){
@@ -1181,7 +1197,8 @@ public class ESIndexAPI {
 		GetSnapshotsRequest request = new GetSnapshotsRequest(repositoryName);
 		request.masterNodeTimeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
 
-		GetSnapshotsResponse response = Sneaky.sneak(()->esclient.snapshot()
+		GetSnapshotsResponse response = Sneaky.sneak(()->
+				RestHighLevelClientProvider.getInstance().getClient().snapshot()
 				.get(request, RequestOptions.DEFAULT));
 
 		List<SnapshotInfo> snapshotInfo = response.getSnapshots();
@@ -1227,8 +1244,9 @@ public class ESIndexAPI {
 				DeleteRepositoryRequest request = new DeleteRepositoryRequest(repositoryName);
 				request.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
 
-				AcknowledgedResponse response = esclient.snapshot()
-						.deleteRepository(request, RequestOptions.DEFAULT);
+				AcknowledgedResponse response =
+						RestHighLevelClientProvider.getInstance().getClient()
+								.snapshot().deleteRepository(request, RequestOptions.DEFAULT);
 
 				if (response.isAcknowledged()) {
 					Logger.info(this.getClass(), repositoryName + " repository has been deleted.");
@@ -1255,7 +1273,8 @@ public class ESIndexAPI {
 	public String getESRepositoryPath(){
 		ClusterGetSettingsRequest clusterGetSettingsRequest = new ClusterGetSettingsRequest();
 		clusterGetSettingsRequest.includeDefaults(true);
-		ClusterGetSettingsResponse clusterGetSettingsResponse = Sneaky.sneak(()-> esclient
+		ClusterGetSettingsResponse clusterGetSettingsResponse = Sneaky.sneak(()->
+				RestHighLevelClientProvider.getInstance().getClient()
 				.cluster().getSettings(clusterGetSettingsRequest, RequestOptions.DEFAULT));
 
 		final String repoPathFromConfig = clusterGetSettingsResponse.getSetting(REPOSITORY_PATH);
@@ -1305,7 +1324,8 @@ public class ESIndexAPI {
 	}
 
 	<T> T performLowLevelRequest(Request request, Class<T> mappingClass) {
-		final RestClient lowLevelClient = esclient.getLowLevelClient();
+		final RestClient lowLevelClient = RestHighLevelClientProvider.getInstance().getClient()
+				.getLowLevelClient();
 		final Response response = Sneaky.sneak(() -> lowLevelClient.performRequest(request));
 		final ObjectMapper mapper = new ObjectMapper();
 		return Sneaky.sneak(() -> mapper
