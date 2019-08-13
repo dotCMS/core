@@ -24,7 +24,6 @@ describe('DotPersonaDropdownSelectorComponent', () => {
         component = fixture.componentInstance;
         de = fixture.debugElement;
         component.persona = mockDotPersona;
-        component.label = 'Titulo';
         fixture.detectChanges();
     });
 

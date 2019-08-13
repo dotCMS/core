@@ -29,6 +29,7 @@ export class DotEditPageStateControllerComponent implements OnInit, OnChanges {
     @Input() pageState: DotRenderedPageState;
 
     lock: boolean;
+    lockWarn = false;
     mode: DotPageMode;
     options$: Observable<SelectItem[]>;
 
@@ -62,7 +63,14 @@ export class DotEditPageStateControllerComponent implements OnInit, OnChanges {
     }
 
     ngOnChanges(changes: SimpleChanges) {
-        this.setFieldsModels(changes.pageState.currentValue);
+        const pageState = changes.pageState.currentValue;
+        /*
+            When the page is lock but the page is being load from an user that can lock the page
+            we want to show the lock off so the new user can steal the lock
+        */
+        this.lock = pageState.state.locked && !this.canTakeLock(pageState);
+        this.lockWarn = pageState.page.canLock && pageState.state.lockedByAnotherUser;
+        this.mode = pageState.state.mode;
     }
 
     /**
@@ -166,11 +174,6 @@ export class DotEditPageStateControllerComponent implements OnInit, OnChanges {
 
     private isPersonalized(): boolean {
         return this.pageState.viewAs.persona && this.pageState.viewAs.persona.personalized;
-    }
-
-    private setFieldsModels(pageState: DotRenderedPageState): void {
-        this.lock = pageState.state.locked && !this.canTakeLock(pageState);
-        this.mode = pageState.state.mode;
     }
 
     private setLockerState() {

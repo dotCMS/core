@@ -2,18 +2,19 @@ import { async, ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { DebugElement } from '@angular/core';
 
-import { DOTTestBed } from '../../../../test/dot-test-bed';
-
-import { DotEditPageInfoComponent } from './dot-edit-page-info.component';
-import { DotMessageService } from '@services/dot-messages-service';
-import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
-import { mockUser } from '../../../../test/login-service.mock';
-import { DotRenderedPageState } from '@portlets/dot-edit-page/shared/models/dot-rendered-page-state.model';
-import { mockDotRenderedPage } from '../../../../test/dot-rendered-page.mock';
-import { SiteServiceMock } from '../../../../test/site-service.mock';
 import { SiteService } from 'dotcms-js';
+
+import { DOTTestBed } from '@tests/dot-test-bed';
+import { MockDotMessageService } from '@tests/dot-message-service.mock';
+import { SiteServiceMock } from '@tests/site-service.mock';
+import { mockDotRenderedPage } from '@tests/dot-page-render.mock';
+import { mockUser } from '@tests/login-service.mock';
+
 import { DotApiLinkModule } from '@components/dot-api-link/dot-api-link.module';
 import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
+import { DotEditPageInfoComponent } from './dot-edit-page-info.component';
+import { DotMessageService } from '@services/dot-messages-service';
+import { DotRenderedPageState } from '@portlets/dot-edit-page/shared/models/dot-rendered-page-state.model';
 import { LOCATION_TOKEN } from 'src/app/providers';
 
 const messageServiceMock = new MockDotMessageService({

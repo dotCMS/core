@@ -5,7 +5,7 @@ import {
     mockDotLayout,
     mockDotContainers,
     mockDotTemplate
-} from './dot-rendered-page.mock';
+} from './dot-page-render.mock';
 
 export const fakePageView: DotPageView = {
     containers: mockDotContainers,

@@ -23,7 +23,6 @@ import { DotContentletEditorModule } from '@components/dot-contentlet-editor/dot
 import { DotEditPageInfoModule } from '../components/dot-edit-page-info/dot-edit-page-info.module';
 import { DotEditPageWorkflowsActionsModule } from './components/dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.module';
 import { DotGlobalMessageModule } from '@components/_common/dot-global-message/dot-global-message.module';
-import { DotPersonalizeService } from '@services/dot-personalize/dot-personalize.service';
 
 const routes: Routes = [
     {
@@ -60,8 +59,7 @@ const routes: Routes = [
         DotEditContentToolbarHtmlService,
         DotEditPageService,
         DotPageRenderService,
-        DotWorkflowService,
-        DotPersonalizeService
+        DotWorkflowService
     ]
 })
 export class DotEditContentModule {}

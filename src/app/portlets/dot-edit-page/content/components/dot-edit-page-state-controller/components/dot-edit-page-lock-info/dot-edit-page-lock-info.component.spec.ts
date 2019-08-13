@@ -2,14 +2,14 @@ import { async, ComponentFixture, fakeAsync, tick } from '@angular/core/testing'
 import { By } from '@angular/platform-browser';
 import { DebugElement } from '@angular/core';
 
-import { DOTTestBed } from '../../../../../../../test/dot-test-bed';
+import { DOTTestBed } from '@tests/dot-test-bed';
+import { mockDotRenderedPage } from '@tests/dot-page-render.mock';
+import { mockUser } from '@tests/login-service.mock';
 
 import { DotEditPageLockInfoComponent } from './dot-edit-page-lock-info.component';
 import { DotMessageService } from '@services/dot-messages-service';
-import { MockDotMessageService } from '../../../../../../../test/dot-message-service.mock';
-import { mockUser } from '../../../../../../../test/login-service.mock';
 import { DotRenderedPageState } from '@portlets/dot-edit-page/shared/models/dot-rendered-page-state.model';
-import { mockDotRenderedPage } from '../../../../../../../test/dot-rendered-page.mock';
+import { MockDotMessageService } from '@tests/dot-message-service.mock';
 
 const messageServiceMock = new MockDotMessageService({
     'editpage.toolbar.page.cant.edit': 'No permissions...',

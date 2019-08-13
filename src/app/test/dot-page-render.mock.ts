@@ -1,5 +1,5 @@
-import { DotTemplate } from './../portlets/dot-edit-page/shared/models/dot-template.model';
-import { DotPage } from './../portlets/dot-edit-page/shared/models/dot-page.model';
+import { DotTemplate } from '../portlets/dot-edit-page/shared/models/dot-template.model';
+import { DotPage } from '../portlets/dot-edit-page/shared/models/dot-page.model';
 import { DotPageRender } from '@portlets/dot-edit-page/shared/models/dot-rendered-page.model';
 import { DotLayout } from '@portlets/dot-edit-page/shared/models/dot-layout.model';
 import { mockDotLanguage } from './dot-language.mock';
@@ -15,7 +15,7 @@ export const mockDotPage: DotPage = {
     languageId: 1,
     liveInode: '456',
     lockMessage: '',
-    lockedBy: 'someone',
+    lockedBy: '123',
     lockedByName: 'Some One',
     lockedOn: new Date(1517330917295),
     pageURI: '/an/url/test',
@@ -109,7 +109,7 @@ export const mockDotRenderedPage: DotPageRender = {
     template: mockDotTemplate,
     canCreateTemplate: true,
     viewAs: {
-        language: mockDotLanguage,
-        mode: DotPageMode[DotPageMode.PREVIEW]
+        language: mockDotLanguage.id,
+        mode: DotPageMode.PREVIEW
     }
 };

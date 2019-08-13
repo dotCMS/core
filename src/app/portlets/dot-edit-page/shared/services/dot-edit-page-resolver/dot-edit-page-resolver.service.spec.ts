@@ -1,5 +1,5 @@
 import { throwError as observableThrowError, of as observableOf } from 'rxjs';
-import { mockDotRenderedPage } from './../../../../../test/dot-rendered-page.mock';
+import { mockDotRenderedPage } from '../../../../../test/dot-page-render.mock';
 import { DotContentletLockerService } from '@services/dot-contentlet-locker/dot-contentlet-locker.service';
 import { DotPageRenderService } from '@services/dot-page-render/dot-page-render.service';
 import { DOTTestBed } from '../../../../../test/dot-test-bed';
@@ -14,7 +14,6 @@ import { async } from '@angular/core/testing';
 import { ActivatedRouteSnapshot } from '@angular/router';
 import { DotRenderedPageState } from '../../models/dot-rendered-page-state.model';
 import { mockResponseView } from '../../../../../test/response-view.mock';
-import { DotEditPageDataService } from './dot-edit-page-data.service';
 
 const route: any = jasmine.createSpyObj<ActivatedRouteSnapshot>('ActivatedRouteSnapshot', [
     'toString'
@@ -27,7 +26,6 @@ describe('DotEditPageResolver', () => {
     let dotPageStateService: DotPageStateService;
     let dotHttpErrorManagerService: DotHttpErrorManagerService;
     let dotRouterService: DotRouterService;
-    let dotEditPageDataService: DotEditPageDataService;
 
     beforeEach(async(() => {
         const testbed = DOTTestBed.configureTestingModule({
@@ -45,7 +43,6 @@ describe('DotEditPageResolver', () => {
                     provide: LoginService,
                     useClass: LoginServiceMock
                 },
-                DotEditPageDataService
             ],
             imports: [RouterTestingModule]
         });
@@ -54,7 +51,6 @@ describe('DotEditPageResolver', () => {
         dotPageStateService = testbed.get(DotPageStateService);
         dotHttpErrorManagerService = testbed.get(DotHttpErrorManagerService);
         dotRouterService = testbed.get(DotRouterService);
-        dotEditPageDataService = testbed.get(DotEditPageDataService);
     }));
 
     describe('content', () => {
@@ -218,7 +214,6 @@ describe('DotEditPageResolver', () => {
         );
 
         beforeEach(() => {
-            dotEditPageDataService.set(renderedPageState);
         });
 
         it('should return a DotRenderedPageState valid object', () => {

@@ -10,7 +10,7 @@ import { DotMessageService } from '@services/dot-messages-service';
 import { MockDotMessageService } from '../../../../../test/dot-message-service.mock';
 import { TemplateContainersCacheService } from '../../../template-containers-cache.service';
 import { DotSidebarPropertiesModule } from '../dot-sidebar-properties/dot-sidebar-properties.module';
-import { mockDotContainers } from '../../../../../test/dot-rendered-page.mock';
+import { mockDotContainers } from '../../../../../test/dot-page-render.mock';
 import { DotLayoutSideBar } from '@portlets/dot-edit-page/shared/models/dot-layout-sidebar.model';
 import { DotEditLayoutService } from '@portlets/dot-edit-page/shared/services/dot-edit-layout.service';
 

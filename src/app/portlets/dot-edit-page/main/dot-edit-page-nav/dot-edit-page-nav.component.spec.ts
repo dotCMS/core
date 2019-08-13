@@ -10,7 +10,7 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { TooltipModule } from 'primeng/primeng';
 import { async, ComponentFixture } from '@angular/core/testing';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
-import { mockDotRenderedPage } from './../../../../test/dot-rendered-page.mock';
+import { mockDotRenderedPage } from '../../../../test/dot-page-render.mock';
 import { mockUser } from './../../../../test/login-service.mock';
 import { Injectable, Component, Input } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';

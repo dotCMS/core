@@ -15,7 +15,7 @@ import {
     mockDotLayout,
     mockDotRenderedPage,
     mockDotPage
-} from '../../../../../test/dot-rendered-page.mock';
+} from '../../../../../test/dot-page-render.mock';
 import { DotCMSContentType } from 'dotcms-models';
 import { DotLicenseService } from '@services/dot-license/dot-license.service';
 import { Injectable } from '@angular/core';

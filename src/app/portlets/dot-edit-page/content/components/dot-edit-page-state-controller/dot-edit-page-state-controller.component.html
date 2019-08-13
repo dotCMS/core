@@ -6,7 +6,7 @@
 ></p-selectButton>
 <p-inputSwitch
     #locker
-    [class.warn]="pageState.page.canLock && pageState.state.lockedByAnotherUser"
+    [class.warn]="lockWarn"
     [disabled]="!pageState.page.canLock"
     [(ngModel)]="lock"
     (onChange)="lockPageHandler()"

@@ -1,8 +1,6 @@
 import { ComponentFixture, async } from '@angular/core/testing';
 import {
-    DotPersonaSelectorComponent,
-    defaultVisitorPersona
-} from './dot-persona-selector.component';
+    DotPersonaSelectorComponent,} from './dot-persona-selector.component';
 import { DebugElement, Component, Input } from '@angular/core';
 import { MockDotMessageService } from '../../../test/dot-message-service.mock';
 import { DOTTestBed } from '../../../test/dot-test-bed';
@@ -14,7 +12,7 @@ import { mockDotPersona } from '@tests/dot-persona.mock';
 import { DotPersonaSelectedItemModule } from '@components/dot-persona-selected-item/dot-persona-selected-item.module';
 import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
 import { DotPersonaSelectorOptionModule } from '@components/dot-persona-selector-option/dot-persona-selector-option.module';
-import { mockDotPage } from '@tests/dot-rendered-page.mock';
+import { mockDotPage } from '@tests/dot-page-render.mock';
 import { of } from 'rxjs';
 import { PaginatorService } from '@services/paginator';
 
@@ -115,23 +113,13 @@ describe('DotPersonaSelectorComponent', () => {
         expect(dropdown.componentInstance.totalRecords).toBe(1);
     });
 
-    it('should set "No Persona" (Default Visitor) value when no persona defined', () => {
-        expect(de.componentInstance.value).toEqual(defaultVisitorPersona);
-    });
-
     it('should keep persona value when set by parent container', () => {
         hostFixture.componentInstance.persona = mockDotPersona;
         hostFixture.detectChanges();
         expect(de.componentInstance.value).toEqual(mockDotPersona);
     });
 
-    it('should render dot-persona-selected-item template with persona data', () => {
-        hostFixture.whenStable().then(() => {
-            hostFixture.detectChanges();
-            const selectedItem = hostFixture.debugElement.query(By.css('dot-persona-selected-item'));
-            expect(selectedItem.componentInstance.persona).toEqual(defaultVisitorPersona);
-        });
-    });
+
 
     it('should call toggle when selected dot-persona-selected-item', () => {
         spyOn(dropdown.componentInstance, 'toggleOverlayPanel');

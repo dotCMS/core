@@ -3,7 +3,7 @@ import { TemplateContainersCacheService } from './../../../../template-container
 import { DotEditLayoutService } from './../../../../shared/services/dot-edit-layout.service';
 import { DotEditLayoutGridModule } from './../../../components/dot-edit-layout-grid/dot-edit-layout-grid.module';
 import { DotActionButtonModule } from './../../../../../../view/components/_common/dot-action-button/dot-action-button.module';
-import { mockDotRenderedPage } from './../../../../../../test/dot-rendered-page.mock';
+import { mockDotRenderedPage } from '../../../../../../test/dot-page-render.mock';
 import { async, ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { DebugElement } from '@angular/core';

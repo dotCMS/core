@@ -3,7 +3,7 @@ import { ConnectionBackend, Response, ResponseOptions } from '@angular/http';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { DotPageLayoutService } from './dot-page-layout.service';
 import { DOTTestBed } from '../../../test/dot-test-bed';
-import { mockDotLayout } from '../../../test/dot-rendered-page.mock';
+import { mockDotLayout } from '../../../test/dot-page-render.mock';
 
 describe('PageViewService', () => {
     let service: DotPageLayoutService;

@@ -1,6 +1,6 @@
 export interface DotDevice {
-    cssHeight?: string;
-    cssWidth?: string;
-    name?: string;
+    cssHeight: string;
+    cssWidth: string;
+    name: string;
     inode: string;
 }
