@@ -10,6 +10,8 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 
+import io.vavr.control.Try;
+
 public class LocalTransaction {
 
   private static enum TransactionErrorEnum {
@@ -228,13 +230,12 @@ public class LocalTransaction {
 
     
     
-    private final static String LocalTransationName= "LocalTransaction.java";
+    private final static String LocalTransationName= LocalTransaction.class.getCanonicalName();
     static public boolean inLocalTransaction() {
       StackTraceElement[] stes =  Thread.currentThread().getStackTrace();
       for(int i=2;i<stes.length;i++) {
-        StackTraceElement ste = stes[i];
-        String steName = ste.getFileName();
-
+        final int stackNumber=i;
+        String steName = Try.of(()->stes[stackNumber].getClassName()).getOrNull();
         if(LocalTransationName.equals(steName)) {
           return true;
         }
