@@ -32,6 +32,9 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.pwd.PwdToolkitUtil;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.util.GetterUtil;
+
+import io.vavr.control.Try;
+
 import java.text.MessageFormat;
 import java.util.Calendar;
 import java.util.Date;
@@ -202,15 +205,20 @@ public class UserAPIImpl implements UserAPI {
        return this.anonUser;
     }
     
-
+    
+    @Override
+    public User getAnonymousUserNoThrow()  {
+      return Try.of(() -> getAnonymousUser()).getOrElseThrow(e->new DotRuntimeException(e));
+    }
+    
 	@WrapInTransaction
 	private User _getAnonymousUser() throws DotDataException {
 		User user = null;
 		try {
-			user = userFactory.loadUserById("anonymous");
+			user = userFactory.loadUserById(CMS_ANON_USER_ID);
 		} catch (DotDataException e) {
-			user = createUser("anonymous", "anonymous@dotcmsfakeemail.org");
-			user.setUserId("anonymous");
+			user = createUser(CMS_ANON_USER_ID, "anonymous@dotcmsfakeemail.org");
+			user.setUserId(CMS_ANON_USER_ID);
 			user.setFirstName("anonymous user");
 			user.setCreateDate(new java.util.Date());
 			user.setCompanyId(PublicCompanyFactory.getDefaultCompanyId());
@@ -218,7 +226,7 @@ public class UserAPIImpl implements UserAPI {
 			com.dotmarketing.business.APILocator.getRoleAPI().addRoleToUser(com.dotmarketing.business.APILocator.getRoleAPI().loadRoleByKey(Config.getStringProperty("CMS_ANONYMOUS_ROLE")).getId(), user);
 		} catch (NoSuchUserException e) {
 			user = createUser("anonymous", "anonymous@dotcmsfakeemail.org");
-			user.setUserId("anonymous");
+			user.setUserId(CMS_ANON_USER_ID);
 			user.setFirstName("anonymous user");
 			user.setCreateDate(new java.util.Date());
 			user.setCompanyId(PublicCompanyFactory.getDefaultCompanyId());

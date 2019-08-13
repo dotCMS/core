@@ -16,7 +16,6 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.filters.Constants;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.HTMLPageAssetRenderedBuilder;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.PageView;
@@ -213,17 +212,14 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                     PageContextBuilder.builder()
                         .setPageMode(PageMode.PREVIEW_MODE)
                         .setPageUri(pageUri)
-                        .setUser(user)
+                        .setUser(systemUser)
                         .build(),
                     host,
                     request
             );
 
-            final ContentletVersionInfo info = this.versionableAPI.
-                    getContentletVersionInfo(htmlPageAsset.getIdentifier(), htmlPageAsset.getLanguageId());
-
-            return user.getUserId().equals(info.getLockedBy()) ? PageMode.EDIT_MODE
-                    : getNotLockDefaultPageMode(htmlPageAsset, user);
+            return this.permissionAPI.doesUserHavePermission(htmlPageAsset, PermissionLevel.READ.getType(), user, false)
+                    ? PageMode.PREVIEW_MODE : PageMode.ADMIN_MODE;
         } catch (DotDataException | DotSecurityException e) {
             throw new DotRuntimeException(e);
         }
@@ -245,14 +241,6 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                 .setResponse(response)
                 .setSite(host)
                 .getPageHTML();
-    }
-
-    private PageMode getNotLockDefaultPageMode(
-            final IHTMLPage htmlPageAsset,
-            final User user
-    ) throws DotDataException {
-        return this.permissionAPI.doesUserHavePermission(htmlPageAsset, PermissionLevel.READ.getType(), user, false)
-                ? PageMode.PREVIEW_MODE : PageMode.ADMIN_MODE;
     }
 
     private IHTMLPage getHtmlPageAsset(

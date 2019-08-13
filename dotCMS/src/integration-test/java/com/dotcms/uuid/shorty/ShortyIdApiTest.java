@@ -10,6 +10,7 @@ import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.LinkDataGen;
 import com.dotcms.datagen.RelationshipDataGen;
 import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -547,7 +548,7 @@ public class ShortyIdApiTest {
         ShortyIdAPI api = APILocator.getShortyAPI();
         User systemUser = APILocator.systemUser();
         String testingFileName = "TESTING.PNG";
-        DotTempFile temp =  APILocator.getTempFileAPI().createEmptyTempFile(testingFileName, systemUser, "noKey");
+        DotTempFile temp =  APILocator.getTempFileAPI().createEmptyTempFile(testingFileName, new MockHttpRequest("localhost", "/api/v1/tempResource").request() );
 
         new FileOutputStream(temp.file).close();
         assertEquals(temp.id, api.shortify(temp.id));

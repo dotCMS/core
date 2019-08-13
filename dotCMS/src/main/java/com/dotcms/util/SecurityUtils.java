@@ -235,7 +235,7 @@ public class SecurityUtils {
    * @param url
    * @return
    */
-  private String hostFromUrl(final String url) {
+  public String hostFromUrl(final String url) {
     if(url==null) return null;
     return Try.of(() -> {
       return (url.contains("://")) ? new URL(url.trim()).getHost().toLowerCase() : new URL("http://" + url.trim()).getHost().toLowerCase();
