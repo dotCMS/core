@@ -2153,6 +2153,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
     final String permissionKey = Try.of(() -> permissionable.getPermissionId())
         .getOrElseThrow(() -> new DotDataException("Invalid Permissionable passed in. permissionable:" + permissionable));
 
+    Logger.info(this.getClass(), "looking for :"  + permissionKey);
     // Step 1. cache lookup first
     List<Permission> permissionList = permissionCache.getPermissionsFromCache(permissionKey);
     if (permissionList != null) {
@@ -2179,9 +2180,9 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
       bitPermissionsList.forEach(p -> p.setBitPermission(true));
       // adding to cache if found
-      if (!bitPermissionsList.isEmpty()) {
-        permissionCache.addToPermissionCache(permissionKey, bitPermissionsList);
-      }
+      
+      permissionCache.addToPermissionCache(permissionKey, bitPermissionsList);
+      
       return bitPermissionsList;
 
     })).getOrElseThrow(e -> new DotDataException(e));
@@ -2204,7 +2205,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
     while (parentPermissionable != null) {
       permissionList = getInheritablePermissions(parentPermissionable, type);
-      if (!permissionList.isEmpty()) {
+      if (!permissionList.isEmpty() || Host.SYSTEM_HOST.equals(parentPermissionable.getPermissionId())) {
         break;
       }
       parentPermissionable = parentPermissionable.getParentPermissionable();

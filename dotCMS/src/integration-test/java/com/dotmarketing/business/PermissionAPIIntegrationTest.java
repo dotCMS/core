@@ -236,6 +236,8 @@ public class PermissionAPIIntegrationTest extends IntegrationTestBase {
     			);
     			permissionAPI.save(inheritedPermission, host, systemUser, true);
 
+    			permissionAPI.resetPermissionsUnder(host);
+    			
     			// Check the permissions for content-type are now inherited from test host
     			permissions = permissionAPI.getPermissions(type);
     			assertFalse(permissions.isEmpty());
