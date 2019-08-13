@@ -44,3 +44,6 @@ echo ""
 
 gcloud auth activate-service-account --key-file="${credentialsFile}"
 gsutil -m -q cp -a public-read -r ${outputFolder} ${buckedPath}
+
+bash /build/github_status.sh ${buckedPath}
+ignoring_return_value=$?
