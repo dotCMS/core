@@ -25,23 +25,23 @@ import java.util.List;
  * User can customize the {@link AutoAssignWorkflowDelegate} in order to use their on implementation when a contentlet is not assigned.
  * @author jsanca
  */
-public class CheckInUnAssignWorkflowStepCheckerListener implements EventSubscriber<ContentletCheckinEvent> {
+public class UnassignedWorkflowContentletCheckinListener implements EventSubscriber<ContentletCheckinEvent> {
 
     private volatile AutoAssignWorkflowDelegate customAutoAssignWorkflowDelegate;
     private final    AutoAssignWorkflowDelegate autoAssignWorkflowDelegate =
-            CheckInUnAssignWorkflowStepCheckerListener::assign;
+            UnassignedWorkflowContentletCheckinListener::assign;
 
     private static class SingletonHolder {
-        private static final CheckInUnAssignWorkflowStepCheckerListener INSTANCE = new CheckInUnAssignWorkflowStepCheckerListener();
+        private static final UnassignedWorkflowContentletCheckinListener INSTANCE = new UnassignedWorkflowContentletCheckinListener();
     }
 
     /**
      * Get the instance.
-     * @return CheckInUnAssignWorkflowStepCheckerListener
+     * @return UnassignedWorkflowContentletCheckinListener
      */
-    public static CheckInUnAssignWorkflowStepCheckerListener getInstance() {
+    public static UnassignedWorkflowContentletCheckinListener getInstance() {
 
-        return CheckInUnAssignWorkflowStepCheckerListener.SingletonHolder.INSTANCE;
+        return UnassignedWorkflowContentletCheckinListener.SingletonHolder.INSTANCE;
     } // getInstance.
 
     /**
@@ -110,7 +110,7 @@ public class CheckInUnAssignWorkflowStepCheckerListener implements EventSubscrib
             }
         } catch (DotDataException | DotSecurityException e) {
 
-            Logger.error(CheckInUnAssignWorkflowStepCheckerListener.class, e.getMessage(), e);
+            Logger.error(UnassignedWorkflowContentletCheckinListener.class, e.getMessage(), e);
         }
     }
 
@@ -148,4 +148,4 @@ public class CheckInUnAssignWorkflowStepCheckerListener implements EventSubscrib
                 .findFirstStep(SystemWorkflowConstants.SYSTEM_WORKFLOW_ID).get();
         APILocator.getWorkflowAPI().saveWorkflowTask(createWorkflowTask(contentlet, user, workflowStep));
     }
-} // E:O:F:CheckInUnAssignWorkflowStepCheckerListener.
+} // E:O:F:UnassignedWorkflowContentletCheckinListener.
