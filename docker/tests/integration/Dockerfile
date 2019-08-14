@@ -54,6 +54,9 @@ VOLUME /custom/output
 COPY setup/build-src/publish.sh /build/publish.sh
 RUN chmod 500 /build/publish.sh
 
+COPY setup/build-src/github_status.sh /build/github_status.sh
+RUN chmod 500 /build/github_status.sh
+
 COPY setup/build-src/entrypoint.sh /build/entrypoint.sh
 RUN chmod 500 /build/entrypoint.sh
 
