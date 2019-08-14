@@ -13,7 +13,7 @@
 <uri>http://struts.apache.org/tags-nested</uri>
 <tag>
 <name>nest</name>
-<tagclass>org.apache.struts.taglib.nested.NestedPropertyTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.nested.NestedPropertyTag</tagclass>
 <bodycontent>JSP</bodycontent>
 <attribute>
 <name>property</name>
@@ -23,8 +23,8 @@
 </tag>
 <tag>
 <name>writeNesting</name>
-<tagclass>org.apache.struts.taglib.nested.NestedWriteNestingTag</tagclass>
-<teiclass>org.apache.struts.taglib.nested.NestedWriteNestingTei</teiclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.nested.NestedWriteNestingTag</tagclass>
+<teiclass>com.dotcms.repackage.org.apache.struts.taglib.nested.NestedWriteNestingTei</teiclass>
 <bodycontent>JSP</bodycontent>
 <attribute>
 <name>property</name>
@@ -44,7 +44,7 @@
 </tag>
 <tag>
 <name>root</name>
-<tagclass>org.apache.struts.taglib.nested.NestedRootTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.nested.NestedRootTag</tagclass>
 <bodycontent>JSP</bodycontent>
 <attribute>
 <name>name</name>
@@ -54,8 +54,8 @@
 </tag>
 <tag>
 <name>define</name>
-<tagclass>org.apache.struts.taglib.nested.bean.NestedDefineTag</tagclass>
-<teiclass>org.apache.struts.taglib.nested.bean.NestedDefineTei</teiclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.nested.bean.NestedDefineTag</tagclass>
+<teiclass>com.dotcms.repackage.org.apache.struts.taglib.nested.bean.NestedDefineTei</teiclass>
 <bodycontent>empty</bodycontent>
 <attribute>
 <name>id</name>
@@ -95,7 +95,7 @@
 </tag>
 <tag>
 <name>message</name>
-<tagclass>org.apache.struts.taglib.nested.bean.NestedMessageTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.nested.bean.NestedMessageTag</tagclass>
 <bodycontent>empty</bodycontent>
 <attribute>
 <name>arg0</name>
@@ -155,8 +155,8 @@
 </tag>
 <tag>
 <name>size</name>
-<tagclass>org.apache.struts.taglib.nested.bean.NestedSizeTag</tagclass>
-<teiclass>org.apache.struts.taglib.bean.SizeTei</teiclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.nested.bean.NestedSizeTag</tagclass>
+<teiclass>com.dotcms.repackage.org.apache.struts.taglib.bean.SizeTei</teiclass>
 <bodycontent>empty</bodycontent>
 <attribute>
 <name>collection</name>
@@ -186,7 +186,7 @@
 </tag>
 <tag>
 <name>write</name>
-<tagclass>org.apache.struts.taglib.nested.bean.NestedWriteTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.nested.bean.NestedWriteTag</tagclass>
 <bodycontent>empty</bodycontent>
 <attribute>
 <name>bundle</name>
@@ -236,7 +236,7 @@
 </tag>
 <tag>
 <name>checkbox</name>
-<tagclass>org.apache.struts.taglib.nested.html.NestedCheckboxTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.nested.html.NestedCheckboxTag</tagclass>
 <attribute>
 <name>accesskey</name>
 <required>false</required>
@@ -375,7 +375,7 @@
 </tag>
 <tag>
 <name>errors</name>
-<tagclass>org.apache.struts.taglib.nested.html.NestedErrorsTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.nested.html.NestedErrorsTag</tagclass>
 <bodycontent>empty</bodycontent>
 <attribute>
 <name>bundle</name>
@@ -400,7 +400,7 @@
 </tag>
 <tag>
 <name>file</name>
-<tagclass>org.apache.struts.taglib.nested.html.NestedFileTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.nested.html.NestedFileTag</tagclass>
 <attribute>
 <name>accesskey</name>
 <required>false</required>
@@ -554,7 +554,7 @@
 </tag>
 <tag>
 <name>form</name>
-<tagclass>org.apache.struts.taglib.nested.html.NestedFormTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.nested.html.NestedFormTag</tagclass>
 <bodycontent>JSP</bodycontent>
 <attribute>
 <name>action</name>
@@ -609,7 +609,7 @@
 </tag>
 <tag>
 <name>hidden</name>
-<tagclass>org.apache.struts.taglib.nested.html.NestedHiddenTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.nested.html.NestedHiddenTag</tagclass>
 <attribute>
 <name>alt</name>
 <required>false</required>
@@ -668,7 +668,7 @@
 </tag>
 <tag>
 <name>image</name>
-<tagclass>org.apache.struts.taglib.nested.html.NestedImageTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.nested.html.NestedImageTag</tagclass>
 <attribute>
 <name>accesskey</name>
 <required>false</required>
@@ -837,7 +837,7 @@
 </tag>
 <tag>
 <name>img</name>
-<tagclass>org.apache.struts.taglib.nested.html.NestedImgTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.nested.html.NestedImgTag</tagclass>
 <bodycontent>empty</bodycontent>
 <attribute>
 <name>accesskey</name>
@@ -1012,7 +1012,7 @@
 </tag>
 <tag>
 <name>link</name>
-<tagclass>org.apache.struts.taglib.nested.html.NestedLinkTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.nested.html.NestedLinkTag</tagclass>
 <attribute>
 <name>accesskey</name>
 <required>false</required>
@@ -1196,8 +1196,8 @@
 </tag>
 <tag>
 <name>messages</name>
-<tagclass>org.apache.struts.taglib.nested.html.NestedMessagesTag</tagclass>
-<teiclass>org.apache.struts.taglib.html.MessagesTei</teiclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.nested.html.NestedMessagesTag</tagclass>
+<teiclass>com.dotcms.repackage.org.apache.struts.taglib.html.MessagesTei</teiclass>
 <bodycontent>JSP</bodycontent>
 <attribute>
 <name>id</name>
@@ -1242,7 +1242,7 @@
 </tag>
 <tag>
 <name>multibox</name>
-<tagclass>org.apache.struts.taglib.nested.html.NestedMultiboxTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.nested.html.NestedMultiboxTag</tagclass>
 <attribute>
 <name>accesskey</name>
 <required>false</required>
@@ -1376,7 +1376,7 @@
 </tag>
 <tag>
 <name>options</name>
-<tagclass>org.apache.struts.taglib.nested.html.NestedOptionsTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.nested.html.NestedOptionsTag</tagclass>
 <bodycontent>empty</bodycontent>
 <attribute>
 <name>collection</name>
@@ -1421,7 +1421,7 @@
 </tag>
 <tag>
 <name>optionsCollection</name>
-<tagclass>org.apache.struts.taglib.nested.html.NestedOptionsCollectionTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.nested.html.NestedOptionsCollectionTag</tagclass>
 <bodycontent>empty</bodycontent>
 <attribute>
 <name>filter</name>
@@ -1461,7 +1461,7 @@
 </tag>
 <tag>
 <name>password</name>
-<tagclass>org.apache.struts.taglib.nested.html.NestedPasswordTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.nested.html.NestedPasswordTag</tagclass>
 <attribute>
 <name>accesskey</name>
 <required>false</required>
@@ -1620,7 +1620,7 @@
 </tag>
 <tag>
 <name>radio</name>
-<tagclass>org.apache.struts.taglib.nested.html.NestedRadioTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.nested.html.NestedRadioTag</tagclass>
 <attribute>
 <name>accesskey</name>
 <required>false</required>
@@ -1739,7 +1739,7 @@
 </tag>
 <tag>
 <name>select</name>
-<tagclass>org.apache.struts.taglib.nested.html.NestedSelectTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.nested.html.NestedSelectTag</tagclass>
 <bodycontent>JSP</bodycontent>
 <attribute>
 <name>accesskey</name>
@@ -1889,7 +1889,7 @@
 </tag>
 <tag>
 <name>submit</name>
-<tagclass>org.apache.struts.taglib.nested.html.NestedSubmitTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.nested.html.NestedSubmitTag</tagclass>
 <attribute>
 <name>accesskey</name>
 <required>false</required>
@@ -2023,7 +2023,7 @@
 </tag>
 <tag>
 <name>text</name>
-<tagclass>org.apache.struts.taglib.nested.html.NestedTextTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.nested.html.NestedTextTag</tagclass>
 <attribute>
 <name>accesskey</name>
 <required>false</required>
@@ -2177,7 +2177,7 @@
 </tag>
 <tag>
 <name>textarea</name>
-<tagclass>org.apache.struts.taglib.nested.html.NestedTextareaTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.nested.html.NestedTextareaTag</tagclass>
 <attribute>
 <name>accesskey</name>
 <required>false</required>
@@ -2331,7 +2331,7 @@
 </tag>
 <tag>
 <name>empty</name>
-<tagclass>org.apache.struts.taglib.nested.logic.NestedEmptyTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.nested.logic.NestedEmptyTag</tagclass>
 <bodycontent>JSP</bodycontent>
 <attribute>
 <name>name</name>
@@ -2351,7 +2351,7 @@
 </tag>
 <tag>
 <name>equal</name>
-<tagclass>org.apache.struts.taglib.nested.logic.NestedEqualTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.nested.logic.NestedEqualTag</tagclass>
 <bodycontent>JSP</bodycontent>
 <attribute>
 <name>cookie</name>
@@ -2391,7 +2391,7 @@
 </tag>
 <tag>
 <name>greaterEqual</name>
-<tagclass>org.apache.struts.taglib.nested.logic.NestedGreaterEqualTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.nested.logic.NestedGreaterEqualTag</tagclass>
 <bodycontent>JSP</bodycontent>
 <attribute>
 <name>cookie</name>
@@ -2431,7 +2431,7 @@
 </tag>
 <tag>
 <name>greaterThan</name>
-<tagclass>org.apache.struts.taglib.nested.logic.NestedGreaterThanTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.nested.logic.NestedGreaterThanTag</tagclass>
 <bodycontent>JSP</bodycontent>
 <attribute>
 <name>cookie</name>
@@ -2471,8 +2471,8 @@
 </tag>
 <tag>
 <name>iterate</name>
-<tagclass>org.apache.struts.taglib.nested.logic.NestedIterateTag</tagclass>
-<teiclass>org.apache.struts.taglib.nested.logic.NestedIterateTei</teiclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.nested.logic.NestedIterateTag</tagclass>
+<teiclass>com.dotcms.repackage.org.apache.struts.taglib.nested.logic.NestedIterateTei</teiclass>
 <bodycontent>JSP</bodycontent>
 <attribute>
 <name>collection</name>
@@ -2522,7 +2522,7 @@
 </tag>
 <tag>
 <name>lessEqual</name>
-<tagclass>org.apache.struts.taglib.nested.logic.NestedLessEqualTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.nested.logic.NestedLessEqualTag</tagclass>
 <bodycontent>JSP</bodycontent>
 <attribute>
 <name>cookie</name>
@@ -2562,7 +2562,7 @@
 </tag>
 <tag>
 <name>lessThan</name>
-<tagclass>org.apache.struts.taglib.nested.logic.NestedLessThanTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.nested.logic.NestedLessThanTag</tagclass>
 <bodycontent>JSP</bodycontent>
 <attribute>
 <name>cookie</name>
@@ -2602,7 +2602,7 @@
 </tag>
 <tag>
 <name>match</name>
-<tagclass>org.apache.struts.taglib.nested.logic.NestedMatchTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.nested.logic.NestedMatchTag</tagclass>
 <bodycontent>JSP</bodycontent>
 <attribute>
 <name>cookie</name>
@@ -2647,7 +2647,7 @@
 </tag>
 <tag>
 <name>messagesNotPresent</name>
-<tagclass>org.apache.struts.taglib.nested.logic.NestedMessagesNotPresentTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.nested.logic.NestedMessagesNotPresentTag</tagclass>
 <bodycontent>JSP</bodycontent>
 <attribute>
 <name>name</name>
@@ -2667,7 +2667,7 @@
 </tag>
 <tag>
 <name>messagesPresent</name>
-<tagclass>org.apache.struts.taglib.nested.logic.NestedMessagesPresentTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.nested.logic.NestedMessagesPresentTag</tagclass>
 <bodycontent>JSP</bodycontent>
 <attribute>
 <name>name</name>
@@ -2687,7 +2687,7 @@
 </tag>
 <tag>
 <name>notEmpty</name>
-<tagclass>org.apache.struts.taglib.nested.logic.NestedNotEmptyTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.nested.logic.NestedNotEmptyTag</tagclass>
 <bodycontent>JSP</bodycontent>
 <attribute>
 <name>name</name>
@@ -2707,7 +2707,7 @@
 </tag>
 <tag>
 <name>notEqual</name>
-<tagclass>org.apache.struts.taglib.nested.logic.NestedNotEqualTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.nested.logic.NestedNotEqualTag</tagclass>
 <bodycontent>JSP</bodycontent>
 <attribute>
 <name>cookie</name>
@@ -2747,7 +2747,7 @@
 </tag>
 <tag>
 <name>notMatch</name>
-<tagclass>org.apache.struts.taglib.nested.logic.NestedNotMatchTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.nested.logic.NestedNotMatchTag</tagclass>
 <bodycontent>JSP</bodycontent>
 <attribute>
 <name>cookie</name>
@@ -2792,7 +2792,7 @@
 </tag>
 <tag>
 <name>notPresent</name>
-<tagclass>org.apache.struts.taglib.nested.logic.NestedNotPresentTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.nested.logic.NestedNotPresentTag</tagclass>
 <bodycontent>JSP</bodycontent>
 <attribute>
 <name>cookie</name>
@@ -2837,7 +2837,7 @@
 </tag>
 <tag>
 <name>present</name>
-<tagclass>org.apache.struts.taglib.nested.logic.NestedPresentTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.nested.logic.NestedPresentTag</tagclass>
 <bodycontent>JSP</bodycontent>
 <attribute>
 <name>cookie</name>

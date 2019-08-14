@@ -1,6 +1,11 @@
 package com.dotmarketing.portlets.files.struts;
 
 
+import com.dotcms.repackage.org.apache.struts.action.ActionErrors;
+import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
+import com.dotcms.repackage.org.apache.struts.action.ActionMessage;
+import com.dotcms.repackage.org.apache.struts.action.ActionMessages;
+import com.dotcms.repackage.org.apache.struts.validator.ValidatorForm;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -17,11 +22,6 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang.builder.ToStringBuilder;
-import org.apache.struts.action.ActionErrors;
-import org.apache.struts.action.ActionMapping;
-import org.apache.struts.action.ActionMessage;
-import org.apache.struts.action.ActionMessages;
-import org.apache.struts.validator.ValidatorForm;
 
 /** @author Hibernate CodeGenerator */
 public class FileForm extends ValidatorForm {

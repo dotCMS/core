@@ -17,9 +17,10 @@
 
 package org.apache.velocity.tools.struts;
 
+import com.dotcms.repackage.org.apache.struts.action.ActionForm;
+import com.dotcms.repackage.org.apache.struts.taglib.html.Constants;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
-import org.apache.struts.action.ActionForm;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
@@ -140,11 +141,11 @@ public class FormTool implements ViewTool
      * must be reported if form validation is to be skipped.</p>
      *
      * <p>This is the value of
-     * <code>org.apache.struts.taglib.html.Constants.CANCEL_PROPERTY</code></p>
+     * <code>com.dotcms.repackage.org.apache.struts.taglib.html.Constants.CANCEL_PROPERTY</code></p>
      */
     public String getCancelName()
     {
-        return org.apache.struts.taglib.html.Constants.CANCEL_PROPERTY;
+        return Constants.CANCEL_PROPERTY;
     }
 
 
@@ -161,11 +162,11 @@ public class FormTool implements ViewTool
     /**
      * <p>Returns the query parameter name under which a transaction token
      * must be reported. This is the value of
-     * <code>org.apache.struts.taglib.html.Constants.TOKEN_KEY</code></p>
+     * <code>com.dotcms.repackage.org.apache.struts.taglib.html.Constants.TOKEN_KEY</code></p>
      */
     public String getTokenName()
     {
-        return org.apache.struts.taglib.html.Constants.TOKEN_KEY;
+        return Constants.TOKEN_KEY;
     }
 
 }

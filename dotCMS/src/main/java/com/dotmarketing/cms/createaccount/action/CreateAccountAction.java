@@ -2,6 +2,12 @@ package com.dotmarketing.cms.createaccount.action;
 
 import com.dotcms.enterprise.PasswordFactoryProxy;
 import com.dotcms.enterprise.de.qaware.heimdall.PasswordException;
+import com.dotcms.repackage.org.apache.struts.action.ActionErrors;
+import com.dotcms.repackage.org.apache.struts.action.ActionForm;
+import com.dotcms.repackage.org.apache.struts.action.ActionForward;
+import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
+import com.dotcms.repackage.org.apache.struts.action.ActionMessage;
+import com.dotcms.repackage.org.apache.struts.action.ActionMessages;
 import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
@@ -37,12 +43,6 @@ import java.util.Date;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.apache.struts.action.ActionErrors;
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionForward;
-import org.apache.struts.action.ActionMapping;
-import org.apache.struts.action.ActionMessage;
-import org.apache.struts.action.ActionMessages;
 
 @Deprecated
 public class CreateAccountAction extends SecureAction {
@@ -124,7 +124,7 @@ public class CreateAccountAction extends SecureAction {
 				request.getSession().setAttribute(WebKeys.REDIRECT_AFTER_LOGIN,af.getPath());                                
 			}
 
-			ae.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("message.createaccount.success"));    		
+			ae.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("message.createaccount.success"));
 			saveMessages(request, ae);
 			return af;
 		}

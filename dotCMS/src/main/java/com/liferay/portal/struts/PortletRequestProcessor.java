@@ -22,14 +22,23 @@
 
 package com.liferay.portal.struts;
 
+import com.dotcms.repackage.com.oroad.stxx.plugin.StxxTilesRequestProcessor;
+import com.dotcms.repackage.org.apache.struts.action.Action;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletException;
 import com.dotcms.repackage.javax.portlet.RenderRequest;
 import com.dotcms.repackage.javax.portlet.RenderResponse;
+import com.dotcms.repackage.org.apache.struts.Globals;
+import com.dotcms.repackage.org.apache.struts.action.ActionErrors;
+import com.dotcms.repackage.org.apache.struts.action.ActionForm;
+import com.dotcms.repackage.org.apache.struts.action.ActionForward;
+import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
+import com.dotcms.repackage.org.apache.struts.action.ActionServlet;
+import com.dotcms.repackage.org.apache.struts.config.ForwardConfig;
+import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
 import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.util.Logger;
-import com.liferay.portal.ejb.PortletManagerUtil;
 import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.Constants;
@@ -44,22 +53,12 @@ import com.liferay.portlet.RenderRequestImpl;
 import com.liferay.portlet.RenderResponseImpl;
 import com.liferay.util.StringPool;
 import com.liferay.util.Validator;
-import com.oroad.stxx.plugin.StxxTilesRequestProcessor;
 import java.io.IOException;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.struts.Globals;
-import org.apache.struts.action.Action;
-import org.apache.struts.action.ActionErrors;
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionForward;
-import org.apache.struts.action.ActionMapping;
-import org.apache.struts.action.ActionServlet;
-import org.apache.struts.config.ForwardConfig;
-import org.apache.struts.config.ModuleConfig;
 
 /**
  * <a href="PortletRequestProcessor.java.html"><b><i>View Source</i></b></a>

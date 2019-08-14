@@ -16,12 +16,12 @@
 
 package org.apache.velocity.tools.struts;
 
+import com.dotcms.repackage.org.apache.struts.action.SecurePlugInInterface;
+import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
+import com.dotcms.repackage.org.apache.struts.config.SecureActionConfig;
 import java.util.Iterator;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
-import org.apache.struts.action.SecurePlugInInterface;
-import org.apache.struts.config.ModuleConfig;
-import org.apache.struts.config.SecureActionConfig;
 import org.apache.velocity.tools.view.tools.LinkTool;
 
 /**
