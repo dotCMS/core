@@ -32,7 +32,6 @@ export class DotPersonaSelectedItemComponent implements OnInit {
             .pipe(take(1))
             .subscribe((messages: { [key: string]: string }) => {
                 this.messages = messages;
-                console.log('this.messages', this.messages);
             });
     }
 
