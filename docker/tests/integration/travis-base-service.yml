@@ -16,6 +16,7 @@ services:
       EXTRA_PARAMS:
       GOOGLE_CREDENTIALS_BASE64:
       exportReports:
+      PULL_REQUEST:
       WAIT_DB_FOR: 2m
     depends_on:
       - database

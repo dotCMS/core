@@ -10,7 +10,7 @@ fi
 # Examples
 # https://storage.googleapis.com/cicd-246518-tests/integration/19-08-13/0253ef83cdfecf5c370fd59ebf80491551b4e0a0/mysql/reports/html/integrationTest/index.html
 # https://storage.googleapis.com/cicd-246518-tests/integration/19-08-13/0253ef83cdfecf5c370fd59ebf80491551b4e0a0/mysql/logs/dotcms.log
-if [ "$TRAVIS_PULL_REQUEST" != "false" ];
+if [ "$PULL_REQUEST" != "false" ];
 then
 
   reportsIndexURL="${GOOGLE_STORAGE_JOB_FOLDER}/reports/html/integrationTest/index.html"
@@ -22,6 +22,8 @@ then
   echo "  >>>   Storage folder for job: [${GOOGLE_STORAGE_JOB_FOLDER}]"
   echo "  >>>   Reports URL for job: [${reportsIndexURL}]"
   echo "  >>>   Log URL for job: [${logURL}]"
+  echo "  >>>   GITHUB pull request: [https://github.com/dotCMS/core/pull/${PULL_REQUEST}]"
+  echo "  >>>   Job build status: ${CURRENT_JOB_BUILD_STATUS}"
   echo "================================================================================"
   echo "================================================================================"
   echo ""
@@ -35,7 +37,7 @@ then
 
   # https://developer.github.com/v3/pulls/#get-a-single-pull-request
   jsonResponse=$(curl -u ${GITHUB_USER}:${GITHUB_USER_TOKEN} \
-  --request GET https://api.github.com/repos/dotCMS/core/pulls/${TRAVIS_PULL_REQUEST} -s)
+  --request GET https://api.github.com/repos/dotCMS/core/pulls/${PULL_REQUEST} -s)
 
   # Parse the response json to get the statuses URL
   jsonStatusesAttribute=`echo "$jsonResponse" | grep "${jsonAttribute}\w*\""`
