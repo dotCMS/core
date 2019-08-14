@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.workflows.business;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
@@ -14,6 +15,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -27,6 +29,8 @@ import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionlet;
+import com.dotmarketing.portlets.workflows.model.WorkflowStep;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
 import org.junit.AfterClass;
@@ -120,6 +124,7 @@ public class SaveContentDraftActionletTest extends BaseWorkflowIntegrationTest {
 
                 if (null != SaveContentDraftActionletTest.schemeStepActionResult) {
 
+                    deleteWorkflowTaskByStep (SaveContentDraftActionletTest.schemeStepActionResult.getStep());
                     SaveContentDraftActionletTest.cleanScheme(SaveContentDraftActionletTest.schemeStepActionResult.getScheme());
                 }
             } finally {
@@ -136,6 +141,17 @@ public class SaveContentDraftActionletTest extends BaseWorkflowIntegrationTest {
             }
         }
     } // cleanup
+
+    @WrapInTransaction
+    private static void deleteWorkflowTaskByStep(final WorkflowStep step) {
+
+        try {
+            new DotConnect().setSQL("delete from workflow_task where status = ?")
+                    .addParam(step.getId()).loadResult();
+        } catch (DotDataException e) {
+            Logger.error(SaveContentDraftActionletTest.class, e.getMessage(), e);
+        }
+    }
 
     @Test
     public void saveContentDraftTest() throws DotDataException, DotSecurityException {

@@ -110,6 +110,8 @@ public class WorkflowResourceLicenseIntegrationTest {
         ContentletAPI contentletAPI = APILocator.getContentletAPI();
         roleAPI = APILocator.getRoleAPI();
         ContentHelper contentHelper = ContentHelper.getInstance();
+        final SystemActionApiFireCommandFactory systemActionApiFireCommandFactory =
+                SystemActionApiFireCommandFactory.getInstance();
         PermissionAPI permissionAPI = APILocator.getPermissionAPI();
         WorkflowImportExportUtil workflowImportExportUtil = WorkflowImportExportUtil.getInstance();
 
@@ -144,13 +146,13 @@ public class WorkflowResourceLicenseIntegrationTest {
         licenseWorkflowResource = new WorkflowResource(licensedWorkflowHelper, contentHelper,
                 licensedWorkflowAPI,
                 contentletAPI, responseUtil, permissionAPI, workflowImportExportUtil, new MultiPartUtils(),
-                webResourceThatReturnsAdminUser);
+                webResourceThatReturnsAdminUser, systemActionApiFireCommandFactory);
 
         nonLicenseWorkflowResource = new WorkflowResource(nonLicensedWorkflowHelper, contentHelper,
                 nonLicensedWorkflowAPI,
                 contentletAPI, responseUtil, permissionAPI, workflowImportExportUtil,
                 new MultiPartUtils(),
-                webResourceThatReturnsARandomUser); //Returns Bill
+                webResourceThatReturnsARandomUser, systemActionApiFireCommandFactory); //Returns Bill
     }
 
 

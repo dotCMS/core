@@ -79,7 +79,7 @@ public class DotDatabaseMetaData {
         ForeignKey foundForeignKey = null;
         final List<ForeignKey> foreignKeys = this.getForeignKeys(connection, foreignKeyTableName);
 
-        for (ForeignKey foreignKey : foreignKeys) {
+        for (final ForeignKey foreignKey : foreignKeys) {
 
             if (primaryKeyTableName.equalsIgnoreCase(foreignKey.getPrimaryKeyTableName()) &&
                     foreignKeyTableName.equalsIgnoreCase(foreignKey.getForeignKeyTableName()) &&
@@ -315,6 +315,43 @@ public class DotDatabaseMetaData {
         }
     } // executeDropForeignKeyMySql.
 
+    /**
+     * Returns true if the table already exists
+     * @param connection {@link Connection}
+     * @param tableName  {@link String}
+     * @return Boolean true if exists, otherwise false
+     * @throws SQLException
+     */
+    public boolean tableExists(final Connection connection, final String tableName) throws SQLException {
+
+        boolean exists                        = false;
+        DatabaseMetaData databaseMetaData     = null;
+        ResultSet        resultSet            = null;
+        String           schema               = null;
+        String           table                = tableName;
+
+        try {
+
+            databaseMetaData = connection.getMetaData();
+
+            if (DbConnectionFactory.isOracle()) {
+                table = table.toUpperCase();
+                schema = databaseMetaData.getUserName();
+            }
+
+            resultSet = databaseMetaData.getTables
+                    (connection.getCatalog(), schema, table, null);
+
+            // Iterates over the foreign foreignKey columns
+            exists = resultSet.next();
+        } catch (SQLException e) {
+            Logger.error(this,
+                    "An error occurred when getting the the table: " + e.getMessage(), e);
+            throw e;
+        }
+
+        return exists;
+    }
 
     /**
      * Returns the columns list of the table as a list
