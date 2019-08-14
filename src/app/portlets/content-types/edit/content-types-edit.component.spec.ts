@@ -355,18 +355,6 @@ describe('ContentTypesEditComponent', () => {
                     workflow: ['123', '456']
                 });
             });
-
-            it('should remove systemActionMappings when empty', () => {
-                spyOn(crudService, 'postData').and.returnValue(of([]));
-
-                contentTypeForm.triggerEventHandler('onSubmit', {
-                    systemActionMappings: {
-                        NEW: ''
-                    }
-                });
-
-                expect(crudService.postData).toHaveBeenCalledWith('v1/contenttype', {});
-            });
         });
 
         describe('bind dialog actions to form', () => {

@@ -4,8 +4,6 @@ import { Component, ViewChild, OnInit, OnDestroy } from '@angular/core';
 
 import {
     DotCMSContentType,
-    DotCMSSystemActionType,
-    DotCMSSystemActionMappings,
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutRow,
     DotCMSWorkflow
@@ -386,17 +384,7 @@ export class ContentTypesEditComponent implements OnInit, OnDestroy {
             delete value.workflows;
         }
 
-        if (this.isSystemActionsMappingsEmpty(value.systemActionMappings)) {
-            delete value.systemActionMappings;
-        }
-
         return value;
-    }
-
-    private isSystemActionsMappingsEmpty(
-        systemActionMappings: DotCMSSystemActionMappings
-    ): boolean {
-        return systemActionMappings && systemActionMappings[DotCMSSystemActionType.NEW] === '';
     }
 
     private getWorkflowsIds(workflows: DotCMSWorkflow[]): string[] {
