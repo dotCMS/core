@@ -12,6 +12,10 @@ $toolbar-height: 52px;
         .ui-toolbar {
             height: $toolbar-height;
         }
+
+        .ui-toolbar-group-right {
+            flex: 0
+        }
     }
 }
 

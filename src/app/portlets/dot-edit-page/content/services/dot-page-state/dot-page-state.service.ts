@@ -71,7 +71,9 @@ export class DotPageStateService {
      * @memberof DotPageStateService
      */
     reload(): void {
-        this.get();
+        this.get({
+            mode: this.currentState.state.mode
+        });
     }
 
     /**
