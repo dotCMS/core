@@ -32,15 +32,15 @@ jobs:
       env: DB_TYPE=postgres
       name: postgres
       script: bash travis/run.sh
-#    - script: bash travis/run.sh
-#      env: DB_TYPE=mysql
-#      name: mysql
-#    - script: bash travis/run.sh
-#      env: DB_TYPE=oracle
-#      name: oracle
-#    - script: bash travis/run.sh
-#      env: DB_TYPE=mssql
-#      name: mssql
+    - script: bash travis/run.sh
+      env: DB_TYPE=mysql
+      name: mysql
+    - script: bash travis/run.sh
+      env: DB_TYPE=oracle
+      name: oracle
+    - script: bash travis/run.sh
+      env: DB_TYPE=mssql
+      name: mssql
 
 install:
   - travis/environment_vars.sh

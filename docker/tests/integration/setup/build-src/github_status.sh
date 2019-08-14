@@ -53,7 +53,7 @@ then
     \"state\": \"${GITHUB_STATUS}\",
     \"description\": \"Log: ${logURL}\",
     \"target_url\": \"${reportsIndexURL}\",
-    \"context\": \"${databaseType}/CI/travis\"
+    \"context\": \"Travis CI - [${databaseType}]\"
   }" \
-  $statusesURL
+  $statusesURL -s
 fi
