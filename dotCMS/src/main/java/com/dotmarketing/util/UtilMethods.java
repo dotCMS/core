@@ -2,6 +2,7 @@ package com.dotmarketing.util;
 
 
 import com.dotcms.repackage.com.csvreader.CsvReader;
+import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -65,7 +66,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import org.apache.commons.beanutils.PropertyUtils;
-import org.apache.struts.Globals;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
@@ -414,26 +414,7 @@ public class UtilMethods {
         return isValidEmail((String) email);
     }
 
-    /**
-     * Description of the Method
-     *
-     * @param cmdline
-     *            Description of the Parameter
-     * @return Description of the Return Value
-     *
-     * public static final String CmdExec(String cmdline) { StringBuffer sb =
-     * new StringBuffer();
-     *
-     * try { String line; Process p = Runtime.getRuntime().exec(cmdline);
-     * BufferedReader input = new BufferedReader(new InputStreamReader(p
-     * .getInputStream()));
-     *
-     * while ((line = input.readLine()) != null) { sb.append(line); }
-     *
-     * input.close(); } catch (Exception err) { sb.append(err); }
-     *
-     * return sb.toString(); }
-     */
+
     public static final String dateToDayViewDate(java.util.Date x) {
         if (x == null) {
             return "";
@@ -1789,8 +1770,8 @@ public class UtilMethods {
     /**
      * Special split function, to split csv files exported from access
      *
-     * @param reader
-     *            The file reader
+     * @param text
+     *
      * @param delim
      *            The columns delimiter
      * @param textQualifier
@@ -2478,7 +2459,6 @@ public class UtilMethods {
     /**
      * Return is a date is equals or before the actual date
      *
-     * @param date
      * @return
      */
     public static Date getCurrentDate() {

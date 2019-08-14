@@ -8,6 +8,8 @@ import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.container.ResourceInfo;
 import javax.ws.rs.ext.Provider;
+
+import com.dotcms.repackage.org.apache.struts.Globals;
 import org.glassfish.jersey.server.ContainerRequest;
 import org.glassfish.jersey.server.internal.routing.UriRoutingContext;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
@@ -25,7 +27,6 @@ import javax.inject.Singleton;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
-import org.apache.struts.Globals;
 
 /**
  * This filter decorates the headers in addition to apply Request Commander associated to the annotations.

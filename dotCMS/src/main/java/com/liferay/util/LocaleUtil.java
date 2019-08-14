@@ -24,6 +24,7 @@ package com.liferay.util;
 
 import com.dotcms.auth.providers.jwt.JsonWebTokenUtils;
 import com.dotcms.company.CompanyAPI;
+import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.util.security.Encryptor;
 import com.dotcms.util.security.EncryptorFactory;
 import com.dotmarketing.business.APILocator;
@@ -44,7 +45,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.struts.Globals;
 
 /**
  * <a href="LocaleUtil.java.html"><b><i>View Source</i></b></a>

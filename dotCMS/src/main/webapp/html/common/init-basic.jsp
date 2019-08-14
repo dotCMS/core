@@ -152,7 +152,7 @@ else {
 	signedIn = true;
 }
 
-Locale locale = (Locale)session.getAttribute(org.apache.struts.Globals.LOCALE_KEY);
+Locale locale = (Locale)session.getAttribute(com.dotcms.repackage.org.apache.struts.Globals.LOCALE_KEY);
 if (locale == null) {
 
 	// Locale should never be null except when the TCK tests invalidate the session

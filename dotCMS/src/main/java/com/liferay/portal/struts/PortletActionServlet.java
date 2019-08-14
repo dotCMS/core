@@ -22,13 +22,13 @@
 
 package com.liferay.portal.struts;
 
+import com.dotcms.repackage.org.apache.struts.Globals;
+import com.dotcms.repackage.org.apache.struts.action.ActionServlet;
+import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
 import com.liferay.portal.util.WebKeys;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
-import org.apache.struts.Globals;
-import org.apache.struts.action.ActionServlet;
-import org.apache.struts.config.ModuleConfig;
 
 /**
  * <a href="PortletActionServlet.java.html"><b><i>View Source</i></b></a>

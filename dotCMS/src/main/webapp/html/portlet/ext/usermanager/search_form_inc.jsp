@@ -13,7 +13,7 @@
 	if(form == null){
 		form = new UserManagerListSearchForm();
 	}
-	pageContext.setAttribute("org.apache.struts.taglib.html.BEAN",form);
+	pageContext.setAttribute("com.dotcms.repackage.org.apache.struts.taglib.html.BEAN",form);
 
 	String active = null;
 	if (form != null) {

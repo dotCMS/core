@@ -22,6 +22,9 @@
 
 package com.liferay.portal.language;
 
+import com.dotcms.repackage.org.apache.struts.Globals;
+import com.dotcms.repackage.org.apache.struts.taglib.TagUtils;
+import com.dotcms.repackage.org.apache.struts.util.MessageResources;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -47,9 +50,6 @@ import javax.servlet.http.HttpSession;
 import javax.servlet.jsp.PageContext;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.struts.Globals;
-import org.apache.struts.taglib.TagUtils;
-import org.apache.struts.util.MessageResources;
 
 /**
  * <a href="LanguageUtil.java.html"><b><i>View Source</i></b></a>
