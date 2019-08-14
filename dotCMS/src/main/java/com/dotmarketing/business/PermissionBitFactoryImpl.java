@@ -1,7 +1,6 @@
 package com.dotmarketing.business;
 
 import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
-import static com.dotcms.exception.ExceptionUtil.bubbleUpException;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
@@ -14,9 +13,7 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.rendering.velocity.viewtools.navigation.NavResult;
-
 import com.dotcms.system.SimpleMapAppContext;
-import com.dotcms.util.ReturnableDelegate;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -58,11 +55,8 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-
 import com.liferay.portal.model.User;
-
 import io.vavr.control.Try;
-
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -1020,16 +1014,19 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 		List<Permission> bitPermissionsList = null;
 
-		if(!forceLoadFromDB) {
+		if(forceLoadFromDB) {
+		     /*
 			bitPermissionsList = permissionCache
 					.getPermissionsFromCache(permissionable.getPermissionId());
+		      */
+			permissionCache.remove(permissionable.getPermissionId());
 		}
 
 		//No permissions in cache have to look for individual permissions or inherited permissions
-		if (bitPermissionsList == null) {
+		//if (bitPermissionsList == null) {
 
 				bitPermissionsList = loadPermissions(permissionable);
-		}
+		//}
 		bitPermissionsList = filterOnlyNonInheritablePermissions(bitPermissionsList, permissionable.getPermissionId());
 
 		if(!bitPermissions) {
@@ -2225,7 +2222,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
     })).onFailure(e -> {
       throw new DotRuntimeException(e);
     });
-
+	permissionCache.addToPermissionCache(permissionKey, permissionList);
     return permissionList;
 
   }
