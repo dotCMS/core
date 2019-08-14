@@ -17,6 +17,8 @@ services:
       GOOGLE_CREDENTIALS_BASE64:
       exportReports:
       PULL_REQUEST:
+      GITHUB_USER:
+      GITHUB_USER_TOKEN:
       WAIT_DB_FOR: 2m
     depends_on:
       - database
