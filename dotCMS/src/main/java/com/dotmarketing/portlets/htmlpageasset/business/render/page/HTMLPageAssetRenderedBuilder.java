@@ -4,6 +4,8 @@ import com.dotmarketing.factories.MultiTreeAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.language.LanguageUtil;
+import io.vavr.control.Try;
 import java.util.*;
 
 import javax.servlet.http.HttpServletRequest;
@@ -105,7 +107,9 @@ public class HTMLPageAssetRenderedBuilder {
         final Set<String> pagePersonalizationSet  = this.multiTreeAPI.getPersonalizationsForPage(htmlPageAsset.getIdentifier());
         final Template template = getTemplate(mode);
         if(!UtilMethods.isSet(template) && mode.equals(PageMode.ADMIN_MODE)){
-            throw new DotStateException("This page cannot be viewed on Live Mode because the template is unpublished or archived.");
+            throw new DotStateException(
+                    Try.of(() -> LanguageUtil.get(user.getLocale(), "template.archived.page.live.mode.error"))
+                            .getOrElse("This page cannot be viewed on Live Mode because the template is unpublished or archived"));
         }
         final Language language = WebAPILocator.getLanguageWebAPI().getLanguage(request);
 
