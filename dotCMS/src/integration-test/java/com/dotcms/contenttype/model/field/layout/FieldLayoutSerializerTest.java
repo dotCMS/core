@@ -1,9 +1,12 @@
 package com.dotcms.contenttype.model.field.layout;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalization;
+import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.util.IntegrationTestInitService;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -11,12 +14,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.liferay.portal.model.User;
+import java.io.IOException;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import java.io.IOException;
-
-import static org.mockito.Mockito.*;
 
 public class FieldLayoutSerializerTest {
 
@@ -27,7 +27,9 @@ public class FieldLayoutSerializerTest {
 
     @Test()
     public void testSerialize() throws IOException, DotDataException, DotSecurityException {
-        final ContentType contactUs = APILocator.getContentTypeAPI(APILocator.systemUser()).find("ContactUs");
+
+
+        final ContentType contactUs = new ContentTypeDataGen().name("any-content-type").nextPersisted();
         final FieldLayout fieldLayout = new FieldLayout(contactUs);
 
         final ObjectMapper mapper = mock(ObjectMapper.class);
@@ -48,7 +50,7 @@ public class FieldLayoutSerializerTest {
 
     @Test()
     public void testSerializeWhenPassContentTypeInternationalization() throws IOException, DotDataException, DotSecurityException {
-        final ContentType contactUs = APILocator.getContentTypeAPI(APILocator.systemUser()).find("ContactUs");
+        final ContentType contactUs = new ContentTypeDataGen().name("any-content-type").nextPersisted();
 
         final long languageId = 1;
         final boolean live = true;
