@@ -17,7 +17,7 @@ RUN mkdir -p /custom \
 #  One of ["COMMIT", "TAG" ]
 ARG BUILD_FROM=COMMIT
 ENV BUILD_FROM=${BUILD_FROM}
-ARG BUILD_ID
+ARG BUILD_ID=origin/master
 ENV BUILD_ID=${BUILD_ID}
 ARG BUILD_HASH
 ENV BUILD_HASH=${BUILD_HASH}
@@ -29,7 +29,7 @@ WORKDIR /srv
 
 # dotCMS core distributed under GPLv3 license (https://github.com/dotCMS/core/blob/master/license.txt)
 COPY setup/build-src/checkout.sh /build/checkout.sh
-RUN chmod 500 /build/checkout.sh && /build/checkout.sh ${BUILD_FROM} ${BUILD_HASH}
+RUN chmod 500 /build/checkout.sh && /build/checkout.sh ${BUILD_FROM} ${BUILD_ID}
 
 COPY setup/build-src/overrideProperties.sh /build/overrideProperties.sh
 RUN chmod 500 /build/overrideProperties.sh && /build/overrideProperties.sh
