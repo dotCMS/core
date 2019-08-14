@@ -18,6 +18,7 @@ import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
@@ -469,7 +470,8 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		db.loadResult();
 	}
 
-	public void deleteWorkflowTaskByWebAsset(final String webAsset) throws DotDataException {
+	@Override
+	public void deleteWorkflowTaskByContentletIdAnyLanguage(final String webAsset) throws DotDataException {
 
 		new DotConnect().setSQL("delete from workflow_comment where workflowtask_id   in (select id from workflow_task where webasset = ?)")
 				.addParam(webAsset).loadResult();
@@ -482,6 +484,38 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 		new DotConnect().setSQL("delete from workflow_task where webasset = ?")
 				.addParam(webAsset).loadResult();
+	}
+
+	@Override
+	public void deleteWorkflowTaskByContentletIdAndLanguage(final String webAsset, final long languageId) throws DotDataException {
+
+		new DotConnect().setSQL("delete from workflow_comment where workflowtask_id   in (select id from workflow_task where webasset = ? and language_id=?)")
+				.addParam(webAsset).addParam(languageId).loadResult();
+
+		new DotConnect().setSQL("delete from workflow_history where workflowtask_id   in (select id from workflow_task where webasset = ? and language_id=?)")
+				.addParam(webAsset).addParam(languageId).loadResult();
+
+		new DotConnect().setSQL("delete from workflowtask_files where workflowtask_id in (select id from workflow_task where webasset = ? and language_id=?)")
+				.addParam(webAsset).addParam(languageId).loadResult();
+
+		new DotConnect().setSQL("delete from workflow_task where webasset = ? and language_id=?")
+				.addParam(webAsset).addParam(languageId).loadResult();
+	}
+
+	@Override
+	public void deleteWorkflowTaskByLanguage(final Language language) throws DotDataException {
+
+		new DotConnect().setSQL("delete from workflow_comment where workflowtask_id   in (select id from workflow_task where language_id=?)")
+				.addParam(language.getId()).loadResult();
+
+		new DotConnect().setSQL("delete from workflow_history where workflowtask_id   in (select id from workflow_task where language_id=?)")
+				.addParam(language.getId()).loadResult();
+
+		new DotConnect().setSQL("delete from workflowtask_files where workflowtask_id in (select id from workflow_task where language_id=?)")
+				.addParam(language.getId()).loadResult();
+
+		new DotConnect().setSQL("delete from workflow_task where language_id=?")
+				.addParam(language.getId()).loadResult();
 	}
 
 	@Override

@@ -5,8 +5,6 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
@@ -310,7 +308,7 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
      */
     public static void remove(Contentlet contentlet) {
         try{
-            APILocator.getWorkflowAPI().deleteWorkflowTaskByWebAsset(contentlet.getIdentifier(), APILocator.systemUser());
+            APILocator.getWorkflowAPI().deleteWorkflowTaskByContentletIdAnyLanguage(contentlet.getIdentifier(), APILocator.systemUser());
             archive(contentlet);
             delete(contentlet);
         } catch (Exception e) {

@@ -38,6 +38,7 @@ import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.contentlet.util.ActionletUtil;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
+import com.dotmarketing.portlets.languagesmanager.business.LanguageDeletedEvent;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.LargeMessageActionlet;
 import com.dotmarketing.portlets.workflows.MessageActionlet;
@@ -197,6 +198,23 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 			Logger.error(this, "Can not delete the system mapping actions associated to the content type: "
 					+ contentTypeDeletedEvent.getContentTypeVar() + ", msg: " + e.getMessage(), e);
+		}
+	}
+
+	@Subscriber
+	@WrapInTransaction
+	public void onLanguageDeletedEvent (final LanguageDeletedEvent languageDeletedEvent) {
+
+		try {
+
+			Logger.debug(this, ()-> "Deleting workflow tasks associated to the language: "
+					+ languageDeletedEvent.getLanguage() );
+
+			this.workFlowFactory.deleteWorkflowTaskByLanguage(languageDeletedEvent.getLanguage());
+		} catch (DotDataException e) {
+
+			Logger.error(this, "Can not delete the workflow tasks associated to the language: "
+					+ languageDeletedEvent.getLanguage() + ", msg: " + e.getMessage(), e);
 		}
 	}
 
@@ -1133,12 +1151,39 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	@Override
 	@WrapInTransaction
-	public void deleteWorkflowTaskByWebAsset(final String webAsset, final User user) throws DotDataException {
+	public void deleteWorkflowTaskByContentletIdAnyLanguage(final String webAsset, final User user) throws DotDataException {
 
 		SecurityLogger.logInfo(this.getClass(),
 				"The Removing Workflow Tasks with the webasset:" + webAsset);
 
-		this.workFlowFactory.deleteWorkflowTaskByWebAsset(webAsset);
+		this.workFlowFactory.deleteWorkflowTaskByContentletIdAnyLanguage(webAsset);
+
+		try {
+			if (UtilMethods.isSet(webAsset)) {
+				HibernateUtil.addCommitListener(() -> {
+					try {
+						this.reindexQueueAPI.addIdentifierReindex(webAsset);
+					} catch (DotDataException e) {
+						Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
+					}
+				});
+			}
+		} catch (Exception e) {
+			Logger.error(this, e.getMessage(), e);
+		}
+
+		SecurityLogger.logInfo(this.getClass(), ()-> "The Removed the tasks with the webasset" + webAsset
+				+ " has been deleted by the user: " + user.getUserId());
+	}
+
+	@Override
+	@WrapInTransaction
+	public void deleteWorkflowTaskByContentletId(final String webAsset, final long languageId, final User user) throws DotDataException {
+
+		SecurityLogger.logInfo(this.getClass(),
+				"The Removing Workflow Tasks with the webasset:" + webAsset);
+
+		this.workFlowFactory.deleteWorkflowTaskByContentletIdAndLanguage(webAsset, languageId);
 
 		try {
 			if (UtilMethods.isSet(webAsset)) {
@@ -1361,6 +1406,11 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	    boolean isSave        = false;
 	    boolean isPublish     = false;
+		boolean isUnPublish   = false;
+		boolean isArchive     = false;
+		boolean isUnArchive   = false;
+		boolean isDelete      = false;
+		boolean isDestroy     = false;
         boolean isPushPublish = false;
 
         for (final WorkflowActionClass actionClass : actionClasses) {
@@ -1370,11 +1420,21 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
                 isSave        |= (null != actionlet) && actionlet.save();
                 isPublish     |= (null != actionlet) && actionlet.publish();
+			    isUnPublish   |= (null != actionlet) && actionlet.unpublish();
+			    isArchive     |= (null != actionlet) && actionlet.archive();
+			    isUnArchive   |= (null != actionlet) && actionlet.unarchive();
+			    isDelete      |= (null != actionlet) && actionlet.delete();
+			    isDestroy     |= (null != actionlet) && actionlet.destroy();
                 isPushPublish |= (null != actionlet) && actionlet.pushPublish();
         }
 
 	    action.setSaveActionlet(isSave);
         action.setPublishActionlet(isPublish);
+		action.setUnpublishActionlet(isUnPublish);
+		action.setArchiveActionlet(isArchive);
+		action.setUnarchiveActionlet(isUnArchive);
+		action.setDeleteActionlet(isDelete);
+		action.setDestroyActionlet(isDestroy);
         action.setPushPublishActionlet(isPushPublish);
     }
 

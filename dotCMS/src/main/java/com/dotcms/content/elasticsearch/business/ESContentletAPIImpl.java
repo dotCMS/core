@@ -13,7 +13,6 @@ import com.dotcms.content.elasticsearch.business.event.ContentletCheckinEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletDeletedEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletPublishEvent;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
-import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.*;
@@ -98,13 +97,11 @@ import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-import com.liferay.portal.util.PortalUtil;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.DomDriver;
-import io.vavr.control.Try;
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchResponse;
@@ -3219,7 +3216,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             try {
 
                 final Optional<Contentlet> workflowContentletOpt =
-                        this.checkAndRunAsWorkflow(contentletIn, contentRelationships,
+                        this.validateWorkflowStateOrRunAsWorkflow(contentletIn, contentRelationships,
                                 categories, user, respectFrontendRoles, createNewVersion, generateSystemEvent);
 
                 if (workflowContentletOpt.isPresent()) {
@@ -3270,7 +3267,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                                        final boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
 
         // if already on workflow or has an actionid skip this method.
-        if (this.disableWorkflow(contentletIn) || this.isWorkflowInProgress(contentletIn) || UtilMethods.isSet(contentletIn.getActionId())) {
+        if (this.isDisableWorkflow(contentletIn) || this.isWorkflowInProgress(contentletIn) || UtilMethods.isSet(contentletIn.getActionId())) {
 
             return Optional.empty();
         }
@@ -3311,13 +3308,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return Optional.empty();
     }
 
-    private Optional<Contentlet> checkAndRunAsWorkflow(final Contentlet contentletIn,      final ContentletRelationships contentRelationships,
-                                                       final List<Category> categories,    final User user,
-                                                       final boolean respectFrontendRoles, final boolean createNewVersion,
-                                                       boolean generateSystemEvent) throws DotSecurityException, DotDataException {
+    private Optional<Contentlet> validateWorkflowStateOrRunAsWorkflow(final Contentlet contentletIn, final ContentletRelationships contentRelationships,
+                                                                      final List<Category> categories, final User user,
+                                                                      final boolean respectFrontendRoles, final boolean createNewVersion,
+                                                                      boolean generateSystemEvent) throws DotSecurityException, DotDataException {
 
         // if already on workflow or has an actionid skip this method.
-        if (this.disableWorkflow(contentletIn) || this.isWorkflowInProgress(contentletIn) || UtilMethods.isSet(contentletIn.getActionId())) {
+        if (this.isDisableWorkflow(contentletIn) || this.isWorkflowInProgress(contentletIn) || UtilMethods.isSet(contentletIn.getActionId())) {
 
             return Optional.empty();
         }
@@ -3360,15 +3357,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return Optional.empty();
     }
 
-    private boolean disableWorkflow(final Contentlet contentlet) {
-        return null != contentlet.getMap().get(Contentlet.DISABLE_WORKFLOW) &&
-                Boolean.TRUE.equals(contentlet.getMap().get(Contentlet.DISABLE_WORKFLOW));
+    private boolean isDisableWorkflow(final Contentlet contentlet) {
+        return contentlet.isDisableWorkflow();
     }
 
     private boolean isWorkflowInProgress (final Contentlet contentlet) {
-
-        return null != contentlet.getMap().get(Contentlet.WORKFLOW_IN_PROGRESS) &&
-                Boolean.TRUE.equals(contentlet.getMap().get(Contentlet.WORKFLOW_IN_PROGRESS));
+        return contentlet.isWorkflowInProgress();
     }
 
     private Contentlet internalCheckin(Contentlet contentlet,

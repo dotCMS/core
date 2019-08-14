@@ -10,7 +10,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.business.ApplicationContainerFolderListener;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.workflows.business.CheckInUnAssignWorkflowStepCheckerListener;
+import com.dotmarketing.portlets.workflows.business.UnassignedWorkflowContentletCheckinListener;
 import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
@@ -33,7 +33,7 @@ public class LocalSystemEventSubscribersInitializer implements DotInitializer {
 
         this.initApplicationContainerFolderListener();
 
-        APILocator.getLocalSystemEventsAPI().subscribe(ContentletCheckinEvent.class, CheckInUnAssignWorkflowStepCheckerListener.getInstance());
+        APILocator.getLocalSystemEventsAPI().subscribe(ContentletCheckinEvent.class, UnassignedWorkflowContentletCheckinListener.getInstance());
     }
 
     public void initApplicationContainerFolderListener() {

@@ -18,6 +18,8 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
@@ -38,6 +40,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.actionlet.ArchiveContentActionlet;
@@ -50,7 +53,7 @@ import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionlet
 import com.dotmarketing.portlets.workflows.actionlet.UnarchiveContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.UnpublishContentActionlet;
 import com.dotmarketing.portlets.workflows.model.*;
-import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
@@ -581,6 +584,50 @@ public class WorkflowAPITest extends IntegrationTestBase {
 
         workflowAPI.mapSystemActionToWorkflowActionForContentType(WorkflowAPI.SystemAction.NEW, workflowAPI.findAction(
                 SystemWorkflowConstants.WORKFLOW_SAVE_ACTION_ID, APILocator.systemUser()), APILocator.systemHost().getContentType());
+    }
+
+    @Test()
+    public void onLanguageDeletedEvent_Test() throws DotDataException, DotSecurityException {
+
+        Language frenchLanguage = null;
+        Contentlet contentlet = null;
+
+        try {
+            frenchLanguage = new LanguageDataGen()
+                    .country("French")
+                    .countryCode("FR")
+                    .languageCode("fr")
+                    .languageName("French").nextPersisted();
+
+            final ContentType contentGenericType = contentTypeAPI.find("webPageContent");
+            final String unicodeText = "Numéro de téléphone";
+
+            final ContentletDataGen contentletDataGen = new ContentletDataGen(contentGenericType.id());
+            contentlet = contentletDataGen.setProperty("title", "TestContent")
+                    .setProperty("body", unicodeText ).languageId(frenchLanguage.getId()).nextPersisted();
+            final WorkflowStep workflowStep           = workflowAPI.findStep(SystemWorkflowConstants.WORKFLOW_NEW_STEP_ID);
+
+            final WorkflowTask workflowTask = workflowAPI.createWorkflowTask
+                    (contentlet, user, workflowStep, "test", "test");
+            workflowAPI.saveWorkflowTask(workflowTask);
+
+            Optional<WorkflowStep> currentStepOpt = workflowAPI.findCurrentStep(contentlet);
+            assertTrue(currentStepOpt.isPresent());
+            assertEquals(SystemWorkflowConstants.WORKFLOW_NEW_STEP_ID, currentStepOpt.get().getId());
+            LanguageDataGen.remove(frenchLanguage);
+            frenchLanguage = null;
+            DateUtil.sleep(DateUtil.SECOND_MILLIS);
+
+            currentStepOpt = workflowAPI.findCurrentStep(contentlet);
+            assertFalse(currentStepOpt.isPresent());
+            final List<WorkflowHistory> histories = workflowAPI.findWorkflowHistory(workflowTask);
+            assertFalse(UtilMethods.isSet(histories));
+        } finally {
+
+            if (null != frenchLanguage) {
+                LanguageDataGen.remove(frenchLanguage);
+            }
+        }
     }
 
     @Test()
@@ -1208,7 +1255,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
             testContentlet.setHost(defaultHost.getIdentifier());
             testContentlet.setIndexPolicy(IndexPolicy.FORCE);
             testContentlet = contentletAPI.checkin(testContentlet, user, false);
-            APILocator.getWorkflowAPI().deleteWorkflowTaskByWebAsset(testContentlet.getIdentifier(), user);
+            APILocator.getWorkflowAPI().deleteWorkflowTaskByContentletIdAnyLanguage(testContentlet.getIdentifier(), user);
 
             //Adding permissions to the just created contentlet
             List<Permission> permissions = new ArrayList<>();
@@ -1333,7 +1380,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
             testContentlet1.setHost(defaultHost.getIdentifier());
             testContentlet1.setIndexPolicy(IndexPolicy.FORCE);
             testContentlet1 = contentletAPI.checkin(testContentlet1, user, false);
-            APILocator.getWorkflowAPI().deleteWorkflowTaskByWebAsset(testContentlet1.getIdentifier(), user);
+            APILocator.getWorkflowAPI().deleteWorkflowTaskByContentletIdAnyLanguage(testContentlet1.getIdentifier(), user);
 
             final Role role = APILocator.getRoleAPI().getUserRole(billIntranet);
             //Adding permissions to the just created contentlet
@@ -1353,14 +1400,14 @@ public class WorkflowAPITest extends IntegrationTestBase {
             testContentlet1Checkout.setStringProperty(FIELD_VAR_NAME, "WorkflowContentTest_" + System.currentTimeMillis());
             testContentlet1Checkout.setIndexPolicy(IndexPolicy.FORCE);
             testContentlet2 = contentletAPI.checkin(testContentlet1Checkout, user, false);
-            APILocator.getWorkflowAPI().deleteWorkflowTaskByWebAsset(testContentlet2.getIdentifier(), user);
+            APILocator.getWorkflowAPI().deleteWorkflowTaskByContentletIdAnyLanguage(testContentlet2.getIdentifier(), user);
 
             // top version
             testContentlet2Checkout = contentletAPI.checkout(testContentlet2.getInode(), user, false);
             testContentlet2Checkout.setStringProperty(FIELD_VAR_NAME, "WorkflowContentTest_" + System.currentTimeMillis());
             testContentlet2Checkout.setIndexPolicy(IndexPolicy.FORCE);
             testContentletTop = contentletAPI.checkin(testContentlet2Checkout, user, false);
-            APILocator.getWorkflowAPI().deleteWorkflowTaskByWebAsset(testContentlet2Checkout.getIdentifier(), user);
+            APILocator.getWorkflowAPI().deleteWorkflowTaskByContentletIdAnyLanguage(testContentlet2Checkout.getIdentifier(), user);
 
             // expected behavior
             List<WorkflowAction> foundActions = APILocator.getWorkflowAPI().findAvailableActions(testContentletTop, billIntranet);

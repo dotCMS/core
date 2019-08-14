@@ -6,6 +6,7 @@ import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.workflows.model.*;
 import com.liferay.portal.model.User;
 import java.util.List;
@@ -43,7 +44,15 @@ public interface WorkFlowFactory {
 	 * @param webAsset {@link String}
 	 * @throws DotDataException
 	 */
-	void deleteWorkflowTaskByWebAsset(String webAsset) throws DotDataException;
+	void deleteWorkflowTaskByContentletIdAnyLanguage(String webAsset) throws DotDataException;
+
+	/**
+	 * Deletes the workflow task associated to a web asset + language and workflow task dependencies
+	 * @param webAsset    {@link String}
+	 * @param languageId  {@link Long}
+	 * @throws DotDataException
+	 */
+	void deleteWorkflowTaskByContentletIdAndLanguage(final String webAsset, final long languageId) throws DotDataException;
 
 	public WorkflowTask findTaskByContentlet(Contentlet contentlet) throws DotDataException;
 
@@ -452,4 +461,10 @@ public interface WorkFlowFactory {
 	 * @throws DotDataException
 	 */
 	Map<String, List<Map<String, Object>>> findSystemActionsMapByContentType(List<ContentType> contentTypes) throws DotDataException;
+
+	/**
+	 * Deletes the workflow tasks associated to a language
+	 * @param language {@link Language}
+	 */
+    void deleteWorkflowTaskByLanguage(Language language) throws DotDataException;
 }

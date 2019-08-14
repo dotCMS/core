@@ -1042,7 +1042,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
 
             try {
 
-                workflowAPI.deleteWorkflowTaskByWebAsset(contentlet.getIdentifier(), APILocator.systemUser());
+                workflowAPI.deleteWorkflowTaskByContentletId(contentlet.getIdentifier(), contentlet.getLanguageId(), APILocator.systemUser());
                 //  Now Test BulkActions
                 final BulkActionForm form1 = new BulkActionForm(
                         Collections.singletonList(inode), null

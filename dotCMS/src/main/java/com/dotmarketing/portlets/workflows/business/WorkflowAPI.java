@@ -213,12 +213,21 @@ public interface WorkflowAPI {
 	public void deleteWorkflowTask(WorkflowTask task, User user) throws DotDataException;
 
 	/**
-	 * Deletes (reset) a workflow tasks associated to the webAsset
+	 * Deletes (reset) a workflow tasks associated to the webAsset by any language
 	 * @param webAsset {@link String}
 	 * @param user {@link User}
 	 * @throws DotDataException
 	 */
-	public void deleteWorkflowTaskByWebAsset(String webAsset, User user) throws DotDataException;
+	public void deleteWorkflowTaskByContentletIdAnyLanguage(String webAsset, User user) throws DotDataException;
+
+	/**
+	 * Deletes (reset) a workflow tasks associated to the webAsset + language id by any language
+	 * @param webAsset {@link String}
+	 * @param languageId {@link Long}
+	 * @param user {@link User}
+	 * @throws DotDataException
+	 */
+	public void deleteWorkflowTaskByContentletId(String webAsset, long languageId, User user) throws DotDataException;
 
 	/**
 	 *
@@ -941,21 +950,21 @@ public interface WorkflowAPI {
 	/**
 	 * Returns true if the action has at least one action let that publish
 	 * @param action {@link WorkflowAction}
-	 * @return Boolean true if has save action
+	 * @return Boolean true if has publish action
 	 */
 	boolean hasPublishActionlet(final WorkflowAction action);
 
 	/**
 	 * Returns true if the action has at least one action let that unpublish
 	 * @param action {@link WorkflowAction}
-	 * @return Boolean true if has save action
+	 * @return Boolean true if has unpublish action
 	 */
 	boolean hasUnpublishActionlet(final WorkflowAction action);
 
 	/**
 	 * Returns true if the action has at least one action let that archive
 	 * @param action {@link WorkflowAction}
-	 * @return Boolean true if has save action
+	 * @return Boolean true if has archive action
 	 */
 	boolean hasArchiveActionlet(final WorkflowAction action);
 
@@ -963,21 +972,21 @@ public interface WorkflowAPI {
 	/**
 	 * Returns true if the action has at least one action let that unarchive
 	 * @param action {@link WorkflowAction}
-	 * @return Boolean true if has save action
+	 * @return Boolean true if has unarchive action
 	 */
 	boolean hasUnarchiveActionlet(final WorkflowAction action);
 
 	/**
 	 * Returns true if the action has at least one action let that delete
 	 * @param action {@link WorkflowAction}
-	 * @return Boolean true if has save action
+	 * @return Boolean true if has delete action
 	 */
 	boolean hasDeleteActionlet(final WorkflowAction action);
 
 	/**
 	 * Returns true if the action has at least one action let that destroy
 	 * @param action {@link WorkflowAction}
-	 * @return Boolean true if has save action
+	 * @return Boolean true if has destroy action
 	 */
 	boolean hasDestroyActionlet(final WorkflowAction action);
 
