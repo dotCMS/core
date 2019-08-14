@@ -1388,6 +1388,11 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	    boolean isSave        = false;
 	    boolean isPublish     = false;
+		boolean isUnPublish   = false;
+		boolean isArchive     = false;
+		boolean isUnArchive   = false;
+		boolean isDelete      = false;
+		boolean isDestroy     = false;
         boolean isPushPublish = false;
 
         for (final WorkflowActionClass actionClass : actionClasses) {
@@ -1397,11 +1402,21 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
                 isSave        |= (null != actionlet) && actionlet.save();
                 isPublish     |= (null != actionlet) && actionlet.publish();
+			    isUnPublish   |= (null != actionlet) && actionlet.unpublish();
+			    isArchive     |= (null != actionlet) && actionlet.archive();
+			    isUnArchive   |= (null != actionlet) && actionlet.unarchive();
+			    isDelete      |= (null != actionlet) && actionlet.delete();
+			    isDestroy     |= (null != actionlet) && actionlet.destroy();
                 isPushPublish |= (null != actionlet) && actionlet.pushPublish();
         }
 
 	    action.setSaveActionlet(isSave);
         action.setPublishActionlet(isPublish);
+		action.setUnpublishActionlet(isUnPublish);
+		action.setArchiveActionlet(isArchive);
+		action.setUnarchiveActionlet(isUnArchive);
+		action.setDeleteActionlet(isDelete);
+		action.setDestroyActionlet(isDestroy);
         action.setPushPublishActionlet(isPushPublish);
     }
 

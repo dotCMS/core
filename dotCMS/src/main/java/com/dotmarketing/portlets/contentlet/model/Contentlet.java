@@ -114,6 +114,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     public static final String DISABLE_WORKFLOW = "__disable_workflow__";
 
     // means the contentlet is being used on unit test mode.
+	// this is only for unit test. do not use on production.
+	@VisibleForTesting
 	public static final String IS_TEST_MODE = "_is_test_mode";
 
 	/**

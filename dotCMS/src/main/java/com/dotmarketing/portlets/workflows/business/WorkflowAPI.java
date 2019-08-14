@@ -950,21 +950,21 @@ public interface WorkflowAPI {
 	/**
 	 * Returns true if the action has at least one action let that publish
 	 * @param action {@link WorkflowAction}
-	 * @return Boolean true if has save action
+	 * @return Boolean true if has publish action
 	 */
 	boolean hasPublishActionlet(final WorkflowAction action);
 
 	/**
 	 * Returns true if the action has at least one action let that unpublish
 	 * @param action {@link WorkflowAction}
-	 * @return Boolean true if has save action
+	 * @return Boolean true if has unpublish action
 	 */
 	boolean hasUnpublishActionlet(final WorkflowAction action);
 
 	/**
 	 * Returns true if the action has at least one action let that archive
 	 * @param action {@link WorkflowAction}
-	 * @return Boolean true if has save action
+	 * @return Boolean true if has archive action
 	 */
 	boolean hasArchiveActionlet(final WorkflowAction action);
 
@@ -972,21 +972,21 @@ public interface WorkflowAPI {
 	/**
 	 * Returns true if the action has at least one action let that unarchive
 	 * @param action {@link WorkflowAction}
-	 * @return Boolean true if has save action
+	 * @return Boolean true if has unarchive action
 	 */
 	boolean hasUnarchiveActionlet(final WorkflowAction action);
 
 	/**
 	 * Returns true if the action has at least one action let that delete
 	 * @param action {@link WorkflowAction}
-	 * @return Boolean true if has save action
+	 * @return Boolean true if has delete action
 	 */
 	boolean hasDeleteActionlet(final WorkflowAction action);
 
 	/**
 	 * Returns true if the action has at least one action let that destroy
 	 * @param action {@link WorkflowAction}
-	 * @return Boolean true if has save action
+	 * @return Boolean true if has destroy action
 	 */
 	boolean hasDestroyActionlet(final WorkflowAction action);
 
