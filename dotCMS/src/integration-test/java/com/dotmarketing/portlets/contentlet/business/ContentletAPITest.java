@@ -94,15 +94,14 @@ import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants;
+import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
+import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.tag.model.Tag;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.DateUtil;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PageMode;
-import com.dotmarketing.util.UUIDGenerator;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
+import com.dotmarketing.util.*;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -159,6 +158,330 @@ import org.junit.runner.RunWith;
 
 @RunWith(DataProviderRunner.class)
 public class ContentletAPITest extends ContentletBaseTest {
+
+    @Test
+    public void testCheckinDefaultActionsSkipBySettingActionId () throws DotDataException, DotSecurityException {
+
+        final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
+        Contentlet contentletToDestroy = null;
+        ContentType type = null;
+
+        try {
+
+            //1) create a content type
+            final String velocityContentTypeName = "DefaultActionContentTypeSkip" + System.currentTimeMillis();
+            type = contentTypeAPI.save(
+                    ContentTypeBuilder.builder(BaseContentType.CONTENT.immutableClass())
+                            .expireDateVar(null).folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
+                            .name("DefaultActionContentTypeSkip").owner(APILocator.systemUser().toString())
+                            .variable(velocityContentTypeName).build());
+
+            final List<com.dotcms.contenttype.model.field.Field> fields = new ArrayList<>(type.fields());
+
+            fields.add(FieldBuilder.builder(TextField.class).name("title").variable("title")
+                    .contentTypeId(type.id()).dataType(DataTypes.TEXT).indexed(true).build());
+            fields.add(FieldBuilder.builder(TextField.class).name("txt").variable("txt")
+                    .contentTypeId(type.id()).dataType(DataTypes.TEXT).indexed(true).build());
+
+            final ContentType contentTypeSaved = contentTypeAPI.save(type, fields);
+
+            final WorkflowScheme systemWorkflow = workflowAPI.findSystemWorkflowScheme();
+            workflowAPI.saveSchemeIdsForContentType(contentTypeSaved, CollectionsUtils.set(systemWorkflow.getId()));
+            final List<WorkflowScheme> contentTypeSchemes = workflowAPI.findSchemesForContentType(contentTypeSaved);
+            Assert.assertNotNull(contentTypeSchemes);
+            Assert.assertEquals(1, contentTypeSchemes.size());
+
+            //2) associated system workflow to the scheme
+            final WorkflowAction saveWorkflowAction = workflowAPI.findAction(SystemWorkflowConstants.WORKFLOW_SAVE_ACTION_ID, APILocator.systemUser());
+            Assert.assertNotNull(saveWorkflowAction);
+            final SystemActionWorkflowActionMapping mapping = workflowAPI.mapSystemActionToWorkflowActionForContentType
+                    (WorkflowAPI.SystemAction.NEW, saveWorkflowAction, contentTypeSaved);
+            Logger.info(this, "mapping: " + mapping);
+            final SystemActionWorkflowActionMapping mappingEdit = workflowAPI.mapSystemActionToWorkflowActionForContentType
+                    (WorkflowAPI.SystemAction.EDIT, saveWorkflowAction, contentTypeSaved);
+            Logger.info(this, "mappingEdit: " + mappingEdit);
+
+            //3) map the save content to the new
+            final Contentlet contentlet = new Contentlet();
+            final User user = APILocator.systemUser();
+            contentlet.setContentTypeId(type.id());
+            contentlet.setOwner(APILocator.systemUser().toString());
+            contentlet.setModDate(new Date());
+            contentlet.setLanguageId(1);
+            contentlet.setStringProperty("title", "Test Save");
+            contentlet.setStringProperty("txt", "Test Save Text");
+            contentlet.setHost(Host.SYSTEM_HOST);
+            contentlet.setFolder(FolderAPI.SYSTEM_FOLDER);
+            contentlet.setIndexPolicy(IndexPolicy.FORCE);
+
+            // save
+            contentlet.setActionId(SystemWorkflowConstants.WORKFLOW_SAVE_PUBLISH_ACTION_ID);
+            final Contentlet contentlet1 = contentletAPI.checkin(contentlet, user, false);
+            contentletToDestroy = contentlet1;
+
+            //4) check the contentlet is on the step unpublish
+            final WorkflowStep unpublishStep = workflowAPI.findStepByContentlet(contentlet1);
+            Assert.assertEquals (SystemWorkflowConstants.WORKFLOW_PUBLISHED_STEP_ID, unpublishStep.getId());
+        } finally {
+
+            if (null != contentletToDestroy) {
+                try {
+                    this.contentletAPI.destroy(contentletToDestroy, user, false);
+                } catch (Exception e) {
+                    // quiet
+                }
+            }
+
+            if (null != type) {
+                try {
+                    contentTypeAPI.delete(type);
+                } catch (Exception e) {
+                    // quiet
+                }
+            }
+        }
+    }
+
+    @Test
+    public void testCheckinDefaultActionsSkip () throws DotDataException, DotSecurityException {
+
+        final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
+        Contentlet contentletToDestroy = null;
+        ContentType type = null;
+
+        try {
+
+            //1) create a content type
+            final String velocityContentTypeName = "DefaultActionContentTypeSkip" + System.currentTimeMillis();
+            type = contentTypeAPI.save(
+                    ContentTypeBuilder.builder(BaseContentType.CONTENT.immutableClass())
+                            .expireDateVar(null).folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
+                            .name("DefaultActionContentTypeSkip").owner(APILocator.systemUser().toString())
+                            .variable(velocityContentTypeName).build());
+
+            final List<com.dotcms.contenttype.model.field.Field> fields = new ArrayList<>(type.fields());
+
+            fields.add(FieldBuilder.builder(TextField.class).name("title").variable("title")
+                    .contentTypeId(type.id()).dataType(DataTypes.TEXT).indexed(true).build());
+            fields.add(FieldBuilder.builder(TextField.class).name("txt").variable("txt")
+                    .contentTypeId(type.id()).dataType(DataTypes.TEXT).indexed(true).build());
+
+            final ContentType contentTypeSaved = contentTypeAPI.save(type, fields);
+
+            final WorkflowScheme systemWorkflow = workflowAPI.findSystemWorkflowScheme();
+            workflowAPI.saveSchemeIdsForContentType(contentTypeSaved, CollectionsUtils.set(systemWorkflow.getId()));
+            final List<WorkflowScheme> contentTypeSchemes = workflowAPI.findSchemesForContentType(contentTypeSaved);
+            Assert.assertNotNull(contentTypeSchemes);
+            Assert.assertEquals(1, contentTypeSchemes.size());
+
+            //2) associated system workflow to the scheme
+            final WorkflowAction saveWorkflowAction = workflowAPI.findAction(SystemWorkflowConstants.WORKFLOW_SAVE_ACTION_ID, APILocator.systemUser());
+            Assert.assertNotNull(saveWorkflowAction);
+            final SystemActionWorkflowActionMapping mapping = workflowAPI.mapSystemActionToWorkflowActionForContentType
+                    (WorkflowAPI.SystemAction.NEW, saveWorkflowAction, contentTypeSaved);
+            Logger.info(this, "mapping: " + mapping);
+            final SystemActionWorkflowActionMapping mappingEdit = workflowAPI.mapSystemActionToWorkflowActionForContentType
+                    (WorkflowAPI.SystemAction.EDIT, saveWorkflowAction, contentTypeSaved);
+            Logger.info(this, "mappingEdit: " + mappingEdit);
+
+            //3) map the save content to the new
+            final Contentlet contentlet = new Contentlet();
+            final User user = APILocator.systemUser();
+            contentlet.setContentTypeId(type.id());
+            contentlet.setOwner(APILocator.systemUser().toString());
+            contentlet.setModDate(new Date());
+            contentlet.setLanguageId(1);
+            contentlet.setStringProperty("title", "Test Save");
+            contentlet.setStringProperty("txt", "Test Save Text");
+            contentlet.setHost(Host.SYSTEM_HOST);
+            contentlet.setFolder(FolderAPI.SYSTEM_FOLDER);
+            contentlet.setIndexPolicy(IndexPolicy.FORCE);
+
+            // save
+            contentlet.setProperty(Contentlet.DISABLE_WORKFLOW, true);
+            final Contentlet contentlet1 = contentletAPI.checkin(contentlet, user, false);
+            contentletToDestroy = contentlet1;
+
+            //4) check the contentlet is on the step unpublish
+            final WorkflowStep unpublishStep = workflowAPI.findStepByContentlet(contentlet1);
+            Assert.assertEquals (SystemWorkflowConstants.WORKFLOW_NEW_STEP_ID, unpublishStep.getId());
+        } finally {
+
+            if (null != contentletToDestroy) {
+                try {
+                    this.contentletAPI.destroy(contentletToDestroy, user, false);
+                } catch (Exception e) {
+                    // quiet
+                }
+            }
+
+            if (null != type) {
+                try {
+                    contentTypeAPI.delete(type);
+                } catch (Exception e) {
+                    // quiet
+                }
+            }
+        }
+    }
+
+    @Test
+    public void testCheckinDefaultActions () throws DotDataException, DotSecurityException {
+
+        final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
+        Contentlet contentletToDestroy = null;
+        ContentType type = null;
+
+        try {
+
+            //1) create a content type
+            final String velocityContentTypeName = "DefaultActionContentType";
+            type = contentTypeAPI.save(
+                    ContentTypeBuilder.builder(BaseContentType.CONTENT.immutableClass())
+                            .expireDateVar(null).folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
+                            .name("DefaultActionContentType").owner(APILocator.systemUser().toString())
+                            .variable(velocityContentTypeName).build());
+
+            final List<com.dotcms.contenttype.model.field.Field> fields = new ArrayList<>(type.fields());
+
+            fields.add(FieldBuilder.builder(TextField.class).name("title").variable("title")
+                    .contentTypeId(type.id()).dataType(DataTypes.TEXT).indexed(true).build());
+            fields.add(FieldBuilder.builder(TextField.class).name("txt").variable("txt")
+                    .contentTypeId(type.id()).dataType(DataTypes.TEXT).indexed(true).build());
+
+            final ContentType contentTypeSaved = contentTypeAPI.save(type, fields);
+
+            final WorkflowScheme systemWorkflow = workflowAPI.findSystemWorkflowScheme();
+            workflowAPI.saveSchemeIdsForContentType(contentTypeSaved, CollectionsUtils.set(systemWorkflow.getId()));
+            final List<WorkflowScheme> contentTypeSchemes = workflowAPI.findSchemesForContentType(contentTypeSaved);
+            Assert.assertNotNull(contentTypeSchemes);
+            Assert.assertEquals(1, contentTypeSchemes.size());
+
+            //2) associated system workflow to the scheme
+            final WorkflowAction saveWorkflowAction = workflowAPI.findAction(SystemWorkflowConstants.WORKFLOW_SAVE_ACTION_ID, APILocator.systemUser());
+            Assert.assertNotNull(saveWorkflowAction);
+            final SystemActionWorkflowActionMapping mapping = workflowAPI.mapSystemActionToWorkflowActionForContentType
+                    (WorkflowAPI.SystemAction.NEW, saveWorkflowAction, contentTypeSaved);
+            Logger.info(this, "mapping: " + mapping);
+            final SystemActionWorkflowActionMapping mappingEdit = workflowAPI.mapSystemActionToWorkflowActionForContentType
+                    (WorkflowAPI.SystemAction.EDIT, saveWorkflowAction, contentTypeSaved);
+            Logger.info(this, "mappingEdit: " + mappingEdit);
+
+            //3) map the save content to the new
+            final Contentlet contentlet = new Contentlet();
+            final User user = APILocator.systemUser();
+            contentlet.setContentTypeId(type.id());
+            contentlet.setOwner(APILocator.systemUser().toString());
+            contentlet.setModDate(new Date());
+            contentlet.setLanguageId(1);
+            contentlet.setStringProperty("title", "Test Save");
+            contentlet.setStringProperty("txt", "Test Save Text");
+            contentlet.setHost(Host.SYSTEM_HOST);
+            contentlet.setFolder(FolderAPI.SYSTEM_FOLDER);
+            contentlet.setIndexPolicy(IndexPolicy.FORCE);
+
+            // save
+            final Contentlet contentlet1 = contentletAPI.checkin(contentlet, user, false);
+            contentletToDestroy = contentlet1;
+
+            //4) check the contentlet is on the step unpublish
+            final WorkflowStep unpublishStep = workflowAPI.findStepByContentlet(contentlet1);
+            Assert.assertEquals (SystemWorkflowConstants.WORKFLOW_UNPUBLISHED_STEP_ID, unpublishStep.getId());
+        } finally {
+
+            if (null != contentletToDestroy) {
+                try {
+                    this.contentletAPI.destroy(contentletToDestroy, user, false);
+                } catch (Exception e) {
+                    // quiet
+                }
+            }
+
+            if (null != type) {
+                try {
+                    contentTypeAPI.delete(type);
+                } catch (Exception e) {
+                    // quiet
+                }
+            }
+        }
+    }
+
+    @Test
+    public void testCheckinNoDefaultActions () throws DotDataException, DotSecurityException {
+
+        final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
+        Contentlet contentletToDestroy = null;
+        ContentType type = null;
+
+        try {
+
+            //1) create a content type
+            final String velocityContentTypeName = "NoDefaultActionContentType";
+            type = contentTypeAPI.save(
+                    ContentTypeBuilder.builder(BaseContentType.CONTENT.immutableClass())
+                            .expireDateVar(null).folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
+                            .name("NoDefaultActionContentType").owner(APILocator.systemUser().toString())
+                            .variable(velocityContentTypeName).build());
+
+            final List<com.dotcms.contenttype.model.field.Field> fields = new ArrayList<>(type.fields());
+
+            fields.add(FieldBuilder.builder(TextField.class).name("title").variable("title")
+                    .contentTypeId(type.id()).dataType(DataTypes.TEXT).indexed(true).build());
+            fields.add(FieldBuilder.builder(TextField.class).name("txt").variable("txt")
+                    .contentTypeId(type.id()).dataType(DataTypes.TEXT).indexed(true).build());
+
+            final ContentType contentTypeSaved = contentTypeAPI.save(type, fields);
+
+            final WorkflowScheme systemWorkflow = workflowAPI.findSystemWorkflowScheme();
+            workflowAPI.saveSchemeIdsForContentType(contentTypeSaved, CollectionsUtils.set(systemWorkflow.getId()));
+            final List<WorkflowScheme> contentTypeSchemes = workflowAPI.findSchemesForContentType(contentTypeSaved);
+            Assert.assertNotNull(contentTypeSchemes);
+            Assert.assertEquals(1, contentTypeSchemes.size());
+
+            //2) associated system workflow to the scheme
+            final WorkflowAction saveWorkflowAction = workflowAPI.findAction(SystemWorkflowConstants.WORKFLOW_SAVE_ACTION_ID, APILocator.systemUser());
+            Assert.assertNotNull(saveWorkflowAction);
+
+            //3) map the save content to the new
+            final Contentlet contentlet = new Contentlet();
+            final User user = APILocator.systemUser();
+            contentlet.setContentTypeId(type.id());
+            contentlet.setOwner(APILocator.systemUser().toString());
+            contentlet.setModDate(new Date());
+            contentlet.setLanguageId(1);
+            contentlet.setStringProperty("title", "Test Save");
+            contentlet.setStringProperty("txt", "Test Save Text");
+            contentlet.setHost(Host.SYSTEM_HOST);
+            contentlet.setFolder(FolderAPI.SYSTEM_FOLDER);
+            contentlet.setIndexPolicy(IndexPolicy.FORCE);
+
+            // save
+            final Contentlet contentlet1 = contentletAPI.checkin(contentlet, user, false);
+            contentletToDestroy = contentlet1;
+
+            //4) check the contentlet is on the step unpublish
+            final WorkflowStep unpublishStep = workflowAPI.findStepByContentlet(contentlet1);
+            Assert.assertEquals (SystemWorkflowConstants.WORKFLOW_NEW_STEP_ID, unpublishStep.getId());
+        } finally {
+
+            if (null != contentletToDestroy) {
+                try {
+                    this.contentletAPI.destroy(contentletToDestroy, user, false);
+                } catch (Exception e) {
+                    // quiet
+                }
+            }
+
+            if (null != type) {
+                try {
+                    contentTypeAPI.delete(type);
+                } catch (Exception e) {
+                    // quiet
+                }
+            }
+        }
+    }
 
     /**
      * Testing {@link ContentletAPI#findAllContent(int, int)}

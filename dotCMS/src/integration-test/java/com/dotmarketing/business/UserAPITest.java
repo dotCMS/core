@@ -474,7 +474,7 @@ public class UserAPITest extends IntegrationTestBase {
 		 * Relate content to page
 		 */
 		MultiTree m = new MultiTree(contentAsset.getIdentifier(), container.getIdentifier(), contentAsset2.getIdentifier());
-		MultiTreeFactory.saveMultiTree(m);
+		APILocator.getMultiTreeAPI().saveMultiTree(m);
 
 		/**
 		 * Add menu link
@@ -533,7 +533,10 @@ public class UserAPITest extends IntegrationTestBase {
 
 		WorkflowTask task = workflowAPI.findTaskByContentlet(contentAsset2);
 		assertTrue(task.getAssignedTo().equals(newUserUserRole.getId()));
-		assertTrue(task.getCreatedBy().equals(newUserUserRole.getId()));
+		Logger.info(this,"******* userToDelete: " + userToDelete);
+		Logger.info(this,"******* task.getCreatedBy(): " + task.getCreatedBy());
+		Logger.info(this,"******* newUserUserRole.getId(): " + newUserUserRole.getId());
+		assertTrue(task.getCreatedBy().equals(userToDelete.getUserId()));
 
 		WorkflowStep  step =  workflowAPI.findStepByContentlet(contentAsset2);
 		assertNotNull(step);
@@ -592,8 +595,8 @@ public class UserAPITest extends IntegrationTestBase {
 		assertNotNull(userAPI.loadByUserByEmail(replacementUser.getEmailAddress(),systemUser,false));
 
 		link = APILocator.getMenuLinkAPI().find(link.getInode(), systemUser, false);
-		assertTrue(link.getOwner().equals(replacementUser.getUserId()));
-		assertTrue(link.getModUser().equals(replacementUser.getUserId()));
+		assertEquals(link.getOwner(),   replacementUser.getUserId());
+		assertEquals(link.getModUser(), replacementUser.getUserId());
 
 		page =htmlPageAssetAPI.getPageByPath(testFolder.getPath()+page0Str, host, langId, true);
 		Logger.info(this, "Page inode:" + page.getInode());
@@ -608,7 +611,9 @@ public class UserAPITest extends IntegrationTestBase {
 
 			task = workflowAPI.findTaskByContentlet(content);
 			assertTrue(task.getAssignedTo().equals(replacementUserUserRole.getId()));
-			assertTrue(task.getCreatedBy().equals(replacementUserUserRole.getId()));
+			Logger.info(this, "task.getCreatedBy() = " + task.getCreatedBy());
+			Logger.info(this, "replacementUserUserRole.getId() = " + replacementUserUserRole.getId());
+			assertEquals(task.getCreatedBy(),replacementUserUserRole.getId());
 
 			step = workflowAPI.findStepByContentlet(content);
 			assertNotNull(step);

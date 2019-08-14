@@ -8,6 +8,8 @@ import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -15,34 +17,21 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants;
+import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.liferay.portal.model.User;
-
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-import static com.dotcms.translate.TranslateTestUtil.getEnglishContent;
-import static com.dotcms.translate.TranslateTestUtil.getFieldsForContent;
-import static com.dotcms.translate.TranslateTestUtil.getTranslateToAsList;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyBoolean;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static com.dotcms.translate.TranslateTestUtil.*;
+import static org.mockito.Matchers.anyObject;
+import static org.mockito.Mockito.*;
 
 public class TranslationActionletTest extends UnitTestBase {
 
@@ -66,7 +55,7 @@ public class TranslationActionletTest extends UnitTestBase {
         when(contentletAPI
             .findContentletByIdentifier(unpersisted.getIdentifier(), false, unpersisted.getLanguageId(), systemUser,
                 false)).thenThrow(DotStateException.class);
-
+        final WorkflowAPI workflowAPI = getMockedWorkflowAPI();
         ApiProvider apiProvider = mock(ApiProvider.class);
         when(apiProvider.contentletAPI()).thenReturn(contentletAPI);
 
@@ -74,7 +63,7 @@ public class TranslationActionletTest extends UnitTestBase {
         when(processor.getContentlet()).thenReturn(unpersisted);
         when(processor.getUser()).thenReturn(systemUser);
 
-        TranslationActionlet actionlet = new TranslationActionlet(apiProvider, null, null);
+        TranslationActionlet actionlet = new TranslationActionlet(apiProvider, null, null, ()->workflowAPI);
         actionlet.executeAction(processor, getParams());
     }
 
@@ -91,11 +80,13 @@ public class TranslationActionletTest extends UnitTestBase {
         // Mock TranslationService
         TranslationService translationService = getMockedTranslationService(englishContent, systemUser);
 
+
+
         // Mock WorkflowProcessor
         WorkflowProcessor processor = getMockedWorkflowProcessor(englishContent, systemUser);
 
         ApiProvider apiProvider = getMockedApiProvider(englishContent, systemUser);
-
+        final WorkflowAPI workflowAPI = getMockedWorkflowAPI();
         ContentletAPI contentletAPI = apiProvider.contentletAPI();
         ContentletRelationships conRel = new ContentletRelationships(englishContent);
         when(contentletAPI.getAllRelationships(englishContent)).thenReturn(conRel);
@@ -103,7 +94,7 @@ public class TranslationActionletTest extends UnitTestBase {
         List<Category> cats = apiProvider.categoryAPI().getParents(englishContent, systemUser, false);
         List<Permission> perms = apiProvider.permissionAPI().getPermissions(englishContent, false, true);
 
-        TranslationActionlet actionlet = spy(new TranslationActionlet(apiProvider, translationUtil, translationService));
+        TranslationActionlet actionlet = spy(new TranslationActionlet(apiProvider, translationUtil, translationService, ()->workflowAPI));
 
         doNothing().when(actionlet).copyBinariesAndTags(any(User.class), any(Contentlet.class), any(Contentlet.class));
 
@@ -144,6 +135,8 @@ public class TranslationActionletTest extends UnitTestBase {
 
         ApiProvider apiProvider = getMockedApiProvider(englishContent, systemUser);
 
+        final WorkflowAPI workflowAPI = getMockedWorkflowAPI();
+
         ContentletAPI contentletAPI = apiProvider.contentletAPI();
         ContentletRelationships conRel = new ContentletRelationships(englishContent);
         when(contentletAPI.getAllRelationships(englishContent)).thenReturn(conRel);
@@ -151,7 +144,7 @@ public class TranslationActionletTest extends UnitTestBase {
         List<Category> cats = apiProvider.categoryAPI().getParents(englishContent, systemUser, false);
         List<Permission> perms = apiProvider.permissionAPI().getPermissions(englishContent, false, true);
 
-        TranslationActionlet actionlet = spy(new TranslationActionlet(apiProvider, translationUtil, translationService));
+        TranslationActionlet actionlet = spy(new TranslationActionlet(apiProvider, translationUtil, translationService, ()->workflowAPI));
 
         doNothing().when(actionlet).copyBinariesAndTags(any(User.class), any(Contentlet.class), any(Contentlet.class));
 
@@ -212,6 +205,18 @@ public class TranslationActionletTest extends UnitTestBase {
             .thenReturn(translateTo);
 
         return translationUtil;
+    }
+
+    public WorkflowAPI getMockedWorkflowAPI() throws DotSecurityException, DotDataException {
+        final WorkflowAPI workflowAPI = mock(WorkflowAPI.class);
+        final WorkflowAction saveAction = new WorkflowAction();
+        saveAction.setId(SystemWorkflowConstants.WORKFLOW_SAVE_ACTION_ID);
+
+        when(
+                workflowAPI.findActionMappedBySystemActionContentlet(anyObject(), anyObject(), anyObject()))
+                .thenReturn(Optional.empty());
+
+        return workflowAPI;
     }
 
     private TranslationService getMockedTranslationService(Contentlet contentlet, User user) throws Exception {

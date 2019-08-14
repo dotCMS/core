@@ -13,7 +13,6 @@ import com.dotcms.content.elasticsearch.business.event.ContentletCheckinEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletDeletedEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletPublishEvent;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
-import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.*;
@@ -87,10 +86,7 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.structure.transform.ContentletRelationshipsTransformer;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
-import com.dotmarketing.portlets.workflows.model.WorkflowComment;
-import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
-import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
-import com.dotmarketing.portlets.workflows.model.WorkflowTask;
+import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.tag.business.TagAPI;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.*;
@@ -101,13 +97,11 @@ import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-import com.liferay.portal.util.PortalUtil;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.DomDriver;
-import io.vavr.control.Try;
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchResponse;
@@ -472,7 +466,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
-    // note: is not annotated with WrapInTransaction b/c it handles his own transaction locally in the methodok
+    // note: is not annotated with WrapInTransaction b/c it handles his own transaction locally in the method
     @WrapInTransaction
     @Override
     public void publish(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException, DotStateException {
@@ -3176,10 +3170,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @throws DotContentletValidationException
      */
     @WrapInTransaction
-    private Contentlet checkin(final Contentlet contentletIn, ContentletRelationships contentRelationships,
-            final List<Category> categories,
-            final User user, boolean respectFrontendRoles, boolean createNewVersion,
-            boolean generateSystemEvent) throws DotDataException, DotSecurityException {
+    private Contentlet checkin(final Contentlet contentletIn, final ContentletRelationships contentRelationships,
+            final List<Category> categories, final User user, boolean respectFrontendRoles,
+            final boolean createNewVersion,  final boolean generateSystemEvent) throws DotDataException, DotSecurityException {
 
         Contentlet contentletOut = null;
         try {
@@ -3200,6 +3193,18 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final String lockKey =
                     "ContentletIdentifier:" + (UtilMethods.isSet(contentletIn.getIdentifier()) ? contentletIn.getIdentifier() : UUIDGenerator.generateUuid());
             try {
+
+                final Optional<Contentlet> workflowContentletOpt =
+                        this.validateWorkflowStateOrRunAsWorkflow(contentletIn, contentRelationships,
+                                categories, user, respectFrontendRoles, createNewVersion, generateSystemEvent);
+
+                if (workflowContentletOpt.isPresent()) {
+
+                    Logger.info(this, "A Workflow has been ran instead of checkin the contentlet: " +
+                            workflowContentletOpt.get().getIdentifier());
+                    return workflowContentletOpt.get();
+                }
+
                 contentletOut = lockManager.tryLock(lockKey,
                                 () -> internalCheckin(
                                         contentletIn, contentRelationships, categories, user,
@@ -3237,6 +3242,62 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
+    private Optional<Contentlet> validateWorkflowStateOrRunAsWorkflow(final Contentlet contentletIn, final ContentletRelationships contentRelationships,
+                                                                      final List<Category> categories, final User user,
+                                                                      final boolean respectFrontendRoles, final boolean createNewVersion,
+                                                                      boolean generateSystemEvent) throws DotSecurityException, DotDataException {
+
+        // if already on workflow or has an actionid skip this method.
+        if (this.isDisableWorkflow(contentletIn) || this.isWorkflowInProgress(contentletIn) || UtilMethods.isSet(contentletIn.getActionId())) {
+
+            return Optional.empty();
+        }
+
+        final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
+        // note: by now we are just using the new system action, even if the contentlet already exists.
+        // in the future if the contentlet exist, EDIT should be catch
+        final Optional<WorkflowAction> workflowActionOpt =
+                workflowAPI.findActionMappedBySystemActionContentlet
+                        (contentletIn, UtilMethods.isSet(contentletIn.getIdentifier())?WorkflowAPI.SystemAction.NEW:WorkflowAPI.SystemAction.EDIT, user);
+
+        if (workflowActionOpt.isPresent()) {
+
+            final String title = contentletIn.getTitle();
+            final String actionId = workflowActionOpt.get().getId();
+            Logger.info(this, () -> "The contentlet: " + title + " hasn't action id set"
+                    + " using the default action: " + actionId);
+
+            // if the action has a save action, we skip the current checkin
+            if (workflowAPI.hasSaveActionlet(workflowActionOpt.get())) {
+
+                Logger.info(this, () -> "The action: " + actionId + " has a save contentlet actionlet"
+                        + " so firing a workflow and skipping the current checkin for the contentlet: " + title);
+
+                return Optional.ofNullable(workflowAPI.fireContentWorkflow(contentletIn,
+                        new ContentletDependencies.Builder().workflowActionId(actionId)
+                                .modUser(user).categories(categories).relationships(contentRelationships)
+                                .respectAnonymousPermissions(respectFrontendRoles)
+                                .generateSystemEvent(generateSystemEvent)
+                                .build()
+                ));
+            }
+
+            Logger.info(this, () -> "The action: " + actionId + " hasn't a save contentlet actionlet"
+                    + " so including just the action to the contentlet: " + title);
+
+            contentletIn.setActionId(actionId);
+        }
+
+        return Optional.empty();
+    }
+
+    private boolean isDisableWorkflow(final Contentlet contentlet) {
+        return contentlet.isDisableWorkflow();
+    }
+
+    private boolean isWorkflowInProgress (final Contentlet contentlet) {
+        return contentlet.isWorkflowInProgress();
+    }
 
     private Contentlet internalCheckin(Contentlet contentlet,
             ContentletRelationships contentRelationships, List<Category> cats,
@@ -6924,7 +6985,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             contentlet.setIndexPolicyDependencies(contentletDependencies.getIndexPolicyDependencies());
         }
 
-        return checkin(contentlet, contentletDependencies.getRelationships(), contentletDependencies.getCategories(), null, contentletDependencies.getModUser(),
+        return checkin(contentlet, contentletDependencies.getRelationships(), contentletDependencies.getCategories(), contentletDependencies.getPermissions(), contentletDependencies.getModUser(),
                 contentletDependencies.isRespectAnonymousPermissions(), contentletDependencies.isGenerateSystemEvent());
     }
 

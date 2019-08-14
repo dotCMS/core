@@ -802,7 +802,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             assertNotNull(savedData);
             assertTrue(savedData.size() == 3);
             for (final Contentlet cont : savedData) {
-                assertNull(workflowAPI.findTaskByContentlet(cont));
+                assertNotNull(workflowAPI.findTaskByContentlet(cont));
             }
 
         } finally {
@@ -967,7 +967,8 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                     assertNotNull(task);
                     assertEquals(task.getStatus(), step1.getId());
                 } else if (cont.getStringProperty(TITLE_FIELD_NAME).startsWith(testH)) {
-                    assertNull(task);
+                    Logger.info(this, "******** task: " + task);
+                    assertNotNull(task);
                 } else {
                     assertNotNull(task);
                     assertEquals(task.getStatus(), step3.getId());

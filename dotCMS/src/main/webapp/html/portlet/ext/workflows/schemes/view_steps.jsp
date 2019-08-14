@@ -41,6 +41,13 @@
 			let index = Array.from(sibblings).indexOf(el);
 
 			try {
+
+				if ("true" == el.dataset.first || index == 0) { // the first one can not be moved or can not drop any step to the first one.
+
+					this.cancel();
+					return;
+				}
+
 				if (sibblings && ((sibblings.length - 1) - index === 0)) {
 					this.cancel();
 					return;

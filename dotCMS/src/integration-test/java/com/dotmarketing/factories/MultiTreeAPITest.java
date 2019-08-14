@@ -428,7 +428,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         final Set<String> allPersonalizationSet = multiTreeAPI.getPersonalizations();
 
         org.junit.Assert.assertNotNull(allPersonalizationSet);
-        org.junit.Assert.assertTrue(allPersonalizationSet.size() == 1);
+        org.junit.Assert.assertTrue(allPersonalizationSet.stream().noneMatch(personalization-> personalization.startsWith("dot:persona:")));
         org.junit.Assert.assertTrue(allPersonalizationSet.contains(MultiTree.DOT_PERSONALIZATION_DEFAULT));
     }
 

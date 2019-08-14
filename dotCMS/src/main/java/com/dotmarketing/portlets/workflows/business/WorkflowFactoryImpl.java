@@ -4,6 +4,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.DbContentTypeTransformer;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
+import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -23,6 +24,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import org.apache.commons.beanutils.BeanUtils;
 
@@ -468,6 +470,38 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	}
 
 	@Override
+	public void deleteWorkflowTaskByContentletIdAnyLanguage(final String webAsset) throws DotDataException {
+
+		new DotConnect().setSQL("delete from workflow_comment where workflowtask_id   in (select id from workflow_task where webasset = ?)")
+				.addParam(webAsset).loadResult();
+
+		new DotConnect().setSQL("delete from workflow_history where workflowtask_id   in (select id from workflow_task where webasset = ?)")
+				.addParam(webAsset).loadResult();
+
+		new DotConnect().setSQL("delete from workflowtask_files where workflowtask_id in (select id from workflow_task where webasset = ?)")
+				.addParam(webAsset).loadResult();
+
+		new DotConnect().setSQL("delete from workflow_task where webasset = ?")
+				.addParam(webAsset).loadResult();
+	}
+
+	@Override
+	public void deleteWorkflowTaskByContentletIdAndLanguage(final String webAsset, final long languageId) throws DotDataException {
+
+		new DotConnect().setSQL("delete from workflow_comment where workflowtask_id   in (select id from workflow_task where webasset = ? and language_id=?)")
+				.addParam(webAsset).addParam(languageId).loadResult();
+
+		new DotConnect().setSQL("delete from workflow_history where workflowtask_id   in (select id from workflow_task where webasset = ? and language_id=?)")
+				.addParam(webAsset).addParam(languageId).loadResult();
+
+		new DotConnect().setSQL("delete from workflowtask_files where workflowtask_id in (select id from workflow_task where webasset = ? and language_id=?)")
+				.addParam(webAsset).addParam(languageId).loadResult();
+
+		new DotConnect().setSQL("delete from workflow_task where webasset = ? and language_id=?")
+				.addParam(webAsset).addParam(languageId).loadResult();
+	}
+
+	@Override
 	public void deleteWorkflowTask(WorkflowTask task) throws DotDataException {
 		final DotConnect db = new DotConnect();
 
@@ -730,6 +764,34 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			}
 		}
 		return step;
+	}
+
+	@Override
+	public Optional<WorkflowStep> findFirstStep(final String actionId, final String actionSchemeId) throws DotDataException {
+
+		WorkflowStep workflowStep = null;
+		final List<Map<String, Object>> workflowStepRows =
+				new DotConnect().setMaxRows(1).setSQL(sql.SELECT_STEPS_BY_ACTION)
+					.addParam(actionId).loadObjectResults();
+
+		try {
+
+			workflowStep = UtilMethods.isSet(workflowStepRows) && workflowStepRows.size() > 0?
+					this.convertStep(workflowStepRows.get(0)):
+					this.findFirstStep(actionSchemeId).orElse(null);
+		} catch (IllegalAccessException | InvocationTargetException e) {
+
+			throw new DotDataException(e);
+		}
+
+		return Optional.ofNullable(workflowStep);
+	}
+
+	@Override
+	public Optional<WorkflowStep> findFirstStep(final String schemeId) throws DotDataException {
+
+		return this.findSteps(this.findScheme(schemeId))
+				.stream().findFirst();
 	}
 
 	@Override
@@ -1072,6 +1134,293 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 		this.saveAction(workflowAction, workflowStep, 0);
 	} // saveAction
+
+	/////////
+	@Override
+	public List<Map<String, Object>> findSystemActionsByContentType(final ContentType contentType) throws DotDataException {
+
+		List<Map<String, Object>> results = this.cache.findSystemActionsByContentType(contentType.variable());
+		if (null == results) {
+
+			results = new DotConnect().setSQL(sql.SELECT_SYSTEM_ACTION_BY_SCHEME_OR_CONTENT_TYPE_MAPPING)
+						.addParam(contentType.variable())
+						.loadObjectResults();
+			if (UtilMethods.isSet(results)) {
+
+				this.cache.addSystemActionsByContentType(contentType.variable(), results);
+			}
+		}
+
+		return results;
+	}
+
+	@Override
+	public Map<String, List<Map<String, Object>>> findSystemActionsMapByContentType(final List<ContentType> contentTypes)  throws DotDataException {
+
+		final ImmutableMap.Builder<String ,List<Map<String, Object>>> mappingMapBuilder = new ImmutableMap.Builder<>();
+		final String selectQueryTemplate = sql.SELECT_SYSTEM_ACTION_BY_CONTENT_TYPES;
+		final Set<String> notFoundContentTypes = new HashSet<>();
+
+		for (final ContentType contentType: contentTypes) {
+
+			final String variable = contentType.variable();
+			final List<Map<String, Object>> results = this.cache.findSystemActionsByContentType(contentType.variable());
+			if (null != results) {
+
+				mappingMapBuilder.put(variable, results);
+			} else {
+
+				notFoundContentTypes.add(variable);
+			}
+		}
+
+		if (!notFoundContentTypes.isEmpty()) {
+
+			final DotConnect dotConnect = new DotConnect()
+					.setSQL(String.format(selectQueryTemplate, this.createQueryIn(notFoundContentTypes)));
+
+			notFoundContentTypes.stream().forEach(dotConnect::addObject);
+
+			final List<Map<String, Object>> mappingRows = dotConnect.loadObjectResults();
+
+			if (!mappingRows.isEmpty()) {
+
+				final Map<String, List<Map<String, Object>>> dbMappingMap = new HashMap<>();
+
+				for (final Map<String, Object> rowMap : mappingRows) {
+
+					final String variable = (String)rowMap.get("scheme_or_content_type");
+					dbMappingMap.computeIfAbsent(variable, key -> new ArrayList<>()).add(rowMap);
+				}
+
+				mappingMapBuilder.putAll(dbMappingMap);
+			}
+		}
+
+		return mappingMapBuilder.build();
+	}
+
+	/**
+	 * Finds the {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction}'s by {@link WorkflowScheme}
+	 * @param workflowScheme {@link WorkflowScheme}
+	 * @return List of Rows
+	 */
+	@Override
+	public List<Map<String, Object>> findSystemActionsByScheme(final WorkflowScheme workflowScheme) throws DotDataException {
+
+		List<Map<String, Object>> results = this.cache.findSystemActionsByScheme(workflowScheme.getId());
+		if (null == results) {
+
+			results = new DotConnect()
+					.setSQL(sql.SELECT_SYSTEM_ACTION_BY_SCHEME_OR_CONTENT_TYPE_MAPPING)
+					.addParam(workflowScheme.getId())
+					.loadObjectResults();
+			if (UtilMethods.isSet(results)) {
+
+				this.cache.addSystemActionsByScheme(workflowScheme.getId(), results);
+			}
+		}
+
+		return results;
+	}
+
+	@Override
+	public List<Map<String, Object>> findSystemActionsByWorkflowAction(final WorkflowAction workflowAction) throws DotDataException {
+
+		List<Map<String, Object>> results = this.cache.findSystemActionsByWorkflowAction(workflowAction.getId());
+		if (null == results) {
+
+			results = new DotConnect()
+					.setSQL(sql.SELECT_SYSTEM_ACTION_BY_WORKFLOW_ACTION)
+					.addParam(workflowAction.getId())
+					.loadObjectResults();
+			if (UtilMethods.isSet(results)) {
+
+				this.cache.addSystemActionsByWorkflowAction(workflowAction.getId(), results);
+			}
+		}
+
+		return results;
+	}
+
+	/**
+	 * Finds the {@link SystemActionWorkflowActionMapping}  associated to the {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction}
+	 * and {@link ContentType}
+	 * @param systemAction  {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction}
+	 * @param contentType   {@link ContentType}
+	 * @return Map<String, Object>
+	 */
+	@Override
+	public Map<String, Object> findSystemActionByContentType(final WorkflowAPI.SystemAction systemAction, final ContentType contentType) throws DotDataException {
+
+		Map<String, Object> mappingRow = this.cache.findSystemActionByContentType(systemAction.name(), contentType.variable());
+		if (!UtilMethods.isSet(mappingRow)) {
+
+			final List<Map<String, Object>> rows = new DotConnect()
+					.setSQL(sql.SELECT_SYSTEM_ACTION_BY_SYSTEM_ACTION_AND_SCHEME_OR_CONTENT_TYPE_MAPPING)
+					.addParam(systemAction.name())
+					.addParam(contentType.variable())
+					.loadObjectResults();
+
+			if (UtilMethods.isSet(rows)) {
+
+				mappingRow = rows.get(0);
+				this.cache.addSystemActionBySystemActionNameAndContentTypeVariable(
+						systemAction.name(), contentType.variable(), mappingRow);
+			}
+		}
+
+		return mappingRow;
+	}
+
+	/**
+	 * Finds the list of {@link SystemActionWorkflowActionMapping}  associated to the {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction}
+	 * and {@link List} of {@link WorkflowScheme}'s
+	 * @param systemAction {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction}
+	 * @param schemes      {@link List} of {@link WorkflowScheme}'s
+	 * @return List<Map<String, Object>>
+	 */
+	@Override
+	public List<Map<String, Object>> findSystemActionsBySchemes(final WorkflowAPI.SystemAction systemAction, final List<WorkflowScheme> schemes) throws DotDataException {
+
+		final List<String> schemeIdList   = schemes.stream().map(WorkflowScheme::getId).collect(Collectors.toList());
+		List<Map<String, Object>> results = this.cache.findSystemActionsBySchemes(systemAction.name(), schemeIdList);
+
+		if (null == results) {
+
+			if (UtilMethods.isSet(schemes)) {
+
+				final DotConnect dotConnect = new DotConnect()
+						.setSQL(String.format(sql.SELECT_SYSTEM_ACTION_BY_SYSTEM_ACTION_AND_SCHEMES, this.createQueryIn(schemes)))
+						.addParam(systemAction.name());
+
+				for (final WorkflowScheme scheme : schemes) {
+
+					dotConnect.addParam(scheme.getId());
+				}
+
+				results = dotConnect.loadObjectResults();
+				if (UtilMethods.isSet(results)) {
+					this.cache.addSystemActionsBySystemActionNameAndSchemeIds(
+							systemAction.name(), schemeIdList, results);
+				}
+			}
+		}
+
+		return results;
+	}
+
+	@Override
+	public Map<String, Object> findSystemActionByIdentifier(final String identifier) throws DotDataException {
+
+		Map<String, Object> systemActionMap = cache.findSystemActionByIdentifier(identifier);
+
+		if (null == systemActionMap) {
+
+			final List<Map<String, Object>> rows = new DotConnect().setSQL(sql.SELECT_SYSTEM_ACTION_BY_IDENTIFIER)
+					.addParam(identifier)
+					.loadObjectResults();
+			systemActionMap = UtilMethods.isSet(rows) ? rows.get(0) : Collections.emptyMap();
+
+			this.cache.addSystemActionByIdentifier(identifier, systemActionMap);
+		}
+
+		return systemActionMap;
+	}
+
+	@Override
+	public boolean deleteSystemAction(final SystemActionWorkflowActionMapping mapping) throws DotDataException {
+
+		new DotConnect().setSQL(sql.DELETE_SYSTEM_ACTION_BY_IDENTIFIER)
+				.addParam(mapping.getIdentifier())
+				.loadResult();
+
+		this.cache.removeSystemActionByIdentifier(mapping.getIdentifier());
+
+		return true; //  todo: if rows affected 0 -> false
+	}
+
+	@Override
+	public void deleteSystemActionsByWorkflowAction(final WorkflowAction action) throws DotDataException {
+
+		Logger.debug(this, ()->"Removing system action mappings associated to the action: " + action.getId());
+		new DotConnect().setSQL(sql.DELETE_SYSTEM_ACTION_BY_WORKFLOW_ACTION_ID)
+				.addParam(action.getId())
+				.loadResult();
+
+		this.cache.removeSystemActionsByWorkflowAction(action.getId());
+	}
+
+	private String createQueryIn (final Collection list) {
+
+		final StringBuilder builder = new StringBuilder();
+
+		for (int i = 0; i < list.size(); ++i) {
+
+			builder.append("?");
+			if (i < list.size() -1) {
+
+				builder.append(",");
+			}
+		}
+
+		return builder.toString();
+	}
+
+
+	@Override
+	public SystemActionWorkflowActionMapping saveSystemActionWorkflowActionMapping(final SystemActionWorkflowActionMapping mapping) throws DotDataException  {
+
+		final String ownerKey = this.getOwnerKey (mapping, mapping.getOwner());
+		SystemActionWorkflowActionMapping toReturn = mapping;
+
+		final List<Map<String, Object>> existsRow =
+				new DotConnect().setSQL(sql.SELECT_SYSTEM_ACTION_BY_SYSTEM_ACTION_AND_SCHEME_OR_CONTENT_TYPE_MAPPING)
+				.addParam(mapping.getSystemAction().name())
+				.addParam(ownerKey)
+				.loadObjectResults();
+
+		if (!UtilMethods.isSet(existsRow)) {
+
+			new DotConnect().setSQL(sql.INSERT_SYSTEM_ACTION_WORKFLOW_ACTION_MAPPING)
+					.addParam(mapping.getIdentifier())
+					.addParam(mapping.getSystemAction().name())
+					.addParam(mapping.getWorkflowAction().getId())
+					.addParam(ownerKey)
+					.loadResult();
+		} else {
+
+			// if exists, we override the id and update.
+			final String existingId = (String)existsRow.get(0).get("id");
+			toReturn = new SystemActionWorkflowActionMapping(existingId,
+					mapping.getSystemAction(),
+					mapping.getWorkflowAction(),
+					mapping.getOwner());
+
+			new DotConnect().setSQL(sql.UPDATE_SYSTEM_ACTION_WORKFLOW_ACTION_MAPPING)
+					.addParam(mapping.getSystemAction().name())
+					.addParam(mapping.getWorkflowAction().getId())
+					.addParam(ownerKey)
+					.addParam(existingId)
+					.loadResult();
+
+			this.cache.removeSystemActionByIdentifier(existingId);
+		}
+
+		return toReturn;
+	}
+
+	/*
+	* The owner could be a ContentType (variable) or WorkflowScheme (identifier)
+	*/
+	private String getOwnerKey (final SystemActionWorkflowActionMapping mapping, final Object ownerContentTypeOrScheme) {
+
+		return mapping.isOwnerContentType()?
+			ContentType.class.cast(ownerContentTypeOrScheme).variable():
+			WorkflowScheme.class.cast(ownerContentTypeOrScheme).getId();
+	}
+
+	///////
 
 	@Override
 	public void saveAction(final WorkflowAction workflowAction,
@@ -1975,11 +2324,39 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			if (null != actions) {
 				actions.stream().forEach(action -> this.cache.remove(action));
 			}
+
+			this.deleteSystemActionsByScheme(scheme);
 			this.cache.remove(scheme);
 		} catch (DotDataException e) {
 			Logger.error(WorkFlowFactory.class,e.getMessage(),e);
 			throw new DotDataException(e.getMessage(), e);
 		}
+	}
+
+	@Override
+	public void deleteSystemActionsByScheme(final WorkflowScheme scheme) throws DotDataException {
+
+		Logger.debug(this,
+				()-> "Deleting the system action mappings associated to the scheme: " + scheme.getId());
+
+		new DotConnect()
+				.setSQL(sql.DELETE_SYSTEM_ACTION_BY_SCHEME_OR_CONTENT_TYPE)
+				.addParam(scheme.getId())
+				.loadResult();
+		this.cache.removeSystemActionsByScheme(scheme.getId());
+	}
+
+	@Override
+	public void deleteSystemActionsByContentType(final String contentTypeVariable) throws DotDataException {
+
+		Logger.debug(this,
+				()-> "Deleting the system action mappings associated to the content type: " + contentTypeVariable);
+
+		new DotConnect()
+				.setSQL(sql.DELETE_SYSTEM_ACTION_BY_SCHEME_OR_CONTENT_TYPE)
+				.addParam(contentTypeVariable)
+				.loadResult();
+		this.cache.removeSystemActionsByContentType(contentTypeVariable);
 	}
 
 	@Override
