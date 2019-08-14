@@ -45,20 +45,6 @@ then
   jsonStatusesAttribute=`echo "$jsonResponse" | grep "${jsonAttribute}\w*\""`
   statusesURL=`echo "$jsonStatusesAttribute" | grep -o "${jsonBaseValue}\w*"`
 
-  # TODO: Remove!!!
-  # TODO: Remove!!!
-  echo ">>>"
-  echo ">>>"
-  echo $jsonResponse
-  echo ">>>"
-  echo ">>>"
-  echo ">>"${jsonStatusesAttribute}"<<"
-  echo ">>"${statusesURL}"<<"
-  echo ">>>"
-  echo ">>>"
-  # TODO: Remove!!!
-  # TODO: Remove!!!
-
   # https://developer.github.com/v3/repos/statuses/#create-a-status
   # The state of the status. Can be one of error, failure, pending, or success.
   curl -u ${GITHUB_USER}:${GITHUB_USER_TOKEN} \
