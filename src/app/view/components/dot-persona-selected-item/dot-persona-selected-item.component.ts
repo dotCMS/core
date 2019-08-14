@@ -12,6 +12,9 @@ export class DotPersonaSelectedItemComponent implements OnInit {
     @Input()
     persona: DotPersona;
 
+    @Input()
+    isEditMode = false;
+
     @Output()
     selected = new EventEmitter<MouseEvent>();
 
@@ -21,10 +24,15 @@ export class DotPersonaSelectedItemComponent implements OnInit {
 
     ngOnInit() {
         this.dotMessageService
-            .getMessages(['modes.persona.selector.title', 'modes.persona.no.persona'])
+            .getMessages([
+                'modes.persona.selector.title.preview',
+                'modes.persona.selector.title.edit',
+                'modes.persona.no.persona'
+            ])
             .pipe(take(1))
             .subscribe((messages: { [key: string]: string }) => {
                 this.messages = messages;
+                console.log('this.messages', this.messages);
             });
     }
 

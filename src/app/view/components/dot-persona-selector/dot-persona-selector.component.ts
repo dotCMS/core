@@ -4,9 +4,7 @@ import {
     Output,
     EventEmitter,
     Input,
-    OnInit,
-    OnChanges,
-    SimpleChanges
+    OnInit
 } from '@angular/core';
 import { PaginatorService } from '@services/paginator';
 import {
@@ -15,6 +13,7 @@ import {
 } from '@components/_common/searchable-dropdown/component';
 import { DotPersona } from '@shared/models/dot-persona/dot-persona.model';
 import { take } from 'rxjs/operators';
+import { DotRenderedPageState, DotPageMode } from '@portlets/dot-edit-page/shared/models';
 
 /**
  * It is dropdown of personas, it handle pagination and global search
@@ -28,13 +27,7 @@ import { take } from 'rxjs/operators';
     styleUrls: ['./dot-persona-selector.component.scss'],
     templateUrl: 'dot-persona-selector.component.html'
 })
-export class DotPersonaSelectorComponent implements OnInit, OnChanges {
-    @Input()
-    pageId: string;
-
-    @Input()
-    value: DotPersona;
-
+export class DotPersonaSelectorComponent implements OnInit {
     @Output()
     selected: EventEmitter<DotPersona> = new EventEmitter();
 
@@ -44,30 +37,36 @@ export class DotPersonaSelectorComponent implements OnInit, OnChanges {
     @ViewChild('searchableDropdown')
     searchableDropdown: SearchableDropdownComponent;
 
-    totalRecords: number;
+    isEditMode = false;
+    messagesKey: { [key: string]: string } = {};
     paginationPerPage = 5;
     personas: DotPersona[];
-    messagesKey: { [key: string]: string } = {};
+    totalRecords: number;
+    value: DotPersona;
     addAction: (item: DotPersona) => void;
 
+    private _pageState: DotRenderedPageState;
+
     constructor(public paginationService: PaginatorService) {}
-
-    ngOnChanges(changes: SimpleChanges): void {
-        this.paginationService.url = `v1/page/${this.pageId}/personas`;
-
-        if (
-            changes.value &&
-            this.isPersonalizeStateUpdated(changes.value.previousValue, changes.value.currentValue)
-        ) {
-            this.reloadPersonasListCurrentPage();
-        }
-    }
 
     ngOnInit(): void {
         this.addAction = () => {
             // TODO Implement + action
         };
         this.paginationService.paginationPerPage = this.paginationPerPage;
+    }
+
+    @Input('pageState')
+    set pageState(value: DotRenderedPageState) {
+        this._pageState = value;
+        this.paginationService.url = `v1/page/${this.pageState.page.identifier}/personas`;
+        this.isEditMode = this.pageState.state.mode === DotPageMode.EDIT;
+        this.value = this.pageState.viewAs && this.pageState.viewAs.persona;
+        this.reloadPersonasListCurrentPage();
+    }
+
+    get pageState(): DotRenderedPageState {
+        return this._pageState;
     }
 
     /**
@@ -134,10 +133,6 @@ export class DotPersonaSelectorComponent implements OnInit, OnChanges {
             .getWithOffset(offset)
             .pipe(take(1))
             .subscribe(this.setList.bind(this));
-    }
-
-    private isPersonalizeStateUpdated(prev: DotPersona, current: DotPersona): boolean {
-        return prev && current && prev.personalized !== current.personalized;
     }
 
     private setList(items: DotPersona[]): void {

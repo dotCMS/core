@@ -21,12 +21,18 @@
             span {
                 display: block;
             }
+
             .dot-persona-selector__label {
                 color: $gray;
                 flex: 1;
                 font-size: $font-size-small;
                 line-height: $basic-padding * 2;
             }
+
+            .dot-persona-selector__label--edit {
+                color: $brand-primary
+            }
+
             .dot-persona-selector__name {
                 color: $black;
                 font-weight: $font-weight-semi-bold;

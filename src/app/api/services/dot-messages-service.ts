@@ -123,17 +123,19 @@ export class DotMessageService {
      * Do the request to the server to get messages
      */
     private requestMessages(): void {
+        const messagesKeysCopy: String[] = _.concat(this.messageKeys);
+        this.messageKeys = [];
+
         this.coreWebService
             .requestView({
                 body: {
-                    messagesKey: this.messageKeys
+                    messagesKey: messagesKeysCopy
                 },
                 method: RequestMethod.Post,
                 url: this.i18nUrl
             })
             .pipe(pluck('i18nMessagesMap'))
             .subscribe((messages) => {
-                this.messageKeys = [];
                 this.messagesLoaded = Object.assign({}, this.messagesLoaded, messages);
                 this._messageMap$.next(this.messagesLoaded);
             });

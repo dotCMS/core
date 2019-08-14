@@ -6,9 +6,16 @@
         [url]="persona?.photo || ''"
     ></dot-avatar>
     <div class="dot-persona-selector__label-container">
-        <span class="dot-persona-selector__label">{{
-            messages['modes.persona.selector.title']
-        }}</span>
+        <span
+            class="dot-persona-selector__label"
+            [ngClass]="{ 'dot-persona-selector__label--edit': isEditMode }"
+        >
+            {{
+                isEditMode
+                    ? messages['modes.persona.selector.title.edit']
+                    : messages['modes.persona.selector.title.preview']
+            }}
+        </span>
         <span class="dot-persona-selector__name">{{
             persona?.name || messages['modes.persona.no.persona']
         }}</span>
