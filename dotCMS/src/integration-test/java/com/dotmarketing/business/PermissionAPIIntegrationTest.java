@@ -202,7 +202,7 @@ public class PermissionAPIIntegrationTest extends IntegrationTestBase {
     public void issue11850() throws DotSecurityException, DotDataException {
 
     	// Create test host
-    	Host host = new SiteDataGen().nextPersisted();
+    	final Host host = new SiteDataGen().nextPersisted();
 
     	try {
     		long time = System.currentTimeMillis();
