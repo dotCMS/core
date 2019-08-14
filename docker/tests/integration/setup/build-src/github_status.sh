@@ -13,8 +13,9 @@ fi
 if [ "$PULL_REQUEST" != "false" ];
 then
 
-  reportsIndexURL="${GOOGLE_STORAGE_JOB_FOLDER}/reports/html/integrationTest/index.html"
-  logURL="${GOOGLE_STORAGE_JOB_FOLDER}/logs/dotcms.log"
+  BASE_GOOGLE_URL="https://storage.googleapis.com/"
+  reportsIndexURL="${BASE_GOOGLE_URL}${GOOGLE_STORAGE_JOB_FOLDER}/reports/html/integrationTest/index.html"
+  logURL="${BASE_GOOGLE_URL}${GOOGLE_STORAGE_JOB_FOLDER}/logs/dotcms.log"
 
   echo ""
   echo "================================================================================"

@@ -2,7 +2,8 @@
 
 outputFolder="/custom/output"
 credentialsFile="/build/credentials.json"
-buckedBasePath="gs://cicd-246518-tests/integration/"
+buckedProtocol="gs://"
+buckedBasePath="cicd-246518-tests/integration/"
 NOW=$(date +"%y-%m-%d")
 folderId="${NOW}/${BUILD_HASH}/${databaseType}"
 buckedPath="${buckedBasePath}${folderId}"
@@ -39,11 +40,11 @@ fi
 echo $GOOGLE_CREDENTIALS_BASE64 | base64 -d - > $credentialsFile
 
 echo ""
-echo "  >>> Pushing reports and logs to [${buckedPath}] <<<"
+echo "  >>> Pushing reports and logs to [${buckedProtocol}${buckedPath}] <<<"
 echo ""
 
 gcloud auth activate-service-account --key-file="${credentialsFile}"
-gsutil -m -q cp -a public-read -r ${outputFolder} ${buckedPath}
+gsutil -m -q cp -a public-read -r ${outputFolder} ${buckedProtocol}${buckedPath}
 
 bash /build/github_status.sh ${buckedPath}
 ignoring_return_value=$?
