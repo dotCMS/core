@@ -11,7 +11,6 @@ import { DotPageRender } from '../../../shared/models/dot-rendered-page.model';
 import { Injectable } from '@angular/core';
 import { DotContentletLockerService } from '@services/dot-contentlet-locker/dot-contentlet-locker.service';
 import { DotPersona } from '@shared/models/dot-persona/dot-persona.model';
-import { DotPageMode } from '@portlets/dot-edit-page/shared/models/dot-page-mode.enum';
 import { DotDevice } from '@shared/models/dot-device/dot-device.model';
 import {
     DotHttpErrorManagerService,
@@ -175,29 +174,11 @@ export class DotPageStateService {
      * @memberof DotPageStateService
      */
     setPersona(persona: DotPersona): void {
-        const options: DotPageRenderOptions = {
-            mode: this.currentState.viewAs.mode,
+        this.get({
             viewAs: {
                 persona
             }
-        };
-
-        // All this logic to unlock the page and set a mode is because per UX we can't allow
-        // a non personalized page to show in EDIT MODE and locked, in other hand maybe we
-        // need to move this to the backend.
-        if (this.shouldUnlockPageToSetPersona(persona)) {
-            options.mode = DotPageMode.PREVIEW;
-
-            this.dotContentletLockerService
-                .unlock(this.currentState.page.inode)
-                .pipe(
-                    take(1),
-                    pluck('message')
-                )
-                .subscribe(() => this.get(options));
-        } else {
-            this.get(options);
-        }
+        });
     }
 
     private getCurrentUser(): User {
@@ -229,13 +210,5 @@ export class DotPageStateService {
 
     private setState(state: DotRenderedPageState): void {
         this.state$.next(state);
-    }
-
-    private shouldUnlockPageToSetPersona(persona: DotPersona): boolean {
-        return (
-            !persona.personalized &&
-            this.currentState.page.locked &&
-            this.currentState.viewAs.mode === DotPageMode.EDIT
-        );
     }
 }
