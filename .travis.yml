@@ -28,7 +28,7 @@ if: >-
   OR branch = master
   OR branch =~ ^release-
   OR branch =~ ^test-
-  OR branch =~ ^issue-16881-
+  OR commit_message = /(travis)/
 
 # https://docs.travis-ci.com/user/build-stages
 jobs:
