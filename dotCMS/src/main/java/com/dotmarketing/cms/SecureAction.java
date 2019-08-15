@@ -1,9 +1,9 @@
 package com.dotmarketing.cms;
 
+import com.dotcms.repackage.org.apache.struts.actions.DispatchAction;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
-import org.apache.struts.actions.DispatchAction;
 
 @Deprecated
 public class SecureAction extends DispatchAction {

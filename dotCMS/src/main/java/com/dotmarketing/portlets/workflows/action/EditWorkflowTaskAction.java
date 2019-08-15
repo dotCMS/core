@@ -3,6 +3,8 @@ package com.dotmarketing.portlets.workflows.action;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
+import com.dotcms.repackage.org.apache.struts.action.ActionForm;
+import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.db.HibernateUtil;
@@ -27,8 +29,6 @@ import java.util.GregorianCalendar;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.beanutils.BeanUtils;
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionMapping;
 /**
  * @author David
  */
@@ -39,7 +39,7 @@ public class EditWorkflowTaskAction extends DotPortletAction {
 	private WorkflowAPI wfAPI = APILocator.getWorkflowAPI();
 	
 	public void processAction(ActionMapping mapping, ActionForm form,
-			PortletConfig config, ActionRequest req, ActionResponse res)
+							  PortletConfig config, ActionRequest req, ActionResponse res)
 	throws Exception {
 		PermissionAPI perAPI = APILocator.getPermissionAPI();
 		String cmd = req.getParameter(Constants.CMD);

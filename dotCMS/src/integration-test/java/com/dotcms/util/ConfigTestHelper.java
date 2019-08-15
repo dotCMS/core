@@ -1,5 +1,7 @@
 package com.dotcms.util;
 
+import com.dotcms.repackage.org.apache.struts.Globals;
+import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -7,8 +9,6 @@ import java.nio.file.Paths;
 
 import javax.servlet.ServletContext;
 
-import org.apache.struts.Globals;
-import org.apache.struts.config.ModuleConfig;
 import org.mockito.Matchers;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;

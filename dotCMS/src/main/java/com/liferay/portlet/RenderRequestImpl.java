@@ -31,18 +31,13 @@ import com.dotcms.repackage.javax.portlet.PortletSession;
 import com.dotcms.repackage.javax.portlet.RenderRequest;
 import com.dotcms.repackage.javax.portlet.RenderResponse;
 import com.dotcms.repackage.javax.portlet.WindowState;
-import com.dotmarketing.util.Logger;
+import com.dotcms.repackage.org.apache.struts.Globals;
 import com.liferay.portal.model.Portlet;
-import com.liferay.portal.model.User;
-import com.liferay.portal.servlet.PortletContextPool;
-import com.liferay.portal.servlet.PortletContextWrapper;
 import com.liferay.portal.util.Constants;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.WebKeys;
-import com.liferay.util.CollectionFactory;
 import com.liferay.util.ParamUtil;
 import com.liferay.util.StringPool;
-import com.liferay.util.Validator;
 import com.liferay.util.servlet.DynamicServletRequest;
 import com.liferay.util.servlet.UploadServletRequest;
 import java.security.Principal;
@@ -50,13 +45,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
-import org.apache.struts.Globals;
 
 /**
  * <a href="RenderRequestImpl.java.html"><b><i>View Source</i></b></a>

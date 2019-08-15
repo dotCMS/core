@@ -16,9 +16,9 @@
 
 package org.apache.velocity.tools.struts;
 
+import com.dotcms.repackage.org.apache.struts.util.MessageResources;
 import java.util.List;
 import java.util.Locale;
-import org.apache.struts.util.MessageResources;
 
 /**
  * <p>View tool that provides methods to render Struts

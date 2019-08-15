@@ -22,9 +22,9 @@
 
 package com.liferay.portal.form;
 
+import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.liferay.util.NullSafeProperties;
 import java.util.Properties;
-import org.apache.struts.action.ActionForm;
 
 /**
  * <a href="LayoutForm.java.html"><b><i>View Source</i></b></a>
