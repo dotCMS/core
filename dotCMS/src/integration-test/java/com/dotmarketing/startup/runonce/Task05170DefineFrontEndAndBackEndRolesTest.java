@@ -46,13 +46,20 @@ public class Task05170DefineFrontEndAndBackEndRolesTest {
         }
         final DotConnect dotConnect = new DotConnect();
 
-        dotConnect
-                .setSQL(" UPDATE cms_role SET role_key = 'LoggedIn Site User' WHERE role_key = 'DOTCMS_BACK_END_USER' ");
-        dotConnect.loadResult();
+        //Need to make sure we already have the old roles present. If we already have the new roles then we rename them to mimic the condition.
+        dotConnect.setSQL(" SELECT count(*) as x FROM cms_role  WHERE role_key = 'LoggedIn Site User' ");
+        if (dotConnect.getInt("x") == 0) {
+            dotConnect
+                    .setSQL(" UPDATE cms_role SET role_key = 'LoggedIn Site User' WHERE role_key = 'DOTCMS_BACK_END_USER' ");
+            dotConnect.loadResult();
+        }
 
-        dotConnect
-                .setSQL(" UPDATE cms_role SET role_key = 'CMS User' WHERE role_key = 'DOTCMS_FRONT_END_USER' ");
-        dotConnect.loadResult();
+        dotConnect.setSQL(" SELECT count(*) as x FROM cms_role  WHERE role_key = 'CMS User' ");
+        if (dotConnect.getInt("x") == 0) {
+            dotConnect
+                    .setSQL(" UPDATE cms_role SET role_key = 'CMS User' WHERE role_key = 'DOTCMS_FRONT_END_USER' ");
+            dotConnect.loadResult();
+        }
 
         try {
             final Task05170DefineFrontEndAndBackEndRoles task05170DefineFrontEndAndBackEndRoles =
@@ -69,12 +76,13 @@ public class Task05170DefineFrontEndAndBackEndRolesTest {
                     .setSQL(" SELECT count(*) as x FROM cms_role  WHERE role_key = 'DOTCMS_FRONT_END_USER' ");
             assertEquals("Task should have created the new roles", dotConnect.getInt("x"), 1);
 
+            //The Old roles should be kept in the database as they could have been given a different purpose on the instance we're upgrading
             dotConnect
                     .setSQL(" SELECT count(*) as x FROM cms_role  WHERE role_key = 'LoggedIn Site User' ");
-            assertEquals("Task should have created the new roles", dotConnect.getInt("x"), 0);
+            assertEquals("Task should have renamed the old roles", dotConnect.getInt("x"), 1);
 
             dotConnect.setSQL(" SELECT count(*) as x FROM cms_role  WHERE role_key = 'CMS User' ");
-            assertEquals("Task should have created the new roles", dotConnect.getInt("x"), 0);
+            assertEquals("Task should have renamed the old roles", dotConnect.getInt("x"), 1);
 
 
         } catch (Exception e) {
@@ -97,30 +105,26 @@ public class Task05170DefineFrontEndAndBackEndRolesTest {
             throw new DotDataException(e.getMessage(), e);
         }
         final DotConnect dotConnect = new DotConnect();
-
+        final long timeMark = System.currentTimeMillis();
         //Get rid of any traces of the roles
         dotConnect
                 .setSQL(String
-                        .format(" UPDATE cms_role SET role_key = 'AnyRoleKey-%d' WHERE role_key = 'DOTCMS_BACK_END_USER' ",
-                                System.currentTimeMillis()));
+                        .format(" UPDATE cms_role SET role_key = 'Any-Backend-RoleKey-%d' WHERE role_key = 'DOTCMS_BACK_END_USER' ", timeMark));
         dotConnect.loadResult();
 
         dotConnect
                 .setSQL(String
-                        .format(" UPDATE cms_role SET role_key = 'AnyRoleKey-%d' WHERE role_key = 'DOTCMS_FRONT_END_USER' ",
-                                System.currentTimeMillis()));
+                        .format(" UPDATE cms_role SET role_key = 'Any-Frontend-RoleKey-%d' WHERE role_key = 'DOTCMS_FRONT_END_USER' ", timeMark ));
         dotConnect.loadResult();
 
         dotConnect
                 .setSQL(String
-                        .format(" UPDATE cms_role SET role_key = 'Any-Role-Key-%d' WHERE role_key = 'LoggedIn Site User' ",
-                                System.currentTimeMillis()));
+                        .format(" UPDATE cms_role SET role_key = 'Any-Logged-In-Role-Key-%d' WHERE role_key = 'LoggedIn Site User' ", timeMark));
         dotConnect.loadResult();
 
         dotConnect
                 .setSQL(String
-                        .format(" UPDATE cms_role SET role_key = 'Any-Role-Key-%d' WHERE role_key = 'CMS User' ",
-                                System.currentTimeMillis()));
+                        .format(" UPDATE cms_role SET role_key = 'Any-CMS-User-Role-Key-%d' WHERE role_key = 'CMS User' ", timeMark));
         dotConnect.loadResult();
 
         try {

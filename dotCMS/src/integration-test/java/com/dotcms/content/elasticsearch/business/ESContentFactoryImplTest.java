@@ -152,9 +152,9 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
 
     @Test
     public void testScore () throws DotDataException, DotSecurityException {
-
+        String blogId="Blog" + System.currentTimeMillis();
         final ContentType blogContentType = TestDataUtils
-                .getBlogLikeContentType("Blog" + System.currentTimeMillis());
+                .getBlogLikeContentType(blogId);
         final long languageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
         new ContentletDataGen(blogContentType.id())
                 .languageId(languageId)
@@ -163,10 +163,18 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
                 .setProperty("urlTitle", "title")
                 .setProperty("body", "During the 1980s and 1990s Southwest Air (LUV) ")
                 .setProperty("sysPublishDate", new Date()).nextPersisted();
+        
+        new ContentletDataGen(blogContentType.id())
+        .languageId(languageId)
+        .host(site)
+        .setProperty("title", "Mulish On America? Get On Board With Southwest Air")
+        .setProperty("urlTitle", "title")
+        .setProperty("body", "During the 1980s and 1990s Southwest Air (LUV) ")
+        .setProperty("sysPublishDate", new Date()).nextPersisted();
 
         //+++++++++++++++++++++++++++
         //Executing a simple query filtering by score
-        SearchHits searchHits = instance.indexSearch("+contenttype:blog", 20, 0, "score");
+        SearchHits searchHits = instance.indexSearch("+contenttype:"+blogId, 20, 0, "score");
 
 
         //Starting some validations
@@ -183,7 +191,7 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
 
         //+++++++++++++++++++++++++++
         //Executing a simple query filtering by score
-        searchHits = instance.indexSearch("+contenttype:blog blog.title:bullish*", 20, 0, "score");
+        searchHits = instance.indexSearch("+contenttype:"+blogId + " " + blogId + ".title:bullish*", 20, 0, "score");
 
         //Starting some validations
         assertNotNull(searchHits.getTotalHits());
