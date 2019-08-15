@@ -26,6 +26,8 @@ before_install:
 
 if: type = pull_request OR branch IN (env(ALLOWED_BRANCHES))
 
+# TODO: Test commit - remove!
+
 # https://docs.travis-ci.com/user/build-stages
 jobs:
   include:
