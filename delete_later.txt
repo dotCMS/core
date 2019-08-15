@@ -1,1 +1,0 @@
-# DELETE: Test #2: Testing the commit_message
