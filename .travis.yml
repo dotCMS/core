@@ -16,6 +16,7 @@ env:
     - LICENSE=${DOTCMS_LICENSE}
     - TRAVIS_WORKER_HARD_TIMEOUT=80m
     - TRAVIS_WORKER_MAX_LOG_LENGTH=20000000
+    - ALLOWED_BRANCHES=master, issue-16881-*, release-*, test-*
 
 before_install:
   - chmod +x travis/environment_vars.sh
@@ -27,22 +28,23 @@ before_install:
 jobs:
   include:
     - stage: build image
+      if: type = pull_request OR branch IN (env(ALLOWED_BRANCHES))
       script: bash travis/submit.sh
     - stage: integration tests
-      if: type = pull_request OR branch IN (master, issue-16881-*, release-*, test-*)
+      if: type = pull_request OR branch IN (env(ALLOWED_BRANCHES))
     - script: bash travis/run.sh
       env: DB_TYPE=postgres
       name: postgres
     - script: bash travis/run.sh
-      if: type != pull_request AND branch IN (master, issue-16881-*, release-*, test-*)
+      if: type != pull_request
       env: DB_TYPE=mysql
       name: mysql
     - script: bash travis/run.sh
-      if: type != pull_request AND branch IN (master, issue-16881-*, release-*, test-*)
+      if: type != pull_request
       env: DB_TYPE=oracle
       name: oracle
     - script: bash travis/run.sh
-      if: type != pull_request AND branch IN (master, issue-16881-*, release-*, test-*)
+      if: type != pull_request
       env: DB_TYPE=mssql
       name: mssql
 
