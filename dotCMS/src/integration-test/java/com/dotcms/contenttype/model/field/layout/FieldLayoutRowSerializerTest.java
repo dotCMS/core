@@ -1,9 +1,8 @@
 package com.dotcms.contenttype.model.field.layout;
 
-<<<<<<< HEAD
 import com.dotcms.contenttype.model.field.*;
 import com.dotcms.contenttype.model.type.BaseContentType;
-=======
+
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -14,7 +13,6 @@ import com.dotcms.contenttype.model.field.ImmutableColumnField;
 import com.dotcms.contenttype.model.field.ImmutableRowField;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.field.RowField;
->>>>>>> origin/master
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalization;
 import com.dotcms.contenttype.transform.field.JsonFieldTransformer;
