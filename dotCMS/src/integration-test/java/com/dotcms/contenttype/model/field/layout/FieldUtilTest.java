@@ -1,9 +1,17 @@
 package com.dotcms.contenttype.model.field.layout;
 
+import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImpl;
+import com.dotcms.contenttype.model.field.ImmutableColumnField;
+import com.dotcms.contenttype.model.field.ImmutableRowField;
+import com.dotcms.contenttype.model.field.ImmutableTextField;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalization;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.integrationtestutil.content.ContentUtils;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
+import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -31,23 +39,46 @@ public class FieldUtilTest {
     public void testSetFieldInternationalization() throws DotDataException, DotSecurityException {
 
         final User systemUser = APILocator.systemUser();
-        final ContentType languageVariableContentType = APILocator.getContentTypeAPI(systemUser).find(LanguageVariableAPI.LANGUAGEVARIABLE);
-
-        final String fieldName = String.format("test%d", new Date().getTime());
-        final String key = String.format("ContactUs.%s.name", fieldName);
-        final String languageVariableValue = "test";
-        final long languageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
-        final boolean live = false;
-
-        final Contentlet content = ContentUtils.createTestKeyValueContent(key, languageVariableValue, languageId, languageVariableContentType, systemUser);
+        final ContentType languageVariableContentType = ContentTypeDataGen.createLanguageVariableContentType();
+        Contentlet content = null;
+        ContentType formContentType = null;
 
         try {
-            final ContentType contactUs = APILocator.getContentTypeAPI(systemUser).find("ContactUs");
+            final String fieldName = String.format("test%d", new Date().getTime());
+
+            formContentType = new ContentTypeDataGen()
+                    .baseContentType(BaseContentType.FORM)
+                    .name("formtest")
+                    .fields(
+                            CollectionsUtils.list(
+                                    ImmutableRowField.builder()
+                                            .name("roe")
+                                            .sortOrder(5)
+                                            .build(),
+                                    ImmutableColumnField.builder()
+                                            .name("column")
+                                            .sortOrder(6)
+                                            .build(),
+                                    ImmutableTextField.builder()
+                                            .name(fieldName)
+                                            .sortOrder(7)
+                                            .build()
+                            )
+                    )
+                    .nextPersisted();
+
+            final String key = String.format("%s.%s.name", formContentType.variable(), fieldName);
+            final String languageVariableValue = "test";
+            final long languageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+            final boolean live = false;
+
+            content = ContentUtils.createTestKeyValueContent(key, languageVariableValue, languageId, languageVariableContentType, systemUser);
+
             final ContentTypeInternationalization contentTypeInternationalization =
                     new ContentTypeInternationalization(languageId, live, systemUser);
 
             final Map<String, Object> fieldMap = map("name", fieldName, "variable", fieldName);
-            FieldUtil.setFieldInternationalization(contactUs, contentTypeInternationalization, fieldMap);
+            FieldUtil.setFieldInternationalization(formContentType, contentTypeInternationalization, fieldMap);
 
             assertEquals(languageVariableValue, fieldMap.get("name"));
         } finally {
@@ -55,6 +86,10 @@ public class FieldUtilTest {
             //Clean up
             if (null != content) {
                 deleteContentlets(systemUser, content);
+            }
+
+            if (null != formContentType) {
+                ContentTypeDataGen.remove(formContentType);
             }
         }
     }

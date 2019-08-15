@@ -6,8 +6,12 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
@@ -237,6 +241,26 @@ public class ContentTypeDataGen extends AbstractDataGen<ContentType> {
                     throw new RuntimeException("Unable to remove ContentType.", e);
                 }
             }
+        }
+    }
+
+    public static ContentType createLanguageVariableContentType() {
+        final User systemUser = APILocator.systemUser();
+
+        try {
+            ContentType languageVariableContentType = APILocator.getContentTypeAPI(systemUser).find(LanguageVariableAPI.LANGUAGEVARIABLE);
+
+            if (languageVariableContentType == null) {
+                final ContentTypeDataGen contentTypeDataGen = new ContentTypeDataGen();
+
+                languageVariableContentType =  contentTypeDataGen.baseContentType(BaseContentType.KEY_VALUE)
+                        .name(LanguageVariableAPI.LANGUAGEVARIABLE)
+                        .nextPersisted();
+            }
+
+            return languageVariableContentType;
+        } catch (DotSecurityException | DotDataException e) {
+            throw new DotRuntimeException(e);
         }
     }
 

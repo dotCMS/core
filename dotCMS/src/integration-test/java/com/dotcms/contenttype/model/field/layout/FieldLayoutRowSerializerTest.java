@@ -1,9 +1,11 @@
 package com.dotcms.contenttype.model.field.layout;
 
 import com.dotcms.contenttype.model.field.*;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalization;
 import com.dotcms.contenttype.transform.field.JsonFieldTransformer;
+import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
@@ -83,7 +85,18 @@ public class FieldLayoutRowSerializerTest {
     @Test()
     public void testSerializeWhenPassContentTypeInternationalization() throws IOException, DotDataException, DotSecurityException {
 
-        final ContentType contactUs = APILocator.getContentTypeAPI(APILocator.systemUser()).find("ContactUs");
+        final ContentType formContentType = new ContentTypeDataGen()
+                .baseContentType(BaseContentType.FORM)
+                .name("form_test")
+                .fields(
+                        CollectionsUtils.list(
+                                ImmutableTextField.builder()
+                                        .name("Text")
+                                        .sortOrder(2)
+                                        .build()
+                        )
+                )
+                .nextPersisted();
 
         final long languageId = 1;
         final boolean live = true;
@@ -116,12 +129,12 @@ public class FieldLayoutRowSerializerTest {
         final JsonGenerator jsonGenerator = mock(JsonGenerator.class);
         final SerializerProvider serializerProvider = mock(SerializerProvider.class);
         when(serializerProvider.getAttribute("internationalization")).thenReturn(contentTypeInternationalization);
-        when(serializerProvider.getAttribute("type")).thenReturn(contactUs);
+        when(serializerProvider.getAttribute("type")).thenReturn(formContentType);
 
         final ObjectMapper mapper = mock(ObjectMapper.class);
 
         final ObjectWriter writer =  mock(ObjectWriter.class);
-        when(writer.withAttribute("type", contactUs)).thenReturn(writer);
+        when(writer.withAttribute("type", formContentType)).thenReturn(writer);
         when(writer.withAttribute("internationalization", contentTypeInternationalization)).thenReturn(writer);
         when(mapper.writer()).thenReturn(writer);
 

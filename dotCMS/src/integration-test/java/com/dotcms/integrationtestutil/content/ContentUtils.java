@@ -1,5 +1,6 @@
 package com.dotcms.integrationtestutil.content;
 
+import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImpl;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.KeyValueContentType;
@@ -67,7 +68,8 @@ public class ContentUtils {
     public static Contentlet createTestKeyValueContent(final String key, final String value, final long languageId,
             final ContentType keyValueContentType, final User user)
             throws DotContentletStateException, IllegalArgumentException, DotDataException, DotSecurityException {
-
+        final ContentletIndexAPIImpl contentletIndexAPI = new ContentletIndexAPIImpl();
+        contentletIndexAPI.checkAndInitialiazeIndex();
         return createTestKeyValueContent(null, key, value, languageId, keyValueContentType, user);
     }
 

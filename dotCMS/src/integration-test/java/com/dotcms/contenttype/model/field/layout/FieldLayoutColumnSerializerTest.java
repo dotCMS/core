@@ -1,9 +1,11 @@
 package com.dotcms.contenttype.model.field.layout;
 
 import com.dotcms.contenttype.model.field.*;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalization;
 import com.dotcms.contenttype.transform.field.JsonFieldTransformer;
+import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
@@ -73,7 +75,18 @@ public class FieldLayoutColumnSerializerTest {
 
     @Test()
     public void testSerializeWhenPassContentTypeInternationalization() throws IOException, DotDataException, DotSecurityException {
-        final ContentType contactUs = APILocator.getContentTypeAPI(APILocator.systemUser()).find("ContactUs");
+        final ContentType formContentType = new ContentTypeDataGen()
+                .baseContentType(BaseContentType.FORM)
+                .name("form_test")
+                .fields(
+                        CollectionsUtils.list(
+                                ImmutableTextField.builder()
+                                        .name("Text")
+                                        .sortOrder(2)
+                                        .build()
+                        )
+                )
+                .nextPersisted();
 
         final long languageId = 1;
         final boolean live = true;
@@ -99,7 +112,7 @@ public class FieldLayoutColumnSerializerTest {
 
         final SerializerProvider serializerProvider = mock(SerializerProvider.class);
         when(serializerProvider.getAttribute("internationalization")).thenReturn(contentTypeInternationalization);
-        when(serializerProvider.getAttribute("type")).thenReturn(contactUs);
+        when(serializerProvider.getAttribute("type")).thenReturn(formContentType);
 
         final JsonFieldTransformer jsonFieldTransformer = new JsonFieldTransformer(fields.get(0));
         final Map<String, Object> fieldMap = jsonFieldTransformer.mapObject();
@@ -122,6 +135,6 @@ public class FieldLayoutColumnSerializerTest {
         verify(jsonGenerator).flush();
 
         PowerMockito.verifyStatic();
-        FieldUtil.setFieldInternationalization(contactUs, contentTypeInternationalization, fieldMap);
+        FieldUtil.setFieldInternationalization(formContentType, contentTypeInternationalization, fieldMap);
     }
 }
