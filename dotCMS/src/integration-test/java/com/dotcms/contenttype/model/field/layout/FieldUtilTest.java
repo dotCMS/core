@@ -1,7 +1,12 @@
 package com.dotcms.contenttype.model.field.layout;
 
+import static com.dotcms.integrationtestutil.content.ContentUtils.deleteContentlets;
+import static com.dotcms.util.CollectionsUtils.map;
+import static org.junit.Assert.assertEquals;
+
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalization;
+import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.integrationtestutil.content.ContentUtils;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.util.IntegrationTestInitService;
@@ -10,15 +15,10 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.liferay.portal.model.User;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import java.util.Date;
 import java.util.Map;
-
-import static com.dotcms.integrationtestutil.content.ContentUtils.deleteContentlets;
-import static com.dotcms.util.CollectionsUtils.map;
-import static org.junit.Assert.assertEquals;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 public class FieldUtilTest {
 
@@ -42,7 +42,7 @@ public class FieldUtilTest {
         final Contentlet content = ContentUtils.createTestKeyValueContent(key, languageVariableValue, languageId, languageVariableContentType, systemUser);
 
         try {
-            final ContentType contactUs = APILocator.getContentTypeAPI(systemUser).find("ContactUs");
+            final ContentType contactUs = new ContentTypeDataGen().name("any-content-type").nextPersisted();
             final ContentTypeInternationalization contentTypeInternationalization =
                     new ContentTypeInternationalization(languageId, live, systemUser);
 
