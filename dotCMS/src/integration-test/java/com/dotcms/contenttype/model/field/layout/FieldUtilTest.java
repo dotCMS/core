@@ -1,5 +1,6 @@
 package com.dotcms.contenttype.model.field.layout;
 
+
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImpl;
 import com.dotcms.contenttype.model.field.ImmutableColumnField;
 import com.dotcms.contenttype.model.field.ImmutableRowField;
@@ -9,6 +10,15 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalization;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.UserDataGen;
+
+import static com.dotcms.integrationtestutil.content.ContentUtils.deleteContentlets;
+import static com.dotcms.util.CollectionsUtils.map;
+import static org.junit.Assert.assertEquals;
+
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalization;
+import com.dotcms.datagen.ContentTypeDataGen;
+
 import com.dotcms.integrationtestutil.content.ContentUtils;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.util.CollectionsUtils;
@@ -18,15 +28,10 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.liferay.portal.model.User;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import java.util.Date;
 import java.util.Map;
-
-import static com.dotcms.integrationtestutil.content.ContentUtils.deleteContentlets;
-import static com.dotcms.util.CollectionsUtils.map;
-import static org.junit.Assert.assertEquals;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 public class FieldUtilTest {
 

@@ -2,32 +2,36 @@ package com.dotcms.contenttype.model.field.layout;
 
 import com.dotcms.contenttype.model.field.*;
 import com.dotcms.contenttype.model.type.BaseContentType;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import com.dotcms.contenttype.model.field.ColumnField;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.ImmutableColumnField;
+import com.dotcms.contenttype.model.field.ImmutableTextField;
+
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalization;
 import com.dotcms.contenttype.transform.field.JsonFieldTransformer;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.liferay.portal.model.User;
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
-
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @PrepareForTest(FieldUtil.class)
 @RunWith(PowerMockRunner.class)
@@ -75,6 +79,7 @@ public class FieldLayoutColumnSerializerTest {
 
     @Test()
     public void testSerializeWhenPassContentTypeInternationalization() throws IOException, DotDataException, DotSecurityException {
+
         final ContentType formContentType = new ContentTypeDataGen()
                 .baseContentType(BaseContentType.FORM)
                 .name("form_test")
