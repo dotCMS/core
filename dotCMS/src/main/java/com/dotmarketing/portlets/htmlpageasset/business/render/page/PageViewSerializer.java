@@ -35,7 +35,7 @@ public class PageViewSerializer extends JsonSerializer<PageView> {
 
         final Map<String, Object> pageViewMap = new TreeMap<>();
         pageViewMap.put("page", this.asMap(pageView.getPageInfo()));
-        pageViewMap.put("containers", getContainerRawAsMap(pageView.getContainers()));
+        pageViewMap.put("containers", pageView.getContainersMap());
 
         final Map<Object, Object> templateMap = this.asMap(template);
         templateMap.put("canEdit", pageView.canEditTemplate());
@@ -44,33 +44,13 @@ public class PageViewSerializer extends JsonSerializer<PageView> {
         pageViewMap.put("site", pageView.getSite());
         pageViewMap.put("viewAs", pageView.getViewAs());
         pageViewMap.put("canCreateTemplate", pageView.canCreateTemplate());
+        pageViewMap.put("haveContent", pageView.haveContent());
 
         if (pageView.getLayout() != null) {
             pageViewMap.put("layout", pageView.getLayout());
         }
         return pageViewMap;
     }
-
-    private Map<String, ContainerRaw> getContainerRawAsMap(final Collection<? extends ContainerRaw> containerRaws) {
-
-        final Map<String, ContainerRaw> containerRawMap = new HashMap<>();
-
-        containerRaws.stream().forEach(containerRaw -> {
-
-            if (containerRaw.getContainer() instanceof FileAssetContainer) {
-
-                final String path = FileAssetContainer.class.cast(containerRaw.getContainer()).getPath();
-                containerRawMap.put(path, containerRaw);
-            } else {
-
-                final String identifier = containerRaw.getContainer().getIdentifier();
-                containerRawMap.put(identifier, containerRaw);
-            }
-        });
-
-        return containerRawMap;
-    }
-
 
     private Map<Object, Object> asMap(final Object object)  {
         final ObjectWriter objectWriter = JsonMapper.mapper.writer().withDefaultPrettyPrinter();

@@ -67,6 +67,7 @@ import static com.dotmarketing.business.PermissionAPI.*;
  */
 public class PageRenderUtil implements Serializable {
 
+    public static String CONTAINER_UUID_PREFIX = "uuid-";
     private static final long serialVersionUID = 1L;
 
     private final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
@@ -369,7 +370,7 @@ public class PageRenderUtil implements Serializable {
                     }
                 }
                 
-                contentMaps.put((uniqueId.startsWith("uuid-")) ? uniqueId : "uuid-" + uniqueId, cListAsMaps);
+                contentMaps.put((uniqueId.startsWith(CONTAINER_UUID_PREFIX)) ? uniqueId : CONTAINER_UUID_PREFIX + uniqueId, cListAsMaps);
                 this.setContentletListPerPersonalization(uniqueId, container, contentIdListByPersonalizationMap, personalizationsForPage);
                 contextMap.put("totalSize" +  container.getIdentifier() + uniqueId, new Integer(contentlets.size())); // todo: not sure about this
             }

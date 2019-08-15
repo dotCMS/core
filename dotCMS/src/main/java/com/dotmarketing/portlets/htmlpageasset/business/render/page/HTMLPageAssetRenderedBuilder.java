@@ -229,14 +229,10 @@ public class HTMLPageAssetRenderedBuilder {
     }
 
     private Contentlet getCurrentDevice() throws DotDataException {
-        final String deviceInode = (String) request.getSession().getAttribute(WebKeys.CURRENT_DEVICE);
+        final String currentDeviceId = (String) request.getSession().getAttribute(WebKeys.CURRENT_DEVICE);
         Contentlet currentDevice = null;
 
         try {
-
-            final String currentDeviceId = deviceInode == null ?
-                    (String) request.getSession().getAttribute(WebKeys.CURRENT_DEVICE)
-                    : deviceInode;
 
             if (currentDeviceId != null) {
                 currentDevice = contentletAPI.find(currentDeviceId, user, false);
