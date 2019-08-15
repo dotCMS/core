@@ -31,9 +31,9 @@ jobs:
     - stage: build image
       script: bash travis/submit.sh
     - stage: integration tests
-    - script: bash travis/run.sh
       env: DB_TYPE=postgres
       name: postgres
+      script: bash travis/run.sh
     - script: bash travis/run.sh
       if: type != pull_request
       env: DB_TYPE=mysql
