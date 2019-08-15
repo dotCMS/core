@@ -1,8 +1,9 @@
 package com.dotmarketing.logConsole.form;
 
-import org.apache.struts.validator.ValidatorForm;
 
-public class ConsoleLogForm extends ValidatorForm{
+import com.dotcms.repackage.org.apache.struts.validator.ValidatorForm;
+
+public class ConsoleLogForm extends ValidatorForm {
     
     private static final long serialVersionUID = 1L;
     

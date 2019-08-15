@@ -27,7 +27,7 @@ public class TranslateTestUtil extends UnitTestBase {
         toTranslate.setStringProperty(TEXT_AREA_VN,"English Value 3");
 
         List<Field> fieldsToTranslate = getFieldsForContent();
-        toTranslate.setProperty("fieldsToTranslate", fieldsToTranslate);
+        toTranslate.getMap().put("fieldsToTranslate", fieldsToTranslate);
 
         return toTranslate;
     }

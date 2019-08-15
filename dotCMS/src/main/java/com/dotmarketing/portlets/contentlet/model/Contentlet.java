@@ -114,6 +114,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     public static final String DISABLE_WORKFLOW = "__disable_workflow__";
 
     // means the contentlet is being used on unit test mode.
+	// this is only for unit test. do not use on production.
+	@VisibleForTesting
 	public static final String IS_TEST_MODE = "_is_test_mode";
 
 	/**
@@ -1634,4 +1636,26 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
             throw new DotStateException(e);
         }
     }
+
+	/**
+	 * Determine if the workflow is disable for this contentlet
+	 * @return boolean true if is disable
+	 */
+	@JsonIgnore
+	public boolean isDisableWorkflow() {
+
+		return null != this.getMap().get(Contentlet.DISABLE_WORKFLOW) &&
+				Boolean.TRUE.equals(this.getMap().get(Contentlet.DISABLE_WORKFLOW));
+	}
+
+	/**
+	 * Determine if the workflow is in progress for this contentlet
+	 * @return
+	 */
+	@JsonIgnore
+	public boolean isWorkflowInProgress () {
+
+		return null != this.getMap().get(Contentlet.WORKFLOW_IN_PROGRESS) &&
+				Boolean.TRUE.equals(this.getMap().get(Contentlet.WORKFLOW_IN_PROGRESS));
+	}
 }

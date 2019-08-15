@@ -30,4 +30,12 @@ public class PersonalizationPersonaPageView implements Serializable {
     public Map<String, Object> getPersona() {
         return persona;
     }
+
+    @Override
+    public String toString() {
+        return "PersonalizationPersonaPageView{" +
+                "pageId='" + pageId + '\'' +
+                ", persona=" + persona +
+                '}';
+    }
 }

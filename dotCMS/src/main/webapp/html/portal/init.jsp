@@ -11,7 +11,7 @@
 	import="com.liferay.portal.struts.PortletRequestProcessor"%><%@ page
 	import="com.liferay.portal.util.PortletTitleComparator"%><%@ page
 	import="javax.servlet.jsp.PageContext"%><%@ page
-	import="org.apache.commons.fileupload.LiferayDiskFileUpload"%><%@ page import="org.apache.struts.action.ActionMapping"%><%@ page
-	import="org.apache.struts.tiles.ComponentDefinition"%><%@ page
-	import="org.apache.struts.tiles.TilesUtil"%><%@ page
+	import="org.apache.commons.fileupload.LiferayDiskFileUpload"%><%@ page import="com.dotcms.repackage.org.apache.struts.action.ActionMapping"%><%@ page
+	import="com.dotcms.repackage.org.apache.struts.tiles.ComponentDefinition"%><%@ page
+	import="com.dotcms.repackage.org.apache.struts.tiles.TilesUtil"%><%@ page
 	import="com.liferay.portal.UserActiveException"%>

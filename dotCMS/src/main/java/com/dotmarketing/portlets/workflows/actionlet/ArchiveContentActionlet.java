@@ -10,6 +10,7 @@ import com.dotmarketing.util.Logger;
 import java.util.List;
 import java.util.Map;
 
+@Actionlet(archive = true)
 public class ArchiveContentActionlet extends WorkFlowActionlet {
     private static final long serialVersionUID = 6953016451278627341L;
 

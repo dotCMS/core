@@ -166,7 +166,7 @@ public class StrutsURLEncoder implements URLEncoder {
 	private void _setServletMapping(String servletMapping) {
 		if (servletMapping != null) {
 
-			// See org.apache.struts.util.RequestUtils.getActionMappingURL
+			// See com.dotcms.repackage.org.apache.struts.util.RequestUtils.getActionMappingURL
 
 			if (servletMapping.endsWith("/*")) {
 				_servletMapping = servletMapping.substring(

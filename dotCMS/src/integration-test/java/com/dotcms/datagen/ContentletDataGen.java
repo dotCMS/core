@@ -308,9 +308,10 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
      */
     public static void remove(Contentlet contentlet) {
         try{
+            APILocator.getWorkflowAPI().deleteWorkflowTaskByContentletIdAnyLanguage(contentlet.getIdentifier(), APILocator.systemUser());
             archive(contentlet);
             delete(contentlet);
-        } catch (DotContentletStateException e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }

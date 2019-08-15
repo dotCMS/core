@@ -1,7 +1,7 @@
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
 <%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
-<%@page import="org.apache.struts.Globals"%>
+<%@page import="com.dotcms.repackage.org.apache.struts.Globals"%>
 <%@ page import="com.dotmarketing.util.*" %>
 <%@ include file="/html/common/init.jsp" %>
 

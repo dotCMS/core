@@ -1,9 +1,6 @@
 package com.dotcms.rest.api.v1.workflow;
 
 import com.dotcms.mock.response.MockAsyncResponse;
-import javax.ws.rs.container.AsyncResponse;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
 import com.dotcms.rest.ContentHelper;
 import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.InitDataObject;
@@ -30,6 +27,9 @@ import org.junit.Test;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.container.AsyncResponse;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -53,14 +53,16 @@ public class WorkflowResourceResponseCodeIntegrationTest {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
         workflowAPI =  APILocator.getWorkflowAPI();
-        ContentletAPI contentletAPI = APILocator.getContentletAPI();
+        final ContentletAPI contentletAPI = APILocator.getContentletAPI();
         roleAPI = APILocator.getRoleAPI();
-        ContentHelper contentHelper = ContentHelper.getInstance();
-        PermissionAPI permissionAPI = APILocator.getPermissionAPI();
-        WorkflowImportExportUtil workflowImportExportUtil = WorkflowImportExportUtil.getInstance();
-        WorkflowHelper workflowHelper = new WorkflowHelper(workflowAPI, roleAPI, contentletAPI, permissionAPI,
+        final ContentHelper contentHelper = ContentHelper.getInstance();
+        final SystemActionApiFireCommandFactory systemActionApiFireCommandFactory =
+                SystemActionApiFireCommandFactory.getInstance();
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        final WorkflowImportExportUtil workflowImportExportUtil = WorkflowImportExportUtil.getInstance();
+        final WorkflowHelper workflowHelper = new WorkflowHelper(workflowAPI, roleAPI, contentletAPI, permissionAPI,
                 workflowImportExportUtil);
-        ResponseUtil responseUtil = ResponseUtil.INSTANCE;
+        final ResponseUtil responseUtil = ResponseUtil.INSTANCE;
 
         final User admin = APILocator.systemUser();
         final WebResource webResource = mock(WebResource.class);
@@ -71,7 +73,8 @@ public class WorkflowResourceResponseCodeIntegrationTest {
                         anyString())).thenReturn(dataObject);
 
         workflowResource = new WorkflowResource(workflowHelper, contentHelper, workflowAPI,
-                contentletAPI, responseUtil, permissionAPI, workflowImportExportUtil,new MultiPartUtils(), webResource);
+                contentletAPI, responseUtil, permissionAPI, workflowImportExportUtil,new MultiPartUtils(), webResource,
+                systemActionApiFireCommandFactory);
     }
 
     //@AfterClass

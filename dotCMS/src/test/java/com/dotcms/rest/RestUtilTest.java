@@ -9,6 +9,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.UnitTestBase;
+import com.dotcms.repackage.org.apache.struts.Globals;
 import javax.ws.rs.core.Response;
 import com.dotmarketing.logConsole.model.LogMapper;
 import com.dotmarketing.util.Config;
@@ -19,7 +20,6 @@ import java.util.Locale;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
-import org.apache.struts.Globals;
 
 /**
  * Created by freddyrodriguez on 7/29/16.

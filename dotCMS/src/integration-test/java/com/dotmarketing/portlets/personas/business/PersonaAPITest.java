@@ -3,9 +3,10 @@ package com.dotmarketing.portlets.personas.business;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
+
+import com.dotcms.repackage.org.apache.struts.Globals;
 import java.util.List;
 
-import org.apache.struts.Globals;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;

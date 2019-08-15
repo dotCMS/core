@@ -1,7 +1,6 @@
 package com.dotmarketing.portlets.containers.business;
 
 import com.dotcms.contenttype.exception.NotFoundInDbException;
-import com.google.common.collect.ImmutableList;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Source;
 import com.dotmarketing.business.APILocator;
@@ -9,7 +8,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.containers.model.FileAssetContainer;
+import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 
 import java.util.List;
