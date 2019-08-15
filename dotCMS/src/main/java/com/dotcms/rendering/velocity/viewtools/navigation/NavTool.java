@@ -186,7 +186,6 @@ public class NavTool implements ViewTool {
                     nav.setTarget(itemLink.getTarget());
                     nav.setPermissionId(itemLink.getPermissionId());
                     nav.setShowOnMenu(itemLink.isShowOnMenu());
-                    //nav = new NavResultHydrated(nav, this.context);
                     children.add(nav);
                 } else if (item instanceof IFileAsset) {
                     IFileAsset itemFile = (IFileAsset) item;
