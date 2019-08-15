@@ -24,14 +24,14 @@ before_install:
   - chmod +x travis/submit.sh
   - chmod +x travis/run.sh
 
+if: type = pull_request OR branch IN (env(ALLOWED_BRANCHES))
+
 # https://docs.travis-ci.com/user/build-stages
 jobs:
   include:
     - stage: build image
-      if: type = pull_request OR branch IN (env(ALLOWED_BRANCHES))
       script: bash travis/submit.sh
     - stage: integration tests
-      if: type = pull_request OR branch IN (env(ALLOWED_BRANCHES))
     - script: bash travis/run.sh
       env: DB_TYPE=postgres
       name: postgres
