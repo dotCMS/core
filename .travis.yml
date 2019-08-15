@@ -33,7 +33,7 @@ jobs:
       name: postgres
       script: bash travis/run.sh
     - script: bash travis/run.sh
-      if: type = pull_request AND branch IN (master, issue-16881-*, release-*)
+      if: type = pull_request OR branch IN (master, issue-16881-*, release-*)
       env: DB_TYPE=mysql
       name: mysql
     - script: bash travis/run.sh
