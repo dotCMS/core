@@ -47,13 +47,10 @@ public class CookiesFilter implements Filter {
     try {
       filterChain.doFilter(req, res);
     } catch (final Exception nse) {
-
-      Class clazz = Try.of(() -> (Class) Class.forName(nse.getStackTrace()[0].getClassName())).getOrElse(this.getClass());
-
-      
       if (ExceptionUtil.causedBy(nse, com.liferay.portal.NoSuchUserException.class)) {
         handleNoSuchUserException(req, res);
       }else {
+        Class clazz = Try.of(() -> (Class) Class.forName(nse.getStackTrace()[0].getClassName())).getOrElse(this.getClass());
         Logger.error(clazz, nse);
       }
     }
