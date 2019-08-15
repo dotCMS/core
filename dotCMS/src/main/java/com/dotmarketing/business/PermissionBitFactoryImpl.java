@@ -66,6 +66,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 
 /**
@@ -947,13 +948,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 	@Override
 	protected List<Permission> getInheritablePermissions(Permissionable permissionable, String type) throws DotDataException {
-		List<Permission> permissions = getInheritablePermissions(permissionable, true);
-		List<Permission> toReturn = new ArrayList<Permission>();
-		for(Permission p : permissions) {
-			if(p.getType().equals(type))
-				toReturn.add(p);
-		}
-		return toReturn;
+		final List<Permission> permissions = getInheritablePermissions(permissionable, true);
+		return permissions.stream().filter(permission -> permission.getType().equals(type)).collect(Collectors.toList());
 	}
 
 	@Override
