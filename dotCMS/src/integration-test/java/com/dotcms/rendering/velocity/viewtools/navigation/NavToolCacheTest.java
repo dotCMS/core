@@ -84,6 +84,10 @@ public class NavToolCacheTest extends IntegrationTestBase {
       assertTrue(result instanceof NavResultHydrated);
       
       NavResult test = navCache.getNav(result.getHostId(), result.getFolderId(), result.getLanguageId());
+      if(test==null) {
+        continue;
+      }
+      assert(test instanceof NavResult);
       assert(!(test instanceof NavResultHydrated));
     }
     
