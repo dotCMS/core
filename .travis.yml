@@ -29,17 +29,20 @@ jobs:
     - stage: build image
       script: bash travis/submit.sh
     - stage: integration tests
+      if: type = pull_request OR branch IN (master, issue-16881-*, release-*, test-*)
       env: DB_TYPE=postgres
       name: postgres
       script: bash travis/run.sh
     - script: bash travis/run.sh
-      if: type = pull_request OR branch IN (master, issue-16881-*, release-*)
+      if: type != pull_request AND branch IN (master, issue-16881-*, release-*, test-*)
       env: DB_TYPE=mysql
       name: mysql
     - script: bash travis/run.sh
+      if: type != pull_request AND branch IN (master, issue-16881-*, release-*, test-*)
       env: DB_TYPE=oracle
       name: oracle
     - script: bash travis/run.sh
+      if: type != pull_request AND branch IN (master, issue-16881-*, release-*, test-*)
       env: DB_TYPE=mssql
       name: mssql
 
