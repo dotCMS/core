@@ -23,7 +23,12 @@ before_install:
   - chmod +x travis/submit.sh
   - chmod +x travis/run.sh
 
-if: type = pull_request OR branch = master OR branch =~ ^release- OR branch =~ ^test- OR branch =~ ^issue-16881-
+if: >-
+  type = pull_request
+  OR branch = master
+  OR branch =~ ^release-
+  OR branch =~ ^test-
+  OR branch =~ ^issue-16881-
 
 # https://docs.travis-ci.com/user/build-stages
 jobs:
