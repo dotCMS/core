@@ -1,12 +1,12 @@
 package com.dotmarketing.portlets.contentlet.struts;
 
+import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotmarketing.util.Logger;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import javax.servlet.ServletRequest;
-import org.apache.struts.action.ActionMapping;
 
 /**
  * 

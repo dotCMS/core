@@ -14,7 +14,7 @@
 <uri>http://struts.apache.org/tags-html</uri>
 <tag>
 <name>base</name>
-<tagclass>org.apache.struts.taglib.html.BaseTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.html.BaseTag</tagclass>
 <bodycontent>empty</bodycontent>
 <attribute>
 <name>target</name>
@@ -29,7 +29,7 @@
 </tag>
 <tag>
 <name>button</name>
-<tagclass>org.apache.struts.taglib.html.ButtonTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.html.ButtonTag</tagclass>
 <attribute>
 <name>accesskey</name>
 <required>false</required>
@@ -163,7 +163,7 @@
 </tag>
 <tag>
 <name>cancel</name>
-<tagclass>org.apache.struts.taglib.html.CancelTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.html.CancelTag</tagclass>
 <attribute>
 <name>accesskey</name>
 <required>false</required>
@@ -292,7 +292,7 @@
 </tag>
 <tag>
 <name>checkbox</name>
-<tagclass>org.apache.struts.taglib.html.CheckboxTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.html.CheckboxTag</tagclass>
 <attribute>
 <name>accesskey</name>
 <required>false</required>
@@ -431,7 +431,7 @@
 </tag>
 <tag>
 <name>errors</name>
-<tagclass>org.apache.struts.taglib.html.ErrorsTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.html.ErrorsTag</tagclass>
 <bodycontent>empty</bodycontent>
 <attribute>
 <name>bundle</name>
@@ -456,7 +456,7 @@
 </tag>
 <tag>
 <name>file</name>
-<tagclass>org.apache.struts.taglib.html.FileTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.html.FileTag</tagclass>
 <attribute>
 <name>accesskey</name>
 <required>false</required>
@@ -610,7 +610,7 @@
 </tag>
 <tag>
 <name>form</name>
-<tagclass>org.apache.struts.taglib.html.FormTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.html.FormTag</tagclass>
 <bodycontent>JSP</bodycontent>
 <attribute>
 <name>action</name>
@@ -680,7 +680,7 @@
 </tag>
 <tag>
 <name>frame</name>
-<tagclass>org.apache.struts.taglib.html.FrameTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.html.FrameTag</tagclass>
 <attribute>
 <name>action</name>
 <required>false</required>
@@ -814,7 +814,7 @@
 </tag>
 <tag>
 <name>hidden</name>
-<tagclass>org.apache.struts.taglib.html.HiddenTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.html.HiddenTag</tagclass>
 <bodycontent>empty</bodycontent>
 <attribute>
 <name>accesskey</name>
@@ -954,7 +954,7 @@
 </tag>
 <tag>
 <name>html</name>
-<tagclass>org.apache.struts.taglib.html.HtmlTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.html.HtmlTag</tagclass>
 <bodycontent>JSP</bodycontent>
 <attribute>
 <name>lang</name>
@@ -974,7 +974,7 @@
 </tag>
 <tag>
 <name>image</name>
-<tagclass>org.apache.struts.taglib.html.ImageTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.html.ImageTag</tagclass>
 <attribute>
 <name>accesskey</name>
 <required>false</required>
@@ -1148,7 +1148,7 @@
 </tag>
 <tag>
 <name>img</name>
-<tagclass>org.apache.struts.taglib.html.ImgTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.html.ImgTag</tagclass>
 <bodycontent>empty</bodycontent>
 <attribute>
 <name>align</name>
@@ -1373,7 +1373,7 @@
 </tag>
 <tag>
 <name>javascript</name>
-<tagclass>org.apache.struts.taglib.html.JavascriptValidatorTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.html.JavascriptValidatorTag</tagclass>
 <bodycontent>empty</bodycontent>
 <attribute>
 <name>cdata</name>
@@ -1423,7 +1423,7 @@
 </tag>
 <tag>
 <name>link</name>
-<tagclass>org.apache.struts.taglib.html.LinkTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.html.LinkTag</tagclass>
 <attribute>
 <name>accesskey</name>
 <required>false</required>
@@ -1617,8 +1617,8 @@
 </tag>
 <tag>
 <name>messages</name>
-<tagclass>org.apache.struts.taglib.html.MessagesTag</tagclass>
-<teiclass>org.apache.struts.taglib.html.MessagesTei</teiclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.html.MessagesTag</tagclass>
+<teiclass>com.dotcms.repackage.org.apache.struts.taglib.html.MessagesTei</teiclass>
 <bodycontent>JSP</bodycontent>
 <attribute>
 <name>id</name>
@@ -1663,7 +1663,7 @@
 </tag>
 <tag>
 <name>multibox</name>
-<tagclass>org.apache.struts.taglib.html.MultiboxTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.html.MultiboxTag</tagclass>
 <attribute>
 <name>accesskey</name>
 <required>false</required>
@@ -1797,7 +1797,7 @@
 </tag>
 <tag>
 <name>option</name>
-<tagclass>org.apache.struts.taglib.html.OptionTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.html.OptionTag</tagclass>
 <attribute>
 <name>bundle</name>
 <required>false</required>
@@ -1841,7 +1841,7 @@
 </tag>
 <tag>
 <name>options</name>
-<tagclass>org.apache.struts.taglib.html.OptionsTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.html.OptionsTag</tagclass>
 <bodycontent>empty</bodycontent>
 <attribute>
 <name>collection</name>
@@ -1886,7 +1886,7 @@
 </tag>
 <tag>
 <name>optionsCollection</name>
-<tagclass>org.apache.struts.taglib.html.OptionsCollectionTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.html.OptionsCollectionTag</tagclass>
 <bodycontent>empty</bodycontent>
 <attribute>
 <name>filter</name>
@@ -1926,7 +1926,7 @@
 </tag>
 <tag>
 <name>password</name>
-<tagclass>org.apache.struts.taglib.html.PasswordTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.html.PasswordTag</tagclass>
 <attribute>
 <name>accesskey</name>
 <required>false</required>
@@ -2085,7 +2085,7 @@
 </tag>
 <tag>
 <name>radio</name>
-<tagclass>org.apache.struts.taglib.html.RadioTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.html.RadioTag</tagclass>
 <attribute>
 <name>accesskey</name>
 <required>false</required>
@@ -2229,7 +2229,7 @@
 </tag>
 <tag>
 <name>reset</name>
-<tagclass>org.apache.struts.taglib.html.ResetTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.html.ResetTag</tagclass>
 <attribute>
 <name>accesskey</name>
 <required>false</required>
@@ -2358,7 +2358,7 @@
 </tag>
 <tag>
 <name>rewrite</name>
-<tagclass>org.apache.struts.taglib.html.RewriteTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.html.RewriteTag</tagclass>
 <bodycontent>empty</bodycontent>
 <attribute>
 <name>action</name>
@@ -2438,7 +2438,7 @@
 </tag>
 <tag>
 <name>select</name>
-<tagclass>org.apache.struts.taglib.html.SelectTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.html.SelectTag</tagclass>
 <bodycontent>JSP</bodycontent>
 <attribute>
 <name>alt</name>
@@ -2583,7 +2583,7 @@
 </tag>
 <tag>
 <name>submit</name>
-<tagclass>org.apache.struts.taglib.html.SubmitTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.html.SubmitTag</tagclass>
 <attribute>
 <name>accesskey</name>
 <required>false</required>
@@ -2717,7 +2717,7 @@
 </tag>
 <tag>
 <name>text</name>
-<tagclass>org.apache.struts.taglib.html.TextTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.html.TextTag</tagclass>
 <attribute>
 <name>accesskey</name>
 <required>false</required>
@@ -2871,7 +2871,7 @@
 </tag>
 <tag>
 <name>textarea</name>
-<tagclass>org.apache.struts.taglib.html.TextareaTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.html.TextareaTag</tagclass>
 <attribute>
 <name>accesskey</name>
 <required>false</required>
@@ -3025,7 +3025,7 @@
 </tag>
 <tag>
 <name>xhtml</name>
-<tagclass>org.apache.struts.taglib.html.XhtmlTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.html.XhtmlTag</tagclass>
 <bodycontent>empty</bodycontent>
 </tag>
 </taglib>

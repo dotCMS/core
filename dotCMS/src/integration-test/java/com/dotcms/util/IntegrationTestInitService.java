@@ -1,16 +1,15 @@
 package com.dotcms.util;
 
 import com.dotcms.config.DotInitializationService;
+import com.dotcms.repackage.org.apache.struts.Globals;
+import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
+import com.dotcms.repackage.org.apache.struts.config.ModuleConfigFactory;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.util.Config;
 import com.liferay.util.SystemProperties;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.apache.struts.Globals;
-import org.apache.struts.config.ModuleConfig;
-import org.apache.struts.config.ModuleConfigFactory;
 import org.mockito.Mockito;
 
 /**
@@ -18,12 +17,15 @@ import org.mockito.Mockito;
  * Created by nollymar on 9/29/16.
  */
 public class IntegrationTestInitService {
+
     private static IntegrationTestInitService service = new IntegrationTestInitService();
 
     private static AtomicBoolean initCompleted;
 
-    static { SystemProperties.getProperties(); }
-    
+    static {
+        SystemProperties.getProperties();
+    }
+
     private IntegrationTestInitService() {
         initCompleted = new AtomicBoolean(false);
     }
@@ -38,13 +40,13 @@ public class IntegrationTestInitService {
             ConfigTestHelper._setupFakeTestingContext();
 
             CacheLocator.init();
-    		FactoryLocator.init();
-    		APILocator.init();
+            FactoryLocator.init();
+            APILocator.init();
 
             //Running the always run startup tasks
             StartupTasksUtil.getInstance().init();
 
-    		//For these tests fire the reindex immediately
+            //For these tests fire the reindex immediately
             Config.setProperty("ASYNC_REINDEX_COMMIT_LISTENERS", false);
             Config.setProperty("ASYNC_COMMIT_LISTENERS", false);
 
@@ -55,7 +57,7 @@ public class IntegrationTestInitService {
             initCompleted.set(true);
         }
     }
-    
+
     public void mockStrutsActionModule() {
         ModuleConfigFactory factoryObject = ModuleConfigFactory.createFactory();
         ModuleConfig config = factoryObject.createModuleConfig("");

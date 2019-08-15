@@ -68,7 +68,7 @@
 		<priority value="ERROR" />
 	</category>
 
-	<category name="com.oroad.stxx">
+	<category name="com.dotcms.repackage.com.oroad.stxx">
 		<priority value="ERROR" />
 	</category>
 
@@ -108,7 +108,7 @@
 		<priority value="ERROR" />
 	</category>
 
-	<category name="org.apache.struts">
+	<category name="com.dotcms.repackage.org.apache.struts">
 		<priority value="ERROR" />
 	</category>
 
