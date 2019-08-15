@@ -23,6 +23,13 @@ before_install:
   - chmod +x travis/submit.sh
   - chmod +x travis/run.sh
 
+if: >-
+  type = pull_request
+  OR branch = master
+  OR branch =~ ^release-
+  OR branch =~ ^test-
+  OR commit_message =~ travis
+
 # https://docs.travis-ci.com/user/build-stages
 jobs:
   include:
@@ -33,12 +40,15 @@ jobs:
       name: postgres
       script: bash travis/run.sh
     - script: bash travis/run.sh
+      if: type != pull_request OR commit_message =~ travis
       env: DB_TYPE=mysql
       name: mysql
     - script: bash travis/run.sh
+      if: type != pull_request OR commit_message =~ travis
       env: DB_TYPE=oracle
       name: oracle
     - script: bash travis/run.sh
+      if: type != pull_request OR commit_message =~ travis
       env: DB_TYPE=mssql
       name: mssql
 
