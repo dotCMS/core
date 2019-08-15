@@ -1,6 +1,5 @@
 package com.dotcms.integrationtestutil.content;
 
-import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImpl;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.KeyValueContentType;
