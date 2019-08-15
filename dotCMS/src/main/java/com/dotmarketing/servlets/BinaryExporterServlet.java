@@ -367,7 +367,7 @@ public class BinaryExporterServlet extends HttpServlet {
           DbConnectionFactory.closeSilently();
           return;
         }
-        inputFile = APILocator.getTempFileAPI().getTempFile(user, req.getSession().getId(), shorty.longId).get().file;
+        inputFile = APILocator.getTempFileAPI().getTempFile(req, shorty.longId).get().file;
       }
 			
 			
@@ -383,7 +383,7 @@ public class BinaryExporterServlet extends HttpServlet {
       // THIS IS WHERE THE MAGIC HAPPENS
       // this creates a temp resource using the altered file
       if (req.getParameter(WebKeys.IMAGE_TOOL_SAVE_FILES) != null && user!=null && !user.equals(APILocator.getUserAPI().getAnonymousUser())) {
-        final DotTempFile temp = APILocator.getTempFileAPI().createEmptyTempFile(inputFile.getName(), user, req.getSession().getId());
+        final DotTempFile temp = APILocator.getTempFileAPI().createEmptyTempFile(inputFile.getName(), req);
         FileUtil.copyFile(data.getDataFile(), temp.file);
         resp.getWriter().println(DotObjectMapperProvider.getInstance().getDefaultObjectMapper().writeValueAsString(temp));
         resp.getWriter().close();

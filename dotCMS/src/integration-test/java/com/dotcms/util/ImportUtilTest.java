@@ -3,7 +3,6 @@ package com.dotcms.util;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
@@ -75,6 +74,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -168,6 +168,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
         user = APILocator.getUserAPI().getSystemUser();
+        user.setLocale(Locale.US);
         defaultSite = APILocator.systemHost();  //getHostAPI().findDefaultHost(user, false);
         defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
         contentTypeApi = (ContentTypeAPIImpl) APILocator.getContentTypeAPI(user);
@@ -653,7 +654,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             validate(results, true, false, true);
 
             assertTrue(results.get("warnings").size() == 1);
-            assertEquals(results.get("warnings").get(0), "the-structure-field testTitle is-unique");
+            assertEquals("The Content Type field testTitle is unique.",results.get("warnings").get(0));
 
 
         } finally {
@@ -725,9 +726,8 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             validate(results, true, false, true);
 
             assertTrue(results.get("warnings").size() == 2);
-            assertEquals(results.get("warnings").get(0), "the-structure-field testTitle is-unique");
-            assertEquals(results.get("warnings").get(1),
-                    "Line-- 3 contains-duplicate-values-for-structure-unique-field testTitle and-will-be-ignored");
+            assertEquals("The Content Type field testTitle is unique.", results.get("warnings").get(0));
+            assertEquals("Line # 3 contains duplicate values for a unique Content Type field testTitle and will be ignored.", results.get("warnings").get(1));
 
         } finally {
             contentTypeApi.delete(type);
@@ -802,7 +802,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             assertNotNull(savedData);
             assertTrue(savedData.size() == 3);
             for (final Contentlet cont : savedData) {
-                assertNull(workflowAPI.findTaskByContentlet(cont));
+                assertNotNull(workflowAPI.findTaskByContentlet(cont));
             }
 
         } finally {
@@ -967,7 +967,8 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                     assertNotNull(task);
                     assertEquals(task.getStatus(), step1.getId());
                 } else if (cont.getStringProperty(TITLE_FIELD_NAME).startsWith(testH)) {
-                    assertNull(task);
+                    Logger.info(this, "******** task: " + task);
+                    assertNotNull(task);
                 } else {
                     assertNotNull(task);
                     assertEquals(task.getStatus(), step3.getId());

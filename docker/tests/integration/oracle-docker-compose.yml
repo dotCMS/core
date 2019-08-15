@@ -5,10 +5,6 @@ version: "3.7"
 
 services:
 
-  integration-tests:
-    environment:
-      databaseType: oracle
-
   # https://github.com/oracle/docker-images/tree/master/OracleDatabase/SingleInstance#running-oracle-database-11gr2-express-edition-in-a-docker-container
   database:
     image: "gcr.io/cicd-246518/oracle-db:11.2.0.2-xe"
@@ -19,5 +15,3 @@ services:
       - "11521:1521"
     volumes:
       - ./setup/db/oracle/init-scripts:/docker-entrypoint-initdb.d/setup
-    networks:
-      - db_net

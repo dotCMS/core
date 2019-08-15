@@ -1,5 +1,5 @@
 <%@page import="com.dotcms.enterprise.license.LicenseManager"%>
-<%@page import="org.apache.struts.Globals"%>
+<%@page import="com.dotcms.repackage.org.apache.struts.Globals"%>
 <%@page import="com.dotmarketing.util.Config"%>
 <%@page import="com.liferay.portal.struts.MultiMessageResources"%>
 <%@ include file="/html/portlet/ext/cmsconfig/init.jsp" %>

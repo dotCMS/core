@@ -2,6 +2,7 @@ package com.dotcms.contenttype.model.field.layout;
 
 import com.dotcms.contenttype.model.field.*;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalization;
 import com.dotcms.util.CollectionsUtils;
 
 import com.dotcms.util.IntegrationTestInitService;
@@ -13,6 +14,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.mockito.Mockito.*;
 
 public class FieldLayoutTest {
@@ -550,6 +552,61 @@ public class FieldLayoutTest {
         assertEquals(2, rows.get(1).getColumns().size());
         assertEquals(2, rows.get(1).getColumns().get(0).getFields().size());
         assertEquals(1, rows.get(1).getColumns().get(1).getFields().size());
+    }
+
+    @Test()
+    public void shouldreturnContentTypeInternationalizationWhenItIsSet() {
+
+        final ContentType contentType = mock(ContentType.class);
+
+        final List<Field> fields = CollectionsUtils.list(
+                ImmutableRowField.builder()
+                        .name("Row Field 1")
+                        .sortOrder(0)
+                        .build(),
+                ImmutableRowField.builder()
+                        .name("Row Field 2")
+                        .sortOrder(1)
+                        .build(),
+                ImmutableTextField.builder()
+                        .name("Text Field")
+                        .sortOrder(2)
+                        .build()
+        );
+        when(contentType.fields()).thenReturn(fields);
+
+        final ContentTypeInternationalization contentTypeInternationalization = mock(ContentTypeInternationalization.class);
+
+        final FieldLayout fieldLayout = new FieldLayout(contentType);
+        fieldLayout.setContentTypeInternationalization(contentTypeInternationalization);
+
+        assertEquals(contentTypeInternationalization, fieldLayout.getContentTypeInternationalization());
+    }
+
+    @Test()
+    public void shouldReturnNullContentTypeInternationalizationWhenItIsNotSet() {
+
+        final ContentType contentType = mock(ContentType.class);
+
+        final List<Field> fields = CollectionsUtils.list(
+                ImmutableRowField.builder()
+                        .name("Row Field 1")
+                        .sortOrder(0)
+                        .build(),
+                ImmutableRowField.builder()
+                        .name("Row Field 2")
+                        .sortOrder(1)
+                        .build(),
+                ImmutableTextField.builder()
+                        .name("Text Field")
+                        .sortOrder(2)
+                        .build()
+        );
+        when(contentType.fields()).thenReturn(fields);
+        
+        final FieldLayout fieldLayout = new FieldLayout(contentType);
+
+        assertNull(fieldLayout.getContentTypeInternationalization());
     }
 
     @NotNull

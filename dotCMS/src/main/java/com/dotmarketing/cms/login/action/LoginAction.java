@@ -1,5 +1,12 @@
 package com.dotmarketing.cms.login.action;
 
+import com.dotcms.repackage.org.apache.struts.Globals;
+import com.dotcms.repackage.org.apache.struts.action.ActionErrors;
+import com.dotcms.repackage.org.apache.struts.action.ActionForm;
+import com.dotcms.repackage.org.apache.struts.action.ActionForward;
+import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
+import com.dotcms.repackage.org.apache.struts.action.ActionMessage;
+import com.dotcms.repackage.org.apache.struts.action.ActionMessages;
 import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
@@ -20,13 +27,6 @@ import java.util.List;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.apache.struts.Globals;
-import org.apache.struts.action.ActionErrors;
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionForward;
-import org.apache.struts.action.ActionMapping;
-import org.apache.struts.action.ActionMessage;
-import org.apache.struts.action.ActionMessages;
 
 /**
  *
@@ -35,7 +35,7 @@ import org.apache.struts.action.ActionMessages;
 public class LoginAction extends SecureAction {
 
     public ActionForward unspecified(ActionMapping mapping, ActionForm lf, HttpServletRequest request,
-            HttpServletResponse response) throws Exception {
+									 HttpServletResponse response) throws Exception {
 
     	Logger.debug(this, "Locale: " + request.getSession().getAttribute(Globals.LOCALE_KEY));
 

@@ -27,6 +27,7 @@ import com.dotcms.repackage.javax.portlet.PortletException;
 import com.dotcms.repackage.javax.portlet.PortletRequestDispatcher;
 import com.dotcms.repackage.javax.portlet.RenderRequest;
 import com.dotcms.repackage.javax.portlet.RenderResponse;
+import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.struts.StrutsURLEncoder;
 import com.liferay.util.ServerDetector;
@@ -40,7 +41,6 @@ import java.util.Map;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
-import org.apache.struts.Globals;
 
 /**
  * <a href="PortletRequestDispatcherImpl.java.html"><b><i>View Source</i></b>

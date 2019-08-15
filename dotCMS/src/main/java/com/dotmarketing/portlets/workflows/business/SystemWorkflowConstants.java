@@ -8,6 +8,11 @@ public interface SystemWorkflowConstants {
 
     String SYSTEM_WORKFLOW_ID               = "d61a59e1-a49c-46f2-a929-db2b4bfa88b2";
 
+    String WORKFLOW_NEW_STEP_ID             = "6cb7e3bd-1710-4eed-8838-d3db60f78f19";
+    String WORKFLOW_UNPUBLISHED_STEP_ID     = "ee24a4cb-2d15-4c98-b1bd-6327126451f3";
+    String WORKFLOW_PUBLISHED_STEP_ID       = "dc3c9cd0-8467-404b-bf95-cb7df3fbc293";
+    String WORKFLOW_ARCHIVE_STEP_ID         = "d6b095b6-b65f-4bdb-bbfd-701d663dfee2";
+
     String WORKFLOW_SAVE_ACTION_ID          = "ceca71a0-deee-4999-bd47-b01baa1bcfc8";
     String WORKFLOW_ARCHIVE_ACTION_ID       = "4da13a42-5d59-480c-ad8f-94a3adf809fe";
     String WORKFLOW_COPY_ACTION_ID          = "134a50d3-782d-43de-8877-42c0be1c86a4";
@@ -16,4 +21,5 @@ public interface SystemWorkflowConstants {
     String WORKFLOW_SAVE_PUBLISH_ACTION_ID  = "b9d89c80-3d88-4311-8365-187323c96436";
     String WORKFLOW_UNARCHIVE_ACTION_ID     = "c92f9aa1-9503-4567-ac30-d3242b54d02d";
     String WORKFLOW_UNPUBLISH_ACTION_ID     = "38efc763-d78f-4e4b-b092-59cd8c579b93";
+
 }

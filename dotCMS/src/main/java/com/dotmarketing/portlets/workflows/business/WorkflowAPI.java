@@ -16,25 +16,10 @@ import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
-import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
-import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
-import com.dotmarketing.portlets.workflows.model.WorkflowComment;
-import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
-import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
-import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
-import com.dotmarketing.portlets.workflows.model.WorkflowSearcher;
-import com.dotmarketing.portlets.workflows.model.WorkflowState;
-import com.dotmarketing.portlets.workflows.model.WorkflowStep;
-import com.dotmarketing.portlets.workflows.model.WorkflowTask;
-import com.dotmarketing.portlets.workflows.model.WorkflowTimelineItem;
+import com.dotmarketing.portlets.workflows.model.*;
 import com.liferay.portal.model.User;
-import java.util.Collection;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+
+import java.util.*;
 import java.util.concurrent.Future;
 
 /**
@@ -162,7 +147,6 @@ public interface WorkflowAPI {
 	 * deletes a specific comment on a workflow item
 	 *
 	 * @param comment
-	 * @param user
 	 * @throws DotDataException
 	 */
 	public void deleteComment(WorkflowComment comment) throws DotDataException;
@@ -180,7 +164,6 @@ public interface WorkflowAPI {
 	 * Saves a new history item for a workflow
 	 *
 	 * @param history
-	 * @param user
 	 * @throws DotDataException
 	 */
 	public void saveWorkflowHistory(WorkflowHistory history) throws DotDataException;
@@ -189,7 +172,6 @@ public interface WorkflowAPI {
 	 * deletes a history item from a workflow
 	 *
 	 * @param history
-	 * @param user
 	 * @throws DotDataException
 	 */
 	public void deleteWorkflowHistory(WorkflowHistory history) throws DotDataException;
@@ -229,6 +211,23 @@ public interface WorkflowAPI {
 	 * @throws DotDataException
 	 */
 	public void deleteWorkflowTask(WorkflowTask task, User user) throws DotDataException;
+
+	/**
+	 * Deletes (reset) a workflow tasks associated to the webAsset by any language
+	 * @param webAsset {@link String}
+	 * @param user {@link User}
+	 * @throws DotDataException
+	 */
+	public void deleteWorkflowTaskByContentletIdAnyLanguage(String webAsset, User user) throws DotDataException;
+
+	/**
+	 * Deletes (reset) a workflow tasks associated to the webAsset + language id by any language
+	 * @param webAsset {@link String}
+	 * @param languageId {@link Long}
+	 * @param user {@link User}
+	 * @throws DotDataException
+	 */
+	public void deleteWorkflowTaskByContentletId(String webAsset, long languageId, User user) throws DotDataException;
 
 	/**
 	 *
@@ -295,6 +294,24 @@ public interface WorkflowAPI {
 	 * @throws DotDataException
 	 */
 	public List<WorkflowStep> findSteps(WorkflowScheme scheme) throws DotDataException;
+
+	/**
+	 * Finds the first step (in order) for a given action
+	 * @param workflowAction {@link WorkflowAction} action
+	 * @return WorkflowStep
+	 * @throws DotDataException
+	 */
+	Optional<WorkflowStep> findFirstStepForAction(WorkflowAction workflowAction) throws DotDataException;
+
+	/**
+	 * Find the first step (in order) for the scheme
+	 * @param schemeId
+	 * @return
+	 * @throws DotDataException
+	 */
+	Optional<WorkflowStep> findFirstStep(final String schemeId) throws DotDataException;
+
+
 
 	/**
 	 * If the user is allowed to modified workflow (valid license and permissions) will save the step.
@@ -573,7 +590,7 @@ public interface WorkflowAPI {
 	public boolean isSystemStep (String stepId);
 
 	/**
-	 * Deletes the action associated to the scheme
+	 * Deletes the action associated to the scheme and references
 	 * @param action WorkflowAction
 	 * @param user   User
 	 * @throws DotDataException
@@ -843,6 +860,168 @@ public interface WorkflowAPI {
     List<WorkflowTimelineItem> getCommentsAndChangeHistory(WorkflowTask task) throws DotDataException;
 
 	/**
+	 * Maps a {@link SystemAction} to a {@link WorkflowAction} for a {@link ContentType}
+	 * @param systemAction   {@link SystemAction}   System Action to mapping
+	 * @param workflowAction {@link WorkflowAction} Workflow Action to map to the SystemAction
+	 * @param contentType    {@link ContentType}    The Map is associated to a content type
+	 * @throws DotDataException
+	 */
+	SystemActionWorkflowActionMapping mapSystemActionToWorkflowActionForContentType (final SystemAction   systemAction, final WorkflowAction workflowAction,
+														final ContentType    contentType) throws DotDataException;
+
+
+	/**
+	 * Maps a {@link SystemAction} to a {@link WorkflowAction} for a {@link WorkflowScheme}
+	 * @param systemAction   {@link SystemAction}   System Action to mapping
+	 * @param workflowAction {@link WorkflowAction} Workflow Action to map to the SystemAction
+	 * @param workflowScheme {@link WorkflowScheme} The Map is associated to a scheme
+	 * @throws DotDataException
+	 */
+	SystemActionWorkflowActionMapping mapSystemActionToWorkflowActionForWorkflowScheme (final SystemAction      systemAction, final WorkflowAction workflowAction,
+														   final WorkflowScheme    workflowScheme) throws DotDataException;
+
+	/**
+	 * Finds the {@link SystemActionWorkflowActionMapping}'s associated to a {@link ContentType}
+	 * @param contentType {@link ContentType} to be processed
+	 * @param user {@link User} t user used to check permissions
+	 * @return List of SystemActionWorkflowActionMapping
+	 */
+	List<SystemActionWorkflowActionMapping> findSystemActionsByContentType (final ContentType contentType, final User user) throws DotSecurityException, DotDataException;
+
+	/**
+	 * Finds the {@link SystemActionWorkflowActionMapping}'s associated to a {@link WorkflowScheme}
+	 * @param workflowScheme {@link WorkflowScheme}
+	 * @param user {@link User}  user used to check permissions
+	 * @return List of SystemActionWorkflowActionMapping
+	 */
+	List<SystemActionWorkflowActionMapping> findSystemActionsByScheme(final WorkflowScheme workflowScheme, final User user)  throws DotSecurityException, DotDataException;
+
+	/**
+	 * Tries to find a {@link WorkflowAction} based on a {@link Contentlet} and {@link SystemAction}, first will find a workflow action
+	 * associated to the {@link Contentlet} {@link ContentType}, if there is not any match, will tries to find by {@link WorkflowScheme}
+	 * if not any, Optional returned will be empty.
+	 * @param contentlet    {@link Contentlet}   contentlet will helps to find by content type or associated schemes
+	 * @param systemAction  {@link SystemAction} action to find possible mapped actions
+	 * @param user {@link User} user used to check permissions
+	 * @return Optional WorkflowAction, present if exists action associated to the search criterias
+	 */
+	Optional<WorkflowAction> findActionMappedBySystemActionContentlet (final Contentlet contentlet, final SystemAction systemAction, final User user) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Tries to find a {@link SystemActionWorkflowActionMapping} based on {@link SystemAction} and {@link ContentType}
+	 * @param systemAction {@link SystemAction}
+	 * @param contentType  {@link ContentType} to be processed
+	 * @param user         {@link User}
+	 * @return             Optional of SystemActionWorkflowActionMapping
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	Optional<SystemActionWorkflowActionMapping> findSystemActionByContentType(final WorkflowAPI.SystemAction systemAction, final ContentType contentType, final User user) throws DotDataException, DotSecurityException;
+	/**
+	 * Tries to find the system action by identifier
+	 * @param identifier {@link String}
+	 * @param user       {@link User}
+	 * @return Optional of SystemActionWorkflowActionMapping
+	 */
+	Optional<SystemActionWorkflowActionMapping> findSystemActionByIdentifier(String identifier, User user) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Finds all system action associated to the workflow action
+	 * @param workflowAction {@link WorkflowAction}
+	 * @param user {@link User}
+	 * @return List of SystemActionWorkflowActionMapping
+	 */
+	List<SystemActionWorkflowActionMapping> findSystemActionsByWorkflowAction(WorkflowAction workflowAction, User user) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Deletes a system action
+	 * @param mapping {@link SystemActionWorkflowActionMapping}
+	 * @return Optional of SystemActionWorkflowActionMapping
+	 */
+	Optional<SystemActionWorkflowActionMapping> deleteSystemAction(SystemActionWorkflowActionMapping mapping)  throws DotDataException ;
+
+	/**
+	 * Returns true if the action has at least one action let that saves
+	 * @param action {@link WorkflowAction}
+	 * @return Boolean true if has save action
+	 */
+	boolean hasSaveActionlet(final WorkflowAction action);
+
+	/**
+	 * Returns true if the action has at least one action let that publish
+	 * @param action {@link WorkflowAction}
+	 * @return Boolean true if has publish action
+	 */
+	boolean hasPublishActionlet(final WorkflowAction action);
+
+	/**
+	 * Returns true if the action has at least one action let that unpublish
+	 * @param action {@link WorkflowAction}
+	 * @return Boolean true if has unpublish action
+	 */
+	boolean hasUnpublishActionlet(final WorkflowAction action);
+
+	/**
+	 * Returns true if the action has at least one action let that archive
+	 * @param action {@link WorkflowAction}
+	 * @return Boolean true if has archive action
+	 */
+	boolean hasArchiveActionlet(final WorkflowAction action);
+
+
+	/**
+	 * Returns true if the action has at least one action let that unarchive
+	 * @param action {@link WorkflowAction}
+	 * @return Boolean true if has unarchive action
+	 */
+	boolean hasUnarchiveActionlet(final WorkflowAction action);
+
+	/**
+	 * Returns true if the action has at least one action let that delete
+	 * @param action {@link WorkflowAction}
+	 * @return Boolean true if has delete action
+	 */
+	boolean hasDeleteActionlet(final WorkflowAction action);
+
+	/**
+	 * Returns true if the action has at least one action let that destroy
+	 * @param action {@link WorkflowAction}
+	 * @return Boolean true if has destroy action
+	 */
+	boolean hasDestroyActionlet(final WorkflowAction action);
+
+	/**
+	 * This method creates a WorkflowTask (does not persists it) based on the information on the contentlet (id + lang),
+	 * user (role to assign, and created by), workflowStep (status 'current step'), title and description
+	 *
+	 * @param contentlet   {@link Contentlet}
+	 * @param user         {@link User}
+	 * @param workflowStep {@link WorkflowStep}
+	 * @param title        {@link String}
+	 * @param description  {@link String}
+	 * @return WorkflowTask
+	 * @throws DotDataException
+	 */
+	WorkflowTask createWorkflowTask(final Contentlet contentlet, final User user,
+												   final WorkflowStep workflowStep, final String title, String description) throws DotDataException;
+
+	/**
+	 * Based on a list of content types, returns the list of system action mappings associated for each of them, indexed by content type variable
+	 * @param contentTypes {@link List}
+	 * @param user         {@link User}
+	 * @return Map variable -> List of SystemActionWorkflowActionMapping
+	 */
+	Map<String, List<SystemActionWorkflowActionMapping>> findSystemActionsMapByContentType(List<ContentType> contentTypes, User user) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Based on a list of content types, returns the list of workflow schemes associated for each of them, indexed by content type variable
+	 * @param contentTypes {@link List}
+	 * @return Map variable -> List of WorkflowScheme
+	 */
+	Map<String, List<WorkflowScheme>> findSchemesMapForContentType(List<ContentType> contentTypes)  throws DotDataException;
+
+
+	/**
 	 * Render mode for the available actions
 	 */
     enum RenderMode {
@@ -857,6 +1036,22 @@ public interface WorkflowAPI {
 		public WorkflowState getState() {
 			return state;
 		}
+	}
+
+	/**
+	 * Core system actions available as part of the API.
+	 * Users can create new content, edit the content, publish/upublish, etc.
+	 */
+	enum SystemAction {
+
+		NEW,
+		EDIT,
+		PUBLISH,
+		UNPUBLISH,
+		ARCHIVE,
+		UNARCHIVE,
+		DELETE,
+		DESTROY
 	}
 
 }

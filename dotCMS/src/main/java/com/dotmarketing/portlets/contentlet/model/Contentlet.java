@@ -44,6 +44,9 @@ import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
+
+import io.vavr.control.Try;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -54,6 +57,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -113,6 +117,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     public static final String DISABLE_WORKFLOW = "__disable_workflow__";
 
     // means the contentlet is being used on unit test mode.
+	// this is only for unit test. do not use on production.
+	@VisibleForTesting
 	public static final String IS_TEST_MODE = "_is_test_mode";
 
 	/**
@@ -222,15 +228,18 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     	return getInode();
     }
 
-    /**
-     * Create a contentlet based on a map (makes a copy of it)
-     * @param map
-     */
-    public Contentlet(final Map<String, Object> map) {
-		this.map = new ContentletHashMap();
-    	this.map.putAll(map);
-		this.indexPolicy = IndexPolicy.DEFER;
-    }
+  /**
+   * Create a contentlet based on a map (makes a copy of it)
+   * 
+   * @param map
+   */
+  public Contentlet(final Map<String, Object> mapIn) {
+
+    mapIn.values().removeIf(Objects::isNull);
+    this.map = new ContentletHashMap();
+    this.map.putAll(mapIn);
+    this.indexPolicy = IndexPolicy.DEFER;
+  }
 
 	/**
 	 * Create a contentlet based on a map (makes a copy of it)
@@ -960,11 +969,11 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 			FolderAPI fAPI = APILocator.getFolderAPI();
 			HostAPI hostAPI = APILocator.getHostAPI();
 			Host systemHost = hostAPI.findSystemHost(systemUser, false);
-			Structure st = getStructure();
+			ContentType type = Try.of(()->getContentType()).getOrNull();
 
 
 
-			if(st != null && st.getVelocityVarName() != null && st.getVelocityVarName().equals("Host")) {
+			if(type != null && "Host".equalsIgnoreCase(type.variable())) {
 				Host hProxy = new Host(this);
 				return hProxy.getParentPermissionable();
 			}
@@ -981,8 +990,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 			}
 
 			// if this contentlet has a structure, inherit from that
-			if(st != null && InodeUtils.isSet(st.getInode())){
-				return st;
+			if(type != null && InodeUtils.isSet(type.inode())){
+				return type;
 			}
 			return null;
 
@@ -1630,4 +1639,26 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
             throw new DotStateException(e);
         }
     }
+
+	/**
+	 * Determine if the workflow is disable for this contentlet
+	 * @return boolean true if is disable
+	 */
+	@JsonIgnore
+	public boolean isDisableWorkflow() {
+
+		return null != this.getMap().get(Contentlet.DISABLE_WORKFLOW) &&
+				Boolean.TRUE.equals(this.getMap().get(Contentlet.DISABLE_WORKFLOW));
+	}
+
+	/**
+	 * Determine if the workflow is in progress for this contentlet
+	 * @return
+	 */
+	@JsonIgnore
+	public boolean isWorkflowInProgress () {
+
+		return null != this.getMap().get(Contentlet.WORKFLOW_IN_PROGRESS) &&
+				Boolean.TRUE.equals(this.getMap().get(Contentlet.WORKFLOW_IN_PROGRESS));
+	}
 }

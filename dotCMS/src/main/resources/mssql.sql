@@ -1314,6 +1314,17 @@ create table workflow_task (
    language_id NUMERIC(19,0) null,
    primary key (id)
 );
+
+create table content_type_workflow_action_mapping (
+
+   id NVARCHAR(36) primary key,
+   action NVARCHAR(36) not null,
+   workflow_action NVARCHAR(255) not null,
+   scheme_or_content_type  NVARCHAR(255) not null
+);
+
+CREATE UNIQUE INDEX idx_content_type_workflow_action_mapping ON content_type_workflow_action_mapping (action, workflow_action, scheme_or_content_type);
+
 create table tag_inode (
    tag_id NVARCHAR(100) not null,
    inode NVARCHAR(100) not null,
@@ -2383,10 +2394,18 @@ create table workflow_action(
     scheme_id NVARCHAR(36) NOT NULL
 );
 
-CREATE TABLE workflow_action_step ( action_id NVARCHAR(36) NOT NULL, step_id NVARCHAR(36) NOT NULL, action_order INT default 0, CONSTRAINT pk_workflow_action_step PRIMARY KEY NONCLUSTERED (action_id, step_id) );
+CREATE TABLE workflow_action_step (
+    action_id    NVARCHAR(36) NOT NULL,
+    step_id      NVARCHAR(36) NOT NULL,
+    action_order INT default 0,
+    CONSTRAINT pk_workflow_action_step PRIMARY KEY NONCLUSTERED (action_id, step_id)
+);
+
+CREATE index idx_workflow_action_step_action_id on workflow_action_step(action_id);
+CREATE index idx_workflow_action_step_step_id on workflow_action_step(step_id);
 ALTER  TABLE workflow_action_step ADD CONSTRAINT fk_w_action_step_action_id foreign key (action_id) references workflow_action(id);
 ALTER  TABLE workflow_action_step ADD CONSTRAINT fk_w_action_step_step_id   foreign key (step_id)   references workflow_step  (id);
-
+CREATE index idx_workflow_action_step on workflow_action(step_id);
 
 create table workflow_action_class(
     id NVARCHAR(36) primary key,
@@ -2425,6 +2444,8 @@ ALTER TABLE workflow_task ADD CONSTRAINT FK_workflow_task_language FOREIGN KEY (
 ALTER TABLE workflow_task ADD CONSTRAINT FK_workflow_assign FOREIGN KEY (assigned_to) REFERENCES cms_role (id);
 ALTER TABLE workflow_task ADD CONSTRAINT FK_workflow_task_asset FOREIGN KEY (webasset) REFERENCES identifier (id);
 ALTER TABLE workflow_task ADD CONSTRAINT FK_workflow_step FOREIGN KEY (status) REFERENCES workflow_step (id);
+
+CREATE index idx_workflow_step_escalation_action on workflow_step(escalation_action);
 alter table workflow_step add constraint fk_escalation_action foreign key (escalation_action) references workflow_action(id);
 
 alter table contentlet_version_info add constraint FK_con_ver_lockedby foreign key (locked_by) references user_(userid);

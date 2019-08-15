@@ -1,5 +1,11 @@
 package com.dotmarketing.cms.createaccount.struts;
 
+import com.dotcms.repackage.org.apache.struts.Globals;
+import com.dotcms.repackage.org.apache.struts.action.ActionErrors;
+import com.dotcms.repackage.org.apache.struts.action.ActionForm;
+import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
+import com.dotcms.repackage.org.apache.struts.action.ActionMessage;
+import com.dotcms.repackage.org.apache.struts.action.ActionMessages;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.FormSpamFilter;
 import com.dotmarketing.util.Logger;
@@ -7,12 +13,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import java.io.Serializable;
 import javax.servlet.http.HttpServletRequest;
-import org.apache.struts.Globals;
-import org.apache.struts.action.ActionErrors;
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionMapping;
-import org.apache.struts.action.ActionMessage;
-import org.apache.struts.action.ActionMessages;
 
 @Deprecated
 public class CreateAccountForm extends ActionForm implements Serializable {
@@ -253,14 +253,15 @@ public class CreateAccountForm extends ActionForm implements Serializable {
     public ActionErrors validate(ActionMapping arg0, HttpServletRequest request) {
 		ActionErrors errors = new ActionErrors();       
 		if (!UtilMethods.isSet(password1) ){
-			errors.add(Globals.MESSAGES_KEY, new ActionMessage("message.contentlet.required","password"));
+			errors.add(
+					Globals.MESSAGES_KEY, new ActionMessage("message.contentlet.required","password"));
 		}
 		if(UtilMethods.isSet(password1) && !password1.equals(verifyPassword)){    		    		    		
 			errors.add(Globals.MESSAGES_KEY, new ActionMessage("error.passwordsDontMatch"));    		
 		}
     	if (!UtilMethods.isSet(emailAddress)) 
     	{
-    		errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("message.contentlet.required","eMail"));    		
+    		errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("message.contentlet.required","eMail"));
     	}
     	
     	if (UtilMethods.isSet(userName)) 

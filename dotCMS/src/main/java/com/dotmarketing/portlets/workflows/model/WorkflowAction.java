@@ -1,12 +1,10 @@
 package com.dotmarketing.portlets.workflows.model;
 
+import com.dotmarketing.business.*;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonSetter;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.PermissionSummary;
-import com.dotmarketing.business.Permissionable;
-import com.dotmarketing.business.RelatedPermissionableGroup;
+import com.google.common.collect.ImmutableList;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.UtilMethods;
 
@@ -49,7 +47,12 @@ public class WorkflowAction implements Permissionable, Serializable{
 	private int order;
 	private boolean saveActionlet;
 	private boolean publishActionlet;
+	private boolean unpublishActionlet;
+	private boolean archiveActionlet;
 	private boolean pushPublishActionlet;
+	private boolean unarchiveActionlet;
+	private boolean deleteActionlet;
+	private boolean destroyActionlet;
 	private Set<WorkflowState> showOn = Collections.emptySet();
 
 	public WorkflowAction() {
@@ -119,6 +122,7 @@ public class WorkflowAction implements Permissionable, Serializable{
 		return this.showOn.contains(WorkflowState.UNLOCKED);
 	}
 
+
 	/**
 	 * Returns the set of the status to show the action.
 	 * @return Set of {@link WorkflowState}
@@ -167,25 +171,79 @@ public class WorkflowAction implements Permissionable, Serializable{
 	public String toString() {
 		return "WorkflowAction [id=" + id + ", name=" + name + ", stepId=" + stepId + ", nextStep=" + nextStep + "]";
 	}
-
-	@JsonIgnore
+  private static final List<PermissionSummary> acceptedPermissions = ImmutableList.of(new PermissionSummary("use","use-permission-description", PermissionAPI.PERMISSION_USE));
+	
+  @JsonIgnore
 	public List<PermissionSummary> acceptedPermissions() {
-		List<PermissionSummary> accepted = new ArrayList<PermissionSummary>();
-		accepted.add(new PermissionSummary("use",
-				"use-permission-description", PermissionAPI.PERMISSION_USE));
-		return accepted;
+		return acceptedPermissions;
 	}
 
+	/**
+	 * Returns true if the action has at least one action let that saves
+	 * @return Boolean true if has save action
+	 */
     public boolean hasSaveActionlet() {
     	return this.saveActionlet;
     }
 
+	/**
+	 * Returns true if the action has at least one action let that publish
+	 * @return Boolean true if has publish action
+	 */
     public boolean hasPublishActionlet() {
     	return this.publishActionlet;
     }
 
+	/**
+	 * Returns true if the action has at least one action let that publish publish
+	 * @return Boolean true if has push publish action
+	 */
+
 	public boolean hasPushPublishActionlet() {
 		return this.pushPublishActionlet;
+	}
+
+	/**
+	 * Returns true if the action has at least one action let that unpublish
+	 * @return Boolean true if has unpublish action
+	 */
+	public boolean hasUnpublishActionlet() {
+		return unpublishActionlet;
+	}
+
+	/**
+	 * Returns true if the action has at least one action let that archive
+	 * @return Boolean true if has archive action
+	 */
+	public boolean hasArchiveActionlet() {
+
+		return archiveActionlet;
+	}
+
+	/**
+	 * Returns true if the action has at least one action let that unarchive
+	 * @return Boolean true if has unarchive action
+	 */
+	public boolean hasUnarchiveActionlet() {
+
+		return unarchiveActionlet;
+	}
+
+	/**
+	 * Returns true if the action has at least one action let that delete
+	 * @return Boolean true if has delete action
+	 */
+	public boolean hasDeleteActionlet() {
+
+		return deleteActionlet;
+	}
+
+	/**
+	 * Returns true if the action has at least one action let that destroy
+	 * @return Boolean true if has destroy action
+	 */
+	public boolean hasDestroyActionlet() {
+		return destroyActionlet;
 	}
 
 	public void setSaveActionlet(boolean saveActionlet) {
@@ -198,6 +256,26 @@ public class WorkflowAction implements Permissionable, Serializable{
 
 	public void setPushPublishActionlet(boolean pushPublishActionlet) {
 		this.pushPublishActionlet = pushPublishActionlet;
+	}
+
+	public void setUnpublishActionlet(final boolean unpublishActionlet) {
+		this.unpublishActionlet = unpublishActionlet;
+	}
+
+	public void setArchiveActionlet(final boolean archiveActionlet) {
+		this.archiveActionlet = archiveActionlet;
+	}
+
+	public void setUnarchiveActionlet(final boolean unarchiveActionlet) {
+		this.unarchiveActionlet = unarchiveActionlet;
+	}
+
+	public void setDeleteActionlet(final boolean deleteActionlet) {
+		this.deleteActionlet = deleteActionlet;
+	}
+
+	public void setDestroyActionlet(final boolean destroyActionlet) {
+		this.destroyActionlet = destroyActionlet;
 	}
 
 	@JsonIgnore

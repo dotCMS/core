@@ -2,6 +2,7 @@ package com.dotmarketing.business.jgroups;
 
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.business.ServerAPI;
+import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.ChainableCacheAdministratorImpl;
@@ -18,7 +19,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.commons.collections.map.LRUMap;
-import org.apache.struts.Globals;
 import org.jgroups.Address;
 import org.jgroups.Event;
 import org.jgroups.JChannel;
@@ -260,7 +260,8 @@ public class JGroupsCacheTransport extends ReceiverAdapter implements CacheTrans
         } else if ( v.toString().equals("ACK") ) {
             Logger.info(this, "ACK Received " + new Date());
         } else if ( v.toString().equals("MultiMessageResources.reload") ) {
-            MultiMessageResources messages = (MultiMessageResources) Config.CONTEXT.getAttribute(Globals.MESSAGES_KEY);
+            MultiMessageResources messages = (MultiMessageResources) Config.CONTEXT.getAttribute(
+                    Globals.MESSAGES_KEY);
             messages.reloadLocally();
         } else if ( v.toString().equals(ChainableCacheAdministratorImpl.DUMMY_TEXT_TO_SEND) ) {
             //Don't do anything is we are only checking sending.

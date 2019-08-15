@@ -16,6 +16,13 @@
 
 package org.apache.velocity.tools.struts;
 
+import com.dotcms.repackage.org.apache.struts.Globals;
+import com.dotcms.repackage.org.apache.struts.config.ActionConfig;
+import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
+import com.dotcms.repackage.org.apache.struts.util.MessageResources;
+import com.dotcms.repackage.org.apache.struts.util.ModuleUtils;
+import com.dotcms.repackage.org.apache.struts.validator.Resources;
+import com.dotcms.repackage.org.apache.struts.validator.ValidatorPlugIn;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -31,13 +38,6 @@ import org.apache.commons.validator.Form;
 import org.apache.commons.validator.ValidatorAction;
 import org.apache.commons.validator.ValidatorResources;
 import org.apache.commons.validator.Var;
-import org.apache.struts.Globals;
-import org.apache.struts.config.ActionConfig;
-import org.apache.struts.config.ModuleConfig;
-import org.apache.struts.util.MessageResources;
-import org.apache.struts.util.ModuleUtils;
-import org.apache.struts.validator.Resources;
-import org.apache.struts.validator.ValidatorPlugIn;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 

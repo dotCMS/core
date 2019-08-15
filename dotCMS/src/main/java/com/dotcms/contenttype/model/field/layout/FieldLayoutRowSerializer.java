@@ -1,9 +1,10 @@
 package com.dotcms.contenttype.model.field.layout;
 
-import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.transform.field.JsonFieldTransformer;
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
 
 import java.io.IOException;
@@ -35,6 +36,17 @@ import java.io.IOException;
  * @see FieldLayoutColumnSerializer
  */
 public class FieldLayoutRowSerializer extends JsonSerializer<FieldLayoutRow> {
+    final ObjectMapper MAPPER;
+
+    public FieldLayoutRowSerializer(){
+        this(new ObjectMapper());
+    }
+
+    @VisibleForTesting
+    FieldLayoutRowSerializer(final ObjectMapper mapper){
+        super();
+        this.MAPPER = mapper;
+    }
 
     @Override
     public void serialize(
@@ -44,10 +56,16 @@ public class FieldLayoutRowSerializer extends JsonSerializer<FieldLayoutRow> {
 
         jsonGenerator.writeStartObject();
 
-        final JsonFieldTransformer jsonFieldDividerTransformer =
-                new JsonFieldTransformer(fieldLayoutRow.getDivider());
+        final JsonFieldTransformer jsonFieldDividerTransformer = new JsonFieldTransformer(fieldLayoutRow.getDivider());
         jsonGenerator.writeObjectField("divider", jsonFieldDividerTransformer.mapObject());
-        jsonGenerator.writeObjectField("columns", fieldLayoutRow.getColumns());
+
+        jsonGenerator.writeFieldName("columns");
+
+
+        MAPPER.writer()
+                .withAttribute("type", serializerProvider.getAttribute("type"))
+                .withAttribute("internationalization", serializerProvider.getAttribute("internationalization"))
+                .writeValue(jsonGenerator, fieldLayoutRow.getColumns());
 
         jsonGenerator.writeEndObject();
         jsonGenerator.flush();

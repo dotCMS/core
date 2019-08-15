@@ -23,6 +23,10 @@ public interface UserAPI {
 	
 	final static String SYSTEM_USER_ID = "system";
 
+	final static String CMS_ANON_USER_ID="anonymous";
+	
+	
+	
 	/**
 	 * Used to encrypt a User's userid
 	 * @param userId
@@ -406,5 +410,7 @@ public interface UserAPI {
      * @throws DotDataException
      */
 	public List<User> getUnDeletedUsers() throws DotDataException;
+
+    User getAnonymousUserNoThrow();
 
 }

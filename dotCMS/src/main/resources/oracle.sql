@@ -1082,6 +1082,17 @@ create table workflow_task (
    language_id number(19,0),
    primary key (id)
 );
+
+create table content_type_workflow_action_mapping (
+
+   id varchar2(36) not null primary key ,
+   action varchar2(36) not null,
+   workflow_action varchar2(255) not null,
+   scheme_or_content_type  varchar2(255) not null
+);
+
+CREATE UNIQUE INDEX idx_content_type_workflow_action_mapping ON content_type_workflow_action_mapping (action, workflow_action, scheme_or_content_type);
+
 create table tag_inode (
    tag_id varchar2(100) not null,
    inode varchar2(100) not null,

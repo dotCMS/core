@@ -69,11 +69,10 @@ public class TempFileResource {
             final boolean allowAnonToUseTempFiles = !Config
                     .getBooleanProperty(TempFileAPI.TEMP_RESOURCE_ALLOW_ANONYMOUS, true);
 
-            final InitDataObject initDataObject = this.webResource
+            this.webResource
                     .init(false, request, allowAnonToUseTempFiles);
 
-            final User user = initDataObject.getUser();
-            final String uniqueKey = request.getSession().getId();
+
 
             if (!new SecurityUtils().validateReferer(request)) {
                 throw new BadRequestException("Invalid Origin or referer");
@@ -98,7 +97,7 @@ public class TempFileResource {
                 if (fileName == null || fileName.startsWith(".") || fileName.contains("/.")) {
                     continue;
                 }
-                tempFiles.add(tempApi.createTempFile(fileName, user, uniqueKey, in));
+                tempFiles.add(tempApi.createTempFile(fileName, request, in));
             }
 
             return Response.ok(ImmutableMap.of("tempFiles", tempFiles)).build();
@@ -137,7 +136,7 @@ public class TempFileResource {
 
             final List<DotTempFile> tempFiles = new ArrayList<DotTempFile>();
             tempFiles.add(tempApi
-                    .createTempFileFromUrl(form.fileName, user, uniqueKey, new URL(form.remoteUrl),
+                    .createTempFileFromUrl(form.fileName, request, new URL(form.remoteUrl),
                             form.urlTimeoutSeconds));
 
             return Response.ok(ImmutableMap.of("tempFiles", tempFiles)).build();

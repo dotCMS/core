@@ -576,10 +576,10 @@ public class ESContentFactoryImpl extends ContentletFactory {
             contentletCache.remove(con.getInode());
 
             // delete workflow task for contentlet
-            WorkFlowFactory wff = FactoryLocator.getWorkFlowFactory();
-            WorkflowTask wft = wff.findTaskByContentlet(con);
-            if ( null != wft && InodeUtils.isSet(wft.getInode() ) ) {
-                wff.deleteWorkflowTask(wft);
+            final WorkFlowFactory workFlowFactory = FactoryLocator.getWorkFlowFactory();
+            final WorkflowTask workflowTask       = workFlowFactory.findTaskByContentlet(con);
+            if ( null != workflowTask && InodeUtils.isSet(workflowTask.getInode() ) ) {
+                workFlowFactory.deleteWorkflowTask(workflowTask);
             }
 
             //Remove the tag references to this Contentlet
@@ -601,10 +601,11 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 }
 
                 try {
-                    com.dotmarketing.portlets.contentlet.business.Contentlet c =
+                    com.dotmarketing.portlets.contentlet.business.Contentlet contentlet =
                             (com.dotmarketing.portlets.contentlet.business.Contentlet)HibernateUtil.load(com.dotmarketing.portlets.contentlet.business.Contentlet.class, con.getInode());
-                    if(c!=null && InodeUtils.isSet(c.getInode())) {
-                        HibernateUtil.delete(c);
+                    if(contentlet!=null && InodeUtils.isSet(contentlet.getInode())) {
+
+                        HibernateUtil.delete(contentlet);
                     }
                 }
                 catch(Exception ex) {

@@ -1382,7 +1382,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		final ContentType languageVariableType = contentTypeApi.find("Languagevariable");
 		final List<Field> fields = languageVariableType.fields();
 		final ContentType languageVariableTypeWithAnotherHost =
-				ContentTypeBuilder.builder(languageVariableType).host("ANY-OTHER-HOST").build();
+				ContentTypeBuilder.builder(languageVariableType).host("ANY-OTHER-HOST").fixed(true).build();
 		languageVariableTypeWithAnotherHost.constructWithFields(fields);
 
 		ContentType savedLanguagaVariableType = contentTypeApi
