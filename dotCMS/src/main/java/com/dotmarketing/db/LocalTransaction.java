@@ -232,7 +232,7 @@ public class LocalTransaction {
     
     private final static String LocalTransationName= LocalTransaction.class.getCanonicalName();
     static public boolean inLocalTransaction() {
-      StackTraceElement[] stes =  Thread.currentThread().getStackTrace();
+      final StackTraceElement[] stes =  Thread.currentThread().getStackTrace();
       for(int i=2;i<stes.length;i++) {
         final int stackNumber=i;
         String steName = Try.of(()->stes[stackNumber].getClassName()).getOrNull();
