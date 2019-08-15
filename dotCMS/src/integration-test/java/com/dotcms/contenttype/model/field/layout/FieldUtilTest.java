@@ -45,57 +45,43 @@ public class FieldUtilTest {
 
         final User systemUser = APILocator.systemUser();
         final ContentType languageVariableContentType = ContentTypeDataGen.createLanguageVariableContentType();
-        Contentlet content = null;
         ContentType formContentType = null;
 
-        try {
-            final String fieldName = String.format("test%d", new Date().getTime());
+        final String fieldName = String.format("test%d", new Date().getTime());
 
-            formContentType = new ContentTypeDataGen()
-                    .baseContentType(BaseContentType.FORM)
-                    .name("formtest")
-                    .fields(
-                            CollectionsUtils.list(
-                                    ImmutableRowField.builder()
-                                            .name("roe")
-                                            .sortOrder(5)
-                                            .build(),
-                                    ImmutableColumnField.builder()
-                                            .name("column")
-                                            .sortOrder(6)
-                                            .build(),
-                                    ImmutableTextField.builder()
-                                            .name(fieldName)
-                                            .sortOrder(7)
-                                            .build()
-                            )
-                    )
-                    .nextPersisted();
+        formContentType = new ContentTypeDataGen()
+                .baseContentType(BaseContentType.FORM)
+                .fields(
+                        CollectionsUtils.list(
+                                ImmutableRowField.builder()
+                                        .name("roe")
+                                        .sortOrder(5)
+                                        .build(),
+                                ImmutableColumnField.builder()
+                                        .name("column")
+                                        .sortOrder(6)
+                                        .build(),
+                                ImmutableTextField.builder()
+                                        .name(fieldName)
+                                        .sortOrder(7)
+                                        .build()
+                        )
+                )
+                .nextPersisted();
 
-            final String key = String.format("%s.%s.name", formContentType.variable(), fieldName);
-            final String languageVariableValue = "test";
-            final long languageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
-            final boolean live = false;
+        final String key = String.format("%s.%s.name", formContentType.variable(), fieldName);
+        final String languageVariableValue = "test";
+        final long languageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+        final boolean live = false;
 
-            content = ContentUtils.createTestKeyValueContent(key, languageVariableValue, languageId, languageVariableContentType, systemUser);
+        ContentUtils.createTestKeyValueContent(key, languageVariableValue, languageId, languageVariableContentType, systemUser);
 
-            final ContentTypeInternationalization contentTypeInternationalization =
-                    new ContentTypeInternationalization(languageId, live, systemUser);
+        final ContentTypeInternationalization contentTypeInternationalization =
+                new ContentTypeInternationalization(languageId, live, systemUser);
 
-            final Map<String, Object> fieldMap = map("name", fieldName, "variable", fieldName);
-            FieldUtil.setFieldInternationalization(formContentType, contentTypeInternationalization, fieldMap);
+        final Map<String, Object> fieldMap = map("name", fieldName, "variable", fieldName);
+        FieldUtil.setFieldInternationalization(formContentType, contentTypeInternationalization, fieldMap);
 
-            assertEquals(languageVariableValue, fieldMap.get("name"));
-        } finally {
-
-            //Clean up
-            if (null != content) {
-                deleteContentlets(systemUser, content);
-            }
-
-            if (null != formContentType) {
-                ContentTypeDataGen.remove(formContentType);
-            }
-        }
+        assertEquals(languageVariableValue, fieldMap.get("name"));
     }
 }
