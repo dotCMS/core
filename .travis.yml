@@ -16,7 +16,6 @@ env:
     - LICENSE=${DOTCMS_LICENSE}
     - TRAVIS_WORKER_HARD_TIMEOUT=80m
     - TRAVIS_WORKER_MAX_LOG_LENGTH=20000000
-    - ALLOWED_BRANCHES=master, release-*, test-*, issue-16881-*
 
 before_install:
   - chmod +x travis/environment_vars.sh
@@ -24,7 +23,7 @@ before_install:
   - chmod +x travis/submit.sh
   - chmod +x travis/run.sh
 
-if: type = pull_request OR branch IN (env(ALLOWED_BRANCHES))
+if: type = pull_request OR branch IN (master, release-*, test-*, issue-16881-*)
 
 # https://docs.travis-ci.com/user/build-stages
 jobs:
