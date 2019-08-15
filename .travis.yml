@@ -23,7 +23,7 @@ before_install:
   - chmod +x travis/submit.sh
   - chmod +x travis/run.sh
 
-if: type = pull_request OR branch IN (master, release-*, test-*, issue-16881-*)
+if: type = pull_request OR branch = issue-16881-travis-filters
 
 # https://docs.travis-ci.com/user/build-stages
 jobs:
