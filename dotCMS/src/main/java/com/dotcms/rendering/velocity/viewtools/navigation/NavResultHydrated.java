@@ -8,6 +8,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.json.JSONIgnore;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,8 +35,16 @@ public final class NavResultHydrated extends NavResult{
         this.context = context;
 
     }
-
-
+    @Override
+    @JSONIgnore
+    public NavResult getUnhydratedNavResult() {
+      NavResult testNavResult = navResult;
+      while(testNavResult instanceof NavResultHydrated) {
+        testNavResult=testNavResult.getUnhydratedNavResult();
+      }
+      return testNavResult;
+    }
+    
 
     public boolean isActive() {
         if (context != null && UtilMethods.isSet(navResult.getHref())) {
@@ -86,7 +95,7 @@ public final class NavResultHydrated extends NavResult{
         return navResult.getHostId();
     }
 
-
+    @Override
     public String getHref() {
         return navResult.getHref();
     }
@@ -145,35 +154,35 @@ public final class NavResultHydrated extends NavResult{
         return list;
     }
 
-
+    @Override
     public String getParentPath() throws DotDataException, DotSecurityException {
         return navResult.getParentPath();
     }
 
 
-
+    @Override
     public NavResult getParent() throws DotDataException, DotSecurityException {
         return navResult.getParent();
     }
 
 
-
+    @Override
     public List<String> getChildrenFolderIds() {
         return navResult.getChildrenFolderIds();
     }
 
-
+    @Override
     public String getType() {
         return navResult.getType();
     }
 
 
-
+    @Override
     public String getTarget() {
         return navResult.getTarget();
     }
 
-
+    @Override
     public String getOwner() {
         return navResult.getOwner();
     }

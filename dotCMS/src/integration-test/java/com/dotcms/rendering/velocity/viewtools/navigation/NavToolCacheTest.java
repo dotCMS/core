@@ -40,7 +40,6 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
 
-
 public class NavToolCacheTest extends IntegrationTestBase {
 
   private static Folder folder;
@@ -64,12 +63,12 @@ public class NavToolCacheTest extends IntegrationTestBase {
   public void test_navtool_cache_does_not_return_hydrated_navresults() throws Exception {
     createData();
 
-    HttpServletRequest request = new MockHeaderRequest(new MockHttpRequest(site.getHostname(), "/").request(), "Origin", "localhost").request();
+    HttpServletRequest request =
+        new MockHeaderRequest(new MockHttpRequest(site.getHostname(), "/").request(), "Origin", "localhost").request();
     HttpServletResponse response = new MockHttpResponse().response();
 
     // fat context
     Context context = new ChainedContext(VelocityUtil.getEngine(), request, response, Config.CONTEXT);
-
 
     NavToolCache navCache = (NavToolCacheImpl) CacheLocator.getNavToolCache();
     navCache.clearCache();
@@ -77,27 +76,61 @@ public class NavToolCacheTest extends IntegrationTestBase {
     navTool.init(context);
     NavResult navResult = navTool.getNav();
     assertNotNull(navResult);
-    
+
     List<NavResult> navResultList = loadResults(navResult, new ArrayList<>());
-    assert(navResultList.size()==7);
-    for(NavResult result : navResultList) {
+    assert (navResultList.size() == 7);
+    for (NavResult result : navResultList) {
       assertTrue(result instanceof NavResultHydrated);
-      
       NavResult test = navCache.getNav(result.getHostId(), result.getFolderId(), result.getLanguageId());
-      if(test==null) {
-        continue;
-      }
-      assert(test instanceof NavResult);
-      assert(!(test instanceof NavResultHydrated));
+
+      assert (test instanceof NavResult);
+      assert (!(test instanceof NavResultHydrated));
     }
-    
 
   }
+  // issue: https://github.com/dotCMS/core/issues/16951
+  @Test
+  public void test_NavToolCache_cannot_take_a_hydrated_result() throws Exception {
 
+    
+    final Folder testFolder = new FolderDataGen().showOnMenu(true).site(site).nextPersisted();
+    
+    HttpServletRequest request =
+        new MockHeaderRequest(new MockHttpRequest(site.getHostname(), "/").request(), "Origin", "localhost").request();
+    HttpServletResponse response = new MockHttpResponse().response();
+
+    // fat context
+    Context context = new ChainedContext(VelocityUtil.getEngine(), request, response, Config.CONTEXT);
+
+    // wipe out navcache
+    NavToolCache navCache = (NavToolCacheImpl) CacheLocator.getNavToolCache();
+    navCache.clearCache();
+    
+    final NavTool navTool = new NavTool();
+    navTool.init(context);
+    
+    // navtool gives us hydrated results
+    NavResult navResultHydrated = navTool.getNav(testFolder.getPath());
+    assertTrue(navResultHydrated instanceof NavResultHydrated);
+    
+    // navCache gives us non=hydrated results
+    NavResult navResult = navCache.getNav(site.getIdentifier(), testFolder.getInode(), APILocator.getLanguageAPI().getDefaultLanguage().getId());
+    assertTrue(!(navResult instanceof NavResultHydrated));
+    
+    // try to add the hydrated value to cache, and still we get back non-hydrated results
+    navCache.putNav(site.getIdentifier(), testFolder.getInode(), navResultHydrated,APILocator.getLanguageAPI().getDefaultLanguage().getId());
+    navResult = navCache.getNav(site.getIdentifier(), testFolder.getInode(), APILocator.getLanguageAPI().getDefaultLanguage().getId());
+    assertTrue(!(navResult instanceof NavResultHydrated));
+    
+    
+    // requested through the navtool we get a hydrated result
+    navResultHydrated = navTool.getNav(testFolder.getPath());
+    assertTrue(navResultHydrated instanceof NavResultHydrated);
+    
+  }
   private List<NavResult> loadResults(NavResult nav, List<NavResult> addToList) throws Exception {
-    System.out.println("adding:" + nav.getType()  + ":" + nav.getTitle());
-    
-    
+    System.out.println("adding:" + nav.getType() + ":" + nav.getTitle());
+
     addToList.add(nav);
     for (NavResult child : nav.getChildren()) {
       loadResults(child, addToList);
@@ -108,20 +141,18 @@ public class NavToolCacheTest extends IntegrationTestBase {
 
   private void createData() throws Exception {
     new FolderDataGen().showOnMenu(true).site(site).nextPersisted();
-    
+
     File file1 = File.createTempFile("test", "test");
-    try(FileWriter out = new FileWriter(file1)){
+    try (FileWriter out = new FileWriter(file1)) {
       out.append("testing");
     }
-    
 
     new FileAssetDataGen(site, file1).setProperty(FileAssetAPI.SHOW_ON_MENU, "true");
-    
-    
+
     // Create Folder
     folder = new FolderDataGen().showOnMenu(true).site(site).nextPersisted();
     new FileAssetDataGen(folder, file1).setProperty(FileAssetAPI.SHOW_ON_MENU, "true").nextPersistedWithSampleTextValues();
-    
+
     // New template
     final Template template = new TemplateDataGen().nextPersisted();
 
@@ -133,13 +164,9 @@ public class NavToolCacheTest extends IntegrationTestBase {
     APILocator.getContentletAPI().publish(pageAsset1, user, true);
     APILocator.getContentletAPI().publish(pageAsset2, user, true);
 
-    
-
-
     // Create 2 Folders (One with show on Menu and one without)
     final Folder subFolder1 = new FolderDataGen().parent(folder).showOnMenu(true).nextPersisted();
 
-    
     // Create 2 Pages (One with show on Menu and one without) in English
     final HTMLPageAsset pageAsset3 = new HTMLPageDataGen(subFolder1, template).showOnMenu(true).languageId(1).nextPersisted();
     final HTMLPageAsset pageAsset4 = new HTMLPageDataGen(subFolder1, template).showOnMenu(false).languageId(1).nextPersisted();
@@ -147,12 +174,10 @@ public class NavToolCacheTest extends IntegrationTestBase {
     pageAsset4.setIndexPolicy(IndexPolicy.FORCE);
     APILocator.getContentletAPI().publish(pageAsset3, user, true);
     APILocator.getContentletAPI().publish(pageAsset4, user, true);
-    
+
     // create a menu link just to test
     Link menuLink = new LinkDataGen(folder).hostId(site.getIdentifier()).showOnMenu(true).nextPersisted();
     APILocator.getVersionableAPI().setLive(menuLink);
-    
-    
 
   }
 

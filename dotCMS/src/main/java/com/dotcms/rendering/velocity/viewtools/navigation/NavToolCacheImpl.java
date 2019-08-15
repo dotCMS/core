@@ -54,7 +54,8 @@ public class NavToolCacheImpl implements NavToolCache {
 
     @Override
     public void putNav(String hostid, String folderInode, NavResult result, long languageId) {
-        cache.put(key(hostid,folderInode, languageId), result, GROUP);
+        if(result==null || null == result.getType())return;
+        cache.put(key(hostid,folderInode, languageId), result.getUnhydratedNavResult(), GROUP);
     }
 
     @Override
