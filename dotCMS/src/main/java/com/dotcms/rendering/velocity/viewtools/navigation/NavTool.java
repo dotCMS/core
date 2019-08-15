@@ -168,7 +168,6 @@ public class NavTool implements ViewTool {
                         nav.setType("htmlpage");
                         nav.setPermissionId(itemPage.getPermissionId());
                         nav.setShowOnMenu(itemPage.isShowOnMenu());
-                        //nav = new NavResultHydrated(nav, this.context);
                         children.add(nav);
                     }
                 } else if (item instanceof Link) {
@@ -203,7 +202,6 @@ public class NavTool implements ViewTool {
                         nav.setType("file");
                         nav.setPermissionId(itemFile.getPermissionId());
                         nav.setShowOnMenu(itemFile.isShowOnMenu());
-                        //nav = new NavResultHydrated(nav, this.context);
                         children.add(nav);
                     }
                 }
@@ -233,7 +231,6 @@ public class NavTool implements ViewTool {
 
         // it will load lazily its children
         folderIds.add(itemFolder.getInode());
-        //nav = new NavResultHydrated(nav, this.context);
         children.add(nav);
     }
 
