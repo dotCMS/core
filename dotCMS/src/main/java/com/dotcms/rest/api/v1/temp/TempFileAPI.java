@@ -1,5 +1,7 @@
 package com.dotcms.rest.api.v1.temp;
 
+import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.util.WebKeys;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileOutputStream;
@@ -282,6 +284,9 @@ public class TempFileAPI {
   public Optional<DotTempFile> getTempFile(final HttpServletRequest request, final String tempFileId) {
     final String anon = Try.of(() -> APILocator.getUserAPI().getAnonymousUser().getUserId()).getOrElse("anonymous");
     final User user = PortalUtil.getUser(request);
+    if(!UtilMethods.isSet(user)){
+      request.setAttribute(WebKeys.USER_ID,anon);
+    }
     final String sessionId = request!=null && request.getSession(false)!=null ? request.getSession().getId() : null;
     final String requestFingerprint = this.getRequestFingerprint(request);
     
