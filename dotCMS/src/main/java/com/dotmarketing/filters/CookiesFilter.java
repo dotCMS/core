@@ -50,9 +50,11 @@ public class CookiesFilter implements Filter {
 
       Class clazz = Try.of(() -> (Class) Class.forName(nse.getStackTrace()[0].getClassName())).getOrElse(this.getClass());
 
-      Logger.error(clazz, nse);
+      
       if (ExceptionUtil.causedBy(nse, com.liferay.portal.NoSuchUserException.class)) {
         handleNoSuchUserException(req, res);
+      }else {
+        Logger.error(clazz, nse);
       }
     }
   }
