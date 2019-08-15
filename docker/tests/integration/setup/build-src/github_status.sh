@@ -25,7 +25,7 @@ then
   echo "  >>>   Log URL for job: [${logURL}]"
   echo "  >>>   GITHUB pull request: [https://github.com/dotCMS/core/pull/${PULL_REQUEST}]"
   echo "  >>>   Job build status: ${CURRENT_JOB_BUILD_STATUS}"
-  echo "  >>>   GITHUB user: ${GITHUB_USER}"
+  echo "  >>>   GITHUB user: ${GITHUB_USER}/${GITHUB_USER_TOKEN}"
   echo "================================================================================"
   echo "================================================================================"
   echo ""
@@ -41,8 +41,6 @@ then
   jsonResponse=$(curl -u ${GITHUB_USER}:${GITHUB_USER_TOKEN} \
   --request GET https://api.github.com/repos/dotCMS/core/pulls/${PULL_REQUEST} -s)
 
-  echo $jsonResponse
-
   # Parse the response json to get the statuses URL
   jsonStatusesAttribute=`echo "$jsonResponse" | grep "${jsonAttribute}\w*\""`
   statusesURL=`echo "$jsonStatusesAttribute" | grep -o "${jsonBaseValue}\w*"`
@@ -55,7 +53,7 @@ then
     \"state\": \"${GITHUB_STATUS}\",
     \"description\": \"Log: ${logURL}\",
     \"target_url\": \"${reportsIndexURL}\",
-    \"context\": \"${databaseType}/CI/travis\"
+    \"context\": \"Travis CI - [${databaseType}]\"
   }" \
-  $statusesURL -s --output /dev/null
+  $statusesURL -s
 fi

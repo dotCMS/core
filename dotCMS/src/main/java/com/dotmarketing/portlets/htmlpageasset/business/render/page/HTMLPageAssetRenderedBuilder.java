@@ -3,6 +3,9 @@ package com.dotmarketing.portlets.htmlpageasset.business.render.page;
 import com.dotmarketing.factories.MultiTreeAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 
+import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.language.LanguageUtil;
+import io.vavr.control.Try;
 import java.util.*;
 
 import javax.servlet.http.HttpServletRequest;
@@ -40,10 +43,6 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
-import org.apache.velocity.context.Context;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.util.Collection;
 import java.util.Optional;
 
@@ -107,6 +106,11 @@ public class HTMLPageAssetRenderedBuilder {
         final HTMLPageAssetInfo htmlPageAssetInfo = getHTMLPageAssetInfo(info);
         final Set<String> pagePersonalizationSet  = this.multiTreeAPI.getPersonalizationsForPage(htmlPageAsset.getIdentifier());
         final Template template = getTemplate(mode);
+        if(!UtilMethods.isSet(template) && mode.equals(PageMode.ADMIN_MODE)){
+            throw new DotStateException(
+                    Try.of(() -> LanguageUtil.get(user.getLocale(), "template.archived.page.live.mode.error"))
+                            .getOrElse("This page cannot be viewed on Live Mode because the template is unpublished or archived"));
+        }
         final Language language = WebAPILocator.getLanguageWebAPI().getLanguage(request);
 
         final TemplateLayout layout = template != null && template.isDrawed() && !LicenseManager.getInstance().isCommunity()
