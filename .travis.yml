@@ -23,6 +23,8 @@ before_install:
   - chmod +x travis/submit.sh
   - chmod +x travis/run.sh
 
+# https://docs.travis-ci.com/user/conditions-v1
+# https://docs.travis-ci.com/user/conditional-builds-stages-jobs/
 if: >-
   type = pull_request
   OR branch = master

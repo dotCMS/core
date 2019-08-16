@@ -30,6 +30,7 @@ import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
+import io.vavr.control.Try;
 
 import java.util.*;
 import java.util.function.Supplier;
@@ -218,7 +219,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
     @SuppressWarnings("unchecked")
     public Container find(final String inode, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
-	    final  Identifier  identifier = APILocator.getIdentifierAPI().findFromInode(inode);
+	      final  Identifier  identifier = Try.of(()->APILocator.getIdentifierAPI().findFromInode(inode)).getOrNull();
         final Container container = this.isContainerFile(identifier)?
 				this.getWorkingContainerByFolderPath(identifier.getParentPath(), identifier.getHostId(), user, respectFrontendRoles):
                 containerFactory.find(inode);
