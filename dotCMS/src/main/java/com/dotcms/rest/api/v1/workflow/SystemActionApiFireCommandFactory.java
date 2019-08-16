@@ -97,6 +97,17 @@ public class SystemActionApiFireCommandFactory {
     }
 
     /**
+     * Gets the SystemActionApiFireCommand associated to the {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction}
+     * This method returns just the command to call it as a fallback
+     * @param systemAction {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction}
+     * @return Optional of SystemActionApiFireCommand
+     */
+    public Optional<SystemActionApiFireCommand> get(final WorkflowAPI.SystemAction systemAction) {
+
+        return Optional.ofNullable(this.commandMap.get(systemAction));
+    }
+
+    /**
      * Implements a {@link SystemActionApiFireCommand} that does a checkin to cover the NEW and EDIT system action
      */
     private class SaveSystemActionApiFireCommandImpl implements SystemActionApiFireCommand {
@@ -147,8 +158,8 @@ public class SystemActionApiFireCommandFactory {
                 contentlet.setStringProperty(Contentlet.WORKFLOW_ASSIGN_KEY, dependencies.getWorkflowAssignKey());
             }
 
-            // todo: create a method publish with dependencies that supports running workflows
-            //return contentletAPI.publish(contentlet, dependencies);
+            contentletAPI.publish(contentlet, dependencies.getModUser(), dependencies.isRespectAnonymousPermissions());
+
             return contentlet;
         }
     }

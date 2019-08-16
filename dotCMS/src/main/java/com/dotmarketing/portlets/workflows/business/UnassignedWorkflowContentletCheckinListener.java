@@ -95,7 +95,7 @@ public class UnassignedWorkflowContentletCheckinListener implements EventSubscri
 
                 if (null != identifier && UtilMethods.isSet(identifier.getId())) {
 
-                    final List<WorkflowAction> workflowActions = APILocator.getWorkflowAPI()
+                    final List<WorkflowAction> workflowActions = APILocator.getWorkflowAPI() // todo: see if what you need is the first step of all schemes or if this is ok
                             .findAvailableDefaultActionsByContentType(contentlet.getContentType(), user);
 
                     if (UtilMethods.isSet(workflowActions)) {
