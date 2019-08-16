@@ -1,6 +1,7 @@
 package com.dotcms.rendering.velocity.viewtools.navigation;
 
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -8,6 +9,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.json.JSONIgnore;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,12 +32,19 @@ public final class NavResultHydrated extends NavResult{
 
     public NavResultHydrated(final NavResult navResult, final ViewContext context) {
         super(navResult);
+        if(navResult instanceof NavResultHydrated) {
+          throw new DotStateException("NavResultHydrated can only hydrate unhydrated NavResults" );
+        }
         this.navResult = navResult;
         this.context = context;
 
     }
-
-
+    @Override
+    @JSONIgnore
+    public NavResult getUnhydratedNavResult() {
+      return this.navResult;
+    }
+    
 
     public boolean isActive() {
         if (context != null && UtilMethods.isSet(navResult.getHref())) {
@@ -86,7 +95,7 @@ public final class NavResultHydrated extends NavResult{
         return navResult.getHostId();
     }
 
-
+    @Override
     public String getHref() {
         return navResult.getHref();
     }
@@ -145,35 +154,35 @@ public final class NavResultHydrated extends NavResult{
         return list;
     }
 
-
+    @Override
     public String getParentPath() throws DotDataException, DotSecurityException {
         return navResult.getParentPath();
     }
 
 
-
+    @Override
     public NavResult getParent() throws DotDataException, DotSecurityException {
         return navResult.getParent();
     }
 
 
-
+    @Override
     public List<String> getChildrenFolderIds() {
         return navResult.getChildrenFolderIds();
     }
 
-
+    @Override
     public String getType() {
         return navResult.getType();
     }
 
 
-
+    @Override
     public String getTarget() {
         return navResult.getTarget();
     }
 
-
+    @Override
     public String getOwner() {
         return navResult.getOwner();
     }
