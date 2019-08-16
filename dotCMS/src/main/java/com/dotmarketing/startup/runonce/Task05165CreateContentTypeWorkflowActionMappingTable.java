@@ -17,7 +17,7 @@ import java.util.Map;
 import static com.dotcms.util.CollectionsUtils.map;
 
 /**
- * This upgrade task will creates the content_type_workflow_action_mapping and unique index for it.
+ * This upgrade task will creates the workflow_action_mappings and unique index for it.
  *
  * @author jsanca
  * @version 5.2
@@ -26,7 +26,7 @@ import static com.dotcms.util.CollectionsUtils.map;
 public class Task05165CreateContentTypeWorkflowActionMappingTable extends AbstractJDBCStartupTask {
 
     private static final Map<DbType, String> createContentTypeWorkflowActionMappingTableSQLMap = map(
-            DbType.H2,           "create table content_type_workflow_action_mapping (\n" +
+            DbType.H2,           "create table workflow_action_mappings (\n" +
                                         "\n" +
                                         "   id varchar(36) not null,\n" +
                                         "   action varchar(36) not null,\n" +
@@ -35,7 +35,7 @@ public class Task05165CreateContentTypeWorkflowActionMappingTable extends Abstra
                                         "   primary key (id)\n" +
                                         ");",
 
-            DbType.POSTGRESQL,   "create table content_type_workflow_action_mapping (\n" +
+            DbType.POSTGRESQL,   "create table workflow_action_mappings (\n" +
                                         "\n" +
                                         "   id varchar(36) not null,\n" +
                                         "   action varchar(36) not null,\n" +
@@ -43,7 +43,7 @@ public class Task05165CreateContentTypeWorkflowActionMappingTable extends Abstra
                                         "   scheme_or_content_type  varchar(255) not null,\n" +
                                         "   primary key (id)\n" +
                                         ");",
-            DbType.MYSQL,        "create table content_type_workflow_action_mapping (\n" +
+            DbType.MYSQL,        "create table workflow_action_mappings (\n" +
                                         "\n" +
                                         "   id varchar(36) not null,\n" +
                                         "   action varchar(36) not null,\n" +
@@ -51,14 +51,14 @@ public class Task05165CreateContentTypeWorkflowActionMappingTable extends Abstra
                                         "   scheme_or_content_type  varchar(255) not null,\n" +
                                         "   primary key (id)\n" +
                                         ");",
-            DbType.ORACLE,       "create table content_type_workflow_action_mapping (\n" +
+            DbType.ORACLE,       "create table workflow_action_mappings (\n" +
                                         "\n" +
                                         "   id varchar2(36) not null primary key ,\n" +
                                         "   action varchar2(36) not null,\n" +
                                         "   workflow_action varchar2(255) not null,\n" +
                                         "   scheme_or_content_type  varchar2(255) not null\n" +
                                         ");",
-            DbType.MSSQL,        "create table content_type_workflow_action_mapping (\n" +
+            DbType.MSSQL,        "create table workflow_action_mappings (\n" +
                                         "\n" +
                                         "   id NVARCHAR(36) primary key,\n" +
                                         "   action NVARCHAR(36) not null,\n" +
@@ -68,11 +68,11 @@ public class Task05165CreateContentTypeWorkflowActionMappingTable extends Abstra
     );
 
     private static final Map<DbType, String> createContentTypeWorkflowActionMappingTableUniqueIndexSQLMap = map(
-            DbType.H2,           "CREATE UNIQUE INDEX idx_content_type_workflow_action_mapping ON content_type_workflow_action_mapping (action, workflow_action, scheme_or_content_type);",
-            DbType.POSTGRESQL,   "CREATE UNIQUE INDEX idx_content_type_workflow_action_mapping ON content_type_workflow_action_mapping (action, workflow_action, scheme_or_content_type);",
-            DbType.MYSQL,        "CREATE UNIQUE INDEX idx_content_type_workflow_action_mapping ON content_type_workflow_action_mapping (action, workflow_action, scheme_or_content_type);",
-            DbType.ORACLE,       "CREATE UNIQUE INDEX idx_content_type_workflow_action_mapping ON content_type_workflow_action_mapping (action, workflow_action, scheme_or_content_type);",
-            DbType.MSSQL,        "CREATE UNIQUE INDEX idx_content_type_workflow_action_mapping ON content_type_workflow_action_mapping (action, workflow_action, scheme_or_content_type);"
+            DbType.H2,           "CREATE UNIQUE INDEX idx_workflow_action_mappings ON workflow_action_mappings (action, workflow_action, scheme_or_content_type);",
+            DbType.POSTGRESQL,   "CREATE UNIQUE INDEX idx_workflow_action_mappings ON workflow_action_mappings (action, workflow_action, scheme_or_content_type);",
+            DbType.MYSQL,        "CREATE UNIQUE INDEX idx_workflow_action_mappings ON workflow_action_mappings (action, workflow_action, scheme_or_content_type);",
+            DbType.ORACLE,       "CREATE UNIQUE INDEX idx_workflow_action_mappings ON workflow_action_mappings (action, workflow_action, scheme_or_content_type);",
+            DbType.MSSQL,        "CREATE UNIQUE INDEX idx_workflow_action_mappings ON workflow_action_mappings (action, workflow_action, scheme_or_content_type);"
     );
 
     @Override
@@ -82,7 +82,7 @@ public class Task05165CreateContentTypeWorkflowActionMappingTable extends Abstra
         try {
 
             return !new DotDatabaseMetaData().tableExists(
-                    DbConnectionFactory.getConnection(), "content_type_workflow_action_mapping");
+                    DbConnectionFactory.getConnection(), "workflow_action_mappings");
         } catch (SQLException e) {
 
             return Boolean.FALSE;
@@ -109,13 +109,13 @@ public class Task05165CreateContentTypeWorkflowActionMappingTable extends Abstra
 
     private void createContentTypeWorkflowActionMappingTable() throws SQLException {
 
-        Logger.info(this, "Creates the table content_type_workflow_action_mapping.");
+        Logger.info(this, "Creates the table workflow_action_mappings.");
 
         try {
 
             new DotConnect().executeStatement(getCreateContentTypeWorkflowActionMappingTableSQL());
         } catch (SQLException e) {
-            Logger.error(this, "The table 'content_type_workflow_action_mapping' could not be created.", e);
+            Logger.error(this, "The table 'workflow_action_mappings' could not be created.", e);
             throw  e;
         }
     }
@@ -130,13 +130,13 @@ public class Task05165CreateContentTypeWorkflowActionMappingTable extends Abstra
 
     private void createContentTypeWorkflowActionMappingUniqueIndex() throws SQLException {
 
-        Logger.info(this, "Creates the table content_type_workflow_action_mapping unique index.");
+        Logger.info(this, "Creates the table idx_workflow_action_mappings unique index.");
 
         try {
 
             new DotConnect().executeStatement(getCreateContentTypeWorkflowActionMappingUniqueIndexSQL());
         } catch (SQLException e) {
-            Logger.error(this, "The index for the table 'content_type_workflow_action_mapping' could not be created.", e);
+            Logger.error(this, "The index for the table 'idx_workflow_action_mappings' could not be created.", e);
             throw  e;
         }
     }
