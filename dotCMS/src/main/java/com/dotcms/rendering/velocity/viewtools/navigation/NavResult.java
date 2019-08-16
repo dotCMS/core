@@ -194,7 +194,7 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
                     ff.setTitle(nn.getTitle());
                     ff.setHref(nn.getHref());
                     ff.setOrder(nn.getOrder());
-                    ff.setType(nn.getType());
+                    ff.setType("folder");
                     ff.setPermissionId(nn.getPermissionId());
                     ff.setShowOnMenu(nn.isShowOnMenu());
                     list.add(ff);

@@ -52,10 +52,14 @@ public class NavToolCacheImpl implements NavToolCache {
         }
     }
 
+    /**
+     * we only add folders to the nav cache, as that is how they are called
+     */
     @Override
     public void putNav(String hostid, String folderInode, NavResult result, long languageId) {
-        if(result==null || null == result.getType())return;
+      if(result!=null  && "folder".equalsIgnoreCase( result.getType())){
         cache.put(key(hostid,folderInode, languageId), result.getUnhydratedNavResult(), GROUP);
+      }
     }
 
     @Override

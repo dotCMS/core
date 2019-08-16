@@ -89,11 +89,18 @@ public class NavToolCacheTest extends IntegrationTestBase {
     for (NavResult result : navResultList) {
       assertTrue(result instanceof NavResultHydrated);
       assertTrue(!(result.getUnhydratedNavResult() instanceof NavResultHydrated));
-      
-      NavResult test = navCache.getNav(result.getHostId(), result.getFolderId(), result.getLanguageId());
-      if(test==null) continue;
-      assert (test instanceof NavResult);
-      assert (!(test instanceof NavResultHydrated));
+      if(result.getType().equals("folder")) {
+        NavResult folderNav = navCache.getNav(result.getHostId(), result.getFolderId(), result.getLanguageId());
+        assert (folderNav instanceof NavResult);
+        assert (!(folderNav instanceof NavResultHydrated));
+        List<? extends NavResult> children = folderNav.getChildren();
+        for(NavResult child: children) {
+          assert (child instanceof NavResult);
+          assert (!(child instanceof NavResultHydrated));
+        }
+        
+        
+      }
     }
 
   }
