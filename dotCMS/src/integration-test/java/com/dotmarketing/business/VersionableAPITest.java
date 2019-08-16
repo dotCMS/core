@@ -44,7 +44,7 @@ public class VersionableAPITest {
 	
 	private HTMLPageAsset createHTMLPage() throws Exception{
 		//Create HTMLPage
-		String ext="."+Config.getStringProperty("VELOCITY_PAGE_EXTENSION");
+		String ext="."+Config.getStringProperty("VELOCITY_PAGE_EXTENSION", "html");
 				
 		Template template = new TemplateDataGen().nextPersisted();
 		        

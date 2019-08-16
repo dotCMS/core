@@ -69,7 +69,7 @@ public class LinkCheckerAPITest extends IntegrationTestBase {
         try {
         	LicenseTestUtil.getLicense();
         	
-            pageExt = Config.getStringProperty("VELOCITY_PAGE_EXTENSION");
+            pageExt = Config.getStringProperty("VELOCITY_PAGE_EXTENSION", "html");
 
             String uuid=UUIDGenerator.generateUuid();
             sysuser = APILocator.getUserAPI().getSystemUser();

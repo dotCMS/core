@@ -73,7 +73,7 @@ public class HTMLPageAPITest extends IntegrationTestBase {
     public void saveHTMLPage() throws Exception {
 
         Host host=APILocator.getHostAPI().findDefaultHost(sysuser, false);
-        String ext="."+Config.getStringProperty("VELOCITY_PAGE_EXTENSION");
+        String ext="."+Config.getStringProperty("VELOCITY_PAGE_EXTENSION", "html");
         
         HibernateUtil.startTransaction();
         Template template=new Template();
@@ -130,7 +130,7 @@ public class HTMLPageAPITest extends IntegrationTestBase {
     @Test
     public void delete() throws Exception {
         Host host=APILocator.getHostAPI().findDefaultHost(sysuser, false);
-        String ext="."+Config.getStringProperty("VELOCITY_PAGE_EXTENSION");
+        String ext="."+Config.getStringProperty("VELOCITY_PAGE_EXTENSION", "html");
 
         // a container to use inside the template
         Container container = new Container();
@@ -213,7 +213,7 @@ public class HTMLPageAPITest extends IntegrationTestBase {
 
     	try {
     		Host host=APILocator.getHostAPI().findDefaultHost(sysuser, false);
-    		String ext="."+Config.getStringProperty("VELOCITY_PAGE_EXTENSION");
+    		String ext="."+Config.getStringProperty("VELOCITY_PAGE_EXTENSION", "html");
 
     		// a container to use inside the template
     		container = new Container();

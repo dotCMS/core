@@ -160,7 +160,7 @@ public class CalendarReminderAPIImpl implements CalendarReminderAPI {
 				
 				//Template
 				String reminderTemplate = Config.getStringProperty("CALENDAR_REMINDER_THREAD_TEMPLATE");
-				reminderTemplate = (UtilMethods.isSet(reminderTemplate) ?  reminderTemplate : "/calendar/emailTemplate." + Config.getStringProperty("VELOCITY_PAGE_EXTENSION"));
+				reminderTemplate = (UtilMethods.isSet(reminderTemplate) ?  reminderTemplate : "/calendar/emailTemplate." + Config.getStringProperty("VELOCITY_PAGE_EXTENSION","html"));
 				parameters.put("emailTemplate",reminderTemplate);
 				
 				//From email

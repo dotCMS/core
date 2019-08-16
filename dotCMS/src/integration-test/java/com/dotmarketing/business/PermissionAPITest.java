@@ -506,7 +506,7 @@ public class PermissionAPITest extends IntegrationTestBase {
 
             permissionAPI.permissionIndividually(APILocator.getHostAPI().findSystemHost(), folderA, sysuser);
 
-            String ext="."+Config.getStringProperty("VELOCITY_PAGE_EXTENSION");
+            String ext="."+Config.getStringProperty("VELOCITY_PAGE_EXTENSION", "html");
             
             HTMLPageAsset pageAssetFolderA = new HTMLPageDataGen(folderA, template).nextPersisted();
             HTMLPageAsset pb = new HTMLPageDataGen(b, template).nextPersisted();

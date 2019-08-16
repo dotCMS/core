@@ -96,7 +96,7 @@ public class DotInitScheduler {
 			Calendar calendar;
 			boolean isNew;
 
-		        if(Config.getBooleanProperty("ENABLE_CONTENT_REVIEW_THREAD")) {
+		        if(Config.getBooleanProperty("ENABLE_CONTENT_REVIEW_THREAD", false)) {
 				try {
 					isNew = false;
 
@@ -132,22 +132,8 @@ public class DotInitScheduler {
 			}
 
 
-			if(Config.getBooleanProperty("ENABLE_CONTENT_REINDEXATION_THREAD")) {
-				try {
-					ScheduledThreadPoolExecutor scheduledThreadPoolExecutor = new ScheduledThreadPoolExecutor(1);
-					scheduledThreadPoolExecutor.scheduleWithFixedDelay(new ContentReindexerThread(), Config.getIntProperty("EXEC_CONTENT_REINDEXATION_INIT_DELAY"), Config.getIntProperty("EXEC_CONTENT_REINDEXATION_DELAY"), TimeUnit.SECONDS);
-				} catch (Exception e) {
-					Logger.info(DotInitScheduler.class, e.toString());
-				}
-			} else {
-		        Logger.info(DotInitScheduler.class, "Automatic Content Reindexation Cron Thread schedule disabled on this server");
-		        Logger.info(DotInitScheduler.class, "Deleting ContentReindexerJob Job");
-				if ((job = sched.getJobDetail("ContentReindexerJob", DOTCMS_JOB_GROUP_NAME)) != null) {
-					sched.deleteJob("ContentReindexerJob", DOTCMS_JOB_GROUP_NAME);
-				}
-			}
 
-			if(Config.getBooleanProperty("ENABLE_USERS_TO_DELETE_THREAD")) {
+			if(Config.getBooleanProperty("ENABLE_USERS_TO_DELETE_THREAD", false)) {
 				try {
 					isNew = false;
 
@@ -184,7 +170,7 @@ public class DotInitScheduler {
 
 			//Calendar Reminder Job
 
-			if(Config.getBooleanProperty("CALENDAR_REMINDER_THREAD")) {
+			if(Config.getBooleanProperty("CALENDAR_REMINDER_THREAD", false)) {
 				try {
 					isNew = false;
 
@@ -223,7 +209,7 @@ public class DotInitScheduler {
 
 
 
-			if(UtilMethods.isSet(Config.getStringProperty("WEBDAV_CLEANUP_JOB_CRON_EXPRESSION"))) {
+			if(UtilMethods.isSet(Config.getStringProperty("WEBDAV_CLEANUP_JOB_CRON_EXPRESSION", "0 15 12 * * ?"))) {
 				try {
 					isNew = false;
 
@@ -238,7 +224,7 @@ public class DotInitScheduler {
 						isNew = true;
 					}
 					calendar = GregorianCalendar.getInstance();
-					trigger = new CronTrigger("trigger10", "group10", "WebDavCleanupJob", DOTCMS_JOB_GROUP_NAME, calendar.getTime(), null, Config.getStringProperty("WEBDAV_CLEANUP_JOB_CRON_EXPRESSION"));
+					trigger = new CronTrigger("trigger10", "group10", "WebDavCleanupJob", DOTCMS_JOB_GROUP_NAME, calendar.getTime(), null, Config.getStringProperty("WEBDAV_CLEANUP_JOB_CRON_EXPRESSION", "0 15 12 * * ?"));
 					trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
 					sched.addJob(job, true);
 
@@ -257,7 +243,7 @@ public class DotInitScheduler {
 				}
 			}
 			//http://jira.dotmarketing.net/browse/DOTCMS-1073
-			if(UtilMethods.isSet(Config.getStringProperty("BINARY_CLEANUP_JOB_CRON_EXPRESSION"))) {
+			if(UtilMethods.isSet(Config.getStringProperty("BINARY_CLEANUP_JOB_CRON_EXPRESSION", "0 0 12 * * ?"))) {
 				try {
 					isNew = false;
 
@@ -292,7 +278,7 @@ public class DotInitScheduler {
 			}
 
 
-			if(UtilMethods.isSet(Config.getStringProperty("TRASH_CLEANUP_JOB_CRON_EXPRESSION"))) {
+			if(UtilMethods.isSet(Config.getStringProperty("TRASH_CLEANUP_JOB_CRON_EXPRESSION","0 0 0/1 * * ?"))) {
 				try {
 					isNew = false;
 
@@ -307,7 +293,7 @@ public class DotInitScheduler {
 						isNew = true;
 					}
 					calendar = GregorianCalendar.getInstance();
-				    trigger = new CronTrigger("trigger12", "group12", "TrashCleanupJob", DOTCMS_JOB_GROUP_NAME, calendar.getTime(), null,Config.getStringProperty("TRASH_CLEANUP_JOB_CRON_EXPRESSION"));
+				    trigger = new CronTrigger("trigger12", "group12", "TrashCleanupJob", DOTCMS_JOB_GROUP_NAME, calendar.getTime(), null,Config.getStringProperty("TRASH_CLEANUP_JOB_CRON_EXPRESSION","0 0 0/1 * * ?"));
 					trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
 					sched.addJob(job, true);
 
@@ -328,7 +314,7 @@ public class DotInitScheduler {
 
 
 
-			if(UtilMethods.isSet(Config.getStringProperty("DASHBOARD_POPULATE_TABLES_CRON_EXPRESSION"))) {
+			if(UtilMethods.isSet(Config.getStringProperty("DASHBOARD_POPULATE_TABLES_CRON_EXPRESSION",null))) {
 				try {
 					isNew = false;
 
@@ -366,7 +352,7 @@ public class DotInitScheduler {
 				}
 			}
 
-			if(Config.getBooleanProperty("ENABLE_CREATE_CONTENT_FROM_EMAIL")) {
+			if(Config.getBooleanProperty("ENABLE_CREATE_CONTENT_FROM_EMAIL", false)) {
 				try {
 					isNew = false;
 
@@ -401,7 +387,7 @@ public class DotInitScheduler {
 				}
 			}
 
-			if(Config.getBooleanProperty("ENABLE_DELETE_OLDER_CLICKSTREAMS", false)){
+			if(Config.getBooleanProperty("ENABLE_DELETE_OLDER_CLICKSTREAMS", true)){
 				try {
 					isNew = false;
 
@@ -430,7 +416,7 @@ public class DotInitScheduler {
 			}
 
 			//SCHEDULE PUBLISH QUEUE JOB
-			if(Config.getBooleanProperty("ENABLE_PUBLISHER_QUEUE_THREAD")) {
+			if(Config.getBooleanProperty("ENABLE_PUBLISHER_QUEUE_THREAD",true)) {
 				try {
 					isNew = false;
 
