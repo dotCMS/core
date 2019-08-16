@@ -1681,6 +1681,14 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
       assert(fields.size()==0);
 	 }
 	 
+	 
+	 /**
+	  * This test is to insure that a content type is returing the corrent
+	  * parent permissionable based on where it lives in the hierarchy
+	  * If the content type lives on a folder, then that will be the parent
+	  * if it lives on a host, then that, else the system host
+	  * @throws Exception
+	  */
    @Test
    public void test_content_type_parent_permissionable() throws Exception{
      Host site = new SiteDataGen().nextPersisted();
@@ -1716,9 +1724,18 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
      assertEquals(systemHostType.getParentPermissionable(), APILocator.systemHost());
      assertEquals(hostType.getParentPermissionable(), site);
      assertEquals(folderType.getParentPermissionable(), folder);
+   }
+   
      
-     
-     
+     /**
+      * When dotCMS starts up and there is no persisted data, we need to instanciate
+      * the content types before we can save the content.  This means that things like
+      * host lookups will fail. So instead of sending the Host as a parent permissionable, 
+      * we send a PermissionProxy that has the same data which can be used temporarilly to 
+      * calcuate the correct permission inheratance.
+      */
+     @Test
+     public void test_content_type_parent_permissionable_when_no_data() throws Exception{
      // test inheritance if no data available
      
      SimpleContentType fakeType = ImmutableSimpleContentType.builder()
