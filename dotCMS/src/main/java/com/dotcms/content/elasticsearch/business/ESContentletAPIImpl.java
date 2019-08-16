@@ -3286,7 +3286,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     + " using the default action: " + actionId);
 
             // if the action has a save action, we skip the current checkin
-            if (workflowAPI.hasPublishActionlet(workflowActionOpt.get())) {
+            if (workflowActionOpt.get().hasPublishActionlet()) {
 
                 Logger.info(this, () -> "The action: " + actionId + " has a publish contentlet actionlet"
                         + " so firing a workflow and skipping the current publish for the contentlet: " + title);
@@ -3334,7 +3334,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     + " using the default action: " + actionId);
 
             // if the action has a save action, we skip the current checkin
-            if (workflowAPI.hasSaveActionlet(workflowActionOpt.get())) {
+            if (workflowActionOpt.get().hasSaveActionlet()) {
 
                 Logger.info(this, () -> "The action: " + actionId + " has a save contentlet actionlet"
                         + " so firing a workflow and skipping the current checkin for the contentlet: " + title);
