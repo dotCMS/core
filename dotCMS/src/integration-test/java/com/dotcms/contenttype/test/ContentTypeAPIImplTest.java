@@ -49,6 +49,7 @@ import com.dotcms.contenttype.model.type.VanityUrlContentType;
 import com.dotcms.contenttype.model.type.WidgetContentType;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotmarketing.beans.Host;
@@ -1678,6 +1679,43 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
       fields = newType.fields(SelectField.class);
       assert(fields.size()==0);
 	 }
+	 
+   @Test
+   public void test_content_type_parent_permissionable() throws Exception{
+     Host site = new SiteDataGen().nextPersisted();
+     Folder folder = new FolderDataGen().site(site).nextPersisted();
+     
+     
+     ContentType systemHostType = ImmutableSimpleContentType.builder()
+         .name("ContentTypeTesting"+System.currentTimeMillis())
+         .variable("velocityVarNameTesting"+System.currentTimeMillis())
+  
+         .host(APILocator.systemHost().getIdentifier())
+         .folder(APILocator.getFolderAPI().SYSTEM_FOLDER)
+         .build();
+     systemHostType = contentTypeApi.save(systemHostType);
+     
+     ContentType hostType = ImmutableSimpleContentType.builder()
+         .name("ContentTypeTesting"+System.currentTimeMillis())
+         .variable("velocityVarNameTesting"+System.currentTimeMillis())
+         .host(site.getIdentifier())
+         .folder(APILocator.getFolderAPI().SYSTEM_FOLDER)
+         .build();
+     hostType = contentTypeApi.save(hostType);
+	 
+     ContentType folderType = ImmutableSimpleContentType.builder()
+         .name("ContentTypeTesting"+System.currentTimeMillis())
+         .variable("velocityVarNameTesting"+System.currentTimeMillis())
+         .host(site.getIdentifier())
+         .folder(folder.getInode())
+         .build();
+     
+     folderType = contentTypeApi.save(folderType);
+     
+     assertEquals(systemHostType.getParentPermissionable(), APILocator.systemHost());
+     assertEquals(hostType.getParentPermissionable(), site);
+     assertEquals(folderType.getParentPermissionable(), folder);
+   }
 	
 	
 }
