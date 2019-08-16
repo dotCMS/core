@@ -1,5 +1,3 @@
-
-
 package com.dotmarketing.startup.runonce;
 
 import com.dotcms.business.CloseDBIfOpened;
@@ -51,13 +49,7 @@ public class Task05165CreateContentTypeWorkflowActionMappingTable extends Abstra
                                         "   scheme_or_content_type  varchar(255) not null,\n" +
                                         "   primary key (id)\n" +
                                         ");",
-            DbType.ORACLE,       "create table workflow_action_mappings (\n" +
-                                        "\n" +
-                                        "   id varchar2(36) not null primary key ,\n" +
-                                        "   action varchar2(36) not null,\n" +
-                                        "   workflow_action varchar2(255) not null,\n" +
-                                        "   scheme_or_content_type  varchar2(255) not null\n" +
-                                        ");",
+            DbType.ORACLE,       "create table workflow_action_mappings (id varchar2(36) not null primary key, action varchar2(36) not null, workflow_action varchar2(255) not null, scheme_or_content_type  varchar2(255) not null );",
             DbType.MSSQL,        "create table workflow_action_mappings (\n" +
                                         "\n" +
                                         "   id NVARCHAR(36) primary key,\n" +
