@@ -5,6 +5,7 @@ import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
@@ -201,9 +202,8 @@ public class PermissionAPIIntegrationTest extends IntegrationTestBase {
     public void issue11850() throws DotSecurityException, DotDataException {
 
     	// Create test host
-    	Host host = new Host();
-    	host.setHostname("issue11850.demo.dotcms.com");
-    	host=hostAPI.save(host, systemUser, false);
+    	final Host host = new SiteDataGen().nextPersisted();
+
     	try {
     		long time = System.currentTimeMillis();
 
@@ -236,6 +236,8 @@ public class PermissionAPIIntegrationTest extends IntegrationTestBase {
     			);
     			permissionAPI.save(inheritedPermission, host, systemUser, true);
 
+    			permissionAPI.resetPermissionsUnder(host);
+    			
     			// Check the permissions for content-type are now inherited from test host
     			permissions = permissionAPI.getPermissions(type);
     			assertFalse(permissions.isEmpty());
