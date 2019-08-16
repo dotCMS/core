@@ -1,6 +1,7 @@
 package com.dotcms.rendering.velocity.viewtools.navigation;
 
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -31,6 +32,9 @@ public final class NavResultHydrated extends NavResult{
 
     public NavResultHydrated(final NavResult navResult, final ViewContext context) {
         super(navResult);
+        if(navResult instanceof NavResultHydrated) {
+          throw new DotStateException("NavResultHydrated can only hydrate unhydrated NavResults" );
+        }
         this.navResult = navResult;
         this.context = context;
 
@@ -38,11 +42,7 @@ public final class NavResultHydrated extends NavResult{
     @Override
     @JSONIgnore
     public NavResult getUnhydratedNavResult() {
-      NavResult testNavResult = navResult;
-      while(testNavResult instanceof NavResultHydrated) {
-        testNavResult=testNavResult.getUnhydratedNavResult();
-      }
-      return testNavResult;
+      return this.navResult;
     }
     
 
