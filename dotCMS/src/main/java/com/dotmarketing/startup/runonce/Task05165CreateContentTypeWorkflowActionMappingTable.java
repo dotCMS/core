@@ -40,7 +40,7 @@ public class Task05165CreateContentTypeWorkflowActionMappingTable extends Abstra
                                         "   workflow_action varchar(255) not null,\n" +
                                         "   scheme_or_content_type  varchar(255) not null,\n" +
                                         "   primary key (id)\n" +
-                                        ");",
+                                        ")",
             DbType.MYSQL,        "create table workflow_action_mappings (\n" +
                                         "\n" +
                                         "   id varchar(36) not null,\n" +
@@ -61,7 +61,7 @@ public class Task05165CreateContentTypeWorkflowActionMappingTable extends Abstra
 
     private static final Map<DbType, String> createContentTypeWorkflowActionMappingTableUniqueIndexSQLMap = map(
             DbType.H2,           "CREATE UNIQUE INDEX idx_workflow_action_mappings ON workflow_action_mappings (action, workflow_action, scheme_or_content_type);",
-            DbType.POSTGRESQL,   "CREATE UNIQUE INDEX idx_workflow_action_mappings ON workflow_action_mappings (action, workflow_action, scheme_or_content_type);",
+            DbType.POSTGRESQL,   "CREATE UNIQUE INDEX idx_workflow_action_mappings ON workflow_action_mappings (action, workflow_action, scheme_or_content_type)",
             DbType.MYSQL,        "CREATE UNIQUE INDEX idx_workflow_action_mappings ON workflow_action_mappings (action, workflow_action, scheme_or_content_type);",
             DbType.ORACLE,       "CREATE UNIQUE INDEX idx_workflow_action_mappings ON workflow_action_mappings (action, workflow_action, scheme_or_content_type);",
             DbType.MSSQL,        "CREATE UNIQUE INDEX idx_workflow_action_mappings ON workflow_action_mappings (action, workflow_action, scheme_or_content_type);"
