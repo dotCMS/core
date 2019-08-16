@@ -58,7 +58,14 @@ public class NavToolCacheTest extends IntegrationTestBase {
     System.out.println("");
   }
 
-  // issue: https://github.com/dotCMS/core/issues/16951
+  
+  /**
+   * @throws Exception
+   * issue: https://github.com/dotCMS/core/issues/16951
+   * This test makes sure using the NavTool returns hydrated results, but only
+   * stored the unhydrated results in cache.
+   */
+
   @Test
   public void test_navtool_cache_does_not_return_hydrated_navresults() throws Exception {
     createData();
@@ -81,14 +88,21 @@ public class NavToolCacheTest extends IntegrationTestBase {
     assert (navResultList.size() == 7);
     for (NavResult result : navResultList) {
       assertTrue(result instanceof NavResultHydrated);
+      assertTrue(!(result.getUnhydratedNavResult() instanceof NavResultHydrated));
+      
       NavResult test = navCache.getNav(result.getHostId(), result.getFolderId(), result.getLanguageId());
-
+      if(test==null) continue;
       assert (test instanceof NavResult);
       assert (!(test instanceof NavResultHydrated));
     }
 
   }
-  // issue: https://github.com/dotCMS/core/issues/16951
+  /**
+   * @throws Exception
+   * issue: https://github.com/dotCMS/core/issues/16951
+   * This test makes sure that the NavCache is not storing any hydrated navs - only the unhydrated ones.
+   */
+
   @Test
   public void test_NavToolCache_cannot_take_a_hydrated_result() throws Exception {
 
@@ -113,6 +127,8 @@ public class NavToolCacheTest extends IntegrationTestBase {
     NavResult navResultHydrated = navTool.getNav(testFolder.getPath());
     assertTrue(navResultHydrated instanceof NavResultHydrated);
     
+    assertTrue(!(navResultHydrated.getUnhydratedNavResult() instanceof NavResultHydrated));
+    
     // navCache gives us non=hydrated results
     NavResult navResult = navCache.getNav(site.getIdentifier(), testFolder.getInode(), APILocator.getLanguageAPI().getDefaultLanguage().getId());
     assertTrue(!(navResult instanceof NavResultHydrated));
@@ -127,7 +143,21 @@ public class NavToolCacheTest extends IntegrationTestBase {
     navResultHydrated = navTool.getNav(testFolder.getPath());
     assertTrue(navResultHydrated instanceof NavResultHydrated);
     
+    assertTrue(!(navResultHydrated.getUnhydratedNavResult() instanceof NavResultHydrated));
+    
+    
+    
+    
+    
   }
+  
+  /**
+   * This helper loads a hierarchy of navs as a flat List<NavResult>
+   * @param nav
+   * @param addToList
+   * @return
+   * @throws Exception
+   */
   private List<NavResult> loadResults(NavResult nav, List<NavResult> addToList) throws Exception {
     System.out.println("adding:" + nav.getType() + ":" + nav.getTitle());
 

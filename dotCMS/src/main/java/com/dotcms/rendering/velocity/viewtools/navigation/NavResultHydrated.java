@@ -1,16 +1,5 @@
 package com.dotcms.rendering.velocity.viewtools.navigation;
 
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.json.JSONIgnore;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -19,6 +8,15 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.apache.velocity.tools.view.context.ViewContext;
 
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.json.JSONIgnore;
 import com.liferay.portal.model.User;
 
 public final class NavResultHydrated extends NavResult{
@@ -31,13 +29,9 @@ public final class NavResultHydrated extends NavResult{
     final transient ViewContext context;
 
     public NavResultHydrated(final NavResult navResult, final ViewContext context) {
-        super(navResult);
-        if(navResult instanceof NavResultHydrated) {
-          throw new DotStateException("NavResultHydrated can only hydrate unhydrated NavResults" );
-        }
-        this.navResult = navResult;
+        super(navResult.getUnhydratedNavResult());
+        this.navResult = navResult.getUnhydratedNavResult();
         this.context = context;
-
     }
     @Override
     @JSONIgnore
@@ -125,7 +119,7 @@ public final class NavResultHydrated extends NavResult{
     public List<? extends NavResult> getChildren() throws Exception {
 
 
-        List<NavResultHydrated> list = navResult.getChildren().stream().map(result -> new NavResultHydrated(result, this.context)).collect(Collectors.toList());
+        List<NavResultHydrated> list = this.navResult.getChildren().stream().map(result -> new NavResultHydrated(result, this.context)).collect(Collectors.toList());
         
         
         
