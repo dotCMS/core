@@ -110,7 +110,10 @@ public class Logger{
     	}
         logger.debug(message, ex);
     }
-
+    
+    public static void error(Object ob, Throwable ex) {
+      error(ob.getClass(), ex.getMessage(), ex);
+    }
     public static void error(Object ob, String message) {
     	error(ob.getClass(), message);
     }
