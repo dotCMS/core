@@ -1414,6 +1414,7 @@ public class WorkflowResource {
                 return this.fireAction(request, fireActionForm, initDataObject.getUser(), contentlet, actionId, fireCommandOpt);
             } else {
 
+                // todo: do the checkin here.
                 final ContentType contentType = contentlet.getContentType();
                 throw new DoesNotExistException("For the contentType: " + (null != contentType?contentType.variable():"unknown") +
                         " systemAction = " + systemAction);

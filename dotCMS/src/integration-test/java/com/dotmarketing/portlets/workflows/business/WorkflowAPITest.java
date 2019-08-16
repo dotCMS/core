@@ -30,6 +30,7 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
@@ -40,6 +41,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.portlets.languagesmanager.business.LanguageDeletedEvent;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -614,12 +616,12 @@ public class WorkflowAPITest extends IntegrationTestBase {
             Optional<WorkflowStep> currentStepOpt = workflowAPI.findCurrentStep(contentlet);
             assertTrue(currentStepOpt.isPresent());
             assertEquals(SystemWorkflowConstants.WORKFLOW_NEW_STEP_ID, currentStepOpt.get().getId());
-            LanguageDataGen.remove(frenchLanguage);
+            APILocator.getLocalSystemEventsAPI().notify(new LanguageDeletedEvent(frenchLanguage));
             frenchLanguage = null;
-            DateUtil.sleep(DateUtil.SECOND_MILLIS);
 
-            currentStepOpt = workflowAPI.findCurrentStep(contentlet);
-            assertFalse(currentStepOpt.isPresent());
+            final List<Map<String, Object>>  results = new DotConnect().setSQL("select * from workflow_task where id = ?")
+                    .addParam(workflowTask.getId()).loadObjectResults();
+            assertFalse(UtilMethods.isSet(results));
             final List<WorkflowHistory> histories = workflowAPI.findWorkflowHistory(workflowTask);
             assertFalse(UtilMethods.isSet(histories));
         } finally {
@@ -628,6 +630,53 @@ public class WorkflowAPITest extends IntegrationTestBase {
                 LanguageDataGen.remove(frenchLanguage);
             }
         }
+    }
+
+    @Test()
+    public void findActionMappedBySystemActionContentlet_Test() throws DotDataException, DotSecurityException {
+
+        final ContentType contentGenericType = contentTypeAPI.find("webPageContent");
+        final String unicodeText = "Numéro de téléphone";
+
+        final ContentletDataGen contentletDataGen = new ContentletDataGen(contentGenericType.id());
+        Contentlet contentlet = contentletDataGen.setProperty("title", "TestContent")
+                .setProperty("body", unicodeText ).languageId(APILocator.getLanguageAPI().getDefaultLanguage().getId()).nextPersisted();
+
+        Optional<WorkflowAction> workflowActionOpt = workflowAPI.findActionMappedBySystemActionContentlet
+                (contentlet, WorkflowAPI.SystemAction.NEW, user);
+
+        assertTrue(workflowActionOpt.isPresent());
+        assertEquals(SystemWorkflowConstants.WORKFLOW_SAVE_ACTION_ID, workflowActionOpt.get().getId());
+
+        workflowActionOpt = workflowAPI.findActionMappedBySystemActionContentlet
+                (contentlet, WorkflowAPI.SystemAction.EDIT, user);
+
+        assertTrue(workflowActionOpt.isPresent());
+        assertEquals(SystemWorkflowConstants.WORKFLOW_SAVE_ACTION_ID, workflowActionOpt.get().getId());
+
+        workflowActionOpt = workflowAPI.findActionMappedBySystemActionContentlet
+                (contentlet, WorkflowAPI.SystemAction.PUBLISH, user);
+
+        assertTrue(workflowActionOpt.isPresent());
+        assertEquals(SystemWorkflowConstants.WORKFLOW_PUBLISH_ACTION_ID, workflowActionOpt.get().getId());
+
+        workflowActionOpt = workflowAPI.findActionMappedBySystemActionContentlet
+                (contentlet, WorkflowAPI.SystemAction.UNPUBLISH, user);
+
+        assertTrue(workflowActionOpt.isPresent());
+        assertEquals(SystemWorkflowConstants.WORKFLOW_UNPUBLISH_ACTION_ID, workflowActionOpt.get().getId());
+
+        workflowActionOpt = workflowAPI.findActionMappedBySystemActionContentlet
+                (contentlet, WorkflowAPI.SystemAction.ARCHIVE, user);
+
+        assertTrue(workflowActionOpt.isPresent());
+        assertEquals(SystemWorkflowConstants.WORKFLOW_ARCHIVE_ACTION_ID, workflowActionOpt.get().getId());
+
+        workflowActionOpt = workflowAPI.findActionMappedBySystemActionContentlet
+                (contentlet, WorkflowAPI.SystemAction.DELETE, user);
+
+        assertTrue(workflowActionOpt.isPresent());
+        assertEquals(SystemWorkflowConstants.WORKFLOW_DELETE_ACTION_ID, workflowActionOpt.get().getId());
     }
 
     @Test()

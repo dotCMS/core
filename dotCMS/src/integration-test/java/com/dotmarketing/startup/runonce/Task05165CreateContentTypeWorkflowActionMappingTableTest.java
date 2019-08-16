@@ -26,6 +26,8 @@ public class Task05165CreateContentTypeWorkflowActionMappingTableTest {
         try{
             final Task05165CreateContentTypeWorkflowActionMappingTable task05165CreateContentTypeWorkflowActionMappingTable =
                     new Task05165CreateContentTypeWorkflowActionMappingTable();
+            final Task05175AssignDefaultActionsToTheSystemWorkflow task05175AssignDefaultActionsToTheSystemWorkflow =
+                    new Task05175AssignDefaultActionsToTheSystemWorkflow();
 
             if (!task05165CreateContentTypeWorkflowActionMappingTable.forceRun()) {
 
@@ -34,6 +36,10 @@ public class Task05165CreateContentTypeWorkflowActionMappingTableTest {
 
             if (task05165CreateContentTypeWorkflowActionMappingTable.forceRun()) {
                 task05165CreateContentTypeWorkflowActionMappingTable.executeUpgrade();
+            }
+
+            if (task05175AssignDefaultActionsToTheSystemWorkflow.forceRun()) {
+                task05175AssignDefaultActionsToTheSystemWorkflow.executeUpgrade();
             }
         } catch (Exception e) {
             final String  errMessage = "Could not modify content_type_workflow_action_mapping table on db of type: " + dbType + " Err: " +  e.toString() ;
@@ -45,8 +51,8 @@ public class Task05165CreateContentTypeWorkflowActionMappingTableTest {
     @WrapInTransaction
     private void removeContentTypeWorkflowActionMappingTable() throws SQLException {
 
-        new DotConnect().executeStatement("DROP INDEX idx_content_type_workflow_action_mapping");
-        new DotConnect().executeStatement("DROP TABLE content_type_workflow_action_mapping");
+        new DotConnect().executeStatement("DROP INDEX idx_workflow_action_mappings");
+        new DotConnect().executeStatement("DROP TABLE workflow_action_mappings");
     }
 
 }

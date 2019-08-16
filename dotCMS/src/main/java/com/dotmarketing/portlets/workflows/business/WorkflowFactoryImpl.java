@@ -26,8 +26,11 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.liferay.portal.model.User;
 import org.apache.commons.beanutils.BeanUtils;
+import org.apache.poi.ss.formula.functions.T;
 
 import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
@@ -45,6 +48,7 @@ import java.util.stream.Collectors;
 
 public class WorkflowFactoryImpl implements WorkFlowFactory {
 
+	public static final int PARTITION_IN_SIZE = 100;
 	private final WorkflowCache cache;
 	private final WorkflowSQL   sql;
 
@@ -1193,6 +1197,21 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 		if (!notFoundContentTypes.isEmpty()) {
 
+			findSystemActionsMapByContentType(mappingMapBuilder, selectQueryTemplate, notFoundContentTypes);
+		}
+
+		return mappingMapBuilder.build();
+	}
+
+	private void findSystemActionsMapByContentType(final ImmutableMap.Builder<String, List<Map<String, Object>>> mappingMapBuilder,
+												   final String selectQueryTemplate,
+												   final Set<String> notFoundContentTypesSet) throws DotDataException {
+
+		final List<List<String>> notFoundContentTypesListOfList = Lists.partition
+				(new ArrayList<>(notFoundContentTypesSet), 100); // select in does not support more than 100
+
+		for (final List<String> notFoundContentTypes: notFoundContentTypesListOfList) {
+
 			final DotConnect dotConnect = new DotConnect()
 					.setSQL(String.format(selectQueryTemplate, this.createQueryIn(notFoundContentTypes)));
 
@@ -1206,16 +1225,15 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 				for (final Map<String, Object> rowMap : mappingRows) {
 
-					final String variable = (String)rowMap.get("scheme_or_content_type");
+					final String variable = (String) rowMap.get("scheme_or_content_type");
 					dbMappingMap.computeIfAbsent(variable, key -> new ArrayList<>()).add(rowMap);
 				}
 
 				mappingMapBuilder.putAll(dbMappingMap);
 			}
 		}
-
-		return mappingMapBuilder.build();
 	}
+
 
 	/**
 	 * Finds the {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction}'s by {@link WorkflowScheme}
@@ -1294,30 +1312,39 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	 * Finds the list of {@link SystemActionWorkflowActionMapping}  associated to the {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction}
 	 * and {@link List} of {@link WorkflowScheme}'s
 	 * @param systemAction {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction}
-	 * @param schemes      {@link List} of {@link WorkflowScheme}'s
+	 * @param schemesList  {@link List} of {@link WorkflowScheme}'s
 	 * @return List<Map<String, Object>>
 	 */
 	@Override
-	public List<Map<String, Object>> findSystemActionsBySchemes(final WorkflowAPI.SystemAction systemAction, final List<WorkflowScheme> schemes) throws DotDataException {
+	public List<Map<String, Object>> findSystemActionsBySchemes(final WorkflowAPI.SystemAction systemAction, final List<WorkflowScheme> schemesList) throws DotDataException {
 
-		final List<String> schemeIdList   = schemes.stream().map(WorkflowScheme::getId).collect(Collectors.toList());
+		final List<String> schemeIdList   = schemesList.stream().map(WorkflowScheme::getId).collect(Collectors.toList());
 		List<Map<String, Object>> results = this.cache.findSystemActionsBySchemes(systemAction.name(), schemeIdList);
 
 		if (null == results) {
 
-			if (UtilMethods.isSet(schemes)) {
+			if (UtilMethods.isSet(schemesList)) {
 
-				final DotConnect dotConnect = new DotConnect()
-						.setSQL(String.format(sql.SELECT_SYSTEM_ACTION_BY_SYSTEM_ACTION_AND_SCHEMES, this.createQueryIn(schemes)))
-						.addParam(systemAction.name());
+				final List<List<WorkflowScheme>> schemeListOfList =
+						Lists.partition(schemesList, PARTITION_IN_SIZE); // select in does not support more than 100.
+				results = new ArrayList<>();
 
-				for (final WorkflowScheme scheme : schemes) {
+				for (final List<WorkflowScheme> schemes : schemeListOfList) {
 
-					dotConnect.addParam(scheme.getId());
+					final DotConnect dotConnect = new DotConnect()
+							.setSQL(String.format(sql.SELECT_SYSTEM_ACTION_BY_SYSTEM_ACTION_AND_SCHEMES, this.createQueryIn(schemes)))
+							.addParam(systemAction.name());
+
+					for (final WorkflowScheme scheme : schemes) {
+
+						dotConnect.addParam(scheme.getId());
+					}
+
+					results.addAll(dotConnect.loadObjectResults());
 				}
 
-				results = dotConnect.loadObjectResults();
 				if (UtilMethods.isSet(results)) {
+
 					this.cache.addSystemActionsBySystemActionNameAndSchemeIds(
 							systemAction.name(), schemeIdList, results);
 				}

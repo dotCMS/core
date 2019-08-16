@@ -376,6 +376,7 @@ public class HostAPIImpl implements HostAPI {
         APILocator.getContentletAPI().copyProperties(contentletHost, host.getMap());
         contentletHost.setInode("");
         contentletHost.setIndexPolicy(host.getIndexPolicy());
+        contentletHost.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
         contentletHost = APILocator.getContentletAPI().checkin(contentletHost, user, respectFrontendRoles);
 
         if(host.isWorking() || host.isLive()){
@@ -937,8 +938,10 @@ public class HostAPIImpl implements HostAPI {
         if(host != null){
             hostCache.remove(host);
         }
-        Contentlet c = APILocator.getContentletAPI().find(host.getInode(), user, respectFrontendRoles);
-        APILocator.getContentletAPI().publish(c, user, respectFrontendRoles);
+
+        final Contentlet contentletHost = APILocator.getContentletAPI().find(host.getInode(), user, respectFrontendRoles);
+        contentletHost.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
+        APILocator.getContentletAPI().publish(contentletHost, user, respectFrontendRoles);
         hostCache.add(host);
         hostCache.clearAliasCache();
 

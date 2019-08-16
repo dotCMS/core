@@ -34,6 +34,7 @@ public class SiteDataGen extends AbstractDataGen<Host> {
 
     public Host persist(final Host site, boolean publish) {
         try {
+
             final Host newSite = APILocator.getHostAPI().save(site, user, false);
             if (publish) {
                 newSite.setIndexPolicy(IndexPolicy.WAIT_FOR);

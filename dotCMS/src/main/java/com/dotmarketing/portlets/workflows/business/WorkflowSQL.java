@@ -71,17 +71,17 @@ abstract class WorkflowSQL {
 	 */
 	protected static String SELECT_STEPS_ID_BY_ACTION  = "select workflow_action_step.step_id as stepid from workflow_action_step  where workflow_action_step.action_id = ?";
 
-	protected static String DELETE_SYSTEM_ACTION_BY_SCHEME_OR_CONTENT_TYPE = "delete from content_type_workflow_action_mapping where scheme_or_content_type=?";
-	protected static String DELETE_SYSTEM_ACTION_BY_WORKFLOW_ACTION_ID = "delete from content_type_workflow_action_mapping where workflow_action=?";
-	protected static String DELETE_SYSTEM_ACTION_BY_IDENTIFIER = "delete from content_type_workflow_action_mapping where id=?";
-	protected static String SELECT_SYSTEM_ACTION_BY_IDENTIFIER = "select * from content_type_workflow_action_mapping where id=?";
-	protected static String SELECT_SYSTEM_ACTION_BY_SCHEME_OR_CONTENT_TYPE_MAPPING = "select * from content_type_workflow_action_mapping where scheme_or_content_type=?";
-	protected static String SELECT_SYSTEM_ACTION_BY_SYSTEM_ACTION_AND_SCHEMES      = "select * from content_type_workflow_action_mapping where action=? and scheme_or_content_type in (%s)";
-	protected static String SELECT_SYSTEM_ACTION_BY_CONTENT_TYPES     			   = "select * from content_type_workflow_action_mapping where scheme_or_content_type in (%s)";
-	protected static String SELECT_SYSTEM_ACTION_BY_SYSTEM_ACTION_AND_SCHEME_OR_CONTENT_TYPE_MAPPING = "select * from content_type_workflow_action_mapping where action=? and scheme_or_content_type=?";
-	protected static String SELECT_SYSTEM_ACTION_BY_WORKFLOW_ACTION = "select * from content_type_workflow_action_mapping where workflow_action=?";
-	protected static String INSERT_SYSTEM_ACTION_WORKFLOW_ACTION_MAPPING = "insert into content_type_workflow_action_mapping(id, action, workflow_action, scheme_or_content_type) values (?,?,?,?)";
-	protected static String UPDATE_SYSTEM_ACTION_WORKFLOW_ACTION_MAPPING = "update content_type_workflow_action_mapping set action=?, workflow_action=?, scheme_or_content_type=? where id=?";
+	protected static String DELETE_SYSTEM_ACTION_BY_SCHEME_OR_CONTENT_TYPE = "delete from workflow_action_mappings where scheme_or_content_type=?";
+	protected static String DELETE_SYSTEM_ACTION_BY_WORKFLOW_ACTION_ID = "delete from workflow_action_mappings where workflow_action=?";
+	protected static String DELETE_SYSTEM_ACTION_BY_IDENTIFIER = "delete from workflow_action_mappings where id=?";
+	protected static String SELECT_SYSTEM_ACTION_BY_IDENTIFIER = "select * from workflow_action_mappings where id=?";
+	protected static String SELECT_SYSTEM_ACTION_BY_SCHEME_OR_CONTENT_TYPE_MAPPING = "select * from workflow_action_mappings where scheme_or_content_type=?";
+	protected static String SELECT_SYSTEM_ACTION_BY_SYSTEM_ACTION_AND_SCHEMES      = "select * from workflow_action_mappings where action=? and scheme_or_content_type in (%s)";
+	protected static String SELECT_SYSTEM_ACTION_BY_CONTENT_TYPES     			   = "select * from workflow_action_mappings where scheme_or_content_type in (%s)";
+	protected static String SELECT_SYSTEM_ACTION_BY_SYSTEM_ACTION_AND_SCHEME_OR_CONTENT_TYPE_MAPPING = "select * from workflow_action_mappings where action=? and scheme_or_content_type=?";
+	protected static String SELECT_SYSTEM_ACTION_BY_WORKFLOW_ACTION = "select * from workflow_action_mappings where workflow_action=?";
+	protected static String INSERT_SYSTEM_ACTION_WORKFLOW_ACTION_MAPPING = "insert into workflow_action_mappings(id, action, workflow_action, scheme_or_content_type) values (?,?,?,?)";
+	protected static String UPDATE_SYSTEM_ACTION_WORKFLOW_ACTION_MAPPING = "update workflow_action_mappings set action=?, workflow_action=?, scheme_or_content_type=? where id=?";
 
 	protected static String INSERT_ACTION_FOR_STEP = "insert into workflow_action_step(action_id, step_id, action_order) values (?,?,?)";
 	protected static String UPDATE_ACTION_FOR_STEP_ORDER = "update workflow_action_step set action_order=? where action_id=? and step_id=?";

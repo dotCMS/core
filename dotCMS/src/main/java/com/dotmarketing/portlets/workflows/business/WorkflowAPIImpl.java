@@ -3618,7 +3618,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
         final List<WorkflowScheme> schemes   = this.findSchemesForContentType(contentType);
 
-        final List<Map<String, Object>> mappingRows =
+        final List<Map<String, Object>> mappingRows = // todo: double check if the system workflow is the first we pick
                 this.workFlowFactory.findSystemActionsBySchemes(systemAction, schemes);
 
 		return UtilMethods.isSet(mappingRows)?
