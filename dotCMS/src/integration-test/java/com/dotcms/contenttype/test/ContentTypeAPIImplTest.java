@@ -54,6 +54,7 @@ import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
+import com.dotmarketing.beans.PermissionableProxy;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -1715,6 +1716,26 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
      assertEquals(systemHostType.getParentPermissionable(), APILocator.systemHost());
      assertEquals(hostType.getParentPermissionable(), site);
      assertEquals(folderType.getParentPermissionable(), folder);
+     
+     
+     
+     // test inheritance if no data available
+     
+     SimpleContentType fakeType = ImmutableSimpleContentType.builder()
+         .name("ContentTypeTesting"+System.currentTimeMillis())
+         .variable("velocityVarNameTesting"+System.currentTimeMillis())
+         .host("fakeHost")
+         .folder("fakeFolder")
+         .build();
+     
+     assert(fakeType.getParentPermissionable() instanceof PermissionableProxy);
+   
+     assertEquals(fakeType.getParentPermissionable().getPermissionId(), "fakeFolder" );
+     fakeType = ImmutableSimpleContentType.copyOf(fakeType).withFolder(Folder.SYSTEM_FOLDER);
+     assertEquals(fakeType.getParentPermissionable().getPermissionId(), "fakeHost" );
+     fakeType = ImmutableSimpleContentType.copyOf(fakeType).withHost(Host.SYSTEM_HOST);
+     assertEquals(fakeType.getParentPermissionable().getPermissionId(), Host.SYSTEM_HOST );
+     
    }
 	
 	
