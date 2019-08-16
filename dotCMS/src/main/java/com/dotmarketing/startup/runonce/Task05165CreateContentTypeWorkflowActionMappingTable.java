@@ -49,7 +49,7 @@ public class Task05165CreateContentTypeWorkflowActionMappingTable extends Abstra
                                         "   scheme_or_content_type  varchar(255) not null,\n" +
                                         "   primary key (id)\n" +
                                         ");",
-            DbType.ORACLE,       "create table workflow_action_mappings (id varchar2(36) not null primary key, action varchar2(36) not null, workflow_action varchar2(255) not null, scheme_or_content_type  varchar2(255) not null );",
+            DbType.ORACLE,       "create table workflow_action_mappings (id varchar2(36) not null primary key, action varchar2(36) not null, workflow_action varchar2(255) not null, scheme_or_content_type  varchar2(255) not null )",
             DbType.MSSQL,        "create table workflow_action_mappings (\n" +
                                         "\n" +
                                         "   id NVARCHAR(36) primary key,\n" +
@@ -63,7 +63,7 @@ public class Task05165CreateContentTypeWorkflowActionMappingTable extends Abstra
             DbType.H2,           "CREATE UNIQUE INDEX idx_workflow_action_mappings ON workflow_action_mappings (action, workflow_action, scheme_or_content_type);",
             DbType.POSTGRESQL,   "CREATE UNIQUE INDEX idx_workflow_action_mappings ON workflow_action_mappings (action, workflow_action, scheme_or_content_type)",
             DbType.MYSQL,        "CREATE UNIQUE INDEX idx_workflow_action_mappings ON workflow_action_mappings (action, workflow_action, scheme_or_content_type);",
-            DbType.ORACLE,       "CREATE UNIQUE INDEX idx_workflow_action_mappings ON workflow_action_mappings (action, workflow_action, scheme_or_content_type);",
+            DbType.ORACLE,       "CREATE UNIQUE INDEX idx_workflow_action_mappings ON workflow_action_mappings (action, workflow_action, scheme_or_content_type)",
             DbType.MSSQL,        "CREATE UNIQUE INDEX idx_workflow_action_mappings ON workflow_action_mappings (action, workflow_action, scheme_or_content_type);"
     );
 
