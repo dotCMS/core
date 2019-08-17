@@ -134,28 +134,12 @@ public class TempFileResourceTest {
   }
 
   @Test
-  public void test_tempResourceAPI_who_can_use_via_session(){
-
-    final String fileName = "test.file";
-    HttpServletRequest request = mockRequest();
-    final DotTempFile dotTempFile = saveTempFile_usingTempResource(fileName,request);
-
-    // we can get the file because we have the same sessionId as the request
-    Optional<DotTempFile> file = new TempFileAPI().getTempFile(request, dotTempFile.id);
-    assertTrue(file.isPresent() && !file.get().file.isDirectory());
-
-    // we CANNOT get the file again because we have a new session ID in the request
-    file = new TempFileAPI().getTempFile(mockRequest(), dotTempFile.id);
-    assertFalse(file.isPresent());
-
-  }
-
-  @Test
   public void test_tempResourceAPI_who_can_use_via_userID(){
 
     final User user = new UserDataGen().nextPersisted();
     HttpServletRequest request = mockRequest();
     request.setAttribute(WebKeys.USER, user);
+    request.setAttribute(WebKeys.USER_ID, user.getUserId());
 
     final String fileName = "test.png";
     final DotTempFile dotTempFile = saveTempFile_usingTempResource(fileName,request);
@@ -334,7 +318,7 @@ public class TempFileResourceTest {
 
     // CANNOT get the file again because the request header changed
     HttpServletRequest newRequest = new MockSessionRequest(
-            new MockHeaderRequest(request, testCase.headerName, "newValue")
+            new MockHeaderRequest(new MockHttpRequest("localhost", "/api/v1/tempResource").request(), testCase.headerName, "newValue")
                     .request());
     file = new TempFileAPI().getTempFile(newRequest, dotTempFile.id);
     assertFalse(file.isPresent());

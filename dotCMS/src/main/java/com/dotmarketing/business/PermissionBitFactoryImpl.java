@@ -2146,7 +2146,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
     final String permissionKey = Try.of(() -> permissionable.getPermissionId())
         .getOrElseThrow(() -> new DotDataException("Invalid Permissionable passed in. permissionable:" + permissionable));
 
-    Logger.info(this.getClass(), "looking for :"  + permissionKey);
+    
     // Step 1. cache lookup first
     List<Permission> permissionList = permissionCache.getPermissionsFromCache(permissionKey);
     if (permissionList != null) {
@@ -2218,6 +2218,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
     })).onFailure(e -> {
       throw new DotRuntimeException(e);
     });
+    Logger.info(this.getClass(), "permission inherited: " + Try.of(()->type.substring(type.lastIndexOf(".")+1, type.length())).getOrElse(type)  + " : "  + permissionKey + " -> " +finalNewReference);
+    
 	permissionCache.addToPermissionCache(permissionKey, permissionList);
     return permissionList;
 

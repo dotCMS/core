@@ -49,10 +49,12 @@ import com.dotcms.contenttype.model.type.VanityUrlContentType;
 import com.dotcms.contenttype.model.type.WidgetContentType;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
+import com.dotmarketing.beans.PermissionableProxy;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -1678,6 +1680,80 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
       fields = newType.fields(SelectField.class);
       assert(fields.size()==0);
 	 }
+	 
+	 
+	 /**
+	  * This test is to insure that a content type is returing the corrent
+	  * parent permissionable based on where it lives in the hierarchy
+	  * If the content type lives on a folder, then that will be the parent
+	  * if it lives on a host, then that, else the system host
+	  * @throws Exception
+	  */
+   @Test
+   public void test_content_type_parent_permissionable() throws Exception{
+     Host site = new SiteDataGen().nextPersisted();
+     Folder folder = new FolderDataGen().site(site).nextPersisted();
+     
+     
+     ContentType systemHostType = ImmutableSimpleContentType.builder()
+         .name("ContentTypeTesting"+System.currentTimeMillis())
+         .variable("velocityVarNameTesting"+System.currentTimeMillis())
+  
+         .host(APILocator.systemHost().getIdentifier())
+         .folder(APILocator.getFolderAPI().SYSTEM_FOLDER)
+         .build();
+     systemHostType = contentTypeApi.save(systemHostType);
+     
+     ContentType hostType = ImmutableSimpleContentType.builder()
+         .name("ContentTypeTesting"+System.currentTimeMillis())
+         .variable("velocityVarNameTesting"+System.currentTimeMillis())
+         .host(site.getIdentifier())
+         .folder(APILocator.getFolderAPI().SYSTEM_FOLDER)
+         .build();
+     hostType = contentTypeApi.save(hostType);
+	 
+     ContentType folderType = ImmutableSimpleContentType.builder()
+         .name("ContentTypeTesting"+System.currentTimeMillis())
+         .variable("velocityVarNameTesting"+System.currentTimeMillis())
+         .host(site.getIdentifier())
+         .folder(folder.getInode())
+         .build();
+     
+     folderType = contentTypeApi.save(folderType);
+     
+     assertEquals(systemHostType.getParentPermissionable(), APILocator.systemHost());
+     assertEquals(hostType.getParentPermissionable(), site);
+     assertEquals(folderType.getParentPermissionable(), folder);
+   }
+   
+     
+     /**
+      * When dotCMS starts up and there is no persisted data, we need to instanciate
+      * the content types before we can save the content.  This means that things like
+      * host lookups will fail. So instead of sending the Host as a parent permissionable, 
+      * we send a PermissionProxy that has the same data which can be used temporarilly to 
+      * calcuate the correct permission inheratance.
+      */
+     @Test
+     public void test_content_type_parent_permissionable_when_no_data() throws Exception{
+     // test inheritance if no data available
+     
+     SimpleContentType fakeType = ImmutableSimpleContentType.builder()
+         .name("ContentTypeTesting"+System.currentTimeMillis())
+         .variable("velocityVarNameTesting"+System.currentTimeMillis())
+         .host("fakeHost")
+         .folder("fakeFolder")
+         .build();
+     
+     assert(fakeType.getParentPermissionable() instanceof PermissionableProxy);
+   
+     assertEquals(fakeType.getParentPermissionable().getPermissionId(), "fakeFolder" );
+     fakeType = ImmutableSimpleContentType.copyOf(fakeType).withFolder(Folder.SYSTEM_FOLDER);
+     assertEquals(fakeType.getParentPermissionable().getPermissionId(), "fakeHost" );
+     fakeType = ImmutableSimpleContentType.copyOf(fakeType).withHost(Host.SYSTEM_HOST);
+     assertEquals(fakeType.getParentPermissionable().getPermissionId(), Host.SYSTEM_HOST );
+     
+   }
 	
 	
 }
