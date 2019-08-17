@@ -498,12 +498,12 @@ public  class WebResource {
             user = getFrontEndUserFromRequest(request, userWebAPI);
         }
 
-        if(
-            (user == null || UserAPI.CMS_ANON_USER_ID.equals(user.getUserId())) && 
-            (Config.getBooleanProperty("REST_API_REJECT_WITH_NO_USER", false) ||
-                    !Config.getBooleanProperty("REST_API_CONTENT_ALLOW_FRONT_END_SAVING", false) ||
-                    rejectWhenNoUser)
-          ) {
+        final boolean doesNotAllowsAnonymous = (user == null || UserAPI.CMS_ANON_USER_ID.equals(user.getUserId())) &&
+                !Config.getBooleanProperty("REST_API_CONTENT_ALLOW_FRONT_END_SAVING", false) &&
+                (Config.getBooleanProperty("REST_API_REJECT_WITH_NO_USER", false) ||
+                        rejectWhenNoUser);
+
+        if(doesNotAllowsAnonymous) {
 
             throw new SecurityException("Invalid User", Response.Status.UNAUTHORIZED);
         } else if(user == null) {
