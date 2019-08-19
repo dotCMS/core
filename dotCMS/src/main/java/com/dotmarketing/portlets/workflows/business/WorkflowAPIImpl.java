@@ -58,6 +58,7 @@ import org.elasticsearch.search.query.QueryPhaseExecutionException;
 import org.osgi.framework.BundleContext;
 
 import javax.annotation.Nullable;
+import javax.ws.rs.HEAD;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;

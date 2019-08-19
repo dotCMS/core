@@ -639,7 +639,7 @@ public class HostAPIImpl implements HostAPI {
 
                 // Remove Templates
                 TemplateAPI templateAPI = APILocator.getTemplateAPI();
-                List<Template> templates = templateAPI.findTemplates(user, true, null, host.getIdentifier(), null, null, null, 0, -1, null);
+                List<Template> templates = templateAPI.findTemplatesAssignedTo(host, true);
                 for (Template template : templates) {
                     dc.setSQL("delete from template_containers where template_id = ?");
                     dc.addParam(template.getIdentifier());

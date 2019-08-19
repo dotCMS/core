@@ -1,5 +1,7 @@
 package com.dotcms.system.event.local.business;
 
+import java.util.List;
+
 import com.dotcms.config.DotInitializer;
 import com.dotcms.content.elasticsearch.business.event.ContentletCheckinEvent;
 import com.dotcms.graphql.listener.ContentTypeAndFieldsModsListeners;
@@ -14,8 +16,6 @@ import com.dotmarketing.portlets.workflows.business.UnassignedWorkflowContentlet
 import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
-
-import java.util.List;
 
 /**
  * Initializer class that allow us to register Local System Events subscribers

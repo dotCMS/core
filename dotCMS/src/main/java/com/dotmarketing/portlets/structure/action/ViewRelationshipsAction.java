@@ -6,6 +6,9 @@ import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
 import com.dotcms.repackage.javax.portlet.RenderRequest;
 import com.dotcms.repackage.javax.portlet.RenderResponse;
+import com.dotcms.repackage.org.apache.struts.action.ActionForm;
+import com.dotcms.repackage.org.apache.struts.action.ActionForward;
+import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.common.util.SQLUtil;
@@ -19,10 +22,6 @@ import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionForward;
-import org.apache.struts.action.ActionMapping;
 
 public class ViewRelationshipsAction extends DotPortletAction {
 

@@ -34,10 +34,6 @@ public class Task05165CreateContentTypeWorkflowActionMappingTableTest {
                 this.removeContentTypeWorkflowActionMappingTable();
             }
 
-            if (task05165CreateContentTypeWorkflowActionMappingTable.forceRun()) {
-                task05165CreateContentTypeWorkflowActionMappingTable.executeUpgrade();
-            }
-
             if (task05175AssignDefaultActionsToTheSystemWorkflow.forceRun()) {
                 task05175AssignDefaultActionsToTheSystemWorkflow.executeUpgrade();
             }

@@ -263,7 +263,7 @@ public class Task05170DefineFrontEndAndBackEndRoles implements StartupTask {
         }
         final DotConnect dotConnect = new DotConnect();
 
-        //This checks the front-end-role's already assigned to anybody with a layout.. which is an invalid state and required closer attention.
+        //This checks the front-end-role's already assigned to anybody with a layout.. which is an invalid state and requires closer attention.
         performFrontendRoleSanityCheck(dotConnect);
 
         //This is an extra precaution in case a new starter without the expected roles is used.

@@ -1,31 +1,37 @@
 package com.dotcms.contenttype.model.field.layout;
 
 import com.dotcms.contenttype.model.field.*;
+import com.dotcms.contenttype.model.type.BaseContentType;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import com.dotcms.contenttype.model.field.ColumnField;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.ImmutableColumnField;
+import com.dotcms.contenttype.model.field.ImmutableTextField;
+
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalization;
 import com.dotcms.contenttype.transform.field.JsonFieldTransformer;
+import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.liferay.portal.model.User;
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
-
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @PrepareForTest(FieldUtil.class)
 @RunWith(PowerMockRunner.class)
@@ -73,7 +79,19 @@ public class FieldLayoutColumnSerializerTest {
 
     @Test()
     public void testSerializeWhenPassContentTypeInternationalization() throws IOException, DotDataException, DotSecurityException {
-        final ContentType contactUs = APILocator.getContentTypeAPI(APILocator.systemUser()).find("ContactUs");
+
+        final ContentType formContentType = new ContentTypeDataGen()
+                .baseContentType(BaseContentType.FORM)
+                .name("form_test")
+                .fields(
+                        CollectionsUtils.list(
+                                ImmutableTextField.builder()
+                                        .name("Text")
+                                        .sortOrder(2)
+                                        .build()
+                        )
+                )
+                .nextPersisted();
 
         final long languageId = 1;
         final boolean live = true;
@@ -99,7 +117,7 @@ public class FieldLayoutColumnSerializerTest {
 
         final SerializerProvider serializerProvider = mock(SerializerProvider.class);
         when(serializerProvider.getAttribute("internationalization")).thenReturn(contentTypeInternationalization);
-        when(serializerProvider.getAttribute("type")).thenReturn(contactUs);
+        when(serializerProvider.getAttribute("type")).thenReturn(formContentType);
 
         final JsonFieldTransformer jsonFieldTransformer = new JsonFieldTransformer(fields.get(0));
         final Map<String, Object> fieldMap = jsonFieldTransformer.mapObject();
@@ -122,6 +140,6 @@ public class FieldLayoutColumnSerializerTest {
         verify(jsonGenerator).flush();
 
         PowerMockito.verifyStatic();
-        FieldUtil.setFieldInternationalization(contactUs, contentTypeInternationalization, fieldMap);
+        FieldUtil.setFieldInternationalization(formContentType, contentTypeInternationalization, fieldMap);
     }
 }

@@ -60,6 +60,8 @@ if [[ "${1}" == "dotcms" || -z "${1}" ]]; then
 
     # Required code, without it gradle will exit 1 killing the docker container
     gradlewReturnCode=$?
+    export CURRENT_JOB_BUILD_STATUS=${gradlewReturnCode}
+
 #    echo ">>>"
 #    echo ">>> GRADLE EXIT CODE: ${gradlewReturnCode}"
 #    echo ">>>"

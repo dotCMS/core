@@ -22,15 +22,17 @@
 
 package com.liferay.portal.struts;
 
+import com.dotcms.repackage.com.oroad.stxx.plugin.StxxTilesRequestProcessor;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
 import com.dotcms.repackage.javax.portlet.PortletContext;
 import com.dotcms.repackage.javax.portlet.PortletException;
 import com.dotcms.repackage.javax.portlet.PortletMode;
 import com.dotcms.repackage.javax.portlet.PortletPreferences;
 import com.dotcms.repackage.javax.portlet.WindowState;
+import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
+import com.dotcms.repackage.org.apache.struts.config.ForwardConfig;
 import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Layout;
 import com.dotmarketing.business.PermissionAPI;
@@ -48,7 +50,6 @@ import com.liferay.portal.RequiredRoleException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.UserActiveException;
 import com.liferay.portal.auth.PrincipalException;
-import com.liferay.portal.ejb.PortletManagerUtil;
 import com.liferay.portal.ejb.PortletPreferencesManagerUtil;
 import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.User;
@@ -70,7 +71,6 @@ import com.liferay.util.StringPool;
 import com.liferay.util.StringUtil;
 import com.liferay.util.servlet.SessionErrors;
 import com.liferay.util.servlet.UploadServletRequest;
-import com.oroad.stxx.plugin.StxxTilesRequestProcessor;
 import java.io.IOException;
 import java.util.Date;
 import java.util.Enumeration;
@@ -78,14 +78,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import javax.servlet.jsp.PageContext;
-import org.apache.struts.action.ActionMapping;
-import org.apache.struts.config.ForwardConfig;
 
 /**
  * <a href="PortalRequestProcessor.java.html"><b><i>View Source</i></b></a>

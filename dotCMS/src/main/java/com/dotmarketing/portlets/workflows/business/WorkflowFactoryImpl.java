@@ -4,7 +4,6 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.DbContentTypeTransformer;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
-import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -27,10 +26,8 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 import com.liferay.portal.model.User;
 import org.apache.commons.beanutils.BeanUtils;
-import org.apache.poi.ss.formula.functions.T;
 
 import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
@@ -1233,7 +1230,6 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			}
 		}
 	}
-
 
 	/**
 	 * Finds the {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction}'s by {@link WorkflowScheme}

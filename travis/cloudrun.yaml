@@ -7,6 +7,9 @@ steps:
       - 'databaseType=$_DB_TYPE'
       - 'exportReports=true'
       - 'GOOGLE_CREDENTIALS_BASE64=$_GOOGLE_CREDENTIALS_BASE64'
+      - 'PULL_REQUEST=$_PULL_REQUEST'
+      - 'GITHUB_USER=$_GITHUB_USER'
+      - 'GITHUB_USER_TOKEN=$_GITHUB_USER_TOKEN'
     args: ['-f', './docker/tests/integration/travis-base-service.yml',
            '-f', './docker/tests/integration/$_DB_TYPE-docker-compose.yml',
            'up',

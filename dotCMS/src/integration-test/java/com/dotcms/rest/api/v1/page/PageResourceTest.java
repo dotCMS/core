@@ -34,12 +34,10 @@ import com.dotmarketing.util.json.JSONException;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.Tuple;
-import io.vavr.Tuple2;
 import org.elasticsearch.action.search.SearchResponse;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.jvnet.hk2.internal.Collector;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -48,7 +46,6 @@ import javax.ws.rs.core.Response;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static com.dotcms.util.CollectionsUtils.list;
@@ -174,7 +171,8 @@ public class PageResourceTest {
         assertTrue(paginatedArrayList.stream().anyMatch(personalizationPersonaPageView ->
                 personalizationPersonaPageView.getPersona().get(PersonaAPI.KEY_TAG_FIELD).equals(personaTag) &&
                         Boolean.TRUE.equals(personalizationPersonaPageView.getPersona().get("personalized"))));
-}
+    }
+
 
     /**
      * Should return about-us/index page

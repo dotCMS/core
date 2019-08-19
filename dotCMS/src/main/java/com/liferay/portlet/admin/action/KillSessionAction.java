@@ -25,6 +25,8 @@ package com.liferay.portlet.admin.action;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
+import com.dotcms.repackage.org.apache.struts.action.ActionForm;
+import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotcms.util.SecurityUtils;
 import com.liferay.portal.auth.PrincipalException;
 import com.liferay.portal.servlet.PortalSessionContext;
@@ -42,8 +44,6 @@ import javax.servlet.http.HttpSession;
 import javax.servlet.jsp.PageContext;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionMapping;
 
 /**
  * <a href="KillSessionAction.java.html"><b><i>View Source</i></b></a>

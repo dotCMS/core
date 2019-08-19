@@ -13,7 +13,7 @@
 <uri>http://struts.apache.org/tags-logic</uri>
 <tag>
 <name>empty</name>
-<tagclass>org.apache.struts.taglib.logic.EmptyTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.logic.EmptyTag</tagclass>
 <bodycontent>JSP</bodycontent>
 <attribute>
 <name>name</name>
@@ -33,7 +33,7 @@
 </tag>
 <tag>
 <name>equal</name>
-<tagclass>org.apache.struts.taglib.logic.EqualTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.logic.EqualTag</tagclass>
 <bodycontent>JSP</bodycontent>
 <attribute>
 <name>cookie</name>
@@ -73,7 +73,7 @@
 </tag>
 <tag>
 <name>forward</name>
-<tagclass>org.apache.struts.taglib.logic.ForwardTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.logic.ForwardTag</tagclass>
 <bodycontent>empty</bodycontent>
 <attribute>
 <name>name</name>
@@ -83,7 +83,7 @@
 </tag>
 <tag>
 <name>greaterEqual</name>
-<tagclass>org.apache.struts.taglib.logic.GreaterEqualTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.logic.GreaterEqualTag</tagclass>
 <bodycontent>JSP</bodycontent>
 <attribute>
 <name>cookie</name>
@@ -123,7 +123,7 @@
 </tag>
 <tag>
 <name>greaterThan</name>
-<tagclass>org.apache.struts.taglib.logic.GreaterThanTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.logic.GreaterThanTag</tagclass>
 <bodycontent>JSP</bodycontent>
 <attribute>
 <name>cookie</name>
@@ -163,8 +163,8 @@
 </tag>
 <tag>
 <name>iterate</name>
-<tagclass>org.apache.struts.taglib.logic.IterateTag</tagclass>
-<teiclass>org.apache.struts.taglib.logic.IterateTei</teiclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.logic.IterateTag</tagclass>
+<teiclass>com.dotcms.repackage.org.apache.struts.taglib.logic.IterateTei</teiclass>
 <bodycontent>JSP</bodycontent>
 <attribute>
 <name>collection</name>
@@ -214,7 +214,7 @@
 </tag>
 <tag>
 <name>lessEqual</name>
-<tagclass>org.apache.struts.taglib.logic.LessEqualTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.logic.LessEqualTag</tagclass>
 <bodycontent>JSP</bodycontent>
 <attribute>
 <name>cookie</name>
@@ -254,7 +254,7 @@
 </tag>
 <tag>
 <name>lessThan</name>
-<tagclass>org.apache.struts.taglib.logic.LessThanTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.logic.LessThanTag</tagclass>
 <bodycontent>JSP</bodycontent>
 <attribute>
 <name>cookie</name>
@@ -294,7 +294,7 @@
 </tag>
 <tag>
 <name>match</name>
-<tagclass>org.apache.struts.taglib.logic.MatchTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.logic.MatchTag</tagclass>
 <bodycontent>JSP</bodycontent>
 <attribute>
 <name>cookie</name>
@@ -339,7 +339,7 @@
 </tag>
 <tag>
 <name>messagesNotPresent</name>
-<tagclass>org.apache.struts.taglib.logic.MessagesNotPresentTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.logic.MessagesNotPresentTag</tagclass>
 <bodycontent>JSP</bodycontent>
 <attribute>
 <name>name</name>
@@ -359,7 +359,7 @@
 </tag>
 <tag>
 <name>messagesPresent</name>
-<tagclass>org.apache.struts.taglib.logic.MessagesPresentTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.logic.MessagesPresentTag</tagclass>
 <bodycontent>JSP</bodycontent>
 <attribute>
 <name>name</name>
@@ -379,7 +379,7 @@
 </tag>
 <tag>
 <name>notEmpty</name>
-<tagclass>org.apache.struts.taglib.logic.NotEmptyTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.logic.NotEmptyTag</tagclass>
 <bodycontent>JSP</bodycontent>
 <attribute>
 <name>name</name>
@@ -399,7 +399,7 @@
 </tag>
 <tag>
 <name>notEqual</name>
-<tagclass>org.apache.struts.taglib.logic.NotEqualTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.logic.NotEqualTag</tagclass>
 <bodycontent>JSP</bodycontent>
 <attribute>
 <name>cookie</name>
@@ -439,7 +439,7 @@
 </tag>
 <tag>
 <name>notMatch</name>
-<tagclass>org.apache.struts.taglib.logic.NotMatchTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.logic.NotMatchTag</tagclass>
 <bodycontent>JSP</bodycontent>
 <attribute>
 <name>cookie</name>
@@ -484,7 +484,7 @@
 </tag>
 <tag>
 <name>notPresent</name>
-<tagclass>org.apache.struts.taglib.logic.NotPresentTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.logic.NotPresentTag</tagclass>
 <bodycontent>JSP</bodycontent>
 <attribute>
 <name>cookie</name>
@@ -529,7 +529,7 @@
 </tag>
 <tag>
 <name>present</name>
-<tagclass>org.apache.struts.taglib.logic.PresentTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.logic.PresentTag</tagclass>
 <bodycontent>JSP</bodycontent>
 <attribute>
 <name>cookie</name>
@@ -574,7 +574,7 @@
 </tag>
 <tag>
 <name>redirect</name>
-<tagclass>org.apache.struts.taglib.logic.RedirectTag</tagclass>
+<tagclass>com.dotcms.repackage.org.apache.struts.taglib.logic.RedirectTag</tagclass>
 <attribute>
 <name>action</name>
 <required>false</required>

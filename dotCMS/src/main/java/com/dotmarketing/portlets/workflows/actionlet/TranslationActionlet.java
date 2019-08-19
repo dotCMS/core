@@ -34,6 +34,7 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 
+import javax.ws.rs.HEAD;
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
