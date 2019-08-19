@@ -4,10 +4,14 @@ import com.dotcms.repackage.com.google.common.base.Strings;
 import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.util.StringPool;
 import java.util.ArrayList;
 import java.util.Date;
@@ -24,6 +28,7 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
 
     private long currentTime = System.currentTimeMillis();
     private String body;
+    private String drawedBody;
     private String footer;
     private String header;
     private String friendlyName = "testFriendlyName" + currentTime;
@@ -46,6 +51,26 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
      */
     public TemplateDataGen body(String body) {
         this.body = body;
+        return this;
+    }
+
+    /**
+     * Sets drawedBody property to the TemplateDataGen instance. This will be used when a new {@link
+     * Template} instance is created.
+     *
+     * @param templateLayout
+     * @return TemplateDataGen with body property set
+     */
+    public TemplateDataGen drawedBody(final TemplateLayout templateLayout) {
+        ObjectMapper mapper = new ObjectMapper();
+        final String json;
+        try {
+            json = mapper.writeValueAsString(templateLayout);
+            this.drawedBody = json;
+        } catch (JsonProcessingException e) {
+            throw new DotRuntimeException(e);
+        }
+
         return this;
     }
 
@@ -178,6 +203,7 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
         template.setTitle(this.title);
         template.setType(type);
         template.setBody(body);
+        template.setDrawedBody(drawedBody);
         return template;
     }
 

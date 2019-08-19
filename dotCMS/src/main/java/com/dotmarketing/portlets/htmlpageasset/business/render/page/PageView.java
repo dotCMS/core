@@ -77,21 +77,25 @@ public class PageView implements Serializable {
         final Map<String, ContainerRaw> containersMap = this.getContainersMap();
 
         if (this.layout != null) {
-            this.haveContent = this.layout.getBody().getRows()
-                    .stream()
-                    .flatMap(row -> row.getColumns().stream())
-                    .flatMap(column -> column.getContainers().stream())
-                    .anyMatch(containerUUID -> {
-                        final ContainerRaw containerRaw = containersMap.get(containerUUID.getIdentifier());
-
-                        if (containerRaw != null) {
-                            final List<Map<String, Object>> contents = containerRaw.getContentlets().get(PageRenderUtil.CONTAINER_UUID_PREFIX + containerUUID.getUUID());
-                            return contents != null && contents.size() > 0;
-                        } else {
-                            return false;
-                        }
-                    });
+            this.haveContent = calculateHaveContent(containersMap);
         }
+    }
+
+    private boolean calculateHaveContent(final Map<String, ContainerRaw> containersMap) {
+        return this.layout.getBody().getRows()
+                .stream()
+                .flatMap(row -> row.getColumns().stream())
+                .flatMap(column -> column.getContainers().stream())
+                .anyMatch(containerUUID -> {
+                    final ContainerRaw containerRaw = containersMap.get(containerUUID.getIdentifier());
+
+                    if (containerRaw != null) {
+                        final List<Map<String, Object>> contents = containerRaw.getContentlets().get(PageRenderUtil.CONTAINER_UUID_PREFIX + containerUUID.getUUID());
+                        return contents != null && contents.size() > 0;
+                    } else {
+                        return false;
+                    }
+                });
     }
 
     /**
