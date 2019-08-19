@@ -8,11 +8,11 @@ logURL="${BASE_GOOGLE_URL}${GOOGLE_STORAGE_JOB_FOLDER}/logs/dotcms.log"
 echo ""
 echo -e "\e[34m==========================================================================================================================\e[0m"
 echo -e "\e[34m==========================================================================================================================\e[0m"
-echo -e "\e[34m                                                REPORTING\e[0m"
+echo -e "\e[1;34m                                                REPORTING\e[0m"
 echo
-echo -e "\e[38;5;214m  ${reportsIndexURL}\e[0m"
+echo -e "\e[38;5;214m   >> ${reportsIndexURL}\e[0m"
 echo
-echo -e "\e[38;5;214m  ${logURL}\e[0m"
+echo -e "\e[38;5;214m   >> ${logURL}\e[0m"
 echo
 if [ "$TRAVIS_PULL_REQUEST" != "false" ];
 then
