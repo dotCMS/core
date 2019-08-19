@@ -163,7 +163,9 @@ public class KeyValueCacheImpl implements KeyValueCache {
             @SuppressWarnings("unchecked")
             final Map<Long, Map<String, Map<String, KeyValue>>> cachedValues = Map.class.cast(this.cache.get(key, BY_LANGUAGE_CONTENT_TYPE_LIVE_GROUP));
             keyValue = (null != cachedValues && cachedValues.containsKey(languageId))?
-                    cachedValues.get(languageId).get(contentTypeId).get(live) : null;
+                    cachedValues.get(languageId).get(contentTypeId) != null
+                            ? cachedValues.get(languageId).get(contentTypeId).get(live):null
+                    :null;
         } catch (DotCacheException e) {
             Logger.debug(this, String.format("Cache entry with key %s was not found.", key), e);
         }
