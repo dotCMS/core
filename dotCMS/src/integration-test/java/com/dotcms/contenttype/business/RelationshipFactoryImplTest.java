@@ -22,7 +22,6 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.factories.RelationshipCache;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import java.util.List;
-import org.junit.Before;
 import org.junit.Test;
 
 public class RelationshipFactoryImplTest extends ContentTypeBaseTest{
