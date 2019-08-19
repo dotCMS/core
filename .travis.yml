@@ -20,6 +20,7 @@ env:
 before_install:
   - chmod +x travis/environment_vars.sh
   - chmod +x travis/install_gcloud.sh
+  - chmod +x travis/printStoragePaths.sh
   - chmod +x travis/submit.sh
   - chmod +x travis/run.sh
 

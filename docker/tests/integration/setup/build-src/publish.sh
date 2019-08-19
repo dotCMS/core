@@ -3,10 +3,6 @@
 outputFolder="/custom/output"
 credentialsFile="/build/credentials.json"
 buckedProtocol="gs://"
-buckedBasePath="cicd-246518-tests/integration/"
-NOW=$(date +"%y-%m-%d")
-folderId="${NOW}/${BUILD_HASH}/${databaseType}"
-buckedPath="${buckedBasePath}${folderId}"
 
 # Do we have service account permissions
 if [ -z "${GOOGLE_CREDENTIALS_BASE64}" ]
@@ -40,11 +36,14 @@ fi
 echo $GOOGLE_CREDENTIALS_BASE64 | base64 -d - > $credentialsFile
 
 echo ""
-echo "  >>> Pushing reports and logs to [${buckedProtocol}${buckedPath}] <<<"
+echo "  >>> Pushing reports and logs to [${buckedProtocol}${GOOGLE_STORAGE_JOB_FOLDER}] <<<"
 echo ""
 
 gcloud auth activate-service-account --key-file="${credentialsFile}"
-gsutil -m -q cp -a public-read -r ${outputFolder} ${buckedProtocol}${buckedPath}
+gsutil -m -q cp -a public-read -r ${outputFolder} ${buckedProtocol}${GOOGLE_STORAGE_JOB_FOLDER}
 
-bash /build/github_status.sh ${buckedPath}
+bash /build/github_status.sh
+ignoring_return_value=$?
+
+bash /build/printStatus.sh
 ignoring_return_value=$?

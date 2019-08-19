@@ -1,6 +1,5 @@
 #! /bin/sh
 
-GOOGLE_STORAGE_JOB_FOLDER=$1
 GITHUB_STATUS="failure"
 if [ ${CURRENT_JOB_BUILD_STATUS} == 0 ]
 then
@@ -17,18 +16,18 @@ then
   reportsIndexURL="${BASE_GOOGLE_URL}${GOOGLE_STORAGE_JOB_FOLDER}/reports/html/integrationTest/index.html"
   logURL="${BASE_GOOGLE_URL}${GOOGLE_STORAGE_JOB_FOLDER}/logs/dotcms.log"
 
-  echo ""
-  echo "================================================================================"
-  echo "================================================================================"
-  echo "  >>>   Storage folder for job: [${GOOGLE_STORAGE_JOB_FOLDER}]"
-  echo "  >>>   Reports URL for job: [${reportsIndexURL}]"
-  echo "  >>>   Log URL for job: [${logURL}]"
-  echo "  >>>   GITHUB pull request: [https://github.com/dotCMS/core/pull/${PULL_REQUEST}]"
-  echo "  >>>   Job build status: ${CURRENT_JOB_BUILD_STATUS}"
-  echo "  >>>   GITHUB user: ${GITHUB_USER}/${GITHUB_USER_TOKEN}"
-  echo "================================================================================"
-  echo "================================================================================"
-  echo ""
+#  echo ""
+#  echo "================================================================================"
+#  echo "================================================================================"
+#  echo "  >>>   Storage folder for job: [${GOOGLE_STORAGE_JOB_FOLDER}]"
+#  echo "  >>>   Reports URL for job: [${reportsIndexURL}]"
+#  echo "  >>>   Log URL for job: [${logURL}]"
+#  echo "  >>>   GITHUB pull request: [https://github.com/dotCMS/core/pull/${PULL_REQUEST}]"
+#  echo "  >>>   Job build status: ${CURRENT_JOB_BUILD_STATUS}"
+#  echo "  >>>   GITHUB user: ${GITHUB_USER}/${GITHUB_USER_TOKEN}"
+#  echo "================================================================================"
+#  echo "================================================================================"
+#  echo ""
 
   jsonBaseValue="https://api.github.com/repos/dotCMS/core/statuses/"
   jsonAttribute="\"href\": \"${jsonBaseValue}"
