@@ -3,21 +3,23 @@ reportsIndexURL="${BASE_GOOGLE_URL}${GOOGLE_STORAGE_JOB_FOLDER}/reports/html/int
 logURL="${BASE_GOOGLE_URL}${GOOGLE_STORAGE_JOB_FOLDER}/logs/dotcms.log"
 
 echo ""
-echo "================================================================================="
-echo "================================================================================="
-echo "  Storage folder for job: [${GOOGLE_STORAGE_JOB_FOLDER}]"
-echo "  Reports URL for job: [${reportsIndexURL}]"
-echo "  Log URL for job: [${logURL}]"
+echo -e "\e[34m==========================================================================================================================\e[0m"
+echo -e "\e[34m==========================================================================================================================\e[0m"
+echo -e "\e[34m                                                REPORTING\e[0m"
+echo -e "\e[38;5;214m   ${reportsIndexURL}\e[0m"
+echo
+echo -e "\e[38;5;214m   ${logURL}\e[0m"
+echo
 if [ "$PULL_REQUEST" != "false" ];
 then
   echo "  GITHUB pull request: [https://github.com/dotCMS/core/pull/${PULL_REQUEST}]"
 fi
 if [ ${CURRENT_JOB_BUILD_STATUS} == 0 ]
 then
-  echo "            >>> Integration tests executed SUCCESSFULLY <<<"
+  echo "\e[32m            >>> Integration tests executed SUCCESSFULLY <<<\e[0m"
 else
-  echo "                  >>> Integration tests FAILED <<<"
+  echo "\e[31m                  >>> Integration tests FAILED <<<\e[0m"
 fi
-echo "================================================================================="
-echo "================================================================================="
+echo -e "\e[34m==========================================================================================================================\e[0m"
+echo -e "\e[34m==========================================================================================================================\e[0m"
 echo ""
