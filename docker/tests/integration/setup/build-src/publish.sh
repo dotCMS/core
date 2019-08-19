@@ -39,6 +39,13 @@ echo ""
 echo "  >>> Pushing reports and logs to [${buckedProtocol}${GOOGLE_STORAGE_JOB_FOLDER}] <<<"
 echo ""
 
+# Now we want to add the logs link at the end of index.html results report file
+logURL="https://storage.googleapis.com/${BASE_GOOGLE_URL}${GOOGLE_STORAGE_JOB_FOLDER}/logs/dotcms.log"
+logsLink="<h2 class=\"summaryGroup infoBox\" style=\"margin: 40px; padding: 15px;\"><a href=\"${logURL}\" target=\"_blank\">dotcms.log</a></h2>"
+echo "
+${logsLink}
+" >> ${outputFolder}/reports/html/integrationTest/index.html
+
 gcloud auth activate-service-account --key-file="${credentialsFile}"
 gsutil -m -q cp -a public-read -r ${outputFolder} ${buckedProtocol}${GOOGLE_STORAGE_JOB_FOLDER}
 
