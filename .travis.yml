@@ -39,7 +39,7 @@ jobs:
   include:
     - stage: build image
       script: bash travis/submit.sh
-    allow_failures:
+  allow_failures:
     - stage: unit tests
       script: bash travis/unit.sh
     - stage: integration tests
