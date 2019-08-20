@@ -39,6 +39,8 @@ jobs:
   include:
     - stage: build image
       script: bash travis/submit.sh
+    - stage: unit tests
+      script: bash travis/unit.sh
     - stage: integration tests
       env: DB_TYPE=postgres
       name: postgres
@@ -55,8 +57,6 @@ jobs:
       if: type != pull_request OR commit_message =~ travis
       env: DB_TYPE=mssql
       name: mssql
-    - stage: unit tests
-      script: bash travis/unit.sh
 
 install:
   - travis/environment_vars.sh
