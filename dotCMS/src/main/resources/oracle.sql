@@ -1083,7 +1083,7 @@ create table workflow_task (
    primary key (id)
 );
 
-create table content_type_workflow_action_mapping (
+create table workflow_action_mappings (
 
    id varchar2(36) not null primary key ,
    action varchar2(36) not null,
@@ -1091,7 +1091,7 @@ create table content_type_workflow_action_mapping (
    scheme_or_content_type  varchar2(255) not null
 );
 
-CREATE UNIQUE INDEX idx_content_type_workflow_action_mapping ON content_type_workflow_action_mapping (action, workflow_action, scheme_or_content_type);
+CREATE UNIQUE INDEX idx_workflow_action_mappings ON workflow_action_mappings (action, workflow_action, scheme_or_content_type);
 
 create table tag_inode (
    tag_id varchar2(100) not null,

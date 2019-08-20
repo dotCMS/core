@@ -1,5 +1,8 @@
 #!/bin/bash
 
+bash travis/printStoragePaths.sh
+ignoring_return_value=$?
+
 # Using this approach in order to avoid travis timeouts waithing for log movement
 
 function bell() {
