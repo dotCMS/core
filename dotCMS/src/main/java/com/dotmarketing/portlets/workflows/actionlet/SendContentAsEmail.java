@@ -1,32 +1,24 @@
 package com.dotmarketing.portlets.workflows.actionlet;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
-import java.util.TreeMap;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.velocity.VelocityContext;
 import org.apache.velocity.context.Context;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.contenttype.model.field.BinaryField;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.response.BaseResponse;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
-import com.dotmarketing.portlets.contentlet.transform.ContentletToMapTransformer;
-import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
-import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
@@ -43,20 +35,29 @@ import io.vavr.control.Try;
 public class SendContentAsEmail extends WorkFlowActionlet {
 
   private static final long serialVersionUID = 1L;
-
+  private static final  String FROM_EMAIL="fromEmail";
+  private static final  String FROM_NAME="fromName";
+  private static final  String TO_EMAIL="toEmail";
+  private static final  String BCC="BCC";
+  private static final  String EMAIL_SUBJECT="emailSubject";
+  private static final  String CONDITION="condition";
+  private static final  String EMAIL_TEMPLATE="emailTemplate";
+  
   @Override
   public List<WorkflowActionletParameter> getParameters() {
+    
+
+    
     List<WorkflowActionletParameter> params = new ArrayList<WorkflowActionletParameter>();
-
-    params.add(new WorkflowActionletParameter("fromEmail", "From Email", "$company.emailAddress", true));
-    params.add(new WorkflowActionletParameter("fromName", "From Name", "dotCMS", true));
-    params.add(new WorkflowActionletParameter("toEmail", "To Email", "${content.formEmail}", true));
-
-    params.add(new WorkflowActionletParameter("bcc", "Bcc Email", "", false));
-    params.add(new WorkflowActionletParameter("emailSubject", "Email Subject", "[dotCMS] new ${contentTypeName}", true));
-    params.add(new WorkflowActionletParameter("condition", "Condition - email will send unless<br>velocity prints 'false'", "", false));
-    params.add(new WorkflowActionletParameter("emailTemplate", "The email template to parse",
+    params.add(new WorkflowActionletParameter(FROM_EMAIL, "From Email", "$company.emailAddress", true));
+    params.add(new WorkflowActionletParameter(FROM_NAME, "From Name", "dotCMS", true));
+    params.add(new WorkflowActionletParameter(TO_EMAIL, "To Email", "${content.formEmail}", true));
+    params.add(new WorkflowActionletParameter(EMAIL_SUBJECT, "Email Subject", "[dotCMS] new ${contentTypeName}", true));
+    params.add(new WorkflowActionletParameter(EMAIL_TEMPLATE, "The email template to parse",
         "#dotParse('static/form/email-form-entry.vtl')", true));
+    
+    params.add(new WorkflowActionletParameter(CONDITION, "Condition - email will send unless<br>velocity prints 'false'", "", false));
+    params.add(new WorkflowActionletParameter(BCC, "Bcc Email", "", false));
 
     return params;
   }
@@ -76,25 +77,17 @@ public class SendContentAsEmail extends WorkFlowActionlet {
       throws WorkflowActionFailureException {
 
     final Contentlet contentlet = processor.getContentlet();
-    final Map<String, Object> valueMap = new TreeMap<>();
-    valueMap.putAll(Try.of(() -> ContentletUtil.getContentPrintableMap(APILocator.systemUser(), contentlet))
-        .getOrElseThrow(e -> new DotRuntimeException(e)));
+    final ContentType contentType = contentlet.getContentType();
     final Company company = APILocator.getCompanyAPI().getDefaultCompany();
     final Host host = resolveHost(contentlet);
-    HttpServletRequest requestProxy = resolveRequest(contentlet);
-    String ipAddress = Try.of(() -> DNSUtil.reverseDns(resolveIPAddress(valueMap))).getOrElse("n/a");
-    valueMap.put("ipAddress", ipAddress);
-    String toEmail = params.get("toEmail").getValue();
-    String fromEmail = params.get("fromEmail").getOrDefault(company.getEmailAddress());
-    String fromName = params.get("fromName").getOrDefault("dotCMS");
-    String emailSubject = params.get("emailSubject").getValue();
-    String condition = params.get("condition").getValue();
-    String emailTemplate = params.get("emailTemplate").getValue();
-    String bcc = params.get("bcc").getValue();
+    final HttpServletRequest requestProxy = resolveRequest(contentlet);
+    final HttpServletResponse responseProxy = new BaseResponse().response();
+    final String ipAddress = Try.of(() -> DNSUtil.reverseDns(resolveIPAddress(contentlet))).getOrElse("n/a");
+    
 
-    HttpServletResponse responseProxy = new BaseResponse().response();
     Context context = VelocityUtil.getWebContext(VelocityUtil.getBasicContext(), requestProxy, responseProxy);
     context.put("host", host);
+    context.put("ipAddress", ipAddress);
     context.put("host_id", host.getIdentifier());
     context.put("user", processor.getUser());
     context.put("company", APILocator.getCompanyAPI().getDefaultCompany());
@@ -118,49 +111,72 @@ public class SendContentAsEmail extends WorkFlowActionlet {
 
     context.put("contentlet", contentlet);
     context.put("content", contentlet);
-    context.put("map", valueMap);
+
 
     VelocityEval velocity = new VelocityEval(context);
+    
+    
 
-    condition = velocity.eval(condition);
+    final String toEmail = velocity.eval(params.get(TO_EMAIL).getValue());
+    final String fromEmail = velocity.eval(params.get(FROM_EMAIL).getOrDefault(company.getEmailAddress()));
+    final String fromName = velocity.eval(params.get(FROM_NAME).getOrDefault("dotCMS"));
+    final String emailSubject = velocity.eval(params.get(EMAIL_SUBJECT).getValue());
+    final String condition = velocity.eval(params.get(CONDITION).getValue());
+    final String emailTemplate = velocity.eval(params.get(EMAIL_TEMPLATE).getValue());
+    final String bcc = velocity.eval(params.get(BCC).getValue());
+
     if (UtilMethods.isSet(condition) && condition.indexOf("false") > -1) {
       Logger.info(this.getClass(), processor.getAction().getName() + " email condition contains false, skipping email send");
       return;
     }
 
-    toEmail = velocity.eval(toEmail);
-    fromEmail = velocity.eval(fromEmail);
-    fromName = velocity.eval(fromName);
-    emailSubject = velocity.eval(emailSubject);
-    emailTemplate = velocity.eval(emailTemplate);
 
-    Mailer mail = new Mailer();
+    final Mailer mail = new Mailer();
     mail.setToEmail(toEmail);
     mail.setFromEmail(fromEmail);
     mail.setFromName(fromName);
     mail.setSubject(emailSubject);
     mail.setHTMLAndTextBody(emailTemplate);
-
     if (UtilMethods.isSet(bcc)) {
-      bcc = velocity.eval(bcc);
       mail.setBcc(bcc);
     }
-    valueMap.entrySet().stream().filter(e -> e.getValue() instanceof File).forEach(e -> mail.addAttachment((File) e.getValue()));
+    
+    //send the binaries as attachments
+    contentType.fields()
+      .stream()
+      .filter(f -> f instanceof BinaryField)
+      .filter(f -> Try.of(()->contentlet.getBinary(f.variable())).getOrNull() !=null)
+      .forEach(f -> mail.addAttachment(Try.of(()->contentlet.getBinary(f.variable())).getOrNull()));
 
     mail.sendMessage();
   }
 
-  private String resolveIPAddress(final Map<String, Object> map) {
-    return (String) (getInsensitive(map, "ipaddress") != null ? getInsensitive(map, "ipaddress")
-        : getInsensitive(map, "ip") != null ? getInsensitive(map, "ip") : "n/a");
+  /**
+   * Best efforts to determine the ipAddress of the content 
+   * @param contentlet
+   * @return
+   */
+  private String resolveIPAddress(final Contentlet contentlet) {
+    return (String) (getInsensitive(contentlet, "ipaddress") != null ? getInsensitive(contentlet, "ipaddress")
+        : getInsensitive(contentlet, "ip") != null ? getInsensitive(contentlet, "ip") : "n/a");
   }
 
+  /**
+   * gets an HTTPRequest to use for velocity
+   * @param contentlet
+   * @return
+   */
   private HttpServletRequest resolveRequest(final Contentlet contentlet) {
 
     return (HttpServletRequestThreadLocal.INSTANCE.getRequest() != null) ? HttpServletRequestThreadLocal.INSTANCE.getRequest()
         : new MockHttpRequest(resolveHost(contentlet).getHostname(), null).request();
   }
 
+  /**
+   * Best efforts to determine the HOST of the content 
+   * @param contentlet
+   * @return
+   */
   private Host resolveHost(final Contentlet contentlet) {
     return Try
         .of(() -> Host.SYSTEM_HOST.equals(contentlet.getHost()) ? APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false)
@@ -168,17 +184,22 @@ public class SendContentAsEmail extends WorkFlowActionlet {
         .getOrElse(APILocator.systemHost());
   }
 
-  private String getInsensitive(final Map<String, Object> map, final String key) {
-    Optional<Entry<String, Object>> entry = map.entrySet().parallelStream().filter(e -> e.getKey().equalsIgnoreCase(key)).findAny();
+  /**
+   * returns the value from the content map regardless of case
+   * @param contentlet
+   * @param key
+   * @return
+   */
+  private String getInsensitive(final Contentlet contentlet, final String key) {
+    Optional<Entry<String, Object>> entry = contentlet.getMap().entrySet().parallelStream().filter(e -> e.getKey().equalsIgnoreCase(key)).findAny();
     return entry.isPresent() ? String.valueOf(entry.get().getValue()) : null;
 
   }
 
-  class VelocityEval {
+  private class VelocityEval {
     private final Context context;
 
     public VelocityEval(Context context) {
-      super();
       this.context = context;
     }
 
