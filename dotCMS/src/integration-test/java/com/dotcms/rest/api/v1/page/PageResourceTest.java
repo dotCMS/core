@@ -298,7 +298,7 @@ public class PageResourceTest {
                 .map((ContainerRaw containerRaw) -> containerRaw.getContainer().getIdentifier())
                 .collect(Collectors.toList());
 
-        assertTrue(pageView.haveContent());
+        assertEquals(pageView.getNumberContents(), 0);
         assertTrue(containerIds.contains(localContainer1.getIdentifier()));
         assertTrue(containerIds.contains(localContainer1.getIdentifier()));
         assertFalse(containerIds.contains(container1.getIdentifier()));
@@ -389,7 +389,7 @@ public class PageResourceTest {
         RestUtilTest.verifySuccessResponse(response);
 
         final PageView pageView = (PageView) ((ResponseEntityView) response.getEntity()).getEntity();
-        assertTrue(pageView.haveContent());
+        assertEquals(pageView.getNumberContents(), 1);
 
     }
 }

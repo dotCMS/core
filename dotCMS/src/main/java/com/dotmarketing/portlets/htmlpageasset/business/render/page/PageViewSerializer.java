@@ -44,7 +44,7 @@ public class PageViewSerializer extends JsonSerializer<PageView> {
         pageViewMap.put("site", pageView.getSite());
         pageViewMap.put("viewAs", pageView.getViewAs());
         pageViewMap.put("canCreateTemplate", pageView.canCreateTemplate());
-        pageViewMap.put("haveContent", pageView.haveContent());
+        pageViewMap.put("numberContents", pageView.getNumberContents());
 
         if (pageView.getLayout() != null) {
             pageViewMap.put("layout", pageView.getLayout());

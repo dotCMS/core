@@ -1,10 +1,7 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render.page;
 
 import java.io.Serializable;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import com.dotcms.rendering.velocity.services.PageRenderUtil;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
@@ -44,7 +41,7 @@ public class PageView implements Serializable {
     private final ViewAsPageStatus viewAs;
     private final boolean canCreateTemplate;
     private final boolean canEditTemplate;
-    private boolean haveContent = false;
+    private int numberContents = 0;
 
     /**
      * Creates an instance of this class.
@@ -77,25 +74,28 @@ public class PageView implements Serializable {
         final Map<String, ContainerRaw> containersMap = this.getContainersMap();
 
         if (this.layout != null) {
-            this.haveContent = calculateHaveContent(containersMap);
+            this.numberContents = getContentsNumber(containersMap);
         }
     }
 
-    private boolean calculateHaveContent(final Map<String, ContainerRaw> containersMap) {
-        return this.layout.getBody().getRows()
-                .stream()
-                .flatMap(row -> row.getColumns().stream())
-                .flatMap(column -> column.getContainers().stream())
-                .anyMatch(containerUUID -> {
-                    final ContainerRaw containerRaw = containersMap.get(containerUUID.getIdentifier());
+    private int getContentsNumber(final Map<String, ContainerRaw> containersMap) {
+        final Optional<Integer> optionalResult = this.layout.getBody().getRows()
+            .stream()
+            .flatMap(row -> row.getColumns().stream())
+            .flatMap(column -> column.getContainers().stream())
+            .map(containerUUID -> {
+                final ContainerRaw containerRaw = containersMap.get(containerUUID.getIdentifier());
 
-                    if (containerRaw != null) {
-                        final List<Map<String, Object>> contents = containerRaw.getContentlets().get(PageRenderUtil.CONTAINER_UUID_PREFIX + containerUUID.getUUID());
-                        return contents != null && contents.size() > 0;
-                    } else {
-                        return false;
-                    }
-                });
+                if (containerRaw != null) {
+                    final List<Map<String, Object>> contents = containerRaw.getContentlets().get(PageRenderUtil.CONTAINER_UUID_PREFIX + containerUUID.getUUID());
+                    return contents != null ? contents.size() : 0;
+                } else {
+                    return 0;
+                }
+            })
+            .reduce((value, accumulator) -> value + accumulator);
+
+        return optionalResult.isPresent() ? optionalResult.get() : 0;
     }
 
     /**
@@ -183,7 +183,7 @@ public class PageView implements Serializable {
         return canEditTemplate;
     }
 
-    public boolean haveContent() {
-        return haveContent;
+    public int getNumberContents() {
+        return numberContents;
     }
 }
