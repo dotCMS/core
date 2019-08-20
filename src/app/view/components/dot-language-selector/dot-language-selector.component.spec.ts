@@ -40,6 +40,13 @@ describe('DotLanguageSelectorComponent', () => {
         expect(component.languagesOptions).toEqual([decoratedLanguage]);
     });
 
+    it('should have right attributes on dropdown', () => {
+        const pDropDown: DebugElement = de.query(By.css('p-dropdown'));
+        expect(pDropDown.attributes.dataKey).toBe('id');
+        expect(pDropDown.attributes.optionLabel).toBe('language');
+        expect(pDropDown.attributes.tiny).toBeDefined();
+    });
+
     it('should emit the selected language', () => {
         const pDropDown: DebugElement = de.query(By.css('p-dropdown'));
 

@@ -37,7 +37,7 @@ export class DotLanguageSelectorComponent implements OnInit {
         this.selected.emit(language);
     }
 
-    private decorateLabels(languages: DotLanguage[]): any {
+    private decorateLabels(languages: DotLanguage[]): DotLanguage[] {
         return languages.map((language: DotLanguage) => {
             const countryCodeLabel = language.countryCode ? ` (${language.countryCode})` : '';
             return { ...language, language: `${language.language}${countryCodeLabel}` };
