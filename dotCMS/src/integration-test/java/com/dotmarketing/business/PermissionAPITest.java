@@ -1,5 +1,9 @@
 package com.dotmarketing.business;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
@@ -35,14 +39,15 @@ import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.ejb.UserTestUtil;
 import com.liferay.portal.model.User;
+import java.io.FileWriter;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import java.io.FileWriter;
-import java.util.*;
-
-import static org.junit.Assert.*;
 
 /**
  * This class tests the creation, copy, update, verification and setting of
@@ -399,6 +404,7 @@ public class PermissionAPITest extends IntegrationTestBase {
             mm.put("individual",Integer.toString(PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE));
             new RoleAjax().saveRolePermission(nrole.getId(), hh.getIdentifier(), mm, false);
 
+            permissionAPI.resetPermissionsUnder(hh);
             assertTrue(permissionAPI.findParentPermissionable(f4).equals(hh));
             assertTrue(permissionAPI.findParentPermissionable(f3).equals(hh));
             assertTrue(permissionAPI.findParentPermissionable(f2).equals(hh));
@@ -465,10 +471,12 @@ public class PermissionAPITest extends IntegrationTestBase {
             cont1=APILocator.getContentletAPI().checkin(cont1, sysuser, false);
 
             permissionAPI.permissionIndividually(permissionAPI.findParentPermissionable(f1), f1, sysuser);
+            permissionAPI.resetPermissionsUnder(f2);
             assertTrue(permissionAPI.findParentPermissionable(cont1).equals(f1));
 
             permissionAPI.permissionIndividually(permissionAPI.findParentPermissionable(f2), f2, sysuser);
             CacheLocator.getPermissionCache().clearCache();
+            permissionAPI.resetPermissionsUnder(f2);
             assertTrue(permissionAPI.findParentPermissionable(cont1).equals(f2));
         }
         finally {
