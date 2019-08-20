@@ -7,13 +7,23 @@ then
 fi
 
 # Examples
-# https://storage.googleapis.com/cicd-246518-tests/integration/19-08-13/0253ef83cdfecf5c370fd59ebf80491551b4e0a0/mysql/reports/html/integrationTest/index.html
-# https://storage.googleapis.com/cicd-246518-tests/integration/19-08-13/0253ef83cdfecf5c370fd59ebf80491551b4e0a0/mysql/logs/dotcms.log
+# https://storage.googleapis.com/cicd-246518-tests/19-08-13/0253ef83cdfecf5c370fd59ebf80491551b4e0a0/integration/mysql/reports/html/integrationTest/index.html
+# https://storage.googleapis.com/cicd-246518-tests/19-08-13/0253ef83cdfecf5c370fd59ebf80491551b4e0a0/integration/mysql/logs/dotcms.log
+# https://storage.googleapis.com/cicd-246518-tests/19-08-13/0253ef83cdfecf5c370fd59ebf80491551b4e0a0/unit/reports/html/index.html
+# https://storage.googleapis.com/cicd-246518-tests/19-08-13/0253ef83cdfecf5c370fd59ebf80491551b4e0a0/unit/logs/dotcms.log
 if [ "$PULL_REQUEST" != "false" ];
 then
 
   BASE_GOOGLE_URL="https://storage.googleapis.com/"
-  reportsIndexURL="${BASE_GOOGLE_URL}${GOOGLE_STORAGE_JOB_FOLDER}/reports/html/integrationTest/index.html"
+
+  if [[ "${TEST_TYPE}" == "unit"  ]]; then
+    reportsIndexURL="${BASE_GOOGLE_URL}${GOOGLE_STORAGE_JOB_FOLDER}/reports/html/index.html"
+    statusesContext="Travis CI - [Unit tests]"
+  else
+    reportsIndexURL="${BASE_GOOGLE_URL}${GOOGLE_STORAGE_JOB_FOLDER}/reports/html/integrationTest/index.html"
+    statusesContext="Travis CI - [${databaseType}]"
+  fi
+
   logURL="${BASE_GOOGLE_URL}${GOOGLE_STORAGE_JOB_FOLDER}/logs/dotcms.log"
 
 #  echo ""
@@ -52,7 +62,7 @@ then
     \"state\": \"${GITHUB_STATUS}\",
     \"description\": \"Log: ${logURL}\",
     \"target_url\": \"${reportsIndexURL}\",
-    \"context\": \"Travis CI - [${databaseType}]\"
+    \"context\": \"${statusesContext}\"
   }" \
   $statusesURL -s
 fi

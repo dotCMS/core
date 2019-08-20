@@ -15,7 +15,7 @@ services:
       databaseType:
       EXTRA_PARAMS:
       GOOGLE_CREDENTIALS_BASE64:
-      exportReports:
+      EXPORT_REPORTS:
       PULL_REQUEST:
       GITHUB_USER:
       GITHUB_USER_TOKEN:
