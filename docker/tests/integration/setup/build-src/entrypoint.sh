@@ -34,6 +34,9 @@ if [[ "${1}" == "dotcms" || -z "${1}" ]]; then
         export databaseType=postgres
     fi
 
+    NOW=$(date +"%y-%m-%d")
+    export GOOGLE_STORAGE_JOB_FOLDER="cicd-246518-tests/integration/${NOW}/${BUILD_HASH}/${databaseType}"
+
     echo ""
     echo "================================================================================"
     echo "================================================================================"
@@ -42,6 +45,7 @@ if [[ "${1}" == "dotcms" || -z "${1}" ]]; then
     echo "  >>>   BUILD FROM: ${BUILD_FROM}"
     echo "  >>>   BUILD ID: ${BUILD_ID}"
     echo "  >>>   GIT HASH: ${BUILD_HASH}"
+    echo "  >>>   GOOGLE_STORAGE_JOB_FOLDER: ${GOOGLE_STORAGE_JOB_FOLDER}"
     echo "================================================================================"
     echo "================================================================================"
     echo ""
