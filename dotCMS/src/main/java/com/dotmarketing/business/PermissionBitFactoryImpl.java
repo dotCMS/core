@@ -1001,34 +1001,24 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	}
 
 	@Override
-	protected List<Permission> getPermissions(Permissionable permissionable, boolean bitPermissions, boolean onlyIndividualPermissions, boolean forceLoadFromDB) throws DotDataException {
-
+	protected List<Permission> getPermissions(Permissionable permissionable, boolean bitPermissions,
+			boolean onlyIndividualPermissions, boolean forceLoadFromDB) throws DotDataException {
 
 		if (!InodeUtils.isSet(permissionable.getPermissionId())) {
-		    return new ArrayList<>();
+			return new ArrayList<>();
 		}
 
 		List<Permission> bitPermissionsList = null;
 
-		if(forceLoadFromDB) {
-		     /*
-			bitPermissionsList = permissionCache
-					.getPermissionsFromCache(permissionable.getPermissionId());
-		      */
-			permissionCache.remove(permissionable.getPermissionId());
-		}
+		bitPermissionsList = loadPermissions(permissionable, forceLoadFromDB);
+		bitPermissionsList = filterOnlyNonInheritablePermissions(bitPermissionsList,
+				permissionable.getPermissionId());
 
-		//No permissions in cache have to look for individual permissions or inherited permissions
-		//if (bitPermissionsList == null) {
-
-				bitPermissionsList = loadPermissions(permissionable);
-		//}
-		bitPermissionsList = filterOnlyNonInheritablePermissions(bitPermissionsList, permissionable.getPermissionId());
-
-		if(!bitPermissions) {
+		if (!bitPermissions) {
 			bitPermissionsList = convertToNonBitPermissions(bitPermissionsList);
 		}
-		return onlyIndividualPermissions?filterOnlyIndividualPermissions(bitPermissionsList, permissionable.getPermissionId()):bitPermissionsList;
+		return onlyIndividualPermissions ? filterOnlyIndividualPermissions(bitPermissionsList,
+				permissionable.getPermissionId()) : bitPermissionsList;
 	}
 
 	@Override
