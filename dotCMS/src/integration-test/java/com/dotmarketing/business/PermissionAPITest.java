@@ -404,7 +404,6 @@ public class PermissionAPITest extends IntegrationTestBase {
             mm.put("individual",Integer.toString(PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE));
             new RoleAjax().saveRolePermission(nrole.getId(), hh.getIdentifier(), mm, false);
 
-            permissionAPI.resetPermissionsUnder(hh);
             assertTrue(permissionAPI.findParentPermissionable(f4).equals(hh));
             assertTrue(permissionAPI.findParentPermissionable(f3).equals(hh));
             assertTrue(permissionAPI.findParentPermissionable(f2).equals(hh));
@@ -471,12 +470,10 @@ public class PermissionAPITest extends IntegrationTestBase {
             cont1=APILocator.getContentletAPI().checkin(cont1, sysuser, false);
 
             permissionAPI.permissionIndividually(permissionAPI.findParentPermissionable(f1), f1, sysuser);
-            permissionAPI.resetPermissionsUnder(f2);
             assertTrue(permissionAPI.findParentPermissionable(cont1).equals(f1));
 
             permissionAPI.permissionIndividually(permissionAPI.findParentPermissionable(f2), f2, sysuser);
             CacheLocator.getPermissionCache().clearCache();
-            permissionAPI.resetPermissionsUnder(f2);
             assertTrue(permissionAPI.findParentPermissionable(cont1).equals(f2));
         }
         finally {

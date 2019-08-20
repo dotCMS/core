@@ -1001,34 +1001,24 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	}
 
 	@Override
-	protected List<Permission> getPermissions(Permissionable permissionable, boolean bitPermissions, boolean onlyIndividualPermissions, boolean forceLoadFromDB) throws DotDataException {
-
+	protected List<Permission> getPermissions(Permissionable permissionable, boolean bitPermissions,
+			boolean onlyIndividualPermissions, boolean forceLoadFromDB) throws DotDataException {
 
 		if (!InodeUtils.isSet(permissionable.getPermissionId())) {
-		    return new ArrayList<>();
+			return new ArrayList<>();
 		}
 
 		List<Permission> bitPermissionsList = null;
 
-		if(forceLoadFromDB) {
-		     /*
-			bitPermissionsList = permissionCache
-					.getPermissionsFromCache(permissionable.getPermissionId());
-		      */
-			permissionCache.remove(permissionable.getPermissionId());
-		}
+		bitPermissionsList = loadPermissions(permissionable, forceLoadFromDB);
+		bitPermissionsList = filterOnlyNonInheritablePermissions(bitPermissionsList,
+				permissionable.getPermissionId());
 
-		//No permissions in cache have to look for individual permissions or inherited permissions
-		//if (bitPermissionsList == null) {
-
-				bitPermissionsList = loadPermissions(permissionable);
-		//}
-		bitPermissionsList = filterOnlyNonInheritablePermissions(bitPermissionsList, permissionable.getPermissionId());
-
-		if(!bitPermissions) {
+		if (!bitPermissions) {
 			bitPermissionsList = convertToNonBitPermissions(bitPermissionsList);
 		}
-		return onlyIndividualPermissions?filterOnlyIndividualPermissions(bitPermissionsList, permissionable.getPermissionId()):bitPermissionsList;
+		return onlyIndividualPermissions ? filterOnlyIndividualPermissions(bitPermissionsList,
+				permissionable.getPermissionId()) : bitPermissionsList;
 	}
 
 	@Override
@@ -1090,7 +1080,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		        ran06=false,ran07=false,ran08=false,ran09=false,ran10=false;
 
 		final List<Map<String, Object>> idsToClear = new ArrayList<>();
-		final List<Permission> permissions = filterOnlyInheritablePermissions(loadPermissions(permissionable), parentPermissionableId);
+		final List<Permission> permissions = filterOnlyInheritablePermissions(loadPermissions(permissionable, true), parentPermissionableId);
 		for(final Permission p : permissions) {
 
 			if (isHost || isFolder) {
@@ -1467,7 +1457,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		whileLoop: while(parentPermissionable != null) {
 			defaultReplacement = parentPermissionable;
 			String parentPermissionableId = parentPermissionable.getPermissionId();
-			List<Permission> permissions = filterOnlyInheritablePermissions(loadPermissions(parentPermissionable), parentPermissionableId);
+			final List<Permission> permissions = filterOnlyInheritablePermissions(loadPermissions(parentPermissionable, true), parentPermissionableId);
 			for(Permission p : permissions) {
 				if(typesToLookFor.contains(p.getType())) {
 					referenceReplacement.put(p.getType(), p.getInode());
@@ -1612,9 +1602,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		boolean updateReferencesOnAdd = false;
 		boolean removePermissionableReference = false;
 		boolean clearReferencesCache = false;
-
-		List<Permission> currentPermissions = filterAssetOnlyPermissions(loadPermissions(permissionable), permissionable.getPermissionId());
-
+		final List<Permission> currentPermissions = filterAssetOnlyPermissions(loadPermissions(permissionable, true), permissionable.getPermissionId());
 		for(Permission cp : currentPermissions) {
             if(containsPermission(permissions, cp)) {
             	deletePermission(cp);
@@ -2138,6 +2126,15 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			Logger.debug(this.getClass(), cause);
 		}
 	}
+
+  @CloseDBIfOpened
+  @SuppressWarnings("unchecked")
+  private List<Permission> loadPermissions(final Permissionable permissionable, final boolean forceDB) throws DotDataException {
+     	if(forceDB){
+     	   permissionCache.remove(permissionable.getPermissionId());
+     	}
+     	return loadPermissions(permissionable);
+  }
 
   @CloseDBIfOpened
   @SuppressWarnings("unchecked")
