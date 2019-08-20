@@ -8,6 +8,7 @@ services:
 
   unit-tests:
     image: "${IMAGE_BASE_NAME}"
+    command: ["unit"]
     environment:
       EXTRA_PARAMS:
       GOOGLE_CREDENTIALS_BASE64:
