@@ -31,13 +31,13 @@ public class MenuLinkFactoryImpl implements MenuLinkFactory {
 
 	
 	@Override
-	public Link load(String inode) throws DotHibernateException{
+	public Link load(String inode) throws DotDataException {
 		
-		HibernateUtil dh = new HibernateUtil(Link.class);
-
-		return (Link) dh.load(inode);
-		
-		
+		final DotConnect dc = new DotConnect();
+		dc.setSQL("select * from links join inode on links.inode = inode.inode where links.inode = ?");
+		dc.addParam(inode);
+		final List<Map<String, Object>> results = dc.loadObjectResults();
+		return TransformerLocator.createLinkTransformer(results).asList().get(0);
 	}
 	
 	public void save(Link menuLink) throws DotDataException, DotStateException, DotSecurityException {
