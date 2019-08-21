@@ -256,7 +256,7 @@ public class PageResource {
             PageMode mode)
     {
 
-        if (mode == null || mode == PageMode.PREVIEW_MODE){
+        if (mode == null){
             if (deviceInode != null) {
                 request.getSession().setAttribute(WebKeys.CURRENT_DEVICE, deviceInode);
             } else {
