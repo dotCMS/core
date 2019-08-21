@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -139,7 +140,7 @@ public class TagResourceIntegrationTest extends IntegrationTestBase {
 
             final TagResource tagResource = new TagResource(tagAPI, webResource);
             final Map<String, RestTag> returnedTags =
-                    tagResource.list(request, testCase.getTagName(), testCase.getSiteOrFolderId());
+                    tagResource.list(request,new MockHttpResponse(), testCase.getTagName(), testCase.getSiteOrFolderId());
 
             final List<String> returnedTagsNames = returnedTags.values().stream()
                     .map((tag) -> tag.label).collect(Collectors.toList());

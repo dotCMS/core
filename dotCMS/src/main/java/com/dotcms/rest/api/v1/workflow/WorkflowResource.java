@@ -5,6 +5,7 @@ import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
+import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONArray;
@@ -43,6 +44,7 @@ import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
 import com.dotmarketing.portlets.workflows.util.WorkflowSchemeImportExportObject;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
@@ -1220,8 +1222,12 @@ public class WorkflowResource {
                                               @DefaultValue("-1") @QueryParam("language")         final long   language,
                                               final FormDataMultiPart multipart) {
 
-        final InitDataObject initDataObject = this.webResource.init
-                (null, request, response, true, null);
+      final InitDataObject initDataObject = new WebResource.InitBuilder()
+          .allowBackendUser(true)
+          .allowFrontendUser(true)
+          .requestAndResponse(request, new MockHttpResponse())
+          .requiredAnonAccess(AnonymousAccess.WRITE)
+          .init();
         String actionId = null;
 
         try {
@@ -1271,8 +1277,12 @@ public class WorkflowResource {
                                      @DefaultValue("-1") @QueryParam("language") final long   language,
                                      final FireActionByNameForm fireActionForm) {
 
-        final InitDataObject initDataObject = this.webResource.init
-                (null, true, request, true, null);
+        final InitDataObject initDataObject = new WebResource.InitBuilder()
+          .allowBackendUser(true)
+          .allowFrontendUser(true)
+          .requestAndResponse(request, new MockHttpResponse())
+          .requiredAnonAccess(AnonymousAccess.WRITE)
+          .init();
         String actionId = null;
 
         try {
@@ -1385,9 +1395,13 @@ public class WorkflowResource {
                                      @PathParam("systemAction") final WorkflowAPI.SystemAction systemAction,
                                      final FireActionForm fireActionForm) {
 
-        final InitDataObject initDataObject = this.webResource.init
-                (null, request, response, true, null);
-
+          final InitDataObject initDataObject = new WebResource.InitBuilder()
+          .allowBackendUser(true)
+          .allowFrontendUser(true)
+          .requestAndResponse(request, response)
+          .requiredAnonAccess(AnonymousAccess.WRITE)
+          .init();
+      
         try {
 
             Logger.debug(this, ()-> "On Fire Action: systemAction = " + systemAction + ", inode = " + inode +
@@ -1775,7 +1789,7 @@ public class WorkflowResource {
 
             DotPreconditions.notNull(currentContentlet, ()-> "contentlet-was-not-found", DoesNotExistException.class);
 
-            contentlet = createContentlet(fireActionForm, initDataObject, currentContentlet);
+            contentlet = createContentlet(fireActionForm, initDataObject, currentContentlet,mode);
         } else if (UtilMethods.isSet(identifier)) {
 
             Logger.debug(this, ()-> "Fire Action, looking for content by identifier: " + identifier
@@ -1788,13 +1802,13 @@ public class WorkflowResource {
 
             DotPreconditions.isTrue(currentContentlet.isPresent(), ()-> "contentlet-was-not-found", DoesNotExistException.class);
 
-            contentlet = createContentlet(fireActionForm, initDataObject, currentContentlet.get());
+            contentlet = createContentlet(fireActionForm, initDataObject, currentContentlet.get(),mode);
         } else {
 
             //otherwise the information must be grabbed from the request body.
             Logger.debug(this, ()-> "Fire Action, creating a new contentlet");
             DotPreconditions.notNull(fireActionForm, ()-> "When no inode is sent the info on the Request body becomes mandatory.");
-            contentlet = this.populateContentlet(fireActionForm, initDataObject.getUser());
+            contentlet = this.populateContentlet(fireActionForm, initDataObject.getUser(), mode);
         }
 
         return contentlet;
@@ -1804,14 +1818,14 @@ public class WorkflowResource {
 
     private Contentlet createContentlet(final FireActionForm fireActionForm,
                                         final InitDataObject initDataObject,
-                                        final Contentlet currentContentlet) throws DotSecurityException {
+                                        final Contentlet currentContentlet,final PageMode mode) throws DotSecurityException {
 
         Contentlet contentlet = new Contentlet();
         contentlet.getMap().putAll(currentContentlet.getMap());
 
         if (null != fireActionForm && null != fireActionForm.getContentletFormData() && null != contentlet) {
 
-            contentlet = this.populateContentlet(fireActionForm, contentlet, initDataObject.getUser());
+            contentlet = this.populateContentlet(fireActionForm, contentlet, initDataObject.getUser(),mode);
         }
         return contentlet;
     }
@@ -1823,10 +1837,10 @@ public class WorkflowResource {
      * @return Contentlet
      * @throws DotSecurityException
      */
-    private Contentlet populateContentlet(final FireActionForm fireActionForm, final User user)
+    private Contentlet populateContentlet(final FireActionForm fireActionForm, final User user,final PageMode mode)
             throws DotSecurityException {
 
-        return this.populateContentlet(fireActionForm, new Contentlet(), user);
+        return this.populateContentlet(fireActionForm, new Contentlet(), user,mode);
     } // populateContentlet.
 
     /**
@@ -1837,7 +1851,7 @@ public class WorkflowResource {
      * @return Contentlet
      * @throws DotSecurityException
      */
-    private Contentlet populateContentlet(final FireActionForm fireActionForm, final Contentlet contentletInput, final User user)
+    private Contentlet populateContentlet(final FireActionForm fireActionForm, final Contentlet contentletInput, final User user,final PageMode mode)
             throws DotSecurityException {
 
         final Contentlet contentlet = this.contentHelper.populateContentletFromMap
@@ -1864,7 +1878,7 @@ public class WorkflowResource {
 
         try {
             if (!this.permissionAPI.doesUserHavePermission(contentlet.getContentType(),
-                    PermissionAPI.PERMISSION_READ, user, false)) {
+                    PermissionAPI.PERMISSION_READ, user, mode.respectAnonPerms)) {
                 throw new DotSecurityException(errorMessageSupplier.get());
             }
         } catch (DotDataException e) {

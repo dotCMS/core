@@ -244,8 +244,8 @@ public class FieldUtil {
 
         final long languageId = contentTypeInternationalization.getLanguageId();
         final boolean live = contentTypeInternationalization.isLive();
-        final User user = contentTypeInternationalization.getUser();
-
+        final User user = APILocator.systemUser();
+        
         for (final String propertyName : fieldMap.keySet()) {
             final String key = String.format("%s.%s.%s", contentType.variable(), fieldMap.get("variable"), propertyName);
             final String i18nValue = APILocator.getLanguageVariableAPI().getLanguageVariable(
