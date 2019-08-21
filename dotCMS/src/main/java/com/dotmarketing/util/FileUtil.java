@@ -97,6 +97,7 @@ public class FileUtil {
    * @return
    */
   public static String sanitizeFileName(final String badFileName) {
+    Arrays.sort(illegalChars);
     StringBuilder cleanName = new StringBuilder();
     int len = badFileName.codePointCount(0, badFileName.length());
     for (int i = 0; i < len; i++) {

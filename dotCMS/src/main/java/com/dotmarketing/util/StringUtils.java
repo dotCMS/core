@@ -304,4 +304,14 @@ public class StringUtils {
 
         return loweredString.toString();
     }
+    
+    
+    
+    public static String sanitizeFileName(final String fileName) {
+      return FileUtil.sanitizeFileName(fileName);
+      
+    }
+    
+    
+    
 }
