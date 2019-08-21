@@ -1,0 +1,26 @@
+@import "variables";
+@import "primeng-theme/utils/theme-variables";
+@import "primeng-theme/utils/extends";
+
+:host {
+    display: flex;
+    align-items: center;
+
+    &::ng-deep {
+        .ui-dropdown {
+            box-shadow: none;
+        }
+    }
+}
+
+dot-icon {
+    margin-right: $basic-padding;
+}
+
+label {
+    @extend #edit-page-selector-label;
+}
+
+.device-selector__field {
+    @extend #edit-page-selector-field;
+}

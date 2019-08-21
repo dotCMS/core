@@ -12,8 +12,7 @@ import { Component, Input } from '@angular/core';
     templateUrl: './dot-icon.component.html'
 })
 export class DotIconComponent {
-    @Input()
-    name: string;
+    @Input() name: string;
 
     constructor() {}
 }

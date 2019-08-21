@@ -9,14 +9,13 @@
     [optionsWidth]="448"
     [rows]="paginationPerPage"
     [totalRecords]="paginationService.totalRecords"
-    cssClass="dot-persona-selector"
     labelPropertyName="name"
 >
     <ng-template let-persona="item" pTemplate="select">
         <dot-persona-selected-item
             [isEditMode]="isEditMode"
             [persona]="persona"
-            (selected)="searchableDropdown.toggleOverlayPanel($event)"
+            (click)="searchableDropdown.toggleOverlayPanel($event)"
         ></dot-persona-selected-item>
     </ng-template>
     <ng-template let-personaData="item" pTemplate="listItem">

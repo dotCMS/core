@@ -1,10 +1,17 @@
-<p-dropdown
-    tiny
-    (onChange)="change($event.value)"
-    [(ngModel)]="value"
-    [options]="options"
-    [style]="{'width': '100px'}"
-    dataKey="inode"
-    optionLabel="name"
-    [disabled]="!options || options.length === 1">
-</p-dropdown>
+<dot-icon name="devices" big></dot-icon>
+
+<div class="device-selector__field">
+    <label for="device-selector">{{ label }}</label>
+    <p-dropdown
+        (onChange)="change($event.value)"
+        [(ngModel)]="value"
+        [disabled]="!options || options.length === 1"
+        [options]="options"
+        [style]="{ width: '120px' }"
+        dataKey="inode"
+        id="device-selector"
+        optionLabel="name"
+        tiny
+    >
+    </p-dropdown>
+</div>

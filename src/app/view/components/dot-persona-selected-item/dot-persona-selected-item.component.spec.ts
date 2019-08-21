@@ -8,7 +8,7 @@ import { DotAvatarModule } from '@components/_common/dot-avatar/dot-avatar.modul
 import { By } from '@angular/platform-browser';
 import { mockDotPersona } from '@tests/dot-persona.mock';
 
-describe('DotPersonaDropdownSelectorComponent', () => {
+describe('DotPersonaSelectedItemComponent', () => {
 
     let component: DotPersonaSelectedItemComponent;
     let fixture: ComponentFixture<DotPersonaSelectedItemComponent>;
@@ -40,13 +40,5 @@ describe('DotPersonaDropdownSelectorComponent', () => {
         const name = de.query(By.css('.dot-persona-selector__name')).nativeElement;
         expect(label.innerText).toBe('Titulo');
         expect(name.innerText).toBe('Global Investor');
-    });
-
-    it('should emit event when selected clicked', () => {
-        spyOn(component.selected, 'emit');
-        de.triggerEventHandler('click', {
-            stopPropagation: () => {}
-        });
-        expect(component.selected.emit).toHaveBeenCalled();
     });
 });

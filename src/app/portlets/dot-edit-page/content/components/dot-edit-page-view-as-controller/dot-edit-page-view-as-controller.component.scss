@@ -2,10 +2,9 @@
 
 :host {
     display: flex;
-    align-items: center;
 
     & > * {
-        margin-left: $basic-padding * 2;
+        margin-left: $basic-padding * 6;
 
         &:first-child {
             margin-left: 0;
@@ -35,7 +34,9 @@
 }
 
 .device-info {
+    align-items: center;
     border-right: solid 1px $gray;
+    display: flex;
     margin-right: $basic-padding;
     padding-right: $basic-padding * 2;
     white-space: nowrap;

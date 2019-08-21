@@ -3,6 +3,10 @@
     padding: $basic-padding;
 }
 
+p-dropdown {
+    display: block;
+}
+
 .ui-dropdown {
     @extend #inputtext-normal-border;
     border-radius: 0;

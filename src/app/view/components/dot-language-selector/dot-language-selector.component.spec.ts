@@ -8,6 +8,13 @@ import { DebugElement } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { mockDotLanguage } from '../../../test/dot-language.mock';
 import { Dropdown } from 'primeng/primeng';
+import { MockDotMessageService } from '@tests/dot-message-service.mock';
+import { DotMessageService } from '@services/dot-messages-service';
+import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
+
+const messageServiceMock = new MockDotMessageService({
+    'editpage.viewas.label.language': 'Language'
+});
 
 describe('DotLanguageSelectorComponent', () => {
     let component: DotLanguageSelectorComponent;
@@ -17,8 +24,12 @@ describe('DotLanguageSelectorComponent', () => {
     beforeEach(() => {
         DOTTestBed.configureTestingModule({
             declarations: [DotLanguageSelectorComponent],
-            imports: [BrowserAnimationsModule],
+            imports: [BrowserAnimationsModule, DotIconModule],
             providers: [
+                {
+                    provide: DotMessageService,
+                    useValue: messageServiceMock
+                },
                 {
                     provide: DotLanguagesService,
                     useClass: DotLanguagesServiceMock
@@ -29,6 +40,19 @@ describe('DotLanguageSelectorComponent', () => {
         fixture = DOTTestBed.createComponent(DotLanguageSelectorComponent);
         component = fixture.componentInstance;
         de = fixture.debugElement;
+    });
+
+    it('should have icon', () => {
+        fixture.detectChanges();
+        const icon = de.query(By.css('dot-icon'));
+        expect(icon.attributes.name).toBe('language');
+        expect(icon.attributes.big).toBeDefined();
+    });
+
+    it('should have label', () => {
+        fixture.detectChanges();
+        const label = de.query(By.css('label')).nativeElement;
+        expect(label.textContent).toBe('Language');
     });
 
     it('should load languages in the dropdown', () => {
@@ -62,6 +86,6 @@ describe('DotLanguageSelectorComponent', () => {
     it('shoudl set fixed width to dropdown', () => {
         fixture.detectChanges();
         const pDropDown: Dropdown = de.query(By.css('p-dropdown')).componentInstance;
-        expect(pDropDown.style).toEqual({ width: '100px' });
+        expect(pDropDown.style).toEqual({ width: '120px' });
     });
 });

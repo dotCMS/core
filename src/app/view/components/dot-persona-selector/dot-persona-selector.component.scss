@@ -1,5 +1,6 @@
 @import "variables";
 
-::ng-deep .dot-persona-selector {
-    margin-top: $basic-padding;
+:host {
+    display: flex;
+    align-items: center;
 }

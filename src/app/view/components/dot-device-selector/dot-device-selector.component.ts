@@ -10,12 +10,11 @@ import { map, take, flatMap, filter, toArray } from 'rxjs/operators';
     styleUrls: ['./dot-device-selector.component.scss']
 })
 export class DotDeviceSelectorComponent implements OnInit {
-    @Input()
-    value: DotDevice;
-    @Output()
-    selected = new EventEmitter<DotDevice>();
+    @Input() value: DotDevice;
+    @Output() selected = new EventEmitter<DotDevice>();
 
     options: DotDevice[];
+    label = '';
 
     constructor(
         private dotDevicesService: DotDevicesService,
@@ -24,9 +23,10 @@ export class DotDeviceSelectorComponent implements OnInit {
 
     ngOnInit() {
         this.dotMessageService
-            .getMessages(['editpage.viewas.default.device'])
+            .getMessages(['editpage.viewas.default.device', 'editpage.viewas.label.device'])
             .pipe(take(1))
-            .subscribe(() => {
+            .subscribe((messages: {[key: string]: string}) => {
+                this.label = messages['editpage.viewas.label.device']
                 this.dotDevicesService
                     .get()
                     .pipe(

@@ -2,55 +2,52 @@
 @import "mixins";
 
 :host {
-    display: block;
+    width: 200px;
+    position: relative;
+    display: flex;
+    cursor: pointer;
+    align-items: center;
 
-    .dot-persona-selector__container {
-        align-items: center;
-        cursor: pointer;
-        display: flex;
-        position: relative;
-        width: 206px;
+    dot-icon {
+        bottom: 0;
+        position: absolute;
+        right: 0;
+    }
 
-        dot-avatar {
-            margin-right: $basic-padding;
-        }
-
-        .dot-persona-selector__label-container {
-            @include truncate-text;
-
-            span {
-                display: block;
-            }
-
-            .dot-persona-selector__label {
-                color: $gray;
-                flex: 1;
-                font-size: $font-size-small;
-                line-height: $basic-padding * 2;
-            }
-
-            .dot-persona-selector__label--edit {
-                color: $brand-primary
-            }
-
-            .dot-persona-selector__name {
-                color: $black;
-                font-weight: $font-weight-semi-bold;
-                line-height: $basic-padding * 2;
-                margin-right: $basic-padding * 3;
-                @include truncate-text;
-            }
-        }
-
-        dot-icon {
-            bottom: 0;
-            position: absolute;
-            right: 0;
-
-            i.material-icons {
-                color: $gray;
-                font-size: $md-icon-size-big;
-            }
+    &::ng-deep {
+        .material-icons {
+            color: $gray;
+            transform: scale(1.2);
         }
     }
+}
+
+dot-avatar {
+    margin-right: $basic-padding;
+}
+
+.dot-persona-selector__label-container {
+    @include truncate-text;
+
+    span {
+        display: block;
+    }
+}
+
+.dot-persona-selector__label {
+    color: $gray;
+    font-size: $font-size-small;
+    line-height: $basic-padding * 2;
+}
+
+.dot-persona-selector__label--edit {
+    color: $brand-primary;
+}
+
+.dot-persona-selector__name {
+    color: $black;
+    font-weight: $font-weight-semi-bold;
+    line-height: $basic-padding * 2;
+    margin-right: $basic-padding * 2;
+    @include truncate-text;
 }

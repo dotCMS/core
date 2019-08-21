@@ -67,3 +67,18 @@
     max-height: $field-height;
     padding: 0 $ui-trigger-width 0 0;
 }
+
+
+// EDIT PAGE
+
+#edit-page-selector-label {
+    color: $gray;
+    font-size: $font-size-small;
+    position: absolute;
+    top: 0;
+}
+
+#edit-page-selector-field {
+    position: relative;
+    padding-top: $font-size-small;
+}

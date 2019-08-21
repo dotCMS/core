@@ -13,6 +13,7 @@ import { mockDotDevices } from '../../../test/dot-device.mock';
 import { DotDevice } from '@models/dot-device/dot-device.model';
 import { Dropdown } from 'primeng/primeng';
 import { of } from 'rxjs/internal/observable/of';
+import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
 
 describe('DotDeviceSelectorComponent', () => {
     let dotDeviceService;
@@ -26,13 +27,14 @@ describe('DotDeviceSelectorComponent', () => {
         inode: '0'
     };
     const messageServiceMock = new MockDotMessageService({
-        'editpage.viewas.default.device': 'Desktop'
+        'editpage.viewas.default.device': 'Desktop',
+        'editpage.viewas.label.device': 'Device'
     });
 
     beforeEach(() => {
         const testbed = DOTTestBed.configureTestingModule({
             declarations: [DotDeviceSelectorComponent],
-            imports: [BrowserAnimationsModule],
+            imports: [BrowserAnimationsModule, DotIconModule],
             providers: [
                 {
                     provide: DotDevicesService,
@@ -50,6 +52,19 @@ describe('DotDeviceSelectorComponent', () => {
         de = fixture.debugElement;
 
         dotDeviceService = testbed.get(DotDevicesService);
+    });
+
+    it('should have icon', () => {
+        fixture.detectChanges();
+        const icon = de.query(By.css('dot-icon'));
+        expect(icon.attributes.name).toBe('devices');
+        expect(icon.attributes.big).toBeDefined();
+    });
+
+    it('should have label', () => {
+        fixture.detectChanges();
+        const label = de.query(By.css('label')).nativeElement;
+        expect(label.textContent).toBe('Device');
     });
 
     it('should emmit the selected Device', () => {
@@ -82,7 +97,7 @@ describe('DotDeviceSelectorComponent', () => {
     it('shoudl set fixed width to dropdown', () => {
         fixture.detectChanges();
         const pDropDown: Dropdown = de.query(By.css('p-dropdown')).componentInstance;
-        expect(pDropDown.style).toEqual({ width: '100px' });
+        expect(pDropDown.style).toEqual({ width: '120px' });
     });
 
     it('should disabled when just hava the default device', () => {
@@ -93,5 +108,4 @@ describe('DotDeviceSelectorComponent', () => {
         const pDropDown: DebugElement = de.query(By.css('p-dropdown'));
         expect(pDropDown.componentInstance.disabled).toBeTruthy();
     });
-
 });
