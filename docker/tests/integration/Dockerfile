@@ -34,8 +34,8 @@ RUN chmod 500 /build/checkout.sh && /build/checkout.sh ${BUILD_FROM} ${BUILD_ID}
 COPY setup/build-src/overrideProperties.sh /build/overrideProperties.sh
 RUN chmod 500 /build/overrideProperties.sh && /build/overrideProperties.sh
 
-COPY setup/build-src/prepareIntegrationTests.sh /build/prepareIntegrationTests.sh
-RUN chmod 500 /build/prepareIntegrationTests.sh && /build/prepareIntegrationTests.sh
+COPY setup/build-src/prepareTests.sh /build/prepareTests.sh
+RUN chmod 500 /build/prepareTests.sh && /build/prepareTests.sh
 
 COPY setup/build-src/prepareLicense.sh /build/prepareLicense.sh
 RUN chmod 500 /build/prepareLicense.sh && /build/prepareLicense.sh ${LICENSE_KEY}
@@ -60,8 +60,14 @@ RUN chmod 500 /build/github_status.sh
 COPY setup/build-src/printStatus.sh /build/printStatus.sh
 RUN chmod 500 /build/printStatus.sh
 
+COPY setup/build-src/integrationTests.sh /build/integrationTests.sh
+RUN chmod 500 /build/integrationTests.sh
+
+COPY setup/build-src/unitTests.sh /build/unitTests.sh
+RUN chmod 500 /build/unitTests.sh
+
 COPY setup/build-src/entrypoint.sh /build/entrypoint.sh
 RUN chmod 500 /build/entrypoint.sh
 
 ENTRYPOINT ["/build/entrypoint.sh"]
-CMD ["dotcms"]
+CMD ["integration"]

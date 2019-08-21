@@ -1,8 +1,14 @@
 NOW=$(date +"%y-%m-%d")
-GOOGLE_STORAGE_JOB_FOLDER="cicd-246518-tests/integration/${NOW}/${TRAVIS_COMMIT}/${DB_TYPE}"
-
 BASE_GOOGLE_URL="https://storage.googleapis.com/"
-reportsIndexURL="${BASE_GOOGLE_URL}${GOOGLE_STORAGE_JOB_FOLDER}/reports/html/integrationTest/index.html"
+
+if [[ "${TEST_TYPE}" == "unit"  ]]; then
+  GOOGLE_STORAGE_JOB_FOLDER="cicd-246518-tests/${NOW}/${TRAVIS_COMMIT}/unit"
+  reportsIndexURL="${BASE_GOOGLE_URL}${GOOGLE_STORAGE_JOB_FOLDER}/reports/html/index.html"
+else
+  GOOGLE_STORAGE_JOB_FOLDER="cicd-246518-tests/${NOW}/${TRAVIS_COMMIT}/integration/${DB_TYPE}"
+  reportsIndexURL="${BASE_GOOGLE_URL}${GOOGLE_STORAGE_JOB_FOLDER}/reports/html/integrationTest/index.html"
+fi
+
 logURL="${BASE_GOOGLE_URL}${GOOGLE_STORAGE_JOB_FOLDER}/logs/dotcms.log"
 
 echo ""
