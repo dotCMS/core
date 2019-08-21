@@ -47,6 +47,7 @@ import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.json.JSONArray;
@@ -55,6 +56,8 @@ import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+
+import io.vavr.control.Try;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -548,7 +551,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
 		}
         //Read the parameters
         Map<String, String> map = getURIParams();
-        String bundleId = map.get( "bundleId" );
+        final String bundleId = map.get( "bundleId" );
         String paramOperation = map.get( "operation" );
         if ( bundleId == null || bundleId.isEmpty() ) {
             Logger.error( this.getClass(), "No Bundle Found with id: " + bundleId );
@@ -562,6 +565,10 @@ public class RemotePublishAjaxAction extends AjaxAction {
             operation = PushPublisherConfig.Operation.UNPUBLISH;
         }
 
+        final Bundle dbBundle = Try.of(()->APILocator.getBundleAPI().getBundleById(bundleId)).getOrElseThrow(e->new DotRuntimeException(e));
+       final String bundleName = dbBundle.getName().replaceAll("[^\\w.-]", "_");
+        
+        
         File bundle;
         String generatedBundleId;
         try {
@@ -576,7 +583,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
         }
 
         response.setContentType( "application/x-tgz" );
-        response.setHeader( "Content-Disposition", "attachment; filename=" + bundle.getName() );
+        response.setHeader( "Content-Disposition", "attachment; filename=" + bundleName + "-" + bundle.getName() );
         BufferedInputStream in = null;
         try {
             in = new BufferedInputStream( Files.newInputStream(bundle.toPath()) );
@@ -846,7 +853,6 @@ public class RemotePublishAjaxAction extends AjaxAction {
                 if(bundle==null){
                     bundleName = (UtilMethods.isNotSet(bundleName)) ? bundleId : bundleName;
                     bundle = new Bundle( bundleName, null, null, getUser().getUserId() );
-                    bundle.setId(bundleId);
                     APILocator.getBundleAPI().saveBundle( bundle );
                 }
                 
