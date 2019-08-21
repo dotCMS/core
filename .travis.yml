@@ -20,8 +20,10 @@ env:
 before_install:
   - chmod +x travis/environment_vars.sh
   - chmod +x travis/install_gcloud.sh
+  - chmod +x travis/printStoragePaths.sh
   - chmod +x travis/submit.sh
-  - chmod +x travis/run.sh
+  - chmod +x travis/integration.sh
+  - chmod +x travis/unit.sh
 
 # https://docs.travis-ci.com/user/conditions-v1
 # https://docs.travis-ci.com/user/conditional-builds-stages-jobs/
@@ -37,19 +39,23 @@ jobs:
   include:
     - stage: build image
       script: bash travis/submit.sh
+#    - stage: unit tests
+#      script: bash travis/unit.sh
     - stage: integration tests
       env: DB_TYPE=postgres
       name: postgres
-      script: bash travis/run.sh
-    - script: bash travis/run.sh
+      script: bash travis/integration.sh
+    - script: bash travis/unit.sh
+      name: unit tests
+    - script: bash travis/integration.sh
       if: type != pull_request OR commit_message =~ travis
       env: DB_TYPE=mysql
       name: mysql
-    - script: bash travis/run.sh
+    - script: bash travis/integration.sh
       if: type != pull_request OR commit_message =~ travis
       env: DB_TYPE=oracle
       name: oracle
-    - script: bash travis/run.sh
+    - script: bash travis/integration.sh
       if: type != pull_request OR commit_message =~ travis
       env: DB_TYPE=mssql
       name: mssql

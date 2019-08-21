@@ -61,6 +61,10 @@ public class RelationshipFactoryImplTest extends ContentTypeBaseTest{
     @Test
     public void testdbAll() throws DotDataException, DotSecurityException {
         try {
+            for(int i=0; i<3; i++) {
+                saveRelationship();
+            }
+
             List<Relationship> relationshipList = relationshipFactory.dbAll();
             final int amountOriginalRelationships = relationshipList.size();
             assertTrue(amountOriginalRelationships > 0);

@@ -1258,7 +1258,6 @@ create table workflow_task (
 );
 
 create table workflow_action_mappings (
-
    id varchar(36) not null,
    action varchar(36) not null,
    workflow_action varchar(255) not null,
