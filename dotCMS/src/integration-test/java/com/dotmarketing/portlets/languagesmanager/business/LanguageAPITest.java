@@ -119,7 +119,7 @@ public class LanguageAPITest {
 		try{
 
 			String value = APILocator.getLanguageAPI().getStringKey(APILocator.getLanguageAPI().getDefaultLanguage(),KEY_1);
-			Assert.assertEquals("email-address",value);
+			Assert.assertEquals("Email Address",value);
 
 			// Using the provided Language Variable Content Type
 			final ContentType languageVariableContentType = APILocator.getContentTypeAPI(systemUser)

@@ -4,29 +4,17 @@ version: "3.7"
 # https://docs.docker.com/compose/compose-file/
 # https://docs.docker.com/compose/extends/
 
-networks:
-  db_net:
-
 services:
 
-  integration-tests:
+  unit-tests:
     image: "${IMAGE_BASE_NAME}"
+    command: ["unit"]
     environment:
-      databaseType:
       EXTRA_PARAMS:
       GOOGLE_CREDENTIALS_BASE64:
-      exportReports:
+      EXPORT_REPORTS:
       PULL_REQUEST:
       GITHUB_USER:
       GITHUB_USER_TOKEN:
-      WAIT_DB_FOR: 2m
-    depends_on:
-      - database
     ports:
       - "15005:5005"
-    networks:
-      - db_net
-
-  database:
-    networks:
-      - db_net
