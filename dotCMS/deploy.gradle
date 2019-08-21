@@ -201,7 +201,7 @@ uploadArchives {
                 def nameArray = fileName.split("_")
                 def artifactId = nameArray[0]
                 def version = nameArray[1]
-                if (nameArray.length > 2 && !isRelease) {//If is a release we don't need a second identifier
+                if (nameArray.length > 2) {//If is a release we don't need a second identifier
                     version += "_" + nameArray[2]
                 }
                 //Required for artifactory in order to upload it to the snapshots repo, without it the upload fails
@@ -381,7 +381,8 @@ Parameters:
         -> Required
 
 Example of use:
-Name convention: starter_timestamp.zip -> starter_20140805.zip
+Name convention:                    starter_timestamp.zip -> starter_20140805.zip
+Name convention for empty starter:  starter_empty_timestamp.zip -> starter_empty_20140805.zip
 As snapshot: ./gradlew -b deploy.gradle uploadStarter -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/starter_20140805.zip
 As release: ./gradlew -b deploy.gradle uploadStarter -Prelease=true -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/starter_20140805.zip
 """

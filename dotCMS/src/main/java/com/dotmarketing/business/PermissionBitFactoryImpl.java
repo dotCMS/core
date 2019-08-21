@@ -66,6 +66,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 
 /**
@@ -947,13 +948,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 	@Override
 	protected List<Permission> getInheritablePermissions(Permissionable permissionable, String type) throws DotDataException {
-		List<Permission> permissions = getInheritablePermissions(permissionable, true);
-		List<Permission> toReturn = new ArrayList<Permission>();
-		for(Permission p : permissions) {
-			if(p.getType().equals(type))
-				toReturn.add(p);
-		}
-		return toReturn;
+		final List<Permission> permissions = getInheritablePermissions(permissionable, true);
+		return permissions.stream().filter(permission -> permission.getType().equals(type)).collect(Collectors.toList());
 	}
 
 	@Override
@@ -1005,34 +1001,24 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	}
 
 	@Override
-	protected List<Permission> getPermissions(Permissionable permissionable, boolean bitPermissions, boolean onlyIndividualPermissions, boolean forceLoadFromDB) throws DotDataException {
-
+	protected List<Permission> getPermissions(Permissionable permissionable, boolean bitPermissions,
+			boolean onlyIndividualPermissions, boolean forceLoadFromDB) throws DotDataException {
 
 		if (!InodeUtils.isSet(permissionable.getPermissionId())) {
-		    return new ArrayList<>();
+			return new ArrayList<>();
 		}
 
 		List<Permission> bitPermissionsList = null;
 
-		if(forceLoadFromDB) {
-		     /*
-			bitPermissionsList = permissionCache
-					.getPermissionsFromCache(permissionable.getPermissionId());
-		      */
-			permissionCache.remove(permissionable.getPermissionId());
-		}
+		bitPermissionsList = loadPermissions(permissionable, forceLoadFromDB);
+		bitPermissionsList = filterOnlyNonInheritablePermissions(bitPermissionsList,
+				permissionable.getPermissionId());
 
-		//No permissions in cache have to look for individual permissions or inherited permissions
-		//if (bitPermissionsList == null) {
-
-				bitPermissionsList = loadPermissions(permissionable);
-		//}
-		bitPermissionsList = filterOnlyNonInheritablePermissions(bitPermissionsList, permissionable.getPermissionId());
-
-		if(!bitPermissions) {
+		if (!bitPermissions) {
 			bitPermissionsList = convertToNonBitPermissions(bitPermissionsList);
 		}
-		return onlyIndividualPermissions?filterOnlyIndividualPermissions(bitPermissionsList, permissionable.getPermissionId()):bitPermissionsList;
+		return onlyIndividualPermissions ? filterOnlyIndividualPermissions(bitPermissionsList,
+				permissionable.getPermissionId()) : bitPermissionsList;
 	}
 
 	@Override
@@ -1094,7 +1080,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		        ran06=false,ran07=false,ran08=false,ran09=false,ran10=false;
 
 		final List<Map<String, Object>> idsToClear = new ArrayList<>();
-		final List<Permission> permissions = filterOnlyInheritablePermissions(loadPermissions(permissionable), parentPermissionableId);
+		final List<Permission> permissions = filterOnlyInheritablePermissions(loadPermissions(permissionable, true), parentPermissionableId);
 		for(final Permission p : permissions) {
 
 			if (isHost || isFolder) {
@@ -1471,7 +1457,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		whileLoop: while(parentPermissionable != null) {
 			defaultReplacement = parentPermissionable;
 			String parentPermissionableId = parentPermissionable.getPermissionId();
-			List<Permission> permissions = filterOnlyInheritablePermissions(loadPermissions(parentPermissionable), parentPermissionableId);
+			final List<Permission> permissions = filterOnlyInheritablePermissions(loadPermissions(parentPermissionable, true), parentPermissionableId);
 			for(Permission p : permissions) {
 				if(typesToLookFor.contains(p.getType())) {
 					referenceReplacement.put(p.getType(), p.getInode());
@@ -1616,9 +1602,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		boolean updateReferencesOnAdd = false;
 		boolean removePermissionableReference = false;
 		boolean clearReferencesCache = false;
-
-		List<Permission> currentPermissions = filterAssetOnlyPermissions(loadPermissions(permissionable), permissionable.getPermissionId());
-
+		final List<Permission> currentPermissions = filterAssetOnlyPermissions(loadPermissions(permissionable, true), permissionable.getPermissionId());
 		for(Permission cp : currentPermissions) {
             if(containsPermission(permissions, cp)) {
             	deletePermission(cp);
@@ -2145,12 +2129,21 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
   @CloseDBIfOpened
   @SuppressWarnings("unchecked")
+  private List<Permission> loadPermissions(final Permissionable permissionable, final boolean forceDB) throws DotDataException {
+     	if(forceDB){
+     	   permissionCache.remove(permissionable.getPermissionId());
+     	}
+     	return loadPermissions(permissionable);
+  }
+
+  @CloseDBIfOpened
+  @SuppressWarnings("unchecked")
   private List<Permission> loadPermissions(final Permissionable permissionable) throws DotDataException {
 
     final String permissionKey = Try.of(() -> permissionable.getPermissionId())
         .getOrElseThrow(() -> new DotDataException("Invalid Permissionable passed in. permissionable:" + permissionable));
 
-    Logger.info(this.getClass(), "looking for :"  + permissionKey);
+    
     // Step 1. cache lookup first
     List<Permission> permissionList = permissionCache.getPermissionsFromCache(permissionKey);
     if (permissionList != null) {
@@ -2222,6 +2215,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
     })).onFailure(e -> {
       throw new DotRuntimeException(e);
     });
+    Logger.info(this.getClass(), "permission inherited: " + Try.of(()->type.substring(type.lastIndexOf(".")+1, type.length())).getOrElse(type)  + " : "  + permissionKey + " -> " +finalNewReference);
+    
 	permissionCache.addToPermissionCache(permissionKey, permissionList);
     return permissionList;
 
