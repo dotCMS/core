@@ -18,6 +18,7 @@ import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.RestUtilTest;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.WebResource.InitBuilder;
+import com.dotcms.util.UserUtilTest;
 import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
@@ -126,16 +127,21 @@ public class UserResourceTest extends UnitTestBase {
 
         RestUtilTest.initMockContext();
 
-        final User user = new User();
+        User user = Mockito.mock(User.class);
+        UserUtilTest.set(user);
         user.setCompanyId(User.DEFAULT + "NO");
         user.setUserId("dotcms.org.1");
 
         final User systemUser = new User();
 
+        when(user.clone()).thenReturn(user);
+        when(user.getUserId()).thenReturn("dotcms.org.1");
         when(initDataObject.getUser()).thenReturn(user);
         when(webResource.init(Mockito.any(InitBuilder.class))).thenReturn(initDataObject);
         when(userAPI.getSystemUser()).thenReturn(systemUser);
-        when(userAPI.loadUserById("dotcms.org.1", systemUser, false)).thenReturn(user);
+        when(userAPI
+                .loadUserById(Mockito.anyString(), Mockito.any(User.class), Mockito.anyBoolean()))
+                .thenReturn(user);
         when(webResource.init(request, httpServletResponse, true)).thenReturn(initDataObject);
         when(request.getSession()).thenReturn(session);
         when(request.getSession(false)).thenReturn(session);
