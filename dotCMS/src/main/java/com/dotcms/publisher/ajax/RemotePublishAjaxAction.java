@@ -565,8 +565,9 @@ public class RemotePublishAjaxAction extends AjaxAction {
             operation = PushPublisherConfig.Operation.UNPUBLISH;
         }
 
-        final Bundle dbBundle = Try.of(() -> APILocator.getBundleAPI().getBundleById(bundleId)).getOrElseThrow(e -> new DotRuntimeException(e));
-        final String bundleName = FileUtil.sanitizeFileName(dbBundle.getName());
+        final Bundle dbBundle = Try.of(()->APILocator.getBundleAPI().getBundleById(bundleId)).getOrElseThrow(e->new DotRuntimeException(e));
+        final String bundleName = dbBundle.getName().replaceAll("[^\\w.-]", "_");
+        
         
         File bundle;
         String generatedBundleId;
