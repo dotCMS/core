@@ -227,7 +227,7 @@ public class PageResource {
 
         PageMode.setPageMode(request, mode);
 
-        setDeviceAndPersona(request, personaId, deviceInode);
+        setDeviceAndPersona(request, personaId, deviceInode, mode);
 
         final PageView pageRendered = this.htmlPageAssetRenderedAPI.getPageRendered(
                 PageContextBuilder.builder()
@@ -252,17 +252,20 @@ public class PageResource {
     private void setDeviceAndPersona(
             final HttpServletRequest request,
             final String personaId,
-            final String deviceInode)
+            final String deviceInode,
+            PageMode mode)
     {
 
-        if (deviceInode != null) {
-            request.getSession().setAttribute(WebKeys.CURRENT_DEVICE, deviceInode);
-        } else {
-            request.getSession().removeAttribute(WebKeys.CURRENT_DEVICE);
-        }
+        if (mode == null || mode == PageMode.PREVIEW_MODE){
+            if (deviceInode != null) {
+                request.getSession().setAttribute(WebKeys.CURRENT_DEVICE, deviceInode);
+            } else {
+                request.getSession().removeAttribute(WebKeys.CURRENT_DEVICE);
+            }
 
-        if (personaId == null) {
-            APILocator.getVisitorAPI().removeVisitor(request);
+            if (personaId == null) {
+                APILocator.getVisitorAPI().removeVisitor(request);
+            }
         }
     }
 
