@@ -1575,7 +1575,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			}
 		}
 
-		this.fillActionInfo(workflowAction, this.workFlowFactory.findActionClasses(workflowAction));
+		if (null != workflowAction) {
+			this.fillActionInfo(workflowAction, this.workFlowFactory.findActionClasses(workflowAction));
+		}
 
 		return workflowAction;
 	}
@@ -1598,7 +1600,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			}
 		}
 
-		this.fillActionInfo(workflowAction, this.workFlowFactory.findActionClasses(workflowAction));
+		if (null != workflowAction) {
+			this.fillActionInfo(workflowAction, this.workFlowFactory.findActionClasses(workflowAction));
+		}
 
 		return workflowAction;
 	}

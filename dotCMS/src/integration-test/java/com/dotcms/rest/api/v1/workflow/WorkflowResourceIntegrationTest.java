@@ -527,6 +527,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                 request1, new EmptyHttpResponse(), secondStep.getId(),
                 new WorkflowActionStepForm.Builder().actionId(firstAction.getId()).build()
         );
+        assertEquals(200, saveActionToStepResponse.getStatus());
         final ResponseEntityView updateResponseEv = ResponseEntityView.class.cast(saveActionToStepResponse.getEntity());
         assertEquals(ResponseEntityView.OK,updateResponseEv.getEntity());
 
@@ -848,8 +849,13 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                final List<Contentlet> contentlets = samples.get(ct);
                if(UtilMethods.isSet(contentlets)){
                    final Contentlet contentlet = contentlets.get(0);
+                   workflowAPI.deleteWorkflowTaskByContentletIdAnyLanguage(contentlet.getIdentifier(), adminUser);
+                   contentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
+                   APILocator.getContentletIndexAPI().addContentToIndex(contentlet);
                    final List<WorkflowStep> steps = workflowAPI.findStepsByContentlet(contentlet);
+                   Logger.info(this, "**** steps" + steps);
                    final List<WorkflowAction> actions = workflowAPI.findActions(steps, APILocator.systemUser());
+                   Logger.info(this, "**** actions" + actions);
 
                    final WorkflowAction action = actions.stream().findAny().get();
                    final HttpServletRequest request = mock(HttpServletRequest.class);
@@ -1042,7 +1048,9 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
 
             try {
 
-                workflowAPI.deleteWorkflowTaskByContentletId(contentlet.getIdentifier(), contentlet.getLanguageId(), APILocator.systemUser());
+                workflowAPI.deleteWorkflowTaskByContentletIdAnyLanguage(contentlet.getIdentifier(), APILocator.systemUser());
+                contentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
+                APILocator.getContentletIndexAPI().addContentToIndex(contentlet);
                 //  Now Test BulkActions
                 final BulkActionForm form1 = new BulkActionForm(
                         Collections.singletonList(inode), null
