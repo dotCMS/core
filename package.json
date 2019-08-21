@@ -71,6 +71,7 @@
         "karma-coverage-istanbul-reporter": "^2.0.1",
         "karma-jasmine": "~1.1.2",
         "karma-jasmine-html-reporter": "^0.2.2",
+        "mock-socket": "^8.0.5",
         "ng-packagr": "^4.4.5",
         "protractor": "~5.4.0",
         "ts-node": "~7.0.0",

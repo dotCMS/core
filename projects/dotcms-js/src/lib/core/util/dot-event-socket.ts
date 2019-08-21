@@ -3,7 +3,7 @@ import { Protocol } from './protocol';
 import { LoggerService } from '../logger.service';
 import { LongPollingProtocol } from './long-polling-protocol';
 import { CoreWebService } from '../core-web.service';
-import { ConfigParams, DotcmsConfig, WebSocketConfigParams } from '../dotcms-config.service';
+import { ConfigParams, DotcmsConfigService, WebSocketConfigParams } from '../dotcms-config.service';
 import { Subject, Observable } from 'rxjs';
 import { DotEventsSocketURL } from './models/dot-event-socket-url';
 import { DotEventMessage } from './models/dot-event-message';
@@ -39,12 +39,12 @@ export class DotEventsSocket {
      * Initializes this service with the configuration properties that are
      * necessary for opening the Websocket with the System Events end-point.
      *
-     * @param dotcmsConfig - The dotCMS configuration properties that include
+     * @param dotcmsConfigService - The dotCMS configuration properties that include
      * the Websocket parameters.
      */
     constructor(
         private dotEventsSocketURL: DotEventsSocketURL,
-        private dotcmsConfig: DotcmsConfig,
+        private dotcmsConfigService: DotcmsConfigService,
         private loggerService: LoggerService,
         private coreWebService: CoreWebService
     ) {
@@ -112,7 +112,7 @@ export class DotEventsSocket {
     }
 
     private init(): Observable<any> {
-        return this.dotcmsConfig.getConfig().pipe(
+        return this.dotcmsConfigService.getConfig().pipe(
             pluck('websocket'),
             tap((webSocketConfigParams: WebSocketConfigParams) => {
                 this.webSocketConfigParams = webSocketConfigParams;

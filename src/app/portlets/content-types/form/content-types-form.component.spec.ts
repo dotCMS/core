@@ -25,7 +25,7 @@ import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { SiteServiceMock } from '@tests/site-service.mock';
 import { DotWorkflowServiceMock, mockWorkflows } from '@tests/dot-workflow-service.mock';
 
-import { DotcmsConfig, LoginService } from 'dotcms-js';
+import { DotcmsConfigService, LoginService } from 'dotcms-js';
 import { SiteService } from 'dotcms-js';
 
 import { ContentTypesFormComponent } from './content-types-form.component';
@@ -183,7 +183,7 @@ describe('ContentTypesFormComponent', () => {
                 { provide: SiteService, useValue: siteServiceMock },
                 { provide: DotWorkflowService, useClass: DotWorkflowServiceMock },
                 { provide: DotLicenseService, useClass: MockDotLicenseService },
-                DotcmsConfig,
+                DotcmsConfigService,
                 ContentTypesInfoService
             ]
         });

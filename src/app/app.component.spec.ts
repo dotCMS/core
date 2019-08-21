@@ -7,13 +7,13 @@ import { AppComponent } from './app.component';
 import { DOTTestBed } from './test/dot-test-bed';
 import { NotLicensedService } from '@services/not-licensed-service';
 import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
-import { DotcmsConfig } from 'dotcms-js';
+import { DotcmsConfigService } from 'dotcms-js';
 import { of } from 'rxjs';
 
 describe('AppComponent', () => {
     let fixture: ComponentFixture<AppComponent>;
     let de: DebugElement;
-    let dotCmsConfig: DotcmsConfig;
+    let dotCmsConfigService: DotcmsConfigService;
     let dotUiColorsService: DotUiColorsService;
     let notLicensedService: NotLicensedService;
 
@@ -26,11 +26,11 @@ describe('AppComponent', () => {
 
         fixture = DOTTestBed.createComponent(AppComponent);
         de = fixture.debugElement;
-        dotCmsConfig = de.injector.get(DotcmsConfig);
+        dotCmsConfigService = de.injector.get(DotcmsConfigService);
         dotUiColorsService = de.injector.get(DotUiColorsService);
         notLicensedService = de.injector.get(NotLicensedService);
 
-        spyOn(dotCmsConfig, 'getConfig').and.returnValue(
+        spyOn(dotCmsConfigService, 'getConfig').and.returnValue(
             of({
                 colors: {
                     primary: '#123',

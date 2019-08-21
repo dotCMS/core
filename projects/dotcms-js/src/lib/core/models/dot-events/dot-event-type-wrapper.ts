@@ -1,4 +1,4 @@
-export interface DotEventTypeWrapper {
-    data: any;
-    eventType: string;
+export interface DotEventTypeWrapper<T> {
+    data: T;
+    name: string;
 }

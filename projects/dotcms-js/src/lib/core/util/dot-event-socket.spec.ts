@@ -3,7 +3,7 @@ import { StringUtils } from '../string-utils.service';
 import { LoggerService } from '../logger.service';
 import { DotEventsSocket } from './dot-event-socket';
 import { DotEventsSocketURL } from './models/dot-event-socket-url';
-import { ConfigParams, DotcmsConfig } from '../dotcms-config.service';
+import { ConfigParams, DotcmsConfigService } from '../dotcms-config.service';
 import { CoreWebService } from '../core-web.service';
 import { Server } from 'mock-socket';
 import { RequestMethod } from '@angular/http';
@@ -36,7 +36,7 @@ class DotcmsConfigMock {
                 paginatorRows: 2,
                 websocket: {
                     websocketReconnectTime: 0,
-                    disabledWebsockets: '',
+                    disabledWebsockets: false,
                 }
             }
         );
@@ -52,7 +52,7 @@ describe('DotEventsSocket', () => {
     beforeEach(() => {
         const injector = ReflectiveInjector.resolveAndCreate([
             { provide: CoreWebService, useValue: coreWebServiceMock },
-            { provide: DotcmsConfig, useValue: dotcmsConfig },
+            { provide: DotcmsConfigService, useValue: dotcmsConfig },
             { provide: DotEventsSocketURL, useValue: url },
             StringUtils,
             LoggerService,

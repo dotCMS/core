@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { NotLicensedService } from '@services/not-licensed-service';
-import { DotcmsConfig } from 'dotcms-js';
+import { DotcmsConfigService } from 'dotcms-js';
 import { DotUiColors, DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
 import { take, pluck } from 'rxjs/operators';
 
@@ -12,14 +12,14 @@ import { take, pluck } from 'rxjs/operators';
 export class AppComponent implements OnInit {
     constructor(
         private notLicensedService: NotLicensedService,
-        private dotCmsConfig: DotcmsConfig,
+        private dotCmsConfigService: DotcmsConfigService,
         private dotUiColors: DotUiColorsService
     ) {
     }
 
     ngOnInit() {
         this.notLicensedService.init();
-        this.dotCmsConfig
+        this.dotCmsConfigService
             .getConfig()
             .pipe(
                 take(1),

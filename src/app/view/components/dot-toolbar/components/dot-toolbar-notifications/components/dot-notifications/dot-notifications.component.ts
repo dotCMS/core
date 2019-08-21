@@ -13,6 +13,7 @@ import { DotMessageService } from '@services/dot-messages-service';
 export class DotNotificationsItemComponent implements OnInit {
     @Input()
     data;
+
     @Output()
     clear = new EventEmitter<Object>();
 
@@ -73,7 +74,7 @@ export class DotNotificationsItemComponent implements OnInit {
 })
 export class DotNotificationsListComponent {
     @Input()
-    notifications: INotification;
+    notifications: INotification[];
     @Output()
     dismissNotification = new EventEmitter<Object>();
 

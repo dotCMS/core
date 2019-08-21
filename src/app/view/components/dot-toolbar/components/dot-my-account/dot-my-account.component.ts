@@ -15,7 +15,7 @@ import { Subject } from 'rxjs';
 
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import { DotMessageService } from '@services/dot-messages-service';
-import { DotcmsConfig, LoginService, User, Auth } from 'dotcms-js';
+import { DotcmsConfigService, LoginService, User, Auth } from 'dotcms-js';
 import { StringFormat } from 'src/app/api/util/stringFormat';
 
 @Component({
@@ -59,14 +59,14 @@ export class DotMyAccountComponent implements OnInit, OnDestroy {
     constructor(
         private dotMessageService: DotMessageService,
         private accountService: AccountService,
-        private dotcmsConfig: DotcmsConfig,
+        private dotcmsConfigService: DotcmsConfigService,
         private loginService: LoginService,
         private stringFormat: StringFormat
     ) {
         this.passwordMatch = false;
         this.changePasswordOption = false;
         this.loginService.watchUser(this.loadUser.bind(this));
-        this.dotcmsConfig.getConfig().subscribe((res) => {
+        this.dotcmsConfigService.getConfig().subscribe((res) => {
             this.emailRegex = res.emailRegex;
         });
     }

@@ -5,12 +5,14 @@ export const mockSites: Site[] = [
     {
         hostname: 'demo.dotcms.com',
         identifier: '123-xyz-567-xxl',
-        type: 'abc'
+        type: 'abc',
+        archived: false
     },
     {
         hostname: 'hello.dotcms.com',
         identifier: '456-xyz-789-xxl',
-        type: 'def'
+        type: 'def',
+        archived: false
     }
 ];
 

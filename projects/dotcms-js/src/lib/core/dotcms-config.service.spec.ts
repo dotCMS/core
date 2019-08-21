@@ -1,10 +1,15 @@
 import { ReflectiveInjector } from '@angular/core';
 import { NoHttpCoreWebServiceMock } from './no-http-core-web.service.mock';
-import { DotcmsConfig, CoreWebService, LoggerService, StringUtils, ConfigParams } from '../../public_api';
+import {
+    DotcmsConfigService,
+    CoreWebService,
+    LoggerService,
+    StringUtils,
+    ConfigParams
+} from '../../public_api';
 
-describe('DotcmsConfig', () => {
-
-    let dotcmsConfig: DotcmsConfig;
+describe('DotcmsConfigService', () => {
+    let service: DotcmsConfigService;
 
     const configParams = {
         config: {
@@ -16,14 +21,14 @@ describe('DotcmsConfig', () => {
             },
             emailRegex: 'emailRegex',
             i18nMessagesMap: {
-                relativeTime: '', 
-                notifications_dismissall: 'Dismiss All', 
+                relativeTime: '',
+                notifications_dismissall: 'Dismiss All',
                 notifications_dismiss: 'Dismiss',
                 notifications_title: 'Notifications'
             },
             languages: [],
             license: {
-                level: 100, 
+                level: 100,
                 displayServerId: '19fc0e44',
                 levelName: 'COMMUNITY EDITION',
                 isCommunity: true
@@ -46,17 +51,17 @@ describe('DotcmsConfig', () => {
 
         const injector = ReflectiveInjector.resolveAndCreate([
             { provide: CoreWebService, useValue: coreWebService },
-            DotcmsConfig,
+            DotcmsConfigService,
             LoggerService,
             StringUtils
         ]);
 
-        dotcmsConfig = injector.get(DotcmsConfig);
+        service = injector.get(DotcmsConfigService);
     });
 
     it('should get the next config', (done) => {
-        dotcmsConfig.getConfig().subscribe((configResponse: ConfigParams) => {
-            expect(configResponse).toEqual({
+        service.getConfig().subscribe((configResponse: ConfigParams) => {
+            const mock: ConfigParams = {
                 colors: configParams.config.colors,
                 emailRegex: configParams.config['emailRegex'],
                 license: configParams.config.license,
@@ -64,13 +69,13 @@ describe('DotcmsConfig', () => {
                 paginatorLinks: configParams.config['dotcms.paginator.links'],
                 paginatorRows: configParams.config['dotcms.paginator.rows'],
                 websocket: {
-                    websocketReconnectTime: configParams.config.websocket['dotcms.websocket.reconnect.time'],
-                    disabledWebsockets: configParams.config.websocket['dotcms.websocket.disable'],
+                    websocketReconnectTime:
+                        configParams.config.websocket['dotcms.websocket.reconnect.time'],
+                    disabledWebsockets: configParams.config.websocket['dotcms.websocket.disable']
                 }
-            });
+            };
+            expect(configResponse).toEqual(mock);
             done();
         });
     });
-
 });
-

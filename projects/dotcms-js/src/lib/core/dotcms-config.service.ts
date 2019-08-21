@@ -20,7 +20,7 @@ const DOTCMS_PAGINATOR_LINKS = 'dotcms.paginator.links';
 const EMAIL_REGEX = 'emailRegex';
 
 export interface ConfigParams {
-    colors: object;
+    colors: { [key: string]: string };
     emailRegex: string;
     license: object;
     menu: Menu[];
@@ -30,11 +30,11 @@ export interface ConfigParams {
 }
 
 export interface WebSocketConfigParams {
-    disabledWebsockets: string;
+    disabledWebsockets: boolean;
     websocketReconnectTime: number;
 }
 @Injectable()
-export class DotcmsConfig {
+export class DotcmsConfigService {
     private configParamsSubject: BehaviorSubject<ConfigParams> = new BehaviorSubject(null);
     private configUrl: string;
 
@@ -49,7 +49,9 @@ export class DotcmsConfig {
     }
 
     getConfig(): Observable<ConfigParams> {
-        return this.configParamsSubject.asObservable().pipe(filter((config: ConfigParams) => !!config));
+        return this.configParamsSubject
+            .asObservable()
+            .pipe(filter((config: ConfigParams) => !!config));
     }
 
     loadConfig(): void {
@@ -72,8 +74,9 @@ export class DotcmsConfig {
                     paginatorLinks: res.config[DOTCMS_PAGINATOR_LINKS],
                     paginatorRows: res.config[DOTCMS_PAGINATOR_ROWS],
                     websocket: {
-                        websocketReconnectTime: res.config.websocket[DOTCMS_WEBSOCKET_RECONNECT_TIME],
-                        disabledWebsockets: res.config.websocket[DOTCMS_DISABLE_WEBSOCKET_PROTOCOL],
+                        websocketReconnectTime:
+                            res.config.websocket[DOTCMS_WEBSOCKET_RECONNECT_TIME],
+                        disabledWebsockets: res.config.websocket[DOTCMS_DISABLE_WEBSOCKET_PROTOCOL]
                     }
                 };
 

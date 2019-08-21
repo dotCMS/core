@@ -88,7 +88,8 @@ describe('SiteSelectorFieldComponent', () => {
         siteServiceMock.setFakeCurrentSite({
             identifier: 'new-identifier',
             hostname: 'hello.word.com',
-            type: 'xyz'
+            type: 'xyz',
+            archived: false
         });
 
         expect(component.form.value).toEqual({

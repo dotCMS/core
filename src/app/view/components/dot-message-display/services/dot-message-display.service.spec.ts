@@ -6,7 +6,6 @@ import { DotcmsEventsServiceMock } from 'src/app/test/dotcms-events-service.mock
 import { Router } from '@angular/router';
 
 describe('DotMessageDisplayService', () => {
-
     const mockRouter = {
         routerState: {
             snapshot: {
@@ -47,10 +46,7 @@ describe('DotMessageDisplayService', () => {
             done();
         });
 
-        mockDotcmsEventsService.triggerSubscribeTo('MESSAGE', {
-            data: messageExpected,
-            type: 'SIMPLE_MESSAGE'
-        });
+        mockDotcmsEventsService.triggerSubscribeTo('MESSAGE', messageExpected);
     });
 
     it('should unsubscribe', () => {
@@ -62,10 +58,7 @@ describe('DotMessageDisplayService', () => {
 
         dotMessageDisplayService.unsubscribe();
 
-        mockDotcmsEventsService.triggerSubscribeTo('MESSAGE', {
-            data: messageExpected,
-            type: 'SIMPLE_MESSAGE'
-        });
+        mockDotcmsEventsService.triggerSubscribeTo('MESSAGE', messageExpected);
 
         expect(wasCalled).toBe(false);
     });
@@ -83,10 +76,7 @@ describe('DotMessageDisplayService', () => {
                 done();
             });
 
-            mockDotcmsEventsService.triggerSubscribeTo('MESSAGE', {
-                data: messageExpected,
-                type: 'SIMPLE_MESSAGE'
-            });
+            mockDotcmsEventsService.triggerSubscribeTo('MESSAGE', messageExpected);
         });
 
         it('should not show message when currentPortlet is not in portletIdList ', () => {
@@ -98,10 +88,7 @@ describe('DotMessageDisplayService', () => {
                 wasCalled = true;
             });
 
-            mockDotcmsEventsService.triggerSubscribeTo('MESSAGE', {
-                data: messageExpected,
-                type: 'SIMPLE_MESSAGE'
-            });
+            mockDotcmsEventsService.triggerSubscribeTo('MESSAGE', messageExpected);
 
             expect(wasCalled).toBe(false);
         });

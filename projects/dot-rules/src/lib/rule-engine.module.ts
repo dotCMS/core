@@ -33,7 +33,7 @@ import { VisitorsLocationContainer } from './custom-types/visitors-location/visi
 import {
     ApiRoot,
     CoreWebService,
-    DotcmsConfig,
+    DotcmsConfigService,
     DotcmsEventsService,
     LoggerService,
     SiteService,
@@ -95,7 +95,7 @@ import { DotAutofocusModule } from './directives/dot-autofocus/dot-autofocus.mod
         ApiRoot,
         BrowserUtil,
         CoreWebService,
-        DotcmsConfig,
+        DotcmsConfigService,
         DotcmsEventsService,
         LoggerService,
         SiteService,

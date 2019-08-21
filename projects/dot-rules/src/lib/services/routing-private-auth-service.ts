@@ -2,8 +2,7 @@ import { Injectable } from '@angular/core';
 import { CanActivate, ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 import { RoutingService } from 'dotcms-js';
 import { Observable, Observer } from 'rxjs';
-import { DotcmsConfig } from 'dotcms-js';
-import { LoginService } from 'dotcms-js';
+import { LoginService, DotcmsConfigService } from 'dotcms-js';
 import { DotRouterService } from 'dotcms-js';
 
 @Injectable()
@@ -12,24 +11,24 @@ export class RoutingPrivateAuthService implements CanActivate {
         private router: DotRouterService,
         private routingService: RoutingService,
         private loginService: LoginService,
-        private dotcmsConfig: DotcmsConfig
+        private dotcmsConfigService: DotcmsConfigService
     ) {}
 
     canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean> {
-        return Observable.create(obs => {
-            this.loginService.isLogin$.subscribe(isLogin => {
+        return Observable.create((obs) => {
+            this.loginService.isLogin$.subscribe((isLogin) => {
                 if (isLogin) {
-                    this.dotcmsConfig.getConfig().subscribe(configParams => {
+                    this.dotcmsConfigService.getConfig().subscribe((configParams) => {
                         if (state.url.indexOf('home') > -1) {
                             if (this.routingService.firstPortlet) {
                                 this.goToFirstPortlet(obs);
                             } else {
-                                this.routingService.menusChange$.subscribe(res => {
+                                this.routingService.menusChange$.subscribe((res) => {
                                     this.goToFirstPortlet(obs);
                                 });
                             }
                         } else {
-                            this.checkAccess(state.url).subscribe(checkAccess => {
+                            this.checkAccess(state.url).subscribe((checkAccess) => {
                                 if (!checkAccess) {
                                     this.router.goToMain();
                                 }
@@ -51,7 +50,7 @@ export class RoutingPrivateAuthService implements CanActivate {
     }
 
     private checkAccess(url: string): Observable<boolean> {
-        return Observable.create(obs => {
+        return Observable.create((obs) => {
             if (this.routingService.currentMenu) {
                 obs.next(this.check(url));
             } else {

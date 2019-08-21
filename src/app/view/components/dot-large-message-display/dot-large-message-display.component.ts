@@ -1,11 +1,28 @@
 import {
-    DotLargeMessageDisplayService,
-    DotLargeMessageDisplayParams
-} from './services/dot-large-message-display.service';
-import { Component, OnInit,  Renderer2, OnDestroy, ViewChildren, QueryList, AfterViewInit } from '@angular/core';
-import { Subject } from 'rxjs';
+    Component,
+    OnInit,
+    Renderer2,
+    OnDestroy,
+    ViewChildren,
+    QueryList,
+    AfterViewInit
+} from '@angular/core';
+import { Subject, Observable } from 'rxjs';
 import { takeUntil, filter } from 'rxjs/operators';
 import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
+import { DotcmsEventsService } from 'dotcms-js';
+
+interface DotLargeMessageDisplayParams {
+    title: string;
+    width: string;
+    height: string;
+    body: string;
+    script?: string;
+    code?: {
+        lang: string;
+        content: string;
+    };
+}
 
 @Component({
     selector: 'dot-large-message-display',
@@ -19,10 +36,7 @@ export class DotLargeMessageDisplayComponent implements OnInit, OnDestroy, After
     private destroy$: Subject<boolean> = new Subject<boolean>();
     private recentlyDialogAdded: boolean;
 
-    constructor(
-        private dotLargeMessageDisplayService: DotLargeMessageDisplayService,
-        private renderer: Renderer2
-    ) {}
+    constructor(private renderer: Renderer2, private dotcmsEventsService: DotcmsEventsService) {}
 
     ngAfterViewInit() {
         this.dialogs.changes
@@ -37,14 +51,11 @@ export class DotLargeMessageDisplayComponent implements OnInit, OnDestroy, After
     }
 
     ngOnInit() {
-        this.dotLargeMessageDisplayService
-            .sub()
+        this.getMessages()
             .pipe(takeUntil(this.destroy$))
             .subscribe((content: DotLargeMessageDisplayParams) => {
-                if (content) {
-                    this.recentlyDialogAdded = true;
-                    this.messages.push(content);
-                }
+                this.recentlyDialogAdded = true;
+                this.messages.push(content);
             });
     }
 
@@ -56,13 +67,17 @@ export class DotLargeMessageDisplayComponent implements OnInit, OnDestroy, After
     /**
      * Close dialog's component by clearing messages from service
      *
+     * @param {DotLargeMessageDisplayParams} messageToRemove
      * @memberof DotLargeMessageDisplayComponent
      */
     close(messageToRemove: DotLargeMessageDisplayParams) {
-       this.messages.splice(this.messages.indexOf(messageToRemove), 1);
+        this.messages.splice(this.messages.indexOf(messageToRemove), 1);
     }
 
-    createContent(dialogComponent: DotDialogComponent, content: DotLargeMessageDisplayParams): void {
+    private createContent(
+        dialogComponent: DotDialogComponent,
+        content: DotLargeMessageDisplayParams
+    ): void {
         const placeholder = document.createElement('div');
         placeholder.innerHTML = content.body;
 
@@ -75,10 +90,7 @@ export class DotLargeMessageDisplayComponent implements OnInit, OnDestroy, After
         });
 
         if (content.script) {
-            this.renderer.appendChild(
-                body,
-                this.createScriptEl(content.script)
-            );
+            this.renderer.appendChild(body, this.createScriptEl(content.script));
         }
     }
 
@@ -93,5 +105,15 @@ export class DotLargeMessageDisplayComponent implements OnInit, OnDestroy, After
         this.renderer.appendChild(script, text);
 
         return script;
+    }
+
+    private getMessages(): Observable<DotLargeMessageDisplayParams> {
+        return this.dotcmsEventsService
+            .subscribeTo<DotLargeMessageDisplayParams>('LARGE_MESSAGE')
+            .pipe(
+                filter((data: DotLargeMessageDisplayParams) => {
+                    return !!data;
+                })
+            );
     }
 }

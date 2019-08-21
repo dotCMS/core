@@ -66,7 +66,8 @@ export const mockDotSiteSelectorResults = {
             payload: {
                 hostname: 'demo.dotcms.com',
                 type: 'host',
-                identifier: 's48190c8c-42c4-46af-8d1a-0cd5db894797'
+                identifier: 's48190c8c-42c4-46af-8d1a-0cd5db894797',
+                archived: false
             }
         }
     ]

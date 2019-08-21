@@ -6,12 +6,13 @@
         [height]="message.height || '400px'"
         (hide)="close(message)"
     >
-            <div class="dialog-message__body" *ngIf="message.body"></div>
+        <div class="dialog-message__body" *ngIf="message.body"></div>
 
-            <div *ngIf="message.code">
-                <pre class="dialog-message__code">
+        <div *ngIf="message.code">
+            <pre class="dialog-message__code">
                     {{ message.code.content }}
-                </pre>
-            </div>
+                </pre
+            >
+        </div>
     </dot-dialog>
 </ng-container>

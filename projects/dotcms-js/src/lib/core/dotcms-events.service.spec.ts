@@ -1,4 +1,3 @@
-
 import { ReflectiveInjector } from '@angular/core';
 import { Observable, Subject, of } from 'rxjs';
 import { DotcmsEventsService } from './dotcms-events.service';
@@ -37,9 +36,7 @@ class DotEventsSocketMock {
     destroy(): void {}
 }
 
-
 describe('DotcmsEventsService', () => {
-
     let socket: DotEventsSocketMock;
     let dotcmsEventsService: DotcmsEventsService;
 
@@ -56,19 +53,18 @@ describe('DotcmsEventsService', () => {
         ]);
 
         dotcmsEventsService = injector.get(DotcmsEventsService);
+
+        spyOn(socket, 'connect').and.callThrough();
+        spyOn(socket, 'destroy').and.callThrough();
     });
 
     it('should create and connect a new socket', () => {
-        spyOn(socket, 'connect').and.callThrough();
-
         dotcmsEventsService.start();
 
         expect(socket.connect).toHaveBeenCalled();
     });
 
     it('should reuse socket', () => {
-        spyOn(socket, 'connect').and.callThrough();
-
         dotcmsEventsService.start();
         dotcmsEventsService.start();
 
@@ -102,11 +98,12 @@ describe('DotcmsEventsService', () => {
 
         dotcmsEventsService.start();
 
-        dotcmsEventsService.subscribeToEvents(['test_event_1', 'test_event_2'])
-            .subscribe((dotEventTypeWrapper: DotEventTypeWrapper) => {
-                if (dotEventTypeWrapper.eventType === 'test_event_1') {
+        dotcmsEventsService
+            .subscribeToEvents(['test_event_1', 'test_event_2'])
+            .subscribe((dotEventTypeWrapper: DotEventTypeWrapper<any>) => {
+                if (dotEventTypeWrapper.name === 'test_event_1') {
                     expect(dotEventTypeWrapper.data).toEqual('test payload_1');
-                } else if (dotEventTypeWrapper.eventType === 'test_event_2') {
+                } else if (dotEventTypeWrapper.name === 'test_event_2') {
                     expect(dotEventTypeWrapper.data).toEqual('test payload_2');
                 } else {
                     expect(true).toBe(false);
@@ -129,21 +126,33 @@ describe('DotcmsEventsService', () => {
     });
 
     it('should destroy socket', () => {
-        spyOn(socket, 'destroy').and.callThrough();
-
+        dotcmsEventsService.start();
         dotcmsEventsService.destroy();
 
         expect(socket.destroy).toHaveBeenCalled();
     });
 
     it('should destroy socket and connect', () => {
-        spyOn(socket, 'destroy').and.callThrough();
-        spyOn(socket, 'connect').and.callThrough();
-
+        dotcmsEventsService.start();
         dotcmsEventsService.destroy();
         expect(socket.destroy).toHaveBeenCalled();
 
         dotcmsEventsService.start();
         expect(socket.connect).toHaveBeenCalledTimes(1);
+    });
+
+    it('should stop emitting after destroy', () => {
+        const subscribeCallback = jasmine.createSpy('spy');
+
+        dotcmsEventsService.start();
+        dotcmsEventsService.subscribeTo('test_event').subscribe(subscribeCallback);
+        dotcmsEventsService.destroy();
+
+        socket.sendMessage({
+            event: 'test_event',
+            payload: 'test payload'
+        });
+
+        expect(subscribeCallback).not.toHaveBeenCalled();
     });
 });
