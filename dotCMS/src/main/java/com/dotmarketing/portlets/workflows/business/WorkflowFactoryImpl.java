@@ -1163,10 +1163,9 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			results = new DotConnect().setSQL(sql.SELECT_SYSTEM_ACTION_BY_SCHEME_OR_CONTENT_TYPE_MAPPING)
 						.addParam(contentType.variable())
 						.loadObjectResults();
-			if (UtilMethods.isSet(results)) {
 
-				this.cache.addSystemActionsByContentType(contentType.variable(), results);
-			}
+			this.cache.addSystemActionsByContentType(contentType.variable(),
+					UtilMethods.isSet(results)?results:Collections.emptyList());
 		}
 
 		return results;
@@ -1226,6 +1225,14 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 					dbMappingMap.computeIfAbsent(variable, key -> new ArrayList<>()).add(rowMap);
 				}
 
+				for (final Map.Entry<String, List<Map<String, Object>>> contentTypeResultsEntry : dbMappingMap.entrySet()) {
+
+					final String variable = contentTypeResultsEntry.getKey();
+					final List<Map<String, Object>> results = contentTypeResultsEntry.getValue();
+					this.cache.addSystemActionsByContentType(variable,
+							UtilMethods.isSet(results)?results:Collections.emptyList());
+				}
+
 				mappingMapBuilder.putAll(dbMappingMap);
 			}
 		}
@@ -1246,10 +1253,9 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 					.setSQL(sql.SELECT_SYSTEM_ACTION_BY_SCHEME_OR_CONTENT_TYPE_MAPPING)
 					.addParam(workflowScheme.getId())
 					.loadObjectResults();
-			if (UtilMethods.isSet(results)) {
 
-				this.cache.addSystemActionsByScheme(workflowScheme.getId(), results);
-			}
+			this.cache.addSystemActionsByScheme(workflowScheme.getId(),
+					UtilMethods.isSet(results)?results:Collections.emptyList());
 		}
 
 		return results;
@@ -1265,10 +1271,9 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 					.setSQL(sql.SELECT_SYSTEM_ACTION_BY_WORKFLOW_ACTION)
 					.addParam(workflowAction.getId())
 					.loadObjectResults();
-			if (UtilMethods.isSet(results)) {
 
-				this.cache.addSystemActionsByWorkflowAction(workflowAction.getId(), results);
-			}
+			this.cache.addSystemActionsByWorkflowAction(workflowAction.getId(),
+					UtilMethods.isSet(results)?results:Collections.emptyList());
 		}
 
 		return results;
@@ -1296,9 +1301,11 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			if (UtilMethods.isSet(rows)) {
 
 				mappingRow = rows.get(0);
-				this.cache.addSystemActionBySystemActionNameAndContentTypeVariable(
-						systemAction.name(), contentType.variable(), mappingRow);
 			}
+
+			this.cache.addSystemActionBySystemActionNameAndContentTypeVariable(
+					systemAction.name(), contentType.variable(),
+					UtilMethods.isSet(mappingRow)?mappingRow:Collections.emptyMap());
 		}
 
 		return mappingRow;
@@ -1353,19 +1360,10 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	@Override
 	public Map<String, Object> findSystemActionByIdentifier(final String identifier) throws DotDataException {
 
-		Map<String, Object> systemActionMap = cache.findSystemActionByIdentifier(identifier);
-
-		if (null == systemActionMap) {
-
-			final List<Map<String, Object>> rows = new DotConnect().setSQL(sql.SELECT_SYSTEM_ACTION_BY_IDENTIFIER)
-					.addParam(identifier)
-					.loadObjectResults();
-			systemActionMap = UtilMethods.isSet(rows) ? rows.get(0) : Collections.emptyMap();
-
-			this.cache.addSystemActionByIdentifier(identifier, systemActionMap);
-		}
-
-		return systemActionMap;
+		final List<Map<String, Object>> rows = new DotConnect().setSQL(sql.SELECT_SYSTEM_ACTION_BY_IDENTIFIER)
+				.addParam(identifier)
+				.loadObjectResults();
+		return UtilMethods.isSet(rows) ? rows.get(0) : Collections.emptyMap();
 	}
 
 	@Override
@@ -1375,7 +1373,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 				.addParam(mapping.getIdentifier())
 				.loadResult();
 
-		this.cache.removeSystemActionByIdentifier(mapping.getIdentifier());
+		this.cache.removeSystemActionWorkflowActionMapping(mapping);
 
 		return true; //  todo: if rows affected 0 -> false
 	}
@@ -1443,9 +1441,9 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 					.addParam(ownerKey)
 					.addParam(existingId)
 					.loadResult();
-
-			this.cache.removeSystemActionByIdentifier(existingId);
 		}
+
+		this.cache.removeSystemActionWorkflowActionMapping(mapping);
 
 		return toReturn;
 	}
