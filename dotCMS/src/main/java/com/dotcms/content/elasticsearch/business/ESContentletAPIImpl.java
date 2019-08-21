@@ -3282,14 +3282,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final String title    = contentletIn.getTitle();
             final String actionId = workflowActionOpt.get().getId();
 
-            Logger.info(this, () -> "The contentlet: " + title + " hasn't action id set"
+            Logger.info(this, () -> "The contentlet: " + contentletIn.getIdentifier() + " hasn't action id set"
                     + " using the default action: " + actionId);
 
             // if the action has a save action, we skip the current checkin
             if (workflowActionOpt.get().hasPublishActionlet()) {
 
                 Logger.info(this, () -> "The action: " + actionId + " has a publish contentlet actionlet"
-                        + " so firing a workflow and skipping the current publish for the contentlet: " + title);
+                        + " so firing a workflow and skipping the current publish for the contentlet: " + contentletIn.getIdentifier());
 
                 return Optional.ofNullable(workflowAPI.fireContentWorkflow(contentletIn,
                         new ContentletDependencies.Builder().workflowActionId(actionId)
@@ -3299,7 +3299,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 ));
             }
 
-            Logger.info(this, () -> "The action: " + actionId + " hasn't a publish contentlet actionlet"
+            Logger.info(this, () -> "The action: " + contentletIn.getIdentifier() + " hasn't a publish contentlet actionlet"
                     + " so including just the action to the contentlet: " + title);
 
             contentletIn.setActionId(actionId);

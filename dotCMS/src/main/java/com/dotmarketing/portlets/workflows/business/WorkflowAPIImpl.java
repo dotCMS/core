@@ -2851,6 +2851,10 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		if (null != processor.getContentlet()) {
 			processor.getContentlet().setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.FALSE);
+		} else {
+
+			Logger.info(this, "The Contentlet: " + (null != contentlet? contentlet.getIdentifier():"Unknown") +
+					"the action: " + (null != contentlet? contentlet.getActionId():"Unknown") + " was not executed");
 		}
 
 		return processor.getContentlet();
