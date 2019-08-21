@@ -62,7 +62,7 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
      * @return TemplateDataGen with body property set
      */
     public TemplateDataGen drawedBody(final TemplateLayout templateLayout) {
-        ObjectMapper mapper = new ObjectMapper();
+        final ObjectMapper mapper = new ObjectMapper();
         final String json;
         try {
             json = mapper.writeValueAsString(templateLayout);

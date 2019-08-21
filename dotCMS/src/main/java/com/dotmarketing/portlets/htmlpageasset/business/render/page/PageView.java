@@ -78,7 +78,7 @@ public class PageView implements Serializable {
         }
     }
 
-    private int getContentsNumber(final Map<String, ContainerRaw> containersMap) {
+    private final int getContentsNumber(final Map<String, ContainerRaw> containersMap) {
         final Optional<Integer> optionalResult = this.layout.getBody().getRows()
             .stream()
             .flatMap(row -> row.getColumns().stream())

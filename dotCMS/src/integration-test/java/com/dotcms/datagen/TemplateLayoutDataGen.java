@@ -1,10 +1,9 @@
 package com.dotcms.datagen;
 
 import com.dotmarketing.portlets.templates.design.bean.*;
-import com.dotmarketing.portlets.templates.model.Template;
 
 import java.util.ArrayList;
-import java.util.Date;
+
 import java.util.List;
 
 public class TemplateLayoutDataGen  {
@@ -24,7 +23,7 @@ public class TemplateLayoutDataGen  {
         final List<ContainerUUID> containers = new ArrayList<>();
 
         for (int i = 0; i < containersIds.size(); i++) {
-            String containersId = containersIds.get(i);
+            final String containersId = containersIds.get(i);
             containers.add(new ContainerUUID(containersId, String.valueOf(i + 1)));
         }
 
