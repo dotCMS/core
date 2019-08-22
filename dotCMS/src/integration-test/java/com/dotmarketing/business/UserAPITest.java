@@ -595,51 +595,51 @@ public class UserAPITest extends IntegrationTestBase {
 		assertNotNull(userAPI.loadByUserByEmail(replacementUser.getEmailAddress(),systemUser,false));
 
 		link = APILocator.getMenuLinkAPI().find(link.getInode(), systemUser, false);
-		assertEquals(link.getOwner(),   replacementUser.getUserId());
-		assertEquals(link.getModUser(), replacementUser.getUserId());
+		assertEquals(replacementUser.getUserId(), link.getOwner());
+		assertEquals(replacementUser.getUserId(), link.getModUser());
 
 		page =htmlPageAssetAPI.getPageByPath(testFolder.getPath()+page0Str, host, langId, true);
 		Logger.info(this, "Page inode:" + page.getInode());
 		Logger.info(this, "Page identifier:" + page.getIdentifier());
-		assertTrue("Page Owner " + page.getOwner(), page.getOwner().equals(replacementUser.getUserId()));
-		assertTrue(page.getModUser().equals(replacementUser.getUserId()));
+		assertEquals("Page Owner " + page.getOwner(), replacementUser.getUserId(), page.getOwner());
+		assertEquals(replacementUser.getUserId(), page.getModUser());
 
 		List<Contentlet> contentAssets = conAPI.findByStructure(st, systemUser, false, 100,0);
 		for(Contentlet content: contentAssets){
-			assertTrue(content.getOwner().equals(replacementUser.getUserId()));
-			assertTrue(content.getModUser().equals(replacementUser.getUserId()));
+			assertEquals(replacementUser.getUserId(), content.getOwner());
+			assertEquals(replacementUser.getUserId(), content.getModUser());
 
 			task = workflowAPI.findTaskByContentlet(content);
-			assertTrue(task.getAssignedTo().equals(replacementUserUserRole.getId()));
+			assertEquals(replacementUserUserRole.getId(), task.getAssignedTo());
 			Logger.info(this, "task.getCreatedBy() = " + task.getCreatedBy());
 			Logger.info(this, "replacementUserUserRole.getId() = " + replacementUserUserRole.getId());
-			assertEquals(task.getCreatedBy(),replacementUserUserRole.getId());
+			assertEquals(replacementUser.getUserId(), task.getCreatedBy());
 
 			step = workflowAPI.findStepByContentlet(content);
 			assertNotNull(step);
 			action =  workflowAPI.findActions(step, systemUser).get(0);
-			assertTrue(action.getNextAssign().equals(replacementUserUserRole.getId()));
+			assertEquals(replacementUserUserRole.getId(), action.getNextAssign());
 
 			comments = workflowAPI.findWorkFlowComments(task);
 			for(WorkflowComment comm : comments){
-				assertTrue(comm.getPostedBy().equals(replacementUser.getUserId()));
+				assertEquals(replacementUser.getUserId(), comm.getPostedBy());
 			}
 		}
 
 		container = containerAPI.getLiveContainerById(container.getIdentifier(), systemUser, false);
-		assertTrue(container.getOwner().equals(replacementUser.getUserId()));
-		assertTrue(container.getModUser().equals(replacementUser.getUserId()));
+		assertEquals(replacementUser.getUserId(), container.getOwner());
+		assertEquals(replacementUser.getUserId(), container.getModUser());
 
 		template = templateAPI.find(template.getInode(), systemUser, false);
-		assertTrue(template.getOwner().equals(replacementUser.getUserId()));
-		assertTrue(template.getModUser().equals(replacementUser.getUserId()));
+		assertEquals(replacementUser.getUserId(), template.getOwner());
+		assertEquals(replacementUser.getUserId(), template.getModUser());
 
 		CacheLocator.getFolderCache().removeFolder(testFolder, identifierAPI.find(testFolder.getIdentifier()));
 		testFolder = folderAPI.findFolderByPath(testFolder.getPath(), host, systemUser, false);
-		assertTrue(testFolder.getOwner().equals(replacementUser.getUserId()));
+		assertEquals(replacementUser.getUserId(), testFolder.getOwner());
 
 		hostVariable = hostVariableAPI.getVariablesForHost(host.getIdentifier(),replacementUser,false).get(0);
-		assertTrue(hostVariable.getLastModifierId().equals(replacementUser.getUserId()));
+		assertEquals(replacementUser.getUserId(), hostVariable.getLastModifierId());
 
 		APILocator.getContentTypeAPI(systemUser).delete(new StructureTransformer(st).from());
 		conAPI.archive(contentAsset,systemUser,false);
