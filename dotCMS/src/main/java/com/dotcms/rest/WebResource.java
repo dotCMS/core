@@ -762,6 +762,7 @@ public  class WebResource {
         
         public InitBuilder() {
             this(new WebResource());
+            requiredRolesSet.add(Role.DOTCMS_BACK_END_USER);
         }
 
         @VisibleForTesting
@@ -842,15 +843,6 @@ public  class WebResource {
                         "A request is always required and it hasn't been set.");
             }
 
-            if (!UtilMethods.isSet(requiredRolesSet)) {
-                Logger.debug(InitBuilder.class,
-                        () -> "No required role has been set calling the webResource.init(..) ");
-            }
-
-            if (!UtilMethods.isSet(requiredPortlet)) {
-                Logger.debug(InitBuilder.class,
-                        () -> "No required portlet has been set calling the webResource.init(..) ");
-            }
 
             if (anonAccess != AnonymousAccess.NONE) {
 

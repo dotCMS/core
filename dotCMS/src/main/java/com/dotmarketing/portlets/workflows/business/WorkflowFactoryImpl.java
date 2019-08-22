@@ -669,13 +669,38 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		db.setSQL(sql.SELECT_ACTION_CLASS_PARAMS_BY_ACTIONCLASS);
 		db.addParam(actionClass.getId());
 		final List<WorkflowActionClassParameter> list = (List<WorkflowActionClassParameter>) this.convertListToObjects(db.loadObjectResults(), WorkflowActionClassParameter.class);
-		final Map<String, WorkflowActionClassParameter> map = new LinkedHashMap<String, WorkflowActionClassParameter>();
+		final Map<String, WorkflowActionClassParameter> map = loadDefaultActionClassParams(actionClass);
 		for (final WorkflowActionClassParameter param : list) {
 			map.put(param.getKey(), param);
 		}
 
+
 		return map;
 
+	}
+  /**
+   * When an actionlet is added, we do not add the default values to the db.
+   * 
+   * you need to make sure that the default values of the actionlet are
+   * persisted, otherwise if you try to use it, it will throw an NPE
+   */
+	private Map<String, WorkflowActionClassParameter> loadDefaultActionClassParams(final WorkflowActionClass actionClass){
+	  
+	  final Map<String, WorkflowActionClassParameter> map = new LinkedHashMap<String, WorkflowActionClassParameter>();
+
+	  if(actionClass!=null && actionClass.getActionlet()!=null && actionClass.getActionlet().getParameters()!=null) {
+      for(WorkflowActionletParameter param :actionClass.getActionlet().getParameters()) {
+        WorkflowActionClassParameter instanceParam  =  new WorkflowActionClassParameter();
+        instanceParam.setActionClassId(actionClass.getId());
+        instanceParam.setKey(param.getKey());
+        instanceParam.setValue(param.getDefaultValue());
+        map.put(param.getKey(), instanceParam);
+      }
+	  }
+    return map;
+    
+	  
+	  
 	}
 
 	@Override
@@ -1619,6 +1644,9 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			db.addParam(actionClass.getOrder());
 			db.addParam(actionClass.getClazz());
 			db.loadResult();
+			
+
+			
 		} else {
 			db.setSQL(sql.UPDATE_ACTION_CLASS);
 			db.addParam(actionClass.getActionId());
