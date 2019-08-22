@@ -21,8 +21,10 @@ public class LocalTransaction {
   }
 
 
-    private final static String WARN_MESSAGE = "Connection that started the transaction is not the same as the one that is committing. Commit process will be executed by the outer transaction";
-  
+
+
+    private final static String WARN_MESSAGE = "Transaction broken - Connection that started the transaction is not the same as the one who is commiting";
+
     /**
      *
      * @param delegate {@link ReturnableDelegate}
@@ -55,10 +57,10 @@ public class LocalTransaction {
             final StackTraceElement[] threadStack = Thread.currentThread().getStackTrace();
             final Connection conn = DbConnectionFactory.getConnection();
             result= delegate.execute();
+            if (isLocalTransaction) {
+               handleTransactionInterruption(conn, threadStack);
+               HibernateUtil.commitTransaction();
 
-            //commits a local transaction only when it is not interrupting others transactions
-            if (isLocalTransaction && handleTransactionInterruption(conn, threadStack)) {
-                HibernateUtil.commitTransaction();
             }
         } catch (Throwable e) {
 
@@ -68,11 +70,11 @@ public class LocalTransaction {
 
             throwException(e);
         } finally {
-            
+
             if (isLocalTransaction && isNewConnection) {
                 HibernateUtil.closeSessionSilently();
             }
-            
+
         }
 
         return result;
@@ -109,15 +111,15 @@ public class LocalTransaction {
             final StackTraceElement[] threadStack = Thread.currentThread().getStackTrace();
             final Connection conn = DbConnectionFactory.getConnection();
             result= delegate.execute();
-            //commits a local transaction only when it is not interrupting others transactions
-            if (isLocalTransaction && handleTransactionInterruption(conn,threadStack)) {
+            if (isLocalTransaction) {
+              handleTransactionInterruption(conn,threadStack);
               DbConnectionFactory.commit();
             }
         } catch (Throwable e) {
 
             handleException(isLocalTransaction, e);
         } finally {
-            
+
             if (isLocalTransaction) {
                 DbConnectionFactory.setAutoCommit(true);
                 if (isNewConnection) {
@@ -149,21 +151,21 @@ public class LocalTransaction {
 
         final boolean isNewConnection    = !DbConnectionFactory.connectionExists();
         final boolean isLocalTransaction = DbConnectionFactory.startTransactionIfNeeded();
-        
+
         try {
             final StackTraceElement[] threadStack = Thread.currentThread().getStackTrace();
             final Connection conn = DbConnectionFactory.getConnection();
             delegate.execute();
 
-            //commits a local transaction only when it is not interrupting others transactions
-            if (isLocalTransaction && handleTransactionInterruption(conn,threadStack)) {
+            if (isLocalTransaction) {
+              handleTransactionInterruption(conn,threadStack);
               DbConnectionFactory.commit();
             }
         } catch (Exception e) {
 
             handleException(isLocalTransaction, e);
         } finally {
-            
+
             if (isLocalTransaction) {
 
                 DbConnectionFactory.setAutoCommit(true);
@@ -173,7 +175,7 @@ public class LocalTransaction {
             }
         }
     } // wrap.
-    
+
     static public void wrapNoException(final VoidDelegate delegate)  {
         try {
             wrap(delegate);
@@ -182,7 +184,7 @@ public class LocalTransaction {
             throw new DotRuntimeException(e);
         }
     } // wrapNoException.
-    
+
     private static void handleException(final boolean isLocalTransaction,
                                         final Throwable  e) throws Exception {
         if(isLocalTransaction){
@@ -192,20 +194,20 @@ public class LocalTransaction {
         throwException(e);
     } // handleException.
 
-    
-    private static boolean handleTransactionInterruption(final Connection conn, final StackTraceElement[] threadStack) throws DotDataException {
+
+    private static void handleTransactionInterruption(final Connection conn, final StackTraceElement[] threadStack) throws DotDataException {
       if (DbConnectionFactory.getConnection() != conn) {
-        final String action = Config.getStringProperty("LOCAL_TRANSACTION_INTERRUPTED_ACTION", TransactionErrorEnum.LOG.name());
+        final String action = Config.getStringProperty("LOCAL_TRANSACTION_INTERUPTED_ACTION", TransactionErrorEnum.LOG.name());
         if (TransactionErrorEnum.LOG.name().equalsIgnoreCase(action)) {
-          
+
           Logger.warn(LocalTransaction.class, WARN_MESSAGE);
+          for(StackTraceElement ste :  threadStack) {
+            Logger.warn(LocalTransaction.class, "    " + ste.toString());
+          }
         } else if (TransactionErrorEnum.THROW.name().equalsIgnoreCase(action)) {
           throw new DotDataException(WARN_MESSAGE);
         }
-        return false;
       }
-
-      return true;
     }
     
     

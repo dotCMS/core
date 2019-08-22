@@ -22,9 +22,10 @@
 
 package com.liferay.portlet.admin.ejb;
 
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.ejb.BasePersistence;
-import com.liferay.portal.util.HibernateUtil;
 import com.liferay.portlet.admin.NoSuchConfigException;
 import com.liferay.util.dao.hibernate.OrderByComparator;
 import java.util.ArrayList;
@@ -49,6 +50,7 @@ public class AdminConfigPersistence extends BasePersistence {
 		return new com.liferay.portlet.admin.model.AdminConfig(configId);
 	}
 
+	@WrapInTransaction
 	protected com.liferay.portlet.admin.model.AdminConfig remove(
 		String configId) throws NoSuchConfigException, SystemException {
 		Session session = null;
@@ -73,11 +75,9 @@ public class AdminConfigPersistence extends BasePersistence {
 				throw new SystemException(he);
 			}
 		}
-		finally {
-			HibernateUtil.closeSession(session);
-		}
 	}
 
+	@WrapInTransaction
 	protected com.liferay.portlet.admin.model.AdminConfig update(
 		com.liferay.portlet.admin.model.AdminConfig adminConfig)
 		throws SystemException {
@@ -126,11 +126,9 @@ public class AdminConfigPersistence extends BasePersistence {
 		catch (HibernateException he) {
 			throw new SystemException(he);
 		}
-		finally {
-			HibernateUtil.closeSession(session);
-		}
 	}
 
+	@CloseDBIfOpened
 	protected com.liferay.portlet.admin.model.AdminConfig findByPrimaryKey(
 		String configId) throws NoSuchConfigException, SystemException {
 		com.liferay.portlet.admin.model.AdminConfig adminConfig = AdminConfigPool.get(configId);
@@ -155,11 +153,9 @@ public class AdminConfigPersistence extends BasePersistence {
 				throw new SystemException(he);
 			}
 		}
-		finally {
-			HibernateUtil.closeSession(session);
-		}
 	}
 
+	@CloseDBIfOpened
 	protected List findByCompanyId(String companyId) throws SystemException {
 		Session session = null;
 
@@ -189,9 +185,6 @@ public class AdminConfigPersistence extends BasePersistence {
 		catch (HibernateException he) {
 			throw new SystemException(he);
 		}
-		finally {
-			HibernateUtil.closeSession(session);
-		}
 	}
 
 	protected List findByCompanyId(String companyId, int begin, int end)
@@ -199,6 +192,7 @@ public class AdminConfigPersistence extends BasePersistence {
 		return findByCompanyId(companyId, begin, end, null);
 	}
 
+	@CloseDBIfOpened
 	protected List findByCompanyId(String companyId, int begin, int end,
 		OrderByComparator obc) throws SystemException {
 		Session session = null;
@@ -253,9 +247,6 @@ public class AdminConfigPersistence extends BasePersistence {
 		catch (HibernateException he) {
 			throw new SystemException(he);
 		}
-		finally {
-			HibernateUtil.closeSession(session);
-		}
 	}
 
 	protected com.liferay.portlet.admin.model.AdminConfig findByCompanyId_First(
@@ -285,6 +276,7 @@ public class AdminConfigPersistence extends BasePersistence {
 		}
 	}
 
+	@CloseDBIfOpened
 	protected com.liferay.portlet.admin.model.AdminConfig[] findByCompanyId_PrevAndNext(
 		String configId, String companyId, OrderByComparator obc)
 		throws NoSuchConfigException, SystemException {
@@ -369,11 +361,9 @@ public class AdminConfigPersistence extends BasePersistence {
 		catch (HibernateException he) {
 			throw new SystemException(he);
 		}
-		finally {
-			HibernateUtil.closeSession(session);
-		}
 	}
 
+	@CloseDBIfOpened
 	protected List findByC_T(String companyId, String type)
 		throws SystemException {
 		Session session = null;
@@ -407,9 +397,6 @@ public class AdminConfigPersistence extends BasePersistence {
 		catch (HibernateException he) {
 			throw new SystemException(he);
 		}
-		finally {
-			HibernateUtil.closeSession(session);
-		}
 	}
 
 	protected List findByC_T(String companyId, String type, int begin, int end)
@@ -417,6 +404,7 @@ public class AdminConfigPersistence extends BasePersistence {
 		return findByC_T(companyId, type, begin, end, null);
 	}
 
+	@CloseDBIfOpened
 	protected List findByC_T(String companyId, String type, int begin, int end,
 		OrderByComparator obc) throws SystemException {
 		Session session = null;
@@ -474,9 +462,6 @@ public class AdminConfigPersistence extends BasePersistence {
 		catch (HibernateException he) {
 			throw new SystemException(he);
 		}
-		finally {
-			HibernateUtil.closeSession(session);
-		}
 	}
 
 	protected com.liferay.portlet.admin.model.AdminConfig findByC_T_First(
@@ -506,6 +491,7 @@ public class AdminConfigPersistence extends BasePersistence {
 		}
 	}
 
+	@CloseDBIfOpened
 	protected com.liferay.portlet.admin.model.AdminConfig[] findByC_T_PrevAndNext(
 		String configId, String companyId, String type, OrderByComparator obc)
 		throws NoSuchConfigException, SystemException {
@@ -593,11 +579,9 @@ public class AdminConfigPersistence extends BasePersistence {
 		catch (HibernateException he) {
 			throw new SystemException(he);
 		}
-		finally {
-			HibernateUtil.closeSession(session);
-		}
 	}
 
+	@CloseDBIfOpened
 	protected List findAll() throws SystemException {
 		Session session = null;
 
@@ -621,11 +605,9 @@ public class AdminConfigPersistence extends BasePersistence {
 		catch (HibernateException he) {
 			throw new SystemException(he);
 		}
-		finally {
-			HibernateUtil.closeSession(session);
-		}
 	}
 
+	@WrapInTransaction
 	protected void removeByCompanyId(String companyId)
 		throws SystemException {
 		Session session = null;
@@ -656,11 +638,9 @@ public class AdminConfigPersistence extends BasePersistence {
 		catch (HibernateException he) {
 			throw new SystemException(he);
 		}
-		finally {
-			HibernateUtil.closeSession(session);
-		}
 	}
 
+	@WrapInTransaction
 	protected void removeByC_T(String companyId, String type)
 		throws SystemException {
 		Session session = null;
@@ -694,11 +674,9 @@ public class AdminConfigPersistence extends BasePersistence {
 		catch (HibernateException he) {
 			throw new SystemException(he);
 		}
-		finally {
-			HibernateUtil.closeSession(session);
-		}
 	}
 
+	@CloseDBIfOpened
 	protected int countByCompanyId(String companyId) throws SystemException {
 		Session session = null;
 
@@ -731,11 +709,9 @@ public class AdminConfigPersistence extends BasePersistence {
 		catch (HibernateException he) {
 			throw new SystemException(he);
 		}
-		finally {
-			HibernateUtil.closeSession(session);
-		}
 	}
 
+	@CloseDBIfOpened
 	protected int countByC_T(String companyId, String type)
 		throws SystemException {
 		Session session = null;
@@ -771,9 +747,6 @@ public class AdminConfigPersistence extends BasePersistence {
 		}
 		catch (HibernateException he) {
 			throw new SystemException(he);
-		}
-		finally {
-			HibernateUtil.closeSession(session);
 		}
 	}
 }

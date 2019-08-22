@@ -22,9 +22,10 @@
 
 package com.liferay.portal.ejb;
 
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.liferay.portal.NoSuchPortletPreferencesException;
 import com.liferay.portal.SystemException;
-import com.liferay.portal.util.HibernateUtil;
 import com.liferay.util.dao.hibernate.OrderByComparator;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -48,6 +49,7 @@ public class PortletPreferencesPersistence extends BasePersistence {
 		return new com.liferay.portal.model.PortletPreferences(portletPreferencesPK);
 	}
 
+	@WrapInTransaction
 	protected com.liferay.portal.model.PortletPreferences remove(
 		PortletPreferencesPK portletPreferencesPK)
 		throws NoSuchPortletPreferencesException, SystemException {
@@ -73,11 +75,9 @@ public class PortletPreferencesPersistence extends BasePersistence {
 				throw new SystemException(he);
 			}
 		}
-		finally {
-			HibernateUtil.closeSession(session);
-		}
 	}
 
+	@WrapInTransaction
 	protected com.liferay.portal.model.PortletPreferences update(
 		com.liferay.portal.model.PortletPreferences portletPreferences)
 		throws SystemException {
@@ -125,11 +125,9 @@ public class PortletPreferencesPersistence extends BasePersistence {
 		catch (HibernateException he) {
 			throw new SystemException(he);
 		}
-		finally {
-			HibernateUtil.closeSession(session);
-		}
 	}
 
+	@CloseDBIfOpened
 	protected com.liferay.portal.model.PortletPreferences findByPrimaryKey(
 		PortletPreferencesPK portletPreferencesPK)
 		throws NoSuchPortletPreferencesException, SystemException {
@@ -155,11 +153,9 @@ public class PortletPreferencesPersistence extends BasePersistence {
 				throw new SystemException(he);
 			}
 		}
-		finally {
-			HibernateUtil.closeSession(session);
-		}
 	}
 
+	@CloseDBIfOpened
 	protected List findByLayoutId(String layoutId) throws SystemException {
 		Session session = null;
 
@@ -189,9 +185,6 @@ public class PortletPreferencesPersistence extends BasePersistence {
 		catch (HibernateException he) {
 			throw new SystemException(he);
 		}
-		finally {
-			HibernateUtil.closeSession(session);
-		}
 	}
 
 	protected List findByLayoutId(String layoutId, int begin, int end)
@@ -199,6 +192,7 @@ public class PortletPreferencesPersistence extends BasePersistence {
 		return findByLayoutId(layoutId, begin, end, null);
 	}
 
+	@CloseDBIfOpened
 	protected List findByLayoutId(String layoutId, int begin, int end,
 		OrderByComparator obc) throws SystemException {
 		Session session = null;
@@ -255,9 +249,6 @@ public class PortletPreferencesPersistence extends BasePersistence {
 		catch (HibernateException he) {
 			throw new SystemException(he);
 		}
-		finally {
-			HibernateUtil.closeSession(session);
-		}
 	}
 
 	protected com.liferay.portal.model.PortletPreferences findByLayoutId_First(
@@ -287,6 +278,7 @@ public class PortletPreferencesPersistence extends BasePersistence {
 		}
 	}
 
+	@CloseDBIfOpened
 	protected com.liferay.portal.model.PortletPreferences[] findByLayoutId_PrevAndNext(
 		PortletPreferencesPK portletPreferencesPK, String layoutId,
 		OrderByComparator obc)
@@ -374,11 +366,9 @@ public class PortletPreferencesPersistence extends BasePersistence {
 		catch (HibernateException he) {
 			throw new SystemException(he);
 		}
-		finally {
-			HibernateUtil.closeSession(session);
-		}
 	}
 
+	@CloseDBIfOpened
 	protected List findByUserId(String userId) throws SystemException {
 		Session session = null;
 
@@ -408,9 +398,6 @@ public class PortletPreferencesPersistence extends BasePersistence {
 		catch (HibernateException he) {
 			throw new SystemException(he);
 		}
-		finally {
-			HibernateUtil.closeSession(session);
-		}
 	}
 
 	protected List findByUserId(String userId, int begin, int end)
@@ -418,6 +405,7 @@ public class PortletPreferencesPersistence extends BasePersistence {
 		return findByUserId(userId, begin, end, null);
 	}
 
+	@CloseDBIfOpened
 	protected List findByUserId(String userId, int begin, int end,
 		OrderByComparator obc) throws SystemException {
 		Session session = null;
@@ -474,9 +462,6 @@ public class PortletPreferencesPersistence extends BasePersistence {
 		catch (HibernateException he) {
 			throw new SystemException(he);
 		}
-		finally {
-			HibernateUtil.closeSession(session);
-		}
 	}
 
 	protected com.liferay.portal.model.PortletPreferences findByUserId_First(
@@ -506,6 +491,7 @@ public class PortletPreferencesPersistence extends BasePersistence {
 		}
 	}
 
+	@CloseDBIfOpened
 	protected com.liferay.portal.model.PortletPreferences[] findByUserId_PrevAndNext(
 		PortletPreferencesPK portletPreferencesPK, String userId,
 		OrderByComparator obc)
@@ -593,11 +579,9 @@ public class PortletPreferencesPersistence extends BasePersistence {
 		catch (HibernateException he) {
 			throw new SystemException(he);
 		}
-		finally {
-			HibernateUtil.closeSession(session);
-		}
 	}
 
+	@CloseDBIfOpened
 	protected List findByL_U(String layoutId, String userId)
 		throws SystemException {
 		Session session = null;
@@ -631,9 +615,6 @@ public class PortletPreferencesPersistence extends BasePersistence {
 		catch (HibernateException he) {
 			throw new SystemException(he);
 		}
-		finally {
-			HibernateUtil.closeSession(session);
-		}
 	}
 
 	protected List findByL_U(String layoutId, String userId, int begin, int end)
@@ -641,6 +622,7 @@ public class PortletPreferencesPersistence extends BasePersistence {
 		return findByL_U(layoutId, userId, begin, end, null);
 	}
 
+	@CloseDBIfOpened
 	protected List findByL_U(String layoutId, String userId, int begin,
 		int end, OrderByComparator obc) throws SystemException {
 		Session session = null;
@@ -700,9 +682,6 @@ public class PortletPreferencesPersistence extends BasePersistence {
 		catch (HibernateException he) {
 			throw new SystemException(he);
 		}
-		finally {
-			HibernateUtil.closeSession(session);
-		}
 	}
 
 	protected com.liferay.portal.model.PortletPreferences findByL_U_First(
@@ -732,6 +711,7 @@ public class PortletPreferencesPersistence extends BasePersistence {
 		}
 	}
 
+	@CloseDBIfOpened
 	protected com.liferay.portal.model.PortletPreferences[] findByL_U_PrevAndNext(
 		PortletPreferencesPK portletPreferencesPK, String layoutId,
 		String userId, OrderByComparator obc)
@@ -822,11 +802,9 @@ public class PortletPreferencesPersistence extends BasePersistence {
 		catch (HibernateException he) {
 			throw new SystemException(he);
 		}
-		finally {
-			HibernateUtil.closeSession(session);
-		}
 	}
 
+	@CloseDBIfOpened
 	protected List findAll() throws SystemException {
 		Session session = null;
 
@@ -850,11 +828,9 @@ public class PortletPreferencesPersistence extends BasePersistence {
 		catch (HibernateException he) {
 			throw new SystemException(he);
 		}
-		finally {
-			HibernateUtil.closeSession(session);
-		}
 	}
 
+	@WrapInTransaction
 	protected void removeByLayoutId(String layoutId) throws SystemException {
 		Session session = null;
 
@@ -884,11 +860,9 @@ public class PortletPreferencesPersistence extends BasePersistence {
 		catch (HibernateException he) {
 			throw new SystemException(he);
 		}
-		finally {
-			HibernateUtil.closeSession(session);
-		}
 	}
 
+	@WrapInTransaction
 	protected void removeByUserId(String userId) throws SystemException {
 		Session session = null;
 
@@ -918,11 +892,9 @@ public class PortletPreferencesPersistence extends BasePersistence {
 		catch (HibernateException he) {
 			throw new SystemException(he);
 		}
-		finally {
-			HibernateUtil.closeSession(session);
-		}
 	}
 
+	@WrapInTransaction
 	protected void removeByL_U(String layoutId, String userId)
 		throws SystemException {
 		Session session = null;
@@ -956,11 +928,9 @@ public class PortletPreferencesPersistence extends BasePersistence {
 		catch (HibernateException he) {
 			throw new SystemException(he);
 		}
-		finally {
-			HibernateUtil.closeSession(session);
-		}
 	}
 
+	@CloseDBIfOpened
 	protected int countByLayoutId(String layoutId) throws SystemException {
 		Session session = null;
 
@@ -993,11 +963,9 @@ public class PortletPreferencesPersistence extends BasePersistence {
 		catch (HibernateException he) {
 			throw new SystemException(he);
 		}
-		finally {
-			HibernateUtil.closeSession(session);
-		}
 	}
 
+	@CloseDBIfOpened
 	protected int countByUserId(String userId) throws SystemException {
 		Session session = null;
 
@@ -1030,11 +998,9 @@ public class PortletPreferencesPersistence extends BasePersistence {
 		catch (HibernateException he) {
 			throw new SystemException(he);
 		}
-		finally {
-			HibernateUtil.closeSession(session);
-		}
 	}
 
+	@CloseDBIfOpened
 	protected int countByL_U(String layoutId, String userId)
 		throws SystemException {
 		Session session = null;
@@ -1070,9 +1036,6 @@ public class PortletPreferencesPersistence extends BasePersistence {
 		}
 		catch (HibernateException he) {
 			throw new SystemException(he);
-		}
-		finally {
-			HibernateUtil.closeSession(session);
 		}
 	}
 }
