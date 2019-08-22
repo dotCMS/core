@@ -1297,7 +1297,7 @@ public class ImportExportUtil {
                     }
                     try {
                         c.setModified(true);
-                        CompanyManagerUtil.updateCompany(c);
+                        APILocator.getCompanyAPI().updateCompany(c);
                     } catch (SystemException e) {
                         throw new DotDataException("Unable to load company",e);
                     }
@@ -1327,7 +1327,7 @@ public class ImportExportUtil {
                 }else{
                     _dh = new HibernateUtil(_importClass);
                     id = HibernateUtil.getSession().getSessionFactory().getClassMetadata(_importClass).getIdentifierPropertyName();
-                    HibernateUtil.getSession().close();
+                    //HibernateUtil.getSession().close();
                 }
 
                 boolean identityOn = false;
@@ -1357,38 +1357,38 @@ public class ImportExportUtil {
                                 	}
                                     LocalTransaction.wrap(() -> APILocator.getIdentifierAPI().save(identifier));
                                 }else{
-                                    HibernateUtil.startTransaction();
+                                    //HibernateUtil.startTransaction();
                                     Logger.debug(this, "Saving the object: " +
                                                 obj.getClass() + ", with the id: " + prop);
                                     Long myId = Long.parseLong(prop);
                                     HibernateUtil.saveWithPrimaryKey(obj, myId);
-                                    HibernateUtil.closeAndCommitTransaction();
+                                    //HibernateUtil.closeAndCommitTransaction();
                                 }
 
                             } else {
                                 if(obj instanceof Relationship){
                                   LocalTransaction.wrap(() -> APILocator.getRelationshipAPI().create(Relationship.class.cast(obj)));
                                 } else {
-                                    HibernateUtil.startTransaction();
+                                    //HibernateUtil.startTransaction();
                                     Logger.debug(this, "Saving the object: " +
                                             obj.getClass() + ", with the id: " + prop);
                                     HibernateUtil.saveWithPrimaryKey(obj, prop);
 
-                                    HibernateUtil.closeAndCommitTransaction();
+                                    //HibernateUtil.closeAndCommitTransaction();
                                 }
                             }
                         } catch (Exception e) {
                             try {
 
                                 if (obj != null && !(obj instanceof Identifier)){
-                                    HibernateUtil.startTransaction();
+                                    //HibernateUtil.startTransaction();
                                     Logger.debug(this, "Error on trying to save: " +
                                             e.getMessage()
                                             + ", trying to Save the object again: " +
                                             obj.getClass() + ", with the id: " + prop);
 
                                     HibernateUtil.saveWithPrimaryKey(obj, prop);
-                                    HibernateUtil.closeAndCommitTransaction();
+                                    //HibernateUtil.closeAndCommitTransaction();
                                 }
                             }catch (Exception ex) {
                                 Logger.debug(this, "Usually not a problem can be that duplicate data or many times a row of data that is created by the system and is trying to be imported again : " + ex.getMessage(), ex);
@@ -1436,9 +1436,9 @@ public class ImportExportUtil {
                                 Logger.debug(this, "Saving the object: " +
                                         obj.getClass() + ", with the values: " + obj);
 
-                                HibernateUtil.startTransaction();
+                                //HibernateUtil.startTransaction();
                                 HibernateUtil.save(obj);
-                                HibernateUtil.closeAndCommitTransaction();
+                                //HibernateUtil.closeAndCommitTransaction();
                             } catch (DotHibernateException e) {
                                 Logger.error(this,e.getMessage(),e);
                                 try {
@@ -1449,7 +1449,7 @@ public class ImportExportUtil {
                                             obj.getClass() + ", with the values: " + obj);
 
                                     HibernateUtil.save(obj);
-                                    HibernateUtil.closeAndCommitTransaction();
+                                    //HibernateUtil.closeAndCommitTransaction();
                                 }catch (Exception ex) {
                                     Logger.debug(this, "Usually not a problem can be that duplicate data or many times a row of data that is created by the system and is trying to be imported again : " + ex.getMessage(), ex);
                                     Logger.info(this, "Problematic object: "+obj);
@@ -1466,7 +1466,7 @@ public class ImportExportUtil {
                     }
 
                     HibernateUtil.getSession().flush();
-                    HibernateUtil.closeSession();
+                    //HibernateUtil.closeSession();
                     try {
                         Thread.sleep(3);
                     } catch (InterruptedException e) {
