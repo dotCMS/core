@@ -85,7 +85,7 @@ public class ContainerAsFileDataGen extends AbstractDataGen<FileAssetContainer> 
         try {
             final Folder containerFolder = createFileAsContainerFolderIfNeeded();
             for (final ContentType contentType : contentTypes) {
-                final String contentTypeName = contentType.name();
+                final String contentTypeName = contentType.variable();
                 final java.io.File file = java.io.File.createTempFile(contentTypeName, ".vtl");
                 FileUtil.write(file, "lol");
                 final Contentlet structure = new FileAssetDataGen(containerFolder, file)
