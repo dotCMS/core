@@ -16,7 +16,7 @@ public class VelocityUtilTest {
         return new Tuple3[] {
                 // actual, expected, firstLetterUppercase
                 new Tuple3<>("123", "one23", false),
-                new Tuple3<>("123", "one23", true),
+                new Tuple3<>("123", "One23", true),
                 new Tuple3<>("_123", "_123", false),
                 new Tuple3<>("_123a", "_123a", false),
                 new Tuple3<>("_123a", "_123a", true),
