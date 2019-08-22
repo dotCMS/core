@@ -15,6 +15,7 @@ import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Versionable;
 import com.dotmarketing.business.query.GenericQueryFactory.BuilderType;
@@ -196,7 +197,8 @@ public class LinkFactory {
 
         Logger.debug(LinkFactory.class, "running getLinkFromInode(String strInode, String userId)");
     	
-        com.dotmarketing.beans.Inode inode = (com.dotmarketing.beans.Inode) com.dotmarketing.factories.InodeFactory.getInode(strInode, com.dotmarketing.beans.Inode.class);
+        com.dotmarketing.beans.Inode inode =
+                com.dotmarketing.factories.InodeFactory.getInode(strInode, com.dotmarketing.beans.Inode.class);
     		
     	if(inode instanceof Link){
     		
@@ -477,9 +479,7 @@ public class LinkFactory {
 		 */
 		public static void updateUserReferences(String userId, String replacementUserId) throws DotDataException, DotStateException, DotSecurityException {
 		    DotConnect dc = new DotConnect();
-	        User systemUser = null;
 	        try {
-	           systemUser = APILocator.getUserAPI().getSystemUser();
 	           dc.setSQL("select inode from links where mod_user = ?");
 	           dc.addParam(userId);
 	           List<HashMap<String, String>> links = dc.loadResults();
@@ -496,7 +496,7 @@ public class LinkFactory {
 	           
 	           for(HashMap<String, String> ident:links){
 	             String inode = ident.get("inode");
-	             Link link = getLinkFromInode(inode, systemUser.getUserId());
+	             Link link = FactoryLocator.getMenuLinkFactory().load(inode);
 	             CacheLocator.getNavToolCache().removeNav(link.getHostId(),link.getInode());
 	    		 RefreshMenus.deleteMenu(link);
 	          }

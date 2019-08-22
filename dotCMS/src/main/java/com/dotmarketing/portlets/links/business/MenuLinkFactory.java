@@ -49,7 +49,7 @@ public interface MenuLinkFactory {
 	 * @return
 	 * @throws DotHibernateException
 	 */
-	Link load(String inode) throws DotHibernateException;
+	Link load(String inode) throws DotDataException;
 
 
     /**
