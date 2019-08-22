@@ -290,7 +290,7 @@ public class VelocityUtil {
     context.put("contentTypeName", processor.getContentlet().getContentType().name());
 
     context.put("contentlet", contentlet);
-    context.put("content", contentlet);
+    context.put("contentMap", new ContentMap(contentlet, processor.getUser(),PageMode.PREVIEW_MODE,host,context));
     return context;
    }
  

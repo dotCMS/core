@@ -52,7 +52,6 @@ public class TagResource {
 
 
       final InitDataObject initDataObject = new WebResource.InitBuilder()
-      .allowBackendUser(true)
       .requiredAnonAccess(AnonymousAccess.READ)
       .requestAndResponse(request, response)
       .init();

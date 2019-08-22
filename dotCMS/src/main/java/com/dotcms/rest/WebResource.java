@@ -354,20 +354,18 @@ public  class WebResource {
           }
         } 
         
-        if (UtilMethods.isSet(builder.requiredRolesSet)) {
+        if (!builder.requiredRolesSet.isEmpty()) {
             final RoleAPI roleAPI = APILocator.getRoleAPI();
-            for (final String requiredRole : builder.requiredRolesSet) {
-                try {
-                    final Role role = roleAPI.loadRoleByKey(requiredRole);
-                    if (!roleAPI.doesUserHaveRole(user, role)) {
-                        throw new SecurityException(
-                                String.format("User lacks required role %s", role),
-                                Response.Status.UNAUTHORIZED);
-                    }
-                } catch (DotDataException dde) {
-                    throw new SecurityException("User lacks required role",
-                            Response.Status.UNAUTHORIZED);
-                }
+            
+            boolean hasARequiredRole=builder.requiredRolesSet.stream()
+                .anyMatch(roleKey -> Try.of(()->roleAPI
+                    .doesUserHaveRole(user, roleAPI.loadRoleByKey(roleKey)))
+                    .getOrElse(false));
+
+            if(!hasARequiredRole) {
+              throw new SecurityException(
+                  String.format("User lacks one of the required role %s", builder.requiredRolesSet.toString()),
+                  Response.Status.UNAUTHORIZED);
             }
         }
         
@@ -758,12 +756,12 @@ public  class WebResource {
         private HttpServletRequest request = null;
         private HttpServletResponse response = null;
         private String[] requiredPortlet = null;
-        private Set<String> requiredRolesSet = new HashSet<>();
+        private final Set<String> requiredRolesSet = new HashSet<>();
         private AnonymousAccess anonAccess=AnonymousAccess.NONE;
         
         public InitBuilder() {
             this(new WebResource());
-            requiredRolesSet.add(Role.DOTCMS_BACK_END_USER);
+            //requiredRolesSet.add(Role.DOTCMS_BACK_END_USER);
         }
 
         @VisibleForTesting

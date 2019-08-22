@@ -1,25 +1,39 @@
 package com.dotmarketing.portlets.workflows.actionlet;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.velocity.context.Context;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.model.field.BinaryField;
+import com.dotcms.contenttype.model.field.ColumnField;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.FormContentType;
+import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.response.BaseResponse;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
@@ -29,7 +43,9 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.Mailer;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
+import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.Company;
+import com.liferay.portal.util.ContentUtil;
 
 import io.vavr.control.Try;
 /**
@@ -83,10 +99,9 @@ public class SendFormEmail extends WorkFlowActionlet {
       throws WorkflowActionFailureException {
 
     final Contentlet contentlet = processor.getContentlet();
-    String x = contentlet.getStringProperty("formEmail");
     final ContentType contentType = contentlet.getContentType();
-    if(!(contentType instanceof FormContentType)) {
-      Logger.debug(this.getClass(), contentlet.getTitle() +  "of type " + contentType.variable()  +" is not a form, skipping email");
+    if(contentType.fieldMap().get(FormContentType.FORM_EMAIL_FIELD_VAR)==null )  {
+      Logger.debug(this.getClass(), contentlet.getTitle() +  "of type " + contentType.variable()  +" does not have a formEmail field, skipping email");
       return;
 
     }
@@ -94,11 +109,11 @@ public class SendFormEmail extends WorkFlowActionlet {
 
     final Context context = new VelocityUtil().getWorkflowContext(processor);
 
-
+    context.put("formMap", getFormMap(processor));
     VelocityEval velocity = new VelocityEval(context);
     
     
-
+    CacheLocator.getVeloctyResourceCache().clearCache();
     final String toEmail = velocity.eval(params.get(TO_EMAIL).getValue());
     final String fromEmail = velocity.eval(params.get(FROM_EMAIL).getOrDefault(company.getEmailAddress()));
     final String fromName = velocity.eval(params.get(FROM_NAME).getOrDefault("dotCMS"));
@@ -112,7 +127,14 @@ public class SendFormEmail extends WorkFlowActionlet {
       return;
     }
 
-
+    if (UtilMethods.isSet(condition) && condition.trim().indexOf("debug") ==0) {
+      try(OutputStream out = new FileOutputStream(new File("./debugging-form-email.html"))){
+        IOUtils.write(emailTemplate, out);
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
+      return;
+    }
     final Mailer mail = new Mailer();
     mail.setToEmail(toEmail);
     mail.setFromEmail(fromEmail);
@@ -133,6 +155,8 @@ public class SendFormEmail extends WorkFlowActionlet {
     mail.sendMessage();
   }
 
+
+  
   /**
    * Best efforts to determine the ipAddress of the content 
    * @param contentlet
@@ -190,5 +214,33 @@ public class SendFormEmail extends WorkFlowActionlet {
     }
 
   }
+  
+  private final static Set<String> ignoreFields = ImmutableSet.of(FormContentType.FORM_EMAIL_FIELD_VAR, FormContentType.FORM_RETURN_PAGE_FIELD_VAR,FormContentType.FORM_TITLE_FIELD_VAR);
+  
+  private Map<String,Object> getFormMap(WorkflowProcessor processor){
+    
+    final LinkedHashMap<String, Object> map = new LinkedHashMap<>();
+    final Contentlet contentlet = processor.getContentlet();
+    final ContentType contentType = contentlet.getContentType();
+    final Map<String,Object> printableMap = Try.of(()->ContentletUtil.getContentPrintableMap(processor.getUser(), contentlet)).getOrElse(contentlet.getMap());
+    final Host host =  resolveHost(contentlet);    
+    for(final Field field : contentType.fields()) {
+      if(ignoreFields.contains(field.variable()))continue;
+      Object obj = contentlet.get(field.variable());
+      if(obj==null)continue;
+      if(field instanceof BinaryField && UtilMethods.isSet(contentlet.getInode())) {
+        map.put(field.name(), "http://" + host.getHostname() + printableMap.get(field.variable() + "Version"));
+        continue;
+      }
+      
+      map.put(field.name(), printableMap.get(field.variable()));
+
+    }
+    return map;
+
+  }
+
+  
+  
 
 }
