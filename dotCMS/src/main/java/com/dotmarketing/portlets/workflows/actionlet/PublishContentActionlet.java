@@ -52,6 +52,7 @@ public class PublishContentActionlet extends WorkFlowActionlet {
             //First verify if we are handling a HTML page
             if (structureType == Structure.STRUCTURE_TYPE_HTMLPAGE) {
 
+                Logger.info(this, "HEY the structure type is a Page");
                 final HTMLPageAsset htmlPageAsset = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
 
                 //Get the un-publish content related to this HTMLPage
@@ -64,6 +65,7 @@ public class PublishContentActionlet extends WorkFlowActionlet {
                         true, processor.getUser(), false);
                 //Publish the page and the related content
                 htmlPageAsset.setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.TRUE);
+                this.setIndexPolicy(contentlet, htmlPageAsset);
                 PublishFactory.publishHTMLPage(htmlPageAsset, relatedNotPublished, processor.getUser(),
                         processor.getContentletDependencies() != null
                                 && processor.getContentletDependencies().isRespectAnonymousPermissions());
@@ -81,4 +83,10 @@ public class PublishContentActionlet extends WorkFlowActionlet {
             throw new WorkflowActionFailureException(e.getMessage(),e);
         }
     } // executeAction.
+
+    private void setIndexPolicy (final Contentlet originContentlet, final Contentlet newContentlet) {
+
+        newContentlet.setIndexPolicy(originContentlet.getIndexPolicy());
+        newContentlet.setIndexPolicyDependencies(originContentlet.getIndexPolicyDependencies());
+    }
 } // E:O:F:PublishContentActionlet.

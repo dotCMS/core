@@ -483,10 +483,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         try {
 
-            if (this.checkAndRunPublishAsWorkflow(contentlet, user, respectFrontendRoles).isPresent()) {
+            final Optional<Contentlet> contentletOpt = this.checkAndRunPublishAsWorkflow(contentlet, user, respectFrontendRoles);
+            if (contentletOpt.isPresent()) {
 
                 Logger.info(this, "A Workflow has been ran instead of publish the contentlet: " +
                         contentlet.getIdentifier());
+                if (!contentlet.getInode().equals(contentletOpt.get().getInode())) {
+                   this.copyProperties(contentlet, contentletOpt.get().getMap());
+                }
                 return;
             }
 
