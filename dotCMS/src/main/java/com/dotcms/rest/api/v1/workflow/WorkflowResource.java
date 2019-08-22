@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.workflow;
 
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
@@ -1893,6 +1894,11 @@ public class WorkflowResource {
         contentlet.setStringProperty(WHERE_TO_SEND,   fireActionForm.getWhereToSend());
         contentlet.setStringProperty(FORCE_PUSH,     fireActionForm.getForcePush());
 
+        for(Field constant : contentlet.getContentType().fields()) {
+          if(constant instanceof ConstantField)
+            contentlet.getMap().put(constant.variable(), constant.values());
+        }
+        
         return contentlet;
     } // populateContentlet.
 

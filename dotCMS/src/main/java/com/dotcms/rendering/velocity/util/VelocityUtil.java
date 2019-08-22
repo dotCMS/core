@@ -253,7 +253,8 @@ public class VelocityUtil {
     final Contentlet contentlet = processor.getContentlet();
     final ContentType contentType = contentlet.getContentType();
     final Host host =  Try
-        .of(() -> Host.SYSTEM_HOST.equals(contentlet.getHost()) ? APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false)
+        .of(() -> Host.SYSTEM_HOST.equals(contentlet.getHost()) || null == contentlet.getHost() 
+        ? APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false)
             : APILocator.getHostAPI().find(contentlet.getHost(), APILocator.systemUser(), false))
         .getOrElse(APILocator.systemHost());
     

@@ -60,7 +60,7 @@ public class SendFormEmail extends WorkFlowActionlet {
     params.add(new WorkflowActionletParameter(TO_EMAIL, "To Email", "${content.formEmail}", true));
     params.add(new WorkflowActionletParameter(EMAIL_SUBJECT, "Email Subject", "[dotCMS] new ${contentTypeName}", true));
     params.add(new WorkflowActionletParameter(EMAIL_TEMPLATE, "The email template to parse",
-        "#dotParse('static/form/email-form-entry.vtl')", true));
+        "#parse('static/form/email-form-entry.vtl')", true));
     
     params.add(new WorkflowActionletParameter(CONDITION, "Condition - email will send unless<br>velocity prints 'false'", "", false));
     params.add(new WorkflowActionletParameter(BCC, "Bcc Email", "", false));
@@ -83,6 +83,7 @@ public class SendFormEmail extends WorkFlowActionlet {
       throws WorkflowActionFailureException {
 
     final Contentlet contentlet = processor.getContentlet();
+    String x = contentlet.getStringProperty("formEmail");
     final ContentType contentType = contentlet.getContentType();
     if(!(contentType instanceof FormContentType)) {
       Logger.debug(this.getClass(), contentlet.getTitle() +  "of type " + contentType.variable()  +" is not a form, skipping email");
