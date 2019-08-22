@@ -6,6 +6,7 @@ import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.ConversionUtils;
+import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.Role;
@@ -917,10 +918,11 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	@Override
 	@SuppressWarnings("unchecked")
 	public List<WorkflowComment> findWorkFlowComments(WorkflowTask task) throws DotDataException {
-		final HibernateUtil hu = new HibernateUtil(WorkflowComment.class);
-		hu.setQuery("from workflow_comment in class com.dotmarketing.portlets.workflows.model.WorkflowComment " + "where workflowtask_id = ? order by creation_date desc");
-		hu.setParam(task.getId());
-		return (List<WorkflowComment>) hu.list();
+		final DotConnect dotConnect = new DotConnect();
+		dotConnect.setSQL("SELECT * FROM workflow_comment WHERE workflowtask_id = ? ORDER BY creation_date DESC");
+		dotConnect.addParam(task.getId());
+		final List<Map<String, Object>> results = dotConnect.loadObjectResults();
+		return TransformerLocator.createWorkflowCommentTransformer(results).asList();
 	}
 
 	@Override

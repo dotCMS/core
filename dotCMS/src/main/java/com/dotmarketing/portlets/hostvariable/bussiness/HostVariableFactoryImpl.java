@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.hostvariable.bussiness;
 
+import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
@@ -71,19 +72,12 @@ public class HostVariableFactoryImpl extends HostVariableFactory{
 	
 
 	protected List<HostVariable> getVariablesForHost (String hostId ) throws DotDataException {
-		
-	
-		List<HostVariable> hvars= getAllVariables();
-		List<HostVariable> hvarsforid =new ArrayList<HostVariable>();
-
-			for(HostVariable  hvar :  hvars) {
-				 if(hvar.getHostId().equals(hostId)) {
-					
-					 hvarsforid.add(hvar);
-				}
-			}
-			return hvarsforid;
-		}
+		return TransformerLocator.createHostVariableTransformer(
+				new DotConnect().setSQL("SELECT * FROM host_variable WHERE host_id=?")
+				.addParam(hostId)
+				.loadObjectResults()
+		).asList();
+	}
 
 	/**
 	 * Updates the user_id of the host_variable table.
