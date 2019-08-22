@@ -6,7 +6,8 @@ public enum AnonymousAccess {
 
   NONE,
   READ,
-  WRITE;
+  WRITE,
+  ;
   /**
    * resolves a String to an AnonymousAccess
    * defaults to NONE
@@ -32,8 +33,6 @@ public enum AnonymousAccess {
    */
   public static AnonymousAccess systemSetting() {
     return from(Config.getStringProperty("CONTENT_APIS_ALLOW_ANONYMOUS","READ"));
-    
-    
   }
   
   

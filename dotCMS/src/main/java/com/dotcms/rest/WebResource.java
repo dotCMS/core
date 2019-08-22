@@ -351,24 +351,25 @@ public  class WebResource {
                 String.format("REST_API_ALLOW_ANONYMOUS permission exceeded - system set to %s but %s was required", AnonymousAccess.systemSetting().name(), builder.anonAccess.name()),
                 Response.Status.UNAUTHORIZED);
           }
-        } else {
-          if (UtilMethods.isSet(builder.requiredRolesSet)) {
-              final RoleAPI roleAPI = APILocator.getRoleAPI();
-              for (final String requiredRole : builder.requiredRolesSet) {
-                  try {
-                      final Role role = roleAPI.loadRoleByKey(requiredRole);
-                      if (!roleAPI.doesUserHaveRole(user, role)) {
-                          throw new SecurityException(
-                                  String.format("User lacks required role %s", role),
-                                  Response.Status.UNAUTHORIZED);
-                      }
-                  } catch (DotDataException dde) {
-                      throw new SecurityException("User lacks required role",
-                              Response.Status.UNAUTHORIZED);
-                  }
-              }
-          }
+        } 
+        
+        if (UtilMethods.isSet(builder.requiredRolesSet)) {
+            final RoleAPI roleAPI = APILocator.getRoleAPI();
+            for (final String requiredRole : builder.requiredRolesSet) {
+                try {
+                    final Role role = roleAPI.loadRoleByKey(requiredRole);
+                    if (!roleAPI.doesUserHaveRole(user, role)) {
+                        throw new SecurityException(
+                                String.format("User lacks required role %s", role),
+                                Response.Status.UNAUTHORIZED);
+                    }
+                } catch (DotDataException dde) {
+                    throw new SecurityException("User lacks required role",
+                            Response.Status.UNAUTHORIZED);
+                }
+            }
         }
+        
 
         if (UtilMethods.isSet(builder.requiredPortlet)) {
             for (final String requiredPortlet : builder.requiredPortlet) {
@@ -502,15 +503,14 @@ public  class WebResource {
         if(user == null) {
             user = getFrontEndUserFromRequest(request, userWebAPI);
         }
-
-        if(
-            ((user == null || UserAPI.CMS_ANON_USER_ID.equals(user.getUserId()))) && access == AnonymousAccess.NONE
-          ) {
-
-            throw new SecurityException("Invalid User", Response.Status.UNAUTHORIZED);
-        } else if(user == null) {
-            user = this.getAnonymousUser();
+        
+        if(user==null) {
+          user = this.getAnonymousUser();
         }
+
+        if( UserAPI.CMS_ANON_USER_ID.equals(user.getUserId()) && access == AnonymousAccess.NONE) {
+            throw new SecurityException("Invalid User", Response.Status.UNAUTHORIZED);
+        } 
 
         request.setAttribute(com.liferay.portal.util.WebKeys.USER_ID, user.getUserId());
         request.setAttribute(com.liferay.portal.util.WebKeys.USER, user);
