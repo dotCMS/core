@@ -1,8 +1,17 @@
 package com.dotcms.translate;
 
+import static com.dotcms.translate.TranslateTestUtil.TEXT_AREA_VN;
+import static com.dotcms.translate.TranslateTestUtil.TEXT_FIELD_VN;
+import static com.dotcms.translate.TranslateTestUtil.WYSIWYG_VN;
+import static com.dotcms.translate.TranslateTestUtil.english;
+import static com.dotcms.translate.TranslateTestUtil.french;
+import static com.dotcms.translate.TranslateTestUtil.getEnglishContent;
+import static com.dotcms.translate.TranslateTestUtil.spanish;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.when;
+
 import com.dotcms.UnitTestBase;
 import com.dotcms.rendering.velocity.viewtools.JSONTool;
-
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
@@ -14,12 +23,7 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.json.JSONObject;
-
 import com.liferay.portal.model.User;
-
-import org.junit.Test;
-import org.mockito.Mockito;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,16 +32,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import static com.dotcms.translate.TranslateTestUtil.TEXT_AREA_VN;
-import static com.dotcms.translate.TranslateTestUtil.TEXT_FIELD_VN;
-import static com.dotcms.translate.TranslateTestUtil.WYSIWYG_VN;
-import static com.dotcms.translate.TranslateTestUtil.english;
-import static com.dotcms.translate.TranslateTestUtil.french;
-import static com.dotcms.translate.TranslateTestUtil.getEnglishContent;
-import static com.dotcms.translate.TranslateTestUtil.spanish;
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.when;
+import org.junit.Test;
+import org.mockito.Mockito;
 
 public class GoogleTranslationServiceTest extends UnitTestBase {
     private User testUser = new User();
@@ -160,7 +156,9 @@ public class GoogleTranslationServiceTest extends UnitTestBase {
         JSONObject jsonObject = new JSONObject(jsonStr);
 
         JSONTool jsonTool = Mockito.mock(JSONTool.class);
-        when(jsonTool.fetch(Mockito.anyString())).thenReturn(jsonObject);
+        when(jsonTool
+                .post(Mockito.anyString(), Mockito.anyInt(), Mockito.anyMap(), Mockito.anyString()))
+                .thenReturn(jsonObject);
 
         TranslationService service = new GoogleTranslationService("key", jsonTool, new ApiProvider());
         List<String> toTranslate = Arrays.asList("This is a test in English", "Latest News",
@@ -179,7 +177,9 @@ public class GoogleTranslationServiceTest extends UnitTestBase {
         JSONObject jsonObject = new JSONObject(jsonStr);
 
         JSONTool jsonTool = Mockito.mock(JSONTool.class);
-        when(jsonTool.fetch(Mockito.anyString())).thenReturn(jsonObject);
+        when(jsonTool
+                .post(Mockito.anyString(), Mockito.anyInt(), Mockito.anyMap(), Mockito.anyString()))
+                .thenReturn(jsonObject);
 
         TranslationService service = new GoogleTranslationService("key", jsonTool, new ApiProvider());
         List<String> toTranslate = Arrays.asList("This is a test in English", null,
@@ -196,7 +196,9 @@ public class GoogleTranslationServiceTest extends UnitTestBase {
         JSONObject jsonObject = new JSONObject(jsonStr);
 
         JSONTool jsonTool = Mockito.mock(JSONTool.class);
-        when(jsonTool.fetch(Mockito.anyString())).thenReturn(jsonObject);
+        when(jsonTool
+                .post(Mockito.anyString(), Mockito.anyInt(), Mockito.anyMap(), Mockito.anyString()))
+                .thenReturn(jsonObject);
 
         GoogleTranslationService service = new GoogleTranslationService("key", jsonTool, new ApiProvider());
         String translated = service.translateString("This is a test in English", english, spanish);

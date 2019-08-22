@@ -5,12 +5,8 @@ import com.dotcms.content.elasticsearch.business.DotIndexException;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESIndexHelper;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import org.apache.commons.fileupload.FileItem;
-import org.apache.commons.fileupload.FileItemFactory;
-import org.apache.commons.fileupload.FileUploadException;
-import org.apache.commons.fileupload.disk.DiskFileItemFactory;
-import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
+import com.dotcms.rest.WebResource;
 import com.dotcms.rest.api.v1.index.ESIndexResource;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -19,7 +15,6 @@ import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.servlets.ajax.AjaxAction;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
@@ -37,6 +32,11 @@ import java.util.Map;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.apache.commons.fileupload.FileItem;
+import org.apache.commons.fileupload.FileItemFactory;
+import org.apache.commons.fileupload.FileUploadException;
+import org.apache.commons.fileupload.disk.DiskFileItemFactory;
+import org.apache.commons.fileupload.servlet.ServletFileUpload;
 
 public class IndexAjaxAction extends AjaxAction {
 
@@ -44,12 +44,18 @@ public class IndexAjaxAction extends AjaxAction {
 	private final ESIndexAPI indexAPI;
 
 	public IndexAjaxAction(){
-		this.indexHelper = ESIndexHelper.INSTANCE;
-		this.indexAPI = APILocator.getESIndexAPI();
+		this(ESIndexHelper.INSTANCE, APILocator.getESIndexAPI(), new WebResource());
 	}
 
 	@VisibleForTesting
-	protected IndexAjaxAction(ESIndexHelper indexHelper, ESIndexAPI indexAPI){
+	public IndexAjaxAction(final WebResource webResource) {
+		this(ESIndexHelper.INSTANCE, APILocator.getESIndexAPI(), webResource);
+	}
+
+	@VisibleForTesting
+	protected IndexAjaxAction(ESIndexHelper indexHelper, ESIndexAPI indexAPI,
+			final WebResource webResource) {
+		super(webResource);
 		this.indexHelper = indexHelper;
 		this.indexAPI = indexAPI;
 	}
