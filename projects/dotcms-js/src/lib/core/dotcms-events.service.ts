@@ -38,11 +38,11 @@ export class DotcmsEventsService {
                 .connect()
                 .pipe(switchMap(() => this.dotEventsSocket.messages()))
                 .subscribe(
-                    (data: DotEventMessage) => {
-                        if (!this.subjects[data.event]) {
-                            this.subjects[data.event] = new Subject();
+                    ({ event, payload }: DotEventMessage) => {
+                        if (!this.subjects[event]) {
+                            this.subjects[event] = new Subject();
                         }
-                        this.subjects[data.event].next(data.payload);
+                        this.subjects[event].next(payload.data);
                     },
                     (e) => {
                         this.loggerService.debug(

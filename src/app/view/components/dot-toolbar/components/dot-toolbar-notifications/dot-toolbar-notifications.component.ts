@@ -127,10 +127,12 @@ export class DotToolbarNotificationsComponent implements OnInit {
     }
 
     private subscribeToNotifications(): void {
-        this.dotcmsEventsService.subscribeTo<any>('NOTIFICATION').subscribe(({ data }: any) => {
-            this.notifications.unshift(data);
-            this.notificationsUnreadCount++;
-            this.isNotificationsMarkedAsRead = false;
-        });
+        this.dotcmsEventsService
+            .subscribeTo<INotification>('NOTIFICATION')
+            .subscribe((data: INotification) => {
+                this.notifications.unshift(data);
+                this.notificationsUnreadCount++;
+                this.isNotificationsMarkedAsRead = false;
+            });
     }
 }

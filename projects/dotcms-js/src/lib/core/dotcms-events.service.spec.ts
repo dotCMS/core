@@ -89,7 +89,9 @@ describe('DotcmsEventsService', () => {
 
         socket.sendMessage({
             event: 'test_event',
-            payload: 'test payload'
+            payload: {
+                data: 'test payload'
+            }
         });
     });
 
@@ -114,12 +116,16 @@ describe('DotcmsEventsService', () => {
 
         socket.sendMessage({
             event: 'test_event_1',
-            payload: 'test payload_1'
+            payload: {
+                data: 'test payload_1'
+            }
         });
 
         socket.sendMessage({
             event: 'test_event_2',
-            payload: 'test payload_2'
+            payload: {
+                data: 'test payload_2'
+            }
         });
 
         expect(count).toBe(2);

@@ -4,80 +4,80 @@ $notification-icon-size: 16px;
 
 :host {
     display: block;
+}
 
-    custom-time {
-        color: $gray;
-        display: block;
+dot-custom-time {
+    color: $gray;
+    display: block;
+}
+
+a {
+    color: $black;
+}
+
+.notification-item {
+    border-top: solid 1px $gray-bg;
+    position: relative;
+}
+
+.notification-item__content {
+    margin-left: rem-cal($notification-icon-size + $basic-padding);
+}
+
+.notification-item__close {
+    color: $gray;
+    height: $notification-icon-size;
+    position: absolute;
+    right: 0;
+    top: 1rem;
+    width: $notification-icon-size;
+    z-index: 1;
+
+    &.ui-state-hover {
+        background: none;
     }
+}
 
-    a {
-        color: $black;
-    }
+.notification-item__icon {
+    font-size: rem-cal(18px);
+    left: 0;
+    position: absolute;
+    top: 1rem;
+    width: $notification-icon-size;
+}
 
-    .notification-item {
-        border-top: solid 1px $gray-bg;
-        position: relative;
-    }
+.notification-item__title {
+    font-size: rem-cal($body-font-size-base);
+}
 
-    .notification-item__content {
-        margin-left: rem-cal($notification-icon-size + $basic-padding);
-    }
+.notification-item__title,
+.notification-item__message {
+    margin: 0;
+}
 
-    .notification-item__close {
-        color: $gray;
-        height: $notification-icon-size;
-        position: absolute;
-        right: 0;
-        top: 1rem;
-        width: $notification-icon-size;
-        z-index: 1;
+.notification-item__message {
+    line-height: 1.5rem;
+}
 
-        &.ui-state-hover {
-            background: none;
-        }
-    }
+.notification-item__wrapper {
+    padding: 1rem 0;
+    position: relative;
+}
 
-    .notification-item__icon {
-        font-size: rem-cal(18px);
-        left: 0;
-        position: absolute;
-        top: 1rem;
-        width: $notification-icon-size;
-    }
-
-    .notification-item__title {
-        font-size: rem-cal($body-font-size-base);
-    }
-
+.warning {
+    .notification-item__icon,
+    .notification-item__link,
     .notification-item__title,
-    .notification-item__message {
-        margin: 0;
+    .notification-item__title a {
+        color: $brand-primary;
     }
+}
 
-    .notification-item__message {
-        line-height: 1.5rem;
-    }
-
-    .notification-item__wrapper {
-        padding: 1rem 0;
-        position: relative;
-    }
-
-    .warning {
-        .notification-item__icon,
-        .notification-item__link,
-        .notification-item__title,
-        .notification-item__title a {
-            color: $brand-primary;
-        }
-    }
-
-    .error {
-        .notification-item__icon,
-        .notification-item__link,
-        .notification-item__title,
-        .notification-item__title a {
-            color: $brand-secondary;
-        }
+.error {
+    .notification-item__icon,
+    .notification-item__link,
+    .notification-item__title,
+    .notification-item__title a {
+        color: $brand-secondary;
     }
 }

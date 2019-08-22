@@ -110,10 +110,6 @@ export class DotLargeMessageDisplayComponent implements OnInit, OnDestroy, After
     private getMessages(): Observable<DotLargeMessageDisplayParams> {
         return this.dotcmsEventsService
             .subscribeTo<DotLargeMessageDisplayParams>('LARGE_MESSAGE')
-            .pipe(
-                filter((data: DotLargeMessageDisplayParams) => {
-                    return !!data;
-                })
-            );
+            .pipe(filter((data: DotLargeMessageDisplayParams) => !!data));
     }
 }

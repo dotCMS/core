@@ -1,11 +1,9 @@
-import { Component, ViewEncapsulation, Input, Output, EventEmitter, OnInit } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
 
 import { INotification } from '@models/notifications';
 import { DotMessageService } from '@services/dot-messages-service';
 
 @Component({
-    encapsulation: ViewEncapsulation.Emulated,
-    providers: [],
     selector: 'dot-notifications-item',
     styleUrls: ['./dot-notifications-item.component.scss'],
     templateUrl: 'dot-notifications-item.component.html'
@@ -66,17 +64,13 @@ export class DotNotificationsItemComponent implements OnInit {
 }
 
 @Component({
-    encapsulation: ViewEncapsulation.Emulated,
-    providers: [],
     selector: 'dot-notifications-list',
     styleUrls: ['./dot-notifications-list.component.scss'],
     templateUrl: 'dot-notifications-list.component.html'
 })
 export class DotNotificationsListComponent {
-    @Input()
-    notifications: INotification[];
-    @Output()
-    dismissNotification = new EventEmitter<Object>();
+    @Input() notifications: INotification[];
+    @Output() dismissNotification = new EventEmitter<Object>();
 
     constructor() {}
 
