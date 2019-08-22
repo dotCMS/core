@@ -227,7 +227,7 @@ public class PageResource {
 
         PageMode.setPageMode(request, mode);
 
-        setDeviceAndPersona(request, personaId, deviceInode, mode);
+        setDeviceAndPersona(request, personaId, deviceInode, modeParam);
 
         final PageView pageRendered = this.htmlPageAssetRenderedAPI.getPageRendered(
                 PageContextBuilder.builder()
@@ -253,10 +253,10 @@ public class PageResource {
             final HttpServletRequest request,
             final String personaId,
             final String deviceInode,
-            PageMode mode)
+            final String modeParam)
     {
 
-        if (mode == null){
+        if (modeParam == null){
             if (deviceInode != null) {
                 request.getSession().setAttribute(WebKeys.CURRENT_DEVICE, deviceInode);
             } else {
