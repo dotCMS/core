@@ -1,5 +1,7 @@
 # Running integration tests
 
+Simple test
+
 ## License set up
 The integration tests require a valid license to run.
 There are two ways to set up a license
