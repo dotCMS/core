@@ -9,7 +9,7 @@ import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * DBTransformer that converts DB objects into {@link com.dotmarketing.portlets.workflows.model.WorkflowComment}
+ * DBTransformer that converts DB objects into {@link HostVariable}
  * instances
  */
 public class HostVariableTransformer implements DBTransformer {

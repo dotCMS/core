@@ -206,7 +206,7 @@ public class TransformerLocator {
     }
 
     /**
-     * Creates a DBTransformer for Link objects
+     * Creates a DBTransformer for HostVariable objects
      * @param initList List of DB results to be transformed
      * @return
      */
