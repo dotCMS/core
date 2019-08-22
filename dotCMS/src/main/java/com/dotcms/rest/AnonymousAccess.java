@@ -23,6 +23,9 @@ public enum AnonymousAccess {
     return NONE;
     
   }
+  
+  public final static String CONTENT_APIS_ALLOW_ANONYMOUS="CONTENT_APIS_ALLOW_ANONYMOUS";
+  
   /**
    * this will be used as the default setting for
    * rest endpoints that can respect anonymous permissions
@@ -32,7 +35,7 @@ public enum AnonymousAccess {
    * @return
    */
   public static AnonymousAccess systemSetting() {
-    return from(Config.getStringProperty("CONTENT_APIS_ALLOW_ANONYMOUS","READ"));
+    return from(Config.getStringProperty(CONTENT_APIS_ALLOW_ANONYMOUS,"READ"));
   }
   
   
