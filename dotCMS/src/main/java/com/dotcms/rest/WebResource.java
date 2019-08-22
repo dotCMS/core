@@ -324,7 +324,8 @@ public  class WebResource {
      * @return
      * @throws SecurityException
      */
-    private InitDataObject init(final InitBuilder builder) throws SecurityException {
+    @VisibleForTesting
+    public InitDataObject init(final InitBuilder builder) throws SecurityException {
 
         checkForceSSL(builder.request);
 

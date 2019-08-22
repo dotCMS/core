@@ -208,7 +208,7 @@ public class PageResource {
                                    @PathParam("uri") final String uri,
                                    @QueryParam(WebKeys.PAGE_MODE_PARAMETER) final String modeParam,
                                    @QueryParam(WebKeys.CMS_PERSONA_PARAMETER) final String personaId,
-                                   @QueryParam("language_id") final String languageId,
+                                   @QueryParam(WebKeys.LANGUAGE_ID_PARAMETER) final String languageId,
                                    @QueryParam("device_inode") final String deviceInode) throws DotSecurityException, DotDataException {
 
         Logger.debug(this, ()->String.format(
@@ -220,48 +220,53 @@ public class PageResource {
         final User user = auth.getUser();
         Response res;
 
-        try {
 
-            final PageMode mode = modeParam != null
-                    ? PageMode.get(modeParam)
-                    : this.htmlPageAssetRenderedAPI.getDefaultEditPageMode(user, request,uri);
+        final PageMode mode = modeParam != null
+                ? PageMode.get(modeParam)
+                : this.htmlPageAssetRenderedAPI.getDefaultEditPageMode(user, request,uri);
 
-            PageMode.setPageMode(request, mode);
+        PageMode.setPageMode(request, mode);
 
-            if (deviceInode != null) {
-                request.getSession().setAttribute(WebKeys.CURRENT_DEVICE, deviceInode);
-            }
+        setDeviceAndPersona(request, personaId, deviceInode, modeParam);
 
-            final PageView pageRendered = this.htmlPageAssetRenderedAPI.getPageRendered(
-                    PageContextBuilder.builder()
-                            .setUser(user)
-                            .setPageUri(uri)
-                            .setPageMode(mode)
-                            .build(),
-                    request,
-                    response
-            );
+        final PageView pageRendered = this.htmlPageAssetRenderedAPI.getPageRendered(
+                PageContextBuilder.builder()
+                        .setUser(user)
+                        .setPageUri(uri)
+                        .setPageMode(mode)
+                        .build(),
+                request,
+                response
+        );
 
-            final Host host = APILocator.getHostAPI().find(pageRendered.getPageInfo().getPage().getHost(), user,
-                    PageMode.get(request.getSession()).respectAnonPerms);
-            request.setAttribute(WebKeys.CURRENT_HOST, host);
-            request.getSession().setAttribute(WebKeys.CURRENT_HOST, host);
+        final Host host = APILocator.getHostAPI().find(pageRendered.getPageInfo().getPage().getHost(), user,
+                PageMode.get(request.getSession()).respectAnonPerms);
+        request.setAttribute(WebKeys.CURRENT_HOST, host);
+        request.getSession().setAttribute(WebKeys.CURRENT_HOST, host);
 
-            res = Response.ok(new ResponseEntityView(pageRendered)).build();
-        } catch (HTMLPageAssetNotFoundException e) {
-            final String errorMsg = String.format("HTMLPageAssetNotFoundException on PageResource.render, parameters:  %s, %s %s: ",
-                    request, uri, modeParam);
-            Logger.error(this, errorMsg, e);
-            res = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
-        } catch (Exception e) {
-
-            final String errorMsg = String.format("HTMLPageAssetNotFoundException on PageResource.render, parameters:  %s, %s %s: ",
-                    request, uri, modeParam);
-            Logger.error(this, errorMsg, e);
-            res = ResponseUtil.mapExceptionResponse(e);
-        }
+        res = Response.ok(new ResponseEntityView(pageRendered)).build();
 
         return res;
+    }
+
+    private void setDeviceAndPersona(
+            final HttpServletRequest request,
+            final String personaId,
+            final String deviceInode,
+            final String modeParam)
+    {
+
+        if (modeParam == null){
+            if (deviceInode != null) {
+                request.getSession().setAttribute(WebKeys.CURRENT_DEVICE, deviceInode);
+            } else {
+                request.getSession().removeAttribute(WebKeys.CURRENT_DEVICE);
+            }
+
+            if (personaId == null) {
+                APILocator.getVisitorAPI().removeVisitor(request);
+            }
+        }
     }
 
     /**
